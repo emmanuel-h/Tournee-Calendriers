@@ -20,8 +20,9 @@ How it works:
 
 ## Reference area (M1)
 
-M1 runs on real BAN streets of an area you choose, stored on the phone until Firestore takes
-over in M2. **To choose** — commune: ______ · streets: ______
+M1 runs on real BAN streets, stored on the phone until Firestore takes over in M2. The field-test
+area is **chosen and kept private**: it is typed in on the phone and never appears in this repo.
+Fixtures, examples and screenshots use **Villefranche-sur-Saône** (public data).
 
 
 ## M0 Foundations
