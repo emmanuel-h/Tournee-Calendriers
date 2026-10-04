@@ -575,27 +575,54 @@ Value-object rules fixed in T1.1 (`lib/domain/street/`):
   rules must count the same way (checked with emoji in the rules tests, T2.4).
 - Invalid input returns a failure value (`Result` = `Ok` | `Err`, `lib/domain/shared/`),
   never an exception.
+- **Identifiers** (`MemberId`, `StreetId`, `BanStreetId`) are opaque, made by adapters, never
+  typed by a person: a blank one is a bug and throws `ArgumentError`. `MemberId` is generated on
+  the phone in M1 and holds the Firebase uid from M2. **`Commune`**: INSEE code (5 characters,
+  `2A`/`2B` for Corsica, stored upper-case) + non-blank name, built with a failure value.
+  **`ChangeStamp`** (`by` member, `at` time) is a house's last change and a street's deletion;
+  `at` always comes from the caller (`Clock` port), never `DateTime.now()`.
+
+`Street` rules fixed in T1.2 (`lib/domain/street/street.dart`):
+
+- `Street.create` sorts the houses by `HouseNumber` and refuses two equal numbers
+  (`duplicateHouseNumber`); `houses`, `oddHouses`, `evenHouses` are read-only lists (0 is even).
+- **A done house never has a « repasser »**: marking a house done clears it (as the Main mockup's
+  tap does), the `House` factory drops it from stored data, and `setComeBack` on a done house is
+  refused (`comeBackOnDoneHouse`). « Personne » and « à faire » keep it.
+- Commands `markHouse`, `setComeBack` (null removes it), `setNote` stamp the house with
+  `by`/`at` and return `Result<(Street, Change), HouseChangeFailure>`; an unknown number is
+  `unknownHouse`. `delete(by, at)` / `restore()` set and clear the street's `deletion`
+  (Corbeille); houses are untouched. Marking a street in the Corbeille is allowed.
+- Each **house change** (`HouseMarked`, `ComeBackSet`, `NoteSet`) carries the street id, the
+  new value, the stamp and **the house as it was** (`before`): undo restores that exact house
+  without re-reading, and storage writes only the named fields (`HouseMarked` also writes
+  `comeBack: null` when `clearsComeBack`, i.e. the new status is done).
+- `Progress` counts done, nobody home, to do (they partition `total`) and come back (overlaps).
+  A street's progress is the sum (`+`) of its houses' `progress`; a building (T1.3) will
+  contribute its dwellings the same way.
 
 ```dart
-// Sketch of the core (final names fixed in the tasks)
+// Sketch of the core (T1.2 delivered the uncommented members; the rest come with their tasks)
 final class Street {                       // aggregate root
   final StreetId id;
   final String name;
   final Commune commune;
   final BanStreetId? banId;                // null when entered by hand
-  final StreetShape shape;                 // empty when entered by hand
-  final Set<MemberId> assignees;
-  final List<House> houses;                // always sorted by HouseNumber
+  // final StreetShape shape;              // map (M3): empty when entered by hand
+  // final Set<MemberId> assignees;        // "Mes rues" panel (M3)
+  final List<House> houses;                // always sorted by HouseNumber, numbers unique
+  final ChangeStamp? deletion;             // set = in the Corbeille
 
   /// Every change returns the new street *and* what changed, so the Firestore adapter
   /// can write only that field (houses.12.status) instead of the whole document.
-  (Street, StreetChange) markHouse(HouseNumber n, VisitStatus s, MemberId by, DateTime at);
-  (Street, StreetChange) addNumbers(List<HouseNumber> numbers);
-  (Street, StreetChange) removeNumber(HouseNumber n, MemberId by, DateTime at); // soft
+  Result<(Street, HouseMarked), HouseChangeFailure> markHouse(
+      HouseNumber n, VisitStatus s, {required MemberId by, required DateTime at});
+  // setComeBack, setNote, delete, restore — then addNumbers, removeNumber (soft) in T1.4
   Progress get progress;
 }
 
-sealed class StreetChange { /* HouseMarked, NumbersAdded, NumberRemoved, … */ }
+sealed class StreetChange { /* HouseMarked, ComeBackSet, NoteSet, StreetDeleted,
+                               StreetRestored — NumbersAdded, NumberRemoved… in T1.4 */ }
 ```
 
 Domain services (pure functions, the bulk of the unit tests): house-number parsing and
