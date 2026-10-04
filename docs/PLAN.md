@@ -664,7 +664,7 @@ no network, including a cold start, and loses nothing.
 | Tournée data | Firestore persistent cache with **unlimited size** (no eviction). The download step runs one read of every street of the tournée, so all of them are in the cache |
 | Live updates | Snapshot listeners serve the cache at once, then the server when reachable |
 | Writes | Applied locally at once, queued by Firestore, survive restarts, sent when back online |
-| Map | MapLibre offline region covering the tournée's bounding box + 300 m margin, zooms 12–17 (≈ 20–50 MB). Street lines and house dots are drawn from the cached street documents, not from the network |
+| Map | MapLibre offline region covering the tournée's bounding box + 300 m margin, zooms 12–17 (≈ 10 MB, measured in the T0.4 spike: OpenFreeMap tiles stop at z14, fonts are most of it). Street lines and house dots are drawn from the cached street documents, not from the network |
 | New streets in the tournée added by teammates | Arrive with the next sync; their map tiles are already covered if they are inside the downloaded area, otherwise the banner asks to update the download |
 
 - The pending-writes indicator ("☁ 3 modifications en attente") comes from the snapshot
