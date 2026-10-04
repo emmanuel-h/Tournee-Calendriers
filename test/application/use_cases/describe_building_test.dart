@@ -80,7 +80,10 @@ void main() {
 
   test('should turn a building back into a single house', () async {
     final change = valueOf(
-      await describeBuilding(lilasId, n('8'), const BackToSingleHouse()),
+      // Built at run time, as the screen does: a `const` instance is made by
+      // the compiler, so its constructor line would never count as covered.
+      // ignore: prefer_const_constructors
+      await describeBuilding(lilasId, n('8'), BackToSingleHouse()),
     );
 
     expect(

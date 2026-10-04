@@ -3,9 +3,11 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/bootstrap/bindings.dart';
+import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/infrastructure/ban/ban_address_directory.dart';
 import 'package:tournee_calendriers/infrastructure/geo_api/geo_commune_search.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_street_repository.dart';
+import 'package:tournee_calendriers/infrastructure/local_storage/local_street_view_preferences.dart';
 import 'package:tournee_calendriers/infrastructure/system/random_id_generator.dart';
 import 'package:tournee_calendriers/infrastructure/system/system_clock.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
@@ -53,6 +55,25 @@ void main() {
     expect(container.read(communeSearchProvider), isA<GeoCommuneSearch>());
     expect(container.read(clockProvider), isA<SystemClock>());
     expect(container.read(idGeneratorProvider), isA<RandomIdGenerator>());
+    expect(
+      container.read(streetViewPreferencesProvider),
+      isA<LocalStreetViewPreferences>(),
+    );
+  });
+
+  test('should keep « Masquer faits » across starts', () async {
+    final street = StreetId('nationale');
+    await (await containerWith())
+        .read(streetViewPreferencesProvider)
+        .setHidesDone(street, hide: true);
+
+    final second = await containerWith();
+
+    expect(
+      second.read(streetViewPreferencesProvider).hidesDone(street),
+      isTrue,
+    );
+    expect(File('${storage.path}/street_view.json').existsSync(), isTrue);
   });
 
   test('should keep the member id across starts', () async {

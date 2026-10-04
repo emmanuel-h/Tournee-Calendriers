@@ -71,6 +71,60 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String tileWithNoteSemantics(String tile) {
+    return '$tile, avec une note';
+  }
+
+  @override
+  String get statusToDo => 'À faire';
+
+  @override
+  String get statusDone => 'Fait';
+
+  @override
+  String get statusNobodyHome => 'Personne';
+
+  @override
+  String houseMarked(String number, String status) {
+    return '$number → $status';
+  }
+
+  @override
+  String get editStreetAction => 'Modifier la rue';
+
+  @override
+  String get hideDone => 'Masquer faits';
+
+  @override
+  String get oddSide => 'Côté impair';
+
+  @override
+  String get evenSide => 'Côté pair';
+
+  @override
+  String streetCountsSemantics(
+    int done,
+    int total,
+    int nobodyHome,
+    int comeBack,
+  ) {
+    return '$done sur $total faits, $nobodyHome personne, $comeBack à repasser';
+  }
+
+  @override
+  String get tapHintTap => 'Appui :';
+
+  @override
+  String get tapHintHold => 'Appui long : détails';
+
+  @override
+  String get tapHintSemantics =>
+      'Appui : à faire, fait, personne, à faire. Appui long : détails';
+
+  @override
+  String get streetGone => 'Cette rue n\'est plus sur ce téléphone.';
+
+  @override
   String startStreetsHeader(int count) {
     return 'Mes rues · $count';
   }

@@ -208,6 +208,95 @@ abstract class AppLocalizations {
   /// **'Numéro {number}, immeuble, {done} sur {total} faits'**
   String buildingTileSemantics(String number, int done, int total);
 
+  /// Screen-reader label of a tile whose house has a note (the small dot).
+  ///
+  /// In fr, this message translates to:
+  /// **'{tile}, avec une note'**
+  String tileWithNoteSemantics(String tile);
+
+  /// Name of the status « to do », in the undo snackbar.
+  ///
+  /// In fr, this message translates to:
+  /// **'À faire'**
+  String get statusToDo;
+
+  /// Name of the status « done », in the undo snackbar.
+  ///
+  /// In fr, this message translates to:
+  /// **'Fait'**
+  String get statusDone;
+
+  /// Name of the status « nobody home », in the undo snackbar.
+  ///
+  /// In fr, this message translates to:
+  /// **'Personne'**
+  String get statusNobodyHome;
+
+  /// Undo snackbar after a tap on a house tile (PLAN §5.6).
+  ///
+  /// In fr, this message translates to:
+  /// **'{number} → {status}'**
+  String houseMarked(String number, String status);
+
+  /// Tooltip of the ✏ button of the street screen, which opens the edit mode.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier la rue'**
+  String get editStreetAction;
+
+  /// Toggle of the street screen that hides the done houses.
+  ///
+  /// In fr, this message translates to:
+  /// **'Masquer faits'**
+  String get hideDone;
+
+  /// Header of the column of odd numbers.
+  ///
+  /// In fr, this message translates to:
+  /// **'Côté impair'**
+  String get oddSide;
+
+  /// Header of the column of even numbers.
+  ///
+  /// In fr, this message translates to:
+  /// **'Côté pair'**
+  String get evenSide;
+
+  /// Screen-reader label of the counts of the street screen (« 31/42 · ✗ 3 · ↻ 1 »).
+  ///
+  /// In fr, this message translates to:
+  /// **'{done} sur {total} faits, {nobodyHome} personne, {comeBack} à repasser'**
+  String streetCountsSemantics(
+    int done,
+    int total,
+    int nobodyHome,
+    int comeBack,
+  );
+
+  /// Start of the hint at the bottom of the street screen, before the glyphs ○ → ✓ → ✗ → ○.
+  ///
+  /// In fr, this message translates to:
+  /// **'Appui :'**
+  String get tapHintTap;
+
+  /// End of the hint at the bottom of the street screen.
+  ///
+  /// In fr, this message translates to:
+  /// **'Appui long : détails'**
+  String get tapHintHold;
+
+  /// Screen-reader label of the hint at the bottom of the street screen.
+  ///
+  /// In fr, this message translates to:
+  /// **'Appui : à faire, fait, personne, à faire. Appui long : détails'**
+  String get tapHintSemantics;
+
+  /// Street screen opened for a street that is not on the phone or is in the Corbeille.
+  ///
+  /// In fr, this message translates to:
+  /// **'Cette rue n\'est plus sur ce téléphone.'**
+  String get streetGone;
+
   /// Header of the street list of the temporary start screen (PLAN §5.0), with the number of streets.
   ///
   /// In fr, this message translates to:

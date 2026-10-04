@@ -184,8 +184,8 @@ final class _StreetList extends ConsumerWidget {
                     return StreetRowTile(
                       key: ValueKey('start.street.${row.id.value}'),
                       row: row,
-                      // The street screen (#11) replaces the placeholder;
-                      // the name travels along as its title meanwhile.
+                      // The name travels along, so the street screen has
+                      // its title before the street is read.
                       onTap: () => context.push(
                         AppRoutes.streetOf(row.id),
                         extra: row.name,

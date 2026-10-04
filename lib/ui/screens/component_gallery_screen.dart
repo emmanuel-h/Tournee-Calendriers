@@ -119,7 +119,7 @@ final class ComponentGalleryScreen extends StatelessWidget {
                   key: const Key('gallery.showSnackBar'),
                   label: l10n.galleryShowSnackBar,
                   onPressed: () => showActionSnackBar(
-                    context,
+                    ScaffoldMessenger.of(context),
                     message: l10n.gallerySnackBarMessage,
                     actionLabel: l10n.undo,
                     onAction: () {},

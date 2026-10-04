@@ -16,9 +16,11 @@ import 'package:tournee_calendriers/application/ports/clock.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
 import 'package:tournee_calendriers/application/ports/id_generator.dart';
 import 'package:tournee_calendriers/application/ports/identity_provider.dart';
+import 'package:tournee_calendriers/application/ports/street_view_preferences.dart';
 import 'package:tournee_calendriers/application/use_cases/describe_building.dart';
 import 'package:tournee_calendriers/application/use_cases/edit_street_numbers.dart';
 import 'package:tournee_calendriers/application/use_cases/find_imported_streets.dart';
+import 'package:tournee_calendriers/application/use_cases/hide_done.dart';
 import 'package:tournee_calendriers/application/use_cases/import_reference_area.dart';
 import 'package:tournee_calendriers/application/use_cases/list_commune_streets.dart';
 import 'package:tournee_calendriers/application/use_cases/mark_dwelling.dart';
@@ -47,6 +49,9 @@ final idGeneratorProvider = Provider<IdGenerator>(
 );
 final identityProvider = Provider<IdentityProvider>(
   (ref) => _unbound('IdentityProvider'),
+);
+final streetViewPreferencesProvider = Provider<StreetViewPreferences>(
+  (ref) => _unbound('StreetViewPreferences'),
 );
 
 /// `Never`: this function never returns, it always throws, so it can stand
@@ -117,4 +122,10 @@ final searchCommunesProvider = Provider(
 );
 final findImportedStreetsProvider = Provider(
   (ref) => FindImportedStreets(ref.watch(streetRepositoryProvider)),
+);
+final readHideDoneProvider = Provider(
+  (ref) => ReadHideDone(ref.watch(streetViewPreferencesProvider)),
+);
+final saveHideDoneProvider = Provider(
+  (ref) => SaveHideDone(ref.watch(streetViewPreferencesProvider)),
 );

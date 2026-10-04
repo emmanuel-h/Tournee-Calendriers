@@ -17,6 +17,7 @@ final class StatusTile extends StatelessWidget {
     super.key,
     required this.number,
     required this.status,
+    this.hasNote = false,
     this.onTap,
     this.onLongPress,
   });
@@ -24,6 +25,10 @@ final class StatusTile extends StatelessWidget {
   /// The house number as displayed, e.g. `3bis`.
   final String number;
   final TileStatus status;
+
+  /// The house has a note: a small dot in the top corner (PLAN §5.6), and
+  /// « avec une note » for screen readers.
+  final bool hasNote;
 
   /// Tap cycles the status, or opens a building (PLAN §5).
   final VoidCallback? onTap;
@@ -51,36 +56,59 @@ final class StatusTile extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         onLongPress: onLongPress,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: AppSizes.tilePadding),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  number,
-                  style: AppTextStyles.tileNumber.copyWith(
+        // `expand`: the number and glyph row fills the tile (and stays
+        // centred in it), the dot is placed over it.
+        child: Stack(
+          fit: StackFit.expand,
+          children: [
+            Padding(
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSizes.tilePadding,
+              ),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      number,
+                      style: AppTextStyles.tileNumber.copyWith(
+                        color: look.foreground,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  StatusGlyph(
+                    look.glyph,
+                    size: look.glyphSize,
                     color: look.foreground,
                   ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                  if (look.count case final count?) ...[
+                    const SizedBox(width: AppSizes.glyphGap),
+                    Text(
+                      count,
+                      style: AppTextStyles.tileCount.copyWith(
+                        color: look.foreground,
+                      ),
+                    ),
+                  ],
+                ],
               ),
-              StatusGlyph(
-                look.glyph,
-                size: look.glyphSize,
-                color: look.foreground,
-              ),
-              if (look.count case final count?) ...[
-                const SizedBox(width: AppSizes.glyphGap),
-                Text(
-                  count,
-                  style: AppTextStyles.tileCount.copyWith(
+            ),
+            if (hasNote)
+              Positioned(
+                key: const Key('tile.note'),
+                top: AppSizes.noteDot,
+                right: AppSizes.noteDot,
+                child: Container(
+                  width: AppSizes.noteDot,
+                  height: AppSizes.noteDot,
+                  decoration: BoxDecoration(
                     color: look.foreground,
+                    shape: BoxShape.circle,
                   ),
                 ),
-              ],
-            ],
-          ),
+              ),
+          ],
         ),
       ),
     );
@@ -103,7 +131,12 @@ final class StatusTile extends StatelessWidget {
     );
   }
 
-  String _semanticsLabel(AppLocalizations l10n) => switch (status) {
+  String _semanticsLabel(AppLocalizations l10n) {
+    final label = _statusLabel(l10n);
+    return hasNote ? l10n.tileWithNoteSemantics(label) : label;
+  }
+
+  String _statusLabel(AppLocalizations l10n) => switch (status) {
     ToDoTile() => l10n.houseTileSemantics(number, l10n.tileStatusToDo),
     DoneTile() => l10n.houseTileSemantics(number, l10n.tileStatusDone),
     NobodyHomeTile() => l10n.houseTileSemantics(

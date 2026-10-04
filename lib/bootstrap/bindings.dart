@@ -10,6 +10,7 @@ import 'package:tournee_calendriers/infrastructure/ban/ban_address_directory.dar
 import 'package:tournee_calendriers/infrastructure/geo_api/geo_commune_search.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_identity.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_street_repository.dart';
+import 'package:tournee_calendriers/infrastructure/local_storage/local_street_view_preferences.dart';
 import 'package:tournee_calendriers/infrastructure/system/random_id_generator.dart';
 import 'package:tournee_calendriers/infrastructure/system/system_clock.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
@@ -27,13 +28,15 @@ final httpClientProvider = Provider<http.Client>((ref) {
 /// the overrides of the app's `ProviderScope`.
 ///
 /// - [storage]: the folder of the phone storage. The streets go in
-///   `streets/`, the member id in `member_id`.
+///   `streets/`, the member id in `member_id`, the street screens'
+///   « Masquer faits » in `street_view.json`.
 /// - [addressDirectory]: replaces the BAN, so the instrumented suite can
 ///   import streets without the network.
 /// - [communeSearch]: replaces geo.api.gouv.fr, for the same reason.
 ///
-/// Async because the member id is read from (or first written to) the
-/// phone before the first screen, so reading it later never waits.
+/// Async because the member id and the street view preferences are read
+/// from the phone before the first screen, so reading them later never
+/// waits.
 Future<List<Override>> bindAdapters({
   required Directory storage,
   AddressDirectory? addressDirectory,
@@ -43,6 +46,9 @@ Future<List<Override>> bindAdapters({
   final identity = await LocalIdentity.load(
     File('${storage.path}${Platform.pathSeparator}member_id'),
     ids,
+  );
+  final streetView = await LocalStreetViewPreferences.load(
+    File('${storage.path}${Platform.pathSeparator}street_view.json'),
   );
   return [
     streetRepositoryProvider.overrideWithValue(
@@ -61,5 +67,6 @@ Future<List<Override>> bindAdapters({
     clockProvider.overrideWithValue(const SystemClock()),
     idGeneratorProvider.overrideWithValue(ids),
     identityProvider.overrideWithValue(identity),
+    streetViewPreferencesProvider.overrideWithValue(streetView),
   ];
 }

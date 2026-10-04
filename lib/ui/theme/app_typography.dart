@@ -95,6 +95,13 @@ abstract final class AppTextStyles {
     fontSize: 15,
   );
 
+  /// The counts under a street's name (« 31/42 · ✗ 3 · ↻ 1 »).
+  static const streetCounts = TextStyle(
+    fontFamily: AppFonts.text,
+    fontWeight: FontWeight.w400,
+    fontSize: 15,
+  );
+
   /// The label above a form field (« Commune »).
   static const fieldLabel = TextStyle(
     fontFamily: AppFonts.text,

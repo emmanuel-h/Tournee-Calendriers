@@ -1,10 +1,12 @@
 import 'package:go_router/go_router.dart';
+import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/screens/component_gallery_screen.dart';
 import 'package:tournee_calendriers/ui/screens/import_streets/import_screen.dart';
 import 'package:tournee_calendriers/ui/screens/placeholder_screen.dart';
 import 'package:tournee_calendriers/ui/screens/start/start_screen.dart';
+import 'package:tournee_calendriers/ui/screens/street/street_screen.dart';
 
 /// Builds the app's navigation: one route per screen of PLAN §5.
 ///
@@ -23,14 +25,18 @@ GoRouter buildAppRouter({required bool showGallery}) => GoRouter(
       path: AppRoutes.importStreets,
       builder: (context, state) => const ImportScreen(),
     ),
-    // Until the street screen exists (#11), a placeholder titled with the
-    // street's name, which the start list passes as `extra`.
+    // `/rue?id=…`; the start list passes the street's name as `extra`, so
+    // the title shows before the street is read.
     GoRoute(
       path: AppRoutes.street,
-      builder: (context, state) => PlaceholderScreen(
+      builder: (context, state) => StreetScreen(
+        streetId: switch (state.uri.queryParameters['id']) {
+          final String id when id.trim().isNotEmpty => StreetId(id),
+          _ => null,
+        },
         title: switch (state.extra) {
           final String name => name,
-          _ => AppLocalizations.of(context).screenStreet,
+          _ => null,
         },
       ),
     ),

@@ -9,15 +9,18 @@ import '../../support/fakes/fake_address_directory.dart';
 import '../../support/fakes/fake_commune_search.dart';
 import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_street_repository.dart';
+import '../../support/fakes/fake_street_view_preferences.dart';
+import '../../support/street_fixtures.dart';
 
-/// Every port the start and import screens use, bound to [streets] (empty
-/// by default: the start screen shows its first-launch state), [directory]
-/// and [communes]. The commune search answers without waiting for a pause
-/// in the typing.
+/// Every port the screens use, bound to [streets] (empty by default: the
+/// start screen shows its first-launch state), [directory], [communes] and
+/// [preferences]; Léa marks the houses at two o'clock. The commune search
+/// answers without waiting for a pause in the typing.
 List<Override> fakePhone({
   FakeStreetRepository? streets,
   FakeAddressDirectory? directory,
   FakeCommuneSearch? communes,
+  FakeStreetViewPreferences? preferences,
 }) => [
   streetRepositoryProvider.overrideWithValue(streets ?? FakeStreetRepository()),
   addressDirectoryProvider.overrideWithValue(
@@ -25,6 +28,11 @@ List<Override> fakePhone({
   ),
   communeSearchProvider.overrideWithValue(communes ?? FakeCommuneSearch()),
   idGeneratorProvider.overrideWithValue(FakeIdGenerator('street')),
+  clockProvider.overrideWithValue(FakeClock(twoPm)),
+  identityProvider.overrideWithValue(FakeIdentity(lea)),
+  streetViewPreferencesProvider.overrideWithValue(
+    preferences ?? FakeStreetViewPreferences(),
+  ),
   communeSearchDelayProvider.overrideWithValue(Duration.zero),
 ];
 

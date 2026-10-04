@@ -23,6 +23,10 @@ abstract final class AppRoutes {
   static String streetOf(StreetId id) =>
       Uri(path: street, queryParameters: {'id': id.value}).toString();
   static const editStreet = '/rue/modifier';
+
+  /// The edit mode of the street [id]: `/rue/modifier?id=…`.
+  static String editStreetOf(StreetId id) =>
+      Uri(path: editStreet, queryParameters: {'id': id.value}).toString();
   static const team = '/equipe';
   static const settings = '/parametres';
   static const newCampaign = '/nouvelle-campagne';

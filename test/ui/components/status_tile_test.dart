@@ -105,6 +105,7 @@ void main() {
           expect(find.byType(Text), findsOneWidget);
         }
         expect(find.text(c.number), findsOneWidget);
+        expect(find.byKey(const Key('tile.note')), findsNothing);
         expect(
           tester.getSemantics(find.byKey(const Key('tile'))),
           matchesSemantics(label: c.label, isButton: true, hasTapAction: true),
@@ -124,6 +125,58 @@ void main() {
       },
     );
   }
+
+  testWidgets('should show a dot and say so when the house has a note', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    await tester.pumpWidget(
+      testApp(
+        Center(
+          child: SizedBox(
+            width: 170,
+            child: StatusTile(
+              key: const Key('tile'),
+              number: '7',
+              status: const DoneTile(),
+              hasNote: true,
+              onTap: () {},
+            ),
+          ),
+        ),
+      ),
+    );
+
+    final dot = find.byKey(const Key('tile.note'));
+    expect(dot, findsOneWidget);
+    // In the top right corner, clear of the glyph.
+    final tile = tester.getRect(find.byKey(const Key('tile')));
+    final dotRect = tester.getRect(dot);
+    expect(dotRect.top - tile.top, 8);
+    expect(tile.right - dotRect.right, 8);
+    expect(dotRect.size, const Size.square(8));
+    expect(
+      dotRect.bottom,
+      lessThan(tester.getRect(find.byType(StatusGlyph)).top),
+    );
+    final decoration =
+        tester
+                .widget<Container>(
+                  find.descendant(of: dot, matching: find.byType(Container)),
+                )
+                .decoration!
+            as BoxDecoration;
+    expect(decoration.color, AppColors.light.onDone);
+    expect(
+      tester.getSemantics(find.byKey(const Key('tile'))),
+      matchesSemantics(
+        label: 'Numéro 7, fait, avec une note',
+        isButton: true,
+        hasTapAction: true,
+      ),
+    );
+    semantics.dispose();
+  });
 
   testWidgets(
     'should report tap and hold separately when the tile is touched',

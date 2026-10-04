@@ -10,7 +10,7 @@ import '../support/app_overrides.dart';
 
 void main() {
   testWidgets(
-    'should show the French screen name when each screen of PLAN §5 is opened',
+    'should show the French screen name when each screen still to build is opened',
     (tester) async {
       const expectedTitles = {
         AppRoutes.welcome: 'Bienvenue',
@@ -19,7 +19,6 @@ void main() {
         AppRoutes.joinPending: 'Demande envoyée',
         AppRoutes.addStreets: 'Ajouter des rues',
         AppRoutes.manualStreet: 'Rue à la main',
-        AppRoutes.street: 'Rue',
         AppRoutes.editStreet: 'Modifier la rue',
         AppRoutes.team: 'Équipe',
         AppRoutes.settings: 'Paramètres',

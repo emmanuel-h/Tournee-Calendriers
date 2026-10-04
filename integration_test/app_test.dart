@@ -144,4 +144,75 @@ void main() {
 
     expect(find.widgetWithText(AppBar, 'Rue Pierre Morin'), findsOneWidget);
   });
+  testWidgets(
+    'should keep a mark across a restart when a house is marked, undone and marked again',
+    (tester) async {
+      final semantics = tester.ensureSemantics();
+      final storage = await Directory.systemTemp.createTemp('mark_flow');
+      addTearDown(() => storage.delete(recursive: true));
+      final communes = FakeCommuneSearch(
+        answers: {
+          'Villef': Ok([
+            CommuneMatch(commune: _villefranche, postcodes: const ['69400']),
+          ]),
+        },
+      );
+      await bootstrap(
+        addressDirectory: _ban(),
+        communeSearch: communes,
+        storage: storage,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('start.import')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('import.commune')), 'Villef');
+      await tester.pumpAndSettle(const Duration(milliseconds: 400));
+      await tester.tap(find.byKey(const ValueKey('import.suggestion.69264')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('import.street.69264_1460')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Importer 1 rue'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Rue Pierre Morin'));
+      await tester.pumpAndSettle();
+      final tile = find.byKey(const ValueKey('street.tile.33'));
+      expect(tester.getSemantics(tile).label, 'Numéro 33, à faire');
+
+      await tester.tap(tile);
+      await tester.pumpAndSettle();
+      expect(tester.getSemantics(tile).label, 'Numéro 33, fait');
+      expect(find.text('33 → Fait'), findsOneWidget);
+
+      await tester.tap(find.text('Annuler'));
+      await tester.pumpAndSettle();
+      expect(tester.getSemantics(tile).label, 'Numéro 33, à faire');
+
+      await tester.tap(tile);
+      await tester.pumpAndSettle();
+      expect(tester.getSemantics(tile).label, 'Numéro 33, fait');
+      // The phone storage writes its file just after the tap: let it land.
+      await Future<void>.delayed(const Duration(seconds: 1));
+
+      // Offline cold start: the whole app goes away (a fresh ProviderScope,
+      // nothing kept in memory), then starts again on the same folder, with
+      // a BAN and a commune search that know nothing: none is needed.
+      runApp(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+      await bootstrap(
+        addressDirectory: FakeAddressDirectory(),
+        communeSearch: FakeCommuneSearch(),
+        storage: storage,
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.text('1/3'), findsOneWidget);
+      await tester.tap(find.text('Rue Pierre Morin'));
+      await tester.pumpAndSettle();
+      expect(
+        tester.getSemantics(find.byKey(const ValueKey('street.tile.33'))).label,
+        'Numéro 33, fait',
+      );
+      semantics.dispose();
+    },
+  );
 }

@@ -57,6 +57,54 @@
     }
   },
 
+  "tileWithNoteSemantics": "{tile}, avec une note",
+  "@tileWithNoteSemantics": {
+    "description": "Screen-reader label of a tile whose house has a note (the small dot).",
+    "placeholders": {
+      "tile": { "type": "String", "example": "Numéro 7, à faire" }
+    }
+  },
+  "statusToDo": "À faire",
+  "@statusToDo": { "description": "Name of the status « to do », in the undo snackbar." },
+  "statusDone": "Fait",
+  "@statusDone": { "description": "Name of the status « done », in the undo snackbar." },
+  "statusNobodyHome": "Personne",
+  "@statusNobodyHome": { "description": "Name of the status « nobody home », in the undo snackbar." },
+  "houseMarked": "{number} → {status}",
+  "@houseMarked": {
+    "description": "Undo snackbar after a tap on a house tile (PLAN §5.6).",
+    "placeholders": {
+      "number": { "type": "String", "example": "7" },
+      "status": { "type": "String", "example": "Personne" }
+    }
+  },
+  "editStreetAction": "Modifier la rue",
+  "@editStreetAction": { "description": "Tooltip of the ✏ button of the street screen, which opens the edit mode." },
+  "hideDone": "Masquer faits",
+  "@hideDone": { "description": "Toggle of the street screen that hides the done houses." },
+  "oddSide": "Côté impair",
+  "@oddSide": { "description": "Header of the column of odd numbers." },
+  "evenSide": "Côté pair",
+  "@evenSide": { "description": "Header of the column of even numbers." },
+  "streetCountsSemantics": "{done} sur {total} faits, {nobodyHome} personne, {comeBack} à repasser",
+  "@streetCountsSemantics": {
+    "description": "Screen-reader label of the counts of the street screen (« 31/42 · ✗ 3 · ↻ 1 »).",
+    "placeholders": {
+      "done": { "type": "int", "example": "31" },
+      "total": { "type": "int", "example": "42" },
+      "nobodyHome": { "type": "int", "example": "3" },
+      "comeBack": { "type": "int", "example": "1" }
+    }
+  },
+  "tapHintTap": "Appui :",
+  "@tapHintTap": { "description": "Start of the hint at the bottom of the street screen, before the glyphs ○ → ✓ → ✗ → ○." },
+  "tapHintHold": "Appui long : détails",
+  "@tapHintHold": { "description": "End of the hint at the bottom of the street screen." },
+  "tapHintSemantics": "Appui : à faire, fait, personne, à faire. Appui long : détails",
+  "@tapHintSemantics": { "description": "Screen-reader label of the hint at the bottom of the street screen." },
+  "streetGone": "Cette rue n'est plus sur ce téléphone.",
+  "@streetGone": { "description": "Street screen opened for a street that is not on the phone or is in the Corbeille." },
+
   "startStreetsHeader": "Mes rues · {count}",
   "@startStreetsHeader": {
     "description": "Header of the street list of the temporary start screen (PLAN §5.0), with the number of streets.",

@@ -18,6 +18,7 @@ import '../support/fakes/fake_address_directory.dart';
 import '../support/fakes/fake_commune_search.dart';
 import '../support/fakes/fake_ports.dart';
 import '../support/fakes/fake_street_repository.dart';
+import '../support/fakes/fake_street_view_preferences.dart';
 import '../support/results.dart';
 import '../support/street_fixtures.dart';
 
@@ -25,6 +26,7 @@ void main() {
   late FakeStreetRepository streets;
   late FakeAddressDirectory directory;
   late FakeCommuneSearch communes;
+  late FakeStreetViewPreferences preferences;
   late ProviderContainer container;
 
   setUp(() {
@@ -47,6 +49,7 @@ void main() {
         ]),
       },
     );
+    preferences = FakeStreetViewPreferences([lilasId]);
     // A ProviderContainer is what a ProviderScope holds, without widgets:
     // the overrides bind the ports to the fakes.
     container = ProviderContainer(
@@ -57,6 +60,7 @@ void main() {
         clockProvider.overrideWithValue(FakeClock(twoPm)),
         idGeneratorProvider.overrideWithValue(FakeIdGenerator('street')),
         identityProvider.overrideWithValue(FakeIdentity(lea)),
+        streetViewPreferencesProvider.overrideWithValue(preferences),
       ],
     );
   });
@@ -71,6 +75,7 @@ void main() {
       'Clock': clockProvider,
       'IdGenerator': idGeneratorProvider,
       'IdentityProvider': identityProvider,
+      'StreetViewPreferences': streetViewPreferencesProvider,
     };
     ports.forEach((name, port) {
       test('should name $name when nobody bound it', () {
@@ -205,6 +210,16 @@ void main() {
       ]);
 
       expect(imported, {lilas.banId});
+    });
+
+    test('should read « Masquer faits » from the bound preferences', () {
+      expect(container.read(readHideDoneProvider)(lilasId), isTrue);
+    });
+
+    test('should save « Masquer faits » in the bound preferences', () async {
+      await container.read(saveHideDoneProvider)(lilasId, hide: false);
+
+      expect(preferences.writes, [(lilasId, false)]);
     });
   });
 }

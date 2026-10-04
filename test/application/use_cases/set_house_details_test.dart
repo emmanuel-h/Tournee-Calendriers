@@ -27,7 +27,11 @@ void main() {
       await setHouseDetails(
         lilasId,
         n('5'),
-        const StatusMark(VisitStatus.toDo),
+        // Built at run time, as the screen does: a `const` instance is made
+        // by the compiler, so its constructor line would never count as
+        // covered.
+        // ignore: prefer_const_constructors
+        StatusMark(VisitStatus.toDo),
       ),
     );
 

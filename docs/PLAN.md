@@ -429,6 +429,26 @@ Edit mode:
 - Building tile: tap opens the Immeuble grid.
 - A street with numbers on one side only shows a single column.
 
+Details fixed in T1.7 (`lib/presentation/street/`, `lib/ui/screens/street/`):
+
+- Each side is listed in its own order; a row of the list is the n-th tile of each side (as the
+  mockup's two columns). Rows are built lazily with a fixed height, so a street of 400 numbers
+  scrolls smoothly.
+- Tile look: a house shows its status; a house to do with a « repasser » shows ↻ (« personne »
+  wins over « repasser »). A building shows ✓ when every door is done, `◐ n/m` when some are,
+  ○ (or ↻ with its own « repasser ») when none is. A note on the house (or the building itself)
+  is a small dot in the tile's top corner, « avec une note » for screen readers.
+- Header « 31/42 · ✗ 3 · ↻ 1 » counts every door, whatever is hidden. « Masquer faits » hides the
+  tiles shown ✓ (houses done, buildings all done) and is remembered per street on the phone.
+  The single column is decided on all the street's numbers, not on the visible ones.
+- A tap gives a light haptic tick at once, then TalkBack hears « Numéro 7, personne » and the
+  snackbar « 7 → Personne [Annuler] » shows for 4 s, replacing any previous one; « Annuler »
+  undoes that last tap only. The snackbar belongs to the screen and leaves with it. While no
+  snackbar shows, the hint « Appui : ○ → ✓ → ✗ → ○ · Appui long : détails » floats in its
+  place. A refused undo (the number was removed meanwhile) does nothing.
+- A street missing from the phone, or in the Corbeille, shows « Cette rue n'est plus sur ce
+  téléphone. » with the back arrow.
+
 ### 5.7 Fiche maison (hold a tile) and Immeuble (by floor)
 
 ```
@@ -952,8 +972,11 @@ can never drift.
   street), writes queued one after the other. An unreadable file (newer version, damaged) is
   skipped and left on the disk. The member id is kept in `member_id`. No network, ever: works
   after an offline cold start.
-- `shared_preferences`: display name, last tournée id, theme, "hide done" per street, offline
-  download date and size per tournée.
+- `street_view.json` in the same folder (port `StreetViewPreferences`, T1.7): « Masquer faits »
+  per street, `{ version: 1, hideDone: [streetId…] }`, read once at start-up; an unreadable file
+  means nothing hidden.
+- `shared_preferences`: display name, last tournée id, theme, offline download date and size per
+  tournée.
 - MapLibre offline region per tournée (tiles), behind the `OfflineMapStore` port.
 
 ---

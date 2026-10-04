@@ -8,7 +8,7 @@ import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/components/status_glyph.dart';
 import 'package:tournee_calendriers/ui/screens/import_streets/import_screen.dart';
-import 'package:tournee_calendriers/ui/screens/placeholder_screen.dart';
+import 'package:tournee_calendriers/ui/screens/street/street_screen.dart';
 
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/results.dart';
@@ -137,7 +137,7 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('start.street.nationale')));
       await tester.pumpAndSettle();
 
-      expect(find.byType(PlaceholderScreen), findsOneWidget);
+      expect(find.byType(StreetScreen), findsOneWidget);
       expect(find.widgetWithText(AppBar, 'Rue Nationale'), findsOneWidget);
       expect(find.byType(BackButton), findsOneWidget);
     },
