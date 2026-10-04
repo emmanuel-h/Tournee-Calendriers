@@ -1,0 +1,53 @@
+# Static analysis for `flutter analyze`. The gate is zero issues: infos and
+# warnings fail it just like errors.
+include: package:flutter_lints/flutter.yaml
+
+analyzer:
+  language:
+    # No implicit `dynamic` sneaking in through casts, generics or inference.
+    strict-casts: true
+    strict-inference: true
+    strict-raw-types: true
+  errors:
+    # Lints are reported as infos by default; promote the ones that guard
+    # correctness so they read as real problems in the IDE.
+    missing_return: error
+    unused_import: error
+    unused_local_variable: error
+    dead_code: error
+    always_declare_return_types: error
+  exclude:
+    - build/**
+    - android/**
+    - ios/**
+
+linter:
+  rules:
+    always_declare_return_types: true
+    avoid_dynamic_calls: true
+    avoid_print: true
+    avoid_relative_lib_imports: true
+    avoid_slow_async_io: true
+    avoid_type_to_string: true
+    cancel_subscriptions: true
+    close_sinks: true
+    directives_ordering: true
+    discarded_futures: true
+    only_throw_errors: true
+    prefer_const_constructors: true
+    prefer_const_declarations: true
+    prefer_final_fields: true
+    prefer_final_in_for_each: true
+    prefer_final_locals: true
+    prefer_single_quotes: true
+    sort_pub_dependencies: true
+    test_types_in_equals: true
+    throw_in_finally: true
+    unawaited_futures: true
+    unnecessary_lambdas: true
+    unnecessary_parenthesis: true
+    unnecessary_statements: true
+    use_super_parameters: true
+    always_use_package_imports: true
+    exhaustive_cases: true
+    no_default_cases: true

@@ -26,7 +26,7 @@ introduce them.
 
 ## Status
 
-Planning done. The project is not scaffolded yet; the commands below become valid after M0.
+Scaffolded (T0.1): Flutter 3.47.6 / Dart 3.13.5, layers in place, gates runnable. CI arrives in T0.3.
 
 ## Commands
 
