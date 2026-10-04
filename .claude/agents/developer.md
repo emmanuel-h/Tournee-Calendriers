@@ -2,7 +2,7 @@
 name: developer
 description: >
   Developer agent for the Tournée Calendriers Flutter app (fr.mandarine.tourneecalendriers).
-  Give it one task from docs/TASKS.md (by id) or one small need in plain language. It delivers
+  Give it one task as a GitHub issue number (e.g. #7) or one small need in plain language. It delivers
   it end to end — domain, application, infrastructure, presentation and Flutter UI — test-first,
   following strict DDD (aggregates, value objects, use cases, ports and adapters), keeps the
   inner test loop fast, runs the quality gates once at the end, updates the docs, and reports.
@@ -30,7 +30,8 @@ Your job is to deliver **one task**, completely, then stop and report.
 
 1. `CLAUDE.md`: commands, conventions, gates, open checkpoints.
 2. `docs/PLAN.md`: product, domain model (§6), architecture (§10), testing (§11). Binding.
-3. `docs/TASKS.md`: your task, its acceptance criteria, what earlier tasks delivered.
+3. Your task: `gh issue view <N> -R emmanuel-h/Tournee-Calendriers` (scope, acceptance criteria,
+   comments). Closed issues of the same milestone tell you what earlier tasks delivered.
 4. `docs/mockups/`: the approved screen for any UI work, and the design tokens in its README.
 5. The existing code you are about to touch, plus its tests.
 
@@ -148,7 +149,8 @@ genuinely cannot be covered, say so in the report and the main session decides.
 
 ### Step 7 — Docs
 
-- Tick the task in `docs/TASKS.md`; note anything deferred.
+- Do not edit `docs/TASKS.md` and do not close or comment on issues yourself; list anything
+  deferred in the report so the main session opens follow-up issues.
 - If user-visible behaviour or the domain model changed, update `docs/PLAN.md` (§5, §6) so it
   stays the single source of truth.
 - `README.md` feature list, if the task adds or removes a feature.
@@ -194,7 +196,7 @@ Dart has no reliable mutation tester, so every test must be written as if one we
 ## 6. Report — output exactly this, nothing after it
 
 ```
-## Delivered: <task id> — <title>
+## Delivered: #<issue> <task id> — <title>
 
 **Files**
 - <path> — <one-line purpose>
@@ -215,5 +217,7 @@ Dart has no reliable mutation tester, so every test must be written as if one we
 - <decision> — <why>
 
 **Needs your attention**
-- <conflict, deferred item, exclusion request — or "nothing">
+- <conflict, deferred item (→ follow-up issue), exclusion request — or "nothing">
+
+Closes #<issue>
 ```

@@ -18,7 +18,8 @@ not implement anything that contradicts it; flag conflicts to the user first.
 **`docs/mockups/`** holds the approved visual mockups (one `.dc.html` per screen) and the design
 tokens in its README.
 
-`docs/TASKS.md` holds the task breakdown.
+**Tasks are GitHub issues** (milestones M0–M7, label `task`); `docs/TASKS.md` is only a map of
+them. Read a task with `gh issue view <N>`. Commits that finish a task say `Closes #<N>`.
 
 The user is still learning Dart and Flutter: explain non-obvious concepts briefly when you
 introduce them.
@@ -80,5 +81,6 @@ or another backend (PLAN §8.1, Q20).
 
 ## Agents
 
-- **`developer`** (`.claude/agents/developer.md`) implements one task from `docs/TASKS.md`
-  end to end with TDD and the gates. It never commits; the main session reviews and commits.
+- **`developer`** (`.claude/agents/developer.md`) implements one task (a GitHub issue) end to end
+  with TDD and the gates. It never commits; the main session reviews, commits with
+  `Closes #<N>`, and opens a follow-up issue for anything deferred.
