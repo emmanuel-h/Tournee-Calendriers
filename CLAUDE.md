@@ -68,7 +68,7 @@ lib/
 ## Conventions
 
 - Comments explain *why* and non-obvious Dart/Flutter concepts; never restate the code.
-- Every user-visible string is French, in `lib/l10n/app_fr.arb` (no other locale).
+- Every user-visible string is French, in `lib/ui/l10n/app_fr.arb` (no other locale).
 - Status is never conveyed by colour alone (glyph + text / semantics label).
 - Nothing on the marking path may need the network: it must work after an offline cold start.
 - Screens are agreed in two steps: ASCII variants in the terminal first (before/after when
