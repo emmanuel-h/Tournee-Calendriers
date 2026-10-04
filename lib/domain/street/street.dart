@@ -81,6 +81,24 @@ enum DwellingChangeFailure {
   comeBackOnDoneDwelling,
 }
 
+/// Why a change could not be undone (« Annuler » of the snackbar).
+enum UndoFailure {
+  /// The change was made on another street.
+  otherStreet,
+
+  /// The house, number or door the change touched is no longer there (it
+  /// was removed, renumbered or laid out again since).
+  gone,
+
+  /// Undoing would give a house a number another house, shown or in the
+  /// Corbeille, has taken since.
+  numberTaken,
+
+  /// The screens offer no undo for this change: added numbers are removed
+  /// with ✕, a street brought back from the Corbeille is deleted again.
+  notUndoable,
+}
+
 /// A street of the tournée and its houses: the aggregate root that guards
 /// every change to them (PLAN §6.1).
 ///
@@ -245,6 +263,7 @@ final class Street {
       comeBack: before.comeBack,
       note: before.note,
       lastChange: stamp,
+      position: before.position,
     );
     return Ok((
       _withHouseAt(index, after),
@@ -279,6 +298,7 @@ final class Street {
       note: before.note,
       lastChange: stamp,
       building: before.building,
+      position: before.position,
     );
     return Ok((
       _withHouseAt(index, after),
@@ -311,6 +331,7 @@ final class Street {
       note: note,
       lastChange: stamp,
       building: before.building,
+      position: before.position,
     );
     return Ok((
       _withHouseAt(index, after),
@@ -327,14 +348,17 @@ final class Street {
   /// marks; the others are dropped (the screen asks first). Either way the
   /// house keeps its own note and « repasser », and its own status becomes
   /// to do: its doors carry the statuses now.
-  Result<(Street, BuildingLaidOut), HouseChangeFailure> describeBuilding(
+  ///
+  /// Fails with [BuildingChangeFailure.unknownHouse], like the other layout
+  /// commands, so the « Modifier les étages » sheet handles one failure type.
+  Result<(Street, BuildingLaidOut), BuildingChangeFailure> describeBuilding(
     HouseNumber number,
     BuildingPlan plan, {
     required MemberId by,
     required DateTime at,
   }) {
     final index = _indexOf(number);
-    if (index < 0) return const Err(HouseChangeFailure.unknownHouse);
+    if (index < 0) return const Err(BuildingChangeFailure.unknownHouse);
     final building = Building.laidOut(plan, keeping: houses[index].building);
     return Ok(_laidOut(index, building, ChangeStamp(by: by, at: at)));
   }
@@ -410,6 +434,7 @@ final class Street {
           comeBack: before.comeBack,
           note: before.note,
           lastChange: stamp,
+          position: before.position,
         );
         return Ok((
           _withHouseAt(index, after),
@@ -719,6 +744,112 @@ final class Street {
     StreetRestored(streetId: id),
   );
 
+  /// Undoes [change], made on this street a moment ago: puts back exactly
+  /// what was there before it (PLAN §7: undo is a normal write of the
+  /// previous value, not a rollback), and returns the change the undo
+  /// makes, which can itself be undone.
+  ///
+  /// - A house change puts the whole house back as it was, status,
+  ///   « repasser », note, building, last change and number included
+  ///   ([HouseReverted]); a door change puts that door back
+  ///   ([DwellingReverted]). Whatever changed on that house or door since
+  ///   is overwritten, as a teammate's later write would be.
+  /// - A removed number comes back from the Corbeille, a restored one goes
+  ///   back there with its old removal, a renamed street gets its old name,
+  ///   a deleted street comes back.
+  ///
+  /// Refused with an [UndoFailure] when the change is not this street's,
+  /// when what it touched is gone, when the old number is taken again, or
+  /// for changes the screens never undo.
+  Result<(Street, StreetChange), UndoFailure> undo(StreetChange change) {
+    if (change.streetId != id) return const Err(UndoFailure.otherStreet);
+    return switch (change) {
+      // Before the general house case: a renamed house is now under its
+      // new number. A `switch` takes the first case that matches.
+      NumberRenamed(:final newNumber, :final before) => _revertHouse(
+        newNumber,
+        before,
+      ),
+      HouseChange(:final number, :final before) => _revertHouse(number, before),
+      HouseReverted(:final house, :final replaced) => _revertHouse(
+        house.number,
+        replaced,
+      ),
+      DwellingChange(:final number, :final key, :final before) =>
+        _revertDwelling(number, key, before),
+      DwellingReverted(:final number, :final key, :final replaced) =>
+        _revertDwelling(number, key, replaced),
+      NumberRemoved(:final number) => switch (restoreNumber(number)) {
+        Ok(:final value) => Ok(value),
+        Err() => const Err(UndoFailure.gone),
+      },
+      NumberRestored(:final removed) => switch (removeNumber(
+        removed.number,
+        by: removed.removal.by,
+        at: removed.removal.at,
+      )) {
+        Ok(:final value) => Ok(value),
+        Err() => const Err(UndoFailure.gone),
+      },
+      StreetRenamed(:final before) => Ok((
+        _copy(
+          name: before,
+          houses: houses,
+          removedHouses: removedHouses,
+          deletion: deletion,
+        ),
+        StreetRenamed(streetId: id, before: name, name: before),
+      )),
+      StreetDeleted() => Ok(restore()),
+      NumbersAdded() || StreetRestored() => const Err(UndoFailure.notUndoable),
+    };
+  }
+
+  /// This street with [back] in place of the house now numbered [now], and
+  /// the [HouseReverted] saying so. When [back] has another number (a
+  /// renumbering undone), that number must be free again.
+  Result<(Street, StreetChange), UndoFailure> _revertHouse(
+    HouseNumber now,
+    House back,
+  ) {
+    final index = _indexOf(now);
+    if (index < 0) return const Err(UndoFailure.gone);
+    if (back.number != now &&
+        (_indexOf(back.number) >= 0 || _removedAt(back.number) != null)) {
+      return const Err(UndoFailure.numberTaken);
+    }
+    return Ok((
+      _copy(
+        name: name,
+        houses: _sortedHouses(houses.toList()..[index] = back),
+        removedHouses: removedHouses,
+        deletion: deletion,
+      ),
+      HouseReverted(streetId: id, replaced: houses[index], house: back),
+    ));
+  }
+
+  /// This street with [back] in place of the door at [key] of the building
+  /// at [number], and the [DwellingReverted] saying so.
+  Result<(Street, StreetChange), UndoFailure> _revertDwelling(
+    HouseNumber number,
+    DwellingKey key,
+    Dwelling back,
+  ) => switch (_dwellingAt(number, key)) {
+    Err() => const Err(UndoFailure.gone),
+    Ok(value: (final index, final now)) => Ok((
+      _withDwellingAt(index, key, back),
+      DwellingReverted(
+        streetId: id,
+        number: number,
+        staircase: key.staircase,
+        level: key.level,
+        replaced: now,
+        dwelling: back,
+      ),
+    )),
+  };
+
   /// The position of [number] in [houses], or -1 when the street has none.
   int _indexOf(HouseNumber number) =>
       houses.indexWhere((house) => house.number == number);
@@ -799,6 +930,7 @@ final class Street {
       note: before.note,
       lastChange: stamp,
       building: building,
+      position: before.position,
     );
     return (
       _withHouseAt(index, after),
@@ -829,6 +961,7 @@ final class Street {
           key.level,
           dwelling,
         ),
+        position: house.position,
       ),
     );
   }

@@ -12,8 +12,8 @@
 //   infrastructure  -> domain, application, infrastructure; any package
 //   bootstrap, main -> everything
 //
-// On top of that, backend packages (Firebase, http, shared_preferences) may
-// only appear in infrastructure/ and bootstrap/, and MapLibre only in ui/map/
+// On top of that, backend packages (Firebase, http, shared_preferences,
+// path_provider) may only appear in infrastructure/ and bootstrap/, and MapLibre only in ui/map/
 // and infrastructure/maplibre_offline/.
 
 /// The package name from `pubspec.yaml`; imports of our own code start with
@@ -72,6 +72,7 @@ const _confinedPackages = <String, List<String>>{
   'package:firebase_': _backendFolders,
   'package:http/': _backendFolders,
   'package:shared_preferences/': _backendFolders,
+  'package:path_provider/': _backendFolders,
   'package:maplibre_gl/': ['ui/map/', 'infrastructure/maplibre_offline/'],
 };
 const _backendFolders = ['infrastructure/', 'bootstrap/'];

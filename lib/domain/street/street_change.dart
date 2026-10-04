@@ -235,6 +235,7 @@ final class NumberRenamed extends HouseChange {
     note: before.note,
     lastChange: stamp,
     building: before.building,
+    position: before.position,
   );
 
   @override
@@ -572,4 +573,102 @@ final class StreetRenamed extends StreetChange {
 
   @override
   String toString() => 'StreetRenamed(${streetId.value}, $before → $name)';
+}
+
+/// An undo put back [house], the house exactly as it was before the change
+/// being undone, in place of [replaced], the house as it was just before
+/// the undo (PLAN §7: undo is a normal write of the previous value, with
+/// its old status, « repasser », note, building and last change).
+///
+/// Storage writes the whole house entry under [number]; when the undo
+/// renumbers it back (« 3bis » → « 3 »), it first deletes the entry under
+/// the number of [replaced]. Undoing this change puts [replaced] back.
+final class HouseReverted extends StreetChange {
+  const HouseReverted({
+    required super.streetId,
+    required this.replaced,
+    required this.house,
+  });
+
+  /// The house before the undo.
+  final House replaced;
+
+  /// The house put back.
+  final House house;
+
+  /// The number the house is stored under after the undo.
+  HouseNumber get number => house.number;
+
+  /// Whether the undo gives the house its old number back, so storage must
+  /// move it from one key to another.
+  bool get renumbers => replaced.number != house.number;
+
+  @override
+  bool operator ==(Object other) =>
+      other is HouseReverted &&
+      other.streetId == streetId &&
+      other.replaced == replaced &&
+      other.house == house;
+
+  @override
+  int get hashCode => Object.hash(streetId, replaced, house);
+
+  @override
+  String toString() =>
+      'HouseReverted(${streetId.value}, '
+      '${replaced.number.label} → ${house.number.label})';
+}
+
+/// An undo put back [dwelling], one door of the building [number] exactly as
+/// it was before the change being undone, in place of [replaced], the door
+/// as it was just before the undo.
+///
+/// Storage writes the whole door entry `houses.8.dwellings.A5-51`; the rest
+/// of the building is left alone, so a teammate marking another door at the
+/// same moment is not overwritten. Undoing this change puts [replaced] back.
+final class DwellingReverted extends StreetChange {
+  const DwellingReverted({
+    required super.streetId,
+    required this.number,
+    required this.staircase,
+    required this.level,
+    required this.replaced,
+    required this.dwelling,
+  });
+
+  /// The number of the building.
+  final HouseNumber number;
+
+  /// The staircase of the door.
+  final StaircaseName staircase;
+
+  /// The level of the door's floor; null for the « Logements » row.
+  final int? level;
+
+  /// The door before the undo.
+  final Dwelling replaced;
+
+  /// The door put back; it has the same label as [replaced].
+  final Dwelling dwelling;
+
+  /// Where the door is in its building; `key.id` is its key in storage.
+  DwellingKey get key => DwellingKey(staircase, level, dwelling.label);
+
+  @override
+  bool operator ==(Object other) =>
+      other is DwellingReverted &&
+      other.streetId == streetId &&
+      other.number == number &&
+      other.staircase == staircase &&
+      other.level == level &&
+      other.replaced == replaced &&
+      other.dwelling == dwelling;
+
+  @override
+  int get hashCode =>
+      Object.hash(streetId, number, staircase, level, replaced, dwelling);
+
+  @override
+  String toString() =>
+      'DwellingReverted(${streetId.value}, ${number.label}, ${key.id})';
 }

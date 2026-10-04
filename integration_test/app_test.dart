@@ -17,7 +17,8 @@ void main() {
   testWidgets('should show the French title when the app starts', (
     tester,
   ) async {
-    app.main();
+    // The app reads its storage before the first frame: wait for it.
+    await app.main();
     // Waits until the first frames are drawn and no animation is running.
     await tester.pumpAndSettle();
 
@@ -27,7 +28,7 @@ void main() {
   testWidgets(
     'should open the component gallery when the app is a debug build',
     (tester) async {
-      app.main();
+      await app.main();
       await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const Key('home.gallery')));

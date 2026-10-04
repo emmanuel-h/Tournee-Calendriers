@@ -143,7 +143,7 @@ void main() {
         failureOf(
           _street8.describeBuilding(n('9'), plan(), by: lea, at: twoPm),
         ),
-        HouseChangeFailure.unknownHouse,
+        BuildingChangeFailure.unknownHouse,
       );
     });
   });

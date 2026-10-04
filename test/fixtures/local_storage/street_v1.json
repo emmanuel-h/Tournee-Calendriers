@@ -1,0 +1,56 @@
+{
+  "version": 1,
+  "id": "x7Kq2LmP9sTb4VnW1cZd",
+  "name": "Rue Nationale",
+  "commune": {"inseeCode": "69264", "name": "Villefranche-sur-Saône"},
+  "banId": "69264_1460",
+  "deletion": null,
+  "houses": [
+    {
+      "number": "4",
+      "status": "toDo",
+      "comeBack": "samedi",
+      "note": "sonnette en panne",
+      "lastChange": {"by": "paul", "at": "2026-11-02T15:00:00.000Z"},
+      "position": null,
+      "building": {
+        "style": "floorAndNumber",
+        "staircases": [
+          {
+            "name": "A",
+            "floors": [
+              {
+                "level": 0,
+                "dwellings": [
+                  {"label": "01", "status": "toDo", "comeBack": null, "note": "", "lastChange": null}
+                ]
+              },
+              {
+                "level": 1,
+                "dwellings": [
+                  {
+                    "label": "11",
+                    "status": "nobodyHome",
+                    "comeBack": null,
+                    "note": "",
+                    "lastChange": {"by": "lea", "at": "2026-11-02T14:02:00.000Z"}
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "number": "2",
+      "status": "done",
+      "comeBack": null,
+      "note": "",
+      "lastChange": {"by": "lea", "at": "2026-11-02T14:02:00.000Z"},
+      "position": {"latitude": 45.9921, "longitude": 4.71705},
+      "building": null
+    }
+  ],
+  "removedHouses": []
+}

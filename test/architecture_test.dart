@@ -298,6 +298,7 @@ import 'package:tournee_calendriers/ui/x.dart';
         'package:firebase_auth/firebase_auth.dart',
         'package:http/http.dart',
         'package:shared_preferences/shared_preferences.dart',
+        'package:path_provider/path_provider.dart',
       ]) {
         final violations = findViolations([
           SourceFile('ui/street/street_screen.dart', "import '$uri';"),

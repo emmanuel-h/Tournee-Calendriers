@@ -1,4 +1,5 @@
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
+import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/street/building/building.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
@@ -25,6 +26,7 @@ final class House {
     this.note,
     this.lastChange,
     this.building,
+    this.position,
   );
 
   /// A house with [number]; by default a single house not visited yet, with
@@ -46,6 +48,7 @@ final class House {
     Note note = Note.empty,
     ChangeStamp? lastChange,
     Building? building,
+    GeoPoint? position,
   }) {
     final ownStatus = building == null ? status : VisitStatus.toDo;
     return House._(
@@ -55,6 +58,7 @@ final class House {
       note,
       lastChange,
       building,
+      position,
     );
   }
 
@@ -81,6 +85,11 @@ final class House {
   /// The dwellings of the house when it is a building; null for a single
   /// house.
   final Building? building;
+
+  /// Where its entrance is (its dot on the map), as the BAN gives it; null
+  /// for a number typed in by hand or one the BAN gives no position. Every
+  /// command keeps it: a mark or a new number does not move the door.
+  final GeoPoint? position;
 
   /// Whether the house is a building.
   bool get isBuilding => building != null;
@@ -117,14 +126,23 @@ final class House {
       other.comeBack == comeBack &&
       other.note == note &&
       other.lastChange == lastChange &&
-      other.building == building;
+      other.building == building &&
+      other.position == position;
 
   @override
-  int get hashCode =>
-      Object.hash(number, status, comeBack, note, lastChange, building);
+  int get hashCode => Object.hash(
+    number,
+    status,
+    comeBack,
+    note,
+    lastChange,
+    building,
+    position,
+  );
 
   /// A single house prints as before buildings existed; a building adds
-  /// itself at the end.
+  /// itself at the end. The position is left out: it never changes after
+  /// the import, and the line stays readable in a failing test.
   @override
   String toString() {
     final fields = '${number.label}, $status, $comeBack, $note, $lastChange';

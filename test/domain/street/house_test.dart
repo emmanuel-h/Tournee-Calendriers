@@ -20,6 +20,13 @@ void main() {
     expect(house.lastChange, isNull);
     expect(house.building, isNull);
     expect(house.isBuilding, isFalse);
+    expect(house.position, isNull);
+  });
+
+  test('should keep its position when given one', () {
+    final house = House(number: n('12'), position: townHallDoor);
+
+    expect(house.position, townHallDoor);
   });
 
   test('should keep every field when given them', () {
@@ -186,7 +193,30 @@ void main() {
         note: note('chien'),
         lastChange: paulAtThree,
       ),
+      'position': House(
+        number: n('3bis'),
+        status: VisitStatus.nobodyHome,
+        comeBack: comeBack('après 19h'),
+        note: note('chien'),
+        lastChange: leaAtTwo,
+        position: townHallDoor,
+      ),
     };
+
+    test('should be equal when the positions are equal', () {
+      expect(
+        House(number: n('3'), position: townHallDoor),
+        House(number: n('3'), position: townHallDoor),
+      );
+      expect(
+        House(number: n('3'), position: townHallDoor).hashCode,
+        House(number: n('3'), position: townHallDoor).hashCode,
+      );
+      expect(
+        House(number: n('3'), position: townHallDoor),
+        isNot(House(number: n('3'), position: northDoor)),
+      );
+    });
 
     test('should differ when the buildings differ', () {
       final four = House(number: n('8'), building: building(doors: 4));

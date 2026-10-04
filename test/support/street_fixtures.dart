@@ -2,6 +2,7 @@
 // Villefranche-sur-Saône (INSEE 69264): the only real place tests may name.
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
 import 'package:tournee_calendriers/domain/shared/commune.dart';
+import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling_label.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
@@ -22,6 +23,16 @@ ComeBack comeBack(String hint) => valueOf(ComeBack.create(hint));
 
 final villefranche = valueOf(
   Commune.create(inseeCode: '69264', name: 'Villefranche-sur-Saône'),
+);
+
+/// The entrance of a house in the centre of Villefranche-sur-Saône.
+final townHallDoor = valueOf(
+  GeoPoint.create(latitude: 45.98915, longitude: 4.71862),
+);
+
+/// Another entrance, a little further north.
+final northDoor = valueOf(
+  GeoPoint.create(latitude: 45.99210, longitude: 4.71705),
 );
 
 final lea = MemberId('lea');

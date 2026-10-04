@@ -27,6 +27,9 @@ dependencies:
   # Required by the code gen-l10n writes into lib/ui/l10n/; the version is the
   # one flutter_localizations pins.
   intl: 0.20.3
+  # Where the phone keeps the streets until Firestore replaces that storage
+  # (M1, T1.6); only in infrastructure/ and bootstrap/.
+  path_provider: 2.1.6
 
 dev_dependencies:
   flutter_lints: 6.0.0

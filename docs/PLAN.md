@@ -734,8 +734,52 @@ Address directory rules fixed in T1.5 (`lib/application/ports/address_directory.
   UTF-8 whatever the headers say. The mapping functions live in `infrastructure/ban/mappers/`
   and are tested on fixtures captured from Villefranche-sur-Saône (`test/fixtures/ban/`).
 
+Use cases and phone storage fixed in T1.6 (`lib/application/use_cases/`,
+`lib/domain/street/street_repository.dart`, `lib/infrastructure/local_storage/`):
+
+- **`House.position`** (`GeoPoint?`): where the entrance is, from the BAN; null for a number typed
+  by hand or one the BAN gives no position. Every command keeps it (a renumbered house too).
+- **Undo** (`Street.undo(change)`): puts back exactly what the change replaced and returns the
+  change the undo makes, itself undoable. A house change (mark, « repasser », note, layout, door
+  added / removed / renamed, back to a single house, renumbering) puts the **whole house** back,
+  last change included → `HouseReverted(replaced, house)` (storage writes the whole house entry,
+  deleting the old key when it renumbers back). A door change puts that door back →
+  `DwellingReverted`. `NumberRemoved` → restore; `NumberRestored` → removed again with its old
+  removal stamp; `StreetRenamed` → old name; `StreetDeleted` → restored. Refused (`UndoFailure`):
+  `otherStreet`, `gone` (the house, number or door is no longer there), `numberTaken` (the old
+  number was taken again, shown or in the Corbeille), `notUndoable` (`NumbersAdded`, removed with ✕
+  instead; `StreetRestored`). Whatever changed on that house or door since is overwritten.
+- `describeBuilding` fails with `BuildingChangeFailure.unknownHouse`, like the other layout
+  commands.
+- **Ports.** `StreetRepository` (domain): `find`, `findByBanId` (Corbeille included), `watch(id)`
+  and `watchAll()` (not deleted) as `Stream`s that give the value now then after each change,
+  `add(street)`, `save(street, change)` (each adapter writes what suits it: the whole street on
+  the phone, the change's fields in Firestore). Storage failures are exceptions, not failure
+  values. Application ports: `Clock` (UTC), `IdGenerator` (ASCII letters and digits), and
+  `IdentityProvider.currentMember`: in M1 a member id made once with `IdGenerator` and kept in a
+  file; from M2 the Firebase uid.
+- **Use cases** (one class, one `call`; each loads the street, runs the root's command, saves,
+  returns the change for « Annuler »; refusals are `CommandFailure<F>` = `StreetNotFound` |
+  `CommandRefused(reason)`, `F` being the street's failure enum): `MarkHouse` (tap),
+  `SetHouseDetails` (one `Mark` of the house sheet: `StatusMark`, `ComeBackMark`, `NoteMark`; the
+  sheet stores each control on its own), `MarkDwelling` (same `Mark`s on a door),
+  `DescribeBuilding` (`LayOutBuilding`, `AddDoor`, `RemoveDoor`, `RenameDoor`,
+  `BackToSingleHouse`), `EditStreetNumbers` (`AddNumbers`, `RemoveNumber`, `RestoreNumber`,
+  `RenameNumber`, `RenameStreet`, `DeleteStreet`), `UndoLastChange(change)` (the screen keeps the
+  last change), `ObserveStreet`, `ObserveStreets` (not deleted, by name ignoring case, then id),
+  `ListCommuneStreets` (the import screen's list).
+- **`ImportReferenceArea(inseeCode, only?)`**: lists the commune, then imports the chosen streets
+  (or, with no choice, every street whose BAN count is above 0; the others are counted in
+  `emptyStreets`), one at a time in the BAN's order, with a progress callback. **Re-importing
+  never wipes marks**: a street whose BAN id is already stored (Corbeille included) is left as is
+  and reported (`StreetAlreadyImported`, `inCorbeille`). A street the BAN refuses or answers
+  nonsense for is reported (`StreetImportFailed`) and the import goes on; once the network is
+  gone (`noNetwork`), the remaining new streets are reported failed without a request (each would
+  wait 15 s), and importing again finishes the job. Chosen ids the commune does not list are
+  reported in `unknownStreets`. Only a commune that cannot be listed fails the whole import.
+
 ```dart
-// Sketch of the core (T1.2–T1.4 delivered the uncommented members; the rest come with their tasks)
+// Sketch of the core (T1.2–T1.6 delivered the uncommented members; the rest come with their tasks)
 final class Street {                       // aggregate root
   final StreetId id;
   final String name;
@@ -756,11 +800,13 @@ final class Street {                       // aggregate root
   //                   markDwelling, setDwellingComeBack, setDwellingNote;
   // edit mode (T1.4): Street.manual, addNumbers, removeNumber (soft), restoreNumber,
   //                   renameNumber, renameStreet
+  // undo (T1.6): undo(change) → (Street, HouseReverted | DwellingReverted | …)
   Progress get progress;
 }
 
 final class House { HouseNumber number; VisitStatus status; ComeBack? comeBack; Note note;
-                    ChangeStamp? lastChange; Building? building; }   // building: status is toDo
+                    ChangeStamp? lastChange; Building? building;     // building: status is toDo
+                    GeoPoint? position; }                            // the map dot (T1.6)
 final class Building { DoorLabelStyle style; List<Staircase> staircases;   // A, B…
                        BuildingStatus get status; Progress get progress; }
 // Staircase { StaircaseName name; List<Floor> floors /* top first */ }
@@ -772,7 +818,8 @@ sealed class StreetChange { /* HouseMarked, ComeBackSet, NoteSet, BuildingLaidOu
                                BuildingRemoved, DwellingMarked, DwellingComeBackSet,
                                DwellingNoteSet, StreetDeleted, StreetRestored,
                                NumbersAdded, NumberRemoved, NumberRestored,
-                               NumberRenamed, StreetRenamed */ }
+                               NumberRenamed, StreetRenamed,
+                               HouseReverted, DwellingReverted (undo, T1.6) */ }
 ```
 
 Domain services (pure functions, the bulk of the unit tests): house-number parsing and
@@ -844,6 +891,18 @@ can never drift.
 
 ### 6.3 Local-only state
 
+- **M1 phone storage** (until Firestore replaces it in M2 behind `StreetRepository`):
+  `infrastructure/local_storage/`, in the app support folder (private, kept across updates).
+  One JSON file per street, `streets/<id>.json` (a commune of ≈ 300 streets / 6 000 numbers would
+  make one file of a few MB rewritten at every tap; a street's file is a few kB to ≈ 100 kB).
+  Schema `version: 1`, written and read by pure mappers (`mappers/street_json_mapper.dart`)
+  through the domain's checks (`Street.create`, `Building.create`, `Note.create`…); statuses and
+  label styles under fixed names, times as ISO 8601 UTC. Every file is read once into memory,
+  which answers all reads and is updated at once on a write (listeners told), then the file is
+  written to `<id>.json.tmp` and renamed over the old one (a kill mid-write leaves the old
+  street), writes queued one after the other. An unreadable file (newer version, damaged) is
+  skipped and left on the disk. The member id is kept in `member_id`. No network, ever: works
+  after an offline cold start.
 - `shared_preferences`: display name, last tournée id, theme, "hide done" per street, offline
   download date and size per tournée.
 - MapLibre offline region per tournée (tiles), behind the `OfflineMapStore` port.
