@@ -1,4 +1,5 @@
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
+import 'package:tournee_calendriers/domain/shared/same_items.dart';
 import 'package:tournee_calendriers/domain/street/building/building.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
@@ -6,6 +7,7 @@ import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/note.dart';
+import 'package:tournee_calendriers/domain/street/removed_house.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
@@ -207,6 +209,49 @@ final class BuildingRemoved extends HouseChange {
       'BuildingRemoved(${streetId.value}, ${number.label}, $status, $stamp)';
 }
 
+/// The house at [number] now has the number [newNumber] (« 3 » → « 3bis »
+/// in edit mode, PLAN §5.5), with its status, « repasser », note and
+/// building.
+///
+/// The number is the house's key in storage (`houses.3`), so storage
+/// deletes the entry under the old number and writes [after] under the new
+/// one. Undo renames it back by putting [before] in place of [after].
+final class NumberRenamed extends HouseChange {
+  const NumberRenamed({
+    required super.streetId,
+    required super.before,
+    required super.stamp,
+    required this.newNumber,
+  });
+
+  final HouseNumber newNumber;
+
+  /// The house under its new number, stamped with [stamp]; nothing else
+  /// changes.
+  House get after => House(
+    number: newNumber,
+    status: before.status,
+    comeBack: before.comeBack,
+    note: before.note,
+    lastChange: stamp,
+    building: before.building,
+  );
+
+  @override
+  bool operator ==(Object other) =>
+      other is NumberRenamed &&
+      _sameHouseChange(other) &&
+      other.newNumber == newNumber;
+
+  @override
+  int get hashCode => Object.hash(streetId, before, stamp, newNumber);
+
+  @override
+  String toString() =>
+      'NumberRenamed(${streetId.value}, ${number.label} → ${newNumber.label}, '
+      '$stamp)';
+}
+
 /// A change to one door of the building at [number] (a tap on the door, or
 /// its sheet on a long press).
 ///
@@ -383,4 +428,148 @@ final class StreetRestored extends StreetChange {
 
   @override
   String toString() => 'StreetRestored(${streetId.value})';
+}
+
+/// Numbers were added to the street from the « Ajouter des numéros » sheet
+/// (PLAN §5.5).
+///
+/// - [added]: the new houses, to do and unmarked; storage writes one entry
+///   per house (`houses.21`…), never the whole map.
+/// - [restored]: numbers that were in the Corbeille, as they were there;
+///   they come back with their marks, and storage clears their `deletedAt`
+///   and `deletedBy`.
+/// - [alreadyThere]: numbers the street shows already, left untouched; the
+///   screen can say they were skipped.
+///
+/// Undo drops the [added] houses and sends the [restored] ones back to the
+/// Corbeille with their removal.
+final class NumbersAdded extends StreetChange {
+  NumbersAdded({
+    required super.streetId,
+    required Iterable<House> added,
+    required Iterable<RemovedHouse> restored,
+    required Iterable<HouseNumber> alreadyThere,
+  }) : added = List.unmodifiable(added),
+       restored = List.unmodifiable(restored),
+       alreadyThere = List.unmodifiable(alreadyThere);
+
+  /// The new houses, in street order.
+  final List<House> added;
+
+  /// The houses brought back from the Corbeille, in street order, each with
+  /// the removal it had.
+  final List<RemovedHouse> restored;
+
+  /// The numbers given that the street already showed, in street order.
+  final List<HouseNumber> alreadyThere;
+
+  @override
+  bool operator ==(Object other) =>
+      other is NumbersAdded &&
+      other.streetId == streetId &&
+      sameItems(other.added, added) &&
+      sameItems(other.restored, restored) &&
+      sameItems(other.alreadyThere, alreadyThere);
+
+  @override
+  int get hashCode => Object.hash(
+    streetId,
+    Object.hashAll(added),
+    Object.hashAll(restored),
+    Object.hashAll(alreadyThere),
+  );
+
+  @override
+  String toString() {
+    String labels(Iterable<HouseNumber> numbers) =>
+        '[${numbers.map((number) => number.label).join(', ')}]';
+    return 'NumbersAdded(${streetId.value}, '
+        'added: ${labels(added.map((house) => house.number))}, '
+        'restored: ${labels(restored.map((house) => house.number))}, '
+        'alreadyThere: ${labels(alreadyThere)})';
+  }
+}
+
+/// A number was removed in edit mode (✕): the house went to the Corbeille
+/// with its marks ([removed]), and can be restored (PLAN §5.11).
+///
+/// Storage writes `houses.14ter.deletedAt` and `deletedBy`; the house's
+/// other fields stay as they are. Undo restores it.
+final class NumberRemoved extends StreetChange {
+  const NumberRemoved({required super.streetId, required this.removed});
+
+  /// The house as it was, and who removed it when.
+  final RemovedHouse removed;
+
+  HouseNumber get number => removed.number;
+
+  /// Whether the removed house had marks (see `House.hasMarks`): the
+  /// screen asked for confirmation first, and the undo snackbar matters.
+  bool get hadMarks => removed.house.hasMarks;
+
+  @override
+  bool operator ==(Object other) =>
+      other is NumberRemoved &&
+      other.streetId == streetId &&
+      other.removed == removed;
+
+  @override
+  int get hashCode => Object.hash(streetId, removed);
+
+  @override
+  String toString() =>
+      'NumberRemoved(${streetId.value}, ${number.label}, ${removed.removal})';
+}
+
+/// A number came back from the Corbeille with its marks. [removed] is the
+/// house as it was there, removal included, so undo can send it back as it
+/// was. Storage clears `houses.14ter.deletedAt` and `deletedBy`.
+final class NumberRestored extends StreetChange {
+  const NumberRestored({required super.streetId, required this.removed});
+
+  final RemovedHouse removed;
+
+  HouseNumber get number => removed.number;
+
+  @override
+  bool operator ==(Object other) =>
+      other is NumberRestored &&
+      other.streetId == streetId &&
+      other.removed == removed;
+
+  @override
+  int get hashCode => Object.hash(streetId, removed);
+
+  @override
+  String toString() => 'NumberRestored(${streetId.value}, ${number.label})';
+}
+
+/// The street was renamed from [before] to [name] (the name field of the
+/// edit mode, PLAN §5.5), for the whole team. Storage writes `name`; undo
+/// writes [before] back.
+final class StreetRenamed extends StreetChange {
+  const StreetRenamed({
+    required super.streetId,
+    required this.before,
+    required this.name,
+  });
+
+  /// The name before the change.
+  final String before;
+
+  /// The new name, already cleaned (see `StreetName`).
+  final String name;
+
+  @override
+  bool operator ==(Object other) =>
+      other is StreetRenamed &&
+      other.streetId == streetId &&
+      other.before == before &&
+      other.name == name;
+
+  @override
+  int get hashCode => Object.hash(streetId, before, name);
+
+  @override
+  String toString() => 'StreetRenamed(${streetId.value}, $before → $name)';
 }

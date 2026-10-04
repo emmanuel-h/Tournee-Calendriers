@@ -350,12 +350,16 @@ Three entry points, all of which work offline:
 
 Edit mode:
 
-- **✕** removes a number (undo snackbar; a number that already has a status asks for
-  confirmation first).
+- **✕** removes a number (undo snackbar; a number that already has a mark — a status, a
+  « repasser », a note, or a mark on one of its doors — asks for confirmation first). The
+  house goes to the Corbeille with its marks (5.11).
 - **+ numéros** opens the *Ajouter des numéros* sheet: one number, a list or a range
   (`12bis, 21-25`), with a preview. New numbers land on the right side automatically.
-- **Tapping a tile** opens a small sheet: change the number (`3` → `3bis`), *Transformer en
-  immeuble…* (5.7), or back to a single house.
+  Numbers already in the street are skipped; a number in the Corbeille comes back with its
+  marks.
+- **Tapping a tile** opens a small sheet: change the number (`3` → `3bis`, refused when
+  another house, shown or in the Corbeille, has it), *Transformer en immeuble…* (5.7), or
+  back to a single house.
 - The name field renames the street for the whole team.
 - *Ne plus la faire* removes me from its assignees; *Supprimer* deletes it for everyone
   (confirmation, any member may do it — see Q2).
@@ -557,7 +561,7 @@ inside an aggregate changes only through its root, which enforces the invariants
 
 Value objects (immutable, validated at construction, equal by value): `JoinCode` (6 chars from
 the alphabet), `RescueCentreKey` (normalised name), `HouseNumber` (12 + "bis", with the
-French ordering), `VisitStatus` (`toDo`, `done`, `nobodyHome`), `ComeBack` (optional hint),
+French ordering), `StreetName`, `VisitStatus` (`toDo`, `done`, `nobodyHome`), `ComeBack` (optional hint),
 `Note` (≤ 200 chars), `GeoPoint`, `StreetShape`, `Progress`, `ProgressLevel`
 (`free`, `toDo`, `partial`, `done`), `CampaignYear`. Each house and dwelling also keeps its
 `previousStatus` (last campaign's result, read-only).
@@ -666,8 +670,49 @@ Building rules fixed in T1.3 (`lib/domain/street/building/`):
   and its `key`, so storage writes field paths such as `houses.8.dwellings.A5-51.status` and
   undo restores that door.
 
+Editing rules fixed in T1.4 (`lib/domain/street/`):
+
+- **`StreetName`**: trimmed, each run of spaces or line breaks inside made one space, 1–150
+  characters (code points, as `Note`); case and accents kept. `Street.create` cleans and checks
+  the name the same way (`invalidName`), so a BAN name, a stored one and a typed one follow one
+  rule, which the security rules can enforce too.
+- **Typed numbers** (`house_numbers_input.dart`, a domain service of pure functions):
+  - `parseHouseNumbers` (the « + numéros » sheet and « Numéros en plus »): items separated by
+    `,` (also `;` or line breaks), spaces and empty items ignored; an item is one number read
+    like `HouseNumber.parse`, or a range of two plain numbers `21-25` (both sides; spaces around
+    the dash, an en dash, and a backwards range `25-21` accepted).
+  - `manualStreetNumbers` (the manual form): « Du » / « Au » are plain numbers 0–99999; one
+    blank means the other alone, both blank means the extras only, swapped when backwards; the
+    range keeps `Sides.both | odd | even` (0 is even); the extras are kept whatever the side.
+  - Both return the numbers sorted in street order, each once, or a `NumbersFailure` naming
+    what is wrong: `InvalidNumber(token, reason)`, `InvalidRange(token)` (suffix, missing
+    bound, `1-2-3`, bound above 99999), `InvalidBound(from | to, text)`, `TooManyNumbers`.
+  - **At most 500 numbers** per input (`maxNumbersAtOnce`): a range is counted before it is
+    expanded, so a typo like `1-99999` is refused without building anything.
+- **Removed numbers.** `Street.removedHouses` holds `RemovedHouse`s (the house exactly as it
+  was + the `removal` stamp: « supprimé par Léa · 3 oct. »), sorted by number. They are out of
+  `houses`, the sides and the progress, and house commands do not see them (`unknownHouse`).
+  **A number is unique among shown and removed houses together** (it is the storage key).
+- **Commands** (each returns its change; `NumberChangeFailure` when refused):
+  - `Street.manual(id, name, commune, numbers)`: no BAN id, one new to-do house per number.
+  - `addNumbers(numbers)` → `NumbersAdded(added, restored, alreadyThere)`: new houses are
+    unmarked and land on their side by number; a number already shown is skipped and listed;
+    **a number in the Corbeille is restored with its marks**. `nothingNew` when nothing would
+    change (no number, or all shown already).
+  - `removeNumber(n, by, at)` → `NumberRemoved`: allowed with marks; `House.hasMarks` (status
+    ≠ to do, « repasser », note, or a door with any of them; `lastChange` and a bare layout are
+    not marks) is the query the screen asks before, and `NumberRemoved.hadMarks` repeats it.
+  - `restoreNumber(n)` → `NumberRestored` (carries the removal, so undo can put it back);
+    `notRemoved` otherwise. It is the undo of `removeNumber`.
+  - `renameNumber(n, newNumber, by, at)` → `NumberRenamed` (a `HouseChange`: `before`, stamp,
+    `after`): the house keeps its status, « repasser », note and building, is stamped, and moves
+    to its new place and side. Refused: `sameNumber`, `numberTaken` (shown), `numberRemoved`
+    (in the Corbeille: restore it or choose another number). Storage deletes `houses.3` and
+    writes `houses.3bis`.
+  - `renameStreet(StreetName)` → `StreetRenamed(before, name)`.
+
 ```dart
-// Sketch of the core (T1.2–T1.3 delivered the uncommented members; the rest come with their tasks)
+// Sketch of the core (T1.2–T1.4 delivered the uncommented members; the rest come with their tasks)
 final class Street {                       // aggregate root
   final StreetId id;
   final String name;
@@ -676,6 +721,7 @@ final class Street {                       // aggregate root
   // final StreetShape shape;              // map (M3): empty when entered by hand
   // final Set<MemberId> assignees;        // "Mes rues" panel (M3)
   final List<House> houses;                // always sorted by HouseNumber, numbers unique
+  final List<RemovedHouse> removedHouses;  // numbers in the Corbeille, with their marks (T1.4)
   final ChangeStamp? deletion;             // set = in the Corbeille
 
   /// Every change returns the new street *and* what changed, so the Firestore adapter
@@ -685,7 +731,8 @@ final class Street {                       // aggregate root
   // setComeBack, setNote, delete, restore;
   // buildings (T1.3): describeBuilding, addDoor, removeDoor, renameDoor, removeBuilding,
   //                   markDwelling, setDwellingComeBack, setDwellingNote;
-  // then addNumbers, removeNumber (soft) in T1.4
+  // edit mode (T1.4): Street.manual, addNumbers, removeNumber (soft), restoreNumber,
+  //                   renameNumber, renameStreet
   Progress get progress;
 }
 
@@ -700,8 +747,9 @@ final class Building { DoorLabelStyle style; List<Staircase> staircases;   // A,
 
 sealed class StreetChange { /* HouseMarked, ComeBackSet, NoteSet, BuildingLaidOut,
                                BuildingRemoved, DwellingMarked, DwellingComeBackSet,
-                               DwellingNoteSet, StreetDeleted, StreetRestored —
-                               NumbersAdded, NumberRemoved… in T1.4 */ }
+                               DwellingNoteSet, StreetDeleted, StreetRestored,
+                               NumbersAdded, NumberRemoved, NumberRestored,
+                               NumberRenamed, StreetRenamed */ }
 ```
 
 Domain services (pure functions, the bulk of the unit tests): house-number parsing and
@@ -738,7 +786,8 @@ tournees/{tourneeId}
       deletedAt, deletedBy                        ← set = in the Corbeille (5.11)
       houses: {                                   ← a map inside the street document
         "12":  { n: 12, sfx: null, lat, lon, status: "DONE", comeBack: null, note: "",
-                 prev: "NOBODY_HOME", by: uid, at: timestamp, deletedAt: null },
+                 prev: "NOBODY_HOME", by: uid, at: timestamp,
+                 deletedAt: null, deletedBy: null },   ← set = number in the Corbeille
         "8":   { n: 8, …, dwellings: { "A5-51": { label: "51", esc: "A", floor: 5, status, note,
                                                   prev, by, at }, … } }
                                           ← key = letter + level + "-" + label ("A0-Gauche";

@@ -50,6 +50,11 @@ final class Dwelling {
   /// Who changed the dwelling last and when; null when nobody has yet.
   final ChangeStamp? lastChange;
 
+  /// Whether someone marked the door: a status other than to do, a
+  /// « repasser » or a note. Its [lastChange] alone is not a mark.
+  bool get hasMarks =>
+      status != VisitStatus.toDo || comeBack != null || note != Note.empty;
+
   /// What this dwelling adds to its building's progress: one door.
   Progress get progress => Progress.of(status, comeBack: comeBack != null);
 

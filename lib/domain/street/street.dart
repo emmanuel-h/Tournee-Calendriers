@@ -13,14 +13,20 @@ import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/note.dart';
 import 'package:tournee_calendriers/domain/street/progress.dart';
+import 'package:tournee_calendriers/domain/street/removed_house.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_name.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
 /// Why a list of houses cannot make a [Street].
 enum NewStreetFailure {
-  /// Two houses have the same number (`12bis` and `12 BIS` included).
+  /// Two houses have the same number (`12bis` and `12 BIS` included),
+  /// whether shown or removed.
   duplicateHouseNumber,
+
+  /// The name is not a valid [StreetName] (blank or too long).
+  invalidName,
 }
 
 /// Why a command on one house of a [Street] was refused.
@@ -34,6 +40,30 @@ enum HouseChangeFailure {
   /// A building was to be marked as a whole: its doors are marked one by
   /// one, and its status follows from them.
   houseIsBuilding,
+}
+
+/// Why a change to the numbers of a [Street] (edit mode, PLAN §5.5) was
+/// refused.
+enum NumberChangeFailure {
+  /// The street shows no house with that number.
+  unknownHouse,
+
+  /// No house with that number is in the Corbeille.
+  notRemoved,
+
+  /// The new number is the number the house already has.
+  sameNumber,
+
+  /// Another house of the street shows the new number.
+  numberTaken,
+
+  /// A house in the Corbeille has the new number: restore it, or choose
+  /// another number.
+  numberRemoved,
+
+  /// Every number to add is already shown (or none was given): nothing
+  /// would change.
+  nothingNew,
 }
 
 /// Why a command on one door of a building was refused.
@@ -55,8 +85,11 @@ enum DwellingChangeFailure {
 /// every change to them (PLAN §6.1).
 ///
 /// Invariants, true of every `Street`:
-/// - each house number appears once;
-/// - [houses] is sorted by [HouseNumber] (`3 < 3bis < 3A < 4`);
+/// - its name is a valid [StreetName];
+/// - each house number appears once, among the [houses] and the
+///   [removedHouses] together (the number is the key in storage);
+/// - [houses] and [removedHouses] are sorted by [HouseNumber]
+///   (`3 < 3bis < 3A < 4`);
 /// - a done house or door has no « repasser » (see [House], [Dwelling]);
 /// - a building is to do itself, its doors carry the statuses (see [House]);
 /// - the invariants of each [Building].
@@ -72,46 +105,84 @@ final class Street {
     required this.commune,
     required this.banId,
     required this.houses,
+    required this.removedHouses,
     required this.deletion,
   });
 
-  /// Builds a street from its identity and its [houses], given in any order.
+  /// Builds a street from its identity and its [houses], given in any order
+  /// (from the BAN, or from storage with its [removedHouses]).
   ///
-  /// Fails with [NewStreetFailure.duplicateHouseNumber] when two houses share
-  /// a number. A street created with a [deletion] is in the Corbeille.
+  /// The [name] is cleaned like a typed [StreetName]. Fails with
+  /// [NewStreetFailure.invalidName] when it is not one, and with
+  /// [NewStreetFailure.duplicateHouseNumber] when two houses, shown or
+  /// removed, share a number. A street created with a [deletion] is in the
+  /// Corbeille.
   static Result<Street, NewStreetFailure> create({
     required StreetId id,
     required String name,
     required Commune commune,
     BanStreetId? banId,
     Iterable<House> houses = const [],
+    Iterable<RemovedHouse> removedHouses = const [],
     ChangeStamp? deletion,
   }) {
-    // `..sort(…)` is a cascade: it sorts the new list and the expression
+    final StreetName streetName;
+    switch (StreetName.create(name)) {
+      case Ok(:final value):
+        streetName = value;
+      case Err():
+        return const Err(NewStreetFailure.invalidName);
+    }
+    // `..sort()` is a cascade: it sorts the new list and the expression
     // still evaluates to the list, not to the `void` that `sort` returns.
-    final sorted = houses.toList()
-      ..sort((a, b) => a.number.compareTo(b.number));
+    final numbers = [
+      for (final house in houses) house.number,
+      for (final removed in removedHouses) removed.number,
+    ]..sort();
     // Once sorted, equal numbers sit next to each other.
-    for (var i = 1; i < sorted.length; i++) {
-      if (sorted[i].number == sorted[i - 1].number) {
+    for (var i = 1; i < numbers.length; i++) {
+      if (numbers[i] == numbers[i - 1]) {
         return const Err(NewStreetFailure.duplicateHouseNumber);
       }
     }
     return Ok(
       Street._(
         id: id,
-        name: name,
+        name: streetName.text,
         commune: commune,
         banId: banId,
-        houses: List.unmodifiable(sorted),
+        houses: _sortedHouses(houses),
+        removedHouses: _sortedRemoved(removedHouses),
         deletion: deletion,
       ),
     );
   }
 
+  /// A street typed in by hand (« Rue à la main », PLAN §5.5): no BAN id,
+  /// and a new house, to do, for each of the [numbers] (each once, whatever
+  /// the order; usually from `manualStreetNumbers`). It cannot fail: the
+  /// [name] is already valid and repeated numbers are merged.
+  factory Street.manual({
+    required StreetId id,
+    required StreetName name,
+    required Commune commune,
+    required Iterable<HouseNumber> numbers,
+  }) => Street._(
+    id: id,
+    name: name.text,
+    commune: commune,
+    banId: null,
+    houses: _sortedHouses([
+      for (final number in numbers.toSet()) House(number: number),
+    ]),
+    removedHouses: const [],
+    deletion: null,
+  );
+
   final StreetId id;
 
-  /// The name as the BAN writes it (« Rue des Lilas »).
+  /// The name as the BAN writes it (« Rue des Lilas ») or as typed, cleaned
+  /// (see [StreetName]).
   final String name;
 
   final Commune commune;
@@ -122,6 +193,11 @@ final class Street {
   /// Every house, sorted by number. The list cannot be modified (it throws
   /// an `UnsupportedError`): houses change only through the commands below.
   final List<House> houses;
+
+  /// The houses whose number was removed in edit mode, sorted by number:
+  /// in the Corbeille with their marks, out of the sides and the progress,
+  /// until restored (PLAN §5.11). The list cannot be modified.
+  final List<RemovedHouse> removedHouses;
 
   /// Who sent the street to the Corbeille and when; null when it is not
   /// deleted.
@@ -464,24 +540,196 @@ final class Street {
     }
   }
 
+  /// Adds [numbers] to the street (« Ajouter des numéros », PLAN §5.5;
+  /// usually from `parseHouseNumbers`). Each lands in its place and on its
+  /// side by its number.
+  ///
+  /// A number the street already shows is left as it is; one in the
+  /// Corbeille comes back with its marks, as « Restaurer » would bring it
+  /// (re-adding a number removed by mistake must not lose its status). The
+  /// change lists the three groups. Fails with
+  /// [NumberChangeFailure.nothingNew] when nothing would change.
+  Result<(Street, NumbersAdded), NumberChangeFailure> addNumbers(
+    Iterable<HouseNumber> numbers,
+  ) {
+    final added = <House>[];
+    final restored = <RemovedHouse>[];
+    final alreadyThere = <HouseNumber>[];
+    for (final number in numbers.toSet().toList()..sort()) {
+      final removed = _removedAt(number);
+      if (_indexOf(number) >= 0) {
+        alreadyThere.add(number);
+      } else if (removed != null) {
+        restored.add(removed);
+      } else {
+        added.add(House(number: number));
+      }
+    }
+    if (added.isEmpty && restored.isEmpty) {
+      return const Err(NumberChangeFailure.nothingNew);
+    }
+    return Ok((
+      _copy(
+        name: name,
+        houses: _sortedHouses([
+          ...houses,
+          ...added,
+          for (final removed in restored) removed.house,
+        ]),
+        removedHouses: List.unmodifiable(
+          removedHouses.where((removed) => !restored.contains(removed)),
+        ),
+        deletion: deletion,
+      ),
+      NumbersAdded(
+        streetId: id,
+        added: added,
+        restored: restored,
+        alreadyThere: alreadyThere,
+      ),
+    ));
+  }
+
+  /// Removes the number [number] from the street (✕ in edit mode), as [by]
+  /// at [at]: the house goes to the Corbeille with its status, « repasser »,
+  /// note and building, hidden from the sides and the progress, until
+  /// [restoreNumber] (PLAN §5.11).
+  ///
+  /// It is allowed even when the house has marks; the screen asks first
+  /// (check `House.hasMarks` before calling) and the change says
+  /// [NumberRemoved.hadMarks].
+  Result<(Street, NumberRemoved), NumberChangeFailure> removeNumber(
+    HouseNumber number, {
+    required MemberId by,
+    required DateTime at,
+  }) {
+    final index = _indexOf(number);
+    if (index < 0) return const Err(NumberChangeFailure.unknownHouse);
+    final removed = RemovedHouse(
+      house: houses[index],
+      removal: ChangeStamp(by: by, at: at),
+    );
+    return Ok((
+      _copy(
+        name: name,
+        houses: List.unmodifiable(houses.toList()..removeAt(index)),
+        removedHouses: _sortedRemoved([...removedHouses, removed]),
+        deletion: deletion,
+      ),
+      NumberRemoved(streetId: id, removed: removed),
+    ));
+  }
+
+  /// Brings the house at [number] back from the Corbeille, exactly as it
+  /// was removed (« Restaurer », or the undo of ✕).
+  Result<(Street, NumberRestored), NumberChangeFailure> restoreNumber(
+    HouseNumber number,
+  ) {
+    final removed = _removedAt(number);
+    if (removed == null) return const Err(NumberChangeFailure.notRemoved);
+    return Ok((
+      _copy(
+        name: name,
+        houses: _sortedHouses([...houses, removed.house]),
+        removedHouses: List.unmodifiable(
+          removedHouses.where((other) => other != removed),
+        ),
+        deletion: deletion,
+      ),
+      NumberRestored(streetId: id, removed: removed),
+    ));
+  }
+
+  /// Gives the house at [number] the number [newNumber] (`3` → `3bis`, a tap
+  /// on a tile in edit mode), as [by] at [at]. It keeps its status,
+  /// « repasser », note and building, and moves to its new place and side.
+  ///
+  /// Refused when [newNumber] is the same, is shown by another house
+  /// ([NumberChangeFailure.numberTaken]) or belongs to a house in the
+  /// Corbeille ([NumberChangeFailure.numberRemoved]): numbers stay unique,
+  /// and merging two houses' marks has no right answer.
+  Result<(Street, NumberRenamed), NumberChangeFailure> renameNumber(
+    HouseNumber number,
+    HouseNumber newNumber, {
+    required MemberId by,
+    required DateTime at,
+  }) {
+    final index = _indexOf(number);
+    if (index < 0) return const Err(NumberChangeFailure.unknownHouse);
+    if (newNumber == number) return const Err(NumberChangeFailure.sameNumber);
+    if (_indexOf(newNumber) >= 0) {
+      return const Err(NumberChangeFailure.numberTaken);
+    }
+    if (_removedAt(newNumber) != null) {
+      return const Err(NumberChangeFailure.numberRemoved);
+    }
+    final change = NumberRenamed(
+      streetId: id,
+      before: houses[index],
+      stamp: ChangeStamp(by: by, at: at),
+      newNumber: newNumber,
+    );
+    return Ok((
+      _copy(
+        name: name,
+        houses: _sortedHouses(houses.toList()..[index] = change.after),
+        removedHouses: removedHouses,
+        deletion: deletion,
+      ),
+      change,
+    ));
+  }
+
+  /// Gives the street the [name] typed in the name field of the edit mode,
+  /// for the whole team (PLAN §5.5).
+  (Street, StreetRenamed) renameStreet(StreetName name) => (
+    _copy(
+      name: name.text,
+      houses: houses,
+      removedHouses: removedHouses,
+      deletion: deletion,
+    ),
+    StreetRenamed(streetId: id, before: this.name, name: name.text),
+  );
+
   /// Sends the street to the Corbeille, as [by] at [at]: it is hidden but
   /// keeps its houses, statuses and notes (PLAN §5.11). Deleting a street
   /// already in the Corbeille records the latest deletion.
   (Street, StreetDeleted) delete({required MemberId by, required DateTime at}) {
     final deletion = ChangeStamp(by: by, at: at);
     return (
-      _copy(houses: houses, deletion: deletion),
+      _copy(
+        name: name,
+        houses: houses,
+        removedHouses: removedHouses,
+        deletion: deletion,
+      ),
       StreetDeleted(streetId: id, deletion: deletion),
     );
   }
 
   /// Brings the street back from the Corbeille, houses untouched.
-  (Street, StreetRestored) restore() =>
-      (_copy(houses: houses, deletion: null), StreetRestored(streetId: id));
+  (Street, StreetRestored) restore() => (
+    _copy(
+      name: name,
+      houses: houses,
+      removedHouses: removedHouses,
+      deletion: null,
+    ),
+    StreetRestored(streetId: id),
+  );
 
   /// The position of [number] in [houses], or -1 when the street has none.
   int _indexOf(HouseNumber number) =>
       houses.indexWhere((house) => house.number == number);
+
+  /// The house at [number] in the Corbeille, or null when there is none.
+  RemovedHouse? _removedAt(HouseNumber number) {
+    for (final removed in removedHouses) {
+      if (removed.number == number) return removed;
+    }
+    return null;
+  }
 
   /// The position of the building at [number] and the building, or why
   /// there is none.
@@ -589,19 +837,41 @@ final class Street {
   /// does not change, so the order still holds.
   Street _withHouseAt(int index, House house) {
     final changed = houses.toList()..[index] = house;
-    return _copy(houses: List.unmodifiable(changed), deletion: deletion);
+    return _copy(
+      name: name,
+      houses: List.unmodifiable(changed),
+      removedHouses: removedHouses,
+      deletion: deletion,
+    );
   }
 
-  /// This street, same identity, with [houses] and [deletion]. Both are
-  /// required so no call can forget one (null is a real value of
-  /// [deletion]: not in the Corbeille).
-  Street _copy({required List<House> houses, required ChangeStamp? deletion}) =>
-      Street._(
-        id: id,
-        name: name,
-        commune: commune,
-        banId: banId,
-        houses: houses,
-        deletion: deletion,
+  /// This street, same id, commune and BAN id, with the other fields given.
+  /// They are all required so no call can forget one (null is a real value
+  /// of [deletion]: not in the Corbeille). The lists must already be sorted
+  /// and unmodifiable.
+  Street _copy({
+    required String name,
+    required List<House> houses,
+    required List<RemovedHouse> removedHouses,
+    required ChangeStamp? deletion,
+  }) => Street._(
+    id: id,
+    name: name,
+    commune: commune,
+    banId: banId,
+    houses: houses,
+    removedHouses: removedHouses,
+    deletion: deletion,
+  );
+
+  /// [houses] sorted by number, in a list nobody can modify.
+  static List<House> _sortedHouses(Iterable<House> houses) => List.unmodifiable(
+    houses.toList()..sort((a, b) => a.number.compareTo(b.number)),
+  );
+
+  /// [removed] sorted by number, in a list nobody can modify.
+  static List<RemovedHouse> _sortedRemoved(Iterable<RemovedHouse> removed) =>
+      List.unmodifiable(
+        removed.toList()..sort((a, b) => a.number.compareTo(b.number)),
       );
 }

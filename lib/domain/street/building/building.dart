@@ -176,6 +176,12 @@ final class Building {
     (sum, staircase) => sum + staircase.progress,
   );
 
+  /// Whether any door of the building has a mark (see
+  /// [Dwelling.hasMarks]).
+  bool get hasMarks => staircases.any(
+    (staircase) => staircase.dwellings.any((dwelling) => dwelling.hasMarks),
+  );
+
   /// Done when every door is done, to do when none is, partial otherwise.
   BuildingStatus get status => BuildingStatus.of(progress);
 

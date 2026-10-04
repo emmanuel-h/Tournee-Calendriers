@@ -66,6 +66,13 @@ final class HouseNumber implements Comparable<HouseNumber> {
   /// so `12 3` is not read as « 12 » with the suffix « 3 ».
   static final _suffixShape = RegExp(r'^[a-z][a-z0-9]*$');
 
+  /// The number [number] without suffix, made by code rather than typed
+  /// (each number of a range, `21-25`). Throws a [RangeError] when it is
+  /// outside `0..`[maxNumber]: the caller has checked its bounds already,
+  /// so an out-of-range number here is a bug, not a user error.
+  HouseNumber.plain(int number)
+    : this._(RangeError.checkValueInInterval(number, 0, maxNumber), null);
+
   /// Reads a number typed by a person: `12`, `12bis`, `12 bis`, `12BIS`,
   /// `12 B`, `3A`. Spaces around the text and between the number and the
   /// suffix are ignored, and so are the case and leading zeros.

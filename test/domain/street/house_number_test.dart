@@ -189,6 +189,29 @@ void main() {
     });
   });
 
+  group('plain', () {
+    test('should make the number without suffix when given an integer', () {
+      final number = HouseNumber.plain(57);
+
+      expect(number.number, 57);
+      expect(number.suffix, isNull);
+      expect(number, _n('57'));
+    });
+
+    test('should accept 0 and the largest number', () {
+      expect(HouseNumber.plain(0).number, 0);
+      expect(HouseNumber.plain(99999).number, 99999);
+    });
+
+    test('should throw when the number is below 0', () {
+      expect(() => HouseNumber.plain(-1), throwsRangeError);
+    });
+
+    test('should throw when the number is above the largest one', () {
+      expect(() => HouseNumber.plain(100000), throwsRangeError);
+    });
+  });
+
   group('label', () {
     test('should read back as the same number when parsed again', () {
       for (final text in ['0', '12', '12bis', '9decies', '3A', '5B2']) {

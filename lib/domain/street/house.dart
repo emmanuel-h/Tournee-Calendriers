@@ -85,6 +85,18 @@ final class House {
   /// Whether the house is a building.
   bool get isBuilding => building != null;
 
+  /// Whether someone marked the house: a status other than to do, a
+  /// « repasser », a note, or a mark on a door of its building. Its
+  /// [lastChange] alone is not a mark, nor is a building's layout.
+  ///
+  /// The edit mode asks before removing a number that has marks
+  /// (PLAN §5.5); the house still goes to the Corbeille with them.
+  bool get hasMarks =>
+      status != VisitStatus.toDo ||
+      comeBack != null ||
+      note != Note.empty ||
+      (building?.hasMarks ?? false);
+
   /// What this house adds to its street's progress: one door for a single
   /// house; the doors of a building, plus the building's own « repasser »
   /// when it has one (counted in the street's ↻, not as a door).
