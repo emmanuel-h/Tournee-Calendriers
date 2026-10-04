@@ -561,6 +561,21 @@ French ordering), `VisitStatus` (`toDo`, `done`, `nobodyHome`), `ComeBack` (opti
 (`free`, `toDo`, `partial`, `done`), `CampaignYear`. Each house and dwelling also keeps its
 `previousStatus` (last campaign's result, read-only).
 
+Value-object rules fixed in T1.1 (`lib/domain/street/`):
+
+- **`HouseNumber`**: integer part `0..99999` (the BAN uses at most five digits; 0 exists) and
+  an optional suffix of ≤ 16 ASCII letters and digits starting with a letter, stored lowercase
+  as the BAN writes it (`bis`, `a`). Parsing ignores case, leading zeros and spaces around and
+  inside (`12 BIS` = `12bis`). The canonical label is the display form *and* the storage key:
+  Latin multiplicatives lowercase and glued (`12bis`), any other suffix uppercase (`3A`).
+  Order: integer part, then no suffix, then `bis ter quater quinquies sexies septies octies
+  nonies decies`, then every other suffix alphabetically. Odd/even comes from the integer part.
+- **`Note`** (≤ 200) and **`ComeBack`** hint (≤ 50): trimmed at both ends (inner line breaks
+  kept), blank means none (`""`), length counted in Unicode code points (🚒 = 1). The security
+  rules must count the same way (checked with emoji in the rules tests, T2.4).
+- Invalid input returns a failure value (`Result` = `Ok` | `Err`, `lib/domain/shared/`),
+  never an exception.
+
 ```dart
 // Sketch of the core (final names fixed in the tasks)
 final class Street {                       // aggregate root
@@ -707,7 +722,8 @@ photo of the QR) is even more likely. So **knowing a code must not be enough**:
   absent; never updated; deleted only with the tournée.
 - `rescueCentres`: readable by signed-in users (station names only), create-only.
 - Street and house writes: field-path updates only on `status`, `comeBack`, `note`, `by`, `at`,
-  `assignees`, `deletedAt/By`, numbers and dwellings; `status` in the enum; `note` ≤ 200 chars;
+  `assignees`, `deletedAt/By`, numbers and dwellings; `status` in the enum; `note` ≤ 200 chars
+  and the `comeBack` hint ≤ 50 chars (code points, as the domain counts them, §6.1);
   `by` must equal the caller's uid; `at` must be the server time.
 - Only the creator: delete the tournée, regenerate the code, start a campaign. Previous
   campaigns are read-only.
