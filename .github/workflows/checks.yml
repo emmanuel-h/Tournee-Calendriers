@@ -1,0 +1,80 @@
+# The quality gates of CLAUDE.md, run by GitHub on every push to main and on
+# every pull request (Dependabot's included). Nothing reaches main red.
+#
+# The instrumented suite (integration_test/) is not run here: it needs an
+# Android emulator and is run by Claude on one before each push.
+name: checks
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# A newer push to the same branch cancels the run still in progress.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  # Same version as pubspec.yaml's environment: upgrades are one commit each.
+  FLUTTER_VERSION: "3.47.6"
+
+jobs:
+  analyze:
+    name: analyze and format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter analyze --fatal-infos
+      - run: dart format --output=none --set-exit-if-changed lib test integration_test
+
+  test:
+    name: tests and coverage gate
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - run: flutter pub get
+      - run: flutter test --coverage
+      - run: bash tool/check_coverage.sh
+      - name: Upload coverage report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: coverage/lcov.info
+          retention-days: 7
+
+  android:
+    # Release-only breakage (R8, resource shrinking, Gradle and plugin
+    # versions) never shows in debug builds or unit tests; this job is also
+    # what validates Dependabot's Gradle bumps.
+    name: android release build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          channel: stable
+          cache: true
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+      - run: flutter pub get
+      # Unsigned for upload: CI has no release key (signing arrives in T5.3).
+      - run: flutter build appbundle --release
