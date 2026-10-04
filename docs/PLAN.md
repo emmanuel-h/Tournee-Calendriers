@@ -1,7 +1,7 @@
 # Tournée Calendriers — App plan
 
 Status: **screens chosen, mockups in review** · 2026-10-04 · mockups: `docs/mockups/`
-Next step once approved: task breakdown in `docs/TASKS.md`.
+Tasks: GitHub issues, mapped in `docs/TASKS.md`.
 
 The app UI is **entirely in French**. This document is in English; every screen sketch shows
 the real French copy.
@@ -907,7 +907,8 @@ exists. No invented data at any stage.
 
 ## 14. Agent workflow
 
-- `.claude/agents/developer.md`: one agent, takes one task from `docs/TASKS.md` and delivers it
+- Tasks are GitHub issues grouped in milestones M0–M7 (`docs/TASKS.md` maps them).
+- `.claude/agents/developer.md`: one agent, takes one task (an issue) and delivers it
   end to end (domain → application → infrastructure → presentation → ui) with TDD, then runs the gates.
 - The main session reviews the result and commits; the agent never commits.
 - Any screen change starts from the ASCII sketch in this document and the approved mockup. If a
