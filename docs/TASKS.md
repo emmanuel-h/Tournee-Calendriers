@@ -44,6 +44,7 @@ Fixtures, examples and screenshots use **Villefranche-sur-Saône** (public data)
 | [#8](https://github.com/emmanuel-h/Tournee-Calendriers/issues/8) | T1.4 Editing numbers (domain) |  |
 | [#9](https://github.com/emmanuel-h/Tournee-Calendriers/issues/9) | T1.5 BAN adapter (real streets and numbers) |  |
 | [#10](https://github.com/emmanuel-h/Tournee-Calendriers/issues/10) | T1.6 Street use cases and on-phone storage |  |
+| [#46](https://github.com/emmanuel-h/Tournee-Calendriers/issues/46) | T1.6b Status glyphs drawn at a consistent size |  |
 | [#11](https://github.com/emmanuel-h/Tournee-Calendriers/issues/11) | T1.7 Street screen |  |
 | [#12](https://github.com/emmanuel-h/Tournee-Calendriers/issues/12) | T1.8 House sheet |  |
 | [#13](https://github.com/emmanuel-h/Tournee-Calendriers/issues/13) | T1.9 Building grid and "Décrire l'immeuble" |  |
