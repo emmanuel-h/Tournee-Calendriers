@@ -863,7 +863,7 @@ to TestFlight once the Apple account exists.
 | # | Milestone | Shows on screen |
 |---|---|---|
 | M0 | Scaffolding: Flutter project, layers + architecture test, theme + fonts, go_router shell, Riverpod bootstrap, French ARB, coverage gate, CI, Firebase wiring (Android); spike on `maplibre_gl` + OpenFreeMap + offline region on a phone | empty app builds green in CI; a map renders on a phone |
-| M1 | Core domain + Street screen + Fiche maison + Immeuble on an **in-memory repository** | you can try the street UX on a phone with fake data |
+| M1 | Core domain + Street screen + Fiche maison + Immeuble on a **real reference area** (BAN streets and numbers, marks stored on the phone) | you walk real streets with the app before any backend exists |
 | M2 | **Starts with an infrastructure checkpoint with you** (Spark vs Blaze, server-side join with rate limiting, or another backend). Then identity + Firestore: bienvenue, créer / rejoindre (code + QR), approval of newcomers, équipe, corbeille, App Check, live sync, rules + emulator tests | two phones see each other's marks; a guessed code gets nowhere |
 | M3 | Map: Accueil map + panel, progress colours, house dots, ajouter des rues (tap → card → add), search, manual street + numbers | real streets, picked on the map |
 | M4 | Offline: download step (cache + tiles), pending-writes indicator, Paramètres hors-ligne, airplane-mode checklist | a full day without network |
@@ -871,7 +871,8 @@ to TestFlight once the Apple account exists.
 | M6 (v1.1) | Nouvelle campagne: copy / reset, *Reprendre mes rues*, last year's result in the sheets, read-only archive | tournée 49 starts 2027 from 2026 |
 
 M1 comes before Firebase on purpose: the street screen is where the app succeeds or fails,
-and an in-memory repository lets you try it in the street before any backend exists.
+and a real reference area stored on the phone lets you try it in the street before any backend
+exists. No invented data at any stage.
 
 ---
 
