@@ -72,4 +72,47 @@ abstract final class AppTextStyles {
     fontWeight: FontWeight.w400,
     fontSize: 17,
   );
+
+  /// A street name in the start list.
+  static const streetName = TextStyle(
+    fontFamily: AppFonts.display,
+    fontWeight: FontWeight.w700,
+    fontSize: 20,
+    height: 1.1,
+  );
+
+  /// The header of a list (« Mes rues · 3 »).
+  static const listHeader = TextStyle(
+    fontFamily: AppFonts.display,
+    fontWeight: FontWeight.w700,
+    fontSize: 24,
+  );
+
+  /// A count at the end of a row (« 31/403 »).
+  static const rowCount = TextStyle(
+    fontFamily: AppFonts.text,
+    fontWeight: FontWeight.w700,
+    fontSize: 15,
+  );
+
+  /// The label above a form field (« Commune »).
+  static const fieldLabel = TextStyle(
+    fontFamily: AppFonts.text,
+    fontWeight: FontWeight.w700,
+    fontSize: 15,
+  );
+
+  /// Small secondary text (a commune name, « 403 n° », notes).
+  static const small = TextStyle(
+    fontFamily: AppFonts.text,
+    fontWeight: FontWeight.w400,
+    fontSize: 14,
+  );
+
+  /// Labels of pill buttons (« Tout cocher »).
+  static const pill = TextStyle(
+    fontFamily: AppFonts.text,
+    fontWeight: FontWeight.w700,
+    fontSize: 14,
+  );
 }

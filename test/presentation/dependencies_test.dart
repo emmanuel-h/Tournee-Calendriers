@@ -3,6 +3,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
+import 'package:tournee_calendriers/application/ports/commune_search.dart';
 import 'package:tournee_calendriers/application/use_cases/describe_building.dart';
 import 'package:tournee_calendriers/application/use_cases/edit_street_numbers.dart';
 import 'package:tournee_calendriers/application/use_cases/import_reference_area.dart';
@@ -14,6 +15,7 @@ import 'package:tournee_calendriers/presentation/dependencies.dart';
 
 import '../application/use_cases/street_fixtures.dart';
 import '../support/fakes/fake_address_directory.dart';
+import '../support/fakes/fake_commune_search.dart';
 import '../support/fakes/fake_ports.dart';
 import '../support/fakes/fake_street_repository.dart';
 import '../support/results.dart';
@@ -22,6 +24,7 @@ import '../support/street_fixtures.dart';
 void main() {
   late FakeStreetRepository streets;
   late FakeAddressDirectory directory;
+  late FakeCommuneSearch communes;
   late ProviderContainer container;
 
   setUp(() {
@@ -37,12 +40,20 @@ void main() {
         ),
       },
     );
+    communes = FakeCommuneSearch(
+      answers: {
+        'Villef': Ok([
+          CommuneMatch(commune: villefranche, postcodes: const ['69400']),
+        ]),
+      },
+    );
     // A ProviderContainer is what a ProviderScope holds, without widgets:
     // the overrides bind the ports to the fakes.
     container = ProviderContainer(
       overrides: [
         streetRepositoryProvider.overrideWithValue(streets),
         addressDirectoryProvider.overrideWithValue(directory),
+        communeSearchProvider.overrideWithValue(communes),
         clockProvider.overrideWithValue(FakeClock(twoPm)),
         idGeneratorProvider.overrideWithValue(FakeIdGenerator('street')),
         identityProvider.overrideWithValue(FakeIdentity(lea)),
@@ -56,6 +67,7 @@ void main() {
     final ports = <String, Provider<Object>>{
       'StreetRepository': streetRepositoryProvider,
       'AddressDirectory': addressDirectoryProvider,
+      'CommuneSearch': communeSearchProvider,
       'Clock': clockProvider,
       'IdGenerator': idGeneratorProvider,
       'IdentityProvider': identityProvider,
@@ -176,6 +188,23 @@ void main() {
       expect(report.commune, villefranche);
       expect(directory.communesAsked, ['69264']);
       expect(streets[StreetId('street-1')], isNull);
+    });
+
+    test('should search communes with the bound service', () async {
+      final found = valueOf(
+        await container.read(searchCommunesProvider)('Villef'),
+      );
+
+      expect(found.single.commune, villefranche);
+      expect(communes.searched, ['Villef']);
+    });
+
+    test('should find the imported streets in the bound repository', () async {
+      final imported = await container.read(findImportedStreetsProvider)([
+        lilas.banId!,
+      ]);
+
+      expect(imported, {lilas.banId});
     });
   });
 }

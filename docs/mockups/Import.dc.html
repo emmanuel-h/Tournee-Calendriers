@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Importer des rues (M1)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B3261E}a:hover{color:#8C1D18}
+.ib{width:48px;height:48px;border:0;background:transparent;color:#1B1F24;border-radius:24px;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;text-decoration:none;flex-shrink:0}
+.ib svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.lbl{font-size:15px;font-weight:700}
+.in{height:52px;box-sizing:border-box;width:100%;border:1.5px solid #CFC9BD;border-radius:12px;background:#FFFFFF;padding:0 14px;font:400 17px 'Atkinson Hyperlegible',sans-serif;color:#1B1F24}
+.chk{display:flex;align-items:center;gap:12px;min-height:56px;border-bottom:1px solid #E2DED5;font-size:17px}
+.chk input{width:24px;height:24px;margin:0;accent-color:#1B1F24;flex-shrink:0}
+.chk .n{margin-left:auto;font-size:14px;color:#4A5058;white-space:nowrap}
+</style>
+</helmet>
+<!-- Temporary M1 import screen (PLAN §5.0): commune search (geo.api.gouv.fr), then its BAN streets. -->
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F3F1EC; color: #1B1F24; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; display: flex; flex-direction: column">
+  <div style="display: flex; align-items: center; gap: 4px; padding: 8px">
+    <a class="ib" href="Start.dc.html" aria-label="Retour"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a>
+    <h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 28px">Importer des rues</h1>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 6px; padding: 0 16px">
+    <label class="lbl" for="cm">Commune</label>
+    <input class="in" id="cm" value="Villefranche-sur-Saône (69400)" style="border-color: #1B1F24">
+  </div>
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: 14px 16px 8px 16px">
+    <span style="font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #4A5058">312 rues · 1 cochée</span>
+    <button style="height: 40px; padding: 0 14px; border-radius: 20px; border: 1.5px solid #CFC9BD; background: #FFFFFF; font: 700 14px 'Atkinson Hyperlegible', sans-serif; color: #1B1F24">Tout cocher</button>
+  </div>
+  <div style="padding: 0 16px 6px 16px"><input class="in" aria-label="Filtrer les rues" placeholder="Filtrer les rues…"></div>
+  <div style="flex: 1; overflow-y: auto; padding: 0 16px">
+    <label class="chk"><input type="checkbox" checked>Rue Nationale<span class="n">403 n°</span></label>
+    <label class="chk"><input type="checkbox">Rue Pierre Morin<span class="n">19 n°</span></label>
+    <label class="chk"><input type="checkbox">Route de Beauregard<span class="n">8 n°</span></label>
+    <label class="chk" style="color: #4A5058"><input type="checkbox" checked disabled>Rue de Thizy<span class="n">déjà importée</span></label>
+  </div>
+  <div style="padding: 12px 16px 28px 16px; display: flex; flex-direction: column; gap: 8px">
+    <span style="font-size: 14px; color: #4A5058; text-align: center">Nécessite le réseau. Les rues déjà importées gardent leurs marques.</span>
+    <a href="Start.dc.html" style="height: 56px; border-radius: 28px; background: #B3261E; color: #FFFFFF; font-weight: 700; font-size: 17px; display: flex; align-items: center; justify-content: center; text-decoration: none">Importer 1 rue</a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

@@ -4,12 +4,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/bootstrap/bindings.dart';
 import 'package:tournee_calendriers/infrastructure/ban/ban_address_directory.dart';
+import 'package:tournee_calendriers/infrastructure/geo_api/geo_commune_search.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_street_repository.dart';
 import 'package:tournee_calendriers/infrastructure/system/random_id_generator.dart';
 import 'package:tournee_calendriers/infrastructure/system/system_clock.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 
 import '../support/fakes/fake_address_directory.dart';
+import '../support/fakes/fake_commune_search.dart';
 
 void main() {
   late Directory storage;
@@ -22,11 +24,13 @@ void main() {
 
   Future<ProviderContainer> containerWith({
     FakeAddressDirectory? directory,
+    FakeCommuneSearch? communes,
   }) async {
     final container = ProviderContainer(
       overrides: await bindAdapters(
         storage: storage,
         addressDirectory: directory,
+        communeSearch: communes,
       ),
     );
     addTearDown(container.dispose);
@@ -46,6 +50,7 @@ void main() {
       container.read(addressDirectoryProvider),
       isA<BanAddressDirectory>(),
     );
+    expect(container.read(communeSearchProvider), isA<GeoCommuneSearch>());
     expect(container.read(clockProvider), isA<SystemClock>());
     expect(container.read(idGeneratorProvider), isA<RandomIdGenerator>());
   });
@@ -67,6 +72,14 @@ void main() {
     final container = await containerWith(directory: directory);
 
     expect(container.read(addressDirectoryProvider), same(directory));
+  });
+
+  test('should use the commune search given instead of geo.api', () async {
+    final communes = FakeCommuneSearch();
+
+    final container = await containerWith(communes: communes);
+
+    expect(container.read(communeSearchProvider), same(communes));
   });
 
   test('should make one HTTP client for the app', () {

@@ -1,10 +1,16 @@
+import 'package:tournee_calendriers/domain/street/street_id.dart';
+
 /// The paths of every screen of PLAN §5, so no path string is typed twice.
 ///
 /// Sheets (Fiche maison, Immeuble, Mes tournées, Ajouter des numéros…) are
 /// not routes: they open over the screen that owns them.
 abstract final class AppRoutes {
-  /// Accueil (§5.3), where the app starts.
+  /// Where the app starts: « Mes rues », the temporary start screen of M1
+  /// (§5.0); Accueil (§5.3) from M3.
   static const home = '/';
+
+  /// « Importer des rues », the temporary import screen of M1 (§5.0).
+  static const importStreets = '/importer-des-rues';
   static const welcome = '/bienvenue';
   static const create = '/creer';
   static const join = '/rejoindre';
@@ -12,6 +18,10 @@ abstract final class AppRoutes {
   static const addStreets = '/ajouter-des-rues';
   static const manualStreet = '/rue-a-la-main';
   static const street = '/rue';
+
+  /// The street screen of the street [id]: `/rue?id=…`.
+  static String streetOf(StreetId id) =>
+      Uri(path: street, queryParameters: {'id': id.value}).toString();
   static const editStreet = '/rue/modifier';
   static const team = '/equipe';
   static const settings = '/parametres';

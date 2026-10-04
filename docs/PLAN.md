@@ -133,6 +133,43 @@ Glyphs: `○` à faire · `✓` fait · `✗` personne · `↻` repasser · `◐
 **One gesture everywhere:** tap cycles `○ → ✓ → ✗ → ○`; hold opens the details. Same rule for
 house tiles and apartment tiles. A building tile opens its unit grid on tap.
 
+### 5.0 Mes rues and Importer des rues (temporary, M1 only)
+
+Until Accueil (5.3) exists in M3, the app opens on a plain list so the street screen can be
+used on a real area. Mockups: `docs/mockups/Start.dc.html` and `docs/mockups/Import.dc.html`.
+
+```
+┌──────────────────────────────┐     ┌──────────────────────────────┐
+│ Tournée des calendriers      │     │ ←  Importer des rues         │
+│ Mes rues · 3   Villefranche… │     │ Commune                      │
+│ [ Filtrer les rues…        ] │     │ [Villefranche-sur-Saône (69400)]
+│ Rue Nationale   ▓░░░ 31/403 ›│     │ 312 RUES · 1 COCHÉE [Tout cocher]
+│ Rue Pierre Morin ░░░░  0/19 ›│     │ [ Filtrer les rues…        ] │
+│ Route de Beaur… ████ ✓ 8/8  ›│     │ ☑ Rue Nationale       403 n° │
+│                              │     │ ☐ Rue Pierre Morin     19 n° │
+│                              │     │ ☑ Rue de Thizy  déjà importée│  ← greyed
+│ [   + Importer des rues    ] │     │ Nécessite le réseau. …       │
+└──────────────────────────────┘     │ [      Importer 1 rue      ] │
+                                     └──────────────────────────────┘
+```
+
+- **Mes rues** (`/`): the streets on the phone, French order (case and accents ignored:
+  « Église » sorts with E), each with a progress bar and « done/total » (green « ✓ 8/8 » once
+  complete); the filter ignores case, accents, hyphens and apostrophes. A row opens the street.
+  No street yet: « Aucune rue pour l'instant » and an explanation. Works offline. Debug builds
+  show an app-bar action to the component gallery.
+- **Importer des rues**: the commune field searches geo.api.gouv.fr as you type (from two
+  characters, after a 300 ms pause; a late answer to older text is ignored); a suggestion shows
+  « name (postcode) », « … » after the first of several postcodes. Choosing one closes the
+  keyboard and lists its BAN streets in French order, none ticked; streets already on the phone
+  (Corbeille included) are ticked, greyed and « déjà importée ». « Tout cocher » /
+  « Tout décocher » act on the streets the filter shows; the import takes every ticked street,
+  shown or not. While importing: « Import en cours… n/N » and no way back. All imported → back
+  to the list with « N rues importées »; some failed → the screen stays, says why (no network
+  first) and keeps them ticked so « Importer » tries them again. No network, service error and
+  unknown commune each have a French message, with « Réessayer » for the street list.
+- Replaced by Accueil (5.3) and Ajouter des rues (5.4) in M3.
+
 ### 5.1 Bienvenue (first launch only)
 
 ```
@@ -778,6 +815,18 @@ Use cases and phone storage fixed in T1.6 (`lib/application/use_cases/`,
   wait 15 s), and importing again finishes the job. Chosen ids the commune does not list are
   reported in `unknownStreets`. Only a commune that cannot be listed fails the whole import.
 
+Start screen rules fixed in T1.11 (`lib/domain/shared/french_text.dart`,
+`lib/application/`):
+
+- **French text** (a domain service): names are compared and filtered on a search key — lower
+  case, accents dropped (`é` → `e`, also typed as a separate mark), `œ`/`æ` spelled out, hyphens
+  and apostrophes read as spaces, spaces collapsed. `ObserveStreets` sorts with it (then by id).
+- **Port `CommuneSearch`** (`search(name)` → `CommuneMatch`es: `Commune` + five-digit
+  postcodes; failures `noNetwork`, `serviceError`), adapter `GeoCommuneSearch`
+  (`infrastructure/geo_api/`, 10 s timeout). An entry without a valid `Commune` or a postcode
+  that is not five digits is left out. Use cases `SearchCommunes` (nothing asked under two
+  characters) and `FindImportedStreets` (BAN ids already on the phone, Corbeille included).
+
 ```dart
 // Sketch of the core (T1.2–T1.6 delivered the uncommented members; the rest come with their tasks)
 final class Street {                       // aggregate root
@@ -994,11 +1043,12 @@ photo of the QR) is even more likely. So **knowing a code must not be enough**:
 | Map tiles + style | `https://tiles.openfreemap.org/styles/liberty` (or `positron`) | OSM vector tiles for MapLibre. Offline download through `maplibre_gl` offline regions; check OpenFreeMap's terms on bulk download in the spike task |
 | Street under a tap | `https://data.geopf.fr/geocodage/reverse?lon={lon}&lat={lat}&index=address&type=street&limit=1` | Returns BAN `id` = idVoie (`69264_1460`), `name`, `citycode` |
 | Street search by name | `https://data.geopf.fr/geocodage/search?q={q}&type=street&citycode={code}` | For the search box |
+| Commune by name | `https://geo.api.gouv.fr/communes?nom={q}&fields=nom,code,codesPostaux&boost=population&limit=5` | Temporary import screen (5.0): `nom`, `code` (INSEE), `codesPostaux`; `[]` when nothing matches |
 | Streets of a commune | `https://plateforme.adresse.data.gouv.fr/lookup/{inseeCode}` | `voies[]`: `idVoie`, `nomVoie`, `nbNumeros`, `type`; 404 for an unknown commune |
 | Numbers of a street | `https://plateforme.adresse.data.gouv.fr/lookup/{idVoie}` | `numeros[]`: `numero`, `suffixe`, `position.coordinates` [lon, lat]; a number may appear twice; 404 for an unknown street |
 | Shape of a street | Overpass `https://overpass-api.de/api/interpreter`, query `way(area INSEE)["highway"]["name"="…"]; out geom;` | Needs a `User-Agent`. One call per added street. Fallback when empty: no shape, house dots only |
 
-All of them are wrapped behind domain interfaces (`AddressDirectory`, `StreetShapes`), so the rest
+All of them are wrapped behind domain interfaces (`AddressDirectory`, `CommuneSearch`, `StreetShapes`), so the rest
 of the app never sees HTTP or JSON, and tests use fakes. Parsing is tested against JSON fixtures
 captured from the real services.
 

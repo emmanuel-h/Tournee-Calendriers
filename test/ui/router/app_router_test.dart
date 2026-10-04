@@ -6,6 +6,8 @@ import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/screens/placeholder_screen.dart';
 
+import '../support/app_overrides.dart';
+
 void main() {
   testWidgets(
     'should show the French screen name when each screen of PLAN §5 is opened',
@@ -24,7 +26,9 @@ void main() {
         AppRoutes.newCampaign: 'Nouvelle campagne',
         AppRoutes.trash: 'Corbeille',
       };
-      await tester.pumpWidget(const ProviderScope(child: TourneeApp()));
+      await tester.pumpWidget(
+        ProviderScope(overrides: emptyPhone(), child: const TourneeApp()),
+      );
       final router = GoRouter.of(tester.element(find.byType(Scaffold)));
 
       for (final MapEntry(key: path, value: title) in expectedTitles.entries) {

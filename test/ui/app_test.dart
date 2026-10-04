@@ -6,13 +6,17 @@ import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/screens/component_gallery_screen.dart';
 
+import 'support/app_overrides.dart';
+
 void main() {
   testWidgets(
     'should start on home with the French title, theme and locale when the app starts',
     (tester) async {
       // Widgets that read providers need a ProviderScope above them, exactly as
       // bootstrap provides in the real app.
-      await tester.pumpWidget(const ProviderScope(child: TourneeApp()));
+      await tester.pumpWidget(
+        ProviderScope(overrides: emptyPhone(), child: const TourneeApp()),
+      );
 
       expect(
         find.descendant(
@@ -38,7 +42,10 @@ void main() {
     'should open the component gallery from home when the build is a debug build',
     (tester) async {
       await tester.pumpWidget(
-        const ProviderScope(child: TourneeApp(showGallery: true)),
+        ProviderScope(
+          overrides: emptyPhone(),
+          child: const TourneeApp(showGallery: true),
+        ),
       );
 
       await tester.tap(find.byKey(const Key('home.gallery')));
@@ -55,7 +62,10 @@ void main() {
     'should offer no gallery, not even by its path, when the build is a release build',
     (tester) async {
       await tester.pumpWidget(
-        const ProviderScope(child: TourneeApp(showGallery: false)),
+        ProviderScope(
+          overrides: emptyPhone(),
+          child: const TourneeApp(showGallery: false),
+        ),
       );
 
       expect(find.byKey(const Key('home.gallery')), findsNothing);

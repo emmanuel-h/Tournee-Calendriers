@@ -12,6 +12,7 @@ final class PrimaryButton extends StatelessWidget {
     required this.label,
     required this.onPressed,
     this.compact = false,
+    this.icon,
   });
 
   final String label;
@@ -20,12 +21,26 @@ final class PrimaryButton extends StatelessWidget {
   /// 52 dp instead of 56 dp, for buttons inside sheets or side by side.
   final bool compact;
 
+  /// Drawn before the label (« + Importer des rues »); decoration only, the
+  /// label names the action.
+  final IconData? icon;
+
   @override
-  Widget build(BuildContext context) => FilledButton(
-    onPressed: onPressed,
-    style: _sizeStyle(compact),
-    child: Text(label),
-  );
+  Widget build(BuildContext context) {
+    final icon = this.icon;
+    return icon == null
+        ? FilledButton(
+            onPressed: onPressed,
+            style: _sizeStyle(compact),
+            child: Text(label),
+          )
+        : FilledButton.icon(
+            onPressed: onPressed,
+            style: _sizeStyle(compact),
+            icon: Icon(icon, size: AppSizes.smallIcon),
+            label: Text(label),
+          );
+  }
 }
 
 /// A secondary action: a white pill with a thin outline.

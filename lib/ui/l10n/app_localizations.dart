@@ -208,6 +208,192 @@ abstract class AppLocalizations {
   /// **'Numéro {number}, immeuble, {done} sur {total} faits'**
   String buildingTileSemantics(String number, int done, int total);
 
+  /// Header of the street list of the temporary start screen (PLAN §5.0), with the number of streets.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mes rues · {count}'**
+  String startStreetsHeader(int count);
+
+  /// Placeholder and screen-reader name of the field that filters a list of streets by name.
+  ///
+  /// In fr, this message translates to:
+  /// **'Filtrer les rues…'**
+  String get filterStreetsHint;
+
+  /// Button of the start screen that opens the import screen, and title of that screen (PLAN §5.0).
+  ///
+  /// In fr, this message translates to:
+  /// **'Importer des rues'**
+  String get importStreetsAction;
+
+  /// Start screen, first launch: no street imported yet.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune rue pour l\'instant'**
+  String get startEmptyTitle;
+
+  /// Start screen, first launch: what to do.
+  ///
+  /// In fr, this message translates to:
+  /// **'Importez les rues d\'une commune pour commencer. Il faut le réseau une fois ; ensuite tout fonctionne hors ligne.'**
+  String get startEmptyBody;
+
+  /// Shown when the street filter keeps no street.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune rue ne correspond à « {filter} ».'**
+  String filterNoMatch(String filter);
+
+  /// Progress of a street in the start list: doors done / doors.
+  ///
+  /// In fr, this message translates to:
+  /// **'{done}/{total}'**
+  String streetProgress(int done, int total);
+
+  /// Screen-reader label of a street row of the start list.
+  ///
+  /// In fr, this message translates to:
+  /// **'{name}, {done} sur {total} faits'**
+  String streetRowSemantics(String name, int done, int total);
+
+  /// Screen-reader label of a street row whose doors are all done.
+  ///
+  /// In fr, this message translates to:
+  /// **'{name}, terminée, {total} sur {total} faits'**
+  String streetRowCompleteSemantics(String name, int total);
+
+  /// Label of the commune field of the import screen.
+  ///
+  /// In fr, this message translates to:
+  /// **'Commune'**
+  String get communeLabel;
+
+  /// Placeholder of the commune field of the import screen.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nom de la commune'**
+  String get communeHint;
+
+  /// A commune suggestion, or the chosen commune, with its postcode.
+  ///
+  /// In fr, this message translates to:
+  /// **'{name} ({postcode})'**
+  String communeWithPostcode(String name, String postcode);
+
+  /// A commune with several postcodes: the first, then an ellipsis.
+  ///
+  /// In fr, this message translates to:
+  /// **'{name} ({postcode}…)'**
+  String communeWithPostcodes(String name, String postcode);
+
+  /// The commune search found nothing.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune commune ne porte ce nom.'**
+  String get communeNoneFound;
+
+  /// The commune search could not reach the service.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pas de réseau : la recherche de communes en a besoin. Réessayez quand le téléphone capte.'**
+  String get communeSearchNoNetwork;
+
+  /// The commune search service answered with an error.
+  ///
+  /// In fr, this message translates to:
+  /// **'La recherche de communes ne répond pas. Réessayez plus tard.'**
+  String get communeSearchServiceError;
+
+  /// While the streets of the chosen commune are being listed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Chargement des rues…'**
+  String get streetsLoading;
+
+  /// The address base (BAN) could not be reached.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pas de réseau. Réessayez quand le téléphone capte.'**
+  String get addressNoNetwork;
+
+  /// The address base (BAN) answered with an error.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le service des adresses ne répond pas. Réessayez plus tard.'**
+  String get addressServiceError;
+
+  /// The address base (BAN) does not know the commune or a street.
+  ///
+  /// In fr, this message translates to:
+  /// **'La base d\'adresses ne connaît pas cette commune ou certaines de ses rues.'**
+  String get addressNotFound;
+
+  /// Button that tries a failed network call again.
+  ///
+  /// In fr, this message translates to:
+  /// **'Réessayer'**
+  String get retry;
+
+  /// Above the import checklist: the commune's streets and how many are ticked.
+  ///
+  /// In fr, this message translates to:
+  /// **'{total, plural, =1{1 rue} other{{total} rues}} · {checked, plural, =0{0 cochée} =1{1 cochée} other{{checked} cochées}}'**
+  String importStreetCount(int total, int checked);
+
+  /// Ticks every street the filter shows.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tout cocher'**
+  String get checkAll;
+
+  /// Unticks every street the filter shows.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tout décocher'**
+  String get uncheckAll;
+
+  /// How many house numbers the address base lists for a street.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count} n°'**
+  String streetNumberCount(int count);
+
+  /// A street of the import checklist that is already on the phone.
+  ///
+  /// In fr, this message translates to:
+  /// **'déjà importée'**
+  String get alreadyImported;
+
+  /// Note above the import button.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nécessite le réseau. Les rues déjà importées gardent leurs marques.'**
+  String get importFooter;
+
+  /// Import button with the number of ticked streets.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, =0{Importer} =1{Importer 1 rue} other{Importer {count} rues}}'**
+  String importButton(int count);
+
+  /// Shown while the ticked streets are imported.
+  ///
+  /// In fr, this message translates to:
+  /// **'Import en cours… {done}/{total}'**
+  String importProgress(int done, int total);
+
+  /// Message on the start screen after a complete import.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, =0{Aucune nouvelle rue} =1{1 rue importée} other{{count} rues importées}}'**
+  String importDone(int count);
+
+  /// After an import where some streets failed; reason is one of the address* messages.
+  ///
+  /// In fr, this message translates to:
+  /// **'{imported, plural, =0{Aucune rue importée} =1{1 rue importée} other{{imported} rues importées}}, {failed, plural, =1{1 en échec} other{{failed} en échec}}. {reason} Les rues encore cochées restent à importer.'**
+  String importPartial(int imported, int failed, String reason);
+
   /// Title of the debug-only component gallery, and of the button opening it.
   ///
   /// In fr, this message translates to:

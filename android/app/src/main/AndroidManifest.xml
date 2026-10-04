@@ -1,4 +1,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- The streets of a commune are imported once from the national
+         address base (BAN, geo.api.gouv.fr). Debug and profile builds get
+         this permission from their own manifests; release builds need it
+         here. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="Tournée des calendriers"
         android:name="${applicationName}"

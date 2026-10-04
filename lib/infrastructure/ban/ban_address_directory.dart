@@ -7,6 +7,7 @@ import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/infrastructure/ban/mappers/ban_lookup_mapper.dart';
+import 'package:tournee_calendriers/infrastructure/http/app_user_agent.dart';
 
 /// The [AddressDirectory] backed by the BAN `lookup` API of
 /// plateforme.adresse.data.gouv.fr (PLAN §9): no key, one GET per call.
@@ -26,11 +27,8 @@ final class BanAddressDirectory implements AddressDirectory {
   /// signal. Beyond this, the user is better told there is no network.
   static const defaultTimeout = Duration(seconds: 15);
 
-  /// Public services ask callers to say who they are, so a misbehaving
-  /// client can be identified and contacted rather than blocked.
-  static const userAgent =
-      'TourneeCalendriers/1.0 '
-      '(+https://github.com/emmanuel-h/Tournee-Calendriers)';
+  /// Sent with every request (see [appUserAgent]).
+  static const userAgent = appUserAgent;
 
   static const _host = 'plateforme.adresse.data.gouv.fr';
 

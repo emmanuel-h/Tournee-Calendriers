@@ -57,6 +57,134 @@
     }
   },
 
+  "startStreetsHeader": "Mes rues · {count}",
+  "@startStreetsHeader": {
+    "description": "Header of the street list of the temporary start screen (PLAN §5.0), with the number of streets.",
+    "placeholders": { "count": { "type": "int", "example": "3" } }
+  },
+  "filterStreetsHint": "Filtrer les rues…",
+  "@filterStreetsHint": { "description": "Placeholder and screen-reader name of the field that filters a list of streets by name." },
+  "importStreetsAction": "Importer des rues",
+  "@importStreetsAction": { "description": "Button of the start screen that opens the import screen, and title of that screen (PLAN §5.0)." },
+  "startEmptyTitle": "Aucune rue pour l'instant",
+  "@startEmptyTitle": { "description": "Start screen, first launch: no street imported yet." },
+  "startEmptyBody": "Importez les rues d'une commune pour commencer. Il faut le réseau une fois ; ensuite tout fonctionne hors ligne.",
+  "@startEmptyBody": { "description": "Start screen, first launch: what to do." },
+  "filterNoMatch": "Aucune rue ne correspond à « {filter} ».",
+  "@filterNoMatch": {
+    "description": "Shown when the street filter keeps no street.",
+    "placeholders": { "filter": { "type": "String", "example": "lilas" } }
+  },
+  "streetProgress": "{done}/{total}",
+  "@streetProgress": {
+    "description": "Progress of a street in the start list: doors done / doors.",
+    "placeholders": {
+      "done": { "type": "int", "example": "31" },
+      "total": { "type": "int", "example": "403" }
+    }
+  },
+  "streetRowSemantics": "{name}, {done} sur {total} faits",
+  "@streetRowSemantics": {
+    "description": "Screen-reader label of a street row of the start list.",
+    "placeholders": {
+      "name": { "type": "String", "example": "Rue Nationale" },
+      "done": { "type": "int", "example": "31" },
+      "total": { "type": "int", "example": "403" }
+    }
+  },
+  "streetRowCompleteSemantics": "{name}, terminée, {total} sur {total} faits",
+  "@streetRowCompleteSemantics": {
+    "description": "Screen-reader label of a street row whose doors are all done.",
+    "placeholders": {
+      "name": { "type": "String", "example": "Route de Beauregard" },
+      "total": { "type": "int", "example": "8" }
+    }
+  },
+  "communeLabel": "Commune",
+  "@communeLabel": { "description": "Label of the commune field of the import screen." },
+  "communeHint": "Nom de la commune",
+  "@communeHint": { "description": "Placeholder of the commune field of the import screen." },
+  "communeWithPostcode": "{name} ({postcode})",
+  "@communeWithPostcode": {
+    "description": "A commune suggestion, or the chosen commune, with its postcode.",
+    "placeholders": {
+      "name": { "type": "String", "example": "Villefranche-sur-Saône" },
+      "postcode": { "type": "String", "example": "69400" }
+    }
+  },
+  "communeWithPostcodes": "{name} ({postcode}…)",
+  "@communeWithPostcodes": {
+    "description": "A commune with several postcodes: the first, then an ellipsis.",
+    "placeholders": {
+      "name": { "type": "String", "example": "Villefranche-sur-Saône" },
+      "postcode": { "type": "String", "example": "69400" }
+    }
+  },
+  "communeNoneFound": "Aucune commune ne porte ce nom.",
+  "@communeNoneFound": { "description": "The commune search found nothing." },
+  "communeSearchNoNetwork": "Pas de réseau : la recherche de communes en a besoin. Réessayez quand le téléphone capte.",
+  "@communeSearchNoNetwork": { "description": "The commune search could not reach the service." },
+  "communeSearchServiceError": "La recherche de communes ne répond pas. Réessayez plus tard.",
+  "@communeSearchServiceError": { "description": "The commune search service answered with an error." },
+  "streetsLoading": "Chargement des rues…",
+  "@streetsLoading": { "description": "While the streets of the chosen commune are being listed." },
+  "addressNoNetwork": "Pas de réseau. Réessayez quand le téléphone capte.",
+  "@addressNoNetwork": { "description": "The address base (BAN) could not be reached." },
+  "addressServiceError": "Le service des adresses ne répond pas. Réessayez plus tard.",
+  "@addressServiceError": { "description": "The address base (BAN) answered with an error." },
+  "addressNotFound": "La base d'adresses ne connaît pas cette commune ou certaines de ses rues.",
+  "@addressNotFound": { "description": "The address base (BAN) does not know the commune or a street." },
+  "retry": "Réessayer",
+  "@retry": { "description": "Button that tries a failed network call again." },
+  "importStreetCount": "{total, plural, =1{1 rue} other{{total} rues}} · {checked, plural, =0{0 cochée} =1{1 cochée} other{{checked} cochées}}",
+  "@importStreetCount": {
+    "description": "Above the import checklist: the commune's streets and how many are ticked.",
+    "placeholders": {
+      "total": { "type": "int", "example": "312" },
+      "checked": { "type": "int", "example": "1" }
+    }
+  },
+  "checkAll": "Tout cocher",
+  "@checkAll": { "description": "Ticks every street the filter shows." },
+  "uncheckAll": "Tout décocher",
+  "@uncheckAll": { "description": "Unticks every street the filter shows." },
+  "streetNumberCount": "{count} n°",
+  "@streetNumberCount": {
+    "description": "How many house numbers the address base lists for a street.",
+    "placeholders": { "count": { "type": "int", "example": "403" } }
+  },
+  "alreadyImported": "déjà importée",
+  "@alreadyImported": { "description": "A street of the import checklist that is already on the phone." },
+  "importFooter": "Nécessite le réseau. Les rues déjà importées gardent leurs marques.",
+  "@importFooter": { "description": "Note above the import button." },
+  "importButton": "{count, plural, =0{Importer} =1{Importer 1 rue} other{Importer {count} rues}}",
+  "@importButton": {
+    "description": "Import button with the number of ticked streets.",
+    "placeholders": { "count": { "type": "int", "example": "1" } }
+  },
+  "importProgress": "Import en cours… {done}/{total}",
+  "@importProgress": {
+    "description": "Shown while the ticked streets are imported.",
+    "placeholders": {
+      "done": { "type": "int", "example": "2" },
+      "total": { "type": "int", "example": "5" }
+    }
+  },
+  "importDone": "{count, plural, =0{Aucune nouvelle rue} =1{1 rue importée} other{{count} rues importées}}",
+  "@importDone": {
+    "description": "Message on the start screen after a complete import.",
+    "placeholders": { "count": { "type": "int", "example": "3" } }
+  },
+  "importPartial": "{imported, plural, =0{Aucune rue importée} =1{1 rue importée} other{{imported} rues importées}}, {failed, plural, =1{1 en échec} other{{failed} en échec}}. {reason} Les rues encore cochées restent à importer.",
+  "@importPartial": {
+    "description": "After an import where some streets failed; reason is one of the address* messages.",
+    "placeholders": {
+      "imported": { "type": "int", "example": "2" },
+      "failed": { "type": "int", "example": "1" },
+      "reason": { "type": "String", "example": "Pas de réseau. Réessayez quand le téléphone capte." }
+    }
+  },
+
   "galleryTitle": "Composants",
   "@galleryTitle": { "description": "Title of the debug-only component gallery, and of the button opening it." },
   "galleryButtons": "Boutons",

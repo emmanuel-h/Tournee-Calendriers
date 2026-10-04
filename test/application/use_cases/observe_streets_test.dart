@@ -29,6 +29,19 @@ void main() {
     expect(_ids(streets), ['roses', 'avenue', 'lilas']);
   });
 
+  test('should sort an accented name with its plain letter', () async {
+    final observeStreets = ObserveStreets(
+      FakeStreetRepository([
+        _street('fleurie', 'Allée Fleurie'),
+        _street('emile', 'Allée Émile Zola'),
+        _street('dame', 'Allée Dame'),
+      ]),
+    );
+
+    // Compared character by character, « É » would come after « F ».
+    expect(_ids(await observeStreets().first), ['dame', 'emile', 'fleurie']);
+  });
+
   test('should order two streets of the same name by id', () async {
     final observeStreets = ObserveStreets(
       FakeStreetRepository([

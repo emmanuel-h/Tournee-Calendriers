@@ -77,6 +77,44 @@ ThemeData buildAppTheme(AppColors colors) {
         ),
       ),
     ),
+    // Text fields: white, a thin outline, darker once focused.
+    inputDecorationTheme: InputDecorationTheme(
+      filled: true,
+      fillColor: colors.surface,
+      hintStyle: AppTextStyles.bodyLarge.copyWith(color: colors.muted),
+      contentPadding: const EdgeInsets.symmetric(
+        horizontal: AppSizes.fieldPadding,
+        vertical: (AppSizes.fieldHeight - 24) / 2,
+      ),
+      enabledBorder: _fieldBorder(colors.line),
+      focusedBorder: _fieldBorder(colors.ink),
+      border: _fieldBorder(colors.line),
+    ),
+    // Ticked boxes in ink, as in the import mockup; a box that cannot be
+    // changed (« déjà importée ») in the muted grey.
+    checkboxTheme: CheckboxThemeData(
+      fillColor: WidgetStateProperty.resolveWith(
+        (states) => !states.contains(WidgetState.selected)
+            ? Colors.transparent
+            : states.contains(WidgetState.disabled)
+            ? colors.muted
+            : colors.ink,
+      ),
+      checkColor: WidgetStatePropertyAll(colors.surface),
+      side: WidgetStateBorderSide.resolveWith(
+        (states) => BorderSide(
+          color: states.contains(WidgetState.disabled)
+              ? colors.muted
+              : colors.ink,
+          width: 2,
+        ),
+      ),
+    ),
+    progressIndicatorTheme: ProgressIndicatorThemeData(
+      color: colors.done,
+      linearTrackColor: colors.divider,
+      circularTrackColor: Colors.transparent,
+    ),
     bottomSheetTheme: BottomSheetThemeData(
       backgroundColor: colors.surface,
       surfaceTintColor: Colors.transparent,
@@ -101,3 +139,8 @@ ThemeData buildAppTheme(AppColors colors) {
     extensions: [colors],
   );
 }
+
+OutlineInputBorder _fieldBorder(Color color) => OutlineInputBorder(
+  borderRadius: const BorderRadius.all(Radius.circular(AppSizes.fieldRadius)),
+  borderSide: BorderSide(color: color, width: AppSizes.borderWidth),
+);
