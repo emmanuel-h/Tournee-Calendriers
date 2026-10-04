@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Paramètres</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B3261E}a:hover{color:#8C1D18}
+.ib{width:48px;height:48px;border:0;background:transparent;color:#1B1F24;border-radius:24px;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;text-decoration:none;flex-shrink:0}
+.ib svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.set{display:flex;align-items:center;gap:12px;min-height:56px;padding:0 12px 0 16px;border:0;border-bottom:1px solid #E2DED5;background:#FFFFFF;width:100%;box-sizing:border-box;font:400 17px 'Atkinson Hyperlegible',sans-serif;color:#1B1F24;text-align:left;cursor:pointer}
+.set .k{flex:1;font-weight:700}
+.set .v{color:#4A5058}
+.set svg{width:20px;height:20px;fill:none;stroke:#5A6068;stroke-width:2}
+.hd{padding:18px 20px 8px 20px;font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#4A5058}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F3F1EC; color: #1B1F24; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; display: flex; flex-direction: column">
+  <div style="display: flex; align-items: center; gap: 4px; padding: 8px">
+    <a class="ib" href="Home.dc.html" aria-label="Retour"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a>
+    <h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 28px">Paramètres</h1>
+  </div>
+  <div class="hd" style="padding-top: 4px">Vous</div>
+  <div style="border-top: 1px solid #E2DED5">
+    <button class="set"><span class="k">Prénom</span><span class="v">Manu</span><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+    <a class="set" href="Switcher.dc.html" style="text-decoration: none"><span class="k">Mes tournées</span><span class="v">49 · 2026</span><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></a>
+  </div>
+  <div class="hd">Hors-ligne</div>
+  <div style="background: #FFFFFF; border-top: 1px solid #E2DED5; border-bottom: 1px solid #E2DED5; padding: 14px 16px; display: flex; flex-direction: column; gap: 10px">
+    <div style="display: flex; align-items: center; gap: 12px">
+      <span style="width: 40px; height: 40px; border-radius: 20px; background: #1E6B47; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 20px; flex-shrink: 0">✓</span>
+      <span style="display: flex; flex-direction: column; gap: 2px">
+        <span style="font-weight: 700">Tournée téléchargée · 34 Mo</span>
+        <span style="font-size: 14px; color: #4A5058">60 rues et la carte · le 02/11 à 08:12</span>
+      </span>
+    </div>
+    <div style="display: flex; gap: 10px">
+      <button style="flex: 1; height: 48px; border-radius: 24px; border: 1.5px solid #CFC9BD; background: #FFFFFF; font: 700 15px 'Atkinson Hyperlegible', sans-serif; color: #1B1F24">Mettre à jour</button>
+      <button style="flex: 1; height: 48px; border-radius: 24px; border: 1.5px solid #CFC9BD; background: #FFFFFF; font: 700 15px 'Atkinson Hyperlegible', sans-serif; color: #B3261E">Supprimer</button>
+    </div>
+    <span style="font-size: 14px; color: #4A5058">Tout fonctionne sans réseau, sauf l'ajout de rues depuis la carte. Les modifications sont envoyées dès que le réseau revient.</span>
+  </div>
+  <div class="hd">Application</div>
+  <div style="border-top: 1px solid #E2DED5">
+    <button class="set"><span class="k">Thème</span><span class="v">Système</span><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+    <button class="set"><span class="k">Confidentialité</span><svg viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></svg></button>
+    <div class="set" style="cursor: default"><span class="k">Version</span><span class="v">1.0.0</span></div>
+  </div>
+  <div style="padding: 14px 20px; font-size: 13px; color: #4A5058; line-height: 1.4">Carte © contributeurs OpenStreetMap, OpenFreeMap. Adresses : Base Adresse Nationale.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

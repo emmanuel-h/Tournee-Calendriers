@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Accueil, zoom sur une rue</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B3261E}a:hover{color:#8C1D18}
+.ib{width:48px;height:48px;border:0;background:transparent;color:#1B1F24;border-radius:24px;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;text-decoration:none;flex-shrink:0}
+.ib svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.lg{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;white-space:nowrap}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F3F1EC; color: #1B1F24; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; display: flex; flex-direction: column; position: relative; overflow: hidden">
+  <div style="display: flex; align-items: center; gap: 4px; padding: 8px 8px 4px 20px">
+    <a href="Switcher.dc.html" aria-label="Tournée 49 · 2026, CS Villefranche. Changer de tournée" style="flex: 1; display: flex; flex-direction: column; text-decoration: none; color: #1B1F24; min-height: 48px; justify-content: center"><span style="display: flex; align-items: center; gap: 4px"><h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 30px; line-height: 1.05">Tournée 49 · 2026</h1><svg viewBox="0 0 24 24" style="width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round"><path d="M6 9l6 6 6-6"/></svg></span><span style="font-size: 14px; color: #4A5058">CS Villefranche</span></a>
+    <a class="ib" href="Team.dc.html" aria-label="Équipe"><svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.8-3.6 3.4-5.5 6.5-5.5s5.7 1.9 6.5 5.5"/><path d="M16 4.6a3.5 3.5 0 0 1 0 6.8M18 14.8c1.9.7 3.1 2.4 3.5 5.2"/></svg></a>
+    <a class="ib" href="Settings.dc.html" aria-label="Paramètres"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1"/></svg></a>
+  </div>
+  <div style="position: relative; flex: 1">
+    <svg viewBox="0 0 390 680" style="position: absolute; inset: 0; width: 390px; height: 680px" role="img" aria-label="Rue des Lilas zoomée : un point par numéro, coloré selon son statut">
+      <rect width="390" height="680" fill="#F2EFE9"/>
+      <rect x="0" y="40" width="390" height="190" fill="#E4DFD5"/>
+      <rect x="0" y="330" width="390" height="230" fill="#E4DFD5"/>
+      <g fill="#D6D0C4">
+        <rect x="14" y="150" width="50" height="62"/><rect x="82" y="150" width="50" height="62"/><rect x="150" y="150" width="50" height="62"/><rect x="218" y="150" width="50" height="62"/><rect x="286" y="150" width="50" height="62"/>
+        <rect x="14" y="350" width="50" height="62"/><rect x="82" y="350" width="50" height="62"/><rect x="150" y="350" width="110" height="90"/><rect x="286" y="350" width="50" height="62"/>
+      </g>
+      <path d="M0 280H390" stroke="#FFFFFF" stroke-width="40"/>
+      <path d="M0 280H390" stroke="#E0A21B" stroke-width="10" stroke-linecap="round" opacity="0.55"/>
+      <text x="16" y="305" font-family="Atkinson Hyperlegible, sans-serif" font-size="13" font-weight="700" fill="#1B1F24">Rue des Lilas</text>
+      <g font-family="Barlow Condensed, sans-serif" font-weight="700" font-size="13" text-anchor="middle">
+        <circle cx="39" cy="236" r="15" fill="#1E6B47"/><text x="39" y="241" fill="#FFFFFF">✓</text><text x="39" y="138" fill="#1B1F24">1</text>
+        <circle cx="107" cy="236" r="15" fill="#1E6B47"/><text x="107" y="241" fill="#FFFFFF">✓</text><text x="107" y="138" fill="#1B1F24">3</text>
+        <circle cx="175" cy="236" r="15" fill="#F2B33D" stroke="#D99A22" stroke-width="2"/><text x="175" y="241" fill="#1B1F24">✗</text><text x="175" y="138" fill="#1B1F24">3bis</text>
+        <circle cx="243" cy="236" r="15" fill="#D6E6F5" stroke="#1D4E7A" stroke-width="2"/><text x="243" y="241" fill="#1D4E7A">↻</text><text x="243" y="138" fill="#1B1F24">5</text>
+        <circle cx="311" cy="236" r="15" fill="#FFFFFF" stroke="#4A5058" stroke-width="2"/><text x="311" y="241" fill="#1B1F24">○</text><text x="311" y="138" fill="#1B1F24">7</text>
+        <circle cx="39" cy="324" r="15" fill="#1E6B47"/><text x="39" y="329" fill="#FFFFFF">✓</text><text x="39" y="432" fill="#1B1F24">2</text>
+        <circle cx="107" cy="324" r="15" fill="#1E6B47"/><text x="107" y="329" fill="#FFFFFF">✓</text><text x="107" y="432" fill="#1B1F24">4</text>
+        <circle cx="205" cy="324" r="17" fill="#EFE9DD" stroke="#4A5058" stroke-width="2" stroke-dasharray="4 3"/><text x="205" y="329" fill="#1B1F24" font-size="11">7/12</text><text x="205" y="460" fill="#1B1F24">8</text>
+        <circle cx="311" cy="324" r="15" fill="#FFFFFF" stroke="#4A5058" stroke-width="2"/><text x="311" y="329" fill="#1B1F24">○</text><text x="311" y="432" fill="#1B1F24">10</text>
+      </g>
+    </svg>
+    <div style="position: absolute; left: 12px; right: 12px; top: 8px; background: #FFFFFF; border: 1px solid #E2DED5; border-radius: 12px; padding: 8px 12px; display: flex; flex-wrap: wrap; gap: 6px 14px">
+      <span class="lg"><span style="width: 18px; height: 18px; border-radius: 9px; background: #1E6B47; color: #FFFFFF; font-size: 12px; display: flex; align-items: center; justify-content: center">✓</span>fait</span>
+      <span class="lg"><span style="width: 18px; height: 18px; border-radius: 9px; background: #F2B33D; font-size: 12px; display: flex; align-items: center; justify-content: center">✗</span>personne</span>
+      <span class="lg"><span style="width: 18px; height: 18px; border-radius: 9px; background: #D6E6F5; color: #1D4E7A; font-size: 12px; display: flex; align-items: center; justify-content: center">↻</span>repasser</span>
+      <span class="lg"><span style="width: 16px; height: 16px; border-radius: 9px; border: 2px solid #4A5058; background: #FFFFFF"></span>à faire</span>
+    </div>
+  </div>
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; background: #FFFFFF; border-radius: 24px 24px 0 0; box-shadow: 0 -4px 20px rgba(27, 31, 36, 0.12); padding: 10px 16px 24px 16px; display: flex; flex-direction: column; gap: 12px">
+    <div style="width: 40px; height: 4px; border-radius: 2px; background: #CFC9BD; align-self: center"></div>
+    <div style="display: flex; align-items: baseline; justify-content: space-between">
+      <span style="font: 700 24px 'Barlow Condensed', sans-serif">Mes rues · 43/62</span>
+      <span style="font-size: 14px; color: #4A5058">Équipe : 41 %</span>
+    </div>
+    <a href="Main.dc.html" style="height: 52px; border-radius: 26px; background: #1B1F24; color: #FFFFFF; font-weight: 700; font-size: 16px; display: flex; align-items: center; justify-content: center; text-decoration: none">Ouvrir Rue des Lilas · 31/42</a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

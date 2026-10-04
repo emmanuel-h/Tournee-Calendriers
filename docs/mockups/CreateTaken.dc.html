@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Créer, tournée déjà existante</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B3261E}a:hover{color:#8C1D18}
+.ib{width:48px;height:48px;border:0;background:transparent;color:#1B1F24;border-radius:24px;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;text-decoration:none;flex-shrink:0}
+.ib svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.lbl{font-size:15px;font-weight:700}
+.in{height:52px;box-sizing:border-box;width:100%;border:1.5px solid #CFC9BD;border-radius:12px;background:#FFFFFF;padding:0 14px;font:400 17px 'Atkinson Hyperlegible',sans-serif;color:#1B1F24}
+.opt{display:flex;align-items:center;min-height:48px;padding:0 14px;font-size:16px;border-bottom:1px solid #E2DED5;background:#FFFFFF;border-left:0;border-right:0;border-top:0;width:100%;text-align:left;font-family:'Atkinson Hyperlegible',sans-serif;color:#1B1F24;cursor:pointer}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F3F1EC; color: #1B1F24; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; display: flex; flex-direction: column">
+  <div style="display: flex; align-items: center; gap: 4px; padding: 8px">
+    <a class="ib" href="Welcome.dc.html" aria-label="Retour"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a>
+    <h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 28px">Nouvelle tournée</h1>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 16px; padding: 4px 24px 0 24px">
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <label class="lbl" for="cs">Centre de secours</label>
+      <input class="in" id="cs" value="villef" style="border-color: #1B1F24">
+      <div role="listbox" aria-label="Centres de secours connus" style="border: 1px solid #E2DED5; border-radius: 12px; overflow: hidden">
+        <button class="opt" role="option" aria-selected="true" style="font-weight: 700; background: #F3F1EC">CS Villefranche</button>
+        <button class="opt" role="option" aria-selected="false">CS Villefranche-sur-Mer</button>
+        <button class="opt" role="option" aria-selected="false" style="border-bottom: 0; color: #B3261E; font-weight: 700">+ Ajouter « villef »</button>
+      </div>
+    </div>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+      <div style="display: flex; flex-direction: column; gap: 6px"><label class="lbl" for="num">N° de tournée</label><input class="in" id="num" value="49" style="border-color: #B3261E"></div>
+      <div style="display: flex; flex-direction: column; gap: 6px"><label class="lbl" for="yr">Année</label><input class="in" id="yr" value="2026"></div>
+    </div>
+    <div role="alert" style="background: #FBE9E7; border: 1.5px solid #B3261E; border-radius: 14px; padding: 14px 16px; display: flex; gap: 12px">
+      <span style="font-weight: 700; font-size: 20px; color: #B3261E; line-height: 1.2">⚠</span>
+      <span style="display: flex; flex-direction: column; gap: 4px; font-size: 15px; line-height: 1.4">
+        <span style="font-weight: 700">La tournée 49 du CS Villefranche existe déjà.</span>
+        <span>Demandez le code ou le QR code à la personne qui l'a créée.</span>
+      </span>
+    </div>
+    <button disabled style="height: 56px; border-radius: 28px; border: 0; background: #E2DED5; color: #4A5058; font: 700 17px 'Atkinson Hyperlegible', sans-serif">Créer</button>
+    <a href="Join.dc.html" style="height: 56px; border-radius: 28px; background: #FFFFFF; color: #1B1F24; border: 1.5px solid #1B1F24; box-sizing: border-box; font-weight: 700; font-size: 17px; display: flex; align-items: center; justify-content: center; text-decoration: none">Rejoindre avec un code</a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

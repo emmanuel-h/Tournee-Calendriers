@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Écran rue</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B3261E}a:hover{color:#8C1D18}
+.ib{width:48px;height:48px;border:0;background:transparent;color:#1B1F24;border-radius:24px;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;text-decoration:none;flex-shrink:0}
+.ib svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tile{height:60px;box-sizing:border-box;border-radius:12px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;cursor:pointer;text-decoration:none;font-family:'Atkinson Hyperlegible',sans-serif;width:100%}
+.num{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:28px;line-height:1}
+.gl{font-size:22px;font-weight:700;line-height:1}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F3F1EC; color: #1B1F24; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden; position: relative">
+  <div style="display: flex; align-items: center; gap: 4px; padding: 8px 8px 0 8px">
+    <a class="ib" href="Home.dc.html" aria-label="Retour"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a>
+    <h1 style="flex: 1; margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 28px; line-height: 1.1">Rue des Lilas</h1>
+    <a class="ib" href="Edit.dc.html" aria-label="Modifier la rue"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></a>
+  </div>
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 16px 0 64px; height: 44px">
+    <span style="font-size: 15px; color: #4A5058">{{doneCount}}/{{total}} · ✗ {{nobodyCount}} · ↻ {{comeBackCount}}</span>
+    <button onClick="{{toggleHide}}" style="{{hideStyle}}" aria-pressed="{{hideDone}}">{{hideLabel}}</button>
+  </div>
+  <div style="height: 6px; margin: 0 16px; background: #E2DED5; border-radius: 3px; overflow: hidden">
+    <div style="{{progressStyle}}"></div>
+  </div>
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 14px 16px 6px 16px; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6068">
+    <div>Côté impair</div>
+    <div>Côté pair</div>
+  </div>
+  <div style="flex: 1; overflow-y: auto; padding: 0 16px 96px 16px">
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start">
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <sc-for list="{{odd}}" as="item" hint-placeholder-count="8">
+          <sc-if value="{{item.building}}" hint-placeholder-val="{{false}}">
+            <a class="tile" href="Building.dc.html" style="{{item.style}}" aria-label="{{item.aria}}"><span class="num">{{item.n}}</span><span class="gl" style="font-size: 17px">{{item.glyph}}</span></a>
+          </sc-if>
+          <sc-if value="{{item.house}}" hint-placeholder-val="{{true}}">
+            <button class="tile" onClick="{{item.tap}}" style="{{item.style}}" aria-label="{{item.aria}}"><span class="num">{{item.n}}</span><span class="gl">{{item.glyph}}</span></button>
+          </sc-if>
+        </sc-for>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <sc-for list="{{even}}" as="item" hint-placeholder-count="8">
+          <sc-if value="{{item.building}}" hint-placeholder-val="{{false}}">
+            <a class="tile" href="Building.dc.html" style="{{item.style}}" aria-label="{{item.aria}}"><span class="num">{{item.n}}</span><span class="gl" style="font-size: 17px">{{item.glyph}}</span></a>
+          </sc-if>
+          <sc-if value="{{item.house}}" hint-placeholder-val="{{true}}">
+            <button class="tile" onClick="{{item.tap}}" style="{{item.style}}" aria-label="{{item.aria}}"><span class="num">{{item.n}}</span><span class="gl">{{item.glyph}}</span></button>
+          </sc-if>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+  <sc-if value="{{hasLast}}" hint-placeholder-val="{{false}}">
+    <div style="position: absolute; left: 16px; right: 16px; bottom: 20px; min-height: 56px; background: #1B1F24; color: #FFFFFF; border-radius: 14px; display: flex; align-items: center; justify-content: space-between; padding: 0 8px 0 18px; box-sizing: border-box; font-size: 16px">
+      <span>{{lastText}}</span>
+      <button onClick="{{undo}}" style="height: 48px; padding: 0 16px; border: 0; background: transparent; color: #F2B33D; font: 700 16px 'Atkinson Hyperlegible', sans-serif; cursor: pointer">Annuler</button>
+    </div>
+  </sc-if>
+  <sc-if value="{{noLast}}" hint-placeholder-val="{{true}}">
+    <div style="position: absolute; left: 16px; right: 16px; bottom: 20px; height: 44px; border-radius: 22px; background: #FFFFFF; border: 1px solid #E2DED5; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #4A5058">Appui : ○ → ✓ → ✗ → ○ · Appui long : détails</div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      hideDone: false,
+      last: null,
+      houses: [
+        { n: '1', side: 'odd', s: 'todo' },
+        { n: '3', side: 'odd', s: 'done' },
+        { n: '3bis', side: 'odd', s: 'nobody' },
+        { n: '5', side: 'odd', s: 'todo', cb: true },
+        { n: '7', side: 'odd', s: 'todo' },
+        { n: '9', side: 'odd', s: 'done' },
+        { n: '11', side: 'odd', s: 'todo' },
+        { n: '13', side: 'odd', s: 'done' },
+        { n: '15', side: 'odd', s: 'todo' },
+        { n: '17', side: 'odd', s: 'nobody' },
+        { n: '19', side: 'odd', s: 'todo' },
+        { n: '2', side: 'even', s: 'done' },
+        { n: '4', side: 'even', s: 'done' },
+        { n: '6', side: 'even', s: 'todo' },
+        { n: '8', side: 'even', building: true, done: 7, total: 12 },
+        { n: '10', side: 'even', s: 'todo' },
+        { n: '12', side: 'even', s: 'nobody' },
+        { n: '14', side: 'even', s: 'todo' },
+        { n: '16', side: 'even', s: 'done' },
+        { n: '18', side: 'even', s: 'todo' },
+        { n: '20', side: 'even', s: 'todo' }
+      ]
+    };
+  }
+  tap(n) {
+    const next = { todo: 'done', done: 'nobody', nobody: 'todo' };
+    const names = { todo: 'À faire', done: 'Fait', nobody: 'Personne' };
+    let before = null;
+    let after = null;
+    const houses = this.state.houses.map((h) => {
+      if (h.n !== n) return h;
+      before = h;
+      after = Object.assign({}, h, { s: next[h.s], cb: next[h.s] === 'done' ? false : h.cb });
+      return after;
+    });
+    this.setState({ houses: houses, last: { before: before, text: n + ' → ' + names[after.s] } });
+  }
+  undo() {
+    const last = this.state.last;
+    if (!last) return;
+    const houses = this.state.houses.map((h) => (h.n === last.before.n ? last.before : h));
+    this.setState({ houses: houses, last: null });
+  }
+  styleFor(h) {
+    const base = 'border-style: solid; border-width: 1.5px; ';
+    if (h.building) return base + 'background: #EFE9DD; color: #1B1F24; border-color: #CFC9BD; border-style: dashed;';
+    if (h.s === 'done') return base + 'background: #1E6B47; color: #FFFFFF; border-color: #1E6B47;';
+    if (h.s === 'nobody') return base + 'background: #F2B33D; color: #1B1F24; border-color: #D99A22;';
+    if (h.cb) return base + 'background: #D6E6F5; color: #1D4E7A; border-color: #A9C8E6;';
+    return base + 'background: #FFFFFF; color: #1B1F24; border-color: #CFC9BD;';
+  }
+  glyphFor(h) {
+    if (h.building) return '◐ ' + h.done + '/' + h.total;
+    if (h.s === 'done') return '✓';
+    if (h.s === 'nobody') return '✗';
+    if (h.cb) return '↻';
+    return '○';
+  }
+  ariaFor(h) {
+    if (h.building) return 'Numéro ' + h.n + ', immeuble, ' + h.done + ' sur ' + h.total + ' faits';
+    const names = { todo: 'à faire', done: 'fait', nobody: 'personne' };
+    return 'Numéro ' + h.n + ', ' + names[h.s] + (h.cb ? ', repasser' : '');
+  }
+  renderVals() {
+    const H = this.state.houses;
+    const hide = this.state.hideDone;
+    const visible = (h) => !(hide && h.s === 'done');
+    const mk = (h) => ({
+      n: h.n,
+      building: !!h.building,
+      house: !h.building,
+      glyph: this.glyphFor(h),
+      style: this.styleFor(h),
+      aria: this.ariaFor(h),
+      tap: () => this.tap(h.n)
+    });
+    const doneCount = H.filter((h) => h.s === 'done').length;
+    const total = H.length;
+    const pct = Math.round((doneCount / total) * 100);
+    return {
+      odd: H.filter((h) => h.side === 'odd' && visible(h)).map(mk),
+      even: H.filter((h) => h.side === 'even' && visible(h)).map(mk),
+      doneCount: doneCount,
+      total: total,
+      nobodyCount: H.filter((h) => h.s === 'nobody').length,
+      comeBackCount: H.filter((h) => h.cb).length,
+      progressStyle: 'height: 6px; background: #1E6B47; width: ' + pct + '%',
+      hideDone: hide,
+      hideLabel: hide ? '☑ Masquer faits' : '☐ Masquer faits',
+      hideStyle: 'height: 40px; padding: 0 14px; border-radius: 20px; font: 700 14px \'Atkinson Hyperlegible\', sans-serif; cursor: pointer; border: 1.5px solid ' + (hide ? '#1B1F24; background: #1B1F24; color: #FFFFFF' : '#CFC9BD; background: #FFFFFF; color: #1B1F24'),
+      toggleHide: () => this.setState({ hideDone: !hide }),
+      hasLast: !!this.state.last,
+      noLast: !this.state.last,
+      lastText: this.state.last ? this.state.last.text : '',
+      undo: () => this.undo()
+    };
+  }
+}
+</script>
+</body>
+</html>

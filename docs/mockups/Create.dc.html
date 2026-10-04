@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Créer une tournée</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B3261E}a:hover{color:#8C1D18}
+.ib{width:48px;height:48px;border:0;background:transparent;color:#1B1F24;border-radius:24px;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;text-decoration:none;flex-shrink:0}
+.ib svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.lbl{font-size:15px;font-weight:700}
+.in{height:52px;box-sizing:border-box;width:100%;border:1.5px solid #CFC9BD;border-radius:12px;background:#FFFFFF;padding:0 14px;font:400 17px 'Atkinson Hyperlegible',sans-serif;color:#1B1F24}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F3F1EC; color: #1B1F24; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; display: flex; flex-direction: column">
+  <div style="display: flex; align-items: center; gap: 4px; padding: 8px">
+    <a class="ib" href="Welcome.dc.html" aria-label="Retour"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a>
+    <h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 28px">Nouvelle tournée</h1>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 16px; padding: 4px 24px 0 24px">
+    <div style="display: flex; flex-direction: column; gap: 6px"><label class="lbl" for="cs">Centre de secours</label>
+      <div style="position: relative"><input class="in" id="cs" value="CS Villefranche" style="padding-right: 44px"><svg viewBox="0 0 24 24" style="position: absolute; right: 14px; top: 16px; width: 20px; height: 20px; fill: none; stroke: #4A5058; stroke-width: 2; stroke-linecap: round"><path d="M6 9l6 6 6-6"/></svg></div></div>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+      <div style="display: flex; flex-direction: column; gap: 6px"><label class="lbl" for="num">N° de tournée</label><input class="in" id="num" value="49"></div>
+      <div style="display: flex; flex-direction: column; gap: 6px"><label class="lbl" for="yr">Année</label><input class="in" id="yr" value="2026"></div>
+    </div>
+    <button style="height: 56px; border-radius: 28px; border: 0; background: #B3261E; color: #FFFFFF; font: 700 17px 'Atkinson Hyperlegible', sans-serif">Créer</button>
+  </div>
+  <div style="margin: 24px 16px 0 16px; background: #FFFFFF; border: 1px solid #E2DED5; border-radius: 20px; padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 14px">
+    <span style="font-size: 15px; color: #4A5058">Tournée 49 · CS Villefranche est prête. Montrez ce code à l'équipe.</span>
+    <div style="width: 176px; height: 176px; display: grid; grid-template-columns: repeat(21, minmax(0, 1fr)); padding: 8px; background: #FFFFFF; border: 1px solid #E2DED5; border-radius: 8px" role="img" aria-label="QR code de la tournée, code K7P-2QX">
+      <sc-for list="{{cells}}" as="c" hint-placeholder-count="441"><div style="{{c.style}}"></div></sc-for>
+    </div>
+    <div style="display: flex; align-items: center; gap: 12px">
+      <span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 34px; letter-spacing: 0.04em">K7P-2QX</span>
+      <button style="height: 44px; padding: 0 16px; border-radius: 22px; border: 1.5px solid #CFC9BD; background: #FFFFFF; font: 700 15px 'Atkinson Hyperlegible', sans-serif; display: flex; align-items: center; gap: 6px; color: #1B1F24">
+        <svg viewBox="0 0 24 24" style="width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="M8.6 13.5l6.8 4M15.4 6.5l-6.8 4"/></svg>Partager</button>
+    </div>
+  </div>
+  <div style="flex: 1"></div>
+  <div style="padding: 0 24px 32px 24px">
+    <a href="Home.dc.html" style="height: 56px; border-radius: 28px; background: #FFFFFF; color: #1B1F24; border: 1.5px solid #CFC9BD; box-sizing: border-box; font-weight: 700; font-size: 17px; display: flex; align-items: center; justify-content: center; text-decoration: none">Continuer</a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const N = 21;
+    const finder = (r, c) => {
+      const inBox = (r0, c0) => r >= r0 && r < r0 + 7 && c >= c0 && c < c0 + 7;
+      const boxes = [[0, 0], [0, N - 7], [N - 7, 0]];
+      for (const [r0, c0] of boxes) {
+        if (inBox(r0, c0)) {
+          const rr = r - r0, cc = c - c0;
+          const ring = rr === 0 || rr === 6 || cc === 0 || cc === 6;
+          const core = rr >= 2 && rr <= 4 && cc >= 2 && cc <= 4;
+          return ring || core ? 1 : 0;
+        }
+        if (r >= r0 - 1 && r <= r0 + 7 && c >= c0 - 1 && c <= c0 + 7) return 0;
+      }
+      return -1;
+    };
+    const cells = [];
+    let seed = 4938;
+    for (let r = 0; r < N; r++) {
+      for (let c = 0; c < N; c++) {
+        let on = finder(r, c);
+        if (on === -1) {
+          seed = (seed * 9301 + 49297) % 233280;
+          on = seed / 233280 > 0.52 ? 1 : 0;
+        }
+        cells.push({ style: on ? 'background: #1B1F24' : 'background: transparent' });
+      }
+    }
+    return { cells: cells };
+  }
+}
+</script>
+</body>
+</html>

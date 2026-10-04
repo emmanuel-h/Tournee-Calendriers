@@ -1,0 +1,136 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Immeuble</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B3261E}a:hover{color:#8C1D18}
+.unit{height:52px;border-radius:12px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;padding:0;font-family:'Atkinson Hyperlegible',sans-serif}
+.seg{flex:1;height:44px;border:0;font:700 15px 'Atkinson Hyperlegible',sans-serif;cursor:pointer}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F3F1EC; color: #1B1F24; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; position: relative; overflow: hidden">
+  <a href="Main.dc.html" aria-label="Fermer" style="position: absolute; inset: 0; background: rgba(27, 31, 36, 0.5)"></a>
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; top: 40px; background: #FFFFFF; border-radius: 24px 24px 0 0; padding: 12px 16px 20px 16px; display: flex; flex-direction: column; gap: 12px; box-sizing: border-box">
+    <div style="width: 40px; height: 4px; border-radius: 2px; background: #CFC9BD; align-self: center"></div>
+    <div style="display: flex; align-items: baseline; justify-content: space-between">
+      <div style="display: flex; align-items: baseline; gap: 10px">
+        <h2 style="margin: 0; font: 700 34px 'Barlow Condensed', sans-serif">8</h2>
+        <span style="font: 600 22px 'Barlow Condensed', sans-serif; color: #4A5058">Rue des Lilas</span>
+      </div>
+      <span style="font: 700 22px 'Barlow Condensed', sans-serif">◐ {{doneCount}}/{{total}}</span>
+    </div>
+    <div role="tablist" aria-label="Escalier" style="display: flex; border: 1.5px solid #CFC9BD; border-radius: 12px; overflow: hidden">
+      <sc-for list="{{stairs}}" as="st" hint-placeholder-count="2">
+        <button class="seg" role="tab" aria-selected="{{st.selected}}" onClick="{{st.pick}}" style="{{st.style}}">{{st.label}}</button>
+      </sc-for>
+    </div>
+    <div style="flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 10px">
+      <sc-for list="{{floors}}" as="f" hint-placeholder-count="6">
+        <div style="display: flex; align-items: flex-start; gap: 10px">
+          <span style="width: 40px; flex-shrink: 0; padding-top: 15px; font-size: 15px; font-weight: 700; color: #4A5058">{{f.label}}</span>
+          <div style="flex: 1; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px">
+            <sc-for list="{{f.doors}}" as="u" hint-placeholder-count="4">
+              <button class="unit" onClick="{{u.tap}}" style="{{u.style}}" aria-label="{{u.aria}}">
+                <span style="font: 700 21px 'Barlow Condensed', sans-serif">{{u.label}}</span>
+                <span style="font-size: 16px; font-weight: 700">{{u.glyph}}</span>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-for>
+    </div>
+    <span style="font-size: 14px; color: #4A5058; text-align: center">Appui : ○ → ✓ → ✗ → ○ · Appui long : note, repasser</span>
+    <div style="display: flex; gap: 10px">
+      <a href="BuildingSetup.dc.html" style="flex: 1; height: 48px; border-radius: 24px; border: 1.5px solid #CFC9BD; background: #FFFFFF; font-weight: 700; font-size: 15px; color: #1B1F24; display: flex; align-items: center; justify-content: center; text-decoration: none">Modifier les étages</a>
+      <button style="flex: 1; height: 48px; border-radius: 24px; border: 1.5px solid #CFC9BD; background: #FFFFFF; font: 700 15px 'Atkinson Hyperlegible', sans-serif; color: #1B1F24">Note · Repasser</button>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    const floor = (n, count, statuses) => {
+      const doors = [];
+      for (let i = 1; i <= count; i++) doors.push({ label: (n === 0 ? '0' : String(n)) + i, s: statuses[i - 1] });
+      return { n: n, doors: doors };
+    };
+    this.state = {
+      stair: 'A',
+      buildings: {
+        A: [
+          floor(5, 4, ['done', 'todo', 'nobody', 'done']),
+          floor(4, 4, ['done', 'done', 'done', 'todo']),
+          floor(3, 4, ['nobody', 'done', 'done', 'done']),
+          floor(2, 4, ['done', 'done', 'todo', 'done']),
+          floor(1, 4, ['todo', 'done', 'done', 'nobody']),
+          floor(0, 2, ['done', 'todo'])
+        ],
+        B: [
+          floor(2, 2, ['todo', 'todo']),
+          floor(1, 2, ['done', 'todo']),
+          floor(0, 2, ['done', 'nobody'])
+        ]
+      }
+    };
+  }
+  tap(stair, fi, di) {
+    const next = { todo: 'done', done: 'nobody', nobody: 'todo' };
+    const b = Object.assign({}, this.state.buildings);
+    b[stair] = b[stair].map((f, i) => i !== fi ? f : {
+      n: f.n,
+      doors: f.doors.map((d, j) => j !== di ? d : { label: d.label, s: next[d.s] })
+    });
+    this.setState({ buildings: b });
+  }
+  renderVals() {
+    const styles = {
+      todo: 'background: #FFFFFF; color: #1B1F24; border: 1.5px solid #CFC9BD',
+      done: 'background: #1E6B47; color: #FFFFFF; border: 1.5px solid #1E6B47',
+      nobody: 'background: #F2B33D; color: #1B1F24; border: 1.5px solid #D99A22'
+    };
+    const glyphs = { todo: '○', done: '✓', nobody: '✗' };
+    const names = { todo: 'à faire', done: 'fait', nobody: 'personne' };
+    const floorName = (n) => (n === 0 ? 'RdC' : n === 1 ? '1er' : n + 'e');
+    const stair = this.state.stair;
+    const all = [].concat(...Object.values(this.state.buildings).map((fs) => [].concat(...fs.map((f) => f.doors))));
+    const floors = this.state.buildings[stair].map((f, fi) => ({
+      label: floorName(f.n),
+      doors: f.doors.map((d, di) => ({
+        label: d.label,
+        glyph: glyphs[d.s],
+        style: styles[d.s],
+        aria: 'Escalier ' + stair + ', ' + floorName(f.n) + ', porte ' + d.label + ', ' + names[d.s],
+        tap: () => this.tap(stair, fi, di)
+      }))
+    }));
+    const stairs = Object.keys(this.state.buildings).map((k) => {
+      const doors = [].concat(...this.state.buildings[k].map((f) => f.doors));
+      const done = doors.filter((d) => d.s === 'done').length;
+      return {
+        label: 'Esc. ' + k + ' · ' + done + '/' + doors.length,
+        selected: k === stair,
+        style: k === stair ? 'background: #1B1F24; color: #FFFFFF' : 'background: #FFFFFF; color: #1B1F24',
+        pick: () => this.setState({ stair: k })
+      };
+    });
+    return {
+      floors: floors,
+      stairs: stairs,
+      doneCount: all.filter((d) => d.s === 'done').length,
+      total: all.length
+    };
+  }
+}
+</script>
+</body>
+</html>
