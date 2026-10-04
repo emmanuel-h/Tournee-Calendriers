@@ -771,7 +771,10 @@ lib/
 ```
 
 - **Dependency rule:** arrows point inward only — `ui → presentation → application → domain`,
-  `infrastructure → application / domain`, `bootstrap` sees everything. A fast architecture
+  `infrastructure → application / domain`, `bootstrap` sees everything. `ui` may also name
+  domain value types (e.g. `VisitStatus`) but never calls `application`; `presentation` may use
+  Riverpod but not Flutter. Firebase / http / shared_preferences appear only in
+  `infrastructure` and `bootstrap`; MapLibre only in `ui/map` and `infrastructure/maplibre_offline`. A fast architecture
   test (`test/architecture_test.dart`) reads every import in `lib/` and fails on a forbidden one.
 - **Use cases** are the only entry point to behaviour: `MarkHouse`, `AddStreetFromMap`,
   `AddManualStreet`, `EditStreetNumbers`, `DescribeBuilding`, `CreateTournee`,

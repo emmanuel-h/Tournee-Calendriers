@@ -54,7 +54,8 @@ lib/
 ```
 
 - Dependencies point inward only: `ui → presentation → application → domain`;
-  `infrastructure → application/domain`; only `bootstrap` sees everything.
+  `infrastructure → application/domain`; only `bootstrap` sees everything. `ui` may name domain
+  value types; `presentation` uses Riverpod but not Flutter.
   `test/architecture_test.dart` enforces it.
 - `domain/` is pure Dart: no Flutter, Firebase, http, MapLibre.
 - Behaviour enters only through use cases; aggregates change only through their root.
