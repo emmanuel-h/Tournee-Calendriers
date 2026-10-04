@@ -3,8 +3,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tournee_calendriers/ui/components/app_buttons.dart';
 import 'package:tournee_calendriers/ui/components/section_header.dart';
 import 'package:tournee_calendriers/ui/components/sheet_scaffold.dart';
+import 'package:tournee_calendriers/ui/components/status_glyph.dart';
 import 'package:tournee_calendriers/ui/components/status_tile.dart';
 import 'package:tournee_calendriers/ui/screens/component_gallery_screen.dart';
+import 'package:tournee_calendriers/ui/theme/status_look.dart';
 
 import '../support/test_app.dart';
 
@@ -57,9 +59,13 @@ void main() {
 
       // One tile per status.
       expect(find.byType(StatusTile), findsNWidgets(5));
-      for (final glyph in ['○', '✓', '✗', '↻', '◐ 7/12']) {
-        expect(find.text(glyph), findsOneWidget);
-      }
+      expect(
+        tester
+            .widgetList<StatusGlyph>(find.byType(StatusGlyph))
+            .map((g) => g.glyph),
+        StatusGlyphs.values,
+      );
+      expect(find.text('7/12'), findsOneWidget);
     },
   );
 

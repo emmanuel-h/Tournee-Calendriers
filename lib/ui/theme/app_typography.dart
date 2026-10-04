@@ -29,16 +29,8 @@ abstract final class AppTextStyles {
     height: 1,
   );
 
-  /// The status glyph on a house tile (`✓`, `✗`…).
-  static const tileGlyph = TextStyle(
-    fontFamily: AppFonts.text,
-    fontWeight: FontWeight.w700,
-    fontSize: 22,
-    height: 1,
-  );
-
-  /// The building glyph and count (`◐ 7/12`), smaller so the count fits.
-  static const tileBuildingGlyph = TextStyle(
+  /// The count after a building's glyph (`◐ 7/12`).
+  static const tileCount = TextStyle(
     fontFamily: AppFonts.text,
     fontWeight: FontWeight.w700,
     fontSize: 17,

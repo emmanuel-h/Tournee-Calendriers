@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tournee_calendriers/ui/components/status_glyph.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
@@ -10,7 +11,7 @@ import 'package:tournee_calendriers/ui/theme/status_look.dart';
 ///
 /// Status is never shown by colour alone: the glyph is always drawn, and
 /// screen readers hear one French sentence (« Numéro 3bis, fait ») instead of
-/// the separate texts.
+/// the number and count texts.
 final class StatusTile extends StatelessWidget {
   const StatusTile({
     super.key,
@@ -64,10 +65,20 @@ final class StatusTile extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                 ),
               ),
-              Text(
+              StatusGlyph(
                 look.glyph,
-                style: look.glyphStyle.copyWith(color: look.foreground),
+                size: look.glyphSize,
+                color: look.foreground,
               ),
+              if (look.count case final count?) ...[
+                const SizedBox(width: AppSizes.glyphGap),
+                Text(
+                  count,
+                  style: AppTextStyles.tileCount.copyWith(
+                    color: look.foreground,
+                  ),
+                ),
+              ],
             ],
           ),
         ),

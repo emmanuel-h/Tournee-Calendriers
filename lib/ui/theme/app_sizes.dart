@@ -13,6 +13,16 @@ abstract final class AppSizes {
   /// least 56 dp.
   static const tileHeight = 60.0;
 
+  /// The status glyph on a house tile (`✓`, `✗`…).
+  static const tileGlyph = 22.0;
+
+  /// The glyph before a building's count (`◐ 7/12`), smaller so the count
+  /// fits.
+  static const tileBuildingGlyph = 17.0;
+
+  /// Space between a glyph and the text next to it.
+  static const glyphGap = 4.0;
+
   static const tileRadius = 12.0;
   static const tilePadding = 14.0;
   static const sheetRadius = 24.0;

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tournee_calendriers/ui/components/status_glyph.dart';
 import 'package:tournee_calendriers/ui/components/status_tile.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/status_look.dart';
@@ -15,7 +16,8 @@ void main() {
       name: 'to do',
       number: '1',
       status: const ToDoTile(),
-      glyph: '○',
+      glyph: StatusGlyphs.toDo,
+      count: null,
       label: 'Numéro 1, à faire',
       background: colors.toDo,
     ),
@@ -23,7 +25,8 @@ void main() {
       name: 'done',
       number: '3',
       status: const DoneTile(),
-      glyph: '✓',
+      glyph: StatusGlyphs.done,
+      count: null,
       label: 'Numéro 3, fait',
       background: colors.done,
     ),
@@ -31,7 +34,8 @@ void main() {
       name: 'nobody home',
       number: '3bis',
       status: const NobodyHomeTile(),
-      glyph: '✗',
+      glyph: StatusGlyphs.nobodyHome,
+      count: null,
       label: 'Numéro 3bis, personne',
       background: colors.nobodyHome,
     ),
@@ -39,7 +43,8 @@ void main() {
       name: 'come back',
       number: '5',
       status: const ComeBackTile(),
-      glyph: '↻',
+      glyph: StatusGlyphs.comeBack,
+      count: null,
       label: 'Numéro 5, à faire, repasser',
       background: colors.comeBack,
     ),
@@ -47,7 +52,8 @@ void main() {
       name: 'building partial',
       number: '8',
       status: const BuildingPartialTile(done: 7, total: 12),
-      glyph: '◐ 7/12',
+      glyph: StatusGlyphs.buildingPartial,
+      count: '7/12',
       label: 'Numéro 8, immeuble, 7 sur 12 faits',
       background: colors.buildingPartial,
     ),
@@ -75,7 +81,29 @@ void main() {
           ),
         );
 
-        expect(find.text(c.glyph), findsOneWidget);
+        // The glyph is drawn, not written: find the icon by what it draws.
+        final glyph = find.byType(StatusGlyph);
+        expect(glyph, findsOneWidget);
+        expect(tester.widget<StatusGlyph>(glyph).glyph, c.glyph);
+        expect(
+          tester.widget<StatusGlyph>(glyph).color,
+          StatusLook.of(c.status, colors).foreground,
+        );
+        if (c.count case final count?) {
+          expect(find.text(count), findsOneWidget);
+          // The count sits right of the icon, centred on the same line.
+          expect(
+            tester.getCenter(find.text(count)).dx,
+            greaterThan(tester.getCenter(glyph).dx),
+          );
+          expect(
+            tester.getCenter(find.text(count)).dy,
+            moreOrLessEquals(tester.getCenter(glyph).dy, epsilon: 1),
+          );
+        } else {
+          // Only the number is text on a house tile.
+          expect(find.byType(Text), findsOneWidget);
+        }
         expect(find.text(c.number), findsOneWidget);
         expect(
           tester.getSemantics(find.byKey(const Key('tile'))),

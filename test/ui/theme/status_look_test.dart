@@ -1,7 +1,7 @@
 import 'package:flutter/painting.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
-import 'package:tournee_calendriers/ui/theme/app_typography.dart';
+import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/status_look.dart';
 
 void main() {
@@ -12,8 +12,9 @@ void main() {
     () {
       final look = StatusLook.of(const ToDoTile(), colors);
 
-      expect(look.glyph, '○');
-      expect(look.glyphStyle, AppTextStyles.tileGlyph);
+      expect(look.glyph, StatusGlyphs.toDo);
+      expect(look.glyphSize, AppSizes.tileGlyph);
+      expect(look.count, isNull);
       expect(look.background, const Color(0xFFFFFFFF));
       expect(look.foreground, const Color(0xFF1B1F24));
       expect(look.border, const Color(0xFFCFC9BD));
@@ -24,8 +25,9 @@ void main() {
   test('should use the green tile with white text when the house is done', () {
     final look = StatusLook.of(const DoneTile(), colors);
 
-    expect(look.glyph, '✓');
-    expect(look.glyphStyle, AppTextStyles.tileGlyph);
+    expect(look.glyph, StatusGlyphs.done);
+    expect(look.glyphSize, AppSizes.tileGlyph);
+    expect(look.count, isNull);
     expect(look.background, const Color(0xFF1E6B47));
     expect(look.foreground, const Color(0xFFFFFFFF));
     expect(look.border, const Color(0xFF1E6B47));
@@ -35,8 +37,9 @@ void main() {
   test('should use the yellow tile with ink text when nobody was home', () {
     final look = StatusLook.of(const NobodyHomeTile(), colors);
 
-    expect(look.glyph, '✗');
-    expect(look.glyphStyle, AppTextStyles.tileGlyph);
+    expect(look.glyph, StatusGlyphs.nobodyHome);
+    expect(look.glyphSize, AppSizes.tileGlyph);
+    expect(look.count, isNull);
     expect(look.background, const Color(0xFFF2B33D));
     expect(look.foreground, const Color(0xFF1B1F24));
     expect(look.border, const Color(0xFFD99A22));
@@ -46,8 +49,9 @@ void main() {
   test('should use the blue tile when the house is to come back to', () {
     final look = StatusLook.of(const ComeBackTile(), colors);
 
-    expect(look.glyph, '↻');
-    expect(look.glyphStyle, AppTextStyles.tileGlyph);
+    expect(look.glyph, StatusGlyphs.comeBack);
+    expect(look.glyphSize, AppSizes.tileGlyph);
+    expect(look.count, isNull);
     expect(look.background, const Color(0xFFD6E6F5));
     expect(look.foreground, const Color(0xFF1D4E7A));
     expect(look.border, const Color(0xFFA9C8E6));
@@ -60,8 +64,9 @@ void main() {
       colors,
     );
 
-    expect(look.glyph, '◐ 7/12');
-    expect(look.glyphStyle, AppTextStyles.tileBuildingGlyph);
+    expect(look.glyph, StatusGlyphs.buildingPartial);
+    expect(look.glyphSize, AppSizes.tileBuildingGlyph);
+    expect(look.count, '7/12');
     expect(look.background, const Color(0xFFEFE9DD));
     expect(look.foreground, const Color(0xFF1B1F24));
     expect(look.border, const Color(0xFFCFC9BD));

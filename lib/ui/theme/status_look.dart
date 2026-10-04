@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/painting.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
-import 'package:tournee_calendriers/ui/theme/app_typography.dart';
+import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 
 /// What a tile shows, independent of how the domain stores it.
 ///
@@ -50,13 +50,27 @@ final class BuildingPartialTile extends TileStatus {
   int get hashCode => Object.hash(done, total);
 }
 
-/// The status glyphs of PLAN §5, the only place they are written.
-abstract final class StatusGlyphs {
-  static const toDo = '○';
-  static const done = '✓';
-  static const nobodyHome = '✗';
-  static const comeBack = '↻';
-  static const buildingPartial = '◐';
+/// The status glyphs of PLAN §5, the only list of them.
+///
+/// They are drawn as vector shapes by `StatusGlyph`
+/// (`ui/components/status_glyph.dart`), not typed as characters: the bundled
+/// fonts lack ○ ↻ ◐, and the phone's fallback font draws them smaller than
+/// ✓ ✗. The comment on each value is the character it stands for.
+enum StatusGlyphs {
+  /// ○ à faire.
+  toDo,
+
+  /// ✓ fait.
+  done,
+
+  /// ✗ personne.
+  nobodyHome,
+
+  /// ↻ repasser.
+  comeBack,
+
+  /// ◐ immeuble en partie fait.
+  buildingPartial,
 }
 
 /// Colours, glyph and outline of a tile for one status: the single source of
@@ -65,7 +79,8 @@ abstract final class StatusGlyphs {
 final class StatusLook {
   const StatusLook({
     required this.glyph,
-    required this.glyphStyle,
+    required this.glyphSize,
+    this.count,
     required this.background,
     required this.foreground,
     required this.border,
@@ -77,7 +92,7 @@ final class StatusLook {
       switch (status) {
         ToDoTile() => StatusLook(
           glyph: StatusGlyphs.toDo,
-          glyphStyle: AppTextStyles.tileGlyph,
+          glyphSize: AppSizes.tileGlyph,
           background: colors.toDo,
           foreground: colors.onToDo,
           border: colors.toDoBorder,
@@ -85,7 +100,7 @@ final class StatusLook {
         ),
         DoneTile() => StatusLook(
           glyph: StatusGlyphs.done,
-          glyphStyle: AppTextStyles.tileGlyph,
+          glyphSize: AppSizes.tileGlyph,
           background: colors.done,
           foreground: colors.onDone,
           border: colors.doneBorder,
@@ -93,7 +108,7 @@ final class StatusLook {
         ),
         NobodyHomeTile() => StatusLook(
           glyph: StatusGlyphs.nobodyHome,
-          glyphStyle: AppTextStyles.tileGlyph,
+          glyphSize: AppSizes.tileGlyph,
           background: colors.nobodyHome,
           foreground: colors.onNobodyHome,
           border: colors.nobodyHomeBorder,
@@ -101,15 +116,16 @@ final class StatusLook {
         ),
         ComeBackTile() => StatusLook(
           glyph: StatusGlyphs.comeBack,
-          glyphStyle: AppTextStyles.tileGlyph,
+          glyphSize: AppSizes.tileGlyph,
           background: colors.comeBack,
           foreground: colors.onComeBack,
           border: colors.comeBackBorder,
           dashedBorder: false,
         ),
         BuildingPartialTile(:final done, :final total) => StatusLook(
-          glyph: '${StatusGlyphs.buildingPartial} $done/$total',
-          glyphStyle: AppTextStyles.tileBuildingGlyph,
+          glyph: StatusGlyphs.buildingPartial,
+          glyphSize: AppSizes.tileBuildingGlyph,
+          count: '$done/$total',
           background: colors.buildingPartial,
           foreground: colors.onBuildingPartial,
           border: colors.buildingPartialBorder,
@@ -117,9 +133,14 @@ final class StatusLook {
         ),
       };
 
-  /// What the tile shows at its right edge: a glyph, or `◐ 7/12`.
-  final String glyph;
-  final TextStyle glyphStyle;
+  /// The glyph at the tile's right edge.
+  final StatusGlyphs glyph;
+
+  /// Side of the glyph's square box, in dp.
+  final double glyphSize;
+
+  /// Text written after the glyph: `7/12` on a building, nothing on a house.
+  final String? count;
   final Color background;
   final Color foreground;
   final Color border;
