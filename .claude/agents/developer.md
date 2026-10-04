@@ -79,6 +79,9 @@ bootstrap/       composition root — binds ports to adapters with Riverpod prov
   `ui/map/` only turns it into MapLibre sources and layers. No MapLibre type outside `ui/map/`
   and `infrastructure/maplibre_offline/`.
 - No code generation: no freezed, no riverpod_generator, no json_serializable, no build_runner.
+- **Location privacy:** fixtures, examples, seed data, tests and screenshots use
+  Villefranche-sur-Saône (INSEE 69264) only. Never hard-code any other real place; the field
+  tests' reference area is private and is only typed in on the phone.
 
 ---
 

@@ -75,6 +75,10 @@ lib/
   changing) so the user can choose, then a visual mockup to confirm. Only then implement.
   Keep `PLAN.md` §5 and `docs/mockups/` in sync.
 - No code generation (no freezed, no riverpod_generator, no build_runner).
+- **Location privacy:** the real reference area used for field tests is private. Never write it
+  (name, postcode, street names, coordinates) into the repo, commits, issues, test fixtures,
+  screenshots or store assets. Everything public that needs a place uses
+  **Villefranche-sur-Saône** (69400, INSEE 69264). The real area is only entered on the phone.
 - Tests: `test` / `flutter_test`, hand-written fakes for ports, `mocktail` only for verified
   collaborators; names `'should <behaviour> when <condition>'`; the inner loop runs one file.
   Slow suites (rules emulator, release build) run once per task and in CI.
