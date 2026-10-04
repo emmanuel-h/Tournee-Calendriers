@@ -10,8 +10,8 @@ import 'package:tournee_calendriers/domain/street/visit_status.dart';
 /// « repasser » at once.
 ///
 /// Progress is always computed from the doors, never stored (PLAN §6.2).
-/// A group's progress is the sum (`+`) of its doors' progress, so a building
-/// (T1.3) only has to add up its dwellings to fit in.
+/// A group's progress is the sum (`+`) of its doors' progress: a building
+/// adds up its dwellings, a street its houses.
 final class Progress {
   const Progress._({
     required this.done,
@@ -22,6 +22,16 @@ final class Progress {
 
   /// No door at all; the starting point of a sum.
   static const empty = Progress._(done: 0, nobodyHome: 0, toDo: 0, comeBack: 0);
+
+  /// A « repasser » on something that is not a door: a building's own
+  /// come-back (« Repasser » under its grid, PLAN §5.7) still counts in the
+  /// street's ↻, but adds no door to [total].
+  static const comeBackAlone = Progress._(
+    done: 0,
+    nobodyHome: 0,
+    toDo: 0,
+    comeBack: 1,
+  );
 
   /// The progress of one door with [status], counted once more in
   /// [Progress.comeBack] when it carries a « repasser ».

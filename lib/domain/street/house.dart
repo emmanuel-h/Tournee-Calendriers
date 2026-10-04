@@ -1,4 +1,5 @@
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
+import 'package:tournee_calendriers/domain/street/building/building.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/note.dart';
@@ -7,6 +8,9 @@ import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
 /// One address of a street (`12`, `12bis`): an entity inside the `Street`
 /// aggregate, identified in its street by its [number].
+///
+/// A house is either a single house, marked as a whole, or a [building]
+/// whose dwellings are marked one by one (PLAN §5.7).
 ///
 /// A `House` is immutable: the street changes a house by replacing it with
 /// a new one (`Street.markHouse`…), so only the street root decides what
@@ -20,46 +24,78 @@ final class House {
     this.comeBack,
     this.note,
     this.lastChange,
+    this.building,
   );
 
-  /// A house with [number]; by default not visited yet, with no
-  /// « repasser », no note and no change recorded.
+  /// A house with [number]; by default a single house not visited yet, with
+  /// no « repasser », no note and no change recorded.
   ///
-  /// A house that is [VisitStatus.done] has no reason to be visited again,
-  /// so its [comeBack] is always dropped: whatever builds it (a command of
-  /// the street, an adapter reading stored data) never ends with a stale
-  /// « repasser » on a done house. A `factory` constructor can run this rule
-  /// before choosing the field values, which a plain constructor cannot.
+  /// Two rules run here, so that whatever builds a house (a command of the
+  /// street, an adapter reading stored data) never breaks them. A `factory`
+  /// constructor can run them before choosing the field values, which a
+  /// plain constructor cannot:
+  /// - a house that is a [building] is always [VisitStatus.toDo] itself:
+  ///   its doors carry the statuses, and its own status is derived from them
+  ///   (see `Building.status`);
+  /// - a house that is [VisitStatus.done] has no reason to be visited again,
+  ///   so its [comeBack] is dropped.
   factory House({
     required HouseNumber number,
     VisitStatus status = VisitStatus.toDo,
     ComeBack? comeBack,
     Note note = Note.empty,
     ChangeStamp? lastChange,
-  }) => House._(
-    number,
-    status,
-    status == VisitStatus.done ? null : comeBack,
-    note,
-    lastChange,
-  );
+    Building? building,
+  }) {
+    final ownStatus = building == null ? status : VisitStatus.toDo;
+    return House._(
+      number,
+      ownStatus,
+      ownStatus == VisitStatus.done ? null : comeBack,
+      note,
+      lastChange,
+      building,
+    );
+  }
 
   final HouseNumber number;
+
+  /// The status of a single house; always [VisitStatus.toDo] on a building,
+  /// whose status is `building.status`.
   final VisitStatus status;
 
   /// The « repasser » flag and its hint; null when nobody asked to come
-  /// back, and always null on a done house.
+  /// back, and always null on a done house. A building keeps its own
+  /// (« Repasser » under the grid) apart from its doors'.
   final ComeBack? comeBack;
 
-  /// The free note; [Note.empty] when nobody wrote one.
+  /// The free note; [Note.empty] when nobody wrote one. On a building, the
+  /// note of the whole building (« digicode »).
   final Note note;
 
-  /// Who changed the house last and when; null when nobody has yet.
+  /// Who changed the house last and when; null when nobody has yet. On a
+  /// building, the last change of its layout, note or « repasser »: each
+  /// door keeps its own.
   final ChangeStamp? lastChange;
 
-  /// What this house adds to its street's progress: one door. A building
-  /// (T1.3) will count its dwellings instead.
-  Progress get progress => Progress.of(status, comeBack: comeBack != null);
+  /// The dwellings of the house when it is a building; null for a single
+  /// house.
+  final Building? building;
+
+  /// Whether the house is a building.
+  bool get isBuilding => building != null;
+
+  /// What this house adds to its street's progress: one door for a single
+  /// house; the doors of a building, plus the building's own « repasser »
+  /// when it has one (counted in the street's ↻, not as a door).
+  Progress get progress => switch (building) {
+    null => Progress.of(status, comeBack: comeBack != null),
+    // A typed pattern: matches a non-null building and names it, so the
+    // line below uses it without `!`.
+    final Building building =>
+      building.progress +
+          (comeBack == null ? Progress.empty : Progress.comeBackAlone),
+  };
 
   @override
   bool operator ==(Object other) =>
@@ -68,12 +104,18 @@ final class House {
       other.status == status &&
       other.comeBack == comeBack &&
       other.note == note &&
-      other.lastChange == lastChange;
+      other.lastChange == lastChange &&
+      other.building == building;
 
   @override
-  int get hashCode => Object.hash(number, status, comeBack, note, lastChange);
+  int get hashCode =>
+      Object.hash(number, status, comeBack, note, lastChange, building);
 
+  /// A single house prints as before buildings existed; a building adds
+  /// itself at the end.
   @override
-  String toString() =>
-      'House(${number.label}, $status, $comeBack, $note, $lastChange)';
+  String toString() {
+    final fields = '${number.label}, $status, $comeBack, $note, $lastChange';
+    return building == null ? 'House($fields)' : 'House($fields, $building)';
+  }
 }

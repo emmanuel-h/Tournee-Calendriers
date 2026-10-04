@@ -435,7 +435,8 @@ Edit mode:
 
 - Afterwards each floor can be adjusted on its own (add / remove a door, rename a door), from
   *Modifier les étages* in edit mode. "Libres" lets you type the labels (e.g. "Gauche", "Droite").
-- Changing the layout keeps the statuses of doors whose label still exists.
+- Changing the layout keeps the statuses (and notes, « repasser ») of doors whose label still
+  exists on the same floor of the same staircase.
 
 ### 5.8 Équipe (👥)
 
@@ -598,11 +599,75 @@ Value-object rules fixed in T1.1 (`lib/domain/street/`):
   without re-reading, and storage writes only the named fields (`HouseMarked` also writes
   `comeBack: null` when `clearsComeBack`, i.e. the new status is done).
 - `Progress` counts done, nobody home, to do (they partition `total`) and come back (overlaps).
-  A street's progress is the sum (`+`) of its houses' `progress`; a building (T1.3) will
-  contribute its dwellings the same way.
+  A street's progress is the sum (`+`) of its houses' `progress`; a building contributes its
+  dwellings (below).
+
+Building rules fixed in T1.3 (`lib/domain/street/building/`):
+
+- **Shape.** `House.building` is null for a single house. A `Building` has a `DoorLabelStyle`
+  and `Staircase`s named `A`…`Z` (`StaircaseName`, at most 26); each staircase lists its
+  `Floor`s **top floor first** (the grid order), each floor its `Dwelling`s left to right. A
+  floor's `level` is 0 for the RdC, 1 for the 1er…; **unknown floors** are one floor with
+  `level: null` per staircase, shown as « Logements ». A floor may be empty (its doors removed).
+- **`DwellingLabel`**: trimmed, 1–12 characters (code points), case and inner spaces kept
+  (`Gauche` ≠ `gauche`); typed text goes through `parse` (failure value), labels made by code
+  through the constructor (throws). **Labels are unique within a floor**, so « Gauche » /
+  « Droite » can be on every floor. A door is named by `DwellingKey(staircase, level, label)`,
+  stored under `"<letter><level>-<label>"` — `"A5-51"`, `"A0-Gauche"`, and `"A-Gauche"` when
+  the floors are unknown. Unambiguous: the letter is one character, the level only digits, and
+  the first dash ends it (a label may contain dashes).
+- **`Dwelling`**: label, status, « repasser », note, last change; a done dwelling drops its
+  « repasser », like a house.
+- **Restoring from storage** (`Building.create(style, staircases)`, for T1.6 / T2.3): checks
+  every invariant and fails with a `NewBuildingFailure` — at least one staircase, unique
+  staircase names, floor levels 0–50 and unique per staircase, a « Logements » row (null level)
+  only alone, labels unique per floor, at least one door, at most 500. Staircases are sorted by
+  name and floors top first whatever order they come in; an empty floor is allowed.
+- **Layout generation** (`BuildingPlan.create` → `generate()`): staircases 1–26, top floor
+  0–50 (or unknown), doors per floor ≥ 1, at most **500 dwellings** per building (a building
+  lives inside its street document, PLAN §6.2), and with style `5A` at most 26 doors per floor.
+  Each breach is a `BuildingPlanFailure`. Labels:
+  - `51` (`floorAndNumber`): floor then door number — RdC `01–04`, 1er `11–14`, 5e `51–54`,
+    10e `101–104`. With **10 doors or more** per floor the door number is padded to the width of
+    the count (RdC `001–010`, 1er `101–110`), so floor 1 door 11 (`111`) never reads like floor
+    11 door 1 (`1101`).
+  - `5A` (`floorAndLetter`): floor then letter — RdC `0A`, 5e `5A–5D`; stops at `Z`.
+  - free (`free`): placeholders `1, 2, 3…` on each floor, renamed door by door, floor by floor
+    (« Gauche », « Droite »).
+  - unknown floors: no floor prefix — `1…n` (`51` and free), `A…` (`5A`).
+- **Derived status** (`BuildingStatus`, never stored): done when every door is done, to do when
+  none is (doors where nobody was home count as not done), partial otherwise (`◐ done/total`).
+- **A building is to do itself**: the `House` factory sets a building's own status to to do; its
+  doors carry the statuses. It keeps its own note and « repasser » (« Repasser · Note » under the
+  grid); that « repasser » counts in the street's ↻ (`Progress.comeBackAlone`) but not as a door.
+  The street's progress counts the building's doors instead of the house.
+- **Commands** (on `Street`, each stamped with `by`/`at`):
+  - `markHouse` on a building is refused (`houseIsBuilding`); `setComeBack` / `setNote` on a
+    building set its own « repasser » / note.
+  - `describeBuilding(number, plan)` makes a house the building the plan lays out, or lays an
+    existing building out again: doors whose label still exists **on the same floor of the same
+    staircase** keep their status, « repasser », note and last change; the others are dropped.
+  - Per-floor adjust: `addDoor(number, staircase, level)` appends a door labelled by the style —
+    the next number (or letter) after the floor's door count, skipping labels already taken on
+    that floor, never zero-padded (`110` after `19`); refused at 500 doors
+    (`tooManyDwellings`) or after `Z` (`noLabelLeft`). `removeDoor` refuses the building's last
+    door (`lastDwelling`) and leaves an emptied floor in place. `renameDoor` keeps the door's marks
+    and refuses a label another door of the same floor has (`duplicateLabel`).
+  - `removeBuilding(number)` turns it back into a single house: done if every door was done
+    (its « repasser » then dropped), to do otherwise; note kept, doors dropped.
+  - `markDwelling`, `setDwellingComeBack` (refused on a done door: `comeBackOnDoneDwelling`),
+    `setDwellingNote` change one door and stamp only that door.
+- **Changes.** Layout commands return `BuildingLaidOut` (the new building + the whole house
+  `before`): storage rewrites that house's building, undo puts `before` back. A layout change is
+  rare and made in edit mode, so a teammate marking a door of the same building at that same
+  instant may be overwritten. `BuildingRemoved` carries the new status (`clearsComeBack` when
+  done). Door commands return a `DwellingChange` (`DwellingMarked`, `DwellingComeBackSet`,
+  `DwellingNoteSet`) with the house number, the staircase, the floor level, the door `before`
+  and its `key`, so storage writes field paths such as `houses.8.dwellings.A5-51.status` and
+  undo restores that door.
 
 ```dart
-// Sketch of the core (T1.2 delivered the uncommented members; the rest come with their tasks)
+// Sketch of the core (T1.2–T1.3 delivered the uncommented members; the rest come with their tasks)
 final class Street {                       // aggregate root
   final StreetId id;
   final String name;
@@ -617,12 +682,26 @@ final class Street {                       // aggregate root
   /// can write only that field (houses.12.status) instead of the whole document.
   Result<(Street, HouseMarked), HouseChangeFailure> markHouse(
       HouseNumber n, VisitStatus s, {required MemberId by, required DateTime at});
-  // setComeBack, setNote, delete, restore — then addNumbers, removeNumber (soft) in T1.4
+  // setComeBack, setNote, delete, restore;
+  // buildings (T1.3): describeBuilding, addDoor, removeDoor, renameDoor, removeBuilding,
+  //                   markDwelling, setDwellingComeBack, setDwellingNote;
+  // then addNumbers, removeNumber (soft) in T1.4
   Progress get progress;
 }
 
-sealed class StreetChange { /* HouseMarked, ComeBackSet, NoteSet, StreetDeleted,
-                               StreetRestored — NumbersAdded, NumberRemoved… in T1.4 */ }
+final class House { HouseNumber number; VisitStatus status; ComeBack? comeBack; Note note;
+                    ChangeStamp? lastChange; Building? building; }   // building: status is toDo
+final class Building { DoorLabelStyle style; List<Staircase> staircases;   // A, B…
+                       BuildingStatus get status; Progress get progress; }
+// Staircase { StaircaseName name; List<Floor> floors /* top first */ }
+// Floor { int? level /* null = « Logements » */; List<Dwelling> dwellings }
+// Dwelling { DwellingLabel label /* unique on its floor */; VisitStatus status; ComeBack? comeBack;
+//            Note note; ChangeStamp? lastChange }   — named by DwellingKey(staircase, level, label)
+
+sealed class StreetChange { /* HouseMarked, ComeBackSet, NoteSet, BuildingLaidOut,
+                               BuildingRemoved, DwellingMarked, DwellingComeBackSet,
+                               DwellingNoteSet, StreetDeleted, StreetRestored —
+                               NumbersAdded, NumberRemoved… in T1.4 */ }
 ```
 
 Domain services (pure functions, the bulk of the unit tests): house-number parsing and
@@ -660,8 +739,12 @@ tournees/{tourneeId}
       houses: {                                   ← a map inside the street document
         "12":  { n: 12, sfx: null, lat, lon, status: "DONE", comeBack: null, note: "",
                  prev: "NOBODY_HOME", by: uid, at: timestamp, deletedAt: null },
-        "8":   { n: 8, …, dwellings: { "A51": { label: "51", esc: "A", floor: 5, status, note,
-                                                prev, by, at }, … } }
+        "8":   { n: 8, …, dwellings: { "A5-51": { label: "51", esc: "A", floor: 5, status, note,
+                                                  prev, by, at }, … } }
+                                          ← key = letter + level + "-" + label ("A0-Gauche";
+                                            "A-Gauche" and floor: null when the floors are
+                                            unknown); the building's label style is stored
+                                            with it (exact field decided in T2.3)
       }
 ```
 

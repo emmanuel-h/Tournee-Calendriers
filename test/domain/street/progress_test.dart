@@ -15,6 +15,18 @@ void main() {
     });
   });
 
+  group('comeBackAlone', () {
+    test('should count one come-back and no door', () {
+      const progress = Progress.comeBackAlone;
+
+      expect(progress.comeBack, 1);
+      expect(progress.done, 0);
+      expect(progress.nobodyHome, 0);
+      expect(progress.toDo, 0);
+      expect(progress.total, 0);
+    });
+  });
+
   group('of one door', () {
     test('should count one done when the door is done', () {
       final progress = Progress.of(VisitStatus.done, comeBack: false);

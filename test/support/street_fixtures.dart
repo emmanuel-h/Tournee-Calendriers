@@ -3,6 +3,8 @@
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
 import 'package:tournee_calendriers/domain/shared/commune.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
+import 'package:tournee_calendriers/domain/street/building/dwelling_label.dart';
+import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/note.dart';
@@ -30,3 +32,9 @@ final threePm = DateTime.utc(2026, 11, 2, 15);
 
 final leaAtTwo = ChangeStamp(by: lea, at: twoPm);
 final paulAtThree = ChangeStamp(by: paul, at: threePm);
+
+/// A dwelling label the test knows is valid: `d('51')`.
+DwellingLabel d(String text) => valueOf(DwellingLabel.parse(text));
+
+final escA = StaircaseName('A');
+final escB = StaircaseName('B');

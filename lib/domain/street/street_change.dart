@@ -1,4 +1,7 @@
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
+import 'package:tournee_calendriers/domain/street/building/building.dart';
+import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
+import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
@@ -133,6 +136,216 @@ final class NoteSet extends HouseChange {
   @override
   String toString() =>
       'NoteSet(${streetId.value}, ${number.label}, $note, $stamp)';
+}
+
+/// The house at [number] got the layout [building]: it was described as a
+/// building, described again, or one of its doors was added, removed or
+/// renamed (PLAN §5.7). The house is to do itself and keeps its note and
+/// « repasser »; the doors whose label survived keep theirs.
+///
+/// Storage writes the whole building (its label style and the
+/// `houses.8.dwellings` map) with the house's `status`, `by` and `at`. A
+/// layout change is rare and made in edit mode, so writing the whole map is
+/// simpler than one write per door; the cost is that a teammate marking a
+/// door of that building at the very same moment can be overwritten. Undo
+/// puts [before] back, old layout and statuses included.
+final class BuildingLaidOut extends HouseChange {
+  const BuildingLaidOut({
+    required super.streetId,
+    required super.before,
+    required super.stamp,
+    required this.building,
+  });
+
+  final Building building;
+
+  @override
+  bool operator ==(Object other) =>
+      other is BuildingLaidOut &&
+      _sameHouseChange(other) &&
+      other.building == building;
+
+  @override
+  int get hashCode => Object.hash(streetId, before, stamp, building);
+
+  @override
+  String toString() =>
+      'BuildingLaidOut(${streetId.value}, ${number.label}, $building, $stamp)';
+}
+
+/// The building at [number] became a single house again, with [status]:
+/// done when every door was done, to do otherwise. Its doors are dropped;
+/// undo puts [before] back with them.
+///
+/// Storage removes the dwellings and writes the house's `status`, `by` and
+/// `at` (and the come-back as absent when [clearsComeBack]).
+final class BuildingRemoved extends HouseChange {
+  const BuildingRemoved({
+    required super.streetId,
+    required super.before,
+    required super.stamp,
+    required this.status,
+  });
+
+  final VisitStatus status;
+
+  /// Whether the building's « repasser » went away: a done house never
+  /// keeps one (see `House`).
+  bool get clearsComeBack => status == VisitStatus.done;
+
+  @override
+  bool operator ==(Object other) =>
+      other is BuildingRemoved &&
+      _sameHouseChange(other) &&
+      other.status == status;
+
+  @override
+  int get hashCode => Object.hash(streetId, before, stamp, status);
+
+  @override
+  String toString() =>
+      'BuildingRemoved(${streetId.value}, ${number.label}, $status, $stamp)';
+}
+
+/// A change to one door of the building at [number] (a tap on the door, or
+/// its sheet on a long press).
+///
+/// Like a [HouseChange] it carries the door as it was ([before]), so undo
+/// can put that exact dwelling back, and storage writes only the named
+/// fields of that door: a [DwellingMarked] on door `51` of the 5e of
+/// staircase `A` of house `8` writes `houses.8.dwellings.A5-51.status`,
+/// `.by` and `.at`
+/// (PLAN §6.2). Two people marking different doors never overwrite each
+/// other.
+sealed class DwellingChange extends StreetChange {
+  const DwellingChange({
+    required super.streetId,
+    required this.number,
+    required this.staircase,
+    required this.level,
+    required this.before,
+    required this.stamp,
+  });
+
+  /// The number of the building, its key in storage.
+  final HouseNumber number;
+
+  /// The staircase of the door.
+  final StaircaseName staircase;
+
+  /// The level of the door's floor; null for the « Logements » row.
+  final int? level;
+
+  /// The door before the change, untouched.
+  final Dwelling before;
+
+  /// Who made the change and when: the door's new last change.
+  final ChangeStamp stamp;
+
+  /// Where the door is in its building; `key.id` (`A5-51`) is its key in
+  /// storage.
+  DwellingKey get key => DwellingKey(staircase, level, before.label);
+
+  bool _sameDwellingChange(DwellingChange other) =>
+      other.streetId == streetId &&
+      other.number == number &&
+      other.staircase == staircase &&
+      other.level == level &&
+      other.before == before &&
+      other.stamp == stamp;
+
+  /// The street, house and door, as every dwelling change prints them.
+  String get _where => '${streetId.value}, ${number.label}, ${key.id}';
+}
+
+/// The door at [key] of the building [number] was given a new [status].
+final class DwellingMarked extends DwellingChange {
+  const DwellingMarked({
+    required super.streetId,
+    required super.number,
+    required super.staircase,
+    required super.level,
+    required super.before,
+    required super.stamp,
+    required this.status,
+  });
+
+  final VisitStatus status;
+
+  /// Whether the change also removed the door's « repasser »: a done door
+  /// never keeps one (see `Dwelling`), so storage then writes it as absent.
+  bool get clearsComeBack => status == VisitStatus.done;
+
+  @override
+  bool operator ==(Object other) =>
+      other is DwellingMarked &&
+      _sameDwellingChange(other) &&
+      other.status == status;
+
+  @override
+  int get hashCode =>
+      Object.hash(streetId, number, staircase, level, before, stamp, status);
+
+  @override
+  String toString() => 'DwellingMarked($_where, $status, $stamp)';
+}
+
+/// The « repasser » of the door at [key] was set to [comeBack], or removed
+/// when [comeBack] is null.
+final class DwellingComeBackSet extends DwellingChange {
+  const DwellingComeBackSet({
+    required super.streetId,
+    required super.number,
+    required super.staircase,
+    required super.level,
+    required super.before,
+    required super.stamp,
+    required this.comeBack,
+  });
+
+  final ComeBack? comeBack;
+
+  @override
+  bool operator ==(Object other) =>
+      other is DwellingComeBackSet &&
+      _sameDwellingChange(other) &&
+      other.comeBack == comeBack;
+
+  @override
+  int get hashCode =>
+      Object.hash(streetId, number, staircase, level, before, stamp, comeBack);
+
+  @override
+  String toString() => 'DwellingComeBackSet($_where, $comeBack, $stamp)';
+}
+
+/// The note of the door at [key] was replaced by [note] ([Note.empty] when
+/// it was erased).
+final class DwellingNoteSet extends DwellingChange {
+  const DwellingNoteSet({
+    required super.streetId,
+    required super.number,
+    required super.staircase,
+    required super.level,
+    required super.before,
+    required super.stamp,
+    required this.note,
+  });
+
+  final Note note;
+
+  @override
+  bool operator ==(Object other) =>
+      other is DwellingNoteSet &&
+      _sameDwellingChange(other) &&
+      other.note == note;
+
+  @override
+  int get hashCode =>
+      Object.hash(streetId, number, staircase, level, before, stamp, note);
+
+  @override
+  String toString() => 'DwellingNoteSet($_where, $note, $stamp)';
 }
 
 /// The street went to the Corbeille: hidden, but kept with its houses so
