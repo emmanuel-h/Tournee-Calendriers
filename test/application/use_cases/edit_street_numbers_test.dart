@@ -109,7 +109,10 @@ void main() {
   });
 
   test('should send the street to the Corbeille', () async {
-    final change = valueOf(await editStreet(lilasId, const DeleteStreet()));
+    // Built at run time, as the screen does: a `const` instance is made by
+    // the compiler, so its constructor line would never count as covered.
+    // ignore: prefer_const_constructors
+    final change = valueOf(await editStreet(lilasId, DeleteStreet()));
 
     expect(change, StreetDeleted(streetId: lilasId, deletion: leaAtTwo));
     expect(stored().deletion, leaAtTwo);
