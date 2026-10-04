@@ -21,6 +21,11 @@ updates:
       time: "06:00"
       timezone: "Europe/Paris"
     open-pull-requests-limit: 5
+    # Gradle, the Android Gradle Plugin and Kotlin depend on each other's
+    # versions (AGP 9.4 needs Gradle >= 9.6), so they move together in one PR.
+    groups:
+      android-build:
+        patterns: ["*"]
     commit-message:
       prefix: "deps(android)"
 
