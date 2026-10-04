@@ -833,7 +833,8 @@ but they run once per task and in CI.
 | Architecture | import rules between layers | Dart VM | every run | < 1 s |
 | Coverage | **100 % line coverage** on `domain/`, `application/`, `presentation/` and the adapters' mapping code, checked by a script on `coverage/lcov.info` | — | end of task, CI | piggybacks |
 | Rules | Firestore security rules in the Firebase emulator (`@firebase/rules-unit-testing`, `node --test`) | Node + emulator | when `firebase/` changes, CI | < 1 min |
-| Device | Manual checklist on a phone: map render, tap-to-add, offline download, **airplane-mode day** (cold start, mark, restart, reconnect, sync), QR scan | device | end of map / offline tasks, before release | — |
+| Instrumented | `integration_test/`: a handful of end-to-end flows in the real app (launch, mark a house + undo, building, edit a street, offline cold start…), ≤ 10 tests | Android emulator (`Medium_Phone_API_36.1`), run by Claude | before every push to `main` | < 3 min |
+| Device | Manual checklist on your phone: map render, tap-to-add, offline download, **airplane-mode day** (cold start, mark, restart, reconnect, sync), QR scan | your phone | after every task, and the full checklist before release | — |
 
 **No mutation-testing gate:** Dart has no maintained equivalent of Pitest. To compensate, the
 developer agent follows explicit test-writing rules: each branch gets a test whose values would
@@ -913,6 +914,8 @@ exists. No invented data at any stage.
 - Tasks are GitHub issues grouped in milestones M0–M7 (`docs/TASKS.md` maps them).
 - `.claude/agents/developer.md`: one agent, takes one task (an issue) and delivers it
   end to end (domain → application → infrastructure → presentation → ui) with TDD, then runs the gates.
-- The main session reviews the result and commits; the agent never commits.
+- The main session reviews, runs the gates and the instrumented suite on the emulator, commits
+  (`Refs #N`), pushes to `main`, then asks you to test on your phone. Issues close only when you
+  say so. The agent never commits.
 - Any screen change starts from the ASCII sketch in this document and the approved mockup. If a
   task needs a screen that isn't sketched here, the agent stops and asks rather than inventing one.
