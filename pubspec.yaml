@@ -1,0 +1,28 @@
+name: tournee_calendriers
+description: "Tournée des calendriers des sapeurs-pompiers."
+# Private app: never published to pub.dev.
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.13.5
+  # Flutter 3.47.6 is the version the project was scaffolded and tested with.
+  flutter: 3.47.6
+
+# Versions are pinned exactly (no `^`) so every machine and CI resolve the same
+# packages; upgrades are deliberate, one commit each.
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: 3.4.3
+
+dev_dependencies:
+  flutter_lints: 6.0.0
+  flutter_test:
+    sdk: flutter
+  # Plain Dart test runner, used by the architecture test and pure-Dart suites.
+  test: 1.31.1
+
+flutter:
+  uses-material-design: true
