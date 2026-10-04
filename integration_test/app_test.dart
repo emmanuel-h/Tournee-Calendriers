@@ -145,7 +145,8 @@ void main() {
     expect(find.widgetWithText(AppBar, 'Rue Pierre Morin'), findsOneWidget);
   });
   testWidgets(
-    'should keep a mark across a restart when a house is marked, undone and marked again',
+    'should keep the marks across a restart when a house is marked, undone, '
+    'marked again and another held to come back',
     (tester) async {
       final semantics = tester.ensureSemantics();
       final storage = await Directory.systemTemp.createTemp('mark_flow');
@@ -190,6 +191,17 @@ void main() {
       await tester.tap(tile);
       await tester.pumpAndSettle();
       expect(tester.getSemantics(tile).label, 'Numéro 33, fait');
+
+      // Hold 34: its sheet opens; « Repasser » is ticked, the sheet closed
+      // by a tap on the dimmed street, and the tile shows ↻.
+      final other = find.byKey(const ValueKey('street.tile.34'));
+      await tester.longPress(other);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('house.comeBack')));
+      await tester.pumpAndSettle();
+      await tester.tapAt(const Offset(200, 40));
+      await tester.pumpAndSettle();
+      expect(tester.getSemantics(other).label, 'Numéro 34, à faire, repasser');
       // The phone storage writes its file just after the tap: let it land.
       await Future<void>.delayed(const Duration(seconds: 1));
 
@@ -211,6 +223,10 @@ void main() {
       expect(
         tester.getSemantics(find.byKey(const ValueKey('street.tile.33'))).label,
         'Numéro 33, fait',
+      );
+      expect(
+        tester.getSemantics(find.byKey(const ValueKey('street.tile.34'))).label,
+        'Numéro 34, à faire, repasser',
       );
       semantics.dispose();
     },

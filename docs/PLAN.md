@@ -480,6 +480,33 @@ Details fixed in T1.7 (`lib/presentation/street/`, `lib/ui/screens/street/`):
   otherwise partial (`◐ done/total`).
 - Under every note field: "N'écrivez ni nom ni information personnelle" (see §8).
 
+Fiche maison details fixed in T1.8 (`lib/presentation/house_sheet/`,
+`lib/ui/screens/street/house_sheet.dart`):
+
+- **Hold** a single-house tile opens the sheet (a building tile: #13). Opening it hides the
+  snackbar of the last tap: its « Annuler » would put the whole house back, wiping the sheet's
+  changes. The sheet shows « 5 Rue des Lilas », the status control (screen readers: a radio
+  group « Statut »), the blue « ↻ Repasser » block, the note, and the last change.
+- **Each control is stored at once** through `SetHouseDetails` (one change each, stamped); the
+  tile behind follows live. A control set to what the house already has stores nothing, so
+  opening and closing a sheet never stamps a house. Changes run one after the other, each on
+  the house as the previous one left it.
+- **« Repasser »**: ticking it shows the hint field (« Quand ? ex. après 19h », one line);
+  unticking drops the hint. While « Fait » is chosen the box is unticked, disabled and greyed,
+  with « Déjà fait : rien à repasser. » under it (read with the box by screen readers); choosing
+  « Fait » clears a « repasser » and its hint (§6.1).
+- **Text fields** (hint ≤ 50, note ≤ 200, counted as the domain counts: code points of the
+  trimmed text) show a « 12/200 » counter. An edit that would pass the limit (a key or a paste)
+  is refused whole and « Note limitée à 200 caractères. » / « Précision limitée à 50
+  caractères. » shows until the next edit that fits; nothing is cut. The texts are stored when
+  the field loses focus (« OK » on the keyboard), before another control is used, when the
+  sheet closes (however it is closed) and when the app goes to the background — not at every
+  key, which would stamp the house each letter.
+- **Last change**: « Modifié à 14:02 » today, « Modifié le 3 oct. à 14:02 » before, in the
+  phone's time zone; nothing when the house was never changed. Names (« par Léa ») come with
+  identities in M2.
+- *Transformer en immeuble…* is not shown yet: it comes with its sheet (#13).
+
 *Transformer en immeuble…* / *Modifier les étages* sheet:
 
 ```

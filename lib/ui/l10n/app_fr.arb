@@ -105,6 +105,62 @@
   "streetGone": "Cette rue n'est plus sur ce téléphone.",
   "@streetGone": { "description": "Street screen opened for a street that is not on the phone or is in the Corbeille." },
 
+  "houseStatusGroup": "Statut",
+  "@houseStatusGroup": { "description": "Screen-reader name of the status control of the house sheet (« À faire | Fait | Personne », PLAN §5.7)." },
+  "comeBack": "Repasser",
+  "@comeBack": { "description": "Box of the house sheet: the residents asked the team to come back later." },
+  "comeBackDoneReason": "Déjà fait : rien à repasser.",
+  "@comeBackDoneReason": { "description": "Under the disabled « Repasser » box when the house is done (a done house cannot get a « repasser »)." },
+  "comeBackHintPlaceholder": "Quand ? ex. après 19h",
+  "@comeBackHintPlaceholder": { "description": "Placeholder and screen-reader name of the field saying when to come back." },
+  "comeBackHintTooLong": "Précision limitée à {max} caractères.",
+  "@comeBackHintTooLong": {
+    "description": "Shown when typing or pasting would make the come-back hint longer than allowed; the edit is refused.",
+    "placeholders": { "max": { "type": "int", "example": "50" } }
+  },
+  "noteLabel": "Note",
+  "@noteLabel": { "description": "Label of the note field of the house sheet." },
+  "notePrivacyHint": "N'écrivez ni nom ni information personnelle.",
+  "@notePrivacyHint": { "description": "Under every note field (PLAN §5.7, §8)." },
+  "noteTooLong": "Note limitée à {max} caractères.",
+  "@noteTooLong": {
+    "description": "Shown when typing or pasting would make the note longer than allowed; the edit is refused.",
+    "placeholders": { "max": { "type": "int", "example": "200" } }
+  },
+  "textCount": "{count}/{max}",
+  "@textCount": {
+    "description": "Characters used / allowed, under a text field with a limit.",
+    "placeholders": {
+      "count": { "type": "int", "example": "12" },
+      "max": { "type": "int", "example": "200" }
+    }
+  },
+  "textCountSemantics": "{count} caractères sur {max}",
+  "@textCountSemantics": {
+    "description": "Screen-reader label of the characters counter.",
+    "placeholders": {
+      "count": { "type": "int", "example": "12" },
+      "max": { "type": "int", "example": "200" }
+    }
+  },
+  "houseChangedToday": "Modifié à {time}",
+  "@houseChangedToday": {
+    "description": "Last change of a house, made today (no member names before M2).",
+    "placeholders": {
+      "time": { "type": "DateTime", "format": "Hm", "example": "14:02" }
+    }
+  },
+  "houseChangedOn": "Modifié le {day} à {time}",
+  "@houseChangedOn": {
+    "description": "Last change of a house, made before today: « Modifié le 3 oct. à 14:02 ».",
+    "placeholders": {
+      "day": { "type": "DateTime", "format": "MMMd", "example": "3 oct." },
+      "time": { "type": "DateTime", "format": "Hm", "example": "14:02" }
+    }
+  },
+  "houseGone": "Ce numéro n'est plus dans cette rue.",
+  "@houseGone": { "description": "House sheet of a number that was removed meanwhile, or whose street went to the Corbeille." },
+
   "startStreetsHeader": "Mes rues · {count}",
   "@startStreetsHeader": {
     "description": "Header of the street list of the temporary start screen (PLAN §5.0), with the number of streets.",

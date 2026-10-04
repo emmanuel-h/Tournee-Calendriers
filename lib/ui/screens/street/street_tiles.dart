@@ -22,6 +22,7 @@ final class StreetTiles extends StatelessWidget {
     required this.state,
     required this.showHint,
     required this.onTap,
+    required this.onHold,
   });
 
   final StreetShown state;
@@ -32,6 +33,9 @@ final class StreetTiles extends StatelessWidget {
 
   /// A house tile was tapped.
   final ValueChanged<HouseNumber> onTap;
+
+  /// A house tile was held (long-pressed).
+  final ValueChanged<HouseNumber> onHold;
 
   @override
   Widget build(BuildContext context) {
@@ -99,8 +103,10 @@ final class StreetTiles extends StatelessWidget {
         ),
       },
       hasNote: tile.hasNote,
-      // A building opens its grid on tap (#13): not cycled here.
+      // A building opens its grid on tap (#13): not cycled here, and its
+      // own sheet is not wired yet.
       onTap: tile.isBuilding ? null : () => onTap(number),
+      onLongPress: tile.isBuilding ? null : () => onHold(number),
     );
   }
 }

@@ -13,6 +13,7 @@ import 'package:tournee_calendriers/presentation/street/street_view_state.dart';
 import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
+import 'package:tournee_calendriers/ui/screens/street/house_sheet.dart';
 import 'package:tournee_calendriers/ui/screens/street/street_header.dart';
 import 'package:tournee_calendriers/ui/screens/street/street_tiles.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
@@ -23,8 +24,8 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 /// right; a tap cycles a house `○ → ✓ → ✗ → ○` with « Annuler » for 4 s.
 /// Works offline: everything it reads and writes is on the phone.
 ///
-/// Not wired yet: a hold on a house (Fiche maison, #12) and a tap on a
-/// building (its grid, #13).
+/// A hold on a house opens its Fiche maison (PLAN §5.7). Not wired yet: a
+/// tap or a hold on a building (its grid, #13).
 final class StreetScreen extends StatelessWidget {
   const StreetScreen({super.key, required this.streetId, this.title});
 
@@ -115,6 +116,7 @@ final class _MarkingScreenState extends ConsumerState<_MarkingScreen> {
                     state: state,
                     showHint: !_snackBarShown,
                     onTap: _cycle,
+                    onHold: _openSheet,
                   ),
                 ),
               ],
@@ -160,6 +162,16 @@ final class _MarkingScreenState extends ConsumerState<_MarkingScreen> {
           setState(() => _snackBarShown = false);
         }
       }),
+    );
+  }
+
+  /// A hold on a house tile opens its sheet. The snackbar of the last tap
+  /// goes: its « Annuler » would put the whole house back as it was before
+  /// that tap, wiping what the sheet changes.
+  void _openSheet(HouseNumber number) {
+    _messenger.currentState!.hideCurrentSnackBar();
+    unawaited(
+      showHouseSheet(context, (street: widget.streetId, number: number)),
     );
   }
 

@@ -23,6 +23,9 @@ Street screen (« Rue »):
 - A tap cycles a house ○ → ✓ → ✗ → ○ with a light vibration and a screen-reader announcement;
   « Annuler » for 4 s undoes the last tap. A note shows as a small dot on the tile.
 - « Masquer faits » hides the done houses, remembered per street on the phone.
+- Hold a house for its sheet (« Fiche maison »): status « À faire | Fait | Personne »,
+  « Repasser » with when to come back, a note (200 characters at most, with the privacy hint),
+  and when it was last changed. Each control is stored at once; the tile follows.
 - Works offline, cold start included: marks are stored on the phone.
-- Not yet: hold a house for its details, open a building's grid, edit mode (✏ opens an empty
-  screen).
+- Not yet: open a building's grid or turn a house into a building, edit mode (✏ opens an
+  empty screen).

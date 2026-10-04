@@ -125,6 +125,65 @@ class AppLocalizationsFr extends AppLocalizations {
   String get streetGone => 'Cette rue n\'est plus sur ce téléphone.';
 
   @override
+  String get houseStatusGroup => 'Statut';
+
+  @override
+  String get comeBack => 'Repasser';
+
+  @override
+  String get comeBackDoneReason => 'Déjà fait : rien à repasser.';
+
+  @override
+  String get comeBackHintPlaceholder => 'Quand ? ex. après 19h';
+
+  @override
+  String comeBackHintTooLong(int max) {
+    return 'Précision limitée à $max caractères.';
+  }
+
+  @override
+  String get noteLabel => 'Note';
+
+  @override
+  String get notePrivacyHint => 'N\'écrivez ni nom ni information personnelle.';
+
+  @override
+  String noteTooLong(int max) {
+    return 'Note limitée à $max caractères.';
+  }
+
+  @override
+  String textCount(int count, int max) {
+    return '$count/$max';
+  }
+
+  @override
+  String textCountSemantics(int count, int max) {
+    return '$count caractères sur $max';
+  }
+
+  @override
+  String houseChangedToday(DateTime time) {
+    final intl.DateFormat timeDateFormat = intl.DateFormat.Hm(localeName);
+    final String timeString = timeDateFormat.format(time);
+
+    return 'Modifié à $timeString';
+  }
+
+  @override
+  String houseChangedOn(DateTime day, DateTime time) {
+    final intl.DateFormat dayDateFormat = intl.DateFormat.MMMd(localeName);
+    final String dayString = dayDateFormat.format(day);
+    final intl.DateFormat timeDateFormat = intl.DateFormat.Hm(localeName);
+    final String timeString = timeDateFormat.format(time);
+
+    return 'Modifié le $dayString à $timeString';
+  }
+
+  @override
+  String get houseGone => 'Ce numéro n\'est plus dans cette rue.';
+
+  @override
   String startStreetsHeader(int count) {
     return 'Mes rues · $count';
   }

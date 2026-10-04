@@ -122,4 +122,27 @@ abstract final class AppTextStyles {
     fontWeight: FontWeight.w700,
     fontSize: 14,
   );
+
+  /// The house number at the top of the Fiche maison (« 5 »).
+  static const sheetNumber = TextStyle(
+    fontFamily: AppFonts.display,
+    fontWeight: FontWeight.w700,
+    fontSize: 34,
+    height: 1.1,
+  );
+
+  /// The street name next to it (« Rue des Lilas »).
+  static const sheetStreetName = TextStyle(
+    fontFamily: AppFonts.display,
+    fontWeight: FontWeight.w600,
+    fontSize: 22,
+    height: 1.1,
+  );
+
+  /// The hint under a field (« N'écrivez ni nom… », « 12/200 »).
+  static const helper = TextStyle(
+    fontFamily: AppFonts.text,
+    fontWeight: FontWeight.w400,
+    fontSize: 13,
+  );
 }

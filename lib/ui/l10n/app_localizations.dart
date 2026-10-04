@@ -297,6 +297,84 @@ abstract class AppLocalizations {
   /// **'Cette rue n\'est plus sur ce téléphone.'**
   String get streetGone;
 
+  /// Screen-reader name of the status control of the house sheet (« À faire | Fait | Personne », PLAN §5.7).
+  ///
+  /// In fr, this message translates to:
+  /// **'Statut'**
+  String get houseStatusGroup;
+
+  /// Box of the house sheet: the residents asked the team to come back later.
+  ///
+  /// In fr, this message translates to:
+  /// **'Repasser'**
+  String get comeBack;
+
+  /// Under the disabled « Repasser » box when the house is done (a done house cannot get a « repasser »).
+  ///
+  /// In fr, this message translates to:
+  /// **'Déjà fait : rien à repasser.'**
+  String get comeBackDoneReason;
+
+  /// Placeholder and screen-reader name of the field saying when to come back.
+  ///
+  /// In fr, this message translates to:
+  /// **'Quand ? ex. après 19h'**
+  String get comeBackHintPlaceholder;
+
+  /// Shown when typing or pasting would make the come-back hint longer than allowed; the edit is refused.
+  ///
+  /// In fr, this message translates to:
+  /// **'Précision limitée à {max} caractères.'**
+  String comeBackHintTooLong(int max);
+
+  /// Label of the note field of the house sheet.
+  ///
+  /// In fr, this message translates to:
+  /// **'Note'**
+  String get noteLabel;
+
+  /// Under every note field (PLAN §5.7, §8).
+  ///
+  /// In fr, this message translates to:
+  /// **'N\'écrivez ni nom ni information personnelle.'**
+  String get notePrivacyHint;
+
+  /// Shown when typing or pasting would make the note longer than allowed; the edit is refused.
+  ///
+  /// In fr, this message translates to:
+  /// **'Note limitée à {max} caractères.'**
+  String noteTooLong(int max);
+
+  /// Characters used / allowed, under a text field with a limit.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count}/{max}'**
+  String textCount(int count, int max);
+
+  /// Screen-reader label of the characters counter.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count} caractères sur {max}'**
+  String textCountSemantics(int count, int max);
+
+  /// Last change of a house, made today (no member names before M2).
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifié à {time}'**
+  String houseChangedToday(DateTime time);
+
+  /// Last change of a house, made before today: « Modifié le 3 oct. à 14:02 ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifié le {day} à {time}'**
+  String houseChangedOn(DateTime day, DateTime time);
+
+  /// House sheet of a number that was removed meanwhile, or whose street went to the Corbeille.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ce numéro n\'est plus dans cette rue.'**
+  String get houseGone;
+
   /// Header of the street list of the temporary start screen (PLAN §5.0), with the number of streets.
   ///
   /// In fr, this message translates to:

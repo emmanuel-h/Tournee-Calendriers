@@ -28,6 +28,10 @@ final class FakeStreetRepository implements StreetRepository {
   /// Every (street, change) given to [save], in order.
   final saved = <(Street, StreetChange)>[];
 
+  /// When set, the next [save] stores nothing and throws it, as a full
+  /// disk would; the saves after it work again.
+  Exception? failNextSave;
+
   /// The street [id] as stored now.
   Street? operator [](StreetId id) => _streets[id];
 
@@ -62,6 +66,10 @@ final class FakeStreetRepository implements StreetRepository {
 
   @override
   Future<void> save(Street street, StreetChange change) async {
+    if (failNextSave case final error?) {
+      failNextSave = null;
+      throw error;
+    }
     saved.add((street, change));
     _streets[street.id] = street;
     _changed.add(null);
