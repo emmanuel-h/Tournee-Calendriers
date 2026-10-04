@@ -225,3 +225,12 @@ README):
 - Re-estimate PLAN §7's « ≈ 20–50 MB » as **≈ 10 MB** for OpenFreeMap.
 - Keep IGN Plan as a manual fallback style only (credit « © IGN » in the UI). It is not worth
   switching automatically.
+
+## Phone check (2026-10-04)
+
+Run by the user on a real phone (Nokia X30 5G, Android) with the spike build:
+
+- **Street names render** — the missing labels were an emulator (software GPU) artefact only.
+- **Offline works:** region downloaded, airplane mode on, app force-closed and cold-started, map
+  displayed from the offline region.
+
