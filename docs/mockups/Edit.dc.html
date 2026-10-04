@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Modifier la rue</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B3261E}a:hover{color:#8C1D18}
+.ib{width:48px;height:48px;border:0;background:transparent;color:#1B1F24;border-radius:24px;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;text-decoration:none;flex-shrink:0}
+.ib svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tile{height:56px;box-sizing:border-box;border-radius:12px;display:flex;align-items:center;background:#FFFFFF;border:1.5px dashed #8A8F96;width:100%}
+.num{flex:1;padding-left:14px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:26px;line-height:1;background:transparent;border:0;text-align:left;color:#1B1F24;cursor:pointer;height:100%}
+.x{width:48px;height:48px;border:0;background:transparent;color:#B3261E;font-size:20px;font-weight:700;cursor:pointer;flex-shrink:0}
+.add{height:56px;box-sizing:border-box;border-radius:12px;border:1.5px solid #1B1F24;background:#F3F1EC;display:flex;align-items:center;justify-content:center;gap:6px;font:700 15px 'Atkinson Hyperlegible',sans-serif;color:#1B1F24;text-decoration:none;width:100%}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F3F1EC; color: #1B1F24; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; display: flex; flex-direction: column; position: relative; overflow: hidden">
+  <div style="display: flex; align-items: center; gap: 4px; padding: 8px 12px 0 8px">
+    <a class="ib" href="Main.dc.html" aria-label="Quitter la modification"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></a>
+    <h1 style="flex: 1; margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 26px">Modifier la rue</h1>
+    <a href="Main.dc.html" style="height: 44px; padding: 0 20px; border-radius: 22px; background: #1B1F24; color: #FFFFFF; font-weight: 700; font-size: 16px; display: flex; align-items: center; text-decoration: none">OK</a>
+  </div>
+  <div style="padding: 10px 16px 0 16px; display: flex; flex-direction: column; gap: 6px">
+    <label for="nm" style="font-size: 14px; font-weight: 700">Nom de la rue</label>
+    <input id="nm" value="Rue des Lilas" style="height: 52px; box-sizing: border-box; width: 100%; border: 1.5px solid #1B1F24; border-radius: 12px; background: #FFFFFF; padding: 0 14px; font: 700 20px 'Barlow Condensed', sans-serif; color: #1B1F24">
+  </div>
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 14px 16px 6px 16px; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #4A5058">
+    <div>Côté impair</div>
+    <div>Côté pair</div>
+  </div>
+  <div style="flex: 1; overflow-y: auto; padding: 0 16px 16px 16px">
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start">
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <sc-for list="{{odd}}" as="h" hint-placeholder-count="6">
+          <div class="tile"><button class="num" aria-label="{{h.editLabel}}">{{h.label}}</button><button class="x" onClick="{{h.remove}}" aria-label="{{h.removeLabel}}">✕</button></div>
+        </sc-for>
+        <a class="add" href="Numbers.dc.html">+ numéros</a>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <sc-for list="{{even}}" as="h" hint-placeholder-count="6">
+          <div class="tile"><button class="num" aria-label="{{h.editLabel}}">{{h.label}}</button><button class="x" onClick="{{h.remove}}" aria-label="{{h.removeLabel}}">✕</button></div>
+        </sc-for>
+        <a class="add" href="Numbers.dc.html">+ numéros</a>
+      </div>
+    </div>
+    <p style="margin: 14px 0 0 0; font-size: 14px; color: #4A5058; line-height: 1.4">Touchez un numéro pour le renommer ou le transformer en immeuble.</p>
+  </div>
+  <sc-if value="{{hasRemoved}}" hint-placeholder-val="{{false}}">
+    <div style="position: absolute; left: 16px; right: 16px; bottom: 96px; min-height: 56px; background: #1B1F24; color: #FFFFFF; border-radius: 14px; display: flex; align-items: center; justify-content: space-between; padding: 0 8px 0 18px; box-sizing: border-box; font-size: 16px">
+      <span>{{removedText}}</span>
+      <button onClick="{{undo}}" style="height: 48px; padding: 0 16px; border: 0; background: transparent; color: #F2B33D; font: 700 16px 'Atkinson Hyperlegible', sans-serif; cursor: pointer">Annuler</button>
+    </div>
+  </sc-if>
+  <div style="display: flex; gap: 10px; padding: 12px 16px 24px 16px; background: #FFFFFF; border-top: 1px solid #E2DED5">
+    <button style="flex: 1; height: 52px; border-radius: 26px; border: 1.5px solid #CFC9BD; background: #FFFFFF; font: 700 15px 'Atkinson Hyperlegible', sans-serif; color: #1B1F24">Ne plus la faire</button>
+    <button style="flex: 1; height: 52px; border-radius: 26px; border: 1.5px solid #B3261E; background: #FFFFFF; font: 700 15px 'Atkinson Hyperlegible', sans-serif; color: #B3261E">Supprimer la rue</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = {
+      removed: null,
+      numbers: [
+        { n: '1', side: 'odd' }, { n: '3', side: 'odd' }, { n: '3bis', side: 'odd' }, { n: '5', side: 'odd' },
+        { n: '7', side: 'odd' }, { n: '9', side: 'odd' }, { n: '11', side: 'odd' },
+        { n: '2', side: 'even' }, { n: '4', side: 'even' }, { n: '6', side: 'even' }, { n: '8 · immeuble', side: 'even' },
+        { n: '10', side: 'even' }, { n: '12', side: 'even' }, { n: '14', side: 'even' }
+      ]
+    };
+  }
+  remove(n) {
+    const index = this.state.numbers.findIndex((x) => x.n === n);
+    this.setState({
+      numbers: this.state.numbers.filter((x) => x.n !== n),
+      removed: { item: this.state.numbers[index], index: index }
+    });
+  }
+  undo() {
+    const r = this.state.removed;
+    if (!r) return;
+    const numbers = this.state.numbers.slice();
+    numbers.splice(r.index, 0, r.item);
+    this.setState({ numbers: numbers, removed: null });
+  }
+  renderVals() {
+    const mk = (x) => ({
+      label: x.n,
+      editLabel: 'Modifier le numéro ' + x.n,
+      removeLabel: 'Supprimer le numéro ' + x.n,
+      remove: () => this.remove(x.n)
+    });
+    const r = this.state.removed;
+    return {
+      odd: this.state.numbers.filter((x) => x.side === 'odd').map(mk),
+      even: this.state.numbers.filter((x) => x.side === 'even').map(mk),
+      hasRemoved: !!r,
+      removedText: r ? 'N° ' + r.item.n + ' supprimé' : '',
+      undo: () => this.undo()
+    };
+  }
+}
+</script>
+</body>
+</html>

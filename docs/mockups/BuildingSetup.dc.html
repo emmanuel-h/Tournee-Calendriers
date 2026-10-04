@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Décrire l'immeuble</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B3261E}a:hover{color:#8C1D18}
+.ghost{height:60px;border-radius:12px;background:#FFFFFF;border:1.5px solid #CFC9BD;box-sizing:border-box}
+.stp{display:flex;align-items:center;justify-content:space-between;min-height:60px;border-bottom:1px solid #E2DED5}
+.pm{width:48px;height:48px;border-radius:24px;border:1.5px solid #CFC9BD;background:#FFFFFF;font:700 22px 'Atkinson Hyperlegible',sans-serif;color:#1B1F24;cursor:pointer;padding:0}
+.val{min-width:72px;text-align:center;font:700 24px 'Barlow Condensed',sans-serif}
+.seg{flex:1;height:48px;border:0;font:700 15px 'Atkinson Hyperlegible',sans-serif;cursor:pointer}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F3F1EC; color: #1B1F24; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; position: relative; overflow: hidden">
+  <div style="padding: 120px 16px 0 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px">
+    <div class="ghost"></div><div class="ghost"></div><div class="ghost"></div><div class="ghost"></div>
+  </div>
+  <div style="position: absolute; inset: 0; background: rgba(27, 31, 36, 0.5)"></div>
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; background: #FFFFFF; border-radius: 24px 24px 0 0; padding: 12px 20px 28px 20px; display: flex; flex-direction: column; gap: 6px">
+    <div style="width: 40px; height: 4px; border-radius: 2px; background: #CFC9BD; align-self: center; margin-bottom: 6px"></div>
+    <h2 style="margin: 0; font: 700 28px 'Barlow Condensed', sans-serif">Décrire l'immeuble</h2>
+    <span style="font-size: 15px; color: #4A5058; margin-bottom: 6px">8 Rue des Lilas</span>
+    <div class="stp"><span style="font-weight: 700">Escaliers</span><span style="display: flex; align-items: center; gap: 6px"><button class="pm" aria-label="Un escalier de moins">−</button><span class="val">2</span><button class="pm" aria-label="Un escalier de plus">+</button></span></div>
+    <div class="stp"><span style="font-weight: 700">Étages</span><span style="display: flex; align-items: center; gap: 6px"><button class="pm" aria-label="Un étage de moins">−</button><span class="val">RdC–5e</span><button class="pm" aria-label="Un étage de plus">+</button></span></div>
+    <div class="stp"><span style="font-weight: 700">Portes par étage</span><span style="display: flex; align-items: center; gap: 6px"><button class="pm" aria-label="Une porte de moins">−</button><span class="val">4</span><button class="pm" aria-label="Une porte de plus">+</button></span></div>
+    <div style="display: flex; flex-direction: column; gap: 6px; padding-top: 10px">
+      <span style="font-weight: 700">Numéros des portes</span>
+      <div role="radiogroup" aria-label="Numéros des portes" style="display: flex; border: 1.5px solid #CFC9BD; border-radius: 14px; overflow: hidden">
+        <button class="seg" role="radio" aria-checked="true" style="background: #1B1F24; color: #FFFFFF">51, 52…</button>
+        <button class="seg" role="radio" aria-checked="false" style="background: #FFFFFF; color: #1B1F24; border-left: 1.5px solid #CFC9BD">5A, 5B…</button>
+        <button class="seg" role="radio" aria-checked="false" style="background: #FFFFFF; color: #1B1F24; border-left: 1.5px solid #CFC9BD">Libres</button>
+      </div>
+    </div>
+    <div style="background: #F3F1EC; border-radius: 14px; padding: 12px 16px; display: flex; flex-direction: column; gap: 4px; margin-top: 8px">
+      <span style="font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #4A5058">Aperçu · 48 logements</span>
+      <span style="font: 600 19px 'Barlow Condensed', sans-serif">Esc. A et B : RdC 01–04, 1er 11–14 … 5e 51–54</span>
+      <span style="font-size: 13px; color: #4A5058">Chaque étage pourra ensuite être ajusté (porte en plus ou en moins).</span>
+    </div>
+    <a href="Building.dc.html" style="margin-top: 10px; height: 56px; border-radius: 28px; background: #B3261E; color: #FFFFFF; font-weight: 700; font-size: 17px; display: flex; align-items: center; justify-content: center; text-decoration: none">Valider</a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

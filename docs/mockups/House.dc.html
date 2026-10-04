@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Fiche maison</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B3261E}a:hover{color:#8C1D18}
+.ghost{height:60px;border-radius:12px;background:#FFFFFF;border:1.5px solid #CFC9BD;box-sizing:border-box}
+.seg{flex:1;height:52px;border:0;font:700 16px 'Atkinson Hyperlegible',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.lbl{font-size:15px;font-weight:700}
+.in{height:52px;box-sizing:border-box;width:100%;border:1.5px solid #CFC9BD;border-radius:12px;background:#FFFFFF;padding:0 14px;font:400 17px 'Atkinson Hyperlegible',sans-serif;color:#1B1F24}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F3F1EC; color: #1B1F24; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; position: relative; overflow: hidden">
+  <div style="padding: 120px 16px 0 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px">
+    <div class="ghost"></div><div class="ghost" style="background: #1E6B47; border-color: #1E6B47"></div>
+    <div class="ghost" style="background: #1E6B47; border-color: #1E6B47"></div><div class="ghost" style="background: #1E6B47; border-color: #1E6B47"></div>
+    <div class="ghost" style="background: #F2B33D; border-color: #D99A22"></div><div class="ghost"></div>
+  </div>
+  <div style="position: absolute; inset: 0; background: rgba(27, 31, 36, 0.5)"></div>
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; background: #FFFFFF; border-radius: 24px 24px 0 0; padding: 12px 20px 28px 20px; display: flex; flex-direction: column; gap: 18px">
+    <div style="width: 40px; height: 4px; border-radius: 2px; background: #CFC9BD; align-self: center"></div>
+    <div style="display: flex; align-items: baseline; gap: 10px">
+      <h2 style="margin: 0; font: 700 34px 'Barlow Condensed', sans-serif">5</h2>
+      <span style="font: 600 22px 'Barlow Condensed', sans-serif; color: #4A5058">Rue des Lilas</span>
+    </div>
+    <div role="radiogroup" aria-label="Statut" style="display: flex; border: 1.5px solid #CFC9BD; border-radius: 14px; overflow: hidden">
+      <button class="seg" role="radio" aria-checked="true" style="background: #1B1F24; color: #FFFFFF">○ À faire</button>
+      <button class="seg" role="radio" aria-checked="false" style="background: #FFFFFF; color: #1B1F24; border-left: 1.5px solid #CFC9BD">✓ Fait</button>
+      <button class="seg" role="radio" aria-checked="false" style="background: #FFFFFF; color: #1B1F24; border-left: 1.5px solid #CFC9BD">✗ Personne</button>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 10px; background: #D6E6F5; border-radius: 14px; padding: 14px">
+      <label style="display: flex; align-items: center; gap: 12px; font-weight: 700; color: #1D4E7A; font-size: 17px">
+        <input type="checkbox" checked style="width: 24px; height: 24px; accent-color: #1D4E7A; margin: 0">↻ Repasser
+      </label>
+      <input class="in" aria-label="Quand repasser" value="après 19h" style="border-color: #A9C8E6">
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 6px">
+      <label class="lbl" for="note">Note</label>
+      <input class="in" id="note" value="chien dans le jardin">
+      <span style="font-size: 13px; color: #5A6068">N'écrivez ni nom ni information personnelle.</span>
+    </div>
+    <button style="height: 52px; border-radius: 26px; border: 1.5px solid #CFC9BD; background: #FFFFFF; font: 700 16px 'Atkinson Hyperlegible', sans-serif; color: #1B1F24; display: flex; align-items: center; justify-content: center; gap: 8px">
+      <svg viewBox="0 0 24 24" style="width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linejoin: round"><rect x="5" y="3" width="14" height="18" rx="1"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2"/></svg>
+      Transformer en immeuble…</button>
+    <span style="font-size: 14px; color: #5A6068; text-align: center">Modifié par Léa · 14:02</span>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

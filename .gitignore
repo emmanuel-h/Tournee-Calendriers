@@ -1,0 +1,26 @@
+# Secrets and per-machine config — the repository is public
+google-services.json
+GoogleService-Info.plist
+lib/firebase_options.dart
+key.properties
+*.jks
+*.keystore
+.claude/settings.local.json
+local.properties
+
+# Flutter / Dart build output
+.dart_tool/
+build/
+coverage/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# IDEs
+.idea/
+*.iml
+.vscode/
+
+# Firebase emulator / node
+firebase/node_modules/
+firebase-debug.log
+firestore-debug.log

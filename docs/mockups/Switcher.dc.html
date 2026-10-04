@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Mes tournées</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B3261E}a:hover{color:#8C1D18}
+.tr{display:flex;align-items:center;gap:14px;min-height:68px;padding:0 4px;border-bottom:1px solid #E2DED5;text-decoration:none;color:#1B1F24}
+.tr:hover{color:#1B1F24}
+.rd{width:22px;height:22px;border-radius:11px;border:2px solid #4A5058;box-sizing:border-box;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F2EFE9; color: #1B1F24; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; position: relative; overflow: hidden">
+  <div style="display: flex; align-items: center; gap: 4px; padding: 8px 8px 4px 20px; background: #F3F1EC">
+    <div style="flex: 1; display: flex; flex-direction: column"><span style="display: flex; align-items: center; gap: 4px"><span style="font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 30px; line-height: 1.05">Tournée 49 · 2026</span><svg viewBox="0 0 24 24" style="width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round"><path d="M18 15l-6-6-6 6"/></svg></span><span style="font-size: 14px; color: #4A5058">CS Villefranche</span></div>
+  </div>
+  <svg viewBox="0 0 390 400" style="position: absolute; top: 72px; left: 0; width: 390px; height: 400px" aria-hidden="true">
+    <rect width="390" height="400" fill="#F2EFE9"/>
+    <g stroke="#FFFFFF" stroke-width="14" fill="none"><path d="M0 60H390"/><path d="M0 200H390"/><path d="M90 0V400"/><path d="M251 0V400"/></g>
+    <path d="M0 60H390" stroke="#E0A21B" stroke-width="8"/><path d="M0 200H390" stroke="#1E6B47" stroke-width="8"/>
+  </svg>
+  <a href="Home.dc.html" aria-label="Fermer" style="position: absolute; inset: 0; background: rgba(27, 31, 36, 0.5)"></a>
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; background: #FFFFFF; border-radius: 24px 24px 0 0; padding: 12px 20px 28px 20px; display: flex; flex-direction: column; gap: 4px">
+    <div style="width: 40px; height: 4px; border-radius: 2px; background: #CFC9BD; align-self: center; margin-bottom: 10px"></div>
+    <h2 style="margin: 0 0 6px 0; font: 700 26px 'Barlow Condensed', sans-serif">Mes tournées</h2>
+    <a class="tr" href="Home.dc.html" aria-current="true">
+      <span class="rd" style="border-color: #1E6B47"><span style="width: 10px; height: 10px; border-radius: 5px; background: #1E6B47"></span></span>
+      <span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font: 700 21px 'Barlow Condensed', sans-serif">Tournée 49 · 2026</span><span style="font-size: 14px; color: #4A5058">CS Villefranche · 41 %</span></span>
+      <span style="font-weight: 700; color: #1E6B47; font-size: 18px; padding-right: 8px">✓</span>
+    </a>
+    <a class="tr" href="Home.dc.html">
+      <span class="rd"></span>
+      <span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font: 700 21px 'Barlow Condensed', sans-serif">Tournée 12 · 2026</span><span style="font-size: 14px; color: #4A5058">CS Gleizé · 8 % · 1 demande en attente</span></span>
+      <span aria-hidden="true" style="width: 12px; height: 12px; border-radius: 6px; background: #B3261E; margin-right: 10px"></span>
+    </a>
+    <div class="tr" style="color: #4A5058">
+      <span class="rd" style="border-style: dashed"></span>
+      <span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font: 700 21px 'Barlow Condensed', sans-serif">Tournée 7 · 2026</span><span style="font-size: 14px">CS Anse · votre demande est en attente</span></span>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 10px; padding-top: 16px">
+      <a href="Create.dc.html" style="height: 52px; border-radius: 26px; background: #B3261E; color: #FFFFFF; font-weight: 700; font-size: 16px; display: flex; align-items: center; justify-content: center; text-decoration: none">+ Créer une tournée</a>
+      <a href="Join.dc.html" style="height: 52px; border-radius: 26px; background: #FFFFFF; color: #1B1F24; border: 1.5px solid #CFC9BD; box-sizing: border-box; font-weight: 700; font-size: 16px; display: flex; align-items: center; justify-content: center; text-decoration: none">Rejoindre une tournée</a>
+    </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

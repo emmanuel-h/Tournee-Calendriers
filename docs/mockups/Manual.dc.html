@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Rue à la main</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B3261E}a:hover{color:#8C1D18}
+.ib{width:48px;height:48px;border:0;background:transparent;color:#1B1F24;border-radius:24px;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;text-decoration:none;flex-shrink:0}
+.ib svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.lbl{font-size:15px;font-weight:700}
+.in{height:52px;box-sizing:border-box;width:100%;border:1.5px solid #CFC9BD;border-radius:12px;background:#FFFFFF;padding:0 14px;font:400 17px 'Atkinson Hyperlegible',sans-serif;color:#1B1F24}
+.seg{flex:1;height:48px;border:0;font:700 15px 'Atkinson Hyperlegible',sans-serif;cursor:pointer}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F3F1EC; color: #1B1F24; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; display: flex; flex-direction: column">
+  <div style="display: flex; align-items: center; gap: 4px; padding: 8px">
+    <a class="ib" href="Pick.dc.html" aria-label="Retour"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a>
+    <h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 28px">Rue à la main</h1>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 16px; padding: 4px 24px 0 24px">
+    <div style="display: flex; flex-direction: column; gap: 6px"><label class="lbl" for="sn">Nom de la rue</label><input class="in" id="sn" value="Chemin des Vignes"></div>
+    <div style="display: flex; flex-direction: column; gap: 6px"><label class="lbl" for="cm">Commune</label>
+      <select class="in" id="cm" style="appearance: none"><option>Villefranche-sur-Saône</option></select></div>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+      <div style="display: flex; flex-direction: column; gap: 6px"><label class="lbl" for="from">Du n°</label><input class="in" id="from" value="1"></div>
+      <div style="display: flex; flex-direction: column; gap: 6px"><label class="lbl" for="to">Au n°</label><input class="in" id="to" value="57"></div>
+    </div>
+    <div role="radiogroup" aria-label="Côtés" style="display: flex; border: 1.5px solid #CFC9BD; border-radius: 14px; overflow: hidden">
+      <button class="seg" role="radio" aria-checked="true" style="background: #1B1F24; color: #FFFFFF">Les deux</button>
+      <button class="seg" role="radio" aria-checked="false" style="background: #FFFFFF; color: #1B1F24; border-left: 1.5px solid #CFC9BD">Impairs</button>
+      <button class="seg" role="radio" aria-checked="false" style="background: #FFFFFF; color: #1B1F24; border-left: 1.5px solid #CFC9BD">Pairs</button>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 6px"><label class="lbl" for="ex">Numéros en plus</label><input class="in" id="ex" value="12bis, 14ter"><span style="font-size: 13px; color: #4A5058">Séparés par des virgules.</span></div>
+    <div style="background: #FFFFFF; border: 1px solid #E2DED5; border-radius: 14px; padding: 12px 16px; display: flex; flex-direction: column; gap: 4px">
+      <span style="font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #4A5058">Aperçu · 59 numéros</span>
+      <span style="font: 600 19px 'Barlow Condensed', sans-serif">1, 2, 3 … 12, 12bis, 13, 14, 14ter … 57</span>
+    </div>
+    <span style="font-size: 14px; color: #4A5058">Fonctionne sans réseau. La rue n'aura pas de tracé sur la carte.</span>
+  </div>
+  <div style="flex: 1"></div>
+  <div style="padding: 0 24px 28px 24px">
+    <a href="Home.dc.html" style="height: 56px; border-radius: 28px; background: #B3261E; color: #FFFFFF; font-weight: 700; font-size: 17px; display: flex; align-items: center; justify-content: center; text-decoration: none">Ajouter la rue</a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

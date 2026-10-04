@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Bienvenue</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B3261E}a:hover{color:#8C1D18}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F3F1EC; color: #1B1F24; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; display: flex; flex-direction: column; padding: 96px 24px 40px 24px; gap: 40px">
+  <div style="display: flex; flex-direction: column; gap: 12px">
+    <div style="width: 64px; height: 64px; border-radius: 18px; background: #B3261E; color: #FFFFFF; display: flex; align-items: center; justify-content: center">
+      <svg viewBox="0 0 24 24" style="width: 34px; height: 34px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M3 9h18M8 2v4M16 2v4M8 14l2.5 2.5L16 12"/></svg>
+    </div>
+    <h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 44px; line-height: 1">Tournée des calendriers</h1>
+    <p style="margin: 0; font-size: 17px; line-height: 1.45; color: #4A5058">Notez chaque porte de votre tournée et suivez l'avancement de l'équipe en direct.</p>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 8px">
+    <label for="name" style="font-size: 15px; font-weight: 700">Votre prénom</label>
+    <input id="name" value="Manu" style="height: 56px; box-sizing: border-box; width: 100%; border: 1.5px solid #1B1F24; border-radius: 12px; background: #FFFFFF; padding: 0 16px; font: 400 18px 'Atkinson Hyperlegible', sans-serif; color: #1B1F24">
+    <span style="font-size: 14px; color: #5A6068">Visible par votre équipe.</span>
+  </div>
+  <div style="flex: 1"></div>
+  <div style="display: flex; flex-direction: column; gap: 12px">
+    <a href="Create.dc.html" style="height: 56px; border-radius: 28px; background: #B3261E; color: #FFFFFF; font-weight: 700; font-size: 17px; display: flex; align-items: center; justify-content: center; text-decoration: none">Créer une tournée</a>
+    <a href="Join.dc.html" style="height: 56px; border-radius: 28px; background: #FFFFFF; color: #1B1F24; border: 1.5px solid #CFC9BD; box-sizing: border-box; font-weight: 700; font-size: 17px; display: flex; align-items: center; justify-content: center; text-decoration: none">Rejoindre une tournée</a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>
