@@ -1,0 +1,42 @@
+{
+  "id": "69264_1781",
+  "banId": "0bdea979-8655-45c1-ac69-d87c6df45b43",
+  "displayBBox": [
+    4.7348,
+    45.9909,
+    4.7361,
+    45.9918
+  ],
+  "idVoie": "69264_1781",
+  "nbNumeros": 0,
+  "nbNumerosCertifies": 0,
+  "nomVoie": "Allée du Square",
+  "nomVoieAlt": {},
+  "position": {
+    "type": "Point",
+    "coordinates": [
+      4.735416,
+      45.991362
+    ]
+  },
+  "sourceNomVoie": "bal",
+  "sources": [
+    "bal"
+  ],
+  "type": "voie",
+  "commune": {
+    "id": "69264",
+    "banId": "6c3df8e1-bae8-44e8-9b22-b13caf7f4855",
+    "nom": "Villefranche-sur-Saône",
+    "code": "69264",
+    "departement": {
+      "nom": "Rhône",
+      "code": "69"
+    },
+    "region": {
+      "nom": "Auvergne-Rhône-Alpes",
+      "code": "84"
+    }
+  },
+  "numeros": []
+}

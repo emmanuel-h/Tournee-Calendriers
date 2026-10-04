@@ -1,0 +1,112 @@
+{
+  "id": "69264_1460",
+  "banId": "00842771-ef34-4e3f-8185-af20917f979d",
+  "displayBBox": [
+    4.7145,
+    45.9866,
+    4.7169,
+    45.9876
+  ],
+  "idVoie": "69264_1460",
+  "nbNumeros": 19,
+  "nbNumerosCertifies": 19,
+  "nomVoie": "Rue Pierre Morin",
+  "nomVoieAlt": {},
+  "position": {
+    "type": "Point",
+    "coordinates": [
+      4.7158,
+      45.987094
+    ]
+  },
+  "sourceNomVoie": "bal",
+  "sources": [
+    "bal"
+  ],
+  "type": "voie",
+  "commune": {
+    "id": "69264",
+    "banId": "6c3df8e1-bae8-44e8-9b22-b13caf7f4855",
+    "nom": "Villefranche-sur-Saône",
+    "code": "69264",
+    "departement": {
+      "nom": "Rhône",
+      "code": "69"
+    },
+    "region": {
+      "nom": "Auvergne-Rhône-Alpes",
+      "code": "84"
+    }
+  },
+  "numeros": [
+    {
+      "banId": "f692fbc5-4a4a-47a0-bbc5-cb7c15f99955",
+      "certifie": true,
+      "codePostal": "69400",
+      "dateMAJ": "2022-06-21",
+      "id": "69264_1460_00032",
+      "libelleAcheminement": "VILLEFRANCHE SUR SAONE",
+      "lieuDitComplementNom": null,
+      "lieuDitComplementNomAlt": {},
+      "numero": 32,
+      "parcelles": [],
+      "position": {
+        "type": "Point",
+        "coordinates": [
+          4.716138,
+          45.987173
+        ]
+      },
+      "positionType": "entrée",
+      "sourcePosition": "bal",
+      "sources": [
+        "bal"
+      ],
+      "suffixe": null
+    },
+    {
+      "banId": "95da85fb-d5a9-4b6f-8205-b71ac387e899",
+      "certifie": true,
+      "codePostal": "69400",
+      "dateMAJ": "2022-06-21",
+      "id": "69264_1460_00033",
+      "libelleAcheminement": "VILLEFRANCHE SUR SAONE",
+      "lieuDitComplementNom": null,
+      "lieuDitComplementNomAlt": {},
+      "numero": 33,
+      "parcelles": [],
+      "position": null,
+      "positionType": "entrée",
+      "sourcePosition": "bal",
+      "sources": [
+        "bal"
+      ],
+      "suffixe": null
+    },
+    {
+      "banId": "dbfee7cb-6046-4dbd-bf57-f3c3b16f586d",
+      "certifie": true,
+      "codePostal": "69400",
+      "dateMAJ": "2022-06-21",
+      "id": "69264_1460_00034",
+      "libelleAcheminement": "VILLEFRANCHE SUR SAONE",
+      "lieuDitComplementNom": null,
+      "lieuDitComplementNomAlt": {},
+      "numero": 34,
+      "parcelles": [],
+      "position": {
+        "type": "Point",
+        "coordinates": [
+          4.71623,
+          45.987186
+        ]
+      },
+      "positionType": "entrée",
+      "sourcePosition": "bal",
+      "sources": [
+        "bal"
+      ],
+      "suffixe": null
+    }
+  ]
+}

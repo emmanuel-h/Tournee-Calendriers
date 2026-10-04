@@ -711,6 +711,29 @@ Editing rules fixed in T1.4 (`lib/domain/street/`):
     writes `houses.3bis`.
   - `renameStreet(StreetName)` → `StreetRenamed(before, name)`.
 
+Address directory rules fixed in T1.5 (`lib/application/ports/address_directory.dart`,
+`lib/infrastructure/ban/`):
+
+- **`GeoPoint`** (`lib/domain/shared/`): latitude −90…90, longitude −180…180 (bounds included,
+  NaN / infinity refused), built with a failure value. The BAN writes `[longitude, latitude]`.
+- **Port `AddressDirectory`**: `streetsOf(inseeCode)` → `CommuneStreets` (the `Commune`, its
+  `DirectoryStreet`s — BAN id, `StreetName`, BAN number count — in the BAN's order, and
+  `skippedStreets`); `numbersOf(BanStreetId)` → `StreetNumbers` (id, name, commune, the
+  `DirectoryNumber`s — `HouseNumber` + optional `GeoPoint` — in the BAN's order, possibly none,
+  plus `invalidNumbers` and `duplicateNumbers`). Failures: `AddressDirectoryFailure.noNetwork`
+  (connection, socket, TLS error or no answer within 15 s), `notFound` (HTTP 404),
+  `serviceError` (any other status, a body that is not UTF-8 JSON, or not the expected
+  document).
+- **Real data never breaks an import**: a street entry without a non-blank id, a valid
+  `StreetName` or a whole count ≥ 0 is skipped and counted; `lieu-dit` entries are kept like
+  streets (they can hold numbers). A number entry that is not a valid `HouseNumber` is skipped
+  and counted (`invalidNumbers`); a number already read (the BAN lists some twice, with two
+  positions; `a` = `A`) is skipped and counted (`duplicateNumbers`), **the first one wins**; an
+  entry without a usable position keeps its number with no position (no dot on the map).
+- Requests send `User-Agent: TourneeCalendriers/1.0 (+<repo URL>)` and decode the body as
+  UTF-8 whatever the headers say. The mapping functions live in `infrastructure/ban/mappers/`
+  and are tested on fixtures captured from Villefranche-sur-Saône (`test/fixtures/ban/`).
+
 ```dart
 // Sketch of the core (T1.2–T1.4 delivered the uncommented members; the rest come with their tasks)
 final class Street {                       // aggregate root
@@ -912,7 +935,8 @@ photo of the QR) is even more likely. So **knowing a code must not be enough**:
 | Map tiles + style | `https://tiles.openfreemap.org/styles/liberty` (or `positron`) | OSM vector tiles for MapLibre. Offline download through `maplibre_gl` offline regions; check OpenFreeMap's terms on bulk download in the spike task |
 | Street under a tap | `https://data.geopf.fr/geocodage/reverse?lon={lon}&lat={lat}&index=address&type=street&limit=1` | Returns BAN `id` = idVoie (`69264_1460`), `name`, `citycode` |
 | Street search by name | `https://data.geopf.fr/geocodage/search?q={q}&type=street&citycode={code}` | For the search box |
-| Numbers of a street | `https://plateforme.adresse.data.gouv.fr/lookup/{idVoie}` | `numeros[]`: `numero`, `suffixe`, `position.coordinates` [lon, lat] |
+| Streets of a commune | `https://plateforme.adresse.data.gouv.fr/lookup/{inseeCode}` | `voies[]`: `idVoie`, `nomVoie`, `nbNumeros`, `type`; 404 for an unknown commune |
+| Numbers of a street | `https://plateforme.adresse.data.gouv.fr/lookup/{idVoie}` | `numeros[]`: `numero`, `suffixe`, `position.coordinates` [lon, lat]; a number may appear twice; 404 for an unknown street |
 | Shape of a street | Overpass `https://overpass-api.de/api/interpreter`, query `way(area INSEE)["highway"]["name"="…"]; out geom;` | Needs a `User-Agent`. One call per added street. Fallback when empty: no shape, house dots only |
 
 All of them are wrapped behind domain interfaces (`AddressDirectory`, `StreetShapes`), so the rest

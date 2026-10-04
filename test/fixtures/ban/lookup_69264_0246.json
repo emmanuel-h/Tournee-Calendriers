@@ -1,0 +1,393 @@
+{
+  "id": "69264_0246",
+  "banId": "08a1eaab-ceea-412a-a33f-21c0075ad70e",
+  "displayBBox": [
+    4.7418,
+    45.9709,
+    4.745,
+    45.9745
+  ],
+  "idVoie": "69264_0246",
+  "nbNumeros": 14,
+  "nbNumerosCertifies": 14,
+  "nomVoie": "Petit Chemin de Bordelan",
+  "nomVoieAlt": {},
+  "position": {
+    "type": "Point",
+    "coordinates": [
+      4.743406,
+      45.972942
+    ]
+  },
+  "sourceNomVoie": "bal",
+  "sources": [
+    "bal"
+  ],
+  "type": "voie",
+  "commune": {
+    "id": "69264",
+    "banId": "6c3df8e1-bae8-44e8-9b22-b13caf7f4855",
+    "nom": "Villefranche-sur-Saône",
+    "code": "69264",
+    "departement": {
+      "nom": "Rhône",
+      "code": "69"
+    },
+    "region": {
+      "nom": "Auvergne-Rhône-Alpes",
+      "code": "84"
+    }
+  },
+  "numeros": [
+    {
+      "banId": "57bd492f-72a0-43e1-b7f4-0f196ad31901",
+      "certifie": true,
+      "codePostal": "69400",
+      "dateMAJ": "2022-06-21",
+      "id": "69264_0246_00089",
+      "libelleAcheminement": "VILLEFRANCHE SUR SAONE",
+      "lieuDitComplementNom": null,
+      "lieuDitComplementNomAlt": {},
+      "numero": 89,
+      "parcelles": [],
+      "position": {
+        "type": "Point",
+        "coordinates": [
+          4.744337,
+          45.974052
+        ]
+      },
+      "positionType": "entrée",
+      "sourcePosition": "bal",
+      "sources": [
+        "bal"
+      ],
+      "suffixe": null
+    },
+    {
+      "banId": "0e3de272-74b2-4e18-b4bc-55e8f20f3f8b",
+      "certifie": true,
+      "codePostal": "69400",
+      "dateMAJ": "2022-06-21",
+      "id": "69264_0246_00165",
+      "libelleAcheminement": "VILLEFRANCHE SUR SAONE",
+      "lieuDitComplementNom": null,
+      "lieuDitComplementNomAlt": {},
+      "numero": 165,
+      "parcelles": [],
+      "position": {
+        "type": "Point",
+        "coordinates": [
+          4.744185,
+          45.973896
+        ]
+      },
+      "positionType": "entrée",
+      "sourcePosition": "bal",
+      "sources": [
+        "bal"
+      ],
+      "suffixe": null
+    },
+    {
+      "banId": "04bfe506-b0b8-4c66-98bc-3e171a9f827f",
+      "certifie": true,
+      "codePostal": "69400",
+      "dateMAJ": "2022-06-21",
+      "id": "69264_0246_00177",
+      "libelleAcheminement": "VILLEFRANCHE SUR SAONE",
+      "lieuDitComplementNom": null,
+      "lieuDitComplementNomAlt": {},
+      "numero": 177,
+      "parcelles": [],
+      "position": {
+        "type": "Point",
+        "coordinates": [
+          4.743974,
+          45.973712
+        ]
+      },
+      "positionType": "entrée",
+      "sourcePosition": "bal",
+      "sources": [
+        "bal"
+      ],
+      "suffixe": null
+    },
+    {
+      "banId": "99983475-f806-4406-89e2-bae218724d9a",
+      "certifie": true,
+      "codePostal": "69400",
+      "dateMAJ": "2022-06-21",
+      "id": "69264_0246_00185",
+      "libelleAcheminement": "VILLEFRANCHE SUR SAONE",
+      "lieuDitComplementNom": null,
+      "lieuDitComplementNomAlt": {},
+      "numero": 185,
+      "parcelles": [],
+      "position": {
+        "type": "Point",
+        "coordinates": [
+          4.743882,
+          45.973621
+        ]
+      },
+      "positionType": "entrée",
+      "sourcePosition": "bal",
+      "sources": [
+        "bal"
+      ],
+      "suffixe": null
+    },
+    {
+      "banId": "2b1e7609-ab77-4d6a-9048-bc9365fe2dce",
+      "certifie": true,
+      "codePostal": "69400",
+      "dateMAJ": "2022-06-21",
+      "id": "69264_0246_00217",
+      "libelleAcheminement": "VILLEFRANCHE SUR SAONE",
+      "lieuDitComplementNom": null,
+      "lieuDitComplementNomAlt": {},
+      "numero": 217,
+      "parcelles": [],
+      "position": {
+        "type": "Point",
+        "coordinates": [
+          4.743561,
+          45.973319
+        ]
+      },
+      "positionType": "entrée",
+      "sourcePosition": "bal",
+      "sources": [
+        "bal"
+      ],
+      "suffixe": null
+    },
+    {
+      "banId": "253d8036-e802-4771-ae59-84d91b74b0cb",
+      "certifie": true,
+      "codePostal": "69400",
+      "dateMAJ": "2022-06-21",
+      "id": "69264_0246_00217_bis",
+      "libelleAcheminement": "VILLEFRANCHE SUR SAONE",
+      "lieuDitComplementNom": null,
+      "lieuDitComplementNomAlt": {},
+      "numero": 217,
+      "parcelles": [],
+      "position": {
+        "type": "Point",
+        "coordinates": [
+          4.743866,
+          45.973576
+        ]
+      },
+      "positionType": "entrée",
+      "sourcePosition": "bal",
+      "sources": [
+        "bal"
+      ],
+      "suffixe": "bis"
+    },
+    {
+      "banId": "b12ee5be-5e02-48c0-accf-e3b0c53e3310",
+      "certifie": true,
+      "codePostal": "69400",
+      "dateMAJ": "2022-06-21",
+      "id": "69264_0246_00245",
+      "libelleAcheminement": "VILLEFRANCHE SUR SAONE",
+      "lieuDitComplementNom": null,
+      "lieuDitComplementNomAlt": {},
+      "numero": 245,
+      "parcelles": [],
+      "position": {
+        "type": "Point",
+        "coordinates": [
+          4.743456,
+          45.973223
+        ]
+      },
+      "positionType": "entrée",
+      "sourcePosition": "bal",
+      "sources": [
+        "bal"
+      ],
+      "suffixe": null
+    },
+    {
+      "banId": "536d9e82-09a8-4e96-aa92-51ced9ece07e",
+      "certifie": true,
+      "codePostal": "69400",
+      "dateMAJ": "2022-06-21",
+      "id": "69264_0246_00269",
+      "libelleAcheminement": "VILLEFRANCHE SUR SAONE",
+      "lieuDitComplementNom": null,
+      "lieuDitComplementNomAlt": {},
+      "numero": 269,
+      "parcelles": [],
+      "position": {
+        "type": "Point",
+        "coordinates": [
+          4.743271,
+          45.97304
+        ]
+      },
+      "positionType": "entrée",
+      "sourcePosition": "bal",
+      "sources": [
+        "bal"
+      ],
+      "suffixe": null
+    },
+    {
+      "banId": "55b9ea6b-b8ec-4f31-8e92-e979ac54100f",
+      "certifie": true,
+      "codePostal": "69400",
+      "dateMAJ": "2022-06-21",
+      "id": "69264_0246_00303",
+      "libelleAcheminement": "VILLEFRANCHE SUR SAONE",
+      "lieuDitComplementNom": null,
+      "lieuDitComplementNomAlt": {},
+      "numero": 303,
+      "parcelles": [],
+      "position": {
+        "type": "Point",
+        "coordinates": [
+          4.743552,
+          45.972657
+        ]
+      },
+      "positionType": "entrée",
+      "sourcePosition": "bal",
+      "sources": [
+        "bal"
+      ],
+      "suffixe": null
+    },
+    {
+      "banId": "9066deed-6901-467b-866a-d2f4b51860dc",
+      "certifie": true,
+      "codePostal": "69400",
+      "dateMAJ": "2022-06-21",
+      "id": "69264_0246_00303__0",
+      "libelleAcheminement": "VILLEFRANCHE SUR SAONE",
+      "lieuDitComplementNom": null,
+      "lieuDitComplementNomAlt": {},
+      "numero": 303,
+      "parcelles": [],
+      "position": {
+        "type": "Point",
+        "coordinates": [
+          4.743106,
+          45.972843
+        ]
+      },
+      "positionType": "entrée",
+      "sourcePosition": "bal",
+      "sources": [
+        "bal"
+      ],
+      "suffixe": null
+    },
+    {
+      "banId": "98d0e794-d741-4494-9f71-d414c599158e",
+      "certifie": true,
+      "codePostal": "69400",
+      "dateMAJ": "2022-06-21",
+      "id": "69264_0246_00401",
+      "libelleAcheminement": "VILLEFRANCHE SUR SAONE",
+      "lieuDitComplementNom": null,
+      "lieuDitComplementNomAlt": {},
+      "numero": 401,
+      "parcelles": [],
+      "position": {
+        "type": "Point",
+        "coordinates": [
+          4.74276,
+          45.972089
+        ]
+      },
+      "positionType": "entrée",
+      "sourcePosition": "bal",
+      "sources": [
+        "bal"
+      ],
+      "suffixe": null
+    },
+    {
+      "banId": "b448f789-cc27-4318-a5c8-d462b41af45c",
+      "certifie": true,
+      "codePostal": "69400",
+      "dateMAJ": "2022-06-21",
+      "id": "69264_0246_00409",
+      "libelleAcheminement": "VILLEFRANCHE SUR SAONE",
+      "lieuDitComplementNom": null,
+      "lieuDitComplementNomAlt": {},
+      "numero": 409,
+      "parcelles": [],
+      "position": {
+        "type": "Point",
+        "coordinates": [
+          4.742728,
+          45.972002
+        ]
+      },
+      "positionType": "entrée",
+      "sourcePosition": "bal",
+      "sources": [
+        "bal"
+      ],
+      "suffixe": null
+    },
+    {
+      "banId": "ee537798-b03f-454a-a183-c1e60cc034c0",
+      "certifie": true,
+      "codePostal": "69400",
+      "dateMAJ": "2022-06-21",
+      "id": "69264_0246_00427",
+      "libelleAcheminement": "VILLEFRANCHE SUR SAONE",
+      "lieuDitComplementNom": null,
+      "lieuDitComplementNomAlt": {},
+      "numero": 427,
+      "parcelles": [],
+      "position": {
+        "type": "Point",
+        "coordinates": [
+          4.742605,
+          45.971801
+        ]
+      },
+      "positionType": "entrée",
+      "sourcePosition": "bal",
+      "sources": [
+        "bal"
+      ],
+      "suffixe": null
+    },
+    {
+      "banId": "b3473a07-566e-4dcd-aa9f-e7c9768007b0",
+      "certifie": true,
+      "codePostal": "69400",
+      "dateMAJ": "2022-06-21",
+      "id": "69264_0246_00493",
+      "libelleAcheminement": "VILLEFRANCHE SUR SAONE",
+      "lieuDitComplementNom": null,
+      "lieuDitComplementNomAlt": {},
+      "numero": 493,
+      "parcelles": [],
+      "position": {
+        "type": "Point",
+        "coordinates": [
+          4.742404,
+          45.971359
+        ]
+      },
+      "positionType": "entrée",
+      "sourcePosition": "bal",
+      "sources": [
+        "bal"
+      ],
+      "suffixe": null
+    }
+  ]
+}

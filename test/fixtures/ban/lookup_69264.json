@@ -1,0 +1,121 @@
+{
+  "id": "69264",
+  "type": "commune",
+  "codeCommune": "69264",
+  "banId": "6c3df8e1-bae8-44e8-9b22-b13caf7f4855",
+  "nomCommune": "Villefranche-sur-Saône",
+  "departement": {
+    "nom": "Rhône",
+    "code": "69"
+  },
+  "region": {
+    "nom": "Auvergne-Rhône-Alpes",
+    "code": "84"
+  },
+  "codesPostaux": [
+    "69400"
+  ],
+  "population": 36172,
+  "typeCommune": "commune-actuelle",
+  "nbNumeros": 6621,
+  "nbNumerosCertifies": 6621,
+  "nbVoies": 312,
+  "nbLieuxDits": 0,
+  "typeComposition": "bal",
+  "displayBBox": [
+    4.698,
+    45.965,
+    4.755,
+    46.003
+  ],
+  "idRevision": "6abe7464b80d327ac658a719",
+  "dateRevision": "2026-10-01T14:55:33.650Z",
+  "composedAt": "2026-10-02T00:15:52.702Z",
+  "withBanId": true,
+  "voies": [
+    {
+      "id": "69264_1460",
+      "banId": "00842771-ef34-4e3f-8185-af20917f979d",
+      "idVoie": "69264_1460",
+      "nbNumeros": 19,
+      "nbNumerosCertifies": 19,
+      "nomVoie": "Rue Pierre Morin",
+      "nomVoieAlt": {},
+      "sourceNomVoie": "bal",
+      "sources": [
+        "bal"
+      ],
+      "type": "voie"
+    },
+    {
+      "id": "69264_7bh70d",
+      "banId": "084459d4-d1a8-4695-88cd-48571f6181c2",
+      "idVoie": "69264_7bh70d",
+      "nbNumeros": 7,
+      "nbNumerosCertifies": 7,
+      "nomVoie": "Allée Eugene Berne",
+      "nomVoieAlt": {},
+      "sourceNomVoie": "bal",
+      "sources": [
+        "bal"
+      ],
+      "type": "voie"
+    },
+    {
+      "id": "69264_0246",
+      "banId": "08a1eaab-ceea-412a-a33f-21c0075ad70e",
+      "idVoie": "69264_0246",
+      "nbNumeros": 14,
+      "nbNumerosCertifies": 14,
+      "nomVoie": "Petit Chemin de Bordelan",
+      "nomVoieAlt": {},
+      "sourceNomVoie": "bal",
+      "sources": [
+        "bal"
+      ],
+      "type": "voie"
+    },
+    {
+      "id": "69264_1781",
+      "banId": "0bdea979-8655-45c1-ac69-d87c6df45b43",
+      "idVoie": "69264_1781",
+      "nbNumeros": 1,
+      "nbNumerosCertifies": 1,
+      "nomVoie": "Allée du Square",
+      "nomVoieAlt": {},
+      "sourceNomVoie": "bal",
+      "sources": [
+        "bal"
+      ],
+      "type": "voie"
+    },
+    {
+      "id": "69264_0682",
+      "banId": "661d1742-1b22-49e9-a469-ac2e38f171c0",
+      "idVoie": "69264_0682",
+      "nbNumeros": 22,
+      "nbNumerosCertifies": 22,
+      "nomVoie": "Rue des Freres Bonnet",
+      "nomVoieAlt": {},
+      "sourceNomVoie": "bal",
+      "sources": [
+        "bal"
+      ],
+      "type": "voie"
+    },
+    {
+      "id": "69264_1270",
+      "banId": "e5799646-3d12-4ef9-bd65-a2c68b295b3f",
+      "idVoie": "69264_1270",
+      "nbNumeros": 403,
+      "nbNumerosCertifies": 403,
+      "nomVoie": "Rue Nationale",
+      "nomVoieAlt": {},
+      "sourceNomVoie": "bal",
+      "sources": [
+        "bal"
+      ],
+      "type": "voie"
+    }
+  ]
+}
