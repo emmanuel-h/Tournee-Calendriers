@@ -21,6 +21,9 @@ dev_dependencies:
   flutter_lints: 6.0.0
   flutter_test:
     sdk: flutter
+  # Instrumented suite run on an emulator or phone (integration_test/).
+  integration_test:
+    sdk: flutter
   # Plain Dart test runner, used by the architecture test and pure-Dart suites.
   test: 1.31.1
 

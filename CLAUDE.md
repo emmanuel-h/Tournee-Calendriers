@@ -19,7 +19,8 @@ not implement anything that contradicts it; flag conflicts to the user first.
 tokens in its README.
 
 **Tasks are GitHub issues** (milestones M0–M7, label `task`); `docs/TASKS.md` is only a map of
-them. Read a task with `gh issue view <N>`. Commits that finish a task say `Closes #<N>`.
+them. Read a task with `gh issue view <N>`. Commits reference their task with `Refs #<N>` —
+**never `Closes`/`Fixes`**: an issue is closed only when the user says so.
 
 The user is still learning Dart and Flutter: explain non-obvious concepts briefly when you
 introduce them.
@@ -38,8 +39,12 @@ flutter analyze                                          # zero warnings
 dart format --set-exit-if-changed lib test
 (cd firebase && npm test)                                # security rules in the emulator
 flutter build appbundle --release                        # release-only breakage
+flutter test integration_test -d emulator-5554           # instrumented suite on the emulator
 flutter run                                              # on a connected Android phone
 ```
+
+Emulator: `~/Android/Sdk/emulator/emulator -avd Medium_Phone_API_36.1 -no-window -no-audio`
+(headless); screenshots with `adb exec-out screencap -p > shot.png`.
 
 ## Architecture (strict DDD, hexagonal)
 
@@ -74,6 +79,19 @@ lib/
   collaborators; names `'should <behaviour> when <condition>'`; the inner loop runs one file.
   Slow suites (rules emulator, release build) run once per task and in CI.
 
+## Task workflow
+
+1. The `developer` agent delivers one issue on a branch; it never commits.
+2. The main session reviews the diff, re-runs the gates, runs the **instrumented suite on the
+   emulator** and looks at the changed screens on the emulator (screenshots).
+3. Commit with `Refs #<N>`, merge into `main` and **push** (standing approval).
+4. Ask the user to test on their phone; fix what they report (same loop).
+5. The user decides when the issue is closed; close it with `gh issue close` only when told.
+
+**Instrumented suite** (`integration_test/`): small on purpose — a handful of end-to-end flows
+on the real app (launch, mark a house, offline cold start…), ≤ 10 tests, < 3 min. Extend it when
+a task adds a user-visible flow; keep it green before every push.
+
 ## Open checkpoint
 
 At the start of M2 (database and server work), **stop and discuss the infrastructure with the
@@ -83,5 +101,5 @@ or another backend (PLAN §8.1, Q20).
 ## Agents
 
 - **`developer`** (`.claude/agents/developer.md`) implements one task (a GitHub issue) end to end
-  with TDD and the gates. It never commits; the main session reviews, commits with
-  `Closes #<N>`, and opens a follow-up issue for anything deferred.
+  with TDD and the gates. It never commits; the main session reviews, commits with `Refs #<N>`,
+  pushes, and opens a follow-up issue for anything deferred.

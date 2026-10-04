@@ -9,8 +9,9 @@ are tracked. This file is only a map of them.
 
 How it works:
 
-- One issue = one run of the `developer` agent = one reviewed commit whose message says
-  `Closes #N`, which closes the issue when it reaches `main`.
+- One issue = one run of the `developer` agent = one reviewed commit (`Refs #N`), pushed to
+  `main`, tested on the emulator by Claude, then on your phone by you.
+- **An issue is closed only when you say so** (after your phone test).
 - Issues are ordered; an issue only depends on those above it in its milestone and in earlier
   milestones.
 - Label `manual` = a step only you can do; `checkpoint` = a decision we take together;

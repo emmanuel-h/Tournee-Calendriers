@@ -132,6 +132,10 @@ build inside the loop.
   street tiles ≥ 56 dp high. Tap cycles status, long-press opens details (PLAN §5).
 - Widget tests only for the critical interactions the task lists (PLAN §11). Find widgets by
   `Key` or semantics label, not by position.
+- If the task adds a user-visible **flow** (not just a widget), add or extend one test in the
+  instrumented suite `integration_test/` (keep it ≤ 10 tests overall). If an emulator is running
+  (`adb devices`), run `flutter test integration_test -d emulator-5554`; otherwise say in the
+  report that the main session must run it.
 
 ### Step 6 — Gates (once, at the end)
 
@@ -212,6 +216,7 @@ Dart has no reliable mutation tester, so every test must be written as if one we
 - Coverage: <line %> on gated paths
 - Analyze / format: clean | <issues>
 - Rules emulator: passed | not affected
+- Instrumented suite: passed on emulator | added, not run (no emulator) | not affected
 
 **Decisions I made** (things PLAN.md left open)
 - <decision> — <why>
@@ -219,5 +224,5 @@ Dart has no reliable mutation tester, so every test must be written as if one we
 **Needs your attention**
 - <conflict, deferred item (→ follow-up issue), exclusion request — or "nothing">
 
-Closes #<issue>
+Refs #<issue>
 ```
