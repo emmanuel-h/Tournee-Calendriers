@@ -1,0 +1,65 @@
+import 'package:flutter/material.dart';
+import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
+import 'package:tournee_calendriers/ui/theme/app_typography.dart';
+
+/// The main action of a screen: a red pill (« Créer », « Rejoindre »).
+///
+/// It fills the width it is given. Passing `null` as [onPressed] disables it,
+/// the Flutter convention for every button.
+final class PrimaryButton extends StatelessWidget {
+  const PrimaryButton({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.compact = false,
+  });
+
+  final String label;
+  final VoidCallback? onPressed;
+
+  /// 52 dp instead of 56 dp, for buttons inside sheets or side by side.
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) => FilledButton(
+    onPressed: onPressed,
+    style: _sizeStyle(compact),
+    child: Text(label),
+  );
+}
+
+/// A secondary action: a white pill with a thin outline.
+final class SecondaryButton extends StatelessWidget {
+  const SecondaryButton({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.compact = false,
+  });
+
+  final String label;
+  final VoidCallback? onPressed;
+
+  /// 52 dp instead of 56 dp, for buttons inside sheets or side by side.
+  final bool compact;
+
+  @override
+  Widget build(BuildContext context) => OutlinedButton(
+    onPressed: onPressed,
+    style: _sizeStyle(compact),
+    child: Text(label),
+  );
+}
+
+/// Height and label style shared by both buttons; colours and the pill shape
+/// come from the theme (`buildAppTheme`).
+ButtonStyle _sizeStyle(bool compact) {
+  final height = compact ? AppSizes.compactButtonHeight : AppSizes.buttonHeight;
+  return ButtonStyle(
+    // `fromHeight` asks for the full available width at a fixed height.
+    minimumSize: WidgetStatePropertyAll(Size.fromHeight(height)),
+    textStyle: WidgetStatePropertyAll(
+      compact ? AppTextStyles.compactButton : AppTextStyles.button,
+    ),
+  );
+}

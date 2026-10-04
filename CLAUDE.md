@@ -27,7 +27,7 @@ introduce them.
 
 ## Status
 
-Scaffolded (T0.1): Flutter 3.47.6 / Dart 3.13.5, layers in place, gates runnable. CI arrives in T0.3.
+Scaffolded with design system (T0.1–T0.2): Flutter 3.47.6 / Dart 3.13.5, layers, theme, French l10n, go_router shell, components. CI arrives in T0.3.
 
 ## Commands
 
