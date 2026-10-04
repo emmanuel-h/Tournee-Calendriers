@@ -1,0 +1,11 @@
+# gen-l10n configuration: French is the only locale (PLAN §10.2).
+#
+# The ARB file and the generated Dart code both live in lib/ui/l10n/, so
+# translations stay inside the ui layer for the architecture test.
+arb-dir: lib/ui/l10n
+output-dir: lib/ui/l10n
+template-arb-file: app_fr.arb
+output-localization-file: app_localizations.dart
+output-class: AppLocalizations
+# Getters return a non-null `AppLocalizations`; the app only ever runs in French.
+nullable-getter: false

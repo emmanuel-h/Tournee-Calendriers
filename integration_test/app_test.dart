@@ -4,6 +4,7 @@
 // Unlike `test/`, these tests start the actual app with the real
 // composition root, so they catch what unit and widget tests cannot: wiring,
 // platform plugins, startup. The suite stays small on purpose (≤ 10 tests).
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:tournee_calendriers/main.dart' as app;
@@ -22,4 +23,18 @@ void main() {
 
     expect(find.text('Tournée des calendriers'), findsOneWidget);
   });
+
+  testWidgets(
+    'should open the component gallery when the app is a debug build',
+    (tester) async {
+      app.main();
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('home.gallery')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Composants'), findsOneWidget);
+      expect(find.bySemanticsLabel('Numéro 3bis, personne'), findsOneWidget);
+    },
+  );
 }

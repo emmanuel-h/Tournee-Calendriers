@@ -15,7 +15,15 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  # Material and Cupertino translations for French (dates, tooltips, the
+  # licences page).
+  flutter_localizations:
+    sdk: flutter
   flutter_riverpod: 3.4.3
+  go_router: 18.0.2
+  # Required by the code gen-l10n writes into lib/ui/l10n/; the version is the
+  # one flutter_localizations pins.
+  intl: 0.20.3
 
 dev_dependencies:
   flutter_lints: 6.0.0
@@ -29,3 +37,27 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+  # Generates `AppLocalizations` from lib/ui/l10n/app_fr.arb (see l10n.yaml) on
+  # every `flutter pub get`, `flutter run` and `flutter test`.
+  generate: true
+
+  # Licence texts shown on the licences page (registered in bootstrap/).
+  assets:
+    - assets/fonts/atkinson_hyperlegible/OFL.txt
+    - assets/fonts/barlow_condensed/OFL.txt
+
+  # Bundled so the app looks the same offline (PLAN §10.2). Only the weights the
+  # mockups use are shipped.
+  fonts:
+    - family: Atkinson Hyperlegible
+      fonts:
+        - asset: assets/fonts/atkinson_hyperlegible/AtkinsonHyperlegible-Regular.ttf
+          weight: 400
+        - asset: assets/fonts/atkinson_hyperlegible/AtkinsonHyperlegible-Bold.ttf
+          weight: 700
+    - family: Barlow Condensed
+      fonts:
+        - asset: assets/fonts/barlow_condensed/BarlowCondensed-SemiBold.ttf
+          weight: 600
+        - asset: assets/fonts/barlow_condensed/BarlowCondensed-Bold.ttf
+          weight: 700

@@ -1,0 +1,88 @@
+{
+  "@@locale": "fr",
+
+  "appTitle": "Tournée des calendriers",
+  "@appTitle": {
+    "description": "The app's name: title bar, task switcher, placeholder home."
+  },
+
+  "screenWelcome": "Bienvenue",
+  "@screenWelcome": { "description": "Title of the first-launch screen (PLAN §5.1)." },
+  "screenCreate": "Nouvelle tournée",
+  "@screenCreate": { "description": "Title of the create-a-tournée screen (PLAN §5.2)." },
+  "screenJoin": "Rejoindre une tournée",
+  "@screenJoin": { "description": "Title of the join screen (PLAN §5.2)." },
+  "screenJoinPending": "Demande envoyée",
+  "@screenJoinPending": { "description": "Title of the waiting-for-approval screen (PLAN §5.2)." },
+  "screenAddStreets": "Ajouter des rues",
+  "@screenAddStreets": { "description": "Title of the map mode that adds streets (PLAN §5.4)." },
+  "screenManualStreet": "Rue à la main",
+  "@screenManualStreet": { "description": "Title of the manual street form (PLAN §5.5)." },
+  "screenStreet": "Rue",
+  "@screenStreet": { "description": "Placeholder title of the street screen; the real one shows the street's name (PLAN §5.6)." },
+  "screenEditStreet": "Modifier la rue",
+  "@screenEditStreet": { "description": "Title of the street edit mode (PLAN §5.5)." },
+  "screenTeam": "Équipe",
+  "@screenTeam": { "description": "Placeholder title of the team screen (PLAN §5.8)." },
+  "screenSettings": "Paramètres",
+  "@screenSettings": { "description": "Title of the settings screen (PLAN §5.9)." },
+  "screenNewCampaign": "Nouvelle campagne",
+  "@screenNewCampaign": { "description": "Title of the new campaign screen (PLAN §5.10)." },
+  "screenTrash": "Corbeille",
+  "@screenTrash": { "description": "Title of the trash screen (PLAN §5.11)." },
+
+  "tileStatusToDo": "à faire",
+  "@tileStatusToDo": { "description": "Screen-reader name of a house still to visit." },
+  "tileStatusDone": "fait",
+  "@tileStatusDone": { "description": "Screen-reader name of a visited house." },
+  "tileStatusNobodyHome": "personne",
+  "@tileStatusNobodyHome": { "description": "Screen-reader name of a house where nobody answered." },
+  "tileStatusComeBack": "à faire, repasser",
+  "@tileStatusComeBack": { "description": "Screen-reader name of a house to visit again later." },
+  "houseTileSemantics": "Numéro {number}, {status}",
+  "@houseTileSemantics": {
+    "description": "Screen-reader label of a house tile, e.g. « Numéro 3bis, fait ».",
+    "placeholders": {
+      "number": { "type": "String", "example": "3bis" },
+      "status": { "type": "String", "example": "fait" }
+    }
+  },
+  "buildingTileSemantics": "Numéro {number}, immeuble, {done} sur {total} faits",
+  "@buildingTileSemantics": {
+    "description": "Screen-reader label of a partly visited building tile.",
+    "placeholders": {
+      "number": { "type": "String", "example": "8" },
+      "done": { "type": "int", "example": "7" },
+      "total": { "type": "int", "example": "12" }
+    }
+  },
+
+  "galleryTitle": "Composants",
+  "@galleryTitle": { "description": "Title of the debug-only component gallery, and of the button opening it." },
+  "galleryButtons": "Boutons",
+  "@galleryButtons": { "description": "Gallery section: buttons." },
+  "galleryPrimaryButton": "Bouton principal",
+  "@galleryPrimaryButton": { "description": "Gallery sample label of a primary button." },
+  "galleryDisabledButton": "Bouton désactivé",
+  "@galleryDisabledButton": { "description": "Gallery sample label of a disabled button." },
+  "gallerySecondaryButton": "Bouton secondaire",
+  "@gallerySecondaryButton": { "description": "Gallery sample label of a secondary button." },
+  "galleryCompactButton": "Bouton compact",
+  "@galleryCompactButton": { "description": "Gallery sample label of a 52 dp button." },
+  "galleryStatusTiles": "Tuiles de statut",
+  "@galleryStatusTiles": { "description": "Gallery section: status tiles." },
+  "gallerySheetAndSnackBar": "Feuille et message",
+  "@gallerySheetAndSnackBar": { "description": "Gallery section: bottom sheet and snackbar." },
+  "galleryShowSheet": "Afficher la feuille",
+  "@galleryShowSheet": { "description": "Gallery button that opens the sample bottom sheet." },
+  "gallerySheetTitle": "Rue des Lilas",
+  "@gallerySheetTitle": { "description": "Title of the sample bottom sheet." },
+  "gallerySheetBody": "Le contenu de la feuille se place ici.",
+  "@gallerySheetBody": { "description": "Body of the sample bottom sheet." },
+  "galleryShowSnackBar": "Afficher le message",
+  "@galleryShowSnackBar": { "description": "Gallery button that shows the sample snackbar." },
+  "gallerySnackBarMessage": "7 → Personne",
+  "@gallerySnackBarMessage": { "description": "Sample snackbar message, as after marking a house." },
+  "undo": "Annuler",
+  "@undo": { "description": "Action that reverts the last change (snackbar)." }
+}
