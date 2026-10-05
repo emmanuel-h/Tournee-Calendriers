@@ -50,6 +50,12 @@ Fixtures, examples and screenshots use **Villefranche-sur-Saône** (public data)
 | [#13](https://github.com/emmanuel-h/Tournee-Calendriers/issues/13) | T1.9 Building grid and "Décrire l'immeuble" |  |
 | [#14](https://github.com/emmanuel-h/Tournee-Calendriers/issues/14) | T1.10 Edit mode and "Ajouter des numéros" |  |
 | [#15](https://github.com/emmanuel-h/Tournee-Calendriers/issues/15) | T1.11 Field build on the reference area | manual |
+| [#54](https://github.com/emmanuel-h/Tournee-Calendriers/issues/54) | T1.12 Adjust one floor of a building | |
+| [#55](https://github.com/emmanuel-h/Tournee-Calendriers/issues/55) | T1.13 Draw the « → » of the undo messages | |
+| [#56](https://github.com/emmanuel-h/Tournee-Calendriers/issues/56) | T1.14 Keep a street name typed in edit mode | |
+
+The temporary start screen of #15 was built right after #46, before the street screen, so every
+later screen could be checked with real streets (decided with you on 2026-10-04).
 
 ## M2 Team and sync
 
