@@ -4,13 +4,13 @@ import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
-import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_state.dart';
+import 'package:tournee_calendriers/presentation/street/follows_street.dart';
 
 /// Which house a sheet shows. A record: two records with the same fields
 /// are equal, so `houseSheetProvider(key)` finds the same notifier for the
@@ -71,11 +71,8 @@ typedef _Marks = ({
 ///
 /// `abstract base`: a class to extend, not to use alone; `base` keeps its
 /// subclasses `final`, so nobody outside this file can change the rules.
-abstract base class MarksSheetNotifier extends Notifier<HouseSheetState> {
-  /// The street last read; null until read, or when there is none.
-  Street? _street;
-  var _read = false;
-
+abstract base class MarksSheetNotifier extends Notifier<HouseSheetState>
+    with FollowsStreet<HouseSheetState> {
   /// The last change asked; the next one starts when it ends.
   Future<void> _pending = Future.value();
 
@@ -92,15 +89,8 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState> {
 
   @override
   HouseSheetState build() {
-    final subscription = ref.watch(observeStreetProvider)(_streetId).listen((
-      street,
-    ) {
-      _street = street;
-      _read = true;
-      state = _view();
-    });
-    ref.onDispose(subscription.cancel);
-    return _view();
+    followStreet(_streetId);
+    return render();
   }
 
   /// The status control: gives [status]. Leaving « Repasser » drops its
@@ -153,19 +143,19 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState> {
     return step;
   }
 
-  _Marks? get _marks {
-    final street = _street;
-    if (street == null || street.isDeleted) return null;
-    return _marksIn(street);
-  }
+  _Marks? get _marks => switch (street) {
+    final street? => _marksIn(street),
+    null => null,
+  };
 
-  HouseSheetState _view() {
-    if (!_read) return const HouseSheetLoading();
+  @override
+  HouseSheetState render() {
+    if (!streetRead) return const HouseSheetLoading();
     final marks = _marks;
     if (marks == null) return const HouseSheetGone();
     final stamp = marks.lastChange;
     return HouseSheetShown(
-      streetName: _street!.name,
+      streetName: street!.name.text,
       number: _number,
       subject: marks.subject,
       status: marks.status,
@@ -178,14 +168,6 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState> {
           : LastChange.of(stamp.at, now: ref.read(clockProvider).now()),
     );
   }
-}
-
-/// The house at [number] of [street], or null.
-House? _houseIn(Street street, HouseNumber number) {
-  for (final house in street.houses) {
-    if (house.number == number) return house;
-  }
-  return null;
 }
 
 /// The Fiche maison of a single house, stored through `SetHouseDetails`.
@@ -202,7 +184,7 @@ final class HouseSheetNotifier extends MarksSheetNotifier {
   HouseNumber get _number => key.number;
 
   @override
-  _Marks? _marksIn(Street street) => switch (_houseIn(street, key.number)) {
+  _Marks? _marksIn(Street street) => switch (street.houseAt(key.number)) {
     final house? when !house.isBuilding => (
       subject: const HouseSubject(),
       status: house.status,
@@ -234,7 +216,7 @@ final class BuildingDetailsNotifier extends MarksSheetNotifier {
   HouseNumber get _number => key.number;
 
   @override
-  _Marks? _marksIn(Street street) => switch (_houseIn(street, key.number)) {
+  _Marks? _marksIn(Street street) => switch (street.houseAt(key.number)) {
     final house? when house.isBuilding => (
       subject: const BuildingSubject(),
       status: null,
@@ -266,7 +248,7 @@ final class DoorSheetNotifier extends MarksSheetNotifier {
 
   @override
   _Marks? _marksIn(Street street) {
-    final building = _houseIn(street, key.number)?.building;
+    final building = street.houseAt(key.number)?.building;
     final door = building?.dwellingAt(key.door);
     if (building == null || door == null) return null;
     return (

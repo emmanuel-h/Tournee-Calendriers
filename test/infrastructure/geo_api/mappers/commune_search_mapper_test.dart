@@ -39,7 +39,10 @@ void main() {
       entry({'nom': 'Villefranche', 'code': '69265'}),
     ]);
 
-    expect(matches.map((match) => match.commune.inseeCode), ['69264', '69265']);
+    expect(matches.map((match) => match.commune.inseeCode.value), [
+      '69264',
+      '69265',
+    ]);
     expect(matches.first.postcodes, ['69400', '69401']);
     expect(matches.last.commune.name, 'Villefranche');
   });

@@ -160,7 +160,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.widgetWithText(AppBar, 'Rue des Iris'), findsOneWidget);
-    expect(streets[_id]!.name, 'Rue des Iris');
+    expect(streets[_id]!.name.text, 'Rue des Iris');
   });
 
   testWidgets('should keep the focus on a refused name submitted with the '
@@ -177,7 +177,7 @@ void main() {
 
     expect(find.byKey(const Key('edit.nameRefusal')), findsNothing);
     expect(hasFocus(tester, field), isFalse);
-    expect(streets[_id]!.name, 'Rue des Iris');
+    expect(streets[_id]!.name.text, 'Rue des Iris');
   });
 
   testWidgets('should keep the focus on a refused number submitted with the '
@@ -238,7 +238,7 @@ void main() {
     hideApp(tester);
     await tester.pumpAndSettle();
 
-    expect(streets[_id]!.name, 'Rue des Iris');
+    expect(streets[_id]!.name.text, 'Rue des Iris');
     expect(find.byKey(const Key('edit.tiles')), findsOneWidget);
   });
 
@@ -250,7 +250,7 @@ void main() {
     hideApp(tester);
     await tester.pumpAndSettle();
 
-    expect(streets[_id]!.name, 'Rue des Lilas');
+    expect(streets[_id]!.name.text, 'Rue des Lilas');
     expect(
       find.text('Le nom de la rue ne peut pas être vide.'),
       findsOneWidget,

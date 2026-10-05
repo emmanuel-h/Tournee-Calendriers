@@ -3,11 +3,13 @@
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
 import 'package:tournee_calendriers/domain/shared/commune.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
+import 'package:tournee_calendriers/domain/shared/insee_code.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling_label.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
+import 'package:tournee_calendriers/domain/street/street_name.dart';
 
 import 'results.dart';
 
@@ -16,6 +18,12 @@ HouseNumber n(String text) => valueOf(HouseNumber.parse(text));
 
 /// A « repasser » with a hint the test knows is valid.
 ComeBack comeBack(String hint) => valueOf(ComeBack.create(hint));
+
+/// A street name the test knows is valid.
+StreetName streetName(String text) => valueOf(StreetName.create(text));
+
+/// An INSEE code the test knows is valid: `insee('69264')`.
+InseeCode insee(String text) => valueOf(InseeCode.parse(text));
 
 final villefranche = valueOf(
   Commune.create(inseeCode: '69264', name: 'Villefranche-sur-Saône'),

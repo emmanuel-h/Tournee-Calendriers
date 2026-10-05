@@ -181,7 +181,7 @@ final class _Suggestions extends ConsumerWidget {
         children: [
           for (final match in communes)
             _Row(
-              key: ValueKey('import.suggestion.${match.inseeCode}'),
+              key: ValueKey('import.suggestion.${match.inseeCode.value}'),
               onTap: () {
                 // Close the keyboard: the checklist needs the room.
                 FocusManager.instance.primaryFocus?.unfocus();

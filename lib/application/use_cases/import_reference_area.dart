@@ -1,6 +1,7 @@
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/id_generator.dart';
 import 'package:tournee_calendriers/domain/shared/commune.dart';
+import 'package:tournee_calendriers/domain/shared/insee_code.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
@@ -123,7 +124,7 @@ final class ImportReferenceArea {
   /// Fails as a whole only when the commune itself cannot be listed and
   /// none of the chosen streets is on the phone.
   Future<Result<ImportReport, AddressDirectoryFailure>> call(
-    String inseeCode, {
+    InseeCode inseeCode, {
     Iterable<BanStreetId>? only,
     void Function(int done, int total)? onProgress,
   }) async {

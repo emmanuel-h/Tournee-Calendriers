@@ -7,6 +7,7 @@ import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/street_list/street_list_notifier.dart';
+import 'package:tournee_calendriers/presentation/street_list/street_list_state.dart';
 
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/results.dart';

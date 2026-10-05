@@ -6,6 +6,7 @@ import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/edit_street/add_numbers_state.dart';
+import 'package:tournee_calendriers/presentation/street/follows_street.dart';
 
 /// The state of the « Ajouter des numéros » sheet of one street.
 final addNumbersProvider = NotifierProvider.autoDispose
@@ -19,40 +20,34 @@ final addNumbersProvider = NotifierProvider.autoDispose
 /// `EditStreetNumbers`. Needs no network.
 ///
 /// The preview follows the street too: a number a teammate adds meanwhile
-/// shows as already there.
-final class AddNumbersNotifier extends Notifier<AddNumbersState> {
+/// shows as already there. It is the street's own answer: the numbers are
+/// added to the street in memory (`Street.addNumbers`, which stores
+/// nothing) and the change it would make is shown.
+final class AddNumbersNotifier extends Notifier<AddNumbersState>
+    with FollowsStreet<AddNumbersState> {
   AddNumbersNotifier(this.streetId);
 
   final StreetId streetId;
 
-  Street? _street;
-  var _read = false;
   var _text = '';
 
   @override
   AddNumbersState build() {
-    final subscription = ref.watch(observeStreetProvider)(streetId).listen((
-      street,
-    ) {
-      _street = street;
-      _read = true;
-      state = _view();
-    });
-    ref.onDispose(subscription.cancel);
-    return _view();
+    followStreet(streetId);
+    return render();
   }
 
   /// The « Numéros » field changed to [text].
   void type(String text) {
     _text = text;
-    state = _view();
+    state = render();
   }
 
   /// « Ajouter »: the numbers typed join the street, each on its side; the
   /// ones in the Corbeille come back with their marks. Returns whether the
   /// street changed (the sheet then closes).
   Future<bool> add() async {
-    final street = _street;
+    final street = this.street;
     if (street == null) return false;
     switch (_preview(street)) {
       case NothingTyped() || NumbersRefused():
@@ -75,22 +70,32 @@ final class AddNumbersNotifier extends Notifier<AddNumbersState> {
       case Ok(value: final numbers) when numbers.isEmpty:
         return const NothingTyped();
       case Ok(value: final numbers):
-        final shown = {for (final house in street.houses) house.number};
-        final removed = {
-          for (final house in street.removedHouses) house.number,
+        return switch (street.addNumbers(numbers)) {
+          Ok(value: (_, final added)) => NumbersPreviewed(
+            numbers: numbers,
+            alreadyThere: added.alreadyThere,
+            fromCorbeille: [
+              for (final removed in added.restored) removed.number,
+            ],
+          ),
+          // The street refuses only when every number is shown already.
+          Err() => NumbersPreviewed(
+            numbers: numbers,
+            alreadyThere: numbers,
+            fromCorbeille: const [],
+          ),
         };
-        return NumbersPreviewed(
-          numbers: numbers,
-          alreadyThere: numbers.where(shown.contains).toList(),
-          fromCorbeille: numbers.where(removed.contains).toList(),
-        );
     }
   }
 
-  AddNumbersState _view() {
-    if (!_read) return const AddNumbersLoading();
-    final street = _street;
-    if (street == null || street.isDeleted) return const AddNumbersGone();
-    return AddNumbersShown(streetName: street.name, preview: _preview(street));
+  @override
+  AddNumbersState render() {
+    if (!streetRead) return const AddNumbersLoading();
+    final street = this.street;
+    if (street == null) return const AddNumbersGone();
+    return AddNumbersShown(
+      streetName: street.name.text,
+      preview: _preview(street),
+    );
   }
 }

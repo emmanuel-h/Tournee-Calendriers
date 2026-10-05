@@ -4,6 +4,7 @@
 import 'dart:async';
 
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
+import 'package:tournee_calendriers/domain/shared/insee_code.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 
@@ -39,11 +40,13 @@ final class FakeAddressDirectory implements AddressDirectory {
 
   @override
   Future<Result<CommuneStreets, AddressDirectoryFailure>> streetsOf(
-    String inseeCode,
+    InseeCode inseeCode,
   ) async {
-    communesAsked.add(inseeCode);
-    await _heldCommunes[inseeCode]?.future;
-    return communes[inseeCode] ?? const Err(AddressDirectoryFailure.notFound);
+    // Keyed by the text of the code, so a test writes `'69264'`.
+    final code = inseeCode.value;
+    communesAsked.add(code);
+    await _heldCommunes[code]?.future;
+    return communes[code] ?? const Err(AddressDirectoryFailure.notFound);
   }
 
   @override

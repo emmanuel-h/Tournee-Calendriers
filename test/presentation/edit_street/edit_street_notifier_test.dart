@@ -253,8 +253,8 @@ void main() {
         change,
         StreetRenamed(
           streetId: _id,
-          before: 'Rue des Lilas',
-          name: 'Rue des Glycines',
+          before: streetName('Rue des Lilas'),
+          name: streetName('Rue des Glycines'),
         ),
       );
       expect((await shown()).name, 'Rue des Glycines');
@@ -287,7 +287,7 @@ void main() {
       );
       expect(streets.saved, isEmpty);
       expect(await edit().renameStreet(atLimit), isNull);
-      expect(stored().name, atLimit);
+      expect(stored().name.text, atLimit);
     });
 
     test('should store nothing when the street is in the Corbeille', () async {

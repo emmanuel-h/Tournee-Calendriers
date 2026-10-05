@@ -8,6 +8,7 @@ import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/removed_house.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_name.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
 /// What one command of a `Street` changed, returned next to the new street.
@@ -502,10 +503,9 @@ final class StreetRenamed extends StreetChange {
   });
 
   /// The name before the change.
-  final String before;
+  final StreetName before;
 
-  /// The new name, already cleaned (see `StreetName`).
-  final String name;
+  final StreetName name;
 
   @override
   bool operator ==(Object other) =>
@@ -518,7 +518,8 @@ final class StreetRenamed extends StreetChange {
   int get hashCode => Object.hash(streetId, before, name);
 
   @override
-  String toString() => 'StreetRenamed(${streetId.value}, $before → $name)';
+  String toString() =>
+      'StreetRenamed(${streetId.value}, ${before.text} → ${name.text})';
 }
 
 /// An undo put back [house], the house exactly as it was before the change

@@ -1,5 +1,6 @@
 import 'package:tournee_calendriers/domain/shared/commune.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
+import 'package:tournee_calendriers/domain/shared/insee_code.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
@@ -16,12 +17,12 @@ import 'package:tournee_calendriers/domain/street/street_name.dart';
 /// unknown code, the service is down) comes back as an [Err] holding an
 /// [AddressDirectoryFailure], never as an exception.
 abstract interface class AddressDirectory {
-  /// The streets of the commune whose INSEE code is [inseeCode] (`69264`),
-  /// as the import screen lists them.
+  /// The streets of the commune [inseeCode] (`69264`), as the import
+  /// screen lists them.
   ///
   /// [AddressDirectoryFailure.notFound] when the BAN knows no such commune.
   Future<Result<CommuneStreets, AddressDirectoryFailure>> streetsOf(
-    String inseeCode,
+    InseeCode inseeCode,
   );
 
   /// The numbers of the street [street], each with its position when the

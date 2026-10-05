@@ -14,6 +14,7 @@ import 'package:tournee_calendriers/domain/street/street_name.dart';
 import 'package:tournee_calendriers/infrastructure/ban/ban_address_directory.dart';
 
 import '../../support/results.dart';
+import '../../support/street_fixtures.dart';
 import 'ban_fixtures.dart';
 
 void main() {
@@ -51,7 +52,7 @@ void main() {
         requests: requests,
       );
 
-      await directory.streetsOf('69264');
+      await directory.streetsOf(insee('69264'));
 
       expect(requests, hasLength(1));
       expect(requests.single.method, 'GET');
@@ -79,7 +80,7 @@ void main() {
         () async => fixtureResponse('lookup_69264.json', 200),
       );
 
-      final streets = valueOf(await directory.streetsOf('69264'));
+      final streets = valueOf(await directory.streetsOf(insee('69264')));
 
       expect(streets.commune, villefranche);
       expect(streets.streets, hasLength(6));
@@ -102,7 +103,7 @@ void main() {
         );
 
         expect(
-          failureOf(await directory.streetsOf('69999')),
+          failureOf(await directory.streetsOf(insee('69999'))),
           AddressDirectoryFailure.notFound,
         );
       },
@@ -116,26 +117,11 @@ void main() {
         );
 
         expect(
-          failureOf(await directory.streetsOf('69264')),
+          failureOf(await directory.streetsOf(insee('69264'))),
           AddressDirectoryFailure.serviceError,
         );
       },
     );
-
-    test('should encode the code so it stays one path segment', () async {
-      final requests = <http.Request>[];
-      final directory = directoryAnswering(
-        () async => fixtureResponse('lookup_unknown_commune.json', 404),
-        requests: requests,
-      );
-
-      await directory.streetsOf('69/../x');
-
-      expect(
-        requests.single.url.toString(),
-        'https://plateforme.adresse.data.gouv.fr/lookup/69%2F..%2Fx',
-      );
-    });
   });
 
   group('numbersOf', () {
@@ -252,7 +238,7 @@ void main() {
   final calls =
       <String, Future<Object> Function(BanAddressDirectory directory)>{
         'streetsOf': (directory) async =>
-            failureOf(await directory.streetsOf('69264')),
+            failureOf(await directory.streetsOf(insee('69264'))),
         'numbersOf': (directory) async =>
             failureOf(await directory.numbersOf(BanStreetId('69264_0246'))),
       };

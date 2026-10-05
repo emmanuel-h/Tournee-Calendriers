@@ -9,7 +9,6 @@ import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
-import 'package:tournee_calendriers/domain/street/street_repository.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/presentation/building/building_grid_notifier.dart';
 import 'package:tournee_calendriers/presentation/building/building_grid_state.dart';
@@ -19,6 +18,7 @@ import 'package:tournee_calendriers/presentation/street/street_view_state.dart';
 import '../../support/building_fixtures.dart';
 import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_street_repository.dart';
+import '../../support/fakes/lost_streets.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 
@@ -87,23 +87,6 @@ Street _street() => valueOf(
 
 DwellingKey _key(String staircase, int? level, String label) =>
     DwellingKey(staircase == 'A' ? escA : escB, level, d(label));
-
-/// Shows the street of [inner] but has lost it when a use case loads it:
-/// the street went between the read and the tap.
-final class _LostStreets implements StreetRepository {
-  _LostStreets(this.inner);
-
-  final FakeStreetRepository inner;
-
-  @override
-  Stream<Street?> watch(StreetId id) => inner.watch(id);
-
-  @override
-  Future<Street?> find(StreetId id) async => null;
-
-  @override
-  Object? noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
 
 void main() {
   late FakeStreetRepository streets;
@@ -352,7 +335,7 @@ void main() {
       streets = FakeStreetRepository([_street()]);
       container = ProviderContainer(
         overrides: [
-          streetRepositoryProvider.overrideWithValue(_LostStreets(streets)),
+          streetRepositoryProvider.overrideWithValue(LostStreets(streets)),
           clockProvider.overrideWithValue(FakeClock(twoPm)),
           identityProvider.overrideWithValue(FakeIdentity(lea)),
         ],

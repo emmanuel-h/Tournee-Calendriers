@@ -20,7 +20,7 @@ final class ObserveStreets {
   );
 
   static int _byName(Street a, Street b) {
-    final byName = compareFrench(a.name, b.name);
+    final byName = compareFrench(a.name.text, b.name.text);
     return byName != 0 ? byName : a.id.value.compareTo(b.id.value);
   }
 }

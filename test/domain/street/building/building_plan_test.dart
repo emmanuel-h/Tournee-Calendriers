@@ -531,6 +531,35 @@ void main() {
       expect(_stairs(null, 2), isNot(_stairs(0, 2)));
     });
 
+    test('should go from unknown floors to the RdC, then up, with one '
+        'floor more', () {
+      expect(_stairs(null, 2).oneFloorMore(), _stairs(0, 2));
+      expect(_stairs(0, 2).oneFloorMore(), _stairs(1, 2));
+      expect(_stairs(4, 2).oneFloorMore(), _stairs(5, 2));
+    });
+
+    test('should go from the RdC to unknown floors with one floor less, '
+        'and below ground after that', () {
+      expect(_stairs(5, 2).oneFloorLess(), _stairs(4, 2));
+      expect(_stairs(0, 2).oneFloorLess(), _stairs(null, 2));
+      expect(_stairs(null, 2).oneFloorLess(), _stairs(-1, 2));
+      expect(
+        failureOf(
+          BuildingPlan.perStaircase(
+            staircases: [_stairs(null, 2).oneFloorLess()],
+            style: DoorLabelStyle.floorAndNumber,
+          ),
+        ),
+        BuildingPlanFailure.belowGroundFloor,
+      );
+    });
+
+    test('should change the doors of each floor by one', () {
+      expect(_stairs(3, 2).oneDoorMore(), _stairs(3, 3));
+      expect(_stairs(3, 2).oneDoorLess(), _stairs(3, 1));
+      expect(_stairs(null, 1).oneDoorLess(), _stairs(null, 0));
+    });
+
     test('should show its fields when printed', () {
       expect(
         _stairs(null, 3).toString(),

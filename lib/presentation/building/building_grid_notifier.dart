@@ -3,14 +3,14 @@ import 'package:tournee_calendriers/application/use_cases/mark.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/building/building.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
-import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
-import 'package:tournee_calendriers/domain/street/street.dart';
-import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/presentation/building/building_grid_state.dart';
+import 'package:tournee_calendriers/presentation/building/chooses_staircase.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
+import 'package:tournee_calendriers/presentation/street/follows_street.dart';
 import 'package:tournee_calendriers/presentation/street/street_view_state.dart';
+import 'package:tournee_calendriers/presentation/street/undoes_last_change.dart';
 
 /// Which building a grid shows.
 typedef BuildingGridKey = ({StreetId street, HouseNumber number});
@@ -28,37 +28,19 @@ final buildingGridProvider = NotifierProvider.autoDispose
 /// staircase at a time, cycles a door's status on a tap (`MarkDwelling`)
 /// and undoes the last tap (`UndoLastChange`), as the street screen does
 /// for houses.
-final class BuildingGridNotifier extends Notifier<BuildingGridState> {
+final class BuildingGridNotifier extends Notifier<BuildingGridState>
+    with
+        FollowsStreet<BuildingGridState>,
+        ChoosesStaircase<BuildingGridState>,
+        UndoesLastChange<BuildingGridState> {
   BuildingGridNotifier(this.key);
 
   final BuildingGridKey key;
 
-  Street? _street;
-  var _read = false;
-
-  /// The staircase chosen; null until one is, then the first is shown.
-  StaircaseName? _chosen;
-
-  /// The change of the last tap, for « Annuler ».
-  StreetChange? _lastChange;
-
   @override
   BuildingGridState build() {
-    final subscription = ref.watch(observeStreetProvider)(key.street).listen((
-      street,
-    ) {
-      _street = street;
-      _read = true;
-      state = _view();
-    });
-    ref.onDispose(subscription.cancel);
-    return _view();
-  }
-
-  /// The staircase control: shows the floors of [name].
-  void selectStaircase(StaircaseName name) {
-    _chosen = name;
-    state = _view();
+    followStreet(key.street);
+    return render();
   }
 
   /// A tap on the door at [door]: gives it its next status (`○ → ✓ → ✗ →
@@ -77,7 +59,7 @@ final class BuildingGridNotifier extends Notifier<BuildingGridState> {
     );
     switch (result) {
       case Ok(value: final change):
-        _lastChange = change;
+        keepForUndo(change);
         return (
           key: door,
           status: dwelling.status.next,
@@ -91,45 +73,23 @@ final class BuildingGridNotifier extends Notifier<BuildingGridState> {
     }
   }
 
-  /// « Annuler » of the snackbar: puts back the door the last tap changed,
-  /// once. Should that be impossible (the door went with a new layout),
-  /// nothing happens.
-  Future<void> undo() async {
-    final change = _lastChange;
-    if (change == null) return;
-    _lastChange = null;
-    await ref.read(undoLastChangeProvider)(change);
-  }
-
   /// The building the grid shows, or null when there is none.
-  Building? get _building {
-    final street = _street;
-    if (street == null || street.isDeleted) return null;
-    for (final house in street.houses) {
-      if (house.number == key.number) return house.building;
-    }
-    return null;
-  }
+  Building? get _building => street?.houseAt(key.number)?.building;
 
-  BuildingGridState _view() {
-    if (!_read) return const BuildingGridLoading();
+  @override
+  BuildingGridState render() {
+    if (!streetRead) return const BuildingGridLoading();
     final building = _building;
     if (building == null) return const BuildingGridGone();
-    final staircases = building.staircases;
-    // The chosen staircase, or the first when none was chosen or the
-    // chosen one went with a new layout.
-    final shown = staircases.firstWhere(
-      (staircase) => staircase.name == _chosen,
-      orElse: () => staircases.first,
-    );
+    final shown = shownIn(building);
     final progress = building.progress;
     return BuildingGridShown(
-      streetName: _street!.name,
+      streetName: street!.name.text,
       number: key.number,
       done: progress.done,
       total: progress.total,
       staircases: [
-        for (final staircase in staircases)
+        for (final staircase in building.staircases)
           (
             name: staircase.name,
             done: staircase.progress.done,

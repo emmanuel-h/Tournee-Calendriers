@@ -1,4 +1,5 @@
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
+import 'package:tournee_calendriers/domain/shared/insee_code.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 
 /// The streets of a commune as the BAN lists them, for the import screen to
@@ -9,8 +10,8 @@ final class ListCommuneStreets {
 
   final AddressDirectory _directory;
 
-  /// The streets of the commune whose INSEE code is [inseeCode] (`69264`).
+  /// The streets of the commune [inseeCode] (`69264`).
   Future<Result<CommuneStreets, AddressDirectoryFailure>> call(
-    String inseeCode,
+    InseeCode inseeCode,
   ) => _directory.streetsOf(inseeCode);
 }

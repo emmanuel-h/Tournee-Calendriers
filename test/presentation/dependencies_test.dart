@@ -180,14 +180,14 @@ void main() {
     });
 
     test('should list the streets of a commune from the directory', () async {
-      valueOf(await container.read(listCommuneStreetsProvider)('69264'));
+      valueOf(await container.read(listCommuneStreetsProvider)(insee('69264')));
 
       expect(directory.communesAsked, ['69264']);
     });
 
     test('should import with the bound directory and ids', () async {
       final report = valueOf(
-        await container.read(importReferenceAreaProvider)('69264'),
+        await container.read(importReferenceAreaProvider)(insee('69264')),
       );
 
       expect(report, isA<ImportReport>());

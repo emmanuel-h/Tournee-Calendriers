@@ -159,7 +159,7 @@ void main() {
         ),
       );
 
-      expect(street.name, 'Rue des Lilas');
+      expect(street.name.text, 'Rue des Lilas');
     });
 
     test('should refuse a blank name', () {
@@ -173,7 +173,7 @@ void main() {
       expect(
         valueOf(
           Street.create(id: _lilas, name: 'a' * 150, commune: villefranche),
-        ).name,
+        ).name.text,
         'a' * 150,
       );
     });
@@ -200,7 +200,7 @@ void main() {
       final street = manual(['1']);
 
       expect(street.id, _lilas);
-      expect(street.name, 'Chemin des Vignes');
+      expect(street.name.text, 'Chemin des Vignes');
       expect(street.commune, villefranche);
       expect(street.banId, isNull);
       expect(street.isDeleted, isFalse);
@@ -339,7 +339,7 @@ void main() {
       final (changed, _) = valueOf(street.addNumbers([n('6')]));
 
       expect(changed.id, _lilas);
-      expect(changed.name, 'Rue des Lilas');
+      expect(changed.name.text, 'Rue des Lilas');
       expect(changed.commune, villefranche);
       expect(changed.banId, BanStreetId('69264_0420'));
       expect(changed.deletion, paulAtThree);
@@ -441,7 +441,7 @@ void main() {
       );
 
       expect(changed.id, _lilas);
-      expect(changed.name, 'Rue des Lilas');
+      expect(changed.name.text, 'Rue des Lilas');
       expect(changed.deletion, paulAtThree);
     });
 
@@ -506,7 +506,7 @@ void main() {
       final (changed, _) = valueOf(street.restoreNumber(n('14ter')));
 
       expect(changed.id, _lilas);
-      expect(changed.name, 'Rue des Lilas');
+      expect(changed.name.text, 'Rue des Lilas');
       expect(changed.deletion, paulAtThree);
     });
 
@@ -616,13 +616,13 @@ void main() {
     test('should give the street the new name and say what it was', () {
       final (changed, change) = street.renameStreet(_name('Allée des Lilas'));
 
-      expect(changed.name, 'Allée des Lilas');
+      expect(changed.name.text, 'Allée des Lilas');
       expect(
         change,
         StreetRenamed(
           streetId: _lilas,
-          before: 'Rue des Lilas',
-          name: 'Allée des Lilas',
+          before: streetName('Rue des Lilas'),
+          name: streetName('Allée des Lilas'),
         ),
       );
     });
@@ -641,7 +641,7 @@ void main() {
     test('should leave the original street with its name', () {
       street.renameStreet(_name('Allée des Lilas'));
 
-      expect(street.name, 'Rue des Lilas');
+      expect(street.name.text, 'Rue des Lilas');
     });
   });
 

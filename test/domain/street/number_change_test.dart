@@ -7,6 +7,7 @@ import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/removed_house.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_name.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
 import '../../support/building_fixtures.dart';
@@ -291,19 +292,22 @@ void main() {
   });
 
   group('StreetRenamed', () {
-    StreetRenamed renamed({StreetId? streetId, String? before, String? name}) =>
-        StreetRenamed(
-          streetId: streetId ?? lilas,
-          before: before ?? 'Rue des Lilas',
-          name: name ?? 'Allée des Lilas',
-        );
+    StreetRenamed renamed({
+      StreetId? streetId,
+      StreetName? before,
+      StreetName? name,
+    }) => StreetRenamed(
+      streetId: streetId ?? lilas,
+      before: before ?? streetName('Rue des Lilas'),
+      name: name ?? streetName('Allée des Lilas'),
+    );
 
     test('should keep the old name and the new one', () {
       final change = renamed();
 
       expect(change.streetId, lilas);
-      expect(change.before, 'Rue des Lilas');
-      expect(change.name, 'Allée des Lilas');
+      expect(change.before.text, 'Rue des Lilas');
+      expect(change.name.text, 'Allée des Lilas');
     });
 
     test('should be equal when every field is equal', () {
@@ -316,11 +320,11 @@ void main() {
     });
 
     test('should differ when the old names differ', () {
-      expect(renamed(), isNot(renamed(before: 'Rue des Roses')));
+      expect(renamed(), isNot(renamed(before: streetName('Rue des Roses'))));
     });
 
     test('should differ when the new names differ', () {
-      expect(renamed(), isNot(renamed(name: 'Impasse des Lilas')));
+      expect(renamed(), isNot(renamed(name: streetName('Impasse des Lilas'))));
     });
 
     test('should show both names when printed', () {

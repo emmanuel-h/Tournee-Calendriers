@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/shared/same_items.dart';
 import 'package:tournee_calendriers/domain/street/building/building_plan.dart';
@@ -233,6 +235,23 @@ final class Building {
   Result<Building, BuildingChangeFailure> withDoorAdded(
     StaircaseName staircase,
     int? level,
+  ) => switch (nextDoor(staircase, level)) {
+    Err(:final failure) => Err(failure),
+    Ok(value: final key) => Ok(
+      _withFloor(
+        staircase,
+        level,
+        (floor) => [...floor.dwellings, Dwelling(label: key.label)],
+      ),
+    ),
+  };
+
+  /// Where [withDoorAdded] would put a door on the floor at [level] of
+  /// [staircase], its label included, or why it would refuse. Nothing
+  /// changes: a screen asks it to name the door it is about to add.
+  Result<DwellingKey, BuildingChangeFailure> nextDoor(
+    StaircaseName staircase,
+    int? level,
   ) {
     final current = _staircaseNamed(staircase);
     if (current == null) {
@@ -245,14 +264,23 @@ final class Building {
     }
     final label = _nextLabel(floor);
     if (label == null) return const Err(BuildingChangeFailure.noLabelLeft);
-    return Ok(
-      _withFloor(
-        staircase,
-        level,
-        (floor) => [...floor.dwellings, Dwelling(label: label)],
-      ),
-    );
+    return Ok(DwellingKey(staircase, level, label));
   }
+
+  /// The plan nearest to this building, to start « Modifier les étages »
+  /// from: its [style] and, for each staircase, its highest floor (unknown
+  /// for a « Logements » row) and the doors of its largest floor.
+  ///
+  /// A building adjusted floor by floor may be larger than a plan allows
+  /// (one floor of 20 doors in a tall staircase); the plan's refusal is
+  /// returned then.
+  Result<BuildingPlan, BuildingPlanFailure> get closestPlan =>
+      BuildingPlan.perStaircase(
+        staircases: [
+          for (final staircase in staircases) _closestPlanOf(staircase),
+        ],
+        style: style,
+      );
 
   /// This building without the door at [key]. Its floor stays, even empty,
   /// so a door can be added back to it.
@@ -301,6 +329,21 @@ final class Building {
             other.label == key.label ? renamed : other,
         ],
       ),
+    );
+  }
+
+  /// The highest floor of [staircase] (null for its « Logements » row,
+  /// alone by an invariant) and the doors of its largest floor.
+  static StaircasePlan _closestPlanOf(Staircase staircase) {
+    final levels = [for (final floor in staircase.floors) floor.level];
+    return StaircasePlan(
+      // `whereType<int>()` keeps the levels that are not null, typed `int`.
+      topFloor: levels.contains(null)
+          ? null
+          : levels.whereType<int>().fold<int>(0, math.max),
+      doorsPerFloor: staircase.floors
+          .map((floor) => floor.dwellings.length)
+          .fold<int>(0, math.max),
     );
   }
 

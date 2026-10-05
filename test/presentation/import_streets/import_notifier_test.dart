@@ -156,7 +156,7 @@ void main() {
       expect((state().suggestions as CommunesFound).communes, [
         CommuneOption(
           name: 'Villefranche-sur-Saône',
-          inseeCode: '69264',
+          inseeCode: insee('69264'),
           postcodes: const ['69400'],
         ),
       ]);

@@ -8,7 +8,6 @@ import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
-import 'package:tournee_calendriers/domain/street/street_repository.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/presentation/building/building_setup_notifier.dart';
 import 'package:tournee_calendriers/presentation/building/building_setup_state.dart';
@@ -17,6 +16,7 @@ import 'package:tournee_calendriers/presentation/dependencies.dart';
 import '../../support/building_fixtures.dart';
 import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_street_repository.dart';
+import '../../support/fakes/lost_streets.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 
@@ -92,22 +92,6 @@ Street _street({List<House>? houses}) => valueOf(
   ),
 );
 
-/// Shows the street of [inner] but has lost it when a use case loads it.
-final class _LostStreets implements StreetRepository {
-  _LostStreets(this.inner);
-
-  final FakeStreetRepository inner;
-
-  @override
-  Stream<Street?> watch(StreetId id) => inner.watch(id);
-
-  @override
-  Future<Street?> find(StreetId id) async => null;
-
-  @override
-  Object? noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
-
 void main() {
   late FakeStreetRepository streets;
   late ProviderContainer container;
@@ -117,7 +101,7 @@ void main() {
     container = ProviderContainer(
       overrides: [
         streetRepositoryProvider.overrideWithValue(
-          lost ? _LostStreets(streets) : streets,
+          lost ? LostStreets(streets) : streets,
         ),
         clockProvider.overrideWithValue(FakeClock(twoPm)),
         identityProvider.overrideWithValue(FakeIdentity(lea)),

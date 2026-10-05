@@ -16,7 +16,9 @@ void main() {
     );
     final directory = FakeAddressDirectory(communes: {'69264': Ok(listed)});
 
-    final streets = valueOf(await ListCommuneStreets(directory)('69264'));
+    final streets = valueOf(
+      await ListCommuneStreets(directory)(insee('69264')),
+    );
 
     expect(streets, same(listed));
     expect(directory.communesAsked, ['69264']);
@@ -28,7 +30,7 @@ void main() {
     );
 
     expect(
-      failureOf(await ListCommuneStreets(directory)('69264')),
+      failureOf(await ListCommuneStreets(directory)(insee('69264'))),
       AddressDirectoryFailure.noNetwork,
     );
   });

@@ -86,9 +86,9 @@ bool isOlderStoredStreet(Object? json) => switch (json) {
 Map<String, Object?> streetToJson(Street street) => {
   'version': storedStreetVersion,
   'id': street.id.value,
-  'name': street.name,
+  'name': street.name.text,
   'commune': {
-    'inseeCode': street.commune.inseeCode,
+    'inseeCode': street.commune.inseeCode.value,
     'name': street.commune.name,
   },
   'banId': street.banId?.value,

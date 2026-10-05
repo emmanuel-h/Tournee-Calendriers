@@ -169,7 +169,7 @@ final class Street {
     return Ok(
       Street._(
         id: id,
-        name: streetName.text,
+        name: streetName,
         commune: commune,
         banId: banId,
         houses: _sortedHouses(houses),
@@ -190,7 +190,7 @@ final class Street {
     required Iterable<HouseNumber> numbers,
   }) => Street._(
     id: id,
-    name: name.text,
+    name: name,
     commune: commune,
     banId: null,
     houses: _sortedHouses([
@@ -204,7 +204,7 @@ final class Street {
 
   /// The name as the BAN writes it (« Rue des Lilas ») or as typed, cleaned
   /// (see [StreetName]).
-  final String name;
+  final StreetName name;
 
   final Commune commune;
 
@@ -234,6 +234,13 @@ final class Street {
   /// The even side of the street (right column), 0 included, in order.
   List<House> get evenHouses =>
       List.unmodifiable(houses.where((house) => house.number.isEven));
+
+  /// The house shown at [number], or null when the street shows none (it may
+  /// be in the Corbeille, see [removedHouses]).
+  House? houseAt(HouseNumber number) {
+    final index = _indexOf(number);
+    return index < 0 ? null : houses[index];
+  }
 
   /// The progress of the whole street: the sum of its houses' progress (a
   /// building counts its doors).
@@ -649,12 +656,12 @@ final class Street {
   /// for the whole team (PLAN §5.5).
   (Street, StreetRenamed) renameStreet(StreetName name) => (
     _copy(
-      name: name.text,
+      name: name,
       houses: houses,
       removedHouses: removedHouses,
       deletion: deletion,
     ),
-    StreetRenamed(streetId: id, before: this.name, name: name.text),
+    StreetRenamed(streetId: id, before: this.name, name: name),
   );
 
   /// Sends the street to the Corbeille, as [by] at [at]: it is hidden but
@@ -921,7 +928,7 @@ final class Street {
   /// of [deletion]: not in the Corbeille). The lists must already be sorted
   /// and unmodifiable.
   Street _copy({
-    required String name,
+    required StreetName name,
     required List<House> houses,
     required List<RemovedHouse> removedHouses,
     required ChangeStamp? deletion,

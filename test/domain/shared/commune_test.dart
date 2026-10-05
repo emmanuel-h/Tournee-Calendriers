@@ -10,7 +10,7 @@ void main() {
         Commune.create(inseeCode: '69264', name: 'Villefranche-sur-Saône'),
       );
 
-      expect(commune.inseeCode, '69264');
+      expect(commune.inseeCode.value, '69264');
       expect(commune.name, 'Villefranche-sur-Saône');
     });
 
@@ -19,7 +19,7 @@ void main() {
         Commune.create(inseeCode: ' 69264 ', name: '  Villefranche-sur-Saône '),
       );
 
-      expect(commune.inseeCode, '69264');
+      expect(commune.inseeCode.value, '69264');
       expect(commune.name, 'Villefranche-sur-Saône');
     });
 
@@ -37,7 +37,7 @@ void main() {
       test('should accept the code $expected when given "$input"', () {
         final commune = valueOf(Commune.create(inseeCode: input, name: 'X'));
 
-        expect(commune.inseeCode, expected);
+        expect(commune.inseeCode.value, expected);
       });
     });
 

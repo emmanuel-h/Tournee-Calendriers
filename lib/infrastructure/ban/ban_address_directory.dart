@@ -4,6 +4,7 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
+import 'package:tournee_calendriers/domain/shared/insee_code.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/infrastructure/ban/mappers/ban_lookup_mapper.dart';
@@ -39,8 +40,8 @@ final class BanAddressDirectory implements AddressDirectory {
 
   @override
   Future<Result<CommuneStreets, AddressDirectoryFailure>> streetsOf(
-    String inseeCode,
-  ) => _lookup(inseeCode, communeStreetsFromJson);
+    InseeCode inseeCode,
+  ) => _lookup(inseeCode.value, communeStreetsFromJson);
 
   @override
   Future<Result<StreetNumbers, AddressDirectoryFailure>> numbersOf(

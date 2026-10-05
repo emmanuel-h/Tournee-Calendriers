@@ -6,11 +6,13 @@ import 'package:tournee_calendriers/domain/street/building/building.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling_label.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
-import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/presentation/building/adjust_doors_state.dart';
 import 'package:tournee_calendriers/presentation/building/building_grid_notifier.dart';
+import 'package:tournee_calendriers/presentation/building/chooses_staircase.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
+import 'package:tournee_calendriers/presentation/street/follows_street.dart';
+import 'package:tournee_calendriers/presentation/street/undoes_last_change.dart';
 
 /// The state of « Modifier les portes » for one building (`family`: one per
 /// street and number, the key of the grid; `autoDispose`: it stops
@@ -26,60 +28,37 @@ final adjustDoorsProvider = NotifierProvider.autoDispose
 /// removes or renames one door at a time through `DescribeBuilding`, then
 /// undoes the last change (`UndoLastChange`). Needs no network.
 ///
-/// A removal is tried on the building first (`Building.withoutDoor`, which
-/// stores nothing): a refusal, such as the last door, is said at once,
-/// before asking about the door's marks.
-final class AdjustDoorsNotifier extends Notifier<AdjustDoorsState> {
+/// An addition or a removal is tried on the building first
+/// (`Building.nextDoor`, `Building.withoutDoor`, which store nothing): a
+/// refusal, such as the last door, is said at once, before asking about the
+/// door's marks, and the new door is named by the building's own rule.
+final class AdjustDoorsNotifier extends Notifier<AdjustDoorsState>
+    with
+        FollowsStreet<AdjustDoorsState>,
+        ChoosesStaircase<AdjustDoorsState>,
+        UndoesLastChange<AdjustDoorsState> {
   AdjustDoorsNotifier(this.key);
 
   final BuildingGridKey key;
 
-  Street? _street;
-  var _read = false;
-
-  /// The staircase chosen; null until one is, then the first is shown.
-  StaircaseName? _chosen;
-
-  /// The last change made here, for « Annuler »; the next one replaces it.
-  StreetChange? _lastChange;
-
   @override
   AdjustDoorsState build() {
-    final subscription = ref.watch(observeStreetProvider)(key.street).listen((
-      street,
-    ) {
-      _street = street;
-      _read = true;
-      state = _view();
-    });
-    ref.onDispose(subscription.cancel);
-    return _view();
-  }
-
-  /// The staircase control: shows the floors of [name].
-  void selectStaircase(StaircaseName name) {
-    _chosen = name;
-    state = _view();
+    followStreet(key.street);
+    return render();
   }
 
   /// « + » at the end of the floor at [level] of [staircase]: one more door,
-  /// labelled by the building's rule (`Building.withDoorAdded`).
+  /// labelled by the building's rule (`Building.nextDoor`).
   Future<DoorEditOutcome> addDoor(StaircaseName staircase, int? level) async {
-    final result = await _describe(AddDoor(staircase, level));
-    // The new door closes its floor: its label is the last one there.
-    return _outcome(
-      result,
-      (building) => DwellingKey(
-        staircase,
-        level,
-        building.staircases
-            .firstWhere((each) => each.name == staircase)
-            .floor(level)!
-            .dwellings
-            .last
-            .label,
-      ),
-    );
+    switch (_building?.nextDoor(staircase, level)) {
+      // No building on the screen: it says so as for a number gone.
+      case null:
+        return const DoorEditRefused(BuildingChangeFailure.unknownHouse);
+      case Err(:final failure):
+        return DoorEditRefused(failure);
+      case Ok(value: final door):
+        return _outcome(await _describe(AddDoor(staircase, level)), door);
+    }
   }
 
   /// ✕ on [door]: the door goes with its marks. When it has marks, nothing
@@ -98,7 +77,7 @@ final class AdjustDoorsNotifier extends Notifier<AdjustDoorsState> {
         return const DoorEditNeedsConfirmation();
       }
     }
-    return _outcome(await _describe(RemoveDoor(door)), (_) => door);
+    return _outcome(await _describe(RemoveDoor(door)), door);
   }
 
   /// « Renommer » of a door's sheet: gives [door] the name typed as
@@ -116,39 +95,27 @@ final class AdjustDoorsNotifier extends Notifier<AdjustDoorsState> {
     if (label == door.label) return const DoorNameKept();
     switch (await _describe(RenameDoor(door, label))) {
       case Ok(value: final change):
-        _lastChange = change;
+        keepForUndo(change);
         return DoorRenamed(DwellingKey(door.staircase, door.level, label));
       case Err(failure: final failure):
         return DoorRenameRefused(_reason(failure));
     }
   }
 
-  /// « Annuler » of the snackbar: puts back what the last change replaced,
-  /// once. When that is no longer possible, nothing happens.
-  Future<void> undo() async {
-    final change = _lastChange;
-    if (change == null) return;
-    _lastChange = null;
-    await ref.read(undoLastChangeProvider)(change);
-  }
-
   Future<Result<HouseChange, CommandFailure<BuildingChangeFailure>>> _describe(
     BuildingEdit edit,
   ) => ref.read(describeBuildingProvider)(key.street, key.number, edit);
 
-  /// Keeps the change of [result] for « Annuler », naming the door it
-  /// added or removed ([door], given the building after it), or says why
-  /// there is none.
+  /// Keeps the change of [result] for « Annuler », naming the [door] it
+  /// added or removed, or says why there is none.
   DoorEditOutcome _outcome(
     Result<HouseChange, CommandFailure<BuildingChangeFailure>> result,
-    DwellingKey Function(Building after) door,
+    DwellingKey door,
   ) {
     switch (result) {
       case Ok(value: final change):
-        _lastChange = change;
-        // A door added or removed lays the building out again: the change
-        // is always a `BuildingLaidOut` here.
-        return DoorEditApplied(door((change as BuildingLaidOut).building));
+        keepForUndo(change);
+        return DoorEditApplied(door);
       case Err(:final failure):
         return DoorEditRefused(_reason(failure));
     }
@@ -164,30 +131,18 @@ final class AdjustDoorsNotifier extends Notifier<AdjustDoorsState> {
   };
 
   /// The building adjusted, or null when there is none.
-  Building? get _building {
-    final street = _street;
-    if (street == null || street.isDeleted) return null;
-    for (final house in street.houses) {
-      if (house.number == key.number) return house.building;
-    }
-    return null;
-  }
+  Building? get _building => street?.houseAt(key.number)?.building;
 
-  AdjustDoorsState _view() {
-    if (!_read) return const AdjustDoorsLoading();
+  @override
+  AdjustDoorsState render() {
+    if (!streetRead) return const AdjustDoorsLoading();
     final building = _building;
     if (building == null) return const AdjustDoorsGone();
-    final staircases = building.staircases;
-    // The chosen staircase, or the first when none was chosen or the
-    // chosen one went with a new layout.
-    final shown = staircases.firstWhere(
-      (staircase) => staircase.name == _chosen,
-      orElse: () => staircases.first,
-    );
+    final shown = shownIn(building);
     return AdjustDoorsShown(
-      streetName: _street!.name,
+      streetName: street!.name.text,
       number: key.number,
-      staircases: [for (final staircase in staircases) staircase.name],
+      staircases: [for (final staircase in building.staircases) staircase.name],
       selected: shown.name,
       floors: [
         for (final floor in shown.floors)

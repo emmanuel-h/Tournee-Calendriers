@@ -3,7 +3,6 @@ import 'package:tournee_calendriers/application/use_cases/command_failure.dart';
 import 'package:tournee_calendriers/application/use_cases/describe_building.dart';
 import 'package:tournee_calendriers/application/use_cases/edit_street_numbers.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
-import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
@@ -11,7 +10,9 @@ import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/edit_street/edit_street_state.dart';
+import 'package:tournee_calendriers/presentation/street/follows_street.dart';
 import 'package:tournee_calendriers/presentation/street/street_view_state.dart';
+import 'package:tournee_calendriers/presentation/street/undoes_last_change.dart';
 
 /// The state of the edit mode of one street (`family`: one per street id;
 /// `autoDispose`: it stops following the street, and forgets its last
@@ -30,29 +31,18 @@ final editStreetProvider = NotifierProvider.autoDispose
 /// Whether marks would go with a change is asked of the domain
 /// (`House.hasMarks`, `Building.hasMarks`) before anything is stored, so the
 /// screen can ask the person first.
-final class EditStreetNotifier extends Notifier<EditStreetState> {
+///
+/// « Annuler » undoes the last removal, renumbering or « back to a house ».
+final class EditStreetNotifier extends Notifier<EditStreetState>
+    with FollowsStreet<EditStreetState>, UndoesLastChange<EditStreetState> {
   EditStreetNotifier(this.streetId);
 
   final StreetId streetId;
 
-  Street? _street;
-  var _read = false;
-
-  /// The last removal, renumbering or « back to a house », for « Annuler »;
-  /// the next one replaces it.
-  StreetChange? _lastChange;
-
   @override
   EditStreetState build() {
-    final subscription = ref.watch(observeStreetProvider)(streetId).listen((
-      street,
-    ) {
-      _street = street;
-      _read = true;
-      state = _view();
-    });
-    ref.onDispose(subscription.cancel);
-    return _view();
+    followStreet(streetId);
+    return render();
   }
 
   /// The name field, when the edit mode is left (« OK », ✕, back), the
@@ -64,10 +54,8 @@ final class EditStreetNotifier extends Notifier<EditStreetState> {
       case Err(:final failure):
         return failure;
       case Ok(value: final name):
-        final street = _street;
-        if (street == null || street.isDeleted || street.name == name.text) {
-          return null;
-        }
+        final street = this.street;
+        if (street == null || street.name == name) return null;
         await ref.read(editStreetNumbersProvider)(streetId, RenameStreet(name));
         return null;
     }
@@ -80,7 +68,7 @@ final class EditStreetNotifier extends Notifier<EditStreetState> {
     bool confirmed = false,
   }) async {
     // A number no longer shown goes on to the use case, which refuses it.
-    if ((_houseAt(number)?.hasMarks ?? false) && !confirmed) {
+    if ((street?.houseAt(number)?.hasMarks ?? false) && !confirmed) {
       return const EditNeedsConfirmation();
     }
     return _keep(
@@ -127,15 +115,6 @@ final class EditStreetNotifier extends Notifier<EditStreetState> {
     ),
   );
 
-  /// « Annuler » of the snackbar: puts back what the last change replaced,
-  /// once. When that is no longer possible, nothing happens.
-  Future<void> undo() async {
-    final change = _lastChange;
-    if (change == null) return;
-    _lastChange = null;
-    await ref.read(undoLastChangeProvider)(change);
-  }
-
   /// « Supprimer la rue », once confirmed: the street goes to the Corbeille
   /// with its houses and marks. Returns whether it went.
   Future<bool> deleteStreet() async => switch (await ref.read(
@@ -146,7 +125,7 @@ final class EditStreetNotifier extends Notifier<EditStreetState> {
   };
 
   Renumbered _renumbered(StreetChange change, HouseNumber newNumber) {
-    _lastChange = change;
+    keepForUndo(change);
     return Renumbered(newNumber);
   }
 
@@ -154,28 +133,22 @@ final class EditStreetNotifier extends Notifier<EditStreetState> {
   EditOutcome _keep<F>(Result<StreetChange, CommandFailure<F>> result) {
     switch (result) {
       case Ok(value: final change):
-        _lastChange = change;
+        keepForUndo(change);
         return const EditApplied();
       case Err():
         return const EditFailed();
     }
   }
 
-  House? _houseAt(HouseNumber number) {
-    for (final house in _street?.houses ?? const <House>[]) {
-      if (house.number == number) return house;
-    }
-    return null;
-  }
-
-  EditStreetState _view() {
-    if (!_read) return const EditStreetLoading();
-    final street = _street;
-    if (street == null || street.isDeleted) return const EditStreetGone();
+  @override
+  EditStreetState render() {
+    if (!streetRead) return const EditStreetLoading();
+    final street = this.street;
+    if (street == null) return const EditStreetGone();
     final odd = street.oddHouses;
     final even = street.evenHouses;
     return EditStreetShown(
-      name: street.name,
+      name: street.name.text,
       columns: StreetColumns.of(odd: odd.length, even: even.length),
       odd: [for (final house in odd) EditTile.of(house)],
       even: [for (final house in even) EditTile.of(house)],

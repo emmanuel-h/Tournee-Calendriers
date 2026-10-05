@@ -88,6 +88,38 @@ final class StaircasePlan {
   /// unknown.
   int get dwellingCount => ((topFloor ?? 0) + 1) * doorsPerFloor;
 
+  /// One floor more (the « + » of the sheet): from unknown floors to the
+  /// RdC alone, then up.
+  StaircasePlan oneFloorMore() => StaircasePlan(
+    topFloor: switch (topFloor) {
+      null => 0,
+      final top => top + 1,
+    },
+    doorsPerFloor: doorsPerFloor,
+  );
+
+  /// One floor less (the « − » of the sheet): down to the RdC alone, then
+  /// unknown floors. Below unknown floors comes a top floor under the RdC,
+  /// which [BuildingPlan.perStaircase] refuses
+  /// ([BuildingPlanFailure.belowGroundFloor]), so the sheet can say why.
+  StaircasePlan oneFloorLess() => StaircasePlan(
+    topFloor: switch (topFloor) {
+      0 => null,
+      null => -1,
+      final top => top - 1,
+    },
+    doorsPerFloor: doorsPerFloor,
+  );
+
+  /// One door more on each floor.
+  StaircasePlan oneDoorMore() =>
+      StaircasePlan(topFloor: topFloor, doorsPerFloor: doorsPerFloor + 1);
+
+  /// One door less on each floor; [BuildingPlan.perStaircase] refuses none
+  /// ([BuildingPlanFailure.noDoor]).
+  StaircasePlan oneDoorLess() =>
+      StaircasePlan(topFloor: topFloor, doorsPerFloor: doorsPerFloor - 1);
+
   @override
   bool operator ==(Object other) =>
       other is StaircasePlan &&

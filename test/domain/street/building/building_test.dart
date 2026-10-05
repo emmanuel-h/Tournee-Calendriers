@@ -650,6 +650,124 @@ void main() {
     });
   });
 
+  group('nextDoor', () {
+    test('should name the door withDoorAdded adds', () {
+      final next = valueOf(building().nextDoor(escA, 5));
+
+      expect(next, _key(escA, 5, '55'));
+      expect(
+        valueOf(building().withDoorAdded(escA, 5)).dwellingAt(next),
+        isNotNull,
+      );
+    });
+
+    test('should skip a label already taken on the floor', () {
+      final renamed = valueOf(
+        building().withDoorRenamed(_key(escA, 5, '54'), d('55')),
+      );
+
+      expect(valueOf(renamed.nextDoor(escA, 5)), _key(escA, 5, '56'));
+    });
+
+    test('should refuse when the staircase is unknown', () {
+      expect(
+        failureOf(building().nextDoor(escB, 5)),
+        BuildingChangeFailure.unknownStaircase,
+      );
+    });
+
+    test('should refuse when the floor is unknown', () {
+      expect(
+        failureOf(building().nextDoor(escA, 9)),
+        BuildingChangeFailure.unknownFloor,
+      );
+    });
+
+    test('should refuse when the style has no label left', () {
+      final full = building(
+        topFloor: 0,
+        doors: DoorLabelStyle.letterCount,
+        style: DoorLabelStyle.floorAndLetter,
+      );
+
+      expect(
+        failureOf(full.nextDoor(escA, 0)),
+        BuildingChangeFailure.noLabelLeft,
+      );
+    });
+
+    test('should refuse when the building is full', () {
+      // 50 floors of 10 doors: the 500 dwellings a building may hold.
+      final full = building(topFloor: 49, doors: 10);
+
+      expect(
+        failureOf(full.nextDoor(escA, 0)),
+        BuildingChangeFailure.tooManyDwellings,
+      );
+    });
+  });
+
+  group('closestPlan', () {
+    test('should give back the plan of a building laid out by one', () {
+      final thePlan = plan(staircases: 2, topFloor: 3, doors: 2);
+
+      expect(valueOf(Building.laidOut(thePlan).closestPlan), thePlan);
+    });
+
+    test('should take the highest floor and the largest floor of each '
+        'staircase', () {
+      final uneven = valueOf(
+        Building.create(
+          style: DoorLabelStyle.free,
+          staircases: [
+            Staircase(
+              name: escA,
+              floors: [
+                _floor(4, ['1']),
+                _floor(0, ['1', '2', '3']),
+              ],
+            ),
+            Staircase(
+              name: escB,
+              floors: [
+                _floor(null, ['1', '2']),
+              ],
+            ),
+          ],
+        ),
+      );
+
+      final closest = valueOf(uneven.closestPlan);
+
+      expect(closest.style, DoorLabelStyle.free);
+      expect(closest.staircases, const [
+        StaircasePlan(topFloor: 4, doorsPerFloor: 3),
+        StaircasePlan(topFloor: null, doorsPerFloor: 2),
+      ]);
+    });
+
+    test('should refuse when the building is larger than a plan allows', () {
+      // The RdC with 20 doors and the 29e with one: 30 floors × 20 doors
+      // would pass 500 dwellings.
+      final odd = valueOf(
+        Building.create(
+          style: DoorLabelStyle.floorAndNumber,
+          staircases: [
+            Staircase(
+              name: escA,
+              floors: [
+                _floor(29, ['291']),
+                _floor(0, [for (var door = 1; door <= 20; door++) '$door']),
+              ],
+            ),
+          ],
+        ),
+      );
+
+      expect(failureOf(odd.closestPlan), BuildingPlanFailure.tooManyDwellings);
+    });
+  });
+
   group('withDoorAdded', () {
     test('should add the next number at the end of the floor', () {
       final added = valueOf(building().withDoorAdded(escA, 5));

@@ -1,6 +1,7 @@
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
 import 'package:tournee_calendriers/domain/shared/french_text.dart';
+import 'package:tournee_calendriers/domain/shared/insee_code.dart';
 import 'package:tournee_calendriers/domain/shared/same_items.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 
@@ -53,7 +54,7 @@ final class CommuneOption {
   final String name;
 
   /// Which commune: the import asks the BAN for it.
-  final String inseeCode;
+  final InseeCode inseeCode;
 
   /// Five-digit postcodes, possibly none. Read-only.
   final List<String> postcodes;
@@ -69,7 +70,7 @@ final class CommuneOption {
   int get hashCode => Object.hash(name, inseeCode, Object.hashAll(postcodes));
 
   @override
-  String toString() => 'CommuneOption($inseeCode, $name, $postcodes)';
+  String toString() => 'CommuneOption(${inseeCode.value}, $name, $postcodes)';
 }
 
 /// What shows under the « Commune » field while typing.

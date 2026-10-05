@@ -33,12 +33,34 @@ List<String> _labels(List<House> houses) => [
 ];
 
 void main() {
+  group('houseAt', () {
+    test('should find the house shown at a number', () {
+      final street = _streetOf(['1', '2', '3bis']);
+
+      expect(street.houseAt(n('3bis')), House(number: n('3bis')));
+    });
+
+    test('should find nothing when no house shows the number', () {
+      final street = _streetOf(['1', '2']);
+
+      expect(street.houseAt(n('3')), isNull);
+    });
+
+    test('should find nothing when the number is in the Corbeille', () {
+      final (street, _) = valueOf(
+        _streetOf(['1', '2']).removeNumber(n('2'), by: lea, at: twoPm),
+      );
+
+      expect(street.houseAt(n('2')), isNull);
+    });
+  });
+
   group('create', () {
     test('should keep its identity when given it', () {
       final street = _streetOf(['1']);
 
       expect(street.id, _lilas);
-      expect(street.name, 'Rue des Lilas');
+      expect(street.name.text, 'Rue des Lilas');
       expect(street.commune, villefranche);
       expect(street.banId, BanStreetId('69264_0420'));
       expect(street.deletion, isNull);

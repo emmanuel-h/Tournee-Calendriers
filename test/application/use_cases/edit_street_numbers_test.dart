@@ -101,11 +101,11 @@ void main() {
       change,
       StreetRenamed(
         streetId: lilasId,
-        before: 'Rue des Lilas',
-        name: 'Rue des Roses',
+        before: streetName('Rue des Lilas'),
+        name: streetName('Rue des Roses'),
       ),
     );
-    expect(stored().name, 'Rue des Roses');
+    expect(stored().name.text, 'Rue des Roses');
   });
 
   test('should send the street to the Corbeille', () async {

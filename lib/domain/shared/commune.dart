@@ -1,8 +1,9 @@
+import 'package:tournee_calendriers/domain/shared/insee_code.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 
 /// Why an (INSEE code, name) pair cannot become a [Commune].
 enum CommuneFailure {
-  /// The code is not five characters shaped like an INSEE commune code.
+  /// The code is not a valid [InseeCode].
   invalidInseeCode,
 
   /// The name is empty or only spaces.
@@ -17,28 +18,26 @@ enum CommuneFailure {
 final class Commune {
   const Commune._(this.inseeCode, this.name);
 
-  /// Two digits for the département (or `2A` / `2B` in Corsica), then three
-  /// digits. Overseas codes (`97411`) have the same five-character shape.
-  static final _inseeCodeShape = RegExp(r'^(\d{2}|2A|2B)\d{3}$');
-
-  /// Builds the commune from [inseeCode] and [name], both trimmed; the code
-  /// is upper-cased (`2a004` → `2A004`). Fails with a [CommuneFailure] when
-  /// the code has the wrong shape or the name is blank.
+  /// Builds the commune from [inseeCode] (read as [InseeCode.parse] reads
+  /// it) and [name], trimmed. Fails with a [CommuneFailure] when the code
+  /// has the wrong shape or the name is blank.
   static Result<Commune, CommuneFailure> create({
     required String inseeCode,
     required String name,
   }) {
-    final code = inseeCode.trim().toUpperCase();
-    if (!_inseeCodeShape.hasMatch(code)) {
-      return const Err(CommuneFailure.invalidInseeCode);
+    final InseeCode code;
+    switch (InseeCode.parse(inseeCode)) {
+      case Err():
+        return const Err(CommuneFailure.invalidInseeCode);
+      case Ok(:final value):
+        code = value;
     }
     final trimmedName = name.trim();
     if (trimmedName.isEmpty) return const Err(CommuneFailure.blankName);
     return Ok(Commune._(code, trimmedName));
   }
 
-  /// The five-character INSEE code, upper-case.
-  final String inseeCode;
+  final InseeCode inseeCode;
 
   /// The trimmed official name.
   final String name;
@@ -51,5 +50,5 @@ final class Commune {
   int get hashCode => Object.hash(inseeCode, name);
 
   @override
-  String toString() => 'Commune($inseeCode, $name)';
+  String toString() => 'Commune(${inseeCode.value}, $name)';
 }

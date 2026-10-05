@@ -3,11 +3,11 @@ import 'package:tournee_calendriers/application/use_cases/describe_building.dart
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
-import 'package:tournee_calendriers/domain/street/street.dart';
-import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
+import 'package:tournee_calendriers/presentation/street/follows_street.dart';
 import 'package:tournee_calendriers/presentation/street/street_view_state.dart';
+import 'package:tournee_calendriers/presentation/street/undoes_last_change.dart';
 
 /// The state of the street screen of one street.
 ///
@@ -21,36 +21,19 @@ final streetProvider = NotifierProvider.autoDispose
 /// cycles a house's status on a tap (`MarkHouse`), turns a building back
 /// into a house (`DescribeBuilding`), undoes the last of those
 /// (`UndoLastChange`) and keeps « Masquer faits » for the street.
-final class StreetNotifier extends Notifier<StreetViewState> {
+final class StreetNotifier extends Notifier<StreetViewState>
+    with FollowsStreet<StreetViewState>, UndoesLastChange<StreetViewState> {
   StreetNotifier(this.streetId);
 
   final StreetId streetId;
 
-  /// The street last read; null until it is read, or when there is none.
-  Street? _street;
-  var _read = false;
   var _hideDone = false;
-
-  /// The change of the last tap, for « Annuler »; a new tap replaces it
-  /// (only the last one can be undone, PLAN §5.6).
-  StreetChange? _lastChange;
 
   @override
   StreetViewState build() {
     _hideDone = ref.watch(readHideDoneProvider)(streetId);
-    // `ref.watch` on the use case: should its repository be replaced, this
-    // notifier is built again and listens to the new one.
-    final subscription = ref.watch(observeStreetProvider)(streetId).listen((
-      street,
-    ) {
-      _street = street;
-      _read = true;
-      state = _view();
-    });
-    // The subscription lives as long as the notifier; Riverpod calls this
-    // when the screen no longer needs it.
-    ref.onDispose(subscription.cancel);
-    return _view();
+    followStreet(streetId);
+    return render();
   }
 
   /// A tap on the tile of [number]: gives the house its next status
@@ -62,7 +45,7 @@ final class StreetNotifier extends Notifier<StreetViewState> {
   /// The new street arrives through [ObserveStreet] like any other change,
   /// so the screen shows the same thing whoever changed it.
   Future<MarkedHouse?> cycle(HouseNumber number) async {
-    final house = _houseAt(number);
+    final house = street?.houseAt(number);
     if (house == null) return null;
     final result = await ref.read(markHouseProvider)(
       streetId,
@@ -71,21 +54,11 @@ final class StreetNotifier extends Notifier<StreetViewState> {
     );
     switch (result) {
       case Ok(value: final change):
-        _lastChange = change;
+        keepForUndo(change);
         return MarkedHouse(number: number, status: change.status);
       case Err():
         return null;
     }
-  }
-
-  /// « Annuler » of the snackbar: puts back what the last tap replaced,
-  /// once. Should that be impossible (a teammate removed the number since),
-  /// nothing happens: the tiles show the street as it is.
-  Future<void> undo() async {
-    final change = _lastChange;
-    if (change == null) return;
-    _lastChange = null;
-    await ref.read(undoLastChangeProvider)(change);
   }
 
   /// « Changer en maison », chosen in the grid of the building at
@@ -99,7 +72,7 @@ final class StreetNotifier extends Notifier<StreetViewState> {
     );
     switch (result) {
       case Ok(value: final change):
-        _lastChange = change;
+        keepForUndo(change);
         return true;
       case Err():
         return false;
@@ -110,26 +83,20 @@ final class StreetNotifier extends Notifier<StreetViewState> {
   /// remembers the choice for this street.
   Future<void> toggleHideDone() {
     _hideDone = !_hideDone;
-    state = _view();
+    state = render();
     return ref.read(saveHideDoneProvider)(streetId, hide: _hideDone);
   }
 
-  House? _houseAt(HouseNumber number) {
-    for (final house in _street?.houses ?? const <House>[]) {
-      if (house.number == number) return house;
-    }
-    return null;
-  }
-
-  StreetViewState _view() {
-    if (!_read) return const StreetLoading();
-    final street = _street;
-    if (street == null || street.isDeleted) return const StreetGone();
+  @override
+  StreetViewState render() {
+    if (!streetRead) return const StreetLoading();
+    final street = this.street;
+    if (street == null) return const StreetGone();
     final progress = street.progress;
     final odd = street.oddHouses;
     final even = street.evenHouses;
     return StreetShown(
-      name: street.name,
+      name: street.name.text,
       done: progress.done,
       total: progress.total,
       nobodyHome: progress.nobodyHome,

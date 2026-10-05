@@ -240,13 +240,13 @@ void main() {
     final found = CommunesFound([
       CommuneOption(
         name: 'Villefranche-sur-Saône',
-        inseeCode: '69264',
+        inseeCode: insee('69264'),
         postcodes: ['69400'],
       ),
     ]);
     final loaded = StreetsLoaded([_choice('a', 'A')]);
 
-    expect(found.communes.single.inseeCode, '69264');
+    expect(found.communes.single.inseeCode.value, '69264');
     expect(found.communes.clear, throwsUnsupportedError);
     expect(loaded.streets.clear, throwsUnsupportedError);
   });
@@ -283,7 +283,7 @@ void main() {
     CommuneOption option([List<String> postcodes = const ['69400']]) =>
         CommuneOption(
           name: 'Villefranche-sur-Saône',
-          inseeCode: '69264',
+          inseeCode: insee('69264'),
           postcodes: postcodes,
         );
 
@@ -293,7 +293,7 @@ void main() {
       );
 
       expect(made.name, 'Villefranche-sur-Saône');
-      expect(made.inseeCode, '69264');
+      expect(made.inseeCode.value, '69264');
       expect(made.postcodes, ['69400', '69401']);
     });
 
@@ -304,7 +304,11 @@ void main() {
       expect(
         option(),
         isNot(
-          CommuneOption(name: 'X', inseeCode: '69264', postcodes: ['69400']),
+          CommuneOption(
+            name: 'X',
+            inseeCode: insee('69264'),
+            postcodes: ['69400'],
+          ),
         ),
       );
       expect(
@@ -312,7 +316,7 @@ void main() {
         isNot(
           CommuneOption(
             name: 'Villefranche-sur-Saône',
-            inseeCode: '69265',
+            inseeCode: insee('69265'),
             postcodes: ['69400'],
           ),
         ),

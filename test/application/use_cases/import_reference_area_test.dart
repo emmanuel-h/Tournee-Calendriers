@@ -105,7 +105,7 @@ void main() {
     test('should import every street the BAN gives numbers for', () async {
       final directory = _directory();
 
-      final report = valueOf(await importWith(directory)('69264'));
+      final report = valueOf(await importWith(directory)(insee('69264')));
 
       expect(report.commune, villefranche);
       expect(idsOf(report), [_nationale, _gambetta, _roses]);
@@ -122,7 +122,7 @@ void main() {
     test(
       'should leave out the streets without numbers and count them',
       () async {
-        final report = valueOf(await importWith(_directory())('69264'));
+        final report = valueOf(await importWith(_directory())(insee('69264')));
 
         expect(report.emptyStreets, 1);
         expect(idsOf(report), isNot(contains(_lieuDit)));
@@ -131,7 +131,7 @@ void main() {
     );
 
     test('should import a street the BAN gives a single number for', () async {
-      final report = valueOf(await importWith(_directory())('69264'));
+      final report = valueOf(await importWith(_directory())(insee('69264')));
 
       // Rue Gambetta has a count of 1: the limit kept is 1, not 2.
       expect(idsOf(report), contains(_gambetta));
@@ -140,11 +140,13 @@ void main() {
 
   group('the street made', () {
     test('should hold the numbers and positions of the BAN', () async {
-      valueOf(await importWith(_directory())('69264', only: [_nationale]));
+      valueOf(
+        await importWith(_directory())(insee('69264'), only: [_nationale]),
+      );
 
       final street = streets.added.single;
       expect(street.id, StreetId('street-1'));
-      expect(street.name, 'Rue Nationale');
+      expect(street.name.text, 'Rue Nationale');
       expect(street.commune, villefranche);
       expect(street.banId, _nationale);
       expect(street.isDeleted, isFalse);
@@ -157,7 +159,7 @@ void main() {
 
     test('should report what it kept and what the BAN gave unread', () async {
       final report = valueOf(
-        await importWith(_directory())('69264', only: [_nationale]),
+        await importWith(_directory())(insee('69264'), only: [_nationale]),
       );
 
       final imported = report.streets.single as StreetImported;
@@ -169,7 +171,7 @@ void main() {
 
     test('should import a chosen street even without numbers', () async {
       final report = valueOf(
-        await importWith(_directory())('69264', only: [_lieuDit]),
+        await importWith(_directory())(insee('69264'), only: [_lieuDit]),
       );
 
       final imported = report.streets.single as StreetImported;
@@ -185,7 +187,7 @@ void main() {
       final directory = _directory();
 
       final report = valueOf(
-        await importWith(directory)('69264', only: [_roses, _nationale]),
+        await importWith(directory)(insee('69264'), only: [_roses, _nationale]),
       );
 
       expect(idsOf(report), [_nationale, _roses]);
@@ -196,7 +198,10 @@ void main() {
       final elsewhere = BanStreetId('69264_9999');
 
       final report = valueOf(
-        await importWith(_directory())('69264', only: [elsewhere, _roses]),
+        await importWith(_directory())(
+          insee('69264'),
+          only: [elsewhere, _roses],
+        ),
       );
 
       expect(report.unknownStreets, [elsewhere]);
@@ -207,7 +212,7 @@ void main() {
   group('re-import', () {
     test('should leave a street already imported as it is', () async {
       final first = importWith(_directory());
-      valueOf(await first('69264', only: [_gambetta]));
+      valueOf(await first(insee('69264'), only: [_gambetta]));
       final imported = streets.added.single;
       final (marked, change) = valueOf(
         imported.markHouse(n('3bis'), VisitStatus.done, by: lea, at: twoPm),
@@ -216,7 +221,7 @@ void main() {
       final directory = _directory();
 
       final report = valueOf(
-        await importWith(directory)('69264', only: [_gambetta]),
+        await importWith(directory)(insee('69264'), only: [_gambetta]),
       );
 
       final already = report.streets.single as StreetAlreadyImported;
@@ -255,7 +260,7 @@ void main() {
       streets = FakeStreetRepository([deleted]);
 
       final report = valueOf(
-        await importWith(_directory())('69264', only: [_gambetta]),
+        await importWith(_directory())(insee('69264'), only: [_gambetta]),
       );
 
       final restored = report.streets.single as StreetRestoredFromCorbeille;
@@ -275,7 +280,7 @@ void main() {
       final directory = _directory();
 
       final report = valueOf(
-        await importWith(directory)('69264', only: [_gambetta]),
+        await importWith(directory)(insee('69264'), only: [_gambetta]),
       );
 
       expect(report.commune, villefranche);
@@ -291,7 +296,7 @@ void main() {
       );
 
       final report = valueOf(
-        await importWith(directory)('69264', only: [_gambetta]),
+        await importWith(directory)(insee('69264'), only: [_gambetta]),
       );
 
       expect(report.streets.single, isA<StreetRestoredFromCorbeille>());
@@ -307,7 +312,10 @@ void main() {
         );
 
         final report = valueOf(
-          await importWith(directory)('69264', only: [_roses, _gambetta]),
+          await importWith(directory)(
+            insee('69264'),
+            only: [_roses, _gambetta],
+          ),
         );
 
         expect(report.commune, villefranche);
@@ -327,7 +335,7 @@ void main() {
 
       final report = valueOf(
         await importWith(directory)(
-          '69264',
+          insee('69264'),
           only: [_roses, _gambetta],
           onProgress: (done, total) => steps.add((done, total)),
         ),
@@ -343,7 +351,7 @@ void main() {
       streets = FakeStreetRepository([deletedGambetta()]);
       final directory = _directory();
 
-      final report = valueOf(await importWith(directory)('69264'));
+      final report = valueOf(await importWith(directory)(insee('69264')));
 
       expect(report.streets[1], isA<StreetRestoredFromCorbeille>());
       expect(directory.streetsAsked, [_nationale, _roses]);
@@ -357,7 +365,7 @@ void main() {
         communes: {'69264': const Err(AddressDirectoryFailure.notFound)},
       );
 
-      final failure = failureOf(await importWith(directory)('69264'));
+      final failure = failureOf(await importWith(directory)(insee('69264')));
 
       expect(failure, AddressDirectoryFailure.notFound);
       expect(directory.streetsAsked, isEmpty);
@@ -370,7 +378,7 @@ void main() {
           _directory(
             streets: {_gambetta: const Err(AddressDirectoryFailure.notFound)},
           ),
-        )('69264'),
+        )(insee('69264')),
       );
 
       final failed = report.streets[1] as StreetImportFailed;
@@ -385,7 +393,7 @@ void main() {
         streets: {_nationale: const Err(AddressDirectoryFailure.serviceError)},
       );
 
-      final report = valueOf(await importWith(directory)('69264'));
+      final report = valueOf(await importWith(directory)(insee('69264')));
 
       expect(
         (report.streets.first as StreetImportFailed).failure,
@@ -399,7 +407,7 @@ void main() {
         streets: {_gambetta: const Err(AddressDirectoryFailure.noNetwork)},
       );
 
-      final report = valueOf(await importWith(directory)('69264'));
+      final report = valueOf(await importWith(directory)(insee('69264')));
 
       expect(report.streets[0], isA<StreetImported>());
       expect(
@@ -429,7 +437,7 @@ void main() {
           streets: {_gambetta: const Err(AddressDirectoryFailure.noNetwork)},
         );
 
-        final report = valueOf(await importWith(directory)('69264'));
+        final report = valueOf(await importWith(directory)(insee('69264')));
 
         expect(report.streets.last, isA<StreetAlreadyImported>());
       },
@@ -443,7 +451,7 @@ void main() {
 
       final report = valueOf(
         await importWith(_directory(streets: {_roses: Ok(twice)}))(
-          '69264',
+          insee('69264'),
           only: [_roses],
         ),
       );
@@ -461,7 +469,7 @@ void main() {
       final steps = <(int, int)>[];
 
       await importWith(_directory())(
-        '69264',
+        insee('69264'),
         onProgress: (done, total) => steps.add((done, total)),
       );
 
@@ -471,7 +479,7 @@ void main() {
 
   group('report', () {
     test('should give lists nobody can change', () async {
-      final report = valueOf(await importWith(_directory())('69264'));
+      final report = valueOf(await importWith(_directory())(insee('69264')));
 
       expect(report.streets.clear, throwsUnsupportedError);
       expect(report.unknownStreets.clear, throwsUnsupportedError);

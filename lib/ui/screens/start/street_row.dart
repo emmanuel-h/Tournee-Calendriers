@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:tournee_calendriers/presentation/street_list/street_list_notifier.dart';
+import 'package:tournee_calendriers/presentation/street_list/street_list_state.dart';
 import 'package:tournee_calendriers/ui/components/status_glyph.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';

@@ -172,7 +172,7 @@ void main() {
 
       final found = await restart().find(StreetId('lilas'));
 
-      expect(found!.name, 'Rue des Lilas');
+      expect(found!.name.text, 'Rue des Lilas');
     });
 
     test('should skip an unreadable file and leave it as it is', () async {

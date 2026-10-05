@@ -492,13 +492,13 @@ void main() {
 
       final (street, undo) = valueOf(renamed.undo(change));
 
-      expect(street.name, 'Rue des Lilas');
+      expect(street.name.text, 'Rue des Lilas');
       expect(
         undo,
         StreetRenamed(
           streetId: _lilas,
-          before: 'Rue des Roses',
-          name: 'Rue des Lilas',
+          before: streetName('Rue des Roses'),
+          name: streetName('Rue des Lilas'),
         ),
       );
       expect(street.houses, _street.houses);
