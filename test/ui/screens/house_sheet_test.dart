@@ -126,7 +126,7 @@ void main() {
       final data = semanticsOf(tester, box);
       expect(data.flagsCollection.isChecked, CheckedState.isFalse);
       expect(data.flagsCollection.isEnabled.toBoolOrNull(), false);
-      expect(data.label, contains('Déjà fait : rien à repasser.'));
+      expect(data.label, contains('Déjà fait\u00a0: rien à repasser.'));
       expect(find.byKey(const Key('house.comeBackHint.field')), findsNothing);
       expect(
         semanticsOf(

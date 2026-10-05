@@ -13,6 +13,7 @@ import '../../support/fakes/fake_street_repository.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 import '../support/app_overrides.dart';
+import '../support/keyboard.dart';
 import '../support/navigation.dart';
 
 final _id = StreetId('lilas');
@@ -95,7 +96,7 @@ void main() {
     await tester.tap(_remove('3'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Supprimer le n° 3 ?'), findsOneWidget);
+    expect(find.text('Supprimer le n° 3\u00a0?'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('edit.confirmRemove.cancel')));
     await tester.pumpAndSettle();
     expect(_tile('3'), findsOneWidget);
@@ -160,6 +161,56 @@ void main() {
 
     expect(find.widgetWithText(AppBar, 'Rue des Iris'), findsOneWidget);
     expect(streets[_id]!.name, 'Rue des Iris');
+  });
+
+  testWidgets('should keep the focus on a refused name submitted with the '
+      'keyboard, and let it go once a name is kept', (tester) async {
+    await openEditMode(tester);
+    final field = find.byKey(const Key('edit.name'));
+
+    await typeAndSubmit(tester, field, '  ');
+
+    expect(find.byKey(const Key('edit.nameRefusal')), findsOneWidget);
+    expect(hasFocus(tester, field), isTrue);
+
+    await typeAndSubmit(tester, field, 'Rue des Iris');
+
+    expect(find.byKey(const Key('edit.nameRefusal')), findsNothing);
+    expect(hasFocus(tester, field), isFalse);
+    expect(streets[_id]!.name, 'Rue des Iris');
+  });
+
+  testWidgets('should keep the focus on a refused number submitted with the '
+      'keyboard', (tester) async {
+    await openEditMode(tester);
+    await tester.tap(
+      find.descendant(
+        of: _tile('1'),
+        matching: find.byKey(const Key('edit.tile.number')),
+      ),
+    );
+    await tester.pumpAndSettle();
+    final field = find.byKey(const Key('number.field'));
+
+    await typeAndSubmit(tester, field, '3');
+
+    expect(find.byKey(const Key('number.refusal')), findsOneWidget);
+    expect(hasFocus(tester, field), isTrue);
+    expect(storedNumbers(), ['1', '2', '3', '3bis']);
+  });
+
+  testWidgets('should keep the focus on refused numbers submitted with the '
+      'keyboard', (tester) async {
+    await openEditMode(tester);
+    await tester.tap(find.byKey(const ValueKey('edit.addNumbers.even')));
+    await tester.pumpAndSettle();
+    final field = find.byKey(const Key('numbers.field'));
+
+    await typeAndSubmit(tester, field, 'abc');
+
+    expect(find.byKey(const Key('numbers.refusal')), findsOneWidget);
+    expect(hasFocus(tester, field), isTrue);
+    expect(storedNumbers(), ['1', '2', '3', '3bis']);
   });
 
   /// The app goes to the background, as before Android may kill it, one

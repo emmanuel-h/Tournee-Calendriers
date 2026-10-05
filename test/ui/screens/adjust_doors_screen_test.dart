@@ -17,6 +17,7 @@ import '../../support/fakes/fake_street_repository.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 import '../support/app_overrides.dart';
+import '../support/keyboard.dart';
 import '../support/navigation.dart';
 
 final _id = StreetId('lilas');
@@ -129,6 +130,20 @@ void main() {
     expect(labelsAt(1), ['Gauche', '2']);
   });
 
+  testWidgets('should keep the focus on a refused door name submitted with '
+      'the keyboard', (tester) async {
+    await openAdjustDoors(tester);
+    await tester.tap(_part('A1-2', 'rename'));
+    await tester.pumpAndSettle();
+    final field = find.byKey(const Key('renameDoor.field'));
+
+    await typeAndSubmit(tester, field, '1');
+
+    expect(find.byKey(const Key('renameDoor.refusal')), findsOneWidget);
+    expect(hasFocus(tester, field), isTrue);
+    expect(labelsAt(1), ['1', '2']);
+  });
+
   testWidgets('should add and remove a door on one floor and keep the marks '
       'of the others', (tester) async {
     await openAdjustDoors(tester);
@@ -163,7 +178,7 @@ void main() {
     await tester.tap(_part('A1-1', 'remove'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Supprimer la porte 1 ?'), findsOneWidget);
+    expect(find.text('Supprimer la porte 1\u00a0?'), findsOneWidget);
     expect(find.text('Garder'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('doors.confirmRemove.cancel')));
     await tester.pumpAndSettle();

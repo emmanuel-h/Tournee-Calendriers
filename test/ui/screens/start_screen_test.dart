@@ -51,7 +51,7 @@ void main() {
       expect(
         find.text(
           "Importez les rues d'une commune pour commencer. Il faut le réseau "
-          'une fois ; ensuite tout fonctionne hors ligne.',
+          'une fois\u00a0; ensuite tout fonctionne hors ligne.',
         ),
         findsOneWidget,
       );
@@ -123,7 +123,7 @@ void main() {
       await tester.pump();
 
       expect(
-        find.text('Aucune rue ne correspond à « lilas ».'),
+        find.text('Aucune rue ne correspond à «\u00a0lilas\u00a0».'),
         findsOneWidget,
       );
     },

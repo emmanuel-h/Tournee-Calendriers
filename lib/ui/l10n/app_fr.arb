@@ -96,11 +96,11 @@
       "comeBack": { "type": "int", "example": "1" }
     }
   },
-  "tapHintTap": "Appui :",
+  "tapHintTap": "Appui :",
   "@tapHintTap": { "description": "Start of the hint at the bottom of the street screen, before the glyphs ○ → ✓ → ✗ → ○, all drawn as vector shapes." },
-  "tapHintHold": "Appui long : détails",
+  "tapHintHold": "Appui long : détails",
   "@tapHintHold": { "description": "End of the hint at the bottom of the street screen." },
-  "tapHintSemantics": "Appui : à faire, fait, personne, à faire. Appui long : détails",
+  "tapHintSemantics": "Appui : à faire, fait, personne, à faire. Appui long : détails",
   "@tapHintSemantics": { "description": "Screen-reader label of the hint at the bottom of the street screen." },
   "streetGone": "Cette rue n'est plus sur ce téléphone.",
   "@streetGone": { "description": "Street screen opened for a street that is not on the phone or is in the Corbeille." },
@@ -109,9 +109,9 @@
   "@houseStatusGroup": { "description": "Screen-reader name of the status control of the house sheet (« À faire | Fait | Personne », PLAN §5.7)." },
   "comeBack": "Repasser",
   "@comeBack": { "description": "Box of the house sheet: the residents asked the team to come back later." },
-  "comeBackDoneReason": "Déjà fait : rien à repasser.",
+  "comeBackDoneReason": "Déjà fait : rien à repasser.",
   "@comeBackDoneReason": { "description": "Under the disabled « Repasser » box when the house is done (a done house cannot get a « repasser »)." },
-  "comeBackHintPlaceholder": "Quand ? ex. après 19h",
+  "comeBackHintPlaceholder": "Quand ? ex. après 19h",
   "@comeBackHintPlaceholder": { "description": "Placeholder and screen-reader name of the field saying when to come back." },
   "comeBackHintTooLong": "Précision limitée à {max} caractères.",
   "@comeBackHintTooLong": {
@@ -185,7 +185,7 @@
   "@setupFewerDoors": { "description": "Screen-reader name of the − button of the doors stepper." },
   "setupMoreDoors": "Une porte de plus",
   "@setupMoreDoors": { "description": "Screen-reader name of the + button of the doors stepper." },
-  "setupStepperSemantics": "{label} : {value}",
+  "setupStepperSemantics": "{label} : {value}",
   "@setupStepperSemantics": {
     "description": "Screen-reader label of the value of a stepper, read again after each tap.",
     "placeholders": {
@@ -213,7 +213,7 @@
     "description": "Header of the preview of the building setup.",
     "placeholders": { "count": { "type": "int", "example": "48" } }
   },
-  "setupPreviewStaircasesTwo": "Esc. {first} et {last} : ",
+  "setupPreviewStaircasesTwo": "Esc. {first} et {last} : ",
   "@setupPreviewStaircasesTwo": {
     "description": "Start of the preview line when the building has two staircases.",
     "placeholders": {
@@ -221,7 +221,7 @@
       "last": { "type": "String", "example": "B" }
     }
   },
-  "setupPreviewStaircasesMany": "Esc. {first} à {last} : ",
+  "setupPreviewStaircasesMany": "Esc. {first} à {last} : ",
   "@setupPreviewStaircasesMany": {
     "description": "Start of the preview line when the building has three staircases or more.",
     "placeholders": {
@@ -267,9 +267,9 @@
     "description": "Refusal of a stepper that would pass the most dwellings of a building.",
     "placeholders": { "max": { "type": "int", "example": "500" } }
   },
-  "setupConfirmTitle": "Modifier les étages ?",
+  "setupConfirmTitle": "Modifier les étages ?",
   "@setupConfirmTitle": { "description": "Title of the confirmation when a new layout drops doors that have marks." },
-  "setupConfirmBody": "{count, plural, =1{1 porte marquée n'existe plus dans ce plan : son statut, sa note et son « repasser » seront perdus.} other{{count} portes marquées n'existent plus dans ce plan : leurs statuts, notes et « repasser » seront perdus.}}",
+  "setupConfirmBody": "{count, plural, =1{1 porte marquée n'existe plus dans ce plan : son statut, sa note et son « repasser » seront perdus.} other{{count} portes marquées n'existent plus dans ce plan : leurs statuts, notes et « repasser » seront perdus.}}",
   "@setupConfirmBody": {
     "description": "Body of the confirmation when a new layout drops doors that have marks.",
     "placeholders": { "count": { "type": "int", "example": "3" } }
@@ -336,16 +336,16 @@
   },
   "delete": "Supprimer",
   "@delete": { "description": "Confirms a removal (a number, a street)." },
-  "confirmRemoveTitle": "Supprimer le n° {number} ?",
+  "confirmRemoveTitle": "Supprimer le n° {number} ?",
   "@confirmRemoveTitle": {
     "description": "Title of the confirmation before removing a number that has marks.",
     "placeholders": { "number": { "type": "String", "example": "3" } }
   },
-  "confirmRemoveBody": "Ce numéro a des marques (statut, note, « repasser » ou portes marquées). Elles partent avec lui à la Corbeille.",
+  "confirmRemoveBody": "Ce numéro a des marques (statut, note, « repasser » ou portes marquées). Elles partent avec lui à la Corbeille.",
   "@confirmRemoveBody": { "description": "Body of the confirmation before removing a number that has marks (PLAN §5.5)." },
-  "confirmDeleteStreetTitle": "Supprimer la rue ?",
+  "confirmDeleteStreetTitle": "Supprimer la rue ?",
   "@confirmDeleteStreetTitle": { "description": "Title of the confirmation of « Supprimer la rue »." },
-  "confirmDeleteStreetBody": "« {name} » part à la Corbeille avec ses numéros et leurs marques, pour toute l'équipe.",
+  "confirmDeleteStreetBody": "« {name} » part à la Corbeille avec ses numéros et leurs marques, pour toute l'équipe.",
   "@confirmDeleteStreetBody": {
     "description": "Body of the confirmation of « Supprimer la rue ».",
     "placeholders": { "name": { "type": "String", "example": "Rue des Lilas" } }
@@ -363,12 +363,12 @@
     "description": "Header of the preview of « Ajouter des numéros ».",
     "placeholders": { "count": { "type": "int", "example": "6" } }
   },
-  "numbersAlreadyThere": "Déjà dans la rue : {numbers}",
+  "numbersAlreadyThere": "Déjà dans la rue : {numbers}",
   "@numbersAlreadyThere": {
     "description": "In the preview: numbers the street already shows, which are skipped.",
     "placeholders": { "numbers": { "type": "String", "example": "12bis, 21" } }
   },
-  "numbersFromCorbeille": "{count, plural, =1{Revient de la Corbeille avec ses marques : {numbers}} other{Reviennent de la Corbeille avec leurs marques : {numbers}}}",
+  "numbersFromCorbeille": "{count, plural, =1{Revient de la Corbeille avec ses marques : {numbers}} other{Reviennent de la Corbeille avec leurs marques : {numbers}}}",
   "@numbersFromCorbeille": {
     "description": "In the preview: numbers in the Corbeille, which come back with their marks.",
     "placeholders": {
@@ -378,7 +378,7 @@
   },
   "addNumbersConfirm": "Ajouter",
   "@addNumbersConfirm": { "description": "Adds the numbers typed in « Ajouter des numéros »." },
-  "numbersInvalidRange": "« {token} » : une plage relie deux numéros simples, comme 21-25.",
+  "numbersInvalidRange": "« {token} » : une plage relie deux numéros simples, comme 21-25.",
   "@numbersInvalidRange": {
     "description": "An item with a dash that is not a range of two plain numbers.",
     "placeholders": { "token": { "type": "String", "example": "12bis-14" } }
@@ -390,12 +390,12 @@
   },
   "numberEmpty": "Tapez un numéro.",
   "@numberEmpty": { "description": "The number field is blank." },
-  "numberMalformed": "« {text} » n'est pas un numéro.",
+  "numberMalformed": "« {text} » n'est pas un numéro.",
   "@numberMalformed": {
     "description": "What was typed does not start with a number.",
     "placeholders": { "text": { "type": "String", "example": "bis" } }
   },
-  "numberTooLarge": "« {text} » : {max} au plus.",
+  "numberTooLarge": "« {text} » : {max} au plus.",
   "@numberTooLarge": {
     "description": "The number is above the largest house number.",
     "placeholders": {
@@ -403,12 +403,12 @@
       "max": { "type": "int", "example": "99999" }
     }
   },
-  "numberInvalidSuffix": "« {text} » : après le numéro, un complément en lettres sans accent (12bis, 3A).",
+  "numberInvalidSuffix": "« {text} » : après le numéro, un complément en lettres sans accent (12bis, 3A).",
   "@numberInvalidSuffix": {
     "description": "What follows the number is not a valid suffix.",
     "placeholders": { "text": { "type": "String", "example": "12é" } }
   },
-  "numberSuffixTooLong": "« {text} » : complément de {max} caractères au plus.",
+  "numberSuffixTooLong": "« {text} » : complément de {max} caractères au plus.",
   "@numberSuffixTooLong": {
     "description": "The suffix after the number is too long.",
     "placeholders": {
@@ -425,16 +425,16 @@
     "description": "The number typed is shown by another house.",
     "placeholders": { "number": { "type": "String", "example": "5" } }
   },
-  "renumberInCorbeille": "Le {number} est dans la Corbeille : ajoutez-le avec « + numéros » pour le retrouver avec ses marques, ou choisissez un autre numéro.",
+  "renumberInCorbeille": "Le {number} est dans la Corbeille : ajoutez-le avec « + numéros » pour le retrouver avec ses marques, ou choisissez un autre numéro.",
   "@renumberInCorbeille": {
     "description": "The number typed belongs to a house in the Corbeille.",
     "placeholders": { "number": { "type": "String", "example": "7" } }
   },
   "backToHouseAction": "Redevenir une maison",
   "@backToHouseAction": { "description": "Button of a building's sheet in edit mode: the building becomes a single house again." },
-  "confirmBackToHouseTitle": "Redevenir une maison ?",
+  "confirmBackToHouseTitle": "Redevenir une maison ?",
   "@confirmBackToHouseTitle": { "description": "Title of the confirmation when the doors of the building have marks." },
-  "confirmBackToHouseBody": "Les portes de l'immeuble et leurs marques (statuts, notes, « repasser ») seront perdues.",
+  "confirmBackToHouseBody": "Les portes de l'immeuble et leurs marques (statuts, notes, « repasser ») seront perdues.",
   "@confirmBackToHouseBody": { "description": "Body of the confirmation when the doors of the building have marks." },
 
   "floorGround": "RdC",
@@ -491,9 +491,9 @@
       "total": { "type": "int", "example": "24" }
     }
   },
-  "gridHintHold": "Appui long : note, repasser",
+  "gridHintHold": "Appui long : note, repasser",
   "@gridHintHold": { "description": "End of the hint of the building grid, after « Appui : ○ → ✓ → ✗ → ○ ·»." },
-  "gridHintSemantics": "Appui : à faire, fait, personne, à faire. Appui long : note, repasser",
+  "gridHintSemantics": "Appui : à faire, fait, personne, à faire. Appui long : note, repasser",
   "@gridHintSemantics": { "description": "Screen-reader label of the hint of the building grid." },
   "editFloors": "Modifier les étages",
   "@editFloors": { "description": "Button under the building grid that lays the building out again." },
@@ -533,7 +533,7 @@
     "description": "Undo snackbar after ✕ on a door.",
     "placeholders": { "label": { "type": "String", "example": "53" } }
   },
-  "confirmRemoveDoorTitle": "Supprimer la porte {label} ?",
+  "confirmRemoveDoorTitle": "Supprimer la porte {label} ?",
   "@confirmRemoveDoorTitle": {
     "description": "Title of the confirmation before removing a door that has a mark.",
     "placeholders": { "label": { "type": "String", "example": "52" } }
@@ -574,9 +574,9 @@
   "@importStreetsAction": { "description": "Button of the start screen that opens the import screen, and title of that screen (PLAN §5.0)." },
   "startEmptyTitle": "Aucune rue pour l'instant",
   "@startEmptyTitle": { "description": "Start screen, first launch: no street imported yet." },
-  "startEmptyBody": "Importez les rues d'une commune pour commencer. Il faut le réseau une fois ; ensuite tout fonctionne hors ligne.",
+  "startEmptyBody": "Importez les rues d'une commune pour commencer. Il faut le réseau une fois ; ensuite tout fonctionne hors ligne.",
   "@startEmptyBody": { "description": "Start screen, first launch: what to do." },
-  "filterNoMatch": "Aucune rue ne correspond à « {filter} ».",
+  "filterNoMatch": "Aucune rue ne correspond à « {filter} ».",
   "@filterNoMatch": {
     "description": "Shown when the street filter keeps no street.",
     "placeholders": { "filter": { "type": "String", "example": "lilas" } }
@@ -628,7 +628,7 @@
   },
   "communeNoneFound": "Aucune commune ne porte ce nom.",
   "@communeNoneFound": { "description": "The commune search found nothing." },
-  "communeSearchNoNetwork": "Pas de réseau : la recherche de communes en a besoin. Réessayez quand le téléphone capte.",
+  "communeSearchNoNetwork": "Pas de réseau : la recherche de communes en a besoin. Réessayez quand le téléphone capte.",
   "@communeSearchNoNetwork": { "description": "The commune search could not reach the service." },
   "communeSearchServiceError": "La recherche de communes ne répond pas. Réessayez plus tard.",
   "@communeSearchServiceError": { "description": "The commune search service answered with an error." },

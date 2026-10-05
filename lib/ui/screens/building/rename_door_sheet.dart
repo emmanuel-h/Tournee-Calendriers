@@ -7,6 +7,7 @@ import 'package:tournee_calendriers/presentation/building/adjust_doors_notifier.
 import 'package:tournee_calendriers/presentation/building/adjust_doors_state.dart';
 import 'package:tournee_calendriers/presentation/building/building_grid_notifier.dart';
 import 'package:tournee_calendriers/ui/components/app_buttons.dart';
+import 'package:tournee_calendriers/ui/components/keep_focus.dart';
 import 'package:tournee_calendriers/ui/components/sheet_scaffold.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/screens/building/door_messages.dart';
@@ -128,6 +129,7 @@ final class _RenameDoorSheetState extends ConsumerState<RenameDoorSheet> {
                 onChanged: (_) {
                   if (_refusal != null) setState(() => _refusal = null);
                 },
+                onEditingComplete: keepFocusOnSubmit,
                 onSubmitted: (_) => unawaited(_rename()),
               ),
             ],

@@ -8,6 +8,7 @@ import 'package:tournee_calendriers/presentation/edit_street/edit_street_notifie
 import 'package:tournee_calendriers/presentation/edit_street/edit_street_state.dart';
 import 'package:tournee_calendriers/ui/components/app_buttons.dart';
 import 'package:tournee_calendriers/ui/components/building_icon.dart';
+import 'package:tournee_calendriers/ui/components/keep_focus.dart';
 import 'package:tournee_calendriers/ui/components/sheet_scaffold.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/screens/edit_street/number_messages.dart';
@@ -150,6 +151,7 @@ final class _NumberSheetState extends ConsumerState<NumberSheet> {
                 onChanged: (_) {
                   if (_refusal != null) setState(() => _refusal = null);
                 },
+                onEditingComplete: keepFocusOnSubmit,
                 onSubmitted: (_) => unawaited(_renumber()),
               ),
             ],

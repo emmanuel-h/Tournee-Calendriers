@@ -276,19 +276,19 @@ abstract class AppLocalizations {
   /// Start of the hint at the bottom of the street screen, before the glyphs ○ → ✓ → ✗ → ○, all drawn as vector shapes.
   ///
   /// In fr, this message translates to:
-  /// **'Appui :'**
+  /// **'Appui :'**
   String get tapHintTap;
 
   /// End of the hint at the bottom of the street screen.
   ///
   /// In fr, this message translates to:
-  /// **'Appui long : détails'**
+  /// **'Appui long : détails'**
   String get tapHintHold;
 
   /// Screen-reader label of the hint at the bottom of the street screen.
   ///
   /// In fr, this message translates to:
-  /// **'Appui : à faire, fait, personne, à faire. Appui long : détails'**
+  /// **'Appui : à faire, fait, personne, à faire. Appui long : détails'**
   String get tapHintSemantics;
 
   /// Street screen opened for a street that is not on the phone or is in the Corbeille.
@@ -312,13 +312,13 @@ abstract class AppLocalizations {
   /// Under the disabled « Repasser » box when the house is done (a done house cannot get a « repasser »).
   ///
   /// In fr, this message translates to:
-  /// **'Déjà fait : rien à repasser.'**
+  /// **'Déjà fait : rien à repasser.'**
   String get comeBackDoneReason;
 
   /// Placeholder and screen-reader name of the field saying when to come back.
   ///
   /// In fr, this message translates to:
-  /// **'Quand ? ex. après 19h'**
+  /// **'Quand ? ex. après 19h'**
   String get comeBackHintPlaceholder;
 
   /// Shown when typing or pasting would make the come-back hint longer than allowed; the edit is refused.
@@ -450,7 +450,7 @@ abstract class AppLocalizations {
   /// Screen-reader label of the value of a stepper, read again after each tap.
   ///
   /// In fr, this message translates to:
-  /// **'{label} : {value}'**
+  /// **'{label} : {value}'**
   String setupStepperSemantics(String label, String value);
 
   /// Value of the floors stepper when the floors are unknown: the doors make one « Logements » row.
@@ -498,13 +498,13 @@ abstract class AppLocalizations {
   /// Start of the preview line when the building has two staircases.
   ///
   /// In fr, this message translates to:
-  /// **'Esc. {first} et {last} : '**
+  /// **'Esc. {first} et {last} : '**
   String setupPreviewStaircasesTwo(String first, String last);
 
   /// Start of the preview line when the building has three staircases or more.
   ///
   /// In fr, this message translates to:
-  /// **'Esc. {first} à {last} : '**
+  /// **'Esc. {first} à {last} : '**
   String setupPreviewStaircasesMany(String first, String last);
 
   /// The labels of the first and last doors of a floor, in the preview.
@@ -570,13 +570,13 @@ abstract class AppLocalizations {
   /// Title of the confirmation when a new layout drops doors that have marks.
   ///
   /// In fr, this message translates to:
-  /// **'Modifier les étages ?'**
+  /// **'Modifier les étages ?'**
   String get setupConfirmTitle;
 
   /// Body of the confirmation when a new layout drops doors that have marks.
   ///
   /// In fr, this message translates to:
-  /// **'{count, plural, =1{1 porte marquée n\'existe plus dans ce plan : son statut, sa note et son « repasser » seront perdus.} other{{count} portes marquées n\'existent plus dans ce plan : leurs statuts, notes et « repasser » seront perdus.}}'**
+  /// **'{count, plural, =1{1 porte marquée n\'existe plus dans ce plan : son statut, sa note et son « repasser » seront perdus.} other{{count} portes marquées n\'existent plus dans ce plan : leurs statuts, notes et « repasser » seront perdus.}}'**
   String setupConfirmBody(int count);
 
   /// Confirms a new layout that drops doors with marks.
@@ -684,25 +684,25 @@ abstract class AppLocalizations {
   /// Title of the confirmation before removing a number that has marks.
   ///
   /// In fr, this message translates to:
-  /// **'Supprimer le n° {number} ?'**
+  /// **'Supprimer le n° {number} ?'**
   String confirmRemoveTitle(String number);
 
   /// Body of the confirmation before removing a number that has marks (PLAN §5.5).
   ///
   /// In fr, this message translates to:
-  /// **'Ce numéro a des marques (statut, note, « repasser » ou portes marquées). Elles partent avec lui à la Corbeille.'**
+  /// **'Ce numéro a des marques (statut, note, « repasser » ou portes marquées). Elles partent avec lui à la Corbeille.'**
   String get confirmRemoveBody;
 
   /// Title of the confirmation of « Supprimer la rue ».
   ///
   /// In fr, this message translates to:
-  /// **'Supprimer la rue ?'**
+  /// **'Supprimer la rue ?'**
   String get confirmDeleteStreetTitle;
 
   /// Body of the confirmation of « Supprimer la rue ».
   ///
   /// In fr, this message translates to:
-  /// **'« {name} » part à la Corbeille avec ses numéros et leurs marques, pour toute l\'équipe.'**
+  /// **'« {name} » part à la Corbeille avec ses numéros et leurs marques, pour toute l\'équipe.'**
   String confirmDeleteStreetBody(String name);
 
   /// Title of the sheet opened by « + numéros » (PLAN §5.5); also the screen-reader name of that button.
@@ -738,13 +738,13 @@ abstract class AppLocalizations {
   /// In the preview: numbers the street already shows, which are skipped.
   ///
   /// In fr, this message translates to:
-  /// **'Déjà dans la rue : {numbers}'**
+  /// **'Déjà dans la rue : {numbers}'**
   String numbersAlreadyThere(String numbers);
 
   /// In the preview: numbers in the Corbeille, which come back with their marks.
   ///
   /// In fr, this message translates to:
-  /// **'{count, plural, =1{Revient de la Corbeille avec ses marques : {numbers}} other{Reviennent de la Corbeille avec leurs marques : {numbers}}}'**
+  /// **'{count, plural, =1{Revient de la Corbeille avec ses marques : {numbers}} other{Reviennent de la Corbeille avec leurs marques : {numbers}}}'**
   String numbersFromCorbeille(int count, String numbers);
 
   /// Adds the numbers typed in « Ajouter des numéros ».
@@ -756,7 +756,7 @@ abstract class AppLocalizations {
   /// An item with a dash that is not a range of two plain numbers.
   ///
   /// In fr, this message translates to:
-  /// **'« {token} » : une plage relie deux numéros simples, comme 21-25.'**
+  /// **'« {token} » : une plage relie deux numéros simples, comme 21-25.'**
   String numbersInvalidRange(String token);
 
   /// The field gives more numbers than allowed at once.
@@ -774,25 +774,25 @@ abstract class AppLocalizations {
   /// What was typed does not start with a number.
   ///
   /// In fr, this message translates to:
-  /// **'« {text} » n\'est pas un numéro.'**
+  /// **'« {text} » n\'est pas un numéro.'**
   String numberMalformed(String text);
 
   /// The number is above the largest house number.
   ///
   /// In fr, this message translates to:
-  /// **'« {text} » : {max} au plus.'**
+  /// **'« {text} » : {max} au plus.'**
   String numberTooLarge(String text, int max);
 
   /// What follows the number is not a valid suffix.
   ///
   /// In fr, this message translates to:
-  /// **'« {text} » : après le numéro, un complément en lettres sans accent (12bis, 3A).'**
+  /// **'« {text} » : après le numéro, un complément en lettres sans accent (12bis, 3A).'**
   String numberInvalidSuffix(String text);
 
   /// The suffix after the number is too long.
   ///
   /// In fr, this message translates to:
-  /// **'« {text} » : complément de {max} caractères au plus.'**
+  /// **'« {text} » : complément de {max} caractères au plus.'**
   String numberSuffixTooLong(String text, int max);
 
   /// Label of the number field of a number's sheet in edit mode.
@@ -816,7 +816,7 @@ abstract class AppLocalizations {
   /// The number typed belongs to a house in the Corbeille.
   ///
   /// In fr, this message translates to:
-  /// **'Le {number} est dans la Corbeille : ajoutez-le avec « + numéros » pour le retrouver avec ses marques, ou choisissez un autre numéro.'**
+  /// **'Le {number} est dans la Corbeille : ajoutez-le avec « + numéros » pour le retrouver avec ses marques, ou choisissez un autre numéro.'**
   String renumberInCorbeille(String number);
 
   /// Button of a building's sheet in edit mode: the building becomes a single house again.
@@ -828,13 +828,13 @@ abstract class AppLocalizations {
   /// Title of the confirmation when the doors of the building have marks.
   ///
   /// In fr, this message translates to:
-  /// **'Redevenir une maison ?'**
+  /// **'Redevenir une maison ?'**
   String get confirmBackToHouseTitle;
 
   /// Body of the confirmation when the doors of the building have marks.
   ///
   /// In fr, this message translates to:
-  /// **'Les portes de l\'immeuble et leurs marques (statuts, notes, « repasser ») seront perdues.'**
+  /// **'Les portes de l\'immeuble et leurs marques (statuts, notes, « repasser ») seront perdues.'**
   String get confirmBackToHouseBody;
 
   /// The ground floor (rez-de-chaussée), in the grid and the setup.
@@ -906,13 +906,13 @@ abstract class AppLocalizations {
   /// End of the hint of the building grid, after « Appui : ○ → ✓ → ✗ → ○ ·».
   ///
   /// In fr, this message translates to:
-  /// **'Appui long : note, repasser'**
+  /// **'Appui long : note, repasser'**
   String get gridHintHold;
 
   /// Screen-reader label of the hint of the building grid.
   ///
   /// In fr, this message translates to:
-  /// **'Appui : à faire, fait, personne, à faire. Appui long : note, repasser'**
+  /// **'Appui : à faire, fait, personne, à faire. Appui long : note, repasser'**
   String get gridHintSemantics;
 
   /// Button under the building grid that lays the building out again.
@@ -996,7 +996,7 @@ abstract class AppLocalizations {
   /// Title of the confirmation before removing a door that has a mark.
   ///
   /// In fr, this message translates to:
-  /// **'Supprimer la porte {label} ?'**
+  /// **'Supprimer la porte {label} ?'**
   String confirmRemoveDoorTitle(String label);
 
   /// Body of the confirmation before removing a door that has a mark.
@@ -1080,13 +1080,13 @@ abstract class AppLocalizations {
   /// Start screen, first launch: what to do.
   ///
   /// In fr, this message translates to:
-  /// **'Importez les rues d\'une commune pour commencer. Il faut le réseau une fois ; ensuite tout fonctionne hors ligne.'**
+  /// **'Importez les rues d\'une commune pour commencer. Il faut le réseau une fois ; ensuite tout fonctionne hors ligne.'**
   String get startEmptyBody;
 
   /// Shown when the street filter keeps no street.
   ///
   /// In fr, this message translates to:
-  /// **'Aucune rue ne correspond à « {filter} ».'**
+  /// **'Aucune rue ne correspond à « {filter} ».'**
   String filterNoMatch(String filter);
 
   /// Progress of a street in the start list: doors done / doors.
@@ -1140,7 +1140,7 @@ abstract class AppLocalizations {
   /// The commune search could not reach the service.
   ///
   /// In fr, this message translates to:
-  /// **'Pas de réseau : la recherche de communes en a besoin. Réessayez quand le téléphone capte.'**
+  /// **'Pas de réseau : la recherche de communes en a besoin. Réessayez quand le téléphone capte.'**
   String get communeSearchNoNetwork;
 
   /// The commune search service answered with an error.

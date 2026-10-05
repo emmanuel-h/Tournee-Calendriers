@@ -11,6 +11,7 @@ import 'package:tournee_calendriers/presentation/edit_street/edit_street_state.d
 import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
 import 'package:tournee_calendriers/ui/components/app_buttons.dart';
 import 'package:tournee_calendriers/ui/components/confirm_dialog.dart';
+import 'package:tournee_calendriers/ui/components/keep_focus.dart';
 import 'package:tournee_calendriers/ui/components/ok_button.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
@@ -64,6 +65,10 @@ final class _EditScreenState extends ConsumerState<_EditScreen>
     with UndoSnackBarHost {
   final _name = TextEditingController();
 
+  /// The name field's focus: the screen lets it go once the keyboard's
+  /// « OK » kept the name ([_submitName]).
+  final _nameFocus = FocusNode();
+
   /// Why the name typed was refused; cleared by the next edit.
   StreetNameFailure? _nameRefusal;
 
@@ -95,6 +100,7 @@ final class _EditScreenState extends ConsumerState<_EditScreen>
   void dispose() {
     _lifecycle.dispose();
     _name.dispose();
+    _nameFocus.dispose();
     super.dispose();
   }
 
@@ -138,13 +144,14 @@ final class _EditScreenState extends ConsumerState<_EditScreen>
               children: [
                 _NameField(
                   controller: _name,
+                  focusNode: _nameFocus,
                   refusal: _nameRefusal,
                   onChanged: () {
                     if (_nameRefusal != null) {
                       setState(() => _nameRefusal = null);
                     }
                   },
-                  onSubmitted: () => unawaited(_saveName()),
+                  onSubmitted: () => unawaited(_submitName()),
                 ),
                 Expanded(
                   child: EditColumns(
@@ -174,6 +181,12 @@ final class _EditScreenState extends ConsumerState<_EditScreen>
     if (!mounted) return false;
     setState(() => _nameRefusal = refusal);
     return refusal == null;
+  }
+
+  /// The keyboard's « OK » on the name: a name kept closes the keyboard; a
+  /// refused one keeps it open on the field ([keepFocusOnSubmit]).
+  Future<void> _submitName() async {
+    if (await _saveName()) _nameFocus.unfocus();
   }
 
   /// Stores the name typed when the field is on screen (not while the
@@ -308,12 +321,14 @@ final class _EditScreenState extends ConsumerState<_EditScreen>
 final class _NameField extends StatelessWidget {
   const _NameField({
     required this.controller,
+    required this.focusNode,
     required this.refusal,
     required this.onChanged,
     required this.onSubmitted,
   });
 
   final TextEditingController controller;
+  final FocusNode focusNode;
   final StreetNameFailure? refusal;
   final VoidCallback onChanged;
   final VoidCallback onSubmitted;
@@ -354,6 +369,8 @@ final class _NameField extends StatelessWidget {
                   textInputAction: TextInputAction.done,
                   style: AppTextStyles.streetName.copyWith(color: colors.ink),
                   onChanged: (_) => onChanged(),
+                  focusNode: focusNode,
+                  onEditingComplete: keepFocusOnSubmit,
                   onSubmitted: (_) => onSubmitted(),
                   decoration: InputDecoration(
                     enabledBorder: OutlineInputBorder(

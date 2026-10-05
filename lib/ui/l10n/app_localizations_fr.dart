@@ -112,14 +112,14 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get tapHintTap => 'Appui :';
+  String get tapHintTap => 'Appui :';
 
   @override
-  String get tapHintHold => 'Appui long : détails';
+  String get tapHintHold => 'Appui long : détails';
 
   @override
   String get tapHintSemantics =>
-      'Appui : à faire, fait, personne, à faire. Appui long : détails';
+      'Appui : à faire, fait, personne, à faire. Appui long : détails';
 
   @override
   String get streetGone => 'Cette rue n\'est plus sur ce téléphone.';
@@ -131,10 +131,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get comeBack => 'Repasser';
 
   @override
-  String get comeBackDoneReason => 'Déjà fait : rien à repasser.';
+  String get comeBackDoneReason => 'Déjà fait : rien à repasser.';
 
   @override
-  String get comeBackHintPlaceholder => 'Quand ? ex. après 19h';
+  String get comeBackHintPlaceholder => 'Quand ? ex. après 19h';
 
   @override
   String comeBackHintTooLong(int max) {
@@ -221,7 +221,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String setupStepperSemantics(String label, String value) {
-    return '$label : $value';
+    return '$label : $value';
   }
 
   @override
@@ -257,12 +257,12 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String setupPreviewStaircasesTwo(String first, String last) {
-    return 'Esc. $first et $last : ';
+    return 'Esc. $first et $last : ';
   }
 
   @override
   String setupPreviewStaircasesMany(String first, String last) {
-    return 'Esc. $first à $last : ';
+    return 'Esc. $first à $last : ';
   }
 
   @override
@@ -307,7 +307,7 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get setupConfirmTitle => 'Modifier les étages ?';
+  String get setupConfirmTitle => 'Modifier les étages ?';
 
   @override
   String setupConfirmBody(int count) {
@@ -315,8 +315,8 @@ class AppLocalizationsFr extends AppLocalizations {
       count,
       locale: localeName,
       other:
-          '$count portes marquées n\'existent plus dans ce plan : leurs statuts, notes et « repasser » seront perdus.',
-      one: '1 porte marquée n\'existe plus dans ce plan : son statut, sa note et son « repasser » seront perdus.',
+          '$count portes marquées n\'existent plus dans ce plan : leurs statuts, notes et « repasser » seront perdus.',
+      one: '1 porte marquée n\'existe plus dans ce plan : son statut, sa note et son « repasser » seront perdus.',
     );
     return '$_temp0';
   }
@@ -391,19 +391,19 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String confirmRemoveTitle(String number) {
-    return 'Supprimer le n° $number ?';
+    return 'Supprimer le n° $number ?';
   }
 
   @override
   String get confirmRemoveBody =>
-      'Ce numéro a des marques (statut, note, « repasser » ou portes marquées). Elles partent avec lui à la Corbeille.';
+      'Ce numéro a des marques (statut, note, « repasser » ou portes marquées). Elles partent avec lui à la Corbeille.';
 
   @override
-  String get confirmDeleteStreetTitle => 'Supprimer la rue ?';
+  String get confirmDeleteStreetTitle => 'Supprimer la rue ?';
 
   @override
   String confirmDeleteStreetBody(String name) {
-    return '« $name » part à la Corbeille avec ses numéros et leurs marques, pour toute l\'équipe.';
+    return '« $name » part à la Corbeille avec ses numéros et leurs marques, pour toute l\'équipe.';
   }
 
   @override
@@ -431,7 +431,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String numbersAlreadyThere(String numbers) {
-    return 'Déjà dans la rue : $numbers';
+    return 'Déjà dans la rue : $numbers';
   }
 
   @override
@@ -439,8 +439,8 @@ class AppLocalizationsFr extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Reviennent de la Corbeille avec leurs marques : $numbers',
-      one: 'Revient de la Corbeille avec ses marques : $numbers',
+      other: 'Reviennent de la Corbeille avec leurs marques : $numbers',
+      one: 'Revient de la Corbeille avec ses marques : $numbers',
     );
     return '$_temp0';
   }
@@ -450,7 +450,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String numbersInvalidRange(String token) {
-    return '« $token » : une plage relie deux numéros simples, comme 21-25.';
+    return '« $token » : une plage relie deux numéros simples, comme 21-25.';
   }
 
   @override
@@ -463,22 +463,22 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String numberMalformed(String text) {
-    return '« $text » n\'est pas un numéro.';
+    return '« $text » n\'est pas un numéro.';
   }
 
   @override
   String numberTooLarge(String text, int max) {
-    return '« $text » : $max au plus.';
+    return '« $text » : $max au plus.';
   }
 
   @override
   String numberInvalidSuffix(String text) {
-    return '« $text » : après le numéro, un complément en lettres sans accent (12bis, 3A).';
+    return '« $text » : après le numéro, un complément en lettres sans accent (12bis, 3A).';
   }
 
   @override
   String numberSuffixTooLong(String text, int max) {
-    return '« $text » : complément de $max caractères au plus.';
+    return '« $text » : complément de $max caractères au plus.';
   }
 
   @override
@@ -494,18 +494,18 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String renumberInCorbeille(String number) {
-    return 'Le $number est dans la Corbeille : ajoutez-le avec « + numéros » pour le retrouver avec ses marques, ou choisissez un autre numéro.';
+    return 'Le $number est dans la Corbeille : ajoutez-le avec « + numéros » pour le retrouver avec ses marques, ou choisissez un autre numéro.';
   }
 
   @override
   String get backToHouseAction => 'Redevenir une maison';
 
   @override
-  String get confirmBackToHouseTitle => 'Redevenir une maison ?';
+  String get confirmBackToHouseTitle => 'Redevenir une maison ?';
 
   @override
   String get confirmBackToHouseBody =>
-      'Les portes de l\'immeuble et leurs marques (statuts, notes, « repasser ») seront perdues.';
+      'Les portes de l\'immeuble et leurs marques (statuts, notes, « repasser ») seront perdues.';
 
   @override
   String get floorGround => 'RdC';
@@ -555,11 +555,11 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get gridHintHold => 'Appui long : note, repasser';
+  String get gridHintHold => 'Appui long : note, repasser';
 
   @override
   String get gridHintSemantics =>
-      'Appui : à faire, fait, personne, à faire. Appui long : note, repasser';
+      'Appui : à faire, fait, personne, à faire. Appui long : note, repasser';
 
   @override
   String get editFloors => 'Modifier les étages';
@@ -611,7 +611,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String confirmRemoveDoorTitle(String label) {
-    return 'Supprimer la porte $label ?';
+    return 'Supprimer la porte $label ?';
   }
 
   @override
@@ -663,11 +663,11 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get startEmptyBody =>
-      'Importez les rues d\'une commune pour commencer. Il faut le réseau une fois ; ensuite tout fonctionne hors ligne.';
+      'Importez les rues d\'une commune pour commencer. Il faut le réseau une fois ; ensuite tout fonctionne hors ligne.';
 
   @override
   String filterNoMatch(String filter) {
-    return 'Aucune rue ne correspond à « $filter ».';
+    return 'Aucune rue ne correspond à « $filter ».';
   }
 
   @override
@@ -706,7 +706,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get communeSearchNoNetwork =>
-      'Pas de réseau : la recherche de communes en a besoin. Réessayez quand le téléphone capte.';
+      'Pas de réseau : la recherche de communes en a besoin. Réessayez quand le téléphone capte.';
 
   @override
   String get communeSearchServiceError =>

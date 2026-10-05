@@ -133,6 +133,12 @@ Glyphs: `○` à faire · `✓` fait · `✗` personne · `↻` repasser · `◐
 **One gesture everywhere:** tap cycles `○ → ✓ → ✗ → ○`; hold opens the details. Same rule for
 house tiles and apartment tiles. A building tile opens its unit grid on tap.
 
+**Text fields:** a value refused on the keyboard's « OK » (a street name, a number, numbers to
+add, a door name) keeps the focus and the keyboard on its field, with the message under it; a
+value taken behaves as with a button. **Typography:** French texts put a non-breaking space
+(U+00A0) inside « » and before : ; ? !, so a line never wraps between a sign and its word
+(checked on `app_fr.arb` by a test).
+
 ### 5.0 Mes rues and Importer des rues (temporary, M1 only)
 
 Until Accueil (5.3) exists in M3, the app opens on a plain list so the street screen can be

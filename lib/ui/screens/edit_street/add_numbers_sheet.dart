@@ -6,6 +6,7 @@ import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/presentation/edit_street/add_numbers_notifier.dart';
 import 'package:tournee_calendriers/presentation/edit_street/add_numbers_state.dart';
 import 'package:tournee_calendriers/ui/components/app_buttons.dart';
+import 'package:tournee_calendriers/ui/components/keep_focus.dart';
 import 'package:tournee_calendriers/ui/components/section_header.dart';
 import 'package:tournee_calendriers/ui/components/sheet_scaffold.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
@@ -146,6 +147,7 @@ final class _NumbersField extends StatelessWidget {
                 textInputAction: TextInputAction.done,
                 style: AppTextStyles.bodyLarge.copyWith(color: colors.ink),
                 onChanged: onChanged,
+                onEditingComplete: keepFocusOnSubmit,
                 onSubmitted: (_) => onSubmitted(),
                 decoration: InputDecoration(
                   hintText: l10n.numbersPlaceholder,

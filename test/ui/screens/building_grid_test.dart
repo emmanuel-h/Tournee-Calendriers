@@ -192,7 +192,10 @@ void main() {
       await tester.pump();
       expect(find.text('Au moins 1 porte par étage.'), findsNothing);
       expect(find.text('RdC–3e'), findsOneWidget);
-      expect(find.text('Esc. A et B : RdC 01, 1er 11 … 3e 31'), findsOneWidget);
+      expect(
+        find.text('Esc. A et B\u00a0: RdC 01, 1er 11 … 3e 31'),
+        findsOneWidget,
+      );
 
       await tester.tap(find.byKey(const Key('setup.validate')));
       await tester.pumpAndSettle();
@@ -205,45 +208,42 @@ void main() {
     },
   );
 
-  testWidgets(
-    'should ask before a new layout drops a marked door, and keep it when '
-    'not confirmed',
-    (tester) async {
-      await openStreet(tester);
-      await tester.tap(_tile('8'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('grid.editFloors')));
-      await tester.pumpAndSettle();
-      expect(find.text('RdC–1er'), findsOneWidget);
+  testWidgets('should ask before a new layout drops a marked door, and keep it when '
+      'not confirmed', (tester) async {
+    await openStreet(tester);
+    await tester.tap(_tile('8'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('grid.editFloors')));
+    await tester.pumpAndSettle();
+    expect(find.text('RdC–1er'), findsOneWidget);
 
-      await tester.tap(find.byKey(const ValueKey('setup.floors.fewer')));
-      await tester.pump();
-      await tester.tap(find.byKey(const Key('setup.validate')));
-      await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('setup.floors.fewer')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('setup.validate')));
+    await tester.pumpAndSettle();
 
-      expect(find.text('Modifier les étages ?'), findsOneWidget);
-      expect(
-        find.text(
-          "1 porte marquée n'existe plus dans ce plan : son statut, sa note "
-          'et son « repasser » seront perdus.',
-        ),
-        findsOneWidget,
-      );
+    expect(find.text('Modifier les étages\u00a0?'), findsOneWidget);
+    expect(
+      find.text(
+        "1 porte marquée n'existe plus dans ce plan\u00a0: son statut, sa note "
+        'et son «\u00a0repasser\u00a0» seront perdus.',
+      ),
+      findsOneWidget,
+    );
 
-      await tester.tap(find.byKey(const Key('setup.confirm.cancel')));
-      await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('setup.confirm.cancel')));
+    await tester.pumpAndSettle();
 
-      expect(find.text("Décrire l'immeuble"), findsOneWidget);
-      expect(streets.saved, isEmpty);
+    expect(find.text("Décrire l'immeuble"), findsOneWidget);
+    expect(streets.saved, isEmpty);
 
-      await tester.tap(find.byKey(const Key('setup.validate')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('setup.confirm.ok')));
-      await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('setup.validate')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('setup.confirm.ok')));
+    await tester.pumpAndSettle();
 
-      expect(find.text("Décrire l'immeuble"), findsNothing);
-      expect(_door('A1-11'), findsNothing);
-      expect(find.text('Esc. A · 0/2'), findsOneWidget);
-    },
-  );
+    expect(find.text("Décrire l'immeuble"), findsNothing);
+    expect(_door('A1-11'), findsNothing);
+    expect(find.text('Esc. A · 0/2'), findsOneWidget);
+  });
 }
