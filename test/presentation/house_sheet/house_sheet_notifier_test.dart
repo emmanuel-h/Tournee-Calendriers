@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
-import 'package:tournee_calendriers/domain/street/note.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
@@ -21,8 +20,8 @@ import '../../support/street_fixtures.dart';
 
 final _id = StreetId('lilas');
 
-/// 3 changed by Paul yesterday evening; 5 to come back « après 19h » with a
-/// note; 7 never changed; 8 a building.
+/// 3 changed by Paul yesterday evening; 5 to come back « après 19h »; 7
+/// never changed; 8 a building.
 final _yesterday = DateTime(2026, 11, 1, 18, 30);
 final _houses = [
   House(
@@ -34,7 +33,6 @@ final _houses = [
     number: n('5'),
     status: VisitStatus.comeBack,
     comeBack: comeBack('après 19h'),
-    note: note('chien dans le jardin'),
   ),
   House(number: n('7')),
   House(number: n('8'), building: building(topFloor: 0, doors: 2)),
@@ -116,7 +114,6 @@ void main() {
       expect(state.status, VisitStatus.comeBack);
       expect(state.comeBack, isTrue);
       expect(state.comeBackHint, 'après 19h');
-      expect(state.note, 'chien dans le jardin');
       expect(state.lastChange, isNull);
     });
 
@@ -130,7 +127,6 @@ void main() {
       expect(state.status, VisitStatus.nobodyHome);
       expect(state.comeBack, isFalse);
       expect(state.comeBackHint, '');
-      expect(state.note, '');
       expect(state.lastChange, ChangedEarlier(_yesterday));
     });
 
@@ -151,11 +147,11 @@ void main() {
       await settled('7');
 
       final (changed, change) = valueOf(
-        _street().setNote(n('7'), note('volets bleus'), by: paul, at: threePm),
+        _street().markHouse(n('7'), VisitStatus.done, by: paul, at: threePm),
       );
       await streets.save(changed, change);
 
-      expect((await shown('7')).note, 'volets bleus');
+      expect((await shown('7')).status, VisitStatus.done);
     });
 
     test(
@@ -356,75 +352,10 @@ void main() {
       open('5');
       await settled('5');
 
-      await notifier('5').saveComeBackHint('a' * 51);
+      await notifier('5').saveComeBackHint('a' * 21);
 
       expect(streets.saved, isEmpty);
       expect(houseNow('5').comeBack, comeBack('après 19h'));
-    });
-  });
-
-  group('saveNote', () {
-    test('should store the trimmed note when it changed', () async {
-      phoneWith(_street());
-      open('7');
-      await settled('7');
-
-      await notifier('7').saveNote(' volets bleus\n');
-
-      expect(
-        streets.saved.single.$2,
-        NoteSet(
-          streetId: _id,
-          before: houseBefore('7'),
-          stamp: leaAtTwo,
-          note: note('volets bleus'),
-        ),
-      );
-      expect((await shown('7')).note, 'volets bleus');
-    });
-
-    test('should erase the note when the text is blank', () async {
-      phoneWith(_street());
-      open('5');
-      await settled('5');
-
-      await notifier('5').saveNote('   ');
-
-      expect(houseNow('5').note, Note.empty);
-      expect((await shown('5')).note, '');
-    });
-
-    test(
-      'should store nothing when the note is the same once trimmed',
-      () async {
-        phoneWith(_street());
-        open('5');
-        await settled('5');
-
-        await notifier('5').saveNote('chien dans le jardin ');
-
-        expect(streets.saved, isEmpty);
-      },
-    );
-
-    test('should store nothing when the note is too long', () async {
-      phoneWith(_street());
-      open('7');
-      await settled('7');
-
-      await notifier('7').saveNote('a' * 201);
-
-      expect(streets.saved, isEmpty);
-    });
-
-    test('should store the note when 200 characters long', () async {
-      phoneWith(_street());
-      open('7');
-      await settled('7');
-
-      await notifier('7').saveNote('a' * 200);
-
-      expect(houseNow('7').note, note('a' * 200));
     });
   });
 
@@ -437,19 +368,19 @@ void main() {
         await settled('7');
         final sheet = notifier('7');
 
-        // Not awaited in between: the note leaves its field as « Fait » is
-        // tapped. Run together, the second change would start from the
-        // street without the note and lose it.
-        final first = sheet.saveNote('volets bleus');
-        final second = sheet.setStatus(VisitStatus.done);
+        // Not awaited in between: « Repasser » is tapped and the hint
+        // leaves its field at once. Run together, the hint would be judged
+        // on a house not « repasser » yet, and dropped.
+        final first = sheet.setStatus(VisitStatus.comeBack);
+        final second = sheet.saveComeBackHint('samedi');
         await Future.wait([first, second]);
 
         expect(streets.saved.map((saved) => saved.$2.runtimeType), [
-          NoteSet,
           HouseMarked,
+          ComeBackSet,
         ]);
-        expect(houseNow('7').note, note('volets bleus'));
-        expect(houseNow('7').status, VisitStatus.done);
+        expect(houseNow('7').status, VisitStatus.comeBack);
+        expect(houseNow('7').comeBack, comeBack('samedi'));
       },
     );
 
@@ -457,33 +388,33 @@ void main() {
       'should still run the next changes when one fails to be stored',
       () async {
         phoneWith(_street());
-        open('7');
-        await settled('7');
-        final sheet = notifier('7');
+        open('5');
+        await settled('5');
+        final sheet = notifier('5');
         streets.failNextSave = const FileSystemException('disk full');
 
         final failed = sheet.setStatus(VisitStatus.done);
-        final next = sheet.saveNote('volets bleus');
+        final next = sheet.saveComeBackHint('samedi');
 
         await expectLater(failed, throwsA(isA<FileSystemException>()));
         await next;
-        expect(houseNow('7').note, note('volets bleus'));
-        expect(houseNow('7').status, VisitStatus.toDo);
+        expect(houseNow('5').status, VisitStatus.comeBack);
+        expect(houseNow('5').comeBack, comeBack('samedi'));
       },
     );
 
     test('should store the text when the sheet has just closed', () async {
       phoneWith(_street());
-      final subscription = open('7');
-      await settled('7');
-      final sheet = notifier('7');
+      final subscription = open('5');
+      await settled('5');
+      final sheet = notifier('5');
 
-      // The sheet saves its fields as it goes away: the notifier is then
+      // The sheet saves its hint as it goes away: the notifier is then
       // about to be disposed.
       subscription.close();
-      await sheet.saveNote('volets bleus');
+      await sheet.saveComeBackHint('samedi');
 
-      expect(houseNow('7').note, note('volets bleus'));
+      expect(houseNow('5').comeBack, comeBack('samedi'));
     });
   });
 }

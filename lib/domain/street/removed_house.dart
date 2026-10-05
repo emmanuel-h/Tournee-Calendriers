@@ -4,7 +4,7 @@ import 'package:tournee_calendriers/domain/street/house_number.dart';
 
 /// A house whose number was removed from its street in edit mode: it sits
 /// in the Corbeille (« 14ter Rue des Lilas · supprimé par Léa · 3 oct. »,
-/// PLAN §5.11) with its status, « repasser », note and building intact,
+/// PLAN §5.11) with its status, « repasser » and building intact,
 /// until someone restores it or it is purged.
 ///
 /// It belongs to the `Street` aggregate: only the street root removes or

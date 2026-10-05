@@ -1,7 +1,6 @@
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
-import 'package:tournee_calendriers/domain/street/note.dart';
 import 'package:tournee_calendriers/domain/street/progress.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
@@ -226,7 +225,6 @@ void main() {
         number: n('3'),
         status: VisitStatus.comeBack,
         comeBack: comeBack('après 19h'),
-        note: note('chien'),
         lastChange: paulAtThree,
       ),
       House(number: n('4'), status: VisitStatus.done),
@@ -261,7 +259,7 @@ void main() {
       );
     });
 
-    test('should drop the hint but keep the note when nobody is home', () {
+    test('should drop the hint when nobody is home', () {
       final (marked, change) = valueOf(
         street.markHouse(n('3'), VisitStatus.nobodyHome, by: lea, at: twoPm),
       );
@@ -271,7 +269,6 @@ void main() {
         House(
           number: n('3'),
           status: VisitStatus.nobodyHome,
-          note: note('chien'),
           lastChange: leaAtTwo,
         ),
       );
@@ -280,19 +277,14 @@ void main() {
       expect(change.before.comeBack, comeBack('après 19h'));
     });
 
-    test('should drop the hint but keep the note when done', () {
+    test('should drop the hint when done', () {
       final (marked, change) = valueOf(
         street.markHouse(n('3'), VisitStatus.done, by: lea, at: twoPm),
       );
 
       expect(
         marked.houses[1],
-        House(
-          number: n('3'),
-          status: VisitStatus.done,
-          note: note('chien'),
-          lastChange: leaAtTwo,
-        ),
+        House(number: n('3'), status: VisitStatus.done, lastChange: leaAtTwo),
       );
       expect(change.comeBack, isNull);
     });
@@ -370,12 +362,12 @@ void main() {
 
   group('setComeBack', () {
     final street = _street([
-      House(number: n('1'), status: VisitStatus.comeBack, note: note('chien')),
+      House(number: n('1'), status: VisitStatus.comeBack),
       House(number: n('2'), status: VisitStatus.nobodyHome),
       House(number: n('4'), status: VisitStatus.done, lastChange: paulAtThree),
     ]);
 
-    test('should set the hint and keep status and note when « repasser »', () {
+    test('should set the hint and keep the status when « repasser »', () {
       final (changed, change) = valueOf(
         street.setComeBack(n('1'), comeBack('après 19h'), by: lea, at: twoPm),
       );
@@ -386,7 +378,6 @@ void main() {
           number: n('1'),
           status: VisitStatus.comeBack,
           comeBack: comeBack('après 19h'),
-          note: note('chien'),
           lastChange: leaAtTwo,
         ),
       );
@@ -436,79 +427,8 @@ void main() {
     });
   });
 
-  group('setNote', () {
-    final street = _street([
-      House(
-        number: n('1'),
-        status: VisitStatus.comeBack,
-        comeBack: comeBack('le samedi'),
-      ),
-      House(number: n('2'), status: VisitStatus.done, note: note('digicode')),
-    ]);
-
-    test('should write the note and keep status and come-back', () {
-      final (changed, change) = valueOf(
-        street.setNote(n('1'), note('chien'), by: lea, at: twoPm),
-      );
-
-      expect(
-        changed.houses[0],
-        House(
-          number: n('1'),
-          status: VisitStatus.comeBack,
-          comeBack: comeBack('le samedi'),
-          note: note('chien'),
-          lastChange: leaAtTwo,
-        ),
-      );
-      expect(
-        change,
-        NoteSet(
-          streetId: _lilas,
-          before: street.houses[0],
-          note: note('chien'),
-          stamp: leaAtTwo,
-        ),
-      );
-    });
-
-    test('should erase the note when given the empty note', () {
-      final (changed, change) = valueOf(
-        street.setNote(n('2'), Note.empty, by: paul, at: threePm),
-      );
-
-      expect(
-        changed.houses[1],
-        House(
-          number: n('2'),
-          status: VisitStatus.done,
-          lastChange: paulAtThree,
-        ),
-      );
-      expect(change.before.note, note('digicode'));
-    });
-
-    test('should leave the other houses alone', () {
-      final (changed, _) = valueOf(
-        street.setNote(n('2'), note('chien'), by: lea, at: twoPm),
-      );
-
-      expect(changed.houses[0], street.houses[0]);
-      expect(changed.id, street.id);
-    });
-
-    test('should fail when the street has no such number', () {
-      expect(
-        failureOf(street.setNote(n('3'), note('chien'), by: lea, at: twoPm)),
-        HouseChangeFailure.unknownHouse,
-      );
-    });
-  });
-
   group('delete and restore', () {
-    final street = _street([
-      House(number: n('1'), status: VisitStatus.done, note: note('chien')),
-    ]);
+    final street = _street([House(number: n('1'), status: VisitStatus.done)]);
 
     test('should mark the street deleted with who and when', () {
       final (deleted, change) = street.delete(by: paul, at: threePm);

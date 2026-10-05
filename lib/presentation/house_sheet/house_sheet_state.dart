@@ -2,15 +2,14 @@ import 'package:tournee_calendriers/domain/shared/text_length.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
-import 'package:tournee_calendriers/domain/street/note.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
 // The view state of the Fiche maison (PLAN §5.7, mockup House): what the
 // sheet of one house shows, as plain data tested without widgets. The sheet
-// of a door of a building, and the building's own « Note · Repasser », show
-// the same controls and share this state.
+// of a door of a building, and the building's own « Repasser », show the
+// same controls and share this state.
 
-/// The length limit of a text field of the sheet, counted exactly as the
+/// The length limit of the hint field of the sheet, counted exactly as the
 /// domain counts it: Unicode code points of the trimmed text
 /// ([characterCount]).
 ///
@@ -20,9 +19,6 @@ import 'package:tournee_calendriers/domain/street/visit_status.dart';
 /// edit with a message rather than letting such a text in.
 final class TextLimit {
   const TextLimit._(this.max);
-
-  /// The note of a house: [Note.maxLength] characters.
-  static const note = TextLimit._(Note.maxLength);
 
   /// The hint of a « repasser »: [ComeBack.maxHintLength] characters.
   static const comeBackHint = TextLimit._(ComeBack.maxHintLength);
@@ -34,7 +30,7 @@ final class TextLimit {
   /// around it are dropped when it is stored, so they do not count.
   int count(String text) => characterCount(text.trim());
 
-  /// Whether the domain takes [text] (`Note.create`, `ComeBack.create`).
+  /// Whether the domain takes [text] (`ComeBack.create`).
   bool accepts(String text) => count(text) <= max;
 }
 
@@ -100,8 +96,7 @@ final class HouseSubject extends SheetSubject {
   const HouseSubject();
 }
 
-/// A building's own « repasser » and note (« Note · Repasser » under the
-/// grid). No status: a building's status comes from its doors.
+/// A building's own « repasser » (« Repasser » under the grid). No status: a building's status comes from its doors.
 final class BuildingSubject extends SheetSubject {
   const BuildingSubject();
 }
@@ -151,7 +146,6 @@ final class HouseSheetShown extends HouseSheetState {
     required this.status,
     required this.comeBack,
     required this.comeBackHint,
-    required this.note,
     required this.lastChange,
     this.subject = const HouseSubject(),
   });
@@ -170,9 +164,6 @@ final class HouseSheetShown extends HouseSheetState {
 
   /// The hint of the « repasser »; empty when there is none.
   final String comeBackHint;
-
-  /// The note; empty when there is none.
-  final String note;
 
   /// Null when nobody has changed it yet.
   final LastChange? lastChange;

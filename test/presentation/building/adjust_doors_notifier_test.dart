@@ -25,7 +25,7 @@ import '../../support/street_fixtures.dart';
 
 final _id = StreetId('lilas');
 
-/// 8: staircase A 1er [11 done, 12], RdC [01 with a note, 02]; staircase
+/// 8: staircase A 1er [11 done, 12], RdC [01 nobody home, 02]; staircase
 /// B 1er emptied, RdC [01]. 9: a single house. 10: one door left.
 final _eight = valueOf(
   Building.create(
@@ -44,7 +44,7 @@ final _eight = valueOf(
           Floor(
             level: 0,
             dwellings: [
-              Dwelling(label: d('01'), note: note('digicode 12')),
+              Dwelling(label: d('01'), status: VisitStatus.nobodyHome),
               Dwelling(label: d('02')),
             ],
           ),
@@ -240,8 +240,8 @@ void main() {
       expect(await floors(), ['1: A1-11 A1-12 A1-13', '0: A0-01 A0-02']);
       expect(stored().dwellingAt(_key('A', 1, '11'))!.status, VisitStatus.done);
       expect(
-        stored().dwellingAt(_key('A', 0, '01'))!.note,
-        note('digicode 12'),
+        stored().dwellingAt(_key('A', 0, '01'))!.status,
+        VisitStatus.nobodyHome,
       );
       final (_, change) = streets.saved.single;
       expect((change as BuildingLaidOut).stamp, leaAtTwo);
@@ -398,8 +398,8 @@ void main() {
           VisitStatus.done,
         );
         expect(
-          stored().dwellingAt(_key('A', 0, 'Gauche'))!.note,
-          note('digicode 12'),
+          stored().dwellingAt(_key('A', 0, 'Gauche'))!.status,
+          VisitStatus.nobodyHome,
         );
       },
     );

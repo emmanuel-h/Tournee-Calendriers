@@ -23,9 +23,11 @@ final class ComeBack {
   /// « Repasser » with nothing more said.
   static const withoutHint = ComeBack._('');
 
-  /// The longest hint, in characters: a short time or day, not a second
-  /// note. The security rules enforce the same limit (PLAN §8.2).
-  static const maxHintLength = 50;
+  /// The longest hint, in characters: room for a time or a day
+  /// (« samedi après 19h »), not for text about the people living there
+  /// (PLAN §8.3, Q23). The security rules enforce the same limit
+  /// (PLAN §8.2).
+  static const maxHintLength = 20;
 
   /// Builds the « repasser » flag with [hint] once trimmed (a blank hint
   /// means none), or fails with [ComeBackFailure.hintTooLong].

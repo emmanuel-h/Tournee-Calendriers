@@ -19,7 +19,7 @@ import '../support/app_overrides.dart';
 
 final _id = StreetId('lilas');
 
-/// 1 to do, 5 « repasser » « après 19h », 7 with a note.
+/// 1 to do, 5 « repasser » « après 19h », 7 to do.
 final _lilas = valueOf(
   Street.create(
     id: _id,
@@ -32,7 +32,7 @@ final _lilas = valueOf(
         status: VisitStatus.comeBack,
         comeBack: comeBack('après 19h'),
       ),
-      House(number: n('7'), note: note('chien')),
+      House(number: n('7')),
     ],
   ),
 );
@@ -87,10 +87,10 @@ void main() {
       await holdTile(tester, '1');
       expect(find.byKey(const Key('house.number')), findsOneWidget);
       expect(find.text('Rue des Lilas'), findsWidgets);
-      expect(
-        find.text("N'écrivez ni nom ni information personnelle."),
-        findsOneWidget,
-      );
+      // No free note: too sensitive to keep about people (PLAN §8.3).
+      expect(find.byKey(const Key('house.note.field')), findsNothing);
+      expect(find.textContaining('Note'), findsNothing);
+      expect(find.textContaining("N'écrivez"), findsNothing);
       expect(find.byKey(const Key('house.lastChange')), findsNothing);
       final hint = find.byKey(const Key('house.comeBackHint.field'));
       expect(tester.widget<TextField>(hint).enabled, isFalse);
@@ -159,10 +159,11 @@ void main() {
       // The house was never changed: the first choice stamps it, and the
       // line « Modifié à … » appears in a place kept for it.
       Rect sheet() => tester.getRect(find.byType(BottomSheet));
-      Rect note() => tester.getRect(find.byKey(const Key('house.note.field')));
       Rect hint() =>
           tester.getRect(find.byKey(const Key('house.comeBackHint.field')));
-      final before = (sheet(), note(), hint());
+      Rect action() =>
+          tester.getRect(find.byKey(const Key('house.toBuilding')));
+      final before = (sheet(), hint(), action());
 
       for (final status in [
         VisitStatus.done,
@@ -174,37 +175,37 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(stored('1').status, status);
-        expect((sheet(), note(), hint()), before, reason: '$status');
+        expect((sheet(), hint(), action()), before, reason: '$status');
       }
     },
   );
 
   testWidgets(
-    'should refuse a note over 200 characters counted as the domain does',
+    'should refuse a hint over 20 characters counted as the domain does',
     (tester) async {
-      await holdTile(tester, '7');
-      final field = find.byKey(const Key('house.note.field'));
-      final count = find.byKey(const Key('house.note.count'));
-      expect(tester.widget<Text>(count).data, '5/200');
+      await holdTile(tester, '5');
+      final field = find.byKey(const Key('house.comeBackHint.field'));
+      final count = find.byKey(const Key('house.comeBackHint.count'));
+      expect(tester.widget<Text>(count).data, '9/20');
 
-      // 196 letters and the emoji: 197 symbols, 201 code points.
-      await tester.enterText(field, '${'a' * 196}$_family');
+      // 16 letters and the emoji: 17 symbols, 21 code points.
+      await tester.enterText(field, '${'a' * 16}$_family');
       await tester.pump();
 
-      expect(find.text('chien'), findsOneWidget);
-      expect(find.text('Note limitée à 200 caractères.'), findsOneWidget);
-      expect(tester.widget<Text>(count).data, '5/200');
+      expect(find.text('après 19h'), findsOneWidget);
+      expect(find.text('Précision limitée à 20 caractères.'), findsOneWidget);
+      expect(tester.widget<Text>(count).data, '9/20');
 
-      final longest = '${'a' * 195}$_family';
+      final longest = '${'a' * 15}$_family';
       await tester.enterText(field, longest);
       await tester.pump();
 
-      expect(find.text('Note limitée à 200 caractères.'), findsNothing);
-      expect(tester.widget<Text>(count).data, '200/200');
+      expect(find.text('Précision limitée à 20 caractères.'), findsNothing);
+      expect(tester.widget<Text>(count).data, '20/20');
 
       await closeSheet(tester);
 
-      expect(stored('7').note, note(longest));
+      expect(stored('5').comeBack, comeBack(longest));
     },
   );
 }

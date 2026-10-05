@@ -189,6 +189,86 @@ void main() {
       expect(broken.readAsStringSync(), '{"version": 99}');
     });
 
+    group('of an older schema', () {
+      const id = 'x7Kq2LmP9sTb4VnW1cZd';
+      File stored() => File('${folder.path}/streets/$id.json');
+
+      /// Puts the fixture [name] in the folder as the file of its street.
+      String put(String name) {
+        final text = File('test/fixtures/local_storage/$name')
+            .readAsStringSync();
+        Directory('${folder.path}/streets').createSync();
+        stored().writeAsStringSync(text);
+        return text;
+      }
+
+      /// Reads the streets, then waits for the writes the reading asked:
+      /// writes run in order, so once a later one is done they are too.
+      Future<void> readThenWait() async {
+        final streets = restart();
+        await streets.find(StreetId(id));
+        await streets.add(_street('lilas', 'Rue des Lilas'));
+      }
+
+      test('should write a version 2 file again in version 3 when read, '
+          'without its notes', () async {
+        put('street_v2.json');
+
+        await readThenWait();
+
+        final written = jsonDecode(stored().readAsStringSync());
+        expect((written as Map<String, Object?>)['version'], 3);
+        expect(stored().readAsStringSync(), isNot(contains('"note"')));
+        expect(
+          written,
+          jsonDecode(
+            jsonEncode(
+              streetToJson(
+                streetFromJson(
+                  jsonDecode(
+                    File('test/fixtures/local_storage/street_v3.json')
+                        .readAsStringSync(),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      });
+
+      test(
+        'should write a version 1 file again in version 3 when read',
+        () async {
+          put('street_v1.json');
+
+          await readThenWait();
+
+          expect(stored().readAsStringSync(), isNot(contains('"note"')));
+          expect(stored().readAsStringSync(), contains('"version":3'));
+        },
+      );
+
+      test('should leave a version 3 file as it is when read', () async {
+        final text = put('street_v3.json');
+
+        await readThenWait();
+
+        expect(stored().readAsStringSync(), text);
+      });
+
+      test('should keep the old file and go on when writing it again '
+          'fails', () async {
+        final text = put('street_v2.json');
+        // A folder where the temporary file should go makes the write fail.
+        Directory('${stored().path}.tmp').createSync();
+
+        await readThenWait();
+
+        expect(stored().readAsStringSync(), text);
+        expect(await restart().find(StreetId('lilas')), isNotNull);
+      });
+    });
+
     test('should report a folder it cannot make', () async {
       File('${folder.path}/streets').writeAsStringSync('not a folder');
 

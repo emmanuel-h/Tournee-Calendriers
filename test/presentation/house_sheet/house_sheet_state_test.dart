@@ -1,7 +1,6 @@
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
-import 'package:tournee_calendriers/domain/street/note.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_state.dart';
 
@@ -15,67 +14,41 @@ String _letters(int count) => 'a' * count;
 const _family = '👨‍👩‍👧';
 
 void main() {
-  group('TextLimit.note', () {
-    test('should allow 200 characters', () {
-      expect(TextLimit.note.max, 200);
-    });
-
-    test('should accept a note of exactly the limit', () {
-      expect(TextLimit.note.accepts(_letters(200)), isTrue);
-    });
-
-    test('should refuse a note one character over the limit', () {
-      expect(TextLimit.note.accepts(_letters(201)), isFalse);
-    });
-
-    test('should count code points when the text holds emoji', () {
-      // 196 + 5 = 201 code points, though a person sees 197 symbols.
-      final text = '${_letters(196)}$_family';
-
-      expect(TextLimit.note.count(text), 201);
-      expect(TextLimit.note.accepts(text), isFalse);
-    });
-
-    test('should not count the spaces around the text', () {
-      final text = '  ${_letters(200)}\n ';
-
-      expect(TextLimit.note.count(text), 200);
-      expect(TextLimit.note.accepts(text), isTrue);
-    });
-
-    test('should agree with Note.create on both sides of the limit', () {
-      for (final text in [
-        _letters(200),
-        _letters(201),
-        '${_letters(195)}$_family',
-      ]) {
-        expect(
-          TextLimit.note.accepts(text),
-          Note.create(text) is Ok,
-          reason: '${text.runes.length} code points',
-        );
-      }
-    });
-  });
-
   group('TextLimit.comeBackHint', () {
-    test('should allow 50 characters', () {
-      expect(TextLimit.comeBackHint.max, 50);
+    test('should allow 20 characters', () {
+      expect(TextLimit.comeBackHint.max, 20);
     });
 
     test('should accept a hint of exactly the limit', () {
-      expect(TextLimit.comeBackHint.accepts(_letters(50)), isTrue);
+      expect(TextLimit.comeBackHint.accepts(_letters(20)), isTrue);
     });
 
     test('should refuse a hint one character over the limit', () {
-      expect(TextLimit.comeBackHint.accepts(_letters(51)), isFalse);
+      expect(TextLimit.comeBackHint.accepts(_letters(21)), isFalse);
+    });
+
+    test('should count code points when the text holds emoji', () {
+      // 16 + 5 = 21 code points, though a person sees 17 symbols.
+      final text = '${_letters(16)}$_family';
+
+      expect(TextLimit.comeBackHint.count(text), 21);
+      expect(TextLimit.comeBackHint.accepts(text), isFalse);
+    });
+
+    test('should not count the spaces around the text', () {
+      final text = '  ${_letters(20)}\n ';
+
+      expect(TextLimit.comeBackHint.count(text), 20);
+      expect(TextLimit.comeBackHint.accepts(text), isTrue);
     });
 
     test('should agree with ComeBack.create on both sides of the limit', () {
       for (final text in [
-        _letters(50),
-        _letters(51),
-        '${_letters(46)}$_family',
+        _letters(19),
+        _letters(20),
+        _letters(21),
+        '${_letters(15)}$_family',
+        '${_letters(16)}$_family',
       ]) {
         expect(
           TextLimit.comeBackHint.accepts(text),
@@ -193,7 +166,6 @@ void main() {
         status: VisitStatus.toDo,
         comeBack: false,
         comeBackHint: '',
-        note: '',
         lastChange: null,
       );
 

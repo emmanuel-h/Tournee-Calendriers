@@ -10,14 +10,13 @@ import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_repository.dart';
 
-/// One control of the Fiche maison (hold a tile, PLAN §5.7): the status,
-/// the hint of its « repasser » or the note of a house. On a building it sets the
-/// building's own « repasser » and note (« Repasser · Note » under the
-/// grid); its status is refused, its doors carry the statuses. Needs no
-/// network.
+/// One control of the Fiche maison (hold a tile, PLAN §5.7): the status or
+/// the hint of the « repasser » of a house. On a building it sets the
+/// building's own « repasser » (« Repasser » under the grid); its status is
+/// refused, its doors carry the statuses. Needs no network.
 ///
-/// The text of a note or hint is checked by the sheet first (`Note.create`,
-/// `ComeBack.create`), so it can say « trop long » before anything is sent.
+/// The text of a hint is checked by the sheet first (`ComeBack.create`), so
+/// it can say « trop long » before anything is sent.
 final class SetHouseDetails {
   const SetHouseDetails(this._streets, this._clock, this._identity);
 
@@ -48,7 +47,6 @@ final class SetHouseDetails {
           by: by,
           at: at,
         ),
-        NoteMark(:final note) => street.setNote(number, note, by: by, at: at),
       },
     );
   }

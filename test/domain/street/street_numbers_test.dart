@@ -44,12 +44,11 @@ List<HouseNumber> _numbers(List<String> labels) => [
   for (final label in labels) n(label),
 ];
 
-/// 3 nobody home with a note, 4 new, 5 done.
+/// 3 nobody home, 4 new, 5 done.
 final _three = House(
   number: n('3'),
   status: VisitStatus.nobodyHome,
   comeBack: comeBack('après 19h'),
-  note: note('chien'),
   lastChange: leaAtTwo,
 );
 final _four = House(number: n('4'));
@@ -59,12 +58,11 @@ final _five = House(
   lastChange: leaAtTwo,
 );
 
-/// 14ter, done with a note, removed by Léa.
+/// 14ter, done, removed by Léa.
 final _fourteenTer = RemovedHouse(
   house: House(
     number: n('14ter'),
     status: VisitStatus.done,
-    note: note('digicode'),
     lastChange: paulAtThree,
   ),
   removal: leaAtTwo,
@@ -470,12 +468,11 @@ void main() {
   group('restoreNumber', () {
     final street = _street([_three, _four], removed: [_fourteenTer]);
 
-    test('should bring the house back with its status and note', () {
+    test('should bring the house back with its status', () {
       final (changed, change) = valueOf(street.restoreNumber(n('14ter')));
 
       expect(changed.houses, [_three, _four, _fourteenTer.house]);
       expect(changed.houses.last.status, VisitStatus.done);
-      expect(changed.houses.last.note, note('digicode'));
       expect(changed.removedHouses, isEmpty);
       expect(change, NumberRestored(streetId: _lilas, removed: _fourteenTer));
     });
@@ -540,7 +537,6 @@ void main() {
         number: n('3bis'),
         status: VisitStatus.nobodyHome,
         comeBack: comeBack('après 19h'),
-        note: note('chien'),
         lastChange: paulAtThree,
       );
       expect(changed.houses, [renamed, _four, _five]);

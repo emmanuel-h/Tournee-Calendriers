@@ -3,7 +3,6 @@ import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/use_cases/import_reference_area.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
-import 'package:tournee_calendriers/domain/street/note.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
@@ -233,7 +232,7 @@ void main() {
   });
 
   group('from the Corbeille', () {
-    /// Rue Gambetta, imported, its 3bis marked done with a note, then sent
+    /// Rue Gambetta, imported, its 3bis « repasser » after 19h, then sent
     /// to the Corbeille.
     Street deletedGambetta() => valueOf(
       Street.create(
@@ -244,8 +243,8 @@ void main() {
         houses: [
           House(
             number: n('3bis'),
-            status: VisitStatus.done,
-            note: valueOf(Note.create('Chien')),
+            status: VisitStatus.comeBack,
+            comeBack: comeBack('après 19h'),
           ),
         ],
       ),
@@ -266,8 +265,8 @@ void main() {
       expect(change, StreetRestored(streetId: StreetId('gambetta')));
       expect(saved.isDeleted, isFalse);
       expect(saved.houses, deleted.houses);
-      expect(saved.houses.single.status, VisitStatus.done);
-      expect(saved.houses.single.note.text, 'Chien');
+      expect(saved.houses.single.status, VisitStatus.comeBack);
+      expect(saved.houses.single.comeBack, comeBack('après 19h'));
       expect(streets.added, isEmpty);
     });
 

@@ -21,22 +21,20 @@ import '../../support/street_fixtures.dart';
 final _id = StreetId('lilas');
 final _yesterday = DateTime(2026, 11, 1, 18, 30);
 
-/// Door 11 of staircase A of number 8, to come back « soir », with a note,
-/// changed by Paul yesterday.
+/// Door 11 of staircase A of number 8, to come back « soir », changed by
+/// Paul yesterday.
 final _door11 = Dwelling(
   label: d('11'),
   status: VisitStatus.comeBack,
   comeBack: comeBack('soir'),
-  note: note('digicode 1234'),
   lastChange: ChangeStamp(by: paul, at: _yesterday.toUtc()),
 );
 
-/// 8: two staircases, RdC and 1er, two doors a floor, with its own note
-/// and « repasser »; 10: a single staircase; 9: a single house.
+/// 8: two staircases, RdC and 1er, two doors a floor, with its own
+/// « repasser »; 10: a single staircase; 9: a single house.
 final _houses = [
   House(
     number: n('8'),
-    note: note('grille verte'),
     comeBack: comeBack('mardi'),
     lastChange: leaAtTwo,
     building: building(
@@ -114,7 +112,6 @@ void main() {
       expect(state.status, VisitStatus.comeBack);
       expect(state.comeBack, isTrue);
       expect(state.comeBackHint, 'soir');
-      expect(state.note, 'digicode 1234');
       expect(state.lastChange, ChangedEarlier(_yesterday));
     });
 
@@ -129,7 +126,6 @@ void main() {
         expect(state.subject, const DoorSubject(staircase: null));
         expect(state.status, VisitStatus.toDo);
         expect(state.comeBack, isFalse);
-        expect(state.note, '');
         expect(state.lastChange, isNull);
       },
     );
@@ -216,26 +212,6 @@ void main() {
 
       expect(streets.saved, isEmpty);
     });
-
-    test('should store the note of the door', () async {
-      phoneWith(_street());
-      await door('8', a11);
-
-      await doorNotifier('8', a11).saveNote('chien');
-
-      expect(
-        streets.saved.single.$2,
-        DwellingNoteSet(
-          streetId: _id,
-          number: n('8'),
-          staircase: escA,
-          level: 1,
-          before: _door11,
-          stamp: leaAtTwo,
-          note: note('chien'),
-        ),
-      );
-    });
   });
 
   group('building details', () {
@@ -249,7 +225,6 @@ void main() {
       expect(state.status, isNull);
       expect(state.comeBack, isTrue);
       expect(state.comeBackHint, 'mardi');
-      expect(state.note, 'grille verte');
       expect(state.lastChange, ChangedToday(twoPm.toLocal()));
     });
 
@@ -277,19 +252,19 @@ void main() {
       expect(streets.saved, isEmpty);
     });
 
-    test('should store the building own note', () async {
+    test('should store the hint of the building own « repasser »', () async {
       phoneWith(_street());
       await details('8');
 
-      await detailsNotifier('8').saveNote('digicode 42');
+      await detailsNotifier('8').saveComeBackHint(' jeudi ');
 
       expect(
         streets.saved.single.$2,
-        NoteSet(
+        ComeBackSet(
           streetId: _id,
           before: _houses.first,
           stamp: leaAtTwo,
-          note: note('digicode 42'),
+          comeBack: comeBack('jeudi'),
         ),
       );
     });

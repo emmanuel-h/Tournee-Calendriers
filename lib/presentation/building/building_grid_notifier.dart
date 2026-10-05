@@ -5,7 +5,6 @@ import 'package:tournee_calendriers/domain/street/building/building.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
-import 'package:tournee_calendriers/domain/street/note.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
@@ -149,7 +148,6 @@ final class BuildingGridNotifier extends Notifier<BuildingGridState> {
                   (
                     key: DwellingKey(shown.name, floor.level, dwelling.label),
                     mark: TileMark.ofDwelling(dwelling),
-                    hasNote: dwelling.note != Note.empty,
                   ),
               ],
             ),

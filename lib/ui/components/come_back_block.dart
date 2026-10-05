@@ -6,7 +6,7 @@ import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 import 'package:tournee_calendriers/ui/theme/status_look.dart';
 
-/// The blue block of a building's own sheet (« Note · Repasser »):
+/// The blue block of a building's own sheet (« Repasser »):
 /// « ☑ ↻ Repasser » and, once ticked, when to come back ([hint]). A house
 /// or a door has no box: « Repasser » is one of its statuses.
 final class ComeBackBlock extends StatelessWidget {

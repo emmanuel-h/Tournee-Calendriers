@@ -3,7 +3,6 @@ import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/street/building/building.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
-import 'package:tournee_calendriers/domain/street/note.dart';
 import 'package:tournee_calendriers/domain/street/progress.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
@@ -23,14 +22,13 @@ final class House {
     this.number,
     this.status,
     this.comeBack,
-    this.note,
     this.lastChange,
     this.building,
     this.position,
   );
 
   /// A house with [number]; by default a single house not visited yet, with
-  /// no note and no change recorded.
+  /// no change recorded.
   ///
   /// Two rules run here, so that whatever builds a house (a command of the
   /// street, an adapter reading stored data) never breaks them. A `factory`
@@ -46,7 +44,6 @@ final class House {
     required HouseNumber number,
     VisitStatus status = VisitStatus.toDo,
     ComeBack? comeBack,
-    Note note = Note.empty,
     ChangeStamp? lastChange,
     Building? building,
     GeoPoint? position,
@@ -56,7 +53,6 @@ final class House {
       number,
       isSingle ? status : VisitStatus.toDo,
       isSingle ? ComeBack.keptBy(status, comeBack) : comeBack,
-      note,
       lastChange,
       building,
       position,
@@ -74,12 +70,8 @@ final class House {
   /// (« Repasser » under the grid) apart from its doors'.
   final ComeBack? comeBack;
 
-  /// The free note; [Note.empty] when nobody wrote one. On a building, the
-  /// note of the whole building (« digicode »).
-  final Note note;
-
   /// Who changed the house last and when; null when nobody has yet. On a
-  /// building, the last change of its layout, note or « repasser »: each
+  /// building, the last change of its layout or « repasser »: each
   /// door keeps its own.
   final ChangeStamp? lastChange;
 
@@ -96,7 +88,7 @@ final class House {
   bool get isBuilding => building != null;
 
   /// Whether someone marked the house: a status other than to do, a
-  /// « repasser », a note, or a mark on a door of its building. Its
+  /// « repasser », or a mark on a door of its building. Its
   /// [lastChange] alone is not a mark, nor is a building's layout.
   ///
   /// The edit mode asks before removing a number that has marks
@@ -104,7 +96,6 @@ final class House {
   bool get hasMarks =>
       status != VisitStatus.toDo ||
       comeBack != null ||
-      note != Note.empty ||
       (building?.hasMarks ?? false);
 
   /// What this house adds to its street's progress: one door for a single
@@ -125,28 +116,20 @@ final class House {
       other.number == number &&
       other.status == status &&
       other.comeBack == comeBack &&
-      other.note == note &&
       other.lastChange == lastChange &&
       other.building == building &&
       other.position == position;
 
   @override
-  int get hashCode => Object.hash(
-    number,
-    status,
-    comeBack,
-    note,
-    lastChange,
-    building,
-    position,
-  );
+  int get hashCode =>
+      Object.hash(number, status, comeBack, lastChange, building, position);
 
   /// A single house prints as before buildings existed; a building adds
   /// itself at the end. The position is left out: it never changes after
   /// the import, and the line stays readable in a failing test.
   @override
   String toString() {
-    final fields = '${number.label}, $status, $comeBack, $note, $lastChange';
+    final fields = '${number.label}, $status, $comeBack, $lastChange';
     return building == null ? 'House($fields)' : 'House($fields, $building)';
   }
 }

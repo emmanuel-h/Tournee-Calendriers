@@ -76,16 +76,6 @@ void main() {
     expect(doorOf('02')!.comeBack, comeBack('soir'));
   });
 
-  test('should save the note of the door', () async {
-    final change = valueOf(
-      await markDwelling(lilasId, n('8'), rdc('01'), NoteMark(note('chat'))),
-    );
-
-    expect(change, isA<DwellingNoteSet>());
-    expect((change as DwellingNoteSet).note, note('chat'));
-    expect(doorOf('01')!.note, note('chat'));
-  });
-
   test('should fail when the door is done and a hint is given', () async {
     final failure = failureOf(
       await markDwelling(

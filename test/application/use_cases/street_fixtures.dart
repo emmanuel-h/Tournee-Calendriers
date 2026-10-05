@@ -13,13 +13,12 @@ import '../../support/street_fixtures.dart';
 
 final lilasId = StreetId('rue-des-lilas');
 
-/// Number 5 « repasser » with a hint and a note (Paul's change),
+/// Number 5 « repasser » with a hint (Paul's change),
 /// number 7 to do, number 8 a building RdC 01 02 whose door 01 is done.
 final five = House(
   number: n('5'),
   status: VisitStatus.comeBack,
   comeBack: comeBack('après 19h'),
-  note: note('chien'),
   lastChange: paulAtThree,
   position: townHallDoor,
 );

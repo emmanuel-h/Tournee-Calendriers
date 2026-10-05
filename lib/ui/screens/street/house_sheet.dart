@@ -30,8 +30,7 @@ Future<HouseSheetExit?> showHouseSheet(
 );
 
 /// The Fiche maison: number and street, the status control, « Repasser »
-/// with its hint, the note, « Transformer en immeuble… », and the last
-/// change.
+/// with its hint, « Transformer en immeuble… », and the last change.
 final class HouseSheet extends StatelessWidget {
   const HouseSheet({super.key, required this.house});
 

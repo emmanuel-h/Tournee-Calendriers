@@ -9,8 +9,14 @@ phone.
   status (houses and doors to do or nobody home with a `comeBack`, a building
   with its own, one in the Corbeille).
 - `street_v2.json`: the same street in schema version 2, where « repasser » is
-  the status `comeBack`. Both files must read as the same street: that is the
-  migration test.
+  the status `comeBack`.
+- `street_v3.json`: the same street in schema version 3, without any `note`
+  (notes were removed for privacy, PLAN §8.3).
+
+Versions 1 and 2 hold notes on a building, a door, a house and a removed
+house. All three files must read as the same street, without any note, and
+versions 1 and 2 must be written back exactly as the version 3 file: that is
+the migration test.
 
 Houses and floors are out of order on purpose: reading must not depend on the
 order.

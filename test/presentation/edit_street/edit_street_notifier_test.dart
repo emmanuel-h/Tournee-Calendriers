@@ -23,7 +23,7 @@ import '../../support/street_fixtures.dart';
 
 final _id = StreetId('lilas');
 
-/// The Edit mockup in short: 1 and 3bis to do, 3 done, 5 with a note; 2
+/// The Edit mockup in short: 1 and 3bis to do, 3 done, 5 « repasser »; 2
 /// to do, 8 a building nobody marked, 10 a building with one door done.
 final _three = House(number: n('3'), status: VisitStatus.done);
 final _eight = House(number: n('8'), building: building(topFloor: 0, doors: 2));
@@ -38,7 +38,7 @@ final _houses = [
   House(number: n('1')),
   _three,
   House(number: n('3bis')),
-  House(number: n('5'), note: note('chien')),
+  House(number: n('5'), status: VisitStatus.comeBack),
   House(number: n('2')),
   _eight,
   _ten,

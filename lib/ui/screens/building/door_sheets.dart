@@ -33,9 +33,8 @@ Future<void> showDoorSheet(BuildContext context, DoorSheetKey door) =>
       },
     );
 
-/// Opens the building's own « repasser » and note (« Note · Repasser »
-/// under the grid, or hold a building tile): no status, its doors carry
-/// them.
+/// Opens the building's own « repasser » (« Repasser » under the grid, or
+/// hold a building tile): no status, its doors carry them.
 Future<void> showBuildingDetailsSheet(
   BuildContext context,
   HouseSheetKey building,

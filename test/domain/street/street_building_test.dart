@@ -6,7 +6,6 @@ import 'package:tournee_calendriers/domain/street/building/building_plan.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
-import 'package:tournee_calendriers/domain/street/note.dart';
 import 'package:tournee_calendriers/domain/street/progress.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
@@ -29,7 +28,7 @@ Street _street(List<House> houses) => valueOf(
 );
 
 /// Number 6 a single house, number 8 the two-door building RdC 01 02 (01
-/// done), number 10 a single house with a note.
+/// done), number 10 a single house.
 final _six = House(number: n('6'), status: VisitStatus.nobodyHome);
 final _eightDoors = building(topFloor: 0, doors: 2).withDwelling(
   escA,
@@ -39,7 +38,6 @@ final _eightDoors = building(topFloor: 0, doors: 2).withDwelling(
 final _eight = House(
   number: n('8'),
   comeBack: comeBack('gardien'),
-  note: note('digicode'),
   lastChange: paulAtThree,
   building: _eightDoors,
 );
@@ -56,7 +54,6 @@ void main() {
           number: n('8'),
           status: VisitStatus.comeBack,
           comeBack: comeBack('après 19h'),
-          note: note('digicode'),
         ),
       ]);
 
@@ -70,7 +67,6 @@ void main() {
         House(
           number: n('8'),
           comeBack: comeBack('après 19h'),
-          note: note('digicode'),
           lastChange: leaAtTwo,
           building: building(),
         ),
@@ -120,13 +116,12 @@ void main() {
       expect(change.building, newBuilding);
     });
 
-    test('should keep the building\'s own come-back and note', () {
+    test('should keep the building\'s own come-back', () {
       final (described, _) = valueOf(
         _street8.describeBuilding(n('8'), plan(), by: lea, at: twoPm),
       );
 
       expect(described.houses[1].comeBack, comeBack('gardien'));
-      expect(described.houses[1].note, note('digicode'));
       expect(described.houses[1].lastChange, leaAtTwo);
     });
 
@@ -175,7 +170,7 @@ void main() {
     });
   });
 
-  group('setComeBack and setNote on a building', () {
+  group('setComeBack on a building', () {
     test('should set the building\'s own come-back and keep its doors', () {
       final (changed, _) = valueOf(
         _street8.setComeBack(n('8'), null, by: lea, at: twoPm),
@@ -206,15 +201,6 @@ void main() {
         expect(changed.houses.single.comeBack, ComeBack.withoutHint);
       },
     );
-
-    test('should set the building\'s own note and keep its doors', () {
-      final (changed, _) = valueOf(
-        _street8.setNote(n('8'), note('code 1234'), by: lea, at: twoPm),
-      );
-
-      expect(changed.houses[1].note, note('code 1234'));
-      expect(changed.houses[1].building, _eightDoors);
-    });
   });
 
   group('markDwelling', () {
@@ -269,11 +255,10 @@ void main() {
       );
       expect(house.lastChange, paulAtThree);
       expect(house.comeBack, comeBack('gardien'));
-      expect(house.note, note('digicode'));
       expect(marked.houses[0], _six);
     });
 
-    test('should drop the door\'s hint but keep its note when done', () {
+    test('should drop the door\'s hint when done', () {
       final (comingBack, _) = valueOf(
         _street8.markDwelling(
           n('8'),
@@ -292,18 +277,8 @@ void main() {
           at: twoPm,
         ),
       );
-      final (noted, _) = valueOf(
-        withComeBack.setDwellingNote(
-          n('8'),
-          _a('02'),
-          note('chien'),
-          by: lea,
-          at: twoPm,
-        ),
-      );
-
       final (marked, change) = valueOf(
-        noted.markDwelling(
+        withComeBack.markDwelling(
           n('8'),
           _a('02'),
           VisitStatus.done,
@@ -317,7 +292,6 @@ void main() {
         Dwelling(
           label: d('02'),
           status: VisitStatus.done,
-          note: note('chien'),
           lastChange: paulAtThree,
         ),
       );
@@ -524,78 +498,6 @@ void main() {
     });
   });
 
-  group('setDwellingNote', () {
-    test('should write the note of a door, keep its status and say so', () {
-      final (changed, change) = valueOf(
-        _street8.setDwellingNote(
-          n('8'),
-          _a('01'),
-          note('chien'),
-          by: lea,
-          at: twoPm,
-        ),
-      );
-
-      expect(
-        changed.houses[1].building!.dwellingAt(_a('01')),
-        Dwelling(
-          label: d('01'),
-          status: VisitStatus.done,
-          note: note('chien'),
-          lastChange: leaAtTwo,
-        ),
-      );
-      expect(
-        change,
-        DwellingNoteSet(
-          streetId: _lilas,
-          number: n('8'),
-          staircase: escA,
-          level: 0,
-          before: _eightDoors.dwellingAt(_a('01'))!,
-          stamp: leaAtTwo,
-          note: note('chien'),
-        ),
-      );
-    });
-
-    test('should erase the note when given the empty note', () {
-      final (noted, _) = valueOf(
-        _street8.setDwellingNote(
-          n('8'),
-          _a('02'),
-          note('chien'),
-          by: lea,
-          at: twoPm,
-        ),
-      );
-
-      final (changed, _) = valueOf(
-        noted.setDwellingNote(n('8'), _a('02'), Note.empty, by: lea, at: twoPm),
-      );
-
-      expect(
-        changed.houses[1].building!.dwellingAt(_a('02'))!.note,
-        Note.empty,
-      );
-    });
-
-    test('should fail when the building has no such door', () {
-      expect(
-        failureOf(
-          _street8.setDwellingNote(
-            n('8'),
-            _a('99'),
-            note('chien'),
-            by: lea,
-            at: twoPm,
-          ),
-        ),
-        DwellingChangeFailure.unknownDwelling,
-      );
-    });
-  });
-
   group('addDoor', () {
     test('should add a door to the floor and stamp the house', () {
       final (changed, change) = valueOf(
@@ -608,7 +510,6 @@ void main() {
         House(
           number: n('8'),
           comeBack: comeBack('gardien'),
-          note: note('digicode'),
           lastChange: leaAtTwo,
           building: expected,
         ),
@@ -726,7 +627,6 @@ void main() {
           number: n('8'),
           status: VisitStatus.comeBack,
           comeBack: comeBack('gardien'),
-          note: note('digicode'),
           lastChange: leaAtTwo,
         ),
       );

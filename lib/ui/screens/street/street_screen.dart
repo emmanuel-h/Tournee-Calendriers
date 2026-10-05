@@ -28,7 +28,7 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 /// Works offline: everything it reads and writes is on the phone.
 ///
 /// A hold on a house opens its Fiche maison (PLAN §5.7); a tap on a
-/// building opens its Immeuble grid, a hold its own note and « repasser ».
+/// building opens its Immeuble grid, a hold its own « repasser ».
 final class StreetScreen extends StatelessWidget {
   const StreetScreen({super.key, required this.streetId, this.title});
 
@@ -194,7 +194,7 @@ final class _MarkingScreenState extends ConsumerState<_MarkingScreen>
     }
   }
 
-  /// A hold on a building tile opens its own note and « repasser ».
+  /// A hold on a building tile opens its own « repasser ».
   void _openBuildingDetails(HouseNumber number) {
     hideUndo();
     unawaited(

@@ -82,7 +82,7 @@ void main() {
       status: VisitStatus.done,
       lastChange: leaAtTwo,
     );
-    final door = Dwelling(label: d('51'), note: note('digicode'));
+    final door = Dwelling(label: d('51'), status: VisitStatus.nobodyHome);
 
     DwellingReverted reverted({
       StreetId? streetId,

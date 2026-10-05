@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
+import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
@@ -20,7 +21,7 @@ import '../support/finders.dart';
 final _id = StreetId('lilas');
 
 /// 7: a single house. 8: two staircases, RdC–1er, two doors a floor; A 11
-/// done, B 01 done with a note: 2 of 8 doors done. 10: the RdC alone, two
+/// done, B 01 done: 2 of 8 doors done. 10: the RdC alone, two
 /// doors, no mark.
 final _lilas = valueOf(
   Street.create(
@@ -41,11 +42,7 @@ final _lilas = valueOf(
             .withDwelling(
               escB,
               0,
-              Dwelling(
-                label: d('01'),
-                status: VisitStatus.done,
-                note: note('digicode'),
-              ),
+              Dwelling(label: d('01'), status: VisitStatus.done),
             ),
       ),
     ],
@@ -156,7 +153,7 @@ void main() {
       expect(_door('A1-11'), findsNothing);
       expect(
         labelOf(tester, _door('B0-01')),
-        'Escalier B, RdC, porte 01, fait, avec une note',
+        'Escalier B, RdC, porte 01, fait',
       );
       // The count covers the whole building, whatever staircase shows.
       expect(labelOf(tester, _count), '2 sur 8 logements faits');
@@ -166,7 +163,8 @@ void main() {
 
       expect(find.byKey(const Key('door.number')), findsOneWidget);
       expect(find.text('Esc. B · RdC · 8 Rue des Lilas'), findsOneWidget);
-      expect(find.text('digicode'), findsOneWidget);
+      // No free note on a door: too sensitive (PLAN §8.3).
+      expect(find.byKey(const Key('door.note.field')), findsNothing);
       expect(find.byKey(const Key('house.toBuilding')), findsNothing);
       semantics.dispose();
     },
@@ -221,50 +219,59 @@ void main() {
     },
   );
 
-  testWidgets('should ask before a new layout drops a marked door, and keep it when '
-      'not confirmed', (tester) async {
-    await openStreet(tester);
-    await tester.tap(_tile('8'));
-    await tester.pumpAndSettle();
-    await manage(tester, 'editFloors');
-    expect(find.text('RdC–1er'), findsOneWidget);
+  testWidgets(
+    'should ask before a new layout drops a marked door, and keep it when '
+    'not confirmed',
+    (tester) async {
+      await openStreet(tester);
+      await tester.tap(_tile('8'));
+      await tester.pumpAndSettle();
+      await manage(tester, 'editFloors');
+      expect(find.text('RdC–1er'), findsOneWidget);
 
-    await tester.tap(find.byKey(const ValueKey('setup.floors.fewer')));
-    await tester.pump();
-    await tester.tap(find.byKey(const Key('setup.validate')));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('setup.floors.fewer')));
+      await tester.pump();
+      await tester.tap(find.byKey(const Key('setup.validate')));
+      await tester.pumpAndSettle();
 
-    expect(find.text('Modifier les étages\u00a0?'), findsOneWidget);
-    expect(
-      find.text(
-        "1 porte marquée n'existe plus dans ce plan\u00a0: son statut, sa note "
-        'et son «\u00a0repasser\u00a0» seront perdus.',
-      ),
-      findsOneWidget,
-    );
+      expect(find.text('Modifier les étages\u00a0?'), findsOneWidget);
+      expect(
+        find.text(
+          "1 porte marquée n'existe plus dans ce plan\u00a0: son statut et son "
+          '«\u00a0repasser\u00a0» seront perdus.',
+        ),
+        findsOneWidget,
+      );
 
-    await tester.tap(find.byKey(const Key('setup.confirm.cancel')));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('setup.confirm.cancel')));
+      await tester.pumpAndSettle();
 
-    expect(find.text("Décrire l'immeuble"), findsOneWidget);
-    expect(streets.saved, isEmpty);
+      expect(find.text("Décrire l'immeuble"), findsOneWidget);
+      expect(streets.saved, isEmpty);
 
-    await tester.tap(find.byKey(const Key('setup.validate')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('setup.confirm.ok')));
-    await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('setup.validate')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('setup.confirm.ok')));
+      await tester.pumpAndSettle();
 
-    expect(find.text("Décrire l'immeuble"), findsNothing);
-    expect(_door('A1-11'), findsNothing);
-    expect(find.text('Esc. A · 0/2'), findsOneWidget);
-  });
+      expect(find.text("Décrire l'immeuble"), findsNothing);
+      expect(_door('A1-11'), findsNothing);
+      expect(find.text('Esc. A · 0/2'), findsOneWidget);
+    },
+  );
 
   testWidgets('should offer the three changes of the building under '
       '« Gérer l\'immeuble »', (tester) async {
     await openStreet(tester);
     await tester.tap(_tile('8'));
     await tester.pumpAndSettle();
-    expect(find.text('Note · Repasser'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: find.byKey(const Key('grid.details')),
+        matching: find.text('Repasser'),
+      ),
+      findsOneWidget,
+    );
 
     await tester.tap(find.byKey(const Key('grid.manage')));
     await tester.pumpAndSettle();
@@ -281,6 +288,25 @@ void main() {
 
     expect(find.text('Modifier les portes'), findsOneWidget);
     expect(find.byKey(const ValueKey('doors.door.A1-11')), findsOneWidget);
+  });
+
+  testWidgets('should open the building own « Repasser », without a note, '
+      'from the button under the grid', (tester) async {
+    await openStreet(tester);
+    await tester.tap(_tile('8'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('grid.details')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('building.number')), findsOneWidget);
+    expect(find.byKey(const Key('building.note.field')), findsNothing);
+    expect(find.textContaining('Note'), findsNothing);
+
+    await tester.tap(find.byKey(const ValueKey('building.comeBack')));
+    await tester.pumpAndSettle();
+
+    expect(stored('8').comeBack, ComeBack.withoutHint);
   });
 
   testWidgets('should ask before a building with marks becomes a house, then '

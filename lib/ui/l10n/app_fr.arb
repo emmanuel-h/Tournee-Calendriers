@@ -57,13 +57,6 @@
     }
   },
 
-  "tileWithNoteSemantics": "{tile}, avec une note",
-  "@tileWithNoteSemantics": {
-    "description": "Screen-reader label of a tile whose house has a note (the small dot).",
-    "placeholders": {
-      "tile": { "type": "String", "example": "Numéro 7, à faire" }
-    }
-  },
   "statusToDo": "À faire",
   "@statusToDo": { "description": "Name of the status « to do », in the undo snackbar." },
   "statusDone": "Fait",
@@ -110,7 +103,7 @@
   "houseStatusGroup": "Statut",
   "@houseStatusGroup": { "description": "Screen-reader name of the status control of the house sheet (« À faire | Fait | Personne | Repasser », PLAN §5.7)." },
   "comeBack": "Repasser",
-  "@comeBack": { "description": "Box of the building's own « Note · Repasser » sheet: the residents asked the team to come back later." },
+  "@comeBack": { "description": "Box of the building's own « Repasser » sheet: the residents asked the team to come back later." },
   "comeBackWhenLabel": "Quand repasser ?",
   "@comeBackWhenLabel": { "description": "Label of the hint field of the house and door sheets; the field is greyed unless the status is « Repasser »." },
   "comeBackWhenPlaceholder": "ex. après 19h",
@@ -120,31 +113,22 @@
   "comeBackHintTooLong": "Précision limitée à {max} caractères.",
   "@comeBackHintTooLong": {
     "description": "Shown when typing or pasting would make the come-back hint longer than allowed; the edit is refused.",
-    "placeholders": { "max": { "type": "int", "example": "50" } }
-  },
-  "noteLabel": "Note",
-  "@noteLabel": { "description": "Label of the note field of the house sheet." },
-  "notePrivacyHint": "N'écrivez ni nom ni information personnelle.",
-  "@notePrivacyHint": { "description": "Under every note field (PLAN §5.7, §8)." },
-  "noteTooLong": "Note limitée à {max} caractères.",
-  "@noteTooLong": {
-    "description": "Shown when typing or pasting would make the note longer than allowed; the edit is refused.",
-    "placeholders": { "max": { "type": "int", "example": "200" } }
+    "placeholders": { "max": { "type": "int", "example": "20" } }
   },
   "textCount": "{count}/{max}",
   "@textCount": {
     "description": "Characters used / allowed, under a text field with a limit.",
     "placeholders": {
-      "count": { "type": "int", "example": "12" },
-      "max": { "type": "int", "example": "200" }
+      "count": { "type": "int", "example": "9" },
+      "max": { "type": "int", "example": "20" }
     }
   },
   "textCountSemantics": "{count} caractères sur {max}",
   "@textCountSemantics": {
     "description": "Screen-reader label of the characters counter.",
     "placeholders": {
-      "count": { "type": "int", "example": "12" },
-      "max": { "type": "int", "example": "200" }
+      "count": { "type": "int", "example": "9" },
+      "max": { "type": "int", "example": "20" }
     }
   },
   "houseChangedToday": "Modifié à {time}",
@@ -293,7 +277,7 @@
   },
   "setupConfirmTitle": "Modifier les étages ?",
   "@setupConfirmTitle": { "description": "Title of the confirmation when a new layout drops doors that have marks." },
-  "setupConfirmBody": "{count, plural, =1{1 porte marquée n'existe plus dans ce plan : son statut, sa note et son « repasser » seront perdus.} other{{count} portes marquées n'existent plus dans ce plan : leurs statuts, notes et « repasser » seront perdus.}}",
+  "setupConfirmBody": "{count, plural, =1{1 porte marquée n'existe plus dans ce plan : son statut et son « repasser » seront perdus.} other{{count} portes marquées n'existent plus dans ce plan : leurs statuts et « repasser » seront perdus.}}",
   "@setupConfirmBody": {
     "description": "Body of the confirmation when a new layout drops doors that have marks.",
     "placeholders": { "count": { "type": "int", "example": "3" } }
@@ -365,7 +349,7 @@
     "description": "Title of the confirmation before removing a number that has marks.",
     "placeholders": { "number": { "type": "String", "example": "3" } }
   },
-  "confirmRemoveBody": "Ce numéro a des marques (statut, note, « repasser » ou portes marquées). Elles partent avec lui à la Corbeille.",
+  "confirmRemoveBody": "Ce numéro a des marques (statut, « repasser » ou portes marquées). Elles partent avec lui à la Corbeille.",
   "@confirmRemoveBody": { "description": "Body of the confirmation before removing a number that has marks (PLAN §5.5)." },
   "confirmDeleteStreetTitle": "Supprimer la rue ?",
   "@confirmDeleteStreetTitle": { "description": "Title of the confirmation of « Supprimer la rue »." },
@@ -458,7 +442,7 @@
   "@backToHouseAction": { "description": "Choice of the « Gérer l'immeuble » menu of the building grid: the building becomes a single house again." },
   "confirmBackToHouseTitle": "Changer en maison ?",
   "@confirmBackToHouseTitle": { "description": "Title of the confirmation when the doors of the building have marks." },
-  "confirmBackToHouseBody": "Les portes de l'immeuble et leurs marques (statuts, notes, « repasser ») seront perdues.",
+  "confirmBackToHouseBody": "Les portes de l'immeuble et leurs marques (statuts, « repasser ») seront perdues.",
   "@confirmBackToHouseBody": { "description": "Body of the confirmation when the doors of the building have marks." },
 
   "floorGround": "RdC",
@@ -525,8 +509,8 @@
   "@manageBuilding": { "description": "Button under the building grid, and title of the menu it opens: Modifier les étages, Modifier les portes, Changer en maison." },
   "openBuilding": "Ouvrir l'immeuble",
   "@openBuilding": { "description": "Button of a building's sheet in edit mode that opens its grid, where the building is changed." },
-  "buildingDetails": "Note · Repasser",
-  "@buildingDetails": { "description": "Button under the building grid that opens the building's own note and « repasser »." },
+  "buildingDetails": "Repasser",
+  "@buildingDetails": { "description": "Button under the building grid that opens the building's own « repasser » and its hint." },
   "buildingGone": "Ce numéro n'est plus un immeuble de cette rue.",
   "@buildingGone": { "description": "Building grid or sheet of a number that is no longer a building of the street." },
   "doorGone": "Cette porte n'est plus dans l'immeuble.",
@@ -579,7 +563,7 @@
     "description": "Title of the confirmation before removing a door that has a mark.",
     "placeholders": { "label": { "type": "String", "example": "52" } }
   },
-  "confirmRemoveDoorBody": "Elle a déjà une marque (fait, personne, repasser ou note), qui partira avec elle. « Annuler » la ramène juste après.",
+  "confirmRemoveDoorBody": "Elle a déjà une marque (fait, personne ou repasser), qui partira avec elle. « Annuler » la ramène juste après.",
   "@confirmRemoveDoorBody": { "description": "Body of the confirmation before removing a door that has a mark." },
   "keep": "Garder",
   "@keep": { "description": "Closes a confirmation, keeping what it was about to remove." },

@@ -34,10 +34,6 @@ void main() {
         isTrue,
       );
     });
-
-    test('should have a mark when it has a note', () {
-      expect(Dwelling(label: d('51'), note: note('chien')).hasMarks, isTrue);
-    });
   });
 
   group('Building', () {
@@ -46,10 +42,11 @@ void main() {
     });
 
     test('should have a mark when one door, not the first, has one', () {
-      final marked = building(
-        topFloor: 1,
-        doors: 2,
-      ).withDwelling(escA, 0, Dwelling(label: d('02'), note: note('digicode')));
+      final marked = building(topFloor: 1, doors: 2).withDwelling(
+        escA,
+        0,
+        Dwelling(label: d('02'), status: VisitStatus.done),
+      );
 
       expect(marked.hasMarks, isTrue);
     });
@@ -98,10 +95,6 @@ void main() {
         ).hasMarks,
         isTrue,
       );
-    });
-
-    test('should have a mark when it has a note', () {
-      expect(House(number: n('3'), note: note('chien')).hasMarks, isTrue);
     });
 
     test('should have no mark when it is a building without marks', () {

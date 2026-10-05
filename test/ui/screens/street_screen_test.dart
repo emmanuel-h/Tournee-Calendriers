@@ -24,7 +24,7 @@ import '../support/navigation.dart';
 final _id = StreetId('lilas');
 
 /// The Main mockup in short: 1 to do, 3 done, 3bis nobody home, 5 to come
-/// back, 7 with a note; 2 done, 4 to do, 8 a building with 1 of its 2
+/// back, 7 to do; 2 done, 4 to do, 8 a building with 1 of its 2
 /// doors done.
 final _lilas = valueOf(
   Street.create(
@@ -40,7 +40,7 @@ final _lilas = valueOf(
         status: VisitStatus.comeBack,
         comeBack: comeBack('après 19h'),
       ),
-      House(number: n('7'), note: note('chien')),
+      House(number: n('7')),
       House(number: n('2'), status: VisitStatus.done),
       House(number: n('4')),
       House(

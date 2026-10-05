@@ -39,7 +39,6 @@ void main() {
         replaced: House(
           number: n('5'),
           status: VisitStatus.done,
-          note: note('chien'),
           lastChange: leaAtTwo,
           position: townHallDoor,
         ),

@@ -27,6 +27,9 @@ import 'package:tournee_calendriers/infrastructure/local_storage/mappers/street_
 ///   asked, so an older save never lands after a newer one.
 /// - A file that cannot be read (written by a newer version, or damaged) is
 ///   skipped and left untouched on the disk, rather than stopping the app.
+/// - A file of an older schema is written again in the current one as soon
+///   as it is read, without waiting for a change: what the app no longer
+///   keeps (the notes of version 2, PLAN §8.3) must not stay on the phone.
 final class LocalStreetRepository implements StreetRepository {
   LocalStreetRepository(this.directory);
 
@@ -81,6 +84,11 @@ final class LocalStreetRepository implements StreetRepository {
     final streets = await _streets();
     streets[street.id] = street;
     _written.add(street.id);
+    await _write(street);
+  }
+
+  /// Queues the write of [street]'s file after the writes already asked.
+  Future<void> _write(Street street) {
     // The text is made now, so a later change cannot slip into this write.
     final text = jsonEncode(streetToJson(street));
     final write = _lastWrite.then(
@@ -89,7 +97,7 @@ final class LocalStreetRepository implements StreetRepository {
     // A failed write must not block the ones after it; the caller still
     // gets its error through `write`.
     _lastWrite = write.then<void>((_) {}, onError: (Object _) {});
-    await write;
+    return write;
   }
 
   Future<Map<StreetId, Street>> _streets() => _loaded ??= _load();
@@ -101,8 +109,14 @@ final class LocalStreetRepository implements StreetRepository {
       // `.json.tmp` files, left by a killed write, end in `.tmp`.
       if (entity is! File || !entity.path.endsWith('.json')) continue;
       try {
-        final street = streetFromJson(jsonDecode(await entity.readAsString()));
+        final json = jsonDecode(await entity.readAsString());
+        final street = streetFromJson(json);
         streets[street.id] = street;
+        if (isOlderStoredStreet(json)) {
+          // Not awaited: the screens need not wait for the disk. A write
+          // that fails leaves the old file, written again at the next start.
+          unawaited(_write(street).catchError((Object _) {}));
+        }
       } on FormatException {
         // Unreadable: skipped, and kept on the disk for a later version.
       } on FileSystemException {

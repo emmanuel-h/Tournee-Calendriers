@@ -13,9 +13,8 @@ import 'package:tournee_calendriers/presentation/street/street_view_state.dart';
 /// One button of the staircase control: « Esc. A · 7/12 ».
 typedef StaircaseTab = ({StaircaseName name, int done, int total});
 
-/// One door of the grid: its label (`key.label`), its look, and the dot of
-/// a note.
-typedef DoorTile = ({DwellingKey key, TileMark mark, bool hasNote});
+/// One door of the grid: its label (`key.label`) and its look.
+typedef DoorTile = ({DwellingKey key, TileMark mark});
 
 /// One floor of the grid: its label (« RdC », « 1er »…, « Logements » when
 /// [level] is null) and its doors, left to right.
@@ -79,7 +78,7 @@ final class BuildingGridShown extends BuildingGridState {
   /// left out.
   final List<FloorRow> floors;
 
-  /// Whether a door has a mark (a status, a « repasser » or a note):
+  /// Whether a door has a mark (a status, « repasser » included):
   /// « Changer en maison » asks first, as they would go.
   final bool hasMarks;
 

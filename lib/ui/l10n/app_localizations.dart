@@ -208,12 +208,6 @@ abstract class AppLocalizations {
   /// **'Numéro {number}, immeuble, {done} sur {total} faits'**
   String buildingTileSemantics(String number, int done, int total);
 
-  /// Screen-reader label of a tile whose house has a note (the small dot).
-  ///
-  /// In fr, this message translates to:
-  /// **'{tile}, avec une note'**
-  String tileWithNoteSemantics(String tile);
-
   /// Name of the status « to do », in the undo snackbar.
   ///
   /// In fr, this message translates to:
@@ -309,7 +303,7 @@ abstract class AppLocalizations {
   /// **'Statut'**
   String get houseStatusGroup;
 
-  /// Box of the building's own « Note · Repasser » sheet: the residents asked the team to come back later.
+  /// Box of the building's own « Repasser » sheet: the residents asked the team to come back later.
   ///
   /// In fr, this message translates to:
   /// **'Repasser'**
@@ -338,24 +332,6 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Précision limitée à {max} caractères.'**
   String comeBackHintTooLong(int max);
-
-  /// Label of the note field of the house sheet.
-  ///
-  /// In fr, this message translates to:
-  /// **'Note'**
-  String get noteLabel;
-
-  /// Under every note field (PLAN §5.7, §8).
-  ///
-  /// In fr, this message translates to:
-  /// **'N\'écrivez ni nom ni information personnelle.'**
-  String get notePrivacyHint;
-
-  /// Shown when typing or pasting would make the note longer than allowed; the edit is refused.
-  ///
-  /// In fr, this message translates to:
-  /// **'Note limitée à {max} caractères.'**
-  String noteTooLong(int max);
 
   /// Characters used / allowed, under a text field with a limit.
   ///
@@ -612,7 +588,7 @@ abstract class AppLocalizations {
   /// Body of the confirmation when a new layout drops doors that have marks.
   ///
   /// In fr, this message translates to:
-  /// **'{count, plural, =1{1 porte marquée n\'existe plus dans ce plan : son statut, sa note et son « repasser » seront perdus.} other{{count} portes marquées n\'existent plus dans ce plan : leurs statuts, notes et « repasser » seront perdus.}}'**
+  /// **'{count, plural, =1{1 porte marquée n\'existe plus dans ce plan : son statut et son « repasser » seront perdus.} other{{count} portes marquées n\'existent plus dans ce plan : leurs statuts et « repasser » seront perdus.}}'**
   String setupConfirmBody(int count);
 
   /// Confirms a new layout that drops doors with marks.
@@ -726,7 +702,7 @@ abstract class AppLocalizations {
   /// Body of the confirmation before removing a number that has marks (PLAN §5.5).
   ///
   /// In fr, this message translates to:
-  /// **'Ce numéro a des marques (statut, note, « repasser » ou portes marquées). Elles partent avec lui à la Corbeille.'**
+  /// **'Ce numéro a des marques (statut, « repasser » ou portes marquées). Elles partent avec lui à la Corbeille.'**
   String get confirmRemoveBody;
 
   /// Title of the confirmation of « Supprimer la rue ».
@@ -870,7 +846,7 @@ abstract class AppLocalizations {
   /// Body of the confirmation when the doors of the building have marks.
   ///
   /// In fr, this message translates to:
-  /// **'Les portes de l\'immeuble et leurs marques (statuts, notes, « repasser ») seront perdues.'**
+  /// **'Les portes de l\'immeuble et leurs marques (statuts, « repasser ») seront perdues.'**
   String get confirmBackToHouseBody;
 
   /// The ground floor (rez-de-chaussée), in the grid and the setup.
@@ -969,10 +945,10 @@ abstract class AppLocalizations {
   /// **'Ouvrir l\'immeuble'**
   String get openBuilding;
 
-  /// Button under the building grid that opens the building's own note and « repasser ».
+  /// Button under the building grid that opens the building's own « repasser » and its hint.
   ///
   /// In fr, this message translates to:
-  /// **'Note · Repasser'**
+  /// **'Repasser'**
   String get buildingDetails;
 
   /// Building grid or sheet of a number that is no longer a building of the street.
@@ -1062,7 +1038,7 @@ abstract class AppLocalizations {
   /// Body of the confirmation before removing a door that has a mark.
   ///
   /// In fr, this message translates to:
-  /// **'Elle a déjà une marque (fait, personne, repasser ou note), qui partira avec elle. « Annuler » la ramène juste après.'**
+  /// **'Elle a déjà une marque (fait, personne ou repasser), qui partira avec elle. « Annuler » la ramène juste après.'**
   String get confirmRemoveDoorBody;
 
   /// Closes a confirmation, keeping what it was about to remove.

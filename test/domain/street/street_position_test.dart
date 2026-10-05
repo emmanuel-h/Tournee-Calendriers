@@ -56,14 +56,6 @@ void main() {
     expect(_positionOf(street, '5'), townHallDoor);
   });
 
-  test('should keep the position when a note is set', () {
-    final (street, _) = valueOf(
-      _street.setNote(n('5'), note('chien'), by: lea, at: twoPm),
-    );
-
-    expect(_positionOf(street, '5'), townHallDoor);
-  });
-
   test('should keep the position when a house becomes a building', () {
     final (street, _) = valueOf(
       _street.describeBuilding(n('5'), plan(), by: lea, at: twoPm),

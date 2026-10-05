@@ -3,7 +3,6 @@ import 'package:tournee_calendriers/domain/street/building/building_status.dart'
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
-import 'package:tournee_calendriers/domain/street/note.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
 // The view state of the street screen (PLAN §5.6, mockup Main). The rules
@@ -92,7 +91,6 @@ final class HouseTile {
   const HouseTile({
     required this.number,
     required this.mark,
-    required this.hasNote,
     required this.isBuilding,
   });
 
@@ -100,17 +98,12 @@ final class HouseTile {
   factory HouseTile.of(House house) => HouseTile(
     number: house.number,
     mark: TileMark.of(house),
-    hasNote: house.note != Note.empty,
     isBuilding: house.isBuilding,
   );
 
   /// Which house; its `label` is what the tile shows (`3bis`).
   final HouseNumber number;
   final TileMark mark;
-
-  /// A note was written on the house (or on the building itself): the tile
-  /// shows a small dot.
-  final bool hasNote;
 
   /// A tap opens the building's grid instead of cycling a status.
   final bool isBuilding;
@@ -120,16 +113,14 @@ final class HouseTile {
       other is HouseTile &&
       other.number == number &&
       other.mark == mark &&
-      other.hasNote == hasNote &&
       other.isBuilding == isBuilding;
 
   @override
-  int get hashCode => Object.hash(number, mark, hasNote, isBuilding);
+  int get hashCode => Object.hash(number, mark, isBuilding);
 
   @override
   String toString() =>
-      'HouseTile(${number.label}, $mark, note: $hasNote, '
-      'building: $isBuilding)';
+      'HouseTile(${number.label}, $mark, building: $isBuilding)';
 }
 
 /// Which columns the screen shows. Decided on every house of the street,

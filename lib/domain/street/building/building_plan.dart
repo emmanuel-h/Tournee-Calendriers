@@ -187,7 +187,7 @@ final class BuildingPlan {
       staircases.fold(0, (sum, staircase) => sum + staircase.dwellingCount);
 
   /// The staircases `A`, `B`… with their floors from the top down, each
-  /// door new (to do, no note).
+  /// door new (to do, unmarked).
   List<Staircase> generate() => [
     for (var index = 0; index < staircases.length; index++)
       Staircase(

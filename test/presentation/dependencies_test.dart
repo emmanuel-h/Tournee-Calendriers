@@ -122,7 +122,7 @@ void main() {
         await container.read(setHouseDetailsProvider)(
           lilasId,
           n('7'),
-          NoteMark(note('chat')),
+          const StatusMark(VisitStatus.done),
         ),
       );
 

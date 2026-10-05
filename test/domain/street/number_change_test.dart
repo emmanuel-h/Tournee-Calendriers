@@ -23,7 +23,6 @@ void main() {
     number: n('3'),
     status: VisitStatus.nobodyHome,
     comeBack: comeBack('après 19h'),
-    note: note('chien'),
     lastChange: leaAtTwo,
   );
 
@@ -247,7 +246,6 @@ void main() {
           number: n('3bis'),
           status: VisitStatus.nobodyHome,
           comeBack: comeBack('après 19h'),
-          note: note('chien'),
           lastChange: paulAtThree,
         ),
       );

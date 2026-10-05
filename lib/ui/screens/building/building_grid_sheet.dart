@@ -238,7 +238,7 @@ final class _BuildingGridSheetState extends ConsumerState<BuildingGridSheet>
     Navigator.of(context).pop(BuildingGridExit.backToHouse);
   }
 
-  /// « Note · Repasser »: the building's own note and « repasser ».
+  /// « Repasser »: the building's own « repasser ».
   void _openDetails() {
     hideUndo();
     unawaited(showBuildingDetailsSheet(context, widget.building));
@@ -442,7 +442,7 @@ final class _Floors extends StatelessWidget {
   }
 }
 
-/// One door: its label and glyph, tinted per status, a dot for a note.
+/// One door: its label and glyph, tinted per status.
 final class _DoorButton extends StatelessWidget {
   const _DoorButton({
     required this.door,
@@ -468,7 +468,7 @@ final class _DoorButton extends StatelessWidget {
     );
     return Semantics(
       key: ValueKey('grid.door.${door.key.id}'),
-      label: door.hasNote ? l10n.tileWithNoteSemantics(spoken) : spoken,
+      label: spoken,
       button: true,
       excludeSemantics: true,
       onTap: onTap,
@@ -485,47 +485,29 @@ final class _DoorButton extends StatelessWidget {
           child: InkWell(
             onTap: onTap,
             onLongPress: onHold,
-            child: Stack(
-              fit: StackFit.expand,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  // A long free label (« Fond cour ») shrinks rather than
-                  // being cut.
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Row(
-                      spacing: 6,
-                      children: [
-                        Text(
-                          door.key.label.text,
-                          style: AppTextStyles.doorLabel.copyWith(
-                            color: look.foreground,
-                          ),
-                        ),
-                        StatusGlyph(
-                          look.glyph,
-                          size: AppSizes.doorGlyph,
-                          color: look.foreground,
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                if (door.hasNote)
-                  Positioned(
-                    top: AppSizes.noteDot,
-                    right: AppSizes.noteDot,
-                    child: Container(
-                      width: AppSizes.noteDot,
-                      height: AppSizes.noteDot,
-                      decoration: BoxDecoration(
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              // A long free label (« Fond cour ») shrinks rather than being
+              // cut.
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Row(
+                  spacing: 6,
+                  children: [
+                    Text(
+                      door.key.label.text,
+                      style: AppTextStyles.doorLabel.copyWith(
                         color: look.foreground,
-                        shape: BoxShape.circle,
                       ),
                     ),
-                  ),
-              ],
+                    StatusGlyph(
+                      look.glyph,
+                      size: AppSizes.doorGlyph,
+                      color: look.foreground,
+                    ),
+                  ],
+                ),
+              ),
             ),
           ),
         ),
@@ -534,7 +516,7 @@ final class _DoorButton extends StatelessWidget {
   }
 }
 
-/// « Gérer l'immeuble ▾ » and « Note · Repasser », side by side.
+/// « Gérer l'immeuble ▾ » and « Repasser », side by side.
 final class _Actions extends StatelessWidget {
   const _Actions({required this.onManage, required this.onDetails});
 

@@ -19,16 +19,16 @@ import 'package:tournee_calendriers/ui/theme/status_look.dart';
 /// The sheet of marks of a house, a door or a building itself (PLAN §5.7,
 /// `docs/mockups/House.dc.html`): a title, the status control « À faire |
 /// Fait | Personne | Repasser » and the « Quand repasser ? » field under it
-/// (a building itself has the « Repasser » box instead), the note, an
-/// optional [action], and the last change. Every control is stored as soon
+/// (a building itself has the « Repasser » box instead), an optional
+/// [action], and the last change. Every control is stored as soon
 /// as it changes; the tile behind follows at once.
 ///
 /// Choosing a status moves nothing on the sheet: the « Quand repasser ? »
 /// field is always there, greyed unless « Repasser » is chosen, and the
 /// line of the last change keeps its place before the first change.
 ///
-/// The two text fields are stored when they could otherwise be lost: when
-/// the field loses focus (« OK » on the keyboard, another field), before
+/// The hint field is stored when it could otherwise be lost: when
+/// the field loses focus (« OK » on the keyboard), before
 /// another control of the sheet is used, when the sheet closes (however it
 /// is closed), and when the app goes to the background (Android may then
 /// end it without warning). Not at each key: that would stamp the house and
@@ -46,7 +46,7 @@ final class MarksSheet extends ConsumerStatefulWidget {
   /// The notifier of what the sheet shows (`houseSheetProvider(key)`…).
   final NotifierProvider<MarksSheetNotifier, HouseSheetState> provider;
 
-  /// Names the parts for tests: `<name>.status.done`, `<name>.note.field`…
+  /// Names the parts for tests: `<name>.status.done`, `<name>.comeBackHint.field`…
   final String name;
 
   /// Shown when what the sheet shows is no longer on the phone.
@@ -55,7 +55,7 @@ final class MarksSheet extends ConsumerStatefulWidget {
   /// The title of the sheet (« 5 Rue des Lilas »).
   final Widget Function(HouseSheetShown state) title;
 
-  /// A button under the note (« Transformer en immeuble… »).
+  /// A button under the « repasser » (« Transformer en immeuble… »).
   final Widget? action;
 
   @override
@@ -64,11 +64,9 @@ final class MarksSheet extends ConsumerStatefulWidget {
 
 final class _MarksSheetState extends ConsumerState<MarksSheet> {
   final _hint = TextEditingController();
-  final _note = TextEditingController();
   final _hintFocus = FocusNode();
-  final _noteFocus = FocusNode();
 
-  /// Kept to store the fields in [dispose], where `ref` is no longer
+  /// Kept to store the hint in [dispose], where `ref` is no longer
   /// usable. The notifier still lives then: the sheet's subscription to it
   /// ends just after.
   late final MarksSheetNotifier _notifier;
@@ -76,7 +74,7 @@ final class _MarksSheetState extends ConsumerState<MarksSheet> {
   /// Tells when the app goes to the background.
   late final AppLifecycleListener _lifecycle;
 
-  /// The fields got the stored texts once; after that they hold what is
+  /// The hint field got the stored text once; after that it holds what is
   /// typed, whatever the street says.
   var _filled = false;
 
@@ -92,10 +90,7 @@ final class _MarksSheetState extends ConsumerState<MarksSheet> {
     _hintFocus.addListener(() {
       if (!_hintFocus.hasFocus) _saveHint();
     });
-    _noteFocus.addListener(() {
-      if (!_noteFocus.hasFocus) _saveNote();
-    });
-    _lifecycle = AppLifecycleListener(onHide: _saveTexts);
+    _lifecycle = AppLifecycleListener(onHide: _saveHint);
   }
 
   void _follow(HouseSheetState? previous, HouseSheetState next) {
@@ -103,7 +98,6 @@ final class _MarksSheetState extends ConsumerState<MarksSheet> {
     if (!_filled) {
       _filled = true;
       _hint.text = next.comeBackHint;
-      _note.text = next.note;
     } else if (previous is HouseSheetShown &&
         previous.comeBack &&
         !next.comeBack) {
@@ -115,33 +109,24 @@ final class _MarksSheetState extends ConsumerState<MarksSheet> {
 
   @override
   void dispose() {
-    _saveTexts();
+    _saveHint();
     _lifecycle.dispose();
     _hint.dispose();
-    _note.dispose();
     _hintFocus.dispose();
-    _noteFocus.dispose();
     super.dispose();
   }
 
   void _saveHint() => unawaited(_notifier.saveComeBackHint(_hint.text));
 
-  void _saveNote() => unawaited(_notifier.saveNote(_note.text));
-
-  void _saveTexts() {
-    _saveHint();
-    _saveNote();
-  }
-
-  /// Another control is used: the texts are stored first, so the change
-  /// that follows starts from them (the notifier runs changes in order).
+  /// Another control is used: the hint is stored first, so the change that
+  /// follows starts from it (the notifier runs changes in order).
   void _setStatus(VisitStatus status) {
-    _saveTexts();
+    _saveHint();
     unawaited(_notifier.setStatus(status));
   }
 
   void _setComeBack(bool on) {
-    _saveTexts();
+    _saveHint();
     unawaited(_notifier.setComeBack(on: on));
   }
 
@@ -193,16 +178,6 @@ final class _MarksSheetState extends ConsumerState<MarksSheet> {
               ),
             ],
           },
-          LimitedTextField(
-            name: '$name.note',
-            controller: _note,
-            focusNode: _noteFocus,
-            limit: TextLimit.note,
-            tooLongMessage: l10n.noteTooLong(TextLimit.note.max),
-            label: l10n.noteLabel,
-            maxLines: 4,
-            helper: l10n.notePrivacyHint,
-          ),
           ?widget.action,
           // An empty line until the first change, so that change does not
           // move the sheet either.

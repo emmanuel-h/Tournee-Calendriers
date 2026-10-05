@@ -41,7 +41,7 @@ final class StreetTiles extends StatelessWidget {
   /// A building tile was tapped: its grid opens.
   final ValueChanged<HouseNumber> onOpenBuilding;
 
-  /// A building tile was held: its own note and « repasser » open.
+  /// A building tile was held: its own « repasser » opens.
   final ValueChanged<HouseNumber> onHoldBuilding;
 
   @override
@@ -100,7 +100,6 @@ final class StreetTiles extends StatelessWidget {
       key: ValueKey('street.tile.${number.label}'),
       number: number.label,
       status: tileStatusOf(tile.mark),
-      hasNote: tile.hasNote,
       // A building is not cycled: its doors are, in its grid.
       onTap: tile.isBuilding
           ? () => onOpenBuilding(number)

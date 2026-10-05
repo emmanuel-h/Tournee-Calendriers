@@ -1,7 +1,6 @@
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
-import 'package:tournee_calendriers/domain/street/note.dart';
 import 'package:tournee_calendriers/domain/street/progress.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
@@ -9,13 +8,12 @@ import '../../../support/street_fixtures.dart';
 
 void main() {
   group('Dwelling', () {
-    test('should be to do, without come-back, note or change when new', () {
+    test('should be to do, without come-back or change when new', () {
       final dwelling = Dwelling(label: d('51'));
 
       expect(dwelling.label, d('51'));
       expect(dwelling.status, VisitStatus.toDo);
       expect(dwelling.comeBack, isNull);
-      expect(dwelling.note, Note.empty);
       expect(dwelling.lastChange, isNull);
     });
 
@@ -24,14 +22,12 @@ void main() {
         label: d('Gauche'),
         status: VisitStatus.comeBack,
         comeBack: comeBack('après 19h'),
-        note: note('digicode 1234'),
         lastChange: leaAtTwo,
       );
 
       expect(dwelling.label, d('Gauche'));
       expect(dwelling.status, VisitStatus.comeBack);
       expect(dwelling.comeBack, comeBack('après 19h'));
-      expect(dwelling.note, note('digicode 1234'));
       expect(dwelling.lastChange, leaAtTwo);
     });
 
@@ -73,7 +69,6 @@ void main() {
         label: d('51'),
         status: VisitStatus.comeBack,
         comeBack: comeBack('après 19h'),
-        note: note('chien'),
         lastChange: leaAtTwo,
       );
 
@@ -87,33 +82,23 @@ void main() {
           label: d('52'),
           status: VisitStatus.comeBack,
           comeBack: comeBack('après 19h'),
-          note: note('chien'),
           lastChange: leaAtTwo,
         ),
         'status': Dwelling(
           label: d('51'),
           status: VisitStatus.nobodyHome,
-          note: note('chien'),
           lastChange: leaAtTwo,
         ),
         'come-back': Dwelling(
           label: d('51'),
           status: VisitStatus.comeBack,
           comeBack: comeBack('après 20h'),
-          note: note('chien'),
-          lastChange: leaAtTwo,
-        ),
-        'note': Dwelling(
-          label: d('51'),
-          status: VisitStatus.comeBack,
-          comeBack: comeBack('après 19h'),
           lastChange: leaAtTwo,
         ),
         'last change': Dwelling(
           label: d('51'),
           status: VisitStatus.comeBack,
           comeBack: comeBack('après 19h'),
-          note: note('chien'),
           lastChange: paulAtThree,
         ),
       };
@@ -128,13 +113,12 @@ void main() {
       final dwelling = Dwelling(
         label: d('51'),
         status: VisitStatus.done,
-        note: note('chien'),
         lastChange: leaAtTwo,
       );
 
       expect(
         dwelling.toString(),
-        'Dwelling(51, VisitStatus.done, null, Note(chien), '
+        'Dwelling(51, VisitStatus.done, null, '
         'ChangeStamp(lea, 2026-11-02 14:02:00.000Z))',
       );
     });

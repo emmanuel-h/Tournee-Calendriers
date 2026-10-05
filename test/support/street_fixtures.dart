@@ -8,15 +8,11 @@ import 'package:tournee_calendriers/domain/street/building/dwelling_label.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
-import 'package:tournee_calendriers/domain/street/note.dart';
 
 import 'results.dart';
 
 /// A house number the test knows is valid: `n('12bis')`.
 HouseNumber n(String text) => valueOf(HouseNumber.parse(text));
-
-/// A note the test knows is valid.
-Note note(String text) => valueOf(Note.create(text));
 
 /// A « repasser » with a hint the test knows is valid.
 ComeBack comeBack(String hint) => valueOf(ComeBack.create(hint));

@@ -25,7 +25,7 @@ import '../../support/street_fixtures.dart';
 final _id = StreetId('lilas');
 
 /// 8: staircase A RdC–1er with two doors a floor, B the RdC alone with
-/// two doors. A 11 done, A 12 nobody home, A 01 to come back with a note,
+/// two doors. A 11 done, A 12 nobody home, A 01 to come back,
 /// B 01 done: 2 doors done of 6. 9: a single house; 10: unknown floors.
 final _eight = valueOf(
   Building.create(
@@ -48,7 +48,6 @@ final _eight = valueOf(
                 label: d('01'),
                 status: VisitStatus.comeBack,
                 comeBack: comeBack('soir'),
-                note: note('chien'),
               ),
               Dwelling(label: d('02')),
             ],
@@ -177,12 +176,12 @@ void main() {
       expect(state.selected, escA);
       expect(state.floors.map((floor) => floor.level), [1, 0]);
       expect(state.floors[0].doors, [
-        (key: _key('A', 1, '11'), mark: const DoneMark(), hasNote: false),
-        (key: _key('A', 1, '12'), mark: const NobodyHomeMark(), hasNote: false),
+        (key: _key('A', 1, '11'), mark: const DoneMark()),
+        (key: _key('A', 1, '12'), mark: const NobodyHomeMark()),
       ]);
       expect(state.floors[1].doors, [
-        (key: _key('A', 0, '01'), mark: const ComeBackMark(), hasNote: true),
-        (key: _key('A', 0, '02'), mark: const ToDoMark(), hasNote: false),
+        (key: _key('A', 0, '01'), mark: const ComeBackMark()),
+        (key: _key('A', 0, '02'), mark: const ToDoMark()),
       ]);
     });
 

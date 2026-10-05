@@ -6,7 +6,6 @@ import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
-import 'package:tournee_calendriers/domain/street/note.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
@@ -17,7 +16,7 @@ import '../../support/street_fixtures.dart';
 void main() {
   final lilas = StreetId('rue-des-lilas');
   final gambetta = StreetId('rue-gambetta');
-  final eight = House(number: n('8'), note: note('digicode'));
+  final eight = House(number: n('8'), status: VisitStatus.nobodyHome);
   final eightBuilding = House(number: n('8'), building: building());
 
   group('BuildingLaidOut', () {
@@ -225,17 +224,17 @@ void main() {
       });
 
       test('should differ from another change of the same door', () {
-        final noteSet = DwellingNoteSet(
+        final comeBackSet = DwellingComeBackSet(
           streetId: lilas,
           number: n('8'),
           staircase: escA,
           level: 5,
           before: door,
           stamp: leaAtTwo,
-          note: Note.empty,
+          comeBack: null,
         );
 
-        expect(marked(), isNot(noteSet));
+        expect(marked(), isNot(comeBackSet));
       });
 
       test('should show its fields when printed', () {
@@ -286,47 +285,6 @@ void main() {
         expect(
           set(comeBack: null).toString(),
           'DwellingComeBackSet(rue-des-lilas, 8, A-51, null, '
-          'ChangeStamp(lea, 2026-11-02 14:02:00.000Z))',
-        );
-      });
-    });
-
-    group('DwellingNoteSet', () {
-      DwellingNoteSet set({Dwelling? before, Note? newNote}) => DwellingNoteSet(
-        streetId: lilas,
-        number: n('8'),
-        staircase: escA,
-        level: 0,
-        before: before ?? door,
-        stamp: leaAtTwo,
-        note: newNote ?? note('chien'),
-      );
-
-      test('should carry the new note and the door before', () {
-        final change = set();
-
-        expect(change.key, DwellingKey(escA, 0, d('51')));
-        expect(change.before, door);
-        expect(change.note, note('chien'));
-      });
-
-      test('should be equal when every field is equal', () {
-        expect(set(), set());
-        expect(set().hashCode, set().hashCode);
-      });
-
-      test('should differ when the notes differ', () {
-        expect(set(), isNot(set(newNote: Note.empty)));
-      });
-
-      test('should differ when the doors before differ', () {
-        expect(set(), isNot(set(before: otherDoor)));
-      });
-
-      test('should show its fields when printed', () {
-        expect(
-          set().toString(),
-          'DwellingNoteSet(rue-des-lilas, 8, A0-51, Note(chien), '
           'ChangeStamp(lea, 2026-11-02 14:02:00.000Z))',
         );
       });

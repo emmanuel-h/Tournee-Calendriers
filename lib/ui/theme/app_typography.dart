@@ -109,7 +109,7 @@ abstract final class AppTextStyles {
     fontSize: 15,
   );
 
-  /// Small secondary text (a commune name, « 403 n° », notes).
+  /// Small secondary text (a commune name, « 403 n° »).
   static const small = TextStyle(
     fontFamily: AppFonts.text,
     fontWeight: FontWeight.w400,

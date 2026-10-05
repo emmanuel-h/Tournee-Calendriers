@@ -71,11 +71,6 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String tileWithNoteSemantics(String tile) {
-    return '$tile, avec une note';
-  }
-
-  @override
   String get statusToDo => 'À faire';
 
   @override
@@ -145,17 +140,6 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String comeBackHintTooLong(int max) {
     return 'Précision limitée à $max caractères.';
-  }
-
-  @override
-  String get noteLabel => 'Note';
-
-  @override
-  String get notePrivacyHint => 'N\'écrivez ni nom ni information personnelle.';
-
-  @override
-  String noteTooLong(int max) {
-    return 'Note limitée à $max caractères.';
   }
 
   @override
@@ -339,8 +323,8 @@ class AppLocalizationsFr extends AppLocalizations {
       count,
       locale: localeName,
       other:
-          '$count portes marquées n\'existent plus dans ce plan : leurs statuts, notes et « repasser » seront perdus.',
-      one: '1 porte marquée n\'existe plus dans ce plan : son statut, sa note et son « repasser » seront perdus.',
+          '$count portes marquées n\'existent plus dans ce plan : leurs statuts et « repasser » seront perdus.',
+      one: '1 porte marquée n\'existe plus dans ce plan : son statut et son « repasser » seront perdus.',
     );
     return '$_temp0';
   }
@@ -420,7 +404,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get confirmRemoveBody =>
-      'Ce numéro a des marques (statut, note, « repasser » ou portes marquées). Elles partent avec lui à la Corbeille.';
+      'Ce numéro a des marques (statut, « repasser » ou portes marquées). Elles partent avec lui à la Corbeille.';
 
   @override
   String get confirmDeleteStreetTitle => 'Supprimer la rue ?';
@@ -529,7 +513,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get confirmBackToHouseBody =>
-      'Les portes de l\'immeuble et leurs marques (statuts, notes, « repasser ») seront perdues.';
+      'Les portes de l\'immeuble et leurs marques (statuts, « repasser ») seront perdues.';
 
   @override
   String get floorGround => 'RdC';
@@ -595,7 +579,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get openBuilding => 'Ouvrir l\'immeuble';
 
   @override
-  String get buildingDetails => 'Note · Repasser';
+  String get buildingDetails => 'Repasser';
 
   @override
   String get buildingGone => 'Ce numéro n\'est plus un immeuble de cette rue.';
@@ -656,7 +640,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get confirmRemoveDoorBody =>
-      'Elle a déjà une marque (fait, personne, repasser ou note), qui partira avec elle. « Annuler » la ramène juste après.';
+      'Elle a déjà une marque (fait, personne ou repasser), qui partira avec elle. « Annuler » la ramène juste après.';
 
   @override
   String get keep => 'Garder';

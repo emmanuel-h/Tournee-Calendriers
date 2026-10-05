@@ -150,26 +150,20 @@ void main() {
   });
 
   group('HouseTile', () {
-    test('should give the number, mark, note and kind of a house', () {
+    test('should give the number, mark and kind of a house', () {
       final tile = HouseTile.of(
-        House(
-          number: n('3bis'),
-          status: VisitStatus.nobodyHome,
-          note: note('chien'),
-        ),
+        House(number: n('3bis'), status: VisitStatus.nobodyHome),
       );
 
       expect(tile.number, n('3bis'));
       expect(tile.mark, const NobodyHomeMark());
-      expect(tile.hasNote, isTrue);
       expect(tile.isBuilding, isFalse);
     });
 
-    test('should say a building is one and has no note when none written', () {
+    test('should say a building is one', () {
       final tile = HouseTile.of(_building(VisitStatus.done, VisitStatus.toDo));
 
       expect(tile.number, n('8'));
-      expect(tile.hasNote, isFalse);
       expect(tile.isBuilding, isTrue);
     });
 
@@ -177,20 +171,13 @@ void main() {
       HouseTile tile({
         String number = '1',
         TileMark mark = const ToDoMark(),
-        bool hasNote = false,
         bool isBuilding = false,
-      }) => HouseTile(
-        number: n(number),
-        mark: mark,
-        hasNote: hasNote,
-        isBuilding: isBuilding,
-      );
+      }) => HouseTile(number: n(number), mark: mark, isBuilding: isBuilding);
 
       expect(tile(), tile());
       expect(tile().hashCode, tile().hashCode);
       expect(tile(), isNot(tile(number: '3')));
       expect(tile(), isNot(tile(mark: const DoneMark())));
-      expect(tile(), isNot(tile(hasNote: true)));
       expect(tile(), isNot(tile(isBuilding: true)));
     });
 
@@ -198,14 +185,12 @@ void main() {
       final tile = HouseTile(
         number: n('3bis'),
         mark: const NobodyHomeMark(),
-        hasNote: true,
         isBuilding: false,
       );
 
       expect(
         tile.toString(),
-        "HouseTile(3bis, Instance of 'NobodyHomeMark', note: true, "
-        'building: false)',
+        "HouseTile(3bis, Instance of 'NobodyHomeMark', building: false)",
       );
     });
   });

@@ -21,11 +21,12 @@ Street screen (« Rue »):
 - Odd numbers on the left, even on the right, scrolling together (one column when the street
   has one side only); counts « done/total · ✗ · ↻ » and a progress bar.
 - A tap cycles a house ○ → ✓ → ✗ → ↻ → ○ (à faire, fait, personne, repasser) with a light vibration and a screen-reader announcement;
-  « Annuler » for 4 s undoes the last tap. A note shows as a small dot on the tile.
+  « Annuler » for 4 s undoes the last tap.
 - « Masquer faits » hides the done houses, remembered per street on the phone.
 - Hold a house for its sheet (« Fiche maison »): status « À faire | Fait | Personne | Repasser »,
-  « Quand repasser ? » (greyed unless « Repasser »), a note (200 characters at most, with the privacy hint),
-  and when it was last changed. Each control is stored at once; the tile follows.
+  « Quand repasser ? » (greyed unless « Repasser », 20 characters at most) and when it was
+  last changed. No free note: too likely to hold personal data, so the app keeps none (notes
+  stored by an earlier version are erased). Each control is stored at once; the tile follows.
 - « Transformer en immeuble… » in the sheet describes a building (« Décrire l'immeuble »):
   staircases, floors (RdC–5e, or « Inconnus »), doors per floor — the same for every staircase,
   or each its own (« Même chose pour chaque escalier » unticked) —, door labels « 51, 52… |
@@ -36,7 +37,7 @@ Street screen (« Rue »):
   sheet. « Gérer l'immeuble » holds every change to the building: « Modifier les étages » lays
   it out again, keeping the marks of the doors that stay (and asks before losing marked ones),
   « Modifier les portes », and « Changer en maison » (asks first when doors have marks;
-  « Annuler » brings them back). « Note · Repasser » sets the building's own.
+  « Annuler » brings them back). « Repasser » sets the building's own.
 - Edit mode (✏, « Modifier la rue »): rename the street, ✕ removes a number at once with
   « Annuler » (asks first when it has marks; it goes to the Corbeille with them), « + numéros »
   adds a number, a list or a range (`12bis, 21-25`) with a live preview, each on its side

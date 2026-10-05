@@ -4,7 +4,6 @@ import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
-import 'package:tournee_calendriers/domain/street/note.dart';
 import 'package:tournee_calendriers/domain/street/removed_house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
@@ -18,14 +17,12 @@ import '../../support/street_fixtures.dart';
 
 final _lilas = StreetId('rue-des-lilas');
 
-/// Number 5: « repasser » with a hint, a note, Paul's last change and a
-/// position. Number 7: to do. Number 8: a building RdC 01 02, door 01 done
-/// with a note.
+/// Number 5: « repasser » with a hint, Paul's last change and a position.
+/// Number 7: to do. Number 8: a building RdC 01 02, door 01 done.
 final _five = House(
   number: n('5'),
   status: VisitStatus.comeBack,
   comeBack: comeBack('après 19h'),
-  note: note('chien'),
   lastChange: paulAtThree,
   position: townHallDoor,
 );
@@ -33,12 +30,10 @@ final _seven = House(number: n('7'));
 final _doorOne = Dwelling(
   label: d('01'),
   status: VisitStatus.done,
-  note: note('digicode'),
   lastChange: paulAtThree,
 );
 final _eight = House(
   number: n('8'),
-  note: note('gardien'),
   building: building(topFloor: 0, doors: 2).withDwelling(escA, 0, _doorOne),
 );
 final _street = valueOf(
@@ -81,7 +76,6 @@ void main() {
           replaced: House(
             number: n('5'),
             status: VisitStatus.done,
-            note: note('chien'),
             lastChange: leaAtTwo,
             position: townHallDoor,
           ),
@@ -94,15 +88,6 @@ void main() {
       final (street, _) = _undone(
         _street,
         (s) => s.setComeBack(n('5'), comeBack('samedi'), by: lea, at: twoPm),
-      );
-
-      expect(_house(street, '5'), _five);
-    });
-
-    test('should put the note back when its change is undone', () {
-      final (street, _) = _undone(
-        _street,
-        (s) => s.setNote(n('5'), Note.empty, by: lea, at: twoPm),
       );
 
       expect(_house(street, '5'), _five);
@@ -127,11 +112,11 @@ void main() {
       final (marked, change) = valueOf(
         _street.markHouse(n('5'), VisitStatus.done, by: lea, at: twoPm),
       );
-      final (noted, _) = valueOf(
-        marked.setNote(n('5'), note('boîte'), by: paul, at: threePm),
+      final (markedAgain, _) = valueOf(
+        marked.markHouse(n('5'), VisitStatus.nobodyHome, by: paul, at: threePm),
       );
 
-      final (street, _) = valueOf(noted.undo(change));
+      final (street, _) = valueOf(markedAgain.undo(change));
 
       expect(_house(street, '5'), _five);
     });
@@ -221,7 +206,6 @@ void main() {
           replaced: Dwelling(
             label: d('01'),
             status: VisitStatus.nobodyHome,
-            note: note('digicode'),
             lastChange: leaAtTwo,
           ),
           dwelling: _doorOne,
@@ -289,21 +273,6 @@ void main() {
         street.houses[2].building!.dwellingAt(_rdc('02'))!.comeBack,
         comeBack('samedi'),
       );
-    });
-
-    test('should put the door back when its note is undone', () {
-      final (street, _) = _undone(
-        _street,
-        (s) => s.setDwellingNote(
-          n('8'),
-          _rdc('01'),
-          Note.empty,
-          by: lea,
-          at: twoPm,
-        ),
-      );
-
-      expect(_house(street, '8'), _eight);
     });
 
     test('should refuse when the door was removed since', () {

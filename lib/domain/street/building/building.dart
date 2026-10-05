@@ -98,7 +98,7 @@ final class Building {
   /// For a building described again (« Modifier les étages »), pass the
   /// building as it was in [keeping]: each new door whose label already
   /// existed *on the same floor of the same staircase* takes that dwelling
-  /// as it was (status, « repasser », note, last change). The other old
+  /// as it was (status, « repasser », last change). The other old
   /// doors are dropped.
   factory Building.laidOut(BuildingPlan plan, {Building? keeping}) {
     final staircases = plan.generate();
@@ -290,7 +290,6 @@ final class Building {
       label: label,
       status: before.status,
       comeBack: before.comeBack,
-      note: before.note,
       lastChange: before.lastChange,
     );
     return Ok(

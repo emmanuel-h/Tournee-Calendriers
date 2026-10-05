@@ -22,10 +22,10 @@ import '../../support/street_fixtures.dart';
 
 final _id = StreetId('lilas');
 
-/// 7: a single house with a note; 8: two staircases RdC–3e, three doors a
+/// 7: a single house nobody answered; 8: two staircases RdC–3e, three doors a
 /// floor, labelled 5A, its 3e door 3C of staircase B done; 10: a building
 /// whose floors are unknown.
-final _seven = House(number: n('7'), note: note('volets bleus'));
+final _seven = House(number: n('7'), status: VisitStatus.nobodyHome);
 final _eight = House(
   number: n('8'),
   building: building(
@@ -324,7 +324,7 @@ void main() {
       await after('7', (setup) => setup.addDoor());
 
       final (changed, change) = valueOf(
-        _street().setNote(n('7'), note('chien'), by: paul, at: threePm),
+        _street().markHouse(n('7'), VisitStatus.done, by: paul, at: threePm),
       );
       await streets.save(changed, change);
 

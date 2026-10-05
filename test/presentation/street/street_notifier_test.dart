@@ -20,7 +20,7 @@ import '../../support/street_fixtures.dart';
 final _id = StreetId('lilas');
 
 /// The Main mockup in short: 1 to do, 3 done, 3bis nobody home, 5 to come
-/// back, 7 to do with a note; 2 done, 8 a building with 1 of its 2 doors
+/// back, 7 to do; 2 done, 8 a building with 1 of its 2 doors
 /// done and its own « repasser ».
 final _houses = [
   House(number: n('1')),
@@ -31,7 +31,7 @@ final _houses = [
     status: VisitStatus.comeBack,
     comeBack: comeBack('après 19h'),
   ),
-  House(number: n('7'), note: note('chien')),
+  House(number: n('7')),
   House(number: n('2'), status: VisitStatus.done),
   House(
     number: n('8'),
@@ -52,17 +52,8 @@ Street _street({List<House>? houses, String name = 'Rue des Lilas'}) => valueOf(
   ),
 );
 
-HouseTile _tile(
-  String number,
-  TileMark mark, {
-  bool hasNote = false,
-  bool isBuilding = false,
-}) => HouseTile(
-  number: n(number),
-  mark: mark,
-  hasNote: hasNote,
-  isBuilding: isBuilding,
-);
+HouseTile _tile(String number, TileMark mark, {bool isBuilding = false}) =>
+    HouseTile(number: n(number), mark: mark, isBuilding: isBuilding);
 
 void main() {
   late FakeStreetRepository streets;
@@ -124,7 +115,7 @@ void main() {
         _tile('3', const DoneMark()),
         _tile('3bis', const NobodyHomeMark()),
         _tile('5', const ComeBackMark()),
-        _tile('7', const ToDoMark(), hasNote: true),
+        _tile('7', const ToDoMark()),
       ]);
       expect(state.even, [
         _tile('2', const DoneMark()),
@@ -386,7 +377,7 @@ void main() {
 
       final state = await shown();
       expect(state.odd.first, _tile('1', const DoneMark()));
-      expect(state.odd.last, _tile('7', const ToDoMark(), hasNote: true));
+      expect(state.odd.last, _tile('7', const ToDoMark()));
     });
 
     test('should undo a tap once only', () async {

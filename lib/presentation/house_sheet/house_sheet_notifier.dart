@@ -6,7 +6,6 @@ import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
-import 'package:tournee_calendriers/domain/street/note.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
@@ -34,7 +33,7 @@ final houseSheetProvider = NotifierProvider.autoDispose
       HouseSheetNotifier.new,
     );
 
-/// The state of the « Note · Repasser » sheet of a building itself.
+/// The state of the « Repasser » sheet of a building itself.
 final buildingDetailsProvider = NotifierProvider.autoDispose
     .family<BuildingDetailsNotifier, HouseSheetState, HouseSheetKey>(
       BuildingDetailsNotifier.new,
@@ -51,17 +50,15 @@ typedef _Marks = ({
   SheetSubject subject,
   VisitStatus? status,
   ComeBack? comeBack,
-  Note note,
   ChangeStamp? lastChange,
 });
 
 /// Follows one house, building or door of a street on the phone
 /// (`ObserveStreet`, offline) and stores each control of its sheet: the
-/// status (« Repasser » among them), the hint of the « repasser », the
-/// note; on a building itself, its own « Repasser » box instead of a
-/// status. The three sheets differ
-/// only in what they read ([_marksIn]) and the use case that stores
-/// ([_storer]); the rules below are written once.
+/// status (« Repasser » among them) and the hint of the « repasser »; on a
+/// building itself, its own « Repasser » box instead of a status. The three
+/// sheets differ only in what they read ([_marksIn]) and the use case that
+/// stores ([_storer]); the rules below are written once.
 ///
 /// - **Nothing changed, nothing stored.** The sheet saves its text fields
 ///   whenever they could be lost (closed, sent to the background…); a text
@@ -69,7 +66,7 @@ typedef _Marks = ({
 ///   so opening and closing a sheet stamps nothing.
 /// - **One change at a time.** Each change waits for the previous one to be
 ///   stored, then decides on the marks as they then are. Started together
-///   (the note leaves its field as « Fait » is tapped), two changes would
+///   (the hint leaves its field as « Fait » is tapped), two changes would
 ///   both start from the same street, and the second would erase the first.
 ///
 /// `abstract base`: a class to extend, not to use alone; `base` keeps its
@@ -138,15 +135,6 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState> {
     },
   );
 
-  /// The note field, stored once trimmed; a blank text erases the note.
-  /// Nothing happens when it is too long.
-  Future<void> saveNote(String text) => _change(
-    (marks) => switch (Note.create(text)) {
-      Ok(:final value) => value == marks.note ? null : NoteMark(value),
-      Err() => null,
-    },
-  );
-
   /// Queues the change [markFor] makes on the marks as they are when its
   /// turn comes (null: nothing to change). A refused change leaves them as
   /// they are; the sheet shows it.
@@ -183,7 +171,6 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState> {
       status: marks.status,
       comeBack: marks.comeBack != null,
       comeBackHint: marks.comeBack?.hint ?? '',
-      note: marks.note.text,
       // The clock tells « today » from « earlier »; reading it here, and
       // not `DateTime.now()`, lets the tests fix the day.
       lastChange: stamp == null
@@ -220,7 +207,6 @@ final class HouseSheetNotifier extends MarksSheetNotifier {
       subject: const HouseSubject(),
       status: house.status,
       comeBack: house.comeBack,
-      note: house.note,
       lastChange: house.lastChange,
     ),
     _ => null,
@@ -233,9 +219,9 @@ final class HouseSheetNotifier extends MarksSheetNotifier {
   }
 }
 
-/// The building's own « repasser » and note (« Note · Repasser » under the
-/// grid), stored through `SetHouseDetails`, which sets a building's own.
-/// No status: its doors carry them.
+/// The building's own « repasser » (« Repasser » under the grid), stored
+/// through `SetHouseDetails`, which sets a building's own. No status: its
+/// doors carry them.
 final class BuildingDetailsNotifier extends MarksSheetNotifier {
   BuildingDetailsNotifier(this.key);
 
@@ -253,7 +239,6 @@ final class BuildingDetailsNotifier extends MarksSheetNotifier {
       subject: const BuildingSubject(),
       status: null,
       comeBack: house.comeBack,
-      note: house.note,
       lastChange: house.lastChange,
     ),
     _ => null,
@@ -290,7 +275,6 @@ final class DoorSheetNotifier extends MarksSheetNotifier {
       ),
       status: door.status,
       comeBack: door.comeBack,
-      note: door.note,
       lastChange: door.lastChange,
     );
   }

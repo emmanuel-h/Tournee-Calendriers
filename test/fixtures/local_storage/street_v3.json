@@ -1,5 +1,5 @@
 {
-  "version": 2,
+  "version": 3,
   "id": "x7Kq2LmP9sTb4VnW1cZd",
   "name": "Rue Nationale",
   "commune": {"inseeCode": "69264", "name": "Villefranche-sur-Saône"},
@@ -10,7 +10,6 @@
       "number": "4",
       "status": "toDo",
       "comeBack": "samedi",
-      "note": "sonnette en panne",
       "lastChange": {"by": "paul", "at": "2026-11-02T15:00:00.000Z"},
       "position": null,
       "building": {
@@ -22,8 +21,8 @@
               {
                 "level": 0,
                 "dwellings": [
-                  {"label": "01", "status": "toDo", "comeBack": null, "note": "", "lastChange": null},
-                  {"label": "02", "status": "comeBack", "comeBack": "", "note": "", "lastChange": null}
+                  {"label": "01", "status": "toDo", "comeBack": null, "lastChange": null},
+                  {"label": "02", "status": "comeBack", "comeBack": "", "lastChange": null}
                 ]
               },
               {
@@ -33,14 +32,12 @@
                     "label": "11",
                     "status": "nobodyHome",
                     "comeBack": null,
-                    "note": "",
                     "lastChange": {"by": "lea", "at": "2026-11-02T14:02:00.000Z"}
                   },
                   {
                     "label": "12",
                     "status": "comeBack",
                     "comeBack": "le soir",
-                    "note": "interphone",
                     "lastChange": {"by": "lea", "at": "2026-11-02T14:02:00.000Z"}
                   }
                 ]
@@ -54,7 +51,6 @@
       "number": "2",
       "status": "done",
       "comeBack": null,
-      "note": "",
       "lastChange": {"by": "lea", "at": "2026-11-02T14:02:00.000Z"},
       "position": {"latitude": 45.9921, "longitude": 4.71705},
       "building": null
@@ -63,7 +59,6 @@
       "number": "5",
       "status": "comeBack",
       "comeBack": "après 19h",
-      "note": "chien",
       "lastChange": {"by": "lea", "at": "2026-11-02T14:02:00.000Z"},
       "position": null,
       "building": null
@@ -72,7 +67,6 @@
       "number": "7",
       "status": "comeBack",
       "comeBack": "",
-      "note": "",
       "lastChange": {"by": "paul", "at": "2026-11-02T15:00:00.000Z"},
       "position": null,
       "building": null
@@ -81,7 +75,6 @@
       "number": "9",
       "status": "nobodyHome",
       "comeBack": null,
-      "note": "",
       "lastChange": {"by": "paul", "at": "2026-11-02T15:00:00.000Z"},
       "position": null,
       "building": null
@@ -93,7 +86,6 @@
         "number": "11",
         "status": "comeBack",
         "comeBack": "dimanche",
-        "note": "boîte cassée",
         "lastChange": null,
         "position": null,
         "building": null

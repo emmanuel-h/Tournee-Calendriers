@@ -6,7 +6,6 @@ import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
-import 'package:tournee_calendriers/domain/street/note.dart';
 import 'package:tournee_calendriers/domain/street/removed_house.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
@@ -117,33 +116,9 @@ final class ComeBackSet extends HouseChange {
       'ComeBackSet(${streetId.value}, ${number.label}, $comeBack, $stamp)';
 }
 
-/// The note of the house at [number] was replaced by [note] ([Note.empty]
-/// when it was erased).
-final class NoteSet extends HouseChange {
-  const NoteSet({
-    required super.streetId,
-    required super.before,
-    required super.stamp,
-    required this.note,
-  });
-
-  final Note note;
-
-  @override
-  bool operator ==(Object other) =>
-      other is NoteSet && _sameHouseChange(other) && other.note == note;
-
-  @override
-  int get hashCode => Object.hash(streetId, before, stamp, note);
-
-  @override
-  String toString() =>
-      'NoteSet(${streetId.value}, ${number.label}, $note, $stamp)';
-}
-
 /// The house at [number] got the layout [building]: it was described as a
 /// building, described again, or one of its doors was added, removed or
-/// renamed (PLAN §5.7). The house is to do itself and keeps its note and
+/// renamed (PLAN §5.7). The house is to do itself and keeps its own
 /// « repasser »; the doors whose label survived keep theirs.
 ///
 /// Storage writes the whole building (its label style and the
@@ -212,7 +187,7 @@ final class BuildingRemoved extends HouseChange {
 }
 
 /// The house at [number] now has the number [newNumber] (« 3 » → « 3bis »
-/// in edit mode, PLAN §5.5), with its status, « repasser », note and
+/// in edit mode, PLAN §5.5), with its status, « repasser » and
 /// building.
 ///
 /// The number is the house's key in storage (`houses.3`), so storage
@@ -234,7 +209,6 @@ final class NumberRenamed extends HouseChange {
     number: newNumber,
     status: before.status,
     comeBack: before.comeBack,
-    note: before.note,
     lastChange: stamp,
     building: before.building,
     position: before.position,
@@ -364,35 +338,6 @@ final class DwellingComeBackSet extends DwellingChange {
 
   @override
   String toString() => 'DwellingComeBackSet($_where, $comeBack, $stamp)';
-}
-
-/// The note of the door at [key] was replaced by [note] ([Note.empty] when
-/// it was erased).
-final class DwellingNoteSet extends DwellingChange {
-  const DwellingNoteSet({
-    required super.streetId,
-    required super.number,
-    required super.staircase,
-    required super.level,
-    required super.before,
-    required super.stamp,
-    required this.note,
-  });
-
-  final Note note;
-
-  @override
-  bool operator ==(Object other) =>
-      other is DwellingNoteSet &&
-      _sameDwellingChange(other) &&
-      other.note == note;
-
-  @override
-  int get hashCode =>
-      Object.hash(streetId, number, staircase, level, before, stamp, note);
-
-  @override
-  String toString() => 'DwellingNoteSet($_where, $note, $stamp)';
 }
 
 /// The street went to the Corbeille: hidden, but kept with its houses so
@@ -579,7 +524,7 @@ final class StreetRenamed extends StreetChange {
 /// An undo put back [house], the house exactly as it was before the change
 /// being undone, in place of [replaced], the house as it was just before
 /// the undo (PLAN §7: undo is a normal write of the previous value, with
-/// its old status, « repasser », note, building and last change).
+/// its old status, « repasser », building and last change).
 ///
 /// Storage writes the whole house entry under [number]; when the undo
 /// renumbers it back (« 3bis » → « 3 »), it first deletes the entry under

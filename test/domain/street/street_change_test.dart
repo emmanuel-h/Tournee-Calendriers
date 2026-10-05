@@ -2,7 +2,6 @@ import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
-import 'package:tournee_calendriers/domain/street/note.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
@@ -88,14 +87,14 @@ void main() {
     });
 
     test('should differ from another change of the same house', () {
-      final noteSet = NoteSet(
+      final comeBackSet = ComeBackSet(
         streetId: lilas,
         before: twelve,
-        note: Note.empty,
         stamp: leaAtTwo,
+        comeBack: null,
       );
 
-      expect(marked(), isNot(noteSet));
+      expect(marked(), isNot(comeBackSet));
     });
 
     test('should show its fields when printed', () {
@@ -155,59 +154,6 @@ void main() {
       expect(
         set().toString(),
         'ComeBackSet(rue-des-lilas, 12, ComeBack(), '
-        'ChangeStamp(lea, 2026-11-02 14:02:00.000Z))',
-      );
-    });
-  });
-
-  group('NoteSet', () {
-    NoteSet set({
-      StreetId? streetId,
-      House? before,
-      Note? newNote,
-      ChangeStamp? stamp,
-    }) => NoteSet(
-      streetId: streetId ?? lilas,
-      before: before ?? twelve,
-      note: newNote ?? note('chien'),
-      stamp: stamp ?? leaAtTwo,
-    );
-
-    test('should carry the new note and the house before', () {
-      final change = set();
-
-      expect(change.streetId, lilas);
-      expect(change.number, n('12'));
-      expect(change.before, twelve);
-      expect(change.note, note('chien'));
-      expect(change.stamp, leaAtTwo);
-    });
-
-    test('should be equal when every field is equal', () {
-      expect(set(), set());
-      expect(set().hashCode, set().hashCode);
-    });
-
-    test('should differ when the streets differ', () {
-      expect(set(), isNot(set(streetId: gambetta)));
-    });
-
-    test('should differ when the houses before differ', () {
-      expect(set(), isNot(set(before: twelveDone)));
-    });
-
-    test('should differ when the notes differ', () {
-      expect(set(), isNot(set(newNote: Note.empty)));
-    });
-
-    test('should differ when the stamps differ', () {
-      expect(set(), isNot(set(stamp: paulAtThree)));
-    });
-
-    test('should show its fields when printed', () {
-      expect(
-        set().toString(),
-        'NoteSet(rue-des-lilas, 12, Note(chien), '
         'ChangeStamp(lea, 2026-11-02 14:02:00.000Z))',
       );
     });

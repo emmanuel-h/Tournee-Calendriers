@@ -27,3 +27,8 @@ the colours, type, spacing and status treatments below are the design tokens.
 | Map: street libre | `#6B7078` dashed line | |
 | Map: selected road | `#1B1F24` casing, white core | |
 | Fonts | Atkinson Hyperlegible (text), Barlow Condensed (numbers, titles) | |
+
+No screen shows a free note: it was removed for privacy (PLAN §8.3, Q23, T1.20). The house,
+door and building sheets have no note field and no privacy hint, tiles and doors no note dot,
+and the button under the building grid reads « Repasser ». The « Quand repasser ? » hint
+(≤ 20 characters) is the only free text.

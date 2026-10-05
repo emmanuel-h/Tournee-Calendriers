@@ -37,7 +37,7 @@ final class StreetImported extends StreetImport {
 }
 
 /// The street was in the Corbeille: it is back in « Mes rues » exactly as it
-/// was deleted, its statuses and notes included, without asking the BAN.
+/// was deleted, its marks included, without asking the BAN.
 final class StreetRestoredFromCorbeille extends StreetImport {
   const StreetRestoredFromCorbeille(super.banId, {required this.streetId});
 
@@ -96,7 +96,7 @@ final class ImportReport {
 ///
 /// - **Never wipes marks.** A street whose BAN id is already on the phone is
 ///   left as it is and reported; if it is in the Corbeille it comes back
-///   from it, statuses and notes included (PLAN §6.1).
+///   from it, marks included (PLAN §6.1).
 /// - **The streets already on the phone need no network.** The chosen ones
 ///   are handled before the BAN is asked anything, so bringing a street back
 ///   from the Corbeille works in airplane mode, and when only such streets

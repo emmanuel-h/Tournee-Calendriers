@@ -25,31 +25,31 @@ void main() {
       expect(comeBack, ComeBack.withoutHint);
     });
 
-    test('should accept the hint when it has 49 characters', () {
-      expect(valueOf(ComeBack.create('a' * 49)).hint, 'a' * 49);
+    test('should accept the hint when it has 19 characters', () {
+      expect(valueOf(ComeBack.create('a' * 19)).hint, 'a' * 19);
     });
 
-    test('should accept the hint when it has exactly 50 characters', () {
-      expect(valueOf(ComeBack.create('a' * 50)).hint, 'a' * 50);
+    test('should accept the hint when it has exactly 20 characters', () {
+      expect(valueOf(ComeBack.create('a' * 20)).hint, 'a' * 20);
     });
 
-    test('should refuse the hint when it has 51 characters', () {
-      expect(failureOf(ComeBack.create('a' * 51)), ComeBackFailure.hintTooLong);
+    test('should refuse the hint when it has 21 characters', () {
+      expect(failureOf(ComeBack.create('a' * 21)), ComeBackFailure.hintTooLong);
     });
 
     test('should count the limit after trimming when spaces surround it', () {
-      expect(valueOf(ComeBack.create('  ${'a' * 50}  ')).hint, 'a' * 50);
+      expect(valueOf(ComeBack.create('  ${'a' * 20}  ')).hint, 'a' * 20);
     });
 
     test('should count an emoji as one character', () {
-      final hint = '🔔' * 50;
+      final hint = '🔔' * 20;
 
       expect(valueOf(ComeBack.create(hint)).hint, hint);
     });
   });
 
-  test('should allow hints of 50 characters', () {
-    expect(ComeBack.maxHintLength, 50);
+  test('should allow hints of 20 characters', () {
+    expect(ComeBack.maxHintLength, 20);
   });
 
   test('should hold an empty hint when it is the come-back without hint', () {

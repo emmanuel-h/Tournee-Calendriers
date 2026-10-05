@@ -2,17 +2,17 @@
 // (M1, until Firestore replaces that storage in M2). Pure functions: no file
 // here, so they are tested alone.
 //
-// The schema, version 2 (PLAN §6.3):
+// The schema, version 3 (PLAN §6.3):
 //
-//   { version: 2, id, name, commune: { inseeCode, name }, banId | null,
+//   { version: 3, id, name, commune: { inseeCode, name }, banId | null,
 //     deletion: stamp | null, houses: [house], removedHouses: [{ house,
 //     removal: stamp }] }
-//   house    = { number: "3bis", status, comeBack: hint | null, note,
+//   house    = { number: "3bis", status, comeBack: hint | null,
 //                lastChange: stamp | null,
 //                position: { latitude, longitude } | null,
 //                building: building | null }
 //   building = { style, staircases: [{ name: "A", floors: [{ level | null,
-//                dwellings: [{ label, status, comeBack, note,
+//                dwellings: [{ label, status, comeBack,
 //                              lastChange }] }] }] }
 //   stamp    = { by: memberId, at: "2026-11-02T14:02:00.000Z" }  (UTC)
 //   status   = "toDo" | "done" | "nobodyHome" | "comeBack"
@@ -24,15 +24,22 @@
 // Version 1 (T1.6 to T1.12) had no "comeBack" status: « repasser » was a
 // flag beside the status. Reading it, a house or door to do or nobody home
 // with a come-back becomes « comeBack », hint kept (a done one never had a
-// come-back); a building keeps its own. Nothing is lost, and the next save
-// writes version 2.
+// come-back); a building keeps its own.
+//
+// Versions 1 and 2 (up to T1.19) allowed « repasser » hints of 50
+// characters: reading cuts a longer one to its first 20 (code points),
+// trimmed. They also held a free `note` on each house and door. Notes were
+// removed for privacy (PLAN §8.3, Q23): reading an older file ignores them,
+// so the street comes back without any. The file is written again in
+// version 3 as soon as it is read (see `LocalStreetRepository`), so no note
+// and no long hint stays on the phone. Every other mark is kept.
 //
 // Statuses and label styles are written under fixed names chosen here, not
 // the Dart enum names, so renaming an enum value in the code cannot make
 // the streets already on a phone unreadable.
 //
 // Reading goes back through the domain's own checks (Street.create,
-// Building.create, Note.create…), so stored data can never build a street
+// Building.create, ComeBack.create…), so stored data can never build a street
 // that breaks an invariant. Anything unreadable makes the whole street
 // unreadable (a FormatException): dropping one house silently would lose
 // its marks.
@@ -50,19 +57,30 @@ import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
-import 'package:tournee_calendriers/domain/street/note.dart';
 import 'package:tournee_calendriers/domain/street/removed_house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
-/// The schema version this code writes. It reads it and version 1 (see the
-/// top of this file); a file of any other version is refused rather than
-/// misread.
-const storedStreetVersion = 2;
+/// The schema version this code writes. It reads it and versions 1 and 2
+/// (see the top of this file); a file of any other version is refused
+/// rather than misread.
+const storedStreetVersion = 3;
 
 /// The first schema, where « repasser » was a flag beside the status.
 const _flagVersion = 1;
+
+/// The schema where « repasser » became a status, and notes were still
+/// kept.
+const _noteVersion = 2;
+
+/// Whether [json] is a street stored in a schema older than
+/// [storedStreetVersion], which the storage must write again so nothing the
+/// app dropped since (the notes of version 2) stays on the disk.
+bool isOlderStoredStreet(Object? json) => switch (json) {
+  {'version': final int version} => version < storedStreetVersion,
+  _ => false,
+};
 
 /// The stored form of [street], ready for `jsonEncode`.
 Map<String, Object?> streetToJson(Street street) => {
@@ -88,12 +106,14 @@ Map<String, Object?> streetToJson(Street street) => {
 /// The street stored as [json] (as `jsonDecode` gives it).
 ///
 /// Throws a [FormatException] when [json] is not a street of
-/// [storedStreetVersion] or version 1, or holds a value the domain refuses.
+/// [storedStreetVersion], 2 or 1, or holds a value the domain refuses.
 Street streetFromJson(Object? json) {
   if (json case {
     // `&&` and `||` combine patterns: the version is named, and must be
-    // one of the two constants this code knows.
-    'version': final int version && (storedStreetVersion || _flagVersion),
+    // one of the constants this code knows.
+    'version':
+        final int version &&
+        (storedStreetVersion || _noteVersion || _flagVersion),
     'id': final String id,
     'name': final String name,
     'commune': {
@@ -131,7 +151,6 @@ Map<String, Object?> _houseToJson(House house) => {
   'number': house.number.label,
   'status': _statusToJson(house.status),
   'comeBack': house.comeBack?.hint,
-  'note': house.note.text,
   'lastChange': _stampToJson(house.lastChange),
   'position': switch (house.position) {
     null => null,
@@ -146,12 +165,14 @@ Map<String, Object?> _houseToJson(House house) => {
   },
 };
 
+/// A map pattern matches a map holding *at least* the keys it names, so the
+/// `note` of a version 1 or 2 house or door is simply not read: it is
+/// dropped.
 House _houseFromJson(Object? json, int version) {
   if (json case {
     'number': final String number,
     'status': final String status,
     'comeBack': final String? comeBack,
-    'note': final String note,
     'lastChange': final Object? lastChange,
     'position': final Object? position,
     'building': final Object? building,
@@ -161,8 +182,7 @@ House _houseFromJson(Object? json, int version) {
       // On a building the House factory makes it to do again, keeping the
       // come-back as the building's own.
       status: _statusFromJson(status, comeBack: comeBack, version: version),
-      comeBack: _comeBackOrNull(comeBack),
-      note: _valid(Note.create(note), 'note'),
+      comeBack: _comeBackOrNull(comeBack, version),
       lastChange: _stampOrNull(lastChange),
       position: position == null ? null : _positionFromJson(position),
       building: building == null ? null : _buildingFromJson(building, version),
@@ -273,7 +293,6 @@ Map<String, Object?> _dwellingToJson(Dwelling dwelling) => {
   'label': dwelling.label.text,
   'status': _statusToJson(dwelling.status),
   'comeBack': dwelling.comeBack?.hint,
-  'note': dwelling.note.text,
   'lastChange': _stampToJson(dwelling.lastChange),
 };
 
@@ -282,14 +301,12 @@ Dwelling _dwellingFromJson(Object? json, int version) {
     'label': final String label,
     'status': final String status,
     'comeBack': final String? comeBack,
-    'note': final String note,
     'lastChange': final Object? lastChange,
   }) {
     return Dwelling(
       label: _valid(DwellingLabel.parse(label), 'door label'),
       status: _statusFromJson(status, comeBack: comeBack, version: version),
-      comeBack: _comeBackOrNull(comeBack),
-      note: _valid(Note.create(note), 'note'),
+      comeBack: _comeBackOrNull(comeBack, version),
       lastChange: _stampOrNull(lastChange),
     );
   }
@@ -316,8 +333,20 @@ ChangeStamp _stamp(Object? json) {
   throw const FormatException('Not a stored stamp');
 }
 
-ComeBack? _comeBackOrNull(String? hint) =>
-    hint == null ? null : _valid(ComeBack.create(hint), '« repasser » hint');
+/// The come-back stored as [hint] in a file of schema [version].
+///
+/// Versions 1 and 2 allowed hints of 50 characters; version 3 allows
+/// [ComeBack.maxHintLength]. A longer hint of an older file keeps its first
+/// characters (code points, as the domain counts them), trimmed, rather
+/// than making the whole street unreadable. A version 3 file is written by
+/// this code, so a hint too long there is damaged data.
+ComeBack? _comeBackOrNull(String? hint, int version) {
+  if (hint == null) return null;
+  final kept = version < storedStreetVersion
+      ? String.fromCharCodes(hint.trim().runes.take(ComeBack.maxHintLength))
+      : hint;
+  return _valid(ComeBack.create(kept), '« repasser » hint');
+}
 
 String _statusToJson(VisitStatus status) => switch (status) {
   VisitStatus.toDo => 'toDo',
@@ -338,7 +367,7 @@ VisitStatus _statusFromJson(
     'toDo' => VisitStatus.toDo,
     'done' => VisitStatus.done,
     'nobodyHome' => VisitStatus.nobodyHome,
-    'comeBack' when version == storedStreetVersion => VisitStatus.comeBack,
+    'comeBack' when version != _flagVersion => VisitStatus.comeBack,
     _ => throw FormatException('Not a stored status', text),
   };
   final wasFlagged =

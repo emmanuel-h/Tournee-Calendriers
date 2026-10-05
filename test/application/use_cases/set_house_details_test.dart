@@ -2,7 +2,6 @@ import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/use_cases/command_failure.dart';
 import 'package:tournee_calendriers/application/use_cases/mark.dart';
 import 'package:tournee_calendriers/application/use_cases/set_house_details.dart';
-import 'package:tournee_calendriers/domain/street/note.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
@@ -87,31 +86,6 @@ void main() {
     expect(streets.saved, isEmpty);
   });
 
-  test('should save the note typed in the sheet', () async {
-    final change = valueOf(
-      await setHouseDetails(lilasId, n('5'), const NoteMark(Note.empty)),
-    );
-
-    expect(
-      change,
-      NoteSet(
-        streetId: lilasId,
-        before: five,
-        stamp: leaAtTwo,
-        note: Note.empty,
-      ),
-    );
-    expect(houseOf(streets[lilasId]!, '5').note, Note.empty);
-  });
-
-  test('should set the building its own note', () async {
-    valueOf(
-      await setHouseDetails(lilasId, n('8'), NoteMark(note('digicode 1234'))),
-    );
-
-    expect(houseOf(streets[lilasId]!, '8').note, note('digicode 1234'));
-  });
-
   test('should fail when the street refuses the mark', () async {
     final failure = failureOf(
       await setHouseDetails(
@@ -130,7 +104,7 @@ void main() {
       await setHouseDetails(
         StreetId('rue-inconnue'),
         n('5'),
-        const NoteMark(Note.empty),
+        const StatusMark(VisitStatus.done),
       ),
     );
 

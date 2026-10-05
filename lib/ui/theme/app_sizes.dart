@@ -1,8 +1,5 @@
 /// Sizes and radii of the mockups, in logical pixels (dp).
 abstract final class AppSizes {
-  /// The small dot on a tile whose house has a note.
-  static const noteDot = 8.0;
-
   /// Space between two tiles of a column of the street screen.
   static const tileGap = 10.0;
 

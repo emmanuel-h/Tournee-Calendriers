@@ -2,7 +2,6 @@ import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
-import 'package:tournee_calendriers/domain/street/note.dart';
 import 'package:tournee_calendriers/domain/street/progress.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
@@ -10,13 +9,12 @@ import '../../support/building_fixtures.dart';
 import '../../support/street_fixtures.dart';
 
 void main() {
-  test('should be to do, without come-back, note or change when new', () {
+  test('should be to do, without come-back or change when new', () {
     final house = House(number: n('12'));
 
     expect(house.number, n('12'));
     expect(house.status, VisitStatus.toDo);
     expect(house.comeBack, isNull);
-    expect(house.note, Note.empty);
     expect(house.lastChange, isNull);
     expect(house.building, isNull);
     expect(house.isBuilding, isFalse);
@@ -34,14 +32,12 @@ void main() {
       number: n('3bis'),
       status: VisitStatus.comeBack,
       comeBack: comeBack('après 19h'),
-      note: note('chien dans le jardin'),
       lastChange: leaAtTwo,
     );
 
     expect(house.number, n('3bis'));
     expect(house.status, VisitStatus.comeBack);
     expect(house.comeBack, comeBack('après 19h'));
-    expect(house.note, note('chien dans le jardin'));
     expect(house.lastChange, leaAtTwo);
   });
 
@@ -87,17 +83,15 @@ void main() {
       expect(house.status, VisitStatus.toDo);
     });
 
-    test('should keep its own come-back and note when it is a building', () {
+    test('should keep its own come-back when it is a building', () {
       final house = House(
         number: n('8'),
         status: VisitStatus.done,
         comeBack: comeBack('gardien'),
-        note: note('digicode'),
         building: building(),
       );
 
       expect(house.comeBack, comeBack('gardien'));
-      expect(house.note, note('digicode'));
     });
   });
 
@@ -158,7 +152,6 @@ void main() {
       number: n('3bis'),
       status: VisitStatus.comeBack,
       comeBack: comeBack('après 19h'),
-      note: note('chien'),
       lastChange: leaAtTwo,
     );
 
@@ -172,40 +165,29 @@ void main() {
         number: n('3ter'),
         status: VisitStatus.comeBack,
         comeBack: comeBack('après 19h'),
-        note: note('chien'),
         lastChange: leaAtTwo,
       ),
       'status': House(
         number: n('3bis'),
         status: VisitStatus.nobodyHome,
-        note: note('chien'),
         lastChange: leaAtTwo,
       ),
       'come-back': House(
         number: n('3bis'),
         status: VisitStatus.comeBack,
         comeBack: comeBack('après 20h'),
-        note: note('chien'),
-        lastChange: leaAtTwo,
-      ),
-      'note': House(
-        number: n('3bis'),
-        status: VisitStatus.comeBack,
-        comeBack: comeBack('après 19h'),
         lastChange: leaAtTwo,
       ),
       'last change': House(
         number: n('3bis'),
         status: VisitStatus.comeBack,
         comeBack: comeBack('après 19h'),
-        note: note('chien'),
         lastChange: paulAtThree,
       ),
       'position': House(
         number: n('3bis'),
         status: VisitStatus.comeBack,
         comeBack: comeBack('après 19h'),
-        note: note('chien'),
         lastChange: leaAtTwo,
         position: townHallDoor,
       ),
@@ -259,13 +241,12 @@ void main() {
       number: n('12'),
       status: VisitStatus.comeBack,
       comeBack: comeBack('après 19h'),
-      note: note('chien'),
       lastChange: leaAtTwo,
     );
 
     expect(
       house.toString(),
-      'House(12, VisitStatus.comeBack, ComeBack(après 19h), Note(chien), '
+      'House(12, VisitStatus.comeBack, ComeBack(après 19h), '
       'ChangeStamp(lea, 2026-11-02 14:02:00.000Z))',
     );
   });
@@ -274,9 +255,6 @@ void main() {
     final one = building(topFloor: 0, doors: 1);
     final house = House(number: n('8'), building: one);
 
-    expect(
-      house.toString(),
-      'House(8, VisitStatus.toDo, null, Note(), null, $one)',
-    );
+    expect(house.toString(), 'House(8, VisitStatus.toDo, null, null, $one)');
   });
 }

@@ -86,7 +86,7 @@ void main() {
     });
 
     group('again, keeping the doors that still exist', () {
-      // Staircase A: 31 done, 21 nobody home with a come-back and a note;
+      // Staircase A: 31 done, 21 nobody home with a come-back;
       // staircase B: 21 done.
       final before = building(staircases: 2, topFloor: 3, doors: 2)
           .withDwelling(
@@ -105,7 +105,6 @@ void main() {
               label: d('21'),
               status: VisitStatus.nobodyHome,
               comeBack: comeBack('après 19h'),
-              note: note('digicode'),
               lastChange: paulAtThree,
             ),
           )
@@ -125,7 +124,7 @@ void main() {
         keeping: before,
       );
 
-      test('should keep status, come-back, note and change of a kept door', () {
+      test('should keep status, come-back and change of a kept door', () {
         expect(
           after.dwellingAt(_key(escA, 2, '21')),
           before.dwellingAt(_key(escA, 2, '21')),
@@ -888,7 +887,6 @@ void main() {
         label: d('11'),
         status: VisitStatus.nobodyHome,
         comeBack: comeBack('le soir'),
-        note: note('chien'),
         lastChange: leaAtTwo,
       ),
     );
@@ -904,7 +902,6 @@ void main() {
           label: d('Gauche'),
           status: VisitStatus.nobodyHome,
           comeBack: comeBack('le soir'),
-          note: note('chien'),
           lastChange: leaAtTwo,
         ),
       );

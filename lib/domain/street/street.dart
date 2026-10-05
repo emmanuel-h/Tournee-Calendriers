@@ -11,7 +11,6 @@ import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
-import 'package:tournee_calendriers/domain/street/note.dart';
 import 'package:tournee_calendriers/domain/street/progress.dart';
 import 'package:tournee_calendriers/domain/street/removed_house.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
@@ -265,7 +264,6 @@ final class Street {
       number: number,
       status: status,
       comeBack: before.comeBack,
-      note: before.note,
       lastChange: stamp,
       position: before.position,
     );
@@ -303,7 +301,6 @@ final class Street {
       number: number,
       status: before.status,
       comeBack: comeBack,
-      note: before.note,
       lastChange: stamp,
       building: before.building,
       position: before.position,
@@ -319,34 +316,6 @@ final class Street {
     ));
   }
 
-  /// Replaces the note of the house at [number] with [note] (erase it with
-  /// [Note.empty]), as [by] at [at]. On a building, it is the building's own
-  /// note (« digicode »).
-  Result<(Street, NoteSet), HouseChangeFailure> setNote(
-    HouseNumber number,
-    Note note, {
-    required MemberId by,
-    required DateTime at,
-  }) {
-    final index = _indexOf(number);
-    if (index < 0) return const Err(HouseChangeFailure.unknownHouse);
-    final before = houses[index];
-    final stamp = ChangeStamp(by: by, at: at);
-    final after = House(
-      number: number,
-      status: before.status,
-      comeBack: before.comeBack,
-      note: note,
-      lastChange: stamp,
-      building: before.building,
-      position: before.position,
-    );
-    return Ok((
-      _withHouseAt(index, after),
-      NoteSet(streetId: id, before: before, stamp: stamp, note: note),
-    ));
-  }
-
   /// Makes the house at [number] the building [plan] lays out, as [by] at
   /// [at] (« Transformer en immeuble… », PLAN §5.7).
   ///
@@ -354,7 +323,7 @@ final class Street {
   /// doors whose label still exists on the same floor of the same staircase
   /// keep their
   /// marks; the others are dropped (the screen asks first). Either way the
-  /// house keeps its own note and « repasser », and its own status becomes
+  /// house keeps its own « repasser », and its own status becomes
   /// to do: its doors carry the statuses now.
   ///
   /// Fails with [BuildingChangeFailure.unknownHouse], like the other layout
@@ -418,8 +387,7 @@ final class Street {
   /// [at] (« or back to a single house », PLAN §5.5). Its doors are
   /// dropped (the screen asks first); the house is done when every door
   /// was done; otherwise it is « repasser », with its hint, when the
-  /// building had its own « repasser », and to do when not. It keeps its
-  /// note.
+  /// building had its own « repasser », and to do when not.
   Result<(Street, BuildingRemoved), BuildingChangeFailure> removeBuilding(
     HouseNumber number, {
     required MemberId by,
@@ -442,7 +410,6 @@ final class Street {
           number: number,
           status: status,
           comeBack: before.comeBack,
-          note: before.note,
           lastChange: stamp,
           position: before.position,
         );
@@ -480,7 +447,6 @@ final class Street {
           label: before.label,
           status: status,
           comeBack: before.comeBack,
-          note: before.note,
           lastChange: stamp,
         );
         return Ok((
@@ -522,7 +488,6 @@ final class Street {
           label: before.label,
           status: before.status,
           comeBack: comeBack,
-          note: before.note,
           lastChange: stamp,
         );
         return Ok((
@@ -535,42 +500,6 @@ final class Street {
             before: before,
             stamp: stamp,
             comeBack: comeBack,
-          ),
-        ));
-    }
-  }
-
-  /// Replaces the note of the door at [key] of the building at [number]
-  /// with [note] (erase it with [Note.empty]), as [by] at [at].
-  Result<(Street, DwellingNoteSet), DwellingChangeFailure> setDwellingNote(
-    HouseNumber number,
-    DwellingKey key,
-    Note note, {
-    required MemberId by,
-    required DateTime at,
-  }) {
-    switch (_dwellingAt(number, key)) {
-      case Err(:final failure):
-        return Err(failure);
-      case Ok(value: (final index, final before)):
-        final stamp = ChangeStamp(by: by, at: at);
-        final after = Dwelling(
-          label: before.label,
-          status: before.status,
-          comeBack: before.comeBack,
-          note: note,
-          lastChange: stamp,
-        );
-        return Ok((
-          _withDwellingAt(index, key, after),
-          DwellingNoteSet(
-            streetId: id,
-            number: number,
-            staircase: key.staircase,
-            level: key.level,
-            before: before,
-            stamp: stamp,
-            note: note,
           ),
         ));
     }
@@ -627,8 +556,8 @@ final class Street {
   }
 
   /// Removes the number [number] from the street (✕ in edit mode), as [by]
-  /// at [at]: the house goes to the Corbeille with its status, « repasser »,
-  /// note and building, hidden from the sides and the progress, until
+  /// at [at]: the house goes to the Corbeille with its status, « repasser »
+  /// and building, hidden from the sides and the progress, until
   /// [restoreNumber] (PLAN §5.11).
   ///
   /// It is allowed even when the house has marks; the screen asks first
@@ -678,7 +607,7 @@ final class Street {
 
   /// Gives the house at [number] the number [newNumber] (`3` → `3bis`, a tap
   /// on a tile in edit mode), as [by] at [at]. It keeps its status,
-  /// « repasser », note and building, and moves to its new place and side.
+  /// « repasser » and building, and moves to its new place and side.
   ///
   /// Refused when [newNumber] is the same, is shown by another house
   /// ([NumberChangeFailure.numberTaken]) or belongs to a house in the
@@ -729,7 +658,7 @@ final class Street {
   );
 
   /// Sends the street to the Corbeille, as [by] at [at]: it is hidden but
-  /// keeps its houses, statuses and notes (PLAN §5.11). Deleting a street
+  /// keeps its houses and their marks (PLAN §5.11). Deleting a street
   /// already in the Corbeille records the latest deletion.
   (Street, StreetDeleted) delete({required MemberId by, required DateTime at}) {
     final deletion = ChangeStamp(by: by, at: at);
@@ -761,7 +690,7 @@ final class Street {
   /// makes, which can itself be undone.
   ///
   /// - A house change puts the whole house back as it was, status,
-  ///   « repasser », note, building, last change and number included
+  ///   « repasser », building, last change and number included
   ///   ([HouseReverted]); a door change puts that door back
   ///   ([DwellingReverted]). Whatever changed on that house or door since
   ///   is overwritten, as a teammate's later write would be.
@@ -927,7 +856,7 @@ final class Street {
   }
 
   /// This street with the house at [index] holding [building], stamped
-  /// with [stamp], and the change saying so. The house keeps its note and
+  /// with [stamp], and the change saying so. The house keeps its own
   /// « repasser »; the `House` factory makes it to do.
   (Street, BuildingLaidOut) _laidOut(
     int index,
@@ -938,7 +867,6 @@ final class Street {
     final after = House(
       number: before.number,
       comeBack: before.comeBack,
-      note: before.note,
       lastChange: stamp,
       building: building,
       position: before.position,
@@ -964,7 +892,6 @@ final class Street {
       House(
         number: house.number,
         comeBack: house.comeBack,
-        note: house.note,
         lastChange: house.lastChange,
         // `!`: only called once `_dwellingAt` found the door in a building.
         building: house.building!.withDwelling(

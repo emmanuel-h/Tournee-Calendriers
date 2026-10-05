@@ -1,5 +1,5 @@
 /// The number of characters in [text], in the sense every length limit of
-/// the app uses (notes, « repasser » hints).
+/// the app uses (« repasser » hints).
 ///
 /// A Dart `String` is a sequence of UTF-16 code units, so `text.length`
 /// counts an emoji such as 🚒 as 2. This counts Unicode code points

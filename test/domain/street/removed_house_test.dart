@@ -6,11 +6,7 @@ import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import '../../support/street_fixtures.dart';
 
 void main() {
-  final fourteen = House(
-    number: n('14ter'),
-    status: VisitStatus.done,
-    note: note('chien'),
-  );
+  final fourteen = House(number: n('14ter'), status: VisitStatus.done);
 
   test('should keep the house and who removed it when', () {
     final removed = RemovedHouse(house: fourteen, removal: leaAtTwo);
@@ -57,7 +53,7 @@ void main() {
         house: House(number: n('3')),
         removal: leaAtTwo,
       ).toString(),
-      'RemovedHouse(House(3, VisitStatus.toDo, null, Note(), null), '
+      'RemovedHouse(House(3, VisitStatus.toDo, null, null), '
       'ChangeStamp(lea, 2026-11-02 14:02:00.000Z))',
     );
   });

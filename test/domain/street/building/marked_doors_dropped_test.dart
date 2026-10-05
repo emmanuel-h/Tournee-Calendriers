@@ -55,9 +55,14 @@ void main() {
       );
     });
 
-    test('should count a door with a note or a « repasser » only', () {
+    test('should count a door nobody answered or a « repasser »', () {
       final marked = _with(
-        _with(empty, escB, 0, Dwelling(label: d('02'), note: note('digicode'))),
+        _with(
+          empty,
+          escB,
+          0,
+          Dwelling(label: d('02'), status: VisitStatus.nobodyHome),
+        ),
         escB,
         1,
         Dwelling(
@@ -117,7 +122,7 @@ void main() {
     test('should count only the marked doors of the staircase made '
         'smaller', () {
       // A keeps RdC–2e; B shrinks to the RdC with one door: B's 21 (done)
-      // and 02 (note) go, A's 21 (done) and B's 01 (done) stay.
+      // and 02 (nobody home) go, A's 21 (done) and B's 01 (done) stay.
       final marked = _with(
         _with(
           _with(
@@ -133,7 +138,7 @@ void main() {
           ),
           escB,
           0,
-          Dwelling(label: d('02'), note: note('digicode')),
+          Dwelling(label: d('02'), status: VisitStatus.nobodyHome),
         ),
         escB,
         0,
