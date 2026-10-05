@@ -292,7 +292,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         tester.getSemantics(tile).label,
-        'Numéro 34, immeuble, 1 sur 6 faits',
+        'Numéro 34, immeuble, 1 sur 6 faits, ouvrir',
       );
 
       // ✏, tap 34, « Ouvrir l'immeuble »: its grid. « Gérer l'immeuble »,
@@ -372,7 +372,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         tester.getSemantics(tile).label,
-        'Numéro 34, immeuble, 1 sur 8 faits',
+        'Numéro 34, immeuble, 1 sur 8 faits, ouvrir',
       );
       semantics.dispose();
     },

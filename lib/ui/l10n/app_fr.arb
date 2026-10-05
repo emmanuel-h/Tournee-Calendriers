@@ -47,13 +47,21 @@
       "status": { "type": "String", "example": "fait" }
     }
   },
-  "buildingTileSemantics": "Numéro {number}, immeuble, {done} sur {total} faits",
+  "buildingTileSemantics": "Numéro {number}, immeuble, {done} sur {total} faits, ouvrir",
   "@buildingTileSemantics": {
-    "description": "Screen-reader label of a partly visited building tile.",
+    "description": "Screen-reader label of a partly visited building tile; « ouvrir » says a tap opens its grid.",
     "placeholders": {
       "number": { "type": "String", "example": "8" },
       "done": { "type": "int", "example": "7" },
       "total": { "type": "int", "example": "12" }
+    }
+  },
+  "buildingStatusTileSemantics": "Numéro {number}, immeuble, {status}, ouvrir",
+  "@buildingStatusTileSemantics": {
+    "description": "Screen-reader label of a building tile with no door done, every door done, or its own « repasser », e.g. « Numéro 8, immeuble, fait, ouvrir ».",
+    "placeholders": {
+      "number": { "type": "String", "example": "8" },
+      "status": { "type": "String", "example": "fait" }
     }
   },
 

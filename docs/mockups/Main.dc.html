@@ -17,6 +17,12 @@ a{color:#B3261E}a:hover{color:#8C1D18}
 .tile{height:60px;box-sizing:border-box;border-radius:12px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;cursor:pointer;text-decoration:none;font-family:'Atkinson Hyperlegible',sans-serif;width:100%}
 .num{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:28px;line-height:1}
 .gl{font-size:22px;font-weight:700;line-height:1}
+/* Building tile (T1.21): building icon before the number, « › » at the right edge; the
+   icons' own empty room keeps them 14px from the edges. The number is cut first. */
+.bld{justify-content:flex-start;gap:4px;padding:0 12px 0 10px}
+.bld .grow{flex:1;min-width:24px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bi{width:20px;height:20px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round}
+.chev{width:10px;height:20px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 </style>
 </helmet>
 <div style="width: 390px; height: 844px; box-sizing: border-box; background: #F3F1EC; color: #1B1F24; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden; position: relative">
@@ -41,7 +47,7 @@ a{color:#B3261E}a:hover{color:#8C1D18}
       <div style="display: flex; flex-direction: column; gap: 10px">
         <sc-for list="{{odd}}" as="item" hint-placeholder-count="8">
           <sc-if value="{{item.building}}" hint-placeholder-val="{{false}}">
-            <a class="tile" href="Building.dc.html" style="{{item.style}}" aria-label="{{item.aria}}"><span class="num">{{item.n}}</span><span class="gl" style="font-size: 17px">{{item.glyph}}</span></a>
+            <a class="tile bld" href="Building.dc.html" style="{{item.style}}" aria-label="{{item.aria}}"><svg class="bi" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="1"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2"/></svg><span class="num grow">{{item.n}}</span><span class="gl" style="{{item.glyphStyle}}">{{item.glyph}}</span><svg class="chev" viewBox="0 0 12 24"><path d="M3 6l6 6-6 6"/></svg></a>
           </sc-if>
           <sc-if value="{{item.house}}" hint-placeholder-val="{{true}}">
             <button class="tile" onClick="{{item.tap}}" style="{{item.style}}" aria-label="{{item.aria}}"><span class="num">{{item.n}}</span><span class="gl">{{item.glyph}}</span></button>
@@ -51,7 +57,7 @@ a{color:#B3261E}a:hover{color:#8C1D18}
       <div style="display: flex; flex-direction: column; gap: 10px">
         <sc-for list="{{even}}" as="item" hint-placeholder-count="8">
           <sc-if value="{{item.building}}" hint-placeholder-val="{{false}}">
-            <a class="tile" href="Building.dc.html" style="{{item.style}}" aria-label="{{item.aria}}"><span class="num">{{item.n}}</span><span class="gl" style="font-size: 17px">{{item.glyph}}</span></a>
+            <a class="tile bld" href="Building.dc.html" style="{{item.style}}" aria-label="{{item.aria}}"><svg class="bi" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="1"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2"/></svg><span class="num grow">{{item.n}}</span><span class="gl" style="{{item.glyphStyle}}">{{item.glyph}}</span><svg class="chev" viewBox="0 0 12 24"><path d="M3 6l6 6-6 6"/></svg></a>
           </sc-if>
           <sc-if value="{{item.house}}" hint-placeholder-val="{{true}}">
             <button class="tile" onClick="{{item.tap}}" style="{{item.style}}" aria-label="{{item.aria}}"><span class="num">{{item.n}}</span><span class="gl">{{item.glyph}}</span></button>
@@ -86,7 +92,7 @@ class Component extends DCLogic {
         { n: '7', side: 'odd', s: 'todo' },
         { n: '9', side: 'odd', s: 'done' },
         { n: '11', side: 'odd', s: 'todo' },
-        { n: '13', side: 'odd', s: 'done' },
+        { n: '13', side: 'odd', building: true, done: 4, total: 4 },
         { n: '15', side: 'odd', s: 'todo' },
         { n: '17', side: 'odd', s: 'nobody' },
         { n: '19', side: 'odd', s: 'todo' },
@@ -122,35 +128,50 @@ class Component extends DCLogic {
     const houses = this.state.houses.map((h) => (h.n === last.before.n ? last.before : h));
     this.setState({ houses: houses, last: null });
   }
+  // A building takes the look of a house when none or all of its doors are done
+  // (○, ✓, or ↻ with its own « repasser »), ◐ n/m otherwise (PLAN §5.6).
+  buildingState(h) {
+    if (h.done === h.total) return 'done';
+    if (h.done === 0) return h.comeBack ? 'comeBack' : 'todo';
+    return 'partial';
+  }
+  look(h) {
+    return h.building ? Object.assign({}, h, { s: this.buildingState(h) }) : h;
+  }
   styleFor(h) {
     const base = 'border-style: solid; border-width: 1.5px; ';
-    if (h.building) return base + 'background: #EFE9DD; color: #1B1F24; border-color: #CFC9BD; border-style: dashed;';
+    h = this.look(h);
+    if (h.s === 'partial') return base + 'background: #EFE9DD; color: #1B1F24; border-color: #CFC9BD; border-style: dashed;';
     if (h.s === 'done') return base + 'background: #1E6B47; color: #FFFFFF; border-color: #1E6B47;';
     if (h.s === 'nobody') return base + 'background: #F2B33D; color: #1B1F24; border-color: #D99A22;';
     if (h.s === 'comeBack') return base + 'background: #D6E6F5; color: #1D4E7A; border-color: #A9C8E6;';
     return base + 'background: #FFFFFF; color: #1B1F24; border-color: #CFC9BD;';
   }
   glyphFor(h) {
-    if (h.building) return '◐ ' + h.done + '/' + h.total;
+    h = this.look(h);
+    if (h.s === 'partial') return '◐ ' + h.done + '/' + h.total;
     if (h.s === 'done') return '✓';
     if (h.s === 'nobody') return '✗';
     if (h.s === 'comeBack') return '↻';
     return '○';
   }
   ariaFor(h) {
-    if (h.building) return 'Numéro ' + h.n + ', immeuble, ' + h.done + ' sur ' + h.total + ' faits';
     const names = { todo: 'à faire', done: 'fait', nobody: 'personne', comeBack: 'repasser' };
-    return 'Numéro ' + h.n + ', ' + names[h.s];
+    if (!h.building) return 'Numéro ' + h.n + ', ' + names[h.s];
+    const s = this.buildingState(h);
+    const status = s === 'partial' ? h.done + ' sur ' + h.total + ' faits' : names[s];
+    return 'Numéro ' + h.n + ', immeuble, ' + status + ', ouvrir';
   }
   renderVals() {
     const H = this.state.houses;
     const hide = this.state.hideDone;
-    const visible = (h) => !(hide && h.s === 'done');
+    const visible = (h) => !(hide && this.look(h).s === 'done');
     const mk = (h) => ({
       n: h.n,
       building: !!h.building,
       house: !h.building,
       glyph: this.glyphFor(h),
+      glyphStyle: this.look(h).s === 'partial' ? 'font-size: 17px; flex-shrink: 0' : 'flex-shrink: 0',
       style: this.styleFor(h),
       aria: this.ariaFor(h),
       tap: () => this.tap(h.n)

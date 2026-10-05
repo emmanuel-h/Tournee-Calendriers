@@ -15,11 +15,11 @@ final class ComponentGalleryScreen extends StatelessWidget {
 
   /// One sample tile per status; house numbers are sample data, not copy.
   static const _tiles = [
-    ('1', ToDoTile()),
-    ('3', DoneTile()),
-    ('3bis', NobodyHomeTile()),
-    ('5', ComeBackTile()),
-    ('8', BuildingPartialTile(done: 7, total: 12)),
+    ('1', ToDoTile(), false),
+    ('3', DoneTile(), false),
+    ('3bis', NobodyHomeTile(), false),
+    ('5', ComeBackTile(), false),
+    ('8', BuildingPartialTile(done: 7, total: 12), true),
   ];
 
   @override
@@ -78,12 +78,13 @@ final class ComponentGalleryScreen extends StatelessWidget {
               spacing: 12,
               runSpacing: 10,
               children: [
-                for (final (number, status) in _tiles)
+                for (final (number, status, isBuilding) in _tiles)
                   SizedBox(
                     width: 170,
                     child: StatusTile(
                       number: number,
                       status: status,
+                      isBuilding: isBuilding,
                       onTap: () {},
                       onLongPress: () {},
                     ),

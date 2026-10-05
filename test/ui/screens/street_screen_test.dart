@@ -10,6 +10,8 @@ import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/components/arrow_text.dart';
+import 'package:tournee_calendriers/ui/components/building_icon.dart';
+import 'package:tournee_calendriers/ui/components/open_chevron.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 
 import '../../support/building_fixtures.dart';
@@ -176,6 +178,31 @@ void main() {
 
       expect(labelOf(tester, _tile('1')), 'Numéro 1, à faire');
       expect(findArrowText('1 → À faire'), findsOneWidget);
+      semantics.dispose();
+    },
+  );
+
+  testWidgets(
+    'should show a building icon, a « › » and « ouvrir » on a building tile '
+    'only',
+    (tester) async {
+      final semantics = tester.ensureSemantics();
+      await openStreet(tester);
+
+      expect(
+        labelOf(tester, _tile('8')),
+        'Numéro 8, immeuble, 1 sur 2 faits, ouvrir',
+      );
+      for (final type in [BuildingIcon, OpenChevron]) {
+        expect(
+          find.descendant(of: _tile('8'), matching: find.byType(type)),
+          findsOneWidget,
+        );
+        expect(
+          find.descendant(of: _tile('4'), matching: find.byType(type)),
+          findsNothing,
+        );
+      }
       semantics.dispose();
     },
   );

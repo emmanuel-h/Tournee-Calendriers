@@ -480,7 +480,7 @@ Edit mode details fixed in T1.10 (`lib/presentation/edit_street/`,
 │ [ 1     ○ ]  │ [ 2     ✓ ]   │
 │ [ 3     ✓ ]  │ [ 4     ✓ ]   │
 │ [ 3bis  ✗ ]  │ [ 6     ○ ]   │
-│ [ 5     ↻ ]  │ [ 8   ◐7/12]  │
+│ [ 5     ↻ ]  │ [▦ 8 ◐7/12 ›] │
 │ [ 7     ○ ]  │ [10     ○ ]   │
 │ [ 9     ○ ]  │ [12     ✗ ]   │
 │ [11     ○ ]  │ [14     ○ ]   │
@@ -493,7 +493,13 @@ Edit mode details fixed in T1.10 (`lib/presentation/edit_street/`,
   (`3 < 3bis < 3ter < 3quater < 3A < 4`). Both columns scroll together.
 - Tile: number, status glyph, tinted background per status. Nothing else: no note (§8.3).
 - **Tap** cycles `○ → ✓ → ✗ → ↻ → ○` (light haptic tick); **hold** opens the Fiche maison.
-- Building tile: tap opens the Immeuble grid.
+- Building tile: tap opens the Immeuble grid. Whatever its status (○, `◐ n/m`, ✓, ↻), it shows
+  the building icon (▦, the one of « Transformer en immeuble… ») before its number and a « › »
+  at its right edge, in the colour of its text; single houses have neither (T1.21). TalkBack
+  ends its label with « ouvrir »: « Numéro 8, immeuble, 7 sur 12 faits, ouvrir », « Numéro 8,
+  immeuble, fait, ouvrir ». On a narrow phone the number gives way first (ellipsis), but keeps
+  room for a digit: past that, the glyph and count shrink, so a tile never overflows (« 12bis »
+  with « ◐ 12/120 » in a half column at 360 dp and 1.3× text).
 - A street with numbers on one side only shows a single column.
 
 Details fixed in T1.7 (`lib/presentation/street/`, `lib/ui/screens/street/`):

@@ -100,6 +100,7 @@ final class StreetTiles extends StatelessWidget {
       key: ValueKey('street.tile.${number.label}'),
       number: number.label,
       status: tileStatusOf(tile.mark),
+      isBuilding: tile.isBuilding,
       // A building is not cycled: its doors are, in its grid.
       onTap: tile.isBuilding
           ? () => onOpenBuilding(number)

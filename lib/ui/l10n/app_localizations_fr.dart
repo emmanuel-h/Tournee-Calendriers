@@ -67,7 +67,12 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String buildingTileSemantics(String number, int done, int total) {
-    return 'Numéro $number, immeuble, $done sur $total faits';
+    return 'Numéro $number, immeuble, $done sur $total faits, ouvrir';
+  }
+
+  @override
+  String buildingStatusTileSemantics(String number, String status) {
+    return 'Numéro $number, immeuble, $status, ouvrir';
   }
 
   @override

@@ -202,11 +202,17 @@ abstract class AppLocalizations {
   /// **'Numéro {number}, {status}'**
   String houseTileSemantics(String number, String status);
 
-  /// Screen-reader label of a partly visited building tile.
+  /// Screen-reader label of a partly visited building tile; « ouvrir » says a tap opens its grid.
   ///
   /// In fr, this message translates to:
-  /// **'Numéro {number}, immeuble, {done} sur {total} faits'**
+  /// **'Numéro {number}, immeuble, {done} sur {total} faits, ouvrir'**
   String buildingTileSemantics(String number, int done, int total);
+
+  /// Screen-reader label of a building tile with no door done, every door done, or its own « repasser », e.g. « Numéro 8, immeuble, fait, ouvrir ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Numéro {number}, immeuble, {status}, ouvrir'**
+  String buildingStatusTileSemantics(String number, String status);
 
   /// Name of the status « to do », in the undo snackbar.
   ///

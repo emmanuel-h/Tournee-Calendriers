@@ -21,6 +21,7 @@ the colours, type, spacing and status treatments below are the design tokens.
 | Nobody home | `#F2B33D` bg, ink text, `✗` | |
 | Come back | `#D6E6F5` bg, `#1D4E7A` text, `↻` | |
 | Building partial | `#EFE9DD` bg, dashed border, `◐ n/m` | |
+| Building (any status) | 20px building icon before the number, 10×20 `›` at the right edge, text colour | tap opens the grid |
 | Map: street faite | `#1E6B47` line | |
 | Map: street en partie | `#E0A21B` line | |
 | Map: street à faire | `#2F5DA8` line | |

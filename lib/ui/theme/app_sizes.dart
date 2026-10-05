@@ -46,6 +46,17 @@ abstract final class AppSizes {
 
   static const tileRadius = 12.0;
   static const tilePadding = 14.0;
+
+  /// A building tile's side padding. Smaller than [tilePadding] because its
+  /// building icon and chevron have empty room of their own (about 4 and
+  /// 2 dp): drawn, they still start and end 14 dp from the edges, and the
+  /// number keeps the width they give back.
+  static const buildingTileStartPadding = 10.0;
+  static const buildingTileEndPadding = 12.0;
+
+  /// The width a tile's number always keeps (one digit and the ellipsis):
+  /// when a building's count would leave less, the count shrinks instead.
+  static const tileNumberMinWidth = 24.0;
   static const sheetRadius = 24.0;
   static const snackBarRadius = 14.0;
 
@@ -77,7 +88,8 @@ abstract final class AppSizes {
   /// still grows to [minTapTarget].
   static const pillHeight = 40.0;
 
-  /// Icons inside buttons and the chevron of a row.
+  /// Icons inside buttons, the chevron of a row, and the building icon and
+  /// the « › » of a building tile.
   static const smallIcon = 20.0;
 
   /// A row of options (« Esc. A | Esc. B »…) and the blue « Repasser »
