@@ -27,8 +27,8 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 /// la rue ». Works offline.
 ///
 /// Each change to the numbers is stored at once, with « Annuler » for 4 s.
-/// The name is stored when the screen is left (« OK », ✕ or back) or the
-/// keyboard's « OK » is pressed.
+/// The name is stored when the screen is left (« OK », ✕ or back), the
+/// keyboard's « OK » is pressed, or the app goes to the background.
 final class EditStreetScreen extends StatelessWidget {
   const EditStreetScreen({super.key, required this.streetId});
 
@@ -66,6 +66,9 @@ final class _EditScreenState extends ConsumerState<_EditScreen>
   /// Why the name typed was refused; cleared by the next edit.
   StreetNameFailure? _nameRefusal;
 
+  /// Tells when the app goes to the background, as the house sheet does.
+  late final AppLifecycleListener _lifecycle;
+
   EditStreetNotifier get _notifier =>
       ref.read(editStreetProvider(widget.streetId).notifier);
 
@@ -80,10 +83,16 @@ final class _EditScreenState extends ConsumerState<_EditScreen>
         _name.text = next.name;
       }
     }, fireImmediately: true);
+    // `onHide`: the app left the screen (home button, another app) and
+    // Android may kill it without warning, so the name typed is stored now.
+    // A refused name stays in the field with its message, for when the
+    // person comes back.
+    _lifecycle = AppLifecycleListener(onHide: () => unawaited(_keepName()));
   }
 
   @override
   void dispose() {
+    _lifecycle.dispose();
     _name.dispose();
     super.dispose();
   }
@@ -163,13 +172,16 @@ final class _EditScreenState extends ConsumerState<_EditScreen>
     return refusal == null;
   }
 
+  /// Stores the name typed when the field is on screen (not while the
+  /// street is read, nor once it is gone); returns false when it is refused.
+  Future<bool> _keepName() async =>
+      ref.read(editStreetProvider(widget.streetId)) is! EditStreetShown ||
+      await _saveName();
+
   /// « OK », ✕ or back: keeps the name, then goes back to the street. A
   /// refused name keeps the screen open, with the message under the field.
   Future<void> _leave() async {
-    if (ref.read(editStreetProvider(widget.streetId)) is EditStreetShown &&
-        !await _saveName()) {
-      return;
-    }
+    if (!await _keepName()) return;
     if (!mounted) return;
     if (context.canPop()) {
       context.pop();

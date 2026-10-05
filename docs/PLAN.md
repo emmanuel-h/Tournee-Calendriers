@@ -406,10 +406,12 @@ Edit mode details fixed in T1.10 (`lib/presentation/edit_street/`,
 `lib/ui/screens/edit_street/`, mockups Edit and Numbers):
 
 - **Top bar** « ✕ Modifier la rue [OK] ». The name field (« Nom de la rue ») is stored when the
-  screen is left — « OK », ✕ and the back gesture all leave the same way — and when the
-  keyboard's « OK » is pressed; a name equal to the stored one (once cleaned, §6.1
+  screen is left — « OK », ✕ and the back gesture all leave the same way —, when the
+  keyboard's « OK » is pressed and when the app goes to the background (it may then be killed;
+  T1.14, as the house sheet's texts); a name equal to the stored one (once cleaned, §6.1
   `StreetName`) stores nothing. A blank name says « Le nom de la rue ne peut pas être vide. »
-  (« Nom limité à 150 caractères. » when too long) and keeps the screen open.
+  (« Nom limité à 150 caractères. » when too long) and keeps the screen open; going to the
+  background then stores nothing and leaves the name and its message in the field.
 - **Numbers**: dashed tiles of 56 dp, odd on the left, even on the right, one column when the
   street has numbers on one side only (decided as on the street screen); a building reads
   « 8 · immeuble ». « + numéros » closes each column (both open the same sheet); under them

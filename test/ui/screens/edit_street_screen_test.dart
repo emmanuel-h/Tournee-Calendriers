@@ -162,6 +162,57 @@ void main() {
     expect(streets[_id]!.name, 'Rue des Iris');
   });
 
+  /// The app goes to the background, as before Android may kill it, one
+  /// state at a time as on a phone (a lifecycle listener refuses a jump);
+  /// it comes back to the foreground after the test.
+  void hideApp(WidgetTester tester) {
+    void moveThrough(List<AppLifecycleState> states) {
+      for (final state in states) {
+        tester.binding.handleAppLifecycleStateChanged(state);
+      }
+    }
+
+    addTearDown(
+      () =>
+          moveThrough([AppLifecycleState.inactive, AppLifecycleState.resumed]),
+    );
+    moveThrough([AppLifecycleState.inactive, AppLifecycleState.hidden]);
+  }
+
+  testWidgets('should rename the street when the app is hidden with a new '
+      'name typed', (tester) async {
+    await openEditMode(tester);
+
+    await tester.enterText(find.byKey(const Key('edit.name')), 'Rue des Iris');
+    hideApp(tester);
+    await tester.pumpAndSettle();
+
+    expect(streets[_id]!.name, 'Rue des Iris');
+    expect(find.byKey(const Key('edit.tiles')), findsOneWidget);
+  });
+
+  testWidgets('should keep a blank name in the field and store nothing when '
+      'the app is hidden', (tester) async {
+    await openEditMode(tester);
+
+    await tester.enterText(find.byKey(const Key('edit.name')), '  ');
+    hideApp(tester);
+    await tester.pumpAndSettle();
+
+    expect(streets[_id]!.name, 'Rue des Lilas');
+    expect(
+      find.text('Le nom de la rue ne peut pas être vide.'),
+      findsOneWidget,
+    );
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('edit.name')))
+          .controller!
+          .text,
+      '  ',
+    );
+  });
+
   testWidgets('should go back to Mes rues without the street when it is '
       'deleted', (tester) async {
     await openEditMode(tester);

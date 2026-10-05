@@ -55,8 +55,8 @@ final class EditStreetNotifier extends Notifier<EditStreetState> {
     return _view();
   }
 
-  /// The name field, when the edit mode is left (« OK », ✕, back) or the
-  /// keyboard's « OK » is pressed: renames the street when [text] is a
+  /// The name field, when the edit mode is left (« OK », ✕, back), the
+  /// keyboard's « OK » is pressed or the app goes to the background: renames the street when [text] is a
   /// valid name other than the stored one. Returns why it is refused, or
   /// null when it is fine (stored, or nothing to store).
   Future<StreetNameFailure?> renameStreet(String text) async {
