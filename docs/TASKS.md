@@ -57,6 +57,11 @@ Fixtures, examples and screenshots use **Villefranche-sur-Saône** (public data)
 | [#58](https://github.com/emmanuel-h/Tournee-Calendriers/issues/58) | T1.16 « Repasser » becomes a fourth status | |
 | [#59](https://github.com/emmanuel-h/Tournee-Calendriers/issues/59) | T1.17 Re-import a street from the Corbeille | |
 | [#60](https://github.com/emmanuel-h/Tournee-Calendriers/issues/60) | T1.18 One building screen and per-staircase setup | |
+| [#61](https://github.com/emmanuel-h/Tournee-Calendriers/issues/61) | T1.19 Copy and « Modifier les portes » fixes | |
+| [#62](https://github.com/emmanuel-h/Tournee-Calendriers/issues/62) | T1.20 Remove the note field | |
+
+Later, to design with you: [#63](https://github.com/emmanuel-h/Tournee-Calendriers/issues/63) Runs and
+money recap (global amounts per payment method, never per house).
 
 The temporary start screen of #15 was built right after #46, before the street screen, so every
 later screen could be checked with real streets (decided with you on 2026-10-04).
