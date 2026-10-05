@@ -193,16 +193,21 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.getSemantics(tile).label, 'Numéro 33, fait');
 
-      // Hold 34: its sheet opens; « Repasser » is ticked, the sheet closed
-      // by a tap on the dimmed street, and the tile shows ↻.
+      // Hold 34: its sheet opens; « Repasser » is chosen and « après 19h »
+      // typed in « Quand repasser ? », the sheet closed by a tap on the
+      // dimmed street, and the tile shows ↻.
       final other = find.byKey(const ValueKey('street.tile.34'));
       await tester.longPress(other);
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('house.comeBack')));
+      await tester.tap(find.byKey(const ValueKey('house.status.comeBack')));
       await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('house.comeBackHint.field')),
+        'après 19h',
+      );
       await tester.tapAt(const Offset(200, 40));
       await tester.pumpAndSettle();
-      expect(tester.getSemantics(other).label, 'Numéro 34, à faire, repasser');
+      expect(tester.getSemantics(other).label, 'Numéro 34, repasser');
       // The phone storage writes its file just after the tap: let it land.
       await Future<void>.delayed(const Duration(seconds: 1));
 
@@ -225,10 +230,11 @@ void main() {
         tester.getSemantics(find.byKey(const ValueKey('street.tile.33'))).label,
         'Numéro 33, fait',
       );
-      expect(
-        tester.getSemantics(find.byKey(const ValueKey('street.tile.34'))).label,
-        'Numéro 34, à faire, repasser',
-      );
+      final comingBack = find.byKey(const ValueKey('street.tile.34'));
+      expect(tester.getSemantics(comingBack).label, 'Numéro 34, repasser');
+      await tester.longPress(comingBack);
+      await tester.pumpAndSettle();
+      expect(find.text('après 19h'), findsOneWidget);
       semantics.dispose();
     },
   );

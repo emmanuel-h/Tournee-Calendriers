@@ -1,5 +1,6 @@
 // A street holding every kind of data the phone storage must keep: a
-// position and none, every status, « repasser » with and without hint,
+// position and none, every status, « repasser » with and without hint (a
+// building's own too),
 // notes, last changes, buildings of every shape (two staircases, unknown
 // floors, free labels, an emptied floor), a removed number and a deletion.
 import 'package:test/test.dart';
@@ -7,7 +8,6 @@ import 'package:tournee_calendriers/domain/street/building/building.dart';
 import 'package:tournee_calendriers/domain/street/building/building_plan.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase.dart';
-import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/removed_house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
@@ -17,8 +17,9 @@ import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 
-/// Staircase A: 1er with doors 11 (done, Léa) and 12 (nobody home, a
-/// « repasser », a note), RdC emptied. Staircase B: RdC door 01.
+/// Staircase A: 1er with doors 11 (done, Léa) and 12 (« repasser » with a
+/// hint, a note), RdC emptied. Staircase B: RdC door 01 (« repasser »
+/// without hint).
 final twoStaircases = valueOf(
   Building.create(
     style: DoorLabelStyle.floorAndNumber,
@@ -26,7 +27,10 @@ final twoStaircases = valueOf(
       Staircase(
         name: escB,
         floors: [
-          Floor(level: 0, dwellings: [Dwelling(label: d('01'))]),
+          Floor(
+            level: 0,
+            dwellings: [Dwelling(label: d('01'), status: VisitStatus.comeBack)],
+          ),
         ],
       ),
       Staircase(
@@ -42,7 +46,7 @@ final twoStaircases = valueOf(
               ),
               Dwelling(
                 label: d('12'),
-                status: VisitStatus.nobodyHome,
+                status: VisitStatus.comeBack,
                 comeBack: comeBack('le soir'),
                 note: note('interphone cassé'),
                 lastChange: paulAtThree,
@@ -96,14 +100,14 @@ final everyKindOfHouse = [
   House(number: n('1'), position: townHallDoor),
   House(
     number: n('3bis'),
-    status: VisitStatus.nobodyHome,
+    status: VisitStatus.comeBack,
     comeBack: comeBack('après 19h'),
     note: note('chien\ndans le jardin 🐕'),
     lastChange: leaAtTwo,
     position: northDoor,
   ),
   House(number: n('3A'), status: VisitStatus.done, lastChange: paulAtThree),
-  House(number: n('5'), comeBack: ComeBack.withoutHint),
+  House(number: n('5'), status: VisitStatus.nobodyHome),
   House(
     number: n('8'),
     comeBack: comeBack('gardien'),

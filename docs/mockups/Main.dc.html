@@ -67,7 +67,7 @@ a{color:#B3261E}a:hover{color:#8C1D18}
     </div>
   </sc-if>
   <sc-if value="{{noLast}}" hint-placeholder-val="{{true}}">
-    <div style="position: absolute; left: 16px; right: 16px; bottom: 20px; height: 44px; border-radius: 22px; background: #FFFFFF; border: 1px solid #E2DED5; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #4A5058">Appui : ○ → ✓ → ✗ → ○ · Appui long : détails</div>
+    <div style="position: absolute; left: 16px; right: 16px; bottom: 20px; height: 44px; border-radius: 22px; background: #FFFFFF; border: 1px solid #E2DED5; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #4A5058">Appui : ○ → ✓ → ✗ → ↻ → ○ · Appui long : détails</div>
   </sc-if>
 </div>
 </x-dc>
@@ -82,7 +82,7 @@ class Component extends DCLogic {
         { n: '1', side: 'odd', s: 'todo' },
         { n: '3', side: 'odd', s: 'done' },
         { n: '3bis', side: 'odd', s: 'nobody' },
-        { n: '5', side: 'odd', s: 'todo', cb: true },
+        { n: '5', side: 'odd', s: 'comeBack' },
         { n: '7', side: 'odd', s: 'todo' },
         { n: '9', side: 'odd', s: 'done' },
         { n: '11', side: 'odd', s: 'todo' },
@@ -104,14 +104,14 @@ class Component extends DCLogic {
     };
   }
   tap(n) {
-    const next = { todo: 'done', done: 'nobody', nobody: 'todo' };
-    const names = { todo: 'À faire', done: 'Fait', nobody: 'Personne' };
+    const next = { todo: 'done', done: 'nobody', nobody: 'comeBack', comeBack: 'todo' };
+    const names = { todo: 'À faire', done: 'Fait', nobody: 'Personne', comeBack: 'Repasser' };
     let before = null;
     let after = null;
     const houses = this.state.houses.map((h) => {
       if (h.n !== n) return h;
       before = h;
-      after = Object.assign({}, h, { s: next[h.s], cb: next[h.s] === 'done' ? false : h.cb });
+      after = Object.assign({}, h, { s: next[h.s] });
       return after;
     });
     this.setState({ houses: houses, last: { before: before, text: n + ' → ' + names[after.s] } });
@@ -127,20 +127,20 @@ class Component extends DCLogic {
     if (h.building) return base + 'background: #EFE9DD; color: #1B1F24; border-color: #CFC9BD; border-style: dashed;';
     if (h.s === 'done') return base + 'background: #1E6B47; color: #FFFFFF; border-color: #1E6B47;';
     if (h.s === 'nobody') return base + 'background: #F2B33D; color: #1B1F24; border-color: #D99A22;';
-    if (h.cb) return base + 'background: #D6E6F5; color: #1D4E7A; border-color: #A9C8E6;';
+    if (h.s === 'comeBack') return base + 'background: #D6E6F5; color: #1D4E7A; border-color: #A9C8E6;';
     return base + 'background: #FFFFFF; color: #1B1F24; border-color: #CFC9BD;';
   }
   glyphFor(h) {
     if (h.building) return '◐ ' + h.done + '/' + h.total;
     if (h.s === 'done') return '✓';
     if (h.s === 'nobody') return '✗';
-    if (h.cb) return '↻';
+    if (h.s === 'comeBack') return '↻';
     return '○';
   }
   ariaFor(h) {
     if (h.building) return 'Numéro ' + h.n + ', immeuble, ' + h.done + ' sur ' + h.total + ' faits';
-    const names = { todo: 'à faire', done: 'fait', nobody: 'personne' };
-    return 'Numéro ' + h.n + ', ' + names[h.s] + (h.cb ? ', repasser' : '');
+    const names = { todo: 'à faire', done: 'fait', nobody: 'personne', comeBack: 'repasser' };
+    return 'Numéro ' + h.n + ', ' + names[h.s];
   }
   renderVals() {
     const H = this.state.houses;
@@ -164,7 +164,7 @@ class Component extends DCLogic {
       doneCount: doneCount,
       total: total,
       nobodyCount: H.filter((h) => h.s === 'nobody').length,
-      comeBackCount: H.filter((h) => h.cb).length,
+      comeBackCount: H.filter((h) => h.s === 'comeBack').length,
       progressStyle: 'height: 6px; background: #1E6B47; width: ' + pct + '%',
       hideDone: hide,
       hideLabel: hide ? '☑ Masquer faits' : '☐ Masquer faits',

@@ -190,18 +190,18 @@ void main() {
       expect(_streetOf([]).progress, Progress.empty);
     });
 
-    test('should count each status and the come-backs on a mixed street', () {
+    test('should count each of the four statuses on a mixed street', () {
       final street = _street([
         House(number: n('1'), status: VisitStatus.done),
         House(number: n('2'), status: VisitStatus.done),
         House(number: n('3'), status: VisitStatus.done),
         House(number: n('4'), status: VisitStatus.nobodyHome),
+        House(number: n('5'), status: VisitStatus.nobodyHome),
         House(
-          number: n('5'),
-          status: VisitStatus.nobodyHome,
+          number: n('6'),
+          status: VisitStatus.comeBack,
           comeBack: comeBack('après 19h'),
         ),
-        House(number: n('6'), comeBack: ComeBack.withoutHint),
         House(number: n('7')),
         House(number: n('8')),
         House(number: n('9')),
@@ -212,9 +212,10 @@ void main() {
 
       expect(progress.done, 3);
       expect(progress.nobodyHome, 2);
-      expect(progress.toDo, 5);
-      expect(progress.comeBack, 2);
+      expect(progress.comeBack, 1);
+      expect(progress.toDo, 4);
       expect(progress.total, 10);
+      expect(progress.toComeBack, 1);
     });
   });
 
@@ -223,6 +224,7 @@ void main() {
       House(number: n('1')),
       House(
         number: n('3'),
+        status: VisitStatus.comeBack,
         comeBack: comeBack('après 19h'),
         note: note('chien'),
         lastChange: paulAtThree,
@@ -259,7 +261,7 @@ void main() {
       );
     });
 
-    test('should keep the come-back and the note when nobody is home', () {
+    test('should drop the hint but keep the note when nobody is home', () {
       final (marked, change) = valueOf(
         street.markHouse(n('3'), VisitStatus.nobodyHome, by: lea, at: twoPm),
       );
@@ -269,15 +271,16 @@ void main() {
         House(
           number: n('3'),
           status: VisitStatus.nobodyHome,
-          comeBack: comeBack('après 19h'),
           note: note('chien'),
           lastChange: leaAtTwo,
         ),
       );
-      expect(change.clearsComeBack, isFalse);
+      expect(marked.houses[1].comeBack, isNull);
+      expect(change.comeBack, isNull);
+      expect(change.before.comeBack, comeBack('après 19h'));
     });
 
-    test('should clear the come-back but keep the note when done', () {
+    test('should drop the hint but keep the note when done', () {
       final (marked, change) = valueOf(
         street.markHouse(n('3'), VisitStatus.done, by: lea, at: twoPm),
       );
@@ -291,8 +294,27 @@ void main() {
           lastChange: leaAtTwo,
         ),
       );
-      expect(change.clearsComeBack, isTrue);
-      expect(change.before.comeBack, comeBack('après 19h'));
+      expect(change.comeBack, isNull);
+    });
+
+    test('should come back without hint when a house becomes it', () {
+      final (marked, change) = valueOf(
+        street.markHouse(n('4'), VisitStatus.comeBack, by: lea, at: twoPm),
+      );
+
+      expect(marked.houses[2].status, VisitStatus.comeBack);
+      expect(marked.houses[2].comeBack, ComeBack.withoutHint);
+      expect(marked.houses[2].lastChange, leaAtTwo);
+      expect(change.status, VisitStatus.comeBack);
+      expect(change.comeBack, ComeBack.withoutHint);
+    });
+
+    test('should keep the hint when a house stays « repasser »', () {
+      final (marked, _) = valueOf(
+        street.markHouse(n('3'), VisitStatus.comeBack, by: lea, at: twoPm),
+      );
+
+      expect(marked.houses[1].comeBack, comeBack('après 19h'));
     });
 
     test('should move a done house back to do', () {
@@ -348,12 +370,12 @@ void main() {
 
   group('setComeBack', () {
     final street = _street([
-      House(number: n('1'), note: note('chien')),
+      House(number: n('1'), status: VisitStatus.comeBack, note: note('chien')),
       House(number: n('2'), status: VisitStatus.nobodyHome),
       House(number: n('4'), status: VisitStatus.done, lastChange: paulAtThree),
     ]);
 
-    test('should add the come-back and keep status and note when to do', () {
+    test('should set the hint and keep status and note when « repasser »', () {
       final (changed, change) = valueOf(
         street.setComeBack(n('1'), comeBack('après 19h'), by: lea, at: twoPm),
       );
@@ -362,6 +384,7 @@ void main() {
         changed.houses[0],
         House(
           number: n('1'),
+          status: VisitStatus.comeBack,
           comeBack: comeBack('après 19h'),
           note: note('chien'),
           lastChange: leaAtTwo,
@@ -378,56 +401,20 @@ void main() {
       );
     });
 
-    test('should add the come-back when nobody was home', () {
-      final (changed, _) = valueOf(
-        street.setComeBack(n('2'), ComeBack.withoutHint, by: lea, at: twoPm),
-      );
-
-      expect(
-        changed.houses[1],
-        House(
-          number: n('2'),
-          status: VisitStatus.nobodyHome,
-          comeBack: ComeBack.withoutHint,
-          lastChange: leaAtTwo,
-        ),
-      );
-    });
-
-    test('should remove the come-back when given none', () {
-      final (withComeBack, _) = valueOf(
-        street.setComeBack(n('2'), ComeBack.withoutHint, by: lea, at: twoPm),
-      );
-
-      final (changed, change) = valueOf(
-        withComeBack.setComeBack(n('2'), null, by: paul, at: threePm),
-      );
-
-      expect(changed.houses[1].comeBack, isNull);
-      expect(changed.houses[1].lastChange, paulAtThree);
-      expect(change.comeBack, isNull);
-      expect(change.before.comeBack, ComeBack.withoutHint);
-    });
-
-    test('should accept removing the come-back of a done house', () {
-      final (changed, change) = valueOf(
-        street.setComeBack(n('4'), null, by: lea, at: twoPm),
-      );
-
-      expect(
-        changed.houses[2],
-        House(number: n('4'), status: VisitStatus.done, lastChange: leaAtTwo),
-      );
-      expect(change.comeBack, isNull);
-    });
-
-    test('should refuse a come-back on a done house', () {
-      expect(
-        failureOf(
-          street.setComeBack(n('4'), ComeBack.withoutHint, by: lea, at: twoPm),
-        ),
-        HouseChangeFailure.comeBackOnDoneHouse,
-      );
+    final refused = <String, (String, ComeBack?)>{
+      'nobody was home': ('2', ComeBack.withoutHint),
+      'the house is done': ('4', comeBack('samedi')),
+      'no hint is given to a house « repasser »': ('1', null),
+    };
+    refused.forEach((when, given) {
+      test('should refuse a hint when $when', () {
+        expect(
+          failureOf(
+            street.setComeBack(n(given.$1), given.$2, by: lea, at: twoPm),
+          ),
+          HouseChangeFailure.notComeBack,
+        );
+      });
     });
 
     test('should leave the other houses alone', () {
@@ -453,7 +440,7 @@ void main() {
     final street = _street([
       House(
         number: n('1'),
-        status: VisitStatus.nobodyHome,
+        status: VisitStatus.comeBack,
         comeBack: comeBack('le samedi'),
       ),
       House(number: n('2'), status: VisitStatus.done, note: note('digicode')),
@@ -468,7 +455,7 @@ void main() {
         changed.houses[0],
         House(
           number: n('1'),
-          status: VisitStatus.nobodyHome,
+          status: VisitStatus.comeBack,
           comeBack: comeBack('le samedi'),
           note: note('chien'),
           lastChange: leaAtTwo,

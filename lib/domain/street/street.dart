@@ -34,8 +34,10 @@ enum HouseChangeFailure {
   /// The street has no house with that number.
   unknownHouse,
 
-  /// A « repasser » was asked on a house that is already done.
-  comeBackOnDoneHouse,
+  /// A « repasser » hint was given to (or taken from) a single house that
+  /// is not « repasser »: its « repasser » is its status, set with
+  /// `markHouse`.
+  notComeBack,
 
   /// A building was to be marked as a whole: its doors are marked one by
   /// one, and its status follows from them.
@@ -77,8 +79,9 @@ enum DwellingChangeFailure {
   /// The building has no door with that staircase, floor and label.
   unknownDwelling,
 
-  /// A « repasser » was asked on a door that is already done.
-  comeBackOnDoneDwelling,
+  /// A « repasser » hint was given to (or taken from) a door that is not
+  /// « repasser »: its « repasser » is its status, set with `markDwelling`.
+  notComeBack,
 }
 
 /// Why a change could not be undone (« Annuler » of the snackbar).
@@ -108,7 +111,8 @@ enum UndoFailure {
 ///   [removedHouses] together (the number is the key in storage);
 /// - [houses] and [removedHouses] are sorted by [HouseNumber]
 ///   (`3 < 3bis < 3A < 4`);
-/// - a done house or door has no « repasser » (see [House], [Dwelling]);
+/// - a single house or a door has a « repasser » hint exactly when its
+///   status is « repasser » (see [House], [Dwelling]);
 /// - a building is to do itself, its doors carry the statuses (see [House]);
 /// - the invariants of each [Building].
 ///
@@ -239,9 +243,9 @@ final class Street {
 
   /// Gives the house at [number] the [status], as [by] at [at].
   ///
-  /// Marking a house done also removes its « repasser »: the residents have
-  /// been seen, there is nothing left to come back for (the tap logic of the
-  /// approved Main mockup). Any other status keeps it.
+  /// The hint of a « repasser » goes with that status: leaving « repasser »
+  /// drops it, coming to « repasser » starts without one (the sheet's field
+  /// then gives it), see [HouseMarked.comeBack].
   ///
   /// Refused with [HouseChangeFailure.houseIsBuilding] on a building: mark
   /// its doors with [markDwelling].
@@ -256,7 +260,7 @@ final class Street {
     final before = houses[index];
     if (before.isBuilding) return const Err(HouseChangeFailure.houseIsBuilding);
     final stamp = ChangeStamp(by: by, at: at);
-    // The House factory drops the come-back when the status is done.
+    // The House factory keeps the come-back only for « repasser ».
     final after = House(
       number: number,
       status: status,
@@ -271,13 +275,16 @@ final class Street {
     ));
   }
 
-  /// Sets the « repasser » of the house at [number] to [comeBack], or
-  /// removes it when [comeBack] is null, as [by] at [at]. On a building, it
-  /// is the building's own « repasser » (its doors keep theirs).
+  /// Sets the « repasser » of the house at [number] to [comeBack], as [by]
+  /// at [at] (the hint field of its sheet).
   ///
-  /// Refused with [HouseChangeFailure.comeBackOnDoneHouse] on a done house:
-  /// it would be dropped at once (see [House]), and silently ignoring the
-  /// request would hide that from the user. Move the house out of done first.
+  /// On a building, it is the building's own « repasser » (its doors keep
+  /// theirs), removed when [comeBack] is null. On a single house only the
+  /// hint changes: « repasser » is its status, given with [markHouse] and
+  /// left by giving another. So it is refused with
+  /// [HouseChangeFailure.notComeBack] when the single house is not
+  /// « repasser », or when [comeBack] is null: dropping the request
+  /// silently would hide that from the user.
   Result<(Street, ComeBackSet), HouseChangeFailure> setComeBack(
     HouseNumber number,
     ComeBack? comeBack, {
@@ -287,8 +294,9 @@ final class Street {
     final index = _indexOf(number);
     if (index < 0) return const Err(HouseChangeFailure.unknownHouse);
     final before = houses[index];
-    if (comeBack != null && before.status == VisitStatus.done) {
-      return const Err(HouseChangeFailure.comeBackOnDoneHouse);
+    if (!before.isBuilding &&
+        (comeBack == null || before.status != VisitStatus.comeBack)) {
+      return const Err(HouseChangeFailure.notComeBack);
     }
     final stamp = ChangeStamp(by: by, at: at);
     final after = House(
@@ -409,8 +417,9 @@ final class Street {
   /// Turns the building at [number] back into a single house, as [by] at
   /// [at] (« or back to a single house », PLAN §5.5). Its doors are
   /// dropped (the screen asks first); the house is done when every door
-  /// was done, to do otherwise, and keeps its note and « repasser » (which
-  /// a done house drops).
+  /// was done; otherwise it is « repasser », with its hint, when the
+  /// building had its own « repasser », and to do when not. It keeps its
+  /// note.
   Result<(Street, BuildingRemoved), BuildingChangeFailure> removeBuilding(
     HouseNumber number, {
     required MemberId by,
@@ -425,7 +434,8 @@ final class Street {
         final before = houses[index];
         final status = switch (building.status) {
           BuildingStatus.done => VisitStatus.done,
-          BuildingStatus.partial || BuildingStatus.toDo => VisitStatus.toDo,
+          BuildingStatus.partial || BuildingStatus.toDo =>
+            before.comeBack == null ? VisitStatus.toDo : VisitStatus.comeBack,
         };
         final stamp = ChangeStamp(by: by, at: at);
         final after = House(
@@ -449,8 +459,8 @@ final class Street {
   }
 
   /// Gives the door at [key] of the building at [number] the [status], as
-  /// [by] at [at] (a tap on the door). Marking a door done removes its
-  /// « repasser », like a house's.
+  /// [by] at [at] (a tap on the door). The hint of a « repasser » goes with
+  /// that status, as a house's.
   ///
   /// The house itself is untouched (its last change included): the door
   /// keeps its own.
@@ -488,9 +498,10 @@ final class Street {
     }
   }
 
-  /// Sets the « repasser » of the door at [key] of the building at [number]
-  /// to [comeBack], or removes it when [comeBack] is null, as [by] at [at].
-  /// Refused on a done door, for the reason given in [setComeBack].
+  /// Sets the hint of the « repasser » of the door at [key] of the building
+  /// at [number] to [comeBack], as [by] at [at]. Refused with
+  /// [DwellingChangeFailure.notComeBack] when the door is not « repasser »
+  /// or [comeBack] is null, for the reason given in [setComeBack].
   Result<(Street, DwellingComeBackSet), DwellingChangeFailure>
   setDwellingComeBack(
     HouseNumber number,
@@ -503,8 +514,8 @@ final class Street {
       case Err(:final failure):
         return Err(failure);
       case Ok(value: (final index, final before)):
-        if (comeBack != null && before.status == VisitStatus.done) {
-          return const Err(DwellingChangeFailure.comeBackOnDoneDwelling);
+        if (comeBack == null || before.status != VisitStatus.comeBack) {
+          return const Err(DwellingChangeFailure.notComeBack);
         }
         final stamp = ChangeStamp(by: by, at: at);
         final after = Dwelling(

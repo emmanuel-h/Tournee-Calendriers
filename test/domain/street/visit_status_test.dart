@@ -2,11 +2,12 @@ import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
 void main() {
-  test('should list the three statuses in tap-cycle order', () {
+  test('should list the four statuses in tap-cycle order', () {
     expect(VisitStatus.values, [
       VisitStatus.toDo,
       VisitStatus.done,
       VisitStatus.nobodyHome,
+      VisitStatus.comeBack,
     ]);
   });
 
@@ -18,13 +19,18 @@ void main() {
     expect(VisitStatus.done.next, VisitStatus.nobodyHome);
   });
 
-  test('should go back to do when a nobody-home house is tapped', () {
-    expect(VisitStatus.nobodyHome.next, VisitStatus.toDo);
+  test('should become come back when a nobody-home house is tapped', () {
+    expect(VisitStatus.nobodyHome.next, VisitStatus.comeBack);
   });
 
-  test('should come back to the start when tapped three times', () {
+  test('should go back to do when a come-back house is tapped', () {
+    expect(VisitStatus.comeBack.next, VisitStatus.toDo);
+  });
+
+  test('should come back to the start when tapped four times', () {
     for (final status in VisitStatus.values) {
-      expect(status.next.next.next, status, reason: '$status');
+      expect(status.next.next.next.next, status, reason: '$status');
+      expect(status.next.next, isNot(status), reason: '$status');
     }
   });
 }

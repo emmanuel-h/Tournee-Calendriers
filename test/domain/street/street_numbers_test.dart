@@ -135,8 +135,7 @@ void main() {
       expect(_labels(street.oddHouses), ['5']);
       expect(
         street.progress,
-        Progress.of(VisitStatus.done, comeBack: false) +
-            Progress.of(VisitStatus.toDo, comeBack: false),
+        Progress.of(VisitStatus.done) + Progress.of(VisitStatus.toDo),
       );
     });
 

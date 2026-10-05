@@ -21,16 +21,21 @@ final _id = StreetId('lilas');
 
 /// The Main mockup in short: 1 to do, 3 done, 3bis nobody home, 5 to come
 /// back, 7 to do with a note; 2 done, 8 a building with 1 of its 2 doors
-/// done.
+/// done and its own « repasser ».
 final _houses = [
   House(number: n('1')),
   House(number: n('3'), status: VisitStatus.done),
   House(number: n('3bis'), status: VisitStatus.nobodyHome),
-  House(number: n('5'), comeBack: comeBack('après 19h')),
+  House(
+    number: n('5'),
+    status: VisitStatus.comeBack,
+    comeBack: comeBack('après 19h'),
+  ),
   House(number: n('7'), note: note('chien')),
   House(number: n('2'), status: VisitStatus.done),
   House(
     number: n('8'),
+    comeBack: comeBack('gardien'),
     building: building(
       topFloor: 0,
       doors: 2,
@@ -110,7 +115,8 @@ void main() {
       expect(state.done, 3);
       expect(state.total, 8);
       expect(state.nobodyHome, 1);
-      expect(state.comeBack, 1);
+      // 5, and the building 8 itself.
+      expect(state.comeBack, 2);
       expect(state.hideDone, isFalse);
       expect(state.columns, StreetColumns.both);
       expect(state.odd, [
@@ -306,6 +312,31 @@ void main() {
         marked,
         MarkedHouse(number: n('3'), status: VisitStatus.nobodyHome),
       );
+    });
+
+    test('should move a nobody-home house to come back', () async {
+      phoneWith(_street());
+      await settled();
+
+      final marked = await notifier().cycle(n('3bis'));
+
+      expect(
+        marked,
+        MarkedHouse(number: n('3bis'), status: VisitStatus.comeBack),
+      );
+      expect((await shown()).odd[2], _tile('3bis', const ComeBackMark()));
+      expect((await shown()).comeBack, 3);
+    });
+
+    test('should move a come-back house to do', () async {
+      phoneWith(_street());
+      await settled();
+
+      final marked = await notifier().cycle(n('5'));
+
+      expect(marked, MarkedHouse(number: n('5'), status: VisitStatus.toDo));
+      expect(streets[_id]!.houses[4].number, n('5'));
+      expect(streets[_id]!.houses[4].comeBack, isNull);
     });
 
     test('should change nothing when the tile is a building', () async {

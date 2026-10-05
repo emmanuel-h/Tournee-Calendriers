@@ -47,7 +47,7 @@ a{color:#B3261E}a:hover{color:#8C1D18}
         </div>
       </sc-for>
     </div>
-    <span style="font-size: 14px; color: #4A5058; text-align: center">Appui : ○ → ✓ → ✗ → ○ · Appui long : note, repasser</span>
+    <span style="font-size: 14px; color: #4A5058; text-align: center">Appui : ○ → ✓ → ✗ → ↻ → ○ · Appui long : détails</span>
     <div style="display: flex; gap: 10px">
       <a href="BuildingSetup.dc.html" style="flex: 1; height: 48px; border-radius: 24px; border: 1.5px solid #CFC9BD; background: #FFFFFF; font-weight: 700; font-size: 15px; color: #1B1F24; display: flex; align-items: center; justify-content: center; text-decoration: none">Modifier les étages</a>
       <button style="flex: 1; height: 48px; border-radius: 24px; border: 1.5px solid #CFC9BD; background: #FFFFFF; font: 700 15px 'Atkinson Hyperlegible', sans-serif; color: #1B1F24">Note · Repasser</button>
@@ -84,7 +84,7 @@ class Component extends DCLogic {
     };
   }
   tap(stair, fi, di) {
-    const next = { todo: 'done', done: 'nobody', nobody: 'todo' };
+    const next = { todo: 'done', done: 'nobody', nobody: 'comeBack', comeBack: 'todo' };
     const b = Object.assign({}, this.state.buildings);
     b[stair] = b[stair].map((f, i) => i !== fi ? f : {
       n: f.n,
@@ -96,10 +96,11 @@ class Component extends DCLogic {
     const styles = {
       todo: 'background: #FFFFFF; color: #1B1F24; border: 1.5px solid #CFC9BD',
       done: 'background: #1E6B47; color: #FFFFFF; border: 1.5px solid #1E6B47',
-      nobody: 'background: #F2B33D; color: #1B1F24; border: 1.5px solid #D99A22'
+      nobody: 'background: #F2B33D; color: #1B1F24; border: 1.5px solid #D99A22',
+      comeBack: 'background: #D6E6F5; color: #1D4E7A; border: 1.5px solid #A9C8E6'
     };
-    const glyphs = { todo: '○', done: '✓', nobody: '✗' };
-    const names = { todo: 'à faire', done: 'fait', nobody: 'personne' };
+    const glyphs = { todo: '○', done: '✓', nobody: '✗', comeBack: '↻' };
+    const names = { todo: 'à faire', done: 'fait', nobody: 'personne', comeBack: 'repasser' };
     const floorName = (n) => (n === 0 ? 'RdC' : n === 1 ? '1er' : n + 'e');
     const stair = this.state.stair;
     const all = [].concat(...Object.values(this.state.buildings).map((fs) => [].concat(...fs.map((f) => f.doors))));

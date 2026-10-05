@@ -72,11 +72,11 @@ final class HouseMarked extends HouseChange {
 
   final VisitStatus status;
 
-  /// Whether the change also removed the house's « repasser »: a done house
-  /// never keeps one (see `House`). Storage must then write the come-back as
-  /// absent too; otherwise it must leave the come-back field alone, because
-  /// a teammate may be changing it at the same moment.
-  bool get clearsComeBack => status == VisitStatus.done;
+  /// The come-back the house has after the change, which storage writes
+  /// with the status: the hint it already had when it stays « repasser »,
+  /// none when it becomes « repasser », null with any other status (see
+  /// `ComeBack.keptBy`).
+  ComeBack? get comeBack => ComeBack.keptBy(status, before.comeBack);
 
   @override
   bool operator ==(Object other) =>
@@ -90,8 +90,9 @@ final class HouseMarked extends HouseChange {
       'HouseMarked(${streetId.value}, ${number.label}, $status, $stamp)';
 }
 
-/// The « repasser » of the house at [number] was set to [comeBack], or
-/// removed when [comeBack] is null.
+/// The « repasser » hint of the house at [number] was set to [comeBack];
+/// on a building, its own « repasser » was set, or removed when
+/// [comeBack] is null.
 final class ComeBackSet extends HouseChange {
   const ComeBackSet({
     required super.streetId,
@@ -176,11 +177,12 @@ final class BuildingLaidOut extends HouseChange {
 }
 
 /// The building at [number] became a single house again, with [status]:
-/// done when every door was done, to do otherwise. Its doors are dropped;
-/// undo puts [before] back with them.
+/// done when every door was done, otherwise « repasser » when the building
+/// had its own, to do when not. Its doors are dropped; undo puts [before]
+/// back with them.
 ///
-/// Storage removes the dwellings and writes the house's `status`, `by` and
-/// `at` (and the come-back as absent when [clearsComeBack]).
+/// Storage removes the dwellings and writes the house's `status`,
+/// [comeBack], `by` and `at`.
 final class BuildingRemoved extends HouseChange {
   const BuildingRemoved({
     required super.streetId,
@@ -191,9 +193,9 @@ final class BuildingRemoved extends HouseChange {
 
   final VisitStatus status;
 
-  /// Whether the building's « repasser » went away: a done house never
-  /// keeps one (see `House`).
-  bool get clearsComeBack => status == VisitStatus.done;
+  /// The come-back the single house keeps: the building's own when it is
+  /// « repasser », none otherwise.
+  ComeBack? get comeBack => ComeBack.keptBy(status, before.comeBack);
 
   @override
   bool operator ==(Object other) =>
@@ -318,9 +320,9 @@ final class DwellingMarked extends DwellingChange {
 
   final VisitStatus status;
 
-  /// Whether the change also removed the door's « repasser »: a done door
-  /// never keeps one (see `Dwelling`), so storage then writes it as absent.
-  bool get clearsComeBack => status == VisitStatus.done;
+  /// The come-back the door has after the change, which storage writes
+  /// with the status (see [HouseMarked.comeBack]).
+  ComeBack? get comeBack => ComeBack.keptBy(status, before.comeBack);
 
   @override
   bool operator ==(Object other) =>
@@ -336,8 +338,7 @@ final class DwellingMarked extends DwellingChange {
   String toString() => 'DwellingMarked($_where, $status, $stamp)';
 }
 
-/// The « repasser » of the door at [key] was set to [comeBack], or removed
-/// when [comeBack] is null.
+/// The « repasser » hint of the door at [key] was set to [comeBack].
 final class DwellingComeBackSet extends DwellingChange {
   const DwellingComeBackSet({
     required super.streetId,

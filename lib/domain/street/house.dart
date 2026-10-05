@@ -30,7 +30,7 @@ final class House {
   );
 
   /// A house with [number]; by default a single house not visited yet, with
-  /// no « repasser », no note and no change recorded.
+  /// no note and no change recorded.
   ///
   /// Two rules run here, so that whatever builds a house (a command of the
   /// street, an adapter reading stored data) never breaks them. A `factory`
@@ -38,9 +38,10 @@ final class House {
   /// plain constructor cannot:
   /// - a house that is a [building] is always [VisitStatus.toDo] itself:
   ///   its doors carry the statuses, and its own status is derived from them
-  ///   (see `Building.status`);
-  /// - a house that is [VisitStatus.done] has no reason to be visited again,
-  ///   so its [comeBack] is dropped.
+  ///   (see `Building.status`); it keeps the [comeBack] it is given, its own;
+  /// - a single house has a [comeBack] exactly when it is
+  ///   [VisitStatus.comeBack] (see [ComeBack.keptBy]): « repasser » without
+  ///   hint when none is given, and none at all with another status.
   factory House({
     required HouseNumber number,
     VisitStatus status = VisitStatus.toDo,
@@ -50,11 +51,11 @@ final class House {
     Building? building,
     GeoPoint? position,
   }) {
-    final ownStatus = building == null ? status : VisitStatus.toDo;
+    final isSingle = building == null;
     return House._(
       number,
-      ownStatus,
-      ownStatus == VisitStatus.done ? null : comeBack,
+      isSingle ? status : VisitStatus.toDo,
+      isSingle ? ComeBack.keptBy(status, comeBack) : comeBack,
       note,
       lastChange,
       building,
@@ -68,8 +69,8 @@ final class House {
   /// whose status is `building.status`.
   final VisitStatus status;
 
-  /// The « repasser » flag and its hint; null when nobody asked to come
-  /// back, and always null on a done house. A building keeps its own
+  /// What goes with the « repasser » status (its hint); null with any other
+  /// status. A building, always to do itself, keeps its own here
   /// (« Repasser » under the grid) apart from its doors'.
   final ComeBack? comeBack;
 
@@ -110,12 +111,12 @@ final class House {
   /// house; the doors of a building, plus the building's own « repasser »
   /// when it has one (counted in the street's ↻, not as a door).
   Progress get progress => switch (building) {
-    null => Progress.of(status, comeBack: comeBack != null),
+    null => Progress.of(status),
     // A typed pattern: matches a non-null building and names it, so the
     // line below uses it without `!`.
     final Building building =>
       building.progress +
-          (comeBack == null ? Progress.empty : Progress.comeBackAlone),
+          (comeBack == null ? Progress.empty : Progress.buildingComeBack),
   };
 
   @override

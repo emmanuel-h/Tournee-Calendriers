@@ -6,24 +6,22 @@ import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 import 'package:tournee_calendriers/ui/theme/status_look.dart';
 
-/// The blue block of a house or door sheet: « ☑ ↻ Repasser » and, once
-/// ticked, when to come back ([hint]). When not [enabled] (the house or
-/// door is done) the box is greyed and says why.
+/// The blue block of a building's own sheet (« Note · Repasser »):
+/// « ☑ ↻ Repasser » and, once ticked, when to come back ([hint]). A house
+/// or a door has no box: « Repasser » is one of its statuses.
 final class ComeBackBlock extends StatelessWidget {
   const ComeBackBlock({
     super.key,
     required this.name,
     required this.ticked,
-    required this.enabled,
     required this.onChanged,
     required this.hint,
   });
 
-  /// Names the parts for tests: `<name>.comeBack`, `<name>.comeBackDisabled`.
+  /// Names the box for tests: `<name>.comeBack`.
   final String name;
 
   final bool ticked;
-  final bool enabled;
   final ValueChanged<bool> onChanged;
 
   /// The hint field, shown while « Repasser » is ticked.
@@ -33,12 +31,12 @@ final class ComeBackBlock extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final colors = AppColors.of(context);
-    final foreground = enabled ? colors.onComeBack : colors.muted;
+    final foreground = colors.onComeBack;
     void toggle() => onChanged(!ticked);
     return Container(
       padding: const EdgeInsets.all(AppSizes.comeBackPadding),
       decoration: BoxDecoration(
-        color: enabled ? colors.comeBack : colors.ground,
+        color: colors.comeBack,
         borderRadius: BorderRadius.circular(AppSizes.segmentRadius),
       ),
       child: Column(
@@ -46,65 +44,46 @@ final class ComeBackBlock extends StatelessWidget {
         spacing: 10,
         children: [
           // One node for screen readers: « Repasser, case à cocher, non
-          // cochée, désactivée, Déjà fait : rien à repasser. »
+          // cochée ».
           MergeSemantics(
             child: InkWell(
               key: ValueKey('$name.comeBack'),
-              onTap: enabled ? toggle : null,
+              onTap: toggle,
               borderRadius: BorderRadius.circular(AppSizes.fieldRadius),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  // The whole row answers taps over at least 48 dp, so the
-                  // box itself can keep the mockup's size.
-                  ConstrainedBox(
-                    constraints: const BoxConstraints(
-                      minHeight: AppSizes.minTapTarget,
-                    ),
-                    child: Row(
-                      children: [
-                        Checkbox(
-                          value: ticked,
-                          onChanged: enabled ? (_) => toggle() : null,
-                          materialTapTargetSize:
-                              MaterialTapTargetSize.shrinkWrap,
-                          visualDensity: VisualDensity.compact,
-                          fillColor: WidgetStateProperty.resolveWith(
-                            (states) => states.contains(WidgetState.selected)
-                                ? foreground
-                                : Colors.transparent,
-                          ),
-                          checkColor: colors.surface,
-                          side: BorderSide(color: foreground, width: 2),
-                        ),
-                        const SizedBox(width: 8),
-                        StatusGlyph(
-                          StatusGlyphs.comeBack,
-                          size: AppSizes.comeBackGlyph,
-                          color: foreground,
-                        ),
-                        const SizedBox(width: 6),
-                        Text(
-                          l10n.comeBack,
-                          style: AppTextStyles.button.copyWith(
-                            color: foreground,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (!enabled)
-                    Padding(
-                      padding: const EdgeInsets.only(left: 4, bottom: 4),
-                      child: Text(
-                        l10n.comeBackDoneReason,
-                        key: ValueKey('$name.comeBackDisabled'),
-                        style: AppTextStyles.small.copyWith(
-                          color: colors.muted,
-                        ),
+              // The whole row answers taps over at least 48 dp, so the box
+              // itself can keep the mockup's size.
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  minHeight: AppSizes.minTapTarget,
+                ),
+                child: Row(
+                  children: [
+                    Checkbox(
+                      value: ticked,
+                      onChanged: (_) => toggle(),
+                      materialTapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                      visualDensity: VisualDensity.compact,
+                      fillColor: WidgetStateProperty.resolveWith(
+                        (states) => states.contains(WidgetState.selected)
+                            ? foreground
+                            : Colors.transparent,
                       ),
+                      checkColor: colors.surface,
+                      side: BorderSide(color: foreground, width: 2),
                     ),
-                ],
+                    const SizedBox(width: 8),
+                    StatusGlyph(
+                      StatusGlyphs.comeBack,
+                      size: AppSizes.comeBackGlyph,
+                      color: foreground,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      l10n.comeBack,
+                      style: AppTextStyles.button.copyWith(color: foreground),
+                    ),
+                  ],
+                ),
               ),
             ),
           ),

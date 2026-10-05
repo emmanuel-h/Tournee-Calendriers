@@ -3,7 +3,6 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
-import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/note.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
@@ -33,6 +32,7 @@ final _houses = [
   ),
   House(
     number: n('5'),
+    status: VisitStatus.comeBack,
     comeBack: comeBack('après 19h'),
     note: note('chien dans le jardin'),
   ),
@@ -113,7 +113,7 @@ void main() {
 
       expect(state.streetName, 'Rue des Lilas');
       expect(state.number, n('5'));
-      expect(state.status, VisitStatus.toDo);
+      expect(state.status, VisitStatus.comeBack);
       expect(state.comeBack, isTrue);
       expect(state.comeBackHint, 'après 19h');
       expect(state.note, 'chien dans le jardin');
@@ -220,7 +220,29 @@ void main() {
       },
     );
 
-    test('should clear the « repasser » when done is chosen', () async {
+    test('should come back without hint when « Repasser » is chosen', () async {
+      phoneWith(_street());
+      open('7');
+      await settled('7');
+
+      await notifier('7').setStatus(VisitStatus.comeBack);
+
+      expect(
+        streets.saved.single.$2,
+        HouseMarked(
+          streetId: _id,
+          before: houseBefore('7'),
+          stamp: leaAtTwo,
+          status: VisitStatus.comeBack,
+        ),
+      );
+      final state = await shown('7');
+      expect(state.status, VisitStatus.comeBack);
+      expect(state.comeBack, isTrue);
+      expect(state.comeBackHint, '');
+    });
+
+    test('should drop the hint when done is chosen', () async {
       phoneWith(_street());
       open('5');
       await settled('5');
@@ -231,7 +253,6 @@ void main() {
       expect(state.status, VisitStatus.done);
       expect(state.comeBack, isFalse);
       expect(state.comeBackHint, '');
-      expect(state.canComeBack, isFalse);
       expect(houseNow('5').comeBack, isNull);
     });
 
@@ -260,78 +281,31 @@ void main() {
   });
 
   group('setComeBack', () {
-    test('should store a « repasser » without hint when ticked', () async {
+    test('should store nothing on a house to do, whose « repasser » is a '
+        'status', () async {
       phoneWith(_street());
       open('7');
       await settled('7');
 
       await notifier('7').setComeBack(on: true);
 
-      expect(
-        streets.saved.single.$2,
-        ComeBackSet(
-          streetId: _id,
-          before: houseBefore('7'),
-          stamp: leaAtTwo,
-          comeBack: ComeBack.withoutHint,
-        ),
-      );
-      final state = await shown('7');
-      expect(state.comeBack, isTrue);
-      expect(state.comeBackHint, '');
-    });
-
-    test('should remove the « repasser » and its hint when unticked', () async {
-      phoneWith(_street());
-      open('5');
-      await settled('5');
-
-      await notifier('5').setComeBack(on: false);
-
-      expect(
-        streets.saved.single.$2,
-        ComeBackSet(
-          streetId: _id,
-          before: houseBefore('5'),
-          stamp: leaAtTwo,
-          comeBack: null,
-        ),
-      );
-      expect((await shown('5')).comeBack, isFalse);
-    });
-
-    test('should keep the hint when ticked while already ticked', () async {
-      phoneWith(_street());
-      open('5');
-      await settled('5');
-
-      await notifier('5').setComeBack(on: true);
-
       expect(streets.saved, isEmpty);
+      expect(houseNow('7').status, VisitStatus.toDo);
     });
 
-    test('should store nothing when unticked while not ticked', () async {
-      phoneWith(_street());
-      open('7');
-      await settled('7');
+    test(
+      'should store nothing on a house « repasser » when unticked',
+      () async {
+        phoneWith(_street());
+        open('5');
+        await settled('5');
 
-      await notifier('7').setComeBack(on: false);
+        await notifier('5').setComeBack(on: false);
 
-      expect(streets.saved, isEmpty);
-    });
-
-    test('should store nothing when the house is done', () async {
-      phoneWith(_street());
-      open('7');
-      await settled('7');
-      await notifier('7').setStatus(VisitStatus.done);
-      streets.saved.clear();
-
-      await notifier('7').setComeBack(on: true);
-
-      expect(streets.saved, isEmpty);
-      expect(houseNow('7').comeBack, isNull);
-    });
+        expect(streets.saved, isEmpty);
+        expect(houseNow('5').comeBack, comeBack('après 19h'));
+      },
+    );
   });
 
   group('saveComeBackHint', () {
@@ -367,7 +341,7 @@ void main() {
       },
     );
 
-    test('should store nothing when « repasser » is not ticked', () async {
+    test('should store nothing when the house is not « repasser »', () async {
       phoneWith(_street());
       open('7');
       await settled('7');

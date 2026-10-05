@@ -32,11 +32,13 @@ final class Segment<T> {
 }
 
 /// A row of options of which one is chosen, the chosen one in ink with
-/// white text (« À faire | Fait | Personne », « Esc. A | Esc. B »,
-/// « 51, 52… | 5A, 5B… | Libres »).
+/// white text (« À faire | Fait | Personne | Repasser », « Esc. A |
+/// Esc. B », « 51, 52… | 5A, 5B… | Libres »).
 ///
-/// Screen readers hear a group named [groupLabel] of radio buttons, each
-/// « cochée » or not. Tapping the chosen option does nothing.
+/// A line separates two options, whichever is chosen, and the outline's
+/// rounded corners clip the chosen option at either end. Screen readers
+/// hear a group named [groupLabel] of radio buttons, each « cochée » or
+/// not. Tapping the chosen option does nothing.
 final class SegmentedChoice<T> extends StatelessWidget {
   const SegmentedChoice({
     super.key,
@@ -46,6 +48,7 @@ final class SegmentedChoice<T> extends StatelessWidget {
     required this.onSelected,
     this.height = AppSizes.segmentHeight,
     this.textStyle = AppTextStyles.compactButton,
+    this.glyphAbove = false,
   });
 
   final String groupLabel;
@@ -57,41 +60,55 @@ final class SegmentedChoice<T> extends StatelessWidget {
   final double height;
   final TextStyle textStyle;
 
+  /// Draws each glyph above its label instead of before it, so four
+  /// options fit side by side (the status control of the house sheet).
+  final bool glyphAbove;
+
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     final divider = BorderSide(color: colors.line, width: AppSizes.borderWidth);
+    final radius = BorderRadius.circular(AppSizes.segmentRadius);
     return Semantics(
       label: groupLabel,
       container: true,
       explicitChildNodes: true,
-      child: Container(
+      // The outline is painted over the options (`foreground`), whole and
+      // inside the edge; under it, the options are clipped to the same
+      // rounded shape, so the chosen one's ink follows the corners. Painted
+      // under them, the outline would be half hidden at the corners.
+      child: DecoratedBox(
+        position: DecorationPosition.foreground,
         decoration: BoxDecoration(
           border: Border.fromBorderSide(divider),
-          borderRadius: BorderRadius.circular(AppSizes.segmentRadius),
+          borderRadius: radius,
         ),
-        // Clips the chosen segment's ink to the rounded corners.
-        clipBehavior: Clip.antiAlias,
-        child: Row(
-          children: [
-            for (final (index, segment) in segments.indexed)
-              Expanded(
-                child: DecoratedBox(
-                  decoration: BoxDecoration(
-                    border: Border(
-                      left: index == 0 ? BorderSide.none : divider,
-                    ),
+        child: ClipRRect(
+          borderRadius: radius,
+          child: Row(
+            children: [
+              for (final (index, segment) in segments.indexed) ...[
+                // A line of its own between two options: drawn as a border
+                // of an option, the chosen option's ink would paint over it.
+                if (index > 0)
+                  SizedBox(
+                    width: AppSizes.borderWidth,
+                    height: height,
+                    child: ColoredBox(color: divider.color),
                   ),
+                Expanded(
                   child: _SegmentButton(
                     segment: segment,
                     selected: segment.value == selected,
                     height: height,
                     textStyle: textStyle,
+                    glyphAbove: glyphAbove,
                     onTap: () => onSelected(segment.value),
                   ),
                 ),
-              ),
-          ],
+              ],
+            ],
+          ),
         ),
       ),
     );
@@ -104,6 +121,7 @@ final class _SegmentButton<T> extends StatelessWidget {
     required this.selected,
     required this.height,
     required this.textStyle,
+    required this.glyphAbove,
     required this.onTap,
   });
 
@@ -111,6 +129,7 @@ final class _SegmentButton<T> extends StatelessWidget {
   final bool selected;
   final double height;
   final TextStyle textStyle;
+  final bool glyphAbove;
   final VoidCallback onTap;
 
   @override
@@ -138,8 +157,12 @@ final class _SegmentButton<T> extends StatelessWidget {
               fit: BoxFit.scaleDown,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 6),
-                child: Row(
-                  spacing: 6,
+                // `Flex` is what `Row` and `Column` both are: one widget
+                // lays the glyph out beside or above the label.
+                child: Flex(
+                  direction: glyphAbove ? Axis.vertical : Axis.horizontal,
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: glyphAbove ? 4 : 6,
                   children: [
                     if (glyph != null)
                       StatusGlyph(

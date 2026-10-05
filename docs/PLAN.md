@@ -54,8 +54,8 @@ Code uses English names, the UI uses French.
 | Rue | `Street` | A street in a commune, with its house numbers and its shape on the map |
 | Numéro / maison | `House` | One address on a street (`12`, `12bis`), with its position when known |
 | Logement | `Dwelling` | One unit inside a building (`Apt 3`, `B2`) |
-| Statut | `VisitStatus` | `TO_DO` (à faire), `DONE` (fait), `NOBODY_HOME` (personne) |
-| Repasser | `comeBack` | The resident asked to come back later, with an optional hint ("après 19h") |
+| Statut | `VisitStatus` | `TO_DO` (à faire), `DONE` (fait), `NOBODY_HOME` (personne), `COME_BACK` (repasser): exactly one per house or door |
+| Repasser | `VisitStatus.comeBack` + `ComeBack` | A status: the resident asked to come back later, with an optional hint ("après 19h", the `ComeBack` value). A building, which has no status, may carry its own « repasser » |
 | Mes rues | assignees | Streets the current member has taken |
 | Libre | — | A street in the tournée that nobody has taken |
 
@@ -115,9 +115,11 @@ In the street (often offline):
 
 1. Open the app → the map shows my streets coloured; the panel lists them.
 2. Tap *Rue des Lilas* → Street screen: odd side on the left, even side on the right.
-3. Each door: **tap the tile** → ✓ fait. Again → ✗ personne. Again → ○ à faire. Undo snackbar.
+3. Each door: **tap the tile** → ✓ fait. Again → ✗ personne. Again → ↻ repasser. Again → ○ à
+   faire. Undo snackbar.
 4. Building at n°8: tap → unit grid → tap each unit the same way.
-5. "Repassez ce soir" → **hold** the tile → sheet → *Repasser* + "après 19h".
+5. "Repassez ce soir" → **hold** the tile → sheet → *↻ Repasser* + "après 19h" in « Quand
+   repasser ? » (or tap the tile up to ↻, without hint).
 6. Back in range: queued changes sync; the team map updates.
 
 ---
@@ -130,7 +132,7 @@ shown by colour alone: every status has a glyph too.
 
 Glyphs: `○` à faire · `✓` fait · `✗` personne · `↻` repasser · `◐ 7/12` immeuble en partie.
 
-**One gesture everywhere:** tap cycles `○ → ✓ → ✗ → ○`; hold opens the details. Same rule for
+**One gesture everywhere:** tap cycles `○ → ✓ → ✗ → ↻ → ○`; hold opens the details. Same rule for
 house tiles and apartment tiles. A building tile opens its unit grid on tap.
 
 **Text fields:** a value refused on the keyboard's « OK » (a street name, a number, numbers to
@@ -475,7 +477,7 @@ Edit mode details fixed in T1.10 (`lib/presentation/edit_street/`,
 - Odd numbers on the left, even on the right, each column sorted ascending
   (`3 < 3bis < 3ter < 3quater < 3A < 4`). Both columns scroll together.
 - Tile: number, status glyph, tinted background per status. A note shows as a small dot.
-- **Tap** cycles `○ → ✓ → ✗ → ○` (light haptic tick); **hold** opens the Fiche maison.
+- **Tap** cycles `○ → ✓ → ✗ → ↻ → ○` (light haptic tick); **hold** opens the Fiche maison.
 - Building tile: tap opens the Immeuble grid.
 - A street with numbers on one side only shows a single column.
 
@@ -484,17 +486,18 @@ Details fixed in T1.7 (`lib/presentation/street/`, `lib/ui/screens/street/`):
 - Each side is listed in its own order; a row of the list is the n-th tile of each side (as the
   mockup's two columns). Rows are built lazily with a fixed height, so a street of 400 numbers
   scrolls smoothly.
-- Tile look: a house shows its status; a house to do with a « repasser » shows ↻ (« personne »
-  wins over « repasser »). A building shows ✓ when every door is done, `◐ n/m` when some are,
-  ○ (or ↻ with its own « repasser ») when none is. A note on the house (or the building itself)
+- Tile look: a house shows its status (↻ tinted blue for « repasser »). A building shows ✓ when
+  every door is done, `◐ n/m` when some are, ○ (or ↻ with its own « repasser ») when none is —
+  doors « repasser » count as not done, so a building whose doors are all ↻ shows ○ (T1.16). A note on the house (or the building itself)
   is a small dot in the tile's top corner, « avec une note » for screen readers.
-- Header « 31/42 · ✗ 3 · ↻ 1 » counts every door, whatever is hidden. « Masquer faits » hides the
+- Header « 31/42 · ✗ 3 · ↻ 1 » counts every door, whatever is hidden; ↻ counts the doors
+  « repasser » plus the buildings with their own « repasser » (`Progress.toComeBack`). « Masquer faits » hides the
   tiles shown ✓ (houses done, buildings all done) and is remembered per street on the phone.
   The single column is decided on all the street's numbers, not on the visible ones.
 - A tap gives a light haptic tick at once, then TalkBack hears « Numéro 7, personne » and the
   snackbar « 7 → Personne [Annuler] » shows for 4 s, replacing any previous one; « Annuler »
   undoes that last tap only. The snackbar belongs to the screen and leaves with it. While no
-  snackbar shows, the hint « Appui : ○ → ✓ → ✗ → ○ · Appui long : détails » floats in its
+  snackbar shows, the hint « Appui : ○ → ✓ → ✗ → ↻ → ○ · Appui long : détails » floats in its
   place. A refused undo (the number was removed meanwhile) does nothing.
 - A street missing from the phone, or in the Corbeille, shows « Cette rue n'est plus sur ce
   téléphone. » with the back arrow.
@@ -507,14 +510,17 @@ Details fixed in T1.7 (`lib/presentation/street/`, `lib/ui/screens/street/`):
 │ (street screen, dimmed)      │    │ (street screen, dimmed)      │
 ├──────────────────────────────┤    ├──────────────────────────────┤
 │ 5 Rue des Lilas              │    │ 8 Rue des Lilas    ◐ 15/24   │
-│ (○ À faire|✓ Fait|✗ Personne)│    │ (Esc. A | Esc. B)  ← if > 1  │
-│ ☑ Repasser                   │    │ 5e  [51✓][52○][53✗][54✓]     │
-│   [ après 19h             ]  │    │ 4e  [41✓][42✓][43✓][44○]     │
-│ Note                         │    │ 3e  [31✗][32✓][33✓][34✓]     │
-│ [ chien dans le jardin    ]  │    │ 2e  [21✓][22✓][23○][24✓]     │
-│ [ Transformer en immeuble… ] │    │ 1er [11○][12✓][13✓][14✗]     │
-│ Modifié par Léa · 14:02      │    │ RdC [01✓][02○]               │
-└──────────────────────────────┘    │ Appui : ○→✓→✗→○ · long : détails│
+│ ┌──────┬──────┬──────┬─────┐ │    │ (Esc. A | Esc. B)  ← if > 1  │
+│ │  ○   │  ✓   │  ✗   │  ↻  │ │    │ 5e  [51✓][52○][53✗][54↻]     │
+│ │À fai.│ Fait │Pers. │Rep. │ │    │ 4e  [41✓][42✓][43✓][44○]     │
+│ └──────┴──────┴──────┴─────┘ │    │ 3e  [31✗][32✓][33✓][34✓]     │
+│ Quand repasser ? (grey ≠ ↻)  │    │ 2e  [21✓][22✓][23○][24✓]     │
+│   [ après 19h             ]  │    │ 1er [11○][12✓][13✓][14✗]     │
+│ Note                         │    │ RdC [01✓][02○]               │
+│ [ chien dans le jardin    ]  │    │                              │
+│ [ Transformer en immeuble… ] │    │                              │
+│ Modifié par Léa · 14:02      │    │                              │
+└──────────────────────────────┘    │ Appui : ○→✓→✗→↻→○ · détails  │
                                     │ [Modifier les étages]        │
                                     │ ☐ Repasser · Note [digicode] │
                                     └──────────────────────────────┘
@@ -522,7 +528,7 @@ Details fixed in T1.7 (`lib/presentation/street/`, `lib/ui/screens/street/`):
 
 - **Floors from top to bottom**, the way you climb the stairs. One row per floor, its doors
   left to right. A row with more doors than fit wraps onto a second line under the same label.
-- Same gesture as everywhere: tap cycles `○ → ✓ → ✗ → ○`, hold opens the door's note / repasser.
+- Same gesture as everywhere: tap cycles `○ → ✓ → ✗ → ↻ → ○`, hold opens the door's sheet.
 - **Several staircases:** a segmented control (Esc. A | Esc. B …) above the floors, shown only
   when the building has more than one; the header count covers the whole building.
 - A building whose floors are unknown is a single row labelled "Logements".
@@ -536,15 +542,19 @@ Fiche maison details fixed in T1.8 (`lib/presentation/house_sheet/`,
 - **Hold** a single-house tile opens the sheet (a building tile: #13). Opening it hides the
   snackbar of the last tap: its « Annuler » would put the whole house back, wiping the sheet's
   changes. The sheet shows « 5 Rue des Lilas », the status control (screen readers: a radio
-  group « Statut »), the blue « ↻ Repasser » block, the note, and the last change.
+  group « Statut »), the « Quand repasser ? » block, the note, and the last change.
 - **Each control is stored at once** through `SetHouseDetails` (one change each, stamped); the
   tile behind follows live. A control set to what the house already has stores nothing, so
   opening and closing a sheet never stamps a house. Changes run one after the other, each on
   the house as the previous one left it.
-- **« Repasser »**: ticking it shows the hint field (« Quand ? ex. après 19h », one line);
-  unticking drops the hint. While « Fait » is chosen the box is unticked, disabled and greyed,
-  with « Déjà fait : rien à repasser. » under it (read with the box by screen readers); choosing
-  « Fait » clears a « repasser » and its hint (§6.1).
+- **Status control** (T1.16): four choices « ○ À faire | ✓ Fait | ✗ Personne | ↻ Repasser »,
+  glyph above the word, 64 dp high, a visible line between two choices, the chosen one in ink
+  (the rounded outline clips it at either end).
+- **« Quand repasser ? »** (T1.16): a block always under the status control, so choosing a
+  status never moves the sheet — blue with the field enabled while « Repasser » is chosen,
+  greyed (field disabled, « ex. après 19h ») otherwise. Choosing « Repasser » starts without a
+  hint; choosing another status drops the hint (§6.1). The line of the last change keeps its
+  place before the first change, so that change does not move the sheet either.
 - **Text fields** (hint ≤ 50, note ≤ 200, counted as the domain counts: code points of the
   trimmed text) show a « 12/200 » counter. An edit that would pass the limit (a key or a paste)
   is refused whole and « Note limitée à 200 caractères. » / « Précision limitée à 50
@@ -562,22 +572,23 @@ Immeuble details fixed in T1.9 (`lib/presentation/building/`, `lib/ui/screens/bu
 
 - **Tap** a building tile opens the grid, a full-height sheet (a 40 dp strip of the street
   stays visible). **Hold** a building tile opens the building's own « Note · Repasser » sheet,
-  as the button under the grid does: the controls of the Fiche maison without a status (a
-  building's status comes from its doors) and without *Transformer en immeuble…*.
+  as the button under the grid does: no status (a building's status comes from its doors), the
+  blue « ☐ ↻ Repasser » box (ticking it shows « Quand ? ex. après 19h »), the note, no
+  *Transformer en immeuble…*.
 - Header « 8 Rue des Lilas  ◐ 15/24 »: the ◐ glyph is always drawn, the count covers every
   staircase. The staircase control « Esc. A · 7/12 | Esc. B · 8/12 » (48 dp, not the mockup's 44:
   tap targets) shows only with more than one staircase; the grid opens on staircase A and comes
   back to it when the chosen one disappears.
 - Floors top first, labelled RdC, 1er, 2e… (« Logements » for unknown floors); four doors a row,
   wrapping under the label; a floor without doors is hidden. A door shows its label and glyph
-  in the status colours, ↻ when to do with a « repasser », a dot for a note.
+  in the status colours (↻ for « repasser »), a dot for a note.
 - **Tap** a door: light haptic tick, TalkBack hears « Escalier A, 5e, porte 51, fait » (the
   staircase is named only when there are several; « Logements » is not said), and the snackbar
-  « 51 → Fait [Annuler] » shows for 4 s over the hint « Appui : ○ → ✓ → ✗ → ○ · Appui long :
-  note, repasser », as on the street screen. The snackbar belongs to the grid and leaves with it;
+  « 51 → Fait [Annuler] » shows for 4 s over the hint « Appui : ○ → ✓ → ✗ → ↻ → ○ · Appui
+  long : détails », as on the street screen. The snackbar belongs to the grid and leaves with it;
   opening any sheet over the grid hides it.
-- **Hold** a door: the door sheet, the Fiche maison's controls without *Transformer en
-  immeuble…*, titled « 51 · Esc. B · RdC · 8 Rue des Lilas » (staircase only when several).
+- **Hold** a door: the door sheet, the Fiche maison's controls (four statuses, « Quand
+  repasser ? », note) without *Transformer en immeuble…*, titled « 51 · Esc. B · RdC · 8 Rue des Lilas » (staircase only when several).
   Stored through `MarkDwelling`: only that door is stamped.
 
 « Décrire l'immeuble » details fixed in T1.9:
@@ -769,7 +780,7 @@ inside an aggregate changes only through its root, which enforces the invariants
 
 Value objects (immutable, validated at construction, equal by value): `JoinCode` (6 chars from
 the alphabet), `RescueCentreKey` (normalised name), `HouseNumber` (12 + "bis", with the
-French ordering), `StreetName`, `VisitStatus` (`toDo`, `done`, `nobodyHome`), `ComeBack` (optional hint),
+French ordering), `StreetName`, `VisitStatus` (`toDo`, `done`, `nobodyHome`, `comeBack`), `ComeBack` (the optional hint of « repasser »),
 `Note` (≤ 200 chars), `GeoPoint`, `StreetShape`, `Progress`, `ProgressLevel`
 (`free`, `toDo`, `partial`, `done`), `CampaignYear`. Each house and dwelling also keeps its
 `previousStatus` (last campaign's result, read-only).
@@ -799,18 +810,24 @@ Value-object rules fixed in T1.1 (`lib/domain/street/`):
 
 - `Street.create` sorts the houses by `HouseNumber` and refuses two equal numbers
   (`duplicateHouseNumber`); `houses`, `oddHouses`, `evenHouses` are read-only lists (0 is even).
-- **A done house never has a « repasser »**: marking a house done clears it (as the Main mockup's
-  tap does), the `House` factory drops it from stored data, and `setComeBack` on a done house is
-  refused (`comeBackOnDoneHouse`). « Personne » and « à faire » keep it.
-- Commands `markHouse`, `setComeBack` (null removes it), `setNote` stamp the house with
+- **« Repasser » is a status** (T1.16, replacing the T1.2 flag): a single house or a door has
+  exactly one of the four statuses, never « personne » and « repasser » at once. It carries a
+  `ComeBack` (its hint, possibly empty) **exactly when** its status is `comeBack`: the `House` and
+  `Dwelling` factories enforce it (`ComeBack.keptBy(status, comeBack)`), so `markHouse` to
+  `comeBack` starts without hint (or keeps the hint it already had) and any other status drops
+  the hint. `setComeBack(number, hint)` on a single house only sets the hint of a house
+  « repasser »; on a house not « repasser », or with null, it is refused (`notComeBack`).
+- Commands `markHouse`, `setComeBack`, `setNote` stamp the house with
   `by`/`at` and return `Result<(Street, Change), HouseChangeFailure>`; an unknown number is
   `unknownHouse`. `delete(by, at)` / `restore()` set and clear the street's `deletion`
   (Corbeille); houses are untouched. Marking a street in the Corbeille is allowed.
 - Each **house change** (`HouseMarked`, `ComeBackSet`, `NoteSet`) carries the street id, the
   new value, the stamp and **the house as it was** (`before`): undo restores that exact house
-  without re-reading, and storage writes only the named fields (`HouseMarked` also writes
-  `comeBack: null` when `clearsComeBack`, i.e. the new status is done).
-- `Progress` counts done, nobody home, to do (they partition `total`) and come back (overlaps).
+  without re-reading, and storage writes only the named fields (`HouseMarked` writes the status
+  with `HouseMarked.comeBack`, the hint the house has after it: kept, empty, or null).
+- `Progress` counts the doors done, nobody home, come back and to do (the four partition
+  `total`), plus `buildingComeBacks` (buildings with their own « repasser », not doors); the
+  header's ↻ is `toComeBack` = doors « repasser » + those buildings.
   A street's progress is the sum (`+`) of its houses' `progress`; a building contributes its
   dwellings (below).
 
@@ -848,10 +865,13 @@ Building rules fixed in T1.3 (`lib/domain/street/building/`):
     (« Gauche », « Droite »).
   - unknown floors: no floor prefix — `1…n` (`51` and free), `A…` (`5A`).
 - **Derived status** (`BuildingStatus`, never stored): done when every door is done, to do when
-  none is (doors where nobody was home count as not done), partial otherwise (`◐ done/total`).
+  none is (doors where nobody was home or « repasser » count as not done: a building whose doors
+  are all ↻ is to do), partial otherwise (`◐ done/total`).
 - **A building is to do itself**: the `House` factory sets a building's own status to to do; its
   doors carry the statuses. It keeps its own note and « repasser » (« Repasser · Note » under the
-  grid); that « repasser » counts in the street's ↻ (`Progress.comeBackAlone`) but not as a door.
+  grid), free of the rule above since it has no status; that « repasser » counts in the street's
+  ↻ (`Progress.buildingComeBack`) but not as a door. A single house « repasser » described as a
+  building gives its « repasser » (hint kept) to the building.
   The street's progress counts the building's doors instead of the house.
 - **Commands** (on `Street`, each stamped with `by`/`at`):
   - `markHouse` on a building is refused (`houseIsBuilding`); `setComeBack` / `setNote` on a
@@ -868,14 +888,16 @@ Building rules fixed in T1.3 (`lib/domain/street/building/`):
     door (`lastDwelling`) and leaves an emptied floor in place. `renameDoor` keeps the door's marks
     and refuses a label another door of the same floor has (`duplicateLabel`).
   - `removeBuilding(number)` turns it back into a single house: done if every door was done
-    (its « repasser » then dropped), to do otherwise; note kept, doors dropped.
-  - `markDwelling`, `setDwellingComeBack` (refused on a done door: `comeBackOnDoneDwelling`),
+    (its « repasser » then dropped), otherwise « repasser » with the building's hint when it had
+    its own, to do when not; note kept, doors dropped.
+  - `markDwelling`, `setDwellingComeBack` (the hint of a door « repasser »; refused otherwise:
+    `notComeBack`),
     `setDwellingNote` change one door and stamp only that door.
 - **Changes.** Layout commands return `BuildingLaidOut` (the new building + the whole house
   `before`): storage rewrites that house's building, undo puts `before` back. A layout change is
   rare and made in edit mode, so a teammate marking a door of the same building at that same
-  instant may be overwritten. `BuildingRemoved` carries the new status (`clearsComeBack` when
-  done). Door commands return a `DwellingChange` (`DwellingMarked`, `DwellingComeBackSet`,
+  instant may be overwritten. `BuildingRemoved` carries the new status (and `comeBack`, the
+  hint the single house keeps). Door commands return a `DwellingChange` (`DwellingMarked`, `DwellingComeBackSet`,
   `DwellingNoteSet`) with the house number, the staircase, the floor level, the door `before`
   and its `key`, so storage writes field paths such as `houses.8.dwellings.A5-51.status` and
   undo restores that door.
@@ -1078,6 +1100,9 @@ tournees/{tourneeId}
       deletedAt, deletedBy                        ← set = in the Corbeille (5.11)
       houses: {                                   ← a map inside the street document
         "12":  { n: 12, sfx: null, lat, lon, status: "DONE", comeBack: null, note: "",
+                                          ← status TO_DO | DONE | NOBODY_HOME | COME_BACK;
+                                            comeBack = hint ("" for none) only when COME_BACK
+                                            (on a building: its own « repasser »)
                  prev: "NOBODY_HOME", by: uid, at: timestamp,
                  deletedAt: null, deletedBy: null },   ← set = number in the Corbeille
         "8":   { n: 8, …, dwellings: { "A5-51": { label: "51", esc: "A", floor: 5, status, note,
@@ -1117,7 +1142,10 @@ can never drift.
   `infrastructure/local_storage/`, in the app support folder (private, kept across updates).
   One JSON file per street, `streets/<id>.json` (a commune of ≈ 300 streets / 6 000 numbers would
   make one file of a few MB rewritten at every tap; a street's file is a few kB to ≈ 100 kB).
-  Schema `version: 1`, written and read by pure mappers (`mappers/street_json_mapper.dart`)
+  Schema `version: 2` (T1.16: status `comeBack`, hint in `comeBack` only then), written and read
+  by pure mappers (`mappers/street_json_mapper.dart`). Version 1 files (« repasser » as a flag)
+  are still read: a house or door to do or nobody home with a `comeBack` becomes « repasser »,
+  hint kept; the next save writes version 2. Mappers go
   through the domain's checks (`Street.create`, `Building.create`, `Note.create`…); statuses and
   label styles under fixed names, times as ISO 8601 UTC. Every file is read once into memory,
   which answers all reads and is updated at once on a write (listeners told), then the file is

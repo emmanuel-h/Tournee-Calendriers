@@ -21,11 +21,11 @@ import '../../support/street_fixtures.dart';
 final _id = StreetId('lilas');
 final _yesterday = DateTime(2026, 11, 1, 18, 30);
 
-/// Door 11 of staircase A of number 8, nobody home, to come back, with a
-/// note, changed by Paul yesterday.
+/// Door 11 of staircase A of number 8, to come back « soir », with a note,
+/// changed by Paul yesterday.
 final _door11 = Dwelling(
   label: d('11'),
-  status: VisitStatus.nobodyHome,
+  status: VisitStatus.comeBack,
   comeBack: comeBack('soir'),
   note: note('digicode 1234'),
   lastChange: ChangeStamp(by: paul, at: _yesterday.toUtc()),
@@ -111,12 +111,11 @@ void main() {
       expect(state.subject, DoorSubject(staircase: escA));
       expect(state.streetName, 'Rue des Lilas');
       expect(state.number, n('8'));
-      expect(state.status, VisitStatus.nobodyHome);
+      expect(state.status, VisitStatus.comeBack);
       expect(state.comeBack, isTrue);
       expect(state.comeBackHint, 'soir');
       expect(state.note, 'digicode 1234');
       expect(state.lastChange, ChangedEarlier(_yesterday));
-      expect(state.canComeBack, isTrue);
     });
 
     test(
@@ -189,24 +188,33 @@ void main() {
       );
     });
 
-    test('should store the « repasser » of the door when ticked', () async {
+    test('should store the hint of the door « repasser »', () async {
       phoneWith(_street());
-      await door('8', b01);
+      await door('8', a11);
 
-      await doorNotifier('8', b01).setComeBack(on: true);
+      await doorNotifier('8', a11).saveComeBackHint('samedi');
 
       expect(
         streets.saved.single.$2,
         DwellingComeBackSet(
           streetId: _id,
           number: n('8'),
-          staircase: escB,
-          level: 0,
-          before: Dwelling(label: d('01')),
+          staircase: escA,
+          level: 1,
+          before: _door11,
           stamp: leaAtTwo,
-          comeBack: ComeBack.withoutHint,
+          comeBack: comeBack('samedi'),
         ),
       );
+    });
+
+    test('should store nothing when the door\'s box would be ticked', () async {
+      phoneWith(_street());
+      await door('8', b01);
+
+      await doorNotifier('8', b01).setComeBack(on: true);
+
+      expect(streets.saved, isEmpty);
     });
 
     test('should store the note of the door', () async {
@@ -243,7 +251,6 @@ void main() {
       expect(state.comeBackHint, 'mardi');
       expect(state.note, 'grille verte');
       expect(state.lastChange, ChangedToday(twoPm.toLocal()));
-      expect(state.canComeBack, isTrue);
     });
 
     test('should say it is gone when the house is a single house', () async {
@@ -285,6 +292,16 @@ void main() {
           note: note('digicode 42'),
         ),
       );
+    });
+
+    test('should give the building its own « repasser » when ticked', () async {
+      phoneWith(_street());
+      await details('10');
+
+      await detailsNotifier('10').setComeBack(on: true);
+
+      expect(streets[_id]!.houses.last.comeBack, ComeBack.withoutHint);
+      expect(streets[_id]!.houses.last.status, VisitStatus.toDo);
     });
 
     test('should drop the building own « repasser » when unticked', () async {

@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "id": "x7Kq2LmP9sTb4VnW1cZd",
   "name": "Rue Nationale",
   "commune": {"inseeCode": "69264", "name": "Villefranche-sur-Saône"},
@@ -23,7 +23,7 @@
                 "level": 0,
                 "dwellings": [
                   {"label": "01", "status": "toDo", "comeBack": null, "note": "", "lastChange": null},
-                  {"label": "02", "status": "toDo", "comeBack": "", "note": "", "lastChange": null}
+                  {"label": "02", "status": "comeBack", "comeBack": "", "note": "", "lastChange": null}
                 ]
               },
               {
@@ -38,7 +38,7 @@
                   },
                   {
                     "label": "12",
-                    "status": "nobodyHome",
+                    "status": "comeBack",
                     "comeBack": "le soir",
                     "note": "interphone",
                     "lastChange": {"by": "lea", "at": "2026-11-02T14:02:00.000Z"}
@@ -61,7 +61,7 @@
     },
     {
       "number": "5",
-      "status": "toDo",
+      "status": "comeBack",
       "comeBack": "après 19h",
       "note": "chien",
       "lastChange": {"by": "lea", "at": "2026-11-02T14:02:00.000Z"},
@@ -70,7 +70,7 @@
     },
     {
       "number": "7",
-      "status": "nobodyHome",
+      "status": "comeBack",
       "comeBack": "",
       "note": "",
       "lastChange": {"by": "paul", "at": "2026-11-02T15:00:00.000Z"},
@@ -91,7 +91,7 @@
     {
       "house": {
         "number": "11",
-        "status": "nobodyHome",
+        "status": "comeBack",
         "comeBack": "dimanche",
         "note": "",
         "lastChange": null,

@@ -6,7 +6,7 @@ import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 import 'package:tournee_calendriers/ui/theme/status_look.dart';
 
-/// « Appui : ○ → ✓ → ✗ → ○ · [hold] », glyphs and arrows drawn, one
+/// « Appui : ○ → ✓ → ✗ → ↻ → ○ · [hold] », glyphs and arrows drawn, one
 /// sentence ([semanticsLabel]) for screen readers. Under the tiles of the
 /// street screen and the doors of the Immeuble grid.
 final class TapHintText extends StatelessWidget {
@@ -50,6 +50,8 @@ final class TapHintText extends StatelessWidget {
             glyph(StatusGlyphs.done),
             arrow,
             glyph(StatusGlyphs.nobodyHome),
+            arrow,
+            glyph(StatusGlyphs.comeBack),
             arrow,
             glyph(StatusGlyphs.toDo),
             TextSpan(text: ' · $hold'),

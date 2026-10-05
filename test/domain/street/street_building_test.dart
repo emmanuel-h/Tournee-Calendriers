@@ -54,12 +54,13 @@ void main() {
       final street = _street([
         House(
           number: n('8'),
-          status: VisitStatus.nobodyHome,
+          status: VisitStatus.comeBack,
           comeBack: comeBack('après 19h'),
           note: note('digicode'),
         ),
       ]);
 
+      // Its « repasser » becomes the building's own.
       final (described, change) = valueOf(
         street.describeBuilding(n('8'), plan(), by: lea, at: twoPm),
       );
@@ -157,7 +158,9 @@ void main() {
       expect(progress.done, 1);
       expect(progress.nobodyHome, 1);
       expect(progress.toDo, 1);
-      expect(progress.comeBack, 1);
+      expect(progress.comeBack, 0);
+      expect(progress.buildingComeBacks, 1);
+      expect(progress.toComeBack, 1);
     });
   });
 
@@ -270,9 +273,18 @@ void main() {
       expect(marked.houses[0], _six);
     });
 
-    test('should clear the door\'s come-back but keep its note when done', () {
+    test('should drop the door\'s hint but keep its note when done', () {
+      final (comingBack, _) = valueOf(
+        _street8.markDwelling(
+          n('8'),
+          _a('02'),
+          VisitStatus.comeBack,
+          by: lea,
+          at: twoPm,
+        ),
+      );
       final (withComeBack, _) = valueOf(
-        _street8.setDwellingComeBack(
+        comingBack.setDwellingComeBack(
           n('8'),
           _a('02'),
           comeBack('le soir'),
@@ -309,7 +321,7 @@ void main() {
           lastChange: paulAtThree,
         ),
       );
-      expect(change.clearsComeBack, isTrue);
+      expect(change.comeBack, isNull);
       expect(change.before.comeBack, comeBack('le soir'));
     });
 
@@ -327,10 +339,10 @@ void main() {
       expect(marked.houses[1].building!.progress.done, 2);
       expect(
         marked.progress,
-        Progress.of(VisitStatus.nobodyHome, comeBack: false) +
-            Progress.of(VisitStatus.done, comeBack: false) +
-            Progress.of(VisitStatus.done, comeBack: false) +
-            Progress.comeBackAlone,
+        Progress.of(VisitStatus.nobodyHome) +
+            Progress.of(VisitStatus.done) +
+            Progress.of(VisitStatus.done) +
+            Progress.buildingComeBack,
       );
     });
 
@@ -426,9 +438,22 @@ void main() {
   });
 
   group('setDwellingComeBack', () {
-    test('should add the come-back to a door and say so', () {
+    /// Door 02 « repasser » without hint, stamped by Paul.
+    final comingBack = valueOf(
+      _street8.markDwelling(
+        n('8'),
+        _a('02'),
+        VisitStatus.comeBack,
+        by: paul,
+        at: threePm,
+      ),
+    ).$1;
+
+    test('should set the hint of a door « repasser » and say so', () {
+      final before = comingBack.houses[1].building!.dwellingAt(_a('02'))!;
+
       final (changed, change) = valueOf(
-        _street8.setDwellingComeBack(
+        comingBack.setDwellingComeBack(
           n('8'),
           _a('02'),
           comeBack('samedi'),
@@ -441,6 +466,7 @@ void main() {
         changed.houses[1].building!.dwellingAt(_a('02')),
         Dwelling(
           label: d('02'),
+          status: VisitStatus.comeBack,
           comeBack: comeBack('samedi'),
           lastChange: leaAtTwo,
         ),
@@ -452,75 +478,34 @@ void main() {
           number: n('8'),
           staircase: escA,
           level: 0,
-          before: Dwelling(label: d('02')),
+          before: before,
           stamp: leaAtTwo,
           comeBack: comeBack('samedi'),
         ),
       );
     });
 
-    test('should remove the come-back when given none', () {
-      final (withComeBack, _) = valueOf(
-        _street8.setDwellingComeBack(
-          n('8'),
-          _a('02'),
-          ComeBack.withoutHint,
-          by: lea,
-          at: twoPm,
-        ),
-      );
-
-      final (changed, change) = valueOf(
-        withComeBack.setDwellingComeBack(
-          n('8'),
-          _a('02'),
-          null,
-          by: paul,
-          at: threePm,
-        ),
-      );
-
-      expect(
-        changed.houses[1].building!.dwellingAt(_a('02'))!.comeBack,
-        isNull,
-      );
-      expect(change.before.comeBack, ComeBack.withoutHint);
-    });
-
-    test('should accept removing the come-back of a done door', () {
-      final (changed, _) = valueOf(
-        _street8.setDwellingComeBack(
-          n('8'),
-          _a('01'),
-          null,
-          by: lea,
-          at: twoPm,
-        ),
-      );
-
-      expect(
-        changed.houses[1].building!.dwellingAt(_a('01')),
-        Dwelling(
-          label: d('01'),
-          status: VisitStatus.done,
-          lastChange: leaAtTwo,
-        ),
-      );
-    });
-
-    test('should refuse a come-back on a done door', () {
-      expect(
-        failureOf(
-          _street8.setDwellingComeBack(
-            n('8'),
-            _a('01'),
-            ComeBack.withoutHint,
-            by: lea,
-            at: twoPm,
+    final refused = <String, (Street, String, ComeBack?)>{
+      'the door is done': (_street8, '01', ComeBack.withoutHint),
+      'the door is to do': (_street8, '02', comeBack('samedi')),
+      'no hint is given to a door « repasser »': (comingBack, '02', null),
+    };
+    refused.forEach((when, given) {
+      test('should refuse a hint when $when', () {
+        final (street, label, hint) = given;
+        expect(
+          failureOf(
+            street.setDwellingComeBack(
+              n('8'),
+              _a(label),
+              hint,
+              by: lea,
+              at: twoPm,
+            ),
           ),
-        ),
-        DwellingChangeFailure.comeBackOnDoneDwelling,
-      );
+          DwellingChangeFailure.notComeBack,
+        );
+      });
     });
 
     test('should fail when the house is not a building', () {
@@ -729,7 +714,8 @@ void main() {
   });
 
   group('removeBuilding', () {
-    test('should make a partly done building a single house to do', () {
+    test('should make a partly done building with its own « repasser » '
+        'a house « repasser »', () {
       final (changed, change) = valueOf(
         _street8.removeBuilding(n('8'), by: lea, at: twoPm),
       );
@@ -738,6 +724,7 @@ void main() {
         changed.houses[1],
         House(
           number: n('8'),
+          status: VisitStatus.comeBack,
           comeBack: comeBack('gardien'),
           note: note('digicode'),
           lastChange: leaAtTwo,
@@ -749,10 +736,26 @@ void main() {
           streetId: _lilas,
           before: _eight,
           stamp: leaAtTwo,
-          status: VisitStatus.toDo,
+          status: VisitStatus.comeBack,
         ),
       );
+      expect(change.comeBack, comeBack('gardien'));
       expect(changed.houses[0], _six);
+    });
+
+    test('should make a partly done building without « repasser » a house '
+        'to do', () {
+      final street = _street([House(number: n('8'), building: _eightDoors)]);
+
+      final (changed, change) = valueOf(
+        street.removeBuilding(n('8'), by: lea, at: twoPm),
+      );
+
+      expect(
+        changed.houses.single,
+        House(number: n('8'), lastChange: leaAtTwo),
+      );
+      expect(change.status, VisitStatus.toDo);
     });
 
     test('should make a building whose doors are all done a done house', () {
@@ -774,7 +777,7 @@ void main() {
         House(number: n('8'), status: VisitStatus.done, lastChange: leaAtTwo),
       );
       expect(change.status, VisitStatus.done);
-      expect(change.clearsComeBack, isTrue);
+      expect(change.comeBack, isNull);
     });
 
     test('should make a building where nobody was home a house to do', () {

@@ -151,30 +151,6 @@ void main() {
     });
   });
 
-  group('HouseSheetShown', () {
-    HouseSheetShown shown(VisitStatus status) => HouseSheetShown(
-      streetName: 'Rue des Lilas',
-      number: n('5'),
-      status: status,
-      comeBack: false,
-      comeBackHint: '',
-      note: '',
-      lastChange: null,
-    );
-
-    test('should allow « repasser » when the house is to do', () {
-      expect(shown(VisitStatus.toDo).canComeBack, isTrue);
-    });
-
-    test('should allow « repasser » when nobody was home', () {
-      expect(shown(VisitStatus.nobodyHome).canComeBack, isTrue);
-    });
-
-    test('should refuse « repasser » when the house is done', () {
-      expect(shown(VisitStatus.done).canComeBack, isFalse);
-    });
-  });
-
   group('SheetSubject', () {
     test('should tell a house, a building and a door apart', () {
       // Built at run time (not `const`), so coverage sees the constructors.
@@ -222,21 +198,6 @@ void main() {
       );
 
       expect(state.subject, isA<HouseSubject>());
-    });
-
-    test('should allow « repasser » when there is no status', () {
-      final state = HouseSheetShown(
-        streetName: 'Rue des Lilas',
-        number: n('8'),
-        status: null,
-        comeBack: false,
-        comeBackHint: '',
-        note: '',
-        lastChange: null,
-        subject: const BuildingSubject(),
-      );
-
-      expect(state.canComeBack, isTrue);
     });
   });
 }

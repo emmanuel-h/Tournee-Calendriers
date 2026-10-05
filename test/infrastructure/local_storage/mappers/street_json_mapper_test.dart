@@ -7,6 +7,7 @@ import 'package:tournee_calendriers/domain/street/building/building_plan.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
+import 'package:tournee_calendriers/domain/street/removed_house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
@@ -63,9 +64,9 @@ void main() {
   });
 
   group('written form', () {
-    test('should write the schema version 1', () {
-      expect(streetToJson(manualStreet)['version'], 1);
-      expect(storedStreetVersion, 1);
+    test('should write the schema version 2', () {
+      expect(streetToJson(manualStreet)['version'], 2);
+      expect(storedStreetVersion, 2);
     });
 
     test('should write each field under its name', () {
@@ -78,7 +79,7 @@ void main() {
           houses: [
             House(
               number: n('3bis'),
-              status: VisitStatus.nobodyHome,
+              status: VisitStatus.comeBack,
               comeBack: comeBack('après 19h'),
               note: note('chien'),
               lastChange: leaAtTwo,
@@ -91,7 +92,7 @@ void main() {
       );
 
       expect(streetToJson(street), {
-        'version': 1,
+        'version': 2,
         'id': 'lilas',
         'name': 'Rue des Lilas',
         'commune': {'inseeCode': '69264', 'name': 'Villefranche-sur-Saône'},
@@ -100,7 +101,7 @@ void main() {
         'houses': [
           {
             'number': '3bis',
-            'status': 'nobodyHome',
+            'status': 'comeBack',
             'comeBack': 'après 19h',
             'note': 'chien',
             'lastChange': {'by': 'lea', 'at': '2026-11-02T14:02:00.000Z'},
@@ -158,7 +159,8 @@ void main() {
 
       expect(houseAt(json, 0)['status'], 'toDo');
       expect(houseAt(json, 2)['status'], 'done');
-      expect(houseAt(json, 1)['status'], 'nobodyHome');
+      expect(houseAt(json, 3)['status'], 'nobodyHome');
+      expect(houseAt(json, 1)['status'], 'comeBack');
       expect(buildingOfEight(json)['style'], 'floorAndNumber');
       expect(
         (houseAt(json, 5)['building']! as Map<String, Object?>)['style'],
@@ -188,65 +190,128 @@ void main() {
     });
   });
 
-  group('stored file of version 1', () {
-    test('should read the file a phone wrote', () {
-      final json = jsonDecode(
-        File('test/fixtures/local_storage/street_v1.json').readAsStringSync(),
-      );
-
-      final street = streetFromJson(json);
-
-      expectSameStreet(
-        street,
-        valueOf(
-          Street.create(
-            id: StreetId('x7Kq2LmP9sTb4VnW1cZd'),
-            name: 'Rue Nationale',
-            commune: villefranche,
-            banId: BanStreetId('69264_1460'),
-            houses: [
-              House(
-                number: n('2'),
-                status: VisitStatus.done,
-                lastChange: leaAtTwo,
-                position: northDoor,
-              ),
-              House(
-                number: n('4'),
-                comeBack: comeBack('samedi'),
-                note: note('sonnette en panne'),
-                lastChange: paulAtThree,
-                building: valueOf(
-                  Building.create(
-                    style: DoorLabelStyle.floorAndNumber,
-                    staircases: [
-                      Staircase(
-                        name: escA,
-                        floors: [
-                          Floor(
-                            level: 1,
-                            dwellings: [
-                              Dwelling(
-                                label: d('11'),
-                                status: VisitStatus.nobodyHome,
-                                lastChange: leaAtTwo,
-                              ),
-                            ],
+  group('stored files', () {
+    /// The street both fixture files hold: houses 5 and 7 and doors 02 and
+    /// 12 « repasser » (each with its hint, or none), building 4 with its
+    /// own « repasser », and number 11 « repasser » in the Corbeille.
+    final rueNationale = valueOf(
+      Street.create(
+        id: StreetId('x7Kq2LmP9sTb4VnW1cZd'),
+        name: 'Rue Nationale',
+        commune: villefranche,
+        banId: BanStreetId('69264_1460'),
+        houses: [
+          House(
+            number: n('2'),
+            status: VisitStatus.done,
+            lastChange: leaAtTwo,
+            position: northDoor,
+          ),
+          House(
+            number: n('4'),
+            comeBack: comeBack('samedi'),
+            note: note('sonnette en panne'),
+            lastChange: paulAtThree,
+            building: valueOf(
+              Building.create(
+                style: DoorLabelStyle.floorAndNumber,
+                staircases: [
+                  Staircase(
+                    name: escA,
+                    floors: [
+                      Floor(
+                        level: 1,
+                        dwellings: [
+                          Dwelling(
+                            label: d('11'),
+                            status: VisitStatus.nobodyHome,
+                            lastChange: leaAtTwo,
                           ),
-                          Floor(
-                            level: 0,
-                            dwellings: [Dwelling(label: d('01'))],
+                          Dwelling(
+                            label: d('12'),
+                            status: VisitStatus.comeBack,
+                            comeBack: comeBack('le soir'),
+                            note: note('interphone'),
+                            lastChange: leaAtTwo,
+                          ),
+                        ],
+                      ),
+                      Floor(
+                        level: 0,
+                        dwellings: [
+                          Dwelling(label: d('01')),
+                          Dwelling(
+                            label: d('02'),
+                            status: VisitStatus.comeBack,
                           ),
                         ],
                       ),
                     ],
                   ),
-                ),
+                ],
               ),
-            ],
+            ),
           ),
+          House(
+            number: n('5'),
+            status: VisitStatus.comeBack,
+            comeBack: comeBack('après 19h'),
+            note: note('chien'),
+            lastChange: leaAtTwo,
+          ),
+          House(
+            number: n('7'),
+            status: VisitStatus.comeBack,
+            lastChange: paulAtThree,
+          ),
+          House(
+            number: n('9'),
+            status: VisitStatus.nobodyHome,
+            lastChange: paulAtThree,
+          ),
+        ],
+        removedHouses: [
+          RemovedHouse(
+            house: House(
+              number: n('11'),
+              status: VisitStatus.comeBack,
+              comeBack: comeBack('dimanche'),
+            ),
+            removal: paulAtThree,
+          ),
+        ],
+      ),
+    );
+
+    Object? fixture(String name) => jsonDecode(
+      File('test/fixtures/local_storage/$name').readAsStringSync(),
+    );
+
+    test('should read the file a phone wrote in version 2', () {
+      expectSameStreet(streetFromJson(fixture('street_v2.json')), rueNationale);
+    });
+
+    test('should turn every « repasser » flag of version 1 into the status, '
+        'hint kept', () {
+      expectSameStreet(streetFromJson(fixture('street_v1.json')), rueNationale);
+    });
+
+    test('should write a version 1 file back as the version 2 file', () {
+      expect(
+        jsonDecode(
+          jsonEncode(streetToJson(streetFromJson(fixture('street_v1.json')))),
+        ),
+        jsonDecode(
+          jsonEncode(streetToJson(streetFromJson(fixture('street_v2.json')))),
         ),
       );
+    });
+
+    test('should keep a done house done when version 1 read it', () {
+      final street = streetFromJson(fixture('street_v1.json'));
+
+      expect(street.houses.first.status, VisitStatus.done);
+      expect(street.houses.first.comeBack, isNull);
     });
   });
 
@@ -281,7 +346,13 @@ void main() {
   group('unreadable data', () {
     final cases = <String, void Function(Map<String, Object?> json)>{
       'the version is missing': (json) => json.remove('version'),
-      'the version is newer': (json) => json['version'] = 2,
+      'the version is newer': (json) => json['version'] = 3,
+      'the version is older': (json) => json['version'] = 0,
+      'the version is text': (json) => json['version'] = '2',
+      'a version 1 file holds the « repasser » status': (json) {
+        json['version'] = 1;
+        houseAt(json, 1)['status'] = 'comeBack';
+      },
       'the id is missing': (json) => json.remove('id'),
       'the id is blank': (json) => json['id'] = '  ',
       'the name is blank': (json) => json['name'] = ' ',
@@ -304,6 +375,10 @@ void main() {
           houseAt(json, 0)['number'] = '12-1',
       'a status is unknown': (json) => houseAt(json, 0)['status'] = 'DONE',
       'a hint is too long': (json) => houseAt(json, 1)['comeBack'] = 'x' * 51,
+      'a version 1 hint is too long': (json) {
+        json['version'] = 1;
+        houseAt(json, 3)['comeBack'] = 'x' * 51;
+      },
       'a note is too long': (json) => houseAt(json, 1)['note'] = 'x' * 201,
       'a last change is not a stamp': (json) =>
           houseAt(json, 1)['lastChange'] = 12,

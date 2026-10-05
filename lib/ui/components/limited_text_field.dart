@@ -26,6 +26,7 @@ final class LimitedTextField extends StatefulWidget {
     this.placeholder,
     this.helper,
     this.borderColor,
+    this.enabled = true,
   });
 
   /// Names the parts of the field for tests: `<name>.field`,
@@ -53,6 +54,10 @@ final class LimitedTextField extends StatefulWidget {
 
   /// The outline when not focused; the theme's by default.
   final Color? borderColor;
+
+  /// False greys the label and the field, which then takes no text; the
+  /// field keeps its place, so the sheet does not move.
+  final bool enabled;
 
   @override
   State<LimitedTextField> createState() => _LimitedTextFieldState();
@@ -92,12 +97,15 @@ final class _LimitedTextFieldState extends State<LimitedTextField> {
               if (label != null)
                 Text(
                   label,
-                  style: AppTextStyles.fieldLabel.copyWith(color: colors.ink),
+                  style: AppTextStyles.fieldLabel.copyWith(
+                    color: widget.enabled ? colors.ink : colors.muted,
+                  ),
                 ),
               TextField(
                 key: ValueKey('${widget.name}.field'),
                 controller: widget.controller,
                 focusNode: widget.focusNode,
+                enabled: widget.enabled,
                 inputFormatters: [_formatter],
                 style: AppTextStyles.bodyLarge,
                 textCapitalization: TextCapitalization.sentences,
@@ -108,6 +116,7 @@ final class _LimitedTextFieldState extends State<LimitedTextField> {
                 maxLines: widget.maxLines,
                 decoration: InputDecoration(
                   hintText: widget.placeholder,
+                  fillColor: widget.enabled ? null : colors.ground,
                   enabledBorder: borderColor == null
                       ? null
                       : OutlineInputBorder(

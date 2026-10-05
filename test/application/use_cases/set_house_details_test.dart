@@ -48,30 +48,43 @@ void main() {
     expect(houseOf(streets[lilasId]!, '5').status, VisitStatus.toDo);
   });
 
-  test('should save the come-back ticked in the sheet', () async {
+  test('should save the hint typed in the sheet', () async {
     final change = valueOf(
-      await setHouseDetails(lilasId, n('7'), ComeBackMark(comeBack('samedi'))),
+      await setHouseDetails(lilasId, n('5'), ComeBackMark(comeBack('samedi'))),
     );
 
     expect(
       change,
       ComeBackSet(
         streetId: lilasId,
-        before: seven,
+        before: five,
         stamp: leaAtTwo,
         comeBack: comeBack('samedi'),
       ),
     );
-    expect(houseOf(streets[lilasId]!, '7').comeBack, comeBack('samedi'));
+    expect(houseOf(streets[lilasId]!, '5').comeBack, comeBack('samedi'));
   });
 
-  test('should remove the come-back when the box is unticked', () async {
+  test('should remove the building\'s own come-back when unticked', () async {
+    valueOf(
+      await setHouseDetails(lilasId, n('8'), ComeBackMark(comeBack('gardien'))),
+    );
+
     final change = valueOf(
-      await setHouseDetails(lilasId, n('5'), const ComeBackMark(null)),
+      await setHouseDetails(lilasId, n('8'), const ComeBackMark(null)),
     );
 
     expect((change as ComeBackSet).comeBack, isNull);
-    expect(houseOf(streets[lilasId]!, '5').comeBack, isNull);
+    expect(houseOf(streets[lilasId]!, '8').comeBack, isNull);
+  });
+
+  test('should refuse a hint on a house that is not « repasser »', () async {
+    final failure = failureOf(
+      await setHouseDetails(lilasId, n('7'), ComeBackMark(comeBack('samedi'))),
+    );
+
+    expect(failure, const CommandRefused(HouseChangeFailure.notComeBack));
+    expect(streets.saved, isEmpty);
   });
 
   test('should save the note typed in the sheet', () async {

@@ -57,7 +57,9 @@ typedef _Marks = ({
 
 /// Follows one house, building or door of a street on the phone
 /// (`ObserveStreet`, offline) and stores each control of its sheet: the
-/// status, the « repasser » and its hint, the note. The three sheets differ
+/// status (« Repasser » among them), the hint of the « repasser », the
+/// note; on a building itself, its own « Repasser » box instead of a
+/// status. The three sheets differ
 /// only in what they read ([_marksIn]) and the use case that stores
 /// ([_storer]); the rules below are written once.
 ///
@@ -104,9 +106,9 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState> {
     return _view();
   }
 
-  /// The status control: gives [status]. « Fait » also clears the
-  /// « repasser » (something done has none, PLAN §6.1). Nothing happens on
-  /// a building's own sheet, which has no status.
+  /// The status control: gives [status]. Leaving « Repasser » drops its
+  /// hint (PLAN §6.1). Nothing happens on a building's own sheet, which has
+  /// no status.
   Future<void> setStatus(VisitStatus status) => _change(
     (marks) => switch (marks.status) {
       null => null,
@@ -115,18 +117,19 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState> {
     },
   );
 
-  /// The « Repasser » box, ticked ([on]) or not. Ticking gives a
-  /// « repasser » without hint, which the hint field then completes;
-  /// unticking drops the hint too. Refused when done: nothing changes.
+  /// The « Repasser » box of a building's own sheet, ticked ([on]) or not.
+  /// Ticking gives a « repasser » without hint, which the hint field then
+  /// completes; unticking drops the hint too. Nothing happens on a house or
+  /// a door, whose « repasser » is a status ([setStatus]).
   Future<void> setComeBack({required bool on}) => _change(
-    (marks) => (marks.comeBack != null) == on
+    (marks) => marks.status != null || (marks.comeBack != null) == on
         ? null
         : ComeBackMark(on ? ComeBack.withoutHint : null),
   );
 
   /// The hint field (« après 19h »), stored once trimmed. Nothing happens
-  /// when « Repasser » is not ticked or the hint is too long (the field
-  /// refuses such a text first, see [TextLimit]).
+  /// without a « repasser » (the field is greyed then) or when the hint is
+  /// too long (the field refuses such a text first, see [TextLimit]).
   Future<void> saveComeBackHint(String text) => _change(
     (marks) => switch ((marks.comeBack, ComeBack.create(text))) {
       (null, _) || (_, Err()) => null,

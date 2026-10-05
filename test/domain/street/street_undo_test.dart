@@ -18,12 +18,12 @@ import '../../support/street_fixtures.dart';
 
 final _lilas = StreetId('rue-des-lilas');
 
-/// Number 5: nobody home, « repasser », a note, Paul's last change and a
+/// Number 5: « repasser » with a hint, a note, Paul's last change and a
 /// position. Number 7: to do. Number 8: a building RdC 01 02, door 01 done
 /// with a note.
 final _five = House(
   number: n('5'),
-  status: VisitStatus.nobodyHome,
+  status: VisitStatus.comeBack,
   comeBack: comeBack('après 19h'),
   note: note('chien'),
   lastChange: paulAtThree,
@@ -93,7 +93,7 @@ void main() {
     test('should put the come-back back when its change is undone', () {
       final (street, _) = _undone(
         _street,
-        (s) => s.setComeBack(n('5'), null, by: lea, at: twoPm),
+        (s) => s.setComeBack(n('5'), comeBack('samedi'), by: lea, at: twoPm),
       );
 
       expect(_house(street, '5'), _five);
@@ -230,8 +230,18 @@ void main() {
     });
 
     test('should put the door back when its come-back is undone', () {
+      final (comingBack, _) = valueOf(
+        _street.markDwelling(
+          n('8'),
+          _rdc('02'),
+          VisitStatus.comeBack,
+          by: paul,
+          at: threePm,
+        ),
+      );
+
       final (street, _) = _undone(
-        _street,
+        comingBack,
         (s) => s.setDwellingComeBack(
           n('8'),
           _rdc('02'),
@@ -241,7 +251,44 @@ void main() {
         ),
       );
 
-      expect(_house(street, '8'), _eight);
+      expect(_house(street, '8'), _house(comingBack, '8'));
+    });
+
+    test('should put the hint back when leaving « repasser » is undone', () {
+      final (comingBack, _) = valueOf(
+        _street.markDwelling(
+          n('8'),
+          _rdc('02'),
+          VisitStatus.comeBack,
+          by: paul,
+          at: threePm,
+        ),
+      );
+      final (hinted, _) = valueOf(
+        comingBack.setDwellingComeBack(
+          n('8'),
+          _rdc('02'),
+          comeBack('samedi'),
+          by: paul,
+          at: threePm,
+        ),
+      );
+
+      final (street, _) = _undone(
+        hinted,
+        (s) => s.markDwelling(
+          n('8'),
+          _rdc('02'),
+          VisitStatus.toDo,
+          by: lea,
+          at: twoPm,
+        ),
+      );
+
+      expect(
+        street.houses[2].building!.dwellingAt(_rdc('02'))!.comeBack,
+        comeBack('samedi'),
+      );
     });
 
     test('should put the door back when its note is undone', () {

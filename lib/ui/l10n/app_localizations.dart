@@ -190,10 +190,10 @@ abstract class AppLocalizations {
   /// **'personne'**
   String get tileStatusNobodyHome;
 
-  /// Screen-reader name of a house to visit again later.
+  /// Screen-reader name of a house or door to visit again later (status « Repasser »), or of a building with its own « repasser ».
   ///
   /// In fr, this message translates to:
-  /// **'à faire, repasser'**
+  /// **'repasser'**
   String get tileStatusComeBack;
 
   /// Screen-reader label of a house tile, e.g. « Numéro 3bis, fait ».
@@ -231,6 +231,12 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Personne'**
   String get statusNobodyHome;
+
+  /// Name of the status « come back later », in the undo snackbar and the status control of the house sheet.
+  ///
+  /// In fr, this message translates to:
+  /// **'Repasser'**
+  String get statusComeBack;
 
   /// Undo snackbar after a tap on a house tile (PLAN §5.6). The « → » is drawn as a vector arrow; screen readers hear the text as written.
   ///
@@ -273,7 +279,7 @@ abstract class AppLocalizations {
     int comeBack,
   );
 
-  /// Start of the hint at the bottom of the street screen, before the glyphs ○ → ✓ → ✗ → ○, all drawn as vector shapes.
+  /// Start of the hint at the bottom of the street screen, before the glyphs ○ → ✓ → ✗ → ↻ → ○, all drawn as vector shapes.
   ///
   /// In fr, this message translates to:
   /// **'Appui :'**
@@ -288,7 +294,7 @@ abstract class AppLocalizations {
   /// Screen-reader label of the hint at the bottom of the street screen.
   ///
   /// In fr, this message translates to:
-  /// **'Appui : à faire, fait, personne, à faire. Appui long : détails'**
+  /// **'Appui : à faire, fait, personne, repasser, à faire. Appui long : détails'**
   String get tapHintSemantics;
 
   /// Street screen opened for a street that is not on the phone or is in the Corbeille.
@@ -297,23 +303,29 @@ abstract class AppLocalizations {
   /// **'Cette rue n\'est plus sur ce téléphone.'**
   String get streetGone;
 
-  /// Screen-reader name of the status control of the house sheet (« À faire | Fait | Personne », PLAN §5.7).
+  /// Screen-reader name of the status control of the house sheet (« À faire | Fait | Personne | Repasser », PLAN §5.7).
   ///
   /// In fr, this message translates to:
   /// **'Statut'**
   String get houseStatusGroup;
 
-  /// Box of the house sheet: the residents asked the team to come back later.
+  /// Box of the building's own « Note · Repasser » sheet: the residents asked the team to come back later.
   ///
   /// In fr, this message translates to:
   /// **'Repasser'**
   String get comeBack;
 
-  /// Under the disabled « Repasser » box when the house is done (a done house cannot get a « repasser »).
+  /// Label of the hint field of the house and door sheets; the field is greyed unless the status is « Repasser ».
   ///
   /// In fr, this message translates to:
-  /// **'Déjà fait : rien à repasser.'**
-  String get comeBackDoneReason;
+  /// **'Quand repasser ?'**
+  String get comeBackWhenLabel;
+
+  /// Placeholder of the « Quand repasser ? » field of the house and door sheets.
+  ///
+  /// In fr, this message translates to:
+  /// **'ex. après 19h'**
+  String get comeBackWhenPlaceholder;
 
   /// Placeholder and screen-reader name of the field saying when to come back.
   ///
@@ -903,16 +915,16 @@ abstract class AppLocalizations {
   /// **'{done} sur {total} logements faits'**
   String buildingCountSemantics(int done, int total);
 
-  /// End of the hint of the building grid, after « Appui : ○ → ✓ → ✗ → ○ ·».
+  /// End of the hint of the building grid, after « Appui : ○ → ✓ → ✗ → ↻ → ○ ·».
   ///
   /// In fr, this message translates to:
-  /// **'Appui long : note, repasser'**
+  /// **'Appui long : détails'**
   String get gridHintHold;
 
   /// Screen-reader label of the hint of the building grid.
   ///
   /// In fr, this message translates to:
-  /// **'Appui : à faire, fait, personne, à faire. Appui long : note, repasser'**
+  /// **'Appui : à faire, fait, personne, repasser, à faire. Appui long : détails'**
   String get gridHintSemantics;
 
   /// Button under the building grid that lays the building out again.

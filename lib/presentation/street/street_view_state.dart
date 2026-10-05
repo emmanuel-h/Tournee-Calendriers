@@ -17,38 +17,34 @@ sealed class TileMark {
   const TileMark();
 
   /// The mark of [house]:
-  /// - a single house shows its status, except that a house still to do
-  ///   with a « repasser » shows ↻ (nobody home wins over « repasser »);
+  /// - a single house shows its status;
   /// - a building shows its derived status: done when every door is,
   ///   `◐ done/total` when some are, and to do (or ↻ with its own
-  ///   « repasser ») when none is.
+  ///   « repasser ») when none is. Doors « repasser » are not done: a
+  ///   building whose doors all are shows ○, its grid shows them ↻.
   static TileMark of(House house) => switch (house.building) {
-    null => switch (house.status) {
-      VisitStatus.done => const DoneMark(),
-      VisitStatus.nobodyHome => const NobodyHomeMark(),
-      VisitStatus.toDo => _toDo(house),
-    },
+    null => _ofStatus(house.status),
     final Building building => switch (building.status) {
       BuildingStatus.done => const DoneMark(),
       BuildingStatus.partial => PartialBuildingMark(
         done: building.progress.done,
         total: building.progress.total,
       ),
-      BuildingStatus.toDo => _toDo(house),
+      BuildingStatus.toDo =>
+        house.comeBack == null ? const ToDoMark() : const ComeBackMark(),
     },
   };
 
-  /// The mark of a door of the Immeuble grid: its status, and ↻ for a
-  /// door still to do with a « repasser », as a single house.
-  static TileMark ofDwelling(Dwelling dwelling) => switch (dwelling.status) {
+  /// The mark of a door of the Immeuble grid: its status, as a single
+  /// house.
+  static TileMark ofDwelling(Dwelling dwelling) => _ofStatus(dwelling.status);
+
+  static TileMark _ofStatus(VisitStatus status) => switch (status) {
+    VisitStatus.toDo => const ToDoMark(),
     VisitStatus.done => const DoneMark(),
     VisitStatus.nobodyHome => const NobodyHomeMark(),
-    VisitStatus.toDo =>
-      dwelling.comeBack == null ? const ToDoMark() : const ComeBackMark(),
+    VisitStatus.comeBack => const ComeBackMark(),
   };
-
-  static TileMark _toDo(House house) =>
-      house.comeBack == null ? const ToDoMark() : const ComeBackMark();
 }
 
 /// ○ Not visited yet.
@@ -66,7 +62,7 @@ final class NobodyHomeMark extends TileMark {
   const NobodyHomeMark();
 }
 
-/// ↻ Not visited yet, and asked to come back later.
+/// ↻ « Repasser »: asked to come back later (a building: its own).
 final class ComeBackMark extends TileMark {
   const ComeBackMark();
 }
@@ -194,7 +190,8 @@ final class StreetShown extends StreetViewState {
   final String name;
 
   /// Header counts « 31/42 · ✗ 3 · ↻ 1 »: doors done, doors (a building
-  /// counts its doors), nobody home, « repasser ». Whatever is hidden.
+  /// counts its doors), nobody home, places to come back to (doors
+  /// « repasser » and buildings with their own). Whatever is hidden.
   final int done;
   final int total;
   final int nobodyHome;

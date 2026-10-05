@@ -8,7 +8,7 @@ import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 /// A `sealed` class lists all its subclasses in this file, so a `switch` over
 /// a `TileStatus` must handle every one of them: adding a status breaks the
 /// build wherever it still needs a look or a label. T1.7 maps the domain's
-/// `VisitStatus` (plus « repasser » and buildings) onto these.
+/// `VisitStatus` (and buildings) onto these.
 sealed class TileStatus {
   const TileStatus();
 }
@@ -28,7 +28,7 @@ final class NobodyHomeTile extends TileStatus {
   const NobodyHomeTile();
 }
 
-/// Not visited yet, with a « repasser » hint.
+/// « Repasser »: asked to come back later.
 final class ComeBackTile extends TileStatus {
   const ComeBackTile();
 }

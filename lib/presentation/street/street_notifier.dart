@@ -113,7 +113,7 @@ final class StreetNotifier extends Notifier<StreetViewState> {
       done: progress.done,
       total: progress.total,
       nobodyHome: progress.nobodyHome,
-      comeBack: progress.comeBack,
+      comeBack: progress.toComeBack,
       hideDone: _hideDone,
       columns: StreetColumns.of(odd: odd.length, even: even.length),
       odd: _tiles(odd),

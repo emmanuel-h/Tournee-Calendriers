@@ -11,7 +11,7 @@ import '../../support/building_fixtures.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 
-/// Number 5 a single house at the town hall door, number 8 a one-door
+/// Number 5 a single house « repasser » at the town hall door, number 8 a one-door
 /// building (RdC 01) at the north door.
 final _street = valueOf(
   Street.create(
@@ -19,7 +19,11 @@ final _street = valueOf(
     name: 'Rue Nationale',
     commune: villefranche,
     houses: [
-      House(number: n('5'), position: townHallDoor),
+      House(
+        number: n('5'),
+        status: VisitStatus.comeBack,
+        position: townHallDoor,
+      ),
       House(
         number: n('8'),
         position: northDoor,

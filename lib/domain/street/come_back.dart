@@ -1,5 +1,6 @@
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/shared/text_length.dart';
+import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
 /// Why a hint cannot go with a [ComeBack].
 enum ComeBackFailure {
@@ -7,12 +8,15 @@ enum ComeBackFailure {
   hintTooLong,
 }
 
-/// « Repasser »: the residents asked the team to come back later, with an
-/// optional [hint] such as « après 19h » (PLAN §2).
+/// What goes with a « repasser »: the optional [hint] such as « après 19h »
+/// (PLAN §2).
 ///
-/// A house either has a `ComeBack` or not; the flag is the presence of the
-/// value, the hint is its content. The hint is trimmed and holds at most
-/// [maxHintLength] characters as counted by [characterCount].
+/// « Repasser » is a status of its own ([VisitStatus.comeBack]): a house or
+/// a door has a `ComeBack` exactly when it has that status (see
+/// [ComeBack.keptBy]). A building, which has no status of its own, may
+/// carry one for itself (« Repasser » under its grid). The hint is trimmed
+/// and holds at most [maxHintLength] characters as counted by
+/// [characterCount].
 final class ComeBack {
   const ComeBack._(this.hint);
 
@@ -32,6 +36,13 @@ final class ComeBack {
     }
     return Ok(ComeBack._(trimmed));
   }
+
+  /// The come-back a house or a door with [status] keeps of [comeBack]:
+  /// only a door « repasser » has one, without hint unless one is given;
+  /// any other status has none. The `House` and `Dwelling` factories run
+  /// it, so no house is ever « personne » and « repasser » at once.
+  static ComeBack? keptBy(VisitStatus status, ComeBack? comeBack) =>
+      status == VisitStatus.comeBack ? comeBack ?? withoutHint : null;
 
   /// The trimmed hint; empty when none was given.
   final String hint;

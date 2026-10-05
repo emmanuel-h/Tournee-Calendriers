@@ -58,7 +58,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tileStatusNobodyHome => 'personne';
 
   @override
-  String get tileStatusComeBack => 'à faire, repasser';
+  String get tileStatusComeBack => 'repasser';
 
   @override
   String houseTileSemantics(String number, String status) {
@@ -83,6 +83,9 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get statusNobodyHome => 'Personne';
+
+  @override
+  String get statusComeBack => 'Repasser';
 
   @override
   String houseMarked(String number, String status) {
@@ -119,7 +122,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tapHintSemantics =>
-      'Appui : à faire, fait, personne, à faire. Appui long : détails';
+      'Appui : à faire, fait, personne, repasser, à faire. Appui long : détails';
 
   @override
   String get streetGone => 'Cette rue n\'est plus sur ce téléphone.';
@@ -131,7 +134,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get comeBack => 'Repasser';
 
   @override
-  String get comeBackDoneReason => 'Déjà fait : rien à repasser.';
+  String get comeBackWhenLabel => 'Quand repasser ?';
+
+  @override
+  String get comeBackWhenPlaceholder => 'ex. après 19h';
 
   @override
   String get comeBackHintPlaceholder => 'Quand ? ex. après 19h';
@@ -555,11 +561,11 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get gridHintHold => 'Appui long : note, repasser';
+  String get gridHintHold => 'Appui long : détails';
 
   @override
   String get gridHintSemantics =>
-      'Appui : à faire, fait, personne, à faire. Appui long : note, repasser';
+      'Appui : à faire, fait, personne, repasser, à faire. Appui long : détails';
 
   @override
   String get editFloors => 'Modifier les étages';

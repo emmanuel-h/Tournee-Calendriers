@@ -93,12 +93,24 @@ void main() {
       expect(change.status, VisitStatus.done);
     });
 
-    test('should clear the come-back when the house becomes done', () {
-      expect(removed(status: VisitStatus.done).clearsComeBack, isTrue);
+    final eightComingBack = House(
+      number: n('8'),
+      comeBack: comeBack('gardien'),
+      building: building(),
+    );
+
+    test('should drop the building\'s come-back when the house is done', () {
+      expect(
+        removed(before: eightComingBack, status: VisitStatus.done).comeBack,
+        isNull,
+      );
     });
 
-    test('should keep the come-back when the house becomes to do', () {
-      expect(removed(status: VisitStatus.toDo).clearsComeBack, isFalse);
+    test('should keep the building\'s come-back when the house is it', () {
+      expect(
+        removed(before: eightComingBack, status: VisitStatus.comeBack).comeBack,
+        comeBack('gardien'),
+      );
     });
 
     test('should be equal when every field is equal', () {
@@ -130,7 +142,7 @@ void main() {
   group('dwelling changes', () {
     final door = Dwelling(
       label: d('51'),
-      status: VisitStatus.nobodyHome,
+      status: VisitStatus.comeBack,
       comeBack: comeBack('le soir'),
     );
     final otherDoor = Dwelling(label: d('52'));
@@ -167,16 +179,28 @@ void main() {
         expect(change.status, VisitStatus.done);
       });
 
-      test('should clear the come-back when the door becomes done', () {
-        expect(marked(status: VisitStatus.done).clearsComeBack, isTrue);
+      for (final status in [
+        VisitStatus.toDo,
+        VisitStatus.done,
+        VisitStatus.nobodyHome,
+      ]) {
+        test('should leave no come-back when the door becomes $status', () {
+          expect(marked(status: status).comeBack, isNull);
+        });
+      }
+
+      test('should keep the hint when the door stays « repasser »', () {
+        expect(
+          marked(status: VisitStatus.comeBack).comeBack,
+          comeBack('le soir'),
+        );
       });
 
-      test('should keep the come-back when nobody was home', () {
-        expect(marked(status: VisitStatus.nobodyHome).clearsComeBack, isFalse);
-      });
-
-      test('should keep the come-back when the door goes back to do', () {
-        expect(marked(status: VisitStatus.toDo).clearsComeBack, isFalse);
+      test('should come back without hint when the door becomes it', () {
+        expect(
+          marked(before: otherDoor, status: VisitStatus.comeBack).comeBack,
+          ComeBack.withoutHint,
+        );
       });
 
       test('should be equal when every field is equal', () {

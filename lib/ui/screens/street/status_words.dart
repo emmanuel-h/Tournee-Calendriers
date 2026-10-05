@@ -18,7 +18,7 @@ TileStatus tileStatusOf(TileMark mark) => switch (mark) {
   ),
 };
 
-/// The spoken status of a door tile (« à faire, repasser »).
+/// The spoken status of a door tile (« repasser »).
 String spokenMark(AppLocalizations l10n, TileMark mark) => switch (mark) {
   ToDoMark() => l10n.tileStatusToDo,
   DoneMark() => l10n.tileStatusDone,
@@ -34,6 +34,7 @@ String spokenStatus(AppLocalizations l10n, VisitStatus status) =>
       VisitStatus.toDo => l10n.tileStatusToDo,
       VisitStatus.done => l10n.tileStatusDone,
       VisitStatus.nobodyHome => l10n.tileStatusNobodyHome,
+      VisitStatus.comeBack => l10n.tileStatusComeBack,
     };
 
 /// The written name of [status] (« Fait »), in the snackbar.
@@ -42,4 +43,5 @@ String statusName(AppLocalizations l10n, VisitStatus status) =>
       VisitStatus.toDo => l10n.statusToDo,
       VisitStatus.done => l10n.statusDone,
       VisitStatus.nobodyHome => l10n.statusNobodyHome,
+      VisitStatus.comeBack => l10n.statusComeBack,
     };

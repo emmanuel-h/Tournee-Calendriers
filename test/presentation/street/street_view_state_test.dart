@@ -28,9 +28,15 @@ void main() {
       expect(TileMark.of(House(number: n('1'))), const ToDoMark());
     });
 
-    test('should show a house to do with a « repasser » as come back', () {
+    test('should show a house « repasser » as come back', () {
       expect(
-        TileMark.of(House(number: n('5'), comeBack: comeBackHint)),
+        TileMark.of(
+          House(
+            number: n('5'),
+            status: VisitStatus.comeBack,
+            comeBack: comeBackHint,
+          ),
+        ),
         const ComeBackMark(),
       );
     });
@@ -42,15 +48,9 @@ void main() {
       );
     });
 
-    test('should show nobody home first, « repasser » or not', () {
+    test('should show a house where nobody was home as nobody home', () {
       expect(
-        TileMark.of(
-          House(
-            number: n('3bis'),
-            status: VisitStatus.nobodyHome,
-            comeBack: comeBackHint,
-          ),
-        ),
+        TileMark.of(House(number: n('3bis'), status: VisitStatus.nobodyHome)),
         const NobodyHomeMark(),
       );
     });
@@ -66,6 +66,14 @@ void main() {
       expect(
         TileMark.of(_building(VisitStatus.done, VisitStatus.done)),
         const DoneMark(),
+      );
+    });
+
+    test('should show a building whose doors are all « repasser » as to '
+        'do', () {
+      expect(
+        TileMark.of(_building(VisitStatus.comeBack, VisitStatus.comeBack)),
+        const ToDoMark(),
       );
     });
 
@@ -94,9 +102,11 @@ void main() {
       expect(TileMark.ofDwelling(Dwelling(label: d('51'))), const ToDoMark());
     });
 
-    test('should show a door to do with a « repasser » as come back', () {
+    test('should show a door « repasser » as come back', () {
       expect(
-        TileMark.ofDwelling(Dwelling(label: d('51'), comeBack: comeBackHint)),
+        TileMark.ofDwelling(
+          Dwelling(label: d('51'), status: VisitStatus.comeBack),
+        ),
         const ComeBackMark(),
       );
     });
@@ -108,14 +118,10 @@ void main() {
       );
     });
 
-    test('should show nobody home first, « repasser » or not', () {
+    test('should show a door where nobody was home as nobody home', () {
       expect(
         TileMark.ofDwelling(
-          Dwelling(
-            label: d('51'),
-            status: VisitStatus.nobodyHome,
-            comeBack: comeBackHint,
-          ),
+          Dwelling(label: d('51'), status: VisitStatus.nobodyHome),
         ),
         const NobodyHomeMark(),
       );

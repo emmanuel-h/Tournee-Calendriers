@@ -12,7 +12,11 @@ import '../../support/street_fixtures.dart';
 void main() {
   final lilas = StreetId('rue-des-lilas');
   final gambetta = StreetId('rue-gambetta');
-  final twelve = House(number: n('12'), comeBack: comeBack('après 19h'));
+  final twelve = House(
+    number: n('12'),
+    status: VisitStatus.comeBack,
+    comeBack: comeBack('après 19h'),
+  );
   final twelveDone = House(number: n('12'), status: VisitStatus.done);
 
   group('HouseMarked', () {
@@ -38,16 +42,28 @@ void main() {
       expect(change.stamp, leaAtTwo);
     });
 
-    test('should clear the come-back when the house becomes done', () {
-      expect(marked(status: VisitStatus.done).clearsComeBack, isTrue);
+    for (final status in [
+      VisitStatus.toDo,
+      VisitStatus.done,
+      VisitStatus.nobodyHome,
+    ]) {
+      test('should leave no come-back when the house becomes $status', () {
+        expect(marked(status: status).comeBack, isNull);
+      });
+    }
+
+    test('should keep the hint when the house stays « repasser »', () {
+      expect(
+        marked(status: VisitStatus.comeBack).comeBack,
+        comeBack('après 19h'),
+      );
     });
 
-    test('should keep the come-back when nobody was home', () {
-      expect(marked(status: VisitStatus.nobodyHome).clearsComeBack, isFalse);
-    });
-
-    test('should keep the come-back when the house goes back to do', () {
-      expect(marked(status: VisitStatus.toDo).clearsComeBack, isFalse);
+    test('should come back without hint when the house becomes it', () {
+      expect(
+        marked(before: twelveDone, status: VisitStatus.comeBack).comeBack,
+        ComeBack.withoutHint,
+      );
     });
 
     test('should be equal when every field is equal', () {

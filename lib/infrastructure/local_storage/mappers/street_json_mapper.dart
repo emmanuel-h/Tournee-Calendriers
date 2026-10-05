@@ -2,9 +2,9 @@
 // (M1, until Firestore replaces that storage in M2). Pure functions: no file
 // here, so they are tested alone.
 //
-// The schema, version 1 (PLAN §6.3):
+// The schema, version 2 (PLAN §6.3):
 //
-//   { version: 1, id, name, commune: { inseeCode, name }, banId | null,
+//   { version: 2, id, name, commune: { inseeCode, name }, banId | null,
 //     deletion: stamp | null, houses: [house], removedHouses: [{ house,
 //     removal: stamp }] }
 //   house    = { number: "3bis", status, comeBack: hint | null, note,
@@ -15,6 +15,17 @@
 //                dwellings: [{ label, status, comeBack, note,
 //                              lastChange }] }] }] }
 //   stamp    = { by: memberId, at: "2026-11-02T14:02:00.000Z" }  (UTC)
+//   status   = "toDo" | "done" | "nobodyHome" | "comeBack"
+//
+// A house or door « comeBack » has its hint in `comeBack` ("" for none); any
+// other status has `comeBack: null`. A building keeps its own « repasser »
+// there, its status being always "toDo".
+//
+// Version 1 (T1.6 to T1.12) had no "comeBack" status: « repasser » was a
+// flag beside the status. Reading it, a house or door to do or nobody home
+// with a come-back becomes « comeBack », hint kept (a done one never had a
+// come-back); a building keeps its own. Nothing is lost, and the next save
+// writes version 2.
 //
 // Statuses and label styles are written under fixed names chosen here, not
 // the Dart enum names, so renaming an enum value in the code cannot make
@@ -45,10 +56,13 @@ import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
-/// The schema version this code writes and reads. A file of another version
-/// is refused rather than misread; a later version that changes the schema
-/// reads the older ones and writes its own.
-const storedStreetVersion = 1;
+/// The schema version this code writes. It reads it and version 1 (see the
+/// top of this file); a file of any other version is refused rather than
+/// misread.
+const storedStreetVersion = 2;
+
+/// The first schema, where « repasser » was a flag beside the status.
+const _flagVersion = 1;
 
 /// The stored form of [street], ready for `jsonEncode`.
 Map<String, Object?> streetToJson(Street street) => {
@@ -74,11 +88,12 @@ Map<String, Object?> streetToJson(Street street) => {
 /// The street stored as [json] (as `jsonDecode` gives it).
 ///
 /// Throws a [FormatException] when [json] is not a street of
-/// [storedStreetVersion], or holds a value the domain refuses.
+/// [storedStreetVersion] or version 1, or holds a value the domain refuses.
 Street streetFromJson(Object? json) {
   if (json case {
-    // A constant inside a pattern matches only that value.
-    'version': storedStreetVersion,
+    // `&&` and `||` combine patterns: the version is named, and must be
+    // one of the two constants this code knows.
+    'version': final int version && (storedStreetVersion || _flagVersion),
     'id': final String id,
     'name': final String name,
     'commune': {
@@ -99,9 +114,10 @@ Street streetFromJson(Object? json) {
           'commune',
         ),
         banId: banId == null ? null : _identifier(banId, BanStreetId.new),
-        houses: [for (final house in houses) _houseFromJson(house)],
+        houses: [for (final house in houses) _houseFromJson(house, version)],
         removedHouses: [
-          for (final removed in removedHouses) _removedFromJson(removed),
+          for (final removed in removedHouses)
+            _removedFromJson(removed, version),
         ],
         deletion: _stampOrNull(deletion),
       ),
@@ -130,7 +146,7 @@ Map<String, Object?> _houseToJson(House house) => {
   },
 };
 
-House _houseFromJson(Object? json) {
+House _houseFromJson(Object? json, int version) {
   if (json case {
     'number': final String number,
     'status': final String status,
@@ -142,23 +158,28 @@ House _houseFromJson(Object? json) {
   }) {
     return House(
       number: _valid(HouseNumber.parse(number), 'house number'),
-      status: _statusFromJson(status),
+      // On a building the House factory makes it to do again, keeping the
+      // come-back as the building's own.
+      status: _statusFromJson(status, comeBack: comeBack, version: version),
       comeBack: _comeBackOrNull(comeBack),
       note: _valid(Note.create(note), 'note'),
       lastChange: _stampOrNull(lastChange),
       position: position == null ? null : _positionFromJson(position),
-      building: building == null ? null : _buildingFromJson(building),
+      building: building == null ? null : _buildingFromJson(building, version),
     );
   }
   throw const FormatException('Not a stored house');
 }
 
-RemovedHouse _removedFromJson(Object? json) {
+RemovedHouse _removedFromJson(Object? json, int version) {
   if (json case {
     'house': final Object? house,
     'removal': final Object? stamp,
   }) {
-    return RemovedHouse(house: _houseFromJson(house), removal: _stamp(stamp));
+    return RemovedHouse(
+      house: _houseFromJson(house, version),
+      removal: _stamp(stamp),
+    );
   }
   throw const FormatException('Not a stored removed house');
 }
@@ -201,7 +222,7 @@ Map<String, Object?> _buildingToJson(Building building) => {
   ],
 };
 
-Building _buildingFromJson(Object json) {
+Building _buildingFromJson(Object json, int version) {
   if (json case {
     'style': final String style,
     'staircases': final List<Object?> staircases,
@@ -210,7 +231,8 @@ Building _buildingFromJson(Object json) {
       Building.create(
         style: _styleFromJson(style),
         staircases: [
-          for (final staircase in staircases) _staircaseFromJson(staircase),
+          for (final staircase in staircases)
+            _staircaseFromJson(staircase, version),
         ],
       ),
       'building',
@@ -219,20 +241,20 @@ Building _buildingFromJson(Object json) {
   throw const FormatException('Not a stored building');
 }
 
-Staircase _staircaseFromJson(Object? json) {
+Staircase _staircaseFromJson(Object? json, int version) {
   if (json case {
     'name': final String name,
     'floors': final List<Object?> floors,
   }) {
     return Staircase(
       name: _identifier(name, StaircaseName.new),
-      floors: [for (final floor in floors) _floorFromJson(floor)],
+      floors: [for (final floor in floors) _floorFromJson(floor, version)],
     );
   }
   throw const FormatException('Not a stored staircase');
 }
 
-Floor _floorFromJson(Object? json) {
+Floor _floorFromJson(Object? json, int version) {
   if (json case {
     'level': final int? level,
     'dwellings': final List<Object?> dwellings,
@@ -240,7 +262,7 @@ Floor _floorFromJson(Object? json) {
     return Floor(
       level: level,
       dwellings: [
-        for (final dwelling in dwellings) _dwellingFromJson(dwelling),
+        for (final dwelling in dwellings) _dwellingFromJson(dwelling, version),
       ],
     );
   }
@@ -255,7 +277,7 @@ Map<String, Object?> _dwellingToJson(Dwelling dwelling) => {
   'lastChange': _stampToJson(dwelling.lastChange),
 };
 
-Dwelling _dwellingFromJson(Object? json) {
+Dwelling _dwellingFromJson(Object? json, int version) {
   if (json case {
     'label': final String label,
     'status': final String status,
@@ -265,7 +287,7 @@ Dwelling _dwellingFromJson(Object? json) {
   }) {
     return Dwelling(
       label: _valid(DwellingLabel.parse(label), 'door label'),
-      status: _statusFromJson(status),
+      status: _statusFromJson(status, comeBack: comeBack, version: version),
       comeBack: _comeBackOrNull(comeBack),
       note: _valid(Note.create(note), 'note'),
       lastChange: _stampOrNull(lastChange),
@@ -301,14 +323,28 @@ String _statusToJson(VisitStatus status) => switch (status) {
   VisitStatus.toDo => 'toDo',
   VisitStatus.done => 'done',
   VisitStatus.nobodyHome => 'nobodyHome',
+  VisitStatus.comeBack => 'comeBack',
 };
 
-VisitStatus _statusFromJson(String text) => switch (text) {
-  'toDo' => VisitStatus.toDo,
-  'done' => VisitStatus.done,
-  'nobodyHome' => VisitStatus.nobodyHome,
-  _ => throw FormatException('Not a stored status', text),
-};
+/// The status stored as [text], next to the stored [comeBack] hint, in a
+/// file of schema [version]. In version 1 a come-back on a house or door
+/// not done was the « repasser » flag: it is that status now.
+VisitStatus _statusFromJson(
+  String text, {
+  required String? comeBack,
+  required int version,
+}) {
+  final status = switch (text) {
+    'toDo' => VisitStatus.toDo,
+    'done' => VisitStatus.done,
+    'nobodyHome' => VisitStatus.nobodyHome,
+    'comeBack' when version == storedStreetVersion => VisitStatus.comeBack,
+    _ => throw FormatException('Not a stored status', text),
+  };
+  final wasFlagged =
+      version == _flagVersion && comeBack != null && status != VisitStatus.done;
+  return wasFlagged ? VisitStatus.comeBack : status;
+}
 
 String _styleToJson(DoorLabelStyle style) => switch (style) {
   DoorLabelStyle.floorAndNumber => 'floorAndNumber',

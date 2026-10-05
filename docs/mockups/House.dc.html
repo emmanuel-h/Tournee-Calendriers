@@ -13,7 +13,8 @@
 body{margin:0}
 a{color:#B3261E}a:hover{color:#8C1D18}
 .ghost{height:60px;border-radius:12px;background:#FFFFFF;border:1.5px solid #CFC9BD;box-sizing:border-box}
-.seg{flex:1;height:52px;border:0;font:700 16px 'Atkinson Hyperlegible',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px}
+.seg{flex:1;height:64px;border:0;font:700 15px 'Atkinson Hyperlegible',sans-serif;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px}
+.sep{width:1.5px;background:#CFC9BD}
 .lbl{font-size:15px;font-weight:700}
 .in{height:52px;box-sizing:border-box;width:100%;border:1.5px solid #CFC9BD;border-radius:12px;background:#FFFFFF;padding:0 14px;font:400 17px 'Atkinson Hyperlegible',sans-serif;color:#1B1F24}
 </style>
@@ -32,15 +33,20 @@ a{color:#B3261E}a:hover{color:#8C1D18}
       <span style="font: 600 22px 'Barlow Condensed', sans-serif; color: #4A5058">Rue des Lilas</span>
     </div>
     <div role="radiogroup" aria-label="Statut" style="display: flex; border: 1.5px solid #CFC9BD; border-radius: 14px; overflow: hidden">
-      <button class="seg" role="radio" aria-checked="true" style="background: #1B1F24; color: #FFFFFF">○ À faire</button>
-      <button class="seg" role="radio" aria-checked="false" style="background: #FFFFFF; color: #1B1F24; border-left: 1.5px solid #CFC9BD">✓ Fait</button>
-      <button class="seg" role="radio" aria-checked="false" style="background: #FFFFFF; color: #1B1F24; border-left: 1.5px solid #CFC9BD">✗ Personne</button>
+      <button class="seg" role="radio" aria-checked="false" style="background: #FFFFFF; color: #1B1F24"><span>○</span>À faire</button>
+      <span class="sep"></span>
+      <button class="seg" role="radio" aria-checked="false" style="background: #FFFFFF; color: #1B1F24"><span>✓</span>Fait</button>
+      <span class="sep"></span>
+      <button class="seg" role="radio" aria-checked="false" style="background: #FFFFFF; color: #1B1F24"><span>✗</span>Personne</button>
+      <span class="sep"></span>
+      <button class="seg" role="radio" aria-checked="true" style="background: #1B1F24; color: #FFFFFF"><span>↻</span>Repasser</button>
     </div>
-    <div style="display: flex; flex-direction: column; gap: 10px; background: #D6E6F5; border-radius: 14px; padding: 14px">
-      <label style="display: flex; align-items: center; gap: 12px; font-weight: 700; color: #1D4E7A; font-size: 17px">
-        <input type="checkbox" checked style="width: 24px; height: 24px; accent-color: #1D4E7A; margin: 0">↻ Repasser
-      </label>
-      <input class="in" aria-label="Quand repasser" value="après 19h" style="border-color: #A9C8E6">
+    <!-- Always shown so choosing a status never moves the sheet: blue while « Repasser » is
+         chosen, greyed (#F3F1EC, label #5A6068, field disabled, « ex. après 19h ») otherwise. -->
+    <div style="display: flex; flex-direction: column; gap: 6px; background: #D6E6F5; border-radius: 14px; padding: 14px">
+      <label class="lbl" for="when">Quand repasser ?</label>
+      <input class="in" id="when" placeholder="ex. après 19h" value="après 19h" style="border-color: #A9C8E6">
+      <span style="font-size: 13px; color: #5A6068; text-align: right">9/50</span>
     </div>
     <div style="display: flex; flex-direction: column; gap: 6px">
       <label class="lbl" for="note">Note</label>

@@ -1,5 +1,6 @@
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
+import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
 import '../../support/results.dart';
 
@@ -53,6 +54,28 @@ void main() {
 
   test('should hold an empty hint when it is the come-back without hint', () {
     expect(ComeBack.withoutHint.hint, '');
+  });
+
+  group('keptBy', () {
+    final evening = valueOf(ComeBack.create('après 19h'));
+
+    test('should keep the hint of a door « repasser »', () {
+      expect(ComeBack.keptBy(VisitStatus.comeBack, evening), evening);
+    });
+
+    test('should come back without hint when « repasser » has none', () {
+      expect(ComeBack.keptBy(VisitStatus.comeBack, null), ComeBack.withoutHint);
+    });
+
+    for (final status in [
+      VisitStatus.toDo,
+      VisitStatus.done,
+      VisitStatus.nobodyHome,
+    ]) {
+      test('should keep nothing when the door is $status', () {
+        expect(ComeBack.keptBy(status, evening), isNull);
+      });
+    }
   });
 
   group('equality', () {

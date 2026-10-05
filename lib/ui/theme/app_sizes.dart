@@ -83,9 +83,13 @@ abstract final class AppSizes {
   /// Icons inside buttons and the chevron of a row.
   static const smallIcon = 20.0;
 
-  /// The status control of the Fiche maison (« À faire | Fait | Personne »)
-  /// and the blue « Repasser » block under it.
+  /// A row of options (« Esc. A | Esc. B »…) and the blue « Repasser »
+  /// block of a building's own sheet.
   static const segmentHeight = 52.0;
+
+  /// The status control of the Fiche maison (« À faire | Fait | Personne |
+  /// Repasser »), glyph above word.
+  static const statusSegmentHeight = 64.0;
   static const segmentRadius = 14.0;
   static const segmentGlyph = 18.0;
   static const comeBackPadding = 14.0;

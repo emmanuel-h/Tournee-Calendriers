@@ -4,6 +4,7 @@ import 'package:tournee_calendriers/domain/street/building/building.dart';
 import 'package:tournee_calendriers/domain/street/building/building_plan.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase.dart';
+import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
@@ -45,6 +46,7 @@ final _eight = valueOf(
             dwellings: [
               Dwelling(
                 label: d('01'),
+                status: VisitStatus.comeBack,
                 comeBack: comeBack('soir'),
                 note: note('chien'),
               ),
@@ -293,16 +295,24 @@ void main() {
       expect(state.staircases.first, (name: escA, done: 2, total: 4));
     });
 
-    test('should go from done to nobody home, then to do', () async {
-      phoneWith(_street());
-      await settled('8');
+    test(
+      'should go from done to nobody home, to come back, then to do',
+      () async {
+        phoneWith(_street());
+        await settled('8');
 
-      await notifier('8').cycle(_key('A', 1, '11'));
-      expect(doorNow(_key('A', 1, '11')).status, VisitStatus.nobodyHome);
+        await notifier('8').cycle(_key('A', 1, '11'));
+        expect(doorNow(_key('A', 1, '11')).status, VisitStatus.nobodyHome);
 
-      await notifier('8').cycle(_key('A', 1, '11'));
-      expect(doorNow(_key('A', 1, '11')).status, VisitStatus.toDo);
-    });
+        await notifier('8').cycle(_key('A', 1, '11'));
+        expect(doorNow(_key('A', 1, '11')).status, VisitStatus.comeBack);
+        expect(doorNow(_key('A', 1, '11')).comeBack, ComeBack.withoutHint);
+
+        await notifier('8').cycle(_key('A', 1, '11'));
+        expect(doorNow(_key('A', 1, '11')).status, VisitStatus.toDo);
+        expect(doorNow(_key('A', 1, '11')).comeBack, isNull);
+      },
+    );
 
     test('should not name the staircase when the building has one', () async {
       phoneWith(_street());
@@ -365,7 +375,8 @@ void main() {
       await notifier('8').undo();
 
       expect(doorNow(_key('A', 0, '02')), Dwelling(label: d('02')));
-      expect(doorNow(_key('A', 0, '01')).status, VisitStatus.done);
+      // 01 was « repasser »: its tap, not undone, made it to do.
+      expect(doorNow(_key('A', 0, '01')).status, VisitStatus.toDo);
     });
 
     test('should undo only once', () async {

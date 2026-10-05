@@ -29,7 +29,10 @@ void main() {
     });
 
     test('should have a mark when it has a « repasser »', () {
-      expect(Dwelling(label: d('51'), comeBack: comeBack('')).hasMarks, isTrue);
+      expect(
+        Dwelling(label: d('51'), status: VisitStatus.comeBack).hasMarks,
+        isTrue,
+      );
     });
 
     test('should have a mark when it has a note', () {
@@ -80,7 +83,21 @@ void main() {
     });
 
     test('should have a mark when it has a « repasser »', () {
-      expect(House(number: n('3'), comeBack: comeBack('')).hasMarks, isTrue);
+      expect(
+        House(number: n('3'), status: VisitStatus.comeBack).hasMarks,
+        isTrue,
+      );
+    });
+
+    test('should have a mark when its building has its own « repasser »', () {
+      expect(
+        House(
+          number: n('8'),
+          comeBack: comeBack(''),
+          building: building(),
+        ).hasMarks,
+        isTrue,
+      );
     });
 
     test('should have a mark when it has a note', () {

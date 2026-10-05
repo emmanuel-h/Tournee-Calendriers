@@ -32,34 +32,42 @@ void main() {
   test('should keep every field when given them', () {
     final house = House(
       number: n('3bis'),
-      status: VisitStatus.nobodyHome,
+      status: VisitStatus.comeBack,
       comeBack: comeBack('après 19h'),
       note: note('chien dans le jardin'),
       lastChange: leaAtTwo,
     );
 
     expect(house.number, n('3bis'));
-    expect(house.status, VisitStatus.nobodyHome);
+    expect(house.status, VisitStatus.comeBack);
     expect(house.comeBack, comeBack('après 19h'));
     expect(house.note, note('chien dans le jardin'));
     expect(house.lastChange, leaAtTwo);
   });
 
-  test('should keep the come-back when the house is to do', () {
-    final house = House(number: n('5'), comeBack: ComeBack.withoutHint);
+  test('should come back without hint when « repasser » has none', () {
+    final house = House(number: n('5'), status: VisitStatus.comeBack);
 
+    expect(house.status, VisitStatus.comeBack);
     expect(house.comeBack, ComeBack.withoutHint);
   });
 
-  test('should drop the come-back when the house is done', () {
-    final house = House(
-      number: n('5'),
-      status: VisitStatus.done,
-      comeBack: comeBack('après 19h'),
-    );
+  for (final status in [
+    VisitStatus.toDo,
+    VisitStatus.done,
+    VisitStatus.nobodyHome,
+  ]) {
+    test('should drop the come-back when the house is $status', () {
+      final house = House(
+        number: n('5'),
+        status: status,
+        comeBack: comeBack('après 19h'),
+      );
 
-    expect(house.comeBack, isNull);
-  });
+      expect(house.status, status);
+      expect(house.comeBack, isNull);
+    });
+  }
 
   group('building', () {
     test('should hold the building it is given', () {
@@ -97,26 +105,24 @@ void main() {
     test('should count one done door when the house is done', () {
       final house = House(number: n('2'), status: VisitStatus.done);
 
-      expect(house.progress, Progress.of(VisitStatus.done, comeBack: false));
+      expect(house.progress, Progress.of(VisitStatus.done));
     });
 
-    test('should count the come-back when the house has one', () {
+    test('should count one come-back door when the house is « repasser »', () {
       final house = House(
         number: n('7'),
-        status: VisitStatus.nobodyHome,
-        comeBack: ComeBack.withoutHint,
+        status: VisitStatus.comeBack,
+        comeBack: comeBack('samedi'),
       );
 
-      expect(
-        house.progress,
-        Progress.of(VisitStatus.nobodyHome, comeBack: true),
-      );
+      expect(house.progress, Progress.of(VisitStatus.comeBack));
+      expect(house.progress.buildingComeBacks, 0);
     });
 
-    test('should count no come-back when the house has none', () {
+    test('should count one door to do when the house is new', () {
       final house = House(number: n('7'));
 
-      expect(house.progress, Progress.of(VisitStatus.toDo, comeBack: false));
+      expect(house.progress, Progress.of(VisitStatus.toDo));
     });
 
     test('should count the doors of its building instead of itself', () {
@@ -140,16 +146,17 @@ void main() {
         building: doors,
       );
 
-      expect(house.progress, doors.progress + Progress.comeBackAlone);
+      expect(house.progress, doors.progress + Progress.buildingComeBack);
       expect(house.progress.total, 2);
-      expect(house.progress.comeBack, 1);
+      expect(house.progress.comeBack, 0);
+      expect(house.progress.toComeBack, 1);
     });
   });
 
   group('equality', () {
     House full() => House(
       number: n('3bis'),
-      status: VisitStatus.nobodyHome,
+      status: VisitStatus.comeBack,
       comeBack: comeBack('après 19h'),
       note: note('chien'),
       lastChange: leaAtTwo,
@@ -163,39 +170,40 @@ void main() {
     final others = <String, House>{
       'number': House(
         number: n('3ter'),
-        status: VisitStatus.nobodyHome,
+        status: VisitStatus.comeBack,
         comeBack: comeBack('après 19h'),
         note: note('chien'),
         lastChange: leaAtTwo,
       ),
       'status': House(
         number: n('3bis'),
-        comeBack: comeBack('après 19h'),
+        status: VisitStatus.nobodyHome,
         note: note('chien'),
         lastChange: leaAtTwo,
       ),
       'come-back': House(
         number: n('3bis'),
-        status: VisitStatus.nobodyHome,
+        status: VisitStatus.comeBack,
+        comeBack: comeBack('après 20h'),
         note: note('chien'),
         lastChange: leaAtTwo,
       ),
       'note': House(
         number: n('3bis'),
-        status: VisitStatus.nobodyHome,
+        status: VisitStatus.comeBack,
         comeBack: comeBack('après 19h'),
         lastChange: leaAtTwo,
       ),
       'last change': House(
         number: n('3bis'),
-        status: VisitStatus.nobodyHome,
+        status: VisitStatus.comeBack,
         comeBack: comeBack('après 19h'),
         note: note('chien'),
         lastChange: paulAtThree,
       ),
       'position': House(
         number: n('3bis'),
-        status: VisitStatus.nobodyHome,
+        status: VisitStatus.comeBack,
         comeBack: comeBack('après 19h'),
         note: note('chien'),
         lastChange: leaAtTwo,
@@ -249,7 +257,7 @@ void main() {
   test('should show its fields when printed', () {
     final house = House(
       number: n('12'),
-      status: VisitStatus.nobodyHome,
+      status: VisitStatus.comeBack,
       comeBack: comeBack('après 19h'),
       note: note('chien'),
       lastChange: leaAtTwo,
@@ -257,7 +265,7 @@ void main() {
 
     expect(
       house.toString(),
-      'House(12, VisitStatus.nobodyHome, ComeBack(après 19h), Note(chien), '
+      'House(12, VisitStatus.comeBack, ComeBack(après 19h), Note(chien), '
       'ChangeStamp(lea, 2026-11-02 14:02:00.000Z))',
     );
   });

@@ -6,7 +6,6 @@ import 'package:tournee_calendriers/domain/street/building/building_status.dart'
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
-import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/progress.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
@@ -545,15 +544,15 @@ void main() {
           ).withDwelling(
             escA,
             0,
-            Dwelling(label: d('01'), comeBack: ComeBack.withoutHint),
+            Dwelling(label: d('01'), status: VisitStatus.comeBack),
           );
 
       expect(
         two.progress,
-        Progress.of(VisitStatus.done, comeBack: false) +
-            Progress.of(VisitStatus.toDo, comeBack: true) +
-            Progress.of(VisitStatus.toDo, comeBack: false) +
-            Progress.of(VisitStatus.toDo, comeBack: false),
+        Progress.of(VisitStatus.done) +
+            Progress.of(VisitStatus.comeBack) +
+            Progress.of(VisitStatus.toDo) +
+            Progress.of(VisitStatus.toDo),
       );
     });
   });

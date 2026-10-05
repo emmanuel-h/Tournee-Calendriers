@@ -52,7 +52,16 @@ void main() {
     expect(doorOf('02')!.lastChange, leaAtTwo);
   });
 
-  test('should save the come-back of the door', () async {
+  test('should save the hint of a door « repasser »', () async {
+    valueOf(
+      await markDwelling(
+        lilasId,
+        n('8'),
+        rdc('02'),
+        const StatusMark(VisitStatus.comeBack),
+      ),
+    );
+
     final change = valueOf(
       await markDwelling(
         lilasId,
@@ -77,7 +86,7 @@ void main() {
     expect(doorOf('01')!.note, note('chat'));
   });
 
-  test('should fail when the door is done and a come-back is asked', () async {
+  test('should fail when the door is done and a hint is given', () async {
     final failure = failureOf(
       await markDwelling(
         lilasId,
@@ -87,10 +96,7 @@ void main() {
       ),
     );
 
-    expect(
-      failure,
-      const CommandRefused(DwellingChangeFailure.comeBackOnDoneDwelling),
-    );
+    expect(failure, const CommandRefused(DwellingChangeFailure.notComeBack));
     expect(streets.saved, isEmpty);
   });
 

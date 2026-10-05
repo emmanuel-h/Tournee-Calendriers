@@ -162,7 +162,10 @@ final class HouseSheetShown extends HouseSheetState {
   /// Null for a [BuildingSubject]: the sheet then has no status control.
   final VisitStatus? status;
 
-  /// « Repasser » is ticked.
+  /// « Repasser » is the status of the house or door, or is ticked for a
+  /// building itself. The hint field takes text only then: on a house or
+  /// door it is always shown, greyed otherwise, so choosing a status never
+  /// moves the sheet.
   final bool comeBack;
 
   /// The hint of the « repasser »; empty when there is none.
@@ -175,8 +178,4 @@ final class HouseSheetShown extends HouseSheetState {
   final LastChange? lastChange;
 
   final SheetSubject subject;
-
-  /// Something done cannot get a « repasser » (PLAN §6.1): the box is then
-  /// disabled, with its reason.
-  bool get canComeBack => status != VisitStatus.done;
 }

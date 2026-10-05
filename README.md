@@ -20,11 +20,11 @@ Street screen (« Rue »):
 
 - Odd numbers on the left, even on the right, scrolling together (one column when the street
   has one side only); counts « done/total · ✗ · ↻ » and a progress bar.
-- A tap cycles a house ○ → ✓ → ✗ → ○ with a light vibration and a screen-reader announcement;
+- A tap cycles a house ○ → ✓ → ✗ → ↻ → ○ (à faire, fait, personne, repasser) with a light vibration and a screen-reader announcement;
   « Annuler » for 4 s undoes the last tap. A note shows as a small dot on the tile.
 - « Masquer faits » hides the done houses, remembered per street on the phone.
-- Hold a house for its sheet (« Fiche maison »): status « À faire | Fait | Personne »,
-  « Repasser » with when to come back, a note (200 characters at most, with the privacy hint),
+- Hold a house for its sheet (« Fiche maison »): status « À faire | Fait | Personne | Repasser »,
+  « Quand repasser ? » (greyed unless « Repasser »), a note (200 characters at most, with the privacy hint),
   and when it was last changed. Each control is stored at once; the tile follows.
 - « Transformer en immeuble… » in the sheet describes a building (« Décrire l'immeuble »):
   staircases, floors (RdC–5e, or « Inconnus »), doors per floor, door labels « 51, 52… |

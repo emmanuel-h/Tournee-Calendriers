@@ -19,7 +19,7 @@ import '../support/app_overrides.dart';
 
 final _id = StreetId('lilas');
 
-/// 1 to do, 5 to come back « après 19h », 7 with a note.
+/// 1 to do, 5 « repasser » « après 19h », 7 with a note.
 final _lilas = valueOf(
   Street.create(
     id: _id,
@@ -27,7 +27,11 @@ final _lilas = valueOf(
     commune: villefranche,
     houses: [
       House(number: n('1')),
-      House(number: n('5'), comeBack: comeBack('après 19h')),
+      House(
+        number: n('5'),
+        status: VisitStatus.comeBack,
+        comeBack: comeBack('après 19h'),
+      ),
       House(number: n('7'), note: note('chien')),
     ],
   ),
@@ -77,7 +81,7 @@ void main() {
       tester.getSemantics(finder).getSemanticsData();
 
   testWidgets(
-    'should show ↻ on the tile when Repasser is ticked in the held house sheet',
+    'should show ↻ on the tile when Repasser is chosen in the held house sheet',
     (tester) async {
       final semantics = tester.ensureSemantics();
       await holdTile(tester, '1');
@@ -88,46 +92,46 @@ void main() {
         findsOneWidget,
       );
       expect(find.byKey(const Key('house.lastChange')), findsNothing);
-      expect(find.byKey(const Key('house.comeBackHint.field')), findsNothing);
+      final hint = find.byKey(const Key('house.comeBackHint.field'));
+      expect(tester.widget<TextField>(hint).enabled, isFalse);
+      expect(find.text('Quand repasser\u00a0?'), findsOneWidget);
 
-      await tester.tap(find.byKey(const Key('house.comeBack')));
+      await tester.tap(find.byKey(const ValueKey('house.status.comeBack')));
       await tester.pumpAndSettle();
-      await tester.enterText(
-        find.byKey(const Key('house.comeBackHint.field')),
-        'après 19h',
+
+      expect(tester.widget<TextField>(hint).enabled, isTrue);
+      expect(
+        semanticsOf(
+          tester,
+          find.byKey(const ValueKey('house.status.comeBack')),
+        ).flagsCollection.isChecked,
+        CheckedState.isTrue,
       );
+      await tester.enterText(hint, 'après 19h');
       await closeSheet(tester);
 
       expect(find.byKey(const Key('house.number')), findsNothing);
-      expect(
-        tester.getSemantics(_tile('1')).label,
-        'Numéro 1, à faire, repasser',
-      );
+      expect(tester.getSemantics(_tile('1')).label, 'Numéro 1, repasser');
+      expect(stored('1').status, VisitStatus.comeBack);
       expect(stored('1').comeBack, comeBack('après 19h'));
       semantics.dispose();
     },
   );
 
   testWidgets(
-    'should untick Repasser and disable it with its reason when Fait is chosen',
+    'should grey the hint field and drop its hint when Fait is chosen',
     (tester) async {
       final semantics = tester.ensureSemantics();
       await holdTile(tester, '5');
-      final box = find.byKey(const Key('house.comeBack'));
-      expect(
-        semanticsOf(tester, box).flagsCollection.isChecked,
-        CheckedState.isTrue,
-      );
+      final hint = find.byKey(const Key('house.comeBackHint.field'));
+      expect(tester.widget<TextField>(hint).enabled, isTrue);
       expect(find.text('après 19h'), findsOneWidget);
 
       await tester.tap(find.byKey(const ValueKey('house.status.done')));
       await tester.pumpAndSettle();
 
-      final data = semanticsOf(tester, box);
-      expect(data.flagsCollection.isChecked, CheckedState.isFalse);
-      expect(data.flagsCollection.isEnabled.toBoolOrNull(), false);
-      expect(data.label, contains('Déjà fait\u00a0: rien à repasser.'));
-      expect(find.byKey(const Key('house.comeBackHint.field')), findsNothing);
+      expect(tester.widget<TextField>(hint).enabled, isFalse);
+      expect(find.text('après 19h'), findsNothing);
       expect(
         semanticsOf(
           tester,
@@ -141,13 +145,37 @@ void main() {
         find.text('Modifié à ${two(local.hour)}:${two(local.minute)}'),
         findsOneWidget,
       );
-
-      await tester.tap(box);
-      await tester.pumpAndSettle();
-
       expect(stored('5').status, VisitStatus.done);
       expect(stored('5').comeBack, isNull);
       semantics.dispose();
+    },
+  );
+
+  testWidgets(
+    'should keep the sheet and its fields in place whichever of the four '
+    'statuses is chosen',
+    (tester) async {
+      await holdTile(tester, '1');
+      // The house was never changed: the first choice stamps it, and the
+      // line « Modifié à … » appears in a place kept for it.
+      Rect sheet() => tester.getRect(find.byType(BottomSheet));
+      Rect note() => tester.getRect(find.byKey(const Key('house.note.field')));
+      Rect hint() =>
+          tester.getRect(find.byKey(const Key('house.comeBackHint.field')));
+      final before = (sheet(), note(), hint());
+
+      for (final status in [
+        VisitStatus.done,
+        VisitStatus.nobodyHome,
+        VisitStatus.comeBack,
+        VisitStatus.toDo,
+      ]) {
+        await tester.tap(find.byKey(ValueKey('house.status.${status.name}')));
+        await tester.pumpAndSettle();
+
+        expect(stored('1').status, status);
+        expect((sheet(), note(), hint()), before, reason: '$status');
+      }
     },
   );
 

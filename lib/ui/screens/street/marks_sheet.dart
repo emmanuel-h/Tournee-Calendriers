@@ -12,14 +12,20 @@ import 'package:tournee_calendriers/ui/components/sheet_scaffold.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/screens/street/last_change_text.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
+import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 import 'package:tournee_calendriers/ui/theme/status_look.dart';
 
 /// The sheet of marks of a house, a door or a building itself (PLAN §5.7,
-/// `docs/mockups/House.dc.html`): a title, the status control (not on a
-/// building itself), « Repasser » with its hint, the note, an optional
-/// [action], and the last change. Every control is stored as soon as it
-/// changes; the tile behind follows at once.
+/// `docs/mockups/House.dc.html`): a title, the status control « À faire |
+/// Fait | Personne | Repasser » and the « Quand repasser ? » field under it
+/// (a building itself has the « Repasser » box instead), the note, an
+/// optional [action], and the last change. Every control is stored as soon
+/// as it changes; the tile behind follows at once.
+///
+/// Choosing a status moves nothing on the sheet: the « Quand repasser ? »
+/// field is always there, greyed unless « Repasser » is chosen, and the
+/// line of the last change keeps its place before the first change.
 ///
 /// The two text fields are stored when they could otherwise be lost: when
 /// the field loses focus (« OK » on the keyboard, another field), before
@@ -101,7 +107,8 @@ final class _MarksSheetState extends ConsumerState<MarksSheet> {
     } else if (previous is HouseSheetShown &&
         previous.comeBack &&
         !next.comeBack) {
-      // « Repasser » was unticked, or « Fait » chosen: its hint is gone.
+      // Another status than « Repasser » was chosen (or the building's box
+      // unticked): its hint is gone.
       _hint.clear();
     }
   }
@@ -156,25 +163,36 @@ final class _MarksSheetState extends ConsumerState<MarksSheet> {
         ],
         HouseSheetShown(:final status) => [
           widget.title(state),
-          if (status != null)
-            _StatusControl(name: name, status: status, onSelected: _setStatus),
-          ComeBackBlock(
-            name: name,
-            ticked: state.comeBack,
-            enabled: state.canComeBack,
-            onChanged: _setComeBack,
-            hint: LimitedTextField(
-              name: '$name.comeBackHint',
-              controller: _hint,
-              focusNode: _hintFocus,
-              limit: TextLimit.comeBackHint,
-              tooLongMessage: l10n.comeBackHintTooLong(
-                TextLimit.comeBackHint.max,
+          ...switch (status) {
+            // A building itself: no status, its own « Repasser » box.
+            null => [
+              ComeBackBlock(
+                name: name,
+                ticked: state.comeBack,
+                onChanged: _setComeBack,
+                hint: _hintField(
+                  placeholder: l10n.comeBackHintPlaceholder,
+                  enabled: true,
+                ),
               ),
-              placeholder: l10n.comeBackHintPlaceholder,
-              borderColor: colors.comeBackBorder,
-            ),
-          ),
+            ],
+            final VisitStatus status => [
+              _StatusControl(
+                name: name,
+                status: status,
+                onSelected: _setStatus,
+              ),
+              _ComeBackHint(
+                name: name,
+                on: state.comeBack,
+                field: _hintField(
+                  label: l10n.comeBackWhenLabel,
+                  placeholder: l10n.comeBackWhenPlaceholder,
+                  enabled: state.comeBack,
+                ),
+              ),
+            ],
+          },
           LimitedTextField(
             name: '$name.note',
             controller: _note,
@@ -186,15 +204,71 @@ final class _MarksSheetState extends ConsumerState<MarksSheet> {
             helper: l10n.notePrivacyHint,
           ),
           ?widget.action,
-          if (state.lastChange case final change?)
-            Text(
+          // An empty line until the first change, so that change does not
+          // move the sheet either.
+          switch (state.lastChange) {
+            null => const Text('', style: AppTextStyles.small),
+            final change => Text(
               lastChangeText(l10n, change),
               key: ValueKey('$name.lastChange'),
               textAlign: TextAlign.center,
               style: AppTextStyles.small.copyWith(color: colors.muted),
             ),
+          },
         ],
       },
+    );
+  }
+
+  /// The field of the « repasser » hint, the same text and focus whichever
+  /// block holds it.
+  Widget _hintField({
+    String? label,
+    required String placeholder,
+    required bool enabled,
+  }) {
+    final l10n = AppLocalizations.of(context);
+    final colors = AppColors.of(context);
+    return LimitedTextField(
+      name: '${widget.name}.comeBackHint',
+      controller: _hint,
+      focusNode: _hintFocus,
+      limit: TextLimit.comeBackHint,
+      tooLongMessage: l10n.comeBackHintTooLong(TextLimit.comeBackHint.max),
+      label: label,
+      placeholder: placeholder,
+      enabled: enabled,
+      borderColor: enabled ? colors.comeBackBorder : null,
+    );
+  }
+}
+
+/// « Quand repasser ? » under the status control of a house or a door: in
+/// the blue of « Repasser » when that status is chosen ([on]), greyed
+/// otherwise, always the same size.
+final class _ComeBackHint extends StatelessWidget {
+  const _ComeBackHint({
+    required this.name,
+    required this.on,
+    required this.field,
+  });
+
+  /// Names the block for tests: `<name>.comeBackBlock`.
+  final String name;
+  final bool on;
+  final Widget field;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return Container(
+      key: ValueKey('$name.comeBackBlock'),
+      padding: const EdgeInsets.all(AppSizes.comeBackPadding),
+      decoration: BoxDecoration(
+        color: on ? colors.comeBack : colors.ground,
+        borderRadius: BorderRadius.circular(AppSizes.segmentRadius),
+      ),
+      child: field,
     );
   }
 }
@@ -247,8 +321,8 @@ final class MarksSheetTitle extends StatelessWidget {
   }
 }
 
-/// « ○ À faire | ✓ Fait | ✗ Personne »: screen readers hear a group of
-/// radio buttons named « Statut ».
+/// « ○ À faire | ✓ Fait | ✗ Personne | ↻ Repasser », each glyph above its
+/// word: screen readers hear a group of radio buttons named « Statut ».
 final class _StatusControl extends StatelessWidget {
   const _StatusControl({
     required this.name,
@@ -267,6 +341,9 @@ final class _StatusControl extends StatelessWidget {
       groupLabel: l10n.houseStatusGroup,
       selected: status,
       onSelected: onSelected,
+      height: AppSizes.statusSegmentHeight,
+      textStyle: AppTextStyles.segment,
+      glyphAbove: true,
       segments: [
         for (final option in VisitStatus.values)
           Segment(
@@ -276,11 +353,13 @@ final class _StatusControl extends StatelessWidget {
               VisitStatus.toDo => StatusGlyphs.toDo,
               VisitStatus.done => StatusGlyphs.done,
               VisitStatus.nobodyHome => StatusGlyphs.nobodyHome,
+              VisitStatus.comeBack => StatusGlyphs.comeBack,
             },
             label: switch (option) {
               VisitStatus.toDo => l10n.statusToDo,
               VisitStatus.done => l10n.statusDone,
               VisitStatus.nobodyHome => l10n.statusNobodyHome,
+              VisitStatus.comeBack => l10n.statusComeBack,
             },
           ),
       ],

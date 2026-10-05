@@ -22,58 +22,56 @@ void main() {
     test('should keep every field when given them', () {
       final dwelling = Dwelling(
         label: d('Gauche'),
-        status: VisitStatus.nobodyHome,
+        status: VisitStatus.comeBack,
         comeBack: comeBack('après 19h'),
         note: note('digicode 1234'),
         lastChange: leaAtTwo,
       );
 
       expect(dwelling.label, d('Gauche'));
-      expect(dwelling.status, VisitStatus.nobodyHome);
+      expect(dwelling.status, VisitStatus.comeBack);
       expect(dwelling.comeBack, comeBack('après 19h'));
       expect(dwelling.note, note('digicode 1234'));
       expect(dwelling.lastChange, leaAtTwo);
     });
 
-    test('should keep the come-back when the dwelling is to do', () {
-      final dwelling = Dwelling(label: d('52'), comeBack: ComeBack.withoutHint);
+    test('should come back without hint when « repasser » has none', () {
+      final dwelling = Dwelling(label: d('52'), status: VisitStatus.comeBack);
 
       expect(dwelling.comeBack, ComeBack.withoutHint);
     });
 
-    test('should drop the come-back when the dwelling is done', () {
-      final dwelling = Dwelling(
-        label: d('52'),
-        status: VisitStatus.done,
-        comeBack: ComeBack.withoutHint,
-      );
+    for (final status in [
+      VisitStatus.toDo,
+      VisitStatus.done,
+      VisitStatus.nobodyHome,
+    ]) {
+      test('should drop the come-back when the dwelling is $status', () {
+        final dwelling = Dwelling(
+          label: d('52'),
+          status: status,
+          comeBack: comeBack('samedi'),
+        );
 
-      expect(dwelling.comeBack, isNull);
-    });
+        expect(dwelling.status, status);
+        expect(dwelling.comeBack, isNull);
+      });
+    }
 
-    test('should count one door with its status and come-back', () {
+    test('should count one door with its status', () {
       final dwelling = Dwelling(
         label: d('53'),
-        status: VisitStatus.nobodyHome,
-        comeBack: ComeBack.withoutHint,
+        status: VisitStatus.comeBack,
+        comeBack: comeBack('samedi'),
       );
 
-      expect(
-        dwelling.progress,
-        Progress.of(VisitStatus.nobodyHome, comeBack: true),
-      );
-    });
-
-    test('should count no come-back when the dwelling has none', () {
-      final dwelling = Dwelling(label: d('53'), status: VisitStatus.done);
-
-      expect(dwelling.progress, Progress.of(VisitStatus.done, comeBack: false));
+      expect(dwelling.progress, Progress.of(VisitStatus.comeBack));
     });
 
     group('equality', () {
       Dwelling full() => Dwelling(
         label: d('51'),
-        status: VisitStatus.nobodyHome,
+        status: VisitStatus.comeBack,
         comeBack: comeBack('après 19h'),
         note: note('chien'),
         lastChange: leaAtTwo,
@@ -87,32 +85,33 @@ void main() {
       final others = <String, Dwelling>{
         'label': Dwelling(
           label: d('52'),
-          status: VisitStatus.nobodyHome,
+          status: VisitStatus.comeBack,
           comeBack: comeBack('après 19h'),
           note: note('chien'),
           lastChange: leaAtTwo,
         ),
         'status': Dwelling(
           label: d('51'),
-          comeBack: comeBack('après 19h'),
+          status: VisitStatus.nobodyHome,
           note: note('chien'),
           lastChange: leaAtTwo,
         ),
         'come-back': Dwelling(
           label: d('51'),
-          status: VisitStatus.nobodyHome,
+          status: VisitStatus.comeBack,
+          comeBack: comeBack('après 20h'),
           note: note('chien'),
           lastChange: leaAtTwo,
         ),
         'note': Dwelling(
           label: d('51'),
-          status: VisitStatus.nobodyHome,
+          status: VisitStatus.comeBack,
           comeBack: comeBack('après 19h'),
           lastChange: leaAtTwo,
         ),
         'last change': Dwelling(
           label: d('51'),
-          status: VisitStatus.nobodyHome,
+          status: VisitStatus.comeBack,
           comeBack: comeBack('après 19h'),
           note: note('chien'),
           lastChange: paulAtThree,

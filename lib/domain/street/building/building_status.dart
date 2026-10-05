@@ -3,7 +3,8 @@ import 'package:tournee_calendriers/domain/street/progress.dart';
 /// Where a building stands, shown on its tile in the street (PLAN §5.7):
 /// derived from its doors every time, never stored or set by hand.
 enum BuildingStatus {
-  /// No door is done yet (doors where nobody was home count as not done).
+  /// No door is done yet: doors where nobody was home, or to come back to,
+  /// count as not done.
   toDo,
 
   /// Some doors are done, not all: the tile shows `◐ done/total`.

@@ -59,7 +59,11 @@ void main() {
         _with(empty, escB, 0, Dwelling(label: d('02'), note: note('digicode'))),
         escB,
         1,
-        Dwelling(label: d('12'), comeBack: comeBack('soir')),
+        Dwelling(
+          label: d('12'),
+          status: VisitStatus.comeBack,
+          comeBack: comeBack('soir'),
+        ),
       );
 
       expect(

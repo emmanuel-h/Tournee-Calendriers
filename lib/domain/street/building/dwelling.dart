@@ -9,9 +9,10 @@ import 'package:tournee_calendriers/domain/street/visit_status.dart';
 /// One door of a building (« Logement », PLAN §2): an entity of the `Street`
 /// aggregate, identified on its floor by its [label].
 ///
-/// A dwelling carries the same marks as a single house (status, « repasser »,
-/// note, last change) and follows the same rule: a done dwelling never keeps
-/// a « repasser ». It is immutable; the street replaces it to change it.
+/// A dwelling carries the same marks as a single house (status, the hint of
+/// its « repasser », note, last change) and follows the same rule: it has a
+/// [comeBack] exactly when it is « repasser ». It is immutable; the street
+/// replaces it to change it.
 final class Dwelling {
   const Dwelling._(
     this.label,
@@ -21,9 +22,9 @@ final class Dwelling {
     this.lastChange,
   );
 
-  /// A dwelling labelled [label]; by default not visited yet, with no
-  /// « repasser », no note and no change recorded. The [comeBack] of a done
-  /// dwelling is dropped (see `House` for why a factory does it).
+  /// A dwelling labelled [label]; by default not visited yet, with no note
+  /// and no change recorded. Its [comeBack] follows its status
+  /// ([ComeBack.keptBy]; see `House` for why a factory does it).
   factory Dwelling({
     required DwellingLabel label,
     VisitStatus status = VisitStatus.toDo,
@@ -33,7 +34,7 @@ final class Dwelling {
   }) => Dwelling._(
     label,
     status,
-    status == VisitStatus.done ? null : comeBack,
+    ComeBack.keptBy(status, comeBack),
     note,
     lastChange,
   );
@@ -41,7 +42,7 @@ final class Dwelling {
   final DwellingLabel label;
   final VisitStatus status;
 
-  /// The « repasser » flag and its hint; always null on a done dwelling.
+  /// The hint of its « repasser »; null unless it is « repasser ».
   final ComeBack? comeBack;
 
   /// The free note (« digicode »…); [Note.empty] when nobody wrote one.
@@ -50,13 +51,12 @@ final class Dwelling {
   /// Who changed the dwelling last and when; null when nobody has yet.
   final ChangeStamp? lastChange;
 
-  /// Whether someone marked the door: a status other than to do, a
-  /// « repasser » or a note. Its [lastChange] alone is not a mark.
-  bool get hasMarks =>
-      status != VisitStatus.toDo || comeBack != null || note != Note.empty;
+  /// Whether someone marked the door: a status other than to do (« repasser »
+  /// included) or a note. Its [lastChange] alone is not a mark.
+  bool get hasMarks => status != VisitStatus.toDo || note != Note.empty;
 
   /// What this dwelling adds to its building's progress: one door.
-  Progress get progress => Progress.of(status, comeBack: comeBack != null);
+  Progress get progress => Progress.of(status);
 
   @override
   bool operator ==(Object other) =>

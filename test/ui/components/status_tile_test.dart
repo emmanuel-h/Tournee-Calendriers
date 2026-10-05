@@ -45,7 +45,7 @@ void main() {
       status: const ComeBackTile(),
       glyph: StatusGlyphs.comeBack,
       count: null,
-      label: 'Numéro 5, à faire, repasser',
+      label: 'Numéro 5, repasser',
       background: colors.comeBack,
     ),
     (

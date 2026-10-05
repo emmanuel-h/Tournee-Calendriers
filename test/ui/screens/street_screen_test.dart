@@ -35,7 +35,11 @@ final _lilas = valueOf(
       House(number: n('1')),
       House(number: n('3'), status: VisitStatus.done),
       House(number: n('3bis'), status: VisitStatus.nobodyHome),
-      House(number: n('5'), comeBack: comeBack('après 19h')),
+      House(
+        number: n('5'),
+        status: VisitStatus.comeBack,
+        comeBack: comeBack('après 19h'),
+      ),
       House(number: n('7'), note: note('chien')),
       House(number: n('2'), status: VisitStatus.done),
       House(number: n('4')),
@@ -97,13 +101,14 @@ void main() {
       await openStreet(tester);
       expect(labelOf(tester, _tile('1')), 'Numéro 1, à faire');
       expect(find.byKey(const Key('street.hint')), findsOneWidget);
-      // The three « → » of the hint are drawn, like its status glyphs.
+      // The four « → » of the hint (○ → ✓ → ✗ → ↻ → ○) are drawn, like
+      // its status glyphs.
       expect(
         find.descendant(
           of: find.byKey(const Key('street.hint')),
           matching: find.byType(ArrowGlyph),
         ),
-        findsNWidgets(3),
+        findsNWidgets(4),
       );
 
       await tester.tap(_tile('1'));
@@ -151,6 +156,26 @@ void main() {
       // The new snackbar replaced the first one.
       expect(findArrowText('1 → Personne'), findsOneWidget);
       expect(findArrowText('1 → Fait'), findsNothing);
+
+      await tester.tap(_tile('1'));
+      await tester.pumpAndSettle();
+
+      expect(labelOf(tester, _tile('1')), 'Numéro 1, repasser');
+      expect(
+        tester.takeAnnouncements().map((announcement) => announcement.message),
+        ['Numéro 1, repasser'],
+      );
+      expect(findArrowText('1 → Repasser'), findsOneWidget);
+      expect(
+        labelOf(tester, find.byKey(const Key('street.counts'))),
+        '3 sur 9 faits, 1 personne, 2 à repasser',
+      );
+
+      await tester.tap(_tile('1'));
+      await tester.pumpAndSettle();
+
+      expect(labelOf(tester, _tile('1')), 'Numéro 1, à faire');
+      expect(findArrowText('1 → À faire'), findsOneWidget);
       semantics.dispose();
     },
   );
@@ -162,14 +187,14 @@ void main() {
       await openStreet(tester);
       await tester.tap(_tile('5'));
       await tester.pumpAndSettle();
-      expect(labelOf(tester, _tile('5')), 'Numéro 5, fait');
+      expect(labelOf(tester, _tile('5')), 'Numéro 5, à faire');
 
       await tester.tap(find.text('Annuler'));
       await tester.pumpAndSettle();
 
-      expect(labelOf(tester, _tile('5')), 'Numéro 5, à faire, repasser');
+      expect(labelOf(tester, _tile('5')), 'Numéro 5, repasser');
       expect(streets[_id]!.houses, _lilas.houses);
-      expect(findArrowText('5 → Fait'), findsNothing);
+      expect(findArrowText('5 → À faire'), findsNothing);
       expect(find.byKey(const Key('street.hint')), findsOneWidget);
       semantics.dispose();
     },

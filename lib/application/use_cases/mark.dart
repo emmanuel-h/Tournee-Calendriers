@@ -13,14 +13,16 @@ sealed class Mark {
   const Mark();
 }
 
-/// The status control (« À faire | Fait | Personne »).
+/// The status control (« À faire | Fait | Personne | Repasser »).
 final class StatusMark extends Mark {
   const StatusMark(this.status);
 
   final VisitStatus status;
 }
 
-/// The « Repasser » box and its hint; null when the box is unticked.
+/// The hint of a house or door « repasser » (« Quand repasser ? »), or the
+/// « Repasser » box of a building itself and its hint (null when the box is
+/// unticked).
 final class ComeBackMark extends Mark {
   const ComeBackMark(this.comeBack);
 
