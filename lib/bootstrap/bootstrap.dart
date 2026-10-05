@@ -11,7 +11,9 @@ import 'package:path_provider/path_provider.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
 import 'package:tournee_calendriers/bootstrap/bindings.dart';
+import 'package:tournee_calendriers/bootstrap/uncaught_errors.dart';
 import 'package:tournee_calendriers/ui/app.dart';
+import 'package:tournee_calendriers/ui/components/save_failed_alert.dart';
 import 'package:tournee_calendriers/ui/theme/font_licenses.dart';
 
 /// Starts the app.
@@ -34,10 +36,21 @@ Future<void> bootstrap({
   // which needs Flutter's binding before `runApp` creates it.
   WidgetsFlutterBinding.ensureInitialized();
   registerFontLicenses();
+  // A failed save surfaces as an error nothing caught; the dialog that
+  // tells the user reaches the screens through the navigator's key.
+  final navigatorKey = GlobalKey<NavigatorState>();
+  final saveFailed = SaveFailedAlert(navigatorKey);
+  WidgetsBinding.instance.platformDispatcher.onError = (error, _) =>
+      handleUncaughtError(error, onSaveFailed: saveFailed.show);
   final overrides = await bindAdapters(
     storage: storage ?? await getApplicationSupportDirectory(),
     addressDirectory: addressDirectory,
     communeSearch: communeSearch,
   );
-  runApp(ProviderScope(overrides: overrides, child: const TourneeApp()));
+  runApp(
+    ProviderScope(
+      overrides: overrides,
+      child: TourneeApp(navigatorKey: navigatorKey),
+    ),
+  );
 }

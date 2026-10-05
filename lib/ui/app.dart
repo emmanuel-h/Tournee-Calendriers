@@ -15,19 +15,30 @@ import 'package:tournee_calendriers/ui/theme/app_theme.dart';
 /// It is a `StatefulWidget` only to create the router once and dispose of it
 /// with the app; rebuilding the root must not reset navigation.
 final class TourneeApp extends StatefulWidget {
-  const TourneeApp({super.key, this.showGallery = kDebugMode});
+  const TourneeApp({
+    super.key,
+    this.showGallery = kDebugMode,
+    this.navigatorKey,
+  });
 
   /// Whether the debug component gallery is reachable. `kDebugMode` is a
   /// compile-time constant, false in release builds, so the gallery never
   /// ships; tests pass `false` to check that.
   final bool showGallery;
 
+  /// The key of the app's navigator, so a dialog can be shown from outside
+  /// any screen (`SaveFailedAlert`).
+  final GlobalKey<NavigatorState>? navigatorKey;
+
   @override
   State<TourneeApp> createState() => _TourneeAppState();
 }
 
 final class _TourneeAppState extends State<TourneeApp> {
-  late final GoRouter _router = buildAppRouter(showGallery: widget.showGallery);
+  late final GoRouter _router = buildAppRouter(
+    showGallery: widget.showGallery,
+    navigatorKey: widget.navigatorKey,
+  );
 
   @override
   void dispose() {

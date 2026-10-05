@@ -766,5 +766,12 @@
   "gallerySnackBarMessage": "7 → Personne",
   "@gallerySnackBarMessage": { "description": "Sample snackbar message, as after marking a house." },
   "undo": "Annuler",
-  "@undo": { "description": "Action that reverts the last change (snackbar)." }
+  "@undo": { "description": "Action that reverts the last change (snackbar)." },
+
+  "saveFailedTitle": "Enregistrement impossible",
+  "@saveFailedTitle": { "description": "Title of the dialog shown over any screen when the phone could not write a change (its storage is full)." },
+  "saveFailedBody": "Le téléphone n'a pas pu enregistrer le dernier changement : sa mémoire est peut-être pleine. Libérez de la place avant de fermer l'application.",
+  "@saveFailedBody": { "description": "Body of that dialog. The change still shows and is kept at the next write of the street that succeeds; it is lost if the app closes first." },
+  "saveFailedOk": "OK",
+  "@saveFailedOk": { "description": "Button that closes that dialog." }
 }

@@ -1,3 +1,4 @@
+import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
@@ -19,7 +20,14 @@ import 'package:tournee_calendriers/ui/screens/street/street_screen.dart';
 /// opened by its path from anywhere (`context.go` replaces the stack,
 /// `context.push` stacks on top). The gallery route only exists when
 /// [showGallery] is true, which the app sets to `kDebugMode`.
-GoRouter buildAppRouter({required bool showGallery}) => GoRouter(
+///
+/// [navigatorKey] reaches the app's navigator from outside any screen (the
+/// dialog of a failed save, `SaveFailedAlert`).
+GoRouter buildAppRouter({
+  required bool showGallery,
+  GlobalKey<NavigatorState>? navigatorKey,
+}) => GoRouter(
+  navigatorKey: navigatorKey,
   initialLocation: AppRoutes.home,
   routes: [
     GoRoute(

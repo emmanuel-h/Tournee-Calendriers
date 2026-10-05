@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/ui/app.dart';
+import 'package:tournee_calendriers/ui/components/save_failed_alert.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/screens/component_gallery_screen.dart';
 
@@ -75,6 +76,25 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(ComponentGalleryScreen), findsNothing);
+    },
+  );
+
+  testWidgets(
+    'should show the failed-save dialog over the app when given its navigator key',
+    (tester) async {
+      final navigatorKey = GlobalKey<NavigatorState>();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: emptyPhone(),
+          child: TourneeApp(navigatorKey: navigatorKey),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      SaveFailedAlert(navigatorKey).show();
+      await tester.pumpAndSettle();
+
+      expect(find.text('Enregistrement impossible'), findsOneWidget);
     },
   );
 }

@@ -1382,6 +1382,24 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Annuler'**
   String get undo;
+
+  /// Title of the dialog shown over any screen when the phone could not write a change (its storage is full).
+  ///
+  /// In fr, this message translates to:
+  /// **'Enregistrement impossible'**
+  String get saveFailedTitle;
+
+  /// Body of that dialog. The change still shows and is kept at the next write of the street that succeeds; it is lost if the app closes first.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le téléphone n\'a pas pu enregistrer le dernier changement : sa mémoire est peut-être pleine. Libérez de la place avant de fermer l\'application.'**
+  String get saveFailedBody;
+
+  /// Button that closes that dialog.
+  ///
+  /// In fr, this message translates to:
+  /// **'OK'**
+  String get saveFailedOk;
 }
 
 class _AppLocalizationsDelegate

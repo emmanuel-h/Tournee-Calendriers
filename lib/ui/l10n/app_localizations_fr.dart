@@ -913,4 +913,14 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get undo => 'Annuler';
+
+  @override
+  String get saveFailedTitle => 'Enregistrement impossible';
+
+  @override
+  String get saveFailedBody =>
+      'Le téléphone n\'a pas pu enregistrer le dernier changement : sa mémoire est peut-être pleine. Libérez de la place avant de fermer l\'application.';
+
+  @override
+  String get saveFailedOk => 'OK';
 }
