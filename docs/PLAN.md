@@ -156,6 +156,7 @@ used on a real area. Mockups: `docs/mockups/Start.dc.html` and `docs/mockups/Imp
 │ Route de Beaur… ████ ✓ 8/8  ›│     │ ☑ Rue Nationale       403 n° │
 │                              │     │ ☐ Rue Pierre Morin     19 n° │
 │                              │     │ ☑ Rue de Thizy  déjà importée│  ← greyed
+│                              │     │ ☐ Rue Paul… dans la Corbeille│
 │ [   + Importer des rues    ] │     │ Nécessite le réseau. …       │
 └──────────────────────────────┘     │ [      Importer 1 rue      ] │
                                      └──────────────────────────────┘
@@ -164,16 +165,20 @@ used on a real area. Mockups: `docs/mockups/Start.dc.html` and `docs/mockups/Imp
 - **Mes rues** (`/`): the streets on the phone, French order (case and accents ignored:
   « Église » sorts with E), each with a progress bar and « done/total » (green « ✓ 8/8 » once
   complete); the filter ignores case, accents, hyphens and apostrophes. A row opens the street.
-  No street yet: « Aucune rue pour l'instant » and an explanation. Works offline. Debug builds
+  No street yet: « Aucune rue pour l'instant » and « Importez les rues d'une commune pour
+  commencer. ». Works offline. Debug builds
   show an app-bar action to the component gallery.
 - **Importer des rues**: the commune field searches geo.api.gouv.fr as you type (from two
   characters, after a 300 ms pause; a late answer to older text is ignored); a suggestion shows
   « name (postcode) », « … » after the first of several postcodes. Choosing one closes the
-  keyboard and lists its BAN streets in French order, none ticked; streets already on the phone
-  (Corbeille included) are ticked, greyed and « déjà importée ». « Tout cocher » /
-  « Tout décocher » act on the streets the filter shows; the import takes every ticked street,
-  shown or not. While importing: « Import en cours… n/N » and no way back. All imported → back
-  to the list with « N rues importées »; some failed → the screen stays, says why (no network
+  keyboard and lists its BAN streets in French order, none ticked; streets already in « Mes
+  rues » are ticked, greyed and « déjà importée »; streets in the Corbeille read « dans la
+  Corbeille », unticked and free to tick. « Tout cocher » / « Tout décocher » act on the
+  streets the filter shows (Corbeille ones included); the import takes every ticked street,
+  shown or not. A ticked Corbeille street comes back with its statuses and notes, without the
+  network. While importing: « Import en cours… n/N » and no way back. All imported → back
+  to the list with « N rues importées », « N rues restaurées » or « N rues importées,
+  M restaurées »; some failed → the screen stays, says why (no network
   first) and keeps them ticked so « Importer » tries them again. No network, service error and
   unknown commune each have a French message, with « Réessayer » for the street list.
 - Replaced by Accueil (5.3) and Ajouter des rues (5.4) in M3.
@@ -1003,12 +1008,17 @@ Use cases and phone storage fixed in T1.6 (`lib/application/use_cases/`,
 - **`ImportReferenceArea(inseeCode, only?)`**: lists the commune, then imports the chosen streets
   (or, with no choice, every street whose BAN count is above 0; the others are counted in
   `emptyStreets`), one at a time in the BAN's order, with a progress callback. **Re-importing
-  never wipes marks**: a street whose BAN id is already stored (Corbeille included) is left as is
-  and reported (`StreetAlreadyImported`, `inCorbeille`). A street the BAN refuses or answers
+  never wipes marks**: a street whose BAN id is already stored is left as is and reported
+  (`StreetAlreadyImported`); if it is in the Corbeille it is restored (`Street.restore`, houses,
+  statuses and notes kept) and reported (`StreetRestoredFromCorbeille`) (T1.17). The chosen
+  streets already stored are handled first, before the BAN is asked: they need no network, and
+  when they are all the BAN is not asked at all; if the commune then cannot be listed, the
+  other chosen streets are reported failed with its failure. A street the BAN refuses or answers
   nonsense for is reported (`StreetImportFailed`) and the import goes on; once the network is
   gone (`noNetwork`), the remaining new streets are reported failed without a request (each would
   wait 15 s), and importing again finishes the job. Chosen ids the commune does not list are
-  reported in `unknownStreets`. Only a commune that cannot be listed fails the whole import.
+  reported in `unknownStreets`. Only a commune that cannot be listed, when no chosen street is stored, fails the whole
+  import.
 
 Start screen rules fixed in T1.11 (`lib/domain/shared/french_text.dart`,
 `lib/application/`):
@@ -1020,7 +1030,7 @@ Start screen rules fixed in T1.11 (`lib/domain/shared/french_text.dart`,
   postcodes; failures `noNetwork`, `serviceError`), adapter `GeoCommuneSearch`
   (`infrastructure/geo_api/`, 10 s timeout). An entry without a valid `Commune` or a postcode
   that is not five digits is left out. Use cases `SearchCommunes` (nothing asked under two
-  characters) and `FindImportedStreets` (BAN ids already on the phone, Corbeille included).
+  characters) and `FindImportedStreets` (BAN ids already on the phone, each `active` or `inCorbeille`).
 
 ```dart
 // Sketch of the core (T1.2–T1.6 delivered the uncommented members; the rest come with their tasks)

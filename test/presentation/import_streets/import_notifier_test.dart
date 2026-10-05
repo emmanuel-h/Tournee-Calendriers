@@ -119,6 +119,18 @@ void main() {
     await notifier().chooseCommune(_option, label: _label);
   }
 
+  /// Rue Pierre Morin, imported before and sent to the Corbeille.
+  Future<void> morinInCorbeille() => streets.add(
+    valueOf(
+      Street.create(
+        id: StreetId('s'),
+        name: 'Rue Pierre Morin',
+        commune: villefranche,
+        banId: _morin,
+      ),
+    ).delete(by: lea, at: twoPm).$1,
+  );
+
   test('should wait 300 ms after the last key by default', () {
     final plain = ProviderContainer();
     addTearDown(plain.dispose);
@@ -331,6 +343,22 @@ void main() {
       },
     );
 
+    test(
+      'should show a street in the Corbeille unticked and free to tick',
+      () async {
+        await morinInCorbeille();
+
+        await chooseVillefranche();
+
+        final morin = (state().streets as StreetsLoaded).streets.last;
+        expect(morin.id, _morin);
+        expect(morin.inCorbeille, isTrue);
+        expect(morin.alreadyImported, isFalse);
+        expect(morin.checked, isFalse);
+        expect(morin.selectable, isTrue);
+      },
+    );
+
     test('should ignore a pending search when a commune is chosen', () async {
       communes.hold('Vill');
       final typed = notifier().typeCommune('Vill');
@@ -440,6 +468,16 @@ void main() {
 
       expect(choice(_morin).checked, isFalse);
       expect(choice(_bonnet).checked, isFalse);
+    });
+
+    test('should tick a street in the Corbeille with all the others', () async {
+      await morinInCorbeille();
+      await notifier().retryStreets();
+
+      notifier().checkAllVisible(checked: true);
+
+      expect(choice(_morin).checked, isTrue);
+      expect(state().toImport, contains(_morin));
     });
 
     test('should change nothing when no street is listed', () async {
@@ -585,6 +623,30 @@ void main() {
         final summary = (state().run as ImportFinished).summary;
         expect(summary.imported, 1);
         expect(summary.failed, 0);
+      },
+    );
+
+    test(
+      'should bring back a street from the Corbeille without the BAN',
+      () async {
+        await morinInCorbeille();
+        await notifier().retryStreets();
+        notifier().toggle(_morin);
+        // The network is gone since the streets were listed.
+        listings['69264'] = const Err(AddressDirectoryFailure.noNetwork);
+
+        await notifier().import();
+
+        final summary = (state().run as ImportFinished).summary;
+        expect(summary.restored, 1);
+        expect(summary.imported, 0);
+        expect(summary.failed, 0);
+        expect(directory.streetsAsked, isEmpty);
+        expect(streets[StreetId('s')]!.isDeleted, isFalse);
+        final morin = (state().streets as StreetsLoaded).streets.last;
+        expect(morin.alreadyImported, isTrue);
+        expect(morin.inCorbeille, isFalse);
+        expect(morin.checked, isTrue);
       },
     );
 

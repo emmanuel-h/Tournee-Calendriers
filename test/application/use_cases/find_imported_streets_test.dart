@@ -25,10 +25,10 @@ void main() {
       BanStreetId('69264_0682'),
     ]);
 
-    expect(imported, {BanStreetId('69264_1460')});
+    expect(imported, {BanStreetId('69264_1460'): ImportedStreetState.active});
   });
 
-  test('should count a street in the Corbeille as imported', () async {
+  test('should tell a street in the Corbeille', () async {
     final (deleted, _) = _imported(
       'a',
       '69264_0246',
@@ -39,7 +39,9 @@ void main() {
       BanStreetId('69264_0246'),
     ]);
 
-    expect(imported, {BanStreetId('69264_0246')});
+    expect(imported, {
+      BanStreetId('69264_0246'): ImportedStreetState.inCorbeille,
+    });
   });
 
   test('should give nothing when no street was imported', () async {

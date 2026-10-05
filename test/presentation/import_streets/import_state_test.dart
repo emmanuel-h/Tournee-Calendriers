@@ -10,6 +10,7 @@ StreetChoice _choice(
   String id,
   String name, {
   bool alreadyImported = false,
+  bool inCorbeille = false,
   bool checked = false,
   int numberCount = 19,
 }) => StreetChoice(
@@ -17,6 +18,7 @@ StreetChoice _choice(
   name: name,
   numberCount: numberCount,
   alreadyImported: alreadyImported,
+  inCorbeille: inCorbeille,
   checked: checked,
 );
 
@@ -31,6 +33,13 @@ void main() {
         _choice('a', 'A', alreadyImported: true, checked: true).selectable,
         isFalse,
       );
+    });
+
+    test('should be selectable and imported when ticked in the Corbeille', () {
+      final street = _choice('a', 'A', inCorbeille: true, checked: true);
+
+      expect(street.selectable, isTrue);
+      expect(street.toImport, isTrue);
     });
 
     test('should be imported when checked and not imported yet', () {
@@ -53,6 +62,10 @@ void main() {
         street.copyWith(alreadyImported: true),
         _choice('a', 'Rue A', numberCount: 7, alreadyImported: true),
       );
+      expect(
+        street.copyWith(inCorbeille: true),
+        _choice('a', 'Rue A', numberCount: 7, inCorbeille: true),
+      );
       expect(street.copyWith(), street);
     });
 
@@ -65,6 +78,7 @@ void main() {
       expect(street, isNot(_choice('a', 'B')));
       expect(street, isNot(_choice('a', 'A', numberCount: 3)));
       expect(street, isNot(_choice('a', 'A', alreadyImported: true)));
+      expect(street, isNot(_choice('a', 'A', inCorbeille: true)));
       expect(street, isNot(_choice('a', 'A', checked: true)));
     });
 
@@ -72,7 +86,7 @@ void main() {
       expect(
         '${_choice('69264_1460', 'Rue Pierre Morin')}',
         'StreetChoice(69264_1460, Rue Pierre Morin, 19, '
-            'alreadyImported: false, checked: false)',
+            'alreadyImported: false, inCorbeille: false, checked: false)',
       );
     });
   });
@@ -97,7 +111,10 @@ void main() {
     });
 
     test('should have no street while loading or failed', () {
-      expect(const ImportState(streets: LoadingStreets()).streetCount, 0);
+      // Built at run time (not `const`), so coverage sees the constructor.
+      // ignore: prefer_const_constructors
+      final StreetChoices loading = LoadingStreets();
+      expect(ImportState(streets: loading).streetCount, 0);
       expect(
         const ImportState(streets: StreetsFailed(ImportProblem.noNetwork))
             .streetCount,
@@ -207,6 +224,7 @@ void main() {
   group('ImportSummary', () {
     test('should be complete only when nothing failed', () {
       expect(const ImportSummary(imported: 2, failed: 0).complete, isTrue);
+      expect(const ImportSummary(imported: 2, failed: 0).restored, 0);
       expect(
         const ImportSummary(
           imported: 2,

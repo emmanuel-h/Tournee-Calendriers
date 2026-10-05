@@ -135,6 +135,7 @@ final class StreetChoice {
     required this.numberCount,
     required this.alreadyImported,
     required this.checked,
+    this.inCorbeille = false,
   });
 
   final BanStreetId id;
@@ -143,9 +144,13 @@ final class StreetChoice {
   /// How many numbers the BAN lists for it.
   final int numberCount;
 
-  /// On the phone already: shown ticked and greyed, « déjà importée », and
+  /// In « Mes rues » already: shown ticked and greyed, « déjà importée », and
   /// never imported again (its marks stay).
   final bool alreadyImported;
+
+  /// Imported before and now in the Corbeille: « dans la Corbeille », free
+  /// to tick; importing it brings it back with its marks.
+  final bool inCorbeille;
 
   /// Ticked by the user (always true when [alreadyImported]).
   final bool checked;
@@ -156,11 +161,16 @@ final class StreetChoice {
   /// Ticked and to be imported by « Importer N rues ».
   bool get toImport => checked && !alreadyImported;
 
-  StreetChoice copyWith({bool? checked, bool? alreadyImported}) => StreetChoice(
+  StreetChoice copyWith({
+    bool? checked,
+    bool? alreadyImported,
+    bool? inCorbeille,
+  }) => StreetChoice(
     id: id,
     name: name,
     numberCount: numberCount,
     alreadyImported: alreadyImported ?? this.alreadyImported,
+    inCorbeille: inCorbeille ?? this.inCorbeille,
     checked: checked ?? this.checked,
   );
 
@@ -171,16 +181,18 @@ final class StreetChoice {
       other.name == name &&
       other.numberCount == numberCount &&
       other.alreadyImported == alreadyImported &&
+      other.inCorbeille == inCorbeille &&
       other.checked == checked;
 
   @override
   int get hashCode =>
-      Object.hash(id, name, numberCount, alreadyImported, checked);
+      Object.hash(id, name, numberCount, alreadyImported, inCorbeille, checked);
 
   @override
   String toString() =>
       'StreetChoice(${id.value}, $name, $numberCount, '
-      'alreadyImported: $alreadyImported, checked: $checked)';
+      'alreadyImported: $alreadyImported, inCorbeille: $inCorbeille, '
+      'checked: $checked)';
 }
 
 /// Where the import itself stands.
@@ -220,11 +232,16 @@ final class ImportSummary {
   const ImportSummary({
     required this.imported,
     required this.failed,
+    this.restored = 0,
     this.failure,
   });
 
-  /// Streets now on the phone (those found there meanwhile included).
+  /// Streets now on the phone from the BAN (those found there meanwhile
+  /// included).
   final int imported;
+
+  /// Streets brought back from the Corbeille, with their marks.
+  final int restored;
 
   /// Streets not imported; importing again tries them again.
   final int failed;

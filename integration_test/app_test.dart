@@ -338,7 +338,8 @@ void main() {
 
   testWidgets(
     'should show added numbers on both sides when a number is removed, '
-    'brought back and 21-25 added in edit mode',
+    'brought back and 21-25 added in edit mode, and bring the street back '
+    'with its mark when it is deleted and imported again',
     (tester) async {
       final storage = await Directory.systemTemp.createTemp('edit_flow');
       addTearDown(() => storage.delete(recursive: true));
@@ -404,6 +405,36 @@ void main() {
         expect(sideOf(even), sideOf('32'), reason: even);
       }
       expect(sideOf('33'), lessThan(sideOf('32')));
+
+      // 33 marked, then ✏ « Supprimer la rue »: « Mes rues » is empty.
+      await tester.tap(find.byKey(const ValueKey('street.tile.33')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('street.edit')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('edit.deleteStreet')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('edit.confirmDelete.ok')));
+      await tester.pumpAndSettle();
+      expect(find.text("Aucune rue pour l'instant"), findsOneWidget);
+
+      // Imported again from « dans la Corbeille »: back with 33 done.
+      await tester.tap(find.byKey(const Key('start.import')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('import.commune')), 'Villef');
+      await tester.pumpAndSettle(const Duration(milliseconds: 400));
+      await tester.tap(find.byKey(const ValueKey('import.suggestion.69264')));
+      await tester.pumpAndSettle();
+      final morin = find.byKey(const ValueKey('import.street.69264_1460'));
+      expect(
+        find.descendant(of: morin, matching: find.text('dans la Corbeille')),
+        findsOneWidget,
+      );
+      await tester.tap(morin);
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Importer 1 rue'));
+      await tester.pumpAndSettle();
+      expect(find.text('1 rue restaurée'), findsOneWidget);
+      expect(find.text('1/8'), findsOneWidget);
     },
   );
 }

@@ -1092,7 +1092,7 @@ abstract class AppLocalizations {
   /// Start screen, first launch: what to do.
   ///
   /// In fr, this message translates to:
-  /// **'Importez les rues d\'une commune pour commencer. Il faut le réseau une fois ; ensuite tout fonctionne hors ligne.'**
+  /// **'Importez les rues d\'une commune pour commencer.'**
   String get startEmptyBody;
 
   /// Shown when the street filter keeps no street.
@@ -1221,6 +1221,12 @@ abstract class AppLocalizations {
   /// **'déjà importée'**
   String get alreadyImported;
 
+  /// A street of the import checklist imported before and now in the Corbeille: ticking it brings it back with its marks.
+  ///
+  /// In fr, this message translates to:
+  /// **'dans la Corbeille'**
+  String get inCorbeille;
+
   /// Note above the import button.
   ///
   /// In fr, this message translates to:
@@ -1244,6 +1250,18 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'{count, plural, =0{Aucune nouvelle rue} =1{1 rue importée} other{{count} rues importées}}'**
   String importDone(int count);
+
+  /// Message on the start screen after an import that only brought streets back from the Corbeille.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, =1{1 rue restaurée} other{{count} rues restaurées}}'**
+  String importRestored(int count);
+
+  /// Message on the start screen after an import that downloaded streets and brought others back from the Corbeille.
+  ///
+  /// In fr, this message translates to:
+  /// **'{imported, plural, =1{1 rue importée} other{{imported} rues importées}}, {restored, plural, =1{1 restaurée} other{{restored} restaurées}}'**
+  String importDoneAndRestored(int imported, int restored);
 
   /// After an import where some streets failed; reason is one of the address* messages.
   ///

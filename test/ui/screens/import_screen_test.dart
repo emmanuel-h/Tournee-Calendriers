@@ -4,9 +4,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
+import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
+import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/screens/import_streets/import_screen.dart';
 
@@ -190,6 +192,48 @@ void main() {
       expect(find.text('3 RUES · 0 COCHÉE'), findsOneWidget);
     },
   );
+
+  testWidgets('should bring a street back from the Corbeille with its marks', (
+    tester,
+  ) async {
+    final morin = valueOf(
+      Street.create(
+        id: StreetId('s'),
+        name: 'Rue Pierre Morin',
+        commune: villefranche,
+        banId: _morin,
+        houses: [
+          House(number: n('1'), status: VisitStatus.done),
+          House(number: n('2')),
+        ],
+      ),
+    );
+    await streets.add(morin.delete(by: lea, at: twoPm).$1);
+    await openVillefranche(tester);
+
+    final tile = tester.widget<CheckboxListTile>(street(_morin));
+    expect(tile.value, isFalse);
+    expect(tile.onChanged, isNotNull);
+    expect(
+      find.descendant(
+        of: street(_morin),
+        matching: find.text('dans la Corbeille'),
+      ),
+      findsOneWidget,
+    );
+
+    await tester.tap(street(_morin));
+    await tester.pump();
+    await tester.tap(find.text('Importer 1 rue'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ImportScreen), findsNothing);
+    expect(find.text('1 rue restaurée'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel('Rue Pierre Morin, 1 sur 2 faits'),
+      findsOneWidget,
+    );
+  });
 
   testWidgets(
     'should go back to the list with the new streets when every street is imported',

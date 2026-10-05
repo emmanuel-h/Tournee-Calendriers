@@ -3,7 +3,9 @@ import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/use_cases/import_reference_area.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
+import 'package:tournee_calendriers/domain/street/note.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
+import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
@@ -97,7 +99,7 @@ void main() {
       ImportReferenceArea(directory, streets, FakeIdGenerator('street'));
 
   List<BanStreetId> idsOf(ImportReport report) => [
-    for (final outcome in report.streets) outcome.street.id,
+    for (final outcome in report.streets) outcome.banId,
   ];
 
   group('whole commune', () {
@@ -160,7 +162,7 @@ void main() {
       );
 
       final imported = report.streets.single as StreetImported;
-      expect(imported.street, _commune.streets.first);
+      expect(imported.banId, _nationale);
       expect(imported.streetId, StreetId('street-1'));
       expect(imported.numberCount, 2);
       expect(imported.skippedNumbers, 3);
@@ -219,32 +221,134 @@ void main() {
       );
 
       final already = report.streets.single as StreetAlreadyImported;
-      expect(already.street.id, _gambetta);
+      expect(already.banId, _gambetta);
       expect(already.streetId, imported.id);
-      expect(already.inCorbeille, isFalse);
+      expect(report.commune, villefranche);
+      expect(directory.communesAsked, isEmpty);
       expect(directory.streetsAsked, isEmpty);
       expect(streets.added, hasLength(1));
+      expect(streets.saved, hasLength(1));
       expect(streets[imported.id], same(marked));
     });
+  });
 
-    test('should say when the street already imported is deleted', () async {
-      final (deleted, _) = valueOf(
-        Street.create(
-          id: StreetId('gambetta'),
-          name: 'Rue Gambetta',
-          commune: villefranche,
-          banId: _gambetta,
-        ),
-      ).delete(by: lea, at: twoPm);
+  group('from the Corbeille', () {
+    /// Rue Gambetta, imported, its 3bis marked done with a note, then sent
+    /// to the Corbeille.
+    Street deletedGambetta() => valueOf(
+      Street.create(
+        id: StreetId('gambetta'),
+        name: 'Rue Gambetta',
+        commune: villefranche,
+        banId: _gambetta,
+        houses: [
+          House(
+            number: n('3bis'),
+            status: VisitStatus.done,
+            note: valueOf(Note.create('Chien')),
+          ),
+        ],
+      ),
+    ).delete(by: lea, at: twoPm).$1;
+
+    test('should bring the street back with its marks', () async {
+      final deleted = deletedGambetta();
       streets = FakeStreetRepository([deleted]);
 
       final report = valueOf(
         await importWith(_directory())('69264', only: [_gambetta]),
       );
 
-      final already = report.streets.single as StreetAlreadyImported;
-      expect(already.inCorbeille, isTrue);
+      final restored = report.streets.single as StreetRestoredFromCorbeille;
+      expect(restored.banId, _gambetta);
+      expect(restored.streetId, StreetId('gambetta'));
+      final (saved, change) = streets.saved.single;
+      expect(change, StreetRestored(streetId: StreetId('gambetta')));
+      expect(saved.isDeleted, isFalse);
+      expect(saved.houses, deleted.houses);
+      expect(saved.houses.single.status, VisitStatus.done);
+      expect(saved.houses.single.note.text, 'Chien');
       expect(streets.added, isEmpty);
+    });
+
+    test('should not ask the BAN for it', () async {
+      streets = FakeStreetRepository([deletedGambetta()]);
+      final directory = _directory();
+
+      final report = valueOf(
+        await importWith(directory)('69264', only: [_gambetta]),
+      );
+
+      expect(report.commune, villefranche);
+      expect(report.unknownStreets, isEmpty);
+      expect(directory.communesAsked, isEmpty);
+      expect(directory.streetsAsked, isEmpty);
+    });
+
+    test('should bring it back when the BAN is unreachable', () async {
+      streets = FakeStreetRepository([deletedGambetta()]);
+      final directory = FakeAddressDirectory(
+        communes: {'69264': const Err(AddressDirectoryFailure.noNetwork)},
+      );
+
+      final report = valueOf(
+        await importWith(directory)('69264', only: [_gambetta]),
+      );
+
+      expect(report.streets.single, isA<StreetRestoredFromCorbeille>());
+      expect(streets[StreetId('gambetta')]!.isDeleted, isFalse);
+    });
+
+    test(
+      'should fail the other chosen streets when the BAN is unreachable',
+      () async {
+        streets = FakeStreetRepository([deletedGambetta()]);
+        final directory = FakeAddressDirectory(
+          communes: {'69264': const Err(AddressDirectoryFailure.noNetwork)},
+        );
+
+        final report = valueOf(
+          await importWith(directory)('69264', only: [_roses, _gambetta]),
+        );
+
+        expect(report.commune, villefranche);
+        expect(report.streets[0], isA<StreetRestoredFromCorbeille>());
+        final failed = report.streets[1] as StreetImportFailed;
+        expect(failed.banId, _roses);
+        expect(failed.failure, AddressDirectoryFailure.noNetwork);
+        expect(report.streets, hasLength(2));
+        expect(streets.added, isEmpty);
+      },
+    );
+
+    test('should download only the chosen streets not on the phone', () async {
+      streets = FakeStreetRepository([deletedGambetta()]);
+      final directory = _directory();
+      final steps = <(int, int)>[];
+
+      final report = valueOf(
+        await importWith(directory)(
+          '69264',
+          only: [_roses, _gambetta],
+          onProgress: (done, total) => steps.add((done, total)),
+        ),
+      );
+
+      expect(idsOf(report), [_gambetta, _roses]);
+      expect(report.streets.last, isA<StreetImported>());
+      expect(directory.streetsAsked, [_roses]);
+      expect(steps, [(2, 2)]);
+    });
+
+    test('should bring it back when the whole commune is imported', () async {
+      streets = FakeStreetRepository([deletedGambetta()]);
+      final directory = _directory();
+
+      final report = valueOf(await importWith(directory)('69264'));
+
+      expect(report.streets[1], isA<StreetRestoredFromCorbeille>());
+      expect(directory.streetsAsked, [_nationale, _roses]);
+      expect(streets[StreetId('gambetta')]!.isDeleted, isFalse);
     });
   });
 
@@ -271,7 +375,7 @@ void main() {
       );
 
       final failed = report.streets[1] as StreetImportFailed;
-      expect(failed.street.id, _gambetta);
+      expect(failed.banId, _gambetta);
       expect(failed.failure, AddressDirectoryFailure.notFound);
       expect(report.streets[2], isA<StreetImported>());
       expect(streets.added.map((street) => street.banId), [_nationale, _roses]);

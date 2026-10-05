@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
+import 'package:tournee_calendriers/application/use_cases/find_imported_streets.dart';
 import 'package:tournee_calendriers/application/use_cases/import_reference_area.dart';
 import 'package:tournee_calendriers/application/use_cases/search_communes.dart';
 import 'package:tournee_calendriers/domain/shared/french_text.dart';
@@ -108,7 +109,7 @@ final class ImportNotifier extends Notifier<ImportState> {
       Ok(:final value) => await findImported(
         value.streets.map((street) => street.id),
       ),
-      Err() => const <BanStreetId>{},
+      Err() => const <BanStreetId, ImportedStreetState>{},
     };
     // The user may have typed another commune, or left, meanwhile.
     if (!ref.mounted || listing != _listing) return;
@@ -124,8 +125,11 @@ final class ImportNotifier extends Notifier<ImportState> {
                 id: street.id,
                 name: street.name.text,
                 numberCount: street.numberCount,
-                alreadyImported: imported.contains(street.id),
-                checked: imported.contains(street.id),
+                alreadyImported:
+                    imported[street.id] == ImportedStreetState.active,
+                inCorbeille:
+                    imported[street.id] == ImportedStreetState.inCorbeille,
+                checked: imported[street.id] == ImportedStreetState.active,
               ),
           ]..sort(_byName),
         ),
@@ -176,7 +180,8 @@ final class ImportNotifier extends Notifier<ImportState> {
 
   /// « Importer N rues »: imports the ticked streets, telling the progress.
   /// When some fail, the screen stays, those stay ticked, and pressing again
-  /// tries them again; the others become « déjà importée ».
+  /// tries them again; the others become « déjà importée », those from the
+  /// Corbeille included.
   Future<void> import() async {
     if (!state.canImport) return;
     final commune = state.commune!;
@@ -202,14 +207,18 @@ final class ImportNotifier extends Notifier<ImportState> {
       case Ok(value: final report):
         final onPhone = {
           for (final outcome in report.streets)
-            if (outcome is! StreetImportFailed) outcome.street.id,
+            if (outcome is! StreetImportFailed) outcome.banId,
         };
         // One new state, so the screen never sees the import finished
         // with stale rows, or the reverse.
         state = state.copyWith(
           streets: _changed(
             (street) => onPhone.contains(street.id)
-                ? street.copyWith(alreadyImported: true, checked: true)
+                ? street.copyWith(
+                    alreadyImported: true,
+                    inCorbeille: false,
+                    checked: true,
+                  )
                 : street,
           ),
           run: ImportFinished(_summary(report)),
@@ -231,6 +240,7 @@ final class ImportNotifier extends Notifier<ImportState> {
       imported:
           report.streets.whereType<StreetImported>().length +
           report.streets.whereType<StreetAlreadyImported>().length,
+      restored: report.streets.whereType<StreetRestoredFromCorbeille>().length,
       failed: failures.length,
       failure: switch (failures) {
         [] => null,

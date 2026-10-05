@@ -49,7 +49,7 @@ final class _ImportScreenState extends ConsumerState<ImportScreen> {
     ref.listen(importProvider.select((state) => state.run), (_, run) {
       if (run case ImportFinished(:final summary) when summary.complete) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(l10n.importDone(summary.imported))),
+          SnackBar(content: Text(importDoneMessage(l10n, summary))),
         );
         context.pop();
       }
@@ -354,7 +354,8 @@ final class _Checklist extends ConsumerWidget {
       ImportFailed(:final failure) => addressFailureMessage(l10n, failure),
       ImportFinished(:final summary) when !summary.complete =>
         l10n.importPartial(
-          summary.imported,
+          // The streets back from the Corbeille are on the phone too.
+          summary.imported + summary.restored,
           summary.failed,
           addressFailureMessage(l10n, summary.failure!),
         ),
@@ -372,8 +373,8 @@ final class _Checklist extends ConsumerWidget {
   }
 }
 
-/// One street of the checklist: « ☑ Rue Nationale  403 n° », or greyed and
-/// « déjà importée ».
+/// One street of the checklist: « ☑ Rue Nationale  403 n° », greyed and
+/// « déjà importée », or « dans la Corbeille ».
 final class _ChoiceRow extends StatelessWidget {
   const _ChoiceRow({
     required this.street,
@@ -412,6 +413,8 @@ final class _ChoiceRow extends StatelessWidget {
         secondary: Text(
           street.alreadyImported
               ? l10n.alreadyImported
+              : street.inCorbeille
+              ? l10n.inCorbeille
               : l10n.streetNumberCount(street.numberCount),
           style: AppTextStyles.small.copyWith(color: colors.muted),
         ),

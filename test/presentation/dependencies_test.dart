@@ -6,6 +6,7 @@ import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
 import 'package:tournee_calendriers/application/use_cases/describe_building.dart';
 import 'package:tournee_calendriers/application/use_cases/edit_street_numbers.dart';
+import 'package:tournee_calendriers/application/use_cases/find_imported_streets.dart';
 import 'package:tournee_calendriers/application/use_cases/import_reference_area.dart';
 import 'package:tournee_calendriers/application/use_cases/mark.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
@@ -209,7 +210,7 @@ void main() {
         lilas.banId!,
       ]);
 
-      expect(imported, {lilas.banId});
+      expect(imported, {lilas.banId: ImportedStreetState.active});
     });
 
     test('should read « Masquer faits » from the bound preferences', () {

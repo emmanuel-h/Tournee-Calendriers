@@ -669,7 +669,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get startEmptyBody =>
-      'Importez les rues d\'une commune pour commencer. Il faut le réseau une fois ; ensuite tout fonctionne hors ligne.';
+      'Importez les rues d\'une commune pour commencer.';
 
   @override
   String filterNoMatch(String filter) {
@@ -769,6 +769,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get alreadyImported => 'déjà importée';
 
   @override
+  String get inCorbeille => 'dans la Corbeille';
+
+  @override
   String get importFooter =>
       'Nécessite le réseau. Les rues déjà importées gardent leurs marques.';
 
@@ -799,6 +802,34 @@ class AppLocalizationsFr extends AppLocalizations {
       zero: 'Aucune nouvelle rue',
     );
     return '$_temp0';
+  }
+
+  @override
+  String importRestored(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count rues restaurées',
+      one: '1 rue restaurée',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String importDoneAndRestored(int imported, int restored) {
+    String _temp0 = intl.Intl.pluralLogic(
+      imported,
+      locale: localeName,
+      other: '$imported rues importées',
+      one: '1 rue importée',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      restored,
+      locale: localeName,
+      other: '$restored restaurées',
+      one: '1 restaurée',
+    );
+    return '$_temp0, $_temp1';
   }
 
   @override

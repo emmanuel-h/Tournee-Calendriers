@@ -34,3 +34,15 @@ String communeLabel(AppLocalizations l10n, CommuneOption commune) {
     [final postcode, ...] => l10n.communeWithPostcodes(name, postcode),
   };
 }
+
+/// The message after a complete import: « 3 rues importées », « 1 rue
+/// restaurée » when only streets from the Corbeille came back, or both.
+String importDoneMessage(AppLocalizations l10n, ImportSummary summary) =>
+    switch ((summary.imported, summary.restored)) {
+      (final imported, 0) => l10n.importDone(imported),
+      (0, final restored) => l10n.importRestored(restored),
+      (final imported, final restored) => l10n.importDoneAndRestored(
+        imported,
+        restored,
+      ),
+    };

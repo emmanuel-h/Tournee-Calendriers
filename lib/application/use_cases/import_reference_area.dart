@@ -10,16 +10,16 @@ import 'package:tournee_calendriers/domain/street/street_repository.dart';
 /// What became of one street of the import, for the import screen's
 /// summary. `sealed`: the screen's `switch` handles each case.
 sealed class StreetImport {
-  const StreetImport(this.street);
+  const StreetImport(this.banId);
 
-  /// The street as the BAN listed it (its BAN id and name).
-  final DirectoryStreet street;
+  /// Which BAN street this outcome is about.
+  final BanStreetId banId;
 }
 
 /// The street is now on the phone, with [numberCount] houses to do.
 final class StreetImported extends StreetImport {
   const StreetImported(
-    super.street, {
+    super.banId, {
     required this.streetId,
     required this.numberCount,
     required this.skippedNumbers,
@@ -36,27 +36,28 @@ final class StreetImported extends StreetImport {
   final int skippedNumbers;
 }
 
-/// The street was imported before. It is left exactly as it is: importing
-/// again must never wipe the marks made since.
-final class StreetAlreadyImported extends StreetImport {
-  const StreetAlreadyImported(
-    super.street, {
-    required this.streetId,
-    required this.inCorbeille,
-  });
+/// The street was in the Corbeille: it is back in « Mes rues » exactly as it
+/// was deleted, its statuses and notes included, without asking the BAN.
+final class StreetRestoredFromCorbeille extends StreetImport {
+  const StreetRestoredFromCorbeille(super.banId, {required this.streetId});
 
   /// The id of the street on the phone.
   final StreetId streetId;
+}
 
-  /// Whether that street is in the Corbeille: the screen can say so, since
-  /// it does not show in the list.
-  final bool inCorbeille;
+/// The street was imported before and is not in the Corbeille. It is left
+/// exactly as it is: importing again must never wipe the marks made since.
+final class StreetAlreadyImported extends StreetImport {
+  const StreetAlreadyImported(super.banId, {required this.streetId});
+
+  /// The id of the street on the phone.
+  final StreetId streetId;
 }
 
 /// The street could not be imported, for [failure]. Importing again later
 /// tries it again (and skips the streets imported meanwhile).
 final class StreetImportFailed extends StreetImport {
-  const StreetImportFailed(super.street, this.failure);
+  const StreetImportFailed(super.banId, this.failure);
 
   final AddressDirectoryFailure failure;
 }
@@ -75,7 +76,8 @@ final class ImportReport {
 
   final Commune commune;
 
-  /// One outcome per street tried, in the BAN's order. Read-only.
+  /// One outcome per street tried: the chosen streets already on the phone
+  /// first, then the others in the BAN's order. Read-only.
   final List<StreetImport> streets;
 
   /// The chosen streets the commune does not list (a stale choice), which
@@ -92,8 +94,13 @@ final class ImportReport {
 /// numbers and positions from the BAN. Nothing is hard-coded. Needs the
 /// network, once; afterwards everything works offline.
 ///
-/// - **Never wipes marks.** A street whose BAN id is already on the phone
-///   (in the Corbeille or not) is left as it is and reported.
+/// - **Never wipes marks.** A street whose BAN id is already on the phone is
+///   left as it is and reported; if it is in the Corbeille it comes back
+///   from it, statuses and notes included (PLAN §6.1).
+/// - **The streets already on the phone need no network.** The chosen ones
+///   are handled before the BAN is asked anything, so bringing a street back
+///   from the Corbeille works in airplane mode, and when only such streets
+///   are chosen the BAN is not asked at all.
 /// - **One street failing does not stop the others**: the BAN refusing a
 ///   street, or answering nonsense, is reported for that street and the
 ///   import goes on. Once the network is gone, though, the remaining
@@ -109,34 +116,60 @@ final class ImportReferenceArea {
 
   /// Imports the streets of the commune [inseeCode]: those listed in
   /// [only], or when it is null every street the BAN has numbers for.
-  /// [onProgress] is told after each street how many are done out of how
-  /// many, for a progress bar.
+  /// [onProgress] is told after each street asked of the BAN how many are
+  /// done out of how many (the streets already on the phone count as done),
+  /// for a progress bar.
   ///
-  /// Fails as a whole only when the commune itself cannot be listed.
+  /// Fails as a whole only when the commune itself cannot be listed and
+  /// none of the chosen streets is on the phone.
   Future<Result<ImportReport, AddressDirectoryFailure>> call(
     String inseeCode, {
     Iterable<BanStreetId>? only,
     void Function(int done, int total)? onProgress,
   }) async {
+    final chosen = only?.toSet();
+
+    // The chosen streets already on the phone first: they need no BAN.
+    final outcomes = <StreetImport>[];
+    final toAsk = <BanStreetId>{};
+    Commune? storedCommune;
+    for (final id in chosen ?? const <BanStreetId>{}) {
+      final stored = await _streets.findByBanId(id);
+      if (stored == null) {
+        toAsk.add(id);
+      } else {
+        outcomes.add(await _keep(id, stored));
+        storedCommune ??= stored.commune;
+      }
+    }
+    if (storedCommune != null && toAsk.isEmpty) {
+      return Ok(_report(storedCommune, outcomes));
+    }
+
     final CommuneStreets listed;
     switch (await _directory.streetsOf(inseeCode)) {
       case Err(:final failure):
-        return Err(failure);
+        if (storedCommune == null) return Err(failure);
+        // Some streets came back from the phone: they are told, and the
+        // ones the BAN was needed for failed.
+        return Ok(
+          _report(storedCommune, [
+            ...outcomes,
+            for (final id in toAsk) StreetImportFailed(id, failure),
+          ]),
+        );
       case Ok(:final value):
         listed = value;
     }
 
-    final chosen = only?.toSet();
     final listedIds = {for (final street in listed.streets) street.id};
     final toImport = [
       for (final street in listed.streets)
-        if (chosen == null
-            ? street.numberCount > 0
-            : chosen.contains(street.id))
+        if (chosen == null ? street.numberCount > 0 : toAsk.contains(street.id))
           street,
     ];
 
-    final outcomes = <StreetImport>[];
+    final total = outcomes.length + toImport.length;
     var offline = false;
     for (final street in toImport) {
       final outcome = await _importOne(street, offline: offline);
@@ -146,15 +179,15 @@ final class ImportReferenceArea {
         offline = true;
       }
       outcomes.add(outcome);
-      onProgress?.call(outcomes.length, toImport.length);
+      onProgress?.call(outcomes.length, total);
     }
 
     return Ok(
-      ImportReport(
-        commune: listed.commune,
-        streets: outcomes,
+      _report(
+        listed.commune,
+        outcomes,
         unknownStreets: [
-          for (final id in chosen ?? const <BanStreetId>{})
+          for (final id in toAsk)
             if (!listedIds.contains(id)) id,
         ],
         emptyStreets: chosen != null
@@ -164,6 +197,29 @@ final class ImportReferenceArea {
     );
   }
 
+  static ImportReport _report(
+    Commune commune,
+    List<StreetImport> streets, {
+    List<BanStreetId> unknownStreets = const [],
+    int emptyStreets = 0,
+  }) => ImportReport(
+    commune: commune,
+    streets: streets,
+    unknownStreets: unknownStreets,
+    emptyStreets: emptyStreets,
+  );
+
+  /// The street [stored], imported before from [banId]: brought back from
+  /// the Corbeille if it is there, otherwise left as it is.
+  Future<StreetImport> _keep(BanStreetId banId, Street stored) async {
+    if (!stored.isDeleted) {
+      return StreetAlreadyImported(banId, streetId: stored.id);
+    }
+    final (restored, change) = stored.restore();
+    await _streets.save(restored, change);
+    return StreetRestoredFromCorbeille(banId, streetId: stored.id);
+  }
+
   /// Imports [street] unless it is on the phone already; when [offline],
   /// does not ask the BAN.
   Future<StreetImport> _importOne(
@@ -171,20 +227,14 @@ final class ImportReferenceArea {
     required bool offline,
   }) async {
     final existing = await _streets.findByBanId(street.id);
-    if (existing != null) {
-      return StreetAlreadyImported(
-        street,
-        streetId: existing.id,
-        inCorbeille: existing.isDeleted,
-      );
-    }
+    if (existing != null) return _keep(street.id, existing);
     if (offline) {
-      return StreetImportFailed(street, AddressDirectoryFailure.noNetwork);
+      return StreetImportFailed(street.id, AddressDirectoryFailure.noNetwork);
     }
     final StreetNumbers numbers;
     switch (await _directory.numbersOf(street.id)) {
       case Err(:final failure):
-        return StreetImportFailed(street, failure);
+        return StreetImportFailed(street.id, failure);
       case Ok(:final value):
         numbers = value;
     }
@@ -201,11 +251,14 @@ final class ImportReferenceArea {
       case Err():
         // The directory promises each number once; a street breaking that
         // is a service answering nonsense.
-        return StreetImportFailed(street, AddressDirectoryFailure.serviceError);
+        return StreetImportFailed(
+          street.id,
+          AddressDirectoryFailure.serviceError,
+        );
       case Ok(value: final created):
         await _streets.add(created);
         return StreetImported(
-          street,
+          street.id,
           streetId: created.id,
           numberCount: created.houses.length,
           skippedNumbers: numbers.invalidNumbers + numbers.duplicateNumbers,

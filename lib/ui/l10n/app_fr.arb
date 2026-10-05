@@ -578,7 +578,7 @@
   "@importStreetsAction": { "description": "Button of the start screen that opens the import screen, and title of that screen (PLAN §5.0)." },
   "startEmptyTitle": "Aucune rue pour l'instant",
   "@startEmptyTitle": { "description": "Start screen, first launch: no street imported yet." },
-  "startEmptyBody": "Importez les rues d'une commune pour commencer. Il faut le réseau une fois ; ensuite tout fonctionne hors ligne.",
+  "startEmptyBody": "Importez les rues d'une commune pour commencer.",
   "@startEmptyBody": { "description": "Start screen, first launch: what to do." },
   "filterNoMatch": "Aucune rue ne correspond à « {filter} ».",
   "@filterNoMatch": {
@@ -665,6 +665,8 @@
   },
   "alreadyImported": "déjà importée",
   "@alreadyImported": { "description": "A street of the import checklist that is already on the phone." },
+  "inCorbeille": "dans la Corbeille",
+  "@inCorbeille": { "description": "A street of the import checklist imported before and now in the Corbeille: ticking it brings it back with its marks." },
   "importFooter": "Nécessite le réseau. Les rues déjà importées gardent leurs marques.",
   "@importFooter": { "description": "Note above the import button." },
   "importButton": "{count, plural, =0{Importer} =1{Importer 1 rue} other{Importer {count} rues}}",
@@ -684,6 +686,19 @@
   "@importDone": {
     "description": "Message on the start screen after a complete import.",
     "placeholders": { "count": { "type": "int", "example": "3" } }
+  },
+  "importRestored": "{count, plural, =1{1 rue restaurée} other{{count} rues restaurées}}",
+  "@importRestored": {
+    "description": "Message on the start screen after an import that only brought streets back from the Corbeille.",
+    "placeholders": { "count": { "type": "int", "example": "1" } }
+  },
+  "importDoneAndRestored": "{imported, plural, =1{1 rue importée} other{{imported} rues importées}}, {restored, plural, =1{1 restaurée} other{{restored} restaurées}}",
+  "@importDoneAndRestored": {
+    "description": "Message on the start screen after an import that downloaded streets and brought others back from the Corbeille.",
+    "placeholders": {
+      "imported": { "type": "int", "example": "2" },
+      "restored": { "type": "int", "example": "1" }
+    }
   },
   "importPartial": "{imported, plural, =0{Aucune rue importée} =1{1 rue importée} other{{imported} rues importées}}, {failed, plural, =1{1 en échec} other{{failed} en échec}}. {reason} Les rues encore cochées restent à importer.",
   "@importPartial": {

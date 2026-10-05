@@ -49,10 +49,7 @@ void main() {
 
       expect(find.text("Aucune rue pour l'instant"), findsOneWidget);
       expect(
-        find.text(
-          "Importez les rues d'une commune pour commencer. Il faut le réseau "
-          'une fois\u00a0; ensuite tout fonctionne hors ligne.',
-        ),
+        find.text("Importez les rues d'une commune pour commencer."),
         findsOneWidget,
       );
 
