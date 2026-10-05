@@ -98,11 +98,10 @@ lib/
 on the real app (launch, mark a house, offline cold start…), ≤ 10 tests, < 3 min. Extend it when
 a task adds a user-visible flow; keep it green before every push.
 
-## Open checkpoint
+## Infrastructure (decided at the M2 checkpoint)
 
-At the start of M2 (database and server work), **stop and discuss the infrastructure with the
-user** before writing data code: Firebase Spark vs Blaze, server-side join with rate limiting,
-or another backend (PLAN §8.1, Q20).
+Firebase **Spark** (free), Blaze-ready: no Cloud Functions; the join stays on the phone behind
+the `TourneeDirectory` port so a server-side join is only an adapter swap later (PLAN Q20).
 
 ## Agents
 

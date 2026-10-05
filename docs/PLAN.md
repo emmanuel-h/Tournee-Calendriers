@@ -1279,7 +1279,7 @@ photo of the QR) is even more likely. So **knowing a code must not be enough**:
 | **Strict security rules**: schema, allowed values and lengths for every field; members may only touch the fields of their job; nobody edits `createdBy`, codes, or other members except as below | A member corrupting documents or escalating | v1 |
 | **Corbeille + attribution**: deletes are soft for 30 days (5.11); every change records who and when | Mistakes, and a member who makes a mess | v1 |
 | **Remove member + new code** (creator) | A bad actor already inside | v1 |
-| Server-side join with rate limiting (Cloud Function, needs the Blaze plan) | Large-scale guessing even from the real app | **To decide at the M2 infrastructure checkpoint** (staying on the free Spark plan for now) |
+| Server-side join with rate limiting (Cloud Function, needs the Blaze plan) | Large-scale guessing even from the real app | **Later, if needed** (decided at the M2 checkpoint, Q20): v1 stays on Spark. The join goes through the `TourneeDirectory` port, so moving to a callable function is an adapter swap with no data migration. Per-uid limits are weak anyway (anonymous accounts are free to create); App Check is the real gate |
 
 ### 8.2 Security rules (`firebase/firestore.rules`, tested in the emulator, §11)
 
@@ -1384,7 +1384,7 @@ lib/
 | State + DI | `flutter_riverpod` 3 (Notifier / AsyncNotifier), **no code generation**: faster builds, readable code |
 | Navigation | `go_router` |
 | Models | Dart 3 `final class` / `sealed class` / records; value equality hand-written in the domain (no `freezed`, no build_runner) |
-| Backend | FlutterFire (official): `firebase_core`, `cloud_firestore`, `firebase_auth` (anonymous), `firebase_app_check` (Play Integrity on Android, App Attest on iOS). Spark (free) plan for now — revisit at M2 |
+| Backend | FlutterFire (official): `firebase_core`, `cloud_firestore`, `firebase_auth` (anonymous), `firebase_app_check` (Play Integrity on Android, App Attest on iOS). Spark (free) plan, decided at the M2 checkpoint (Q20); Blaze-ready |
 | Map | `maplibre_gl` (official MapLibre plugin) + OpenFreeMap tiles; offline regions |
 | HTTP | `http` (geopf, BAN, Overpass), `MockClient` in tests |
 | QR | `qr_flutter` (draw), `mobile_scanner` (scan; camera permission asked on tap) |
@@ -1494,7 +1494,7 @@ exists. No invented data at any stage.
 | Q17 | Next year | One campaign per year inside the tournée. New campaign keeps streets, numbers, buildings; resets statuses, *repasser*, assignees; *Reprendre mes rues 2026*; last year's result shown in the sheets. v1.1, model ready in v1. |
 | Q18 | Who starts a campaign, what is kept | The creator. Previous campaign read-only; the one before is deleted. |
 | Q19 | Guessed / leaked codes | A code only creates a pending request; any accepted member accepts or refuses. App Check in v1. Soft delete with a 30-day Corbeille. |
-| Q20 | Infrastructure | Stay on the free Spark plan for now. **Revisit at the start of M2** (database and server work): server-side join with rate limiting on Blaze, or another option. |
+| Q20 | Infrastructure | **Decided at the M2 checkpoint (2026-10-05): Spark (free), Blaze-ready.** Join on the phone (`joinCodes` get → pending member) behind a `TourneeDirectory` port; App Check + approval are the guard; the Corbeille purge runs on members' phones (5.11). Move to Blaze (1 click, no data migration) and a rate-limited callable join + scheduled purge when real usage nears Spark's shared daily quota (50 k reads, 20 k writes for the whole app ≈ 10 busy tournées a day) or abuse shows up. Another backend was rejected: it loses Firestore's offline cache. |
 | Q21 | Switching / creating from Accueil | The title is a button: « Mes tournées » sheet with all my tournées (progress, pending requests), *Créer*, *Rejoindre*. |
 | Q22 | Technical stack | **Flutter + Riverpod**, strict DDD (hexagonal: domain, use cases, ports, adapters). Android first; iOS later from the same code, built in the cloud (no Mac). Mutation gate dropped (no Dart tool); 100 % coverage gate kept. |
 | Q23 | Notes | **Removed for privacy, 2026-10-05** (after the phone test of M1): a free note on a house, door or building is too likely to hold personal data (GDPR). No note field anywhere; notes already on a phone are erased when the app reads them (storage schema v3). The « repasser » hint stays, limited to 20 characters (was 50); longer hints already on a phone are cut to their first 20 when read. |
