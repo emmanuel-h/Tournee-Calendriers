@@ -22,13 +22,14 @@ import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
-/// « Ajuster les portes » (PLAN §5.7, `docs/mockups/Doors.dc.html`),
+/// « Modifier les portes » (PLAN §5.7, `docs/mockups/Doors.dc.html`),
 /// opened from « Gérer l'immeuble » under the grid: the floors of one
 /// staircase, top first, each door with its ✕ and a « + » closing the
 /// floor. A tap on a door renames it. Works offline.
 ///
-/// Every change is stored at once, so ✕ and « OK » both simply leave. A
-/// removal shows « Porte 53 supprimée [Annuler] » for 4 s.
+/// Every change is stored at once, so ✕ and « OK » both simply leave. Each
+/// change shows its « Annuler » for 4 s, as in the street's edit mode:
+/// « Porte 53 supprimée », « Porte 13 ajoutée », « Porte 11 → Gauche ».
 final class AdjustDoorsScreen extends ConsumerStatefulWidget {
   const AdjustDoorsScreen({super.key, required this.building});
 
@@ -104,28 +105,33 @@ final class _AdjustDoorsScreenState extends ConsumerState<AdjustDoorsScreen>
     }
   }
 
-  /// A tap on a door opens its rename sheet. The snackbar goes: its
-  /// « Annuler » would also undo the new name.
-  Future<void> _rename(AdjustDoorsShown state, DwellingKey door) {
+  /// A tap on a door opens its rename sheet; once renamed, « Porte 11 →
+  /// Gauche [Annuler] ». The snackbar on screen goes first: the sheet
+  /// covers it, and only the latest change can be undone.
+  Future<void> _rename(AdjustDoorsShown state, DwellingKey door) async {
+    final l10n = AppLocalizations.of(context);
+    final notifier = _notifier;
     hideUndo();
-    return showRenameDoorSheet(
+    final renamed = await showRenameDoorSheet(
       context,
       building: widget.building!,
       door: door,
       where: '${state.number.label} ${state.streetName}',
       namesStaircase: state.showsStaircases,
     );
+    if (renamed == null || !mounted) return;
+    showUndo(
+      message: l10n.doorRenamed(door.label.text, renamed.label.text),
+      undoLabel: l10n.undo,
+      onUndo: () => unawaited(notifier.undo()),
+    );
   }
 
-  /// « + »: one more door at the end of the floor, or why not.
+  /// « + »: one more door at the end of the floor, with « Porte 13 ajoutée
+  /// [Annuler] », or why not.
   Future<void> _add(StaircaseName staircase, int? level) async {
-    final l10n = AppLocalizations.of(context);
-    // The snackbar goes: its « Annuler » would also remove the new door.
-    hideUndo();
-    final outcome = await _notifier.addDoor(staircase, level);
-    if (outcome case DoorEditRefused(:final reason) when mounted) {
-      showMessage(buildingChangeMessage(l10n, reason));
-    }
+    final notifier = _notifier;
+    _show(await notifier.addDoor(staircase, level), notifier, added: true);
   }
 
   /// ✕ on a door: removed at once, or after a confirmation when it has a
@@ -150,24 +156,36 @@ final class _AdjustDoorsScreenState extends ConsumerState<AdjustDoorsScreen>
       if (!confirmed) return;
       outcome = await notifier.remove(door, confirmed: true);
     }
+    _show(outcome, notifier, added: false);
+  }
+
+  /// What « + » or ✕ did: « Annuler » for the door [added] or removed, or
+  /// why nothing changed.
+  void _show(
+    DoorEditOutcome outcome,
+    AdjustDoorsNotifier notifier, {
+    required bool added,
+  }) {
     if (!mounted) return;
+    final l10n = AppLocalizations.of(context);
     switch (outcome) {
-      case DoorEditApplied():
+      case DoorEditApplied(:final door):
+        final label = door.label.text;
         showUndo(
-          message: l10n.doorRemoved(label),
+          message: added ? l10n.doorAdded(label) : l10n.doorRemoved(label),
           undoLabel: l10n.undo,
           onUndo: () => unawaited(notifier.undo()),
         );
       case DoorEditRefused(:final reason):
         showMessage(buildingChangeMessage(l10n, reason));
-      // Only asked when not confirmed yet, which was handled above.
+      // Only asked by ✕ before it is confirmed, which `_remove` handles.
       case DoorEditNeedsConfirmation():
         break;
     }
   }
 }
 
-/// « Ajuster les portes » over « 8 Rue des Lilas ».
+/// « Modifier les portes » over « 8 Rue des Lilas ».
 final class _Title extends StatelessWidget {
   const _Title({required this.subtitle});
 
@@ -180,6 +198,7 @@ final class _Title extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       mainAxisSize: MainAxisSize.min,
+      spacing: AppSizes.titleSubtitleGap,
       children: [
         Text(l10n.adjustDoorsAction),
         if (subtitle != null)
@@ -352,7 +371,9 @@ final class _FloorRow extends StatelessWidget {
 }
 
 /// A door: white, a dashed grey outline, its label to tap and a red ✕, as
-/// wide as its label needs.
+/// wide as its label needs. The label zone takes the room right of the
+/// label too, and the ✕ zone is narrow (PLAN §5.7): a tap aimed at the
+/// label renames rather than removes.
 final class _DoorTile extends StatelessWidget {
   const _DoorTile({
     super.key,
@@ -390,7 +411,10 @@ final class _DoorTile extends StatelessWidget {
                   key: const Key('doors.door.rename'),
                   onTap: onRename,
                   child: Padding(
-                    padding: const EdgeInsets.only(left: 12, right: 4),
+                    padding: const EdgeInsets.only(
+                      left: AppSizes.doorLabelStart,
+                      right: AppSizes.doorLabelEnd,
+                    ),
                     child: Center(
                       widthFactor: 1,
                       child: Text(
@@ -404,11 +428,23 @@ final class _DoorTile extends StatelessWidget {
                   ),
                 ),
               ),
+              // `shrinkWrap`: the button keeps its narrow width instead of
+              // growing its tap area to 48 dp over the label zone.
               IconButton(
                 key: const Key('doors.door.remove'),
                 tooltip: l10n.removeDoorSemantics(label),
                 onPressed: onRemove,
                 color: colors.accent,
+                padding: EdgeInsets.zero,
+                iconSize: AppSizes.doorRemoveGlyph,
+                constraints: const BoxConstraints.tightFor(
+                  width: AppSizes.doorRemoveWidth,
+                  height: AppSizes.doorHeight,
+                ),
+                style: IconButton.styleFrom(
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  shape: const RoundedRectangleBorder(),
+                ),
                 icon: const Icon(Icons.close),
               ),
             ],

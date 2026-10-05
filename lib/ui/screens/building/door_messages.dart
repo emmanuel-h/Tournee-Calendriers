@@ -4,7 +4,7 @@ import 'package:tournee_calendriers/domain/street/building/dwelling_label.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 
 /// Why a door could not be added, removed or renamed, in French
-/// (« Ajuster les portes » and the rename sheet of a door).
+/// (« Modifier les portes » and the rename sheet of a door).
 String buildingChangeMessage(
   AppLocalizations l10n,
   BuildingChangeFailure reason,

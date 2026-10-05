@@ -236,7 +236,7 @@ void main() {
 
       final outcome = await adjust().addDoor(escA, 1);
 
-      expect(outcome, const DoorEditApplied());
+      expect(outcome, DoorEditApplied(_key('A', 1, '13')));
       expect(await floors(), ['1: A1-11 A1-12 A1-13', '0: A0-01 A0-02']);
       expect(stored().dwellingAt(_key('A', 1, '11'))!.status, VisitStatus.done);
       expect(
@@ -252,7 +252,10 @@ void main() {
       await settled();
       adjust().selectStaircase(escB);
 
-      expect(await adjust().addDoor(escB, 1), const DoorEditApplied());
+      expect(
+        await adjust().addDoor(escB, 1),
+        DoorEditApplied(_key('B', 1, '11')),
+      );
 
       expect(await floors(), ['1: B1-11', '0: B0-01']);
     });
@@ -299,7 +302,7 @@ void main() {
 
       final outcome = await adjust().remove(_key('A', 1, '12'));
 
-      expect(outcome, const DoorEditApplied());
+      expect(outcome, DoorEditApplied(_key('A', 1, '12')));
       expect(await floors(), ['1: A1-11', '0: A0-01 A0-02']);
       expect(stored().dwellingAt(_key('A', 1, '11'))!.status, VisitStatus.done);
     });
@@ -323,7 +326,7 @@ void main() {
         confirmed: true,
       );
 
-      expect(outcome, const DoorEditApplied());
+      expect(outcome, DoorEditApplied(_key('A', 1, '11')));
       expect(stored().dwellingAt(_key('A', 1, '11')), isNull);
     });
 
@@ -382,11 +385,11 @@ void main() {
 
         expect(
           await adjust().rename(_key('A', 1, '11'), 'Gauche'),
-          const DoorRenamed(),
+          DoorRenamed(_key('A', 1, 'Gauche')),
         );
         expect(
           await adjust().rename(_key('A', 0, '01'), '  Gauche '),
-          const DoorRenamed(),
+          DoorRenamed(_key('A', 0, 'Gauche')),
         );
 
         expect(await floors(), ['1: A1-Gauche A1-12', '0: A0-Gauche A0-02']);
@@ -429,7 +432,7 @@ void main() {
 
       expect(
         await adjust().rename(_key('A', 1, '12'), 'Fond de cour'),
-        const DoorRenamed(),
+        DoorRenamed(_key('A', 1, 'Fond de cour')),
       );
       expect(
         await adjust().rename(_key('A', 1, 'Fond de cour'), 'Fond de cours'),
@@ -446,7 +449,7 @@ void main() {
 
         expect(
           await adjust().rename(_key('A', 1, '12'), ' 12 '),
-          const DoorRenamed(),
+          const DoorNameKept(),
         );
         expect(streets.saved, isEmpty);
       },
@@ -478,6 +481,28 @@ void main() {
       await adjust().undo();
 
       expect(streets.saved, hasLength(2));
+    });
+
+    test('should take a door added away', () async {
+      phoneWith(_street());
+      await settled();
+      await adjust().addDoor(escA, 1);
+
+      await adjust().undo();
+
+      expect(await floors(), ['1: A1-11 A1-12', '0: A0-01 A0-02']);
+      expect(streets.saved, hasLength(2));
+    });
+
+    test('should give a renamed door its name back, its marks kept', () async {
+      phoneWith(_street());
+      await settled();
+      await adjust().rename(_key('A', 1, '11'), 'Gauche');
+
+      await adjust().undo();
+
+      expect(await floors(), ['1: A1-11 A1-12', '0: A0-01 A0-02']);
+      expect(stored().dwellingAt(_key('A', 1, '11'))!.status, VisitStatus.done);
     });
 
     test('should do nothing when nothing was changed', () async {

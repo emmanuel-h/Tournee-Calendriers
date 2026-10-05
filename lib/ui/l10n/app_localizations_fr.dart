@@ -407,7 +407,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String backToHouseDone(String number) {
-    return 'N° $number redevient une maison';
+    return 'N° $number changé en maison';
   }
 
   @override
@@ -522,10 +522,10 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get backToHouseAction => 'Redevenir une maison';
+  String get backToHouseAction => 'Changer en maison';
 
   @override
-  String get confirmBackToHouseTitle => 'Redevenir une maison ?';
+  String get confirmBackToHouseTitle => 'Changer en maison ?';
 
   @override
   String get confirmBackToHouseBody =>
@@ -604,14 +604,14 @@ class AppLocalizationsFr extends AppLocalizations {
   String get doorGone => 'Cette porte n\'est plus dans l\'immeuble.';
 
   @override
-  String get adjustDoorsAction => 'Ajuster les portes';
+  String get adjustDoorsAction => 'Modifier les portes';
 
   @override
   String get adjustDoorsClose => 'Quitter';
 
   @override
   String get adjustDoorsHint =>
-      'Touchez une porte pour la renommer (« Gauche », « 5A »…). Les marques des autres portes sont gardées.';
+      'Touchez une porte pour la renommer (« Gauche », « 5A »…).';
 
   @override
   String renameDoorSemantics(String label) {
@@ -640,6 +640,16 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String doorAdded(String label) {
+    return 'Porte $label ajoutée';
+  }
+
+  @override
+  String doorRenamed(String from, String to) {
+    return 'Porte $from → $to';
+  }
+
+  @override
   String confirmRemoveDoorTitle(String label) {
     return 'Supprimer la porte $label ?';
   }
@@ -653,7 +663,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get lastDoorRefused =>
-      'C\'est la dernière porte de l\'immeuble. Pour en refaire une maison, revenez à l\'immeuble : « Gérer l\'immeuble », puis « Redevenir une maison ».';
+      'C\'est la dernière porte de l\'immeuble. Pour en refaire une maison, revenez à l\'immeuble : « Gérer l\'immeuble », puis « Changer en maison ».';
 
   @override
   String doorTitle(String label) {
@@ -794,10 +804,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get inCorbeille => 'dans la Corbeille';
-
-  @override
-  String get importFooter =>
-      'Nécessite le réseau. Les rues déjà importées gardent leurs marques.';
 
   @override
   String importButton(int count) {

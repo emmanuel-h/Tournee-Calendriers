@@ -4,7 +4,7 @@ import 'package:tournee_calendriers/domain/street/building/dwelling_label.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 
-// The view state of « Ajuster les portes » (PLAN §5.7, mockup Doors): the
+// The view state of « Modifier les portes » (PLAN §5.7, mockup Doors): the
 // floors of one staircase with their doors, and what its commands answer,
 // so the screen knows whether to ask first, show « Annuler », or say why
 // nothing changed.
@@ -23,7 +23,7 @@ final class AdjustFloor {
   final List<DwellingKey> doors;
 }
 
-/// Everything « Ajuster les portes » shows. `sealed`: the screen handles
+/// Everything « Modifier les portes » shows. `sealed`: the screen handles
 /// each case.
 sealed class AdjustDoorsState {
   const AdjustDoorsState();
@@ -72,9 +72,23 @@ sealed class DoorEditOutcome {
   const DoorEditOutcome();
 }
 
-/// The change is stored; « Annuler » can undo a removal.
+/// The change is stored; « Annuler » can undo it. [door] is the door
+/// added (labelled by the building's rule, so the screen can name it:
+/// « Porte 13 ajoutée ») or the door removed.
 final class DoorEditApplied extends DoorEditOutcome {
-  const DoorEditApplied();
+  const DoorEditApplied(this.door);
+
+  final DwellingKey door;
+
+  @override
+  bool operator ==(Object other) =>
+      other is DoorEditApplied && other.door == door;
+
+  @override
+  int get hashCode => door.hashCode;
+
+  @override
+  String toString() => 'DoorEditApplied(${door.id})';
 }
 
 /// Nothing was stored: the door has marks that would go with it. The
@@ -106,10 +120,27 @@ sealed class DoorRenameOutcome {
   const DoorRenameOutcome();
 }
 
-/// The door has the name typed, its marks kept (or already had it: nothing
-/// was stored then). The sheet closes.
+/// The door has the name typed, its marks kept, and is now [door]. The
+/// sheet closes and the screen offers « Annuler ».
 final class DoorRenamed extends DoorRenameOutcome {
-  const DoorRenamed();
+  const DoorRenamed(this.door);
+
+  final DwellingKey door;
+
+  @override
+  bool operator ==(Object other) => other is DoorRenamed && other.door == door;
+
+  @override
+  int get hashCode => door.hashCode;
+
+  @override
+  String toString() => 'DoorRenamed(${door.id})';
+}
+
+/// The name typed is the one the door has: nothing was stored, so there is
+/// nothing to undo. The sheet closes.
+final class DoorNameKept extends DoorRenameOutcome {
+  const DoorNameKept();
 }
 
 /// The text typed cannot name a door, for [reason].

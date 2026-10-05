@@ -30,7 +30,7 @@ abstract final class AppRoutes {
       Uri(path: editStreet, queryParameters: {'id': id.value}).toString();
   static const adjustDoors = '/rue/modifier/portes';
 
-  /// « Ajuster les portes » of the building [number] of the street [id]:
+  /// « Modifier les portes » of the building [number] of the street [id]:
   /// `/rue/modifier/portes?id=…&numero=8`.
   static String adjustDoorsOf(StreetId id, HouseNumber number) => Uri(
     path: adjustDoors,

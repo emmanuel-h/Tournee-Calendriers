@@ -35,7 +35,7 @@ Street screen (« Rue »):
   cycles a door (vibration, announcement, « Annuler » for 4 s); a hold opens the door's
   sheet. « Gérer l'immeuble » holds every change to the building: « Modifier les étages » lays
   it out again, keeping the marks of the doors that stay (and asks before losing marked ones),
-  « Ajuster les portes », and « Redevenir une maison » (asks first when doors have marks;
+  « Modifier les portes », and « Changer en maison » (asks first when doors have marks;
   « Annuler » brings them back). « Note · Repasser » sets the building's own.
 - Edit mode (✏, « Modifier la rue »): rename the street, ✕ removes a number at once with
   « Annuler » (asks first when it has marks; it goes to the Corbeille with them), « + numéros »
@@ -43,7 +43,7 @@ Street screen (« Rue »):
   (numbers in the Corbeille come back with their marks). Tap a number to change it
   (`3` → `3bis`), make it a building, or open a building's grid (« Ouvrir l'immeuble »).
   « Supprimer la rue » sends the street to the Corbeille.
-- « Ajuster les portes » (« Gérer l'immeuble » under the grid): floor by floor, « + » adds a
+- « Modifier les portes » (« Gérer l'immeuble » under the grid): floor by floor, « + » adds a
   door, ✕ removes one (with « Annuler »; asks first when it has a mark), a tap renames it
   (« Gauche », « Droite » on every floor). The other doors keep their marks.
 - Works offline, cold start included: marks are stored on the phone.

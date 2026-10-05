@@ -48,7 +48,7 @@ GoRouter buildAppRouter({required bool showGallery}) => GoRouter(
       builder: (context, state) =>
           EditStreetScreen(streetId: _streetIdOf(state)),
     ),
-    // `/rue/modifier/portes?id=…&numero=8`, pushed by « Ajuster les
+    // `/rue/modifier/portes?id=…&numero=8`, pushed by « Modifier les
     // portes » in the « Gérer l'immeuble » menu of the grid.
     GoRoute(
       path: AppRoutes.adjustDoors,

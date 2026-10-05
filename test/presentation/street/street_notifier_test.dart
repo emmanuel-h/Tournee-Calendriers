@@ -410,7 +410,7 @@ void main() {
     });
   });
 
-  group('Redevenir une maison', () {
+  group('Changer en maison', () {
     House eight() =>
         streets[_id]!.houses.singleWhere((h) => h.number == n('8'));
 

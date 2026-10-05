@@ -174,9 +174,9 @@ final class _MarkingScreenState extends ConsumerState<_MarkingScreen>
     unawaited(_showGrid(number));
   }
 
-  /// The grid of the building [number]; left by « Redevenir une maison »
+  /// The grid of the building [number]; left by « Changer en maison »
   /// (confirmed there), the building becomes a house here, with « N° 8
-  /// redevient une maison [Annuler] ».
+  /// changé en maison [Annuler] ».
   Future<void> _showGrid(HouseNumber number) async {
     final l10n = AppLocalizations.of(context);
     final notifier = _notifier;

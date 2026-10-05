@@ -337,8 +337,9 @@ void main() {
       expect(find.text('Esc. B · 0/2'), findsOneWidget);
       expect(tester.getSemantics(count).label, '1 sur 8 logements faits');
 
-      // « Gérer l'immeuble », « Ajuster les portes », rename door 01
-      // « Gauche »: back on the grid, it is still done.
+      // « Gérer l'immeuble », « Modifier les portes », rename door 01
+      // « Gauche » (with « Annuler » offered): back on the grid, it is
+      // still done.
       await manage('adjustDoors');
       await tester.tap(
         find.descendant(
@@ -353,6 +354,7 @@ void main() {
       );
       await tester.tap(find.byKey(const Key('renameDoor.rename')));
       await tester.pumpAndSettle();
+      expect(findArrowText('Porte 01 → Gauche'), findsOneWidget);
       await tester.tap(find.byKey(const Key('doors.ok')));
       await tester.pumpAndSettle();
       expect(

@@ -29,7 +29,7 @@ import 'package:tournee_calendriers/ui/theme/status_look.dart';
 
 /// How the grid was left, when its opener has something to do next.
 enum BuildingGridExit {
-  /// « Redevenir une maison », confirmed when doors had marks: the opener
+  /// « Changer en maison », confirmed when doors had marks: the opener
   /// turns the building back into a house and offers « Annuler ».
   backToHouse,
 }
@@ -221,7 +221,7 @@ final class _BuildingGridSheetState extends ConsumerState<BuildingGridSheet>
     }
   }
 
-  /// « Redevenir une maison »: asks first when a door has a mark, then
+  /// « Changer en maison »: asks first when a door has a mark, then
   /// closes the grid; its opener makes the house and offers « Annuler ».
   Future<void> _backToHouse(BuildingGridShown state) async {
     if (state.hasMarks) {

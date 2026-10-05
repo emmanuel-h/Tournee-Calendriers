@@ -17,7 +17,7 @@ final class EditTile {
   final HouseNumber number;
 
   /// The house is a building: the tile says so, and its sheet offers
-  /// « Modifier les étages » and « Redevenir une maison ».
+  /// « Modifier les étages » and « Changer en maison ».
   final bool isBuilding;
 
   @override
@@ -79,7 +79,7 @@ final class EditStreetShown extends EditStreetState {
   }
 }
 
-/// What ✕ or « Redevenir une maison » did. `sealed`: the screen handles
+/// What ✕ or « Changer en maison » did. `sealed`: the screen handles
 /// each case.
 sealed class EditOutcome {
   const EditOutcome();

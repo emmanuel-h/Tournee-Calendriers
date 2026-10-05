@@ -268,7 +268,7 @@ final class _EditScreenState extends ConsumerState<_EditScreen>
     }
   }
 
-  /// « Redevenir une maison », chosen (and confirmed) in the grid.
+  /// « Changer en maison », chosen (and confirmed) in the grid.
   Future<void> _backToHouse(HouseNumber number) async {
     final l10n = AppLocalizations.of(context);
     final notifier = _notifier;

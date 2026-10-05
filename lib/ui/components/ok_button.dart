@@ -5,7 +5,7 @@ import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
 /// The dark « OK » pill of a top bar that leaves an editing screen
-/// (« Modifier la rue », « Ajuster les portes »). Its tap target still
+/// (« Modifier la rue », « Modifier les portes »). Its tap target still
 /// grows to [AppSizes.minTapTarget].
 final class OkButton extends StatelessWidget {
   const OkButton({super.key, required this.onPressed});

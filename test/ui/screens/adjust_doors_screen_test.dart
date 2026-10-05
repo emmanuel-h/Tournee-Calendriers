@@ -17,6 +17,7 @@ import '../../support/fakes/fake_street_repository.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 import '../support/app_overrides.dart';
+import '../support/finders.dart';
 import '../support/keyboard.dart';
 import '../support/navigation.dart';
 
@@ -55,7 +56,7 @@ void main() {
   late FakeStreetRepository streets;
 
   /// Starts the app with the Rue des Lilas on the phone, opens its street
-  /// screen, taps 8, then « Gérer l'immeuble » and « Ajuster les portes ».
+  /// screen, taps 8, then « Gérer l'immeuble » and « Modifier les portes ».
   Future<void> openAdjustDoors(WidgetTester tester) async {
     tester.view
       ..physicalSize = const Size(393 * 3, 852 * 3)
@@ -149,6 +150,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(_door('A1-3'), findsOneWidget);
+    expect(find.text('Porte 3 ajoutée'), findsOneWidget);
     expect(labelsAt(1), ['1', '2', '3']);
 
     await tester.tap(_part('A1-2', 'remove'));
@@ -191,6 +193,72 @@ void main() {
     expect(_door('A1-1'), findsNothing);
     expect(find.text('Porte 1 supprimée'), findsOneWidget);
     expect(labelsAt(1), ['2']);
+
+    await tester.tap(find.text('Annuler'));
+    await tester.pumpAndSettle();
+
+    expect(labelsAt(1), ['1', '2']);
+    expect(
+      stored().dwellingAt(DwellingKey(escA, 1, d('1')))!.status,
+      VisitStatus.done,
+    );
+  });
+
+  testWidgets('should take a door added away when Annuler is tapped', (
+    tester,
+  ) async {
+    await openAdjustDoors(tester);
+    await tester.tap(find.byKey(const ValueKey('doors.add.0')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.text('Annuler'));
+    await tester.pumpAndSettle();
+
+    expect(labelsAt(0), ['1', '2']);
+    expect(_door('A0-3'), findsNothing);
+  });
+
+  testWidgets('should offer Annuler after a rename and give the door its '
+      'name back', (tester) async {
+    await openAdjustDoors(tester);
+    await rename(tester, 'A1-1', 'Gauche');
+
+    expect(findArrowText('Porte 1 → Gauche'), findsOneWidget);
+
+    await tester.tap(find.text('Annuler'));
+    await tester.pumpAndSettle();
+
+    expect(labelsAt(1), ['1', '2']);
+    expect(
+      stored().dwellingAt(DwellingKey(escA, 1, d('1')))!.status,
+      VisitStatus.done,
+    );
+  });
+
+  testWidgets('should offer no Annuler when a door keeps its name', (
+    tester,
+  ) async {
+    await openAdjustDoors(tester);
+    await rename(tester, 'A1-2', '2');
+
+    expect(find.byKey(const Key('renameDoor.field')), findsNothing);
+    expect(find.text('Annuler'), findsNothing);
+  });
+
+  testWidgets('should rename, not remove, when the tap lands just right of '
+      'the label', (tester) async {
+    await openAdjustDoors(tester);
+    final label = find.descendant(of: _door('A1-2'), matching: find.text('2'));
+    final remove = _part('A1-2', 'remove');
+
+    // 12 dp right of the label's last letter: the label zone used to end
+    // 4 dp after it, so this tap hit the ✕.
+    await tester.tapAt(tester.getRect(label).centerRight + const Offset(12, 0));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('renameDoor.field')), findsOneWidget);
+    expect(labelsAt(1), ['1', '2']);
+    expect(tester.getSize(remove).height, greaterThanOrEqualTo(48));
   });
 
   testWidgets('should go back to the grid when OK is tapped', (tester) async {

@@ -391,7 +391,7 @@ void main() {
     });
   });
 
-  group('Redevenir une maison', () {
+  group('Changer en maison', () {
     test('should make an unmarked building a single house at once', () async {
       phoneWith(_street());
       await settled();

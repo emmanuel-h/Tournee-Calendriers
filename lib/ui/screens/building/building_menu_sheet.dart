@@ -10,10 +10,10 @@ enum BuildingAction {
   /// « Modifier les étages »: « Décrire l'immeuble », prefilled.
   editFloors,
 
-  /// « Ajuster les portes »: a door more or less, a door renamed.
+  /// « Modifier les portes »: a door more or less, a door renamed.
   adjustDoors,
 
-  /// « Redevenir une maison »: the doors go (asked first when marked).
+  /// « Changer en maison »: the doors go (asked first when marked).
   backToHouse,
 }
 

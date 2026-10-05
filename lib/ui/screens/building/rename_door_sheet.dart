@@ -15,17 +15,20 @@ import 'package:tournee_calendriers/ui/screens/building/floor_names.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
-/// Opens the rename sheet of [door] (tap a door of « Ajuster les portes »,
+/// Opens the rename sheet of [door] (tap a door of « Modifier les portes »,
 /// PLAN §5.7): « Porte 11 », where it is, the « Nom de la porte » field and
 /// « Renommer ». [where] is what follows the door's floor in the subtitle
 /// (« 8 Rue des Lilas »); the staircase is named when [namesStaircase].
-Future<void> showRenameDoorSheet(
+///
+/// Completes with the door under its new name once renamed, so the screen
+/// can offer « Annuler »; with null when the sheet closed without a change.
+Future<DwellingKey?> showRenameDoorSheet(
   BuildContext context, {
   required BuildingGridKey building,
   required DwellingKey door,
   required String where,
   required bool namesStaircase,
-}) => showAppBottomSheet<void>(
+}) => showAppBottomSheet<DwellingKey>(
   context: context,
   builder: (_) => RenameDoorSheet(
     building: building,
@@ -167,7 +170,9 @@ final class _RenameDoorSheetState extends ConsumerState<RenameDoorSheet> {
         .rename(widget.door, _field.text);
     if (!mounted) return;
     switch (outcome) {
-      case DoorRenamed():
+      case DoorRenamed(:final door):
+        Navigator.of(context).pop(door);
+      case DoorNameKept():
         Navigator.of(context).pop();
       case DoorLabelInvalid(:final reason):
         setState(() => _refusal = dwellingLabelMessage(l10n, reason));

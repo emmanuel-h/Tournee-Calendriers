@@ -136,7 +136,17 @@ abstract final class AppSizes {
   static const okButtonHeight = 44.0;
   static const okButtonPadding = 20.0;
 
-  /// A top bar whose title has a line under it (« Ajuster les portes »
-  /// over « 8 Rue des Lilas »).
-  static const titleBarWithSubtitleHeight = 64.0;
+  /// A top bar whose title has a line under it (« Modifier les portes »
+  /// over « 8 Rue des Lilas »), and the gap between the two lines.
+  static const titleBarWithSubtitleHeight = 72.0;
+  static const titleSubtitleGap = 6.0;
+
+  /// A door of « Modifier les portes »: its label zone (tap to rename) ends
+  /// with [doorLabelEnd] of empty room, then the ✕ zone. The ✕ zone is
+  /// narrower than [minTapTarget] so a tap just right of the label still
+  /// renames; it stays [doorHeight] tall, so it is still 52 dp to aim at.
+  static const doorLabelStart = 14.0;
+  static const doorLabelEnd = 18.0;
+  static const doorRemoveWidth = 36.0;
+  static const doorRemoveGlyph = 20.0;
 }

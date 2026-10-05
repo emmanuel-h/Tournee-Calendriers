@@ -116,7 +116,7 @@ final class EditStreetNotifier extends Notifier<EditStreetState> {
     };
   }
 
-  /// « Redevenir une maison » on the building at [number], chosen in its
+  /// « Changer en maison » on the building at [number], chosen in its
   /// grid (which asked first when a door had marks): its doors go, with
   /// « Annuler » to bring them back.
   Future<EditOutcome> backToSingleHouse(HouseNumber number) async => _keep(

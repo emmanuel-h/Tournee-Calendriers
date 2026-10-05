@@ -80,7 +80,7 @@ final class BuildingGridShown extends BuildingGridState {
   final List<FloorRow> floors;
 
   /// Whether a door has a mark (a status, a « repasser » or a note):
-  /// « Redevenir une maison » asks first, as they would go.
+  /// « Changer en maison » asks first, as they would go.
   final bool hasMarks;
 
   /// The staircase control shows only when there is a choice to make.

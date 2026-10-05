@@ -708,7 +708,7 @@ abstract class AppLocalizations {
   /// Undo snackbar after a building was turned back into a single house.
   ///
   /// In fr, this message translates to:
-  /// **'N° {number} redevient une maison'**
+  /// **'N° {number} changé en maison'**
   String backToHouseDone(String number);
 
   /// Confirms a removal (a number, a street).
@@ -858,13 +858,13 @@ abstract class AppLocalizations {
   /// Choice of the « Gérer l'immeuble » menu of the building grid: the building becomes a single house again.
   ///
   /// In fr, this message translates to:
-  /// **'Redevenir une maison'**
+  /// **'Changer en maison'**
   String get backToHouseAction;
 
   /// Title of the confirmation when the doors of the building have marks.
   ///
   /// In fr, this message translates to:
-  /// **'Redevenir une maison ?'**
+  /// **'Changer en maison ?'**
   String get confirmBackToHouseTitle;
 
   /// Body of the confirmation when the doors of the building have marks.
@@ -957,7 +957,7 @@ abstract class AppLocalizations {
   /// **'Modifier les étages'**
   String get editFloors;
 
-  /// Button under the building grid, and title of the menu it opens: Modifier les étages, Ajuster les portes, Redevenir une maison.
+  /// Button under the building grid, and title of the menu it opens: Modifier les étages, Modifier les portes, Changer en maison.
   ///
   /// In fr, this message translates to:
   /// **'Gérer l\'immeuble'**
@@ -990,22 +990,22 @@ abstract class AppLocalizations {
   /// Choice of the « Gérer l'immeuble » menu of the building grid, and title of the screen that adds, removes and renames doors floor by floor (PLAN §5.7).
   ///
   /// In fr, this message translates to:
-  /// **'Ajuster les portes'**
+  /// **'Modifier les portes'**
   String get adjustDoorsAction;
 
-  /// Screen-reader name and tooltip of the ✕ of « Ajuster les portes », which leaves it (every change is already stored).
+  /// Screen-reader name and tooltip of the ✕ of « Modifier les portes », which leaves it (every change is already stored).
   ///
   /// In fr, this message translates to:
   /// **'Quitter'**
   String get adjustDoorsClose;
 
-  /// Under the floors of « Ajuster les portes ».
+  /// Under the floors of « Modifier les portes ».
   ///
   /// In fr, this message translates to:
-  /// **'Touchez une porte pour la renommer (« Gauche », « 5A »…). Les marques des autres portes sont gardées.'**
+  /// **'Touchez une porte pour la renommer (« Gauche », « 5A »…).'**
   String get adjustDoorsHint;
 
-  /// Screen-reader name of a door of « Ajuster les portes »: a tap opens its rename sheet.
+  /// Screen-reader name of a door of « Modifier les portes »: a tap opens its rename sheet.
   ///
   /// In fr, this message translates to:
   /// **'Renommer la porte {label}'**
@@ -1041,6 +1041,18 @@ abstract class AppLocalizations {
   /// **'Porte {label} supprimée'**
   String doorRemoved(String label);
 
+  /// Undo snackbar after « + » at the end of a floor.
+  ///
+  /// In fr, this message translates to:
+  /// **'Porte {label} ajoutée'**
+  String doorAdded(String label);
+
+  /// Undo snackbar after a door was renamed (11 → Gauche). The « → » is drawn as a vector arrow; screen readers hear the text as written.
+  ///
+  /// In fr, this message translates to:
+  /// **'Porte {from} → {to}'**
+  String doorRenamed(String from, String to);
+
   /// Title of the confirmation before removing a door that has a mark.
   ///
   /// In fr, this message translates to:
@@ -1062,7 +1074,7 @@ abstract class AppLocalizations {
   /// ✕ on the only door left in a building: a building keeps at least one door.
   ///
   /// In fr, this message translates to:
-  /// **'C\'est la dernière porte de l\'immeuble. Pour en refaire une maison, revenez à l\'immeuble : « Gérer l\'immeuble », puis « Redevenir une maison ».'**
+  /// **'C\'est la dernière porte de l\'immeuble. Pour en refaire une maison, revenez à l\'immeuble : « Gérer l\'immeuble », puis « Changer en maison ».'**
   String get lastDoorRefused;
 
   /// Title of the rename sheet of a door.
@@ -1262,12 +1274,6 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'dans la Corbeille'**
   String get inCorbeille;
-
-  /// Note above the import button.
-  ///
-  /// In fr, this message translates to:
-  /// **'Nécessite le réseau. Les rues déjà importées gardent leurs marques.'**
-  String get importFooter;
 
   /// Import button with the number of ticked streets.
   ///

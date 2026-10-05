@@ -279,7 +279,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('buildingMenu.adjustDoors')));
     await tester.pumpAndSettle();
 
-    expect(find.text('Ajuster les portes'), findsOneWidget);
+    expect(find.text('Modifier les portes'), findsOneWidget);
     expect(find.byKey(const ValueKey('doors.door.A1-11')), findsOneWidget);
   });
 
@@ -290,7 +290,7 @@ void main() {
     await tester.pumpAndSettle();
     await manage(tester, 'backToHouse');
 
-    expect(find.text('Redevenir une maison ?'), findsOneWidget);
+    expect(find.text('Changer en maison ?'), findsOneWidget);
     await tester.tap(
       find.byKey(const ValueKey('grid.confirmBackToHouse.cancel')),
     );
@@ -304,7 +304,7 @@ void main() {
 
     expect(_count, findsNothing);
     expect(stored('8').isBuilding, isFalse);
-    expect(find.text('N° 8 redevient une maison'), findsOneWidget);
+    expect(find.text('N° 8 changé en maison'), findsOneWidget);
 
     await tester.tap(find.text('Annuler'));
     await tester.pumpAndSettle();
@@ -324,7 +324,7 @@ void main() {
 
     await manage(tester, 'backToHouse');
 
-    expect(find.text('Redevenir une maison ?'), findsNothing);
+    expect(find.text('Changer en maison ?'), findsNothing);
     expect(_count, findsNothing);
     expect(stored('10').isBuilding, isFalse);
   });
@@ -411,7 +411,7 @@ void main() {
 
     expect(_count, findsNothing);
     expect(find.byKey(const Key('edit.ok')), findsOneWidget);
-    expect(find.text('N° 10 redevient une maison'), findsOneWidget);
+    expect(find.text('N° 10 changé en maison'), findsOneWidget);
     expect(stored('10').isBuilding, isFalse);
   });
 }

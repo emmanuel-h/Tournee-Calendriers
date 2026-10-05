@@ -72,7 +72,7 @@ final class SecondaryButton extends StatelessWidget {
   final bool destructive;
 
   /// Outline in ink rather than the light line, for the action a sheet
-  /// leads to most after its main one (« Ajuster les portes »).
+  /// leads to most after its main one (« Modifier les portes »).
   final bool strong;
 
   @override

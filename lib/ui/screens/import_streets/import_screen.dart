@@ -326,11 +326,6 @@ final class _Checklist extends ConsumerWidget {
             spacing: 8,
             children: [
               ..._outcome(l10n, colors),
-              Text(
-                l10n.importFooter,
-                textAlign: TextAlign.center,
-                style: AppTextStyles.small.copyWith(color: colors.muted),
-              ),
               if (state.run case ImportRunning(:final done, :final total))
                 _Progress(done: done, total: total)
               else

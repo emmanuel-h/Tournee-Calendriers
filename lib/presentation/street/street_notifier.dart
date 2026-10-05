@@ -88,7 +88,7 @@ final class StreetNotifier extends Notifier<StreetViewState> {
     await ref.read(undoLastChangeProvider)(change);
   }
 
-  /// « Redevenir une maison », chosen in the grid of the building at
+  /// « Changer en maison », chosen in the grid of the building at
   /// [number] (which asked first when a door had marks): its doors go.
   /// Returns whether it was done; « Annuler » ([undo]) brings them back.
   Future<bool> backToSingleHouse(HouseNumber number) async {
