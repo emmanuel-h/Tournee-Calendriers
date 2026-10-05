@@ -568,6 +568,9 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String get gridClose => 'Fermer';
+
+  @override
   String get gridHintHold => 'Appui long : détails';
 
   @override

@@ -10,6 +10,7 @@ import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
 import 'package:tournee_calendriers/presentation/building/building_grid_notifier.dart';
 import 'package:tournee_calendriers/presentation/building/building_grid_state.dart';
 import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
+import 'package:tournee_calendriers/ui/components/close_icon_button.dart';
 import 'package:tournee_calendriers/ui/components/confirm_dialog.dart';
 import 'package:tournee_calendriers/ui/components/segmented_choice.dart';
 import 'package:tournee_calendriers/ui/components/sheet_scaffold.dart';
@@ -261,7 +262,8 @@ final class _Grabber extends StatelessWidget {
   );
 }
 
-/// « 8 Rue des Lilas        ◐ 15/24 ».
+/// « ✕ 8 Rue des Lilas      ◐ 15/24 ». The street name shortens first, so
+/// the count always shows.
 final class _Header extends StatelessWidget {
   const _Header({required this.state});
 
@@ -271,61 +273,78 @@ final class _Header extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final colors = AppColors.of(context);
+    // Two rows: the ✕ has no text baseline, so it is centred against the
+    // line, while the number, the name and the count share their baseline.
     return Row(
-      crossAxisAlignment: CrossAxisAlignment.baseline,
-      textBaseline: TextBaseline.alphabetic,
-      spacing: 10,
+      spacing: 4,
       children: [
-        Expanded(
-          // One heading for screen readers: « 8 Rue des Lilas ».
-          child: MergeSemantics(
-            child: Semantics(
-              header: true,
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.baseline,
-                textBaseline: TextBaseline.alphabetic,
-                spacing: 10,
-                children: [
-                  Text(
-                    state.number.label,
-                    style: AppTextStyles.sheetNumber.copyWith(
-                      color: colors.ink,
-                    ),
-                  ),
-                  Expanded(
-                    child: Text(
-                      state.streetName,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppTextStyles.sheetStreetName.copyWith(
-                        color: colors.muted,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
+        // Closes as a swipe down does: a plain `pop` returns null, so the
+        // opener has nothing to do next.
+        CloseIconButton(
+          key: const Key('grid.close'),
+          tooltip: l10n.gridClose,
+          onPressed: () => Navigator.of(context).pop(),
         ),
-        Semantics(
-          label: l10n.buildingCountSemantics(state.done, state.total),
-          excludeSemantics: true,
-          child: Text.rich(
-            key: const Key('grid.count'),
-            TextSpan(
-              children: [
-                WidgetSpan(
-                  alignment: PlaceholderAlignment.middle,
-                  child: StatusGlyph(
-                    StatusGlyphs.buildingPartial,
-                    size: AppSizes.gridCountGlyph,
-                    color: colors.ink,
+        Expanded(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.baseline,
+            textBaseline: TextBaseline.alphabetic,
+            spacing: 10,
+            children: [
+              Expanded(
+                // One heading for screen readers: « 8 Rue des Lilas ».
+                child: MergeSemantics(
+                  child: Semantics(
+                    header: true,
+                    child: Row(
+                      crossAxisAlignment: CrossAxisAlignment.baseline,
+                      textBaseline: TextBaseline.alphabetic,
+                      spacing: 10,
+                      children: [
+                        Text(
+                          state.number.label,
+                          style: AppTextStyles.sheetNumber.copyWith(
+                            color: colors.ink,
+                          ),
+                        ),
+                        Expanded(
+                          child: Text(
+                            state.streetName,
+                            key: const Key('grid.streetName'),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppTextStyles.sheetStreetName.copyWith(
+                              color: colors.muted,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
-                TextSpan(text: ' ${state.done}/${state.total}'),
-              ],
-            ),
-            style: AppTextStyles.gridCount.copyWith(color: colors.ink),
+              ),
+              Semantics(
+                label: l10n.buildingCountSemantics(state.done, state.total),
+                excludeSemantics: true,
+                child: Text.rich(
+                  key: const Key('grid.count'),
+                  TextSpan(
+                    children: [
+                      WidgetSpan(
+                        alignment: PlaceholderAlignment.middle,
+                        child: StatusGlyph(
+                          StatusGlyphs.buildingPartial,
+                          size: AppSizes.gridCountGlyph,
+                          color: colors.ink,
+                        ),
+                      ),
+                      TextSpan(text: ' ${state.done}/${state.total}'),
+                    ],
+                  ),
+                  style: AppTextStyles.gridCount.copyWith(color: colors.ink),
+                ),
+              ),
+            ],
           ),
         ),
       ],

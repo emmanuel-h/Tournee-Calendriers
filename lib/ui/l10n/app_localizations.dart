@@ -921,6 +921,12 @@ abstract class AppLocalizations {
   /// **'{done} sur {total} logements faits'**
   String buildingCountSemantics(int done, int total);
 
+  /// Screen-reader name and tooltip of the ✕ left of the building grid's number, which closes the grid like a swipe down (PLAN §5.7).
+  ///
+  /// In fr, this message translates to:
+  /// **'Fermer'**
+  String get gridClose;
+
   /// End of the hint of the building grid, after « Appui : ○ → ✓ → ✗ → ↻ → ○ ·».
   ///
   /// In fr, this message translates to:

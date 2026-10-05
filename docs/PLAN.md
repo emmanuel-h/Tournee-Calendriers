@@ -530,7 +530,7 @@ Details fixed in T1.7 (`lib/presentation/street/`, `lib/ui/screens/street/`):
 ┌──────────────────────────────┐    ┌──────────────────────────────┐
 │ (street screen, dimmed)      │    │ (street screen, dimmed)      │
 ├──────────────────────────────┤    ├──────────────────────────────┤
-│ 5 Rue des Lilas              │    │ 8 Rue des Lilas    ◐ 15/24   │
+│ 5 Rue des Lilas              │    │ ✕ 8 Rue des Lilas  ◐ 15/24   │
 │ ┌──────┬──────┬──────┬─────┐ │    │ (Esc. A | Esc. B)  ← if > 1  │
 │ │  ○   │  ✓   │  ✗   │  ↻  │ │    │ 5e  [51✓][52○][53✗][54↻]     │
 │ │À fai.│ Fait │Pers. │Rep. │ │    │ 4e  [41✓][42✓][43✓][44○]     │
@@ -598,8 +598,12 @@ Immeuble details fixed in T1.9 (`lib/presentation/building/`, `lib/ui/screens/bu
   button under the grid does: no status (a building's status comes from its doors), the blue
   « ☐ ↻ Repasser » box (ticking it shows « Quand ? ex. après 19h »), no
   *Transformer en immeuble…*.
-- Header « 8 Rue des Lilas  ◐ 15/24 »: the ◐ glyph is always drawn, the count covers every
-  staircase. The staircase control « Esc. A · 7/12 | Esc. B · 8/12 » (48 dp, not the mockup's 44:
+- Header « ✕ 8 Rue des Lilas  ◐ 15/24 »: the ◐ glyph is always drawn, the count covers every
+  staircase. A long street name ends with « … », the count always shows.
+- **Closing** (T1.22): the ✕ left of the number (48 dp, « Fermer » for screen readers; the
+  same ✕ as « Modifier la rue » and « Modifier les portes ») closes the grid exactly as a swipe
+  down does, which still works: back to the screen that opened it, the door marks kept, the
+  snackbar of the last door gone with the grid. The staircase control « Esc. A · 7/12 | Esc. B · 8/12 » (48 dp, not the mockup's 44:
   tap targets) shows only with more than one staircase; the grid opens on staircase A and comes
   back to it when the chosen one disappears.
 - Floors top first, labelled RdC, 1er, 2e… (« Logements » for unknown floors); four doors a row,

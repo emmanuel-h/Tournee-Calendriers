@@ -288,7 +288,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.getSemantics(count).label, '1 sur 6 logements faits');
 
-      Navigator.of(tester.element(count)).pop();
+      await tester.tap(find.byKey(const Key('grid.close')));
       await tester.pumpAndSettle();
       expect(
         tester.getSemantics(tile).label,
@@ -364,9 +364,9 @@ void main() {
         'Escalier A, RdC, porte Gauche, fait',
       );
 
-      // Closed, the grid leaves the edit mode; « OK » the street, where
+      // Closed with its ✕, the grid leaves the edit mode; « OK » the street, where
       // the tile counts every door.
-      Navigator.of(tester.element(count)).pop();
+      await tester.tap(find.byKey(const Key('grid.close')));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('edit.ok')));
       await tester.pumpAndSettle();

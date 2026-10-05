@@ -10,6 +10,7 @@ import 'package:tournee_calendriers/presentation/edit_street/edit_street_notifie
 import 'package:tournee_calendriers/presentation/edit_street/edit_street_state.dart';
 import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
 import 'package:tournee_calendriers/ui/components/app_buttons.dart';
+import 'package:tournee_calendriers/ui/components/close_icon_button.dart';
 import 'package:tournee_calendriers/ui/components/confirm_dialog.dart';
 import 'package:tournee_calendriers/ui/components/keep_focus.dart';
 import 'package:tournee_calendriers/ui/components/ok_button.dart';
@@ -121,10 +122,9 @@ final class _EditScreenState extends ConsumerState<_EditScreen>
         child: Scaffold(
           appBar: AppBar(
             titleSpacing: 4,
-            leading: IconButton(
+            leading: CloseIconButton(
               key: const Key('edit.close'),
               tooltip: l10n.editStreetClose,
-              icon: const Icon(Icons.close),
               onPressed: () => unawaited(_leave()),
             ),
             title: Text(l10n.screenEditStreet),

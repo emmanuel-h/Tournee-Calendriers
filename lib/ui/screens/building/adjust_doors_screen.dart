@@ -9,6 +9,7 @@ import 'package:tournee_calendriers/presentation/building/adjust_doors_notifier.
 import 'package:tournee_calendriers/presentation/building/adjust_doors_state.dart';
 import 'package:tournee_calendriers/presentation/building/building_grid_notifier.dart';
 import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
+import 'package:tournee_calendriers/ui/components/close_icon_button.dart';
 import 'package:tournee_calendriers/ui/components/confirm_dialog.dart';
 import 'package:tournee_calendriers/ui/components/dashed_outline.dart';
 import 'package:tournee_calendriers/ui/components/ok_button.dart';
@@ -56,10 +57,9 @@ final class _AdjustDoorsScreenState extends ConsumerState<AdjustDoorsScreen>
         appBar: AppBar(
           titleSpacing: 4,
           toolbarHeight: AppSizes.titleBarWithSubtitleHeight,
-          leading: IconButton(
+          leading: CloseIconButton(
             key: const Key('doors.close'),
             tooltip: l10n.adjustDoorsClose,
-            icon: const Icon(Icons.close),
             onPressed: _leave,
           ),
           title: _Title(

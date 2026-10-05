@@ -341,6 +341,46 @@ void main() {
     );
   });
 
+  testWidgets('should close the grid, keeping the door just marked, when the '
+      '✕ is tapped', (tester) async {
+    final semantics = tester.ensureSemantics();
+    await openStreet(tester);
+    await tester.tap(_tile('8'));
+    await tester.pumpAndSettle();
+    await tester.tap(_door('A1-12'));
+    await tester.pumpAndSettle();
+    expect(
+      tester.getSemantics(find.byKey(const Key('grid.close'))).tooltip,
+      'Fermer',
+    );
+
+    await tester.tap(find.byKey(const Key('grid.close')));
+    await tester.pumpAndSettle();
+
+    expect(_count, findsNothing);
+    expect(findArrowText('12 → Fait'), findsNothing);
+    expect(find.textContaining('changé en maison'), findsNothing);
+    expect(_tile('8'), findsOneWidget);
+    expect(storedDoor(DwellingKey(escA, 1, d('12'))).status, VisitStatus.done);
+    semantics.dispose();
+  });
+
+  testWidgets('should still close the grid when it is swiped down', (
+    tester,
+  ) async {
+    await openStreet(tester);
+    await tester.tap(_tile('8'));
+    await tester.pumpAndSettle();
+
+    await tester.fling(_count, const Offset(0, 800), 2000);
+    await tester.pumpAndSettle();
+
+    expect(_count, findsNothing);
+    expect(find.byKey(const Key('grid.close')), findsNothing);
+    expect(_tile('8'), findsOneWidget);
+    expect(find.textContaining('changé en maison'), findsNothing);
+  });
+
   testWidgets('should make a building without marks a house at once', (
     tester,
   ) async {

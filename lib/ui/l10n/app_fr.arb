@@ -507,6 +507,8 @@
       "total": { "type": "int", "example": "24" }
     }
   },
+  "gridClose": "Fermer",
+  "@gridClose": { "description": "Screen-reader name and tooltip of the ✕ left of the building grid's number, which closes the grid like a swipe down (PLAN §5.7)." },
   "gridHintHold": "Appui long : détails",
   "@gridHintHold": { "description": "End of the hint of the building grid, after « Appui : ○ → ✓ → ✗ → ↻ → ○ ·»." },
   "gridHintSemantics": "Appui : à faire, fait, personne, repasser, à faire. Appui long : détails",
