@@ -131,4 +131,8 @@ abstract final class AppSizes {
   /// grows to [minTapTarget].
   static const okButtonHeight = 44.0;
   static const okButtonPadding = 20.0;
+
+  /// A top bar whose title has a line under it (« Ajuster les portes »
+  /// over « 8 Rue des Lilas »).
+  static const titleBarWithSubtitleHeight = 64.0;
 }

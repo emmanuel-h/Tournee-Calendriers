@@ -939,6 +939,120 @@ abstract class AppLocalizations {
   /// **'Cette porte n\'est plus dans l\'immeuble.'**
   String get doorGone;
 
+  /// Button of a building's sheet in edit mode, and title of the screen that adds, removes and renames doors floor by floor (PLAN §5.7).
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajuster les portes'**
+  String get adjustDoorsAction;
+
+  /// Screen-reader name and tooltip of the ✕ of « Ajuster les portes », which leaves it (every change is already stored).
+  ///
+  /// In fr, this message translates to:
+  /// **'Quitter'**
+  String get adjustDoorsClose;
+
+  /// Under the floors of « Ajuster les portes ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Touchez une porte pour la renommer (« Gauche », « 5A »…). Les marques des autres portes sont gardées.'**
+  String get adjustDoorsHint;
+
+  /// Screen-reader name of a door of « Ajuster les portes »: a tap opens its rename sheet.
+  ///
+  /// In fr, this message translates to:
+  /// **'Renommer la porte {label}'**
+  String renameDoorSemantics(String label);
+
+  /// Screen-reader name and tooltip of the ✕ of a door.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer la porte {label}'**
+  String removeDoorSemantics(String label);
+
+  /// Screen-reader name of the « + » at the end of a floor from the 1er up.
+  ///
+  /// In fr, this message translates to:
+  /// **'Une porte de plus au {floor}'**
+  String addDoorSemantics(String floor);
+
+  /// Screen-reader name of the « + » at the end of the RdC.
+  ///
+  /// In fr, this message translates to:
+  /// **'Une porte de plus au rez-de-chaussée'**
+  String get addDoorGroundSemantics;
+
+  /// Screen-reader name of the « + » of the « Logements » row (floors unknown).
+  ///
+  /// In fr, this message translates to:
+  /// **'Une porte de plus'**
+  String get addDoorUnknownFloorSemantics;
+
+  /// Undo snackbar after ✕ on a door.
+  ///
+  /// In fr, this message translates to:
+  /// **'Porte {label} supprimée'**
+  String doorRemoved(String label);
+
+  /// Title of the confirmation before removing a door that has a mark.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer la porte {label} ?'**
+  String confirmRemoveDoorTitle(String label);
+
+  /// Body of the confirmation before removing a door that has a mark.
+  ///
+  /// In fr, this message translates to:
+  /// **'Elle a déjà une marque (fait, personne, repasser ou note), qui partira avec elle. « Annuler » la ramène juste après.'**
+  String get confirmRemoveDoorBody;
+
+  /// Closes a confirmation, keeping what it was about to remove.
+  ///
+  /// In fr, this message translates to:
+  /// **'Garder'**
+  String get keep;
+
+  /// ✕ on the only door left in a building: a building keeps at least one door.
+  ///
+  /// In fr, this message translates to:
+  /// **'C\'est la dernière porte de l\'immeuble. Pour en refaire une maison, touchez son numéro puis « Redevenir une maison ».'**
+  String get lastDoorRefused;
+
+  /// Title of the rename sheet of a door.
+  ///
+  /// In fr, this message translates to:
+  /// **'Porte {label}'**
+  String doorTitle(String label);
+
+  /// Label of the field of the rename sheet of a door.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nom de la porte'**
+  String get doorNameLabel;
+
+  /// Gives the door the name typed, its marks kept.
+  ///
+  /// In fr, this message translates to:
+  /// **'Renommer'**
+  String get renameDoorAction;
+
+  /// Another door of the same floor has the name typed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ce nom est déjà pris à cet étage.'**
+  String get doorLabelTaken;
+
+  /// The name typed for a door is empty.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le nom de la porte ne peut pas être vide.'**
+  String get doorLabelBlank;
+
+  /// The name typed for a door is too long.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nom limité à {max} caractères.'**
+  String doorLabelTooLong(int max);
+
   /// Header of the street list of the temporary start screen (PLAN §5.0), with the number of streets.
   ///
   /// In fr, this message translates to:

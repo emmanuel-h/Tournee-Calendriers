@@ -11,6 +11,7 @@ import 'package:tournee_calendriers/presentation/edit_street/edit_street_state.d
 import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
 import 'package:tournee_calendriers/ui/components/app_buttons.dart';
 import 'package:tournee_calendriers/ui/components/confirm_dialog.dart';
+import 'package:tournee_calendriers/ui/components/ok_button.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/screens/building/building_setup_sheet.dart';
@@ -122,7 +123,10 @@ final class _EditScreenState extends ConsumerState<_EditScreen>
             title: Text(l10n.screenEditStreet),
             actions: [
               if (state is EditStreetShown)
-                _OkButton(onPressed: () => unawaited(_leave())),
+                OkButton(
+                  key: const Key('edit.ok'),
+                  onPressed: () => unawaited(_leave()),
+                ),
               const SizedBox(width: 12),
             ],
           ),
@@ -239,6 +243,10 @@ final class _EditScreenState extends ConsumerState<_EditScreen>
           street: widget.streetId,
           number: number,
         ));
+      case AdjustDoorsExit():
+        await context.push<void>(
+          AppRoutes.adjustDoorsOf(widget.streetId, number),
+        );
       case BackToHouseExit():
         await _backToHouse(number);
     }
@@ -292,32 +300,6 @@ final class _EditScreenState extends ConsumerState<_EditScreen>
     );
     if (!confirmed) return;
     if (await notifier.deleteStreet() && mounted) context.go(AppRoutes.home);
-  }
-}
-
-/// The dark « OK » pill of the top bar (Edit mockup).
-final class _OkButton extends StatelessWidget {
-  const _OkButton({required this.onPressed});
-
-  final VoidCallback onPressed;
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    return FilledButton(
-      key: const Key('edit.ok'),
-      onPressed: onPressed,
-      style: FilledButton.styleFrom(
-        backgroundColor: colors.ink,
-        foregroundColor: colors.surface,
-        minimumSize: const Size(0, AppSizes.okButtonHeight),
-        padding: const EdgeInsets.symmetric(
-          horizontal: AppSizes.okButtonPadding,
-        ),
-        textStyle: AppTextStyles.compactButton,
-      ),
-      child: Text(AppLocalizations.of(context).editStreetOk),
-    );
   }
 }
 

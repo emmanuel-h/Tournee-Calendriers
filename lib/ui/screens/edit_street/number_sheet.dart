@@ -35,6 +35,12 @@ final class DescribeBuildingExit extends NumberSheetExit {
   const DescribeBuildingExit();
 }
 
+/// « Ajuster les portes »: the screen that adjusts the building floor by
+/// floor opens next.
+final class AdjustDoorsExit extends NumberSheetExit {
+  const AdjustDoorsExit();
+}
+
 /// « Redevenir une maison »: the edit mode asks first when doors have
 /// marks.
 final class BackToHouseExit extends NumberSheetExit {
@@ -56,8 +62,8 @@ Future<NumberSheetExit?> showNumberSheet(
 );
 
 /// « 3 Rue des Lilas », the « Numéro » field with « Changer le numéro »,
-/// then *Transformer en immeuble…* for a house, or « Modifier les étages »
-/// and « Redevenir une maison » for a building.
+/// then *Transformer en immeuble…* for a house, or « Ajuster les portes »,
+/// « Modifier les étages » and « Redevenir une maison » for a building.
 final class NumberSheet extends ConsumerStatefulWidget {
   const NumberSheet({super.key, required this.streetId, required this.number});
 
@@ -168,6 +174,13 @@ final class _NumberSheetState extends ConsumerState<NumberSheet> {
           onPressed: () => unawaited(_renumber()),
         ),
         if (tile.isBuilding) ...[
+          SecondaryButton(
+            key: const Key('number.adjustDoors'),
+            label: l10n.adjustDoorsAction,
+            compact: true,
+            strong: true,
+            onPressed: () => leave(const AdjustDoorsExit()),
+          ),
           SecondaryButton(
             key: const Key('number.editFloors'),
             label: l10n.editFloors,

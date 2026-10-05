@@ -442,9 +442,9 @@ Edit mode details fixed in T1.10 (`lib/presentation/edit_street/`,
   la Corbeille avec ses numéros et leurs marques, pour toute l'équipe. » then goes back to
   « Mes rues », where the street no longer shows. **« Ne plus la faire » is not shown before
   M3**: it removes me from the street's assignees, which come with Accueil (§6.1 sketch).
-- Not yet: adjusting one floor (add / remove / rename a door, typing « Libres » labels), which
-  §5.7 places under « Modifier les étages » here, waits for a sketch; the Corbeille screen
-  (§5.11) comes in M2.
+- A building's sheet also offers « Ajuster les portes » (dark outline, between « Changer le
+  numéro » and « Modifier les étages »), which opens the screen of §5.7 (T1.12). Not yet: the
+  Corbeille screen (§5.11) comes in M2.
 
 ### 5.6 Rue — two sides of the street (used 95 % of the time)
 
@@ -592,7 +592,8 @@ Immeuble details fixed in T1.9 (`lib/presentation/building/`, `lib/ui/screens/bu
 - « Valider » on a building whose new layout drops doors with marks asks first: « Modifier les
   étages ? — 3 portes marquées n'existent plus dans ce plan : leurs statuts, notes et
   « repasser » seront perdus. [Annuler] [Modifier] » (`Building.markedDoorsDroppedBy`).
-- « Libres » keeps the placeholder labels 1, 2, 3… until doors can be renamed (edit mode, #14).
+- « Libres » starts with the placeholder labels 1, 2, 3… of each floor; « Ajuster les portes »
+  renames them.
 
 *Transformer en immeuble…* / *Modifier les étages* sheet:
 
@@ -609,9 +610,39 @@ Immeuble details fixed in T1.9 (`lib/presentation/building/`, `lib/ui/screens/bu
 ```
 
 - Afterwards each floor can be adjusted on its own (add / remove a door, rename a door), from
-  *Modifier les étages* in edit mode. "Libres" lets you type the labels (e.g. "Gauche", "Droite").
+  « Ajuster les portes » in edit mode. "Libres" lets you type the labels (e.g. "Gauche", "Droite").
 - Changing the layout keeps the statuses (and notes, « repasser ») of doors whose label still
   exists on the same floor of the same staircase.
+
+« Ajuster les portes » details fixed in T1.12 (`lib/presentation/building/adjust_doors_*`,
+`lib/ui/screens/building/adjust_doors_screen.dart`, `rename_door_sheet.dart`, mockup Doors):
+
+- Opened from edit mode: tap a building's number, then « Ajuster les portes ». A full screen
+  « ✕ Ajuster les portes [OK] » with « 8 Rue des Lilas » under the title; ✕, « OK » and back
+  all just leave, since every change is stored at once (through `DescribeBuilding`, offline).
+- « Esc. A | Esc. B » only with more than one staircase (it comes back to A when the chosen
+  one disappears). Floors top first (RdC, 1er, 2e…, « Logements » for unknown floors); each
+  door is a dashed tile « label ✕ » as wide as its label, the tiles wrap under the floor
+  label, and a « + » square (ink outline) closes each floor. **Empty floors are listed**
+  (unlike the grid), so a door can be added back. Under the floors: « Touchez une porte pour
+  la renommer (« Gauche », « 5A »…). Les marques des autres portes sont gardées. ».
+- **+** adds a door at the end of the floor with the building's next label (the number or
+  letter after the count of doors on the floor, skipping taken ones; « Libres » goes on with
+  3, 4…). Refusals show in a 4 s message: « 500 logements au plus par immeuble. », « 26 portes
+  par étage au plus avec 5A, 5B… ». No « Annuler » (✕ removes it).
+- **✕** removes at once with « Porte 53 supprimée [Annuler] » (4 s; « Annuler » puts the
+  building back as it was before the removal). A door with a mark (status, « repasser » or
+  note) asks first: « Supprimer la porte 52 ? — Elle a déjà une marque (fait, personne,
+  repasser ou note), qui partira avec elle. « Annuler » la ramène juste après. [Garder]
+  [Supprimer] » (« Supprimer » in red). The building's last door is refused before anything
+  is asked: « C'est la dernière porte de l'immeuble. Pour en refaire une maison, touchez son
+  numéro puis « Redevenir une maison ». ». « + » and opening a sheet hide the snackbar.
+- **Tap a door** → a small sheet « Porte 11 », « Esc. A · 1er · 8 Rue des Lilas » (staircase
+  only when several, no floor for « Logements »), field « Nom de la porte » (prefilled and
+  selected, keyboard open), « Renommer ». The door keeps its marks. Refusals under the field
+  until the next edit: « Ce nom est déjà pris à cet étage. », « Le nom de la porte ne peut pas
+  être vide. », « Nom limité à 12 caractères. ». The name it already has just closes the sheet
+  and stores nothing. A rename has no « Annuler » (rename it back).
 
 ### 5.8 Équipe (👥)
 

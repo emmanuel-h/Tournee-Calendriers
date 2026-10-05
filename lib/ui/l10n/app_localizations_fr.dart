@@ -574,6 +574,80 @@ class AppLocalizationsFr extends AppLocalizations {
   String get doorGone => 'Cette porte n\'est plus dans l\'immeuble.';
 
   @override
+  String get adjustDoorsAction => 'Ajuster les portes';
+
+  @override
+  String get adjustDoorsClose => 'Quitter';
+
+  @override
+  String get adjustDoorsHint =>
+      'Touchez une porte pour la renommer (« Gauche », « 5A »…). Les marques des autres portes sont gardées.';
+
+  @override
+  String renameDoorSemantics(String label) {
+    return 'Renommer la porte $label';
+  }
+
+  @override
+  String removeDoorSemantics(String label) {
+    return 'Supprimer la porte $label';
+  }
+
+  @override
+  String addDoorSemantics(String floor) {
+    return 'Une porte de plus au $floor';
+  }
+
+  @override
+  String get addDoorGroundSemantics => 'Une porte de plus au rez-de-chaussée';
+
+  @override
+  String get addDoorUnknownFloorSemantics => 'Une porte de plus';
+
+  @override
+  String doorRemoved(String label) {
+    return 'Porte $label supprimée';
+  }
+
+  @override
+  String confirmRemoveDoorTitle(String label) {
+    return 'Supprimer la porte $label ?';
+  }
+
+  @override
+  String get confirmRemoveDoorBody =>
+      'Elle a déjà une marque (fait, personne, repasser ou note), qui partira avec elle. « Annuler » la ramène juste après.';
+
+  @override
+  String get keep => 'Garder';
+
+  @override
+  String get lastDoorRefused =>
+      'C\'est la dernière porte de l\'immeuble. Pour en refaire une maison, touchez son numéro puis « Redevenir une maison ».';
+
+  @override
+  String doorTitle(String label) {
+    return 'Porte $label';
+  }
+
+  @override
+  String get doorNameLabel => 'Nom de la porte';
+
+  @override
+  String get renameDoorAction => 'Renommer';
+
+  @override
+  String get doorLabelTaken => 'Ce nom est déjà pris à cet étage.';
+
+  @override
+  String get doorLabelBlank => 'Le nom de la porte ne peut pas être vide.';
+
+  @override
+  String doorLabelTooLong(int max) {
+    return 'Nom limité à $max caractères.';
+  }
+
+  @override
   String startStreetsHeader(int count) {
     return 'Mes rues · $count';
   }

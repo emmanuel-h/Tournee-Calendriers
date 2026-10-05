@@ -53,6 +53,7 @@ final class SecondaryButton extends StatelessWidget {
     this.compact = false,
     this.leading,
     this.destructive = false,
+    this.strong = false,
   });
 
   final String label;
@@ -70,15 +71,26 @@ final class SecondaryButton extends StatelessWidget {
   /// something (« Supprimer la rue »); it still asks before doing it.
   final bool destructive;
 
+  /// Outline in ink rather than the light line, for the action a sheet
+  /// leads to most after its main one (« Ajuster les portes »).
+  final bool strong;
+
   @override
   Widget build(BuildContext context) {
     final leading = this.leading;
-    final accent = AppColors.of(context).accent;
+    final colors = AppColors.of(context);
+    final accent = colors.accent;
     final style = destructive
         ? _sizeStyle(compact).copyWith(
             foregroundColor: WidgetStatePropertyAll(accent),
             side: WidgetStatePropertyAll(
               BorderSide(color: accent, width: AppSizes.borderWidth),
+            ),
+          )
+        : strong
+        ? _sizeStyle(compact).copyWith(
+            side: WidgetStatePropertyAll(
+              BorderSide(color: colors.ink, width: AppSizes.borderWidth),
             ),
           )
         : _sizeStyle(compact);

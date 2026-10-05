@@ -1,7 +1,11 @@
 import 'package:go_router/go_router.dart';
+import 'package:tournee_calendriers/domain/shared/result.dart';
+import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/presentation/building/building_grid_notifier.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
+import 'package:tournee_calendriers/ui/screens/building/adjust_doors_screen.dart';
 import 'package:tournee_calendriers/ui/screens/component_gallery_screen.dart';
 import 'package:tournee_calendriers/ui/screens/edit_street/edit_street_screen.dart';
 import 'package:tournee_calendriers/ui/screens/import_streets/import_screen.dart';
@@ -44,6 +48,13 @@ GoRouter buildAppRouter({required bool showGallery}) => GoRouter(
       builder: (context, state) =>
           EditStreetScreen(streetId: _streetIdOf(state)),
     ),
+    // `/rue/modifier/portes?id=…&numero=8`, pushed by « Ajuster les
+    // portes » in edit mode.
+    GoRoute(
+      path: AppRoutes.adjustDoors,
+      builder: (context, state) =>
+          AdjustDoorsScreen(building: _buildingOf(state)),
+    ),
     _placeholder(AppRoutes.welcome, (l10n) => l10n.screenWelcome),
     _placeholder(AppRoutes.create, (l10n) => l10n.screenCreate),
     _placeholder(AppRoutes.join, (l10n) => l10n.screenJoin),
@@ -68,6 +79,23 @@ StreetId? _streetIdOf(GoRouterState state) =>
       final String id when id.trim().isNotEmpty => StreetId(id),
       _ => null,
     };
+
+/// The building named by the link's `id` and `numero`, or null when it
+/// names none.
+BuildingGridKey? _buildingOf(GoRouterState state) {
+  final street = _streetIdOf(state);
+  final number = switch (state.uri.queryParameters['numero']) {
+    final String text => HouseNumber.parse(text),
+    null => null,
+  };
+  return switch ((street, number)) {
+    (final StreetId street, Ok(value: final number)) => (
+      street: street,
+      number: number,
+    ),
+    _ => null,
+  };
+}
 
 /// A route to an empty screen whose title is picked from the translations.
 GoRoute _placeholder(String path, String Function(AppLocalizations) title) =>

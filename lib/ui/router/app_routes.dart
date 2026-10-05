@@ -1,3 +1,4 @@
+import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 
 /// The paths of every screen of PLAN §5, so no path string is typed twice.
@@ -27,6 +28,14 @@ abstract final class AppRoutes {
   /// The edit mode of the street [id]: `/rue/modifier?id=…`.
   static String editStreetOf(StreetId id) =>
       Uri(path: editStreet, queryParameters: {'id': id.value}).toString();
+  static const adjustDoors = '/rue/modifier/portes';
+
+  /// « Ajuster les portes » of the building [number] of the street [id]:
+  /// `/rue/modifier/portes?id=…&numero=8`.
+  static String adjustDoorsOf(StreetId id, HouseNumber number) => Uri(
+    path: adjustDoors,
+    queryParameters: {'id': id.value, 'numero': number.label},
+  ).toString();
   static const team = '/equipe';
   static const settings = '/parametres';
   static const newCampaign = '/nouvelle-campagne';

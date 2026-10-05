@@ -40,6 +40,8 @@ Street screen (« Rue »):
   (numbers in the Corbeille come back with their marks). Tap a number to change it
   (`3` → `3bis`), make it a building, lay a building out again or turn it back into a house.
   « Supprimer la rue » sends the street to the Corbeille.
+- « Ajuster les portes » (a building's number in edit mode): floor by floor, « + » adds a
+  door, ✕ removes one (with « Annuler »; asks first when it has a mark), a tap renames it
+  (« Gauche », « Droite » on every floor). The other doors keep their marks.
 - Works offline, cold start included: marks are stored on the phone.
-- Not yet: adjusting one floor (a door more or less, renaming a door: « Libres » doors keep
-  the numbers 1, 2, 3… until then), the Corbeille screen (M2), « Ne plus la faire » (M3).
+- Not yet: the Corbeille screen (M2), « Ne plus la faire » (M3).

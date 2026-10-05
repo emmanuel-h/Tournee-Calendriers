@@ -44,6 +44,28 @@ ScaffoldFeatureController<SnackBar, SnackBarClosedReason> showActionSnackBar(
   );
 }
 
+/// Shows [message] alone, without an action, for 4 s: why a change was
+/// refused (« C'est la dernière porte de l'immeuble… »). It replaces the
+/// message on screen, as [showActionSnackBar] does.
+ScaffoldFeatureController<SnackBar, SnackBarClosedReason> showMessageSnackBar(
+  ScaffoldMessengerState messenger, {
+  required String message,
+}) {
+  messenger.hideCurrentSnackBar();
+  return messenger.showSnackBar(
+    SnackBar(
+      content: Text(message),
+      duration: const Duration(seconds: 4),
+      margin: const EdgeInsets.fromLTRB(
+        AppSizes.gutter,
+        0,
+        AppSizes.gutter,
+        AppSizes.floatingBottom,
+      ),
+    ),
+  );
+}
+
 /// The undo snackbar of a screen or sheet that has its own
 /// `ScaffoldMessenger` ([messengerKey]), so the snackbar, and its
 /// « Annuler », goes away with it. [snackBarShown] tells when the snackbar
@@ -67,12 +89,25 @@ mixin UndoSnackBarHost<T extends StatefulWidget> on State<T> {
     required String undoLabel,
     required VoidCallback onUndo,
   }) {
-    final controller = showActionSnackBar(
-      messengerKey.currentState!,
-      message: message,
-      actionLabel: undoLabel,
-      onAction: onUndo,
+    _track(
+      showActionSnackBar(
+        messengerKey.currentState!,
+        message: message,
+        actionLabel: undoLabel,
+        onAction: onUndo,
+      ),
     );
+  }
+
+  /// Shows why a change was refused for 4 s, replacing any snackbar (an
+  /// « Annuler » included: the refusal is the latest news).
+  void showMessage(String message) =>
+      _track(showMessageSnackBar(messengerKey.currentState!, message: message));
+
+  /// Notes that the snackbar of [controller] is on screen until it closes.
+  void _track(
+    ScaffoldFeatureController<SnackBar, SnackBarClosedReason> controller,
+  ) {
     final shown = ++_snackBarCount;
     setState(() => snackBarShown = true);
     controller.closed.then((_) {

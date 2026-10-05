@@ -234,8 +234,8 @@ void main() {
   );
 
   testWidgets(
-    'should show the building partly done on its tile when a house is made '
-    'a building and one door is marked',
+    'should show the building partly done on its tile and the door renamed '
+    'in its grid when a house is made a building, a door marked and renamed',
     (tester) async {
       final semantics = tester.ensureSemantics();
       final storage = await Directory.systemTemp.createTemp('building_flow');
@@ -286,6 +286,45 @@ void main() {
       expect(
         tester.getSemantics(tile).label,
         'Numéro 34, immeuble, 1 sur 6 faits',
+      );
+
+      // ✏, tap 34, « Ajuster les portes », rename door 01 « Gauche »: the
+      // grid shows it, still done.
+      await tester.tap(find.byKey(const Key('street.edit')));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.descendant(
+          of: find.byKey(const ValueKey('edit.tile.34')),
+          matching: find.byKey(const Key('edit.tile.number')),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('number.adjustDoors')));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.descendant(
+          of: find.byKey(const ValueKey('doors.door.A0-01')),
+          matching: find.byKey(const Key('doors.door.rename')),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('renameDoor.field')),
+        'Gauche',
+      );
+      await tester.tap(find.byKey(const Key('renameDoor.rename')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('doors.ok')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('edit.ok')));
+      await tester.pumpAndSettle();
+      await tester.tap(tile);
+      await tester.pumpAndSettle();
+      expect(
+        tester
+            .getSemantics(find.byKey(const ValueKey('grid.door.A0-Gauche')))
+            .label,
+        'RdC, porte Gauche, fait',
       );
       semantics.dispose();
     },

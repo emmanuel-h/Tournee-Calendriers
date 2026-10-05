@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Ajuster les portes</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B3261E}a:hover{color:#8C1D18}
+.ib{width:48px;height:48px;border:0;background:transparent;color:#1B1F24;border-radius:24px;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;text-decoration:none;flex-shrink:0}
+.ib svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.seg{flex:1;height:48px;border:0;font:700 15px 'Atkinson Hyperlegible',sans-serif;cursor:pointer}
+.door{height:52px;box-sizing:border-box;border-radius:12px;display:flex;align-items:center;background:#FFFFFF;border:1.5px dashed #8A8F96}
+.door .n{padding:0 4px 0 12px;font:700 21px 'Barlow Condensed',sans-serif;background:transparent;border:0;color:#1B1F24;height:100%;cursor:pointer;white-space:nowrap}
+.door .x{width:44px;height:48px;border:0;background:transparent;color:#B3261E;font-size:18px;font-weight:700;cursor:pointer}
+.plus{width:52px;height:52px;box-sizing:border-box;border-radius:12px;border:1.5px solid #1B1F24;background:#F3F1EC;font:700 22px 'Atkinson Hyperlegible',sans-serif;color:#1B1F24}
+.lvl{width:40px;flex-shrink:0;padding-top:15px;font-size:15px;font-weight:700;color:#4A5058}
+.row{display:flex;align-items:flex-start;gap:10px}
+.doors{flex:1;display:flex;flex-wrap:wrap;gap:8px}
+</style>
+</helmet>
+<!-- PLAN §5.7: each floor adjusted on its own (add / remove / rename a door), from edit mode (#54). -->
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F3F1EC; color: #1B1F24; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; display: flex; flex-direction: column; position: relative; overflow: hidden">
+  <div style="display: flex; align-items: center; gap: 4px; padding: 8px 12px 0 8px">
+    <a class="ib" href="Edit.dc.html" aria-label="Quitter"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></a>
+    <div style="flex: 1; display: flex; flex-direction: column">
+      <h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 26px; line-height: 1.1">Ajuster les portes</h1>
+      <span style="font-size: 14px; color: #4A5058">8 Rue des Lilas</span>
+    </div>
+    <a href="Edit.dc.html" style="height: 44px; padding: 0 20px; border-radius: 22px; background: #1B1F24; color: #FFFFFF; font-weight: 700; font-size: 16px; display: flex; align-items: center; text-decoration: none">OK</a>
+  </div>
+  <div style="padding: 14px 16px 6px 16px">
+    <div role="tablist" aria-label="Escalier" style="display: flex; border: 1.5px solid #CFC9BD; border-radius: 12px; overflow: hidden">
+      <button class="seg" role="tab" aria-selected="true" style="background: #1B1F24; color: #FFFFFF">Esc. A</button>
+      <button class="seg" role="tab" aria-selected="false" style="background: #FFFFFF; color: #1B1F24; border-left: 1.5px solid #CFC9BD">Esc. B</button>
+    </div>
+  </div>
+  <div style="flex: 1; overflow-y: auto; padding: 8px 16px 16px 16px; display: flex; flex-direction: column; gap: 12px">
+    <div class="row"><span class="lvl">5e</span><div class="doors">
+      <div class="door"><button class="n" aria-label="Renommer la porte 51">51</button><button class="x" aria-label="Supprimer la porte 51">✕</button></div>
+      <div class="door"><button class="n" aria-label="Renommer la porte 52">52</button><button class="x" aria-label="Supprimer la porte 52">✕</button></div>
+      <div class="door"><button class="n" aria-label="Renommer la porte 54">54</button><button class="x" aria-label="Supprimer la porte 54">✕</button></div>
+      <button class="plus" aria-label="Une porte de plus au 5e">+</button></div></div>
+    <div class="row"><span class="lvl">4e</span><div class="doors">
+      <div class="door"><button class="n">41</button><button class="x">✕</button></div>
+      <div class="door"><button class="n">42</button><button class="x">✕</button></div>
+      <div class="door"><button class="n">43</button><button class="x">✕</button></div>
+      <div class="door"><button class="n">44</button><button class="x">✕</button></div>
+      <button class="plus" aria-label="Une porte de plus au 4e">+</button></div></div>
+    <div class="row"><span class="lvl">1er</span><div class="doors">
+      <div class="door"><button class="n">Gauche</button><button class="x">✕</button></div>
+      <div class="door"><button class="n">Droite</button><button class="x">✕</button></div>
+      <button class="plus" aria-label="Une porte de plus au 1er">+</button></div></div>
+    <div class="row"><span class="lvl">RdC</span><div class="doors">
+      <div class="door"><button class="n">Gauche</button><button class="x">✕</button></div>
+      <div class="door"><button class="n">Droite</button><button class="x">✕</button></div>
+      <button class="plus" aria-label="Une porte de plus au rez-de-chaussée">+</button></div></div>
+    <p style="margin: 6px 0 0 0; font-size: 14px; color: #4A5058; line-height: 1.4">Touchez une porte pour la renommer (« Gauche », « 5A »…). Les marques des autres portes sont gardées.</p>
+  </div>
+  <div style="position: absolute; left: 16px; right: 16px; bottom: 24px; min-height: 56px; background: #1B1F24; color: #FFFFFF; border-radius: 14px; display: flex; align-items: center; justify-content: space-between; padding: 0 8px 0 18px; box-sizing: border-box; font-size: 16px">
+    <span>Porte 53 supprimée</span>
+    <button style="height: 48px; padding: 0 16px; border: 0; background: transparent; color: #F2B33D; font: 700 16px 'Atkinson Hyperlegible', sans-serif; cursor: pointer">Annuler</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

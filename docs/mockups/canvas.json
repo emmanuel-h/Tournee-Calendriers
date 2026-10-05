@@ -146,6 +146,13 @@
       "w": 390,
       "h": 844,
       "title": "5.3 Mes tournées (appui sur le titre)"
+    },
+    "Doors.dc.html": {
+      "x": 2820,
+      "y": 2528,
+      "w": 390,
+      "h": 844,
+      "title": "5.7 Ajuster les portes"
     }
   },
   "createdOnFiles": {
@@ -207,6 +214,7 @@
     "House.dc.html",
     "Building.dc.html",
     "BuildingSetup.dc.html",
+    "Doors.dc.html",
     "Team.dc.html",
     "Settings.dc.html",
     "Campaign.dc.html",
