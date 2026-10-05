@@ -9,6 +9,7 @@ import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/ui/app.dart';
+import 'package:tournee_calendriers/ui/components/arrow_text.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 
 import '../../support/building_fixtures.dart';
@@ -17,6 +18,7 @@ import '../../support/fakes/fake_street_view_preferences.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 import '../support/app_overrides.dart';
+import '../support/finders.dart';
 import '../support/navigation.dart';
 
 final _id = StreetId('lilas');
@@ -95,6 +97,14 @@ void main() {
       await openStreet(tester);
       expect(labelOf(tester, _tile('1')), 'Numéro 1, à faire');
       expect(find.byKey(const Key('street.hint')), findsOneWidget);
+      // The three « → » of the hint are drawn, like its status glyphs.
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('street.hint')),
+          matching: find.byType(ArrowGlyph),
+        ),
+        findsNWidgets(3),
+      );
 
       await tester.tap(_tile('1'));
       await tester.pumpAndSettle();
@@ -114,7 +124,16 @@ void main() {
         tester.takeAnnouncements().map((announcement) => announcement.message),
         ['Numéro 1, fait'],
       );
-      expect(find.text('1 → Fait'), findsOneWidget);
+      expect(findArrowText('1 → Fait'), findsOneWidget);
+      // The arrow is drawn; screen readers still hear the message.
+      expect(
+        find.descendant(
+          of: find.byType(SnackBar),
+          matching: find.byType(ArrowGlyph),
+        ),
+        findsOneWidget,
+      );
+      expect(find.bySemanticsLabel('1 → Fait'), findsOneWidget);
       expect(find.byKey(const Key('street.hint')), findsNothing);
       expect(
         labelOf(tester, find.byKey(const Key('street.counts'))),
@@ -130,8 +149,8 @@ void main() {
         ['Numéro 1, personne'],
       );
       // The new snackbar replaced the first one.
-      expect(find.text('1 → Personne'), findsOneWidget);
-      expect(find.text('1 → Fait'), findsNothing);
+      expect(findArrowText('1 → Personne'), findsOneWidget);
+      expect(findArrowText('1 → Fait'), findsNothing);
       semantics.dispose();
     },
   );
@@ -150,7 +169,7 @@ void main() {
 
       expect(labelOf(tester, _tile('5')), 'Numéro 5, à faire, repasser');
       expect(streets[_id]!.houses, _lilas.houses);
-      expect(find.text('5 → Fait'), findsNothing);
+      expect(findArrowText('5 → Fait'), findsNothing);
       expect(find.byKey(const Key('street.hint')), findsOneWidget);
       semantics.dispose();
     },
@@ -166,7 +185,7 @@ void main() {
       await tester.pump(const Duration(seconds: 4));
       await tester.pumpAndSettle();
 
-      expect(find.text('4 → Fait'), findsNothing);
+      expect(findArrowText('4 → Fait'), findsNothing);
       expect(find.byKey(const Key('street.hint')), findsOneWidget);
       expect(streets[_id]!.houses[1].status, VisitStatus.done);
     },

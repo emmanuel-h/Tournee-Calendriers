@@ -72,7 +72,7 @@
   "@statusNobodyHome": { "description": "Name of the status « nobody home », in the undo snackbar." },
   "houseMarked": "{number} → {status}",
   "@houseMarked": {
-    "description": "Undo snackbar after a tap on a house tile (PLAN §5.6).",
+    "description": "Undo snackbar after a tap on a house tile (PLAN §5.6). The « → » is drawn as a vector arrow; screen readers hear the text as written.",
     "placeholders": {
       "number": { "type": "String", "example": "7" },
       "status": { "type": "String", "example": "Personne" }
@@ -97,7 +97,7 @@
     }
   },
   "tapHintTap": "Appui :",
-  "@tapHintTap": { "description": "Start of the hint at the bottom of the street screen, before the glyphs ○ → ✓ → ✗ → ○." },
+  "@tapHintTap": { "description": "Start of the hint at the bottom of the street screen, before the glyphs ○ → ✓ → ✗ → ○, all drawn as vector shapes." },
   "tapHintHold": "Appui long : détails",
   "@tapHintHold": { "description": "End of the hint at the bottom of the street screen." },
   "tapHintSemantics": "Appui : à faire, fait, personne, à faire. Appui long : détails",
@@ -323,7 +323,7 @@
   },
   "numberRenamed": "N° {from} → {to}",
   "@numberRenamed": {
-    "description": "Undo snackbar after a number was changed (3 → 3bis).",
+    "description": "Undo snackbar after a number was changed (3 → 3bis). The « → » is drawn as a vector arrow; screen readers hear the text as written.",
     "placeholders": {
       "from": { "type": "String", "example": "3" },
       "to": { "type": "String", "example": "3bis" }

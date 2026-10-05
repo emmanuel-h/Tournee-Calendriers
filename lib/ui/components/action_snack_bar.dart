@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tournee_calendriers/ui/components/arrow_text.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 
 /// Shows a short message with one action at the bottom of the screen, like
@@ -8,6 +9,8 @@ import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 /// `ScaffoldMessenger.of(context)`. A screen whose action must not outlive
 /// it (the street screen's « Annuler ») has its own messenger, so the
 /// snackbar goes away with the screen.
+///
+/// A « → » in [message] is drawn ([ArrowText]), at the size of the text.
 ///
 /// Colours and shape come from the theme's `snackBarTheme`. A new message
 /// replaces the one on screen instead of queuing behind it: after several
@@ -25,7 +28,7 @@ ScaffoldFeatureController<SnackBar, SnackBarClosedReason> showActionSnackBar(
   messenger.hideCurrentSnackBar();
   return messenger.showSnackBar(
     SnackBar(
-      content: Text(message),
+      content: ArrowText(message),
       duration: duration,
       // Keep the action-less timeout even when an action is present
       // (Material 3 otherwise keeps snackbars with an action until tapped).

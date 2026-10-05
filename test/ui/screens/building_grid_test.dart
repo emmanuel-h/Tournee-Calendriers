@@ -15,6 +15,7 @@ import '../../support/fakes/fake_street_repository.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 import '../support/app_overrides.dart';
+import '../support/finders.dart';
 
 final _id = StreetId('lilas');
 
@@ -109,7 +110,7 @@ void main() {
         tester.takeAnnouncements().map((announcement) => announcement.message),
         ['Escalier A, 1er, porte 12, fait'],
       );
-      expect(find.text('12 → Fait'), findsOneWidget);
+      expect(findArrowText('12 → Fait'), findsOneWidget);
       expect(find.byKey(const Key('grid.hint')), findsNothing);
 
       await tester.tap(find.text('Annuler'));

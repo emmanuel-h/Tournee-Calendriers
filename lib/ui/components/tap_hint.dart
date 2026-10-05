@@ -1,13 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:tournee_calendriers/ui/components/arrow_text.dart';
 import 'package:tournee_calendriers/ui/components/status_glyph.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 import 'package:tournee_calendriers/ui/theme/status_look.dart';
 
-/// « Appui : ○ → ✓ → ✗ → ○ · [hold] », the glyphs drawn, one sentence
-/// ([semanticsLabel]) for screen readers. Under the tiles of the street
-/// screen and the doors of the Immeuble grid.
+/// « Appui : ○ → ✓ → ✗ → ○ · [hold] », glyphs and arrows drawn, one
+/// sentence ([semanticsLabel]) for screen readers. Under the tiles of the
+/// street screen and the doors of the Immeuble grid.
 final class TapHintText extends StatelessWidget {
   const TapHintText({
     super.key,
@@ -29,7 +30,14 @@ final class TapHintText extends StatelessWidget {
       alignment: PlaceholderAlignment.middle,
       child: StatusGlyph(which, size: _glyphSize, color: colors.muted),
     );
-    const arrow = TextSpan(text: ' → ');
+    // The spaces stay text, so they are as wide as the other spaces.
+    final arrow = TextSpan(
+      children: [
+        const TextSpan(text: ' '),
+        arrowSpan(size: AppTextStyles.small.fontSize!, color: colors.muted),
+        const TextSpan(text: ' '),
+      ],
+    );
     return Semantics(
       label: semanticsLabel,
       excludeSemantics: true,

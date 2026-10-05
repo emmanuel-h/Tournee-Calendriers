@@ -1274,7 +1274,7 @@ but they run once per task and in CI.
 | Application | use cases with **hand-written fakes** of the ports | Dart VM | every TDD cycle | ms per test |
 | Presentation | Riverpod notifiers via `ProviderContainer`, ports overridden by fakes | Dart VM | every TDD cycle | ms per test |
 | Adapters | Firestore adapter against `fake_cloud_firestore` (in memory, no emulator); geopf / BAN / Overpass parsing with `MockClient` + JSON fixtures captured from the real services | Dart VM | when touched | < 10 s |
-| Widgets | widget tests for the critical interactions only: welcome gating, tap-cycle + undo on street tiles, hold → house sheet, building grid, edit mode remove + undo, street card states, join pending screen | `flutter test` (headless) | end of each UI task, CI | ≤ 25 tests, < 60 s |
+| Widgets | widget tests for the critical interactions only: welcome gating, tap-cycle + undo on street tiles, hold → house sheet, building grid, edit mode remove + undo, street card states, join pending screen | `flutter test` (headless) | end of each UI task, CI | a few per UI task; the whole suite stays under 60 s |
 | Architecture | import rules between layers | Dart VM | every run | < 1 s |
 | Coverage | **100 % line coverage** on `domain/`, `application/`, `presentation/` and the adapters' mapping code, checked by a script on `coverage/lcov.info` | — | end of task, CI | piggybacks |
 | Rules | Firestore security rules in the Firebase emulator (`@firebase/rules-unit-testing`, `node --test`) | Node + emulator | when `firebase/` changes, CI | < 1 min |

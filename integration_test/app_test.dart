@@ -21,6 +21,7 @@ import 'package:tournee_calendriers/main.dart' as app;
 
 import '../test/support/fakes/fake_address_directory.dart';
 import '../test/support/fakes/fake_commune_search.dart';
+import '../test/ui/support/finders.dart';
 
 /// The value of [result], which the test data guarantees.
 T _ok<T, F>(Result<T, F> result) => switch (result) {
@@ -182,7 +183,7 @@ void main() {
       await tester.tap(tile);
       await tester.pumpAndSettle();
       expect(tester.getSemantics(tile).label, 'Numéro 33, fait');
-      expect(find.text('33 → Fait'), findsOneWidget);
+      expect(findArrowText('33 → Fait'), findsOneWidget);
 
       await tester.tap(find.text('Annuler'));
       await tester.pumpAndSettle();

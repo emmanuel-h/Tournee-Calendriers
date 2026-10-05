@@ -8,6 +8,7 @@ import 'package:tournee_calendriers/ui/components/status_tile.dart';
 import 'package:tournee_calendriers/ui/screens/component_gallery_screen.dart';
 import 'package:tournee_calendriers/ui/theme/status_look.dart';
 
+import '../support/finders.dart';
 import '../support/test_app.dart';
 
 void main() {
@@ -96,7 +97,13 @@ void main() {
       await tester.tap(find.byKey(const Key('gallery.showSnackBar')));
       await tester.pumpAndSettle();
 
-      expect(find.widgetWithText(SnackBar, '7 → Personne'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(SnackBar),
+          matching: findArrowText('7 → Personne'),
+        ),
+        findsOneWidget,
+      );
       expect(find.widgetWithText(SnackBarAction, 'Annuler'), findsOneWidget);
 
       // Gone after its 4 s, although it has an action.

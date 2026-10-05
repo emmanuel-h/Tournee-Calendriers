@@ -232,7 +232,7 @@ abstract class AppLocalizations {
   /// **'Personne'**
   String get statusNobodyHome;
 
-  /// Undo snackbar after a tap on a house tile (PLAN §5.6).
+  /// Undo snackbar after a tap on a house tile (PLAN §5.6). The « → » is drawn as a vector arrow; screen readers hear the text as written.
   ///
   /// In fr, this message translates to:
   /// **'{number} → {status}'**
@@ -273,7 +273,7 @@ abstract class AppLocalizations {
     int comeBack,
   );
 
-  /// Start of the hint at the bottom of the street screen, before the glyphs ○ → ✓ → ✗ → ○.
+  /// Start of the hint at the bottom of the street screen, before the glyphs ○ → ✓ → ✗ → ○, all drawn as vector shapes.
   ///
   /// In fr, this message translates to:
   /// **'Appui :'**
@@ -663,7 +663,7 @@ abstract class AppLocalizations {
   /// **'N° {number} supprimé'**
   String numberRemoved(String number);
 
-  /// Undo snackbar after a number was changed (3 → 3bis).
+  /// Undo snackbar after a number was changed (3 → 3bis). The « → » is drawn as a vector arrow; screen readers hear the text as written.
   ///
   /// In fr, this message translates to:
   /// **'N° {from} → {to}'**
