@@ -14,6 +14,13 @@ import 'package:tournee_calendriers/domain/street/street_id.dart';
 ///
 /// A storage failure (a full disk) is not something the user can act on in
 /// the street, so it is thrown as an exception, not returned as a failure.
+///
+/// **Memory first**, which every adapter must keep: [find] answers from
+/// memory, and [add] and [save] put the new street in memory before they
+/// first wait (for the disk, the network). Two quick taps then never lose
+/// one another: the second reads the street the first one made (see
+/// `runOnStreet`). Firestore's local cache works this way too: a write is
+/// applied to the cache at once and sent later.
 abstract interface class StreetRepository {
   /// The street [id] as it is now, in the Corbeille or not; null when there
   /// is none.

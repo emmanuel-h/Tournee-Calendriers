@@ -12,9 +12,10 @@ import 'package:tournee_calendriers/domain/street/street_repository.dart';
 /// [command] is a function the use case passes in (`(street) =>
 /// street.markHouse(…)`), so the loading and saving are written once.
 ///
-/// Two quick taps must not lose one another: the repository answers [find]
-/// from memory and takes the new street into memory as soon as [save] is
-/// called, before writing it out. No tap can be handled between the two
+/// Two quick taps must not lose one another: the repository answers `find`
+/// from memory and takes the new street into memory as soon as `save` is
+/// called, before writing it out (the « memory first » promise of
+/// [StreetRepository]). No tap can be handled between the two
 /// (Dart runs one event at a time, and these steps wait for no outside
 /// event), so a second tap reads the street the first one made.
 Future<Result<C, CommandFailure<F>>> runOnStreet<C extends StreetChange, F>(

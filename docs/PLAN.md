@@ -841,7 +841,8 @@ inside an aggregate changes only through its root, which enforces the invariants
 
 Value objects (immutable, validated at construction, equal by value): `JoinCode` (6 chars from
 the alphabet), `RescueCentreKey` (normalised name), `HouseNumber` (12 + "bis", with the
-French ordering), `StreetName`, `VisitStatus` (`toDo`, `done`, `nobodyHome`, `comeBack`), `ComeBack` (the optional hint of « repasser »),
+French ordering), `StreetName`, `InseeCode` (the five-character commune code, `2A`/`2B`
+in Corsica), `VisitStatus` (`toDo`, `done`, `nobodyHome`, `comeBack`), `ComeBack` (the optional hint of « repasser »),
 `GeoPoint`, `StreetShape`, `Progress`, `ProgressLevel`
 (`free`, `toDo`, `partial`, `done`), `CampaignYear`. Each house and dwelling also keeps its
 `previousStatus` (last campaign's result, read-only).
@@ -1012,7 +1013,7 @@ Address directory rules fixed in T1.5 (`lib/application/ports/address_directory.
 
 - **`GeoPoint`** (`lib/domain/shared/`): latitude −90…90, longitude −180…180 (bounds included,
   NaN / infinity refused), built with a failure value. The BAN writes `[longitude, latitude]`.
-- **Port `AddressDirectory`**: `streetsOf(inseeCode)` → `CommuneStreets` (the `Commune`, its
+- **Port `AddressDirectory`**: `streetsOf(InseeCode)` → `CommuneStreets` (the `Commune`, its
   `DirectoryStreet`s — BAN id, `StreetName`, BAN number count — in the BAN's order, and
   `skippedStreets`); `numbersOf(BanStreetId)` → `StreetNumbers` (id, name, commune, the
   `DirectoryNumber`s — `HouseNumber` + optional `GeoPoint` — in the BAN's order, possibly none,
@@ -1063,8 +1064,10 @@ Use cases and phone storage fixed in T1.6 (`lib/application/use_cases/`,
   `BackToSingleHouse`), `EditStreetNumbers` (`AddNumbers`, `RemoveNumber`, `RestoreNumber`,
   `RenameNumber`, `RenameStreet`, `DeleteStreet`), `UndoLastChange(change)` (the screen keeps the
   last change), `ObserveStreet`, `ObserveStreets` (not deleted, by name ignoring case, then id),
-  `ListCommuneStreets` (the import screen's list).
-- **`ImportReferenceArea(inseeCode, only?)`**: lists the commune, then imports the chosen streets
+  `ListCommuneStreets` (the import screen's list). They rely on the **memory-first** promise of
+  every `StreetRepository` adapter: `find` answers from memory and `save` puts the new street
+  in memory before it first waits, so two quick taps never lose one another.
+- **`ImportReferenceArea(InseeCode, only?)`**: lists the commune, then imports the chosen streets
   (or, with no choice, every street whose BAN count is above 0; the others are counted in
   `emptyStreets`), one at a time in the BAN's order, with a progress callback. **Re-importing
   never wipes marks**: a street whose BAN id is already stored is left as is and reported
