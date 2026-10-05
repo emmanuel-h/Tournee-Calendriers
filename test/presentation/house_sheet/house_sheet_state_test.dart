@@ -174,4 +174,69 @@ void main() {
       expect(shown(VisitStatus.done).canComeBack, isFalse);
     });
   });
+
+  group('SheetSubject', () {
+    test('should tell a house, a building and a door apart', () {
+      // Built at run time (not `const`), so coverage sees the constructors.
+      // ignore: prefer_const_constructors
+      final SheetSubject house = HouseSubject();
+      // ignore: prefer_const_constructors
+      final SheetSubject building = BuildingSubject();
+      // ignore: prefer_const_constructors
+      final SheetSubject door = DoorSubject(staircase: null);
+
+      expect(house, isNot(isA<BuildingSubject>()));
+      expect(building, isNot(isA<DoorSubject>()));
+      expect(door, isNot(isA<HouseSubject>()));
+    });
+
+    test('should be the same door when the staircase is the same', () {
+      expect(DoorSubject(staircase: escA), DoorSubject(staircase: escA));
+      expect(
+        DoorSubject(staircase: escA).hashCode,
+        DoorSubject(staircase: escA).hashCode,
+      );
+      expect(DoorSubject(staircase: escA), isNot(DoorSubject(staircase: escB)));
+      expect(
+        DoorSubject(staircase: escA),
+        isNot(const DoorSubject(staircase: null)),
+      );
+    });
+
+    test('should name the staircase when printed', () {
+      expect(
+        DoorSubject(staircase: escA).toString(),
+        'DoorSubject(StaircaseName(A))',
+      );
+    });
+
+    test('should be about a house by default', () {
+      final state = HouseSheetShown(
+        streetName: 'Rue des Lilas',
+        number: n('5'),
+        status: VisitStatus.toDo,
+        comeBack: false,
+        comeBackHint: '',
+        note: '',
+        lastChange: null,
+      );
+
+      expect(state.subject, isA<HouseSubject>());
+    });
+
+    test('should allow « repasser » when there is no status', () {
+      final state = HouseSheetShown(
+        streetName: 'Rue des Lilas',
+        number: n('8'),
+        status: null,
+        comeBack: false,
+        comeBackHint: '',
+        note: '',
+        lastChange: null,
+        subject: const BuildingSubject(),
+      );
+
+      expect(state.canComeBack, isTrue);
+    });
+  });
 }

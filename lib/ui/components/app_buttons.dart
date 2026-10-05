@@ -50,6 +50,7 @@ final class SecondaryButton extends StatelessWidget {
     required this.label,
     required this.onPressed,
     this.compact = false,
+    this.leading,
   });
 
   final String label;
@@ -58,12 +59,27 @@ final class SecondaryButton extends StatelessWidget {
   /// 52 dp instead of 56 dp, for buttons inside sheets or side by side.
   final bool compact;
 
+  /// Drawn before the label (the building of « Transformer en
+  /// immeuble… »); decoration only, the label names the action. A widget
+  /// rather than an `IconData`, so a drawn icon fits too.
+  final Widget? leading;
+
   @override
-  Widget build(BuildContext context) => OutlinedButton(
-    onPressed: onPressed,
-    style: _sizeStyle(compact),
-    child: Text(label),
-  );
+  Widget build(BuildContext context) {
+    final leading = this.leading;
+    return leading == null
+        ? OutlinedButton(
+            onPressed: onPressed,
+            style: _sizeStyle(compact),
+            child: Text(label),
+          )
+        : OutlinedButton.icon(
+            onPressed: onPressed,
+            style: _sizeStyle(compact),
+            icon: leading,
+            label: Text(label),
+          );
+  }
 }
 
 /// Height and label style shared by both buttons; colours and the pill shape

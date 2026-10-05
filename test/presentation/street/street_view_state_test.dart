@@ -89,6 +89,39 @@ void main() {
     );
   });
 
+  group('TileMark.ofDwelling', () {
+    test('should show a door to do as to do', () {
+      expect(TileMark.ofDwelling(Dwelling(label: d('51'))), const ToDoMark());
+    });
+
+    test('should show a door to do with a « repasser » as come back', () {
+      expect(
+        TileMark.ofDwelling(Dwelling(label: d('51'), comeBack: comeBackHint)),
+        const ComeBackMark(),
+      );
+    });
+
+    test('should show a done door as done', () {
+      expect(
+        TileMark.ofDwelling(Dwelling(label: d('51'), status: VisitStatus.done)),
+        const DoneMark(),
+      );
+    });
+
+    test('should show nobody home first, « repasser » or not', () {
+      expect(
+        TileMark.ofDwelling(
+          Dwelling(
+            label: d('51'),
+            status: VisitStatus.nobodyHome,
+            comeBack: comeBackHint,
+          ),
+        ),
+        const NobodyHomeMark(),
+      );
+    });
+  });
+
   group('PartialBuildingMark', () {
     test('should be equal when both counts are equal', () {
       const mark = PartialBuildingMark(done: 7, total: 12);

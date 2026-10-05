@@ -1,11 +1,14 @@
 import 'package:tournee_calendriers/domain/shared/text_length.dart';
+import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/note.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
 // The view state of the Fiche maison (PLAN §5.7, mockup House): what the
-// sheet of one house shows, as plain data tested without widgets.
+// sheet of one house shows, as plain data tested without widgets. The sheet
+// of a door of a building, and the building's own « Note · Repasser », show
+// the same controls and share this state.
 
 /// The length limit of a text field of the sheet, counted exactly as the
 /// domain counts it: Unicode code points of the trimmed text
@@ -86,6 +89,43 @@ final class ChangedEarlier extends LastChange {
   String toString() => 'ChangedEarlier($at)';
 }
 
+/// What a sheet of marks is about. `sealed`: the sheet titles each case
+/// its own way and shows the controls that case has.
+sealed class SheetSubject {
+  const SheetSubject();
+}
+
+/// A single house: its status, and « Transformer en immeuble… ».
+final class HouseSubject extends SheetSubject {
+  const HouseSubject();
+}
+
+/// A building's own « repasser » and note (« Note · Repasser » under the
+/// grid). No status: a building's status comes from its doors.
+final class BuildingSubject extends SheetSubject {
+  const BuildingSubject();
+}
+
+/// One door of a building (held in the grid). Its floor and label are in
+/// the key the sheet was opened with.
+final class DoorSubject extends SheetSubject {
+  const DoorSubject({required this.staircase});
+
+  /// Null when the building has a single staircase: it is not named then,
+  /// as the grid shows no staircase control.
+  final StaircaseName? staircase;
+
+  @override
+  bool operator ==(Object other) =>
+      other is DoorSubject && other.staircase == staircase;
+
+  @override
+  int get hashCode => staircase.hashCode;
+
+  @override
+  String toString() => 'DoorSubject($staircase)';
+}
+
 /// Everything the Fiche maison shows. `sealed`: the sheet handles each case.
 sealed class HouseSheetState {
   const HouseSheetState();
@@ -96,14 +136,14 @@ final class HouseSheetLoading extends HouseSheetState {
   const HouseSheetLoading();
 }
 
-/// The house is no longer a single house of a street on the phone: the
-/// number was removed, it became a building, or the street went to the
-/// Corbeille.
+/// What the sheet shows is no longer on the phone: the number was removed,
+/// a house became a building (or the reverse), a door went with a new
+/// layout, or the street went to the Corbeille.
 final class HouseSheetGone extends HouseSheetState {
   const HouseSheetGone();
 }
 
-/// The house, ready to change.
+/// The house (or building, or door), ready to change.
 final class HouseSheetShown extends HouseSheetState {
   const HouseSheetShown({
     required this.streetName,
@@ -113,11 +153,14 @@ final class HouseSheetShown extends HouseSheetState {
     required this.comeBackHint,
     required this.note,
     required this.lastChange,
+    this.subject = const HouseSubject(),
   });
 
   final String streetName;
   final HouseNumber number;
-  final VisitStatus status;
+
+  /// Null for a [BuildingSubject]: the sheet then has no status control.
+  final VisitStatus? status;
 
   /// « Repasser » is ticked.
   final bool comeBack;
@@ -128,10 +171,12 @@ final class HouseSheetShown extends HouseSheetState {
   /// The note; empty when there is none.
   final String note;
 
-  /// Null when nobody has changed the house yet.
+  /// Null when nobody has changed it yet.
   final LastChange? lastChange;
 
-  /// A done house cannot get a « repasser » (PLAN §6.1): the box is then
+  final SheetSubject subject;
+
+  /// Something done cannot get a « repasser » (PLAN §6.1): the box is then
   /// disabled, with its reason.
   bool get canComeBack => status != VisitStatus.done;
 }

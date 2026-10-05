@@ -22,12 +22,19 @@ Future<T?> showAppBottomSheet<T>({
 /// The inside of every bottom sheet: grabber, optional title, then [children]
 /// stacked with even spacing, as in the mockups.
 final class SheetScaffold extends StatelessWidget {
-  const SheetScaffold({super.key, this.title, required this.children});
+  const SheetScaffold({
+    super.key,
+    this.title,
+    this.spacing = 18,
+    required this.children,
+  });
 
   final String? title;
   final List<Widget> children;
 
-  static const _spacing = 18.0;
+  /// Space between two children: 18 dp in most sheets, less in a dense
+  /// form (« Décrire l'immeuble »).
+  final double spacing;
 
   @override
   Widget build(BuildContext context) {
@@ -44,7 +51,7 @@ final class SheetScaffold extends StatelessWidget {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,
-        spacing: _spacing,
+        spacing: spacing,
         children: [
           Center(
             child: Container(

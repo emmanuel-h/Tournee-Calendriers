@@ -1,13 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/presentation/street/street_view_state.dart';
-import 'package:tournee_calendriers/ui/components/status_glyph.dart';
 import 'package:tournee_calendriers/ui/components/status_tile.dart';
+import 'package:tournee_calendriers/ui/components/tap_hint.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
+import 'package:tournee_calendriers/ui/screens/street/status_words.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
-import 'package:tournee_calendriers/ui/theme/app_typography.dart';
-import 'package:tournee_calendriers/ui/theme/status_look.dart';
 
 /// The tiles of both sides, scrolling together, with the tap hint floating
 /// at the bottom while no snackbar shows.
@@ -23,6 +22,8 @@ final class StreetTiles extends StatelessWidget {
     required this.showHint,
     required this.onTap,
     required this.onHold,
+    required this.onOpenBuilding,
+    required this.onHoldBuilding,
   });
 
   final StreetShown state;
@@ -36,6 +37,12 @@ final class StreetTiles extends StatelessWidget {
 
   /// A house tile was held (long-pressed).
   final ValueChanged<HouseNumber> onHold;
+
+  /// A building tile was tapped: its grid opens.
+  final ValueChanged<HouseNumber> onOpenBuilding;
+
+  /// A building tile was held: its own note and « repasser » open.
+  final ValueChanged<HouseNumber> onHoldBuilding;
 
   @override
   Widget build(BuildContext context) {
@@ -92,21 +99,15 @@ final class StreetTiles extends StatelessWidget {
     return StatusTile(
       key: ValueKey('street.tile.${number.label}'),
       number: number.label,
-      status: switch (tile.mark) {
-        ToDoMark() => const ToDoTile(),
-        DoneMark() => const DoneTile(),
-        NobodyHomeMark() => const NobodyHomeTile(),
-        ComeBackMark() => const ComeBackTile(),
-        PartialBuildingMark(:final done, :final total) => BuildingPartialTile(
-          done: done,
-          total: total,
-        ),
-      },
+      status: tileStatusOf(tile.mark),
       hasNote: tile.hasNote,
-      // A building opens its grid on tap (#13): not cycled here, and its
-      // own sheet is not wired yet.
-      onTap: tile.isBuilding ? null : () => onTap(number),
-      onLongPress: tile.isBuilding ? null : () => onHold(number),
+      // A building is not cycled: its doors are, in its grid.
+      onTap: tile.isBuilding
+          ? () => onOpenBuilding(number)
+          : () => onTap(number),
+      onLongPress: tile.isBuilding
+          ? () => onHoldBuilding(number)
+          : () => onHold(number),
     );
   }
 }
@@ -115,48 +116,23 @@ final class StreetTiles extends StatelessWidget {
 final class _TapHint extends StatelessWidget {
   const _TapHint();
 
-  static const _glyphSize = 14.0;
-
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final colors = AppColors.of(context);
-    WidgetSpan glyph(StatusGlyphs which) => WidgetSpan(
-      alignment: PlaceholderAlignment.middle,
-      child: StatusGlyph(which, size: _glyphSize, color: colors.muted),
-    );
-    const arrow = TextSpan(text: ' → ');
-    return Semantics(
-      label: l10n.tapHintSemantics,
-      excludeSemantics: true,
-      child: Container(
-        key: const Key('street.hint'),
-        height: AppSizes.hintHeight,
-        alignment: Alignment.center,
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        decoration: BoxDecoration(
-          color: colors.surface,
-          border: Border.all(color: colors.divider),
-          borderRadius: BorderRadius.circular(AppSizes.hintHeight / 2),
-        ),
-        child: Text.rich(
-          TextSpan(
-            children: [
-              TextSpan(text: '${l10n.tapHintTap} '),
-              glyph(StatusGlyphs.toDo),
-              arrow,
-              glyph(StatusGlyphs.done),
-              arrow,
-              glyph(StatusGlyphs.nobodyHome),
-              arrow,
-              glyph(StatusGlyphs.toDo),
-              TextSpan(text: ' · ${l10n.tapHintHold}'),
-            ],
-          ),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: AppTextStyles.small.copyWith(color: colors.muted),
-        ),
+    return Container(
+      key: const Key('street.hint'),
+      height: AppSizes.hintHeight,
+      alignment: Alignment.center,
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        border: Border.all(color: colors.divider),
+        borderRadius: BorderRadius.circular(AppSizes.hintHeight / 2),
+      ),
+      child: TapHintText(
+        hold: l10n.tapHintHold,
+        semanticsLabel: l10n.tapHintSemantics,
       ),
     );
   }

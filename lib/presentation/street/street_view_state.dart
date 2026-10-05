@@ -1,5 +1,6 @@
 import 'package:tournee_calendriers/domain/street/building/building.dart';
 import 'package:tournee_calendriers/domain/street/building/building_status.dart';
+import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/note.dart';
@@ -35,6 +36,15 @@ sealed class TileMark {
       ),
       BuildingStatus.toDo => _toDo(house),
     },
+  };
+
+  /// The mark of a door of the Immeuble grid: its status, and ↻ for a
+  /// door still to do with a « repasser », as a single house.
+  static TileMark ofDwelling(Dwelling dwelling) => switch (dwelling.status) {
+    VisitStatus.done => const DoneMark(),
+    VisitStatus.nobodyHome => const NobodyHomeMark(),
+    VisitStatus.toDo =>
+      dwelling.comeBack == null ? const ToDoMark() : const ComeBackMark(),
   };
 
   static TileMark _toDo(House house) =>
@@ -106,7 +116,7 @@ final class HouseTile {
   /// shows a small dot.
   final bool hasNote;
 
-  /// A tap opens the building's grid (#13) instead of cycling a status.
+  /// A tap opens the building's grid instead of cycling a status.
   final bool isBuilding;
 
   @override

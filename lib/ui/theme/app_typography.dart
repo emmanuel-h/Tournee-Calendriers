@@ -145,4 +145,51 @@ abstract final class AppTextStyles {
     fontWeight: FontWeight.w400,
     fontSize: 13,
   );
+
+  /// The count of the grid's header (« ◐ 15/24 »).
+  static const gridCount = TextStyle(
+    fontFamily: AppFonts.display,
+    fontWeight: FontWeight.w700,
+    fontSize: 22,
+    height: 1.1,
+  );
+
+  /// The label of a door of the grid (« 51 »).
+  static const doorLabel = TextStyle(
+    fontFamily: AppFonts.display,
+    fontWeight: FontWeight.w700,
+    fontSize: 21,
+    height: 1,
+  );
+
+  /// A segment of a choice (« Esc. A · 7/12 », « 51, 52… ») and the floor
+  /// labels of the grid.
+  static const segment = TextStyle(
+    fontFamily: AppFonts.text,
+    fontWeight: FontWeight.w700,
+    fontSize: 15,
+  );
+
+  /// The value of a stepper (« RdC–5e »).
+  static const stepperValue = TextStyle(
+    fontFamily: AppFonts.display,
+    fontWeight: FontWeight.w700,
+    fontSize: 24,
+  );
+
+  /// The sign of a stepper button (« − », « + »).
+  static const stepperSign = TextStyle(
+    fontFamily: AppFonts.text,
+    fontWeight: FontWeight.w700,
+    fontSize: 22,
+    height: 1,
+  );
+
+  /// The line of the setup preview (« RdC 01–04, 1er 11–14 … »).
+  static const previewLine = TextStyle(
+    fontFamily: AppFonts.display,
+    fontWeight: FontWeight.w600,
+    fontSize: 19,
+    height: 1.2,
+  );
 }

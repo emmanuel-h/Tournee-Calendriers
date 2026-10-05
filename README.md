@@ -26,6 +26,15 @@ Street screen (« Rue »):
 - Hold a house for its sheet (« Fiche maison »): status « À faire | Fait | Personne »,
   « Repasser » with when to come back, a note (200 characters at most, with the privacy hint),
   and when it was last changed. Each control is stored at once; the tile follows.
+- « Transformer en immeuble… » in the sheet describes a building (« Décrire l'immeuble »):
+  staircases, floors (RdC–5e, or « Inconnus »), doors per floor, door labels « 51, 52… |
+  5A, 5B… | Libres », with a live preview.
+- Tap a building for its grid (« Immeuble »): floors from the top down, four doors a row,
+  a staircase control when there are several, « ◐ done/total » for the whole building. A tap
+  cycles a door (vibration, announcement, « Annuler » for 4 s); a hold opens the door's
+  sheet. « Modifier les étages » lays it out again, keeping the marks of the doors that stay
+  (and asks before losing marked ones); « Note · Repasser » sets the building's own.
 - Works offline, cold start included: marks are stored on the phone.
-- Not yet: open a building's grid or turn a house into a building, edit mode (✏ opens an
-  empty screen).
+- Not yet: adjusting one floor (a door more or less, renaming a door: « Libres » doors keep
+  the numbers 1, 2, 3… until then), turning a building back into a house, edit mode (✏
+  opens an empty screen).

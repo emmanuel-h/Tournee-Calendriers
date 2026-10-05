@@ -43,6 +43,12 @@ void main() {
 
   /// Opens the street screen of [_lilas], then holds the tile of [number].
   Future<void> holdTile(WidgetTester tester, String number) async {
+    // A phone-sized screen (411 × 914 dp): on the default 800 × 600 test
+    // surface the sheet reaches the top, leaving no dimmed street to tap.
+    tester.view
+      ..physicalSize = const Size(1080, 2400)
+      ..devicePixelRatio = 2.625;
+    addTearDown(tester.view.reset);
     streets = FakeStreetRepository([_lilas]);
     await tester.pumpWidget(
       ProviderScope(

@@ -160,6 +160,189 @@
   },
   "houseGone": "Ce numéro n'est plus dans cette rue.",
   "@houseGone": { "description": "House sheet of a number that was removed meanwhile, or whose street went to the Corbeille." },
+  "transformToBuilding": "Transformer en immeuble…",
+  "@transformToBuilding": { "description": "Button of the house sheet that opens « Décrire l'immeuble » (PLAN §5.7)." },
+  "cancel": "Annuler",
+  "@cancel": { "description": "Button that closes a confirmation without doing anything." },
+
+  "buildingSetupTitle": "Décrire l'immeuble",
+  "@buildingSetupTitle": { "description": "Title of the sheet that lays a building out (« Transformer en immeuble… », « Modifier les étages », PLAN §5.7)." },
+  "setupStaircases": "Escaliers",
+  "@setupStaircases": { "description": "Stepper of the building setup: how many staircases." },
+  "setupFloors": "Étages",
+  "@setupFloors": { "description": "Stepper of the building setup: the floors, from the RdC up." },
+  "setupDoorsPerFloor": "Portes par étage",
+  "@setupDoorsPerFloor": { "description": "Stepper of the building setup: doors on each floor." },
+  "setupFewerStaircases": "Un escalier de moins",
+  "@setupFewerStaircases": { "description": "Screen-reader name of the − button of the staircases stepper." },
+  "setupMoreStaircases": "Un escalier de plus",
+  "@setupMoreStaircases": { "description": "Screen-reader name of the + button of the staircases stepper." },
+  "setupFewerFloors": "Un étage de moins",
+  "@setupFewerFloors": { "description": "Screen-reader name of the − button of the floors stepper." },
+  "setupMoreFloors": "Un étage de plus",
+  "@setupMoreFloors": { "description": "Screen-reader name of the + button of the floors stepper." },
+  "setupFewerDoors": "Une porte de moins",
+  "@setupFewerDoors": { "description": "Screen-reader name of the − button of the doors stepper." },
+  "setupMoreDoors": "Une porte de plus",
+  "@setupMoreDoors": { "description": "Screen-reader name of the + button of the doors stepper." },
+  "setupStepperSemantics": "{label} : {value}",
+  "@setupStepperSemantics": {
+    "description": "Screen-reader label of the value of a stepper, read again after each tap.",
+    "placeholders": {
+      "label": { "type": "String", "example": "Étages" },
+      "value": { "type": "String", "example": "RdC–5e" }
+    }
+  },
+  "setupFloorsUnknown": "Inconnus",
+  "@setupFloorsUnknown": { "description": "Value of the floors stepper when the floors are unknown: the doors make one « Logements » row." },
+  "setupFloorsRange": "RdC–{top}",
+  "@setupFloorsRange": {
+    "description": "Value of the floors stepper: from the RdC to the top floor.",
+    "placeholders": { "top": { "type": "String", "example": "5e" } }
+  },
+  "setupLabelStyle": "Numéros des portes",
+  "@setupLabelStyle": { "description": "Choice of how the doors are labelled." },
+  "labelStyleNumber": "51, 52…",
+  "@labelStyleNumber": { "description": "Door labels: floor then door number." },
+  "labelStyleLetter": "5A, 5B…",
+  "@labelStyleLetter": { "description": "Door labels: floor then a letter." },
+  "labelStyleFree": "Libres",
+  "@labelStyleFree": { "description": "Door labels typed by hand later (placeholders 1, 2, 3… until then)." },
+  "setupPreviewTitle": "Aperçu · {count, plural, =1{1 logement} other{{count} logements}}",
+  "@setupPreviewTitle": {
+    "description": "Header of the preview of the building setup.",
+    "placeholders": { "count": { "type": "int", "example": "48" } }
+  },
+  "setupPreviewStaircasesTwo": "Esc. {first} et {last} : ",
+  "@setupPreviewStaircasesTwo": {
+    "description": "Start of the preview line when the building has two staircases.",
+    "placeholders": {
+      "first": { "type": "String", "example": "A" },
+      "last": { "type": "String", "example": "B" }
+    }
+  },
+  "setupPreviewStaircasesMany": "Esc. {first} à {last} : ",
+  "@setupPreviewStaircasesMany": {
+    "description": "Start of the preview line when the building has three staircases or more.",
+    "placeholders": {
+      "first": { "type": "String", "example": "A" },
+      "last": { "type": "String", "example": "D" }
+    }
+  },
+  "setupPreviewRange": "{first}–{last}",
+  "@setupPreviewRange": {
+    "description": "The labels of the first and last doors of a floor, in the preview.",
+    "placeholders": {
+      "first": { "type": "String", "example": "51" },
+      "last": { "type": "String", "example": "54" }
+    }
+  },
+  "setupPreviewHint": "Chaque étage pourra ensuite être ajusté (porte en plus ou en moins).",
+  "@setupPreviewHint": { "description": "Under the preview of the building setup." },
+  "setupValidate": "Valider",
+  "@setupValidate": { "description": "Lays the building out as described." },
+  "setupNoStaircase": "Au moins 1 escalier.",
+  "@setupNoStaircase": { "description": "Refusal of the staircases stepper below one." },
+  "setupTooManyStaircases": "{max} escaliers au plus (A à Z).",
+  "@setupTooManyStaircases": {
+    "description": "Refusal of the staircases stepper above the limit.",
+    "placeholders": { "max": { "type": "int", "example": "26" } }
+  },
+  "setupBelowGroundFloor": "Les sous-sols ne sont pas comptés.",
+  "@setupBelowGroundFloor": { "description": "Refusal of the floors stepper below « Inconnus »." },
+  "setupTooManyFloors": "{max} étages au plus.",
+  "@setupTooManyFloors": {
+    "description": "Refusal of the floors stepper above the limit.",
+    "placeholders": { "max": { "type": "int", "example": "50" } }
+  },
+  "setupNoDoor": "Au moins 1 porte par étage.",
+  "@setupNoDoor": { "description": "Refusal of the doors stepper below one." },
+  "setupTooManyDoorsForLetters": "{max} portes par étage au plus avec 5A, 5B…",
+  "@setupTooManyDoorsForLetters": {
+    "description": "Refusal of the letter labels (or of one more door with them) past Z.",
+    "placeholders": { "max": { "type": "int", "example": "26" } }
+  },
+  "setupTooManyDwellings": "{max} logements au plus par immeuble.",
+  "@setupTooManyDwellings": {
+    "description": "Refusal of a stepper that would pass the most dwellings of a building.",
+    "placeholders": { "max": { "type": "int", "example": "500" } }
+  },
+  "setupConfirmTitle": "Modifier les étages ?",
+  "@setupConfirmTitle": { "description": "Title of the confirmation when a new layout drops doors that have marks." },
+  "setupConfirmBody": "{count, plural, =1{1 porte marquée n'existe plus dans ce plan : son statut, sa note et son « repasser » seront perdus.} other{{count} portes marquées n'existent plus dans ce plan : leurs statuts, notes et « repasser » seront perdus.}}",
+  "@setupConfirmBody": {
+    "description": "Body of the confirmation when a new layout drops doors that have marks.",
+    "placeholders": { "count": { "type": "int", "example": "3" } }
+  },
+  "setupConfirmAction": "Modifier",
+  "@setupConfirmAction": { "description": "Confirms a new layout that drops doors with marks." },
+
+  "floorGround": "RdC",
+  "@floorGround": { "description": "The ground floor (rez-de-chaussée), in the grid and the setup." },
+  "floorFirst": "1er",
+  "@floorFirst": { "description": "The first floor." },
+  "floorNth": "{level}e",
+  "@floorNth": {
+    "description": "A floor from the second up: 2e, 3e…",
+    "placeholders": { "level": { "type": "int", "example": "5" } }
+  },
+  "floorUnknown": "Logements",
+  "@floorUnknown": { "description": "The single row of a building whose floors are unknown." },
+  "staircaseGroup": "Escalier",
+  "@staircaseGroup": { "description": "Screen-reader name of the staircase control of the building grid." },
+  "staircaseTab": "Esc. {letter} · {done}/{total}",
+  "@staircaseTab": {
+    "description": "A button of the staircase control: its letter, doors done / doors.",
+    "placeholders": {
+      "letter": { "type": "String", "example": "A" },
+      "done": { "type": "int", "example": "7" },
+      "total": { "type": "int", "example": "12" }
+    }
+  },
+  "staircaseTabSemantics": "Escalier {letter}, {done} sur {total} faits",
+  "@staircaseTabSemantics": {
+    "description": "Screen-reader name of a button of the staircase control.",
+    "placeholders": {
+      "letter": { "type": "String", "example": "A" },
+      "done": { "type": "int", "example": "7" },
+      "total": { "type": "int", "example": "12" }
+    }
+  },
+  "staircaseSpoken": "Escalier {letter}",
+  "@staircaseSpoken": {
+    "description": "A staircase, in the screen-reader name of a door: « Escalier A, 5e, porte 51, fait ».",
+    "placeholders": { "letter": { "type": "String", "example": "A" } }
+  },
+  "staircaseShort": "Esc. {letter}",
+  "@staircaseShort": {
+    "description": "A staircase, in the title of a door sheet: « Esc. A · 5e ».",
+    "placeholders": { "letter": { "type": "String", "example": "A" } }
+  },
+  "doorSpoken": "porte {label}",
+  "@doorSpoken": {
+    "description": "A door, in the screen-reader name of a door: « Escalier A, 5e, porte 51, fait ».",
+    "placeholders": { "label": { "type": "String", "example": "51" } }
+  },
+  "buildingCountSemantics": "{done} sur {total} logements faits",
+  "@buildingCountSemantics": {
+    "description": "Screen-reader name of the count of the building grid (« ◐ 15/24 »).",
+    "placeholders": {
+      "done": { "type": "int", "example": "15" },
+      "total": { "type": "int", "example": "24" }
+    }
+  },
+  "gridHintHold": "Appui long : note, repasser",
+  "@gridHintHold": { "description": "End of the hint of the building grid, after « Appui : ○ → ✓ → ✗ → ○ ·»." },
+  "gridHintSemantics": "Appui : à faire, fait, personne, à faire. Appui long : note, repasser",
+  "@gridHintSemantics": { "description": "Screen-reader label of the hint of the building grid." },
+  "editFloors": "Modifier les étages",
+  "@editFloors": { "description": "Button under the building grid that lays the building out again." },
+  "buildingDetails": "Note · Repasser",
+  "@buildingDetails": { "description": "Button under the building grid that opens the building's own note and « repasser »." },
+  "buildingGone": "Ce numéro n'est plus un immeuble de cette rue.",
+  "@buildingGone": { "description": "Building grid or sheet of a number that is no longer a building of the street." },
+  "doorGone": "Cette porte n'est plus dans l'immeuble.",
+  "@doorGone": { "description": "Door sheet of a door that a new layout removed." },
 
   "startStreetsHeader": "Mes rues · {count}",
   "@startStreetsHeader": {

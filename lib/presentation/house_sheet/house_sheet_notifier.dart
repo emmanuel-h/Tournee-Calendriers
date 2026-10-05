@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tournee_calendriers/application/use_cases/mark.dart';
+import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
+import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
@@ -16,7 +18,14 @@ import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_state.d
 /// same house.
 typedef HouseSheetKey = ({StreetId street, HouseNumber number});
 
-/// The state of the Fiche maison of one house (PLAN §5.7).
+/// Which door of which building a door sheet shows.
+typedef DoorSheetKey = ({
+  StreetId street,
+  HouseNumber number,
+  DwellingKey door,
+});
+
+/// The state of the Fiche maison of one single house (PLAN §5.7).
 ///
 /// `family`: one notifier per house; `autoDispose`: it stops following the
 /// street once the sheet is closed.
@@ -25,23 +34,45 @@ final houseSheetProvider = NotifierProvider.autoDispose
       HouseSheetNotifier.new,
     );
 
-/// Follows one house of a street on the phone (`ObserveStreet`, offline)
-/// and stores each control of its sheet through `SetHouseDetails`: the
-/// status, the « repasser » and its hint, the note.
+/// The state of the « Note · Repasser » sheet of a building itself.
+final buildingDetailsProvider = NotifierProvider.autoDispose
+    .family<BuildingDetailsNotifier, HouseSheetState, HouseSheetKey>(
+      BuildingDetailsNotifier.new,
+    );
+
+/// The state of the sheet of one door of a building (hold a door).
+final doorSheetProvider = NotifierProvider.autoDispose
+    .family<DoorSheetNotifier, HouseSheetState, DoorSheetKey>(
+      DoorSheetNotifier.new,
+    );
+
+/// The marks a sheet shows and changes, read from the street.
+typedef _Marks = ({
+  SheetSubject subject,
+  VisitStatus? status,
+  ComeBack? comeBack,
+  Note note,
+  ChangeStamp? lastChange,
+});
+
+/// Follows one house, building or door of a street on the phone
+/// (`ObserveStreet`, offline) and stores each control of its sheet: the
+/// status, the « repasser » and its hint, the note. The three sheets differ
+/// only in what they read ([_marksIn]) and the use case that stores
+/// ([_storer]); the rules below are written once.
 ///
 /// - **Nothing changed, nothing stored.** The sheet saves its text fields
 ///   whenever they could be lost (closed, sent to the background…); a text
-///   equal to the stored one, or a status the house already has, stores
-///   nothing, so opening and closing a sheet does not stamp the house.
+///   equal to the stored one, or a status already there, stores nothing,
+///   so opening and closing a sheet stamps nothing.
 /// - **One change at a time.** Each change waits for the previous one to be
-///   stored, then decides on the house as it then is. Started together (the
-///   note leaves its field as « Fait » is tapped), two changes would both
-///   start from the same street, and the second would erase the first.
-final class HouseSheetNotifier extends Notifier<HouseSheetState> {
-  HouseSheetNotifier(this.key);
-
-  final HouseSheetKey key;
-
+///   stored, then decides on the marks as they then are. Started together
+///   (the note leaves its field as « Fait » is tapped), two changes would
+///   both start from the same street, and the second would erase the first.
+///
+/// `abstract base`: a class to extend, not to use alone; `base` keeps its
+/// subclasses `final`, so nobody outside this file can change the rules.
+abstract base class MarksSheetNotifier extends Notifier<HouseSheetState> {
   /// The street last read; null until read, or when there is none.
   Street? _street;
   var _read = false;
@@ -49,9 +80,20 @@ final class HouseSheetNotifier extends Notifier<HouseSheetState> {
   /// The last change asked; the next one starts when it ends.
   Future<void> _pending = Future.value();
 
+  StreetId get _streetId;
+  HouseNumber get _number;
+
+  /// The marks the sheet shows in [street] (not deleted), or null when the
+  /// house, building or door is not there.
+  _Marks? _marksIn(Street street);
+
+  /// The use case that stores a mark, read from `ref` now: a change queued
+  /// as the sheet closes runs when this notifier may be disposed.
+  Future<void> Function(Mark mark) _storer();
+
   @override
   HouseSheetState build() {
-    final subscription = ref.watch(observeStreetProvider)(key.street).listen((
+    final subscription = ref.watch(observeStreetProvider)(_streetId).listen((
       street,
     ) {
       _street = street;
@@ -62,17 +104,22 @@ final class HouseSheetNotifier extends Notifier<HouseSheetState> {
     return _view();
   }
 
-  /// The status control: gives the house [status]. « Fait » also clears
-  /// the « repasser » (a done house has none, PLAN §6.1).
-  Future<void> setStatus(VisitStatus status) =>
-      _change((house) => house.status == status ? null : StatusMark(status));
+  /// The status control: gives [status]. « Fait » also clears the
+  /// « repasser » (something done has none, PLAN §6.1). Nothing happens on
+  /// a building's own sheet, which has no status.
+  Future<void> setStatus(VisitStatus status) => _change(
+    (marks) => switch (marks.status) {
+      null => null,
+      final current when current == status => null,
+      _ => StatusMark(status),
+    },
+  );
 
   /// The « Repasser » box, ticked ([on]) or not. Ticking gives a
   /// « repasser » without hint, which the hint field then completes;
-  /// unticking drops the hint too. Refused on a done house: nothing
-  /// changes.
+  /// unticking drops the hint too. Refused when done: nothing changes.
   Future<void> setComeBack({required bool on}) => _change(
-    (house) => (house.comeBack != null) == on
+    (marks) => (marks.comeBack != null) == on
         ? null
         : ComeBackMark(on ? ComeBack.withoutHint : null),
   );
@@ -81,7 +128,7 @@ final class HouseSheetNotifier extends Notifier<HouseSheetState> {
   /// when « Repasser » is not ticked or the hint is too long (the field
   /// refuses such a text first, see [TextLimit]).
   Future<void> saveComeBackHint(String text) => _change(
-    (house) => switch ((house.comeBack, ComeBack.create(text))) {
+    (marks) => switch ((marks.comeBack, ComeBack.create(text))) {
       (null, _) || (_, Err()) => null,
       (final stored, Ok(:final value)) =>
         value == stored ? null : ComeBackMark(value),
@@ -91,25 +138,23 @@ final class HouseSheetNotifier extends Notifier<HouseSheetState> {
   /// The note field, stored once trimmed; a blank text erases the note.
   /// Nothing happens when it is too long.
   Future<void> saveNote(String text) => _change(
-    (house) => switch (Note.create(text)) {
-      Ok(:final value) => value == house.note ? null : NoteMark(value),
+    (marks) => switch (Note.create(text)) {
+      Ok(:final value) => value == marks.note ? null : NoteMark(value),
       Err() => null,
     },
   );
 
-  /// Queues the change [markFor] makes on the house as it is when its turn
-  /// comes (null: nothing to change). A refused change leaves the house as
-  /// it is; the sheet shows it.
-  Future<void> _change(Mark? Function(House house) markFor) {
-    // Read now, not when the turn comes: the sheet saves its fields as it
-    // closes, and this notifier may be disposed by then.
-    final setHouseDetails = ref.read(setHouseDetailsProvider);
+  /// Queues the change [markFor] makes on the marks as they are when its
+  /// turn comes (null: nothing to change). A refused change leaves them as
+  /// they are; the sheet shows it.
+  Future<void> _change(Mark? Function(_Marks marks) markFor) {
+    final store = _storer();
     final step = _pending.then((_) async {
-      final house = _house;
-      if (house == null) return;
-      final mark = markFor(house);
+      final marks = _marks;
+      if (marks == null) return;
+      final mark = markFor(marks);
       if (mark == null) return;
-      await setHouseDetails(key.street, key.number, mark);
+      await store(mark);
     });
     // A change that failed to be stored (a full disk) must not block the
     // ones after it; its caller still gets the error through `step`.
@@ -117,35 +162,139 @@ final class HouseSheetNotifier extends Notifier<HouseSheetState> {
     return step;
   }
 
-  /// The single house the sheet shows, or null when there is none.
-  House? get _house {
+  _Marks? get _marks {
     final street = _street;
     if (street == null || street.isDeleted) return null;
-    for (final house in street.houses) {
-      if (house.number == key.number) {
-        return house.isBuilding ? null : house;
-      }
-    }
-    return null;
+    return _marksIn(street);
   }
 
   HouseSheetState _view() {
     if (!_read) return const HouseSheetLoading();
-    final house = _house;
-    if (house == null) return const HouseSheetGone();
-    final stamp = house.lastChange;
+    final marks = _marks;
+    if (marks == null) return const HouseSheetGone();
+    final stamp = marks.lastChange;
     return HouseSheetShown(
       streetName: _street!.name,
-      number: house.number,
-      status: house.status,
-      comeBack: house.comeBack != null,
-      comeBackHint: house.comeBack?.hint ?? '',
-      note: house.note.text,
+      number: _number,
+      subject: marks.subject,
+      status: marks.status,
+      comeBack: marks.comeBack != null,
+      comeBackHint: marks.comeBack?.hint ?? '',
+      note: marks.note.text,
       // The clock tells « today » from « earlier »; reading it here, and
       // not `DateTime.now()`, lets the tests fix the day.
       lastChange: stamp == null
           ? null
           : LastChange.of(stamp.at, now: ref.read(clockProvider).now()),
     );
+  }
+}
+
+/// The house at [number] of [street], or null.
+House? _houseIn(Street street, HouseNumber number) {
+  for (final house in street.houses) {
+    if (house.number == number) return house;
+  }
+  return null;
+}
+
+/// The Fiche maison of a single house, stored through `SetHouseDetails`.
+/// A house that became a building is gone for this sheet.
+final class HouseSheetNotifier extends MarksSheetNotifier {
+  HouseSheetNotifier(this.key);
+
+  final HouseSheetKey key;
+
+  @override
+  StreetId get _streetId => key.street;
+
+  @override
+  HouseNumber get _number => key.number;
+
+  @override
+  _Marks? _marksIn(Street street) => switch (_houseIn(street, key.number)) {
+    final house? when !house.isBuilding => (
+      subject: const HouseSubject(),
+      status: house.status,
+      comeBack: house.comeBack,
+      note: house.note,
+      lastChange: house.lastChange,
+    ),
+    _ => null,
+  };
+
+  @override
+  Future<void> Function(Mark mark) _storer() {
+    final setHouseDetails = ref.read(setHouseDetailsProvider);
+    return (mark) => setHouseDetails(key.street, key.number, mark);
+  }
+}
+
+/// The building's own « repasser » and note (« Note · Repasser » under the
+/// grid), stored through `SetHouseDetails`, which sets a building's own.
+/// No status: its doors carry them.
+final class BuildingDetailsNotifier extends MarksSheetNotifier {
+  BuildingDetailsNotifier(this.key);
+
+  final HouseSheetKey key;
+
+  @override
+  StreetId get _streetId => key.street;
+
+  @override
+  HouseNumber get _number => key.number;
+
+  @override
+  _Marks? _marksIn(Street street) => switch (_houseIn(street, key.number)) {
+    final house? when house.isBuilding => (
+      subject: const BuildingSubject(),
+      status: null,
+      comeBack: house.comeBack,
+      note: house.note,
+      lastChange: house.lastChange,
+    ),
+    _ => null,
+  };
+
+  @override
+  Future<void> Function(Mark mark) _storer() {
+    final setHouseDetails = ref.read(setHouseDetailsProvider);
+    return (mark) => setHouseDetails(key.street, key.number, mark);
+  }
+}
+
+/// The sheet of one door, stored through `MarkDwelling`: only that door is
+/// stamped. A door dropped by a new layout is gone for this sheet.
+final class DoorSheetNotifier extends MarksSheetNotifier {
+  DoorSheetNotifier(this.key);
+
+  final DoorSheetKey key;
+
+  @override
+  StreetId get _streetId => key.street;
+
+  @override
+  HouseNumber get _number => key.number;
+
+  @override
+  _Marks? _marksIn(Street street) {
+    final building = _houseIn(street, key.number)?.building;
+    final door = building?.dwellingAt(key.door);
+    if (building == null || door == null) return null;
+    return (
+      subject: DoorSubject(
+        staircase: building.staircases.length > 1 ? key.door.staircase : null,
+      ),
+      status: door.status,
+      comeBack: door.comeBack,
+      note: door.note,
+      lastChange: door.lastChange,
+    );
+  }
+
+  @override
+  Future<void> Function(Mark mark) _storer() {
+    final markDwelling = ref.read(markDwellingProvider);
+    return (mark) => markDwelling(key.street, key.number, key.door, mark);
   }
 }

@@ -185,6 +185,24 @@ final class Building {
   /// Done when every door is done, to do when none is, partial otherwise.
   BuildingStatus get status => BuildingStatus.of(progress);
 
+  /// How many doors with a mark (see [Dwelling.hasMarks]) laying this
+  /// building out again as [plan] would drop, because their label is no
+  /// longer on the same floor of the same staircase (see [Building.laidOut]).
+  /// « Modifier les étages » asks before losing them.
+  int markedDoorsDroppedBy(BuildingPlan plan) {
+    final next = Building.laidOut(plan);
+    var dropped = 0;
+    for (final staircase in staircases) {
+      for (final floor in staircase.floors) {
+        for (final dwelling in floor.dwellings) {
+          final key = DwellingKey(staircase.name, floor.level, dwelling.label);
+          if (dwelling.hasMarks && next.dwellingAt(key) == null) dropped++;
+        }
+      }
+    }
+    return dropped;
+  }
+
   /// The dwelling at [key], or null when the building has none.
   Dwelling? dwellingAt(DwellingKey key) =>
       _staircaseNamed(key.staircase)?.floor(key.level)?.dwelling(key.label);

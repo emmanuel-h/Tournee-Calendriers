@@ -40,3 +40,46 @@ ScaffoldFeatureController<SnackBar, SnackBarClosedReason> showActionSnackBar(
     ),
   );
 }
+
+/// The undo snackbar of a screen or sheet that has its own
+/// `ScaffoldMessenger` ([messengerKey]), so the snackbar, and its
+/// « Annuler », goes away with it. [snackBarShown] tells when the snackbar
+/// is on screen, so the tap hint can give way to it.
+///
+/// A `mixin` adds these members to a `State` class (`with
+/// UndoSnackBarHost`), so the street screen and the building grid share them
+/// without a common parent class.
+mixin UndoSnackBarHost<T extends StatefulWidget> on State<T> {
+  final messengerKey = GlobalKey<ScaffoldMessengerState>();
+
+  var snackBarShown = false;
+
+  /// Counts the snackbars shown, so the end of a replaced one does not
+  /// bring the hint back while its successor is on screen.
+  var _snackBarCount = 0;
+
+  /// Shows « 7 → Fait [Annuler] » for 4 s, replacing any previous one.
+  void showUndo({
+    required String message,
+    required String undoLabel,
+    required VoidCallback onUndo,
+  }) {
+    final controller = showActionSnackBar(
+      messengerKey.currentState!,
+      message: message,
+      actionLabel: undoLabel,
+      onAction: onUndo,
+    );
+    final shown = ++_snackBarCount;
+    setState(() => snackBarShown = true);
+    controller.closed.then((_) {
+      if (mounted && shown == _snackBarCount) {
+        setState(() => snackBarShown = false);
+      }
+    }).ignore();
+  }
+
+  /// Hides the snackbar at once: a sheet opening over it would make its
+  /// « Annuler » undo more than the user sees.
+  void hideUndo() => messengerKey.currentState!.hideCurrentSnackBar();
+}

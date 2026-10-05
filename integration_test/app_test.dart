@@ -231,4 +231,62 @@ void main() {
       semantics.dispose();
     },
   );
+
+  testWidgets(
+    'should show the building partly done on its tile when a house is made '
+    'a building and one door is marked',
+    (tester) async {
+      final semantics = tester.ensureSemantics();
+      final storage = await Directory.systemTemp.createTemp('building_flow');
+      addTearDown(() => storage.delete(recursive: true));
+      await bootstrap(
+        addressDirectory: _ban(),
+        communeSearch: FakeCommuneSearch(
+          answers: {
+            'Villef': Ok([
+              CommuneMatch(commune: _villefranche, postcodes: const ['69400']),
+            ]),
+          },
+        ),
+        storage: storage,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('start.import')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('import.commune')), 'Villef');
+      await tester.pumpAndSettle(const Duration(milliseconds: 400));
+      await tester.tap(find.byKey(const ValueKey('import.suggestion.69264')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('import.street.69264_1460')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Importer 1 rue'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Rue Pierre Morin'));
+      await tester.pumpAndSettle();
+
+      // Hold 34, « Transformer en immeuble… », « Valider » the default
+      // (one staircase, RdC–2e, two doors a floor): its grid opens.
+      final tile = find.byKey(const ValueKey('street.tile.34'));
+      await tester.longPress(tile);
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('house.toBuilding')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('setup.validate')));
+      await tester.pumpAndSettle();
+      final count = find.byKey(const Key('grid.count'));
+      expect(tester.getSemantics(count).label, '0 sur 6 logements faits');
+
+      await tester.tap(find.byKey(const ValueKey('grid.door.A0-01')));
+      await tester.pumpAndSettle();
+      expect(tester.getSemantics(count).label, '1 sur 6 logements faits');
+
+      Navigator.of(tester.element(count)).pop();
+      await tester.pumpAndSettle();
+      expect(
+        tester.getSemantics(tile).label,
+        'Numéro 34, immeuble, 1 sur 6 faits',
+      );
+      semantics.dispose();
+    },
+  );
 }

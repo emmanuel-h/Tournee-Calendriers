@@ -184,6 +184,213 @@ class AppLocalizationsFr extends AppLocalizations {
   String get houseGone => 'Ce numéro n\'est plus dans cette rue.';
 
   @override
+  String get transformToBuilding => 'Transformer en immeuble…';
+
+  @override
+  String get cancel => 'Annuler';
+
+  @override
+  String get buildingSetupTitle => 'Décrire l\'immeuble';
+
+  @override
+  String get setupStaircases => 'Escaliers';
+
+  @override
+  String get setupFloors => 'Étages';
+
+  @override
+  String get setupDoorsPerFloor => 'Portes par étage';
+
+  @override
+  String get setupFewerStaircases => 'Un escalier de moins';
+
+  @override
+  String get setupMoreStaircases => 'Un escalier de plus';
+
+  @override
+  String get setupFewerFloors => 'Un étage de moins';
+
+  @override
+  String get setupMoreFloors => 'Un étage de plus';
+
+  @override
+  String get setupFewerDoors => 'Une porte de moins';
+
+  @override
+  String get setupMoreDoors => 'Une porte de plus';
+
+  @override
+  String setupStepperSemantics(String label, String value) {
+    return '$label : $value';
+  }
+
+  @override
+  String get setupFloorsUnknown => 'Inconnus';
+
+  @override
+  String setupFloorsRange(String top) {
+    return 'RdC–$top';
+  }
+
+  @override
+  String get setupLabelStyle => 'Numéros des portes';
+
+  @override
+  String get labelStyleNumber => '51, 52…';
+
+  @override
+  String get labelStyleLetter => '5A, 5B…';
+
+  @override
+  String get labelStyleFree => 'Libres';
+
+  @override
+  String setupPreviewTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count logements',
+      one: '1 logement',
+    );
+    return 'Aperçu · $_temp0';
+  }
+
+  @override
+  String setupPreviewStaircasesTwo(String first, String last) {
+    return 'Esc. $first et $last : ';
+  }
+
+  @override
+  String setupPreviewStaircasesMany(String first, String last) {
+    return 'Esc. $first à $last : ';
+  }
+
+  @override
+  String setupPreviewRange(String first, String last) {
+    return '$first–$last';
+  }
+
+  @override
+  String get setupPreviewHint =>
+      'Chaque étage pourra ensuite être ajusté (porte en plus ou en moins).';
+
+  @override
+  String get setupValidate => 'Valider';
+
+  @override
+  String get setupNoStaircase => 'Au moins 1 escalier.';
+
+  @override
+  String setupTooManyStaircases(int max) {
+    return '$max escaliers au plus (A à Z).';
+  }
+
+  @override
+  String get setupBelowGroundFloor => 'Les sous-sols ne sont pas comptés.';
+
+  @override
+  String setupTooManyFloors(int max) {
+    return '$max étages au plus.';
+  }
+
+  @override
+  String get setupNoDoor => 'Au moins 1 porte par étage.';
+
+  @override
+  String setupTooManyDoorsForLetters(int max) {
+    return '$max portes par étage au plus avec 5A, 5B…';
+  }
+
+  @override
+  String setupTooManyDwellings(int max) {
+    return '$max logements au plus par immeuble.';
+  }
+
+  @override
+  String get setupConfirmTitle => 'Modifier les étages ?';
+
+  @override
+  String setupConfirmBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count portes marquées n\'existent plus dans ce plan : leurs statuts, notes et « repasser » seront perdus.',
+      one: '1 porte marquée n\'existe plus dans ce plan : son statut, sa note et son « repasser » seront perdus.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get setupConfirmAction => 'Modifier';
+
+  @override
+  String get floorGround => 'RdC';
+
+  @override
+  String get floorFirst => '1er';
+
+  @override
+  String floorNth(int level) {
+    return '${level}e';
+  }
+
+  @override
+  String get floorUnknown => 'Logements';
+
+  @override
+  String get staircaseGroup => 'Escalier';
+
+  @override
+  String staircaseTab(String letter, int done, int total) {
+    return 'Esc. $letter · $done/$total';
+  }
+
+  @override
+  String staircaseTabSemantics(String letter, int done, int total) {
+    return 'Escalier $letter, $done sur $total faits';
+  }
+
+  @override
+  String staircaseSpoken(String letter) {
+    return 'Escalier $letter';
+  }
+
+  @override
+  String staircaseShort(String letter) {
+    return 'Esc. $letter';
+  }
+
+  @override
+  String doorSpoken(String label) {
+    return 'porte $label';
+  }
+
+  @override
+  String buildingCountSemantics(int done, int total) {
+    return '$done sur $total logements faits';
+  }
+
+  @override
+  String get gridHintHold => 'Appui long : note, repasser';
+
+  @override
+  String get gridHintSemantics =>
+      'Appui : à faire, fait, personne, à faire. Appui long : note, repasser';
+
+  @override
+  String get editFloors => 'Modifier les étages';
+
+  @override
+  String get buildingDetails => 'Note · Repasser';
+
+  @override
+  String get buildingGone => 'Ce numéro n\'est plus un immeuble de cette rue.';
+
+  @override
+  String get doorGone => 'Cette porte n\'est plus dans l\'immeuble.';
+
+  @override
   String startStreetsHeader(int count) {
     return 'Mes rues · $count';
   }

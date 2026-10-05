@@ -505,7 +505,50 @@ Fiche maison details fixed in T1.8 (`lib/presentation/house_sheet/`,
 - **Last change**: « Modifié à 14:02 » today, « Modifié le 3 oct. à 14:02 » before, in the
   phone's time zone; nothing when the house was never changed. Names (« par Léa ») come with
   identities in M2.
-- *Transformer en immeuble…* is not shown yet: it comes with its sheet (#13).
+- *Transformer en immeuble…* (with the building icon of the mockup) closes the sheet and opens
+  « Décrire l'immeuble »; « Valider » there opens the new building's grid (one sheet at a time).
+
+Immeuble details fixed in T1.9 (`lib/presentation/building/`, `lib/ui/screens/building/`):
+
+- **Tap** a building tile opens the grid, a full-height sheet (a 40 dp strip of the street
+  stays visible). **Hold** a building tile opens the building's own « Note · Repasser » sheet,
+  as the button under the grid does: the controls of the Fiche maison without a status (a
+  building's status comes from its doors) and without *Transformer en immeuble…*.
+- Header « 8 Rue des Lilas  ◐ 15/24 »: the ◐ glyph is always drawn, the count covers every
+  staircase. The staircase control « Esc. A · 7/12 | Esc. B · 8/12 » (48 dp, not the mockup's 44:
+  tap targets) shows only with more than one staircase; the grid opens on staircase A and comes
+  back to it when the chosen one disappears.
+- Floors top first, labelled RdC, 1er, 2e… (« Logements » for unknown floors); four doors a row,
+  wrapping under the label; a floor without doors is hidden. A door shows its label and glyph
+  in the status colours, ↻ when to do with a « repasser », a dot for a note.
+- **Tap** a door: light haptic tick, TalkBack hears « Escalier A, 5e, porte 51, fait » (the
+  staircase is named only when there are several; « Logements » is not said), and the snackbar
+  « 51 → Fait [Annuler] » shows for 4 s over the hint « Appui : ○ → ✓ → ✗ → ○ · Appui long :
+  note, repasser », as on the street screen. The snackbar belongs to the grid and leaves with it;
+  opening any sheet over the grid hides it.
+- **Hold** a door: the door sheet, the Fiche maison's controls without *Transformer en
+  immeuble…*, titled « 51 · Esc. B · RdC · 8 Rue des Lilas » (staircase only when several).
+  Stored through `MarkDwelling`: only that door is stamped.
+
+« Décrire l'immeuble » details fixed in T1.9:
+
+- Title « Décrire l'immeuble », then « 8 Rue des Lilas ». A house starts at 1 staircase, RdC–2e,
+  2 doors a floor, « 51, 52… »; « Modifier les étages » starts from the building: its staircases,
+  style, highest floor and largest floor (the default when that is larger than a plan allows).
+- The **Étages** stepper runs « Inconnus » (one « Logements » row), « RdC », « RdC–1er », …
+  « RdC–50e »: (−) on « RdC » gives « Inconnus », (+) on « Inconnus » gives « RdC ».
+- A step the domain refuses (`BuildingPlan.create`) leaves the answers as they were and says why
+  above the preview, until the next step that is taken: « Au moins 1 escalier. », « 26 escaliers
+  au plus (A à Z). », « Les sous-sols ne sont pas comptés. », « 50 étages au plus. », « Au moins
+  1 porte par étage. », « 26 portes par étage au plus avec 5A, 5B… », « 500 logements au plus
+  par immeuble. ». Answers already taken are never undone by a change of the street meanwhile.
+- Preview « APERÇU · 48 LOGEMENTS » and « Esc. A et B : RdC 01–04, 1er 11–14 … 5e 51–54 »: no
+  staircase prefix for one staircase, « Esc. A à C » from three; every floor up to three, then
+  RdC, 1er … top floor; a floor of one door shows its label alone.
+- « Valider » on a building whose new layout drops doors with marks asks first: « Modifier les
+  étages ? — 3 portes marquées n'existent plus dans ce plan : leurs statuts, notes et
+  « repasser » seront perdus. [Annuler] [Modifier] » (`Building.markedDoorsDroppedBy`).
+- « Libres » keeps the placeholder labels 1, 2, 3… until doors can be renamed (edit mode, #14).
 
 *Transformer en immeuble…* / *Modifier les étages* sheet:
 
@@ -735,6 +778,8 @@ Building rules fixed in T1.3 (`lib/domain/street/building/`):
   - `describeBuilding(number, plan)` makes a house the building the plan lays out, or lays an
     existing building out again: doors whose label still exists **on the same floor of the same
     staircase** keep their status, « repasser », note and last change; the others are dropped.
+    `Building.markedDoorsDroppedBy(plan)` counts the doors with marks a new layout would drop,
+    so the screen can ask first (T1.9).
   - Per-floor adjust: `addDoor(number, staircase, level)` appends a door labelled by the style —
     the next number (or letter) after the floor's door count, skipping labels already taken on
     that floor, never zero-padded (`110` after `19`); refused at 500 doors

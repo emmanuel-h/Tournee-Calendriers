@@ -375,6 +375,318 @@ abstract class AppLocalizations {
   /// **'Ce numéro n\'est plus dans cette rue.'**
   String get houseGone;
 
+  /// Button of the house sheet that opens « Décrire l'immeuble » (PLAN §5.7).
+  ///
+  /// In fr, this message translates to:
+  /// **'Transformer en immeuble…'**
+  String get transformToBuilding;
+
+  /// Button that closes a confirmation without doing anything.
+  ///
+  /// In fr, this message translates to:
+  /// **'Annuler'**
+  String get cancel;
+
+  /// Title of the sheet that lays a building out (« Transformer en immeuble… », « Modifier les étages », PLAN §5.7).
+  ///
+  /// In fr, this message translates to:
+  /// **'Décrire l\'immeuble'**
+  String get buildingSetupTitle;
+
+  /// Stepper of the building setup: how many staircases.
+  ///
+  /// In fr, this message translates to:
+  /// **'Escaliers'**
+  String get setupStaircases;
+
+  /// Stepper of the building setup: the floors, from the RdC up.
+  ///
+  /// In fr, this message translates to:
+  /// **'Étages'**
+  String get setupFloors;
+
+  /// Stepper of the building setup: doors on each floor.
+  ///
+  /// In fr, this message translates to:
+  /// **'Portes par étage'**
+  String get setupDoorsPerFloor;
+
+  /// Screen-reader name of the − button of the staircases stepper.
+  ///
+  /// In fr, this message translates to:
+  /// **'Un escalier de moins'**
+  String get setupFewerStaircases;
+
+  /// Screen-reader name of the + button of the staircases stepper.
+  ///
+  /// In fr, this message translates to:
+  /// **'Un escalier de plus'**
+  String get setupMoreStaircases;
+
+  /// Screen-reader name of the − button of the floors stepper.
+  ///
+  /// In fr, this message translates to:
+  /// **'Un étage de moins'**
+  String get setupFewerFloors;
+
+  /// Screen-reader name of the + button of the floors stepper.
+  ///
+  /// In fr, this message translates to:
+  /// **'Un étage de plus'**
+  String get setupMoreFloors;
+
+  /// Screen-reader name of the − button of the doors stepper.
+  ///
+  /// In fr, this message translates to:
+  /// **'Une porte de moins'**
+  String get setupFewerDoors;
+
+  /// Screen-reader name of the + button of the doors stepper.
+  ///
+  /// In fr, this message translates to:
+  /// **'Une porte de plus'**
+  String get setupMoreDoors;
+
+  /// Screen-reader label of the value of a stepper, read again after each tap.
+  ///
+  /// In fr, this message translates to:
+  /// **'{label} : {value}'**
+  String setupStepperSemantics(String label, String value);
+
+  /// Value of the floors stepper when the floors are unknown: the doors make one « Logements » row.
+  ///
+  /// In fr, this message translates to:
+  /// **'Inconnus'**
+  String get setupFloorsUnknown;
+
+  /// Value of the floors stepper: from the RdC to the top floor.
+  ///
+  /// In fr, this message translates to:
+  /// **'RdC–{top}'**
+  String setupFloorsRange(String top);
+
+  /// Choice of how the doors are labelled.
+  ///
+  /// In fr, this message translates to:
+  /// **'Numéros des portes'**
+  String get setupLabelStyle;
+
+  /// Door labels: floor then door number.
+  ///
+  /// In fr, this message translates to:
+  /// **'51, 52…'**
+  String get labelStyleNumber;
+
+  /// Door labels: floor then a letter.
+  ///
+  /// In fr, this message translates to:
+  /// **'5A, 5B…'**
+  String get labelStyleLetter;
+
+  /// Door labels typed by hand later (placeholders 1, 2, 3… until then).
+  ///
+  /// In fr, this message translates to:
+  /// **'Libres'**
+  String get labelStyleFree;
+
+  /// Header of the preview of the building setup.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aperçu · {count, plural, =1{1 logement} other{{count} logements}}'**
+  String setupPreviewTitle(int count);
+
+  /// Start of the preview line when the building has two staircases.
+  ///
+  /// In fr, this message translates to:
+  /// **'Esc. {first} et {last} : '**
+  String setupPreviewStaircasesTwo(String first, String last);
+
+  /// Start of the preview line when the building has three staircases or more.
+  ///
+  /// In fr, this message translates to:
+  /// **'Esc. {first} à {last} : '**
+  String setupPreviewStaircasesMany(String first, String last);
+
+  /// The labels of the first and last doors of a floor, in the preview.
+  ///
+  /// In fr, this message translates to:
+  /// **'{first}–{last}'**
+  String setupPreviewRange(String first, String last);
+
+  /// Under the preview of the building setup.
+  ///
+  /// In fr, this message translates to:
+  /// **'Chaque étage pourra ensuite être ajusté (porte en plus ou en moins).'**
+  String get setupPreviewHint;
+
+  /// Lays the building out as described.
+  ///
+  /// In fr, this message translates to:
+  /// **'Valider'**
+  String get setupValidate;
+
+  /// Refusal of the staircases stepper below one.
+  ///
+  /// In fr, this message translates to:
+  /// **'Au moins 1 escalier.'**
+  String get setupNoStaircase;
+
+  /// Refusal of the staircases stepper above the limit.
+  ///
+  /// In fr, this message translates to:
+  /// **'{max} escaliers au plus (A à Z).'**
+  String setupTooManyStaircases(int max);
+
+  /// Refusal of the floors stepper below « Inconnus ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Les sous-sols ne sont pas comptés.'**
+  String get setupBelowGroundFloor;
+
+  /// Refusal of the floors stepper above the limit.
+  ///
+  /// In fr, this message translates to:
+  /// **'{max} étages au plus.'**
+  String setupTooManyFloors(int max);
+
+  /// Refusal of the doors stepper below one.
+  ///
+  /// In fr, this message translates to:
+  /// **'Au moins 1 porte par étage.'**
+  String get setupNoDoor;
+
+  /// Refusal of the letter labels (or of one more door with them) past Z.
+  ///
+  /// In fr, this message translates to:
+  /// **'{max} portes par étage au plus avec 5A, 5B…'**
+  String setupTooManyDoorsForLetters(int max);
+
+  /// Refusal of a stepper that would pass the most dwellings of a building.
+  ///
+  /// In fr, this message translates to:
+  /// **'{max} logements au plus par immeuble.'**
+  String setupTooManyDwellings(int max);
+
+  /// Title of the confirmation when a new layout drops doors that have marks.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier les étages ?'**
+  String get setupConfirmTitle;
+
+  /// Body of the confirmation when a new layout drops doors that have marks.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, =1{1 porte marquée n\'existe plus dans ce plan : son statut, sa note et son « repasser » seront perdus.} other{{count} portes marquées n\'existent plus dans ce plan : leurs statuts, notes et « repasser » seront perdus.}}'**
+  String setupConfirmBody(int count);
+
+  /// Confirms a new layout that drops doors with marks.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier'**
+  String get setupConfirmAction;
+
+  /// The ground floor (rez-de-chaussée), in the grid and the setup.
+  ///
+  /// In fr, this message translates to:
+  /// **'RdC'**
+  String get floorGround;
+
+  /// The first floor.
+  ///
+  /// In fr, this message translates to:
+  /// **'1er'**
+  String get floorFirst;
+
+  /// A floor from the second up: 2e, 3e…
+  ///
+  /// In fr, this message translates to:
+  /// **'{level}e'**
+  String floorNth(int level);
+
+  /// The single row of a building whose floors are unknown.
+  ///
+  /// In fr, this message translates to:
+  /// **'Logements'**
+  String get floorUnknown;
+
+  /// Screen-reader name of the staircase control of the building grid.
+  ///
+  /// In fr, this message translates to:
+  /// **'Escalier'**
+  String get staircaseGroup;
+
+  /// A button of the staircase control: its letter, doors done / doors.
+  ///
+  /// In fr, this message translates to:
+  /// **'Esc. {letter} · {done}/{total}'**
+  String staircaseTab(String letter, int done, int total);
+
+  /// Screen-reader name of a button of the staircase control.
+  ///
+  /// In fr, this message translates to:
+  /// **'Escalier {letter}, {done} sur {total} faits'**
+  String staircaseTabSemantics(String letter, int done, int total);
+
+  /// A staircase, in the screen-reader name of a door: « Escalier A, 5e, porte 51, fait ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Escalier {letter}'**
+  String staircaseSpoken(String letter);
+
+  /// A staircase, in the title of a door sheet: « Esc. A · 5e ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Esc. {letter}'**
+  String staircaseShort(String letter);
+
+  /// A door, in the screen-reader name of a door: « Escalier A, 5e, porte 51, fait ».
+  ///
+  /// In fr, this message translates to:
+  /// **'porte {label}'**
+  String doorSpoken(String label);
+
+  /// Screen-reader name of the count of the building grid (« ◐ 15/24 »).
+  ///
+  /// In fr, this message translates to:
+  /// **'{done} sur {total} logements faits'**
+  String buildingCountSemantics(int done, int total);
+
+  /// End of the hint of the building grid, after « Appui : ○ → ✓ → ✗ → ○ ·».
+  ///
+  /// In fr, this message translates to:
+  /// **'Appui long : note, repasser'**
+  String get gridHintHold;
+
+  /// Screen-reader label of the hint of the building grid.
+  ///
+  /// In fr, this message translates to:
+  /// **'Appui : à faire, fait, personne, à faire. Appui long : note, repasser'**
+  String get gridHintSemantics;
+
+  /// Button under the building grid that lays the building out again.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier les étages'**
+  String get editFloors;
+
+  /// Button under the building grid that opens the building's own note and « repasser ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Note · Repasser'**
+  String get buildingDetails;
+
+  /// Building grid or sheet of a number that is no longer a building of the street.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ce numéro n\'est plus un immeuble de cette rue.'**
+  String get buildingGone;
+
+  /// Door sheet of a door that a new layout removed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Cette porte n\'est plus dans l\'immeuble.'**
+  String get doorGone;
+
   /// Header of the street list of the temporary start screen (PLAN §5.0), with the number of streets.
   ///
   /// In fr, this message translates to:

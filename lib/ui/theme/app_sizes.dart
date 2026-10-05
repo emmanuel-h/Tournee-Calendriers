@@ -92,4 +92,34 @@ abstract final class AppSizes {
 
   /// The ↻ before « Repasser ».
   static const comeBackGlyph = 20.0;
+
+  /// The Immeuble grid fills the screen but this gap at the top, where the
+  /// street stays visible, dimmed (Building mockup).
+  static const fullSheetTopGap = 40.0;
+
+  /// A door of the Immeuble grid, four on a row.
+  static const doorHeight = 52.0;
+  static const doorGap = 8.0;
+  static const doorsPerRow = 4;
+  static const doorGlyph = 16.0;
+
+  /// The floor label left of its doors (« RdC », « 1er »).
+  static const floorLabelWidth = 40.0;
+
+  /// The ◐ before the count of the grid's header.
+  static const gridCountGlyph = 20.0;
+
+  /// The buttons under the grid. The staircase control above it is 48 dp
+  /// too ([labelStyleHeight]), not the mockup's 44: a tap target is never
+  /// smaller.
+  static const gridButtonHeight = 48.0;
+
+  /// A row of the « Décrire l'immeuble » sheet: its (−) and (+) buttons
+  /// and the value between them.
+  static const stepperRowHeight = 60.0;
+  static const stepperButton = 48.0;
+  static const stepperValueWidth = 96.0;
+
+  /// The « 51, 52… | 5A, 5B… | Libres » choice and the staircase control.
+  static const labelStyleHeight = 48.0;
 }
