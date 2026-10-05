@@ -15,6 +15,7 @@ import 'package:tournee_calendriers/ui/components/keep_focus.dart';
 import 'package:tournee_calendriers/ui/components/ok_button.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
+import 'package:tournee_calendriers/ui/screens/building/building_grid_sheet.dart';
 import 'package:tournee_calendriers/ui/screens/building/building_setup_sheet.dart';
 import 'package:tournee_calendriers/ui/screens/edit_street/add_numbers_sheet.dart';
 import 'package:tournee_calendriers/ui/screens/edit_street/edit_tiles.dart';
@@ -256,32 +257,22 @@ final class _EditScreenState extends ConsumerState<_EditScreen>
           street: widget.streetId,
           number: number,
         ));
-      case AdjustDoorsExit():
-        await context.push<void>(
-          AppRoutes.adjustDoorsOf(widget.streetId, number),
-        );
-      case BackToHouseExit():
-        await _backToHouse(number);
+      case OpenBuildingExit():
+        final gridExit = await showBuildingGrid(context, (
+          street: widget.streetId,
+          number: number,
+        ));
+        if (gridExit == BuildingGridExit.backToHouse && mounted) {
+          await _backToHouse(number);
+        }
     }
   }
 
-  /// « Redevenir une maison », after a confirmation when doors have marks.
+  /// « Redevenir une maison », chosen (and confirmed) in the grid.
   Future<void> _backToHouse(HouseNumber number) async {
     final l10n = AppLocalizations.of(context);
     final notifier = _notifier;
-    var outcome = await notifier.backToSingleHouse(number);
-    if (outcome is EditNeedsConfirmation) {
-      if (!mounted) return;
-      final confirmed = await showConfirmDialog(
-        context,
-        name: 'edit.confirmBackToHouse',
-        title: l10n.confirmBackToHouseTitle,
-        body: l10n.confirmBackToHouseBody,
-        confirmLabel: l10n.backToHouseAction,
-      );
-      if (!confirmed) return;
-      outcome = await notifier.backToSingleHouse(number, confirmed: true);
-    }
+    final outcome = await notifier.backToSingleHouse(number);
     if (outcome is EditApplied && mounted) {
       showUndo(
         message: l10n.backToHouseDone(number.label),

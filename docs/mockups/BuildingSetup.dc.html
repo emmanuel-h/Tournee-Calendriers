@@ -20,7 +20,7 @@ a{color:#B3261E}a:hover{color:#8C1D18}
 </style>
 </helmet>
 <div style="width: 390px; height: 844px; box-sizing: border-box; background: #F3F1EC; color: #1B1F24; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; position: relative; overflow: hidden">
-  <div style="padding: 120px 16px 0 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px">
+  <div style="padding: 60px 16px 0 16px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px 12px">
     <div class="ghost"></div><div class="ghost"></div><div class="ghost"></div><div class="ghost"></div>
   </div>
   <div style="position: absolute; inset: 0; background: rgba(27, 31, 36, 0.5)"></div>
@@ -29,8 +29,14 @@ a{color:#B3261E}a:hover{color:#8C1D18}
     <h2 style="margin: 0; font: 700 28px 'Barlow Condensed', sans-serif">Décrire l'immeuble</h2>
     <span style="font-size: 15px; color: #4A5058; margin-bottom: 6px">8 Rue des Lilas</span>
     <div class="stp"><span style="font-weight: 700">Escaliers</span><span style="display: flex; align-items: center; gap: 6px"><button class="pm" aria-label="Un escalier de moins">−</button><span class="val">2</span><button class="pm" aria-label="Un escalier de plus">+</button></span></div>
-    <div class="stp"><span style="font-weight: 700">Étages</span><span style="display: flex; align-items: center; gap: 6px"><button class="pm" aria-label="Un étage de moins">−</button><span class="val">RdC–5e</span><button class="pm" aria-label="Un étage de plus">+</button></span></div>
-    <div class="stp"><span style="font-weight: 700">Portes par étage</span><span style="display: flex; align-items: center; gap: 6px"><button class="pm" aria-label="Une porte de moins">−</button><span class="val">4</span><button class="pm" aria-label="Une porte de plus">+</button></span></div>
+    <!-- Ticked (the default when every staircase is alike): one « Étages » and one « Portes par étage » for all, as before (#60). -->
+    <label style="display: flex; align-items: center; gap: 12px; min-height: 56px; border-bottom: 1px solid #E2DED5; cursor: pointer"><input type="checkbox" style="width: 20px; height: 20px; margin: 0 2px; accent-color: #1B1F24"><span>Même chose pour chaque escalier</span></label>
+    <span style="padding-top: 12px; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #4A5058">Esc. A</span>
+    <div class="stp"><span style="font-weight: 700">Étages</span><span style="display: flex; align-items: center; gap: 6px"><button class="pm" aria-label="Un étage de moins, escalier A">−</button><span class="val">RdC–5e</span><button class="pm" aria-label="Un étage de plus, escalier A">+</button></span></div>
+    <div class="stp"><span style="font-weight: 700">Portes par étage</span><span style="display: flex; align-items: center; gap: 6px"><button class="pm" aria-label="Une porte de moins, escalier A">−</button><span class="val">4</span><button class="pm" aria-label="Une porte de plus, escalier A">+</button></span></div>
+    <span style="padding-top: 12px; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #4A5058">Esc. B</span>
+    <div class="stp"><span style="font-weight: 700">Étages</span><span style="display: flex; align-items: center; gap: 6px"><button class="pm" aria-label="Un étage de moins, escalier B">−</button><span class="val">RdC–2e</span><button class="pm" aria-label="Un étage de plus, escalier B">+</button></span></div>
+    <div class="stp"><span style="font-weight: 700">Portes par étage</span><span style="display: flex; align-items: center; gap: 6px"><button class="pm" aria-label="Une porte de moins, escalier B">−</button><span class="val">2</span><button class="pm" aria-label="Une porte de plus, escalier B">+</button></span></div>
     <div style="display: flex; flex-direction: column; gap: 6px; padding-top: 10px">
       <span style="font-weight: 700">Numéros des portes</span>
       <div role="radiogroup" aria-label="Numéros des portes" style="display: flex; border: 1.5px solid #CFC9BD; border-radius: 14px; overflow: hidden">
@@ -40,8 +46,8 @@ a{color:#B3261E}a:hover{color:#8C1D18}
       </div>
     </div>
     <div style="background: #F3F1EC; border-radius: 14px; padding: 12px 16px; display: flex; flex-direction: column; gap: 4px; margin-top: 8px">
-      <span style="font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #4A5058">Aperçu · 48 logements</span>
-      <span style="font: 600 19px 'Barlow Condensed', sans-serif">Esc. A et B : RdC 01–04, 1er 11–14 … 5e 51–54</span>
+      <span style="font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #4A5058">Aperçu · 30 logements</span>
+      <span style="font: 600 19px 'Barlow Condensed', sans-serif">Esc. A : RdC 01–04 … 5e 51–54 · Esc. B : RdC 01–02 … 2e 21–22</span>
       <span style="font-size: 13px; color: #4A5058">Chaque étage pourra ensuite être ajusté (porte en plus ou en moins).</span>
     </div>
     <a href="Building.dc.html" style="margin-top: 10px; height: 56px; border-radius: 28px; background: #B3261E; color: #FFFFFF; font-weight: 700; font-size: 17px; display: flex; align-items: center; justify-content: center; text-decoration: none">Valider</a>

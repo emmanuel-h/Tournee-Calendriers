@@ -30,22 +30,15 @@ final class RenumberedExit extends NumberSheetExit {
   final HouseNumber to;
 }
 
-/// « Transformer en immeuble… » or « Modifier les étages »: « Décrire
-/// l'immeuble » opens next.
+/// « Transformer en immeuble… »: « Décrire l'immeuble » opens next.
 final class DescribeBuildingExit extends NumberSheetExit {
   const DescribeBuildingExit();
 }
 
-/// « Ajuster les portes »: the screen that adjusts the building floor by
-/// floor opens next.
-final class AdjustDoorsExit extends NumberSheetExit {
-  const AdjustDoorsExit();
-}
-
-/// « Redevenir une maison »: the edit mode asks first when doors have
-/// marks.
-final class BackToHouseExit extends NumberSheetExit {
-  const BackToHouseExit();
+/// « Ouvrir l'immeuble »: the building's grid opens next, where the
+/// building itself is changed (« Gérer l'immeuble »).
+final class OpenBuildingExit extends NumberSheetExit {
+  const OpenBuildingExit();
 }
 
 /// Opens the sheet of [number] in the edit mode of [street] (PLAN §5.5:
@@ -63,8 +56,8 @@ Future<NumberSheetExit?> showNumberSheet(
 );
 
 /// « 3 Rue des Lilas », the « Numéro » field with « Changer le numéro »,
-/// then *Transformer en immeuble…* for a house, or « Ajuster les portes »,
-/// « Modifier les étages » and « Redevenir une maison » for a building.
+/// then *Transformer en immeuble…* for a house, or « Ouvrir l'immeuble »
+/// for a building: every change to a building is made from its grid.
 final class NumberSheet extends ConsumerStatefulWidget {
   const NumberSheet({super.key, required this.streetId, required this.number});
 
@@ -175,28 +168,16 @@ final class _NumberSheetState extends ConsumerState<NumberSheet> {
           compact: true,
           onPressed: () => unawaited(_renumber()),
         ),
-        if (tile.isBuilding) ...[
+        if (tile.isBuilding)
           SecondaryButton(
-            key: const Key('number.adjustDoors'),
-            label: l10n.adjustDoorsAction,
+            key: const Key('number.openBuilding'),
+            label: l10n.openBuilding,
             compact: true,
             strong: true,
-            onPressed: () => leave(const AdjustDoorsExit()),
-          ),
-          SecondaryButton(
-            key: const Key('number.editFloors'),
-            label: l10n.editFloors,
-            compact: true,
             leading: const BuildingIcon(size: AppSizes.smallIcon),
-            onPressed: () => leave(const DescribeBuildingExit()),
-          ),
-          SecondaryButton(
-            key: const Key('number.backToHouse'),
-            label: l10n.backToHouseAction,
-            compact: true,
-            onPressed: () => leave(const BackToHouseExit()),
-          ),
-        ] else
+            onPressed: () => leave(const OpenBuildingExit()),
+          )
+        else
           SecondaryButton(
             key: const Key('number.toBuilding'),
             label: l10n.transformToBuilding,

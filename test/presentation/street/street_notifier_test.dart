@@ -409,4 +409,37 @@ void main() {
       expect(streets.saved, isEmpty);
     });
   });
+
+  group('Redevenir une maison', () {
+    House eight() =>
+        streets[_id]!.houses.singleWhere((h) => h.number == n('8'));
+
+    test('should make the building a house, its doors gone', () async {
+      phoneWith(_street());
+      await settled();
+
+      expect(await notifier().backToSingleHouse(n('8')), isTrue);
+
+      expect(eight().building, isNull);
+      expect((await shown()).even[1], _tile('8', const ComeBackMark()));
+    });
+
+    test('should bring the doors back when Annuler is tapped', () async {
+      phoneWith(_street());
+      await settled();
+      await notifier().backToSingleHouse(n('8'));
+
+      await notifier().undo();
+
+      expect(eight(), _houses.last);
+    });
+
+    test('should fail when the house is not a building', () async {
+      phoneWith(_street());
+      await settled();
+
+      expect(await notifier().backToSingleHouse(n('1')), isFalse);
+      expect(streets.saved, isEmpty);
+    });
+  });
 }

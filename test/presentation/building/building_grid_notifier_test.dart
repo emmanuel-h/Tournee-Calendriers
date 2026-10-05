@@ -201,6 +201,19 @@ void main() {
       ]);
     });
 
+    test('should say a door has a mark, so going back to a house asks '
+        'first', () async {
+      phoneWith(_street());
+
+      expect((await shown('8')).hasMarks, isTrue);
+    });
+
+    test('should say no door has a mark in a new building', () async {
+      phoneWith(_street());
+
+      expect((await shown('10')).hasMarks, isFalse);
+    });
+
     test('should say it is gone when the house is a single house', () async {
       phoneWith(_street());
 

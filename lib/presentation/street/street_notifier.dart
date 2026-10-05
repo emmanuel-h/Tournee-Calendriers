@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tournee_calendriers/application/use_cases/describe_building.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
@@ -17,7 +18,8 @@ final streetProvider = NotifierProvider.autoDispose
     .family<StreetNotifier, StreetViewState, StreetId>(StreetNotifier.new);
 
 /// Follows a street on the phone (`ObserveStreet`, which works offline),
-/// cycles a house's status on a tap (`MarkHouse`), undoes the last tap
+/// cycles a house's status on a tap (`MarkHouse`), turns a building back
+/// into a house (`DescribeBuilding`), undoes the last of those
 /// (`UndoLastChange`) and keeps « Masquer faits » for the street.
 final class StreetNotifier extends Notifier<StreetViewState> {
   StreetNotifier(this.streetId);
@@ -84,6 +86,24 @@ final class StreetNotifier extends Notifier<StreetViewState> {
     if (change == null) return;
     _lastChange = null;
     await ref.read(undoLastChangeProvider)(change);
+  }
+
+  /// « Redevenir une maison », chosen in the grid of the building at
+  /// [number] (which asked first when a door had marks): its doors go.
+  /// Returns whether it was done; « Annuler » ([undo]) brings them back.
+  Future<bool> backToSingleHouse(HouseNumber number) async {
+    final result = await ref.read(describeBuildingProvider)(
+      streetId,
+      number,
+      const BackToSingleHouse(),
+    );
+    switch (result) {
+      case Ok(value: final change):
+        _lastChange = change;
+        return true;
+      case Err():
+        return false;
+    }
   }
 
   /// « Masquer faits »: hides or shows the done tiles at once, and

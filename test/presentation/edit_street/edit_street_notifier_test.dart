@@ -406,23 +406,12 @@ void main() {
       expect((await shown()).even[1], _tile('8'));
     });
 
-    test('should ask first when a door has a mark', () async {
+    test('should drop the marked doors at once, the grid having asked, with '
+        'Annuler to put them back', () async {
       phoneWith(_street());
       await settled();
 
-      expect(
-        await edit().backToSingleHouse(n('10')),
-        const EditNeedsConfirmation(),
-      );
-      expect(streets.saved, isEmpty);
-    });
-
-    test('should drop the marked doors when confirmed, with Annuler to put '
-        'them back', () async {
-      phoneWith(_street());
-      await settled();
-
-      final outcome = await edit().backToSingleHouse(n('10'), confirmed: true);
+      final outcome = await edit().backToSingleHouse(n('10'));
 
       expect(outcome, const EditApplied());
       expect(stored().houses.last.building, isNull);

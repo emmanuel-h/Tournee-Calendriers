@@ -54,8 +54,8 @@ Finder _part(String id, String part) => find.descendant(
 void main() {
   late FakeStreetRepository streets;
 
-  /// Starts the app with the Rue des Lilas on the phone, opens its edit
-  /// mode, taps 8 and « Ajuster les portes ».
+  /// Starts the app with the Rue des Lilas on the phone, opens its street
+  /// screen, taps 8, then « Gérer l'immeuble » and « Ajuster les portes ».
   Future<void> openAdjustDoors(WidgetTester tester) async {
     tester.view
       ..physicalSize = const Size(393 * 3, 852 * 3)
@@ -70,16 +70,13 @@ void main() {
     );
     await tester.pumpAndSettle();
     final router = GoRouter.of(tester.element(find.byType(Scaffold).first));
-    unawaitedPush(router, AppRoutes.editStreetOf(_id));
+    unawaitedPush(router, AppRoutes.streetOf(_id));
     await tester.pumpAndSettle();
-    await tester.tap(
-      find.descendant(
-        of: find.byKey(const ValueKey('edit.tile.8')),
-        matching: find.byKey(const Key('edit.tile.number')),
-      ),
-    );
+    await tester.tap(find.byKey(const ValueKey('street.tile.8')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('number.adjustDoors')));
+    await tester.tap(find.byKey(const Key('grid.manage')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('buildingMenu.adjustDoors')));
     await tester.pumpAndSettle();
   }
 
@@ -194,5 +191,15 @@ void main() {
     expect(_door('A1-1'), findsNothing);
     expect(find.text('Porte 1 supprimée'), findsOneWidget);
     expect(labelsAt(1), ['2']);
+  });
+
+  testWidgets('should go back to the grid when OK is tapped', (tester) async {
+    await openAdjustDoors(tester);
+
+    await tester.tap(find.byKey(const Key('doors.ok')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('doors.ok')), findsNothing);
+    expect(find.byKey(const ValueKey('grid.door.A1-1')), findsOneWidget);
   });
 }

@@ -36,6 +36,47 @@ final _eight = House(
   ).withDwelling(escB, 3, Dwelling(label: d('3C'), status: VisitStatus.done)),
 );
 
+/// Staircase A: RdC of 3 doors, 1er of 1, 2e of 2; staircase B: one
+/// « Logements » row of 2 doors. « Libres » labels.
+final _uneven = valueOf(
+  Building.create(
+    style: DoorLabelStyle.free,
+    staircases: [
+      Staircase(
+        name: escA,
+        floors: [
+          Floor(
+            level: 2,
+            dwellings: [
+              Dwelling(label: d('1')),
+              Dwelling(label: d('2')),
+            ],
+          ),
+          Floor(level: 1, dwellings: [Dwelling(label: d('1'))]),
+          Floor(
+            level: 0,
+            dwellings: [
+              for (final l in ['1', '2', '3']) Dwelling(label: d(l)),
+            ],
+          ),
+        ],
+      ),
+      Staircase(
+        name: escB,
+        floors: [
+          Floor(
+            level: null,
+            dwellings: [
+              Dwelling(label: d('1')),
+              Dwelling(label: d('2')),
+            ],
+          ),
+        ],
+      ),
+    ],
+  ),
+);
+
 Street _street({List<House>? houses}) => valueOf(
   Street.create(
     id: _id,
@@ -191,8 +232,8 @@ void main() {
 
     test('should start from the default when the building is larger than a '
         'plan allows', () async {
-      // Staircase A: 30 floors of one door; B: the RdC with 20 doors. A plan
-      // of 2 × 30 floors × 20 doors would pass 500 dwellings.
+      // One staircase: the RdC with 20 doors and the 29e with one. A plan
+      // of 30 floors × 20 doors would pass 500 dwellings.
       final odd = valueOf(
         Building.create(
           style: DoorLabelStyle.floorAndNumber,
@@ -200,16 +241,7 @@ void main() {
             Staircase(
               name: escA,
               floors: [
-                for (var level = 29; level >= 0; level--)
-                  Floor(
-                    level: level,
-                    dwellings: [Dwelling(label: d('$level'))],
-                  ),
-              ],
-            ),
-            Staircase(
-              name: escB,
-              floors: [
+                Floor(level: 29, dwellings: [Dwelling(label: d('291'))]),
                 Floor(
                   level: 0,
                   dwellings: [
@@ -229,6 +261,46 @@ void main() {
       );
 
       expect((await shown('8')).plan, plan(topFloor: 2, doors: 2));
+    });
+
+    test('should start each staircase from its own floors, unticked, when '
+        'they differ', () async {
+      // A: RdC–2e, its largest floor 3 doors; B: unknown floors, 2 doors.
+      phoneWith(
+        _street(
+          houses: [House(number: n('8'), building: _uneven)],
+        ),
+      );
+
+      final state = await shown('8');
+
+      expect(state.plan.staircases, const [
+        StaircasePlan(topFloor: 2, doorsPerFloor: 3),
+        StaircasePlan(topFloor: null, doorsPerFloor: 2),
+      ]);
+      expect(state.plan.style, DoorLabelStyle.free);
+      expect(state.sameForEach, isFalse);
+      expect(state.stepsEachStaircase, isTrue);
+    });
+
+    test('should start ticked when every staircase is alike', () async {
+      phoneWith(_street());
+
+      final state = await shown('8');
+
+      expect(state.sameForEach, isTrue);
+      expect(state.offersSameForEach, isTrue);
+      expect(state.stepsEachStaircase, isFalse);
+    });
+
+    test('should not offer the box for a single staircase', () async {
+      phoneWith(_street());
+
+      final state = await shown('7');
+
+      expect(state.sameForEach, isTrue);
+      expect(state.offersSameForEach, isFalse);
+      expect(state.stepsEachStaircase, isFalse);
     });
 
     test(
@@ -256,7 +328,7 @@ void main() {
       );
       await streets.save(changed, change);
 
-      expect((await shown('7')).plan.doorsPerFloor, 3);
+      expect((await shown('7')).plan.staircases.first.doorsPerFloor, 3);
     });
   });
 
@@ -304,13 +376,16 @@ void main() {
       final state = await after('7', (s) => s.addDoor());
 
       expect(state.refusal, isNull);
-      expect(state.plan.doorsPerFloor, 3);
+      expect(state.plan.staircases.first.doorsPerFloor, 3);
     });
 
     test('should add a floor above the top one', () async {
       phoneWith(_street());
 
-      expect((await after('7', (s) => s.addFloor())).plan.topFloor, 3);
+      expect(
+        (await after('7', (s) => s.addFloor())).plan.staircases.first.topFloor,
+        3,
+      );
     });
 
     test('should go from the RdC down to unknown floors, and back', () async {
@@ -320,10 +395,19 @@ void main() {
         s.removeFloor();
         s.removeFloor();
       });
-      expect(down.plan.topFloor, 0);
+      expect(down.plan.staircases.first.topFloor, 0);
 
-      expect((await after('7', (s) => s.removeFloor())).plan.topFloor, isNull);
-      expect((await after('7', (s) => s.addFloor())).plan.topFloor, 0);
+      expect(
+        (await after(
+          '7',
+          (s) => s.removeFloor(),
+        )).plan.staircases.first.topFloor,
+        isNull,
+      );
+      expect(
+        (await after('7', (s) => s.addFloor())).plan.staircases.first.topFloor,
+        0,
+      );
     });
 
     test('should refuse to go below unknown floors', () async {
@@ -332,7 +416,7 @@ void main() {
       final state = await after('10', (s) => s.removeFloor());
 
       expect(state.refusal, BuildingPlanFailure.belowGroundFloor);
-      expect(state.plan.topFloor, isNull);
+      expect(state.plan.staircases.first.topFloor, isNull);
     });
 
     test('should refuse a floor above the 50th', () async {
@@ -342,19 +426,31 @@ void main() {
       for (var i = 0; i < 48; i++) {
         notifier('7').addFloor();
       }
-      expect((await shown('7')).plan.topFloor, 50);
+      expect((await shown('7')).plan.staircases.first.topFloor, 50);
 
       final state = await after('7', (s) => s.addFloor());
 
       expect(state.refusal, BuildingPlanFailure.tooManyFloors);
-      expect(state.plan.topFloor, 50);
+      expect(state.plan.staircases.first.topFloor, 50);
     });
 
     test('should add and remove a door per floor', () async {
       phoneWith(_street());
 
-      expect((await after('7', (s) => s.addDoor())).plan.doorsPerFloor, 3);
-      expect((await after('7', (s) => s.removeDoor())).plan.doorsPerFloor, 2);
+      expect(
+        (await after(
+          '7',
+          (s) => s.addDoor(),
+        )).plan.staircases.first.doorsPerFloor,
+        3,
+      );
+      expect(
+        (await after(
+          '7',
+          (s) => s.removeDoor(),
+        )).plan.staircases.first.doorsPerFloor,
+        2,
+      );
     });
 
     test('should refuse fewer than one door per floor', () async {
@@ -366,7 +462,7 @@ void main() {
       });
 
       expect(state.refusal, BuildingPlanFailure.noDoor);
-      expect(state.plan.doorsPerFloor, 1);
+      expect(state.plan.staircases.first.doorsPerFloor, 1);
     });
 
     test('should refuse more than 500 dwellings', () async {
@@ -381,7 +477,7 @@ void main() {
       final state = await after('7', (s) => s.addDoor());
 
       expect(state.refusal, BuildingPlanFailure.tooManyDwellings);
-      expect(state.plan.doorsPerFloor, 166);
+      expect(state.plan.staircases.first.doorsPerFloor, 166);
     });
 
     test('should change the label style', () async {
@@ -393,7 +489,11 @@ void main() {
       );
 
       expect(state.plan.style, DoorLabelStyle.floorAndLetter);
-      expect(state.preview.floors.first, (level: 0, first: '0A', last: '0B'));
+      expect(state.preview.parts.single.floors.first, (
+        level: 0,
+        first: '0A',
+        last: '0B',
+      ));
     });
 
     test('should refuse letters for more than 26 doors a floor', () async {
@@ -420,7 +520,173 @@ void main() {
       notifier('7').addDoor();
 
       expect(container.read(provider), isA<BuildingSetupLoading>());
-      expect((await shown('7')).plan.doorsPerFloor, 2);
+      expect((await shown('7')).plan.staircases.first.doorsPerFloor, 2);
+    });
+  });
+
+  group('each staircase', () {
+    /// Opens 8 (two staircases RdC–3e, three doors) unticked.
+    Future<BuildingSetupShown> unticked(
+      void Function(BuildingSetupNotifier setup) steps,
+    ) => after('8', (s) {
+      s.setSameForEach(same: false);
+      steps(s);
+    });
+
+    test('should untick the box and keep the plan', () async {
+      phoneWith(_street());
+
+      final state = await unticked((_) {});
+
+      expect(state.sameForEach, isFalse);
+      expect(state.stepsEachStaircase, isTrue);
+      expect(state.plan.isUniform, isTrue);
+    });
+
+    test('should add a floor to staircase B only', () async {
+      phoneWith(_street());
+
+      final state = await unticked((s) => s.addFloor(staircase: escB));
+
+      expect(state.plan.staircases, const [
+        StaircasePlan(topFloor: 3, doorsPerFloor: 3),
+        StaircasePlan(topFloor: 4, doorsPerFloor: 3),
+      ]);
+      expect(state.preview.dwellings, 12 + 15);
+    });
+
+    test('should remove a floor from staircase B only', () async {
+      phoneWith(_street());
+
+      final state = await unticked((s) => s.removeFloor(staircase: escB));
+
+      expect(state.plan.staircases.map((s) => s.topFloor), [3, 2]);
+    });
+
+    test('should add a door to staircase A only', () async {
+      phoneWith(_street());
+
+      final state = await unticked((s) => s.addDoor(staircase: escA));
+
+      expect(state.plan.staircases.map((s) => s.doorsPerFloor), [4, 3]);
+    });
+
+    test('should remove a door from staircase B only', () async {
+      phoneWith(_street());
+
+      final state = await unticked((s) => s.removeDoor(staircase: escB));
+
+      expect(state.plan.staircases.map((s) => s.doorsPerFloor), [3, 2]);
+    });
+
+    test('should refuse no door in staircase B and keep the plan', () async {
+      phoneWith(_street());
+
+      final state = await unticked((s) {
+        s
+          ..removeDoor(staircase: escB)
+          ..removeDoor(staircase: escB)
+          ..removeDoor(staircase: escB);
+      });
+
+      expect(state.refusal, BuildingPlanFailure.noDoor);
+      expect(state.plan.staircases.map((s) => s.doorsPerFloor), [3, 1]);
+    });
+
+    test('should step every staircase when none is named', () async {
+      phoneWith(_street());
+
+      final state = await unticked((s) {
+        s
+          ..removeDoor(staircase: escB)
+          ..addDoor();
+      });
+
+      expect(state.plan.staircases.map((s) => s.doorsPerFloor), [4, 3]);
+    });
+
+    test('should give a new staircase the floors and doors of the last '
+        'one', () async {
+      phoneWith(_street());
+
+      final state = await unticked((s) {
+        s
+          ..removeFloor(staircase: escB)
+          ..addStaircase();
+      });
+
+      expect(state.plan.staircases.map((s) => s.topFloor), [3, 2, 2]);
+    });
+
+    test('should make every staircase like A when the box is ticked '
+        'again', () async {
+      phoneWith(_street());
+
+      final state = await unticked((s) {
+        s
+          ..addFloor(staircase: escB)
+          ..setSameForEach(same: true);
+      });
+
+      expect(state.sameForEach, isTrue);
+      expect(
+        state.plan,
+        plan(
+          staircases: 2,
+          topFloor: 3,
+          doors: 3,
+          style: DoorLabelStyle.floorAndLetter,
+        ),
+      );
+    });
+
+    test('should refuse to tick the box when B like A makes too many '
+        'dwellings', () async {
+      // A: one « Logements » row of 251 doors; B: one of 1. Alike: 502.
+      final big = valueOf(
+        Building.create(
+          style: DoorLabelStyle.floorAndNumber,
+          staircases: [
+            for (final (name, doors) in [(escA, 251), (escB, 1)])
+              Staircase(
+                name: name,
+                floors: [
+                  Floor(
+                    level: null,
+                    dwellings: [
+                      for (var door = 1; door <= doors; door++)
+                        Dwelling(label: d('$door')),
+                    ],
+                  ),
+                ],
+              ),
+          ],
+        ),
+      );
+      phoneWith(
+        _street(
+          houses: [House(number: n('8'), building: big)],
+        ),
+      );
+
+      final state = await after('8', (s) => s.setSameForEach(same: true));
+
+      expect(state.refusal, BuildingPlanFailure.tooManyDwellings);
+      expect(state.sameForEach, isFalse);
+      expect(state.plan.dwellingCount, 252);
+    });
+
+    test('should clear the refusal when the box is unticked', () async {
+      phoneWith(_street());
+      await after('8', (s) {
+        for (var i = 0; i < 25; i++) {
+          s.addStaircase();
+        }
+      });
+
+      final state = await unticked((_) {});
+
+      expect(state.refusal, isNull);
     });
   });
 

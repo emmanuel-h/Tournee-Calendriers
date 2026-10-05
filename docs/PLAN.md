@@ -408,8 +408,9 @@ Edit mode:
   Numbers already in the street are skipped; a number in the Corbeille comes back with its
   marks.
 - **Tapping a tile** opens a small sheet: change the number (`3` → `3bis`, refused when
-  another house, shown or in the Corbeille, has it), *Transformer en immeuble…* (5.7), or
-  back to a single house.
+  another house, shown or in the Corbeille, has it), then *Transformer en immeuble…* (5.7) for
+  a house, or « Ouvrir l'immeuble » for a building: every change to a building itself (floors,
+  doors, back to a single house) is made from its grid (5.7, T1.18).
 - The name field renames the street for the whole team.
 - *Ne plus la faire* removes me from its assignees; *Supprimer* deletes it for everyone
   (confirmation, any member may do it — see Q2).
@@ -446,18 +447,25 @@ Edit mode details fixed in T1.10 (`lib/presentation/edit_street/`,
   numéro » (refusals: the number messages above, « Le 5 est déjà dans la rue. », « Le 7 est
   dans la Corbeille : ajoutez-le avec « + numéros » pour le retrouver avec ses marques, ou
   choisissez un autre numéro. »; the same number just closes), then « N° 3 → 3bis
-  [Annuler] ». A house offers *Transformer en immeuble…*; a building « Modifier les étages »
-  (both open « Décrire l'immeuble », §5.7, then come back to the edit mode) and « Redevenir
-  une maison », which asks first when a door has marks (« Redevenir une maison ? — Les portes
-  de l'immeuble et leurs marques (statuts, notes, « repasser ») seront perdues. »), then
-  « N° 8 redevient une maison [Annuler] ».
+  [Annuler] ». A house offers *Transformer en immeuble…* (« Décrire l'immeuble », §5.7, then
+  back to the edit mode). A building offers « Ouvrir l'immeuble » (dark outline, building icon)
+  instead (T1.18): its grid opens over the edit mode, and « Redevenir une maison » chosen there
+  closes it back to the edit mode with « N° 8 redevient une maison [Annuler] ».
 - **« Supprimer la rue »** (red outline) asks « Supprimer la rue ? — « Rue des Lilas » part à
   la Corbeille avec ses numéros et leurs marques, pour toute l'équipe. » then goes back to
   « Mes rues », where the street no longer shows. **« Ne plus la faire » is not shown before
   M3**: it removes me from the street's assignees, which come with Accueil (§6.1 sketch).
-- A building's sheet also offers « Ajuster les portes » (dark outline, between « Changer le
-  numéro » and « Modifier les étages »), which opens the screen of §5.7 (T1.12). Not yet: the
-  Corbeille screen (§5.11) comes in M2.
+- Not yet: the Corbeille screen (§5.11) comes in M2.
+
+```
+  number sheet of a building (T1.18)
+┌──────────────────────────────┐
+│ 8  Rue des Lilas             │
+│ Numéro [ 8                 ] │
+│ [    Changer le numéro     ] │
+│ [ 🏢  Ouvrir l'immeuble    ] │
+└──────────────────────────────┘
+```
 
 ### 5.6 Rue — two sides of the street (used 95 % of the time)
 
@@ -526,9 +534,11 @@ Details fixed in T1.7 (`lib/presentation/street/`, `lib/ui/screens/street/`):
 │ [ Transformer en immeuble… ] │    │                              │
 │ Modifié par Léa · 14:02      │    │                              │
 └──────────────────────────────┘    │ Appui : ○→✓→✗→↻→○ · détails  │
-                                    │ [Modifier les étages]        │
-                                    │ ☐ Repasser · Note [digicode] │
+                                    │ [Gérer l'immeuble ▾][Note · Repasser]
                                     └──────────────────────────────┘
+                                      ▾ opens: Modifier les étages
+                                               Ajuster les portes
+                                               Redevenir une maison
 ```
 
 - **Floors from top to bottom**, the way you climb the stairs. One row per floor, its doors
@@ -587,6 +597,15 @@ Immeuble details fixed in T1.9 (`lib/presentation/building/`, `lib/ui/screens/bu
 - Floors top first, labelled RdC, 1er, 2e… (« Logements » for unknown floors); four doors a row,
   wrapping under the label; a floor without doors is hidden. A door shows its label and glyph
   in the status colours (↻ for « repasser »), a dot for a note.
+- **Under the grid** (T1.18): « Gérer l'immeuble ▾ » next to « Note · Repasser » (48 dp each).
+  « Gérer l'immeuble » opens a menu sheet titled « Gérer l'immeuble » — a sheet like every
+  other choice of the app, rows of 56 dp — with « Modifier les étages » (« Décrire
+  l'immeuble » over the grid), « Ajuster les portes » (its screen over the grid, back to it
+  when left) and « Redevenir une maison ». The last asks first when a door has marks
+  (« Redevenir une maison ? — Les portes de l'immeuble et leurs marques (statuts, notes,
+  « repasser ») seront perdues. [Annuler] [Redevenir une maison] »), then the grid closes back
+  to the screen that opened it (street, or edit mode), which shows « N° 8 redevient une maison
+  [Annuler] ». Opening the menu hides the snackbar of the last door.
 - **Tap** a door: light haptic tick, TalkBack hears « Escalier A, 5e, porte 51, fait » (the
   staircase is named only when there are several; « Logements » is not said), and the snackbar
   « 51 → Fait [Annuler] » shows for 4 s over the hint « Appui : ○ → ✓ → ✗ → ↻ → ○ · Appui
@@ -599,18 +618,29 @@ Immeuble details fixed in T1.9 (`lib/presentation/building/`, `lib/ui/screens/bu
 « Décrire l'immeuble » details fixed in T1.9:
 
 - Title « Décrire l'immeuble », then « 8 Rue des Lilas ». A house starts at 1 staircase, RdC–2e,
-  2 doors a floor, « 51, 52… »; « Modifier les étages » starts from the building: its staircases,
-  style, highest floor and largest floor (the default when that is larger than a plan allows).
+  2 doors a floor, « 51, 52… »; « Modifier les étages » starts from the building: its style and,
+  **for each staircase**, its highest floor and its largest floor (the default when that is
+  larger than a plan allows).
+- **« Même chose pour chaque escalier »** (T1.18), a box under « Escaliers » shown from two
+  staircases: ticked, one « Étages » and one « Portes par étage » set every staircase alike;
+  unticked, each staircase has its own pair under « ESC. A », « ESC. B »… (screen readers:
+  « Étages, escalier B »), so B can be RdC–2e with 2 doors while A is RdC–5e with 4. It starts
+  ticked for a house and for a building whose staircases are alike, unticked otherwise.
+  Ticking it again gives every staircase A's floors and doors (refused, still unticked, when
+  that passes 500 dwellings). A new staircase takes the floors and doors of the last one; « − »
+  removes the last staircase.
 - The **Étages** stepper runs « Inconnus » (one « Logements » row), « RdC », « RdC–1er », …
   « RdC–50e »: (−) on « RdC » gives « Inconnus », (+) on « Inconnus » gives « RdC ».
-- A step the domain refuses (`BuildingPlan.create`) leaves the answers as they were and says why
+- A step the domain refuses (`BuildingPlan.perStaircase`) leaves the answers as they were and says why
   above the preview, until the next step that is taken: « Au moins 1 escalier. », « 26 escaliers
   au plus (A à Z). », « Les sous-sols ne sont pas comptés. », « 50 étages au plus. », « Au moins
   1 porte par étage. », « 26 portes par étage au plus avec 5A, 5B… », « 500 logements au plus
   par immeuble. ». Answers already taken are never undone by a change of the street meanwhile.
 - Preview « APERÇU · 48 LOGEMENTS » and « Esc. A et B : RdC 01–04, 1er 11–14 … 5e 51–54 »: no
   staircase prefix for one staircase, « Esc. A à C » from three; every floor up to three, then
-  RdC, 1er … top floor; a floor of one door shows its label alone.
+  RdC, 1er … top floor; a floor of one door shows its label alone. When the staircases differ,
+  one line each, shorter: « Esc. A : RdC 01–04 … 5e 51–54 » then « Esc. B : RdC 01–02 … 2e 21–22 »
+  (the RdC and the top floor, « … » when floors lie between).
 - « Valider » on a building whose new layout drops doors with marks asks first: « Modifier les
   étages ? — 3 portes marquées n'existent plus dans ce plan : leurs statuts, notes et
   « repasser » seront perdus. [Annuler] [Modifier] » (`Building.markedDoorsDroppedBy`).
@@ -621,25 +651,32 @@ Immeuble details fixed in T1.9 (`lib/presentation/building/`, `lib/ui/screens/bu
 
 ```
 ┌──────────────────────────────┐
-│ Immeuble · 8 Rue des Lilas   │
-│ Escaliers     [ 1 ]  (−)(+)  │
-│ Étages  RdC à [ 5 ]e (−)(+)  │
-│ Portes par étage [ 4 ] (−)(+)│
+│ Décrire l'immeuble           │
+│ 8 Rue des Lilas              │
+│ Escaliers        (−) 2 (+)   │
+│ ☐ Même chose pour chaque escalier
+│ ESC. A                       │
+│ Étages      (−) RdC–5e (+)   │
+│ Portes par étage (−) 4 (+)   │
+│ ESC. B                       │
+│ Étages      (−) RdC–2e (+)   │
+│ Portes par étage (−) 2 (+)   │
 │ Numéros ( 51, 52… | 5A, 5B… | libres )
-│ Aperçu : RdC 01-04 … 5e 51-54│
+│ Aperçu · 30 logements        │
 │ [         Valider         ]  │
 └──────────────────────────────┘
 ```
 
 - Afterwards each floor can be adjusted on its own (add / remove a door, rename a door), from
-  « Ajuster les portes » in edit mode. "Libres" lets you type the labels (e.g. "Gauche", "Droite").
+  « Ajuster les portes » under the grid. "Libres" lets you type the labels (e.g. "Gauche", "Droite").
 - Changing the layout keeps the statuses (and notes, « repasser ») of doors whose label still
   exists on the same floor of the same staircase.
 
 « Ajuster les portes » details fixed in T1.12 (`lib/presentation/building/adjust_doors_*`,
 `lib/ui/screens/building/adjust_doors_screen.dart`, `rename_door_sheet.dart`, mockup Doors):
 
-- Opened from edit mode: tap a building's number, then « Ajuster les portes ». A full screen
+- Opened from the grid: « Gérer l'immeuble », then « Ajuster les portes » (T1.18); leaving it
+  comes back to the grid. A full screen
   « ✕ Ajuster les portes [OK] » with « 8 Rue des Lilas » under the title; ✕, « OK » and back
   all just leave, since every change is stored at once (through `DescribeBuilding`, offline).
 - « Esc. A | Esc. B » only with more than one staircase (it comes back to A when the chosen
@@ -657,8 +694,9 @@ Immeuble details fixed in T1.9 (`lib/presentation/building/`, `lib/ui/screens/bu
   note) asks first: « Supprimer la porte 52 ? — Elle a déjà une marque (fait, personne,
   repasser ou note), qui partira avec elle. « Annuler » la ramène juste après. [Garder]
   [Supprimer] » (« Supprimer » in red). The building's last door is refused before anything
-  is asked: « C'est la dernière porte de l'immeuble. Pour en refaire une maison, touchez son
-  numéro puis « Redevenir une maison ». ». « + » and opening a sheet hide the snackbar.
+  is asked: « C'est la dernière porte de l'immeuble. Pour en refaire une maison, revenez à
+  l'immeuble : « Gérer l'immeuble », puis « Redevenir une maison ». ». « + » and opening a sheet
+  hide the snackbar.
 - **Tap a door** → a small sheet « Porte 11 », « Esc. A · 1er · 8 Rue des Lilas » (staircase
   only when several, no floor for « Logements »), field « Nom de la porte » (prefilled and
   selected, keyboard open), « Renommer ». The door keeps its marks. Refusals under the field
@@ -857,10 +895,15 @@ Building rules fixed in T1.3 (`lib/domain/street/building/`):
   staircase names, floor levels 0–50 and unique per staircase, a « Logements » row (null level)
   only alone, labels unique per floor, at least one door, at most 500. Staircases are sorted by
   name and floors top first whatever order they come in; an empty floor is allowed.
-- **Layout generation** (`BuildingPlan.create` → `generate()`): staircases 1–26, top floor
-  0–50 (or unknown), doors per floor ≥ 1, at most **500 dwellings** per building (a building
-  lives inside its street document, PLAN §6.2), and with style `5A` at most 26 doors per floor.
-  Each breach is a `BuildingPlanFailure`. Labels:
+- **Layout generation** (`BuildingPlan` → `generate()`): a plan is a `DoorLabelStyle` and one
+  `StaircasePlan(topFloor, doorsPerFloor)` per staircase, `A` first (T1.18).
+  `BuildingPlan.perStaircase(staircases, style)` checks each staircase — top floor 0–50 (or
+  unknown: one « Logements » row), doors per floor ≥ 1, with style `5A` at most 26 doors per
+  floor — and the whole building: staircases 1–26, at most **500 dwellings** in all (a building
+  lives inside its street document, PLAN §6.2). `BuildingPlan.create(staircaseCount, topFloor,
+  doorsPerFloor, style)` is the simple case, every staircase alike; `isUniform` tells whether
+  they are. Each breach is a `BuildingPlanFailure`. Door numbers are padded per staircase (a
+  staircase of 10 doors reads `101–110`, its neighbour of 4 keeps `11–14`). Labels:
   - `51` (`floorAndNumber`): floor then door number — RdC `01–04`, 1er `11–14`, 5e `51–54`,
     10e `101–104`. With **10 doors or more** per floor the door number is padded to the width of
     the count (RdC `001–010`, 1er `101–110`), so floor 1 door 11 (`111`) never reads like floor
@@ -900,7 +943,7 @@ Building rules fixed in T1.3 (`lib/domain/street/building/`):
     `setDwellingNote` change one door and stamp only that door.
 - **Changes.** Layout commands return `BuildingLaidOut` (the new building + the whole house
   `before`): storage rewrites that house's building, undo puts `before` back. A layout change is
-  rare and made in edit mode, so a teammate marking a door of the same building at that same
+  rare and made from « Gérer l'immeuble », so a teammate marking a door of the same building at that same
   instant may be overwritten. `BuildingRemoved` carries the new status (and `comeBack`, the
   hint the single house keeps). Door commands return a `DwellingChange` (`DwellingMarked`, `DwellingComeBackSet`,
   `DwellingNoteSet`) with the house number, the staircase, the floor level, the door `before`

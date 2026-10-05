@@ -116,23 +116,16 @@ final class EditStreetNotifier extends Notifier<EditStreetState> {
     };
   }
 
-  /// « Redevenir une maison » on the building at [number]: its doors go.
-  /// When one of them has marks, nothing happens unless [confirmed].
-  Future<EditOutcome> backToSingleHouse(
-    HouseNumber number, {
-    bool confirmed = false,
-  }) async {
-    if ((_houseAt(number)?.building?.hasMarks ?? false) && !confirmed) {
-      return const EditNeedsConfirmation();
-    }
-    return _keep(
-      await ref.read(describeBuildingProvider)(
-        streetId,
-        number,
-        const BackToSingleHouse(),
-      ),
-    );
-  }
+  /// « Redevenir une maison » on the building at [number], chosen in its
+  /// grid (which asked first when a door had marks): its doors go, with
+  /// « Annuler » to bring them back.
+  Future<EditOutcome> backToSingleHouse(HouseNumber number) async => _keep(
+    await ref.read(describeBuildingProvider)(
+      streetId,
+      number,
+      const BackToSingleHouse(),
+    ),
+  );
 
   /// « Annuler » of the snackbar: puts back what the last change replaced,
   /// once. When that is no longer possible, nothing happens.

@@ -27,20 +27,23 @@ Street screen (« Rue »):
   « Quand repasser ? » (greyed unless « Repasser »), a note (200 characters at most, with the privacy hint),
   and when it was last changed. Each control is stored at once; the tile follows.
 - « Transformer en immeuble… » in the sheet describes a building (« Décrire l'immeuble »):
-  staircases, floors (RdC–5e, or « Inconnus »), doors per floor, door labels « 51, 52… |
+  staircases, floors (RdC–5e, or « Inconnus »), doors per floor — the same for every staircase,
+  or each its own (« Même chose pour chaque escalier » unticked) —, door labels « 51, 52… |
   5A, 5B… | Libres », with a live preview.
 - Tap a building for its grid (« Immeuble »): floors from the top down, four doors a row,
   a staircase control when there are several, « ◐ done/total » for the whole building. A tap
   cycles a door (vibration, announcement, « Annuler » for 4 s); a hold opens the door's
-  sheet. « Modifier les étages » lays it out again, keeping the marks of the doors that stay
-  (and asks before losing marked ones); « Note · Repasser » sets the building's own.
+  sheet. « Gérer l'immeuble » holds every change to the building: « Modifier les étages » lays
+  it out again, keeping the marks of the doors that stay (and asks before losing marked ones),
+  « Ajuster les portes », and « Redevenir une maison » (asks first when doors have marks;
+  « Annuler » brings them back). « Note · Repasser » sets the building's own.
 - Edit mode (✏, « Modifier la rue »): rename the street, ✕ removes a number at once with
   « Annuler » (asks first when it has marks; it goes to the Corbeille with them), « + numéros »
   adds a number, a list or a range (`12bis, 21-25`) with a live preview, each on its side
   (numbers in the Corbeille come back with their marks). Tap a number to change it
-  (`3` → `3bis`), make it a building, lay a building out again or turn it back into a house.
+  (`3` → `3bis`), make it a building, or open a building's grid (« Ouvrir l'immeuble »).
   « Supprimer la rue » sends the street to the Corbeille.
-- « Ajuster les portes » (a building's number in edit mode): floor by floor, « + » adds a
+- « Ajuster les portes » (« Gérer l'immeuble » under the grid): floor by floor, « + » adds a
   door, ✕ removes one (with « Annuler »; asks first when it has a mark), a tap renames it
   (« Gauche », « Droite » on every floor). The other doors keep their marks.
 - Works offline, cold start included: marks are stored on the phone.

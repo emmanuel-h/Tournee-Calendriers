@@ -57,6 +57,7 @@ final class BuildingGridShown extends BuildingGridState {
     required List<StaircaseTab> staircases,
     required this.selected,
     required List<FloorRow> floors,
+    required this.hasMarks,
   }) : staircases = List.unmodifiable(staircases),
        floors = List.unmodifiable(floors);
 
@@ -77,6 +78,10 @@ final class BuildingGridShown extends BuildingGridState {
   /// The floors of [selected], top floor first; a floor without a door is
   /// left out.
   final List<FloorRow> floors;
+
+  /// Whether a door has a mark (a status, a « repasser » or a note):
+  /// « Redevenir une maison » asks first, as they would go.
+  final bool hasMarks;
 
   /// The staircase control shows only when there is a choice to make.
   bool get showsStaircases => staircases.length > 1;

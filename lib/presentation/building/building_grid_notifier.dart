@@ -138,6 +138,7 @@ final class BuildingGridNotifier extends Notifier<BuildingGridState> {
           ),
       ],
       selected: shown.name,
+      hasMarks: building.hasMarks,
       floors: [
         for (final floor in shown.floors)
           if (floor.dwellings.isNotEmpty)

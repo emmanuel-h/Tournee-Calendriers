@@ -39,6 +39,26 @@ BuildingPlanFailure _failure({
   ),
 );
 
+StaircasePlan _stairs(int? topFloor, int doors) =>
+    StaircasePlan(topFloor: topFloor, doorsPerFloor: doors);
+
+/// Staircase A RdC–5e with 4 doors a floor, then [b] (by default RdC–2e
+/// with 2 doors): the « Décrire l'immeuble » sketch.
+BuildingPlan _uneven({StaircasePlan? b, DoorLabelStyle style = _number}) =>
+    valueOf(
+      BuildingPlan.perStaircase(
+        staircases: [_stairs(5, 4), b ?? _stairs(2, 2)],
+        style: style,
+      ),
+    );
+
+BuildingPlanFailure _unevenFailure(
+  StaircasePlan b, {
+  DoorLabelStyle style = _number,
+}) => failureOf(
+  BuildingPlan.perStaircase(staircases: [_stairs(5, 4), b], style: style),
+);
+
 /// Each floor of [staircase] as `level: label label…`, top first.
 List<String> _rows(Staircase staircase) => [
   for (final floor in staircase.floors)
@@ -84,13 +104,13 @@ void main() {
       final plan = _plan(staircases: 2, topFloor: 3, doors: 6, style: _letter);
 
       expect(plan.staircaseCount, 2);
-      expect(plan.topFloor, 3);
-      expect(plan.doorsPerFloor, 6);
+      expect(plan.staircases, [_stairs(3, 6), _stairs(3, 6)]);
       expect(plan.style, _letter);
+      expect(plan.isUniform, isTrue);
     });
 
     test('should accept unknown floors', () {
-      expect(_plan(topFloor: null).topFloor, isNull);
+      expect(_plan(topFloor: null).staircases.single.topFloor, isNull);
     });
 
     test('should count the dwellings of the Décrire l’immeuble preview', () {
@@ -129,12 +149,15 @@ void main() {
       });
 
       test('should accept the RdC alone', () {
-        expect(_plan(topFloor: 0).topFloor, 0);
+        expect(_plan(topFloor: 0).staircases.single.topFloor, 0);
       });
 
       test('should accept the highest top floor', () {
         expect(
-          _plan(topFloor: BuildingPlan.maxTopFloor, doors: 1).topFloor,
+          _plan(
+            topFloor: BuildingPlan.maxTopFloor,
+            doors: 1,
+          ).staircases.single.topFloor,
           50,
         );
       });
@@ -151,11 +174,14 @@ void main() {
       });
 
       test('should accept one door per floor', () {
-        expect(_plan(doors: 1).doorsPerFloor, 1);
+        expect(_plan(doors: 1).staircases.single.doorsPerFloor, 1);
       });
 
       test('should accept 26 doors per floor with letters', () {
-        expect(_plan(doors: 26, style: _letter).doorsPerFloor, 26);
+        expect(
+          _plan(doors: 26, style: _letter).staircases.single.doorsPerFloor,
+          26,
+        );
       });
 
       test('should refuse 27 doors per floor with letters', () {
@@ -166,7 +192,10 @@ void main() {
       });
 
       test('should accept 27 doors per floor with numbers', () {
-        expect(_plan(doors: 27, style: _number).doorsPerFloor, 27);
+        expect(
+          _plan(doors: 27, style: _number).staircases.single.doorsPerFloor,
+          27,
+        );
       });
 
       test('should accept the largest building', () {
@@ -325,6 +354,191 @@ void main() {
     });
   });
 
+  group('perStaircase', () {
+    test('should keep the floors and doors of each staircase', () {
+      final plan = _uneven();
+
+      expect(plan.staircases, [_stairs(5, 4), _stairs(2, 2)]);
+      expect(plan.staircaseCount, 2);
+      expect(plan.style, _number);
+      expect(plan.isUniform, isFalse);
+    });
+
+    test('should be uniform when every staircase is alike', () {
+      expect(_uneven(b: _stairs(5, 4)).isUniform, isTrue);
+    });
+
+    test('should differ from uniform when only the doors differ', () {
+      expect(_uneven(b: _stairs(5, 3)).isUniform, isFalse);
+    });
+
+    test('should not let its staircases be modified', () {
+      expect(
+        () => _uneven().staircases.add(_stairs(1, 1)),
+        throwsUnsupportedError,
+      );
+    });
+
+    test('should count the dwellings of every staircase: 24 + 6', () {
+      expect(_uneven().dwellingCount, 30);
+    });
+
+    test('should count one row for a staircase whose floors are unknown', () {
+      expect(_uneven(b: _stairs(null, 3)).dwellingCount, 27);
+    });
+
+    test('should equal the uniform plan with the same staircases', () {
+      expect(
+        _uneven(b: _stairs(5, 4)),
+        _plan(staircases: 2, topFloor: 5, doors: 4),
+      );
+    });
+
+    group('limits', () {
+      final refusals = <String, (StaircasePlan, DoorLabelStyle, Object)>{
+        'a top floor of B below the RdC': (
+          _stairs(-1, 2),
+          _number,
+          BuildingPlanFailure.belowGroundFloor,
+        ),
+        'a top floor of B above the 50th': (
+          _stairs(51, 1),
+          _number,
+          BuildingPlanFailure.tooManyFloors,
+        ),
+        'no door on the floors of B': (
+          _stairs(2, 0),
+          _number,
+          BuildingPlanFailure.noDoor,
+        ),
+        '27 doors a floor in B with letters': (
+          _stairs(0, 27),
+          _letter,
+          BuildingPlanFailure.tooManyDoorsForLetters,
+        ),
+        // A has 24 dwellings: B's 477 make 501.
+        'one dwelling more than 500 in all': (
+          _stairs(null, 477),
+          _number,
+          BuildingPlanFailure.tooManyDwellings,
+        ),
+      };
+      refusals.forEach((what, given) {
+        final (b, style, failure) = given;
+        test('should refuse $what', () {
+          expect(_unevenFailure(b, style: style), failure);
+        });
+      });
+
+      final accepted = <String, (StaircasePlan, DoorLabelStyle, int)>{
+        'unknown floors in B': (_stairs(null, 2), _number, 26),
+        'the RdC alone in B': (_stairs(0, 2), _number, 26),
+        'the 50th floor in B': (_stairs(50, 1), _number, 75),
+        'one door a floor in B': (_stairs(2, 1), _number, 27),
+        '26 doors a floor in B with letters': (_stairs(0, 26), _letter, 50),
+        '27 doors a floor in B with numbers': (_stairs(0, 27), _number, 51),
+        '500 dwellings in all': (_stairs(null, 476), _number, 500),
+      };
+      accepted.forEach((what, given) {
+        final (b, style, dwellings) = given;
+        test('should accept $what', () {
+          expect(_uneven(b: b, style: style).dwellingCount, dwellings);
+        });
+      });
+
+      test('should refuse no staircase', () {
+        expect(
+          failureOf(BuildingPlan.perStaircase(staircases: [], style: _number)),
+          BuildingPlanFailure.noStaircase,
+        );
+      });
+
+      test('should accept 26 staircases and refuse 27', () {
+        expect(
+          valueOf(
+            BuildingPlan.perStaircase(
+              staircases: List.filled(26, _stairs(0, 1)),
+              style: _number,
+            ),
+          ).staircaseCount,
+          26,
+        );
+        expect(
+          failureOf(
+            BuildingPlan.perStaircase(
+              staircases: List.filled(27, _stairs(0, 1)),
+              style: _number,
+            ),
+          ),
+          BuildingPlanFailure.tooManyStaircases,
+        );
+      });
+
+      test('should check staircase A as well as B', () {
+        expect(
+          failureOf(
+            BuildingPlan.perStaircase(
+              staircases: [_stairs(2, 0), _stairs(2, 2)],
+              style: _number,
+            ),
+          ),
+          BuildingPlanFailure.noDoor,
+        );
+      });
+    });
+
+    group('generate', () {
+      test('should lay out each staircase as its own answers say', () {
+        final staircases = _uneven().generate();
+
+        expect(staircases.map((s) => s.name), [escA, escB]);
+        expect(_rows(staircases[0]).first, '5: 51 52 53 54');
+        expect(_rows(staircases[0]).last, '0: 01 02 03 04');
+        expect(_rows(staircases[1]), ['2: 21 22', '1: 11 12', '0: 01 02']);
+      });
+
+      test('should pad the doors of each staircase to its own count', () {
+        final staircases = _uneven(b: _stairs(0, 10)).generate();
+
+        expect(_rows(staircases[0]).last, '0: 01 02 03 04');
+        expect(_rows(staircases[1]), [
+          '0: 001 002 003 004 005 006 007 008 009 010',
+        ]);
+      });
+
+      test('should make one Logements row for B only when its floors are '
+          'unknown', () {
+        final staircases = _uneven(b: _stairs(null, 2)).generate();
+
+        expect(staircases[0].floors, hasLength(6));
+        expect(_rows(staircases[1]), ['null: 1 2']);
+      });
+    });
+  });
+
+  group('StaircasePlan', () {
+    test('should count its dwellings', () {
+      expect(_stairs(5, 4).dwellingCount, 24);
+      expect(_stairs(0, 3).dwellingCount, 3);
+      expect(_stairs(null, 7).dwellingCount, 7);
+    });
+
+    test('should be equal when its floors and doors are', () {
+      expect(_stairs(2, 2), _stairs(2, 2));
+      expect(_stairs(2, 2).hashCode, _stairs(2, 2).hashCode);
+      expect(_stairs(2, 2), isNot(_stairs(3, 2)));
+      expect(_stairs(2, 2), isNot(_stairs(2, 3)));
+      expect(_stairs(null, 2), isNot(_stairs(0, 2)));
+    });
+
+    test('should show its fields when printed', () {
+      expect(
+        _stairs(null, 3).toString(),
+        'StaircasePlan(top floor null, 3 door(s) per floor)',
+      );
+    });
+  });
+
   group('equality', () {
     test('should be equal when every field is equal', () {
       expect(_plan(), _plan());
@@ -336,6 +550,7 @@ void main() {
       'top floors': _plan(topFloor: 4),
       'door counts': _plan(doors: 3),
       'styles': _plan(style: _letter),
+      'staircases B': _uneven(b: _stairs(5, 3)),
     };
     others.forEach((field, other) {
       test('should differ when the $field differ', () {
@@ -346,7 +561,7 @@ void main() {
     test('should show its fields when printed', () {
       expect(
         _plan().toString(),
-        'BuildingPlan(1 staircase(s), top floor 5, 4 door(s) per floor, '
+        'BuildingPlan([StaircasePlan(top floor 5, 4 door(s) per floor)], '
         'DoorLabelStyle.floorAndNumber)',
       );
     });

@@ -4,16 +4,20 @@ import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
 import 'package:tournee_calendriers/presentation/building/building_grid_notifier.dart';
 import 'package:tournee_calendriers/presentation/building/building_grid_state.dart';
 import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
+import 'package:tournee_calendriers/ui/components/confirm_dialog.dart';
 import 'package:tournee_calendriers/ui/components/segmented_choice.dart';
 import 'package:tournee_calendriers/ui/components/sheet_scaffold.dart';
 import 'package:tournee_calendriers/ui/components/status_glyph.dart';
 import 'package:tournee_calendriers/ui/components/tap_hint.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
+import 'package:tournee_calendriers/ui/router/app_routes.dart';
+import 'package:tournee_calendriers/ui/screens/building/building_menu_sheet.dart';
 import 'package:tournee_calendriers/ui/screens/building/building_setup_sheet.dart';
 import 'package:tournee_calendriers/ui/screens/building/door_sheets.dart';
 import 'package:tournee_calendriers/ui/screens/building/floor_names.dart';
@@ -23,18 +27,29 @@ import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 import 'package:tournee_calendriers/ui/theme/status_look.dart';
 
-/// Opens the Immeuble grid of [building] over the street screen (tap a
-/// building tile, PLAN §5.7, `docs/mockups/Building.dc.html`).
-Future<void> showBuildingGrid(BuildContext context, BuildingGridKey building) =>
-    showAppBottomSheet<void>(
-      context: context,
-      builder: (_) => BuildingGridSheet(building: building),
-    );
+/// How the grid was left, when its opener has something to do next.
+enum BuildingGridExit {
+  /// « Redevenir une maison », confirmed when doors had marks: the opener
+  /// turns the building back into a house and offers « Annuler ».
+  backToHouse,
+}
+
+/// Opens the Immeuble grid of [building] (tap a building tile, or
+/// « Ouvrir l'immeuble » in edit mode; PLAN §5.7,
+/// `docs/mockups/Building.dc.html`). Returns what to do next, or null.
+Future<BuildingGridExit?> showBuildingGrid(
+  BuildContext context,
+  BuildingGridKey building,
+) => showAppBottomSheet<BuildingGridExit>(
+  context: context,
+  builder: (_) => BuildingGridSheet(building: building),
+);
 
 /// The floors of one staircase from the top down, four doors a row; a tap
-/// cycles a door `○ → ✓ → ✗ → ○` with « Annuler » for 4 s, a hold opens
-/// its sheet. The header counts the doors of the whole building; the
-/// staircase control shows when there are several. Works offline.
+/// cycles a door `○ → ✓ → ✗ → ↻ → ○` with « Annuler » for 4 s, a hold
+/// opens its sheet. The header counts the doors of the whole building; the
+/// staircase control shows when there are several. « Gérer l'immeuble »
+/// holds every change to the building itself. Works offline.
 ///
 /// The sheet has its own `ScaffoldMessenger`, like the street screen: the
 /// snackbar of a door, and its « Annuler », goes away with the grid.
@@ -120,9 +135,13 @@ final class _BuildingGridSheetState extends ConsumerState<BuildingGridSheet>
               ),
             ),
             // The snackbar floats above these buttons, over the hint.
-            bottomNavigationBar: state is BuildingGridShown
-                ? _Actions(onEditFloors: _editFloors, onDetails: _openDetails)
-                : null,
+            bottomNavigationBar: switch (state) {
+              BuildingGridShown() => _Actions(
+                onManage: () => unawaited(_manage(state)),
+                onDetails: _openDetails,
+              ),
+              BuildingGridLoading() || BuildingGridGone() => null,
+            },
           ),
         ),
       ),
@@ -178,11 +197,45 @@ final class _BuildingGridSheetState extends ConsumerState<BuildingGridSheet>
     );
   }
 
-  /// « Modifier les étages »: the setup sheet, prefilled, over the grid,
-  /// which shows the new layout as soon as it is stored.
-  void _editFloors() {
+  /// « Gérer l'immeuble »: the menu, then the choice. The snackbar goes
+  /// first: its « Annuler » would undo a door behind the change.
+  Future<void> _manage(BuildingGridShown state) async {
     hideUndo();
-    unawaited(showBuildingSetup(context, widget.building));
+    final action = await showBuildingMenu(context);
+    if (action == null || !mounted) return;
+    switch (action) {
+      // The setup sheet, prefilled, over the grid, which shows the new
+      // layout as soon as it is stored.
+      case BuildingAction.editFloors:
+        await showBuildingSetup(context, widget.building);
+      // A screen over the grid (`push`), back to it when left.
+      case BuildingAction.adjustDoors:
+        await context.push<void>(
+          AppRoutes.adjustDoorsOf(
+            widget.building.street,
+            widget.building.number,
+          ),
+        );
+      case BuildingAction.backToHouse:
+        await _backToHouse(state);
+    }
+  }
+
+  /// « Redevenir une maison »: asks first when a door has a mark, then
+  /// closes the grid; its opener makes the house and offers « Annuler ».
+  Future<void> _backToHouse(BuildingGridShown state) async {
+    if (state.hasMarks) {
+      final l10n = AppLocalizations.of(context);
+      final confirmed = await showConfirmDialog(
+        context,
+        name: 'grid.confirmBackToHouse',
+        title: l10n.confirmBackToHouseTitle,
+        body: l10n.confirmBackToHouseBody,
+        confirmLabel: l10n.backToHouseAction,
+      );
+      if (!confirmed || !mounted) return;
+    }
+    Navigator.of(context).pop(BuildingGridExit.backToHouse);
   }
 
   /// « Note · Repasser »: the building's own note and « repasser ».
@@ -481,11 +534,11 @@ final class _DoorButton extends StatelessWidget {
   }
 }
 
-/// « Modifier les étages » and « Note · Repasser », side by side.
+/// « Gérer l'immeuble ▾ » and « Note · Repasser », side by side.
 final class _Actions extends StatelessWidget {
-  const _Actions({required this.onEditFloors, required this.onDetails});
+  const _Actions({required this.onManage, required this.onDetails});
 
-  final VoidCallback onEditFloors;
+  final VoidCallback onManage;
   final VoidCallback onDetails;
 
   @override
@@ -511,11 +564,14 @@ final class _Actions extends StatelessWidget {
           spacing: 10,
           children: [
             Expanded(
-              child: OutlinedButton(
-                key: const Key('grid.editFloors'),
+              // The ▾ after the label says a menu opens; decoration only.
+              child: OutlinedButton.icon(
+                key: const Key('grid.manage'),
                 style: style,
-                onPressed: onEditFloors,
-                child: Text(l10n.editFloors),
+                onPressed: onManage,
+                iconAlignment: IconAlignment.end,
+                icon: const Icon(Icons.arrow_drop_down),
+                label: Text(l10n.manageBuilding),
               ),
             ),
             Expanded(

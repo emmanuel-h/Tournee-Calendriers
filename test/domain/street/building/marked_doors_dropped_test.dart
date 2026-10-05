@@ -6,6 +6,7 @@ import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
 import '../../../support/building_fixtures.dart';
+import '../../../support/results.dart';
 import '../../../support/street_fixtures.dart';
 
 /// [building] with the door [label] of floor [level] of [staircase]
@@ -111,6 +112,44 @@ void main() {
         ),
         1,
       );
+    });
+
+    test('should count only the marked doors of the staircase made '
+        'smaller', () {
+      // A keeps RdC–2e; B shrinks to the RdC with one door: B's 21 (done)
+      // and 02 (note) go, A's 21 (done) and B's 01 (done) stay.
+      final marked = _with(
+        _with(
+          _with(
+            _with(
+              empty,
+              escA,
+              2,
+              Dwelling(label: d('21'), status: VisitStatus.done),
+            ),
+            escB,
+            2,
+            Dwelling(label: d('21'), status: VisitStatus.done),
+          ),
+          escB,
+          0,
+          Dwelling(label: d('02'), note: note('digicode')),
+        ),
+        escB,
+        0,
+        Dwelling(label: d('01'), status: VisitStatus.done),
+      );
+      final smallerB = valueOf(
+        BuildingPlan.perStaircase(
+          staircases: const [
+            StaircasePlan(topFloor: 2, doorsPerFloor: 2),
+            StaircasePlan(topFloor: 0, doorsPerFloor: 1),
+          ],
+          style: DoorLabelStyle.floorAndNumber,
+        ),
+      );
+
+      expect(marked.markedDoorsDroppedBy(smallerB), 2);
     });
 
     test('should count a door the « Logements » row no longer has', () {

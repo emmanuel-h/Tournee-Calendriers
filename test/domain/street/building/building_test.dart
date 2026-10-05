@@ -178,6 +178,35 @@ void main() {
         expect(both.dwellingAt(_key(escB, 2, '21'))!.status, VisitStatus.done);
       });
 
+      test('should keep the marks of the doors that stay in a staircase '
+          'made smaller', () {
+        // A stays RdC–3e with two doors; B becomes RdC–2e with one door:
+        // A's 21 and B's 21 (done) both stay, each in its staircase.
+        final smallerB = Building.laidOut(
+          valueOf(
+            BuildingPlan.perStaircase(
+              staircases: const [
+                StaircasePlan(topFloor: 3, doorsPerFloor: 2),
+                StaircasePlan(topFloor: 2, doorsPerFloor: 1),
+              ],
+              style: DoorLabelStyle.floorAndNumber,
+            ),
+          ),
+          keeping: before,
+        );
+
+        expect(
+          smallerB.dwellingAt(_key(escA, 2, '21')),
+          before.dwellingAt(_key(escA, 2, '21')),
+        );
+        expect(
+          smallerB.dwellingAt(_key(escB, 2, '21')),
+          before.dwellingAt(_key(escB, 2, '21')),
+        );
+        expect(_rows(smallerB.staircases[0]), hasLength(4));
+        expect(_rows(smallerB.staircases[1]), ['2: 21', '1: 11', '0: 01']);
+      });
+
       test('should not take a label from another floor', () {
         // Gauche of the RdC is done; laid out again with the floors unknown,
         // the « Logements » row's 1 is not the RdC's.

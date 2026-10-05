@@ -241,7 +241,8 @@ void main() {
 
   testWidgets(
     'should show the building partly done on its tile and the door renamed '
-    'in its grid when a house is made a building, a door marked and renamed',
+    'in its grid when a house is made a building, a door marked and renamed, '
+    'and staircase B made smaller',
     (tester) async {
       final semantics = tester.ensureSemantics();
       final storage = await Directory.systemTemp.createTemp('building_flow');
@@ -294,8 +295,10 @@ void main() {
         'Numéro 34, immeuble, 1 sur 6 faits',
       );
 
-      // ✏, tap 34, « Ajuster les portes », rename door 01 « Gauche »: the
-      // grid shows it, still done.
+      // ✏, tap 34, « Ouvrir l'immeuble »: its grid. « Gérer l'immeuble »,
+      // « Modifier les étages »: a staircase more, the box unticked, B down
+      // to the RdC alone. The grid has « Esc. B · 0/2 »; A keeps its door
+      // 01, done.
       await tester.tap(find.byKey(const Key('street.edit')));
       await tester.pumpAndSettle();
       await tester.tap(
@@ -305,8 +308,38 @@ void main() {
         ),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('number.adjustDoors')));
+      await tester.tap(find.byKey(const Key('number.openBuilding')));
       await tester.pumpAndSettle();
+      Future<void> manage(String action) async {
+        await tester.tap(find.byKey(const Key('grid.manage')));
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(ValueKey('buildingMenu.$action')));
+        await tester.pumpAndSettle();
+      }
+
+      await manage('editFloors');
+      await tester.tap(find.byKey(const ValueKey('setup.staircases.more')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('setup.sameForEach')));
+      await tester.pumpAndSettle();
+      final fewerB = find.byKey(const ValueKey('setup.B.floors.fewer'));
+      await tester.ensureVisible(fewerB);
+      await tester.pumpAndSettle();
+      await tester.tap(fewerB);
+      await tester.pumpAndSettle();
+      await tester.tap(fewerB);
+      await tester.pumpAndSettle();
+      final validate = find.byKey(const Key('setup.validate'));
+      await tester.ensureVisible(validate);
+      await tester.pumpAndSettle();
+      await tester.tap(validate);
+      await tester.pumpAndSettle();
+      expect(find.text('Esc. B · 0/2'), findsOneWidget);
+      expect(tester.getSemantics(count).label, '1 sur 8 logements faits');
+
+      // « Gérer l'immeuble », « Ajuster les portes », rename door 01
+      // « Gauche »: back on the grid, it is still done.
+      await manage('adjustDoors');
       await tester.tap(
         find.descendant(
           of: find.byKey(const ValueKey('doors.door.A0-01')),
@@ -322,15 +355,22 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('doors.ok')));
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('edit.ok')));
-      await tester.pumpAndSettle();
-      await tester.tap(tile);
-      await tester.pumpAndSettle();
       expect(
         tester
             .getSemantics(find.byKey(const ValueKey('grid.door.A0-Gauche')))
             .label,
-        'RdC, porte Gauche, fait',
+        'Escalier A, RdC, porte Gauche, fait',
+      );
+
+      // Closed, the grid leaves the edit mode; « OK » the street, where
+      // the tile counts every door.
+      Navigator.of(tester.element(count)).pop();
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('edit.ok')));
+      await tester.pumpAndSettle();
+      expect(
+        tester.getSemantics(tile).label,
+        'Numéro 34, immeuble, 1 sur 8 faits',
       );
       semantics.dispose();
     },

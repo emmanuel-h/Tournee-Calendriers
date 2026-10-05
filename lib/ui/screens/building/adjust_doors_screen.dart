@@ -23,7 +23,7 @@ import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
 /// « Ajuster les portes » (PLAN §5.7, `docs/mockups/Doors.dc.html`),
-/// opened from a building's number in edit mode: the floors of one
+/// opened from « Gérer l'immeuble » under the grid: the floors of one
 /// staircase, top first, each door with its ✕ and a « + » closing the
 /// floor. A tap on a door renames it. Works offline.
 ///
@@ -98,7 +98,7 @@ final class _AdjustDoorsScreenState extends ConsumerState<AdjustDoorsScreen>
     if (context.canPop()) {
       context.pop();
     } else if (widget.building case final building?) {
-      context.go(AppRoutes.editStreetOf(building.street));
+      context.go(AppRoutes.streetOf(building.street));
     } else {
       context.go(AppRoutes.home);
     }

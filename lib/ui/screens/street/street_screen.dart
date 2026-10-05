@@ -165,15 +165,33 @@ final class _MarkingScreenState extends ConsumerState<_MarkingScreen>
     if (exit != HouseSheetExit.toBuilding || !mounted) return;
     final laidOut = await showBuildingSetup(context, house);
     if (!laidOut || !mounted) return;
-    await showBuildingGrid(context, house);
+    await _showGrid(number);
   }
 
   /// A tap on a building tile opens its grid.
   void _openBuilding(HouseNumber number) {
     hideUndo();
-    unawaited(
-      showBuildingGrid(context, (street: widget.streetId, number: number)),
-    );
+    unawaited(_showGrid(number));
+  }
+
+  /// The grid of the building [number]; left by « Redevenir une maison »
+  /// (confirmed there), the building becomes a house here, with « N° 8
+  /// redevient une maison [Annuler] ».
+  Future<void> _showGrid(HouseNumber number) async {
+    final l10n = AppLocalizations.of(context);
+    final notifier = _notifier;
+    final exit = await showBuildingGrid(context, (
+      street: widget.streetId,
+      number: number,
+    ));
+    if (exit != BuildingGridExit.backToHouse || !mounted) return;
+    if (await notifier.backToSingleHouse(number) && mounted) {
+      showUndo(
+        message: l10n.backToHouseDone(number.label),
+        undoLabel: l10n.undo,
+        onUndo: () => unawaited(notifier.undo()),
+      );
+    }
   }
 
   /// A hold on a building tile opens its own note and « repasser ».

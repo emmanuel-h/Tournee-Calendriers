@@ -231,6 +231,19 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String get setupSameForEach => 'Même chose pour chaque escalier';
+
+  @override
+  String setupStaircaseHeader(String letter) {
+    return 'Esc. $letter';
+  }
+
+  @override
+  String setupForStaircase(String text, String letter) {
+    return '$text, escalier $letter';
+  }
+
+  @override
   String get setupFloorsUnknown => 'Inconnus';
 
   @override
@@ -259,6 +272,11 @@ class AppLocalizationsFr extends AppLocalizations {
       one: '1 logement',
     );
     return 'Aperçu · $_temp0';
+  }
+
+  @override
+  String setupPreviewStaircaseOne(String letter) {
+    return 'Esc. $letter : ';
   }
 
   @override
@@ -571,6 +589,12 @@ class AppLocalizationsFr extends AppLocalizations {
   String get editFloors => 'Modifier les étages';
 
   @override
+  String get manageBuilding => 'Gérer l\'immeuble';
+
+  @override
+  String get openBuilding => 'Ouvrir l\'immeuble';
+
+  @override
   String get buildingDetails => 'Note · Repasser';
 
   @override
@@ -629,7 +653,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get lastDoorRefused =>
-      'C\'est la dernière porte de l\'immeuble. Pour en refaire une maison, touchez son numéro puis « Redevenir une maison ».';
+      'C\'est la dernière porte de l\'immeuble. Pour en refaire une maison, revenez à l\'immeuble : « Gérer l\'immeuble », puis « Redevenir une maison ».';
 
   @override
   String doorTitle(String label) {

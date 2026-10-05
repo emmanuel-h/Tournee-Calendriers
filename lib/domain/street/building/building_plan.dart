@@ -1,4 +1,5 @@
 import 'package:tournee_calendriers/domain/shared/result.dart';
+import 'package:tournee_calendriers/domain/shared/same_items.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling_label.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase.dart';
@@ -55,29 +56,63 @@ enum BuildingPlanFailure {
   /// A top floor above [BuildingPlan.maxTopFloor].
   tooManyFloors,
 
-  /// Fewer than one door per floor.
+  /// Fewer than one door per floor (in any staircase).
   noDoor,
 
-  /// More doors per floor than letters, with [DoorLabelStyle.floorAndLetter].
+  /// More doors per floor than letters in a staircase, with
+  /// [DoorLabelStyle.floorAndLetter].
   tooManyDoorsForLetters,
 
-  /// More than [BuildingPlan.maxDwellings] dwellings in all.
+  /// More than [BuildingPlan.maxDwellings] dwellings in all, every
+  /// staircase counted.
   tooManyDwellings,
 }
 
-/// The answers of the « Décrire l'immeuble » sheet (PLAN §5.7): how many
-/// staircases, floors from the RdC up to [topFloor], doors per floor, and
-/// how the doors are labelled. [generate] lays the building out.
+/// The floors and doors of one staircase in a [BuildingPlan]: floors from
+/// the RdC up to [topFloor] (null: unknown floors, one « Logements » row),
+/// [doorsPerFloor] doors on each.
 ///
-/// Every staircase gets the same floors and every floor the same number of
-/// doors; the floors are then adjusted one by one (a door more or less).
+/// Only answers: [BuildingPlan.perStaircase] checks them, with the label
+/// style and the other staircases (a 5A style stops at 26 doors, a
+/// building at 500 dwellings).
+final class StaircasePlan {
+  const StaircasePlan({required this.topFloor, required this.doorsPerFloor});
+
+  /// The highest floor (0 is the RdC alone); null when the floors are
+  /// unknown.
+  final int? topFloor;
+
+  final int doorsPerFloor;
+
+  /// How many dwellings the staircase gets: one row when the floors are
+  /// unknown.
+  int get dwellingCount => ((topFloor ?? 0) + 1) * doorsPerFloor;
+
+  @override
+  bool operator ==(Object other) =>
+      other is StaircasePlan &&
+      other.topFloor == topFloor &&
+      other.doorsPerFloor == doorsPerFloor;
+
+  @override
+  int get hashCode => Object.hash(topFloor, doorsPerFloor);
+
+  @override
+  String toString() =>
+      'StaircasePlan(top floor $topFloor, $doorsPerFloor door(s) per floor)';
+}
+
+/// The answers of the « Décrire l'immeuble » sheet (PLAN §5.7): the floors
+/// and doors of each staircase ([staircases], `A` first) and how the doors
+/// are labelled. [generate] lays the building out.
+///
+/// Every floor of a staircase gets the same number of doors; the floors are
+/// then adjusted one by one (a door more or less). The simple case, every
+/// staircase alike (« Même chose pour chaque escalier »), is [create]; a
+/// smaller staircase B is [perStaircase].
 final class BuildingPlan {
-  const BuildingPlan._(
-    this.staircaseCount,
-    this.topFloor,
-    this.doorsPerFloor,
-    this.style,
-  );
+  BuildingPlan._(List<StaircasePlan> staircases, this.style)
+    : staircases = List.unmodifiable(staircases);
 
   /// The highest top floor: 50 floors is above the tallest residential
   /// towers of France, and keeps a slip of the « + » button harmless.
@@ -88,65 +123,87 @@ final class BuildingPlan {
   /// about 50 KB, more than a large tower block needs.
   static const maxDwellings = 500;
 
-  /// Checks the answers, or fails with the first [BuildingPlanFailure]. A
-  /// null [topFloor] means the floors are unknown: each staircase is then
-  /// one row of [doorsPerFloor] doors, « Logements ».
+  /// [staircaseCount] staircases alike: floors from the RdC up to
+  /// [topFloor] (null: unknown floors, each staircase one row of
+  /// [doorsPerFloor] doors, « Logements »). Checked as [perStaircase] does.
   static Result<BuildingPlan, BuildingPlanFailure> create({
     required int staircaseCount,
     required int? topFloor,
     required int doorsPerFloor,
     required DoorLabelStyle style,
   }) {
+    // Checked before the list is made: a negative count cannot make one,
+    // and a huge one is not worth making.
     if (staircaseCount < 1) return const Err(BuildingPlanFailure.noStaircase);
     if (staircaseCount > StaircaseName.maxCount) {
       return const Err(BuildingPlanFailure.tooManyStaircases);
     }
-    if (topFloor != null && topFloor < 0) {
-      return const Err(BuildingPlanFailure.belowGroundFloor);
+    return perStaircase(
+      staircases: List.filled(
+        staircaseCount,
+        StaircasePlan(topFloor: topFloor, doorsPerFloor: doorsPerFloor),
+      ),
+      style: style,
+    );
+  }
+
+  /// Checks the answers of each staircase, `A` first, or fails with the
+  /// first [BuildingPlanFailure]. The limits on floors and doors hold for
+  /// each staircase; the limit on dwellings for the whole building.
+  static Result<BuildingPlan, BuildingPlanFailure> perStaircase({
+    required List<StaircasePlan> staircases,
+    required DoorLabelStyle style,
+  }) {
+    if (staircases.isEmpty) return const Err(BuildingPlanFailure.noStaircase);
+    if (staircases.length > StaircaseName.maxCount) {
+      return const Err(BuildingPlanFailure.tooManyStaircases);
     }
-    if (topFloor != null && topFloor > maxTopFloor) {
-      return const Err(BuildingPlanFailure.tooManyFloors);
+    for (final staircase in staircases) {
+      final failure = _staircaseFailure(staircase, style);
+      if (failure != null) return Err(failure);
     }
-    if (doorsPerFloor < 1) return const Err(BuildingPlanFailure.noDoor);
-    if (style == DoorLabelStyle.floorAndLetter &&
-        doorsPerFloor > DoorLabelStyle.letterCount) {
-      return const Err(BuildingPlanFailure.tooManyDoorsForLetters);
-    }
-    final plan = BuildingPlan._(staircaseCount, topFloor, doorsPerFloor, style);
+    final plan = BuildingPlan._(staircases, style);
     if (plan.dwellingCount > maxDwellings) {
       return const Err(BuildingPlanFailure.tooManyDwellings);
     }
     return Ok(plan);
   }
 
-  final int staircaseCount;
+  /// The floors and doors of each staircase, `A` first. The list cannot be
+  /// modified.
+  final List<StaircasePlan> staircases;
 
-  /// The highest floor (0 is the RdC alone); null when the floors are
-  /// unknown.
-  final int? topFloor;
-
-  final int doorsPerFloor;
   final DoorLabelStyle style;
+
+  int get staircaseCount => staircases.length;
+
+  /// Whether every staircase has the same floors and doors: the sheet's
+  /// « Même chose pour chaque escalier ».
+  bool get isUniform => staircases.every((s) => s == staircases.first);
 
   /// How many dwellings [generate] makes: the sheet's « Aperçu · 48
   /// logements ».
-  int get dwellingCount => staircaseCount * _floorCount * doorsPerFloor;
-
-  /// The floors of each staircase: one row when the floors are unknown.
-  int get _floorCount => (topFloor ?? 0) + 1;
+  int get dwellingCount =>
+      staircases.fold(0, (sum, staircase) => sum + staircase.dwellingCount);
 
   /// The staircases `A`, `B`… with their floors from the top down, each
   /// door new (to do, no note).
   List<Staircase> generate() => [
-    for (var index = 0; index < staircaseCount; index++)
-      Staircase(name: StaircaseName.at(index), floors: _floors()),
+    for (var index = 0; index < staircases.length; index++)
+      Staircase(
+        name: StaircaseName.at(index),
+        floors: _floors(staircases[index]),
+      ),
   ];
 
-  List<Floor> _floors() {
-    final width = '$doorsPerFloor'.length;
+  List<Floor> _floors(StaircasePlan staircase) {
+    final doors = staircase.doorsPerFloor;
+    // Padded to the doors of this staircase: a staircase of 10 doors reads
+    // `101…110`, its neighbour of 4 doors keeps `11…14`.
+    final width = '$doors'.length;
     // A field cannot be promoted from `int?` to `int` by a null check (a
     // getter could return something else the second time); a local can.
-    final top = topFloor;
+    final top = staircase.topFloor;
     // A `for` loop counting down inside a list literal (a « collection
     // for »): the top floor comes first, as in the grid. `levels` is
     // `[null]` when the floors are unknown.
@@ -158,10 +215,10 @@ final class BuildingPlan {
         Floor(
           level: level,
           dwellings: [
-            for (var door = 1; door <= doorsPerFloor; door++)
+            for (var door = 1; door <= doors; door++)
               Dwelling(
-                // `!`: [create] refused the plans for which a style runs out
-                // of labels, so every door here has one.
+                // `!`: [perStaircase] refused the plans for which a style
+                // runs out of labels, so every door here has one.
                 label: DwellingLabel(
                   style.label(level: level, door: door, width: width)!,
                 ),
@@ -174,17 +231,30 @@ final class BuildingPlan {
   @override
   bool operator ==(Object other) =>
       other is BuildingPlan &&
-      other.staircaseCount == staircaseCount &&
-      other.topFloor == topFloor &&
-      other.doorsPerFloor == doorsPerFloor &&
-      other.style == style;
+      other.style == style &&
+      sameItems(other.staircases, staircases);
 
   @override
-  int get hashCode =>
-      Object.hash(staircaseCount, topFloor, doorsPerFloor, style);
+  int get hashCode => Object.hash(style, Object.hashAll(staircases));
 
   @override
-  String toString() =>
-      'BuildingPlan($staircaseCount staircase(s), top floor $topFloor, '
-      '$doorsPerFloor door(s) per floor, $style)';
+  String toString() => 'BuildingPlan($staircases, $style)';
+}
+
+/// Why [staircase] cannot be laid out with [style], or null when it can.
+BuildingPlanFailure? _staircaseFailure(
+  StaircasePlan staircase,
+  DoorLabelStyle style,
+) {
+  final top = staircase.topFloor;
+  if (top != null && top < 0) return BuildingPlanFailure.belowGroundFloor;
+  if (top != null && top > BuildingPlan.maxTopFloor) {
+    return BuildingPlanFailure.tooManyFloors;
+  }
+  if (staircase.doorsPerFloor < 1) return BuildingPlanFailure.noDoor;
+  if (style == DoorLabelStyle.floorAndLetter &&
+      staircase.doorsPerFloor > DoorLabelStyle.letterCount) {
+    return BuildingPlanFailure.tooManyDoorsForLetters;
+  }
+  return null;
 }

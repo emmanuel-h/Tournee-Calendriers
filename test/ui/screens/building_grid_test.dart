@@ -20,7 +20,8 @@ import '../support/finders.dart';
 final _id = StreetId('lilas');
 
 /// 7: a single house. 8: two staircases, RdC–1er, two doors a floor; A 11
-/// done, B 01 done with a note: 2 of 8 doors done.
+/// done, B 01 done with a note: 2 of 8 doors done. 10: the RdC alone, two
+/// doors, no mark.
 final _lilas = valueOf(
   Street.create(
     id: _id,
@@ -28,6 +29,7 @@ final _lilas = valueOf(
     commune: villefranche,
     houses: [
       House(number: n('7')),
+      House(number: n('10'), building: building(topFloor: 0, doors: 2)),
       House(
         number: n('8'),
         building: building(staircases: 2, topFloor: 1, doors: 2)
@@ -75,6 +77,17 @@ void main() {
     router.push<void>(AppRoutes.streetOf(_id)).ignore();
     await tester.pumpAndSettle();
   }
+
+  /// « Gérer l'immeuble » under the grid, then the menu's [action].
+  Future<void> manage(WidgetTester tester, String action) async {
+    await tester.tap(find.byKey(const Key('grid.manage')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(ValueKey('buildingMenu.$action')));
+    await tester.pumpAndSettle();
+  }
+
+  House stored(String number) =>
+      streets[_id]!.houses.singleWhere((house) => house.number == n(number));
 
   String labelOf(WidgetTester tester, Finder finder) =>
       tester.getSemantics(finder).label;
@@ -213,8 +226,7 @@ void main() {
     await openStreet(tester);
     await tester.tap(_tile('8'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('grid.editFloors')));
-    await tester.pumpAndSettle();
+    await manage(tester, 'editFloors');
     expect(find.text('RdC–1er'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('setup.floors.fewer')));
@@ -245,5 +257,161 @@ void main() {
     expect(find.text("Décrire l'immeuble"), findsNothing);
     expect(_door('A1-11'), findsNothing);
     expect(find.text('Esc. A · 0/2'), findsOneWidget);
+  });
+
+  testWidgets('should offer the three changes of the building under '
+      '« Gérer l\'immeuble »', (tester) async {
+    await openStreet(tester);
+    await tester.tap(_tile('8'));
+    await tester.pumpAndSettle();
+    expect(find.text('Note · Repasser'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('grid.manage')));
+    await tester.pumpAndSettle();
+
+    expect(find.text("Gérer l'immeuble"), findsNWidgets(2));
+    for (final action in ['editFloors', 'adjustDoors', 'backToHouse']) {
+      final row = find.byKey(ValueKey('buildingMenu.$action'));
+      expect(row, findsOneWidget);
+      expect(tester.getSize(row).height, greaterThanOrEqualTo(56));
+    }
+
+    await tester.tap(find.byKey(const ValueKey('buildingMenu.adjustDoors')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Ajuster les portes'), findsOneWidget);
+    expect(find.byKey(const ValueKey('doors.door.A1-11')), findsOneWidget);
+  });
+
+  testWidgets('should ask before a building with marks becomes a house, then '
+      'close the grid and offer Annuler', (tester) async {
+    await openStreet(tester);
+    await tester.tap(_tile('8'));
+    await tester.pumpAndSettle();
+    await manage(tester, 'backToHouse');
+
+    expect(find.text('Redevenir une maison ?'), findsOneWidget);
+    await tester.tap(
+      find.byKey(const ValueKey('grid.confirmBackToHouse.cancel')),
+    );
+    await tester.pumpAndSettle();
+    expect(_count, findsOneWidget);
+    expect(stored('8').isBuilding, isTrue);
+
+    await manage(tester, 'backToHouse');
+    await tester.tap(find.byKey(const ValueKey('grid.confirmBackToHouse.ok')));
+    await tester.pumpAndSettle();
+
+    expect(_count, findsNothing);
+    expect(stored('8').isBuilding, isFalse);
+    expect(find.text('N° 8 redevient une maison'), findsOneWidget);
+
+    await tester.tap(find.text('Annuler'));
+    await tester.pumpAndSettle();
+
+    expect(
+      stored('8'),
+      _lilas.houses.singleWhere((house) => house.number == n('8')),
+    );
+  });
+
+  testWidgets('should make a building without marks a house at once', (
+    tester,
+  ) async {
+    await openStreet(tester);
+    await tester.tap(_tile('10'));
+    await tester.pumpAndSettle();
+
+    await manage(tester, 'backToHouse');
+
+    expect(find.text('Redevenir une maison ?'), findsNothing);
+    expect(_count, findsNothing);
+    expect(stored('10').isBuilding, isFalse);
+  });
+
+  testWidgets('should give staircase B its own floors and doors when the box '
+      'is unticked', (tester) async {
+    final semantics = tester.ensureSemantics();
+    await openStreet(tester);
+    await tester.tap(_tile('8'));
+    await tester.pumpAndSettle();
+    await manage(tester, 'editFloors');
+    final box = find.byKey(const Key('setup.sameForEach'));
+    expect(tester.widget<CheckboxListTile>(box).value, isTrue);
+    expect(find.text('ESC. B'), findsNothing);
+
+    await tester.tap(box);
+    await tester.pump();
+
+    expect(tester.widget<CheckboxListTile>(box).value, isFalse);
+    expect(find.text('ESC. A'), findsOneWidget);
+    expect(find.text('ESC. B'), findsOneWidget);
+    expect(
+      tester.getSemantics(find.byKey(const ValueKey('setup.B.floors.fewer'))),
+      matchesSemantics(
+        label: 'Un étage de moins, escalier B',
+        isButton: true,
+        hasTapAction: true,
+      ),
+    );
+
+    await tester.ensureVisible(
+      find.byKey(const ValueKey('setup.B.floors.fewer')),
+    );
+    await tester.tap(find.byKey(const ValueKey('setup.B.floors.fewer')));
+    await tester.tap(find.byKey(const ValueKey('setup.B.doors.more')));
+    await tester.pump();
+
+    String valueOf(String key) =>
+        tester.widget<Text>(find.byKey(ValueKey('setup.$key.value'))).data!;
+    expect(valueOf('A.floors'), 'RdC–1er');
+    expect(valueOf('A.doors'), '2');
+    expect(valueOf('B.floors'), 'RdC');
+    expect(valueOf('B.doors'), '3');
+    expect(find.text('APERÇU · 7 LOGEMENTS'), findsOneWidget);
+    expect(
+      find.text('Esc. A : RdC 01–02, 1er 11–12\nEsc. B : RdC 01–03'),
+      findsOneWidget,
+    );
+
+    await tester.ensureVisible(find.byKey(const Key('setup.validate')));
+    await tester.tap(find.byKey(const Key('setup.validate')));
+    await tester.pumpAndSettle();
+
+    expect(find.text("Décrire l'immeuble"), findsNothing);
+    expect(find.text('Esc. B · 1/3'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('grid.staircase.B')));
+    await tester.pumpAndSettle();
+    expect(_door('B0-03'), findsOneWidget);
+    expect(_door('B1-11'), findsNothing);
+    semantics.dispose();
+  });
+
+  testWidgets('should open the grid from a building\'s number in edit mode, '
+      'and come back to it a house', (tester) async {
+    await openStreet(tester);
+    await tester.tap(find.byKey(const Key('street.edit')));
+    await tester.pumpAndSettle();
+    await tester.tap(
+      find.descendant(
+        of: find.byKey(const ValueKey('edit.tile.10')),
+        matching: find.byKey(const Key('edit.tile.number')),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('number.renumber')), findsOneWidget);
+    expect(find.byKey(const Key('number.toBuilding')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('number.openBuilding')));
+    await tester.pumpAndSettle();
+
+    expect(_door('A0-01'), findsOneWidget);
+
+    await manage(tester, 'backToHouse');
+
+    expect(_count, findsNothing);
+    expect(find.byKey(const Key('edit.ok')), findsOneWidget);
+    expect(find.text('N° 10 redevient une maison'), findsOneWidget);
+    expect(stored('10').isBuilding, isFalse);
   });
 }

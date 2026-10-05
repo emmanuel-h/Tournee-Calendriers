@@ -49,8 +49,19 @@ a{color:#B3261E}a:hover{color:#8C1D18}
     </div>
     <span style="font-size: 14px; color: #4A5058; text-align: center">Appui : ○ → ✓ → ✗ → ↻ → ○ · Appui long : détails</span>
     <div style="display: flex; gap: 10px">
-      <a href="BuildingSetup.dc.html" style="flex: 1; height: 48px; border-radius: 24px; border: 1.5px solid #CFC9BD; background: #FFFFFF; font-weight: 700; font-size: 15px; color: #1B1F24; display: flex; align-items: center; justify-content: center; text-decoration: none">Modifier les étages</a>
+      <button onClick="{{toggleMenu}}" aria-haspopup="menu" aria-expanded="{{menuOpen}}" style="flex: 1; height: 48px; border-radius: 24px; border: 1.5px solid #CFC9BD; background: #FFFFFF; font: 700 15px 'Atkinson Hyperlegible', sans-serif; color: #1B1F24; cursor: pointer">Gérer l'immeuble ▾</button>
       <button style="flex: 1; height: 48px; border-radius: 24px; border: 1.5px solid #CFC9BD; background: #FFFFFF; font: 700 15px 'Atkinson Hyperlegible', sans-serif; color: #1B1F24">Note · Repasser</button>
+    </div>
+  </div>
+  <!-- « Gérer l'immeuble ▾ » opens a sheet over the grid (PLAN §5.7, #60): rows of 56 dp. -->
+  <div style="{{menuStyle}}">
+    <div style="position: absolute; inset: 0; background: rgba(27, 31, 36, 0.5)" onClick="{{toggleMenu}}"></div>
+    <div role="menu" aria-label="Gérer l'immeuble" style="position: absolute; left: 0; right: 0; bottom: 0; background: #FFFFFF; border-radius: 24px 24px 0 0; padding: 12px 20px 28px 20px; display: flex; flex-direction: column">
+      <div style="width: 40px; height: 4px; border-radius: 2px; background: #CFC9BD; align-self: center; margin-bottom: 18px"></div>
+      <h2 style="margin: 0 0 8px 0; font: 700 28px 'Barlow Condensed', sans-serif">Gérer l'immeuble</h2>
+      <a role="menuitem" href="BuildingSetup.dc.html" style="min-height: 56px; display: flex; align-items: center; border-bottom: 1px solid #E2DED5; font-weight: 700; font-size: 17px; color: #1B1F24; text-decoration: none">Modifier les étages</a>
+      <a role="menuitem" href="Doors.dc.html" style="min-height: 56px; display: flex; align-items: center; border-bottom: 1px solid #E2DED5; font-weight: 700; font-size: 17px; color: #1B1F24; text-decoration: none">Ajuster les portes</a>
+      <a role="menuitem" href="Main.dc.html" style="min-height: 56px; display: flex; align-items: center; border-bottom: 1px solid #E2DED5; font-weight: 700; font-size: 17px; color: #1B1F24; text-decoration: none">Redevenir une maison</a>
     </div>
   </div>
 </div>
@@ -65,6 +76,7 @@ class Component extends DCLogic {
       return { n: n, doors: doors };
     };
     this.state = {
+      menuOpen: false,
       stair: 'A',
       buildings: {
         A: [
@@ -125,6 +137,9 @@ class Component extends DCLogic {
       };
     });
     return {
+      menuOpen: this.state.menuOpen,
+      menuStyle: this.state.menuOpen ? 'display: block' : 'display: none',
+      toggleMenu: () => this.setState({ menuOpen: !this.state.menuOpen }),
       floors: floors,
       stairs: stairs,
       doneCount: all.filter((d) => d.s === 'done').length,

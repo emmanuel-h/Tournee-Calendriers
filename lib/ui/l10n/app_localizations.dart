@@ -465,6 +465,24 @@ abstract class AppLocalizations {
   /// **'{label} : {value}'**
   String setupStepperSemantics(String label, String value);
 
+  /// Box of the building setup: ticked, one « Étages » and one « Portes par étage » stepper set every staircase alike; unticked, each staircase has its own.
+  ///
+  /// In fr, this message translates to:
+  /// **'Même chose pour chaque escalier'**
+  String get setupSameForEach;
+
+  /// Header above the steppers of one staircase in the building setup, shown in capitals (« ESC. A »).
+  ///
+  /// In fr, this message translates to:
+  /// **'Esc. {letter}'**
+  String setupStaircaseHeader(String letter);
+
+  /// Screen-reader name of a stepper or of its (−)/(+) when each staircase has its own: « Étages, escalier B ».
+  ///
+  /// In fr, this message translates to:
+  /// **'{text}, escalier {letter}'**
+  String setupForStaircase(String text, String letter);
+
   /// Value of the floors stepper when the floors are unknown: the doors make one « Logements » row.
   ///
   /// In fr, this message translates to:
@@ -506,6 +524,12 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Aperçu · {count, plural, =1{1 logement} other{{count} logements}}'**
   String setupPreviewTitle(int count);
+
+  /// Start of the part of the preview line of one staircase, when the staircases differ.
+  ///
+  /// In fr, this message translates to:
+  /// **'Esc. {letter} : '**
+  String setupPreviewStaircaseOne(String letter);
 
   /// Start of the preview line when the building has two staircases.
   ///
@@ -831,7 +855,7 @@ abstract class AppLocalizations {
   /// **'Le {number} est dans la Corbeille : ajoutez-le avec « + numéros » pour le retrouver avec ses marques, ou choisissez un autre numéro.'**
   String renumberInCorbeille(String number);
 
-  /// Button of a building's sheet in edit mode: the building becomes a single house again.
+  /// Choice of the « Gérer l'immeuble » menu of the building grid: the building becomes a single house again.
   ///
   /// In fr, this message translates to:
   /// **'Redevenir une maison'**
@@ -927,11 +951,23 @@ abstract class AppLocalizations {
   /// **'Appui : à faire, fait, personne, repasser, à faire. Appui long : détails'**
   String get gridHintSemantics;
 
-  /// Button under the building grid that lays the building out again.
+  /// Choice of the « Gérer l'immeuble » menu of the building grid that lays the building out again.
   ///
   /// In fr, this message translates to:
   /// **'Modifier les étages'**
   String get editFloors;
+
+  /// Button under the building grid, and title of the menu it opens: Modifier les étages, Ajuster les portes, Redevenir une maison.
+  ///
+  /// In fr, this message translates to:
+  /// **'Gérer l\'immeuble'**
+  String get manageBuilding;
+
+  /// Button of a building's sheet in edit mode that opens its grid, where the building is changed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ouvrir l\'immeuble'**
+  String get openBuilding;
 
   /// Button under the building grid that opens the building's own note and « repasser ».
   ///
@@ -951,7 +987,7 @@ abstract class AppLocalizations {
   /// **'Cette porte n\'est plus dans l\'immeuble.'**
   String get doorGone;
 
-  /// Button of a building's sheet in edit mode, and title of the screen that adds, removes and renames doors floor by floor (PLAN §5.7).
+  /// Choice of the « Gérer l'immeuble » menu of the building grid, and title of the screen that adds, removes and renames doors floor by floor (PLAN §5.7).
   ///
   /// In fr, this message translates to:
   /// **'Ajuster les portes'**
@@ -1026,7 +1062,7 @@ abstract class AppLocalizations {
   /// ✕ on the only door left in a building: a building keeps at least one door.
   ///
   /// In fr, this message translates to:
-  /// **'C\'est la dernière porte de l\'immeuble. Pour en refaire une maison, touchez son numéro puis « Redevenir une maison ».'**
+  /// **'C\'est la dernière porte de l\'immeuble. Pour en refaire une maison, revenez à l\'immeuble : « Gérer l\'immeuble », puis « Redevenir une maison ».'**
   String get lastDoorRefused;
 
   /// Title of the rename sheet of a door.

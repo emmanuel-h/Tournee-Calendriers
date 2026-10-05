@@ -81,28 +81,21 @@ final class BuildingSetupSheet extends ConsumerWidget {
             onFewer: setup.removeStaircase,
             onMore: setup.addStaircase,
           ),
-          _StepperRow(
-            name: 'floors',
-            label: l10n.setupFloors,
-            value: switch (plan.topFloor) {
-              null => l10n.setupFloorsUnknown,
-              0 => l10n.floorGround,
-              final top => l10n.setupFloorsRange(floorName(l10n, top)),
-            },
-            fewer: l10n.setupFewerFloors,
-            more: l10n.setupMoreFloors,
-            onFewer: setup.removeFloor,
-            onMore: setup.addFloor,
-          ),
-          _StepperRow(
-            name: 'doors',
-            label: l10n.setupDoorsPerFloor,
-            value: '${plan.doorsPerFloor}',
-            fewer: l10n.setupFewerDoors,
-            more: l10n.setupMoreDoors,
-            onFewer: setup.removeDoor,
-            onMore: setup.addDoor,
-          ),
+          if (state.offersSameForEach)
+            _SameForEachBox(
+              value: state.sameForEach,
+              onChanged: (same) => setup.setSameForEach(same: same),
+            ),
+          if (state.stepsEachStaircase)
+            for (final (index, staircase) in plan.staircases.indexed)
+              ..._staircaseSteppers(
+                l10n,
+                setup,
+                staircase,
+                name: StaircaseName.at(index),
+              )
+          else
+            ..._staircaseSteppers(l10n, setup, plan.staircases.first),
           Padding(
             padding: const EdgeInsets.only(top: 10),
             child: Text(
@@ -158,6 +151,49 @@ final class BuildingSetupSheet extends ConsumerWidget {
         ],
       },
     );
+  }
+
+  /// « Étages » and « Portes par étage » of [staircase]: of the staircase
+  /// [name], under its header « ESC. B », or of every staircase alike when
+  /// [name] is null.
+  static List<Widget> _staircaseSteppers(
+    AppLocalizations l10n,
+    BuildingSetupNotifier setup,
+    StaircasePlan staircase, {
+    StaircaseName? name,
+  }) {
+    final prefix = name == null ? '' : '${name.letter}.';
+    return [
+      if (name != null)
+        SectionHeader(
+          l10n.setupStaircaseHeader(name.letter),
+          padding: const EdgeInsets.only(top: 12),
+        ),
+      _StepperRow(
+        name: '${prefix}floors',
+        label: l10n.setupFloors,
+        staircase: name,
+        value: switch (staircase.topFloor) {
+          null => l10n.setupFloorsUnknown,
+          0 => l10n.floorGround,
+          final top => l10n.setupFloorsRange(floorName(l10n, top)),
+        },
+        fewer: l10n.setupFewerFloors,
+        more: l10n.setupMoreFloors,
+        onFewer: () => setup.removeFloor(staircase: name),
+        onMore: () => setup.addFloor(staircase: name),
+      ),
+      _StepperRow(
+        name: '${prefix}doors',
+        label: l10n.setupDoorsPerFloor,
+        staircase: name,
+        value: '${staircase.doorsPerFloor}',
+        fewer: l10n.setupFewerDoors,
+        more: l10n.setupMoreDoors,
+        onFewer: () => setup.removeDoor(staircase: name),
+        onMore: () => setup.addDoor(staircase: name),
+      ),
+    ];
   }
 
   /// « Valider »: lays the building out and closes the sheet, after asking
@@ -217,6 +253,7 @@ final class _StepperRow extends StatelessWidget {
   const _StepperRow({
     required this.name,
     required this.label,
+    this.staircase,
     required this.value,
     required this.fewer,
     required this.more,
@@ -227,6 +264,10 @@ final class _StepperRow extends StatelessWidget {
   /// Names the parts for tests: `setup.<name>.value`, `.fewer`, `.more`.
   final String name;
   final String label;
+
+  /// The staircase the row steps alone, which screen readers then name
+  /// (« Étages, escalier B »); null for every staircase.
+  final StaircaseName? staircase;
   final String value;
 
   /// What screen readers hear for (−) and (+).
@@ -238,6 +279,11 @@ final class _StepperRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
+    final l10n = AppLocalizations.of(context);
+    String spoken(String text) => switch (staircase) {
+      null => text,
+      final name => l10n.setupForStaircase(text, name.letter),
+    };
     return Container(
       constraints: const BoxConstraints(minHeight: AppSizes.stepperRowHeight),
       decoration: BoxDecoration(
@@ -257,14 +303,13 @@ final class _StepperRow extends StatelessWidget {
           _StepButton(
             key: ValueKey('setup.$name.fewer'),
             sign: '−',
-            semanticsLabel: fewer,
+            semanticsLabel: spoken(fewer),
             onPressed: onFewer,
           ),
           // `liveRegion`: the new value is read after each tap.
           Semantics(
             liveRegion: true,
-            label: AppLocalizations.of(context)
-                .setupStepperSemantics(label, value),
+            label: l10n.setupStepperSemantics(spoken(label), value),
             excludeSemantics: true,
             // A fixed width keeps the (−) buttons of the three rows in
             // line; a wider value (« RdC–50e ») shrinks to fit.
@@ -283,10 +328,44 @@ final class _StepperRow extends StatelessWidget {
           _StepButton(
             key: ValueKey('setup.$name.more'),
             sign: '+',
-            semanticsLabel: more,
+            semanticsLabel: spoken(more),
             onPressed: onMore,
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// « ☐ Même chose pour chaque escalier », over a thin divider like the
+/// steppers.
+final class _SameForEachBox extends StatelessWidget {
+  const _SameForEachBox({required this.value, required this.onChanged});
+
+  final bool value;
+  final ValueChanged<bool> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: colors.divider)),
+      ),
+      // A `CheckboxListTile` is one tap target of 56 dp at least, box and
+      // text alike, and screen readers hear « case cochée » with the text.
+      child: CheckboxListTile(
+        key: const Key('setup.sameForEach'),
+        value: value,
+        // `onChanged` gives a `bool?`: null only for a three-state box.
+        onChanged: (checked) => onChanged(checked ?? false),
+        controlAffinity: ListTileControlAffinity.leading,
+        contentPadding: EdgeInsets.zero,
+        horizontalTitleGap: 12,
+        title: Text(
+          AppLocalizations.of(context).setupSameForEach,
+          style: AppTextStyles.body.copyWith(color: colors.ink),
+        ),
       ),
     );
   }
@@ -337,7 +416,9 @@ final class _StepButton extends StatelessWidget {
 }
 
 /// « APERÇU · 48 LOGEMENTS », « Esc. A et B : RdC 01–04, 1er 11–14 … 5e
-/// 51–54 », and what can be adjusted later.
+/// 51–54 » (or one line per staircase when they differ, so a range such as
+/// « 01–02 » is never split across two lines), and what can be adjusted
+/// later.
 final class _Preview extends StatelessWidget {
   const _Preview({required this.preview});
 
@@ -347,30 +428,11 @@ final class _Preview extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final colors = AppColors.of(context);
-    final staircases = preview.staircases;
-    final floors = [
-      for (final floor in preview.floors)
-        '${floorName(l10n, floor.level)} ${floor.first == floor.last ? floor.first : l10n.setupPreviewRange(floor.first, floor.last)}',
-    ];
-    final line = StringBuffer(switch (staircases.length) {
-      1 => '',
-      2 => l10n.setupPreviewStaircasesTwo(
-        staircases.first.letter,
-        staircases.last.letter,
-      ),
-      _ => l10n.setupPreviewStaircasesMany(
-        staircases.first.letter,
-        staircases.last.letter,
-      ),
-    });
-    if (preview.skipsFloors) {
-      line
-        ..write(floors.sublist(0, floors.length - 1).join(', '))
-        ..write(' … ')
-        ..write(floors.last);
-    } else {
-      line.write(floors.join(', '));
-    }
+    final line = [
+      for (final part in preview.parts)
+        '${preview.namesStaircases ? _staircases(l10n, part.staircases) : ''}'
+            '${_floors(l10n, part)}',
+    ].join('\n');
     return Container(
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
@@ -387,7 +449,7 @@ final class _Preview extends StatelessWidget {
             padding: EdgeInsets.zero,
           ),
           Text(
-            line.toString(),
+            line,
             key: const Key('setup.preview'),
             style: AppTextStyles.previewLine.copyWith(color: colors.ink),
           ),
@@ -399,4 +461,30 @@ final class _Preview extends StatelessWidget {
       ),
     );
   }
+}
+
+/// « Esc. B : », « Esc. A et B : » or « Esc. A à C : ».
+String _staircases(AppLocalizations l10n, List<StaircaseName> names) =>
+    switch (names) {
+      [final only] => l10n.setupPreviewStaircaseOne(only.letter),
+      [final first, final last] => l10n.setupPreviewStaircasesTwo(
+        first.letter,
+        last.letter,
+      ),
+      _ => l10n.setupPreviewStaircasesMany(
+        names.first.letter,
+        names.last.letter,
+      ),
+    };
+
+/// « RdC 01–04, 1er 11–14 … 5e 51–54 »: the floors of [part], « … » where
+/// some are left out; a floor of one door shows its label alone.
+String _floors(AppLocalizations l10n, PreviewPart part) {
+  final floors = [
+    for (final floor in part.floors)
+      '${floorName(l10n, floor.level)} '
+          '${floor.first == floor.last ? floor.first : l10n.setupPreviewRange(floor.first, floor.last)}',
+  ];
+  if (!part.skipsFloors) return floors.join(', ');
+  return '${floors.sublist(0, floors.length - 1).join(', ')} … ${floors.last}';
 }

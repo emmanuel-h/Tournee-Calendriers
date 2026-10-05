@@ -5,16 +5,14 @@ import 'package:tournee_calendriers/application/use_cases/describe_building.dart
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/building/building.dart';
 import 'package:tournee_calendriers/domain/street/building/building_plan.dart';
+import 'package:tournee_calendriers/domain/street/building/staircase.dart';
+import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/presentation/building/building_setup_state.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
-
-/// The four answers of the sheet: staircases, top floor (null: unknown),
-/// doors per floor, label style.
-typedef _Answers = (int, int?, int, DoorLabelStyle);
 
 /// Which house the « Décrire l'immeuble » sheet lays out.
 typedef BuildingSetupKey = ({StreetId street, HouseNumber number});
@@ -27,7 +25,7 @@ final buildingSetupProvider = NotifierProvider.autoDispose
 
 /// The answers of « Décrire l'immeuble » (« Transformer en immeuble… » on a
 /// house, « Modifier les étages » on a building), checked at each step by
-/// the domain (`BuildingPlan.create`), and laid out by « Valider »
+/// the domain (`BuildingPlan.perStaircase`), and laid out by « Valider »
 /// (`DescribeBuilding`). Needs no network.
 ///
 /// The answers start from the building as it is, or from a small default
@@ -40,18 +38,16 @@ final class BuildingSetupNotifier extends Notifier<BuildingSetupState> {
 
   /// What a house becomes by default: one staircase, RdC–2e, two doors a
   /// floor, numbered 51 — a small building, quick to adjust from.
-  static final _defaultPlan = _planOrNull(
-    staircases: 1,
-    topFloor: 2,
-    doors: 2,
-    style: DoorLabelStyle.floorAndNumber,
-  )!;
+  static final _defaultPlan = _planOrNull(const [
+    StaircasePlan(topFloor: 2, doorsPerFloor: 2),
+  ], DoorLabelStyle.floorAndNumber)!;
 
   Street? _street;
   var _read = false;
 
   /// The answers; null until the street is read.
   BuildingPlan? _plan;
+  var _sameForEach = true;
   BuildingPlanFailure? _refusal;
 
   @override
@@ -61,66 +57,95 @@ final class BuildingSetupNotifier extends Notifier<BuildingSetupState> {
     ) {
       _street = street;
       _read = true;
-      _plan ??= switch (_house?.building) {
-        null => _defaultPlan,
-        final building => _planOf(building),
-      };
+      if (_plan == null) {
+        final plan = switch (_house?.building) {
+          null => _defaultPlan,
+          final building => _planOf(building),
+        };
+        _plan = plan;
+        _sameForEach = plan.isUniform;
+      }
       state = _view();
     });
     ref.onDispose(subscription.cancel);
     return _view();
   }
 
-  void addStaircase() => _step(
-    (p) => (p.staircaseCount + 1, p.topFloor, p.doorsPerFloor, p.style),
-  );
+  /// One staircase more, with the floors and doors of the last one.
+  void addStaircase() =>
+      _step((p) => _withStaircases(p, [...p.staircases, p.staircases.last]));
 
+  /// The last staircase goes.
   void removeStaircase() => _step(
-    (p) => (p.staircaseCount - 1, p.topFloor, p.doorsPerFloor, p.style),
+    (p) => _withStaircases(p, p.staircases.sublist(0, p.staircases.length - 1)),
   );
 
-  /// One floor more: from unknown floors (« Inconnus ») to the RdC alone,
-  /// then up.
-  void addFloor() => _step(
-    (p) => (
-      p.staircaseCount,
-      switch (p.topFloor) {
+  /// « Même chose pour chaque escalier »: ticked, every staircase takes
+  /// the floors and doors of staircase A (refused, and left unticked, when
+  /// that makes too many dwellings); unticked, each keeps its own.
+  void setSameForEach({required bool same}) {
+    if (!same) {
+      _sameForEach = false;
+      _refusal = null;
+      state = _view();
+      return;
+    }
+    _step(
+      (p) => _withStaircases(p, [
+        for (final _ in p.staircases) p.staircases.first,
+      ]),
+      onTaken: () => _sameForEach = true,
+    );
+  }
+
+  /// One floor more in [staircase], or in every staircase when null: from
+  /// unknown floors (« Inconnus ») to the RdC alone, then up.
+  void addFloor({StaircaseName? staircase}) => _stepStaircases(
+    staircase,
+    (s) => StaircasePlan(
+      topFloor: switch (s.topFloor) {
         null => 0,
         final top => top + 1,
       },
-      p.doorsPerFloor,
-      p.style,
+      doorsPerFloor: s.doorsPerFloor,
     ),
   );
 
-  /// One floor less: from the RdC alone to unknown floors, and nothing
-  /// below.
-  void removeFloor() => _step(
-    (p) => (
-      p.staircaseCount,
-      switch (p.topFloor) {
+  /// One floor less in [staircase], or in every staircase when null: from
+  /// the RdC alone to unknown floors, and nothing below.
+  void removeFloor({StaircaseName? staircase}) => _stepStaircases(
+    staircase,
+    (s) => StaircasePlan(
+      topFloor: switch (s.topFloor) {
         0 => null,
         // -1 lets the domain refuse it (`belowGroundFloor`), so the sheet
         // says why.
         null => -1,
         final top => top - 1,
       },
-      p.doorsPerFloor,
-      p.style,
+      doorsPerFloor: s.doorsPerFloor,
     ),
   );
 
-  void addDoor() => _step(
-    (p) => (p.staircaseCount, p.topFloor, p.doorsPerFloor + 1, p.style),
+  /// One door more on each floor of [staircase], or of every staircase
+  /// when null.
+  void addDoor({StaircaseName? staircase}) => _stepStaircases(
+    staircase,
+    (s) =>
+        StaircasePlan(topFloor: s.topFloor, doorsPerFloor: s.doorsPerFloor + 1),
   );
 
-  void removeDoor() => _step(
-    (p) => (p.staircaseCount, p.topFloor, p.doorsPerFloor - 1, p.style),
+  /// One door less on each floor of [staircase], or of every staircase
+  /// when null.
+  void removeDoor({StaircaseName? staircase}) => _stepStaircases(
+    staircase,
+    (s) =>
+        StaircasePlan(topFloor: s.topFloor, doorsPerFloor: s.doorsPerFloor - 1),
   );
 
   /// The « Numéros des portes » choice.
   void setStyle(DoorLabelStyle style) =>
-      _step((p) => (p.staircaseCount, p.topFloor, p.doorsPerFloor, style));
+      _step((p) => _tryPlan(p.staircases, style));
 
   /// « Valider »: lays the house out as the answers say. When that would
   /// drop doors that have marks, nothing is stored unless [confirmed]: the
@@ -142,22 +167,35 @@ final class BuildingSetupNotifier extends Notifier<BuildingSetupState> {
     };
   }
 
-  /// Tries the answers [change] makes of the current plan (staircases,
-  /// top floor, doors per floor, style): taken when the domain accepts
-  /// them, otherwise the plan stays and the refusal shows.
-  void _step(_Answers Function(BuildingPlan plan) change) {
+  /// Steps the staircase named [only] with [change], or every staircase
+  /// when [only] is null.
+  void _stepStaircases(
+    StaircaseName? only,
+    StaircasePlan Function(StaircasePlan staircase) change,
+  ) => _step(
+    (p) => _withStaircases(p, [
+      for (final (index, staircase) in p.staircases.indexed)
+        only == null || StaircaseName.at(index) == only
+            ? change(staircase)
+            : staircase,
+    ]),
+  );
+
+  /// Tries the plan [next] makes of the current one: taken when the domain
+  /// accepts it (then [onTaken] runs), otherwise the plan stays and the
+  /// refusal shows.
+  void _step(
+    Result<BuildingPlan, BuildingPlanFailure> Function(BuildingPlan plan)
+    next, {
+    void Function()? onTaken,
+  }) {
     final current = _plan;
     if (current == null) return;
-    final (staircases, topFloor, doors, style) = change(current);
-    switch (BuildingPlan.create(
-      staircaseCount: staircases,
-      topFloor: topFloor,
-      doorsPerFloor: doors,
-      style: style,
-    )) {
+    switch (next(current)) {
       case Ok(:final value):
         _plan = value;
         _refusal = null;
+        onTaken?.call();
       case Err(:final failure):
         _refusal = failure;
     }
@@ -181,40 +219,51 @@ final class BuildingSetupNotifier extends Notifier<BuildingSetupState> {
       streetName: _street!.name,
       number: house.number,
       plan: _plan!,
+      sameForEach: _sameForEach,
       refusal: _refusal,
     );
   }
 
-  /// The plan closest to [building]: its staircases and style, its highest
-  /// floor and its largest floor. A building adjusted floor by floor may
-  /// be larger than a plan allows; the default plan is used then.
-  static BuildingPlan _planOf(Building building) {
-    final floors = [
-      for (final staircase in building.staircases) ...staircase.floors,
-    ];
-    final unknown = floors.any((floor) => floor.level == null);
-    return _planOrNull(
-          staircases: building.staircases.length,
-          topFloor: unknown
-              ? null
-              : floors.map((floor) => floor.level!).reduce(math.max),
-          doors: floors.map((floor) => floor.dwellings.length).reduce(math.max),
-          style: building.style,
-        ) ??
-        _defaultPlan;
+  /// [current] with [staircases] instead of its own, its style kept.
+  static Result<BuildingPlan, BuildingPlanFailure> _withStaircases(
+    BuildingPlan current,
+    List<StaircasePlan> staircases,
+  ) => _tryPlan(staircases, current.style);
+
+  static Result<BuildingPlan, BuildingPlanFailure> _tryPlan(
+    List<StaircasePlan> staircases,
+    DoorLabelStyle style,
+  ) => BuildingPlan.perStaircase(staircases: staircases, style: style);
+
+  /// The plan closest to [building]: its style and, for each staircase, its
+  /// highest floor and its largest floor. A building adjusted floor by
+  /// floor may be larger than a plan allows; the default plan is used then.
+  static BuildingPlan _planOf(Building building) =>
+      _planOrNull([
+        for (final staircase in building.staircases)
+          _staircasePlanOf(staircase),
+      ], building.style) ??
+      _defaultPlan;
+
+  /// The highest floor of [staircase] (null for its « Logements » row,
+  /// alone by a `Building` invariant) and its largest floor.
+  static StaircasePlan _staircasePlanOf(Staircase staircase) {
+    final levels = [for (final floor in staircase.floors) floor.level];
+    return StaircasePlan(
+      // `whereType<int>()` keeps the levels that are not null, typed `int`.
+      topFloor: levels.contains(null)
+          ? null
+          : levels.whereType<int>().fold<int>(0, math.max),
+      doorsPerFloor: staircase.floors
+          .map((floor) => floor.dwellings.length)
+          .fold<int>(0, math.max),
+    );
   }
 
-  static BuildingPlan? _planOrNull({
-    required int staircases,
-    required int? topFloor,
-    required int doors,
-    required DoorLabelStyle style,
-  }) => switch (BuildingPlan.create(
-    staircaseCount: staircases,
-    topFloor: topFloor,
-    doorsPerFloor: doors,
-    style: style,
-  )) {
+  static BuildingPlan? _planOrNull(
+    List<StaircasePlan> staircases,
+    DoorLabelStyle style,
+  ) => switch (_tryPlan(staircases, style)) {
     Ok(:final value) => value,
     Err() => null,
   };
