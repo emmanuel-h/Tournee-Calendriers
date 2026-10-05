@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
@@ -51,6 +52,7 @@ final class SecondaryButton extends StatelessWidget {
     required this.onPressed,
     this.compact = false,
     this.leading,
+    this.destructive = false,
   });
 
   final String label;
@@ -64,18 +66,27 @@ final class SecondaryButton extends StatelessWidget {
   /// rather than an `IconData`, so a drawn icon fits too.
   final Widget? leading;
 
+  /// Outline and label in the accent red, for an action that removes
+  /// something (« Supprimer la rue »); it still asks before doing it.
+  final bool destructive;
+
   @override
   Widget build(BuildContext context) {
     final leading = this.leading;
-    return leading == null
-        ? OutlinedButton(
-            onPressed: onPressed,
-            style: _sizeStyle(compact),
-            child: Text(label),
+    final accent = AppColors.of(context).accent;
+    final style = destructive
+        ? _sizeStyle(compact).copyWith(
+            foregroundColor: WidgetStatePropertyAll(accent),
+            side: WidgetStatePropertyAll(
+              BorderSide(color: accent, width: AppSizes.borderWidth),
+            ),
           )
+        : _sizeStyle(compact);
+    return leading == null
+        ? OutlinedButton(onPressed: onPressed, style: style, child: Text(label))
         : OutlinedButton.icon(
             onPressed: onPressed,
-            style: _sizeStyle(compact),
+            style: style,
             icon: leading,
             label: Text(label),
           );

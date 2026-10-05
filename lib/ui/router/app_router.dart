@@ -3,6 +3,7 @@ import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/screens/component_gallery_screen.dart';
+import 'package:tournee_calendriers/ui/screens/edit_street/edit_street_screen.dart';
 import 'package:tournee_calendriers/ui/screens/import_streets/import_screen.dart';
 import 'package:tournee_calendriers/ui/screens/placeholder_screen.dart';
 import 'package:tournee_calendriers/ui/screens/start/start_screen.dart';
@@ -30,15 +31,18 @@ GoRouter buildAppRouter({required bool showGallery}) => GoRouter(
     GoRoute(
       path: AppRoutes.street,
       builder: (context, state) => StreetScreen(
-        streetId: switch (state.uri.queryParameters['id']) {
-          final String id when id.trim().isNotEmpty => StreetId(id),
-          _ => null,
-        },
+        streetId: _streetIdOf(state),
         title: switch (state.extra) {
           final String name => name,
           _ => null,
         },
       ),
+    ),
+    // `/rue/modifier?id=…`, pushed by ✏ on the street screen.
+    GoRoute(
+      path: AppRoutes.editStreet,
+      builder: (context, state) =>
+          EditStreetScreen(streetId: _streetIdOf(state)),
     ),
     _placeholder(AppRoutes.welcome, (l10n) => l10n.screenWelcome),
     _placeholder(AppRoutes.create, (l10n) => l10n.screenCreate),
@@ -46,7 +50,6 @@ GoRouter buildAppRouter({required bool showGallery}) => GoRouter(
     _placeholder(AppRoutes.joinPending, (l10n) => l10n.screenJoinPending),
     _placeholder(AppRoutes.addStreets, (l10n) => l10n.screenAddStreets),
     _placeholder(AppRoutes.manualStreet, (l10n) => l10n.screenManualStreet),
-    _placeholder(AppRoutes.editStreet, (l10n) => l10n.screenEditStreet),
     _placeholder(AppRoutes.team, (l10n) => l10n.screenTeam),
     _placeholder(AppRoutes.settings, (l10n) => l10n.screenSettings),
     _placeholder(AppRoutes.newCampaign, (l10n) => l10n.screenNewCampaign),
@@ -58,6 +61,13 @@ GoRouter buildAppRouter({required bool showGallery}) => GoRouter(
       ),
   ],
 );
+
+/// The street named by the link's `id`, or null when it names none.
+StreetId? _streetIdOf(GoRouterState state) =>
+    switch (state.uri.queryParameters['id']) {
+      final String id when id.trim().isNotEmpty => StreetId(id),
+      _ => null,
+    };
 
 /// A route to an empty screen whose title is picked from the translations.
 GoRoute _placeholder(String path, String Function(AppLocalizations) title) =>

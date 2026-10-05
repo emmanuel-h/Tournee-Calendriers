@@ -585,6 +585,258 @@ abstract class AppLocalizations {
   /// **'Modifier'**
   String get setupConfirmAction;
 
+  /// Screen-reader name and tooltip of the ✕ of the edit mode, which leaves it (the name is kept, as with OK).
+  ///
+  /// In fr, this message translates to:
+  /// **'Quitter la modification'**
+  String get editStreetClose;
+
+  /// Button of the edit mode's top bar that keeps the name and leaves (PLAN §5.5).
+  ///
+  /// In fr, this message translates to:
+  /// **'OK'**
+  String get editStreetOk;
+
+  /// Label of the name field of the edit mode.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nom de la rue'**
+  String get streetNameLabel;
+
+  /// Under the name field when it holds only spaces; the old name is kept.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le nom de la rue ne peut pas être vide.'**
+  String get streetNameBlank;
+
+  /// Under the name field when the name is too long; the old name is kept.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nom limité à {max} caractères.'**
+  String streetNameTooLong(int max);
+
+  /// A building's tile in edit mode.
+  ///
+  /// In fr, this message translates to:
+  /// **'{number} · immeuble'**
+  String editBuildingTile(String number);
+
+  /// Screen-reader name of a number in edit mode; a tap opens its sheet.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier le numéro {number}'**
+  String editTileSemantics(String number);
+
+  /// Screen-reader name of a building in edit mode.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier le numéro {number}, immeuble'**
+  String editBuildingTileSemantics(String number);
+
+  /// Screen-reader name of the ✕ of a number in edit mode.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer le numéro {number}'**
+  String removeNumberSemantics(String number);
+
+  /// Button under each column of the edit mode; opens « Ajouter des numéros ».
+  ///
+  /// In fr, this message translates to:
+  /// **'+ numéros'**
+  String get addNumbersButton;
+
+  /// Under the numbers of the edit mode.
+  ///
+  /// In fr, this message translates to:
+  /// **'Touchez un numéro pour le renommer ou le transformer en immeuble.'**
+  String get editHint;
+
+  /// Bottom button of the edit mode: sends the street to the Corbeille after a confirmation.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer la rue'**
+  String get deleteStreetAction;
+
+  /// Undo snackbar after ✕ on a number.
+  ///
+  /// In fr, this message translates to:
+  /// **'N° {number} supprimé'**
+  String numberRemoved(String number);
+
+  /// Undo snackbar after a number was changed (3 → 3bis).
+  ///
+  /// In fr, this message translates to:
+  /// **'N° {from} → {to}'**
+  String numberRenamed(String from, String to);
+
+  /// Undo snackbar after a building was turned back into a single house.
+  ///
+  /// In fr, this message translates to:
+  /// **'N° {number} redevient une maison'**
+  String backToHouseDone(String number);
+
+  /// Confirms a removal (a number, a street).
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer'**
+  String get delete;
+
+  /// Title of the confirmation before removing a number that has marks.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer le n° {number} ?'**
+  String confirmRemoveTitle(String number);
+
+  /// Body of the confirmation before removing a number that has marks (PLAN §5.5).
+  ///
+  /// In fr, this message translates to:
+  /// **'Ce numéro a des marques (statut, note, « repasser » ou portes marquées). Elles partent avec lui à la Corbeille.'**
+  String get confirmRemoveBody;
+
+  /// Title of the confirmation of « Supprimer la rue ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer la rue ?'**
+  String get confirmDeleteStreetTitle;
+
+  /// Body of the confirmation of « Supprimer la rue ».
+  ///
+  /// In fr, this message translates to:
+  /// **'« {name} » part à la Corbeille avec ses numéros et leurs marques, pour toute l\'équipe.'**
+  String confirmDeleteStreetBody(String name);
+
+  /// Title of the sheet opened by « + numéros » (PLAN §5.5); also the screen-reader name of that button.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter des numéros'**
+  String get addNumbersTitle;
+
+  /// Label of the field of « Ajouter des numéros ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Numéros'**
+  String get numbersLabel;
+
+  /// Placeholder of the field of « Ajouter des numéros »: an example.
+  ///
+  /// In fr, this message translates to:
+  /// **'12bis, 21-25'**
+  String get numbersPlaceholder;
+
+  /// Under the field of « Ajouter des numéros ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Un numéro, une liste ou une plage (21-25).'**
+  String get numbersHelper;
+
+  /// Header of the preview of « Ajouter des numéros ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Aperçu · {count, plural, =1{1 numéro} other{{count} numéros}}'**
+  String numbersPreviewTitle(int count);
+
+  /// In the preview: numbers the street already shows, which are skipped.
+  ///
+  /// In fr, this message translates to:
+  /// **'Déjà dans la rue : {numbers}'**
+  String numbersAlreadyThere(String numbers);
+
+  /// In the preview: numbers in the Corbeille, which come back with their marks.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, =1{Revient de la Corbeille avec ses marques : {numbers}} other{Reviennent de la Corbeille avec leurs marques : {numbers}}}'**
+  String numbersFromCorbeille(int count, String numbers);
+
+  /// Adds the numbers typed in « Ajouter des numéros ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter'**
+  String get addNumbersConfirm;
+
+  /// An item with a dash that is not a range of two plain numbers.
+  ///
+  /// In fr, this message translates to:
+  /// **'« {token} » : une plage relie deux numéros simples, comme 21-25.'**
+  String numbersInvalidRange(String token);
+
+  /// The field gives more numbers than allowed at once.
+  ///
+  /// In fr, this message translates to:
+  /// **'{max} numéros au plus à la fois.'**
+  String numbersTooMany(int max);
+
+  /// The number field is blank.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tapez un numéro.'**
+  String get numberEmpty;
+
+  /// What was typed does not start with a number.
+  ///
+  /// In fr, this message translates to:
+  /// **'« {text} » n\'est pas un numéro.'**
+  String numberMalformed(String text);
+
+  /// The number is above the largest house number.
+  ///
+  /// In fr, this message translates to:
+  /// **'« {text} » : {max} au plus.'**
+  String numberTooLarge(String text, int max);
+
+  /// What follows the number is not a valid suffix.
+  ///
+  /// In fr, this message translates to:
+  /// **'« {text} » : après le numéro, un complément en lettres sans accent (12bis, 3A).'**
+  String numberInvalidSuffix(String text);
+
+  /// The suffix after the number is too long.
+  ///
+  /// In fr, this message translates to:
+  /// **'« {text} » : complément de {max} caractères au plus.'**
+  String numberSuffixTooLong(String text, int max);
+
+  /// Label of the number field of a number's sheet in edit mode.
+  ///
+  /// In fr, this message translates to:
+  /// **'Numéro'**
+  String get numberLabel;
+
+  /// Gives the house the number typed (3 → 3bis), its marks kept.
+  ///
+  /// In fr, this message translates to:
+  /// **'Changer le numéro'**
+  String get renumberAction;
+
+  /// The number typed is shown by another house.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le {number} est déjà dans la rue.'**
+  String renumberTaken(String number);
+
+  /// The number typed belongs to a house in the Corbeille.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le {number} est dans la Corbeille : ajoutez-le avec « + numéros » pour le retrouver avec ses marques, ou choisissez un autre numéro.'**
+  String renumberInCorbeille(String number);
+
+  /// Button of a building's sheet in edit mode: the building becomes a single house again.
+  ///
+  /// In fr, this message translates to:
+  /// **'Redevenir une maison'**
+  String get backToHouseAction;
+
+  /// Title of the confirmation when the doors of the building have marks.
+  ///
+  /// In fr, this message translates to:
+  /// **'Redevenir une maison ?'**
+  String get confirmBackToHouseTitle;
+
+  /// Body of the confirmation when the doors of the building have marks.
+  ///
+  /// In fr, this message translates to:
+  /// **'Les portes de l\'immeuble et leurs marques (statuts, notes, « repasser ») seront perdues.'**
+  String get confirmBackToHouseBody;
+
   /// The ground floor (rez-de-chaussée), in the grid and the setup.
   ///
   /// In fr, this message translates to:

@@ -325,6 +325,189 @@ class AppLocalizationsFr extends AppLocalizations {
   String get setupConfirmAction => 'Modifier';
 
   @override
+  String get editStreetClose => 'Quitter la modification';
+
+  @override
+  String get editStreetOk => 'OK';
+
+  @override
+  String get streetNameLabel => 'Nom de la rue';
+
+  @override
+  String get streetNameBlank => 'Le nom de la rue ne peut pas être vide.';
+
+  @override
+  String streetNameTooLong(int max) {
+    return 'Nom limité à $max caractères.';
+  }
+
+  @override
+  String editBuildingTile(String number) {
+    return '$number · immeuble';
+  }
+
+  @override
+  String editTileSemantics(String number) {
+    return 'Modifier le numéro $number';
+  }
+
+  @override
+  String editBuildingTileSemantics(String number) {
+    return 'Modifier le numéro $number, immeuble';
+  }
+
+  @override
+  String removeNumberSemantics(String number) {
+    return 'Supprimer le numéro $number';
+  }
+
+  @override
+  String get addNumbersButton => '+ numéros';
+
+  @override
+  String get editHint =>
+      'Touchez un numéro pour le renommer ou le transformer en immeuble.';
+
+  @override
+  String get deleteStreetAction => 'Supprimer la rue';
+
+  @override
+  String numberRemoved(String number) {
+    return 'N° $number supprimé';
+  }
+
+  @override
+  String numberRenamed(String from, String to) {
+    return 'N° $from → $to';
+  }
+
+  @override
+  String backToHouseDone(String number) {
+    return 'N° $number redevient une maison';
+  }
+
+  @override
+  String get delete => 'Supprimer';
+
+  @override
+  String confirmRemoveTitle(String number) {
+    return 'Supprimer le n° $number ?';
+  }
+
+  @override
+  String get confirmRemoveBody =>
+      'Ce numéro a des marques (statut, note, « repasser » ou portes marquées). Elles partent avec lui à la Corbeille.';
+
+  @override
+  String get confirmDeleteStreetTitle => 'Supprimer la rue ?';
+
+  @override
+  String confirmDeleteStreetBody(String name) {
+    return '« $name » part à la Corbeille avec ses numéros et leurs marques, pour toute l\'équipe.';
+  }
+
+  @override
+  String get addNumbersTitle => 'Ajouter des numéros';
+
+  @override
+  String get numbersLabel => 'Numéros';
+
+  @override
+  String get numbersPlaceholder => '12bis, 21-25';
+
+  @override
+  String get numbersHelper => 'Un numéro, une liste ou une plage (21-25).';
+
+  @override
+  String numbersPreviewTitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count numéros',
+      one: '1 numéro',
+    );
+    return 'Aperçu · $_temp0';
+  }
+
+  @override
+  String numbersAlreadyThere(String numbers) {
+    return 'Déjà dans la rue : $numbers';
+  }
+
+  @override
+  String numbersFromCorbeille(int count, String numbers) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Reviennent de la Corbeille avec leurs marques : $numbers',
+      one: 'Revient de la Corbeille avec ses marques : $numbers',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get addNumbersConfirm => 'Ajouter';
+
+  @override
+  String numbersInvalidRange(String token) {
+    return '« $token » : une plage relie deux numéros simples, comme 21-25.';
+  }
+
+  @override
+  String numbersTooMany(int max) {
+    return '$max numéros au plus à la fois.';
+  }
+
+  @override
+  String get numberEmpty => 'Tapez un numéro.';
+
+  @override
+  String numberMalformed(String text) {
+    return '« $text » n\'est pas un numéro.';
+  }
+
+  @override
+  String numberTooLarge(String text, int max) {
+    return '« $text » : $max au plus.';
+  }
+
+  @override
+  String numberInvalidSuffix(String text) {
+    return '« $text » : après le numéro, un complément en lettres sans accent (12bis, 3A).';
+  }
+
+  @override
+  String numberSuffixTooLong(String text, int max) {
+    return '« $text » : complément de $max caractères au plus.';
+  }
+
+  @override
+  String get numberLabel => 'Numéro';
+
+  @override
+  String get renumberAction => 'Changer le numéro';
+
+  @override
+  String renumberTaken(String number) {
+    return 'Le $number est déjà dans la rue.';
+  }
+
+  @override
+  String renumberInCorbeille(String number) {
+    return 'Le $number est dans la Corbeille : ajoutez-le avec « + numéros » pour le retrouver avec ses marques, ou choisissez un autre numéro.';
+  }
+
+  @override
+  String get backToHouseAction => 'Redevenir une maison';
+
+  @override
+  String get confirmBackToHouseTitle => 'Redevenir une maison ?';
+
+  @override
+  String get confirmBackToHouseBody =>
+      'Les portes de l\'immeuble et leurs marques (statuts, notes, « repasser ») seront perdues.';
+
+  @override
   String get floorGround => 'RdC';
 
   @override

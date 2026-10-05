@@ -19,7 +19,6 @@ void main() {
         AppRoutes.joinPending: 'Demande envoyée',
         AppRoutes.addStreets: 'Ajouter des rues',
         AppRoutes.manualStreet: 'Rue à la main',
-        AppRoutes.editStreet: 'Modifier la rue',
         AppRoutes.team: 'Équipe',
         AppRoutes.settings: 'Paramètres',
         AppRoutes.newCampaign: 'Nouvelle campagne',

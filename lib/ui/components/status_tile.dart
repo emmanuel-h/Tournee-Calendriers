@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:tournee_calendriers/ui/components/dashed_outline.dart';
 import 'package:tournee_calendriers/ui/components/status_glyph.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
@@ -114,7 +115,7 @@ final class StatusTile extends StatelessWidget {
     );
     if (look.dashedBorder) {
       tile = CustomPaint(
-        foregroundPainter: _DashedOutlinePainter(look.border),
+        foregroundPainter: DashedOutlinePainter(look.border),
         child: tile,
       );
     }
@@ -147,40 +148,4 @@ final class StatusTile extends StatelessWidget {
     BuildingPartialTile(:final done, :final total) =>
       l10n.buildingTileSemantics(number, done, total),
   };
-}
-
-/// Draws the dashed rounded outline of building tiles.
-final class _DashedOutlinePainter extends CustomPainter {
-  const _DashedOutlinePainter(this.color);
-
-  final Color color;
-
-  static const _dash = 6.0;
-  static const _gap = 4.0;
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    const inset = AppSizes.borderWidth / 2;
-    final outline = Path()
-      ..addRRect(
-        RRect.fromRectAndRadius(
-          (Offset.zero & size).deflate(inset),
-          const Radius.circular(AppSizes.tileRadius - inset),
-        ),
-      );
-    final paint = Paint()
-      ..color = color
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = AppSizes.borderWidth;
-    // Walks along the outline and keeps one dash every `_dash + _gap` pixels.
-    for (final metric in outline.computeMetrics()) {
-      for (var start = 0.0; start < metric.length; start += _dash + _gap) {
-        canvas.drawPath(metric.extractPath(start, start + _dash), paint);
-      }
-    }
-  }
-
-  @override
-  bool shouldRepaint(_DashedOutlinePainter oldDelegate) =>
-      oldDelegate.color != color;
 }

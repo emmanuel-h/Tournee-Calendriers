@@ -402,6 +402,48 @@ Edit mode:
   (confirmation, any member may do it — see Q2).
 - A manual street has no shape on the map; it appears in the lists, marked "saisie à la main".
 
+Edit mode details fixed in T1.10 (`lib/presentation/edit_street/`,
+`lib/ui/screens/edit_street/`, mockups Edit and Numbers):
+
+- **Top bar** « ✕ Modifier la rue [OK] ». The name field (« Nom de la rue ») is stored when the
+  screen is left — « OK », ✕ and the back gesture all leave the same way — and when the
+  keyboard's « OK » is pressed; a name equal to the stored one (once cleaned, §6.1
+  `StreetName`) stores nothing. A blank name says « Le nom de la rue ne peut pas être vide. »
+  (« Nom limité à 150 caractères. » when too long) and keeps the screen open.
+- **Numbers**: dashed tiles of 56 dp, odd on the left, even on the right, one column when the
+  street has numbers on one side only (decided as on the street screen); a building reads
+  « 8 · immeuble ». « + numéros » closes each column (both open the same sheet); under them
+  « Touchez un numéro pour le renommer ou le transformer en immeuble. ».
+- **✕** removes at once with « N° 3 supprimé [Annuler] » (4 s, the street screen's snackbar).
+  A number with marks (`House.hasMarks`) asks first: « Supprimer le n° 3 ? — Ce numéro a des
+  marques (statut, note, « repasser » ou portes marquées). Elles partent avec lui à la
+  Corbeille. [Annuler] [Supprimer] ». Opening any sheet hides the snackbar.
+- **« Ajouter des numéros »**: field « Numéros » (placeholder `12bis, 21-25`, keyboard open),
+  helper « Un numéro, une liste ou une plage (21-25). ». The preview follows each key:
+  « Aperçu · 6 numéros », the numbers (up to twelve, then the first ten, « … » and the last),
+  « Déjà dans la rue : 4 » (skipped) and « Revient de la Corbeille avec ses marques : 5 ». A
+  wrong item is named instead: « « x » n'est pas un numéro. », « « 12bis-14 » : une plage relie
+  deux numéros simples, comme 21-25. », « « 123456 » : 99999 au plus. », « « 12é » : après le
+  numéro, un complément en lettres sans accent (12bis, 3A). », « « … » : complément de 16
+  caractères au plus. », « 500 numéros au plus à la fois. ». « Ajouter » is disabled until a
+  number would be new; the sheet closes once added. Adding has no « Annuler » (✕ removes).
+- **Tap a number** → a small sheet « 3 Rue des Lilas »: field « Numéro » with « Changer le
+  numéro » (refusals: the number messages above, « Le 5 est déjà dans la rue. », « Le 7 est
+  dans la Corbeille : ajoutez-le avec « + numéros » pour le retrouver avec ses marques, ou
+  choisissez un autre numéro. »; the same number just closes), then « N° 3 → 3bis
+  [Annuler] ». A house offers *Transformer en immeuble…*; a building « Modifier les étages »
+  (both open « Décrire l'immeuble », §5.7, then come back to the edit mode) and « Redevenir
+  une maison », which asks first when a door has marks (« Redevenir une maison ? — Les portes
+  de l'immeuble et leurs marques (statuts, notes, « repasser ») seront perdues. »), then
+  « N° 8 redevient une maison [Annuler] ».
+- **« Supprimer la rue »** (red outline) asks « Supprimer la rue ? — « Rue des Lilas » part à
+  la Corbeille avec ses numéros et leurs marques, pour toute l'équipe. » then goes back to
+  « Mes rues », where the street no longer shows. **« Ne plus la faire » is not shown before
+  M3**: it removes me from the street's assignees, which come with Accueil (§6.1 sketch).
+- Not yet: adjusting one floor (add / remove / rename a door, typing « Libres » labels), which
+  §5.7 places under « Modifier les étages » here, waits for a sketch; the Corbeille screen
+  (§5.11) comes in M2.
+
 ### 5.6 Rue — two sides of the street (used 95 % of the time)
 
 ```

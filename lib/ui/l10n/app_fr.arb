@@ -277,6 +277,166 @@
   "setupConfirmAction": "Modifier",
   "@setupConfirmAction": { "description": "Confirms a new layout that drops doors with marks." },
 
+  "editStreetClose": "Quitter la modification",
+  "@editStreetClose": { "description": "Screen-reader name and tooltip of the ✕ of the edit mode, which leaves it (the name is kept, as with OK)." },
+  "editStreetOk": "OK",
+  "@editStreetOk": { "description": "Button of the edit mode's top bar that keeps the name and leaves (PLAN §5.5)." },
+  "streetNameLabel": "Nom de la rue",
+  "@streetNameLabel": { "description": "Label of the name field of the edit mode." },
+  "streetNameBlank": "Le nom de la rue ne peut pas être vide.",
+  "@streetNameBlank": { "description": "Under the name field when it holds only spaces; the old name is kept." },
+  "streetNameTooLong": "Nom limité à {max} caractères.",
+  "@streetNameTooLong": {
+    "description": "Under the name field when the name is too long; the old name is kept.",
+    "placeholders": { "max": { "type": "int", "example": "150" } }
+  },
+  "editBuildingTile": "{number} · immeuble",
+  "@editBuildingTile": {
+    "description": "A building's tile in edit mode.",
+    "placeholders": { "number": { "type": "String", "example": "8" } }
+  },
+  "editTileSemantics": "Modifier le numéro {number}",
+  "@editTileSemantics": {
+    "description": "Screen-reader name of a number in edit mode; a tap opens its sheet.",
+    "placeholders": { "number": { "type": "String", "example": "3bis" } }
+  },
+  "editBuildingTileSemantics": "Modifier le numéro {number}, immeuble",
+  "@editBuildingTileSemantics": {
+    "description": "Screen-reader name of a building in edit mode.",
+    "placeholders": { "number": { "type": "String", "example": "8" } }
+  },
+  "removeNumberSemantics": "Supprimer le numéro {number}",
+  "@removeNumberSemantics": {
+    "description": "Screen-reader name of the ✕ of a number in edit mode.",
+    "placeholders": { "number": { "type": "String", "example": "3bis" } }
+  },
+  "addNumbersButton": "+ numéros",
+  "@addNumbersButton": { "description": "Button under each column of the edit mode; opens « Ajouter des numéros »." },
+  "editHint": "Touchez un numéro pour le renommer ou le transformer en immeuble.",
+  "@editHint": { "description": "Under the numbers of the edit mode." },
+  "deleteStreetAction": "Supprimer la rue",
+  "@deleteStreetAction": { "description": "Bottom button of the edit mode: sends the street to the Corbeille after a confirmation." },
+  "numberRemoved": "N° {number} supprimé",
+  "@numberRemoved": {
+    "description": "Undo snackbar after ✕ on a number.",
+    "placeholders": { "number": { "type": "String", "example": "3" } }
+  },
+  "numberRenamed": "N° {from} → {to}",
+  "@numberRenamed": {
+    "description": "Undo snackbar after a number was changed (3 → 3bis).",
+    "placeholders": {
+      "from": { "type": "String", "example": "3" },
+      "to": { "type": "String", "example": "3bis" }
+    }
+  },
+  "backToHouseDone": "N° {number} redevient une maison",
+  "@backToHouseDone": {
+    "description": "Undo snackbar after a building was turned back into a single house.",
+    "placeholders": { "number": { "type": "String", "example": "8" } }
+  },
+  "delete": "Supprimer",
+  "@delete": { "description": "Confirms a removal (a number, a street)." },
+  "confirmRemoveTitle": "Supprimer le n° {number} ?",
+  "@confirmRemoveTitle": {
+    "description": "Title of the confirmation before removing a number that has marks.",
+    "placeholders": { "number": { "type": "String", "example": "3" } }
+  },
+  "confirmRemoveBody": "Ce numéro a des marques (statut, note, « repasser » ou portes marquées). Elles partent avec lui à la Corbeille.",
+  "@confirmRemoveBody": { "description": "Body of the confirmation before removing a number that has marks (PLAN §5.5)." },
+  "confirmDeleteStreetTitle": "Supprimer la rue ?",
+  "@confirmDeleteStreetTitle": { "description": "Title of the confirmation of « Supprimer la rue »." },
+  "confirmDeleteStreetBody": "« {name} » part à la Corbeille avec ses numéros et leurs marques, pour toute l'équipe.",
+  "@confirmDeleteStreetBody": {
+    "description": "Body of the confirmation of « Supprimer la rue ».",
+    "placeholders": { "name": { "type": "String", "example": "Rue des Lilas" } }
+  },
+  "addNumbersTitle": "Ajouter des numéros",
+  "@addNumbersTitle": { "description": "Title of the sheet opened by « + numéros » (PLAN §5.5); also the screen-reader name of that button." },
+  "numbersLabel": "Numéros",
+  "@numbersLabel": { "description": "Label of the field of « Ajouter des numéros »." },
+  "numbersPlaceholder": "12bis, 21-25",
+  "@numbersPlaceholder": { "description": "Placeholder of the field of « Ajouter des numéros »: an example." },
+  "numbersHelper": "Un numéro, une liste ou une plage (21-25).",
+  "@numbersHelper": { "description": "Under the field of « Ajouter des numéros »." },
+  "numbersPreviewTitle": "Aperçu · {count, plural, =1{1 numéro} other{{count} numéros}}",
+  "@numbersPreviewTitle": {
+    "description": "Header of the preview of « Ajouter des numéros ».",
+    "placeholders": { "count": { "type": "int", "example": "6" } }
+  },
+  "numbersAlreadyThere": "Déjà dans la rue : {numbers}",
+  "@numbersAlreadyThere": {
+    "description": "In the preview: numbers the street already shows, which are skipped.",
+    "placeholders": { "numbers": { "type": "String", "example": "12bis, 21" } }
+  },
+  "numbersFromCorbeille": "{count, plural, =1{Revient de la Corbeille avec ses marques : {numbers}} other{Reviennent de la Corbeille avec leurs marques : {numbers}}}",
+  "@numbersFromCorbeille": {
+    "description": "In the preview: numbers in the Corbeille, which come back with their marks.",
+    "placeholders": {
+      "count": { "type": "int", "example": "1" },
+      "numbers": { "type": "String", "example": "3" }
+    }
+  },
+  "addNumbersConfirm": "Ajouter",
+  "@addNumbersConfirm": { "description": "Adds the numbers typed in « Ajouter des numéros »." },
+  "numbersInvalidRange": "« {token} » : une plage relie deux numéros simples, comme 21-25.",
+  "@numbersInvalidRange": {
+    "description": "An item with a dash that is not a range of two plain numbers.",
+    "placeholders": { "token": { "type": "String", "example": "12bis-14" } }
+  },
+  "numbersTooMany": "{max} numéros au plus à la fois.",
+  "@numbersTooMany": {
+    "description": "The field gives more numbers than allowed at once.",
+    "placeholders": { "max": { "type": "int", "example": "500" } }
+  },
+  "numberEmpty": "Tapez un numéro.",
+  "@numberEmpty": { "description": "The number field is blank." },
+  "numberMalformed": "« {text} » n'est pas un numéro.",
+  "@numberMalformed": {
+    "description": "What was typed does not start with a number.",
+    "placeholders": { "text": { "type": "String", "example": "bis" } }
+  },
+  "numberTooLarge": "« {text} » : {max} au plus.",
+  "@numberTooLarge": {
+    "description": "The number is above the largest house number.",
+    "placeholders": {
+      "text": { "type": "String", "example": "123456" },
+      "max": { "type": "int", "example": "99999" }
+    }
+  },
+  "numberInvalidSuffix": "« {text} » : après le numéro, un complément en lettres sans accent (12bis, 3A).",
+  "@numberInvalidSuffix": {
+    "description": "What follows the number is not a valid suffix.",
+    "placeholders": { "text": { "type": "String", "example": "12é" } }
+  },
+  "numberSuffixTooLong": "« {text} » : complément de {max} caractères au plus.",
+  "@numberSuffixTooLong": {
+    "description": "The suffix after the number is too long.",
+    "placeholders": {
+      "text": { "type": "String", "example": "12abcdefghijklmnopq" },
+      "max": { "type": "int", "example": "16" }
+    }
+  },
+  "numberLabel": "Numéro",
+  "@numberLabel": { "description": "Label of the number field of a number's sheet in edit mode." },
+  "renumberAction": "Changer le numéro",
+  "@renumberAction": { "description": "Gives the house the number typed (3 → 3bis), its marks kept." },
+  "renumberTaken": "Le {number} est déjà dans la rue.",
+  "@renumberTaken": {
+    "description": "The number typed is shown by another house.",
+    "placeholders": { "number": { "type": "String", "example": "5" } }
+  },
+  "renumberInCorbeille": "Le {number} est dans la Corbeille : ajoutez-le avec « + numéros » pour le retrouver avec ses marques, ou choisissez un autre numéro.",
+  "@renumberInCorbeille": {
+    "description": "The number typed belongs to a house in the Corbeille.",
+    "placeholders": { "number": { "type": "String", "example": "7" } }
+  },
+  "backToHouseAction": "Redevenir une maison",
+  "@backToHouseAction": { "description": "Button of a building's sheet in edit mode: the building becomes a single house again." },
+  "confirmBackToHouseTitle": "Redevenir une maison ?",
+  "@confirmBackToHouseTitle": { "description": "Title of the confirmation when the doors of the building have marks." },
+  "confirmBackToHouseBody": "Les portes de l'immeuble et leurs marques (statuts, notes, « repasser ») seront perdues.",
+  "@confirmBackToHouseBody": { "description": "Body of the confirmation when the doors of the building have marks." },
+
   "floorGround": "RdC",
   "@floorGround": { "description": "The ground floor (rez-de-chaussée), in the grid and the setup." },
   "floorFirst": "1er",

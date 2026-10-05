@@ -252,4 +252,22 @@ void main() {
       );
     });
   });
+
+  group('StreetColumns.of', () {
+    test('should show both sides when each has numbers', () {
+      expect(StreetColumns.of(odd: 1, even: 1), StreetColumns.both);
+    });
+
+    test('should show the odd side alone when there is no even number', () {
+      expect(StreetColumns.of(odd: 1, even: 0), StreetColumns.oddOnly);
+    });
+
+    test('should show the even side alone when there is no odd number', () {
+      expect(StreetColumns.of(odd: 0, even: 1), StreetColumns.evenOnly);
+    });
+
+    test('should show both sides when the street has no number', () {
+      expect(StreetColumns.of(odd: 0, even: 0), StreetColumns.both);
+    });
+  });
 }

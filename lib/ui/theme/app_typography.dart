@@ -192,4 +192,13 @@ abstract final class AppTextStyles {
     fontSize: 19,
     height: 1.2,
   );
+
+  /// A number of the edit mode (« 3bis », « 8 · immeuble »): a little
+  /// smaller than on the street screen, to leave room for the ✕.
+  static const editTileNumber = TextStyle(
+    fontFamily: AppFonts.display,
+    fontWeight: FontWeight.w700,
+    fontSize: 26,
+    height: 1,
+  );
 }

@@ -17,6 +17,7 @@ import '../../support/fakes/fake_street_view_preferences.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 import '../support/app_overrides.dart';
+import '../support/navigation.dart';
 
 final _id = StreetId('lilas');
 
@@ -263,10 +264,4 @@ void main() {
     expect(find.widgetWithText(AppBar, 'Modifier la rue'), findsOneWidget);
     expect(router.state.uri.toString(), AppRoutes.editStreetOf(_id));
   });
-}
-
-/// `push` returns a `Future` that ends when the pushed screen is closed;
-/// the tests do not wait for it.
-void unawaitedPush(GoRouter router, String location) {
-  router.push<void>(location).ignore();
 }

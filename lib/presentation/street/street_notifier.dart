@@ -115,11 +115,7 @@ final class StreetNotifier extends Notifier<StreetViewState> {
       nobodyHome: progress.nobodyHome,
       comeBack: progress.comeBack,
       hideDone: _hideDone,
-      columns: switch ((odd.isEmpty, even.isEmpty)) {
-        (false, true) => StreetColumns.oddOnly,
-        (true, false) => StreetColumns.evenOnly,
-        _ => StreetColumns.both,
-      },
+      columns: StreetColumns.of(odd: odd.length, even: even.length),
       odd: _tiles(odd),
       even: _tiles(even),
     );

@@ -289,4 +289,75 @@ void main() {
       semantics.dispose();
     },
   );
+
+  testWidgets(
+    'should show added numbers on both sides when a number is removed, '
+    'brought back and 21-25 added in edit mode',
+    (tester) async {
+      final storage = await Directory.systemTemp.createTemp('edit_flow');
+      addTearDown(() => storage.delete(recursive: true));
+      await bootstrap(
+        addressDirectory: _ban(),
+        communeSearch: FakeCommuneSearch(
+          answers: {
+            'Villef': Ok([
+              CommuneMatch(commune: _villefranche, postcodes: const ['69400']),
+            ]),
+          },
+        ),
+        storage: storage,
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('start.import')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('import.commune')), 'Villef');
+      await tester.pumpAndSettle(const Duration(milliseconds: 400));
+      await tester.tap(find.byKey(const ValueKey('import.suggestion.69264')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('import.street.69264_1460')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Importer 1 rue'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Rue Pierre Morin'));
+      await tester.pumpAndSettle();
+
+      // ✏, then ✕ on 33 and « Annuler »: 33 is back.
+      await tester.tap(find.byKey(const Key('street.edit')));
+      await tester.pumpAndSettle();
+      final tile33 = find.byKey(const ValueKey('edit.tile.33'));
+      await tester.tap(
+        find.descendant(
+          of: tile33,
+          matching: find.byKey(const Key('edit.tile.remove')),
+        ),
+      );
+      await tester.pumpAndSettle();
+      expect(tile33, findsNothing);
+      expect(find.text('N° 33 supprimé'), findsOneWidget);
+      await tester.tap(find.text('Annuler'));
+      await tester.pumpAndSettle();
+      expect(tile33, findsOneWidget);
+
+      // « + numéros », 21-25, « Ajouter », « OK »: the street screen shows
+      // 21, 23, 25 with the odd numbers and 22, 24 with the even ones.
+      await tester.tap(find.byKey(const ValueKey('edit.addNumbers.odd')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('numbers.field')), '21-25');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('numbers.add')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('edit.ok')));
+      await tester.pumpAndSettle();
+
+      double sideOf(String number) =>
+          tester.getCenter(find.byKey(ValueKey('street.tile.$number'))).dx;
+      for (final odd in ['21', '23', '25']) {
+        expect(sideOf(odd), sideOf('33'), reason: odd);
+      }
+      for (final even in ['22', '24']) {
+        expect(sideOf(even), sideOf('32'), reason: even);
+      }
+      expect(sideOf('33'), lessThan(sideOf('32')));
+    },
+  );
 }

@@ -122,4 +122,13 @@ abstract final class AppSizes {
 
   /// The « 51, 52… | 5A, 5B… | Libres » choice and the staircase control.
   static const labelStyleHeight = 48.0;
+
+  /// A number of the edit mode (Edit mockup): 56 dp, the least PLAN §5
+  /// allows for a street tile, so the ✕ fits beside it.
+  static const editTileHeight = 56.0;
+
+  /// The dark « OK » pill of the edit mode's top bar; its tap target still
+  /// grows to [minTapTarget].
+  static const okButtonHeight = 44.0;
+  static const okButtonPadding = 20.0;
 }

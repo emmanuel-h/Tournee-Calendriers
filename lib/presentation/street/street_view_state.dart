@@ -147,7 +147,16 @@ enum StreetColumns {
   oddOnly,
 
   /// The street only has even numbers: one column.
-  evenOnly,
+  evenOnly;
+
+  /// The columns of a street whose sides hold [odd] and [even] numbers:
+  /// one column when one side is empty and the other is not.
+  static StreetColumns of({required int odd, required int even}) =>
+      switch ((odd == 0, even == 0)) {
+        (false, true) => StreetColumns.oddOnly,
+        (true, false) => StreetColumns.evenOnly,
+        _ => StreetColumns.both,
+      };
 }
 
 /// Everything the street screen shows. `sealed`: the screen handles each

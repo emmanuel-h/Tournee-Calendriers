@@ -7,6 +7,7 @@ import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
 import 'package:tournee_calendriers/presentation/building/building_setup_notifier.dart';
 import 'package:tournee_calendriers/presentation/building/building_setup_state.dart';
 import 'package:tournee_calendriers/ui/components/app_buttons.dart';
+import 'package:tournee_calendriers/ui/components/confirm_dialog.dart';
 import 'package:tournee_calendriers/ui/components/section_header.dart';
 import 'package:tournee_calendriers/ui/components/segmented_choice.dart';
 import 'package:tournee_calendriers/ui/components/sheet_scaffold.dart';
@@ -179,28 +180,15 @@ final class BuildingSetupSheet extends ConsumerWidget {
     }
   }
 
-  static Future<bool> _confirmDrop(BuildContext context, int doors) async {
+  static Future<bool> _confirmDrop(BuildContext context, int doors) {
     final l10n = AppLocalizations.of(context);
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: Text(l10n.setupConfirmTitle),
-        content: Text(l10n.setupConfirmBody(doors)),
-        actions: [
-          TextButton(
-            key: const Key('setup.confirm.cancel'),
-            onPressed: () => Navigator.of(context).pop(false),
-            child: Text(l10n.cancel),
-          ),
-          TextButton(
-            key: const Key('setup.confirm.ok'),
-            onPressed: () => Navigator.of(context).pop(true),
-            child: Text(l10n.setupConfirmAction),
-          ),
-        ],
-      ),
+    return showConfirmDialog(
+      context,
+      name: 'setup.confirm',
+      title: l10n.setupConfirmTitle,
+      body: l10n.setupConfirmBody(doors),
+      confirmLabel: l10n.setupConfirmAction,
     );
-    return confirmed ?? false;
   }
 
   static String _refusalText(

@@ -37,6 +37,7 @@ final class AppColors extends ThemeExtension<AppColors> {
     required this.buildingPartial,
     required this.onBuildingPartial,
     required this.buildingPartialBorder,
+    required this.editTileBorder,
     required this.snackBar,
     required this.onSnackBar,
     required this.snackBarAction,
@@ -78,6 +79,7 @@ final class AppColors extends ThemeExtension<AppColors> {
     buildingPartial: Color(0xFFEFE9DD),
     onBuildingPartial: Color(0xFF1B1F24),
     buildingPartialBorder: Color(0xFFCFC9BD),
+    editTileBorder: Color(0xFF8A8F96),
     snackBar: Color(0xFF1B1F24),
     onSnackBar: Color(0xFFFFFFFF),
     snackBarAction: Color(0xFFF2B33D),
@@ -121,6 +123,7 @@ final class AppColors extends ThemeExtension<AppColors> {
     buildingPartial: Color(0xFF2B2822),
     onBuildingPartial: Color(0xFFECEAE5),
     buildingPartialBorder: Color(0xFF6B6558),
+    editTileBorder: Color(0xFF8A8F96),
     snackBar: Color(0xFFECEAE5),
     onSnackBar: Color(0xFF1B1F24),
     snackBarAction: Color(0xFF9A3412),
@@ -184,6 +187,10 @@ final class AppColors extends ThemeExtension<AppColors> {
   final Color buildingPartial;
   final Color onBuildingPartial;
   final Color buildingPartialBorder;
+
+  /// The dashed outline of a number in edit mode (Edit mockup): grey, so
+  /// the tiles read as « being edited », not as a status.
+  final Color editTileBorder;
 
   /// The undo snackbar: dark bar, yellow action.
   final Color snackBar;
