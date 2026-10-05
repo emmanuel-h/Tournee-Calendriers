@@ -53,6 +53,10 @@ Fixtures, examples and screenshots use **Villefranche-sur-Saône** (public data)
 | [#54](https://github.com/emmanuel-h/Tournee-Calendriers/issues/54) | T1.12 Adjust one floor of a building | |
 | [#55](https://github.com/emmanuel-h/Tournee-Calendriers/issues/55) | T1.13 Draw the « → » of the undo messages | |
 | [#56](https://github.com/emmanuel-h/Tournee-Calendriers/issues/56) | T1.14 Keep a street name typed in edit mode | |
+| [#57](https://github.com/emmanuel-h/Tournee-Calendriers/issues/57) | T1.15 Keep focus on a refused name, no wrap inside « » | |
+| [#58](https://github.com/emmanuel-h/Tournee-Calendriers/issues/58) | T1.16 « Repasser » becomes a fourth status | |
+| [#59](https://github.com/emmanuel-h/Tournee-Calendriers/issues/59) | T1.17 Re-import a street from the Corbeille | |
+| [#60](https://github.com/emmanuel-h/Tournee-Calendriers/issues/60) | T1.18 One building screen and per-staircase setup | |
 
 The temporary start screen of #15 was built right after #46, before the street screen, so every
 later screen could be checked with real streets (decided with you on 2026-10-04).
