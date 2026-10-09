@@ -840,7 +840,8 @@ inside an aggregate changes only through its root, which enforces the invariants
 | `Street` (one per campaign) | `House` entities, each with an optional `Building` → `Staircase` → `Floor` → `Dwelling` | numbers unique in the street; a building's status is derived, never set; deleting is soft (Corbeille) |
 
 Value objects (immutable, validated at construction, equal by value): `JoinCode` (6 chars from
-the alphabet), `RescueCentreKey` (normalised name), `HouseNumber` (12 + "bis", with the
+the alphabet), `RescueCentreKey` (normalised name), `TourneeNumber`, `MemberName`,
+`HouseNumber` (12 + "bis", with the
 French ordering), `StreetName`, `InseeCode` (the five-character commune code, `2A`/`2B`
 in Corsica), `VisitStatus` (`toDo`, `done`, `nobodyHome`, `comeBack`), `ComeBack` (the optional hint of « repasser »),
 `GeoPoint`, `StreetShape`, `Progress`, `ProgressLevel`
@@ -1097,6 +1098,59 @@ Start screen rules fixed in T1.11 (`lib/domain/shared/french_text.dart`,
   (`infrastructure/geo_api/`, 10 s timeout). An entry without a valid `Commune` or a postcode
   that is not five digits is left out. Use cases `SearchCommunes` (nothing asked under two
   characters) and `FindImportedStreets` (BAN ids already on the phone, each `active` or `inCorbeille`).
+
+Tournée rules fixed in T2.2 (`lib/domain/tournee/`):
+
+- **`JoinCode`**: 6 characters of `ABCDEFGHJKMNPQRSTUVWXYZ23456789`. `generate(Random)` draws
+  each one from the injected source (`Random.secure()` in the app, a scripted source in
+  tests). `parse` ignores case, spaces and the dash, and fails with `invalidCharacter`
+  (reported first) or `wrongLength`. `value` `K7P2QX` is stored and put in the QR; `display`
+  `K7P-2QX` is shown.
+- **`RescueCentre`**: the name as typed (trimmed, spaces joined, case and accents kept, 1–80
+  code points, else `tooLong`) and its **`RescueCentreKey`**: the name's French search key
+  (§6.1, T1.11) cut into words of `a–z 0–9` (any other character separates), without one
+  leading prefix `CS`, `CIS`, `centre de secours` or `centre d'incendie et de secours` and the
+  article `de / d' / du / des` right after it (kept when it is the last word), words joined
+  with `-`: `CS Villefranche`, `cis villefranche`, `Centre de secours de Villefranche` →
+  `villefranche`; `CS Villefranche-sur-Saône` → `villefranche-sur-saone`. Nothing left
+  (`CS`, `!?`) → `blank`. Two names are the same station when their keys are equal
+  (`isSameStationAs`); the key is the `rescueCentres` document id and the first half of the
+  `tourneeKeys` id (§6.2).
+- **`TourneeNumber`** 1–9999 and **`CampaignYear`** 2000–2099: `create(int)` or `parse(text)`
+  (digits only, spaces around and leading zeros ignored; `notANumber`, `outOfRange`).
+  **`MemberName`**: trimmed, spaces joined, 1–30 code points (`blank`, `tooLong`).
+  **`TourneeId`** is opaque like the other ids.
+- **`Member`** (entity): id (the uid), `MemberName`, `requestedAt` and `acceptance` (a
+  `ChangeStamp`: `acceptedBy` / `acceptedAt`). Its status is derived: pending while
+  `acceptance` is null, active otherwise; the creator accepted themself at creation.
+- **`Tournee`**: `Tournee.createdBy(…)` makes a new one whose only member is its creator,
+  active; `Tournee.create(…)` rebuilds a stored one and fails with `duplicateMember` or
+  `creatorNotActive` (the creator missing or pending). Members are sorted by request time, then
+  id; `pendingMembers`, `activeMembers`, `memberOf`, `isCreator`.
+- **Commands** return `(Tournee, change)` or a `TourneeCommandFailure`. The one acting must be
+  in the tournée (`notAMember`) and active (`requestPending`), except to leave:
+
+  | Command | Who | Refused when |
+  |---|---|---|
+  | `accept(member, by, at)` | any active member | `unknownMember`, `alreadyActive` |
+  | `refuse(member, by)` | any active member | `unknownMember`, `alreadyActive` |
+  | `remove(member, by)` | the creator (`notCreator`) | `unknownMember`, `creatorStays`, `memberPending` (refuse it instead) |
+  | `leave(by)` | any member but the creator; a pending one cancels their request | `creatorStays` |
+  | `regenerateCode(by, random)` | the creator | — (draws again if it gets the old code) |
+  | `delete(by)` | the creator | — |
+
+  **The creator can neither leave nor be removed** (the tournée would have nobody to run it):
+  they delete the tournée instead.
+- **Changes** (`TourneeChange`, sealed): `MemberAccepted` (the member as accepted),
+  `MemberRefused`, `MemberRemoved`, `MemberLeft` (the member as they were),
+  `JoinCodeRegenerated(before, code)`. `delete` returns a `TourneeDeleted` holding the whole
+  tournée (storage needs its code, centre and number to free them); it is not a
+  `TourneeChange`.
+- **Port `TourneeRepository`** (domain): `find(id)`, `watch(id)` (null when there is no such
+  tournée or this member may no longer read it), `add(tournee)` → `AddTourneeFailure`
+  (`alreadyExists`, `noNetwork`), `save(tournee, change)`, `delete(TourneeDeleted)`. A pending
+  newcomer cannot read the tournée (§8.2), so the join (code lookup, request) goes through the
+  `TourneeDirectory` port (Q20), not this one.
 
 ```dart
 // Sketch of the core (T1.2–T1.6 delivered the uncommented members; the rest come with their tasks)
