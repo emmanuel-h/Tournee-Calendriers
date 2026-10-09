@@ -73,6 +73,15 @@ final class LocalStreetRepository implements StreetRepository {
   );
 
   @override
+  Stream<List<Street>> watchDeleted() => _observe(
+    (streets) => List.unmodifiable([
+      for (final street in streets.values)
+        if (street.isDeleted) street,
+    ]),
+    (_) => true,
+  );
+
+  @override
   Future<void> add(Street street) => _put(street);
 
   /// Saves the whole [street]: a file holds a street, so the [change] is not

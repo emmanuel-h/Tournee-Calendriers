@@ -43,6 +43,11 @@ abstract interface class StreetRepository {
   /// to any of them, in no particular order.
   Stream<List<Street>> watchAll();
 
+  /// Every street in the Corbeille (« Corbeille », PLAN §5.11), now and
+  /// after each change to any street, in no particular order. The numbers
+  /// removed from the other streets are in their `removedHouses`.
+  Stream<List<Street>> watchDeleted();
+
   /// Stores [street], new to the tournée (imported from the BAN, typed in by
   /// hand). It replaces nothing: the street id is new.
   Future<void> add(Street street);

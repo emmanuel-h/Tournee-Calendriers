@@ -13,9 +13,12 @@ environment:
 # Versions are pinned exactly (no `^`) so every machine and CI resolve the same
 # packages; upgrades are deliberate, one commit each.
 dependencies:
-  # Firebase (PLAN §10.2), only in infrastructure/ and bootstrap/: App Check
-  # (only the genuine app talks to Firebase), anonymous sign-in (the uid is
-  # the member id) and the core every Firebase plugin needs.
+  # Firebase (PLAN §10.2), only in infrastructure/ and bootstrap/: the
+  # Firestore database (the tournées and their streets, with its offline
+  # cache), App Check (only the genuine app talks to Firebase), anonymous
+  # sign-in (the uid is the member id) and the core every Firebase plugin
+  # needs.
+  cloud_firestore: 6.10.0
   firebase_app_check: 0.4.8
   firebase_auth: 6.7.0
   firebase_core: 4.15.0
@@ -38,12 +41,19 @@ dependencies:
   path_provider: 2.1.6
 
 dev_dependencies:
+  # An in-memory Firestore for the adapters' tests (PLAN §11): no emulator,
+  # no network.
+  fake_cloud_firestore: 4.3.0
   flutter_lints: 6.0.0
   flutter_test:
     sdk: flutter
   # Instrumented suite run on an emulator or phone (integration_test/).
   integration_test:
     sdk: flutter
+  # The companion of fake_cloud_firestore that makes one of its calls throw
+  # (`whenCalling(…).on(document).thenThrow(…)`): how the adapters' tests
+  # play a phone without network.
+  mock_exceptions: 0.8.2
   # Plain Dart test runner, used by the architecture test and pure-Dart suites.
   test: 1.31.1
 

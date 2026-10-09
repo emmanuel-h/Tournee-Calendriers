@@ -1049,8 +1049,9 @@ Use cases and phone storage fixed in T1.6 (`lib/application/use_cases/`,
   instead; `StreetRestored`). Whatever changed on that house or door since is overwritten.
 - `describeBuilding` fails with `BuildingChangeFailure.unknownHouse`, like the other layout
   commands.
-- **Ports.** `StreetRepository` (domain): `find`, `findByBanId` (Corbeille included), `watch(id)`
-  and `watchAll()` (not deleted) as `Stream`s that give the value now then after each change,
+- **Ports.** `StreetRepository` (domain): `find`, `findByBanId` (Corbeille included), `watch(id)`,
+  `watchAll()` (not deleted) and `watchDeleted()` (the Corbeille's streets, T2.3) as `Stream`s
+  that give the value now then after each change,
   `add(street)`, `save(street, change)` (each adapter writes what suits it: the whole street on
   the phone, the change's fields in Firestore). Storage failures are exceptions, not failure
   values. Application ports: `Clock` (UTC), `IdGenerator` (ASCII letters and digits), and
@@ -1152,6 +1153,39 @@ Tournée rules fixed in T2.2 (`lib/domain/tournee/`):
   newcomer cannot read the tournée (§8.2), so the join (code lookup, request) goes through the
   `TourneeDirectory` port (Q20), not this one.
 
+Firestore adapters fixed in T2.3 (`lib/infrastructure/firestore/`, `lib/application/ports/`):
+
+- **Port `TourneeDirectory`** (application, Q20): what someone outside a tournée asks of the
+  server. `preview(JoinCode)` → `JoinPreview` (code, tournée id, number, centre, campaign: what
+  « Rejoindre » shows) or `JoinFailure` (`unknownCode`, `noNetwork`); `requestToJoin(preview,
+  member)` stores the newcomer's pending member document; `watchRequest(tournée, member)` →
+  pending, active, or null once refused or cancelled; `cancelRequest`; `isTaken(centre,
+  number)` and `rescueCentres()` (sorted by name) for « Créer », failing with
+  `DirectoryFailure.noNetwork`. The code, the number and the centres are asked of the server,
+  never answered from the phone's copy.
+- **Port `PendingSync`** (application): `watchUnsentStreets()`, the number of streets holding
+  changes the server has not received yet (`hasPendingWrites` of each street document). Streets,
+  not changes: Firestore tells per document, and its queue survives a restart (§7).
+- **`FirestoreStreetRepository`** (streets of one campaign, also the `PendingSync`): one listener
+  on the campaign's `streets` collection, served from the phone's cache first; every read answers
+  from what it gave, and `add` / `save` put the street in memory and hand the write to Firestore
+  **without waiting for the server** (offline the write waits on the phone, across restarts).
+  A write the server refuses is taken back out of the phone's copy by Firestore and logged. An
+  unreadable street document is left out, not fatal.
+- **`FirestoreTourneeRepository`**: creating a tournée and a new code run in a **transaction**
+  (needs the server, fails at once offline with `noNetwork`, sees a number or code taken at the
+  same second). A join code another tournée already holds is replaced by a new one drawn from
+  the injected `Random` (up to 10 draws, then a `StateError`): `add` returns the tournée as
+  stored. Accepting, refusing, removing and leaving are queued like street writes. Deleting
+  reads the campaigns, streets and members from the server and deletes them in batches of 500,
+  the creator's member document last (with the tournée, its code and its reservation).
+- **Undo is stamped with who undoes, now** (`HouseReverted`, `DwellingReverted`): the adapter
+  writes the current member and the `Clock`'s time as `by` / `at`, not the old stamp, since the
+  rules accept only the caller's uid (§8.2). The domain's undo still puts the exact house back;
+  the stored one carries the new stamp, which the listener then shows.
+- **Times** are the phone's (`Clock`), stored as Firestore `Timestamp`s and read back in UTC: a
+  mark made offline keeps the time it was made, not the time it reached the server.
+
 ```dart
 // Sketch of the core (T1.2–T1.6 delivered the uncommented members; the rest come with their tasks)
 final class Street {                       // aggregate root
@@ -1218,31 +1252,65 @@ joinCodes/{code}                                  ← "K7P2QX": readable only by
 
 tournees/{tourneeId}
     number: 49, centreKey, centreName, joinCode, createdBy, createdAt,
-    currentCampaign: 2026, communes: ["69264", …]
+    currentCampaign: 2026, communes: ["69264", …]  ← communes: M3, not written yet
   members/{uid}
-    displayName: "Manu", status: "pending" | "active", requestedAt, acceptedBy, acceptedAt
+    displayName: "Manu", status: "pending" | "active", requestedAt, acceptedBy, acceptedAt,
+    joinCode                                      ← only on a newcomer's request: the code used
   campaigns/{year}                                ← one per year: 2026, 2027…
       startedAt, previousYear: null | 2026
     streets/{streetId}
       name, communeName, communeCode, banId,
-      shape: ["<encoded polyline>", …],           ← one per OSM way, simplified, ≈ 1 KB a street
-      assignees: [uid, …],
-      deletedAt, deletedBy                        ← set = in the Corbeille (5.11)
+      shape: ["<encoded polyline>", …],           ← one per OSM way, simplified, ≈ 1 KB a street (M3)
+      assignees: [uid, …],                        ← (M3)
+      deletedAt, deletedBy                        ← set = in the Corbeille (5.11); null otherwise
       houses: {                                   ← a map inside the street document
         "12":  { n: 12, sfx: null, lat, lon, status: "DONE", comeBack: null,
-                                          ← status TO_DO | DONE | NOBODY_HOME | COME_BACK;
+                                          ← key = the number's label ("3bis", "3A"), n + sfx
+                                            say the same; lat / lon null without position;
+                                            status TO_DO | DONE | NOBODY_HOME | COME_BACK;
                                             comeBack = hint ("" for none) only when COME_BACK
                                             (on a building: its own « repasser »)
-                 prev: "NOBODY_HOME", by: uid, at: timestamp,
+                 by: uid, at: timestamp,  ← last change, both null before any
                  deletedAt: null, deletedBy: null },   ← set = number in the Corbeille
-        "8":   { n: 8, …, dwellings: { "A5-51": { label: "51", esc: "A", floor: 5, status,
-                                                  comeBack, prev, by, at }, … } }
-                                          ← key = letter + level + "-" + label ("A0-Gauche";
-                                            "A-Gauche" and floor: null when the floors are
-                                            unknown); the building's label style is stored
-                                            with it (exact field decided in T2.3)
+        "8":   { n: 8, …, status: "TO_DO",        ← a building is always TO_DO itself
+                 labelStyle: "FLOOR_AND_NUMBER",  ← FLOOR_AND_NUMBER | FLOOR_AND_LETTER | FREE
+                 layout: [ { esc: "A", floor: 5, doors: ["51", "52"] },
+                           { esc: "A", floor: 4, doors: [] }, … ],
+                                          ← staircases A→Z, floors top first (floor null for
+                                            the « Logements » row), doors left to right; it
+                                            keeps the doors' order and the emptied floors
+                 dwellings: { "A5-51": { status, comeBack, by, at }, … } }
+                                          ← the marks of each door; key = letter + level +
+                                            "-" + label ("A0-Gauche"; "A-Gauche" when the
+                                            floors are unknown). A single house has none of
+                                            labelStyle, layout, dwellings
       }
 ```
+
+The street document fixed in T2.3 (`infrastructure/firestore/mappers/`): field names above,
+statuses and label styles under fixed names. `prev` (last campaign's status) comes with the new
+campaign (v1.1), `shape` and `assignees` with the map (M3); this version does not write them.
+**Writes name field paths by segments** (`FieldPath(['houses', '8', 'dwellings', 'A0-Porte
+1.2', 'status'])`), never dotted text: a typed door label may hold a dot. What each change
+writes:
+
+| Change | Fields written (under `houses.<n>` unless said) |
+|---|---|
+| mark, « repasser » of a house | `status`, `comeBack`, `by`, `at` (« repasser » hint: `comeBack`, `by`, `at`) |
+| mark, « repasser » of a door | `dwellings.<key>.status`, `.comeBack`, `.by`, `.at` (hint: no `status`) |
+| layout (describe, add / remove / rename a door) | `status`, `comeBack`, `by`, `at`, `labelStyle`, `layout`, then each door `dwellings.<key>` whole; each door dropped is deleted |
+| back to a single house | `status`, `comeBack`, `by`, `at`; `labelStyle`, `layout`, `dwellings` deleted |
+| numbers added | each new `houses.<n>` whole; each one restored: `deletedAt`, `deletedBy` = null |
+| number removed / restored | `deletedAt`, `deletedBy` (set / null) |
+| number renamed | `houses.<old>` deleted, `houses.<new>` whole |
+| street renamed, deleted, restored | `name`; `deletedAt`, `deletedBy` (top level) |
+| undo of a house (`HouseReverted`) | as a layout change, or `houses.<old>` deleted and `houses.<n>` whole when it renumbers back; `by` / `at` = who undoes, now |
+| undo of a door (`DwellingReverted`) | `dwellings.<key>` whole, `by` / `at` = who undoes, now |
+
+A building is never written as one map that would replace the doors: two writes crossing (a
+door marked while a teammate lays the building out again) leave at most a door entry the
+layout does not list, or a house entry without `n` (a mark landing just after a renumbering);
+reading skips both.
 
 Creating a tournée writes `tourneeKeys`, `joinCodes`, `tournees` and its first campaign in one
 batch; the security rules refuse the batch if `tourneeKeys/{key}` already exists, which is what
@@ -1312,7 +1380,8 @@ no network, including a cold start, and loses nothing.
 | New streets in the tournée added by teammates | Arrive with the next sync; their map tiles are already covered if they are inside the downloaded area, otherwise the banner asks to update the download |
 
 - The pending-writes indicator ("☁ 3 modifications en attente") comes from the snapshot
-  metadata `hasPendingWrites`.
+  metadata `hasPendingWrites` (port `PendingSync`, T2.3): it counts the **streets** with writes
+  waiting, since Firestore tells it per document.
 - The banner and the Paramètres section show the download state; "Mettre à jour" re-runs both
   parts (streets and tiles).
 - What needs the network: creating / joining a tournée, the download itself, and **adding a
@@ -1354,9 +1423,33 @@ photo of the QR) is even more likely. So **knowing a code must not be enough**:
   `assignees`, `deletedAt/By`, numbers and dwellings; `status` in the enum; the `comeBack` hint
   ≤ 20 chars (code points, as the domain counts them, §6.1); no other free-text field (no
   `note`, §8.3);
-  `by` must equal the caller's uid; `at` must be the server time.
+  `by` must equal the caller's uid; `at` must be a timestamp. It is the phone's time of the
+  change, not the server's (T2.3): a mark queued offline reaches the server hours later and
+  must keep the time it was made, so the rules cannot require `at == request.time`.
 - Only the creator: delete the tournée, regenerate the code, start a campaign. Previous
   campaigns are read-only.
+
+What the adapters write (T2.3), which the rules must allow:
+
+- **Create** (one transaction): reads `tourneeKeys/{key}`, `joinCodes/{code}` (more than one
+  if a code is taken) and `rescueCentres/{key}`; writes `tourneeKeys/{key}`,
+  `joinCodes/{code}`, `tournees/{id}`, `members/{creator}` **already `active`** (accepted by
+  themself), `campaigns/{year}`, and `rescueCentres/{key}` only when absent.
+- **Join:** the request is `members/{uid}` with `status: "pending"` and the `joinCode` used
+  (the rule compares it with the tournée's). The newcomer **reads their own member document**
+  while pending (« Demande envoyée » follows it) and deletes it to cancel.
+- **Accept:** updates `status`, `acceptedBy` (the caller), `acceptedAt` only. Refuse, remove,
+  leave: delete the member document.
+- **New code** (one transaction): reads `joinCodes/{new}`, updates `tournees/{id}.joinCode`,
+  deletes `joinCodes/{old}`, creates `joinCodes/{new}`.
+- **Delete:** lists `campaigns`, their `streets` and `members` from the server, deletes them in
+  batches of ≤ 500, then one batch: `joinCodes/{code}`, `tourneeKeys/{key}`, `tournees/{id}`
+  and the creator's own member document.
+- **Streets:** the writes of the table in §6.2. Whole entries (a number added or renamed, a
+  layout, an undo) carry door entries with the `by` / `at` they already had, possibly a
+  teammate's: only the entries that change carry the caller's uid. The undo of « Restaurer »
+  writes back the removal it undoes (`deletedBy` possibly a teammate's).
+- `rescueCentres` is listed (a query), not only read by id.
 
 ### 8.3 Privacy
 

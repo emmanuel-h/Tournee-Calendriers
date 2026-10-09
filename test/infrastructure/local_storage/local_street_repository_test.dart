@@ -394,4 +394,46 @@ void main() {
       expect(all.clear, throwsUnsupportedError);
     });
   });
+
+  group('watchDeleted', () {
+    test('should list the streets in the Corbeille, live', () async {
+      final streets = restart();
+      final lilas = _street('lilas', 'Rue des Lilas');
+      final roses = _street('roses', 'Allée des Roses');
+      await streets.add(lilas);
+      await streets.add(roses);
+      final seen = <List<String>>[];
+      final subscription = streets.watchDeleted().listen(
+        (deleted) => seen.add([for (final street in deleted) street.id.value]),
+      );
+      await pumpEventQueue();
+
+      final (deleted, change) = lilas.delete(by: lea, at: twoPm);
+      await streets.save(deleted, change);
+      final (restored, back) = deleted.restore();
+      await streets.save(restored, back);
+      await pumpEventQueue();
+      await subscription.cancel();
+
+      expect(seen, [
+        isEmpty,
+        ['lilas'],
+        isEmpty,
+      ]);
+    });
+
+    test('should give a list nobody can change', () async {
+      final streets = restart();
+      final (deleted, _) = _street(
+        'lilas',
+        'Rue des Lilas',
+      ).delete(by: lea, at: twoPm);
+      await streets.add(deleted);
+
+      final all = await streets.watchDeleted().first;
+
+      expect(all.single.id.value, 'lilas');
+      expect(all.clear, throwsUnsupportedError);
+    });
+  });
 }

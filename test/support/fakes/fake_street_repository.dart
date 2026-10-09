@@ -58,6 +58,14 @@ final class FakeStreetRepository implements StreetRepository {
   );
 
   @override
+  Stream<List<Street>> watchDeleted() => _observe(
+    () => [
+      for (final street in _streets.values)
+        if (street.isDeleted) street,
+    ],
+  );
+
+  @override
   Future<void> add(Street street) async {
     added.add(street);
     _streets[street.id] = street;
