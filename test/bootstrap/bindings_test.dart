@@ -1,10 +1,13 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/bootstrap/bindings.dart';
+import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/infrastructure/ban/ban_address_directory.dart';
+import 'package:tournee_calendriers/infrastructure/firebase_auth/firebase_identity.dart';
 import 'package:tournee_calendriers/infrastructure/geo_api/geo_commune_search.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_street_repository.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_street_view_preferences.dart';
@@ -13,6 +16,7 @@ import 'package:tournee_calendriers/infrastructure/system/system_clock.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 
 import '../support/fakes/fake_address_directory.dart';
+import '../support/fakes/fake_anonymous_auth.dart';
 import '../support/fakes/fake_commune_search.dart';
 
 void main() {
@@ -27,10 +31,13 @@ void main() {
   Future<ProviderContainer> containerWith({
     FakeAddressDirectory? directory,
     FakeCommuneSearch? communes,
+    FakeAnonymousAuth? auth,
   }) async {
     final container = ProviderContainer(
       overrides: await bindAdapters(
         storage: storage,
+        // By default a phone that never signed in and is offline.
+        auth: auth ?? FakeAnonymousAuth(),
         addressDirectory: directory,
         communeSearch: communes,
       ),
@@ -59,6 +66,38 @@ void main() {
       container.read(streetViewPreferencesProvider),
       isA<LocalStreetViewPreferences>(),
     );
+    expect(container.read(identityProvider), isA<FirebaseIdentity>());
+  });
+
+  test('should stamp with the uid when the phone signed in before', () async {
+    final auth = FakeAnonymousAuth(currentUid: 'uid-kept', nextUid: 'uid-new');
+
+    final container = await containerWith(auth: auth);
+
+    expect(
+      container.read(identityProvider).currentMember,
+      MemberId('uid-kept'),
+    );
+    expect(auth.signInCalls, 0);
+  });
+
+  test('should start without waiting for the first sign-in', () async {
+    final auth = FakeAnonymousAuth(nextUid: 'uid-new')
+      ..gate = Completer<void>();
+
+    final container = await containerWith(auth: auth);
+    final identity = container.read(identityProvider);
+
+    expect(auth.signInCalls, 1);
+    expect(
+      identity.currentMember.value,
+      File('${storage.path}/member_id').readAsStringSync(),
+    );
+    auth.gate.complete();
+    await auth.gate.future;
+    // Lets the sign-in's `await` resume (a microtask) before looking again.
+    await Future<void>.delayed(Duration.zero);
+    expect(identity.currentMember, MemberId('uid-new'));
   });
 
   test('should keep « Masquer faits » across starts', () async {
@@ -76,7 +115,7 @@ void main() {
     expect(File('${storage.path}/street_view.json').existsSync(), isTrue);
   });
 
-  test('should keep the member id across starts', () async {
+  test('should keep the phone id across starts when never signed in', () async {
     final first = (await containerWith()).read(identityProvider);
     final second = (await containerWith()).read(identityProvider);
 

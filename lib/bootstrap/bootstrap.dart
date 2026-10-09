@@ -1,6 +1,6 @@
-/// Composition root: the only layer that sees every other one. It binds
-/// each port to its adapter (`bindings.dart`) and starts the app; from M2 it
-/// also initialises Firebase here.
+/// Composition root: the only layer that sees every other one. It connects
+/// Firebase (`firebase.dart`), binds each port to its adapter
+/// (`bindings.dart`) and starts the app.
 library;
 
 import 'dart:io';
@@ -11,6 +11,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
 import 'package:tournee_calendriers/bootstrap/bindings.dart';
+import 'package:tournee_calendriers/bootstrap/firebase.dart';
 import 'package:tournee_calendriers/bootstrap/uncaught_errors.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/components/save_failed_alert.dart';
@@ -32,8 +33,8 @@ Future<void> bootstrap({
   CommuneSearch? communeSearch,
   Directory? storage,
 }) async {
-  // `path_provider` asks the platform for the folder through a channel,
-  // which needs Flutter's binding before `runApp` creates it.
+  // `path_provider` and Firebase talk to the platform through channels,
+  // which need Flutter's binding before `runApp` creates it.
   WidgetsFlutterBinding.ensureInitialized();
   registerFontLicenses();
   // A failed save surfaces as an error nothing caught; the dialog that
@@ -44,6 +45,7 @@ Future<void> bootstrap({
       handleUncaughtError(error, onSaveFailed: saveFailed.show);
   final overrides = await bindAdapters(
     storage: storage ?? await getApplicationSupportDirectory(),
+    auth: await startFirebase(),
     addressDirectory: addressDirectory,
     communeSearch: communeSearch,
   );

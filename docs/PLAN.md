@@ -1054,7 +1054,11 @@ Use cases and phone storage fixed in T1.6 (`lib/application/use_cases/`,
   the phone, the change's fields in Firestore). Storage failures are exceptions, not failure
   values. Application ports: `Clock` (UTC), `IdGenerator` (ASCII letters and digits), and
   `IdentityProvider.currentMember`: in M1 a member id made once with `IdGenerator` and kept in a
-  file; from M2 the Firebase uid.
+  file; from M2 (T2.1) the uid of the phone's anonymous Firebase account
+  (`infrastructure/firebase_auth/`). The sign-in starts in the background at launch and is
+  never waited for; Firebase keeps the session on the phone, so later starts know the uid
+  offline. Until the very first sign-in succeeds (first launch offline), changes are stamped
+  with the M1 phone id; the next start tries again.
 - **Use cases** (one class, one `call`; each loads the street, runs the root's command, saves,
   returns the change for « Annuler »; refusals are `CommandFailure<F>` = `StreetNotFound` |
   `CommandRefused(reason)`, `F` being the street's failure enum): `MarkHouse` (tap),
@@ -1227,7 +1231,8 @@ can never drift.
   which answers all reads and is updated at once on a write (listeners told), then the file is
   written to `<id>.json.tmp` and renamed over the old one (a kill mid-write leaves the old
   street), writes queued one after the other. An unreadable file (newer version, damaged) is
-  skipped and left on the disk. The member id is kept in `member_id`. No network, ever: works
+  skipped and left on the disk. The phone's own member id is kept in `member_id` (from M2 it
+  only stands in until the first Firebase sign-in, §6.1). No network, ever: works
   after an offline cold start.
 - `street_view.json` in the same folder (port `StreetViewPreferences`, T1.7): « Masquer faits »
   per street, `{ version: 1, hideDone: [streetId…] }`, read once at start-up; an unreadable file
@@ -1404,8 +1409,14 @@ lib/
    (`fr.mandarine.tourneecalendriers`); iOS is added the same way later.
 3. Install the Firebase CLI (`npm i -g firebase-tools`) for the emulator and rules deploys.
 
-The generated `firebase_options.dart` and `google-services.json` are gitignored (the repo is
-public). CI writes them from secrets.
+The generated `firebase_options.dart` (moved to `lib/bootstrap/`, the only layer that reads
+it: `flutterfire configure --out=lib/bootstrap/firebase_options.dart`) and
+`google-services.json` are gitignored (the repo is public), and so is the root `firebase.json`
+`flutterfire` writes. CI writes the first two with `tool/write_firebase_config.sh` from the
+secrets `FIREBASE_OPTIONS_DART` and `GOOGLE_SERVICES_JSON` (each the base64 of its file, also
+set as Dependabot secrets). App Check (`bootstrap/firebase.dart`) uses Play Integrity in
+release builds and the debug provider in debug builds (its token, printed in `adb logcat`, is
+registered in the console).
 
 ---
 

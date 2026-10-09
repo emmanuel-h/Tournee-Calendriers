@@ -30,10 +30,21 @@ jobs:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
+      # The Firebase settings are gitignored (the repository is public):
+      # written from the secrets FIREBASE_OPTIONS_DART and
+      # GOOGLE_SERVICES_JSON, each the base64 of its file. Dependabot's runs
+      # read Dependabot secrets, so both are set there too.
+      - name: Write Firebase settings
+        env:
+          FIREBASE_OPTIONS_DART: ${{ secrets.FIREBASE_OPTIONS_DART }}
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: bash tool/write_firebase_config.sh
       - run: flutter pub get
       - run: flutter analyze --fatal-infos
       - run: dart format --output=none --set-exit-if-changed lib test integration_test
 
+  # Needs no Firebase settings: no test loads bootstrap/firebase.dart, the
+  # only file that imports them.
   test:
     name: tests and coverage gate
     runs-on: ubuntu-latest
@@ -75,6 +86,15 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
+      # The Firebase settings are gitignored (the repository is public):
+      # written from the secrets FIREBASE_OPTIONS_DART and
+      # GOOGLE_SERVICES_JSON, each the base64 of its file. Dependabot's runs
+      # read Dependabot secrets, so both are set there too.
+      - name: Write Firebase settings
+        env:
+          FIREBASE_OPTIONS_DART: ${{ secrets.FIREBASE_OPTIONS_DART }}
+          GOOGLE_SERVICES_JSON: ${{ secrets.GOOGLE_SERVICES_JSON }}
+        run: bash tool/write_firebase_config.sh
       - run: flutter pub get
       # Unsigned for upload: CI has no release key (signing arrives in T5.3).
       - run: flutter build appbundle --release

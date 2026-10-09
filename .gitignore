@@ -1,7 +1,10 @@
 # Secrets and per-machine config — the repository is public
 google-services.json
 GoogleService-Info.plist
-lib/firebase_options.dart
+lib/bootstrap/firebase_options.dart
+# Written by `flutterfire configure` (project and app ids), only needed to
+# run it again; the emulator and rules config lives in firebase/.
+/firebase.json
 key.properties
 *.jks
 *.keystore

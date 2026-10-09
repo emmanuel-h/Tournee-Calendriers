@@ -30,6 +30,10 @@ introduce them.
 Scaffolded with design system (T0.1–T0.2): Flutter 3.47.6 / Dart 3.13.5, layers, theme, French l10n, go_router shell, components. CI on every push and pull request (T0.3).
 M1 code delivered (#5–#14, #46, #15): street domain, BAN import, phone storage, start screen, street
 screen, house sheet, buildings, edit mode; awaiting the user's field test (#15).
+M2 started (#17): Firebase (Spark) wired in `bootstrap/`, App Check, anonymous sign-in as the
+`IdentityProvider`. `lib/bootstrap/firebase_options.dart` and `android/app/google-services.json`
+are gitignored: run `flutterfire configure --out=lib/bootstrap/firebase_options.dart` locally;
+CI writes them from secrets.
 
 ## Commands
 

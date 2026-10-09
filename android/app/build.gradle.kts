@@ -1,5 +1,11 @@
 plugins {
     id("com.android.application")
+    // START: FlutterFire Configuration
+    // Reads google-services.json (gitignored, written from a secret in CI)
+    // into the Android resources Firebase starts from. The markers let
+    // `flutterfire configure` find its own lines when run again.
+    id("com.google.gms.google-services")
+    // END: FlutterFire Configuration
     // The Flutter Gradle Plugin must be applied after the Android and Kotlin Gradle plugins.
     id("dev.flutter.flutter-gradle-plugin")
 }

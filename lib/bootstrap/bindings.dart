@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -7,6 +8,8 @@ import 'package:http/http.dart' as http;
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
 import 'package:tournee_calendriers/infrastructure/ban/ban_address_directory.dart';
+import 'package:tournee_calendriers/infrastructure/firebase_auth/anonymous_auth.dart';
+import 'package:tournee_calendriers/infrastructure/firebase_auth/firebase_identity.dart';
 import 'package:tournee_calendriers/infrastructure/geo_api/geo_commune_search.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_identity.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_street_repository.dart';
@@ -28,8 +31,10 @@ final httpClientProvider = Provider<http.Client>((ref) {
 /// the overrides of the app's `ProviderScope`.
 ///
 /// - [storage]: the folder of the phone storage. The streets go in
-///   `streets/`, the member id in `member_id`, the street screens'
-///   « Masquer faits » in `street_view.json`.
+///   `streets/`, the id the phone made for itself in `member_id`, the
+///   street screens' « Masquer faits » in `street_view.json`.
+/// - [auth]: Firebase anonymous sign-in. Its uid is the member; until the
+///   first sign-in succeeds, the phone's own id stands in.
 /// - [addressDirectory]: replaces the BAN, so the instrumented suite can
 ///   import streets without the network.
 /// - [communeSearch]: replaces geo.api.gouv.fr, for the same reason.
@@ -39,14 +44,19 @@ final httpClientProvider = Provider<http.Client>((ref) {
 /// waits.
 Future<List<Override>> bindAdapters({
   required Directory storage,
+  required AnonymousAuth auth,
   AddressDirectory? addressDirectory,
   CommuneSearch? communeSearch,
 }) async {
   final ids = RandomIdGenerator();
-  final identity = await LocalIdentity.load(
+  final phoneIdentity = await LocalIdentity.load(
     File('${storage.path}${Platform.pathSeparator}member_id'),
     ids,
   );
+  final identity = FirebaseIdentity(auth, beforeSignIn: phoneIdentity);
+  // Not awaited: the first screen must not wait for the network, and an
+  // offline first start simply tries again at the next one.
+  unawaited(identity.signInIfNeeded());
   final streetView = await LocalStreetViewPreferences.load(
     File('${storage.path}${Platform.pathSeparator}street_view.json'),
   );

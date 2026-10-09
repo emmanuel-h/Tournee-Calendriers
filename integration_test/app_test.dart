@@ -6,18 +6,23 @@
 // platform plugins, startup. The suite stays small on purpose (≤ 10 tests).
 import 'dart:io';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
 import 'package:tournee_calendriers/bootstrap/bootstrap.dart';
 import 'package:tournee_calendriers/domain/shared/commune.dart';
+import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
 import 'package:tournee_calendriers/main.dart' as app;
+import 'package:tournee_calendriers/presentation/dependencies.dart';
+import 'package:tournee_calendriers/ui/app.dart';
 
 import '../test/support/fakes/fake_address_directory.dart';
 import '../test/support/fakes/fake_commune_search.dart';
@@ -477,6 +482,42 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('1 rue restaurée'), findsOneWidget);
       expect(find.text('1/8'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'should stamp changes with the Firebase uid, the same after a restart',
+    (tester) async {
+      final storage = await Directory.systemTemp.createTemp('identity_flow');
+      addTearDown(() => storage.delete(recursive: true));
+      MemberId member() =>
+          ProviderScope.containerOf(tester.element(find.byType(TourneeApp)))
+              .read(identityProvider)
+              .currentMember;
+
+      await bootstrap(storage: storage);
+      await tester.pumpAndSettle();
+      // The first sign-in runs in the background and needs the network
+      // (the emulator has it): wait for it, at most 10 s.
+      for (
+        var i = 0;
+        i < 100 && FirebaseAuth.instance.currentUser == null;
+        i++
+      ) {
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+      }
+      final uid = FirebaseAuth.instance.currentUser?.uid;
+      expect(uid, isNotNull, reason: 'the anonymous sign-in did not finish');
+      expect(FirebaseAuth.instance.currentUser!.isAnonymous, isTrue);
+      expect(member(), MemberId(uid!));
+
+      // A restart reads the session Firebase kept on the phone.
+      runApp(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+      await bootstrap(storage: storage);
+      await tester.pumpAndSettle();
+
+      expect(member(), MemberId(uid));
     },
   );
 }

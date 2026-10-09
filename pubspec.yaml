@@ -13,6 +13,12 @@ environment:
 # Versions are pinned exactly (no `^`) so every machine and CI resolve the same
 # packages; upgrades are deliberate, one commit each.
 dependencies:
+  # Firebase (PLAN §10.2), only in infrastructure/ and bootstrap/: App Check
+  # (only the genuine app talks to Firebase), anonymous sign-in (the uid is
+  # the member id) and the core every Firebase plugin needs.
+  firebase_app_check: 0.4.8
+  firebase_auth: 6.7.0
+  firebase_core: 4.15.0
   flutter:
     sdk: flutter
   # Material and Cupertino translations for French (dates, tooltips, the
