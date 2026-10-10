@@ -201,4 +201,22 @@ abstract final class AppTextStyles {
     fontSize: 26,
     height: 1,
   );
+
+  /// The open tournée as the title of the start screen (« Tournée 49 ·
+  /// 2026 », Home mockup): larger than a screen title, as it names the
+  /// whole app's content.
+  static const tourneeTitle = TextStyle(
+    fontFamily: AppFonts.display,
+    fontWeight: FontWeight.w700,
+    fontSize: 30,
+    height: 1.05,
+  );
+
+  /// A tournée in « Mes tournées » (« Tournée 12 · 2026 »).
+  static const tourneeRowTitle = TextStyle(
+    fontFamily: AppFonts.display,
+    fontWeight: FontWeight.w700,
+    fontSize: 21,
+    height: 1.1,
+  );
 }

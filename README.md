@@ -15,6 +15,11 @@ Temporary M1 start screen (until the map arrives in M3):
 - « Importer des rues »: find a commune by name (geo.api.gouv.fr), tick some of its streets
   (national address base, BAN) and import them with their house numbers. Needs the network
   once; streets already imported keep their marks.
+- Top bar: the open tournée (« Tournée 49 · 2026 » over its centre de secours) opens « Mes
+  tournées », to switch tournée (the app reopens the last one at launch, offline too); ⚙
+  opens Paramètres: first name, « Mes tournées », theme (Système, Clair, Sombre),
+  confidentialité, version and licences, data credits. Creating or joining a tournée comes
+  with the onboarding screens.
 
 Street screen (« Rue »):
 

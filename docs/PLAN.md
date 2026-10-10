@@ -170,6 +170,10 @@ used on a real area. Mockups: `docs/mockups/Start.dc.html` and `docs/mockups/Imp
   No street yet: « Aucune rue pour l'instant » and « Importez les rues d'une commune pour
   commencer. ». Works offline. Debug builds
   show an app-bar action to the component gallery.
+- **Top bar** (T2.7): Accueil's (5.3, Home mockup) already. With a tournée open, its title
+  « Tournée 49 · 2026 ▾ » over the CS opens « Mes tournées »; with none, the title stays
+  « Tournée des calendriers ». [⚙] opens Paramètres (5.9) either way; [👥] comes with Équipe
+  (5.8). The street list itself stays the phone's streets until the streets move to Firestore.
 - **Importer des rues**: the commune field searches geo.api.gouv.fr as you type (from two
   characters, after a 300 ms pause; a late answer to older text is ignored); a suggestion shows
   « name (postcode) », « … » after the first of several postcodes. Choosing one closes the
@@ -332,6 +336,12 @@ bottom sheet:
 - *Créer* and *Rejoindre* open 5.2; the current tournée stays untouched until the new one is
   ready (or accepted).
 - Paramètres → *Mes tournées* opens the same sheet.
+- Delivered in T2.7: the rows keep the order the phone met the tournées (opening one does not
+  move them); the open one shows ● and ✓, another ○ (a tap opens it and closes the sheet),
+  a request a dashed ○ in grey, « CS … · votre demande est en attente », and cannot be tapped.
+  No tournée: « Aucune tournée pour l'instant. ». Still to come: the progress « · 41 % » (with
+  the streets on Firestore), the dot of a request waiting in another tournée (with Équipe),
+  « Pas téléchargée » (M4), *Créer* / *Rejoindre* (with their screens, 5.2).
 
 ### 5.4 Ajouter des rues — map mode
 
@@ -774,6 +784,21 @@ Immeuble details fixed in T1.9 (`lib/presentation/building/`, `lib/ui/screens/bu
 └──────────────────────────────┘
 ```
 
+- **Prénom** opens a sheet « Votre prénom » + « Enregistrer » (the keyboard's « OK » too):
+  `MemberName` rules; blank → « Écrivez votre prénom. », too long → « Prénom limité à 30
+  caractères. », the sheet stays. Kept on the phone; the member documents of the tournées
+  already joined keep the name they joined with (renaming them there is to come).
+- **Mes tournées** shows the open one (« 49 · 2026 ») and opens the sheet of 5.3.
+- **Thème** opens « Système | Clair | Sombre »: a tap redraws the app at once and closes the
+  sheet. « Sombre » uses the first dark palette, reviewed in T5.1.
+- **Confidentialité** opens a page saying 8.3 in French: compte, données enregistrées,
+  position, hébergement, suppression.
+- **Version** (from `pubspec.yaml`, `appBuildName`) has a › : a tap opens the licences page
+  (packages and bundled fonts).
+- Credits under the list: « Carte © contributeurs OpenStreetMap, OpenFreeMap.
+  Adresses{N}: Base Adresse Nationale. »
+- HORS-LIGNE comes with the download (T4.2).
+
 ### 5.10 Nouvelle campagne (v1.1)
 
 ```
@@ -1161,6 +1186,30 @@ Tournée rules fixed in T2.2 (`lib/domain/tournee/`):
   newcomer cannot read the tournée (§8.2), so the join (code lookup, request) goes through the
   `TourneeDirectory` port (Q20), not this one.
 
+« Mes tournées » fixed in T2.7 (`lib/domain/tournee/`, `lib/application/`):
+
+- **`TourneeSummary`** (value): what the phone keeps of one of the member's tournées — id,
+  number, centre, campaign, `MemberStatus` (pending while the request waits; for a request,
+  what the join preview showed, since a pending newcomer cannot read the tournée).
+  `accepted()` gives it active.
+- **`MyTournees`** (value): the summaries in the order the phone met them, each id once, and
+  `currentId`, the open one, always an active one of the list. `none`; `remember(summary)`
+  adds at the end or replaces in place, never opens (the open one stays while « Créer » /
+  « Rejoindre » run), and closes the open one should it come back pending; `open(id)` →
+  `OpenTourneeFailure` (`unknownTournee`, `requestPending`); `forget(id)` drops it, leaving
+  none open when it was the open one (which to open next is the member's choice).
+- **Port `MyTourneesStore`** (application): `myTournees` (sync, loaded at start-up),
+  `changes` (each list saved), `save`. Use cases `ReadMyTournees`, `ObserveMyTournees`,
+  `OpenTournee` (writes nothing when already open), `WatchJoinRequest` (`TourneeDirectory.
+  watchRequest` as `MemberAccount.signedInMember`; nothing before the first sign-in) and
+  `SettleJoinRequest` (active → the summary accepted, not opened; null → forgotten; pending or
+  not a request → nothing). `MyTourneesNotifier` (kept alive) follows each pending request
+  while the app runs (a failing listener leaves it pending); `currentTourneeProvider` is the
+  open tournée the screens of a tournée follow.
+- **Port `PhoneSettings`** (application): `memberName` (null until given), `theme`
+  (`ThemeChoice` system / light / dark), setters. Use cases `ReadPhoneSettings`,
+  `ChangeMemberName` (`MemberName.create`, nothing kept when refused), `ChooseTheme`.
+
 Firestore adapters fixed in T2.3 (`lib/infrastructure/firestore/`, `lib/application/ports/`):
 
 - **Port `TourneeDirectory`** (application, Q20): what someone outside a tournée asks of the
@@ -1367,8 +1416,14 @@ can never drift.
 - `street_view.json` in the same folder (port `StreetViewPreferences`, T1.7): « Masquer faits »
   per street, `{ version: 1, hideDone: [streetId…] }`, read once at start-up; an unreadable file
   means nothing hidden.
-- `shared_preferences`: display name, last tournée id, theme, offline download date and size per
-  tournée.
+- `my_tournees.json` in the same folder (port `MyTourneesStore`, T2.7): « Mes tournées » and
+  the open one, `{ version: 1, open: id | null, tournees: [{ id, number, centre, campaign,
+  status: "active" | "pending" }] }`, read once at start-up, so the last tournée reopens after
+  an offline cold start. `settings.json` (port `PhoneSettings`): `{ version: 1, name: "Manu" |
+  null, theme: "system" | "light" | "dark" }`. Same writing as the streets (`.tmp` then
+  rename, queued); an unreadable file means none / defaults and is left until the next save.
+  Files of the storage folder rather than `shared_preferences`: no plugin, plain Dart tests.
+- Offline download date and size per tournée (M4).
 - MapLibre offline region per tournée (tiles), behind the `OfflineMapStore` port.
 
 ---

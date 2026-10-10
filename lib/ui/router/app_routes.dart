@@ -38,6 +38,9 @@ abstract final class AppRoutes {
   ).toString();
   static const team = '/equipe';
   static const settings = '/parametres';
+
+  /// « Confidentialité », pushed from Paramètres.
+  static const privacy = '/parametres/confidentialite';
   static const newCampaign = '/nouvelle-campagne';
   static const trash = '/corbeille';
 

@@ -11,6 +11,8 @@ import 'package:tournee_calendriers/ui/screens/component_gallery_screen.dart';
 import 'package:tournee_calendriers/ui/screens/edit_street/edit_street_screen.dart';
 import 'package:tournee_calendriers/ui/screens/import_streets/import_screen.dart';
 import 'package:tournee_calendriers/ui/screens/placeholder_screen.dart';
+import 'package:tournee_calendriers/ui/screens/settings/privacy_screen.dart';
+import 'package:tournee_calendriers/ui/screens/settings/settings_screen.dart';
 import 'package:tournee_calendriers/ui/screens/start/start_screen.dart';
 import 'package:tournee_calendriers/ui/screens/street/street_screen.dart';
 
@@ -70,7 +72,14 @@ GoRouter buildAppRouter({
     _placeholder(AppRoutes.addStreets, (l10n) => l10n.screenAddStreets),
     _placeholder(AppRoutes.manualStreet, (l10n) => l10n.screenManualStreet),
     _placeholder(AppRoutes.team, (l10n) => l10n.screenTeam),
-    _placeholder(AppRoutes.settings, (l10n) => l10n.screenSettings),
+    GoRoute(
+      path: AppRoutes.settings,
+      builder: (context, state) => const SettingsScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.privacy,
+      builder: (context, state) => const PrivacyScreen(),
+    ),
     _placeholder(AppRoutes.newCampaign, (l10n) => l10n.screenNewCampaign),
     _placeholder(AppRoutes.trash, (l10n) => l10n.screenTrash),
     if (showGallery)

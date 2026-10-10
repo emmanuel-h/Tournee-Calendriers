@@ -5,6 +5,7 @@ library;
 
 import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
@@ -46,6 +47,9 @@ Future<void> bootstrap({
   final overrides = await bindAdapters(
     storage: storage ?? await getApplicationSupportDirectory(),
     auth: await startFirebase(),
+    // A getter, not the instance: `startFirebase` has connected the
+    // project, but nothing asks Firestore anything until a screen needs it.
+    firestore: () => FirebaseFirestore.instance,
     addressDirectory: addressDirectory,
     communeSearch: communeSearch,
   );

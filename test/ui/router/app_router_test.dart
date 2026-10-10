@@ -20,7 +20,6 @@ void main() {
         AppRoutes.addStreets: 'Ajouter des rues',
         AppRoutes.manualStreet: 'Rue à la main',
         AppRoutes.team: 'Équipe',
-        AppRoutes.settings: 'Paramètres',
         AppRoutes.newCampaign: 'Nouvelle campagne',
         AppRoutes.trash: 'Corbeille',
       };

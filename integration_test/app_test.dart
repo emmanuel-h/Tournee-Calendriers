@@ -4,6 +4,7 @@
 // Unlike `test/`, these tests start the actual app with the real
 // composition root, so they catch what unit and widget tests cannot: wiring,
 // platform plugins, startup. The suite stays small on purpose (≤ 10 tests).
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:firebase_auth/firebase_auth.dart';
@@ -519,6 +520,50 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(member(), MemberId(uid));
+    },
+  );
+
+  testWidgets(
+    'should reopen the last tournée at launch and switch from the title',
+    (tester) async {
+      final storage = await Directory.systemTemp.createTemp('tournees_flow');
+      addTearDown(() => storage.delete(recursive: true));
+      // What « Créer » and « Rejoindre » will leave on the phone: two
+      // tournées of the CS Villefranche, the 49 open. Nothing of it needs
+      // the network.
+      Map<String, Object?> tournee(String id, int number) => {
+        'id': id,
+        'number': number,
+        'centre': 'CS Villefranche',
+        'campaign': 2026,
+        'status': 'active',
+      };
+      File('${storage.path}/my_tournees.json').writeAsStringSync(
+        jsonEncode({
+          'version': 1,
+          'open': 't49',
+          'tournees': [tournee('t49', 49), tournee('t12', 12)],
+        }),
+      );
+
+      await bootstrap(storage: storage);
+      await tester.pumpAndSettle();
+      expect(find.text('Tournée 49 · 2026'), findsOneWidget);
+      expect(find.text('CS Villefranche'), findsOneWidget);
+
+      await tester.tap(find.byKey(const Key('home.tournee')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('myTournees.t12')));
+      await tester.pumpAndSettle();
+      expect(find.text('Tournée 12 · 2026'), findsOneWidget);
+
+      // A restart opens the tournée chosen last.
+      runApp(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+      await bootstrap(storage: storage);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Tournée 12 · 2026'), findsOneWidget);
     },
   );
 }

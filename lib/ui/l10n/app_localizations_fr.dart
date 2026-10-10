@@ -923,4 +923,135 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get saveFailedOk => 'OK';
+
+  @override
+  String tourneeTitle(String number, String year) {
+    return 'Tournée $number · $year';
+  }
+
+  @override
+  String tourneeTitleSemantics(String title, String centre) {
+    return '$title, $centre. Changer de tournée';
+  }
+
+  @override
+  String get myTourneesTitle => 'Mes tournées';
+
+  @override
+  String get myTourneesEmpty => 'Aucune tournée pour l\'instant.';
+
+  @override
+  String myTourneesPending(String centre) {
+    return '$centre · votre demande est en attente';
+  }
+
+  @override
+  String myTourneesOpenSemantics(String title, String centre) {
+    return '$title, $centre, tournée ouverte';
+  }
+
+  @override
+  String myTourneesClosedSemantics(String title, String centre) {
+    return '$title, $centre, ouvrir';
+  }
+
+  @override
+  String myTourneesPendingSemantics(String title, String centre) {
+    return '$title, $centre, votre demande est en attente';
+  }
+
+  @override
+  String get settingsYou => 'Vous';
+
+  @override
+  String get settingsApplication => 'Application';
+
+  @override
+  String get settingsName => 'Prénom';
+
+  @override
+  String settingsMyTourneesValue(String number, String year) {
+    return '$number · $year';
+  }
+
+  @override
+  String get settingsTheme => 'Thème';
+
+  @override
+  String get themeSystem => 'Système';
+
+  @override
+  String get themeLight => 'Clair';
+
+  @override
+  String get themeDark => 'Sombre';
+
+  @override
+  String get settingsPrivacy => 'Confidentialité';
+
+  @override
+  String get settingsVersion => 'Version';
+
+  @override
+  String settingsVersionSemantics(String version) {
+    return 'Version $version, voir les licences';
+  }
+
+  @override
+  String get settingsCredits =>
+      'Carte © contributeurs OpenStreetMap, OpenFreeMap. Adresses : Base Adresse Nationale.';
+
+  @override
+  String settingsRowSemantics(String label, String value) {
+    return '$label, $value';
+  }
+
+  @override
+  String get nameFieldLabel => 'Votre prénom';
+
+  @override
+  String get nameSave => 'Enregistrer';
+
+  @override
+  String get nameBlank => 'Écrivez votre prénom.';
+
+  @override
+  String nameTooLong(int max) {
+    return 'Prénom limité à $max caractères.';
+  }
+
+  @override
+  String get privacyAccountTitle => 'Compte';
+
+  @override
+  String get privacyAccountBody =>
+      'Un compte anonyme est créé au premier lancement : ni adresse e-mail, ni numéro de téléphone. L\'équipe voit seulement le prénom que vous donnez.';
+
+  @override
+  String get privacyDataTitle => 'Données enregistrées';
+
+  @override
+  String get privacyDataBody =>
+      'Les adresses et leur position (données publiques), l\'état de chaque porte, l\'indication « repasser » (20 caractères au plus) et les prénoms des membres. Aucun nom d\'habitant, aucun don, aucune réponse des habitants.';
+
+  @override
+  String get privacyLocationTitle => 'Position';
+
+  @override
+  String get privacyLocationBody =>
+      'Votre position sert seulement à vous situer sur la carte. Elle n\'est ni enregistrée ni envoyée. L\'autorisation est demandée la première fois que vous touchez le bouton qui vous situe.';
+
+  @override
+  String get privacyHostingTitle => 'Hébergement';
+
+  @override
+  String get privacyHostingBody =>
+      'Les données des tournées sont hébergées dans l\'Union européenne (Google Firebase).';
+
+  @override
+  String get privacyDeletionTitle => 'Suppression';
+
+  @override
+  String get privacyDeletionBody =>
+      'Supprimer la tournée efface toutes ses données. À chaque nouvelle campagne, la campagne d\'avant la précédente est effacée.';
 }

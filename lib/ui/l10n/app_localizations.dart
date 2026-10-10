@@ -1400,6 +1400,216 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'OK'**
   String get saveFailedOk;
+
+  /// Title of the open tournée on the start screen (PLAN §5.3) and of a row of « Mes tournées ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Tournée {number} · {year}'**
+  String tourneeTitle(String number, String year);
+
+  /// Screen-reader label of the title button that opens « Mes tournées » (Home mockup).
+  ///
+  /// In fr, this message translates to:
+  /// **'{title}, {centre}. Changer de tournée'**
+  String tourneeTitleSemantics(String title, String centre);
+
+  /// Title of the sheet listing the member's tournées (PLAN §5.3), and of its row in Paramètres.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mes tournées'**
+  String get myTourneesTitle;
+
+  /// « Mes tournées » when the phone knows no tournée yet.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune tournée pour l\'instant.'**
+  String get myTourneesEmpty;
+
+  /// Second line of a tournée the member asked to join, not accepted yet (Switcher mockup).
+  ///
+  /// In fr, this message translates to:
+  /// **'{centre} · votre demande est en attente'**
+  String myTourneesPending(String centre);
+
+  /// Screen-reader label of the open tournée in « Mes tournées ».
+  ///
+  /// In fr, this message translates to:
+  /// **'{title}, {centre}, tournée ouverte'**
+  String myTourneesOpenSemantics(String title, String centre);
+
+  /// Screen-reader label of another tournée in « Mes tournées »: a tap opens it.
+  ///
+  /// In fr, this message translates to:
+  /// **'{title}, {centre}, ouvrir'**
+  String myTourneesClosedSemantics(String title, String centre);
+
+  /// Screen-reader label of a tournée the member asked to join, not accepted yet.
+  ///
+  /// In fr, this message translates to:
+  /// **'{title}, {centre}, votre demande est en attente'**
+  String myTourneesPendingSemantics(String title, String centre);
+
+  /// Section header of Paramètres: the member's own settings (PLAN §5.9).
+  ///
+  /// In fr, this message translates to:
+  /// **'Vous'**
+  String get settingsYou;
+
+  /// Section header of Paramètres: the app's settings.
+  ///
+  /// In fr, this message translates to:
+  /// **'Application'**
+  String get settingsApplication;
+
+  /// Row of Paramètres that changes the member's first name.
+  ///
+  /// In fr, this message translates to:
+  /// **'Prénom'**
+  String get settingsName;
+
+  /// Value of the « Mes tournées » row of Paramètres: the open tournée.
+  ///
+  /// In fr, this message translates to:
+  /// **'{number} · {year}'**
+  String settingsMyTourneesValue(String number, String year);
+
+  /// Row of Paramètres that picks the theme, and title of its sheet.
+  ///
+  /// In fr, this message translates to:
+  /// **'Thème'**
+  String get settingsTheme;
+
+  /// Theme that follows the phone's setting.
+  ///
+  /// In fr, this message translates to:
+  /// **'Système'**
+  String get themeSystem;
+
+  /// Light theme.
+  ///
+  /// In fr, this message translates to:
+  /// **'Clair'**
+  String get themeLight;
+
+  /// Dark theme.
+  ///
+  /// In fr, this message translates to:
+  /// **'Sombre'**
+  String get themeDark;
+
+  /// Row of Paramètres that opens the privacy page, and its title.
+  ///
+  /// In fr, this message translates to:
+  /// **'Confidentialité'**
+  String get settingsPrivacy;
+
+  /// Row of Paramètres with the app's version; a tap opens the licences.
+  ///
+  /// In fr, this message translates to:
+  /// **'Version'**
+  String get settingsVersion;
+
+  /// Screen-reader label of the version row: a tap opens the licences page.
+  ///
+  /// In fr, this message translates to:
+  /// **'Version {version}, voir les licences'**
+  String settingsVersionSemantics(String version);
+
+  /// Attribution of the map and address data at the bottom of Paramètres (PLAN §8.3).
+  ///
+  /// In fr, this message translates to:
+  /// **'Carte © contributeurs OpenStreetMap, OpenFreeMap. Adresses : Base Adresse Nationale.'**
+  String get settingsCredits;
+
+  /// Screen-reader label of a row of Paramètres with a value, e.g. « Thème, Système ».
+  ///
+  /// In fr, this message translates to:
+  /// **'{label}, {value}'**
+  String settingsRowSemantics(String label, String value);
+
+  /// Label of the first-name field (Paramètres → Prénom).
+  ///
+  /// In fr, this message translates to:
+  /// **'Votre prénom'**
+  String get nameFieldLabel;
+
+  /// Button that keeps the first name typed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Enregistrer'**
+  String get nameSave;
+
+  /// Refusal under the first-name field when it holds nothing but spaces.
+  ///
+  /// In fr, this message translates to:
+  /// **'Écrivez votre prénom.'**
+  String get nameBlank;
+
+  /// Shown when an edit would make the first name too long.
+  ///
+  /// In fr, this message translates to:
+  /// **'Prénom limité à {max} caractères.'**
+  String nameTooLong(int max);
+
+  /// Privacy page: section about the account.
+  ///
+  /// In fr, this message translates to:
+  /// **'Compte'**
+  String get privacyAccountTitle;
+
+  /// Privacy page: the account (PLAN §8.3).
+  ///
+  /// In fr, this message translates to:
+  /// **'Un compte anonyme est créé au premier lancement : ni adresse e-mail, ni numéro de téléphone. L\'équipe voit seulement le prénom que vous donnez.'**
+  String get privacyAccountBody;
+
+  /// Privacy page: section about the data stored.
+  ///
+  /// In fr, this message translates to:
+  /// **'Données enregistrées'**
+  String get privacyDataTitle;
+
+  /// Privacy page: what is stored (PLAN §8.3).
+  ///
+  /// In fr, this message translates to:
+  /// **'Les adresses et leur position (données publiques), l\'état de chaque porte, l\'indication « repasser » (20 caractères au plus) et les prénoms des membres. Aucun nom d\'habitant, aucun don, aucune réponse des habitants.'**
+  String get privacyDataBody;
+
+  /// Privacy page: section about the phone's position.
+  ///
+  /// In fr, this message translates to:
+  /// **'Position'**
+  String get privacyLocationTitle;
+
+  /// Privacy page: the phone's position (PLAN §8.3).
+  ///
+  /// In fr, this message translates to:
+  /// **'Votre position sert seulement à vous situer sur la carte. Elle n\'est ni enregistrée ni envoyée. L\'autorisation est demandée la première fois que vous touchez le bouton qui vous situe.'**
+  String get privacyLocationBody;
+
+  /// Privacy page: section about where the data is kept.
+  ///
+  /// In fr, this message translates to:
+  /// **'Hébergement'**
+  String get privacyHostingTitle;
+
+  /// Privacy page: where the data is kept (PLAN §8.3, Firestore in europe-west).
+  ///
+  /// In fr, this message translates to:
+  /// **'Les données des tournées sont hébergées dans l\'Union européenne (Google Firebase).'**
+  String get privacyHostingBody;
+
+  /// Privacy page: section about deleting the data.
+  ///
+  /// In fr, this message translates to:
+  /// **'Suppression'**
+  String get privacyDeletionTitle;
+
+  /// Privacy page: how data is deleted (PLAN §8.3).
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer la tournée efface toutes ses données. À chaque nouvelle campagne, la campagne d\'avant la précédente est effacée.'**
+  String get privacyDeletionBody;
 }
 
 class _AppLocalizationsDelegate

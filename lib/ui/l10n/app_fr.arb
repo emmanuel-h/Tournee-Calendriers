@@ -773,5 +773,133 @@
   "saveFailedBody": "Le téléphone n'a pas pu enregistrer le dernier changement : sa mémoire est peut-être pleine. Libérez de la place avant de fermer l'application.",
   "@saveFailedBody": { "description": "Body of that dialog. The change still shows and is kept at the next write of the street that succeeds; it is lost if the app closes first." },
   "saveFailedOk": "OK",
-  "@saveFailedOk": { "description": "Button that closes that dialog." }
+  "@saveFailedOk": { "description": "Button that closes that dialog." },
+
+  "tourneeTitle": "Tournée {number} · {year}",
+  "@tourneeTitle": {
+    "description": "Title of the open tournée on the start screen (PLAN §5.3) and of a row of « Mes tournées ».",
+    "placeholders": {
+      "number": { "type": "String", "example": "49" },
+      "year": { "type": "String", "example": "2026" }
+    }
+  },
+  "tourneeTitleSemantics": "{title}, {centre}. Changer de tournée",
+  "@tourneeTitleSemantics": {
+    "description": "Screen-reader label of the title button that opens « Mes tournées » (Home mockup).",
+    "placeholders": {
+      "title": { "type": "String", "example": "Tournée 49 · 2026" },
+      "centre": { "type": "String", "example": "CS Villefranche" }
+    }
+  },
+  "myTourneesTitle": "Mes tournées",
+  "@myTourneesTitle": { "description": "Title of the sheet listing the member's tournées (PLAN §5.3), and of its row in Paramètres." },
+  "myTourneesEmpty": "Aucune tournée pour l'instant.",
+  "@myTourneesEmpty": { "description": "« Mes tournées » when the phone knows no tournée yet." },
+  "myTourneesPending": "{centre} · votre demande est en attente",
+  "@myTourneesPending": {
+    "description": "Second line of a tournée the member asked to join, not accepted yet (Switcher mockup).",
+    "placeholders": {
+      "centre": { "type": "String", "example": "CS Villefranche" }
+    }
+  },
+  "myTourneesOpenSemantics": "{title}, {centre}, tournée ouverte",
+  "@myTourneesOpenSemantics": {
+    "description": "Screen-reader label of the open tournée in « Mes tournées ».",
+    "placeholders": {
+      "title": { "type": "String", "example": "Tournée 49 · 2026" },
+      "centre": { "type": "String", "example": "CS Villefranche" }
+    }
+  },
+  "myTourneesClosedSemantics": "{title}, {centre}, ouvrir",
+  "@myTourneesClosedSemantics": {
+    "description": "Screen-reader label of another tournée in « Mes tournées »: a tap opens it.",
+    "placeholders": {
+      "title": { "type": "String", "example": "Tournée 12 · 2026" },
+      "centre": { "type": "String", "example": "CS Villefranche" }
+    }
+  },
+  "myTourneesPendingSemantics": "{title}, {centre}, votre demande est en attente",
+  "@myTourneesPendingSemantics": {
+    "description": "Screen-reader label of a tournée the member asked to join, not accepted yet.",
+    "placeholders": {
+      "title": { "type": "String", "example": "Tournée 7 · 2026" },
+      "centre": { "type": "String", "example": "CS Villefranche" }
+    }
+  },
+  "settingsYou": "Vous",
+  "@settingsYou": { "description": "Section header of Paramètres: the member's own settings (PLAN §5.9)." },
+  "settingsApplication": "Application",
+  "@settingsApplication": { "description": "Section header of Paramètres: the app's settings." },
+  "settingsName": "Prénom",
+  "@settingsName": { "description": "Row of Paramètres that changes the member's first name." },
+  "settingsMyTourneesValue": "{number} · {year}",
+  "@settingsMyTourneesValue": {
+    "description": "Value of the « Mes tournées » row of Paramètres: the open tournée.",
+    "placeholders": {
+      "number": { "type": "String", "example": "49" },
+      "year": { "type": "String", "example": "2026" }
+    }
+  },
+  "settingsTheme": "Thème",
+  "@settingsTheme": { "description": "Row of Paramètres that picks the theme, and title of its sheet." },
+  "themeSystem": "Système",
+  "@themeSystem": { "description": "Theme that follows the phone's setting." },
+  "themeLight": "Clair",
+  "@themeLight": { "description": "Light theme." },
+  "themeDark": "Sombre",
+  "@themeDark": { "description": "Dark theme." },
+  "settingsPrivacy": "Confidentialité",
+  "@settingsPrivacy": { "description": "Row of Paramètres that opens the privacy page, and its title." },
+  "settingsVersion": "Version",
+  "@settingsVersion": { "description": "Row of Paramètres with the app's version; a tap opens the licences." },
+  "settingsVersionSemantics": "Version {version}, voir les licences",
+  "@settingsVersionSemantics": {
+    "description": "Screen-reader label of the version row: a tap opens the licences page.",
+    "placeholders": {
+      "version": { "type": "String", "example": "1.0.0" }
+    }
+  },
+  "settingsCredits": "Carte © contributeurs OpenStreetMap, OpenFreeMap. Adresses : Base Adresse Nationale.",
+  "@settingsCredits": { "description": "Attribution of the map and address data at the bottom of Paramètres (PLAN §8.3)." },
+  "settingsRowSemantics": "{label}, {value}",
+  "@settingsRowSemantics": {
+    "description": "Screen-reader label of a row of Paramètres with a value, e.g. « Thème, Système ».",
+    "placeholders": {
+      "label": { "type": "String", "example": "Thème" },
+      "value": { "type": "String", "example": "Système" }
+    }
+  },
+  "nameFieldLabel": "Votre prénom",
+  "@nameFieldLabel": { "description": "Label of the first-name field (Paramètres → Prénom)." },
+  "nameSave": "Enregistrer",
+  "@nameSave": { "description": "Button that keeps the first name typed." },
+  "nameBlank": "Écrivez votre prénom.",
+  "@nameBlank": { "description": "Refusal under the first-name field when it holds nothing but spaces." },
+  "nameTooLong": "Prénom limité à {max} caractères.",
+  "@nameTooLong": {
+    "description": "Shown when an edit would make the first name too long.",
+    "placeholders": {
+      "max": { "type": "int", "example": "30" }
+    }
+  },
+  "privacyAccountTitle": "Compte",
+  "@privacyAccountTitle": { "description": "Privacy page: section about the account." },
+  "privacyAccountBody": "Un compte anonyme est créé au premier lancement : ni adresse e-mail, ni numéro de téléphone. L'équipe voit seulement le prénom que vous donnez.",
+  "@privacyAccountBody": { "description": "Privacy page: the account (PLAN §8.3)." },
+  "privacyDataTitle": "Données enregistrées",
+  "@privacyDataTitle": { "description": "Privacy page: section about the data stored." },
+  "privacyDataBody": "Les adresses et leur position (données publiques), l'état de chaque porte, l'indication « repasser » (20 caractères au plus) et les prénoms des membres. Aucun nom d'habitant, aucun don, aucune réponse des habitants.",
+  "@privacyDataBody": { "description": "Privacy page: what is stored (PLAN §8.3)." },
+  "privacyLocationTitle": "Position",
+  "@privacyLocationTitle": { "description": "Privacy page: section about the phone's position." },
+  "privacyLocationBody": "Votre position sert seulement à vous situer sur la carte. Elle n'est ni enregistrée ni envoyée. L'autorisation est demandée la première fois que vous touchez le bouton qui vous situe.",
+  "@privacyLocationBody": { "description": "Privacy page: the phone's position (PLAN §8.3)." },
+  "privacyHostingTitle": "Hébergement",
+  "@privacyHostingTitle": { "description": "Privacy page: section about where the data is kept." },
+  "privacyHostingBody": "Les données des tournées sont hébergées dans l'Union européenne (Google Firebase).",
+  "@privacyHostingBody": { "description": "Privacy page: where the data is kept (PLAN §8.3, Firestore in europe-west)." },
+  "privacyDeletionTitle": "Suppression",
+  "@privacyDeletionTitle": { "description": "Privacy page: section about deleting the data." },
+  "privacyDeletionBody": "Supprimer la tournée efface toutes ses données. À chaque nouvelle campagne, la campagne d'avant la précédente est effacée.",
+  "@privacyDeletionBody": { "description": "Privacy page: how data is deleted (PLAN §8.3)." }
 }

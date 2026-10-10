@@ -17,7 +17,10 @@ import 'package:tournee_calendriers/application/ports/commune_search.dart';
 import 'package:tournee_calendriers/application/ports/id_generator.dart';
 import 'package:tournee_calendriers/application/ports/identity_provider.dart';
 import 'package:tournee_calendriers/application/ports/member_account.dart';
+import 'package:tournee_calendriers/application/ports/my_tournees_store.dart';
+import 'package:tournee_calendriers/application/ports/phone_settings.dart';
 import 'package:tournee_calendriers/application/ports/street_view_preferences.dart';
+import 'package:tournee_calendriers/application/ports/tournee_directory.dart';
 import 'package:tournee_calendriers/application/use_cases/describe_building.dart';
 import 'package:tournee_calendriers/application/use_cases/edit_street_numbers.dart';
 import 'package:tournee_calendriers/application/use_cases/find_imported_streets.dart';
@@ -26,8 +29,10 @@ import 'package:tournee_calendriers/application/use_cases/import_reference_area.
 import 'package:tournee_calendriers/application/use_cases/list_commune_streets.dart';
 import 'package:tournee_calendriers/application/use_cases/mark_dwelling.dart';
 import 'package:tournee_calendriers/application/use_cases/mark_house.dart';
+import 'package:tournee_calendriers/application/use_cases/my_tournees.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_street.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_streets.dart';
+import 'package:tournee_calendriers/application/use_cases/phone_settings.dart';
 import 'package:tournee_calendriers/application/use_cases/search_communes.dart';
 import 'package:tournee_calendriers/application/use_cases/set_house_details.dart';
 import 'package:tournee_calendriers/application/use_cases/sign_in.dart';
@@ -57,6 +62,15 @@ final streetViewPreferencesProvider = Provider<StreetViewPreferences>(
 );
 final memberAccountProvider = Provider<MemberAccount>(
   (ref) => _unbound('MemberAccount'),
+);
+final myTourneesStoreProvider = Provider<MyTourneesStore>(
+  (ref) => _unbound('MyTourneesStore'),
+);
+final phoneSettingsProvider = Provider<PhoneSettings>(
+  (ref) => _unbound('PhoneSettings'),
+);
+final tourneeDirectoryProvider = Provider<TourneeDirectory>(
+  (ref) => _unbound('TourneeDirectory'),
 );
 
 /// `Never`: this function never returns, it always throws, so it can stand
@@ -139,4 +153,31 @@ final readSignedInMemberProvider = Provider(
 );
 final signInProvider = Provider(
   (ref) => SignIn(ref.watch(memberAccountProvider)),
+);
+final readMyTourneesProvider = Provider(
+  (ref) => ReadMyTournees(ref.watch(myTourneesStoreProvider)),
+);
+final observeMyTourneesProvider = Provider(
+  (ref) => ObserveMyTournees(ref.watch(myTourneesStoreProvider)),
+);
+final openTourneeProvider = Provider(
+  (ref) => OpenTournee(ref.watch(myTourneesStoreProvider)),
+);
+final watchJoinRequestProvider = Provider(
+  (ref) => WatchJoinRequest(
+    ref.watch(tourneeDirectoryProvider),
+    ref.watch(memberAccountProvider),
+  ),
+);
+final settleJoinRequestProvider = Provider(
+  (ref) => SettleJoinRequest(ref.watch(myTourneesStoreProvider)),
+);
+final readPhoneSettingsProvider = Provider(
+  (ref) => ReadPhoneSettings(ref.watch(phoneSettingsProvider)),
+);
+final changeMemberNameProvider = Provider(
+  (ref) => ChangeMemberName(ref.watch(phoneSettingsProvider)),
+);
+final chooseThemeProvider = Provider(
+  (ref) => ChooseTheme(ref.watch(phoneSettingsProvider)),
 );

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 // `Override` (the type of a ProviderScope's overrides) lives in misc.dart.
 import 'package:flutter_riverpod/misc.dart';
@@ -10,8 +11,11 @@ import 'package:tournee_calendriers/application/ports/commune_search.dart';
 import 'package:tournee_calendriers/infrastructure/ban/ban_address_directory.dart';
 import 'package:tournee_calendriers/infrastructure/firebase_auth/anonymous_auth.dart';
 import 'package:tournee_calendriers/infrastructure/firebase_auth/firebase_identity.dart';
+import 'package:tournee_calendriers/infrastructure/firestore/firestore_tournee_directory.dart';
 import 'package:tournee_calendriers/infrastructure/geo_api/geo_commune_search.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_identity.dart';
+import 'package:tournee_calendriers/infrastructure/local_storage/local_my_tournees.dart';
+import 'package:tournee_calendriers/infrastructure/local_storage/local_phone_settings.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_street_repository.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_street_view_preferences.dart';
 import 'package:tournee_calendriers/infrastructure/system/random_id_generator.dart';
@@ -32,20 +36,26 @@ final httpClientProvider = Provider<http.Client>((ref) {
 ///
 /// - [storage]: the folder of the phone storage. The streets go in
 ///   `streets/`, the id the phone made for itself in `member_id`, the
-///   street screens' « Masquer faits » in `street_view.json`.
+///   street screens' « Masquer faits » in `street_view.json`, « Mes
+///   tournées » and the open one in `my_tournees.json`, the name and the
+///   theme in `settings.json`.
 /// - [auth]: Firebase anonymous sign-in. Its uid is the member; until the
 ///   first sign-in succeeds, the phone's own id stands in for the marks,
 ///   and creating or joining a tournée signs in again (`MemberAccount`).
+/// - [firestore]: gives the Firestore database, asked only when a screen
+///   first needs the server (following a request to join), so an offline
+///   cold start never touches it.
 /// - [addressDirectory]: replaces the BAN, so the instrumented suite can
 ///   import streets without the network.
 /// - [communeSearch]: replaces geo.api.gouv.fr, for the same reason.
 ///
-/// Async because the member id and the street view preferences are read
-/// from the phone before the first screen, so reading them later never
-/// waits.
+/// Async because the member id, the street view preferences, « Mes
+/// tournées » and the settings are read from the phone before the first
+/// screen, so reading them later never waits.
 Future<List<Override>> bindAdapters({
   required Directory storage,
   required AnonymousAuth auth,
+  required FirebaseFirestore Function() firestore,
   AddressDirectory? addressDirectory,
   CommuneSearch? communeSearch,
 }) async {
@@ -58,9 +68,13 @@ Future<List<Override>> bindAdapters({
   // Not awaited: the first screen must not wait for the network. After an
   // offline first start, creating or joining a tournée tries again.
   unawaited(identity.signInIfNeeded());
+  File fileOf(String name) =>
+      File('${storage.path}${Platform.pathSeparator}$name');
   final streetView = await LocalStreetViewPreferences.load(
-    File('${storage.path}${Platform.pathSeparator}street_view.json'),
+    fileOf('street_view.json'),
   );
+  final myTournees = await LocalMyTournees.load(fileOf('my_tournees.json'));
+  final settings = await LocalPhoneSettings.load(fileOf('settings.json'));
   return [
     streetRepositoryProvider.overrideWithValue(
       LocalStreetRepository(
@@ -80,5 +94,11 @@ Future<List<Override>> bindAdapters({
     identityProvider.overrideWithValue(identity),
     memberAccountProvider.overrideWithValue(identity),
     streetViewPreferencesProvider.overrideWithValue(streetView),
+    myTourneesStoreProvider.overrideWithValue(myTournees),
+    phoneSettingsProvider.overrideWithValue(settings),
+    // `overrideWith`: built the first time it is read, not at start-up.
+    tourneeDirectoryProvider.overrideWith(
+      (ref) => FirestoreTourneeDirectory(firestore()),
+    ),
   ];
 }
