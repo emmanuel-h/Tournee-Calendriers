@@ -98,3 +98,31 @@ jobs:
       - run: flutter pub get
       # Unsigned for upload: CI has no release key (signing arrives in T5.3).
       - run: flutter build appbundle --release
+
+  # The Firestore security rules (firebase/firestore.rules) against the
+  # emulator. Node 22: firebase-tools 13 is pinned for Node 18 on the
+  # developer machine and runs on 18–22.
+  rules:
+    name: firestore security rules
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: firebase
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: firebase/package-lock.json
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+      # The emulator's jar, downloaded by firebase-tools on first use.
+      - uses: actions/cache@v6
+        with:
+          path: ~/.cache/firebase/emulators
+          key: firebase-emulators-${{ hashFiles('firebase/package-lock.json') }}
+      - run: npm ci
+      - run: npm test

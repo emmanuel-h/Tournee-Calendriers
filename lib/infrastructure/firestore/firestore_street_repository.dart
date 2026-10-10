@@ -31,7 +31,7 @@ import 'package:tournee_calendriers/infrastructure/firestore/street_memory.dart'
 ///   restart if need be. See [sendInBackground].
 /// - **Field paths.** [save] writes only the fields the change names
 ///   (`houses.12.status`), so two people marking different houses never
-///   overwrite each other ([streetUpdate]).
+///   overwrite each other ([streetUpdates]).
 /// - **Undo** is stamped with who undoes, read from [IdentityProvider] and
 ///   [Clock] at the time of the write (PLAN §8.2).
 final class FirestoreStreetRepository implements StreetRepository, PendingSync {
@@ -105,23 +105,29 @@ final class FirestoreStreetRepository implements StreetRepository, PendingSync {
   @override
   Future<void> save(Street street, StreetChange change) async {
     _ready.put(street);
-    final update = streetUpdate(
+    final updates = streetUpdates(
       street,
       change,
       undoStamp: ChangeStamp(by: _identity.currentMember, at: _clock.now()),
       removal: FieldValue.delete(),
     );
-    sendInBackground(
-      '$change',
-      _streets.doc(street.id.value).update({
-        // A top-level field (`name`, `deletedAt`) is written as its name:
-        // the same for Firestore, and the only form the in-memory Firestore
-        // of the tests reads for one segment. Those names are ours, without
-        // dots; the house and door paths keep their segments.
-        for (final MapEntry(:key, :value) in update.entries)
-          (key.components.length == 1 ? key.components.single : key): value,
-      }),
-    );
+    final doc = _streets.doc(street.id.value);
+    // Sent one after the other: Firestore keeps the order of the writes of
+    // one phone, offline too.
+    for (final update in updates) {
+      sendInBackground(
+        '$change',
+        doc.update({
+          // A top-level field (`name`, `deletedAt`) is written as its name:
+          // the same for Firestore, and the only form the in-memory
+          // Firestore of the tests reads for one segment. Those names are
+          // ours, without dots; the house and door paths keep their
+          // segments.
+          for (final MapEntry(:key, :value) in update.entries)
+            (key.components.length == 1 ? key.components.single : key): value,
+        }),
+      );
+    }
   }
 
   /// Stops listening: the composition root calls it when the tournée or

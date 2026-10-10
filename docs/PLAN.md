@@ -1300,7 +1300,7 @@ writes:
 | mark, « repasser » of a door | `dwellings.<key>.status`, `.comeBack`, `.by`, `.at` (hint: no `status`) |
 | layout (describe, add / remove / rename a door) | `status`, `comeBack`, `by`, `at`, `labelStyle`, `layout`, then each door `dwellings.<key>` whole; each door dropped is deleted |
 | back to a single house | `status`, `comeBack`, `by`, `at`; `labelStyle`, `layout`, `dwellings` deleted |
-| numbers added | each new `houses.<n>` whole; each one restored: `deletedAt`, `deletedBy` = null |
+| numbers added | each new `houses.<n>` whole in one update; each one restored: `deletedAt`, `deletedBy` = null, in an update of its own (the rules check one by one only a write changing one house, T2.4) |
 | number removed / restored | `deletedAt`, `deletedBy` (set / null) |
 | number renamed | `houses.<old>` deleted, `houses.<new>` whole |
 | street renamed, deleted, restored | `name`; `deletedAt`, `deletedBy` (top level) |
@@ -1451,6 +1451,71 @@ What the adapters write (T2.3), which the rules must allow:
   writes back the removal it undoes (`deletedBy` possibly a teammate's).
 - `rescueCentres` is listed (a query), not only read by id.
 
+Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/test/`, `npm test`):
+
+- **Reading.** A tournée, its members, campaigns and streets: active members only. A pending
+  newcomer reads their own member document and nothing else; someone outside reads nothing.
+  `joinCodes` and `tourneeKeys`: `get` when signed in, never `list`. `rescueCentres`: `get`
+  and `list` when signed in. Anything not described is refused.
+- **Values.** Every document holds exactly its fields (no more, no fewer) with the domain's
+  limits: tournée number 1–9999, campaign 2000–2099, join code 6 characters of the alphabet,
+  centre key words of `a–z 0–9` joined by `-`, names cleaned as the domain cleans them
+  (one line, trimmed, single spaces): member ≤ 30, centre ≤ 80, street ≤ 150; commune code
+  `69264` / `2A004`; house number 0–99999 with a suffix of ≤ 16 lowercase letters and digits,
+  stored under its label; position in range or both null; statuses and label styles among
+  their fixed names; a hint exactly on « repasser » (a building may keep its own), trimmed,
+  ≤ 20; a stamp a write sets is the caller's (`by` = uid, `at` a timestamp), a new house has
+  none; no `note` anywhere. Lengths are counted in code points
+  with a pattern (`matches('(?s).{0,20}')`): the rules' `size()` counts UTF-16 units
+  (🚒 = 2), the patterns count 🚒 as 1, as `characterCount` does.
+- **Times** are only required to be timestamps, never compared with `request.time`: the
+  phone's clock stamps a mark made offline hours before it reaches the server, and a phone
+  whose clock is ahead would see its marks refused and silently taken back, while a forged
+  time harms nothing (it is shown, never used to order writes).
+- **Creating a tournée** is accepted only whole: the tournée checks with `getAfter` that the
+  same transaction writes its reservation (create-only, so number + station stay unique), its
+  code (create-only, so no one replaces another tournée's preview; the preview must repeat
+  the tournée's number, station and campaign), its creator `active` and accepted by
+  themself, and its first campaign (the current year). Each of those documents in turn is
+  accepted only from the tournée's creator and must match the tournée as written.
+- **Members.** A request is the caller's own document, `pending`, with the tournée's current
+  code. Any active member accepts (status, `acceptedBy` = caller, `acceptedAt` only) or refuses
+  a request; the newcomer cancels it. The creator removes an active member; a member leaves.
+  The creator's own document goes only in the batch that deletes the tournée.
+- **New code** (creator): only `joinCode` changes, the new code document is created and the old
+  one deleted in the same transaction. **Deleting** (creator): the contents first (campaigns,
+  streets, other members), then one batch where the tournée goes only with its code, its
+  reservation and the creator's member document. Previous campaigns are read-only (streets
+  are written only in `currentCampaign`); the creator alone deletes streets and campaigns
+  outright, which only the deletion does.
+- **Streets.** The rules language has no loops, and cannot name the key a write changed (a set
+  has no index): the house or door is found by value (`values().removeAll(…)`: the one entry
+  that is new; each holds its own number or stamp). So a write may:
+  - change **one house in place**: its marks (status, hint, `by` = caller, `at`), its layout
+    (labelStyle, layout, doors; house stamp = caller), its removal (`deletedBy` = caller, or
+    null to restore it), each checked field by field;
+  - change **one door** of a building: the door entry whole and valid, `by` = caller;
+  - **move one house** (renumbering or its undo): the new entry whole and valid, under its
+    label, stamped by the caller;
+  - **add houses** (« numéros en plus »): one new house is checked whole (unmarked, not a
+    building, under its label); several are only counted (≤ 500);
+  - change the street's `name` or its deletion (`deletedBy` = caller), never its commune or BAN
+    id.
+  Anything else (two houses changed at once, a house deleted outright, a mark landing on a
+  number or a door that is no longer there) is refused. **What the rules cannot check one by
+  one** — the houses of a new street and of several numbers added at once, and the doors and
+  layout of a building written whole — are only counted (doors ≤ 500, layout rows ≤ 26 × 51);
+  making them checkable would need writes split into small fixed-size chunks.
+- **A removal put back by an undo of « Restaurer »** keeps the teammate's stamp (§6.2): the
+  rules accept a number's `deletedBy` that is the caller or an active member of the tournée
+  (so a member could also name a teammate as the remover of a number; the stricter choice,
+  stamping that undo with who undoes as for houses and doors, would change T2.3's undo).
+- Fields no adapter writes yet (`assignees`, `shape`, `communes` in M3; `prev` and a new
+  campaign in v1.1) are refused: the task that writes them extends the rules and their tests.
+- Indexes (`firebase/firestore.indexes.json`): `houses` of `streets` is exempt from
+  single-field indexing (its thousands of sub-fields would count against the index limits and
+  slow every write); no query of the adapters needs a composite index.
+
 ### 8.3 Privacy
 
 - **Auth:** anonymous Firebase account created on first launch. The uid is the member id.
@@ -1554,7 +1619,9 @@ lib/
 1. Create a Firebase project, Firestore in `europe-west`, enable Anonymous sign-in and App Check.
 2. `dart pub global activate flutterfire_cli`, then `flutterfire configure` for Android
    (`fr.mandarine.tourneecalendriers`); iOS is added the same way later.
-3. Install the Firebase CLI (`npm i -g firebase-tools`) for the emulator and rules deploys.
+3. Install the Firebase CLI (`npm i -g firebase-tools`) for the rules deploys
+   (`firebase deploy --only firestore --project <id>` from `firebase/`). The emulator tests
+   need no global CLI: `firebase/package.json` pins its own.
 
 The generated `firebase_options.dart` (moved to `lib/bootstrap/`, the only layer that reads
 it: `flutterfire configure --out=lib/bootstrap/firebase_options.dart`) and
@@ -1581,7 +1648,7 @@ but they run once per task and in CI.
 | Widgets | widget tests for the critical interactions only: welcome gating, tap-cycle + undo on street tiles, hold → house sheet, building grid, edit mode remove + undo, street card states, join pending screen | `flutter test` (headless) | end of each UI task, CI | a few per UI task; the whole suite stays under 60 s |
 | Architecture | import rules between layers | Dart VM | every run | < 1 s |
 | Coverage | **100 % line coverage** on `domain/`, `application/`, `presentation/` and the adapters' mapping code, checked by a script on `coverage/lcov.info` | — | end of task, CI | piggybacks |
-| Rules | Firestore security rules in the Firebase emulator (`@firebase/rules-unit-testing`, `node --test`) | Node + emulator | when `firebase/` changes, CI | < 1 min |
+| Rules | Firestore security rules in the Firebase emulator (`@firebase/rules-unit-testing`, `node --test`): `cd firebase && npm ci && npm test` starts the emulator itself (`firebase emulators:exec`, demo project, versions pinned for Node 18+, Java 11+) | Node + emulator | when `firebase/` or the Firestore adapters change, CI | < 1 min |
 | Instrumented | `integration_test/`: a handful of end-to-end flows in the real app (launch, mark a house + undo, building, edit a street, offline cold start…), ≤ 10 tests | Android emulator (`Medium_Phone_API_36.1`), run by Claude | before every push to `main` | < 3 min |
 | Device | Manual checklist on your phone: map render, tap-to-add, offline download, **airplane-mode day** (cold start, mark, restart, reconnect, sync), QR scan | your phone | after every task, and the full checklist before release | — |
 

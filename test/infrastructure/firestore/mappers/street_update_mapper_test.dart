@@ -36,14 +36,26 @@ FieldPath door(String label, String key, String field) =>
 
 Timestamp at(DateTime time) => Timestamp.fromDate(time);
 
-/// The update storing the change [command] makes on [street].
-Map<FieldPath, Object?> updateOf<C extends StreetChange, F>(
+/// The updates storing the change [command] makes on [street].
+List<Map<FieldPath, Object?>> updatesOf<C extends StreetChange, F>(
   Street street,
   Result<(Street, C), F> Function(Street street) command,
 ) {
   final (changed, change) = valueOf(command(street));
-  return streetUpdate(changed, change, undoStamp: manuAtFour, removal: removed);
+  return streetUpdates(
+    changed,
+    change,
+    undoStamp: manuAtFour,
+    removal: removed,
+  );
 }
+
+/// The update storing the change [command] makes on [street], when it is
+/// stored in one update.
+Map<FieldPath, Object?> updateOf<C extends StreetChange, F>(
+  Street street,
+  Result<(Street, C), F> Function(Street street) command,
+) => updatesOf(street, command).single;
 
 /// The update storing the undo of the change [command] makes on [street].
 Map<FieldPath, Object?> undoOf<C extends StreetChange, F>(
@@ -309,16 +321,52 @@ void main() {
 
   group('numbers', () {
     test('should write the new houses whole and clear the restored ones', () {
-      final update = updateOf(
+      final updates = updatesOf(
         lilas,
         (s) => s.addNumbers([n('6'), n('14ter'), n('4')]),
       );
 
-      expect(update, {
-        house('6'): houseEntry(House(number: n('6'))),
-        house('14ter', ['deletedAt']): null,
-        house('14ter', ['deletedBy']): null,
-      });
+      // The restored number in an update of its own: the security rules
+      // check one by one only the houses of a write that changes one.
+      expect(updates, [
+        {house('6'): houseEntry(House(number: n('6')))},
+        {
+          house('14ter', ['deletedAt']): null,
+          house('14ter', ['deletedBy']): null,
+        },
+      ]);
+    });
+
+    test('should write the new houses in one update', () {
+      final updates = updatesOf(lilas, (s) => s.addNumbers([n('6'), n('12')]));
+
+      expect(updates, [
+        {
+          house('6'): houseEntry(House(number: n('6'))),
+          house('12'): houseEntry(House(number: n('12'))),
+        },
+      ]);
+    });
+
+    test('should clear each restored number in an update of its own', () {
+      final street = valueOf(lilas.removeNumber(n('4'), by: paul, at: threePm))
+          .$1;
+
+      final updates = updatesOf(
+        street,
+        (s) => s.addNumbers([n('4'), n('14ter')]),
+      );
+
+      expect(updates, [
+        {
+          house('4', ['deletedAt']): null,
+          house('4', ['deletedBy']): null,
+        },
+        {
+          house('14ter', ['deletedAt']): null,
+          house('14ter', ['deletedBy']): null,
+        },
+      ]);
     });
 
     test('should write who removed a number and when', () {

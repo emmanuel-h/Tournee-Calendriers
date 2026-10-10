@@ -213,6 +213,32 @@ void main() {
       expect(house['at'], Timestamp.fromDate(fourPm));
     });
 
+    test(
+      'should store new and restored numbers sent in several updates',
+      () async {
+        await phone().add(lilas);
+        await pumpEventQueue();
+        final streets = phone();
+        final (removed, removal) = valueOf(
+          (await streets.find(lilas.id))!
+              .removeNumber(n('2'), by: MemberId('lea'), at: twoPm),
+        );
+        await streets.save(removed, removal);
+        final (added, change) = valueOf(removed.addNumbers([n('2'), n('3')]));
+
+        await streets.save(added, change);
+        await pumpEventQueue();
+
+        final found = (await phone('paul').find(lilas.id))!;
+        expect(found.houses.map((house) => house.number.label), [
+          '1',
+          '2',
+          '3',
+        ]);
+        expect(found.removedHouses, isEmpty);
+      },
+    );
+
     test('should not throw when Firestore refuses the write', () async {
       await phone().add(lilas);
       await pumpEventQueue();

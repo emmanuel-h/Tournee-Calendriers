@@ -1,0 +1,525 @@
+rules_version = '2';
+
+// Security rules of Tournée Calendriers (PLAN §8.1, §8.2).
+//
+// They accept exactly what the Firestore adapters write
+// (lib/infrastructure/firestore/, PLAN §6.2 and « What the adapters
+// write » in §8.2) and refuse everything else. Tested in the emulator by
+// `npm test` (firebase/test/).
+//
+// How to read them:
+// - A request is allowed when one `allow` of the document it touches is
+//   true. A rule that hits an error (a missing field, a document that does
+//   not exist) counts as false: whatever is not described is refused.
+// - `resource.data` is the document as stored, `request.resource.data` the
+//   document as it would be after the write.
+// - In a batch or a transaction, `get` / `exists` see the database before
+//   the batch, `getAfter` / `existsAfter` as it would be after it. That is
+//   how a rule checks that the other documents of the batch go with it
+//   (a new tournée comes with its code, its reservation and its creator).
+// - The rules language has no loops. A write that changes one house, one
+//   door or one field is checked field by field; one that creates houses
+//   in bulk (a new street, « numéros en plus » of several numbers) is only
+//   counted, and the doors of a building written whole are only counted
+//   (PLAN §8.2).
+// - Lengths are counted in code points, as the domain counts them
+//   (`characterCount`: 🚒 = 1), with a pattern: the `size()` of a string
+//   counts UTF-16 units (🚒 = 2), the patterns (RE2) count code points.
+// - Times (`at`, `requestedAt`…) are the phone's clock (PLAN §6.1): a mark
+//   made offline reaches the server hours later and keeps its time, so
+//   they are only required to be timestamps, never compared with
+//   `request.time`.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------------------------------------------------------------- who
+
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function uid() {
+      return request.auth.uid;
+    }
+
+    function tourneePath(tournee) {
+      return /databases/$(database)/documents/tournees/$(tournee);
+    }
+
+    function memberPath(tournee, member) {
+      return /databases/$(database)/documents/tournees/$(tournee)/members/$(member);
+    }
+
+    function campaignPath(tournee, year) {
+      return /databases/$(database)/documents/tournees/$(tournee)/campaigns/$(year);
+    }
+
+    function joinCodePath(code) {
+      return /databases/$(database)/documents/joinCodes/$(code);
+    }
+
+    function tourneeKeyPath(key) {
+      return /databases/$(database)/documents/tourneeKeys/$(key);
+    }
+
+    // An accepted member: a pending one reads and writes nothing of the
+    // tournée (PLAN §8.1), only their own member document.
+    function isActiveMember(tournee) {
+      return signedIn()
+        && exists(memberPath(tournee, uid()))
+        && get(memberPath(tournee, uid())).data.status == 'active';
+    }
+
+    function isCreator(tournee) {
+      return signedIn() && get(tourneePath(tournee)).data.createdBy == uid();
+    }
+
+    // ------------------------------------------------------------ values
+
+    // A document holding exactly [fields], no more, no fewer.
+    function hasExactly(data, fields) {
+      return data.keys().hasAll(fields) && data.keys().hasOnly(fields);
+    }
+
+    // At most [max] characters, counted in code points. `(?s)`: a line
+    // break counts too.
+    function hasAtMost(text, max) {
+      return text is string && text.matches('(?s).{0,' + string(max) + '}');
+    }
+
+    // Trimmed at both ends, possibly empty (a « repasser » without hint).
+    function isTrimmed(text) {
+      return text is string && text.matches('(?s)([^\\s](.*[^\\s])?)?');
+    }
+
+    // A name as the domain cleans it: one line, trimmed, single spaces
+    // between words, 1 to [max] characters (MemberName, RescueCentre,
+    // StreetName).
+    function isName(text, max) {
+      return hasAtMost(text, max) && text.matches('[^\\s]+( [^\\s]+)*');
+    }
+
+    // An identifier the app makes (IdGenerator, Firestore): ASCII letters
+    // and digits. Checked before it is put in a path.
+    function isId(text) {
+      return text is string && text.matches('[A-Za-z0-9]{1,128}');
+    }
+
+    // JoinCode: 6 characters of ABCDEFGHJKMNPQRSTUVWXYZ23456789.
+    function isJoinCode(code) {
+      return code is string && code.matches('[A-HJKMNP-Z2-9]{6}');
+    }
+
+    // RescueCentreKey: words of a–z 0–9 joined by dashes (`villefranche-sur-saone`).
+    function isCentreKey(key) {
+      return key is string && key.size() <= 200 && key.matches('[a-z0-9]+(-[a-z0-9]+)*');
+    }
+
+    function isTourneeNumber(number) {
+      return number is int && number >= 1 && number <= 9999;
+    }
+
+    function isCampaignYear(year) {
+      return year is int && year >= 2000 && year <= 2099;
+    }
+
+    // A stamp the caller makes: every change records who made it (PLAN §8.1).
+    function isCallerStamp(by, at) {
+      return signedIn() && by == uid() && at is timestamp;
+    }
+
+    // ----------------------------------------------------- the directory
+
+    // `tourneeKeys/{centreKey}_{number}`: its existence reserves the number
+    // in the station. Written by the creator, for the tournée's own pair.
+    function isReservation(key, data) {
+      return hasExactly(data, ['tourneeId'])
+        && isId(data.tourneeId)
+        && getAfter(tourneePath(data.tourneeId)).data.createdBy == uid()
+        && key == getAfter(tourneePath(data.tourneeId)).data.centreKey + '_'
+          + string(getAfter(tourneePath(data.tourneeId)).data.number);
+    }
+
+    // `joinCodes/{code}`: what « Rejoindre » shows before the request, and
+    // nothing else (PLAN §8.2). Written by the creator with the tournée or
+    // a new code, and it must say what the tournée says.
+    function isPreview(code, data) {
+      return hasExactly(data, ['tourneeId', 'number', 'centreName', 'campaign'])
+        && isId(data.tourneeId)
+        && getAfter(tourneePath(data.tourneeId)).data.createdBy == uid()
+        && getAfter(tourneePath(data.tourneeId)).data.joinCode == code
+        && data.number == getAfter(tourneePath(data.tourneeId)).data.number
+        && data.centreName == getAfter(tourneePath(data.tourneeId)).data.centreName
+        && data.campaign == getAfter(tourneePath(data.tourneeId)).data.currentCampaign;
+    }
+
+    // A code or a reservation goes when its tournée goes, or (a code) when
+    // the creator draws a new one.
+    function isFreedByCreator(tourneeId) {
+      return isCreator(tourneeId) && !existsAfter(tourneePath(tourneeId));
+    }
+
+    function isCodeFreed(code, data) {
+      return isCreator(data.tourneeId)
+        && (!existsAfter(tourneePath(data.tourneeId))
+          || getAfter(tourneePath(data.tourneeId)).data.joinCode != code);
+    }
+
+    match /rescueCentres/{centreKey} {
+      // Listed by « Créer » (station names only); the first name stays.
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && isCentreKey(centreKey)
+        && hasExactly(request.resource.data, ['name'])
+        && isName(request.resource.data.name, 80);
+    }
+
+    match /tourneeKeys/{key} {
+      // `get` only: « Créer » asks whether one pair is taken.
+      allow get: if signedIn();
+      allow create: if signedIn() && isReservation(key, request.resource.data);
+      allow delete: if isFreedByCreator(resource.data.tourneeId);
+    }
+
+    match /joinCodes/{code} {
+      // `get` only, never `list`: knowing a code is the only way to it.
+      // Create only: a set over an existing code is an update, refused,
+      // so no one replaces another tournée's preview.
+      allow get: if signedIn();
+      allow create: if signedIn() && isJoinCode(code) && isPreview(code, request.resource.data);
+      allow delete: if isCodeFreed(code, resource.data);
+    }
+
+    // ------------------------------------------------------- the tournée
+
+    function tourneeFields() {
+      return ['number', 'centreKey', 'centreName', 'joinCode', 'createdBy',
+        'createdAt', 'currentCampaign'];
+    }
+
+    // Created in one batch with its reservation, its code, its creator
+    // (already active) and its first campaign (PLAN §8.2): the reservation
+    // can only be created if absent, which makes number + station unique.
+    function isNewTournee(tournee, data) {
+      return hasExactly(data, tourneeFields())
+        && isTourneeNumber(data.number)
+        && isCentreKey(data.centreKey)
+        && isName(data.centreName, 80)
+        && isJoinCode(data.joinCode)
+        && data.createdBy == uid()
+        && data.createdAt is timestamp
+        && isCampaignYear(data.currentCampaign)
+        && getAfter(tourneeKeyPath(data.centreKey + '_' + string(data.number))).data.tourneeId == tournee
+        && getAfter(joinCodePath(data.joinCode)).data.tourneeId == tournee
+        && getAfter(memberPath(tournee, uid())).data.status == 'active'
+        && existsAfter(campaignPath(tournee, string(data.currentCampaign)));
+    }
+
+    // A new code (creator only): the new code document comes with it and
+    // the old one goes, in the same transaction.
+    function isNewCode(tournee, before, after) {
+      return signedIn()
+        && before.createdBy == uid()
+        && after.diff(before).affectedKeys().hasOnly(['joinCode'])
+        && isJoinCode(after.joinCode)
+        && getAfter(joinCodePath(after.joinCode)).data.tourneeId == tournee
+        && !existsAfter(joinCodePath(before.joinCode));
+    }
+
+    // Deleting (creator only) is the last batch: the code, the reservation
+    // and the creator's own member document go with the tournée, after
+    // its campaigns, streets and other members (PLAN §8.2).
+    function isTourneeDeletion(tournee, data) {
+      return signedIn()
+        && data.createdBy == uid()
+        && !existsAfter(joinCodePath(data.joinCode))
+        && !existsAfter(tourneeKeyPath(data.centreKey + '_' + string(data.number)))
+        && !existsAfter(memberPath(tournee, uid()));
+    }
+
+    // ------------------------------------------------------- the members
+
+    function memberFields() {
+      return ['displayName', 'status', 'requestedAt', 'acceptedBy', 'acceptedAt'];
+    }
+
+    // A newcomer's request: pending, with the code they used, which must
+    // be the tournée's current code (they cannot read the tournée).
+    function isJoinRequest(tournee, data) {
+      return hasExactly(data, memberFields().concat(['joinCode']))
+        && isName(data.displayName, 30)
+        && data.status == 'pending'
+        && data.requestedAt is timestamp
+        && data.acceptedBy == null
+        && data.acceptedAt == null
+        && data.joinCode == get(tourneePath(tournee)).data.joinCode;
+    }
+
+    // The creator, accepted by themself, written with the tournée.
+    function isCreatorMembership(tournee, data) {
+      return hasExactly(data, memberFields())
+        && isName(data.displayName, 30)
+        && data.status == 'active'
+        && data.requestedAt is timestamp
+        && data.acceptedBy == uid()
+        && data.acceptedAt is timestamp
+        && getAfter(tourneePath(tournee)).data.createdBy == uid();
+    }
+
+    // Any active member accepts a pending one: status, who and when only.
+    function isAcceptance(tournee, before, after) {
+      return isActiveMember(tournee)
+        && before.status == 'pending'
+        && after.diff(before).affectedKeys().hasOnly(['status', 'acceptedBy', 'acceptedAt'])
+        && after.status == 'active'
+        && after.acceptedBy == uid()
+        && after.acceptedAt is timestamp;
+    }
+
+    // Refuse or cancel a request; remove (creator) or leave (the member)
+    // an active one. The creator can neither leave nor be removed: their
+    // member document goes only with the tournée (PLAN §6.1).
+    function isMemberDeletion(tournee, member, data) {
+      return signedIn() && (
+        (data.status == 'pending' && (member == uid() || isActiveMember(tournee)))
+        || (data.status == 'active'
+          && member != get(tourneePath(tournee)).data.createdBy
+          && (member == uid() || isCreator(tournee)))
+        || (member == uid()
+          && isCreator(tournee)
+          && !existsAfter(tourneePath(tournee))));
+    }
+
+    // ------------------------------------------------------- the streets
+
+    function streetFields() {
+      return ['name', 'communeName', 'communeCode', 'banId', 'deletedAt',
+        'deletedBy', 'houses'];
+    }
+
+    function houseFields() {
+      return ['n', 'sfx', 'lat', 'lon', 'status', 'comeBack', 'by', 'at',
+        'deletedAt', 'deletedBy'];
+    }
+
+    function buildingFields() {
+      return ['labelStyle', 'layout', 'dwellings'];
+    }
+
+    // The four statuses, under the names the mapper stores.
+    function isStatus(status) {
+      return status in ['TO_DO', 'DONE', 'NOBODY_HOME', 'COME_BACK'];
+    }
+
+    // The « repasser » hint: trimmed, at most 20 characters (ComeBack);
+    // empty when none was given. The only free text kept about a house:
+    // there is no `note` field anywhere (PLAN §8.3).
+    function isHint(hint) {
+      return hasAtMost(hint, 20) && isTrimmed(hint);
+    }
+
+    // A single house or a door has a hint exactly when it is « repasser ».
+    function hasMarks(entry) {
+      return isStatus(entry.status)
+        && (entry.status == 'COME_BACK' ? isHint(entry.comeBack) : entry.comeBack == null);
+    }
+
+    function isPosition(lat, lon) {
+      return (lat == null && lon == null)
+        || (lat is number && lon is number
+          && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180);
+    }
+
+    // A building is to do itself, its doors carry the statuses, and it
+    // may have a « repasser » of its own. Its doors are counted, not
+    // checked one by one: at most 500 doors, 26 staircases of floors 0–50.
+    function isBuilding(house) {
+      return house.status == 'TO_DO'
+        && (house.comeBack == null || isHint(house.comeBack))
+        && house.labelStyle in ['FLOOR_AND_NUMBER', 'FLOOR_AND_LETTER', 'FREE']
+        && house.layout is list && house.layout.size() >= 1 && house.layout.size() <= 26 * 51
+        && house.dwellings is map && house.dwellings.size() >= 1 && house.dwellings.size() <= 500;
+    }
+
+    // A whole entry of the `houses` map (houseEntry in the mapper). Its
+    // stamps are checked where a write sets them.
+    function isHouse(house) {
+      return house is map
+        && (('layout' in house)
+          ? hasExactly(house, houseFields().concat(buildingFields())) && isBuilding(house)
+          : hasExactly(house, houseFields()) && hasMarks(house))
+        && house.n is int && house.n >= 0 && house.n <= 99999
+        && (house.sfx == null || (house.sfx is string && house.sfx.matches('[a-z][a-z0-9]{0,15}')))
+        && isPosition(house.lat, house.lon);
+    }
+
+    // The key of a house is its number's label (HouseNumber.label):
+    // `12`, `12bis`, `3A`.
+    function labelOf(house) {
+      return house.sfx == null
+        ? string(house.n)
+        : string(house.n) + (house.sfx in ['bis', 'ter', 'quater', 'quinquies',
+            'sexies', 'septies', 'octies', 'nonies', 'decies']
+          ? house.sfx
+          : house.sfx.upper());
+    }
+
+    // A door entry (dwellingEntry in the mapper). Its stamp is the
+    // caller's (isOneDoorEdited).
+    function isDoor(door) {
+      return door is map
+        && hasExactly(door, ['status', 'comeBack', 'by', 'at'])
+        && hasMarks(door);
+    }
+
+    // Sending a street to the Corbeille (the caller's stamp) or bringing
+    // it back (null).
+    function isRemovalStamp(data) {
+      return (data.deletedAt == null && data.deletedBy == null)
+        || isCallerStamp(data.deletedBy, data.deletedAt);
+    }
+
+    // The same for a number, and one more case: the undo of « Restaurer »
+    // puts back the removal it undoes, which may be a teammate's (PLAN
+    // §6.2). Then it must name an active member of the tournée.
+    function isNumberRemoval(tournee, house) {
+      return isRemovalStamp(house)
+        || (isId(house.deletedBy)
+          && house.deletedAt is timestamp
+          && get(memberPath(tournee, house.deletedBy)).data.status == 'active');
+    }
+
+    // A new street (import from the BAN, PLAN §6.2): out of the Corbeille.
+    // Its houses come in bulk: the rules cannot check them one by one.
+    function isNewStreet(data) {
+      return hasExactly(data, streetFields())
+        && isName(data.name, 150)
+        && hasAtMost(data.communeName, 150) && isTrimmed(data.communeName) && data.communeName != ''
+        && data.communeCode is string && data.communeCode.matches('([0-9]{2}|2A|2B)[0-9]{3}')
+        && (data.banId == null || (data.banId is string && data.banId.size() >= 1 && data.banId.size() <= 100))
+        && data.deletedAt == null && data.deletedBy == null
+        && data.houses is map;
+    }
+
+    // A change of a street (the table of PLAN §6.2): its name, its
+    // deletion (Corbeille), or its houses. The commune and the BAN id
+    // never change.
+    function isStreetChange(tournee, before, after) {
+      return after.diff(before).affectedKeys().hasOnly(['name', 'deletedAt', 'deletedBy', 'houses'])
+        && (after.name == before.name || isName(after.name, 150))
+        && ((after.deletedAt == before.deletedAt && after.deletedBy == before.deletedBy)
+          || isRemovalStamp(after))
+        && (after.houses == before.houses || isHousesChange(tournee, before.houses, after.houses));
+    }
+
+    // What a write may do to the `houses` map: change one house in place,
+    // move one house to a new number, or add houses (« numéros en plus »).
+    // Restoring several numbers from the Corbeille is sent one write per
+    // number by the adapter, so each is checked.
+    function isHousesChange(tournee, before, after) {
+      let changes = after.diff(before);
+      let changed = changes.changedKeys().size();
+      let added = changes.addedKeys().size();
+      let removed = changes.removedKeys().size();
+      return (changed == 1 && added == 0 && removed == 0
+          && isOneHouseEdited(tournee, before.values().removeAll(after.values()),
+            after.values().removeAll(before.values())))
+        || (changed == 0 && added == 1 && removed <= 1
+          && isHouseAt(after.keys().removeAll(before.keys())[0], after, removed == 0))
+        || (changed == 0 && removed == 0 && added >= 2 && added <= 500);
+    }
+
+    // The rules cannot name the key that changed (a set has no index), so
+    // the house is found by its value: the one old entry no longer there,
+    // the one new entry not there before. Two entries never hold the same
+    // value: each holds its own number.
+    function isOneHouseEdited(tournee, olds, news) {
+      return olds.size() == 1 && news.size() == 1 && isHouseEdit(tournee, olds[0], news[0]);
+    }
+
+    function isHouseEdit(tournee, old, new) {
+      let fields = new.diff(old).affectedKeys();
+      return (fields.hasOnly(['deletedAt', 'deletedBy']) && isNumberRemoval(tournee, new))
+        || (fields.hasOnly(['dwellings'])
+          && isOneDoorEdited(old.dwellings, new.dwellings))
+        || (fields.hasOnly(['status', 'comeBack', 'by', 'at'].concat(buildingFields()))
+          && isHouse(new)
+          && isCallerStamp(new.by, new.at));
+    }
+
+    // One door marked, its hint set, or put back by an undo: the door
+    // entry is whole and carries the caller's stamp. Found by its value,
+    // as a house is: the new door carries its own stamp.
+    function isOneDoorEdited(old, new) {
+      let changes = new.diff(old);
+      let doors = new.values().removeAll(old.values());
+      return changes.affectedKeys().size() == 1
+        && changes.changedKeys().size() == 1
+        && doors.size() == 1
+        && isDoor(doors[0])
+        && isCallerStamp(doors[0].by, doors[0].at);
+    }
+
+    // A house written whole under a key it did not have: a number added
+    // ([isNew]: unmarked, as `addNumbers` makes it) or a house moved to
+    // its new number (renumbering, or its undo: stamped by the caller).
+    // Either way it is shown, not in the Corbeille, under its own label.
+    function isHouseAt(key, houses, isNew) {
+      let house = houses[key];
+      return isHouse(house)
+        && key == labelOf(house)
+        && house.deletedAt == null && house.deletedBy == null
+        && (isNew
+          ? !('layout' in house) && house.status == 'TO_DO'
+            && house.by == null && house.at == null
+          : isCallerStamp(house.by, house.at));
+    }
+
+    match /tournees/{tournee} {
+      // No `list`: a tournée is reached by its id, from its code.
+      allow get: if isActiveMember(tournee);
+      allow create: if signedIn() && isNewTournee(tournee, request.resource.data);
+      allow update: if isNewCode(tournee, resource.data, request.resource.data);
+      allow delete: if isTourneeDeletion(tournee, resource.data);
+
+      match /members/{member} {
+        // A pending newcomer reads their own document (« Demande envoyée »
+        // follows it), and nothing else.
+        allow get: if (signedIn() && member == uid()) || isActiveMember(tournee);
+        allow list: if isActiveMember(tournee);
+        allow create: if signedIn() && member == uid()
+          && (isJoinRequest(tournee, request.resource.data)
+            || isCreatorMembership(tournee, request.resource.data));
+        allow update: if isAcceptance(tournee, resource.data, request.resource.data);
+        allow delete: if isMemberDeletion(tournee, member, resource.data);
+      }
+
+      match /campaigns/{year} {
+        allow read: if isActiveMember(tournee);
+        // The first campaign, written by the creator with the tournée. A new
+        // campaign (v1.1) extends this rule when it is written.
+        allow create: if signedIn()
+          && hasExactly(request.resource.data, ['startedAt', 'previousYear'])
+          && request.resource.data.startedAt is timestamp
+          && request.resource.data.previousYear == null
+          && getAfter(tourneePath(tournee)).data.createdBy == uid()
+          && year == string(getAfter(tourneePath(tournee)).data.currentCampaign);
+        allow delete: if isCreator(tournee);
+
+        match /streets/{street} {
+          allow read: if isActiveMember(tournee);
+          // Previous campaigns are read-only.
+          allow create: if isActiveMember(tournee)
+            && year == string(get(tourneePath(tournee)).data.currentCampaign)
+            && isNewStreet(request.resource.data);
+          allow update: if isActiveMember(tournee)
+            && year == string(get(tourneePath(tournee)).data.currentCampaign)
+            && isStreetChange(tournee, resource.data, request.resource.data);
+          // Hard deletion only goes with the tournée; a street goes to the
+          // Corbeille by an update.
+          allow delete: if isCreator(tournee);
+        }
+      }
+    }
+  }
+}

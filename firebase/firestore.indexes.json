@@ -1,0 +1,10 @@
+{
+  "indexes": [],
+  "fieldOverrides": [
+    {
+      "collectionGroup": "streets",
+      "fieldPath": "houses",
+      "indexes": []
+    }
+  ]
+}
