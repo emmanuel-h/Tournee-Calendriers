@@ -72,12 +72,17 @@ later screen could be checked with real streets (decided with you on 2026-10-04)
 |---|---|---|
 | [#16](https://github.com/emmanuel-h/Tournee-Calendriers/issues/16) | T2.0 Infrastructure checkpoint | manual, checkpoint |
 | [#17](https://github.com/emmanuel-h/Tournee-Calendriers/issues/17) | T2.1 Firebase project and bootstrap | manual |
+| [#68](https://github.com/emmanuel-h/Tournee-Calendriers/issues/68) | T2.1b App Check registration and enforcement | manual |
+| [#67](https://github.com/emmanuel-h/Tournee-Calendriers/issues/67) | T2.1c Wait for or retry the anonymous sign-in |  |
 | [#18](https://github.com/emmanuel-h/Tournee-Calendriers/issues/18) | T2.2 Tournée aggregate (domain) |  |
 | [#19](https://github.com/emmanuel-h/Tournee-Calendriers/issues/19) | T2.3 Firestore adapters |  |
 | [#20](https://github.com/emmanuel-h/Tournee-Calendriers/issues/20) | T2.4 Security rules |  |
 | [#21](https://github.com/emmanuel-h/Tournee-Calendriers/issues/21) | T2.5 Onboarding screens |  |
 | [#22](https://github.com/emmanuel-h/Tournee-Calendriers/issues/22) | T2.6 Équipe and Corbeille |  |
+| [#72](https://github.com/emmanuel-h/Tournee-Calendriers/issues/72) | T2.6b Purge the Corbeille after 30 days |  |
+| [#73](https://github.com/emmanuel-h/Tournee-Calendriers/issues/73) | T2.6c A removed member, or a deleted tournée, leaves « Mes tournées » |  |
 | [#23](https://github.com/emmanuel-h/Tournee-Calendriers/issues/23) | T2.7 Mes tournées and Paramètres |  |
+| [#71](https://github.com/emmanuel-h/Tournee-Calendriers/issues/71) | T2.7b A new first name reaches the team |  |
 | [#24](https://github.com/emmanuel-h/Tournee-Calendriers/issues/24) | T2.8 Street screen on Firestore |  |
 | [#25](https://github.com/emmanuel-h/Tournee-Calendriers/issues/25) | T2.9 Pending-sync indicator |  |
 
@@ -107,6 +112,8 @@ later screen could be checked with real streets (decided with you on 2026-10-04)
 | [#35](https://github.com/emmanuel-h/Tournee-Calendriers/issues/35) | T5.1 Dark mode and accessibility |  |
 | [#36](https://github.com/emmanuel-h/Tournee-Calendriers/issues/36) | T5.2 Identity and store assets |  |
 | [#37](https://github.com/emmanuel-h/Tournee-Calendriers/issues/37) | T5.3 Signed release | manual |
+| [#69](https://github.com/emmanuel-h/Tournee-Calendriers/issues/69) | Upgrade the rules test tooling past Node 18 |  |
+| [#70](https://github.com/emmanuel-h/Tournee-Calendriers/issues/70) | Check bulk street writes entry by entry in the rules |  |
 
 ## M6 Next year (v1.1)
 
