@@ -11,6 +11,7 @@ import '../../support/fakes/fake_commune_search.dart';
 import '../../support/fakes/fake_member_account.dart';
 import '../../support/fakes/fake_moved_streets_log.dart';
 import '../../support/fakes/fake_my_tournees_store.dart';
+import '../../support/fakes/fake_pending_sync.dart';
 import '../../support/fakes/fake_phone_settings.dart';
 import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_street_repository.dart';
@@ -25,7 +26,8 @@ import '../../support/street_fixtures.dart';
 /// [preferences], [myTournees] (none by default), [settings] and
 /// [tourneeDirectory], [tournees] (none by default), [phoneStreets] (the
 /// streets kept on the phone since M1, none by default: no card offers
-/// them to a tournée) and [movedStreets]; [member] (Léa by
+/// them to a tournée), [movedStreets] and [pending] (nothing waiting to be
+/// sent by default); [member] (Léa by
 /// default) uses the phone and marks the houses at [now] (two o'clock by
 /// default). The commune search answers without waiting for a pause in
 /// the typing; a new join code is `234567`.
@@ -40,6 +42,7 @@ List<Override> fakePhone({
   FakeTourneeRepository? tournees,
   FakeStreetRepository? phoneStreets,
   FakeMovedStreetsLog? movedStreets,
+  FakePendingSync? pending,
   MemberId? member,
   DateTime? now,
 }) => [
@@ -50,6 +53,7 @@ List<Override> fakePhone({
   movedStreetsLogProvider.overrideWithValue(
     movedStreets ?? FakeMovedStreetsLog(),
   ),
+  pendingSyncProvider.overrideWithValue(pending ?? FakePendingSync()),
   addressDirectoryProvider.overrideWithValue(
     directory ?? FakeAddressDirectory(),
   ),

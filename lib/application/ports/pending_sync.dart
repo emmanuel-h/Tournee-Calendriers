@@ -1,6 +1,6 @@
 /// What this phone has changed that the server has not received yet
-/// (« ☁ 3 modifications en attente d'envoi », PLAN §7): marks made offline
-/// wait on the phone and leave with the network.
+/// (« ☁ Modifications de 3 rues en attente d'envoi », PLAN §7): marks made
+/// offline wait on the phone and leave with the network.
 ///
 /// An application port: the use cases own it, the Firestore street adapter
 /// implements it from the metadata of its snapshots (`hasPendingWrites`).

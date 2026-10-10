@@ -698,6 +698,17 @@ class AppLocalizationsFr extends AppLocalizations {
       'Importez les rues d\'une commune pour commencer.';
 
   @override
+  String pendingSyncLine(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Modifications de $count rues en attente d\'envoi',
+      one: 'Modifications d\'une rue en attente d\'envoi',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String filterNoMatch(String filter) {
     return 'Aucune rue ne correspond à « $filter ».';
   }

@@ -1131,6 +1131,12 @@ abstract class AppLocalizations {
   /// **'Importez les rues d\'une commune pour commencer.'**
   String get startEmptyBody;
 
+  /// Line above « Importer des rues » while changes made on this phone wait to be sent (PLAN §5.3, §7), after a cloud glyph. Firestore tells only which streets have writes waiting, so it counts streets, not changes. Never shown for 0.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, =1{Modifications d\'une rue en attente d\'envoi} other{Modifications de {count} rues en attente d\'envoi}}'**
+  String pendingSyncLine(int count);
+
   /// Shown when the street filter keeps no street.
   ///
   /// In fr, this message translates to:

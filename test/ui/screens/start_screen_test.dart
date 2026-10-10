@@ -10,6 +10,7 @@ import 'package:tournee_calendriers/ui/components/status_glyph.dart';
 import 'package:tournee_calendriers/ui/screens/import_streets/import_screen.dart';
 import 'package:tournee_calendriers/ui/screens/street/street_screen.dart';
 
+import '../../support/fakes/fake_pending_sync.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
@@ -32,10 +33,17 @@ Street _street(String id, String name, {int done = 0, int total = 1}) =>
     );
 
 void main() {
-  Future<void> pumpApp(WidgetTester tester, List<Street> streets) async {
+  Future<void> pumpApp(
+    WidgetTester tester,
+    List<Street> streets, {
+    FakePendingSync? pending,
+  }) async {
     await tester.pumpWidget(
       ProviderScope(
-        overrides: fakePhone(streets: FakeStreetRepository(streets)),
+        overrides: fakePhone(
+          streets: FakeStreetRepository(streets),
+          pending: pending,
+        ),
         child: const TourneeApp(showGallery: false),
       ),
     );
@@ -137,6 +145,55 @@ void main() {
       expect(find.byType(StreetScreen), findsOneWidget);
       expect(find.widgetWithText(AppBar, 'Rue Nationale'), findsOneWidget);
       expect(find.byType(BackButton), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'should say how many streets wait to be sent while some do, above the import button',
+    (tester) async {
+      final pending = FakePendingSync();
+      await pumpApp(tester, [
+        _street('nationale', 'Rue Nationale'),
+      ], pending: pending);
+      final line = find.byKey(const Key('start.pendingSync'));
+
+      expect(line, findsNothing);
+
+      pending.unsent(2);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text("Modifications de 2 rues en attente d'envoi"),
+        findsOneWidget,
+      );
+      // A glyph next to the text, and the text read out: never a colour.
+      expect(
+        find.descendant(of: line, matching: find.byIcon(Icons.cloud_outlined)),
+        findsOneWidget,
+      );
+      expect(
+        find.bySemanticsLabel("Modifications de 2 rues en attente d'envoi"),
+        findsOneWidget,
+      );
+      expect(
+        tester.getBottomLeft(line).dy,
+        lessThanOrEqualTo(
+          tester.getTopLeft(find.byKey(const Key('start.import'))).dy,
+        ),
+      );
+
+      pending.unsent(1);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text("Modifications d'une rue en attente d'envoi"),
+        findsOneWidget,
+      );
+
+      pending.unsent(0);
+      await tester.pumpAndSettle();
+
+      expect(line, findsNothing);
     },
   );
 }

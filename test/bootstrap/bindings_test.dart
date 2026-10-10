@@ -383,6 +383,48 @@ void main() {
       },
     );
 
+    test('should have nothing to send while no tournée is open', () async {
+      final container = await leasPhone(noTournee: true);
+
+      final unsent = await container
+          .read(pendingSyncProvider)
+          .watchUnsentStreets()
+          .first;
+
+      expect(unsent, 0);
+      expect(firestoreAsked, 0);
+    });
+
+    test(
+      'should count the unsent streets with the storage of the open tournée',
+      () async {
+        final container = await leasPhone();
+        final streets49 = container.read(streetRepositoryProvider);
+
+        // The same adapter, so one Firestore listener serves both.
+        expect(container.read(pendingSyncProvider), same(streets49));
+        expect(streets49, isA<FirestoreStreetRepository>());
+
+        await openTournee(container, tournee12.id);
+
+        final streets12 = container.read(streetRepositoryProvider);
+        expect(streets12, isNot(same(streets49)));
+        expect(container.read(pendingSyncProvider), same(streets12));
+      },
+    );
+
+    test('should have nothing to send once no tournée is open', () async {
+      final container = await leasPhone();
+      container.read(pendingSyncProvider);
+
+      final store = container.read(myTourneesStoreProvider);
+      await store.save(store.myTournees.forget(tournee49.id));
+
+      final pending = container.read(pendingSyncProvider);
+      expect(pending, isNot(isA<FirestoreStreetRepository>()));
+      expect(await pending.watchUnsentStreets().first, 0);
+    });
+
     test('should show a teammate the marks of another phone', () async {
       final paulsFolder = await Directory.systemTemp.createTemp('paul');
       addTearDown(() => paulsFolder.delete(recursive: true));

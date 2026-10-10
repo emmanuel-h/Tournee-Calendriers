@@ -201,4 +201,9 @@ abstract final class AppSizes {
   /// A deleted street or number of the Corbeille: its name over who
   /// deleted it, and « Restaurer ».
   static const corbeilleRowHeight = 72.0;
+
+  /// The cloud of « ☁ Modifications de 3 rues en attente d'envoi », and
+  /// the gap between it and the text.
+  static const pendingSyncGlyph = 18.0;
+  static const pendingSyncGap = 8.0;
 }

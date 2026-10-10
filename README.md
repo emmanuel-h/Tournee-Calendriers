@@ -30,6 +30,8 @@ Temporary M1 start screen (until the map arrives in M3):
   Answering, removing and leaving work offline; a new code and deleting need the network.
 - Corbeille (from Équipe): the deleted streets and numbers, who deleted them and when, and
   « Restaurer », which brings them back with their marks.
+- « ☁ Modifications de 3 rues en attente d'envoi » above « Importer des rues » while marks
+  made offline in the open tournée have not reached the server yet.
 
 Street screen (« Rue »):
 

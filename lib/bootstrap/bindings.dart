@@ -9,6 +9,7 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:http/http.dart' as http;
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
+import 'package:tournee_calendriers/application/ports/pending_sync.dart';
 import 'package:tournee_calendriers/infrastructure/ban/ban_address_directory.dart';
 import 'package:tournee_calendriers/infrastructure/firebase_auth/anonymous_auth.dart';
 import 'package:tournee_calendriers/infrastructure/firebase_auth/firebase_identity.dart';
@@ -54,7 +55,9 @@ final httpClientProvider = Provider<http.Client>((ref) {
 ///   it. It serves the phone's copy first, so an offline cold start works.
 ///
 /// The streets follow the open tournée: those of its current campaign in
-/// Firestore while one is open, the phone's own (M1) while none is.
+/// Firestore while one is open, the phone's own (M1) while none is. So does
+/// the pending sync: the Firestore streets' own count of unsent streets,
+/// always 0 for the phone's streets.
 /// - [addressDirectory]: replaces the BAN, so the instrumented suite can
 ///   import streets without the network.
 /// - [communeSearch]: replaces geo.api.gouv.fr, for the same reason.
@@ -101,32 +104,46 @@ Future<List<Override>> bindAdapters({
   // The operating system's secure source: a join code drawn from the
   // plain `Random()` could be predicted (PLAN §5.2).
   final random = Random.secure();
+  // The streets of the open tournée's current campaign in Firestore, null
+  // while none is open. A provider of its own, made here because it needs
+  // the database and the identity above, so that the street repository and
+  // the pending sync share one adapter, hence one listener.
+  //
+  // Built again each time another tournée (or none) is opened, which
+  // builds again every use case, and every screen, that watches it. The
+  // old tournée's listener stops (`onDispose`, which Riverpod runs before
+  // building again).
+  final tourneeStreets = Provider<FirestoreStreetRepository?>((ref) {
+    // `select`: only the tournée and its campaign name the streets; the
+    // summary changing otherwise (a new centre name) keeps them.
+    final open = ref.watch(
+      currentTourneeProvider.select(
+        (tournee) => tournee == null ? null : (tournee.id, tournee.campaign),
+      ),
+    );
+    if (open == null) return null;
+    final (tournee, campaign) = open;
+    final streets = FirestoreStreetRepository(
+      db,
+      tournee: tournee,
+      campaign: campaign,
+      identity: identity,
+      clock: clock,
+    );
+    ref.onDispose(() => unawaited(streets.close()));
+    return streets;
+  });
   return [
     phoneStreetRepositoryProvider.overrideWithValue(phoneStreets),
-    // Built again each time another tournée (or none) is opened, which
-    // builds again every use case, and every screen, that watches it. The
-    // old tournée's listener stops (`onDispose`, which Riverpod runs before
-    // building again).
-    streetRepositoryProvider.overrideWith((ref) {
-      // `select`: only the tournée and its campaign name the streets; the
-      // summary changing otherwise (a new centre name) keeps them.
-      final open = ref.watch(
-        currentTourneeProvider.select(
-          (tournee) => tournee == null ? null : (tournee.id, tournee.campaign),
-        ),
-      );
-      if (open == null) return phoneStreets;
-      final (tournee, campaign) = open;
-      final streets = FirestoreStreetRepository(
-        db,
-        tournee: tournee,
-        campaign: campaign,
-        identity: identity,
-        clock: clock,
-      );
-      ref.onDispose(() => unawaited(streets.close()));
-      return streets;
-    }),
+    streetRepositoryProvider.overrideWith(
+      (ref) => ref.watch(tourneeStreets) ?? phoneStreets,
+    ),
+    // The same adapter as the streets: its one listener on the tournée
+    // also tells which streets still have writes waiting. The phone's own
+    // streets are never sent anywhere.
+    pendingSyncProvider.overrideWith(
+      (ref) => ref.watch(tourneeStreets) ?? const _NothingToSend(),
+    ),
     movedStreetsLogProvider.overrideWithValue(movedStreets),
     addressDirectoryProvider.overrideWith(
       (ref) =>
@@ -152,4 +169,13 @@ Future<List<Override>> bindAdapters({
     ),
     randomProvider.overrideWithValue(random),
   ];
+}
+
+/// The pending sync while no tournée is open: the phone's own streets (M1)
+/// stay on the phone, so nothing ever waits to be sent.
+final class _NothingToSend implements PendingSync {
+  const _NothingToSend();
+
+  @override
+  Stream<int> watchUnsentStreets() => Stream.value(0);
 }

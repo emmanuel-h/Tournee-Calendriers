@@ -209,6 +209,10 @@ used on a real area. Mockups: `docs/mockups/Start.dc.html` and `docs/mockups/Imp
   a street whose BAN street (or id) the tournée already has is skipped and counted. The
   phone keeps its copies, only no longer shown while a tournée is open. No network needed to
   start: Firestore queues the new streets.
+- **Pending sync** (T2.9): while a tournée is open and changes made on the phone have not
+  reached the server, a line sits above « Importer des rues », as on Accueil (5.3, Home
+  mockup): a cloud glyph and « Modifications de 3 rues en attente d'envoi » (« … d'une rue … »
+  for one), read out as such. It goes away once all is sent (§7).
 - **Importer des rues**: the commune field searches geo.api.gouv.fr as you type (from two
   characters, after a 300 ms pause; a late answer to older text is ignored); a suggestion shows
   « name (postcode) », « … » after the first of several postcodes. Choosing one closes the
@@ -332,8 +336,8 @@ Both buttons stay disabled until the name is filled in.
 │ Mes rues · 43/62   Équipe 41%│
 │ Rue des Lilas  ▓▓▓▓▓░ 31/42 ›│
 │ Allée des Pins ░░░░░░  0/8  ›│
+│ ☁ Modifications de 3 rues en…│  ← only while offline writes are pending
 │ [   Ajouter des rues   ]     │
-│ ☁ 3 modifications en attente │  ← only while offline writes are pending
 └──────────────────────────────┘
 ```
 
@@ -1323,6 +1327,12 @@ Streets on Firestore fixed in T2.8 (`lib/bootstrap/bindings.dart`,
   while its stream reloads (`isLoading`) rather than showing the old tournée's items. A
   stream that fails (the member may no longer read the tournée) shows no street, or the
   street as gone.
+- **Pending sync** (T2.9): `pendingSyncProvider` follows the same rule through one private
+  provider of `bindAdapters` (the open tournée's `FirestoreStreetRepository`, or null): the
+  very adapter bound as the street repository, so one listener serves both; while no
+  tournée is open, a stand-in that always says 0. `ObservePendingSync` hands the count to
+  `PendingSyncNotifier` (`AllSent` / `ChangesWaiting(streets)`; a failed stream shows
+  nothing).
 - **`Street.restampedBy(member)`** (also on `House`, `Building`, `Dwelling`, `RemovedHouse`,
   `ChangeStamp`): every stamp — each house's and door's last change, each removed number's
   removal, the street's deletion — made by `member` at the time it had; nothing else
@@ -1577,9 +1587,12 @@ no network, including a cold start, and loses nothing.
 | Map | MapLibre offline region covering the tournée's bounding box + 300 m margin, zooms 12–17 (≈ 10 MB, measured in the T0.4 spike: OpenFreeMap tiles stop at z14, fonts are most of it). Street lines and house dots are drawn from the cached street documents, not from the network |
 | New streets in the tournée added by teammates | Arrive with the next sync; their map tiles are already covered if they are inside the downloaded area, otherwise the banner asks to update the download |
 
-- The pending-writes indicator ("☁ 3 modifications en attente") comes from the snapshot
-  metadata `hasPendingWrites` (port `PendingSync`, T2.3): it counts the **streets** with writes
-  waiting, since Firestore tells it per document.
+- The pending-writes indicator (« ☁ Modifications de 3 rues en attente d'envoi », « … d'une
+  rue … » for one) comes from the snapshot metadata `hasPendingWrites` (port `PendingSync`,
+  T2.3): it counts the **streets** with writes waiting, since Firestore tells it per document,
+  and words it so (not « 3 modifications »). The Firestore street adapter of the open tournée
+  is the `PendingSync` too (one listener for both); with no tournée open the phone's streets
+  are never sent, so nothing is pending. Shown only while the count is above 0.
 - The banner and the Paramètres section show the download state; "Mettre à jour" re-runs both
   parts (streets and tiles).
 - What needs the network: creating / joining a tournée, the download itself, and **adding a

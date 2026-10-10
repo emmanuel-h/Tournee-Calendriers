@@ -33,6 +33,7 @@ import '../support/fakes/fake_commune_search.dart';
 import '../support/fakes/fake_member_account.dart';
 import '../support/fakes/fake_moved_streets_log.dart';
 import '../support/fakes/fake_my_tournees_store.dart';
+import '../support/fakes/fake_pending_sync.dart';
 import '../support/fakes/fake_phone_settings.dart';
 import '../support/fakes/fake_ports.dart';
 import '../support/fakes/fake_street_repository.dart';
@@ -55,6 +56,7 @@ void main() {
   late FakePhoneSettings settings;
   late FakeTourneeDirectory tourneeDirectory;
   late FakeTourneeRepository tournees;
+  late FakePendingSync pending;
   late ProviderContainer container;
 
   /// Every port bound to the fakes, the member on the phone being
@@ -63,6 +65,7 @@ void main() {
     streetRepositoryProvider.overrideWithValue(streets),
     phoneStreetRepositoryProvider.overrideWithValue(phoneStreets),
     movedStreetsLogProvider.overrideWithValue(movedStreets),
+    pendingSyncProvider.overrideWithValue(pending),
     addressDirectoryProvider.overrideWithValue(directory),
     communeSearchProvider.overrideWithValue(communes),
     clockProvider.overrideWithValue(FakeClock(twoPm)),
@@ -125,6 +128,7 @@ void main() {
     settings = FakePhoneSettings(memberName: nameOf('Léa'));
     tourneeDirectory = FakeTourneeDirectory();
     tournees = FakeTourneeRepository([team()]);
+    pending = FakePendingSync(2);
     // A ProviderContainer is what a ProviderScope holds, without widgets:
     // the overrides bind the ports to the fakes.
     container = ProviderContainer(overrides: overridesAs(lea));
@@ -148,6 +152,7 @@ void main() {
       'TourneeRepository': tourneeRepositoryProvider,
       'phone StreetRepository': phoneStreetRepositoryProvider,
       'MovedStreetsLog': movedStreetsLogProvider,
+      'PendingSync': pendingSyncProvider,
       'Random': randomProvider,
     };
     ports.forEach((name, port) {
@@ -374,6 +379,12 @@ void main() {
       final items = await container.read(observeCorbeilleProvider)().first;
 
       expect((items.single as RemovedNumber).number, n('7'));
+    });
+
+    test('should observe what the bound pending sync has not sent', () async {
+      final streets = await container.read(observePendingSyncProvider)().first;
+
+      expect(streets, 2);
     });
 
     test('should observe the team in the bound repository', () async {

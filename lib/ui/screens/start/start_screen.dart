@@ -11,6 +11,7 @@ import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/screens/my_tournees/my_tournees_sheet.dart';
 import 'package:tournee_calendriers/ui/screens/my_tournees/tournee_title_button.dart';
 import 'package:tournee_calendriers/ui/screens/start/move_streets_card.dart';
+import 'package:tournee_calendriers/ui/screens/start/pending_sync_line.dart';
 import 'package:tournee_calendriers/ui/screens/start/street_row.dart';
 import 'package:tournee_calendriers/ui/screens/team/team_button.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
@@ -19,7 +20,8 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
 /// « Mes rues », the temporary start screen of M1 (PLAN §5.0,
 /// `docs/mockups/Start.dc.html`): the streets on the phone with their
-/// progress, a filter, and « Importer des rues ». Works offline.
+/// progress, a filter, and « Importer des rues ». Works offline; while
+/// changes made offline wait to be sent, a line above the button says so.
 ///
 /// Its top bar is Accueil's (PLAN §5.3, Home mockup): the open tournée
 /// (« Tournée 49 · 2026 ▾ » over its centre) opens « Mes tournées », 👥
@@ -89,6 +91,9 @@ final class StartScreen extends ConsumerWidget {
                   ? const _EmptyState()
                   : _StreetList(state: state),
             ),
+            // « ☁ Modifications de 3 rues en attente d'envoi », only while
+            // some wait to be sent.
+            const PendingSyncLine(),
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSizes.gutter,

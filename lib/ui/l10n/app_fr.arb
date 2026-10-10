@@ -611,6 +611,11 @@
   "@startEmptyTitle": { "description": "Start screen, first launch: no street imported yet." },
   "startEmptyBody": "Importez les rues d'une commune pour commencer.",
   "@startEmptyBody": { "description": "Start screen, first launch: what to do." },
+  "pendingSyncLine": "{count, plural, =1{Modifications d'une rue en attente d'envoi} other{Modifications de {count} rues en attente d'envoi}}",
+  "@pendingSyncLine": {
+    "description": "Line above « Importer des rues » while changes made on this phone wait to be sent (PLAN §5.3, §7), after a cloud glyph. Firestore tells only which streets have writes waiting, so it counts streets, not changes. Never shown for 0.",
+    "placeholders": { "count": { "type": "int", "example": "3" } }
+  },
   "filterNoMatch": "Aucune rue ne correspond à « {filter} ».",
   "@filterNoMatch": {
     "description": "Shown when the street filter keeps no street.",

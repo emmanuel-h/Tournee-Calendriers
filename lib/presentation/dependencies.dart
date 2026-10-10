@@ -21,6 +21,7 @@ import 'package:tournee_calendriers/application/ports/identity_provider.dart';
 import 'package:tournee_calendriers/application/ports/member_account.dart';
 import 'package:tournee_calendriers/application/ports/moved_streets_log.dart';
 import 'package:tournee_calendriers/application/ports/my_tournees_store.dart';
+import 'package:tournee_calendriers/application/ports/pending_sync.dart';
 import 'package:tournee_calendriers/application/ports/phone_settings.dart';
 import 'package:tournee_calendriers/application/ports/street_view_preferences.dart';
 import 'package:tournee_calendriers/application/ports/tournee_directory.dart';
@@ -35,6 +36,7 @@ import 'package:tournee_calendriers/application/use_cases/mark_house.dart';
 import 'package:tournee_calendriers/application/use_cases/move_streets_into_tournee.dart';
 import 'package:tournee_calendriers/application/use_cases/my_tournees.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_corbeille.dart';
+import 'package:tournee_calendriers/application/use_cases/observe_pending_sync.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_street.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_streets.dart';
 import 'package:tournee_calendriers/application/use_cases/phone_settings.dart';
@@ -60,6 +62,14 @@ final streetRepositoryProvider = Provider<StreetRepository>(
 /// « Les ajouter à la tournée » moves (PLAN §5.0).
 final phoneStreetRepositoryProvider = Provider<StreetRepository>(
   (ref) => _unbound('phone StreetRepository'),
+);
+
+/// What the open tournée's streets still have to send to the server. The
+/// composition root binds it to the same adapter as
+/// [streetRepositoryProvider], so one listener serves both; with no
+/// tournée open there is nothing to send.
+final pendingSyncProvider = Provider<PendingSync>(
+  (ref) => _unbound('PendingSync'),
 );
 final addressDirectoryProvider = Provider<AddressDirectory>(
   (ref) => _unbound('AddressDirectory'),
@@ -211,6 +221,9 @@ final chooseThemeProvider = Provider(
 );
 final observeCorbeilleProvider = Provider(
   (ref) => ObserveCorbeille(ref.watch(streetRepositoryProvider)),
+);
+final observePendingSyncProvider = Provider(
+  (ref) => ObservePendingSync(ref.watch(pendingSyncProvider)),
 );
 final observeTeamProvider = Provider(
   (ref) => ObserveTeam(ref.watch(tourneeRepositoryProvider)),
