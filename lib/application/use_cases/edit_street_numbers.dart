@@ -62,8 +62,15 @@ final class DeleteStreet extends StreetEdit {
   const DeleteStreet();
 }
 
+/// « Restaurer » a street from the Corbeille (PLAN §5.11): it is shown
+/// again with its houses and marks.
+final class RestoreStreet extends StreetEdit {
+  const RestoreStreet();
+}
+
 /// The edit mode of a street: numbers added, removed, restored or renamed,
-/// the street renamed or deleted. Needs no network.
+/// the street renamed, deleted or restored (from the Corbeille). Needs no
+/// network.
 ///
 /// Returns the change, which the screen offers to undo (`UndoLastChange`)
 /// except for added numbers (remove them with ✕).
@@ -97,10 +104,11 @@ final class EditStreetNumbers {
           by: by,
           at: at,
         ),
-        // These two cannot be refused: they return a plain (street, change)
-        // record, wrapped in `Ok` to match the others.
+        // These three cannot be refused: they return a plain (street,
+        // change) record, wrapped in `Ok` to match the others.
         RenameStreet(:final name) => Ok(street.renameStreet(name)),
         DeleteStreet() => Ok(street.delete(by: by, at: at)),
+        RestoreStreet() => Ok(street.restore()),
       },
     );
   }

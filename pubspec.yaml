@@ -39,6 +39,11 @@ dependencies:
   # Where the phone keeps the streets until Firestore replaces that storage
   # (M1, T1.6); only in infrastructure/ and bootstrap/.
   path_provider: 2.1.6
+  # Draws the join code as a QR code in Équipe (PLAN §5.2, §5.8, §10.2).
+  qr_flutter: 4.1.0
+  # The phone's share sheet for « Partager » the join code (PLAN §10.2);
+  # only in ui/.
+  share_plus: 13.3.1
 
 dev_dependencies:
   # An in-memory Firestore for the adapters' tests (PLAN §11): no emulator,

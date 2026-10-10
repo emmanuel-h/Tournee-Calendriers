@@ -23,7 +23,7 @@
   "screenEditStreet": "Modifier la rue",
   "@screenEditStreet": { "description": "Title of the street edit mode (PLAN §5.5)." },
   "screenTeam": "Équipe",
-  "@screenTeam": { "description": "Placeholder title of the team screen (PLAN §5.8)." },
+  "@screenTeam": { "description": "Title of the team screen (PLAN §5.8) before its tournée is read." },
   "screenSettings": "Paramètres",
   "@screenSettings": { "description": "Title of the settings screen (PLAN §5.9)." },
   "screenNewCampaign": "Nouvelle campagne",
@@ -901,5 +901,237 @@
   "privacyDeletionTitle": "Suppression",
   "@privacyDeletionTitle": { "description": "Privacy page: section about deleting the data." },
   "privacyDeletionBody": "Supprimer la tournée efface toutes ses données. À chaque nouvelle campagne, la campagne d'avant la précédente est effacée.",
-  "@privacyDeletionBody": { "description": "Privacy page: how data is deleted (PLAN §8.3)." }
+  "@privacyDeletionBody": { "description": "Privacy page: how data is deleted (PLAN §8.3)." },
+  "homeTeam": "Équipe",
+  "@homeTeam": { "description": "Tooltip and screen-reader name of the 👥 button of the start screen (PLAN §5.3)." },
+  "homeTeamWaiting": "{count, plural, =1{Équipe, 1 demande en attente} other{Équipe, {count} demandes en attente}}",
+  "@homeTeamWaiting": {
+    "description": "Screen-reader name of the 👥 button when join requests wait (the dot, PLAN §5.3).",
+    "placeholders": {
+      "count": { "type": "int", "example": "1" }
+    }
+  },
+  "teamTitle": "Tournée {number}",
+  "@teamTitle": {
+    "description": "Title of Équipe (Team mockup).",
+    "placeholders": {
+      "number": { "type": "String", "example": "49" }
+    }
+  },
+  "teamSubtitle": "{centre} · campagne {campaign}",
+  "@teamSubtitle": {
+    "description": "Line under the title of Équipe.",
+    "placeholders": {
+      "centre": { "type": "String", "example": "CS Villefranche" },
+      "campaign": { "type": "String", "example": "2026" }
+    }
+  },
+  "teamCodeLabel": "Code",
+  "@teamCodeLabel": { "description": "Label above the join code in Équipe." },
+  "teamQrSemantics": "QR code de la tournée, code {code}",
+  "@teamQrSemantics": {
+    "description": "Screen-reader name of the QR code of Équipe.",
+    "placeholders": {
+      "code": { "type": "String", "example": "K7P-2QX" }
+    }
+  },
+  "teamShare": "Partager",
+  "@teamShare": { "description": "Button of Équipe that opens the phone's share sheet with the join code." },
+  "teamShareText": "Tournée {number} · {centre}\nRejoignez-la dans l'app Tournée Calendriers avec le code {code}.",
+  "@teamShareText": {
+    "description": "Text shared by « Partager » in Équipe.",
+    "placeholders": {
+      "number": { "type": "String", "example": "49" },
+      "centre": { "type": "String", "example": "CS Villefranche" },
+      "code": { "type": "String", "example": "K7P-2QX" }
+    }
+  },
+  "teamNewCode": "Nouveau code",
+  "@teamNewCode": { "description": "Creator-only button of Équipe: replaces the join code (PLAN §5.8)." },
+  "teamWaitingHeader": "En attente ({count})",
+  "@teamWaitingHeader": {
+    "description": "Header of the join requests in Équipe.",
+    "placeholders": {
+      "count": { "type": "int", "example": "1" }
+    }
+  },
+  "teamRequestAsked": "a demandé à rejoindre · {when}",
+  "@teamRequestAsked": {
+    "description": "Line under a request's name in Équipe.",
+    "placeholders": {
+      "when": { "type": "String", "example": "il y a 2 min" }
+    }
+  },
+  "teamAccept": "Accepter",
+  "@teamAccept": { "description": "Button of a join request in Équipe." },
+  "teamAcceptSemantics": "Accepter {name}",
+  "@teamAcceptSemantics": {
+    "description": "Screen-reader name of « Accepter » on the request of {name}.",
+    "placeholders": {
+      "name": { "type": "String", "example": "Julie" }
+    }
+  },
+  "teamRefuse": "Refuser",
+  "@teamRefuse": { "description": "Button of a join request in Équipe." },
+  "teamRefuseSemantics": "Refuser {name}",
+  "@teamRefuseSemantics": {
+    "description": "Screen-reader name of « Refuser » on the request of {name}.",
+    "placeholders": {
+      "name": { "type": "String", "example": "Julie" }
+    }
+  },
+  "teamMembersHeader": "Membres ({count})",
+  "@teamMembersHeader": {
+    "description": "Header of the members in Équipe.",
+    "placeholders": {
+      "count": { "type": "int", "example": "5" }
+    }
+  },
+  "teamMemberYou": "{name} (vous)",
+  "@teamMemberYou": {
+    "description": "The member using the phone in Équipe.",
+    "placeholders": {
+      "name": { "type": "String", "example": "Manu" }
+    }
+  },
+  "teamMemberCreator": "{name} · créateur",
+  "@teamMemberCreator": {
+    "description": "The creator in Équipe ({name} may already read « Manu (vous) »).",
+    "placeholders": {
+      "name": { "type": "String", "example": "Manu (vous)" }
+    }
+  },
+  "teamMemberOptions": "Options pour {name}",
+  "@teamMemberOptions": {
+    "description": "Screen-reader name of the ⋮ of a member (creator only).",
+    "placeholders": {
+      "name": { "type": "String", "example": "Léa" }
+    }
+  },
+  "teamRemove": "Retirer",
+  "@teamRemove": { "description": "Item of a member's ⋮ menu, and the confirm button." },
+  "teamRemoveTitle": "Retirer {name} ?",
+  "@teamRemoveTitle": {
+    "description": "Title of the confirmation before removing a member.",
+    "placeholders": {
+      "name": { "type": "String", "example": "Léa" }
+    }
+  },
+  "teamRemoveBody": "{name} n'aura plus accès à la tournée. Ses marques restent dans les rues.",
+  "@teamRemoveBody": {
+    "description": "Body of the confirmation before removing a member (PLAN §5.8).",
+    "placeholders": {
+      "name": { "type": "String", "example": "Léa" }
+    }
+  },
+  "teamCorbeille": "{count, plural, =0{Corbeille · vide} =1{Corbeille · 1 élément} other{Corbeille · {count} éléments}}",
+  "@teamCorbeille": {
+    "description": "Row of Équipe that opens the Corbeille (PLAN §5.11).",
+    "placeholders": {
+      "count": { "type": "int", "example": "2" }
+    }
+  },
+  "teamLeave": "Quitter la tournée",
+  "@teamLeave": { "description": "Button of Équipe for every member but the creator." },
+  "teamLeaveTitle": "Quitter la tournée {number} ?",
+  "@teamLeaveTitle": {
+    "description": "Title of the confirmation before leaving.",
+    "placeholders": {
+      "number": { "type": "String", "example": "49" }
+    }
+  },
+  "teamLeaveBody": "Pour revenir, il faudra le code et l'accord d'un membre.",
+  "@teamLeaveBody": { "description": "Body of the confirmation before leaving." },
+  "teamLeaveConfirm": "Quitter",
+  "@teamLeaveConfirm": { "description": "Confirm button of the confirmation before leaving." },
+  "teamDelete": "Supprimer la tournée",
+  "@teamDelete": { "description": "Creator-only button of Équipe." },
+  "teamDeleteTitle": "Supprimer la tournée {number} ?",
+  "@teamDeleteTitle": {
+    "description": "Title of the confirmation before deleting the tournée.",
+    "placeholders": {
+      "number": { "type": "String", "example": "49" }
+    }
+  },
+  "teamDeleteBody": "Les rues, les statuts et les membres seront supprimés pour toute l'équipe. C'est définitif.",
+  "@teamDeleteBody": { "description": "Body of the confirmation before deleting the tournée (PLAN §8.3)." },
+  "teamDeleteConfirm": "Supprimer",
+  "@teamDeleteConfirm": { "description": "Confirm button of the confirmation before deleting the tournée." },
+  "teamNoTournee": "Aucune tournée ouverte.",
+  "@teamNoTournee": { "description": "Équipe when no tournée is open." },
+  "teamUnavailable": "L'équipe ne peut pas être affichée : la tournée n'est pas sur ce téléphone, ou vous n'en faites plus partie.",
+  "@teamUnavailable": { "description": "Équipe when the tournée cannot be read (removed, deleted, never read offline)." },
+  "teamChanged": "L'équipe a changé entre-temps.",
+  "@teamChanged": { "description": "Snackbar of Équipe when a command was refused because a teammate acted first." },
+  "teamOffline": "Pas de réseau. Réessayez une fois connecté.",
+  "@teamOffline": { "description": "Snackbar of Équipe when a new code or deleting the tournée needs the network." },
+  "recentJustNow": "à l'instant",
+  "@recentJustNow": { "description": "Less than a minute ago." },
+  "recentMinutes": "il y a {count} min",
+  "@recentMinutes": {
+    "description": "Minutes ago, 1 to 59.",
+    "placeholders": {
+      "count": { "type": "int", "example": "2" }
+    }
+  },
+  "recentHours": "il y a {count} h",
+  "@recentHours": {
+    "description": "Hours ago, the same day.",
+    "placeholders": {
+      "count": { "type": "int", "example": "3" }
+    }
+  },
+  "recentYesterday": "hier",
+  "@recentYesterday": { "description": "The day before today." },
+  "recentDay": "{day}",
+  "@recentDay": {
+    "description": "A day before yesterday: « 3 oct. ».",
+    "placeholders": {
+      "day": { "type": "DateTime", "format": "MMMd", "example": "3 oct." }
+    }
+  },
+  "corbeilleIntro": "Les rues et numéros supprimés sont gardés 30 jours avec leurs statuts, puis supprimés définitivement.",
+  "@corbeilleIntro": { "description": "Text under the title of the Corbeille (Trash mockup)." },
+  "corbeilleEmpty": "La corbeille est vide.",
+  "@corbeilleEmpty": { "description": "The Corbeille with nothing in it." },
+  "corbeilleNumberTitle": "{number} {street}",
+  "@corbeilleNumberTitle": {
+    "description": "A removed number in the Corbeille: « 14ter Rue des Lilas ».",
+    "placeholders": {
+      "number": { "type": "String", "example": "14ter" },
+      "street": { "type": "String", "example": "Rue des Lilas" }
+    }
+  },
+  "corbeilleStreetNumbers": "{count, plural, =0{aucun numéro} =1{1 numéro} other{{count} numéros}}",
+  "@corbeilleStreetNumbers": {
+    "description": "The numbers of a deleted street in the Corbeille.",
+    "placeholders": {
+      "count": { "type": "int", "example": "22" }
+    }
+  },
+  "corbeilleStreetDeletedBy": "supprimée par {name}",
+  "@corbeilleStreetDeletedBy": {
+    "description": "Who deleted a street (la rue), in the Corbeille.",
+    "placeholders": {
+      "name": { "type": "String", "example": "Paul" }
+    }
+  },
+  "corbeilleNumberDeletedBy": "supprimé par {name}",
+  "@corbeilleNumberDeletedBy": {
+    "description": "Who removed a number (le numéro), in the Corbeille.",
+    "placeholders": {
+      "name": { "type": "String", "example": "Léa" }
+    }
+  },
+  "corbeilleSomeone": "un membre",
+  "@corbeilleSomeone": { "description": "Stands for a member no longer in the team, in « supprimée par … »." },
+  "corbeilleRestore": "Restaurer",
+  "@corbeilleRestore": { "description": "Button of an item of the Corbeille." },
+  "corbeilleRestoreSemantics": "Restaurer {item}",
+  "@corbeilleRestoreSemantics": {
+    "description": "Screen-reader name of « Restaurer » on {item}.",
+    "placeholders": {
+      "item": { "type": "String", "example": "14ter Rue des Lilas" }
+    }
+  }
 }

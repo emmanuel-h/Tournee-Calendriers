@@ -24,6 +24,7 @@ import 'package:tournee_calendriers/domain/street/street_name.dart';
 import 'package:tournee_calendriers/main.dart' as app;
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/ui/app.dart';
+import 'package:tournee_calendriers/ui/screens/team/team_screen.dart';
 
 import '../test/support/fakes/fake_address_directory.dart';
 import '../test/support/fakes/fake_commune_search.dart';
@@ -550,6 +551,16 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Tournée 49 · 2026'), findsOneWidget);
       expect(find.text('CS Villefranche'), findsOneWidget);
+
+      // 👥 opens Équipe, which follows the tournée in Firestore (the first
+      // use of the real database, with its offline settings). The server
+      // knows no such tournée: Équipe says it cannot show it, or is still
+      // waiting; either way nothing breaks.
+      await tester.tap(find.byKey(const Key('home.team')));
+      await tester.pumpAndSettle();
+      expect(find.byType(TeamScreen), findsOneWidget);
+      await tester.tap(find.byTooltip('Retour'));
+      await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const Key('home.tournee')));
       await tester.pumpAndSettle();

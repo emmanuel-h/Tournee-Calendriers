@@ -118,6 +118,16 @@ void main() {
     expect(stored().deletion, leaAtTwo);
   });
 
+  test('should bring a deleted street back from the Corbeille', () async {
+    await editStreet(lilasId, const DeleteStreet());
+
+    final change = valueOf(await editStreet(lilasId, const RestoreStreet()));
+
+    expect(change, StreetRestored(streetId: lilasId));
+    expect(stored().deletion, isNull);
+    expect(labels(stored()), ['5', '7', '8']);
+  });
+
   test('should fail when the street refuses the edit', () async {
     final failure = failureOf(
       await editStreet(lilasId, RenameNumber(n('5'), n('7'))),

@@ -15,6 +15,15 @@ enum AddTourneeFailure {
   noNetwork,
 }
 
+/// Why a change to a stored tournée that needs the server was not made
+/// (« Nouveau code », « Supprimer la tournée », PLAN §5.8).
+enum TourneeWriteFailure {
+  /// The phone could not reach the server. A new code must be checked
+  /// against every other tournée's, and deleting reads what the tournée
+  /// holds from the server: neither can wait in a queue (PLAN §7).
+  noNetwork,
+}
+
 /// Where the tournées the member belongs to are kept: Firestore from M2
 /// (`tournees/{id}` and its `members`, PLAN §6.2). A repository port: the
 /// domain owns this interface, an adapter in `infrastructure/` implements
@@ -29,7 +38,7 @@ enum AddTourneeFailure {
 /// team screen opens offline; accepting, refusing, removing and leaving are
 /// applied on the phone at once and sent when the network is back. A
 /// storage failure the user cannot act on is thrown as an exception;
-/// [add] returns the failures they can act on.
+/// [add], [save] and [delete] return the failures they can act on.
 abstract interface class TourneeRepository {
   /// The tournée [id] as it is now; null when there is none, or when this
   /// member may no longer read it (removed, left).
@@ -50,14 +59,31 @@ abstract interface class TourneeRepository {
   /// (PLAN §6.2), and with [AddTourneeFailure.noNetwork] offline.
   Future<Result<Tournee, AddTourneeFailure>> add(Tournee tournee);
 
-  /// Stores [change], which turned the stored tournée into [tournee].
+  /// Stores [change], which turned the stored tournée into [tournee], and
+  /// returns the tournée as stored.
   ///
   /// Both are given so the adapter writes only what [change] names (one
   /// member's document, the join code) and still finds what it needs
   /// around it (the preview fields of a new join code).
-  Future<void> save(Tournee tournee, TourneeChange change);
+  ///
+  /// A member accepted, refused, removed or leaving is kept on the phone at
+  /// once and sent when the network is back: it never fails. A new join
+  /// code needs the server, which checks no other tournée holds it: one
+  /// that does is replaced by another (the stored tournée then has that
+  /// one), and offline it fails with [TourneeWriteFailure.noNetwork].
+  Future<Result<Tournee, TourneeWriteFailure>> save(
+    Tournee tournee,
+    TourneeChange change,
+  );
 
   /// Deletes the tournée of [deletion] and everything in it: members,
-  /// campaigns, streets, its join code and its number reservation.
-  Future<void> delete(TourneeDeleted deletion);
+  /// campaigns, streets, its join code and its number reservation. Returns
+  /// [deletion] once done.
+  ///
+  /// Needs the server, which alone knows everything the tournée holds:
+  /// offline it deletes nothing and fails with
+  /// [TourneeWriteFailure.noNetwork].
+  Future<Result<TourneeDeleted, TourneeWriteFailure>> delete(
+    TourneeDeleted deletion,
+  );
 }

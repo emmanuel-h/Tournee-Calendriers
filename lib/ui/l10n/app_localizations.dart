@@ -148,7 +148,7 @@ abstract class AppLocalizations {
   /// **'Modifier la rue'**
   String get screenEditStreet;
 
-  /// Placeholder title of the team screen (PLAN §5.8).
+  /// Title of the team screen (PLAN §5.8) before its tournée is read.
   ///
   /// In fr, this message translates to:
   /// **'Équipe'**
@@ -1610,6 +1610,300 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Supprimer la tournée efface toutes ses données. À chaque nouvelle campagne, la campagne d\'avant la précédente est effacée.'**
   String get privacyDeletionBody;
+
+  /// Tooltip and screen-reader name of the 👥 button of the start screen (PLAN §5.3).
+  ///
+  /// In fr, this message translates to:
+  /// **'Équipe'**
+  String get homeTeam;
+
+  /// Screen-reader name of the 👥 button when join requests wait (the dot, PLAN §5.3).
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, =1{Équipe, 1 demande en attente} other{Équipe, {count} demandes en attente}}'**
+  String homeTeamWaiting(int count);
+
+  /// Title of Équipe (Team mockup).
+  ///
+  /// In fr, this message translates to:
+  /// **'Tournée {number}'**
+  String teamTitle(String number);
+
+  /// Line under the title of Équipe.
+  ///
+  /// In fr, this message translates to:
+  /// **'{centre} · campagne {campaign}'**
+  String teamSubtitle(String centre, String campaign);
+
+  /// Label above the join code in Équipe.
+  ///
+  /// In fr, this message translates to:
+  /// **'Code'**
+  String get teamCodeLabel;
+
+  /// Screen-reader name of the QR code of Équipe.
+  ///
+  /// In fr, this message translates to:
+  /// **'QR code de la tournée, code {code}'**
+  String teamQrSemantics(String code);
+
+  /// Button of Équipe that opens the phone's share sheet with the join code.
+  ///
+  /// In fr, this message translates to:
+  /// **'Partager'**
+  String get teamShare;
+
+  /// Text shared by « Partager » in Équipe.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tournée {number} · {centre}\nRejoignez-la dans l\'app Tournée Calendriers avec le code {code}.'**
+  String teamShareText(String number, String centre, String code);
+
+  /// Creator-only button of Équipe: replaces the join code (PLAN §5.8).
+  ///
+  /// In fr, this message translates to:
+  /// **'Nouveau code'**
+  String get teamNewCode;
+
+  /// Header of the join requests in Équipe.
+  ///
+  /// In fr, this message translates to:
+  /// **'En attente ({count})'**
+  String teamWaitingHeader(int count);
+
+  /// Line under a request's name in Équipe.
+  ///
+  /// In fr, this message translates to:
+  /// **'a demandé à rejoindre · {when}'**
+  String teamRequestAsked(String when);
+
+  /// Button of a join request in Équipe.
+  ///
+  /// In fr, this message translates to:
+  /// **'Accepter'**
+  String get teamAccept;
+
+  /// Screen-reader name of « Accepter » on the request of {name}.
+  ///
+  /// In fr, this message translates to:
+  /// **'Accepter {name}'**
+  String teamAcceptSemantics(String name);
+
+  /// Button of a join request in Équipe.
+  ///
+  /// In fr, this message translates to:
+  /// **'Refuser'**
+  String get teamRefuse;
+
+  /// Screen-reader name of « Refuser » on the request of {name}.
+  ///
+  /// In fr, this message translates to:
+  /// **'Refuser {name}'**
+  String teamRefuseSemantics(String name);
+
+  /// Header of the members in Équipe.
+  ///
+  /// In fr, this message translates to:
+  /// **'Membres ({count})'**
+  String teamMembersHeader(int count);
+
+  /// The member using the phone in Équipe.
+  ///
+  /// In fr, this message translates to:
+  /// **'{name} (vous)'**
+  String teamMemberYou(String name);
+
+  /// The creator in Équipe ({name} may already read « Manu (vous) »).
+  ///
+  /// In fr, this message translates to:
+  /// **'{name} · créateur'**
+  String teamMemberCreator(String name);
+
+  /// Screen-reader name of the ⋮ of a member (creator only).
+  ///
+  /// In fr, this message translates to:
+  /// **'Options pour {name}'**
+  String teamMemberOptions(String name);
+
+  /// Item of a member's ⋮ menu, and the confirm button.
+  ///
+  /// In fr, this message translates to:
+  /// **'Retirer'**
+  String get teamRemove;
+
+  /// Title of the confirmation before removing a member.
+  ///
+  /// In fr, this message translates to:
+  /// **'Retirer {name} ?'**
+  String teamRemoveTitle(String name);
+
+  /// Body of the confirmation before removing a member (PLAN §5.8).
+  ///
+  /// In fr, this message translates to:
+  /// **'{name} n\'aura plus accès à la tournée. Ses marques restent dans les rues.'**
+  String teamRemoveBody(String name);
+
+  /// Row of Équipe that opens the Corbeille (PLAN §5.11).
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, =0{Corbeille · vide} =1{Corbeille · 1 élément} other{Corbeille · {count} éléments}}'**
+  String teamCorbeille(int count);
+
+  /// Button of Équipe for every member but the creator.
+  ///
+  /// In fr, this message translates to:
+  /// **'Quitter la tournée'**
+  String get teamLeave;
+
+  /// Title of the confirmation before leaving.
+  ///
+  /// In fr, this message translates to:
+  /// **'Quitter la tournée {number} ?'**
+  String teamLeaveTitle(String number);
+
+  /// Body of the confirmation before leaving.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pour revenir, il faudra le code et l\'accord d\'un membre.'**
+  String get teamLeaveBody;
+
+  /// Confirm button of the confirmation before leaving.
+  ///
+  /// In fr, this message translates to:
+  /// **'Quitter'**
+  String get teamLeaveConfirm;
+
+  /// Creator-only button of Équipe.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer la tournée'**
+  String get teamDelete;
+
+  /// Title of the confirmation before deleting the tournée.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer la tournée {number} ?'**
+  String teamDeleteTitle(String number);
+
+  /// Body of the confirmation before deleting the tournée (PLAN §8.3).
+  ///
+  /// In fr, this message translates to:
+  /// **'Les rues, les statuts et les membres seront supprimés pour toute l\'équipe. C\'est définitif.'**
+  String get teamDeleteBody;
+
+  /// Confirm button of the confirmation before deleting the tournée.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer'**
+  String get teamDeleteConfirm;
+
+  /// Équipe when no tournée is open.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune tournée ouverte.'**
+  String get teamNoTournee;
+
+  /// Équipe when the tournée cannot be read (removed, deleted, never read offline).
+  ///
+  /// In fr, this message translates to:
+  /// **'L\'équipe ne peut pas être affichée : la tournée n\'est pas sur ce téléphone, ou vous n\'en faites plus partie.'**
+  String get teamUnavailable;
+
+  /// Snackbar of Équipe when a command was refused because a teammate acted first.
+  ///
+  /// In fr, this message translates to:
+  /// **'L\'équipe a changé entre-temps.'**
+  String get teamChanged;
+
+  /// Snackbar of Équipe when a new code or deleting the tournée needs the network.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pas de réseau. Réessayez une fois connecté.'**
+  String get teamOffline;
+
+  /// Less than a minute ago.
+  ///
+  /// In fr, this message translates to:
+  /// **'à l\'instant'**
+  String get recentJustNow;
+
+  /// Minutes ago, 1 to 59.
+  ///
+  /// In fr, this message translates to:
+  /// **'il y a {count} min'**
+  String recentMinutes(int count);
+
+  /// Hours ago, the same day.
+  ///
+  /// In fr, this message translates to:
+  /// **'il y a {count} h'**
+  String recentHours(int count);
+
+  /// The day before today.
+  ///
+  /// In fr, this message translates to:
+  /// **'hier'**
+  String get recentYesterday;
+
+  /// A day before yesterday: « 3 oct. ».
+  ///
+  /// In fr, this message translates to:
+  /// **'{day}'**
+  String recentDay(DateTime day);
+
+  /// Text under the title of the Corbeille (Trash mockup).
+  ///
+  /// In fr, this message translates to:
+  /// **'Les rues et numéros supprimés sont gardés 30 jours avec leurs statuts, puis supprimés définitivement.'**
+  String get corbeilleIntro;
+
+  /// The Corbeille with nothing in it.
+  ///
+  /// In fr, this message translates to:
+  /// **'La corbeille est vide.'**
+  String get corbeilleEmpty;
+
+  /// A removed number in the Corbeille: « 14ter Rue des Lilas ».
+  ///
+  /// In fr, this message translates to:
+  /// **'{number} {street}'**
+  String corbeilleNumberTitle(String number, String street);
+
+  /// The numbers of a deleted street in the Corbeille.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, =0{aucun numéro} =1{1 numéro} other{{count} numéros}}'**
+  String corbeilleStreetNumbers(int count);
+
+  /// Who deleted a street (la rue), in the Corbeille.
+  ///
+  /// In fr, this message translates to:
+  /// **'supprimée par {name}'**
+  String corbeilleStreetDeletedBy(String name);
+
+  /// Who removed a number (le numéro), in the Corbeille.
+  ///
+  /// In fr, this message translates to:
+  /// **'supprimé par {name}'**
+  String corbeilleNumberDeletedBy(String name);
+
+  /// Stands for a member no longer in the team, in « supprimée par … ».
+  ///
+  /// In fr, this message translates to:
+  /// **'un membre'**
+  String get corbeilleSomeone;
+
+  /// Button of an item of the Corbeille.
+  ///
+  /// In fr, this message translates to:
+  /// **'Restaurer'**
+  String get corbeilleRestore;
+
+  /// Screen-reader name of « Restaurer » on {item}.
+  ///
+  /// In fr, this message translates to:
+  /// **'Restaurer {item}'**
+  String corbeilleRestoreSemantics(String item);
 }
 
 class _AppLocalizationsDelegate

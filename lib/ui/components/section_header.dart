@@ -11,10 +11,15 @@ final class SectionHeader extends StatelessWidget {
     this.label, {
     super.key,
     this.padding = const EdgeInsets.fromLTRB(20, 16, 20, 8),
+    this.color,
   });
 
   final String label;
   final EdgeInsetsGeometry padding;
+
+  /// The text's colour; the muted one by default. « EN ATTENTE » in Équipe
+  /// uses the accent, as something waits for the reader.
+  final Color? color;
 
   @override
   Widget build(BuildContext context) => Padding(
@@ -26,7 +31,7 @@ final class SectionHeader extends StatelessWidget {
       child: Text(
         label.toUpperCase(),
         style: AppTextStyles.sectionHeader.copyWith(
-          color: AppColors.of(context).muted,
+          color: color ?? AppColors.of(context).muted,
         ),
       ),
     ),

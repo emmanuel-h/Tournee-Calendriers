@@ -252,6 +252,10 @@ Both buttons stay disabled until the name is filled in.
   newcomer waits on the screen below until an accepted member lets them in (§8). Scanning uses
   `mobile_scanner` (Android and iOS); the camera permission is asked only when *Scanner* is
   tapped. `qr_flutter` draws the QR.
+- **QR payload** (fixed in T2.6): the code's six characters and nothing else, `K7P2QX`
+  (`JoinCode.value`): no URL, no prefix. The scanner of « Rejoindre » reads it with
+  `JoinCode.parse`, like a typed code, so any other QR code is refused as an invalid code. Drawn
+  dark on white whatever the theme, so it scans.
 - The creator can regenerate the code from Équipe (old code stops working; members stay).
 
 ```
@@ -342,6 +346,9 @@ bottom sheet:
   No tournée: « Aucune tournée pour l'instant. ». Still to come: the progress « · 41 % » (with
   the streets on Firestore), the dot of a request waiting in another tournée (with Équipe),
   « Pas téléchargée » (M4), *Créer* / *Rejoindre* (with their screens, 5.2).
+- Delivered in T2.6: 👥 sits left of ⚙ while a tournée is open (none otherwise) and opens
+  Équipe; a red dot on it while a request waits in the open tournée, said by screen readers
+  (« Équipe, 1 demande en attente »). The team is followed as long as a tournée is open.
 
 ### 5.4 Ajouter des rues — map mode
 
@@ -762,6 +769,23 @@ Immeuble details fixed in T1.9 (`lib/presentation/building/`, `lib/ui/screens/bu
   can accept or refuse, so nobody has to wait for the creator.
 - *Retirer* (creator only) cuts the member's access at once; what they marked stays, stamped
   with their name. Combine with *Nouveau code* if the code has leaked.
+- Delivered in T2.6 (Team mockup): title « Tournée 49 » over « CS Villefranche · campagne
+  2026 »; the code card (QR, « Code K7P-2QX », « Partager » — the phone's share sheet with
+  « Tournée 49 · CS Villefranche » and the code —, « Nouveau code » for the creator, at once,
+  no confirmation); « EN ATTENTE (n) » only with requests: name, « a demandé à rejoindre · il
+  y a 2 min », « Accepter » (green) and « Refuser », no confirmation; « MEMBRES (n) »: every
+  active member, one row each, oldest first (the creator first), « (vous) » and « · créateur »;
+  ⋮ → « Retirer » on the others for the creator, asking « Retirer Léa ? » first; « Corbeille · n
+  éléments › » (« · vide »). At the bottom one button: « Supprimer la tournée » for the creator
+  (asks « Supprimer la tournée 49 ? »), « Quitter la tournée » for the others (asks too, since
+  coming back needs the code and an approval); both then forget the tournée on the phone and go
+  back to the start screen with none open. Answering, removing and leaving work offline; a
+  new code and deleting need the network (« Pas de réseau. Réessayez une fois connecté. »). A
+  command a teammate made pointless meanwhile says « L'équipe a changé entre-temps. ». A
+  tournée that cannot be read (removed, deleted, or never read on this phone offline) shows
+  « L'équipe ne peut pas être affichée : … ». Times: « à l'instant », « il y a 2 min », « il
+  y a 3 h », « hier », then the day (« 3 oct. »). Still to come: the street counts « 5 rues »
+  (with the assignees, M3) and « CAMPAGNE » / « Démarrer une nouvelle campagne » (v1.1).
 
 ### 5.9 Paramètres (⚙)
 
@@ -849,6 +873,14 @@ Immeuble details fixed in T1.9 (`lib/presentation/building/`, `lib/ui/screens/bu
   makes a mess.
 - Items older than 30 days are purged by the first member's app that is online (no server
   needed), and at the latest when a new campaign starts.
+- Delivered in T2.6 (Trash mockup), opened from Équipe: the deleted streets (« Rue Gambetta »
+  over « 22 numéros · supprimée par Paul · hier ») and the numbers removed from the streets
+  still shown (« 14ter Rue des Lilas » over « supprimé par Léa · 3 oct. »), the latest first;
+  the numbers removed from a deleted street come back in sight with it. A member no longer
+  in the team reads « un membre ». « Restaurer » brings the item back at once for everyone,
+  with its marks; nothing when empty but « La corbeille est vide. ». Works offline, with
+  whichever street storage is bound. Still to come: the 30-day purge (it needs a hard delete
+  the street port and the security rules do not offer yet).
 
 ---
 
@@ -1182,7 +1214,8 @@ Tournée rules fixed in T2.2 (`lib/domain/tournee/`):
   `TourneeChange`.
 - **Port `TourneeRepository`** (domain): `find(id)`, `watch(id)` (null when there is no such
   tournée or this member may no longer read it), `add(tournee)` → `AddTourneeFailure`
-  (`alreadyExists`, `noNetwork`), `save(tournee, change)`, `delete(TourneeDeleted)`. A pending
+  (`alreadyExists`, `noNetwork`), `save(tournee, change)`, `delete(TourneeDeleted)` (from T2.6 both return
+  `TourneeWriteFailure.noNetwork` for what needs the server, see below). A pending
   newcomer cannot read the tournée (§8.2), so the join (code lookup, request) goes through the
   `TourneeDirectory` port (Q20), not this one.
 
@@ -1209,6 +1242,37 @@ Tournée rules fixed in T2.2 (`lib/domain/tournee/`):
 - **Port `PhoneSettings`** (application): `memberName` (null until given), `theme`
   (`ThemeChoice` system / light / dark), setters. Use cases `ReadPhoneSettings`,
   `ChangeMemberName` (`MemberName.create`, nothing kept when refused), `ChooseTheme`.
+
+Équipe and Corbeille fixed in T2.6 (`lib/application/use_cases/team.dart`,
+`observe_corbeille.dart`, `lib/domain/street/corbeille.dart`, `lib/presentation/`):
+
+- **Use cases** of Équipe, each acting as `IdentityProvider.currentMember` (the tournée's root
+  checks they may): `ObserveTeam` (`TourneeRepository.watch`), `ReadCurrentMember`,
+  `AcceptMember` (stamped with the `Clock`), `RefuseMember`, `RemoveMember`, `LeaveTournee`
+  and `DeleteTournee` (both then `forget` the tournée in « Mes tournées »),
+  `RegenerateJoinCode` (draws from the injected `Random`, `Random.secure()` in the app;
+  returns the code as stored). Refusals are `TeamFailure` = `TourneeGone` (cannot be read) |
+  `TeamCommandRefused(TourneeCommandFailure)` | `TeamOffline`.
+- **`TourneeRepository.save`** returns the tournée as stored and **`delete`** the deletion,
+  or `TourneeWriteFailure.noNetwork` for what needs the server: a new code (the transaction)
+  and deleting (which first reads the tournée from the server, so offline it fails before
+  deleting anything). Member changes never fail (queued).
+- **Corbeille** (domain service `corbeilleOf(streets)`): a `DeletedStreet` (id, name, shown
+  numbers, `removal`) per street in the Corbeille and a `RemovedNumber` (street id and name,
+  number, `removal`) per removed number of the other streets; latest removal first, then
+  street name (French order), street id, number. `ObserveCorbeille` combines `watchAll` and
+  `watchDeleted` once both answered. « Restaurer » is `EditStreetNumbers` with `RestoreStreet`
+  (new, `Street.restore`) or `RestoreNumber`.
+- **Presentation:** `teamProvider` (kept alive, follows `currentTourneeProvider`):
+  `NoTeam` | `TeamLoading` | `TeamUnavailable` | `TeamShown` (number, centre, campaign, code,
+  `qrData`, `iAmCreator`, `RequestRow`s, `MemberRow`s with `isMe`, `isCreator`, `canRemove`;
+  `waitingRequests` for the dot); commands answer `TeamActionFailure` `teamChanged` |
+  `offline`. `corbeilleProvider` (auto-disposed) names `by` through the team. `RecentTime`
+  (`JustNow`, `MinutesAgo`, `HoursAgo`, `Yesterday`, `OnDay`) on the phone's calendar.
+- **Firestore settings** (PLAN §7) are applied in one place, `bootstrap/firebase.dart`
+  (`offlineFirestore`: persistence on, `CACHE_SIZE_UNLIMITED`), before the database's first
+  use and once per process; `bindAdapters` asks for the database once, lazily, for every
+  Firestore adapter.
 
 Firestore adapters fixed in T2.3 (`lib/infrastructure/firestore/`, `lib/application/ports/`):
 

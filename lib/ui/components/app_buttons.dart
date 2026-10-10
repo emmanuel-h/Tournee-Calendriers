@@ -105,6 +105,61 @@ final class SecondaryButton extends StatelessWidget {
   }
 }
 
+/// A small outlined pill that sits in a row beside text (« Partager »,
+/// « Restaurer »): as wide as its label, 40 dp drawn, still answering taps
+/// over 48 dp.
+final class PillButton extends StatelessWidget {
+  const PillButton({
+    super.key,
+    required this.label,
+    required this.onPressed,
+    this.strong = false,
+    this.semanticsLabel,
+  });
+
+  final String label;
+  final VoidCallback? onPressed;
+
+  /// Outline in ink rather than the light line, for the action the row is
+  /// about (« Restaurer »).
+  final bool strong;
+
+  /// What screen readers hear instead of [label], to say which row the
+  /// button acts on (« Restaurer 14ter Rue des Lilas »).
+  final String? semanticsLabel;
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    return Semantics(
+      // A node of its own, not merged with the text beside it.
+      container: true,
+      button: true,
+      label: semanticsLabel ?? label,
+      excludeSemantics: true,
+      child: OutlinedButton(
+        onPressed: onPressed,
+        style: ButtonStyle(
+          minimumSize: const WidgetStatePropertyAll(
+            Size(0, AppSizes.pillHeight),
+          ),
+          padding: const WidgetStatePropertyAll(
+            EdgeInsets.symmetric(horizontal: 14),
+          ),
+          textStyle: const WidgetStatePropertyAll(AppTextStyles.pill),
+          side: WidgetStatePropertyAll(
+            BorderSide(
+              color: strong ? colors.ink : colors.line,
+              width: AppSizes.borderWidth,
+            ),
+          ),
+        ),
+        child: Text(label),
+      ),
+    );
+  }
+}
+
 /// Height and label style shared by both buttons; colours and the pill shape
 /// come from the theme (`buildAppTheme`).
 ButtonStyle _sizeStyle(bool compact) {

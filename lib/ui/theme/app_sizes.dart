@@ -172,4 +172,28 @@ abstract final class AppSizes {
 
   /// The ▾ after the open tournée's name in the title.
   static const titleChevron = 22.0;
+
+  /// The red dot on 👥 while a join request waits (Home mockup).
+  static const waitingDot = 12.0;
+
+  /// The card of Équipe holding the QR code and the join code, and the QR
+  /// code in it.
+  static const codeCardRadius = 20.0;
+  static const qrCode = 100.0;
+
+  /// A join request's card in Équipe.
+  static const requestCardRadius = 16.0;
+
+  /// The round initial before a member or a request (« M », « J »).
+  static const avatar = 36.0;
+
+  /// A member of Équipe, and its « Corbeille » row.
+  static const memberRowHeight = 56.0;
+
+  /// The trash icon in the avatar of the « Corbeille » row.
+  static const avatarIcon = 18.0;
+
+  /// A deleted street or number of the Corbeille: its name over who
+  /// deleted it, and « Restaurer ».
+  static const corbeilleRowHeight = 72.0;
 }

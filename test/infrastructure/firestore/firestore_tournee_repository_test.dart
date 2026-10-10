@@ -253,9 +253,10 @@ void main() {
             .accept(julieId, by: manuId, at: leaAcceptedAt),
       );
 
-      await repository().save(accepted, change);
+      final saved = await repository().save(accepted, change);
       await pumpEventQueue();
 
+      expect(valueOf(saved), same(accepted));
       expect(await stored('tournees/t49/members/uid-julie'), {
         ...joinRequestDocument(julie, firstCode),
         'status': 'active',
@@ -288,9 +289,10 @@ void main() {
         final (after, change) = valueOf(act(team()));
         final gone = (change as MemberChange).member.id.value;
 
-        await repository().save(after, change);
+        final saved = await repository().save(after, change);
         await pumpEventQueue();
 
+        expect(valueOf(saved), same(after));
         expect(await stored('tournees/t49/members/$gone'), isNull);
         expect(await stored('tournees/t49/members/uid-manu'), isNotNull);
       });
@@ -302,8 +304,9 @@ void main() {
         team().regenerateCode(by: manuId, random: ScriptedRandom(draws234567)),
       );
 
-      await repository().save(renewed, change);
+      final saved = await repository().save(renewed, change);
 
+      expect(valueOf(saved), same(renewed));
       expect((await stored('tournees/t49'))!['joinCode'], '234567');
       expect(await stored('joinCodes/K7P2QX'), isNull);
       expect(await stored('joinCodes/234567'), joinCodeDocument(created));
@@ -323,8 +326,12 @@ void main() {
           JoinCode.alphabet.indexOf(character),
       ];
 
-      await repository(draws).save(renewed, change);
+      final saved = valueOf(await repository(draws).save(renewed, change));
 
+      // The tournée as stored, with the code the server took.
+      expect(saved.joinCode, codeOf('765432'));
+      expect(saved.id, tourneeId);
+      expect(saved.members, renewed.members);
       expect((await stored('tournees/t49'))!['joinCode'], '765432');
       expect(await stored('joinCodes/765432'), joinCodeDocument(created));
       expect(await stored('joinCodes/234567'), {'tourneeId': 'other'});
@@ -332,7 +339,7 @@ void main() {
     });
   });
 
-  test('should throw when a new code is asked offline', () async {
+  test('should tell when a new code is asked offline', () async {
     await repository().add(created);
     final (renewed, change) = valueOf(
       team().regenerateCode(by: manuId, random: ScriptedRandom(draws234567)),
@@ -341,11 +348,25 @@ void main() {
         .on(db.doc('joinCodes/234567'))
         .thenThrow(firestoreError('unavailable'));
 
+    final saved = await repository().save(renewed, change);
+
+    expect(failureOf(saved), TourneeWriteFailure.noNetwork);
+    expect((await stored('tournees/t49'))!['joinCode'], 'K7P2QX');
+  });
+
+  test('should throw any other failure of a new code', () async {
+    await repository().add(created);
+    final (renewed, change) = valueOf(
+      team().regenerateCode(by: manuId, random: ScriptedRandom(draws234567)),
+    );
+    whenCalling(Invocation.method(#get, null))
+        .on(db.doc('joinCodes/234567'))
+        .thenThrow(firestoreError('permission-denied'));
+
     await expectLater(
       repository().save(renewed, change),
       throwsA(isA<FirebaseException>()),
     );
-    expect((await stored('tournees/t49'))!['joinCode'], 'K7P2QX');
   });
 
   group('delete', () {
@@ -359,8 +380,11 @@ void main() {
         'name': 'Allée des Roses',
       });
 
-      await repository().delete(valueOf(team().delete(by: manuId)));
+      final deletion = valueOf(team().delete(by: manuId));
 
+      final deleted = await repository().delete(deletion);
+
+      expect(valueOf(deleted), same(deletion));
       for (final path in [
         'tournees/t49',
         'tournees/t49/members/uid-manu',
@@ -391,6 +415,36 @@ void main() {
           .collection('tournees/t49/campaigns/2026/streets')
           .get();
       expect(left.docs, isEmpty);
+    });
+
+    test('should tell and delete nothing when the server cannot be '
+        'reached', () async {
+      await repository().add(created);
+      // Only the reads asked of the server fail (`get` with options), so
+      // the test can still look at what is stored.
+      whenCalling(Invocation.method(#get, [isA<GetOptions>()]))
+          .on(db.doc('tournees/t49'))
+          .thenThrow(firestoreError('unavailable'));
+
+      final deleted = await repository().delete(
+        valueOf(team().delete(by: manuId)),
+      );
+
+      expect(failureOf(deleted), TourneeWriteFailure.noNetwork);
+      expect(await stored('tournees/t49'), isNotNull);
+      expect(await stored('tournees/t49/campaigns/2026'), isNotNull);
+    });
+
+    test('should throw any other failure of the server', () async {
+      await repository().add(created);
+      whenCalling(Invocation.method(#get, null))
+          .on(db.doc('tournees/t49'))
+          .thenThrow(firestoreError('permission-denied'));
+
+      await expectLater(
+        repository().delete(valueOf(team().delete(by: manuId))),
+        throwsA(isA<FirebaseException>()),
+      );
     });
   });
 }

@@ -1,6 +1,8 @@
 // The providers wire each use case to the ports bound in the container: a
 // call through a provider must reach the fakes given as overrides.
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+// `Override`, the type of a container's overrides.
+import 'package:flutter_riverpod/misc.dart';
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
@@ -12,15 +14,18 @@ import 'package:tournee_calendriers/application/use_cases/import_reference_area.
 import 'package:tournee_calendriers/application/use_cases/mark.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
+import 'package:tournee_calendriers/domain/street/corbeille.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/domain/tournee/member.dart';
 import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_change.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 
 import '../application/use_cases/street_fixtures.dart';
 import '../domain/tournee/my_tournees_fixtures.dart';
-import '../domain/tournee/tournee_fixtures.dart' show nameOf;
+import '../domain/tournee/tournee_fixtures.dart'
+    show codeOf, julieId, leaId, manuId, nameOf, team, tourneeId;
 import '../support/fakes/fake_address_directory.dart';
 import '../support/fakes/fake_commune_search.dart';
 import '../support/fakes/fake_member_account.dart';
@@ -30,7 +35,9 @@ import '../support/fakes/fake_ports.dart';
 import '../support/fakes/fake_street_repository.dart';
 import '../support/fakes/fake_street_view_preferences.dart';
 import '../support/fakes/fake_tournee_directory.dart';
+import '../support/fakes/fake_tournee_repository.dart';
 import '../support/results.dart';
+import '../support/scripted_random.dart';
 import '../support/street_fixtures.dart';
 
 void main() {
@@ -42,7 +49,34 @@ void main() {
   late FakeMyTourneesStore myTournees;
   late FakePhoneSettings settings;
   late FakeTourneeDirectory tourneeDirectory;
+  late FakeTourneeRepository tournees;
   late ProviderContainer container;
+
+  /// Every port bound to the fakes, the member on the phone being
+  /// [member].
+  List<Override> overridesAs(MemberId member) => [
+    streetRepositoryProvider.overrideWithValue(streets),
+    addressDirectoryProvider.overrideWithValue(directory),
+    communeSearchProvider.overrideWithValue(communes),
+    clockProvider.overrideWithValue(FakeClock(twoPm)),
+    idGeneratorProvider.overrideWithValue(FakeIdGenerator('street')),
+    identityProvider.overrideWithValue(FakeIdentity(member)),
+    streetViewPreferencesProvider.overrideWithValue(preferences),
+    memberAccountProvider.overrideWithValue(account),
+    myTourneesStoreProvider.overrideWithValue(myTournees),
+    phoneSettingsProvider.overrideWithValue(settings),
+    tourneeDirectoryProvider.overrideWithValue(tourneeDirectory),
+    tourneeRepositoryProvider.overrideWithValue(tournees),
+    // The indexes of `2`…`7` in the alphabet: the code `234567`.
+    randomProvider.overrideWithValue(ScriptedRandom([23, 24, 25, 26, 27, 28])),
+  ];
+
+  /// A container where Manu, the creator of the 49, uses the phone.
+  ProviderContainer asManu() {
+    final manusPhone = ProviderContainer(overrides: overridesAs(manuId));
+    addTearDown(manusPhone.dispose);
+    return manusPhone;
+  }
 
   setUp(() {
     streets = repositoryWithLilas();
@@ -71,23 +105,10 @@ void main() {
     );
     settings = FakePhoneSettings(memberName: nameOf('Léa'));
     tourneeDirectory = FakeTourneeDirectory();
+    tournees = FakeTourneeRepository([team()]);
     // A ProviderContainer is what a ProviderScope holds, without widgets:
     // the overrides bind the ports to the fakes.
-    container = ProviderContainer(
-      overrides: [
-        streetRepositoryProvider.overrideWithValue(streets),
-        addressDirectoryProvider.overrideWithValue(directory),
-        communeSearchProvider.overrideWithValue(communes),
-        clockProvider.overrideWithValue(FakeClock(twoPm)),
-        idGeneratorProvider.overrideWithValue(FakeIdGenerator('street')),
-        identityProvider.overrideWithValue(FakeIdentity(lea)),
-        streetViewPreferencesProvider.overrideWithValue(preferences),
-        memberAccountProvider.overrideWithValue(account),
-        myTourneesStoreProvider.overrideWithValue(myTournees),
-        phoneSettingsProvider.overrideWithValue(settings),
-        tourneeDirectoryProvider.overrideWithValue(tourneeDirectory),
-      ],
-    );
+    container = ProviderContainer(overrides: overridesAs(lea));
   });
 
   tearDown(() => container.dispose());
@@ -105,6 +126,8 @@ void main() {
       'MyTourneesStore': myTourneesStoreProvider,
       'PhoneSettings': phoneSettingsProvider,
       'TourneeDirectory': tourneeDirectoryProvider,
+      'TourneeRepository': tourneeRepositoryProvider,
+      'Random': randomProvider,
     };
     ports.forEach((name, port) {
       test('should name $name when nobody bound it', () {
@@ -320,5 +343,83 @@ void main() {
 
       expect(settings.themes, [ThemeChoice.dark]);
     });
+
+    test('should observe the Corbeille of the bound repository', () async {
+      final (removed, change) = valueOf(
+        lilas.removeNumber(n('7'), by: lea, at: twoPm),
+      );
+      await streets.save(removed, change);
+
+      final items = await container.read(observeCorbeilleProvider)().first;
+
+      expect((items.single as RemovedNumber).number, n('7'));
+    });
+
+    test('should observe the team in the bound repository', () async {
+      final tournee = await container
+          .read(observeTeamProvider)(tourneeId)
+          .first;
+
+      expect(tournee, same(tournees[tourneeId]));
+    });
+
+    test('should read the bound member', () {
+      expect(container.read(readCurrentMemberProvider)(), lea);
+    });
+
+    test('should accept a request with the bound clock and member', () async {
+      final manusPhone = asManu();
+
+      final change = valueOf(
+        await manusPhone.read(acceptMemberProvider)(tourneeId, julieId),
+      );
+
+      expect(change.member.acceptance!.by, manuId);
+      expect(change.member.acceptance!.at, twoPm);
+    });
+
+    test('should refuse a request as the bound member', () async {
+      final change = valueOf(
+        await asManu().read(refuseMemberProvider)(tourneeId, julieId),
+      );
+
+      expect(change, isA<MemberRefused>());
+    });
+
+    test('should remove a member as the bound member', () async {
+      final change = valueOf(
+        await asManu().read(removeMemberProvider)(tourneeId, leaId),
+      );
+
+      expect(change, isA<MemberRemoved>());
+    });
+
+    test('should leave the tournée and forget it in the bound store', () async {
+      await myTournees.save(MyTournees.none.remember(tournee49));
+      final phone = ProviderContainer(overrides: overridesAs(leaId));
+      addTearDown(phone.dispose);
+
+      valueOf(await phone.read(leaveTourneeProvider)(tourneeId));
+
+      expect(myTournees.myTournees.tournees, isEmpty);
+    });
+
+    test('should draw a new code from the bound random source', () async {
+      final code = valueOf(
+        await asManu().read(regenerateJoinCodeProvider)(tourneeId),
+      );
+
+      expect(code, codeOf('234567'));
+    });
+
+    test(
+      'should delete the tournée and forget it in the bound store',
+      () async {
+        valueOf(await asManu().read(deleteTourneeProvider)(tourneeId));
+
+        expect(tournees.deleted, hasLength(1));
+        expect(myTournees.myTournees.find(tourneeId), isNull);
+      },
+    );
   });
 }

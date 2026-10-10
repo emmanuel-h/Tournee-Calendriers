@@ -157,7 +157,10 @@ final class FirestoreTourneeRepository implements TourneeRepository {
   }
 
   @override
-  Future<void> save(Tournee tournee, TourneeChange change) async {
+  Future<Result<Tournee, TourneeWriteFailure>> save(
+    Tournee tournee,
+    TourneeChange change,
+  ) async {
     final members = FirestoreLayout.membersOf(_db, tournee.id);
     switch (change) {
       case MemberAccepted(:final member):
@@ -165,20 +168,31 @@ final class FirestoreTourneeRepository implements TourneeRepository {
           '$change',
           members.doc(member.id.value).update(acceptanceFields(member)),
         );
+        return Ok(tournee);
       case MemberRefused(:final member) ||
           MemberRemoved(:final member) ||
           MemberLeft(:final member):
         sendInBackground('$change', members.doc(member.id.value).delete());
+        return Ok(tournee);
       case JoinCodeRegenerated(:final before, :final code):
-        await _db.runTransaction((transaction) async {
-          final free = await _freeCode(transaction, code, old: before);
-          transaction
-            ..update(FirestoreLayout.tournee(_db, tournee.id), {
-              'joinCode': free.value,
-            })
-            ..delete(_joinCode(before))
-            ..set(_joinCode(free), joinCodeDocument(tournee));
-        });
+        try {
+          final free = await _db.runTransaction((transaction) async {
+            final free = await _freeCode(transaction, code, old: before);
+            transaction
+              ..update(FirestoreLayout.tournee(_db, tournee.id), {
+                'joinCode': free.value,
+              })
+              ..delete(_joinCode(before))
+              ..set(_joinCode(free), joinCodeDocument(tournee));
+            return free;
+          });
+          return Ok(free == code ? tournee : _withCode(tournee, free));
+        } on FirebaseException catch (error) {
+          if (isNoNetwork(error)) {
+            return const Err(TourneeWriteFailure.noNetwork);
+          }
+          rethrow;
+        }
     }
   }
 
@@ -190,10 +204,20 @@ final class FirestoreTourneeRepository implements TourneeRepository {
   /// code and its reservation in one batch: until then the security rules
   /// still see an active creator deleting.
   @override
-  Future<void> delete(TourneeDeleted deletion) async {
+  Future<Result<TourneeDeleted, TourneeWriteFailure>> delete(
+    TourneeDeleted deletion,
+  ) async {
     final tournee = deletion.tournee;
     const server = GetOptions(source: Source.server);
     final tourneeDoc = FirestoreLayout.tournee(_db, tournee.id);
+    try {
+      // Asked of the server first: offline it fails at once, before
+      // anything is deleted (a batch would wait on the phone instead).
+      await tourneeDoc.get(server);
+    } on FirebaseException catch (error) {
+      if (isNoNetwork(error)) return const Err(TourneeWriteFailure.noNetwork);
+      rethrow;
+    }
     final contents = <DocumentReference<Map<String, dynamic>>>[];
     final campaigns = await tourneeDoc
         .collection(FirestoreLayout.campaigns)
@@ -237,6 +261,7 @@ final class FirestoreTourneeRepository implements TourneeRepository {
             ).doc(tournee.createdBy.value),
           ))
         .commit();
+    return Ok(deletion);
   }
 
   DocumentReference<Map<String, dynamic>> _joinCode(JoinCode code) =>

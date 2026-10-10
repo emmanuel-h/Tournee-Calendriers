@@ -16,10 +16,16 @@ Temporary M1 start screen (until the map arrives in M3):
   (national address base, BAN) and import them with their house numbers. Needs the network
   once; streets already imported keep their marks.
 - Top bar: the open tournée (« Tournée 49 · 2026 » over its centre de secours) opens « Mes
-  tournées », to switch tournée (the app reopens the last one at launch, offline too); ⚙
-  opens Paramètres: first name, « Mes tournées », theme (Système, Clair, Sombre),
+  tournées », to switch tournée (the app reopens the last one at launch, offline too); 👥
+  opens Équipe (a dot while a join request waits); ⚙ opens Paramètres: first name, « Mes tournées », theme (Système, Clair, Sombre),
   confidentialité, version and licences, data credits. Creating or joining a tournée comes
   with the onboarding screens.
+- Équipe (👥): the join code and its QR code, « Partager », « Nouveau code » (creator), the
+  requests to join with « Accepter » / « Refuser » (any member), the members with « Retirer »
+  (creator), the Corbeille, « Quitter la tournée » / « Supprimer la tournée » (creator).
+  Answering, removing and leaving work offline; a new code and deleting need the network.
+- Corbeille (from Équipe): the deleted streets and numbers, who deleted them and when, and
+  « Restaurer », which brings them back with their marks.
 
 Street screen (« Rue »):
 
@@ -53,4 +59,4 @@ Street screen (« Rue »):
   door, ✕ removes one (with « Annuler »; asks first when it has a mark), a tap renames it
   (« Gauche », « Droite » on every floor). The other doors keep their marks.
 - Works offline, cold start included: marks are stored on the phone.
-- Not yet: the Corbeille screen (M2), « Ne plus la faire » (M3).
+- Not yet: « Ne plus la faire » (M3).

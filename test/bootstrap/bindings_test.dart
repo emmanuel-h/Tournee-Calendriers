@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,6 +13,7 @@ import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
 import 'package:tournee_calendriers/infrastructure/ban/ban_address_directory.dart';
 import 'package:tournee_calendriers/infrastructure/firebase_auth/firebase_identity.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_tournee_directory.dart';
+import 'package:tournee_calendriers/infrastructure/firestore/firestore_tournee_repository.dart';
 import 'package:tournee_calendriers/infrastructure/geo_api/geo_commune_search.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_my_tournees.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_phone_settings.dart';
@@ -90,6 +92,17 @@ void main() {
       isA<FirestoreTourneeDirectory>(),
     );
     expect(firestoreAsked, 1);
+    expect(
+      container.read(tourneeRepositoryProvider),
+      isA<FirestoreTourneeRepository>(),
+    );
+    // One database for every Firestore adapter.
+    expect(firestoreAsked, 1);
+    expect(container.read(randomProvider), isA<Random>());
+    expect(
+      container.read(randomProvider).runtimeType,
+      Random.secure().runtimeType,
+    );
     // One adapter for both ports: the account the screens wait for is the
     // one whose uid stamps the marks.
     expect(

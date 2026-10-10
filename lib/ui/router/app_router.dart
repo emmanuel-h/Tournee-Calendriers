@@ -8,6 +8,7 @@ import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/screens/building/adjust_doors_screen.dart';
 import 'package:tournee_calendriers/ui/screens/component_gallery_screen.dart';
+import 'package:tournee_calendriers/ui/screens/corbeille/corbeille_screen.dart';
 import 'package:tournee_calendriers/ui/screens/edit_street/edit_street_screen.dart';
 import 'package:tournee_calendriers/ui/screens/import_streets/import_screen.dart';
 import 'package:tournee_calendriers/ui/screens/placeholder_screen.dart';
@@ -15,6 +16,7 @@ import 'package:tournee_calendriers/ui/screens/settings/privacy_screen.dart';
 import 'package:tournee_calendriers/ui/screens/settings/settings_screen.dart';
 import 'package:tournee_calendriers/ui/screens/start/start_screen.dart';
 import 'package:tournee_calendriers/ui/screens/street/street_screen.dart';
+import 'package:tournee_calendriers/ui/screens/team/team_screen.dart';
 
 /// Builds the app's navigation: one route per screen of PLAN §5.
 ///
@@ -71,7 +73,11 @@ GoRouter buildAppRouter({
     _placeholder(AppRoutes.joinPending, (l10n) => l10n.screenJoinPending),
     _placeholder(AppRoutes.addStreets, (l10n) => l10n.screenAddStreets),
     _placeholder(AppRoutes.manualStreet, (l10n) => l10n.screenManualStreet),
-    _placeholder(AppRoutes.team, (l10n) => l10n.screenTeam),
+    // Pushed by 👥 on the start screen; Équipe pushes the Corbeille.
+    GoRoute(
+      path: AppRoutes.team,
+      builder: (context, state) => const TeamScreen(),
+    ),
     GoRoute(
       path: AppRoutes.settings,
       builder: (context, state) => const SettingsScreen(),
@@ -81,7 +87,10 @@ GoRouter buildAppRouter({
       builder: (context, state) => const PrivacyScreen(),
     ),
     _placeholder(AppRoutes.newCampaign, (l10n) => l10n.screenNewCampaign),
-    _placeholder(AppRoutes.trash, (l10n) => l10n.screenTrash),
+    GoRoute(
+      path: AppRoutes.trash,
+      builder: (context, state) => const CorbeilleScreen(),
+    ),
     if (showGallery)
       GoRoute(
         path: AppRoutes.gallery,

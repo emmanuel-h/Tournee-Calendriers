@@ -212,11 +212,30 @@ abstract final class AppTextStyles {
     height: 1.05,
   );
 
-  /// A tournée in « Mes tournées » (« Tournée 12 · 2026 »).
+  /// A tournée in « Mes tournées » (« Tournée 12 · 2026 »), and a street
+  /// or number of the Corbeille (« 14ter Rue des Lilas »).
   static const tourneeRowTitle = TextStyle(
     fontFamily: AppFonts.display,
     fontWeight: FontWeight.w700,
     fontSize: 21,
     height: 1.1,
+  );
+
+  /// The join code in Équipe (« K7P-2QX »), spaced a little so each
+  /// character reads alone.
+  static const joinCode = TextStyle(
+    fontFamily: AppFonts.display,
+    fontWeight: FontWeight.w700,
+    fontSize: 28,
+    letterSpacing: 28 * 0.04,
+    height: 1.1,
+  );
+
+  /// The initial in a member's round avatar (« M »).
+  static const avatarInitial = TextStyle(
+    fontFamily: AppFonts.display,
+    fontWeight: FontWeight.w700,
+    fontSize: 16,
+    height: 1,
   );
 }

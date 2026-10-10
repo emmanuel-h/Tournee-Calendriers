@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -12,6 +13,7 @@ import 'package:tournee_calendriers/infrastructure/ban/ban_address_directory.dar
 import 'package:tournee_calendriers/infrastructure/firebase_auth/anonymous_auth.dart';
 import 'package:tournee_calendriers/infrastructure/firebase_auth/firebase_identity.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_tournee_directory.dart';
+import 'package:tournee_calendriers/infrastructure/firestore/firestore_tournee_repository.dart';
 import 'package:tournee_calendriers/infrastructure/geo_api/geo_commune_search.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_identity.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_my_tournees.dart';
@@ -42,9 +44,10 @@ final httpClientProvider = Provider<http.Client>((ref) {
 /// - [auth]: Firebase anonymous sign-in. Its uid is the member; until the
 ///   first sign-in succeeds, the phone's own id stands in for the marks,
 ///   and creating or joining a tournée signs in again (`MemberAccount`).
-/// - [firestore]: gives the Firestore database, asked only when a screen
-///   first needs the server (following a request to join), so an offline
-///   cold start never touches it.
+/// - [firestore]: gives the Firestore database, asked once, only when a
+///   screen first needs it (following a request to join, the open
+///   tournée's team), so a phone with no tournée never touches it. It
+///   serves the phone's copy first, so an offline cold start works.
 /// - [addressDirectory]: replaces the BAN, so the instrumented suite can
 ///   import streets without the network.
 /// - [communeSearch]: replaces geo.api.gouv.fr, for the same reason.
@@ -75,6 +78,13 @@ Future<List<Override>> bindAdapters({
   );
   final myTournees = await LocalMyTournees.load(fileOf('my_tournees.json'));
   final settings = await LocalPhoneSettings.load(fileOf('settings.json'));
+  // `late final` with a value: computed the first time it is read, then
+  // kept. So Firestore is asked for once, by whichever adapter needs it
+  // first, and never on a phone that does not.
+  late final db = firestore();
+  // The operating system's secure source: a join code drawn from the
+  // plain `Random()` could be predicted (PLAN §5.2).
+  final random = Random.secure();
   return [
     streetRepositoryProvider.overrideWithValue(
       LocalStreetRepository(
@@ -98,7 +108,11 @@ Future<List<Override>> bindAdapters({
     phoneSettingsProvider.overrideWithValue(settings),
     // `overrideWith`: built the first time it is read, not at start-up.
     tourneeDirectoryProvider.overrideWith(
-      (ref) => FirestoreTourneeDirectory(firestore()),
+      (ref) => FirestoreTourneeDirectory(db),
     ),
+    tourneeRepositoryProvider.overrideWith(
+      (ref) => FirestoreTourneeRepository(db, random: random),
+    ),
+    randomProvider.overrideWithValue(random),
   ];
 }

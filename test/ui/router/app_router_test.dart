@@ -19,9 +19,7 @@ void main() {
         AppRoutes.joinPending: 'Demande envoyée',
         AppRoutes.addStreets: 'Ajouter des rues',
         AppRoutes.manualStreet: 'Rue à la main',
-        AppRoutes.team: 'Équipe',
         AppRoutes.newCampaign: 'Nouvelle campagne',
-        AppRoutes.trash: 'Corbeille',
       };
       await tester.pumpWidget(
         ProviderScope(overrides: emptyPhone(), child: const TourneeApp()),

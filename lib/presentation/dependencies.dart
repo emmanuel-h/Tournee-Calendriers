@@ -10,6 +10,8 @@
 /// port nobody bound fails at once, naming it.
 library;
 
+import 'dart:math';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/clock.dart';
@@ -30,14 +32,17 @@ import 'package:tournee_calendriers/application/use_cases/list_commune_streets.d
 import 'package:tournee_calendriers/application/use_cases/mark_dwelling.dart';
 import 'package:tournee_calendriers/application/use_cases/mark_house.dart';
 import 'package:tournee_calendriers/application/use_cases/my_tournees.dart';
+import 'package:tournee_calendriers/application/use_cases/observe_corbeille.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_street.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_streets.dart';
 import 'package:tournee_calendriers/application/use_cases/phone_settings.dart';
 import 'package:tournee_calendriers/application/use_cases/search_communes.dart';
 import 'package:tournee_calendriers/application/use_cases/set_house_details.dart';
 import 'package:tournee_calendriers/application/use_cases/sign_in.dart';
+import 'package:tournee_calendriers/application/use_cases/team.dart';
 import 'package:tournee_calendriers/application/use_cases/undo_last_change.dart';
 import 'package:tournee_calendriers/domain/street/street_repository.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_repository.dart';
 
 // Ports, bound by bootstrap/.
 
@@ -72,6 +77,14 @@ final phoneSettingsProvider = Provider<PhoneSettings>(
 final tourneeDirectoryProvider = Provider<TourneeDirectory>(
   (ref) => _unbound('TourneeDirectory'),
 );
+final tourneeRepositoryProvider = Provider<TourneeRepository>(
+  (ref) => _unbound('TourneeRepository'),
+);
+
+/// The source join codes are drawn from: `Random.secure()` in the app
+/// (PLAN §5.2), a scripted one in tests. `Random` (`dart:math`) is an
+/// interface, so it is bound like a port.
+final randomProvider = Provider<Random>((ref) => _unbound('Random'));
 
 /// `Never`: this function never returns, it always throws, so it can stand
 /// where a port is expected.
@@ -180,4 +193,53 @@ final changeMemberNameProvider = Provider(
 );
 final chooseThemeProvider = Provider(
   (ref) => ChooseTheme(ref.watch(phoneSettingsProvider)),
+);
+final observeCorbeilleProvider = Provider(
+  (ref) => ObserveCorbeille(ref.watch(streetRepositoryProvider)),
+);
+final observeTeamProvider = Provider(
+  (ref) => ObserveTeam(ref.watch(tourneeRepositoryProvider)),
+);
+final readCurrentMemberProvider = Provider(
+  (ref) => ReadCurrentMember(ref.watch(identityProvider)),
+);
+final acceptMemberProvider = Provider(
+  (ref) => AcceptMember(
+    ref.watch(tourneeRepositoryProvider),
+    ref.watch(clockProvider),
+    ref.watch(identityProvider),
+  ),
+);
+final refuseMemberProvider = Provider(
+  (ref) => RefuseMember(
+    ref.watch(tourneeRepositoryProvider),
+    ref.watch(identityProvider),
+  ),
+);
+final removeMemberProvider = Provider(
+  (ref) => RemoveMember(
+    ref.watch(tourneeRepositoryProvider),
+    ref.watch(identityProvider),
+  ),
+);
+final leaveTourneeProvider = Provider(
+  (ref) => LeaveTournee(
+    ref.watch(tourneeRepositoryProvider),
+    ref.watch(identityProvider),
+    ref.watch(myTourneesStoreProvider),
+  ),
+);
+final regenerateJoinCodeProvider = Provider(
+  (ref) => RegenerateJoinCode(
+    ref.watch(tourneeRepositoryProvider),
+    ref.watch(identityProvider),
+    ref.watch(randomProvider),
+  ),
+);
+final deleteTourneeProvider = Provider(
+  (ref) => DeleteTournee(
+    ref.watch(tourneeRepositoryProvider),
+    ref.watch(identityProvider),
+    ref.watch(myTourneesStoreProvider),
+  ),
 );

@@ -11,6 +11,7 @@ import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/screens/my_tournees/my_tournees_sheet.dart';
 import 'package:tournee_calendriers/ui/screens/my_tournees/tournee_title_button.dart';
 import 'package:tournee_calendriers/ui/screens/start/street_row.dart';
+import 'package:tournee_calendriers/ui/screens/team/team_button.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
@@ -20,8 +21,9 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 /// progress, a filter, and « Importer des rues ». Works offline.
 ///
 /// Its top bar is Accueil's (PLAN §5.3, Home mockup): the open tournée
-/// (« Tournée 49 · 2026 ▾ » over its centre) opens « Mes tournées », ⚙
-/// opens Paramètres. With no tournée open, the app's name stays.
+/// (« Tournée 49 · 2026 ▾ » over its centre) opens « Mes tournées », 👥
+/// opens Équipe (with a dot while a request waits), ⚙ opens Paramètres.
+/// With no tournée open, the app's name stays and there is no 👥.
 ///
 /// Temporary: Accueil (the map and its « Mes rues » panel, PLAN §5.3)
 /// replaces it in M3.
@@ -60,6 +62,7 @@ final class StartScreen extends ConsumerWidget {
               // `push` stacks the gallery on top, so it offers a back arrow.
               onPressed: () => context.push(AppRoutes.gallery),
             ),
+          if (tournee != null) const TeamButton(key: Key('home.team')),
           IconButton(
             key: const Key('home.settings'),
             tooltip: l10n.screenSettings,

@@ -1054,4 +1054,230 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get privacyDeletionBody =>
       'Supprimer la tournée efface toutes ses données. À chaque nouvelle campagne, la campagne d\'avant la précédente est effacée.';
+
+  @override
+  String get homeTeam => 'Équipe';
+
+  @override
+  String homeTeamWaiting(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Équipe, $count demandes en attente',
+      one: 'Équipe, 1 demande en attente',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String teamTitle(String number) {
+    return 'Tournée $number';
+  }
+
+  @override
+  String teamSubtitle(String centre, String campaign) {
+    return '$centre · campagne $campaign';
+  }
+
+  @override
+  String get teamCodeLabel => 'Code';
+
+  @override
+  String teamQrSemantics(String code) {
+    return 'QR code de la tournée, code $code';
+  }
+
+  @override
+  String get teamShare => 'Partager';
+
+  @override
+  String teamShareText(String number, String centre, String code) {
+    return 'Tournée $number · $centre\nRejoignez-la dans l\'app Tournée Calendriers avec le code $code.';
+  }
+
+  @override
+  String get teamNewCode => 'Nouveau code';
+
+  @override
+  String teamWaitingHeader(int count) {
+    return 'En attente ($count)';
+  }
+
+  @override
+  String teamRequestAsked(String when) {
+    return 'a demandé à rejoindre · $when';
+  }
+
+  @override
+  String get teamAccept => 'Accepter';
+
+  @override
+  String teamAcceptSemantics(String name) {
+    return 'Accepter $name';
+  }
+
+  @override
+  String get teamRefuse => 'Refuser';
+
+  @override
+  String teamRefuseSemantics(String name) {
+    return 'Refuser $name';
+  }
+
+  @override
+  String teamMembersHeader(int count) {
+    return 'Membres ($count)';
+  }
+
+  @override
+  String teamMemberYou(String name) {
+    return '$name (vous)';
+  }
+
+  @override
+  String teamMemberCreator(String name) {
+    return '$name · créateur';
+  }
+
+  @override
+  String teamMemberOptions(String name) {
+    return 'Options pour $name';
+  }
+
+  @override
+  String get teamRemove => 'Retirer';
+
+  @override
+  String teamRemoveTitle(String name) {
+    return 'Retirer $name ?';
+  }
+
+  @override
+  String teamRemoveBody(String name) {
+    return '$name n\'aura plus accès à la tournée. Ses marques restent dans les rues.';
+  }
+
+  @override
+  String teamCorbeille(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Corbeille · $count éléments',
+      one: 'Corbeille · 1 élément',
+      zero: 'Corbeille · vide',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get teamLeave => 'Quitter la tournée';
+
+  @override
+  String teamLeaveTitle(String number) {
+    return 'Quitter la tournée $number ?';
+  }
+
+  @override
+  String get teamLeaveBody =>
+      'Pour revenir, il faudra le code et l\'accord d\'un membre.';
+
+  @override
+  String get teamLeaveConfirm => 'Quitter';
+
+  @override
+  String get teamDelete => 'Supprimer la tournée';
+
+  @override
+  String teamDeleteTitle(String number) {
+    return 'Supprimer la tournée $number ?';
+  }
+
+  @override
+  String get teamDeleteBody =>
+      'Les rues, les statuts et les membres seront supprimés pour toute l\'équipe. C\'est définitif.';
+
+  @override
+  String get teamDeleteConfirm => 'Supprimer';
+
+  @override
+  String get teamNoTournee => 'Aucune tournée ouverte.';
+
+  @override
+  String get teamUnavailable =>
+      'L\'équipe ne peut pas être affichée : la tournée n\'est pas sur ce téléphone, ou vous n\'en faites plus partie.';
+
+  @override
+  String get teamChanged => 'L\'équipe a changé entre-temps.';
+
+  @override
+  String get teamOffline => 'Pas de réseau. Réessayez une fois connecté.';
+
+  @override
+  String get recentJustNow => 'à l\'instant';
+
+  @override
+  String recentMinutes(int count) {
+    return 'il y a $count min';
+  }
+
+  @override
+  String recentHours(int count) {
+    return 'il y a $count h';
+  }
+
+  @override
+  String get recentYesterday => 'hier';
+
+  @override
+  String recentDay(DateTime day) {
+    final intl.DateFormat dayDateFormat = intl.DateFormat.MMMd(localeName);
+    final String dayString = dayDateFormat.format(day);
+
+    return '$dayString';
+  }
+
+  @override
+  String get corbeilleIntro =>
+      'Les rues et numéros supprimés sont gardés 30 jours avec leurs statuts, puis supprimés définitivement.';
+
+  @override
+  String get corbeilleEmpty => 'La corbeille est vide.';
+
+  @override
+  String corbeilleNumberTitle(String number, String street) {
+    return '$number $street';
+  }
+
+  @override
+  String corbeilleStreetNumbers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count numéros',
+      one: '1 numéro',
+      zero: 'aucun numéro',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String corbeilleStreetDeletedBy(String name) {
+    return 'supprimée par $name';
+  }
+
+  @override
+  String corbeilleNumberDeletedBy(String name) {
+    return 'supprimé par $name';
+  }
+
+  @override
+  String get corbeilleSomeone => 'un membre';
+
+  @override
+  String get corbeilleRestore => 'Restaurer';
+
+  @override
+  String corbeilleRestoreSemantics(String item) {
+    return 'Restaurer $item';
+  }
 }
