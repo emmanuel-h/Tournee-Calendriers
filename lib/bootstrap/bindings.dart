@@ -34,7 +34,8 @@ final httpClientProvider = Provider<http.Client>((ref) {
 ///   `streets/`, the id the phone made for itself in `member_id`, the
 ///   street screens' « Masquer faits » in `street_view.json`.
 /// - [auth]: Firebase anonymous sign-in. Its uid is the member; until the
-///   first sign-in succeeds, the phone's own id stands in.
+///   first sign-in succeeds, the phone's own id stands in for the marks,
+///   and creating or joining a tournée signs in again (`MemberAccount`).
 /// - [addressDirectory]: replaces the BAN, so the instrumented suite can
 ///   import streets without the network.
 /// - [communeSearch]: replaces geo.api.gouv.fr, for the same reason.
@@ -54,8 +55,8 @@ Future<List<Override>> bindAdapters({
     ids,
   );
   final identity = FirebaseIdentity(auth, beforeSignIn: phoneIdentity);
-  // Not awaited: the first screen must not wait for the network, and an
-  // offline first start simply tries again at the next one.
+  // Not awaited: the first screen must not wait for the network. After an
+  // offline first start, creating or joining a tournée tries again.
   unawaited(identity.signInIfNeeded());
   final streetView = await LocalStreetViewPreferences.load(
     File('${storage.path}${Platform.pathSeparator}street_view.json'),
@@ -77,6 +78,7 @@ Future<List<Override>> bindAdapters({
     clockProvider.overrideWithValue(const SystemClock()),
     idGeneratorProvider.overrideWithValue(ids),
     identityProvider.overrideWithValue(identity),
+    memberAccountProvider.overrideWithValue(identity),
     streetViewPreferencesProvider.overrideWithValue(streetView),
   ];
 }

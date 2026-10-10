@@ -18,6 +18,7 @@ import 'package:tournee_calendriers/presentation/dependencies.dart';
 import '../support/fakes/fake_address_directory.dart';
 import '../support/fakes/fake_anonymous_auth.dart';
 import '../support/fakes/fake_commune_search.dart';
+import '../support/results.dart';
 
 void main() {
   late Directory storage;
@@ -67,6 +68,12 @@ void main() {
       isA<LocalStreetViewPreferences>(),
     );
     expect(container.read(identityProvider), isA<FirebaseIdentity>());
+    // One adapter for both ports: the account the screens wait for is the
+    // one whose uid stamps the marks.
+    expect(
+      container.read(memberAccountProvider),
+      same(container.read(identityProvider)),
+    );
   });
 
   test('should stamp with the uid when the phone signed in before', () async {
@@ -150,5 +157,21 @@ void main() {
       container.read(httpClientProvider),
       same(container.read(httpClientProvider)),
     );
+  });
+
+  test('should sign in on demand when the first start was offline', () async {
+    final auth = FakeAnonymousAuth();
+    final container = await containerWith(auth: auth);
+    final account = container.read(memberAccountProvider);
+    // The sign-in started at launch fails: no network.
+    await Future<void>.delayed(Duration.zero);
+    expect(account.signedInMember, isNull);
+
+    auth.nextUid = 'uid-new';
+    final member = valueOf(await account.signInIfNeeded());
+
+    expect(member, MemberId('uid-new'));
+    expect(auth.signInCalls, 2);
+    expect(container.read(identityProvider).currentMember, member);
   });
 }

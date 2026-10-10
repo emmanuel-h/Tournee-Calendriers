@@ -18,12 +18,20 @@ final class FakeAnonymousAuth implements AnonymousAuth {
   /// Completed by the test to let [signIn] finish; already done by default.
   Completer<void> gate = Completer<void>()..complete();
 
+  /// Thrown by the next [signIn] when set, like an SDK error the adapter
+  /// did not expect; null by default.
+  Exception? error;
+
   var signInCalls = 0;
 
   @override
   Future<void> signIn() async {
     signInCalls++;
     await gate.future;
+    if (error case final Exception thrown) {
+      error = null;
+      throw thrown;
+    }
     currentUid ??= nextUid;
   }
 }

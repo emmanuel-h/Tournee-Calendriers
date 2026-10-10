@@ -1060,7 +1060,15 @@ Use cases and phone storage fixed in T1.6 (`lib/application/use_cases/`,
   (`infrastructure/firebase_auth/`). The sign-in starts in the background at launch and is
   never waited for; Firebase keeps the session on the phone, so later starts know the uid
   offline. Until the very first sign-in succeeds (first launch offline), changes are stamped
-  with the M1 phone id; the next start tries again.
+  with the M1 phone id. Creating or joining a tournée cannot stand in like that (the rules let
+  in the uid only, §8.2): they go through the port `MemberAccount` (T2.1c, same adapter):
+  `signedInMember` (from the phone, null before the first sign-in) and `signInIfNeeded()`
+  (`Result<MemberId, SignInFailure.noNetwork>`), which waits for the sign-in already on its
+  way (one at a time, never two accounts) or tries again after a failed one, so the network
+  coming back is enough, no restart. Use cases `ReadSignedInMember` and `SignIn`; the
+  onboarding screens show `AccountNotifier` (auto-disposed, so each opening of a screen is a
+  new try): `AccountSigningIn` | `AccountSignedIn(member)` | `AccountOffline` (« hors ligne »,
+  with « Réessayer » → `retry()`). Nothing of it runs on the marking path.
 - **Use cases** (one class, one `call`; each loads the street, runs the root's command, saves,
   returns the change for « Annuler »; refusals are `CommandFailure<F>` = `StreetNotFound` |
   `CommandRefused(reason)`, `F` being the street's failure enum): `MarkHouse` (tap),
@@ -1372,7 +1380,7 @@ no network, including a cold start, and loses nothing.
 
 | What | How it works offline |
 |---|---|
-| Sign-in | The anonymous Firebase session is persisted on the phone; no network needed at start-up |
+| Sign-in | The anonymous Firebase session is persisted on the phone; no network needed at start-up. After an offline first start, the sign-in is tried again when Créer / Rejoindre need it (§6.1) |
 | Tournée data | Firestore persistent cache with **unlimited size** (no eviction). The download step runs one read of every street of the tournée, so all of them are in the cache |
 | Live updates | Snapshot listeners serve the cache at once, then the server when reachable |
 | Writes | Applied locally at once, queued by Firestore, survive restarts, sent when back online |

@@ -490,10 +490,9 @@ void main() {
     (tester) async {
       final storage = await Directory.systemTemp.createTemp('identity_flow');
       addTearDown(() => storage.delete(recursive: true));
-      MemberId member() =>
-          ProviderScope.containerOf(tester.element(find.byType(TourneeApp)))
-              .read(identityProvider)
-              .currentMember;
+      ProviderContainer app() =>
+          ProviderScope.containerOf(tester.element(find.byType(TourneeApp)));
+      MemberId member() => app().read(identityProvider).currentMember;
 
       await bootstrap(storage: storage);
       await tester.pumpAndSettle();
@@ -510,6 +509,8 @@ void main() {
       expect(uid, isNotNull, reason: 'the anonymous sign-in did not finish');
       expect(FirebaseAuth.instance.currentUser!.isAnonymous, isTrue);
       expect(member(), MemberId(uid!));
+      // « Créer » / « Rejoindre » get the same account, without waiting.
+      expect(app().read(memberAccountProvider).signedInMember, member());
 
       // A restart reads the session Firebase kept on the phone.
       runApp(const SizedBox.shrink());

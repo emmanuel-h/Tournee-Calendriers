@@ -9,6 +9,7 @@ import 'package:tournee_calendriers/application/use_cases/edit_street_numbers.da
 import 'package:tournee_calendriers/application/use_cases/find_imported_streets.dart';
 import 'package:tournee_calendriers/application/use_cases/import_reference_area.dart';
 import 'package:tournee_calendriers/application/use_cases/mark.dart';
+import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
@@ -17,6 +18,7 @@ import 'package:tournee_calendriers/presentation/dependencies.dart';
 import '../application/use_cases/street_fixtures.dart';
 import '../support/fakes/fake_address_directory.dart';
 import '../support/fakes/fake_commune_search.dart';
+import '../support/fakes/fake_member_account.dart';
 import '../support/fakes/fake_ports.dart';
 import '../support/fakes/fake_street_repository.dart';
 import '../support/fakes/fake_street_view_preferences.dart';
@@ -28,6 +30,7 @@ void main() {
   late FakeAddressDirectory directory;
   late FakeCommuneSearch communes;
   late FakeStreetViewPreferences preferences;
+  late FakeMemberAccount account;
   late ProviderContainer container;
 
   setUp(() {
@@ -51,6 +54,7 @@ void main() {
       },
     );
     preferences = FakeStreetViewPreferences([lilasId]);
+    account = FakeMemberAccount(nextMember: MemberId('uid-lea'));
     // A ProviderContainer is what a ProviderScope holds, without widgets:
     // the overrides bind the ports to the fakes.
     container = ProviderContainer(
@@ -62,6 +66,7 @@ void main() {
         idGeneratorProvider.overrideWithValue(FakeIdGenerator('street')),
         identityProvider.overrideWithValue(FakeIdentity(lea)),
         streetViewPreferencesProvider.overrideWithValue(preferences),
+        memberAccountProvider.overrideWithValue(account),
       ],
     );
   });
@@ -77,6 +82,7 @@ void main() {
       'IdGenerator': idGeneratorProvider,
       'IdentityProvider': identityProvider,
       'StreetViewPreferences': streetViewPreferencesProvider,
+      'MemberAccount': memberAccountProvider,
     };
     ports.forEach((name, port) {
       test('should name $name when nobody bound it', () {
@@ -221,6 +227,22 @@ void main() {
       await container.read(saveHideDoneProvider)(lilasId, hide: false);
 
       expect(preferences.writes, [(lilasId, false)]);
+    });
+
+    test('should read the member from the bound account', () {
+      account.signedInMember = MemberId('uid-kept');
+
+      expect(
+        container.read(readSignedInMemberProvider)(),
+        MemberId('uid-kept'),
+      );
+    });
+
+    test('should sign in with the bound account', () async {
+      final member = valueOf(await container.read(signInProvider)());
+
+      expect(member, MemberId('uid-lea'));
+      expect(account.signInCalls, 1);
     });
   });
 }
