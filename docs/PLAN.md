@@ -173,7 +173,42 @@ used on a real area. Mockups: `docs/mockups/Start.dc.html` and `docs/mockups/Imp
 - **Top bar** (T2.7): Accueil's (5.3, Home mockup) already. With a tournée open, its title
   « Tournée 49 · 2026 ▾ » over the CS opens « Mes tournées »; with none, the title stays
   « Tournée des calendriers ». [⚙] opens Paramètres (5.9) either way; [👥] comes with Équipe
-  (5.8). The street list itself stays the phone's streets until the streets move to Firestore.
+  (5.8).
+- **Streets of the tournée** (T2.8): with a tournée open, « Mes rues », the street screen,
+  the sheets, edit mode, « Importer des rues » and the Corbeille work on the streets of its
+  current campaign in Firestore, shared live with the team; with none open, on the phone's
+  own streets as in M1. Opening another tournée switches them at once: nothing of the one
+  left stays on screen, and « Annuler » no longer undoes a change made there. Streets the
+  member can no longer read (removed from the tournée) show as none, a street as gone.
+- **Moving the phone's streets into the tournée** (T2.8): while a tournée is open, the member
+  is one of its active members (as the phone last read it), the phone still holds streets
+  (Corbeille left out) and they never went into this tournée, a card sits above the list
+  (above « Aucune rue pour l'instant » too):
+
+```
+┌──────────────────────────────┐
+│ Tournée 49 · 2026 ▾   [👥][⚙]│
+│ CS Villefranche              │
+│ ┌──────────────────────────┐ │
+│ │ 12 rues sont enregistrées│ │
+│ │ sur ce téléphone.        │ │
+│ │ [Les ajouter à la tournée]│ │  ← primary button
+│ │        Plus tard         │ │  ← text button
+│ └──────────────────────────┘ │
+│ Mes rues · 3   Villefranche… │
+│ [ Filtrer les rues…        ] │
+└──────────────────────────────┘
+```
+
+  « 1 rue est enregistrée… » / « L'ajouter à la tournée » for one. While moving: « Ajout en
+  cours… n/N » in place of the buttons. Done: « 12 rues ajoutées à la tournée », or « 10 rues
+  ajoutées, 2 déjà dans la tournée » (« Aucune rue ajoutée, … » when all were there), and the
+  card never comes back for that tournée (another tournée may still be offered them). « Plus
+  tard » hides it for that tournée until the next launch. Each street goes as it is (marks,
+  buildings, hints, removed numbers) with every stamp's `by` made the member's, times kept;
+  a street whose BAN street (or id) the tournée already has is skipped and counted. The
+  phone keeps its copies, only no longer shown while a tournée is open. No network needed to
+  start: Firestore queues the new streets.
 - **Importer des rues**: the commune field searches geo.api.gouv.fr as you type (from two
   characters, after a 300 ms pause; a late answer to older text is ignored); a suggestion shows
   « name (postcode) », « … » after the first of several postcodes. Choosing one closes the
@@ -1274,6 +1309,38 @@ Tournée rules fixed in T2.2 (`lib/domain/tournee/`):
   use and once per process; `bindAdapters` asks for the database once, lazily, for every
   Firestore adapter.
 
+Streets on Firestore fixed in T2.8 (`lib/bootstrap/bindings.dart`,
+`lib/application/use_cases/move_streets_into_tournee.dart`, `lib/presentation/`):
+
+- **Binding.** `streetRepositoryProvider` follows `currentTourneeProvider` (its id and
+  campaign only): a `FirestoreStreetRepository` of the open tournée's current campaign,
+  closed (`onDispose`) when another tournée or none is opened; the phone storage
+  (`phoneStreetRepositoryProvider`, one `LocalStreetRepository`) while none is open. Every use
+  case watches it, so it is built again with the new storage. A Riverpod 3 notifier is
+  **kept** when it builds again (only its `ref` is new): notifiers reset what they read in
+  `build` (`FollowsStreet`, « Mes rues »), the kept undo change remembers the `ref` it was
+  made under and is dropped once that `ref` is no longer `mounted`, and the Corbeille waits
+  while its stream reloads (`isLoading`) rather than showing the old tournée's items. A
+  stream that fails (the member may no longer read the tournée) shows no street, or the
+  street as gone.
+- **`Street.restampedBy(member)`** (also on `House`, `Building`, `Dwelling`, `RemovedHouse`,
+  `ChangeStamp`): every stamp — each house's and door's last change, each removed number's
+  removal, the street's deletion — made by `member` at the time it had; nothing else
+  changes.
+- **Port `MovedStreetsLog`** (application): `wereMovedInto(tournée)`, `rememberMovedInto`.
+  Use cases `CountStreetsToMove(tournée)` (0 when they went there, when the member is not an
+  active member of the tournée as `TourneeRepository.find` gives it, or the phone holds none
+  out of its Corbeille) and `MoveStreetsIntoTournee(tournée, onProgress)`: each phone street
+  out of the Corbeille, unless the tournée has its id or its BAN id (Corbeille included), is
+  `add`ed restamped by `IdentityProvider.currentMember`; then the tournée is remembered;
+  returns `StreetsMoved(moved, alreadyThere)`. Started again after an interruption, it skips
+  what already went. `MoveStreetsNotifier` (`NoStreetsToMove` | `StreetsToMove(count)` |
+  `MovingStreets(done, total)`; « Plus tard » in `postponedMovesProvider`, in memory).
+- **Size.** One `set` per street (≈ 60 document writes for a typical member, a few kB to
+  ≈ 100 kB each). The rules only count nothing on a new street (`isNewStreet`: the houses are
+  a map, not checked one by one), so no bulk limit refuses a big street; the 1 MB document
+  limit is far off (a street of 1 500 numbers and a 500-door building ≈ 300 kB, rules test).
+
 Firestore adapters fixed in T2.3 (`lib/infrastructure/firestore/`, `lib/application/ports/`):
 
 - **Port `TourneeDirectory`** (application, Q20): what someone outside a tournée asks of the
@@ -1457,7 +1524,8 @@ can never drift.
 
 ### 6.3 Local-only state
 
-- **M1 phone storage** (until Firestore replaces it in M2 behind `StreetRepository`):
+- **M1 phone storage** (the streets while no tournée is open; Firestore's cache holds a
+  tournée's, T2.8):
   `infrastructure/local_storage/`, in the app support folder (private, kept across updates).
   One JSON file per street, `streets/<id>.json` (a commune of ≈ 300 streets / 6 000 numbers would
   make one file of a few MB rewritten at every tap; a street's file is a few kB to ≈ 100 kB).
@@ -1487,6 +1555,9 @@ can never drift.
   null, theme: "system" | "light" | "dark" }`. Same writing as the streets (`.tmp` then
   rename, queued); an unreadable file means none / defaults and is left until the next save.
   Files of the storage folder rather than `shared_preferences`: no plugin, plain Dart tests.
+- `moved_streets.json` (port `MovedStreetsLog`, T2.8): the tournées the phone's streets went
+  into, `{ version: 1, movedInto: [tourneeId…] }`, read once at start-up; an unreadable file
+  means none (moving again skips what is already there).
 - Offline download date and size per tournée (M4).
 - MapLibre offline region per tournée (tiles), behind the `OfflineMapStore` port.
 

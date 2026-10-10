@@ -15,6 +15,13 @@ void main() {
     expect(stamp.at, twoPm);
   });
 
+  test('should name another member and keep the time when restamped', () {
+    final stamp = ChangeStamp(by: lea, at: twoPm).restampedBy(paul);
+
+    expect(stamp.by, paul);
+    expect(stamp.at, twoPm);
+  });
+
   group('equality', () {
     test('should be equal when the member and the time are equal', () {
       final a = ChangeStamp(by: lea, at: twoPm);

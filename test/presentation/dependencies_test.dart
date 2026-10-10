@@ -12,9 +12,11 @@ import 'package:tournee_calendriers/application/use_cases/edit_street_numbers.da
 import 'package:tournee_calendriers/application/use_cases/find_imported_streets.dart';
 import 'package:tournee_calendriers/application/use_cases/import_reference_area.dart';
 import 'package:tournee_calendriers/application/use_cases/mark.dart';
+import 'package:tournee_calendriers/application/use_cases/move_streets_into_tournee.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/corbeille.dart';
+import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/domain/tournee/member.dart';
@@ -29,6 +31,7 @@ import '../domain/tournee/tournee_fixtures.dart'
 import '../support/fakes/fake_address_directory.dart';
 import '../support/fakes/fake_commune_search.dart';
 import '../support/fakes/fake_member_account.dart';
+import '../support/fakes/fake_moved_streets_log.dart';
 import '../support/fakes/fake_my_tournees_store.dart';
 import '../support/fakes/fake_phone_settings.dart';
 import '../support/fakes/fake_ports.dart';
@@ -42,6 +45,8 @@ import '../support/street_fixtures.dart';
 
 void main() {
   late FakeStreetRepository streets;
+  late FakeStreetRepository phoneStreets;
+  late FakeMovedStreetsLog movedStreets;
   late FakeAddressDirectory directory;
   late FakeCommuneSearch communes;
   late FakeStreetViewPreferences preferences;
@@ -56,6 +61,8 @@ void main() {
   /// [member].
   List<Override> overridesAs(MemberId member) => [
     streetRepositoryProvider.overrideWithValue(streets),
+    phoneStreetRepositoryProvider.overrideWithValue(phoneStreets),
+    movedStreetsLogProvider.overrideWithValue(movedStreets),
     addressDirectoryProvider.overrideWithValue(directory),
     communeSearchProvider.overrideWithValue(communes),
     clockProvider.overrideWithValue(FakeClock(twoPm)),
@@ -80,6 +87,18 @@ void main() {
 
   setUp(() {
     streets = repositoryWithLilas();
+    // Rue Pierre Morin, kept on the phone since M1.
+    phoneStreets = FakeStreetRepository([
+      valueOf(
+        Street.create(
+          id: StreetId('morin'),
+          name: 'Rue Pierre Morin',
+          commune: villefranche,
+          banId: BanStreetId('69264_1460'),
+        ),
+      ),
+    ]);
+    movedStreets = FakeMovedStreetsLog();
     directory = FakeAddressDirectory(
       communes: {
         '69264': Ok(
@@ -127,6 +146,8 @@ void main() {
       'PhoneSettings': phoneSettingsProvider,
       'TourneeDirectory': tourneeDirectoryProvider,
       'TourneeRepository': tourneeRepositoryProvider,
+      'phone StreetRepository': phoneStreetRepositoryProvider,
+      'MovedStreetsLog': movedStreetsLogProvider,
       'Random': randomProvider,
     };
     ports.forEach((name, port) {
@@ -419,6 +440,33 @@ void main() {
 
         expect(tournees.deleted, hasLength(1));
         expect(myTournees.myTournees.find(tourneeId), isNull);
+      },
+    );
+
+    test(
+      'should count the phone streets for the bound tournées and member',
+      () async {
+        // Léa of the team (`uid-lea`): an active member of the 49.
+        final leasPhone = ProviderContainer(overrides: overridesAs(leaId));
+        addTearDown(leasPhone.dispose);
+
+        expect(await leasPhone.read(countStreetsToMoveProvider)(tourneeId), 1);
+      },
+    );
+
+    test(
+      'should move the phone streets into the bound repository and log',
+      () async {
+        final moved = await container.read(moveStreetsIntoTourneeProvider)(
+          tourneeId,
+        );
+
+        expect(moved, const StreetsMoved(moved: 1, alreadyThere: 0));
+        expect(
+          streets[StreetId('morin')]?.name,
+          streetName('Rue Pierre Morin'),
+        );
+        expect(movedStreets.remembered, [tourneeId]);
       },
     );
   });

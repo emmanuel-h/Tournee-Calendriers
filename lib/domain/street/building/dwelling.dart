@@ -1,4 +1,5 @@
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
+import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling_label.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
@@ -41,6 +42,11 @@ final class Dwelling {
 
   /// What this dwelling adds to its building's progress: one door.
   Progress get progress => Progress.of(status);
+
+  /// This door with its last change made by [member], at the same time
+  /// (see `Street.restampedBy`).
+  Dwelling restampedBy(MemberId member) =>
+      Dwelling._(label, status, comeBack, lastChange?.restampedBy(member));
 
   @override
   bool operator ==(Object other) =>

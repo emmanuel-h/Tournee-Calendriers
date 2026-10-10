@@ -8,13 +8,20 @@ import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/phone_settings.dart';
 import 'package:tournee_calendriers/bootstrap/bindings.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
+import 'package:tournee_calendriers/domain/street/house.dart';
+import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 import 'package:tournee_calendriers/infrastructure/ban/ban_address_directory.dart';
 import 'package:tournee_calendriers/infrastructure/firebase_auth/firebase_identity.dart';
+import 'package:tournee_calendriers/infrastructure/firestore/firestore_street_repository.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_tournee_directory.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_tournee_repository.dart';
+import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_document_mapper.dart';
 import 'package:tournee_calendriers/infrastructure/geo_api/geo_commune_search.dart';
+import 'package:tournee_calendriers/infrastructure/local_storage/local_moved_streets_log.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_my_tournees.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_phone_settings.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_street_repository.dart';
@@ -29,6 +36,7 @@ import '../support/fakes/fake_address_directory.dart';
 import '../support/fakes/fake_anonymous_auth.dart';
 import '../support/fakes/fake_commune_search.dart';
 import '../support/results.dart';
+import '../support/street_fixtures.dart' show n, villefranche;
 
 void main() {
   late Directory storage;
@@ -45,15 +53,17 @@ void main() {
     FakeAddressDirectory? directory,
     FakeCommuneSearch? communes,
     FakeAnonymousAuth? auth,
+    FakeFirebaseFirestore? db,
+    Directory? folder,
   }) async {
     final container = ProviderContainer(
       overrides: await bindAdapters(
-        storage: storage,
+        storage: folder ?? storage,
         // By default a phone that never signed in and is offline.
         auth: auth ?? FakeAnonymousAuth(),
         firestore: () {
           firestoreAsked++;
-          return FakeFirebaseFirestore();
+          return db ?? FakeFirebaseFirestore();
         },
         addressDirectory: directory,
         communeSearch: communes,
@@ -235,5 +245,186 @@ void main() {
     expect(second.memberName, nameOf('Manu'));
     expect(second.theme, ThemeChoice.dark);
     expect(File('${storage.path}/settings.json').existsSync(), isTrue);
+  });
+
+  group('streets', () {
+    late FakeFirebaseFirestore db;
+
+    setUp(() => db = FakeFirebaseFirestore());
+
+    /// The phone of [uid] (Léa by default, signed in before) knowing the
+    /// 49 and the 12, the 49 open unless [noTournee].
+    Future<ProviderContainer> leasPhone({
+      bool noTournee = false,
+      Directory? folder,
+      String uid = 'uid-lea',
+    }) async {
+      final container = await containerWith(
+        auth: FakeAnonymousAuth(currentUid: uid),
+        db: db,
+        folder: folder,
+      );
+      final mine = MyTournees.none.remember(tournee49).remember(tournee12);
+      await container
+          .read(myTourneesStoreProvider)
+          .save(noTournee ? mine : valueOf(mine.open(tournee49.id)));
+      return container;
+    }
+
+    Future<void> openTournee(ProviderContainer container, TourneeId id) async {
+      final store = container.read(myTourneesStoreProvider);
+      await store.save(valueOf(store.myTournees.open(id)));
+    }
+
+    final morin = valueOf(
+      Street.create(
+        id: StreetId('morin'),
+        name: 'Rue Pierre Morin',
+        commune: villefranche,
+        banId: BanStreetId('69264_1460'),
+        houses: [
+          House(number: n('32')),
+          House(number: n('33')),
+        ],
+      ),
+    );
+
+    test('should be the phone storage while no tournée is open', () async {
+      final container = await leasPhone(noTournee: true);
+
+      final streets = container.read(streetRepositoryProvider);
+
+      expect(streets, same(container.read(phoneStreetRepositoryProvider)));
+      expect(streets, isA<LocalStreetRepository>());
+      expect(firestoreAsked, 0);
+      expect(
+        container.read(movedStreetsLogProvider),
+        isA<LocalMovedStreetsLog>(),
+      );
+    });
+
+    test('should be the open tournée\'s campaign in Firestore', () async {
+      final container = await leasPhone();
+
+      final streets = container.read(streetRepositoryProvider);
+      await streets.add(morin);
+      await pumpEventQueue();
+
+      expect(streets, isA<FirestoreStreetRepository>());
+      expect(
+        container.read(phoneStreetRepositoryProvider),
+        isA<LocalStreetRepository>(),
+      );
+      final stored = await db
+          .doc('tournees/t49/campaigns/2026/streets/morin')
+          .get();
+      expect(stored.data()?['name'], 'Rue Pierre Morin');
+      expect(
+        await container.read(phoneStreetRepositoryProvider).find(morin.id),
+        isNull,
+      );
+    });
+
+    test(
+      'should follow the tournée opened and stop following the one left',
+      () async {
+        final container = await leasPhone();
+        final streets49 = container.read(streetRepositoryProvider);
+        final seenIn49 = <int>[];
+        final listening = streets49.watchAll().listen(
+          (streets) => seenIn49.add(streets.length),
+        );
+        addTearDown(listening.cancel);
+        await pumpEventQueue();
+
+        await openTournee(container, tournee12.id);
+        final streets12 = container.read(streetRepositoryProvider);
+        await streets12.add(morin);
+        // A teammate adds a street to the 49, which is no longer followed.
+        await db
+            .doc('tournees/t49/campaigns/2026/streets/morin')
+            .set(streetToDocument(morin));
+        await pumpEventQueue();
+
+        expect(streets12, isNot(same(streets49)));
+        expect(streets12, isA<FirestoreStreetRepository>());
+        expect(
+          (await db.doc('tournees/t12/campaigns/2026/streets/morin').get())
+              .exists,
+          isTrue,
+        );
+        expect(seenIn49, [0]);
+      },
+    );
+
+    test('should be the phone storage again once no tournée is open', () async {
+      final container = await leasPhone();
+      container.read(streetRepositoryProvider);
+
+      final store = container.read(myTourneesStoreProvider);
+      await store.save(store.myTournees.forget(tournee49.id));
+
+      expect(
+        container.read(streetRepositoryProvider),
+        same(container.read(phoneStreetRepositoryProvider)),
+      );
+    });
+
+    test(
+      'should keep the storage when the open tournée is saved again',
+      () async {
+        final container = await leasPhone();
+        final streets = container.read(streetRepositoryProvider);
+
+        final store = container.read(myTourneesStoreProvider);
+        await store.save(store.myTournees.remember(tournee49));
+
+        expect(container.read(streetRepositoryProvider), same(streets));
+      },
+    );
+
+    test('should show a teammate the marks of another phone', () async {
+      final paulsFolder = await Directory.systemTemp.createTemp('paul');
+      addTearDown(() => paulsFolder.delete(recursive: true));
+      final lea = await leasPhone();
+      final paul = await leasPhone(folder: paulsFolder, uid: 'uid-paul');
+      await lea.read(streetRepositoryProvider).add(morin);
+      await pumpEventQueue();
+      final seenByPaul = <VisitStatus?>[];
+      final listening = paul
+          .read(observeStreetProvider)(morin.id)
+          .listen((street) => seenByPaul.add(street?.houses.first.status));
+      addTearDown(listening.cancel);
+      await pumpEventQueue();
+
+      valueOf(
+        await lea.read(markHouseProvider)(morin.id, n('32'), VisitStatus.done),
+      );
+      await pumpEventQueue();
+
+      expect(seenByPaul, [VisitStatus.toDo, VisitStatus.done]);
+      final stored = await db
+          .doc('tournees/t49/campaigns/2026/streets/morin')
+          .get();
+      final houses = stored.data()!['houses'] as Map<String, dynamic>;
+      expect((houses['32'] as Map<String, dynamic>)['by'], 'uid-lea');
+    });
+
+    test(
+      'should keep the tournées the streets went into across starts',
+      () async {
+        await (await containerWith())
+            .read(movedStreetsLogProvider)
+            .rememberMovedInto(tournee49.id);
+
+        final second = await containerWith();
+
+        expect(
+          second.read(movedStreetsLogProvider).wereMovedInto(tournee49.id),
+          isTrue,
+        );
+        expect(File('${storage.path}/moved_streets.json').existsSync(), isTrue);
+      },
+    );
   });
 }

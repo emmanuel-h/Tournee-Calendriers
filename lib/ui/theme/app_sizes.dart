@@ -184,6 +184,11 @@ abstract final class AppSizes {
   /// A join request's card in Équipe.
   static const requestCardRadius = 16.0;
 
+  /// The card of the start screen offering the phone's streets to the
+  /// open tournée (« Les ajouter à la tournée »): drawn like a request's
+  /// card.
+  static const moveStreetsCardRadius = requestCardRadius;
+
   /// The round initial before a member or a request (« M », « J »).
   static const avatar = 36.0;
 

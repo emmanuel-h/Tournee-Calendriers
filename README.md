@@ -10,11 +10,15 @@ across a team. Flutter + Riverpod, Android first. The UI is in French.
 
 Temporary M1 start screen (until the map arrives in M3):
 
-- « Mes rues »: the streets on the phone with their progress, a filter that ignores accents
-  and case; works offline.
+- « Mes rues »: the streets of the open tournée, shared live with the team (Firestore), or
+  the streets on the phone while no tournée is open; their progress, a filter that ignores
+  accents and case; works offline.
+- With a tournée open, a card offers the streets kept on the phone: « Les ajouter à la
+  tournée » moves them with their marks (once per tournée; a street the tournée already has
+  is skipped), « Plus tard » hides the card until the next launch.
 - « Importer des rues »: find a commune by name (geo.api.gouv.fr), tick some of its streets
-  (national address base, BAN) and import them with their house numbers. Needs the network
-  once; streets already imported keep their marks.
+  (national address base, BAN) and import them with their house numbers, into the open
+  tournée (or the phone). Needs the network once; streets already imported keep their marks.
 - Top bar: the open tournée (« Tournée 49 · 2026 » over its centre de secours) opens « Mes
   tournées », to switch tournée (the app reopens the last one at launch, offline too); 👥
   opens Équipe (a dot while a join request waits); ⚙ opens Paramètres: first name, « Mes tournées », theme (Système, Clair, Sombre),
@@ -58,5 +62,6 @@ Street screen (« Rue »):
 - « Modifier les portes » (« Gérer l'immeuble » under the grid): floor by floor, « + » adds a
   door, ✕ removes one (with « Annuler »; asks first when it has a mark), a tap renames it
   (« Gauche », « Droite » on every floor). The other doors keep their marks.
-- Works offline, cold start included: marks are stored on the phone.
+- Works offline, cold start included: marks are kept on the phone (Firestore's cache for a
+  tournée) and sent to the team when the network is back.
 - Not yet: « Ne plus la faire » (M3).

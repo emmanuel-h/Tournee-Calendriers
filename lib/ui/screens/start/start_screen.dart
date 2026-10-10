@@ -10,6 +10,7 @@ import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/screens/my_tournees/my_tournees_sheet.dart';
 import 'package:tournee_calendriers/ui/screens/my_tournees/tournee_title_button.dart';
+import 'package:tournee_calendriers/ui/screens/start/move_streets_card.dart';
 import 'package:tournee_calendriers/ui/screens/start/street_row.dart';
 import 'package:tournee_calendriers/ui/screens/team/team_button.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
@@ -24,6 +25,9 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 /// (« Tournée 49 · 2026 ▾ » over its centre) opens « Mes tournées », 👥
 /// opens Équipe (with a dot while a request waits), ⚙ opens Paramètres.
 /// With no tournée open, the app's name stays and there is no 👥.
+///
+/// The streets are those of the open tournée, the phone's own when none is
+/// open; a card on top offers the phone's streets to the open tournée.
 ///
 /// Temporary: Accueil (the map and its « Mes rues » panel, PLAN §5.3)
 /// replaces it in M3.
@@ -75,6 +79,9 @@ final class StartScreen extends ConsumerWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
+            // The phone's streets offered to the open tournée (nothing
+            // when there is none to offer).
+            const MoveStreetsCard(),
             Expanded(
               child: state.loading
                   ? const SizedBox.shrink()

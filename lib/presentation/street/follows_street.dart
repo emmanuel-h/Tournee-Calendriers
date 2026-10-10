@@ -31,15 +31,28 @@ mixin FollowsStreet<S> on Notifier<S> {
 
   /// Starts following the street [id]; `build` then returns [render].
   void followStreet(StreetId id) {
+    // Riverpod keeps the notifier when it builds again (another tournée
+    // opened): what was read of the old street storage must not show.
+    _street = null;
+    _read = false;
     // `ref.watch` on the use case: should its repository be replaced, the
     // notifier is built again and listens to the new one.
-    final subscription = ref.watch(observeStreetProvider)(id).listen((street) {
-      _street = street;
-      _read = true;
-      state = render();
-    });
+    final subscription = ref
+        .watch(observeStreetProvider)(id)
+        .listen(
+          _show,
+          // The street can no longer be read (the member left the
+          // tournée): the screen shows it as gone.
+          onError: (Object _) => _show(null),
+        );
     // The subscription lives as long as the notifier; Riverpod calls this
     // when the screen no longer needs it.
     ref.onDispose(subscription.cancel);
+  }
+
+  void _show(Street? street) {
+    _street = street;
+    _read = true;
+    state = render();
   }
 }

@@ -1904,6 +1904,42 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Restaurer {item}'**
   String corbeilleRestoreSemantics(String item);
+
+  /// Card of the start screen, with a tournée open, while the phone still holds streets from before the tournée (PLAN §5.0).
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, =1{1 rue est enregistrée sur ce téléphone.} other{{count} rues sont enregistrées sur ce téléphone.}}'**
+  String moveStreetsCount(int count);
+
+  /// Primary button of the card: moves the phone's streets into the open tournée.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, =1{L\'ajouter à la tournée} other{Les ajouter à la tournée}}'**
+  String moveStreetsAction(int count);
+
+  /// Text button of the card: hides it until the next launch.
+  ///
+  /// In fr, this message translates to:
+  /// **'Plus tard'**
+  String get moveStreetsLater;
+
+  /// In the card while the phone's streets go into the tournée.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajout en cours… {done}/{total}'**
+  String moveStreetsProgress(int done, int total);
+
+  /// Message once every street of the phone went into the tournée.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, =1{1 rue ajoutée à la tournée} other{{count} rues ajoutées à la tournée}}'**
+  String moveStreetsDone(int count);
+
+  /// Message once the phone's streets went into the tournée, some of them skipped because the tournée already had them.
+  ///
+  /// In fr, this message translates to:
+  /// **'{moved, plural, =0{Aucune rue ajoutée} =1{1 rue ajoutée} other{{moved} rues ajoutées}}, {already, plural, =1{1 déjà dans la tournée} other{{already} déjà dans la tournée}}'**
+  String moveStreetsDoneSome(int moved, int already);
 }
 
 class _AppLocalizationsDelegate

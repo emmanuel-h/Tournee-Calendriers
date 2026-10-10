@@ -19,6 +19,7 @@ import 'package:tournee_calendriers/application/ports/commune_search.dart';
 import 'package:tournee_calendriers/application/ports/id_generator.dart';
 import 'package:tournee_calendriers/application/ports/identity_provider.dart';
 import 'package:tournee_calendriers/application/ports/member_account.dart';
+import 'package:tournee_calendriers/application/ports/moved_streets_log.dart';
 import 'package:tournee_calendriers/application/ports/my_tournees_store.dart';
 import 'package:tournee_calendriers/application/ports/phone_settings.dart';
 import 'package:tournee_calendriers/application/ports/street_view_preferences.dart';
@@ -31,6 +32,7 @@ import 'package:tournee_calendriers/application/use_cases/import_reference_area.
 import 'package:tournee_calendriers/application/use_cases/list_commune_streets.dart';
 import 'package:tournee_calendriers/application/use_cases/mark_dwelling.dart';
 import 'package:tournee_calendriers/application/use_cases/mark_house.dart';
+import 'package:tournee_calendriers/application/use_cases/move_streets_into_tournee.dart';
 import 'package:tournee_calendriers/application/use_cases/my_tournees.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_corbeille.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_street.dart';
@@ -46,8 +48,18 @@ import 'package:tournee_calendriers/domain/tournee/tournee_repository.dart';
 
 // Ports, bound by bootstrap/.
 
+/// The streets every street use case works on: those of the open
+/// tournée, or the phone's own (M1) while none is open. The composition
+/// root makes it follow the open tournée, so every use case, and every
+/// screen that watches one, follows a switch of tournée by itself.
 final streetRepositoryProvider = Provider<StreetRepository>(
   (ref) => _unbound('StreetRepository'),
+);
+
+/// The streets kept on the phone since M1, whichever tournée is open: what
+/// « Les ajouter à la tournée » moves (PLAN §5.0).
+final phoneStreetRepositoryProvider = Provider<StreetRepository>(
+  (ref) => _unbound('phone StreetRepository'),
 );
 final addressDirectoryProvider = Provider<AddressDirectory>(
   (ref) => _unbound('AddressDirectory'),
@@ -79,6 +91,9 @@ final tourneeDirectoryProvider = Provider<TourneeDirectory>(
 );
 final tourneeRepositoryProvider = Provider<TourneeRepository>(
   (ref) => _unbound('TourneeRepository'),
+);
+final movedStreetsLogProvider = Provider<MovedStreetsLog>(
+  (ref) => _unbound('MovedStreetsLog'),
 );
 
 /// The source join codes are drawn from: `Random.secure()` in the app
@@ -241,5 +256,21 @@ final deleteTourneeProvider = Provider(
     ref.watch(tourneeRepositoryProvider),
     ref.watch(identityProvider),
     ref.watch(myTourneesStoreProvider),
+  ),
+);
+final countStreetsToMoveProvider = Provider(
+  (ref) => CountStreetsToMove(
+    ref.watch(phoneStreetRepositoryProvider),
+    ref.watch(movedStreetsLogProvider),
+    ref.watch(tourneeRepositoryProvider),
+    ref.watch(identityProvider),
+  ),
+);
+final moveStreetsIntoTourneeProvider = Provider(
+  (ref) => MoveStreetsIntoTournee(
+    ref.watch(phoneStreetRepositoryProvider),
+    ref.watch(streetRepositoryProvider),
+    ref.watch(identityProvider),
+    ref.watch(movedStreetsLogProvider),
   ),
 );

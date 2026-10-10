@@ -150,6 +150,31 @@ describe('creating a street', () => {
     await assertFails(newStreet(lea, streetDoc({ communeName: '' })));
   });
 
+  it('should accept a large street moved from the phone whole', async () => {
+    // « Les ajouter à la tournée » (PLAN §5.0) writes each street of the
+    // phone as one new document: 1 500 numbers, all marked by the caller,
+    // and a building of 500 doors. A new street's houses are not checked
+    // one by one, so no bulk limit applies (the 1 MB document limit does,
+    // far above this ≈ 300 kB).
+    const houses = {};
+    for (let n = 1; n <= 1500; n += 1) {
+      houses[n] = houseEntry(n, { status: 'DONE', by: lea, at: twoPm });
+    }
+    const dwellings = {};
+    const doors = [];
+    for (let door = 1; door <= 500; door += 1) {
+      dwellings[`A-${door}`] = doorEntry({ status: 'NOBODY_HOME', by: lea, at: twoPm });
+      doors.push(String(door));
+    }
+    houses[2000] = buildingEntry({
+      n: 2000,
+      layout: [{ esc: 'A', floor: null, doors }],
+      dwellings,
+    });
+
+    await assertSucceeds(newStreet(lea, streetDoc({ houses })));
+  });
+
   it('should refuse a street whose houses are not a map', async () => {
     await assertFails(newStreet(lea, streetDoc({ houses: [] })));
   });

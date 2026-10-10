@@ -32,6 +32,15 @@ final class FakeStreetRepository implements StreetRepository {
   /// disk would; the saves after it work again.
   Exception? failNextSave;
 
+  /// When set, each [add] waits for it before storing: a test holds a
+  /// long operation half way.
+  Completer<void>? holdAdds;
+
+  /// When set, every stream fails with it instead of giving the streets,
+  /// as Firestore's listener does once the member may no longer read the
+  /// tournée.
+  Object? watchError;
+
   /// The street [id] as stored now.
   Street? operator [](StreetId id) => _streets[id];
 
@@ -67,6 +76,7 @@ final class FakeStreetRepository implements StreetRepository {
 
   @override
   Future<void> add(Street street) async {
+    await holdAdds?.future;
     added.add(street);
     _streets[street.id] = street;
     _changed.add(null);
@@ -89,6 +99,10 @@ final class FakeStreetRepository implements StreetRepository {
     StreamSubscription<void>? subscription;
     controller = StreamController<T>(
       onListen: () {
+        if (watchError case final error?) {
+          controller.addError(error);
+          return;
+        }
         controller.add(read());
         subscription = _changed.stream.listen((_) => controller.add(read()));
       },

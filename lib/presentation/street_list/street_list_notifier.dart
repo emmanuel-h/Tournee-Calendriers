@@ -21,16 +21,29 @@ final class StreetListNotifier extends Notifier<StreetListState> {
 
   @override
   StreetListState build() {
+    // Riverpod keeps the notifier when it builds again (another tournée
+    // opened): the old tournée's streets must not show. The filter stays,
+    // as the text in its field does.
+    _streets = null;
     // `ref.watch` on the use case: should its repository be replaced, this
     // notifier is built again and listens to the new one.
-    final subscription = ref.watch(observeStreetsProvider)().listen((streets) {
-      _streets = streets;
-      state = _view();
-    });
+    final subscription = ref
+        .watch(observeStreetsProvider)()
+        .listen(
+          _show,
+          // The streets can no longer be read (the member left the
+          // tournée): none to show.
+          onError: (Object _) => _show(const []),
+        );
     // The subscription lives as long as the notifier; Riverpod calls this
     // when the screen no longer needs it.
     ref.onDispose(subscription.cancel);
     return _view();
+  }
+
+  void _show(List<Street> streets) {
+    _streets = streets;
+    state = _view();
   }
 
   /// Keeps only the streets whose name holds [text], ignoring case and

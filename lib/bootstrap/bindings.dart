@@ -12,10 +12,12 @@ import 'package:tournee_calendriers/application/ports/commune_search.dart';
 import 'package:tournee_calendriers/infrastructure/ban/ban_address_directory.dart';
 import 'package:tournee_calendriers/infrastructure/firebase_auth/anonymous_auth.dart';
 import 'package:tournee_calendriers/infrastructure/firebase_auth/firebase_identity.dart';
+import 'package:tournee_calendriers/infrastructure/firestore/firestore_street_repository.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_tournee_directory.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_tournee_repository.dart';
 import 'package:tournee_calendriers/infrastructure/geo_api/geo_commune_search.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_identity.dart';
+import 'package:tournee_calendriers/infrastructure/local_storage/local_moved_streets_log.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_my_tournees.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_phone_settings.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_street_repository.dart';
@@ -23,6 +25,7 @@ import 'package:tournee_calendriers/infrastructure/local_storage/local_street_vi
 import 'package:tournee_calendriers/infrastructure/system/random_id_generator.dart';
 import 'package:tournee_calendriers/infrastructure/system/system_clock.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
+import 'package:tournee_calendriers/presentation/my_tournees/my_tournees_notifier.dart';
 
 /// The one HTTP client of the app, shared by the services that need the
 /// network (the BAN and geo.api.gouv.fr). Riverpod calls `onDispose` when the
@@ -36,18 +39,22 @@ final httpClientProvider = Provider<http.Client>((ref) {
 /// Binds every port of `presentation/dependencies.dart` to its adapter, as
 /// the overrides of the app's `ProviderScope`.
 ///
-/// - [storage]: the folder of the phone storage. The streets go in
+/// - [storage]: the folder of the phone storage. The streets of M1 go in
 ///   `streets/`, the id the phone made for itself in `member_id`, the
 ///   street screens' « Masquer faits » in `street_view.json`, « Mes
 ///   tournées » and the open one in `my_tournees.json`, the name and the
-///   theme in `settings.json`.
+///   theme in `settings.json`, the tournées that received the streets of
+///   M1 in `moved_streets.json`.
 /// - [auth]: Firebase anonymous sign-in. Its uid is the member; until the
 ///   first sign-in succeeds, the phone's own id stands in for the marks,
 ///   and creating or joining a tournée signs in again (`MemberAccount`).
 /// - [firestore]: gives the Firestore database, asked once, only when a
 ///   screen first needs it (following a request to join, the open
-///   tournée's team), so a phone with no tournée never touches it. It
-///   serves the phone's copy first, so an offline cold start works.
+///   tournée's team and streets), so a phone with no tournée never touches
+///   it. It serves the phone's copy first, so an offline cold start works.
+///
+/// The streets follow the open tournée: those of its current campaign in
+/// Firestore while one is open, the phone's own (M1) while none is.
 /// - [addressDirectory]: replaces the BAN, so the instrumented suite can
 ///   import streets without the network.
 /// - [communeSearch]: replaces geo.api.gouv.fr, for the same reason.
@@ -78,6 +85,15 @@ Future<List<Override>> bindAdapters({
   );
   final myTournees = await LocalMyTournees.load(fileOf('my_tournees.json'));
   final settings = await LocalPhoneSettings.load(fileOf('settings.json'));
+  final movedStreets = await LocalMovedStreetsLog.load(
+    fileOf('moved_streets.json'),
+  );
+  // One phone storage of the streets: it answers from memory and queues
+  // its writes, so two instances of it must never run side by side.
+  final phoneStreets = LocalStreetRepository(
+    Directory('${storage.path}${Platform.pathSeparator}streets'),
+  );
+  const clock = SystemClock();
   // `late final` with a value: computed the first time it is read, then
   // kept. So Firestore is asked for once, by whichever adapter needs it
   // first, and never on a phone that does not.
@@ -86,11 +102,32 @@ Future<List<Override>> bindAdapters({
   // plain `Random()` could be predicted (PLAN §5.2).
   final random = Random.secure();
   return [
-    streetRepositoryProvider.overrideWithValue(
-      LocalStreetRepository(
-        Directory('${storage.path}${Platform.pathSeparator}streets'),
-      ),
-    ),
+    phoneStreetRepositoryProvider.overrideWithValue(phoneStreets),
+    // Built again each time another tournée (or none) is opened, which
+    // builds again every use case, and every screen, that watches it. The
+    // old tournée's listener stops (`onDispose`, which Riverpod runs before
+    // building again).
+    streetRepositoryProvider.overrideWith((ref) {
+      // `select`: only the tournée and its campaign name the streets; the
+      // summary changing otherwise (a new centre name) keeps them.
+      final open = ref.watch(
+        currentTourneeProvider.select(
+          (tournee) => tournee == null ? null : (tournee.id, tournee.campaign),
+        ),
+      );
+      if (open == null) return phoneStreets;
+      final (tournee, campaign) = open;
+      final streets = FirestoreStreetRepository(
+        db,
+        tournee: tournee,
+        campaign: campaign,
+        identity: identity,
+        clock: clock,
+      );
+      ref.onDispose(() => unawaited(streets.close()));
+      return streets;
+    }),
+    movedStreetsLogProvider.overrideWithValue(movedStreets),
     addressDirectoryProvider.overrideWith(
       (ref) =>
           addressDirectory ??
@@ -99,7 +136,7 @@ Future<List<Override>> bindAdapters({
     communeSearchProvider.overrideWith(
       (ref) => communeSearch ?? GeoCommuneSearch(ref.watch(httpClientProvider)),
     ),
-    clockProvider.overrideWithValue(const SystemClock()),
+    clockProvider.overrideWithValue(clock),
     idGeneratorProvider.overrideWithValue(ids),
     identityProvider.overrideWithValue(identity),
     memberAccountProvider.overrideWithValue(identity),

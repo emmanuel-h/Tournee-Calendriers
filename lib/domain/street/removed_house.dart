@@ -1,4 +1,5 @@
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
+import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 
@@ -19,6 +20,13 @@ final class RemovedHouse {
   final ChangeStamp removal;
 
   HouseNumber get number => house.number;
+
+  /// This removed house, and its removal, stamped by [member] at the same
+  /// times (see `Street.restampedBy`).
+  RemovedHouse restampedBy(MemberId member) => RemovedHouse(
+    house: house.restampedBy(member),
+    removal: removal.restampedBy(member),
+  );
 
   @override
   bool operator ==(Object other) =>

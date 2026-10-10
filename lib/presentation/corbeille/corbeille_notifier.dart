@@ -30,10 +30,12 @@ final corbeilleProvider =
 final class CorbeilleNotifier extends Notifier<CorbeilleState> {
   @override
   CorbeilleState build() {
-    // `.value`: the items once read, null while loading (or should the
-    // storage fail, which the phone storage only does with a bug).
-    final items = ref.watch(corbeilleItemsProvider).value;
-    if (items == null) return CorbeilleState.waiting;
+    final read = ref.watch(corbeilleItemsProvider);
+    // `.value`: the items once read, null before (or should the storage
+    // fail). While another tournée's streets load, `.value` still holds
+    // the old tournée's items (`isLoading` is true then): not shown.
+    final items = read.value;
+    if (items == null || read.isLoading) return CorbeilleState.waiting;
     final team = ref.watch(teamProvider);
     final now = ref.read(clockProvider).now();
     return CorbeilleState(

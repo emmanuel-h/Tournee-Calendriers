@@ -1280,4 +1280,63 @@ class AppLocalizationsFr extends AppLocalizations {
   String corbeilleRestoreSemantics(String item) {
     return 'Restaurer $item';
   }
+
+  @override
+  String moveStreetsCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count rues sont enregistrées sur ce téléphone.',
+      one: '1 rue est enregistrée sur ce téléphone.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String moveStreetsAction(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Les ajouter à la tournée',
+      one: 'L\'ajouter à la tournée',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get moveStreetsLater => 'Plus tard';
+
+  @override
+  String moveStreetsProgress(int done, int total) {
+    return 'Ajout en cours… $done/$total';
+  }
+
+  @override
+  String moveStreetsDone(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count rues ajoutées à la tournée',
+      one: '1 rue ajoutée à la tournée',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String moveStreetsDoneSome(int moved, int already) {
+    String _temp0 = intl.Intl.pluralLogic(
+      moved,
+      locale: localeName,
+      other: '$moved rues ajoutées',
+      one: '1 rue ajoutée',
+      zero: 'Aucune rue ajoutée',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      already,
+      locale: localeName,
+      other: '$already déjà dans la tournée',
+      one: '1 déjà dans la tournée',
+    );
+    return '$_temp0, $_temp1';
+  }
 }

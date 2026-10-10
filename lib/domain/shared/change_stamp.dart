@@ -11,6 +11,11 @@ final class ChangeStamp {
   final MemberId by;
   final DateTime at;
 
+  /// The same change, made at the same time, but by [member]: what a
+  /// street moved from the phone into a tournée carries (see
+  /// `Street.restampedBy`).
+  ChangeStamp restampedBy(MemberId member) => ChangeStamp(by: member, at: at);
+
   @override
   bool operator ==(Object other) =>
       other is ChangeStamp && other.by == by && other.at == at;

@@ -41,6 +41,9 @@ final class FakeTourneeRepository implements TourneeRepository {
   /// When set, [watch] fails with it instead of giving the tournée.
   Object? watchError;
 
+  /// When set, [find] fails with it instead of giving the tournée.
+  Error? findError;
+
   /// The tournée [id] as stored now.
   Tournee? operator [](TourneeId id) => _tournees[id];
 
@@ -58,7 +61,10 @@ final class FakeTourneeRepository implements TourneeRepository {
   }
 
   @override
-  Future<Tournee?> find(TourneeId id) async => _tournees[id];
+  Future<Tournee?> find(TourneeId id) async {
+    if (findError case final error?) throw error;
+    return _tournees[id];
+  }
 
   @override
   Stream<Tournee?> watch(TourneeId id) {

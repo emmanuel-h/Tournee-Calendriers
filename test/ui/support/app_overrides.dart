@@ -9,6 +9,7 @@ import 'package:tournee_calendriers/presentation/import_streets/import_notifier.
 import '../../support/fakes/fake_address_directory.dart';
 import '../../support/fakes/fake_commune_search.dart';
 import '../../support/fakes/fake_member_account.dart';
+import '../../support/fakes/fake_moved_streets_log.dart';
 import '../../support/fakes/fake_my_tournees_store.dart';
 import '../../support/fakes/fake_phone_settings.dart';
 import '../../support/fakes/fake_ports.dart';
@@ -22,7 +23,9 @@ import '../../support/street_fixtures.dart';
 /// Every port the screens use, bound to [streets] (empty by default: the
 /// start screen shows its first-launch state), [directory], [communes],
 /// [preferences], [myTournees] (none by default), [settings] and
-/// [tourneeDirectory], [tournees] (none by default); [member] (Léa by
+/// [tourneeDirectory], [tournees] (none by default), [phoneStreets] (the
+/// streets kept on the phone since M1, none by default: no card offers
+/// them to a tournée) and [movedStreets]; [member] (Léa by
 /// default) uses the phone and marks the houses at [now] (two o'clock by
 /// default). The commune search answers without waiting for a pause in
 /// the typing; a new join code is `234567`.
@@ -35,10 +38,18 @@ List<Override> fakePhone({
   FakePhoneSettings? settings,
   FakeTourneeDirectory? tourneeDirectory,
   FakeTourneeRepository? tournees,
+  FakeStreetRepository? phoneStreets,
+  FakeMovedStreetsLog? movedStreets,
   MemberId? member,
   DateTime? now,
 }) => [
   streetRepositoryProvider.overrideWithValue(streets ?? FakeStreetRepository()),
+  phoneStreetRepositoryProvider.overrideWithValue(
+    phoneStreets ?? FakeStreetRepository(),
+  ),
+  movedStreetsLogProvider.overrideWithValue(
+    movedStreets ?? FakeMovedStreetsLog(),
+  ),
   addressDirectoryProvider.overrideWithValue(
     directory ?? FakeAddressDirectory(),
   ),

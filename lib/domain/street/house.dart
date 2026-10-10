@@ -1,5 +1,6 @@
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
+import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/building/building.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
@@ -109,6 +110,17 @@ final class House {
       building.progress +
           (comeBack == null ? Progress.empty : Progress.buildingComeBack),
   };
+
+  /// This house with its last change, and each door's, made by [member],
+  /// at the same time (see `Street.restampedBy`).
+  House restampedBy(MemberId member) => House._(
+    number,
+    status,
+    comeBack,
+    lastChange?.restampedBy(member),
+    building?.restampedBy(member),
+    position,
+  );
 
   @override
   bool operator ==(Object other) =>
