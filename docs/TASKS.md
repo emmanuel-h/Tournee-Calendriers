@@ -62,6 +62,8 @@ Fixtures, examples and screenshots use **Villefranche-sur-Saône** (public data)
 
 Later, to design with you: [#63](https://github.com/emmanuel-h/Tournee-Calendriers/issues/63) Runs and
 money recap (global amounts per payment method, never per house).
+[#80](https://github.com/emmanuel-h/Tournee-Calendriers/issues/80) count the visits to a house, [#81](https://github.com/emmanuel-h/Tournee-Calendriers/issues/81) the third tap opens the details to
+set when to come back, [#82](https://github.com/emmanuel-h/Tournee-Calendriers/issues/82) come-back reminders and a list of houses to come back to.
 
 The temporary start screen of #15 was built right after #46, before the street screen, so every
 later screen could be checked with real streets (decided with you on 2026-10-04).
@@ -85,6 +87,9 @@ later screen could be checked with real streets (decided with you on 2026-10-04)
 | [#71](https://github.com/emmanuel-h/Tournee-Calendriers/issues/71) | T2.7b A new first name reaches the team |  |
 | [#24](https://github.com/emmanuel-h/Tournee-Calendriers/issues/24) | T2.8 Street screen on Firestore |  |
 | [#25](https://github.com/emmanuel-h/Tournee-Calendriers/issues/25) | T2.9 Pending-sync indicator |  |
+| [#75](https://github.com/emmanuel-h/Tournee-Calendriers/issues/75) | Only admins add a centre de secours, create a tournée or draw a new code | checkpoint |
+| [#76](https://github.com/emmanuel-h/Tournee-Calendriers/issues/76) | Copy button next to the code |  |
+| [#77](https://github.com/emmanuel-h/Tournee-Calendriers/issues/77) | Licences page keeps loading on the phone |  |
 
 ## M3 Map and streets
 
@@ -96,6 +101,7 @@ later screen could be checked with real streets (decided with you on 2026-10-04)
 | [#29](https://github.com/emmanuel-h/Tournee-Calendriers/issues/29) | T3.4 Map widget |  |
 | [#30](https://github.com/emmanuel-h/Tournee-Calendriers/issues/30) | T3.5 Accueil |  |
 | [#31](https://github.com/emmanuel-h/Tournee-Calendriers/issues/31) | T3.6 Ajouter des rues |  |
+| [#78](https://github.com/emmanuel-h/Tournee-Calendriers/issues/78) | A tournée's commune: map centred on it, map and list to add streets | checkpoint |
 
 ## M4 Offline
 
@@ -114,6 +120,7 @@ later screen could be checked with real streets (decided with you on 2026-10-04)
 | [#37](https://github.com/emmanuel-h/Tournee-Calendriers/issues/37) | T5.3 Signed release | manual |
 | [#69](https://github.com/emmanuel-h/Tournee-Calendriers/issues/69) | Upgrade the rules test tooling past Node 18 |  |
 | [#70](https://github.com/emmanuel-h/Tournee-Calendriers/issues/70) | Check bulk street writes entry by entry in the rules |  |
+| [#79](https://github.com/emmanuel-h/Tournee-Calendriers/issues/79) | Rewrite the Confidentialité screen | manual |
 
 ## M6 Next year (v1.1)
 
