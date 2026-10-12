@@ -62,8 +62,6 @@ Fixtures, examples and screenshots use **Villefranche-sur-Saône** (public data)
 
 Later, to design with you: [#63](https://github.com/emmanuel-h/Tournee-Calendriers/issues/63) Runs and
 money recap (global amounts per payment method, never per house).
-[#80](https://github.com/emmanuel-h/Tournee-Calendriers/issues/80) count the visits to a house, [#81](https://github.com/emmanuel-h/Tournee-Calendriers/issues/81) the third tap opens the details to
-set when to come back, [#82](https://github.com/emmanuel-h/Tournee-Calendriers/issues/82) come-back reminders and a list of houses to come back to.
 
 The temporary start screen of #15 was built right after #46, before the street screen, so every
 later screen could be checked with real streets (decided with you on 2026-10-04).
@@ -103,6 +101,8 @@ later screen could be checked with real streets (decided with you on 2026-10-04)
 | [#30](https://github.com/emmanuel-h/Tournee-Calendriers/issues/30) | T3.5 Accueil |  |
 | [#31](https://github.com/emmanuel-h/Tournee-Calendriers/issues/31) | T3.6 Ajouter des rues |  |
 | [#78](https://github.com/emmanuel-h/Tournee-Calendriers/issues/78) | A tournée's commune: map centred on it, map and list to add streets | checkpoint |
+| [#80](https://github.com/emmanuel-h/Tournee-Calendriers/issues/80) | Count the visits to a house: « still nobody » on a return |  |
+| [#81](https://github.com/emmanuel-h/Tournee-Calendriers/issues/81) | The third tap opens the details to set when to come back |  |
 
 ## M4 Offline
 
@@ -130,6 +130,7 @@ later screen could be checked with real streets (decided with you on 2026-10-04)
 | [#38](https://github.com/emmanuel-h/Tournee-Calendriers/issues/38) | T6.1 Roll-over rules (domain) |  |
 | [#39](https://github.com/emmanuel-h/Tournee-Calendriers/issues/39) | T6.2 StartCampaign |  |
 | [#40](https://github.com/emmanuel-h/Tournee-Calendriers/issues/40) | T6.3 Campaign UI |  |
+| [#82](https://github.com/emmanuel-h/Tournee-Calendriers/issues/82) | Come-back reminders and a list of houses to come back to |  |
 
 ## M7 iOS
 
