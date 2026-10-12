@@ -1,5 +1,6 @@
 // The members of a tournée (PLAN §8.1, §8.2): a newcomer's request, what a
-// pending member may read, accepting, refusing, removing, leaving.
+// pending member may read, accepting, renaming oneself, refusing, removing,
+// leaving.
 import { after, before, beforeEach, describe, it } from 'node:test';
 import { assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
 import {
@@ -177,8 +178,55 @@ describe('accepting', () => {
   });
 
   it('should refuse any other change of a member', async () => {
-    await assertFails(updateDoc(memberOf(lea, lea), { displayName: 'Léa B.' }));
     await assertFails(updateDoc(memberOf(manu, lea), { status: 'pending' }));
+    await assertFails(updateDoc(memberOf(lea, lea), { requestedAt: threePm }));
+  });
+});
+
+describe('renaming oneself', () => {
+  /** What renaming writes (displayNameFields). */
+  const rename = (uid, member, name) =>
+    updateDoc(memberOf(uid, member), { displayName: name });
+
+  it('should let an active member rename themself', async () => {
+    await assertSucceeds(rename(lea, lea, 'Léa B.'));
+  });
+
+  it('should let the creator rename themself', async () => {
+    await assertSucceeds(rename(manu, manu, 'Emmanuel'));
+  });
+
+  it('should refuse renaming someone else, even as the creator', async () => {
+    await assertFails(rename(lea, manu, 'Chef'));
+    await assertFails(rename(manu, lea, 'Léa B.'));
+  });
+
+  it('should refuse a pending member renaming themself', async () => {
+    await assertFails(rename(paul, paul, 'Paulo'));
+  });
+
+  it('should refuse someone outside renaming a member', async () => {
+    await assertFails(rename(zoe, lea, 'Zoé'));
+  });
+
+  it('should accept a name of 30 characters and refuse 31', async () => {
+    await assertSucceeds(rename(lea, lea, '🚒'.repeat(30)));
+    await assertFails(rename(lea, lea, '🚒'.repeat(31)));
+  });
+
+  it('should refuse a name that is blank or not cleaned', async () => {
+    for (const name of ['', ' Léa', 'Léa ', 'Léa  B.']) {
+      await assertFails(rename(lea, lea, name));
+    }
+  });
+
+  it('should refuse a rename that changes another field too', async () => {
+    await assertFails(
+      updateDoc(memberOf(lea, lea), { displayName: 'Léa B.', status: 'pending' }),
+    );
+    await assertFails(
+      updateDoc(memberOf(lea, lea), { displayName: 'Léa B.', acceptedBy: lea }),
+    );
   });
 });
 

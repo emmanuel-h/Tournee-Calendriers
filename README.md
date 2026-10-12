@@ -35,7 +35,7 @@ Temporary M1 start screen (until the map arrives in M3):
 - Top bar: the open tournée (« Tournée 49 · 2026 » over its centre de secours), or the
   app's name when none is open, opens « Mes tournées », to switch tournée (the app reopens
   the last one at launch, offline too) or create or join one; 👥 opens Équipe (a dot while a
-  join request waits); ⚙ opens Paramètres: first name, « Mes tournées », theme (Système,
+  join request waits); ⚙ opens Paramètres: first name (the team sees the new one), « Mes tournées », theme (Système,
   Clair, Sombre), confidentialité, version and licences, data credits.
 - Équipe (👥): the join code (copy button: « Code copié ») and its QR code, « Partager »,
   « Nouveau code » (creator), the requests to join with « Accepter » / « Refuser » (any

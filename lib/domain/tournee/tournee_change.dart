@@ -21,12 +21,12 @@ sealed class TourneeChange {
   final TourneeId tourneeId;
 }
 
-/// A change that let a member in or took one out of the tournée.
+/// A change about one member: let in, taken out, or renamed.
 sealed class MemberChange extends TourneeChange {
   const MemberChange({required super.tourneeId, required this.member});
 
-  /// For [MemberAccepted], the member as accepted; otherwise the member as
-  /// they were before leaving the tournée.
+  /// For [MemberAccepted] and [MemberRenamed], the member as they are now;
+  /// otherwise the member as they were before leaving the tournée.
   final Member member;
 
   /// Equal when of the same kind and about the same member: the
@@ -77,6 +77,15 @@ final class MemberLeft extends MemberChange {
 
   @override
   String toString() => 'MemberLeft(${tourneeId.value}, $member)';
+}
+
+/// [member] gave themself a new first name (« Prénom », PLAN §5.9):
+/// storage writes only the member's `displayName`.
+final class MemberRenamed extends MemberChange {
+  const MemberRenamed({required super.tourneeId, required super.member});
+
+  @override
+  String toString() => 'MemberRenamed(${tourneeId.value}, $member)';
 }
 
 /// The creator replaced the join code [before] by [code] (« Nouveau

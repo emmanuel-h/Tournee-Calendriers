@@ -12,7 +12,8 @@ final settingsProvider = NotifierProvider<SettingsNotifier, SettingsState>(
 );
 
 /// Shows and changes the settings of Paramètres (PLAN §5.9): the member's
-/// first name and the theme. On the phone only, offline always.
+/// first name, which also reaches the team of each of the member's
+/// tournées, and the theme. Offline always.
 final class SettingsNotifier extends Notifier<SettingsState> {
   @override
   SettingsState build() {
@@ -22,8 +23,9 @@ final class SettingsNotifier extends Notifier<SettingsState> {
     return SettingsState(name: name?.text, theme: _shown(theme));
   }
 
-  /// « Prénom »: keeps [text] as the member's name once cleaned. Returns
-  /// why it is refused, or null once it is kept.
+  /// « Prénom »: keeps [text] as the member's name once cleaned, and gives
+  /// it to them in their tournées. Returns why it is refused, or null once
+  /// it is kept.
   Future<MemberNameFailure?> rename(String text) async {
     switch (await ref.read(changeMemberNameProvider)(text)) {
       case Ok(:final value):

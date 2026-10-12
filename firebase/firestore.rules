@@ -276,6 +276,15 @@ service cloud.firestore {
         && after.acceptedAt is timestamp;
     }
 
+    // An active member renames themself (« Prénom », PLAN §5.9): their own
+    // document, the name only, cleaned as MemberName cleans it.
+    function isRename(tournee, member, before, after) {
+      return member == uid()
+        && isActiveMember(tournee)
+        && after.diff(before).affectedKeys().hasOnly(['displayName'])
+        && isName(after.displayName, 30);
+    }
+
     // Refuse or cancel a request; remove (creator) or leave (the member)
     // an active one. The creator can neither leave nor be removed: their
     // member document goes only with the tournée (PLAN §6.1).
@@ -490,7 +499,8 @@ service cloud.firestore {
         allow create: if signedIn() && member == uid()
           && (isJoinRequest(tournee, request.resource.data)
             || isCreatorMembership(tournee, request.resource.data));
-        allow update: if isAcceptance(tournee, resource.data, request.resource.data);
+        allow update: if isAcceptance(tournee, resource.data, request.resource.data)
+          || isRename(tournee, member, resource.data, request.resource.data);
         allow delete: if isMemberDeletion(tournee, member, resource.data);
       }
 

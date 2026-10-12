@@ -15,6 +15,8 @@ void main() {
     'MemberRemoved': (id, member) =>
         MemberRemoved(tourneeId: id, member: member),
     'MemberLeft': (id, member) => MemberLeft(tourneeId: id, member: member),
+    'MemberRenamed': (id, member) =>
+        MemberRenamed(tourneeId: id, member: member),
   };
 
   for (final MapEntry(key: kind, value: make) in memberChanges.entries) {
@@ -59,6 +61,10 @@ void main() {
     expect(
       MemberAccepted(tourneeId: tourneeId, member: julie),
       isNot(MemberRefused(tourneeId: tourneeId, member: julie)),
+    );
+    expect(
+      MemberRenamed(tourneeId: tourneeId, member: lea),
+      isNot(MemberAccepted(tourneeId: tourneeId, member: lea)),
     );
   });
 

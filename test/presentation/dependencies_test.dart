@@ -371,10 +371,12 @@ void main() {
       expect(container.read(readPhoneSettingsProvider)().name, nameOf('Léa'));
     });
 
-    test('should change the name in the bound settings', () async {
-      await container.read(changeMemberNameProvider)('Julie');
+    test('should change the name in the bound settings and in the bound '
+        'tournées, as the bound member', () async {
+      await asManu().read(changeMemberNameProvider)('Emmanuel');
 
-      expect(settings.names, [nameOf('Julie')]);
+      expect(settings.names, [nameOf('Emmanuel')]);
+      expect(tournees[tourneeId]!.creator.name, nameOf('Emmanuel'));
     });
 
     test('should choose the theme in the bound settings', () async {

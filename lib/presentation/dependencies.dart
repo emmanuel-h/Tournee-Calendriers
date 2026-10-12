@@ -217,7 +217,12 @@ final readPhoneSettingsProvider = Provider(
   (ref) => ReadPhoneSettings(ref.watch(phoneSettingsProvider)),
 );
 final changeMemberNameProvider = Provider(
-  (ref) => ChangeMemberName(ref.watch(phoneSettingsProvider)),
+  (ref) => ChangeMemberName(
+    ref.watch(phoneSettingsProvider),
+    ref.watch(tourneeRepositoryProvider),
+    ref.watch(identityProvider),
+    ref.watch(myTourneesStoreProvider),
+  ),
 );
 final chooseThemeProvider = Provider(
   (ref) => ChooseTheme(ref.watch(phoneSettingsProvider)),

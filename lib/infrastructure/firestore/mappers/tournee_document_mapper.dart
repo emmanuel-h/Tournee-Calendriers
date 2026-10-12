@@ -70,6 +70,12 @@ Map<String, Object?> acceptanceFields(Member member) => {
   },
 };
 
+/// The field a rename changes on [member]'s document: only its name, so a
+/// teammate's acceptance written at the same time is not overwritten.
+Map<String, Object?> displayNameFields(Member member) => {
+  'displayName': member.name.text,
+};
+
 /// The tournée stored in `tournees/[id]` as [data], with its [members]
 /// (each document's data by uid).
 ///

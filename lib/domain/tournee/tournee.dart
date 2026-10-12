@@ -68,6 +68,7 @@ enum TourneeCommandFailure {
 /// | [remove]                   | yes     | no     | no           | no       |
 /// | [leave]                    | no      | yes    | yes (cancel) | no       |
 /// | [regenerateCode], [delete] | yes     | no     | no           | no       |
+/// | [rename] (themself)        | yes     | yes    | no           | no       |
 ///
 /// A `Tournee` is immutable. Each command returns a new tournée together
 /// with the [TourneeChange] it made, as a Dart record `(Tournee, Change)`;
@@ -271,6 +272,32 @@ final class Tournee {
     if (leaving == null) return const Err(TourneeCommandFailure.notAMember);
     if (isCreator(by)) return const Err(TourneeCommandFailure.creatorStays);
     return Ok((_without(by), MemberLeft(tourneeId: id, member: leaving)));
+  }
+
+  /// Gives [by] the first name [name] in this tournée (« Prénom » in
+  /// Paramètres, PLAN §5.9), so the team sees the new name. Any active
+  /// member may, for themself only: there is no member parameter, so
+  /// renaming someone else cannot even be asked.
+  Result<(Tournee, MemberRenamed), TourneeCommandFailure> rename(
+    MemberName name, {
+    required MemberId by,
+  }) {
+    if (_activeActor(by) case final failure?) return Err(failure);
+    // `!`: `_activeActor` just found [by] among the members.
+    final before = memberOf(by)!;
+    final renamed = Member(
+      id: before.id,
+      name: name,
+      requestedAt: before.requestedAt,
+      acceptance: before.acceptance,
+    );
+    return Ok((
+      _withMembers([
+        for (final other in members)
+          if (other.id == by) renamed else other,
+      ]),
+      MemberRenamed(tourneeId: id, member: renamed),
+    ));
   }
 
   /// Replaces the join code by a new one drawn from [random], as [by]

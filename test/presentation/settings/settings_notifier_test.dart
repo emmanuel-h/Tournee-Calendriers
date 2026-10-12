@@ -2,20 +2,35 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/phone_settings.dart';
 import 'package:tournee_calendriers/domain/tournee/member_name.dart';
+import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/settings/settings_notifier.dart';
 import 'package:tournee_calendriers/presentation/settings/settings_state.dart';
 
+import '../../domain/tournee/my_tournees_fixtures.dart';
 import '../../domain/tournee/tournee_fixtures.dart';
+import '../../support/fakes/fake_my_tournees_store.dart';
 import '../../support/fakes/fake_phone_settings.dart';
+import '../../support/fakes/fake_ports.dart';
+import '../../support/fakes/fake_tournee_repository.dart';
 
 void main() {
   late FakePhoneSettings settings;
+  late FakeTourneeRepository tournees;
 
+  /// Manu's phone, which knows the 49 he created.
   ProviderContainer containerWith(FakePhoneSettings phone) {
     settings = phone;
+    tournees = FakeTourneeRepository([team()]);
     final container = ProviderContainer(
-      overrides: [phoneSettingsProvider.overrideWithValue(phone)],
+      overrides: [
+        phoneSettingsProvider.overrideWithValue(phone),
+        tourneeRepositoryProvider.overrideWithValue(tournees),
+        identityProvider.overrideWithValue(FakeIdentity(manuId)),
+        myTourneesStoreProvider.overrideWithValue(
+          FakeMyTourneesStore(MyTournees.none.remember(tournee49)),
+        ),
+      ],
     );
     addTearDown(container.dispose);
     return container;
@@ -53,6 +68,7 @@ void main() {
       expect(container.read(settingsProvider).name, 'Emmanuel');
       expect(container.read(settingsProvider).theme, AppTheme.dark);
       expect(settings.names, [nameOf('Emmanuel')]);
+      expect(tournees[tourneeId]!.creator.name, nameOf('Emmanuel'));
     });
 
     test(

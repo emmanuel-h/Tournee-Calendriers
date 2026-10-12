@@ -265,6 +265,27 @@ void main() {
       });
     });
 
+    test('should write only the new name on the member renamed', () async {
+      await repository().add(created);
+      await db.doc('tournees/t49/members/uid-lea').set(memberToDocument(lea));
+      final (renamed, change) = valueOf(
+        team().rename(nameOf('Léa B.'), by: leaId),
+      );
+
+      final saved = await repository().save(renamed, change);
+      await pumpEventQueue();
+
+      expect(valueOf(saved), same(renamed));
+      expect(await stored('tournees/t49/members/uid-lea'), {
+        ...memberToDocument(lea),
+        'displayName': 'Léa B.',
+      });
+      expect(
+        await stored('tournees/t49/members/uid-manu'),
+        memberToDocument(manu),
+      );
+    });
+
     for (final (name, act)
         in <
           (

@@ -24,7 +24,7 @@ import 'package:tournee_calendriers/infrastructure/firestore/mappers/tournee_doc
 ///   drawn from [random], up to [maxCodeDraws] times: with 887 million
 ///   codes it does not happen in practice, and the user would have nothing
 ///   to do about it.
-/// - **Accepting, refusing, removing, leaving** are applied on the phone at
+/// - **Accepting, refusing, removing, leaving, renaming** are applied on the phone at
 ///   once and sent when the network allows ([sendInBackground]).
 /// - **Reading** follows the tournée document and its members with two
 ///   listeners, served from the phone's copy first.
@@ -167,6 +167,12 @@ final class FirestoreTourneeRepository implements TourneeRepository {
         sendInBackground(
           '$change',
           members.doc(member.id.value).update(acceptanceFields(member)),
+        );
+        return Ok(tournee);
+      case MemberRenamed(:final member):
+        sendInBackground(
+          '$change',
+          members.doc(member.id.value).update(displayNameFields(member)),
         );
         return Ok(tournee);
       case MemberRefused(:final member) ||

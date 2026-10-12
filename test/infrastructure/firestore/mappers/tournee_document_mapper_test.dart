@@ -160,6 +160,10 @@ void main() {
       });
     });
 
+    test('should write only the name of a renamed member', () {
+      expect(displayNameFields(lea), {'displayName': 'Léa'});
+    });
+
     test('should read a member back with the id of its document', () {
       final back = memberFromDocument('uid-lea', {...memberToDocument(lea)});
 

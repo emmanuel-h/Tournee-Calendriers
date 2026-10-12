@@ -280,6 +280,40 @@ void main() {
     });
   });
 
+  group('rename', () {
+    test('should give the member their new name when they rename '
+        'themself', () {
+      final (tournee, change) = valueOf(
+        team().rename(nameOf('Léa B.'), by: leaId),
+      );
+
+      final renamed = Member(
+        id: leaId,
+        name: nameOf('Léa B.'),
+        requestedAt: leaAskedAt,
+        acceptance: ChangeStamp(by: manuId, at: leaAcceptedAt),
+      );
+      expect(tournee.members, [manu, renamed, julie]);
+      expect(change.tourneeId, tourneeId);
+      expect(change.member, renamed);
+      _expectSameIdentity(tournee, team());
+    });
+
+    test('should rename the creator too when they rename themself', () {
+      final (tournee, change) = valueOf(
+        team().rename(nameOf('Emmanuel'), by: manuId),
+      );
+
+      expect(tournee.creator.name, nameOf('Emmanuel'));
+      expect(
+        tournee.creator.acceptance,
+        ChangeStamp(by: manuId, at: createdAt),
+      );
+      expect(change.member.name, nameOf('Emmanuel'));
+      expect(tournee.members.skip(1), [lea, julie]);
+    });
+  });
+
   group('regenerateCode', () {
     test(
       'should give a new code drawn from the source when the creator asks',
@@ -349,6 +383,7 @@ void main() {
       'regenerate the code': (t, by) =>
           t.regenerateCode(by: by, random: ScriptedRandom([0, 0, 0, 0, 0, 0])),
       'delete the tournée': (t, by) => t.delete(by: by),
+      'rename themself': (t, by) => t.rename(nameOf('Zoé'), by: by),
     };
     const TourneeCommandFailure? ok = null;
     const matrix = <String, List<TourneeCommandFailure?>>{
@@ -386,6 +421,12 @@ void main() {
       'delete the tournée': [
         ok,
         TourneeCommandFailure.notCreator,
+        TourneeCommandFailure.requestPending,
+        TourneeCommandFailure.notAMember,
+      ],
+      'rename themself': [
+        ok,
+        ok,
         TourneeCommandFailure.requestPending,
         TourneeCommandFailure.notAMember,
       ],

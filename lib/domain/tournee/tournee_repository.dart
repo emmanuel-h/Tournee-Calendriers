@@ -35,9 +35,9 @@ enum TourneeWriteFailure {
 /// the request), not through this one.
 ///
 /// Reads come from the phone's copy once the tournée has been seen, so the
-/// team screen opens offline; accepting, refusing, removing and leaving are
-/// applied on the phone at once and sent when the network is back. A
-/// storage failure the user cannot act on is thrown as an exception;
+/// team screen opens offline; accepting, refusing, removing, leaving and
+/// renaming oneself are applied on the phone at once and sent when the
+/// network is back. A storage failure the user cannot act on is thrown as an exception;
 /// [add], [save] and [delete] return the failures they can act on.
 abstract interface class TourneeRepository {
   /// The tournée [id] as it is now; null when there is none, or when this
@@ -66,10 +66,10 @@ abstract interface class TourneeRepository {
   /// member's document, the join code) and still finds what it needs
   /// around it (the preview fields of a new join code).
   ///
-  /// A member accepted, refused, removed or leaving is kept on the phone at
-  /// once and sent when the network is back: it never fails. A new join
-  /// code needs the server, which checks no other tournée holds it: one
-  /// that does is replaced by another (the stored tournée then has that
+  /// A member accepted, refused, removed, leaving or renamed is kept on the
+  /// phone at once and sent when the network is back: it never fails. A
+  /// new join code needs the server, which checks no other tournée holds
+  /// it: one that does is replaced by another (the stored tournée then has that
   /// one), and offline it fails with [TourneeWriteFailure.noNetwork].
   Future<Result<Tournee, TourneeWriteFailure>> save(
     Tournee tournee,

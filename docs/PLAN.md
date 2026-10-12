@@ -915,8 +915,10 @@ Immeuble details fixed in T1.9 (`lib/presentation/building/`, `lib/ui/screens/bu
 
 - **Prénom** opens a sheet « Votre prénom » + « Enregistrer » (the keyboard's « OK » too):
   `MemberName` rules; blank → « Écrivez votre prénom. », too long → « Prénom limité à 30
-  caractères. », the sheet stays. Kept on the phone; the member documents of the tournées
-  already joined keep the name they joined with (renaming them there is to come).
+  caractères. », the sheet stays. Kept on the phone, then written to the member's own
+  document in every tournée of « Mes tournées » they are active in, so Équipe shows the new
+  name to the team (T2.7b). Works offline (sent when the network is back); a pending request
+  keeps the name it was made with, and a tournée the phone cannot read is skipped.
 - **Mes tournées** shows the open one (« 49 · 2026 ») and opens the sheet of 5.3.
 - **Thème** opens « Système | Clair | Sombre »: a tap redraws the app at once and closes the
   sheet. « Sombre » uses the first dark palette, reviewed in T5.1.
@@ -1309,11 +1311,13 @@ Tournée rules fixed in T2.2 (`lib/domain/tournee/`):
   | `leave(by)` | any member but the creator; a pending one cancels their request | `creatorStays` |
   | `regenerateCode(by, random)` | the creator | — (draws again if it gets the old code) |
   | `delete(by)` | the creator | — |
+  | `rename(name, by)` | any active member, for themself only (no member parameter) | — |
 
   **The creator can neither leave nor be removed** (the tournée would have nobody to run it):
   they delete the tournée instead.
 - **Changes** (`TourneeChange`, sealed): `MemberAccepted` (the member as accepted),
-  `MemberRefused`, `MemberRemoved`, `MemberLeft` (the member as they were),
+  `MemberRefused`, `MemberRemoved`, `MemberLeft` (the member as they were), `MemberRenamed`
+  (the member with the new name; storage writes `displayName` only),
   `JoinCodeRegenerated(before, code)`. `delete` returns a `TourneeDeleted` holding the whole
   tournée (storage needs its code, centre and number to free them); it is not a
   `TourneeChange`.
@@ -1725,7 +1729,8 @@ photo of the QR) is even more likely. So **knowing a code must not be enough**:
 - `tournees/{id}/**`: read and write only for members with `status == "active"`.
 - `members/{uid}` create: only by that uid, only `status: "pending"`, only with the tournée's
   current join code. Update `pending → active` or delete a pending request: any active member.
-  Delete an active member: the creator, or the member themself (*Quitter*).
+  Delete an active member: the creator, or the member themself (*Quitter*). Update
+  `displayName` only: the member themself, active, a name as `MemberName` cleans it (≤ 30).
 - `joinCodes/{code}`: `get` for signed-in users, `list` denied; holds only the preview fields.
 - `tourneeKeys/{key}`: `get` allowed (creation must know the pair is taken); create only if
   absent; never updated; deleted only with the tournée.
@@ -1750,7 +1755,8 @@ What the adapters write (T2.3), which the rules must allow:
   (the rule compares it with the tournée's). The newcomer **reads their own member document**
   while pending (« Demande envoyée » follows it) and deletes it to cancel.
 - **Accept:** updates `status`, `acceptedBy` (the caller), `acceptedAt` only. Refuse, remove,
-  leave: delete the member document.
+  leave: delete the member document. **Rename** (« Prénom »): updates the caller's own
+  `displayName` only.
 - **New code** (one transaction): reads `joinCodes/{new}`, updates `tournees/{id}.joinCode`,
   deletes `joinCodes/{old}`, creates `joinCodes/{new}`.
 - **Delete:** lists `campaigns`, their `streets` and `members` from the server, deletes them in
@@ -1792,6 +1798,8 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
 - **Members.** A request is the caller's own document, `pending`, with the tournée's current
   code. Any active member accepts (status, `acceptedBy` = caller, `acceptedAt` only) or refuses
   a request; the newcomer cancels it. The creator removes an active member; a member leaves.
+  An active member renames themself: their own document, `displayName` only, a cleaned name
+  ≤ 30 (T2.7b); nobody renames someone else, not even the creator.
   The creator's own document goes only in the batch that deletes the tournée.
 - **New code** (creator): only `joinCode` changes, the new code document is created and the old
   one deleted in the same transaction. **Deleting** (creator): the contents first (campaigns,

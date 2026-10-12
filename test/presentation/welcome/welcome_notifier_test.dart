@@ -7,17 +7,26 @@ import 'package:tournee_calendriers/presentation/welcome/welcome_notifier.dart';
 import 'package:tournee_calendriers/presentation/welcome/welcome_state.dart';
 
 import '../../domain/tournee/tournee_fixtures.dart';
+import '../../support/fakes/fake_my_tournees_store.dart';
 import '../../support/fakes/fake_phone_settings.dart';
+import '../../support/fakes/fake_ports.dart';
+import '../../support/fakes/fake_tournee_repository.dart';
 
 void main() {
   late FakePhoneSettings settings;
   late ProviderContainer container;
 
-  /// Opens « Bienvenue » on a phone whose name is [name].
+  /// Opens « Bienvenue » on a phone whose name is [name] and that knows no
+  /// tournée yet.
   void open({MemberName? name}) {
     settings = FakePhoneSettings(memberName: name);
     container = ProviderContainer(
-      overrides: [phoneSettingsProvider.overrideWithValue(settings)],
+      overrides: [
+        phoneSettingsProvider.overrideWithValue(settings),
+        tourneeRepositoryProvider.overrideWithValue(FakeTourneeRepository()),
+        identityProvider.overrideWithValue(FakeIdentity(manuId)),
+        myTourneesStoreProvider.overrideWithValue(FakeMyTourneesStore()),
+      ],
     );
     addTearDown(container.dispose);
     container.listen(welcomeProvider, (_, _) {});
