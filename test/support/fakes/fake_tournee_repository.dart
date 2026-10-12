@@ -44,6 +44,17 @@ final class FakeTourneeRepository implements TourneeRepository {
   /// When set, [find] fails with it instead of giving the tournée.
   Error? findError;
 
+  /// When set, [add] stores nothing and fails with it, as the server does
+  /// for a number taken or a phone without network.
+  AddTourneeFailure? addFailure;
+
+  /// When set, [add] stores the tournée with this code instead of the one
+  /// drawn, as the server does when another tournée holds the drawn one.
+  JoinCode? addCodeTaken;
+
+  /// Every tournée given to [add], in order.
+  final added = <Tournee>[];
+
   /// The tournée [id] as stored now.
   Tournee? operator [](TourneeId id) => _tournees[id];
 
@@ -92,9 +103,30 @@ final class FakeTourneeRepository implements TourneeRepository {
 
   @override
   Future<Result<Tournee, AddTourneeFailure>> add(Tournee tournee) async {
-    put(tournee);
-    return Ok(tournee);
+    added.add(tournee);
+    if (addFailure case final failure?) return Err(failure);
+    final stored = switch (addCodeTaken) {
+      final code? => _withCode(tournee, code),
+      null => tournee,
+    };
+    put(stored);
+    return Ok(stored);
   }
+
+  static Tournee _withCode(Tournee tournee, JoinCode code) =>
+      switch (Tournee.create(
+        id: tournee.id,
+        number: tournee.number,
+        centre: tournee.centre,
+        joinCode: code,
+        createdBy: tournee.createdBy,
+        createdAt: tournee.createdAt,
+        currentCampaign: tournee.currentCampaign,
+        members: tournee.members,
+      )) {
+        Ok(:final value) => value,
+        Err(:final failure) => throw StateError('$failure'),
+      };
 
   @override
   Future<Result<Tournee, TourneeWriteFailure>> save(
@@ -104,21 +136,7 @@ final class FakeTourneeRepository implements TourneeRepository {
     var stored = tournee;
     if (change is JoinCodeRegenerated) {
       if (offline) return const Err(TourneeWriteFailure.noNetwork);
-      if (codeTaken case final code?) {
-        stored = switch (Tournee.create(
-          id: tournee.id,
-          number: tournee.number,
-          centre: tournee.centre,
-          joinCode: code,
-          createdBy: tournee.createdBy,
-          createdAt: tournee.createdAt,
-          currentCampaign: tournee.currentCampaign,
-          members: tournee.members,
-        )) {
-          Ok(:final value) => value,
-          Err(:final failure) => throw StateError('$failure'),
-        };
-      }
+      if (codeTaken case final code?) stored = _withCode(tournee, code);
     }
     saved.add((tournee, change));
     put(stored);

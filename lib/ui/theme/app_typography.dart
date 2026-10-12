@@ -238,4 +238,65 @@ abstract final class AppTextStyles {
     fontSize: 16,
     height: 1,
   );
+
+  /// The app's name on « Bienvenue » (Welcome mockup).
+  static const welcomeTitle = TextStyle(
+    fontFamily: AppFonts.display,
+    fontWeight: FontWeight.w700,
+    fontSize: 44,
+    height: 1,
+  );
+
+  /// « Demande envoyée », the title of the waiting screen (JoinPending
+  /// mockup).
+  static const pendingTitle = TextStyle(
+    fontFamily: AppFonts.display,
+    fontWeight: FontWeight.w700,
+    fontSize: 40,
+    height: 1,
+  );
+
+  /// The tournée under it (« Tournée 49 · CS Villefranche »).
+  static const pendingTournee = TextStyle(
+    fontFamily: AppFonts.display,
+    fontWeight: FontWeight.w600,
+    fontSize: 22,
+    height: 1.1,
+  );
+
+  /// The tournée a join code shows (« Tournée 49 · CS Villefranche », Join
+  /// mockup).
+  static const previewTitle = TextStyle(
+    fontFamily: AppFonts.display,
+    fontWeight: FontWeight.w700,
+    fontSize: 22,
+    height: 1.1,
+  );
+
+  /// The number in the red square beside it (« 49 »).
+  static const previewBadge = TextStyle(
+    fontFamily: AppFonts.display,
+    fontWeight: FontWeight.w700,
+    fontSize: 24,
+    height: 1,
+  );
+
+  /// A box of the join code on « Rejoindre » (« K7P »), spaced so each
+  /// character reads alone.
+  static const codeBox = TextStyle(
+    fontFamily: AppFonts.display,
+    fontWeight: FontWeight.w700,
+    fontSize: 32,
+    letterSpacing: 32 * 0.08,
+    height: 1.1,
+  );
+
+  /// The code of a tournée just created (« K7P-2QX », Create mockup).
+  static const createdCode = TextStyle(
+    fontFamily: AppFonts.display,
+    fontWeight: FontWeight.w700,
+    fontSize: 34,
+    letterSpacing: 34 * 0.04,
+    height: 1.1,
+  );
 }

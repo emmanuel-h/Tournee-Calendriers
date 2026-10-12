@@ -1,6 +1,8 @@
-// A TourneeDirectory in memory, for what « Mes tournées » asks of it: where
-// the member's requests stand. A test plays the server by adding to the
-// stream of a request ([answer]); the calls a test does not expect fail.
+// A TourneeDirectory in memory, for « Mes tournées », « Nouvelle tournée »
+// and « Rejoindre ». A test plays the server: it adds to the stream of a
+// request ([answer]), says which codes show a tournée ([previews]), which
+// numbers are taken ([taken]) and which centres are known ([centres]), or
+// cuts the network ([offline]). It records the requests sent and cancelled.
 import 'dart:async';
 
 import 'package:tournee_calendriers/application/ports/tournee_directory.dart';
@@ -17,6 +19,40 @@ final class FakeTourneeDirectory implements TourneeDirectory {
   final watched = <(TourneeId, MemberId)>[];
 
   final _requests = <TourneeId, StreamController<MemberStatus?>>{};
+
+  /// The tournée each code shows; any other code is unknown.
+  final previews = <JoinCode, JoinPreview>{};
+
+  /// The numbers taken, by the key of their centre: the same station
+  /// however written.
+  final taken = <(RescueCentreKey, TourneeNumber)>{};
+
+  /// The centres de secours the app knows.
+  List<RescueCentre> centres = const [];
+
+  /// Plays a phone without network: every read fails with `noNetwork`.
+  var offline = false;
+
+  /// Every code [preview] was asked, in order.
+  final previewed = <JoinCode>[];
+
+  /// Every (centre, number) [isTaken] was asked, in order.
+  final takenAsked = <(RescueCentre, TourneeNumber)>[];
+
+  /// How many times [rescueCentres] was asked.
+  var centresAsked = 0;
+
+  /// Every request sent, in order.
+  final sent = <(JoinPreview, Member)>[];
+
+  /// Every (tournée, member) whose request was cancelled, in order.
+  final cancelled = <(TourneeId, MemberId)>[];
+
+  /// Answers held back, one per call of [preview] / [isTaken] in order
+  /// while any is left: the call waits for its gate, so a test makes a
+  /// slow server answer after a later one.
+  final previewGates = <Completer<void>>[];
+  final takenGates = <Completer<void>>[];
 
   /// The stream of the request to join [tournee]; one per tournée.
   StreamController<MemberStatus?> _request(TourneeId tournee) =>
@@ -41,24 +77,41 @@ final class FakeTourneeDirectory implements TourneeDirectory {
   }
 
   @override
-  Future<Result<JoinPreview, JoinFailure>> preview(JoinCode code) =>
-      throw UnimplementedError('preview');
+  Future<Result<JoinPreview, JoinFailure>> preview(JoinCode code) async {
+    previewed.add(code);
+    if (previewGates.isNotEmpty) await previewGates.removeAt(0).future;
+    if (offline) return const Err(JoinFailure.noNetwork);
+    return switch (previews[code]) {
+      final preview? => Ok(preview),
+      null => const Err(JoinFailure.unknownCode),
+    };
+  }
 
   @override
-  Future<void> requestToJoin(JoinPreview preview, Member request) =>
-      throw UnimplementedError('requestToJoin');
+  Future<void> requestToJoin(JoinPreview preview, Member request) async {
+    sent.add((preview, request));
+  }
 
   @override
-  Future<void> cancelRequest(TourneeId tournee, MemberId member) =>
-      throw UnimplementedError('cancelRequest');
+  Future<void> cancelRequest(TourneeId tournee, MemberId member) async {
+    cancelled.add((tournee, member));
+  }
 
   @override
   Future<Result<bool, DirectoryFailure>> isTaken(
     RescueCentre centre,
     TourneeNumber number,
-  ) => throw UnimplementedError('isTaken');
+  ) async {
+    takenAsked.add((centre, number));
+    if (takenGates.isNotEmpty) await takenGates.removeAt(0).future;
+    if (offline) return const Err(DirectoryFailure.noNetwork);
+    return Ok(taken.contains((centre.key, number)));
+  }
 
   @override
-  Future<Result<List<RescueCentre>, DirectoryFailure>> rescueCentres() =>
-      throw UnimplementedError('rescueCentres');
+  Future<Result<List<RescueCentre>, DirectoryFailure>> rescueCentres() async {
+    centresAsked++;
+    if (offline) return const Err(DirectoryFailure.noNetwork);
+    return Ok(centres);
+  }
 }

@@ -2,28 +2,55 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/presentation/my_tournees/my_tournees_notifier.dart';
 import 'package:tournee_calendriers/presentation/my_tournees/my_tournees_state.dart';
+import 'package:tournee_calendriers/presentation/settings/settings_notifier.dart';
+import 'package:tournee_calendriers/ui/components/app_buttons.dart';
 import 'package:tournee_calendriers/ui/components/dashed_outline.dart';
 import 'package:tournee_calendriers/ui/components/sheet_scaffold.dart';
 import 'package:tournee_calendriers/ui/components/status_glyph.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
+import 'package:tournee_calendriers/ui/router/app_routes.dart';
+import 'package:tournee_calendriers/ui/screens/settings/name_sheet.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 import 'package:tournee_calendriers/ui/theme/status_look.dart';
 
 /// Opens « Mes tournées » (tap the title, or Paramètres → Mes tournées,
-/// PLAN §5.3, Switcher mockup).
-Future<void> showMyTourneesSheet(BuildContext context) =>
-    showAppBottomSheet<void>(
-      context: context,
-      builder: (_) => const MyTourneesSheet(),
-    );
+/// PLAN §5.3, Switcher mockup), then « Nouvelle tournée » or « Rejoindre
+/// une tournée » when the sheet's buttons chose one.
+Future<void> showMyTourneesSheet(BuildContext context) async {
+  // The sheet closes with the screen to open, if any.
+  final location = await showAppBottomSheet<String>(
+    context: context,
+    builder: (_) => const MyTourneesSheet(),
+  );
+  if (location != null && context.mounted) {
+    await _openWithName(context, location);
+  }
+}
+
+/// Opens [location] once the member has a first name, which the team will
+/// see: « Votre prénom » first when the phone has none yet.
+Future<void> _openWithName(BuildContext context, String location) async {
+  // The providers of the app, read from outside a widget's `build`.
+  final container = ProviderScope.containerOf(context, listen: false);
+  if (container.read(settingsProvider).name == null) {
+    await showNameSheet(context);
+    if (!context.mounted || container.read(settingsProvider).name == null) {
+      return;
+    }
+  }
+  // Not awaited: `push` ends only when the screen opened is closed.
+  unawaited(context.push(location));
+}
 
 /// The member's tournées: the open one (● and ✓), the others (a tap opens
 /// one at once, and the app reopens it next time), and their requests not
-/// accepted yet, which cannot be opened.
+/// accepted yet, which cannot be opened; then « Créer une tournée » and
+/// « Rejoindre une tournée ».
 final class MyTourneesSheet extends ConsumerWidget {
   const MyTourneesSheet({super.key});
 
@@ -58,6 +85,22 @@ final class MyTourneesSheet extends ConsumerWidget {
               TourneeRowStatus.pending => null,
             },
           ),
+        // The current tournée stays open until the new one is ready (or
+        // accepted, PLAN §5.3).
+        const SizedBox(height: 10),
+        PrimaryButton(
+          key: const Key('myTournees.create'),
+          label: l10n.createTourneeAction,
+          icon: Icons.add,
+          compact: true,
+          onPressed: () => Navigator.of(context).pop(AppRoutes.create),
+        ),
+        SecondaryButton(
+          key: const Key('myTournees.join'),
+          label: l10n.joinTourneeAction,
+          compact: true,
+          onPressed: () => Navigator.of(context).pop(AppRoutes.join),
+        ),
       ],
     );
   }

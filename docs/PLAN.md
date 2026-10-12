@@ -106,6 +106,13 @@ first launch
 
 Next launches open the last tournée directly, on the map.
 
+Where the app opens (T2.5, decided from the phone alone, so an offline cold start opens
+where it should): a tournée open → it (the start screen); otherwise the phone holds streets
+of its own (Corbeille included, as in M1) → « Mes rues »; otherwise a request to join waits →
+« Demande envoyée » for the latest one; otherwise the phone knows tournées, none open → the
+start screen; otherwise → « Bienvenue ». Nothing on the marking path ever waits for a
+request.
+
 Before the round (once):
 
 1. Join the tournée with the QR code at the station.
@@ -173,7 +180,8 @@ used on a real area. Mockups: `docs/mockups/Start.dc.html` and `docs/mockups/Imp
 - **Top bar** (T2.7): Accueil's (5.3, Home mockup) already. With a tournée open, its title
   « Tournée 49 · 2026 ▾ » over the CS opens « Mes tournées »; with none, the title stays
   « Tournée des calendriers ». [⚙] opens Paramètres (5.9) either way; [👥] comes with Équipe
-  (5.8).
+  (5.8). From T2.5 the app's name has a ▾ too and opens « Mes tournées » the same way, so a
+  phone with streets of its own reaches « Créer » / « Rejoindre » without Paramètres.
 - **Streets of the tournée** (T2.8): with a tournée open, « Mes rues », the street screen,
   the sheets, edit mode, « Importer des rues » and the Corbeille work on the streets of its
   current campaign in Firestore, shared live with the team; with none open, on the phone's
@@ -243,6 +251,13 @@ used on a real area. Mockups: `docs/mockups/Start.dc.html` and `docs/mockups/Imp
 
 Both buttons stay disabled until the name is filled in.
 
+Delivered in T2.5 (Welcome mockup): shown only where the app opens on a phone that holds
+nothing (§4). The app's logo and name, « Notez chaque porte… », « Votre prénom » (« Visible
+par votre équipe. » under it; « Prénom limité à 30 caractères. » when too long), then
+« Créer une tournée » and « Rejoindre une tournée », disabled until the name is a valid
+`MemberName`. Either keeps the name on the phone (`ChangeMemberName`, the one of Paramètres)
+and opens its screen above « Bienvenue »; the field starts from the name kept.
+
 ### 5.2 Créer / Rejoindre
 
 ```
@@ -254,10 +269,10 @@ Both buttons stay disabled until the name is filled in.
 │ N° de tournée   [ 49       ] │    │ [ K7P ] - [ 2QX ]            │
 │ Année           [ 2026     ] │    │ ┌──────────────────────────┐ │
 │ [          Créer         ]   │    │ │ Tournée 49               │ │
-│ ──────────────────────────── │    │ │ CS Villefranche · 6 memb.│ │
+│ ──────────────────────────── │    │ │ CS Villefranche          │ │
 │ Tournée 49 · CS Villefranche │    │ │ Campagne 2026            │ │
 │        ▄▄▄▄ ▄ ▄▄▄▄           │    │ └──────────────────────────┘ │
-│   Code K7P-2QX   [Partager]  │    │ [        Rejoindre       ]   │
+│   Code K7P-2QX   [Partager]  │    │ [  Demander à rejoindre  ]   │
 └──────────────────────────────┘    └──────────────────────────────┘
 
   Créer — the pair already exists
@@ -296,6 +311,41 @@ Both buttons stay disabled until the name is filled in.
   `JoinCode.parse`, like a typed code, so any other QR code is refused as an invalid code. Drawn
   dark on white whatever the theme, so it scans.
 - The creator can regenerate the code from Équipe (old code stops working; members stay).
+- Delivered in T2.5 (Create, CreateTaken, Join mockups). Both screens first need the phone's
+  account (§6.1): a line « Connexion au serveur… » while it signs in, « Hors ligne : créer ou
+  rejoindre une tournée demande le réseau. » with « Réessayer » when it cannot; the server
+  is asked nothing before.
+  - **Nouvelle tournée:** while « Centre de secours » has the focus and nothing is picked, a
+    list under it: the known centres whose station key contains the typed one (all of them
+    before a station is named), then « + Ajouter « villef » » unless a known centre is that
+    same station; a pick fills the field, a new key typed forgets it. « Nom limité à 80
+    caractères. » when too long. « N° de tournée » (« Un numéro de 1 à 9999. ») and
+    « Année » (the phone's year, « Une année de 2000 à 2099. »). 300 ms after the centre or
+    the number last changed, the server says whether the pair exists (a late answer to older
+    input is ignored; no answer offline: « Créer » still asks, and the server refuses a
+    duplicate): « ⚠ La tournée 49 du CS Villefranche existe déjà. Demandez le code ou le QR
+    code à la personne qui l'a créée. » in a red frame, the number framed red, « Créer »
+    disabled, and « Rejoindre avec un code » (replaces this screen with « Rejoindre »).
+    « Créer » keeps the tournée among the member's and opens it at once; offline « Pas de
+    réseau. Réessayez une fois connecté. », a number taken meanwhile shows as taken. Then,
+    the form frozen, a card « Tournée 49 · CS Villefranche est prête. Montrez ce code à
+    l'équipe. », the QR code (Équipe's, larger), « 234-567 » and « Partager » (Équipe's
+    text); « Continuer » (and back) open the start screen on the new tournée, where the
+    phone's streets are offered to it (5.0).
+  - **Rejoindre:** « Scanner le QR code » opens the camera full screen (permission asked
+    then; refused: « L'appareil photo n'est pas disponible. Saisissez le code à la main. »),
+    which closes on the first QR code read; one that is not a code: « Ce QR code n'est pas
+    celui d'une tournée. ». Or « Code » in two boxes of three: upper-cased, dash and spaces
+    dropped, a whole code typed or pasted in the first fills both, at most three characters
+    each; the first box full and valid moves on to the second; a character outside the
+    alphabet: « Un code n'a que des lettres et des chiffres, sans 0, O, 1, I ni L. ». A
+    complete code is looked up at once: the card « 49 | Tournée 49 · CS Villefranche » over
+    « Campagne 2026 » (**no member or street count**: `joinCodes` holds only the preview
+    fields, §6.2 — the mockup's « 6 membres · 60 rues » is not shown), « Aucune tournée n'a
+    ce code. Vérifiez-le… », or « Pas de réseau : la tournée ne peut pas être affichée. »
+    with « Réessayer ». « Demander à rejoindre » (the mockup's label) sends the request and
+    opens « Demande envoyée »; a tournée already in « Mes tournées » sends nothing: « Cette
+    tournée est déjà dans « Mes tournées ». ».
 
 ```
   after "Rejoindre": waiting for approval
@@ -316,6 +366,16 @@ Both buttons stay disabled until the name is filled in.
 - The screen updates by itself as soon as someone accepts (listener on the member document),
   then opens Accueil and offers the download. If refused: "Demande refusée", back to Bienvenue.
 - Until accepted, the app shows this screen at every launch.
+- Delivered in T2.5 (JoinPending mockup): the clock in a yellow ring (« Demande en
+  attente » for screen readers), « Demande envoyée », « Tournée 49 · CS Villefranche », the
+  text and « Cet écran s'ouvrira tout seul sur la tournée dès que vous serez accepté. »,
+  « Annuler la demande » at the bottom. Accepted: the tournée is opened and the start
+  screen shows it. Refused: « Demande refusée » (a message over the next screen) and back to
+  where the app would open now (§4: « Bienvenue », or the start screen when the phone has
+  streets or a tournée open). Cancelled: withdrawn (offline too) and the same way back,
+  without the message. Offline nothing comes and the request stays, across restarts. It is
+  where the app opens only when the phone has nothing else (§4); while it has a start screen
+  a back arrow leads there, so marking never waits for a request.
 - Everywhere else the app shows **Tournée 49 · 2026** as the title and the CS as subtitle.
 
 ### 5.3 Accueil — map + "Mes rues" panel
@@ -384,7 +444,11 @@ bottom sheet:
   a request a dashed ○ in grey, « CS … · votre demande est en attente », and cannot be tapped.
   No tournée: « Aucune tournée pour l'instant. ». Still to come: the progress « · 41 % » (with
   the streets on Firestore), the dot of a request waiting in another tournée (with Équipe),
-  « Pas téléchargée » (M4), *Créer* / *Rejoindre* (with their screens, 5.2).
+  « Pas téléchargée » (M4).
+- Delivered in T2.5: « + Créer une tournée » (red) and « Rejoindre une tournée » under the
+  rows close the sheet and open 5.2 above the screen; a phone without a name asks « Votre
+  prénom » (Paramètres' sheet) first and opens nothing if it is closed without one. With no
+  tournée open, the app's name in the title opens the sheet too.
 - Delivered in T2.6: 👥 sits left of ⚙ while a tournée is open (none otherwise) and opens
   Équipe; a red dot on it while a request waits in the open tournée, said by screen readers
   (« Équipe, 1 demande en attente »). The team is followed as long as a tournée is open.
@@ -1281,6 +1345,40 @@ Tournée rules fixed in T2.2 (`lib/domain/tournee/`):
 - **Port `PhoneSettings`** (application): `memberName` (null until given), `theme`
   (`ThemeChoice` system / light / dark), setters. Use cases `ReadPhoneSettings`,
   `ChangeMemberName` (`MemberName.create`, nothing kept when refused), `ChooseTheme`.
+
+Onboarding fixed in T2.5 (`lib/application/use_cases/choose_start_point.dart`,
+`create_tournee.dart`, `join_tournee.dart`, `lib/presentation/`):
+
+- **`ChooseStartPoint`** (`MyTourneesStore`, the phone's `StreetRepository`): `StartOnStreets`
+  | `StartOnWelcome` | `StartOnRequest(summary)`, in the order of §4. It takes the first value
+  of `watchAll` / `watchDeleted` without waiting for the stream to be let go. Also where the
+  app goes once a request is refused or cancelled. `launchPlaceProvider` (a `FutureProvider`
+  read once) gives the router its first location; `TourneeApp` shows the bare ground until
+  then.
+- **Créer:** `ListRescueCentres`, `CheckTourneeTaken` (the directory, `noNetwork`) and
+  `CreateTournee(centre, number, campaign, creatorName)`: `signInIfNeeded` (its `noNetwork`
+  → `CreateTourneeFailure.noNetwork`), `Tournee.createdBy` with an `IdGenerator` id, a
+  `JoinCode.generate` from the bound `Random` and the `Clock`, `TourneeRepository.add`
+  (`alreadyExists` | `noNetwork`), then the summary remembered **and opened**; returns the
+  tournée as stored (its code possibly replaced).
+- **Rejoindre:** `PreviewJoin` (the directory), `RequestToJoin(preview, name)`: a tournée
+  already in « Mes tournées » → `alreadyJoined` (asking again would turn an active member
+  back into a request); else `signInIfNeeded` (→ `noNetwork`), the pending `Member` stamped
+  with the `Clock` sent with `requestToJoin`, and the preview remembered as a pending
+  summary. `CancelJoinRequest(tournee)`: `cancelRequest` as the signed-in member (none: only
+  forgotten), then `forget`.
+- **Following a request:** « Mes tournées » (`MyTourneesNotifier`, T2.7) already follows and
+  settles each pending request; `JoinRequestNotifier` (family by tournée) watches it:
+  `RequestWaiting(number, centre, canLeave)` | `RequestAccepted` (after `OpenTournee`) |
+  `RequestClosed(refused, next)` | `RequestUnknown`. A request gone while shown is refused
+  unless « Annuler » was pressed; one gone before the screen opened is not called refused.
+  `FirestoreTourneeDirectory.watchRequest` tells nothing for a snapshot of the phone's copy
+  without the document (`metadata.isFromCache`, `requestStatusesIn`): only the server can say
+  a request is gone, so an offline start never drops it.
+- **Presentation:** `WelcomeNotifier`, `NewTourneeNotifier` (duplicate check after
+  `duplicateCheckDelayProvider`, 300 ms; answers about older input dropped) and
+  `JoinTourneeNotifier` (late previews dropped) each wait for `AccountSignedIn` before asking
+  the server, so after an offline first start « Réessayer » is enough, no restart.
 
 Équipe and Corbeille fixed in T2.6 (`lib/application/use_cases/team.dart`,
 `observe_corbeille.dart`, `lib/domain/street/corbeille.dart`, `lib/presentation/`):

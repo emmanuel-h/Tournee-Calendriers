@@ -8,6 +8,18 @@ across a team. Flutter + Riverpod, Android first. The UI is in French.
 
 ## Features
 
+Onboarding:
+
+- « Bienvenue » on a phone that holds nothing yet: the first name, then « Créer une
+  tournée » or « Rejoindre une tournée » (disabled until a name is typed). A phone with
+  streets of its own opens on « Mes rues » as before.
+- « Nouvelle tournée »: the centre de secours picked from the known ones as you type (or
+  added), the number checked as you type (« … existe déjà » with « Rejoindre avec un
+  code »), the year; then the code, its QR code and « Partager ». Needs the network.
+- « Rejoindre une tournée »: scan the QR code or type the code in two boxes, check the
+  tournée shown, « Demander à rejoindre »; « Demande envoyée » waits, offline too, and opens
+  the tournée once a member accepts (« Demande refusée » otherwise, « Annuler la demande »).
+
 Temporary M1 start screen (until the map arrives in M3):
 
 - « Mes rues »: the streets of the open tournée, shared live with the team (Firestore), or
@@ -19,11 +31,11 @@ Temporary M1 start screen (until the map arrives in M3):
 - « Importer des rues »: find a commune by name (geo.api.gouv.fr), tick some of its streets
   (national address base, BAN) and import them with their house numbers, into the open
   tournée (or the phone). Needs the network once; streets already imported keep their marks.
-- Top bar: the open tournée (« Tournée 49 · 2026 » over its centre de secours) opens « Mes
-  tournées », to switch tournée (the app reopens the last one at launch, offline too); 👥
-  opens Équipe (a dot while a join request waits); ⚙ opens Paramètres: first name, « Mes tournées », theme (Système, Clair, Sombre),
-  confidentialité, version and licences, data credits. Creating or joining a tournée comes
-  with the onboarding screens.
+- Top bar: the open tournée (« Tournée 49 · 2026 » over its centre de secours), or the
+  app's name when none is open, opens « Mes tournées », to switch tournée (the app reopens
+  the last one at launch, offline too) or create or join one; 👥 opens Équipe (a dot while a
+  join request waits); ⚙ opens Paramètres: first name, « Mes tournées », theme (Système,
+  Clair, Sombre), confidentialité, version and licences, data credits.
 - Équipe (👥): the join code and its QR code, « Partager », « Nouveau code » (creator), the
   requests to join with « Accepter » / « Refuser » (any member), the members with « Retirer »
   (creator), the Corbeille, « Quitter la tournée » / « Supprimer la tournée » (creator).

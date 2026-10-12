@@ -100,12 +100,6 @@ abstract class AppLocalizations {
   /// **'Tournée des calendriers'**
   String get appTitle;
 
-  /// Title of the first-launch screen (PLAN §5.1).
-  ///
-  /// In fr, this message translates to:
-  /// **'Bienvenue'**
-  String get screenWelcome;
-
   /// Title of the create-a-tournée screen (PLAN §5.2).
   ///
   /// In fr, this message translates to:
@@ -1946,6 +1940,246 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'{moved, plural, =0{Aucune rue ajoutée} =1{1 rue ajoutée} other{{moved} rues ajoutées}}, {already, plural, =1{1 déjà dans la tournée} other{{already} déjà dans la tournée}}'**
   String moveStreetsDoneSome(int moved, int already);
+
+  /// Line under the app's name on « Bienvenue » (PLAN §5.1, Welcome mockup).
+  ///
+  /// In fr, this message translates to:
+  /// **'Notez chaque porte de votre tournée et suivez l\'avancement de l\'équipe en direct.'**
+  String get welcomeIntro;
+
+  /// Hint under « Votre prénom » on « Bienvenue ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Visible par votre équipe.'**
+  String get welcomeNameHelp;
+
+  /// Button of « Bienvenue » and « Mes tournées » that opens « Nouvelle tournée ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Créer une tournée'**
+  String get createTourneeAction;
+
+  /// Button of « Bienvenue » and « Mes tournées » that opens « Rejoindre une tournée ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Rejoindre une tournée'**
+  String get joinTourneeAction;
+
+  /// Screen-reader label of the app's name as the title of the start screen with no tournée open: a button that opens « Mes tournées ».
+  ///
+  /// In fr, this message translates to:
+  /// **'{title}. Mes tournées'**
+  String appTitleSemantics(String title);
+
+  /// Line of « Nouvelle tournée » and « Rejoindre » while the phone gets its account.
+  ///
+  /// In fr, this message translates to:
+  /// **'Connexion au serveur…'**
+  String get accountSigningIn;
+
+  /// Line of « Nouvelle tournée » and « Rejoindre » when the phone could not get its account, with « Réessayer ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Hors ligne : créer ou rejoindre une tournée demande le réseau.'**
+  String get accountOffline;
+
+  /// Label of the centre de secours field of « Nouvelle tournée ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Centre de secours'**
+  String get createCentreLabel;
+
+  /// Screen-reader name of the list of known centres under the field.
+  ///
+  /// In fr, this message translates to:
+  /// **'Centres de secours connus'**
+  String get createCentreListSemantics;
+
+  /// Last row of the list of centres: adds the station typed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter « {name} »'**
+  String createCentreAdd(String name);
+
+  /// Under the centre de secours field when the name is too long.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nom limité à {max} caractères.'**
+  String createCentreTooLong(int max);
+
+  /// Label of the number field of « Nouvelle tournée ».
+  ///
+  /// In fr, this message translates to:
+  /// **'N° de tournée'**
+  String get createNumberLabel;
+
+  /// Under the number field when what is typed is not a tournée number.
+  ///
+  /// In fr, this message translates to:
+  /// **'Un numéro de 1 à {max}.'**
+  String createNumberInvalid(int max);
+
+  /// Label of the year field of « Nouvelle tournée ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Année'**
+  String get createYearLabel;
+
+  /// Under the year field when what is typed is not a campaign year.
+  ///
+  /// In fr, this message translates to:
+  /// **'Une année de {first} à {last}.'**
+  String createYearInvalid(int first, int last);
+
+  /// Main button of « Nouvelle tournée ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Créer'**
+  String get createAction;
+
+  /// Warning of « Nouvelle tournée » when the number is taken in that centre (CreateTaken mockup).
+  ///
+  /// In fr, this message translates to:
+  /// **'La tournée {number} du {centre} existe déjà.'**
+  String createTakenTitle(String number, String centre);
+
+  /// Under the warning of a tournée that exists already.
+  ///
+  /// In fr, this message translates to:
+  /// **'Demandez le code ou le QR code à la personne qui l\'a créée.'**
+  String get createTakenBody;
+
+  /// Button under the warning: opens « Rejoindre une tournée ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Rejoindre avec un code'**
+  String get createJoinWithCode;
+
+  /// Under « Créer » or « Demander à rejoindre » when the server could not be reached.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pas de réseau. Réessayez une fois connecté.'**
+  String get onboardingOffline;
+
+  /// Above the QR code of a tournée just created.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tournée {number} · {centre} est prête. Montrez ce code à l\'équipe.'**
+  String createReady(String number, String centre);
+
+  /// Bottom button of « Nouvelle tournée » once created: opens the start screen on the new tournée.
+  ///
+  /// In fr, this message translates to:
+  /// **'Continuer'**
+  String get createContinue;
+
+  /// Button of « Rejoindre » that opens the camera, and the title of the camera screen.
+  ///
+  /// In fr, this message translates to:
+  /// **'Scanner le QR code'**
+  String get joinScan;
+
+  /// Between « Scanner le QR code » and the code boxes.
+  ///
+  /// In fr, this message translates to:
+  /// **'ou saisir le code'**
+  String get joinOrType;
+
+  /// Screen-reader name of the second box of the code.
+  ///
+  /// In fr, this message translates to:
+  /// **'Code, suite'**
+  String get joinCodeSecondSemantics;
+
+  /// Under the code boxes when a character no code has is typed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Un code n\'a que des lettres et des chiffres, sans 0, O, 1, I ni L.'**
+  String get joinInvalidCharacter;
+
+  /// Under the code boxes when the QR code scanned is not a tournée's.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ce QR code n\'est pas celui d\'une tournée.'**
+  String get joinScanRefused;
+
+  /// When no tournée has the code typed or scanned.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune tournée n\'a ce code. Vérifiez-le auprès de la personne qui vous l\'a donné.'**
+  String get joinUnknownCode;
+
+  /// When the tournée of the code cannot be read for lack of network, with « Réessayer ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Pas de réseau : la tournée ne peut pas être affichée.'**
+  String get joinLookupOffline;
+
+  /// The tournée a join code shows, and the subtitle of « Demande envoyée ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Tournée {number} · {centre}'**
+  String joinPreviewTitle(String number, String centre);
+
+  /// Under the tournée a join code shows.
+  ///
+  /// In fr, this message translates to:
+  /// **'Campagne {year}'**
+  String joinPreviewCampaign(String year);
+
+  /// Main button of « Rejoindre une tournée »: sends the request.
+  ///
+  /// In fr, this message translates to:
+  /// **'Demander à rejoindre'**
+  String get joinRequest;
+
+  /// When the tournée of the code is already one of the member's.
+  ///
+  /// In fr, this message translates to:
+  /// **'Cette tournée est déjà dans « Mes tournées ».'**
+  String get joinAlreadyJoined;
+
+  /// Over the camera of « Scanner le QR code ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Visez le QR code de la tournée.'**
+  String get scannerHint;
+
+  /// On the camera screen when the camera is refused or missing.
+  ///
+  /// In fr, this message translates to:
+  /// **'L\'appareil photo n\'est pas disponible. Saisissez le code à la main.'**
+  String get scannerUnavailable;
+
+  /// Text of « Demande envoyée » (PLAN §5.2, JoinPending mockup).
+  ///
+  /// In fr, this message translates to:
+  /// **'Un membre de la tournée doit vous accepter. Demandez-le à la personne qui vous a donné le code.'**
+  String get joinPendingBody;
+
+  /// Note of « Demande envoyée ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Cet écran s\'ouvrira tout seul sur la tournée dès que vous serez accepté.'**
+  String get joinPendingOpensItself;
+
+  /// Screen-reader label of the clock of « Demande envoyée ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Demande en attente'**
+  String get joinPendingSemantics;
+
+  /// Button of « Demande envoyée »: withdraws the request.
+  ///
+  /// In fr, this message translates to:
+  /// **'Annuler la demande'**
+  String get joinPendingCancel;
+
+  /// Message once the member's request was refused.
+  ///
+  /// In fr, this message translates to:
+  /// **'Demande refusée'**
+  String get joinRefused;
 }
 
 class _AppLocalizationsDelegate

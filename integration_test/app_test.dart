@@ -82,6 +82,37 @@ FakeAddressDirectory _ban() => FakeAddressDirectory(
   },
 );
 
+/// A fresh storage folder for one test, deleted after it.
+Future<Directory> _freshStorage(String name) async {
+  final storage = await Directory.systemTemp.createTemp(name);
+  addTearDown(() => storage.delete(recursive: true));
+  return storage;
+}
+
+/// A fresh storage folder of a phone that already knows a tournée, none of
+/// them open: the app opens on « Mes rues » and the phone's own streets, as
+/// on a phone of M1, rather than on « Bienvenue ». Nothing of it needs the
+/// network.
+Future<Directory> _knownPhone(String name) async {
+  final storage = await _freshStorage(name);
+  File('${storage.path}/my_tournees.json').writeAsStringSync(
+    jsonEncode({
+      'version': 1,
+      'open': null,
+      'tournees': [
+        {
+          'id': 't12',
+          'number': 12,
+          'centre': 'CS Villefranche',
+          'campaign': 2026,
+          'status': 'active',
+        },
+      ],
+    }),
+  );
+  return storage;
+}
+
 void main() {
   // Connects the test to the device so results are reported back to
   // `flutter test`.
@@ -101,7 +132,7 @@ void main() {
   testWidgets(
     'should open the component gallery when the app is a debug build',
     (tester) async {
-      await app.main();
+      await bootstrap(storage: await _knownPhone('gallery'));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const Key('home.gallery')));
@@ -116,8 +147,7 @@ void main() {
     tester,
   ) async {
     // A fresh folder: the app starts with no street.
-    final storage = await Directory.systemTemp.createTemp('import_flow');
-    addTearDown(() => storage.delete(recursive: true));
+    final storage = await _knownPhone('import_flow');
     await bootstrap(
       addressDirectory: _ban(),
       communeSearch: FakeCommuneSearch(
@@ -157,8 +187,7 @@ void main() {
     'marked again and another held to come back',
     (tester) async {
       final semantics = tester.ensureSemantics();
-      final storage = await Directory.systemTemp.createTemp('mark_flow');
-      addTearDown(() => storage.delete(recursive: true));
+      final storage = await _knownPhone('mark_flow');
       final communes = FakeCommuneSearch(
         answers: {
           'Villef': Ok([
@@ -252,8 +281,7 @@ void main() {
     'and staircase B made smaller',
     (tester) async {
       final semantics = tester.ensureSemantics();
-      final storage = await Directory.systemTemp.createTemp('building_flow');
-      addTearDown(() => storage.delete(recursive: true));
+      final storage = await _knownPhone('building_flow');
       await bootstrap(
         addressDirectory: _ban(),
         communeSearch: FakeCommuneSearch(
@@ -390,8 +418,7 @@ void main() {
     'brought back and 21-25 added in edit mode, and bring the street back '
     'with its mark when it is deleted and imported again',
     (tester) async {
-      final storage = await Directory.systemTemp.createTemp('edit_flow');
-      addTearDown(() => storage.delete(recursive: true));
+      final storage = await _knownPhone('edit_flow');
       await bootstrap(
         addressDirectory: _ban(),
         communeSearch: FakeCommuneSearch(
@@ -490,8 +517,7 @@ void main() {
   testWidgets(
     'should stamp changes with the Firebase uid, the same after a restart',
     (tester) async {
-      final storage = await Directory.systemTemp.createTemp('identity_flow');
-      addTearDown(() => storage.delete(recursive: true));
+      final storage = await _freshStorage('identity_flow');
       ProviderContainer app() =>
           ProviderScope.containerOf(tester.element(find.byType(TourneeApp)));
       MemberId member() => app().read(identityProvider).currentMember;
@@ -527,8 +553,7 @@ void main() {
   testWidgets(
     'should reopen the last tournée at launch and switch from the title',
     (tester) async {
-      final storage = await Directory.systemTemp.createTemp('tournees_flow');
-      addTearDown(() => storage.delete(recursive: true));
+      final storage = await _freshStorage('tournees_flow');
       // What « Créer » and « Rejoindre » will leave on the phone: two
       // tournées of the CS Villefranche, the 49 open. Nothing of it needs
       // the network.
@@ -575,6 +600,57 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Tournée 12 · 2026'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'should open « Bienvenue » on a new phone, keep its buttons disabled '
+    'until a name is typed, and keep the name',
+    (tester) async {
+      final storage = await _freshStorage('welcome_flow');
+      Finder button(String key) => find.byKey(Key(key));
+      bool enabled(String key) => tester
+          .widget<ButtonStyleButton>(
+            find.descendant(
+              of: button(key),
+              matching: find.bySubtype<ButtonStyleButton>(),
+            ),
+          )
+          .enabled;
+
+      await bootstrap(storage: storage);
+      await tester.pumpAndSettle();
+      expect(find.text('Visible par votre équipe.'), findsOneWidget);
+      expect(enabled('welcome.create'), isFalse);
+      expect(enabled('welcome.join'), isFalse);
+
+      await tester.enterText(find.byKey(const Key('welcome.name')), 'Léa');
+      // « OK » on the keyboard, which then leaves the buttons in sight.
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+      expect(enabled('welcome.create'), isTrue);
+      expect(enabled('welcome.join'), isTrue);
+
+      // « Rejoindre » asks the server nothing until a code is typed: no
+      // request reaches the real project.
+      await tester.ensureVisible(button('welcome.join'));
+      await tester.pumpAndSettle();
+      await tester.tap(button('welcome.join'));
+      await tester.pumpAndSettle();
+      expect(find.text('Rejoindre une tournée'), findsOneWidget);
+      expect(find.byKey(const Key('join.first')), findsOneWidget);
+      // The settings file is written just after the tap: let it land.
+      await Future<void>.delayed(const Duration(seconds: 1));
+
+      // A restart: still nothing but a name, so « Bienvenue » again, with
+      // the name kept.
+      runApp(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+      await bootstrap(storage: storage);
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(TextField, 'Léa'), findsOneWidget);
+      expect(enabled('welcome.create'), isTrue);
     },
   );
 }

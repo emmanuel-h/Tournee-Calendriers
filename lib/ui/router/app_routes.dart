@@ -1,5 +1,6 @@
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 
 /// The paths of every screen of PLAN §5, so no path string is typed twice.
 ///
@@ -12,10 +13,19 @@ abstract final class AppRoutes {
 
   /// « Importer des rues », the temporary import screen of M1 (§5.0).
   static const importStreets = '/importer-des-rues';
+
+  /// « Bienvenue », where a phone the app knows nothing of opens (§5.1).
   static const welcome = '/bienvenue';
+
+  /// « Nouvelle tournée » and « Rejoindre une tournée » (§5.2).
   static const create = '/creer';
   static const join = '/rejoindre';
   static const joinPending = '/rejoindre/attente';
+
+  /// « Demande envoyée » for the request to join [tournee]:
+  /// `/rejoindre/attente?id=…`.
+  static String joinPendingOf(TourneeId tournee) =>
+      Uri(path: joinPending, queryParameters: {'id': tournee.value}).toString();
   static const addStreets = '/ajouter-des-rues';
   static const manualStreet = '/rue-a-la-main';
   static const street = '/rue';

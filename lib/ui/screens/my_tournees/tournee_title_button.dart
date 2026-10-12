@@ -76,6 +76,52 @@ final class TourneeTitleButton extends StatelessWidget {
   }
 }
 
+/// The app's name as the title of the start screen while no tournée is
+/// open (« Tournée des calendriers ▾ »): a button that opens « Mes
+/// tournées » too, so a phone with streets of its own reaches « Créer » and
+/// « Rejoindre » from there.
+final class AppTitleButton extends StatelessWidget {
+  const AppTitleButton({super.key, required this.onPressed});
+
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = AppColors.of(context);
+    return Semantics(
+      button: true,
+      label: l10n.appTitleSemantics(l10n.appTitle),
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(AppSizes.tileRadius),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(minHeight: AppSizes.minTapTarget),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            spacing: 4,
+            children: [
+              Flexible(
+                child: Text(
+                  l10n.appTitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              Icon(
+                Icons.keyboard_arrow_down,
+                size: AppSizes.titleChevron,
+                color: colors.ink,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 /// « Tournée 49 · 2026 »: how a tournée is named everywhere but on the
 /// join screens (PLAN §5.2).
 String tourneeTitle(AppLocalizations l10n, TourneeSummary tournee) =>

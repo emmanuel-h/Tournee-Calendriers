@@ -6,8 +6,6 @@
     "description": "The app's name: title bar, task switcher, placeholder home."
   },
 
-  "screenWelcome": "Bienvenue",
-  "@screenWelcome": { "description": "Title of the first-launch screen (PLAN §5.1)." },
   "screenCreate": "Nouvelle tournée",
   "@screenCreate": { "description": "Title of the create-a-tournée screen (PLAN §5.2)." },
   "screenJoin": "Rejoindre une tournée",
@@ -1171,5 +1169,125 @@
       "moved": { "type": "int", "example": "10" },
       "already": { "type": "int", "example": "2" }
     }
-  }
+  },
+
+  "welcomeIntro": "Notez chaque porte de votre tournée et suivez l'avancement de l'équipe en direct.",
+  "@welcomeIntro": { "description": "Line under the app's name on « Bienvenue » (PLAN §5.1, Welcome mockup)." },
+  "welcomeNameHelp": "Visible par votre équipe.",
+  "@welcomeNameHelp": { "description": "Hint under « Votre prénom » on « Bienvenue »." },
+  "createTourneeAction": "Créer une tournée",
+  "@createTourneeAction": { "description": "Button of « Bienvenue » and « Mes tournées » that opens « Nouvelle tournée »." },
+  "joinTourneeAction": "Rejoindre une tournée",
+  "@joinTourneeAction": { "description": "Button of « Bienvenue » and « Mes tournées » that opens « Rejoindre une tournée »." },
+  "appTitleSemantics": "{title}. Mes tournées",
+  "@appTitleSemantics": {
+    "description": "Screen-reader label of the app's name as the title of the start screen with no tournée open: a button that opens « Mes tournées ».",
+    "placeholders": { "title": { "type": "String", "example": "Tournée des calendriers" } }
+  },
+  "accountSigningIn": "Connexion au serveur…",
+  "@accountSigningIn": { "description": "Line of « Nouvelle tournée » and « Rejoindre » while the phone gets its account." },
+  "accountOffline": "Hors ligne : créer ou rejoindre une tournée demande le réseau.",
+  "@accountOffline": { "description": "Line of « Nouvelle tournée » and « Rejoindre » when the phone could not get its account, with « Réessayer »." },
+  "createCentreLabel": "Centre de secours",
+  "@createCentreLabel": { "description": "Label of the centre de secours field of « Nouvelle tournée »." },
+  "createCentreListSemantics": "Centres de secours connus",
+  "@createCentreListSemantics": { "description": "Screen-reader name of the list of known centres under the field." },
+  "createCentreAdd": "Ajouter « {name} »",
+  "@createCentreAdd": {
+    "description": "Last row of the list of centres: adds the station typed.",
+    "placeholders": { "name": { "type": "String", "example": "CS Gleizé" } }
+  },
+  "createCentreTooLong": "Nom limité à {max} caractères.",
+  "@createCentreTooLong": {
+    "description": "Under the centre de secours field when the name is too long.",
+    "placeholders": { "max": { "type": "int", "example": "80" } }
+  },
+  "createNumberLabel": "N° de tournée",
+  "@createNumberLabel": { "description": "Label of the number field of « Nouvelle tournée »." },
+  "createNumberInvalid": "Un numéro de 1 à {max}.",
+  "@createNumberInvalid": {
+    "description": "Under the number field when what is typed is not a tournée number.",
+    "placeholders": { "max": { "type": "int", "example": "9999" } }
+  },
+  "createYearLabel": "Année",
+  "@createYearLabel": { "description": "Label of the year field of « Nouvelle tournée »." },
+  "createYearInvalid": "Une année de {first} à {last}.",
+  "@createYearInvalid": {
+    "description": "Under the year field when what is typed is not a campaign year.",
+    "placeholders": {
+      "first": { "type": "int", "example": "2000" },
+      "last": { "type": "int", "example": "2099" }
+    }
+  },
+  "createAction": "Créer",
+  "@createAction": { "description": "Main button of « Nouvelle tournée »." },
+  "createTakenTitle": "La tournée {number} du {centre} existe déjà.",
+  "@createTakenTitle": {
+    "description": "Warning of « Nouvelle tournée » when the number is taken in that centre (CreateTaken mockup).",
+    "placeholders": {
+      "number": { "type": "String", "example": "49" },
+      "centre": { "type": "String", "example": "CS Villefranche" }
+    }
+  },
+  "createTakenBody": "Demandez le code ou le QR code à la personne qui l'a créée.",
+  "@createTakenBody": { "description": "Under the warning of a tournée that exists already." },
+  "createJoinWithCode": "Rejoindre avec un code",
+  "@createJoinWithCode": { "description": "Button under the warning: opens « Rejoindre une tournée »." },
+  "onboardingOffline": "Pas de réseau. Réessayez une fois connecté.",
+  "@onboardingOffline": { "description": "Under « Créer » or « Demander à rejoindre » when the server could not be reached." },
+  "createReady": "Tournée {number} · {centre} est prête. Montrez ce code à l'équipe.",
+  "@createReady": {
+    "description": "Above the QR code of a tournée just created.",
+    "placeholders": {
+      "number": { "type": "String", "example": "49" },
+      "centre": { "type": "String", "example": "CS Villefranche" }
+    }
+  },
+  "createContinue": "Continuer",
+  "@createContinue": { "description": "Bottom button of « Nouvelle tournée » once created: opens the start screen on the new tournée." },
+  "joinScan": "Scanner le QR code",
+  "@joinScan": { "description": "Button of « Rejoindre » that opens the camera, and the title of the camera screen." },
+  "joinOrType": "ou saisir le code",
+  "@joinOrType": { "description": "Between « Scanner le QR code » and the code boxes." },
+  "joinCodeSecondSemantics": "Code, suite",
+  "@joinCodeSecondSemantics": { "description": "Screen-reader name of the second box of the code." },
+  "joinInvalidCharacter": "Un code n'a que des lettres et des chiffres, sans 0, O, 1, I ni L.",
+  "@joinInvalidCharacter": { "description": "Under the code boxes when a character no code has is typed." },
+  "joinScanRefused": "Ce QR code n'est pas celui d'une tournée.",
+  "@joinScanRefused": { "description": "Under the code boxes when the QR code scanned is not a tournée's." },
+  "joinUnknownCode": "Aucune tournée n'a ce code. Vérifiez-le auprès de la personne qui vous l'a donné.",
+  "@joinUnknownCode": { "description": "When no tournée has the code typed or scanned." },
+  "joinLookupOffline": "Pas de réseau : la tournée ne peut pas être affichée.",
+  "@joinLookupOffline": { "description": "When the tournée of the code cannot be read for lack of network, with « Réessayer »." },
+  "joinPreviewTitle": "Tournée {number} · {centre}",
+  "@joinPreviewTitle": {
+    "description": "The tournée a join code shows, and the subtitle of « Demande envoyée ».",
+    "placeholders": {
+      "number": { "type": "String", "example": "49" },
+      "centre": { "type": "String", "example": "CS Villefranche" }
+    }
+  },
+  "joinPreviewCampaign": "Campagne {year}",
+  "@joinPreviewCampaign": {
+    "description": "Under the tournée a join code shows.",
+    "placeholders": { "year": { "type": "String", "example": "2026" } }
+  },
+  "joinRequest": "Demander à rejoindre",
+  "@joinRequest": { "description": "Main button of « Rejoindre une tournée »: sends the request." },
+  "joinAlreadyJoined": "Cette tournée est déjà dans « Mes tournées ».",
+  "@joinAlreadyJoined": { "description": "When the tournée of the code is already one of the member's." },
+  "scannerHint": "Visez le QR code de la tournée.",
+  "@scannerHint": { "description": "Over the camera of « Scanner le QR code »." },
+  "scannerUnavailable": "L'appareil photo n'est pas disponible. Saisissez le code à la main.",
+  "@scannerUnavailable": { "description": "On the camera screen when the camera is refused or missing." },
+  "joinPendingBody": "Un membre de la tournée doit vous accepter. Demandez-le à la personne qui vous a donné le code.",
+  "@joinPendingBody": { "description": "Text of « Demande envoyée » (PLAN §5.2, JoinPending mockup)." },
+  "joinPendingOpensItself": "Cet écran s'ouvrira tout seul sur la tournée dès que vous serez accepté.",
+  "@joinPendingOpensItself": { "description": "Note of « Demande envoyée »." },
+  "joinPendingSemantics": "Demande en attente",
+  "@joinPendingSemantics": { "description": "Screen-reader label of the clock of « Demande envoyée »." },
+  "joinPendingCancel": "Annuler la demande",
+  "@joinPendingCancel": { "description": "Button of « Demande envoyée »: withdraws the request." },
+  "joinRefused": "Demande refusée",
+  "@joinRefused": { "description": "Message once the member's request was refused." }
 }

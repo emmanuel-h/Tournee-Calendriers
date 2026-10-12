@@ -13,9 +13,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get appTitle => 'Tournée des calendriers';
 
   @override
-  String get screenWelcome => 'Bienvenue';
-
-  @override
   String get screenCreate => 'Nouvelle tournée';
 
   @override
@@ -1350,4 +1347,152 @@ class AppLocalizationsFr extends AppLocalizations {
     );
     return '$_temp0, $_temp1';
   }
+
+  @override
+  String get welcomeIntro =>
+      'Notez chaque porte de votre tournée et suivez l\'avancement de l\'équipe en direct.';
+
+  @override
+  String get welcomeNameHelp => 'Visible par votre équipe.';
+
+  @override
+  String get createTourneeAction => 'Créer une tournée';
+
+  @override
+  String get joinTourneeAction => 'Rejoindre une tournée';
+
+  @override
+  String appTitleSemantics(String title) {
+    return '$title. Mes tournées';
+  }
+
+  @override
+  String get accountSigningIn => 'Connexion au serveur…';
+
+  @override
+  String get accountOffline =>
+      'Hors ligne : créer ou rejoindre une tournée demande le réseau.';
+
+  @override
+  String get createCentreLabel => 'Centre de secours';
+
+  @override
+  String get createCentreListSemantics => 'Centres de secours connus';
+
+  @override
+  String createCentreAdd(String name) {
+    return 'Ajouter « $name »';
+  }
+
+  @override
+  String createCentreTooLong(int max) {
+    return 'Nom limité à $max caractères.';
+  }
+
+  @override
+  String get createNumberLabel => 'N° de tournée';
+
+  @override
+  String createNumberInvalid(int max) {
+    return 'Un numéro de 1 à $max.';
+  }
+
+  @override
+  String get createYearLabel => 'Année';
+
+  @override
+  String createYearInvalid(int first, int last) {
+    return 'Une année de $first à $last.';
+  }
+
+  @override
+  String get createAction => 'Créer';
+
+  @override
+  String createTakenTitle(String number, String centre) {
+    return 'La tournée $number du $centre existe déjà.';
+  }
+
+  @override
+  String get createTakenBody =>
+      'Demandez le code ou le QR code à la personne qui l\'a créée.';
+
+  @override
+  String get createJoinWithCode => 'Rejoindre avec un code';
+
+  @override
+  String get onboardingOffline => 'Pas de réseau. Réessayez une fois connecté.';
+
+  @override
+  String createReady(String number, String centre) {
+    return 'Tournée $number · $centre est prête. Montrez ce code à l\'équipe.';
+  }
+
+  @override
+  String get createContinue => 'Continuer';
+
+  @override
+  String get joinScan => 'Scanner le QR code';
+
+  @override
+  String get joinOrType => 'ou saisir le code';
+
+  @override
+  String get joinCodeSecondSemantics => 'Code, suite';
+
+  @override
+  String get joinInvalidCharacter =>
+      'Un code n\'a que des lettres et des chiffres, sans 0, O, 1, I ni L.';
+
+  @override
+  String get joinScanRefused => 'Ce QR code n\'est pas celui d\'une tournée.';
+
+  @override
+  String get joinUnknownCode =>
+      'Aucune tournée n\'a ce code. Vérifiez-le auprès de la personne qui vous l\'a donné.';
+
+  @override
+  String get joinLookupOffline =>
+      'Pas de réseau : la tournée ne peut pas être affichée.';
+
+  @override
+  String joinPreviewTitle(String number, String centre) {
+    return 'Tournée $number · $centre';
+  }
+
+  @override
+  String joinPreviewCampaign(String year) {
+    return 'Campagne $year';
+  }
+
+  @override
+  String get joinRequest => 'Demander à rejoindre';
+
+  @override
+  String get joinAlreadyJoined =>
+      'Cette tournée est déjà dans « Mes tournées ».';
+
+  @override
+  String get scannerHint => 'Visez le QR code de la tournée.';
+
+  @override
+  String get scannerUnavailable =>
+      'L\'appareil photo n\'est pas disponible. Saisissez le code à la main.';
+
+  @override
+  String get joinPendingBody =>
+      'Un membre de la tournée doit vous accepter. Demandez-le à la personne qui vous a donné le code.';
+
+  @override
+  String get joinPendingOpensItself =>
+      'Cet écran s\'ouvrira tout seul sur la tournée dès que vous serez accepté.';
+
+  @override
+  String get joinPendingSemantics => 'Demande en attente';
+
+  @override
+  String get joinPendingCancel => 'Annuler la demande';
+
+  @override
+  String get joinRefused => 'Demande refusée';
 }

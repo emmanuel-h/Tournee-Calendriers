@@ -26,7 +26,8 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 /// Its top bar is Accueil's (PLAN §5.3, Home mockup): the open tournée
 /// (« Tournée 49 · 2026 ▾ » over its centre) opens « Mes tournées », 👥
 /// opens Équipe (with a dot while a request waits), ⚙ opens Paramètres.
-/// With no tournée open, the app's name stays and there is no 👥.
+/// With no tournée open, the app's name stays, opens « Mes tournées » too,
+/// and there is no 👥.
 ///
 /// The streets are those of the open tournée, the phone's own when none is
 /// open; a card on top offers the phone's streets to the open tournée.
@@ -53,7 +54,10 @@ final class StartScreen extends ConsumerWidget {
             ? null
             : AppSizes.titleBarWithSubtitleHeight,
         title: tournee == null
-            ? Text(l10n.appTitle)
+            ? AppTitleButton(
+                key: const Key('home.appTitle'),
+                onPressed: () => showMyTourneesSheet(context),
+              )
             : TourneeTitleButton(
                 tournee: tournee,
                 onPressed: () => showMyTourneesSheet(context),

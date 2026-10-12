@@ -3,14 +3,13 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:qr_flutter/qr_flutter.dart';
-import 'package:share_plus/share_plus.dart';
 import 'package:tournee_calendriers/presentation/corbeille/corbeille_notifier.dart';
 import 'package:tournee_calendriers/presentation/team/team_notifier.dart';
 import 'package:tournee_calendriers/presentation/team/team_state.dart';
 import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
 import 'package:tournee_calendriers/ui/components/app_buttons.dart';
 import 'package:tournee_calendriers/ui/components/confirm_dialog.dart';
+import 'package:tournee_calendriers/ui/components/join_qr_code.dart';
 import 'package:tournee_calendriers/ui/components/recent_time_text.dart';
 import 'package:tournee_calendriers/ui/components/section_header.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
@@ -149,16 +148,11 @@ final class _Team extends ConsumerWidget {
           children: [
             _CodeCard(
               state: state,
-              onShare: () => unawaited(
-                SharePlus.instance.share(
-                  ShareParams(
-                    text: l10n.teamShareText(
-                      '${state.number}',
-                      state.centre,
-                      state.code,
-                    ),
-                  ),
-                ),
+              onShare: () => shareJoinCode(
+                l10n,
+                number: state.number,
+                centre: state.centre,
+                code: state.code,
               ),
               onNewCode: () => unawaited(run(notifier.regenerateCode)),
             ),
@@ -289,9 +283,6 @@ final class _CodeCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final colors = AppColors.of(context);
-    // A QR code scans best dark on light: it keeps the light palette's ink
-    // and white in the dark theme too.
-    const qrInk = AppColors.light;
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: AppSizes.gutter),
       padding: const EdgeInsets.all(14),
@@ -303,29 +294,11 @@ final class _CodeCard extends StatelessWidget {
       child: Row(
         spacing: 16,
         children: [
-          Semantics(
-            // A node of its own, not merged with the code beside it.
-            container: true,
-            label: l10n.teamQrSemantics(state.code),
-            image: true,
-            excludeSemantics: true,
-            child: ColoredBox(
-              color: qrInk.surface,
-              child: QrImageView(
-                key: const Key('team.qr'),
-                data: state.qrData,
-                size: AppSizes.qrCode,
-                padding: const EdgeInsets.all(4),
-                eyeStyle: QrEyeStyle(
-                  eyeShape: QrEyeShape.square,
-                  color: qrInk.ink,
-                ),
-                dataModuleStyle: QrDataModuleStyle(
-                  dataModuleShape: QrDataModuleShape.square,
-                  color: qrInk.ink,
-                ),
-              ),
-            ),
+          JoinQrCode(
+            key: const Key('team.qr'),
+            data: state.qrData,
+            code: state.code,
+            size: AppSizes.qrCode,
           ),
           Expanded(
             child: Column(

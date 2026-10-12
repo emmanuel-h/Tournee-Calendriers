@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tournee_calendriers/domain/tournee/member_name.dart';
 import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/screens/my_tournees/my_tournees_sheet.dart';
+import 'package:tournee_calendriers/ui/screens/onboarding/create_tournee_screen.dart';
+import 'package:tournee_calendriers/ui/screens/onboarding/join_tournee_screen.dart';
+import 'package:tournee_calendriers/ui/screens/settings/name_sheet.dart';
 import 'package:tournee_calendriers/ui/screens/settings/settings_screen.dart';
 
 import '../../domain/tournee/my_tournees_fixtures.dart';
+import '../../domain/tournee/tournee_fixtures.dart' show nameOf;
 import '../../support/fakes/fake_my_tournees_store.dart';
+import '../../support/fakes/fake_phone_settings.dart';
 import '../../support/results.dart';
 import '../support/app_overrides.dart';
 
@@ -22,12 +28,18 @@ MyTournees _manusPhone() => valueOf(
 
 void main() {
   late FakeMyTourneesStore store;
+  late FakePhoneSettings settings;
 
-  Future<void> pumpApp(WidgetTester tester, MyTournees mine) async {
+  Future<void> pumpApp(
+    WidgetTester tester,
+    MyTournees mine, {
+    MemberName? name,
+  }) async {
     store = FakeMyTourneesStore(mine);
+    settings = FakePhoneSettings(memberName: name);
     await tester.pumpWidget(
       ProviderScope(
-        overrides: fakePhone(myTournees: store),
+        overrides: fakePhone(myTournees: store, settings: settings),
         child: const TourneeApp(showGallery: false),
       ),
     );
@@ -166,5 +178,69 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text("Aucune tournée pour l'instant."), findsOneWidget);
+  });
+
+  testWidgets(
+    'should open the sheet from the app\'s name when no tournée is open',
+    (tester) async {
+      await pumpApp(tester, MyTournees.none);
+
+      await tester.tap(find.byKey(const Key('home.appTitle')));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(MyTourneesSheet), findsOneWidget);
+      expect(
+        find.bySemanticsLabel('Tournée des calendriers. Mes tournées'),
+        findsOneWidget,
+      );
+    },
+  );
+
+  testWidgets(
+    'should open « Nouvelle tournée » from the sheet, the open tournée kept',
+    (tester) async {
+      await pumpApp(tester, _manusPhone(), name: nameOf('Manu'));
+      await openSheet(tester);
+
+      await tester.tap(find.byKey(const Key('myTournees.create')));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(MyTourneesSheet), findsNothing);
+      expect(find.byType(CreateTourneeScreen), findsOneWidget);
+      expect(store.saves, isEmpty);
+    },
+  );
+
+  testWidgets('should ask the name first when the phone has none, then open '
+      '« Rejoindre une tournée »', (tester) async {
+    await pumpApp(tester, _manusPhone());
+    await openSheet(tester);
+
+    await tester.tap(find.byKey(const Key('myTournees.join')));
+    await tester.pumpAndSettle();
+    expect(find.byType(NameSheet), findsOneWidget);
+    await tester.enterText(find.byKey(const Key('name.field')), 'Manu');
+    await tester.tap(find.byKey(const Key('name.save')));
+    await tester.pumpAndSettle();
+
+    expect(settings.names, [nameOf('Manu')]);
+    expect(find.byType(JoinTourneeScreen), findsOneWidget);
+  });
+
+  testWidgets('should open nothing when the name sheet is closed without one', (
+    tester,
+  ) async {
+    await pumpApp(tester, _manusPhone());
+    await openSheet(tester);
+    await tester.tap(find.byKey(const Key('myTournees.create')));
+    await tester.pumpAndSettle();
+
+    // A tap on the dimmed screen above the sheet closes it.
+    await tester.tapAt(const Offset(200, 40));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(NameSheet), findsNothing);
+    expect(find.byType(CreateTourneeScreen), findsNothing);
+    expect(find.text('Tournée 49 · 2026'), findsOneWidget);
   });
 }

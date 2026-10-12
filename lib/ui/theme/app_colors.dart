@@ -21,6 +21,7 @@ final class AppColors extends ThemeExtension<AppColors> {
     required this.onAccent,
     required this.disabled,
     required this.onDisabled,
+    required this.alert,
     required this.scrim,
     required this.toDo,
     required this.onToDo,
@@ -63,6 +64,7 @@ final class AppColors extends ThemeExtension<AppColors> {
     onAccent: Color(0xFFFFFFFF),
     disabled: Color(0xFFE2DED5),
     onDisabled: Color(0xFF4A5058),
+    alert: Color(0xFFFBE9E7),
     scrim: Color(0x801B1F24),
     toDo: Color(0xFFFFFFFF),
     onToDo: Color(0xFF1B1F24),
@@ -107,6 +109,7 @@ final class AppColors extends ThemeExtension<AppColors> {
     onAccent: Color(0xFFFFFFFF),
     disabled: Color(0xFF2E3238),
     onDisabled: Color(0xFFA9AFB7),
+    alert: Color(0xFF3A1F1D),
     scrim: Color(0xB3000000),
     toDo: Color(0xFF1F2328),
     onToDo: Color(0xFFECEAE5),
@@ -167,6 +170,10 @@ final class AppColors extends ThemeExtension<AppColors> {
   /// Disabled buttons.
   final Color disabled;
   final Color onDisabled;
+
+  /// The pale red behind a warning framed in [accent] (« La tournée 49 du
+  /// CS Villefranche existe déjà », CreateTaken mockup).
+  final Color alert;
 
   /// Dims the screen behind a bottom sheet.
   final Color scrim;

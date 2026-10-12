@@ -13,10 +13,6 @@ void main() {
     'should show the French screen name when each screen still to build is opened',
     (tester) async {
       const expectedTitles = {
-        AppRoutes.welcome: 'Bienvenue',
-        AppRoutes.create: 'Nouvelle tournée',
-        AppRoutes.join: 'Rejoindre une tournée',
-        AppRoutes.joinPending: 'Demande envoyée',
         AppRoutes.addStreets: 'Ajouter des rues',
         AppRoutes.manualStreet: 'Rue à la main',
         AppRoutes.newCampaign: 'Nouvelle campagne',

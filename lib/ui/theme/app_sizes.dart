@@ -206,4 +206,41 @@ abstract final class AppSizes {
   /// the gap between it and the text.
   static const pendingSyncGlyph = 18.0;
   static const pendingSyncGap = 8.0;
+
+  /// The red square holding the calendar on « Bienvenue », its corner and
+  /// the calendar in it (Welcome mockup).
+  static const welcomeLogo = 64.0;
+  static const welcomeLogoRadius = 18.0;
+  static const welcomeLogoIcon = 34.0;
+
+  /// A tall field: « Votre prénom » on « Bienvenue ».
+  static const tallFieldHeight = 56.0;
+
+  /// « Scanner le QR code » on « Rejoindre », and its icon (Join mockup).
+  static const scanButtonHeight = 120.0;
+  static const scanButtonRadius = 20.0;
+  static const scanIcon = 36.0;
+
+  /// A box of the join code.
+  static const codeBoxHeight = 64.0;
+
+  /// The card of the tournée a code shows, and the number square in it.
+  static const previewCardRadius = 16.0;
+  static const previewBadge = 52.0;
+  static const previewBadgeRadius = 14.0;
+
+  /// The round clock of « Demande envoyée » and the clock in it
+  /// (JoinPending mockup).
+  static const pendingBadge = 72.0;
+  static const pendingIcon = 34.0;
+
+  /// The QR code of a tournée just created (Create mockup).
+  static const createdQrCode = 176.0;
+
+  /// A warning framed in red (« … existe déjà »), and its ⚠.
+  static const alertRadius = 14.0;
+  static const alertGlyph = 20.0;
+
+  /// A row of the list of centres de secours.
+  static const optionRowHeight = 48.0;
 }

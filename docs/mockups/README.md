@@ -17,6 +17,7 @@ the colours, type, spacing and status treatments below are the design tokens.
 | Muted | `#4A5058` | secondary text |
 | Line | `#CFC9BD` / `#E2DED5` | borders / dividers |
 | Accent | `#B3261E` | primary buttons |
+| Alert | `#FBE9E7` bg, accent border, ⚠ | a warning (« La tournée 49 … existe déjà ») |
 | Done | `#1E6B47` bg, white text, `✓` | |
 | Nobody home | `#F2B33D` bg, ink text, `✗` | |
 | Come back | `#D6E6F5` bg, `#1D4E7A` text, `↻` | |

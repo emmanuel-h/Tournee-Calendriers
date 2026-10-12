@@ -4,6 +4,13 @@
          this permission from their own manifests; release builds need it
          here. -->
     <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- « Scanner le QR code » of « Rejoindre une tournée » (mobile_scanner,
+         PLAN §5.2). The permission is asked only when that button is
+         tapped; a phone without a camera still installs the app and types
+         the code instead. mobile_scanner declares both too: written here
+         so the app's manifest says what it uses. -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <application
         android:label="Tournée des calendriers"
         android:name="${applicationName}"

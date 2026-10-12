@@ -234,6 +234,42 @@ void main() {
     });
   });
 
+  group('request snapshot', () {
+    final pendingData = <String, dynamic>{
+      ...joinRequestDocument(julie, firstCode),
+    };
+    final activeData = <String, dynamic>{...memberToDocument(lea)};
+
+    test('should tell a pending request from the server', () {
+      expect(requestStatusesIn('uid-julie', pendingData, fromCache: false), [
+        MemberStatus.pending,
+      ]);
+    });
+
+    test('should tell a pending request from the phone\'s copy', () {
+      expect(requestStatusesIn('uid-julie', pendingData, fromCache: true), [
+        MemberStatus.pending,
+      ]);
+    });
+
+    test('should tell an accepted request', () {
+      expect(requestStatusesIn('uid-lea', activeData, fromCache: false), [
+        MemberStatus.active,
+      ]);
+    });
+
+    test('should tell the request is gone when the server has none', () {
+      expect(requestStatusesIn('uid-julie', null, fromCache: false), [null]);
+    });
+
+    test(
+      'should tell nothing when only the phone\'s copy lacks the request',
+      () {
+        expect(requestStatusesIn('uid-julie', null, fromCache: true), isEmpty);
+      },
+    );
+  });
+
   group('join code', () {
     test('should write only what the join preview shows', () {
       expect(joinCodeDocument(team()), {

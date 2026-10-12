@@ -25,11 +25,14 @@ import 'package:tournee_calendriers/application/ports/pending_sync.dart';
 import 'package:tournee_calendriers/application/ports/phone_settings.dart';
 import 'package:tournee_calendriers/application/ports/street_view_preferences.dart';
 import 'package:tournee_calendriers/application/ports/tournee_directory.dart';
+import 'package:tournee_calendriers/application/use_cases/choose_start_point.dart';
+import 'package:tournee_calendriers/application/use_cases/create_tournee.dart';
 import 'package:tournee_calendriers/application/use_cases/describe_building.dart';
 import 'package:tournee_calendriers/application/use_cases/edit_street_numbers.dart';
 import 'package:tournee_calendriers/application/use_cases/find_imported_streets.dart';
 import 'package:tournee_calendriers/application/use_cases/hide_done.dart';
 import 'package:tournee_calendriers/application/use_cases/import_reference_area.dart';
+import 'package:tournee_calendriers/application/use_cases/join_tournee.dart';
 import 'package:tournee_calendriers/application/use_cases/list_commune_streets.dart';
 import 'package:tournee_calendriers/application/use_cases/mark_dwelling.dart';
 import 'package:tournee_calendriers/application/use_cases/mark_house.dart';
@@ -285,5 +288,45 @@ final moveStreetsIntoTourneeProvider = Provider(
     ref.watch(streetRepositoryProvider),
     ref.watch(identityProvider),
     ref.watch(movedStreetsLogProvider),
+  ),
+);
+final chooseStartPointProvider = Provider(
+  (ref) => ChooseStartPoint(
+    ref.watch(myTourneesStoreProvider),
+    ref.watch(phoneStreetRepositoryProvider),
+  ),
+);
+final listRescueCentresProvider = Provider(
+  (ref) => ListRescueCentres(ref.watch(tourneeDirectoryProvider)),
+);
+final checkTourneeTakenProvider = Provider(
+  (ref) => CheckTourneeTaken(ref.watch(tourneeDirectoryProvider)),
+);
+final createTourneeProvider = Provider(
+  (ref) => CreateTournee(
+    ref.watch(tourneeRepositoryProvider),
+    ref.watch(memberAccountProvider),
+    ref.watch(myTourneesStoreProvider),
+    ref.watch(clockProvider),
+    ref.watch(idGeneratorProvider),
+    ref.watch(randomProvider),
+  ),
+);
+final previewJoinProvider = Provider(
+  (ref) => PreviewJoin(ref.watch(tourneeDirectoryProvider)),
+);
+final requestToJoinProvider = Provider(
+  (ref) => RequestToJoin(
+    ref.watch(tourneeDirectoryProvider),
+    ref.watch(memberAccountProvider),
+    ref.watch(myTourneesStoreProvider),
+    ref.watch(clockProvider),
+  ),
+);
+final cancelJoinRequestProvider = Provider(
+  (ref) => CancelJoinRequest(
+    ref.watch(tourneeDirectoryProvider),
+    ref.watch(memberAccountProvider),
+    ref.watch(myTourneesStoreProvider),
   ),
 );

@@ -135,6 +135,27 @@ Member memberFromDocument(String uid, Map<String, Object?> data) {
   throw FormatException('Not a member document', uid);
 }
 
+/// What one snapshot of a newcomer's member document `members/[uid]` tells
+/// of their request (« Demande envoyée », PLAN §5.2): its status, null once
+/// the request is gone (refused, cancelled), or nothing at all.
+///
+/// [data] is null when the document does not exist in the snapshot. When
+/// that snapshot comes only from the phone's copy ([fromCache]), the
+/// document may simply never have been read on this phone (an offline
+/// start after the copy was cleared): that is no answer, so the list is
+/// empty, and a pending request is never dropped without the server
+/// saying so. A list rather than a nullable status, since null is itself
+/// an answer.
+List<MemberStatus?> requestStatusesIn(
+  String uid,
+  Map<String, Object?>? data, {
+  required bool fromCache,
+}) => switch (data) {
+  final data? => [memberFromDocument(uid, data).status],
+  null when fromCache => const [],
+  null => const [null],
+};
+
 /// The document `joinCodes/{code}` of [tournee]: only what the join screen
 /// shows (PLAN §8.2).
 Map<String, Object?> joinCodeDocument(Tournee tournee) => {

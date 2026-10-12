@@ -7,6 +7,8 @@ import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
 import 'package:tournee_calendriers/application/ports/phone_settings.dart';
+import 'package:tournee_calendriers/application/ports/tournee_directory.dart';
+import 'package:tournee_calendriers/application/use_cases/choose_start_point.dart';
 import 'package:tournee_calendriers/application/use_cases/describe_building.dart';
 import 'package:tournee_calendriers/application/use_cases/edit_street_numbers.dart';
 import 'package:tournee_calendriers/application/use_cases/find_imported_streets.dart';
@@ -22,12 +24,23 @@ import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/domain/tournee/member.dart';
 import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_change.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 
 import '../application/use_cases/street_fixtures.dart';
 import '../domain/tournee/my_tournees_fixtures.dart';
 import '../domain/tournee/tournee_fixtures.dart'
-    show codeOf, julieId, leaId, manuId, nameOf, team, tourneeId;
+    show
+        campaign2026,
+        codeOf,
+        csVillefranche,
+        julieId,
+        leaId,
+        manuId,
+        nameOf,
+        number49,
+        team,
+        tourneeId;
 import '../support/fakes/fake_address_directory.dart';
 import '../support/fakes/fake_commune_search.dart';
 import '../support/fakes/fake_member_account.dart';
@@ -478,6 +491,100 @@ void main() {
           streetName('Rue Pierre Morin'),
         );
         expect(movedStreets.remembered, [tourneeId]);
+      },
+    );
+
+    test(
+      'should choose where to start from the bound store and phone streets',
+      () async {
+        // The phone holds Rue Pierre Morin: the start screen.
+        expect(
+          await container.read(chooseStartPointProvider)(),
+          const StartOnStreets(),
+        );
+      },
+    );
+
+    test('should list the centres of the bound directory', () async {
+      tourneeDirectory.centres = [csVillefranche];
+
+      expect(valueOf(await container.read(listRescueCentresProvider)()), [
+        csVillefranche,
+      ]);
+    });
+
+    test('should check a number in the bound directory', () async {
+      tourneeDirectory.taken.add((csVillefranche.key, number49));
+
+      expect(
+        valueOf(
+          await container.read(checkTourneeTakenProvider)(
+            csVillefranche,
+            number49,
+          ),
+        ),
+        isTrue,
+      );
+    });
+
+    test('should create with the bound repository, account, store, clock, ids '
+        'and random source', () async {
+      final created = valueOf(
+        await container.read(createTourneeProvider)(
+          centre: csVillefranche,
+          number: number49,
+          campaign: campaign2026,
+          creatorName: nameOf('Léa'),
+        ),
+      );
+
+      expect(tournees.added, [created]);
+      expect(created.id.value, 'street-1');
+      expect(created.createdBy, MemberId('uid-lea'));
+      expect(created.createdAt, twoPm);
+      expect(created.joinCode, codeOf('234567'));
+      expect(myTournees.myTournees.currentId, created.id);
+    });
+
+    test('should preview a code in the bound directory', () async {
+      expect(
+        failureOf(await container.read(previewJoinProvider)(codeOf('234567'))),
+        JoinFailure.unknownCode,
+      );
+      expect(tourneeDirectory.previewed, [codeOf('234567')]);
+    });
+
+    test('should request to join through the bound directory, account, store '
+        'and clock', () async {
+      final preview = JoinPreview(
+        code: codeOf('234567'),
+        tourneeId: TourneeId('t12'),
+        number: tournee12.number,
+        centre: csVillefranche,
+        campaign: campaign2026,
+      );
+
+      valueOf(
+        await container.read(requestToJoinProvider)(preview, nameOf('Léa')),
+      );
+
+      final (_, request) = tourneeDirectory.sent.single;
+      expect(request.id, MemberId('uid-lea'));
+      expect(request.requestedAt, twoPm);
+      expect(myTournees.myTournees.find(TourneeId('t12'))?.isPending, isTrue);
+    });
+
+    test(
+      'should cancel a request through the bound directory and store',
+      () async {
+        account.signedInMember = MemberId('uid-lea');
+
+        await container.read(cancelJoinRequestProvider)(tournee7.id);
+
+        expect(tourneeDirectory.cancelled, [
+          (tournee7.id, MemberId('uid-lea')),
+        ]);
+        expect(myTournees.myTournees.find(tournee7.id), isNull);
       },
     );
   });

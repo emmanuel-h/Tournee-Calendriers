@@ -1,10 +1,13 @@
 // The ports the screens of the app read, bound to in-memory fakes, for
 // widget tests that pump the whole app.
 // `Override` (the type of a ProviderScope's overrides) lives in misc.dart.
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/import_streets/import_notifier.dart';
+import 'package:tournee_calendriers/presentation/launch/launch_place.dart';
+import 'package:tournee_calendriers/presentation/new_tournee/new_tournee_notifier.dart';
 
 import '../../support/fakes/fake_address_directory.dart';
 import '../../support/fakes/fake_commune_search.dart';
@@ -29,8 +32,14 @@ import '../../support/street_fixtures.dart';
 /// them to a tournée), [movedStreets] and [pending] (nothing waiting to be
 /// sent by default); [member] (Léa by
 /// default) uses the phone and marks the houses at [now] (two o'clock by
-/// default). The commune search answers without waiting for a pause in
-/// the typing; a new join code is `234567`.
+/// default); [account] is the phone's account (none by default, and no
+/// network to get one). The commune search and the duplicate check of
+/// « Nouvelle tournée » answer without waiting for a pause in the typing;
+/// a new join code is `234567`.
+///
+/// The app opens on the start screen, as on a phone that already holds
+/// streets or tournées; with [chooseLaunch], it decides from the fakes as
+/// at a real launch (« Bienvenue » on an empty phone).
 List<Override> fakePhone({
   FakeStreetRepository? streets,
   FakeAddressDirectory? directory,
@@ -45,7 +54,12 @@ List<Override> fakePhone({
   FakePendingSync? pending,
   MemberId? member,
   DateTime? now,
+  FakeMemberAccount? account,
+  bool chooseLaunch = false,
 }) => [
+  if (!chooseLaunch)
+    launchPlaceProvider.overrideWithValue(const AsyncData(LaunchOnStreets())),
+  duplicateCheckDelayProvider.overrideWithValue(Duration.zero),
   streetRepositoryProvider.overrideWithValue(streets ?? FakeStreetRepository()),
   phoneStreetRepositoryProvider.overrideWithValue(
     phoneStreets ?? FakeStreetRepository(),
@@ -72,7 +86,7 @@ List<Override> fakePhone({
   tourneeDirectoryProvider.overrideWithValue(
     tourneeDirectory ?? FakeTourneeDirectory(),
   ),
-  memberAccountProvider.overrideWithValue(FakeMemberAccount()),
+  memberAccountProvider.overrideWithValue(account ?? FakeMemberAccount()),
   tourneeRepositoryProvider.overrideWithValue(
     tournees ?? FakeTourneeRepository(),
   ),

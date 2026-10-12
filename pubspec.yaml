@@ -36,10 +36,15 @@ dependencies:
   # Required by the code gen-l10n writes into lib/ui/l10n/; the version is the
   # one flutter_localizations pins.
   intl: 0.20.3
+  # Reads the join code's QR code with the camera on « Rejoindre » (PLAN
+  # §5.2, §10.2); only in ui/. The camera permission is asked when
+  # « Scanner le QR code » is tapped, never at launch.
+  mobile_scanner: 7.4.2
   # Where the phone keeps the streets until Firestore replaces that storage
   # (M1, T1.6); only in infrastructure/ and bootstrap/.
   path_provider: 2.1.6
-  # Draws the join code as a QR code in Équipe (PLAN §5.2, §5.8, §10.2).
+  # Draws the join code as a QR code in Équipe and « Nouvelle tournée »
+  # (PLAN §5.2, §5.8, §10.2).
   qr_flutter: 4.1.0
   # The phone's share sheet for « Partager » the join code (PLAN §10.2);
   # only in ui/.

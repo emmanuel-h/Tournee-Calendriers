@@ -63,12 +63,15 @@ final class FirestoreTourneeDirectory implements TourneeDirectory {
   Stream<MemberStatus?> watchRequest(TourneeId tournee, MemberId member) =>
       _member(tournee, member)
           .snapshots()
-          .map<MemberStatus?>((doc) {
-            final data = doc.data();
-            return data == null
-                ? null
-                : memberFromDocument(doc.id, data).status;
-          })
+          // A snapshot of the phone's copy without the document tells
+          // nothing: an offline start must never drop a pending request.
+          .expand<MemberStatus?>(
+            (doc) => requestStatusesIn(
+              doc.id,
+              doc.data(),
+              fromCache: doc.metadata.isFromCache,
+            ),
+          )
           .transform(
             StreamTransformer.fromHandlers(
               handleError: (error, trace, sink) {
