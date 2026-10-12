@@ -15,7 +15,8 @@ Onboarding:
   streets of its own opens on « Mes rues » as before.
 - « Nouvelle tournée »: the centre de secours picked from the known ones as you type (or
   added), the number checked as you type (« … existe déjà » with « Rejoindre avec un
-  code »), the year; then the code, its QR code and « Partager ». Needs the network.
+  code »), the year; then the code (with a copy button), its QR code and « Partager ».
+  Needs the network.
 - « Rejoindre une tournée »: scan the QR code or type the code in two boxes, check the
   tournée shown, « Demander à rejoindre »; « Demande envoyée » waits, offline too, and opens
   the tournée once a member accepts (« Demande refusée » otherwise, « Annuler la demande »).
@@ -36,9 +37,10 @@ Temporary M1 start screen (until the map arrives in M3):
   the last one at launch, offline too) or create or join one; 👥 opens Équipe (a dot while a
   join request waits); ⚙ opens Paramètres: first name, « Mes tournées », theme (Système,
   Clair, Sombre), confidentialité, version and licences, data credits.
-- Équipe (👥): the join code and its QR code, « Partager », « Nouveau code » (creator), the
-  requests to join with « Accepter » / « Refuser » (any member), the members with « Retirer »
-  (creator), the Corbeille, « Quitter la tournée » / « Supprimer la tournée » (creator).
+- Équipe (👥): the join code (copy button: « Code copié ») and its QR code, « Partager »,
+  « Nouveau code » (creator), the requests to join with « Accepter » / « Refuser » (any
+  member), the members with « Retirer » (creator), the Corbeille, « Quitter la tournée » /
+  « Supprimer la tournée » (creator).
   Answering, removing and leaving work offline; a new code and deleting need the network.
 - Corbeille (from Équipe): the deleted streets and numbers, who deleted them and when, and
   « Restaurer », which brings them back with their marks.

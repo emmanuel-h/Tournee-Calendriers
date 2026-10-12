@@ -19,6 +19,7 @@ import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/results.dart';
 import '../support/app_overrides.dart';
 import '../support/buttons.dart';
+import '../support/clipboard.dart';
 import '../support/navigation.dart';
 
 void main() {
@@ -187,6 +188,27 @@ void main() {
       expect(find.text('Tournée 49 · 2026'), findsOneWidget);
     },
   );
+
+  testWidgets('should put the code on the clipboard and say so when the '
+      'copy button is tapped', (tester) async {
+    await open(tester);
+    await fillIn(tester);
+    await tester.tap(createButton);
+    await tester.pumpAndSettle();
+    final clipboard = FakeClipboard.install(tester);
+
+    final copy = find.byTooltip('Copier le code');
+    expect(copy, findsOneWidget);
+    expect(tester.getSize(find.byKey(const Key('create.copy'))).height, 48);
+    // Under the form: scrolled to first, so the tap lands on it.
+    await tester.ensureVisible(copy);
+    await tester.pumpAndSettle();
+    await tester.tap(copy);
+    await tester.pumpAndSettle();
+
+    expect(clipboard.text, '234-567');
+    expect(find.text('Code copié'), findsOneWidget);
+  });
 
   testWidgets('should say the number is no tournée number', (tester) async {
     await open(tester);

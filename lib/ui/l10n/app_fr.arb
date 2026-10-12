@@ -949,6 +949,10 @@
       "code": { "type": "String", "example": "K7P-2QX" }
     }
   },
+  "teamCopyCode": "Copier le code",
+  "@teamCopyCode": { "description": "Screen-reader name and tooltip of the copy button right of the join code (Équipe, « Nouvelle tournée »)." },
+  "teamCodeCopied": "Code copié",
+  "@teamCodeCopied": { "description": "Short message once the join code is on the clipboard." },
   "teamNewCode": "Nouveau code",
   "@teamNewCode": { "description": "Creator-only button of Équipe: replaces the join code (PLAN §5.8)." },
   "teamWaitingHeader": "En attente ({count})",

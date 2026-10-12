@@ -1104,6 +1104,12 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String get teamCopyCode => 'Copier le code';
+
+  @override
+  String get teamCodeCopied => 'Code copié';
+
+  @override
   String get teamNewCode => 'Nouveau code';
 
   @override

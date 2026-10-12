@@ -9,6 +9,7 @@ import 'package:tournee_calendriers/domain/tournee/tournee_number.dart';
 import 'package:tournee_calendriers/presentation/new_tournee/new_tournee_notifier.dart';
 import 'package:tournee_calendriers/presentation/new_tournee/new_tournee_state.dart';
 import 'package:tournee_calendriers/ui/components/app_buttons.dart';
+import 'package:tournee_calendriers/ui/components/copy_code_button.dart';
 import 'package:tournee_calendriers/ui/components/join_qr_code.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
@@ -460,7 +461,7 @@ final class _TakenAlert extends StatelessWidget {
 }
 
 /// The tournée just created: « Tournée 49 · CS Villefranche est prête… »,
-/// its QR code, its code and « Partager ».
+/// its QR code, its code with its copy button, and « Partager ».
 final class _CodeCard extends StatelessWidget {
   const _CodeCard({required this.created});
 
@@ -500,10 +501,30 @@ final class _CodeCard extends StatelessWidget {
             crossAxisAlignment: WrapCrossAlignment.center,
             spacing: 12,
             children: [
-              Text(
-                created.code,
-                key: const Key('create.code'),
-                style: AppTextStyles.createdCode.copyWith(color: colors.ink),
+              // The code and its copy button stay together on one line
+              // should « Partager » not fit beside them.
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Shrinks the code rather than overflow when the screen is narrow
+                  // or the phone's text is set large: the copy button stays.
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      child: Text(
+                        created.code,
+                        key: const Key('create.code'),
+                        style: AppTextStyles.createdCode.copyWith(
+                          color: colors.ink,
+                        ),
+                      ),
+                    ),
+                  ),
+                  CopyCodeButton(
+                    key: const Key('create.copy'),
+                    code: created.code,
+                  ),
+                ],
               ),
               PillButton(
                 key: const Key('create.share'),

@@ -272,7 +272,7 @@ and opens its screen above « Bienvenue »; the field starts from the name kept.
 │ ──────────────────────────── │    │ │ CS Villefranche          │ │
 │ Tournée 49 · CS Villefranche │    │ │ Campagne 2026            │ │
 │        ▄▄▄▄ ▄ ▄▄▄▄           │    │ └──────────────────────────┘ │
-│   Code K7P-2QX   [Partager]  │    │ [  Demander à rejoindre  ]   │
+│ Code K7P-2QX [⧉] [Partager]  │    │ [  Demander à rejoindre  ]   │
 └──────────────────────────────┘    └──────────────────────────────┘
 
   Créer — the pair already exists
@@ -329,8 +329,8 @@ and opens its screen above « Bienvenue »; the field starts from the name kept.
     « Créer » keeps the tournée among the member's and opens it at once; offline « Pas de
     réseau. Réessayez une fois connecté. », a number taken meanwhile shows as taken. Then,
     the form frozen, a card « Tournée 49 · CS Villefranche est prête. Montrez ce code à
-    l'équipe. », the QR code (Équipe's, larger), « 234-567 » and « Partager » (Équipe's
-    text); « Continuer » (and back) open the start screen on the new tournée, where the
+    l'équipe. », the QR code (Équipe's, larger), « 234-567 » with its copy button (Équipe's)
+    and « Partager » (Équipe's text); « Continuer » (and back) open the start screen on the new tournée, where the
     phone's streets are offered to it (5.0).
   - **Rejoindre:** « Scanner le QR code » opens the camera full screen (permission asked
     then; refused: « L'appareil photo n'est pas disponible. Saisissez le code à la main. »),
@@ -850,9 +850,9 @@ Immeuble details fixed in T1.9 (`lib/presentation/building/`, `lib/ui/screens/bu
 ┌──────────────────────────────┐
 │ ← Tournée 49                 │
 │   CS Villefranche · 2026     │
-│  ▄▄▄▄ ▄ ▄▄▄▄   Code K7P-2QX  │
-│  █▄▄█ ▀ █▄▄█   [Partager]    │
-│                [Nouveau code]│  ← creator only
+│  ▄▄▄▄ ▄ ▄▄▄▄ Code K7P-2QX [⧉]│  ← ⧉ copies the code
+│  █▄▄█ ▀ █▄▄█ [Partager]      │
+│              [Nouveau code]  │  ← creator only
 │ EN ATTENTE (1)               │  ← only when requests exist
 │ Julie · il y a 2 min         │
 │ [ Accepter ]  [ Refuser ]    │  ← any accepted member
@@ -873,8 +873,10 @@ Immeuble details fixed in T1.9 (`lib/presentation/building/`, `lib/ui/screens/bu
 - *Retirer* (creator only) cuts the member's access at once; what they marked stays, stamped
   with their name. Combine with *Nouveau code* if the code has leaked.
 - Delivered in T2.6 (Team mockup): title « Tournée 49 » over « CS Villefranche · campagne
-  2026 »; the code card (QR, « Code K7P-2QX », « Partager » — the phone's share sheet with
-  « Tournée 49 · CS Villefranche » and the code —, « Nouveau code » for the creator, at once,
+  2026 »; the code card (QR, « Code K7P-2QX » and its copy button ⧉ — puts the code as shown,
+  `K7P-2QX`, on the clipboard and says « Code copié », TalkBack « Copier le code », 48 dp,
+  offline too —, « Partager » — the phone's share sheet with « Tournée 49 · CS Villefranche »
+  and the code —, « Nouveau code » for the creator, at once,
   no confirmation); « EN ATTENTE (n) » only with requests: name, « a demandé à rejoindre · il
   y a 2 min », « Accepter » (green) and « Refuser », no confirmation; « MEMBRES (n) »: every
   active member, one row each, oldest first (the creator first), « (vous) » and « · créateur »;

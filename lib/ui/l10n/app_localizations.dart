@@ -1659,6 +1659,18 @@ abstract class AppLocalizations {
   /// **'Tournée {number} · {centre}\nRejoignez-la dans l\'app Tournée Calendriers avec le code {code}.'**
   String teamShareText(String number, String centre, String code);
 
+  /// Screen-reader name and tooltip of the copy button right of the join code (Équipe, « Nouvelle tournée »).
+  ///
+  /// In fr, this message translates to:
+  /// **'Copier le code'**
+  String get teamCopyCode;
+
+  /// Short message once the join code is on the clipboard.
+  ///
+  /// In fr, this message translates to:
+  /// **'Code copié'**
+  String get teamCodeCopied;
+
   /// Creator-only button of Équipe: replaces the join code (PLAN §5.8).
   ///
   /// In fr, this message translates to:

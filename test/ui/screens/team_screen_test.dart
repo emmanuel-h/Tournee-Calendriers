@@ -15,6 +15,7 @@ import '../../support/fakes/fake_my_tournees_store.dart';
 import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/results.dart';
 import '../support/app_overrides.dart';
+import '../support/clipboard.dart';
 import '../support/navigation.dart';
 
 /// Two minutes after Julie asked to join the 49.
@@ -85,6 +86,21 @@ void main() {
     expect(find.byTooltip('Options pour Léa'), findsOneWidget);
     expect(find.byKey(const Key('team.delete')), findsOneWidget);
     expect(find.byKey(const Key('team.leave')), findsNothing);
+  });
+
+  testWidgets('should put the code on the clipboard and say so when the '
+      'copy button is tapped', (tester) async {
+    await pumpTeam(tester, leaId);
+    final clipboard = FakeClipboard.install(tester);
+
+    final copy = find.byTooltip('Copier le code');
+    expect(copy, findsOneWidget);
+    expect(tester.getSize(find.byKey(const Key('team.copy'))).height, 48);
+    await tester.tap(copy);
+    await tester.pumpAndSettle();
+
+    expect(clipboard.text, 'K7P-2QX');
+    expect(find.text('Code copié'), findsOneWidget);
   });
 
   testWidgets('should let the newcomer in when « Accepter » is tapped', (
