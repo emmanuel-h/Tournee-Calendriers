@@ -90,6 +90,7 @@ later screen could be checked with real streets (decided with you on 2026-10-04)
 | [#75](https://github.com/emmanuel-h/Tournee-Calendriers/issues/75) | Only admins add a centre de secours, create a tournée or draw a new code | checkpoint |
 | [#76](https://github.com/emmanuel-h/Tournee-Calendriers/issues/76) | Copy button next to the code |  |
 | [#77](https://github.com/emmanuel-h/Tournee-Calendriers/issues/77) | Licences page keeps loading on the phone |  |
+| [#83](https://github.com/emmanuel-h/Tournee-Calendriers/issues/83) | « Version » opens Nouveautés; licences get their own row |  |
 
 ## M3 Map and streets
 
