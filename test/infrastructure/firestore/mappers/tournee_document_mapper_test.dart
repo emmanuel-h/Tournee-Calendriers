@@ -8,6 +8,7 @@ import 'package:tournee_calendriers/domain/tournee/member.dart';
 import 'package:tournee_calendriers/domain/tournee/rescue_centre.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_loss.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_number.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/tournee_document_mapper.dart';
 
@@ -272,6 +273,74 @@ void main() {
         expect(requestStatusesIn('uid-julie', null, fromCache: true), isEmpty);
       },
     );
+  });
+
+  group('membership snapshot', () {
+    test('should tell the member is gone when the server has no document', () {
+      expect(
+        isMembershipGone(
+          exists: false,
+          fromCache: false,
+          hasPendingWrites: false,
+        ),
+        isTrue,
+      );
+    });
+
+    test('should tell nothing while the member document is there', () {
+      expect(
+        isMembershipGone(
+          exists: true,
+          fromCache: false,
+          hasPendingWrites: false,
+        ),
+        isFalse,
+      );
+    });
+
+    test('should tell nothing when only the phone\'s copy lacks it '
+        '(offline, never read)', () {
+      expect(
+        isMembershipGone(
+          exists: false,
+          fromCache: true,
+          hasPendingWrites: false,
+        ),
+        isFalse,
+      );
+    });
+
+    test('should tell nothing when this phone deleted it itself '
+        '(leaving, deleting)', () {
+      expect(
+        isMembershipGone(
+          exists: false,
+          fromCache: false,
+          hasPendingWrites: true,
+        ),
+        isFalse,
+      );
+    });
+
+    test('should say removed while the reservation still names the '
+        'tournée', () {
+      expect(
+        lossFromReservation(tourneeId, {'tourneeId': 't49'}),
+        TourneeLoss.removed,
+      );
+    });
+
+    test('should say deleted once the reservation is gone', () {
+      expect(lossFromReservation(tourneeId, null), TourneeLoss.deleted);
+    });
+
+    test('should say deleted when the number now belongs to another '
+        'tournée', () {
+      expect(
+        lossFromReservation(tourneeId, {'tourneeId': 't50'}),
+        TourneeLoss.deleted,
+      );
+    });
   });
 
   group('join code', () {

@@ -15,6 +15,7 @@ import 'package:integration_test/integration_test.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
 import 'package:tournee_calendriers/bootstrap/bootstrap.dart';
+import 'package:tournee_calendriers/bootstrap/firebase.dart';
 import 'package:tournee_calendriers/domain/shared/commune.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
@@ -117,6 +118,17 @@ void main() {
   // Connects the test to the device so results are reported back to
   // `flutter test`.
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
+
+  // Firestore offline for the whole suite (the sign-in keeps the network):
+  // the tournées the tests leave on the phone do not exist on the real
+  // server, which would rightly make the app forget them (« La tournée 12
+  // a été supprimée. »). Offline, the phone keeps them: what an offline
+  // start must do (PLAN §7). The settings come first, as in the app.
+  setUpAll(() async {
+    await startFirebase();
+    await offlineFirestore().disableNetwork();
+  });
+  tearDownAll(() => offlineFirestore().enableNetwork());
 
   testWidgets('should show the French title when the app starts', (
     tester,
@@ -578,9 +590,10 @@ void main() {
       expect(find.text('CS Villefranche'), findsOneWidget);
 
       // 👥 opens Équipe, which follows the tournée in Firestore (the first
-      // use of the real database, with its offline settings). The server
-      // knows no such tournée: Équipe says it cannot show it, or is still
-      // waiting; either way nothing breaks.
+      // use of the real database, with its offline settings), offline: the
+      // phone never read it, so Équipe says it cannot show it, or is still
+      // waiting; either way nothing breaks, and the phone keeps both
+      // tournées.
       await tester.tap(find.byKey(const Key('home.team')));
       await tester.pumpAndSettle();
       expect(find.byType(TeamScreen), findsOneWidget);

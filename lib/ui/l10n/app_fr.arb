@@ -821,6 +821,23 @@
       "centre": { "type": "String", "example": "CS Villefranche" }
     }
   },
+  "myTourneesWaiting": "{centre} · {count, plural, =1{1 demande en attente} other{{count} demandes en attente}}",
+  "@myTourneesWaiting": {
+    "description": "Second line of a tournée not open where join requests wait for an answer, beside a red dot (Switcher mockup).",
+    "placeholders": {
+      "centre": { "type": "String", "example": "CS Villefranche" },
+      "count": { "type": "int", "example": "1" }
+    }
+  },
+  "myTourneesWaitingSemantics": "{title}, {centre}, {count, plural, =1{1 demande en attente} other{{count} demandes en attente}}, ouvrir",
+  "@myTourneesWaitingSemantics": {
+    "description": "Screen-reader label of a tournée not open where join requests wait: the dot, said.",
+    "placeholders": {
+      "title": { "type": "String", "example": "Tournée 12 · 2026" },
+      "centre": { "type": "String", "example": "CS Villefranche" },
+      "count": { "type": "int", "example": "1" }
+    }
+  },
   "myTourneesPendingSemantics": "{title}, {centre}, votre demande est en attente",
   "@myTourneesPendingSemantics": {
     "description": "Screen-reader label of a tournée the member asked to join, not accepted yet.",
@@ -1293,5 +1310,19 @@
   "joinPendingCancel": "Annuler la demande",
   "@joinPendingCancel": { "description": "Button of « Demande envoyée »: withdraws the request." },
   "joinRefused": "Demande refusée",
-  "@joinRefused": { "description": "Message once the member's request was refused." }
+  "@joinRefused": { "description": "Message once the member's request was refused." },
+  "tourneeRemoved": "Vous avez été retiré de la tournée {number}.",
+  "@tourneeRemoved": {
+    "description": "Message over the next screen once the server said the creator removed the member from a tournée, which the phone then forgot (PLAN §5.3).",
+    "placeholders": {
+      "number": { "type": "String", "example": "49" }
+    }
+  },
+  "tourneeDeleted": "La tournée {number} a été supprimée.",
+  "@tourneeDeleted": {
+    "description": "Message over the next screen once the server said a tournée of the member was deleted, which the phone then forgot (PLAN §5.3).",
+    "placeholders": {
+      "number": { "type": "String", "example": "49" }
+    }
+  }
 }

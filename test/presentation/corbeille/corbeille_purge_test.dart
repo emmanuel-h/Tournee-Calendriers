@@ -12,6 +12,7 @@ import '../../domain/tournee/my_tournees_fixtures.dart';
 import '../../support/fakes/fake_my_tournees_store.dart';
 import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_street_repository.dart';
+import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 import '../../support/streets_of_the_open_tournee.dart';
@@ -65,6 +66,8 @@ void main() {
         ),
         myTourneesStoreProvider.overrideWithValue(store),
         clockProvider.overrideWithValue(FakeClock(_now)),
+        // « Mes tournées » follows the teams of the tournées not open.
+        tourneeRepositoryProvider.overrideWithValue(FakeTourneeRepository()),
       ],
     );
     addTearDown(container.dispose);

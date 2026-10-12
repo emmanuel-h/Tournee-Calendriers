@@ -1443,6 +1443,18 @@ abstract class AppLocalizations {
   /// **'{title}, {centre}, ouvrir'**
   String myTourneesClosedSemantics(String title, String centre);
 
+  /// Second line of a tournée not open where join requests wait for an answer, beside a red dot (Switcher mockup).
+  ///
+  /// In fr, this message translates to:
+  /// **'{centre} · {count, plural, =1{1 demande en attente} other{{count} demandes en attente}}'**
+  String myTourneesWaiting(String centre, int count);
+
+  /// Screen-reader label of a tournée not open where join requests wait: the dot, said.
+  ///
+  /// In fr, this message translates to:
+  /// **'{title}, {centre}, {count, plural, =1{1 demande en attente} other{{count} demandes en attente}}, ouvrir'**
+  String myTourneesWaitingSemantics(String title, String centre, int count);
+
   /// Screen-reader label of a tournée the member asked to join, not accepted yet.
   ///
   /// In fr, this message translates to:
@@ -2192,6 +2204,18 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Demande refusée'**
   String get joinRefused;
+
+  /// Message over the next screen once the server said the creator removed the member from a tournée, which the phone then forgot (PLAN §5.3).
+  ///
+  /// In fr, this message translates to:
+  /// **'Vous avez été retiré de la tournée {number}.'**
+  String tourneeRemoved(String number);
+
+  /// Message over the next screen once the server said a tournée of the member was deleted, which the phone then forgot (PLAN §5.3).
+  ///
+  /// In fr, this message translates to:
+  /// **'La tournée {number} a été supprimée.'**
+  String tourneeDeleted(String number);
 }
 
 class _AppLocalizationsDelegate

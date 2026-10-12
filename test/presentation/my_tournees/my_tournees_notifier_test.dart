@@ -12,6 +12,7 @@ import '../../domain/tournee/tournee_fixtures.dart';
 import '../../support/fakes/fake_member_account.dart';
 import '../../support/fakes/fake_my_tournees_store.dart';
 import '../../support/fakes/fake_tournee_directory.dart';
+import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/results.dart';
 
 /// The 49, the 12 and the pending 7; [open] is the one the app shows.
@@ -26,14 +27,18 @@ MyTournees _manusPhone({TourneeId? open}) {
 void main() {
   late FakeMyTourneesStore store;
   late FakeTourneeDirectory directory;
+  late FakeTourneeRepository tournees;
 
   ProviderContainer containerWith(MyTournees mine) {
     store = FakeMyTourneesStore(mine);
     directory = FakeTourneeDirectory();
+    // The 49 with Julie's request waiting; the 12 cannot be read.
+    tournees = FakeTourneeRepository([team()]);
     final container = ProviderContainer(
       overrides: [
         myTourneesStoreProvider.overrideWithValue(store),
         tourneeDirectoryProvider.overrideWithValue(directory),
+        tourneeRepositoryProvider.overrideWithValue(tournees),
         memberAccountProvider.overrideWithValue(
           FakeMemberAccount(signedInMember: manuId),
         ),
@@ -201,6 +206,84 @@ void main() {
       container.dispose();
 
       expect(directory.isWatching(tournee7.id), isFalse);
+    });
+  });
+
+  group('requests waiting in another tournée', () {
+    int waitingIn(ProviderContainer container, TourneeId id) => container
+        .read(myTourneesProvider)
+        .rows
+        .firstWhere((row) => row.id == id)
+        .waitingRequests;
+
+    test('should count the requests waiting in a tournée not open', () async {
+      final container = containerWith(_manusPhone(open: tournee12.id));
+      container.read(myTourneesProvider);
+      await pumpEventQueue();
+
+      expect(waitingIn(container, tournee49.id), 1);
+      expect(waitingIn(container, tournee12.id), 0);
+    });
+
+    test('should follow only the tournées not open, not the requests', () {
+      final container = containerWith(_manusPhone(open: tournee12.id));
+
+      container.read(myTourneesProvider);
+
+      expect(tournees.watched, [tournee49.id]);
+    });
+
+    test('should follow the team live', () async {
+      final container = containerWith(_manusPhone(open: tournee12.id));
+      container.read(myTourneesProvider);
+      await pumpEventQueue();
+
+      tournees.put(team(members: [manu, lea]));
+      await pumpEventQueue();
+
+      expect(waitingIn(container, tournee49.id), 0);
+    });
+
+    test('should count none in a tournée it cannot read', () async {
+      final container = containerWith(_manusPhone(open: tournee49.id));
+      container.read(myTourneesProvider);
+      await pumpEventQueue();
+
+      expect(waitingIn(container, tournee12.id), 0);
+    });
+
+    test('should count none when the team cannot be followed', () async {
+      final container = containerWith(_manusPhone(open: tournee12.id));
+      tournees.watchError = StateError('listener failed');
+      container.read(myTourneesProvider);
+      await pumpEventQueue();
+
+      expect(waitingIn(container, tournee49.id), 0);
+    });
+
+    test('should stop following a tournée once it is opened, and follow '
+        'the one left', () async {
+      final container = containerWith(_manusPhone(open: tournee12.id));
+      container.read(myTourneesProvider);
+      await pumpEventQueue();
+
+      await container.read(myTourneesProvider.notifier).open(tournee49.id);
+      await pumpEventQueue();
+
+      expect(tournees.isWatching(tournee49.id), isFalse);
+      expect(tournees.isWatching(tournee12.id), isTrue);
+      expect(waitingIn(container, tournee49.id), 0);
+    });
+
+    test('should stop following when the app goes away', () async {
+      final container = containerWith(_manusPhone(open: tournee12.id));
+      container.read(myTourneesProvider);
+      await pumpEventQueue();
+
+      container.dispose();
+      await pumpEventQueue();
+
+      expect(tournees.isWatching(tournee49.id), isFalse);
     });
   });
 }

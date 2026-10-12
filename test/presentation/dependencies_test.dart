@@ -25,6 +25,7 @@ import 'package:tournee_calendriers/domain/tournee/member.dart';
 import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_change.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_loss.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 
 import '../application/use_cases/street_fixtures.dart';
@@ -365,6 +366,24 @@ void main() {
       );
 
       expect(myTournees.myTournees.find(tournee7.id)!.isPending, isFalse);
+    });
+
+    test('should watch a membership in the bound directory as the bound '
+        'account', () {
+      account.signedInMember = MemberId('uid-kept');
+
+      container.read(watchMembershipProvider)(tournee49);
+
+      expect(tourneeDirectory.memberships, [(tournee49, MemberId('uid-kept'))]);
+    });
+
+    test('should forget a lost tournée in the bound store', () async {
+      await container.read(forgetLostTourneeProvider)(
+        tournee49.id,
+        TourneeLoss.removed,
+      );
+
+      expect(myTournees.myTournees.find(tournee49.id), isNull);
     });
 
     test('should read the bound settings', () {

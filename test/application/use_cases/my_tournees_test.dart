@@ -3,6 +3,8 @@ import 'package:tournee_calendriers/application/use_cases/my_tournees.dart';
 import 'package:tournee_calendriers/domain/tournee/member.dart';
 import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_loss.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_summary.dart';
 
 import '../../domain/tournee/my_tournees_fixtures.dart';
 import '../../domain/tournee/tournee_fixtures.dart';
@@ -141,5 +143,117 @@ void main() {
         expect(store.saves, isEmpty);
       },
     );
+  });
+
+  group('WatchMembership', () {
+    test('should follow the membership of the signed-in member', () async {
+      final directory = FakeTourneeDirectory();
+      final watch = WatchMembership(
+        directory,
+        FakeMemberAccount(signedInMember: manuId),
+      );
+
+      final first = watch(tournee12).first;
+      directory.lose(tournee12.id, TourneeLoss.removed);
+
+      expect(await first, TourneeLoss.removed);
+      expect(directory.memberships, [(tournee12, manuId)]);
+    });
+
+    test('should follow nothing when the phone never signed in', () async {
+      final directory = FakeTourneeDirectory();
+      final watch = WatchMembership(directory, FakeMemberAccount());
+
+      expect(await watch(tournee12).isEmpty, isTrue);
+      expect(directory.memberships, isEmpty);
+    });
+  });
+
+  group('ForgetLostTournee', () {
+    test('should forget the open tournée lost, none open any more, and say '
+        'which it was', () async {
+      final lost = await ForgetLostTournee(store)(
+        tournee49.id,
+        TourneeLoss.deleted,
+      );
+
+      expect(
+        lost,
+        LostTournee(
+          tournee: tournee49,
+          loss: TourneeLoss.deleted,
+          wasOpen: true,
+        ),
+      );
+      expect(store.saves.single.tournees, [tournee12, tournee7]);
+      expect(store.saves.single.current, isNull);
+    });
+
+    test('should forget another tournée lost and keep the open one', () async {
+      final lost = await ForgetLostTournee(store)(
+        tournee12.id,
+        TourneeLoss.removed,
+      );
+
+      expect(
+        lost,
+        LostTournee(
+          tournee: tournee12,
+          loss: TourneeLoss.removed,
+          wasOpen: false,
+        ),
+      );
+      expect(store.saves.single.tournees, [tournee49, tournee7]);
+      expect(store.saves.single.current, tournee49);
+    });
+
+    test('should forget nothing and tell nothing when the tournée is gone '
+        'already (left, deleted from this phone)', () async {
+      final lost = await ForgetLostTournee(store)(
+        TourneeId('t99'),
+        TourneeLoss.removed,
+      );
+
+      expect(lost, isNull);
+      expect(store.saves, isEmpty);
+    });
+
+    test('should leave a pending request to its own answer', () async {
+      final lost = await ForgetLostTournee(store)(
+        tournee7.id,
+        TourneeLoss.removed,
+      );
+
+      expect(lost, isNull);
+      expect(store.saves, isEmpty);
+    });
+  });
+
+  group('LostTournee', () {
+    LostTournee lostOf({
+      TourneeSummary? tournee,
+      TourneeLoss loss = TourneeLoss.removed,
+      bool wasOpen = true,
+    }) => LostTournee(
+      tournee: tournee ?? tournee49,
+      loss: loss,
+      wasOpen: wasOpen,
+    );
+
+    test('should equal another with the same tournée, loss and place', () {
+      expect(lostOf(), lostOf());
+      expect(lostOf().hashCode, lostOf().hashCode);
+    });
+
+    test('should differ by any field', () {
+      expect(lostOf(), isNot(lostOf(tournee: tournee12)));
+      expect(lostOf(), isNot(lostOf(loss: TourneeLoss.deleted)));
+      expect(lostOf(), isNot(lostOf(wasOpen: false)));
+    });
+
+    test('should name what was lost', () {
+      expect('${lostOf()}', 'LostTournee(t49, removed, open)');
+      expect('${lostOf(wasOpen: false)}', 'LostTournee(t49, removed, closed)');
+    });
   });
 }

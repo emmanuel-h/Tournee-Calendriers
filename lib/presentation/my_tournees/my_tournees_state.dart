@@ -25,6 +25,7 @@ final class TourneeRow {
     required this.campaign,
     required this.centre,
     required this.status,
+    this.waitingRequests = 0,
   });
 
   /// Which tournée the row opens.
@@ -38,6 +39,11 @@ final class TourneeRow {
   final String centre;
   final TourneeRowStatus status;
 
+  /// The join requests waiting in the tournée for an answer from its
+  /// members (« · 1 demande en attente » and a dot, Switcher mockup).
+  /// Followed only for the tournées not open: the open one's show on 👥.
+  final int waitingRequests;
+
   @override
   bool operator ==(Object other) =>
       other is TourneeRow &&
@@ -45,10 +51,12 @@ final class TourneeRow {
       other.number == number &&
       other.campaign == campaign &&
       other.centre == centre &&
-      other.status == status;
+      other.status == status &&
+      other.waitingRequests == waitingRequests;
 
   @override
-  int get hashCode => Object.hash(id, number, campaign, centre, status);
+  int get hashCode =>
+      Object.hash(id, number, campaign, centre, status, waitingRequests);
 }
 
 /// What « Mes tournées » and the title of the start screen show (PLAN
@@ -58,8 +66,12 @@ final class MyTourneesState {
     : rows = List.unmodifiable(rows);
 
   /// The rows of [mine], in the order the phone met the tournées: opening
-  /// another one does not move them under the finger.
-  factory MyTourneesState.of(MyTournees mine) => MyTourneesState(
+  /// another one does not move them under the finger. [waiting] counts the
+  /// requests waiting in some of them, by tournée; none for the others.
+  factory MyTourneesState.of(
+    MyTournees mine, {
+    Map<TourneeId, int> waiting = const {},
+  }) => MyTourneesState(
     rows: [
       for (final tournee in mine.tournees)
         TourneeRow(
@@ -72,6 +84,7 @@ final class MyTourneesState {
               : tournee.isPending
               ? TourneeRowStatus.pending
               : TourneeRowStatus.closed,
+          waitingRequests: waiting[tournee.id] ?? 0,
         ),
     ],
     current: mine.current,

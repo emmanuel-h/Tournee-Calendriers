@@ -5,7 +5,9 @@ import 'package:tournee_calendriers/domain/tournee/join_code.dart';
 import 'package:tournee_calendriers/domain/tournee/member.dart';
 import 'package:tournee_calendriers/domain/tournee/rescue_centre.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_loss.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_number.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_summary.dart';
 
 /// What the join screen shows before the newcomer asks to join (« Tournée
 /// 49 · CS Villefranche · Campagne 2026 », PLAN §5.2), read with the exact
@@ -108,6 +110,17 @@ abstract interface class TourneeDirectory {
   /// Cancels the pending request of [member] to join [tournee] (« Annuler
   /// la demande »). Applied on the phone at once, sent with the network.
   Future<void> cancelRequest(TourneeId tournee, MemberId member);
+
+  /// Tells once the server says [member] is no longer in [tournee], one of
+  /// their tournées (PLAN §5.3): [TourneeLoss.removed] while the tournée
+  /// goes on without them, [TourneeLoss.deleted] once it is gone.
+  ///
+  /// Only the server's answer counts: the phone's copy alone (offline, or
+  /// a tournée never read on this phone) never says a tournée is lost, so
+  /// an offline phone keeps all its tournées (PLAN §7). Neither does a
+  /// change made on this phone (leaving, deleting), which the use cases
+  /// settle themselves. Emits nothing while the member is in.
+  Stream<TourneeLoss> watchMembership(TourneeSummary tournee, MemberId member);
 
   /// Whether a tournée [number] already exists in [centre] (the same
   /// station, however written: `RescueCentre.isSameStationAs`), asked

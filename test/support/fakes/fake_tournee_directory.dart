@@ -3,6 +3,7 @@
 // request ([answer]), says which codes show a tournée ([previews]), which
 // numbers are taken ([taken]) and which centres are known ([centres]), or
 // cuts the network ([offline]). It records the requests sent and cancelled.
+// It also plays the server telling a member they lost a tournée ([lose]).
 import 'dart:async';
 
 import 'package:tournee_calendriers/application/ports/tournee_directory.dart';
@@ -12,7 +13,9 @@ import 'package:tournee_calendriers/domain/tournee/join_code.dart';
 import 'package:tournee_calendriers/domain/tournee/member.dart';
 import 'package:tournee_calendriers/domain/tournee/rescue_centre.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_loss.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_number.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_summary.dart';
 
 final class FakeTourneeDirectory implements TourneeDirectory {
   /// Every (tournée, member) whose request was watched, in order.
@@ -69,6 +72,30 @@ final class FakeTourneeDirectory implements TourneeDirectory {
 
   /// Whether someone still listens to the request to join [tournee].
   bool isWatching(TourneeId tournee) => _request(tournee).hasListener;
+
+  /// Every (tournée, member) whose membership was watched, in order.
+  final memberships = <(TourneeSummary, MemberId)>[];
+
+  final _losses = <TourneeId, StreamController<TourneeLoss>>{};
+
+  StreamController<TourneeLoss> _loss(TourneeId tournee) =>
+      _losses.putIfAbsent(tournee, StreamController.broadcast);
+
+  /// The server tells the member they lost [tournee], for [loss].
+  void lose(TourneeId tournee, TourneeLoss loss) => _loss(tournee).add(loss);
+
+  /// The listener of the membership of [tournee] fails (a server error).
+  void failMembership(TourneeId tournee) =>
+      _loss(tournee).addError(StateError('listener failed'));
+
+  /// Whether someone still listens to the membership of [tournee].
+  bool isFollowing(TourneeId tournee) => _loss(tournee).hasListener;
+
+  @override
+  Stream<TourneeLoss> watchMembership(TourneeSummary tournee, MemberId member) {
+    memberships.add((tournee, member));
+    return _loss(tournee.id).stream;
+  }
 
   @override
   Stream<MemberStatus?> watchRequest(TourneeId tournee, MemberId member) {

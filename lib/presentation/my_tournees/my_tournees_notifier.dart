@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tournee_calendriers/domain/tournee/member.dart';
 import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_summary.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
@@ -25,14 +26,25 @@ final currentTourneeProvider = Provider<TourneeSummary?>(
 );
 
 /// Shows the member's tournées and opens the one they tap; follows each of
-/// their requests to join until it is answered (PLAN §5.3).
+/// their requests to join until it is answered, and the requests waiting
+/// in their tournées not open (PLAN §5.3).
 ///
 /// The list is on the phone, read before the first frame: the open
 /// tournée shows at once at launch, offline too. Only following a request
-/// needs the network, and it simply waits for it.
+/// needs the network, and it simply waits for it; the teams are read from
+/// the phone's copy first.
 final class MyTourneesNotifier extends Notifier<MyTourneesState> {
   /// The listener of each pending request, by tournée.
   final _requests = <TourneeId, StreamSubscription<MemberStatus?>>{};
+
+  /// The listener of the team of each tournée not open, by tournée.
+  final _teams = <TourneeId, StreamSubscription<Tournee?>>{};
+
+  /// The requests waiting in each tournée followed in [_teams].
+  final _waiting = <TourneeId, int>{};
+
+  /// The list last shown, which a team's change shows again.
+  var _mine = MyTournees.none;
 
   @override
   MyTourneesState build() {
@@ -41,14 +53,17 @@ final class MyTourneesNotifier extends Notifier<MyTourneesState> {
     final changes = ref.watch(observeMyTourneesProvider)().listen(_show);
     ref.onDispose(() {
       unawaited(changes.cancel());
-      for (final request in _requests.values) {
-        unawaited(request.cancel());
+      for (final listener in [..._requests.values, ..._teams.values]) {
+        unawaited(listener.cancel());
       }
       _requests.clear();
+      _teams.clear();
+      _waiting.clear();
     });
-    final mine = ref.watch(readMyTourneesProvider)();
-    _followRequests(mine);
-    return MyTourneesState.of(mine);
+    _mine = ref.watch(readMyTourneesProvider)();
+    _followRequests(_mine);
+    _followTeams(_mine);
+    return MyTourneesState.of(_mine, waiting: _waiting);
   }
 
   /// Opens the tournée [id] (a tap in the sheet). The new list reaches
@@ -60,8 +75,44 @@ final class MyTourneesNotifier extends Notifier<MyTourneesState> {
   }
 
   void _show(MyTournees mine) {
-    state = MyTourneesState.of(mine);
+    _mine = mine;
     _followRequests(mine);
+    _followTeams(mine);
+    state = MyTourneesState.of(mine, waiting: _waiting);
+  }
+
+  /// Follows the team of each tournée of [mine] that the member is in and
+  /// that is not open, for the dot of a request waiting there; the open
+  /// one's requests show on 👥 (`teamProvider`).
+  void _followTeams(MyTournees mine) {
+    final others = {
+      for (final tournee in mine.tournees)
+        if (!tournee.isPending && tournee.id != mine.currentId) tournee.id,
+    };
+    for (final id in _teams.keys.toList()) {
+      if (!others.contains(id)) {
+        unawaited(_teams.remove(id)!.cancel());
+        _waiting.remove(id);
+      }
+    }
+    for (final id in others) {
+      _teams.putIfAbsent(
+        id,
+        () => ref
+            .read(observeTeamProvider)(id)
+            .listen(
+              (tournee) => _count(id, tournee?.pendingMembers.length ?? 0),
+              // A team that cannot be followed shows no dot: the requests
+              // are seen once it is opened.
+              onError: (Object _) => _count(id, 0),
+            ),
+      );
+    }
+  }
+
+  void _count(TourneeId id, int waiting) {
+    _waiting[id] = waiting;
+    state = MyTourneesState.of(_mine, waiting: _waiting);
   }
 
   /// Listens to each pending request of [mine] once, and stops listening

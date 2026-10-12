@@ -108,7 +108,9 @@ final class MyTourneesSheet extends ConsumerWidget {
 
 /// One tournée: its mark, « Tournée 12 · 2026 » over its centre, and ✓
 /// when it is the open one. Never told by colour alone: the open one has
-/// ✓ and a filled mark, a request a dashed mark and its own words.
+/// ✓ and a filled mark, a request a dashed mark and its own words, and the
+/// red dot of a request waiting in another tournée comes with « · 1
+/// demande en attente ».
 final class _TourneeRowTile extends StatelessWidget {
   const _TourneeRowTile({super.key, required this.row, required this.onTap});
 
@@ -126,6 +128,10 @@ final class _TourneeRowTile extends StatelessWidget {
       TourneeRowStatus.open => (
         row.centre,
         l10n.myTourneesOpenSemantics(title, row.centre),
+      ),
+      TourneeRowStatus.closed when row.waitingRequests > 0 => (
+        l10n.myTourneesWaiting(row.centre, row.waitingRequests),
+        l10n.myTourneesWaitingSemantics(title, row.centre, row.waitingRequests),
       ),
       TourneeRowStatus.closed => (
         row.centre,
@@ -181,6 +187,19 @@ final class _TourneeRowTile extends StatelessWidget {
                     StatusGlyphs.done,
                     size: AppSizes.segmentGlyph,
                     color: colors.done,
+                  ),
+                )
+              // The open tournée's requests show on 👥, not here.
+              else if (row.status == TourneeRowStatus.closed &&
+                  row.waitingRequests > 0)
+                Container(
+                  key: Key('myTournees.${row.id.value}.dot'),
+                  width: AppSizes.waitingDot,
+                  height: AppSizes.waitingDot,
+                  margin: const EdgeInsets.only(right: 10),
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: colors.accent,
                   ),
                 ),
             ],

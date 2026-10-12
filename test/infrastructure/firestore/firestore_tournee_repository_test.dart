@@ -9,10 +9,13 @@ import 'package:tournee_calendriers/domain/tournee/join_code.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_change.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_loss.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_repository.dart';
+import 'package:tournee_calendriers/infrastructure/firestore/firestore_tournee_directory.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_tournee_repository.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/tournee_document_mapper.dart';
 
+import '../../domain/tournee/my_tournees_fixtures.dart';
 import '../../domain/tournee/tournee_fixtures.dart';
 import '../../support/results.dart';
 import '../../support/scripted_random.dart';
@@ -422,6 +425,26 @@ void main() {
         isNotNull,
       );
       expect(await stored('rescueCentres/villefranche'), isNotNull);
+    });
+
+    test('should delete the other members only with the tournée, so they '
+        'learn it was deleted, not that they were removed', () async {
+      await repository().add(created);
+      await db.doc('tournees/t49/members/uid-lea').set(memberToDocument(lea));
+      await db.doc('tournees/t49/campaigns/2026/streets/lilas').set({
+        'name': 'Rue des Lilas',
+      });
+      final seen = <TourneeLoss>[];
+      final leasPhone = FirestoreTourneeDirectory(db)
+          .watchMembership(tournee49, leaId)
+          .listen(seen.add);
+      await pumpEventQueue();
+
+      await repository().delete(valueOf(team().delete(by: manuId)));
+      await pumpEventQueue();
+      await leasPhone.cancel();
+
+      expect(seen, [TourneeLoss.deleted]);
     });
 
     test('should delete in batches of at most 500 writes', () async {

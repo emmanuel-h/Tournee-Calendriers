@@ -443,8 +443,19 @@ bottom sheet:
   move them); the open one shows ● and ✓, another ○ (a tap opens it and closes the sheet),
   a request a dashed ○ in grey, « CS … · votre demande est en attente », and cannot be tapped.
   No tournée: « Aucune tournée pour l'instant. ». Still to come: the progress « · 41 % » (with
-  the streets on Firestore), the dot of a request waiting in another tournée (with Équipe),
-  « Pas téléchargée » (M4).
+  the streets on Firestore), « Pas téléchargée » (M4).
+- Delivered in T2.6c: another tournée (not the open one) where join requests wait shows
+  « CS … · 1 demande en attente » (« 2 demandes… ») and a red dot at the end of its row, said
+  by screen readers (« Tournée 12 · 2026, CS Villefranche, 1 demande en attente, ouvrir »);
+  its team is followed from the phone's copy first, offline too. The open tournée's requests
+  stay on 👥 only.
+- **A tournée lost** (T2.6c): when the server says the member was removed (« Retirer ») or
+  the tournée deleted, the phone forgets it at once (its row leaves « Mes tournées »; when it
+  was the open one, the app goes back to the start screen with none open, whatever screen
+  was shown) and says so over the next screen, as « Demande refusée »: « Vous avez été retiré
+  de la tournée 49. » or « La tournée 49 a été supprimée. ». Only the server's answer counts:
+  offline, or for a tournée never read on this phone, nothing is forgotten; leaving and
+  deleting from this phone are not told (the member did it).
 - Delivered in T2.5: « + Créer une tournée » (red) and « Rejoindre une tournée » under the
   rows close the sheet and open 5.2 above the screen; a phone without a name asks « Votre
   prénom » (Paramètres' sheet) first and opens nothing if it is closed without one. With no
@@ -891,6 +902,10 @@ Immeuble details fixed in T1.9 (`lib/presentation/building/`, `lib/ui/screens/bu
   « L'équipe ne peut pas être affichée : … ». Times: « à l'instant », « il y a 2 min », « il
   y a 3 h », « hier », then the day (« 3 oct. »). Still to come: the street counts « 5 rues »
   (with the assignees, M3) and « CAMPAGNE » / « Démarrer une nouvelle campagne » (v1.1).
+- From T2.6c a member removed, or a tournée deleted, is forgotten by the phone as soon as the
+  server says so, with a message (« Vous avez été retiré de la tournée 49. », 5.3), which
+  closes Équipe; « L'équipe ne peut pas être affichée » stays for a tournée never read
+  offline.
 
 ### 5.9 Paramètres (⚙)
 
@@ -1354,7 +1369,19 @@ Tournée rules fixed in T2.2 (`lib/domain/tournee/`):
   `SettleJoinRequest` (active → the summary accepted, not opened; null → forgotten; pending or
   not a request → nothing). `MyTourneesNotifier` (kept alive) follows each pending request
   while the app runs (a failing listener leaves it pending); `currentTourneeProvider` is the
-  open tournée the screens of a tournée follow.
+  open tournée the screens of a tournée follow. From T2.6c it also follows the team
+  (`ObserveTeam`) of each active tournée not open: `TourneeRow.waitingRequests` (0 when it
+  cannot be read).
+- **A tournée lost** (T2.6c): **`TourneeLoss`** (domain enum) `removed` | `deleted`.
+  `TourneeDirectory.watchMembership(summary, member)` emits once the server says the member is
+  no longer in it, never from the phone's copy nor for a deletion made on this phone.
+  `WatchMembership` (as `MemberAccount.signedInMember`, nothing before the first sign-in);
+  `ForgetLostTournee(id, loss)` → `LostTournee(summary, loss, wasOpen)` after `forget`, or
+  null (unknown any more, or still a request: nothing saved). `TourneeLossNotifier` (kept
+  alive, listened to by `TourneeApp`) follows each active tournée of « Mes tournées » (a
+  failing listener keeps it) and gives a `TourneeLossNotice(tournee, number, loss, wasOpen)`;
+  the app shows the message on its `ScaffoldMessenger` and goes to the start screen when it
+  was the open one.
 - **Port `PhoneSettings`** (application): `memberName` (null until given), `theme`
   (`ThemeChoice` system / light / dark), setters. Use cases `ReadPhoneSettings`,
   `ChangeMemberName` (`MemberName.create`, nothing kept when refused), `ChooseTheme`.
@@ -1479,7 +1506,12 @@ Firestore adapters fixed in T2.3 (`lib/infrastructure/firestore/`, `lib/applicat
   server. `preview(JoinCode)` → `JoinPreview` (code, tournée id, number, centre, campaign: what
   « Rejoindre » shows) or `JoinFailure` (`unknownCode`, `noNetwork`); `requestToJoin(preview,
   member)` stores the newcomer's pending member document; `watchRequest(tournée, member)` →
-  pending, active, or null once refused or cancelled; `cancelRequest`; `isTaken(centre,
+  pending, active, or null once refused or cancelled; `cancelRequest`; `watchMembership(summary,
+  member)` (T2.6c: the member's own document, which the rules always let them read; once the
+  server has it no more — not `isFromCache`, not `hasPendingWrites` — the reservation
+  `tourneeKeys/{key}` read from the server tells `removed` while it still names the tournée,
+  `deleted` otherwise; a `permission-denied` is passed on as an error, never taken as a
+  loss); `isTaken(centre,
   number)` and `rescueCentres()` (sorted by name) for « Créer », failing with
   `DirectoryFailure.noNetwork`. The code, the number and the centres are asked of the server,
   never answered from the phone's copy.
@@ -1497,8 +1529,10 @@ Firestore adapters fixed in T2.3 (`lib/infrastructure/firestore/`, `lib/applicat
   same second). A join code another tournée already holds is replaced by a new one drawn from
   the injected `Random` (up to 10 draws, then a `StateError`): `add` returns the tournée as
   stored. Accepting, refusing, removing and leaving are queued like street writes. Deleting
-  reads the campaigns, streets and members from the server and deletes them in batches of 500,
-  the creator's member document last (with the tournée, its code and its reservation).
+  reads the campaigns, streets and members from the server and deletes the campaigns and
+  streets in batches of 500, then the members (the creator's last) with the tournée, its code
+  and its reservation in one batch, so a member's phone sees its membership and the
+  reservation go together and says « supprimée », not « retiré » (T2.6c).
 - **Undo is stamped with who undoes, now** (`HouseReverted`, `DwellingReverted`): the adapter
   writes the current member and the `Clock`'s time as `by` / `at`, not the old stamp, since the
   rules accept only the caller's uid (§8.2). The domain's undo still puts the exact house back;
@@ -1779,9 +1813,9 @@ What the adapters write (T2.3), which the rules must allow:
   `displayName` only.
 - **New code** (one transaction): reads `joinCodes/{new}`, updates `tournees/{id}.joinCode`,
   deletes `joinCodes/{old}`, creates `joinCodes/{new}`.
-- **Delete:** lists `campaigns`, their `streets` and `members` from the server, deletes them in
-  batches of ≤ 500, then one batch: `joinCodes/{code}`, `tourneeKeys/{key}`, `tournees/{id}`
-  and the creator's own member document.
+- **Delete:** lists `campaigns`, their `streets` and `members` from the server, deletes the
+  campaigns and streets in batches of ≤ 500, then one batch: `joinCodes/{code}`,
+  `tourneeKeys/{key}`, `tournees/{id}`, the other members' documents and the creator's own.
 - **Streets:** the writes of the table in §6.2. Whole entries (a number added or renamed, a
   layout, an undo) carry door entries with the `by` / `at` they already had, possibly a
   teammate's: only the entries that change carry the caller's uid. The undo of « Restaurer »
@@ -1826,10 +1860,11 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
   The creator's own document goes only in the batch that deletes the tournée.
 - **New code** (creator): only `joinCode` changes, the new code document is created and the old
   one deleted in the same transaction. **Deleting** (creator): the contents first (campaigns,
-  streets, other members), then one batch where the tournée goes only with its code, its
-  reservation and the creator's member document. Previous campaigns are read-only (streets
-  are written only in `currentCampaign`); the creator alone deletes campaigns outright, and
-  streets outright, which only the deletion does, except the 30-day purge below.
+  streets), then one batch where the tournée goes only with its code, its reservation and the
+  creator's member document, the other members with them (from T2.6c). Previous campaigns are
+  read-only (streets are written only in `currentCampaign`); the creator alone deletes
+  campaigns outright, and streets outright, which only the deletion does, except the 30-day
+  purge below.
 - **30-day purge** (T2.6b): any active member deletes a street of the current campaign whose
   `deletedAt` is more than 30 days before `request.time`, and drops one house of the
   `houses` map per write whose `deletedAt` is too (nothing else changing in that write).

@@ -11,9 +11,10 @@ import 'package:tournee_calendriers/ui/screens/settings/name_sheet.dart';
 import 'package:tournee_calendriers/ui/screens/settings/settings_screen.dart';
 
 import '../../domain/tournee/my_tournees_fixtures.dart';
-import '../../domain/tournee/tournee_fixtures.dart' show nameOf;
+import '../../domain/tournee/tournee_fixtures.dart' show nameOf, team;
 import '../../support/fakes/fake_my_tournees_store.dart';
 import '../../support/fakes/fake_phone_settings.dart';
+import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/results.dart';
 import '../support/app_overrides.dart';
 
@@ -34,12 +35,17 @@ void main() {
     WidgetTester tester,
     MyTournees mine, {
     MemberName? name,
+    FakeTourneeRepository? tournees,
   }) async {
     store = FakeMyTourneesStore(mine);
     settings = FakePhoneSettings(memberName: name);
     await tester.pumpWidget(
       ProviderScope(
-        overrides: fakePhone(myTournees: store, settings: settings),
+        overrides: fakePhone(
+          myTournees: store,
+          settings: settings,
+          tournees: tournees,
+        ),
         child: const TourneeApp(showGallery: false),
       ),
     );
@@ -99,6 +105,34 @@ void main() {
         find.text('CS Villefranche · votre demande est en attente'),
         findsOneWidget,
       );
+    },
+  );
+
+  testWidgets(
+    'should show a dot and the count on another tournée where a request '
+    'waits',
+    (tester) async {
+      // The 49, with Julie's request waiting, is not the open one.
+      await pumpApp(
+        tester,
+        valueOf(_manusPhone().open(tournee12.id)),
+        tournees: FakeTourneeRepository([team()]),
+      );
+
+      await openSheet(tester);
+
+      expect(
+        find.text('CS Villefranche · 1 demande en attente'),
+        findsOneWidget,
+      );
+      expect(
+        find.bySemanticsLabel(
+          'Tournée 49 · 2026, CS Villefranche, 1 demande en attente, ouvrir',
+        ),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('myTournees.t49.dot')), findsOneWidget);
+      expect(find.byKey(const Key('myTournees.t12.dot')), findsNothing);
     },
   );
 

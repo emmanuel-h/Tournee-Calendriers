@@ -214,6 +214,15 @@ final watchJoinRequestProvider = Provider(
 final settleJoinRequestProvider = Provider(
   (ref) => SettleJoinRequest(ref.watch(myTourneesStoreProvider)),
 );
+final watchMembershipProvider = Provider(
+  (ref) => WatchMembership(
+    ref.watch(tourneeDirectoryProvider),
+    ref.watch(memberAccountProvider),
+  ),
+);
+final forgetLostTourneeProvider = Provider(
+  (ref) => ForgetLostTournee(ref.watch(myTourneesStoreProvider)),
+);
 final readPhoneSettingsProvider = Provider(
   (ref) => ReadPhoneSettings(ref.watch(phoneSettingsProvider)),
 );

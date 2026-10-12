@@ -399,14 +399,16 @@ describe('a new code', () => {
 });
 
 describe('deleting a tournée', () => {
-  /** The adapter's order: the contents first, then the last batch. */
+  /**
+   * The adapter's order: the contents first, then the last batch, where
+   * the members go with the tournée and its reservation, so a member's
+   * phone sees them go together (« supprimée », not « retiré »).
+   */
   async function deleteContents(uid) {
     const db = phoneOf(env, uid);
     const batch = writeBatch(db);
     batch.delete(doc(db, `${streetsPath}/nationale`));
     batch.delete(doc(db, campaignPath));
-    batch.delete(doc(db, memberPath(lea)));
-    batch.delete(doc(db, memberPath(paul)));
     await batch.commit();
   }
 
@@ -416,11 +418,13 @@ describe('deleting a tournée', () => {
     if (!keepCode) batch.delete(doc(db, `joinCodes/${code}`));
     if (!keepKey) batch.delete(doc(db, 'tourneeKeys/villefranche_49'));
     batch.delete(doc(db, tourneePath));
+    batch.delete(doc(db, memberPath(lea)));
+    batch.delete(doc(db, memberPath(paul)));
     if (!keepMember) batch.delete(doc(db, memberPath(manu)));
     return batch.commit();
   }
 
-  it('should let the creator delete everything, their member document last', async () => {
+  it('should let the creator delete everything, the members with the tournée', async () => {
     await assertSucceeds(deleteContents(manu));
     await assertSucceeds(lastBatch(manu));
   });

@@ -253,7 +253,8 @@ void main() {
     setUp(() => db = FakeFirebaseFirestore());
 
     /// The phone of [uid] (Léa by default, signed in before) knowing the
-    /// 49 and the 12, the 49 open unless [noTournee].
+    /// 49 and the 12, the 49 open; with [noTournee], knowing no tournée
+    /// (one that knows tournées follows them in Firestore, open or not).
     Future<ProviderContainer> leasPhone({
       bool noTournee = false,
       Directory? folder,
@@ -267,7 +268,7 @@ void main() {
       final mine = MyTournees.none.remember(tournee49).remember(tournee12);
       await container
           .read(myTourneesStoreProvider)
-          .save(noTournee ? mine : valueOf(mine.open(tournee49.id)));
+          .save(noTournee ? MyTournees.none : valueOf(mine.open(tournee49.id)));
       return container;
     }
 

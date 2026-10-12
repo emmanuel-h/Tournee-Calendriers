@@ -30,6 +30,7 @@ import 'package:tournee_calendriers/domain/tournee/member_name.dart';
 import 'package:tournee_calendriers/domain/tournee/rescue_centre.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_loss.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_number.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/stored_values.dart';
 
@@ -160,6 +161,32 @@ List<MemberStatus?> requestStatusesIn(
   final data? => [memberFromDocument(uid, data).status],
   null when fromCache => const [],
   null => const [null],
+};
+
+/// Whether a snapshot of the member's own document says they are no
+/// longer in the tournée: only the server's word, without the document,
+/// counts. The phone's copy without it ([fromCache]: offline, or never
+/// read) tells nothing, nor does a deletion made on this phone and not yet
+/// sent ([hasPendingWrites]: leaving, deleting), which the use cases
+/// settle themselves.
+bool isMembershipGone({
+  required bool exists,
+  required bool fromCache,
+  required bool hasPendingWrites,
+}) => !exists && !fromCache && !hasPendingWrites;
+
+/// How the member lost [tournee] once their member document is gone, from
+/// the reservation of its number (`tourneeKeys/{key}` read from the
+/// server, null when there is none): it still names the tournée while the
+/// tournée exists, so the member was removed; it goes with the tournée
+/// (in the same batch, PLAN §8.2), so without it the tournée was deleted.
+TourneeLoss lossFromReservation(
+  TourneeId tournee,
+  Map<String, Object?>? reservation,
+) => switch (reservation) {
+  final data? when tourneeIdFromKeyDocument(data) == tournee =>
+    TourneeLoss.removed,
+  _ => TourneeLoss.deleted,
 };
 
 /// The document `joinCodes/{code}` of [tournee]: only what the join screen

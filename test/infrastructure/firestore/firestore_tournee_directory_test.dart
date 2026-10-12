@@ -7,10 +7,12 @@ import 'package:mock_exceptions/mock_exceptions.dart';
 import 'package:tournee_calendriers/application/ports/tournee_directory.dart';
 import 'package:tournee_calendriers/domain/tournee/member.dart';
 import 'package:tournee_calendriers/domain/tournee/rescue_centre.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_loss.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_number.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_tournee_directory.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/tournee_document_mapper.dart';
 
+import '../../domain/tournee/my_tournees_fixtures.dart';
 import '../../domain/tournee/tournee_fixtures.dart';
 import '../../support/results.dart';
 
@@ -150,6 +152,74 @@ void main() {
       await pumpEventQueue();
 
       expect(await stored('tournees/t49/members/uid-julie'), isNull);
+    });
+  });
+
+  group('membership', () {
+    Future<List<TourneeLoss>> lossesWhile(
+      Future<void> Function() change,
+    ) async {
+      final seen = <TourneeLoss>[];
+      final subscription = directory
+          .watchMembership(tournee49, leaId)
+          .listen(seen.add);
+      await pumpEventQueue();
+      await change();
+      await pumpEventQueue();
+      await subscription.cancel();
+      return seen;
+    }
+
+    setUp(() async {
+      await db.doc('tourneeKeys/villefranche_49').set({'tourneeId': 't49'});
+      await db.doc('tournees/t49/members/uid-lea').set(memberToDocument(lea));
+    });
+
+    test('should tell nothing while the member is in', () async {
+      final seen = await lossesWhile(() async {});
+
+      expect(seen, isEmpty);
+    });
+
+    test('should tell removed once the member document goes and the '
+        'tournée stays', () async {
+      final seen = await lossesWhile(
+        () => db.doc('tournees/t49/members/uid-lea').delete(),
+      );
+
+      expect(seen, [TourneeLoss.removed]);
+    });
+
+    test('should tell deleted once the member document goes with the '
+        'reservation of the number', () async {
+      // One batch, as the deletion makes it. Firestore applies a batch
+      // at once; the fake applies it in order, so the reservation goes
+      // first.
+      final seen = await lossesWhile(
+        () async =>
+            (db.batch()
+                  ..delete(db.doc('tourneeKeys/villefranche_49'))
+                  ..delete(db.doc('tournees/t49/members/uid-lea')))
+                .commit(),
+      );
+
+      expect(seen, [TourneeLoss.deleted]);
+    });
+
+    test('should ask the server, not the phone\'s copy, whether the '
+        'tournée still exists', () async {
+      offline(db.doc('tourneeKeys/villefranche_49'));
+      final errors = <Object>[];
+      final subscription = directory
+          .watchMembership(tournee49, leaId)
+          .listen((_) {}, onError: errors.add);
+      await pumpEventQueue();
+
+      await db.doc('tournees/t49/members/uid-lea').delete();
+      await pumpEventQueue();
+      await subscription.cancel();
+
+      expect(errors.single, isA<FirebaseException>());
     });
   });
 

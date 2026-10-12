@@ -6,10 +6,14 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_loss.dart';
 import 'package:tournee_calendriers/presentation/corbeille/corbeille_purge.dart';
 import 'package:tournee_calendriers/presentation/launch/launch_place.dart';
+import 'package:tournee_calendriers/presentation/my_tournees/tournee_loss_notice.dart';
+import 'package:tournee_calendriers/presentation/my_tournees/tournee_loss_notifier.dart';
 import 'package:tournee_calendriers/presentation/settings/settings_notifier.dart';
 import 'package:tournee_calendriers/presentation/settings/settings_state.dart';
+import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_router.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
@@ -20,6 +24,10 @@ import 'package:tournee_calendriers/ui/theme/app_theme.dart';
 /// `launchPlaceProvider` says (« Bienvenue », « Demande envoyée » or the
 /// start screen, PLAN §4), showing the bare ground for the moment the phone
 /// takes to tell.
+///
+/// It also tells, over whatever screen is shown, that the member lost one
+/// of their tournées (`tourneeLossProvider`, PLAN §5.3): the open one
+/// lost, it goes back to the start screen, with none open.
 ///
 /// It is a `StatefulWidget` only to create the router once and dispose of it
 /// with the app; rebuilding the root (a new theme) must not reset
@@ -49,6 +57,10 @@ final class _TourneeAppState extends ConsumerState<TourneeApp> {
   /// Made once, as soon as the app knows where it opens.
   GoRouter? _router;
 
+  /// The app's `ScaffoldMessenger`, which shows a message above every
+  /// screen and keeps it on screen when the app goes to another one.
+  final _messengerKey = GlobalKey<ScaffoldMessengerState>();
+
   @override
   void dispose() {
     _router?.dispose();
@@ -61,6 +73,25 @@ final class _TourneeAppState extends ConsumerState<TourneeApp> {
     initialLocation: location,
   );
 
+  /// « Vous avez été retiré de la tournée 49. » or « La tournée 49 a été
+  /// supprimée. », as « Demande refusée » is told: a message over the next
+  /// screen. Nothing is shown before the app has its first screen.
+  void _tell(TourneeLossNotice notice) {
+    final messenger = _messengerKey.currentState;
+    final router = _router;
+    if (messenger == null || router == null) return;
+    final l10n = AppLocalizations.of(messenger.context);
+    showMessageSnackBar(
+      messenger,
+      message: switch (notice.loss) {
+        TourneeLoss.removed => l10n.tourneeRemoved('${notice.number}'),
+        TourneeLoss.deleted => l10n.tourneeDeleted('${notice.number}'),
+      },
+    );
+    // Its screens (Équipe, its streets) show a tournée the phone forgot.
+    if (notice.wasOpen) router.go(AppRoutes.home);
+  }
+
   @override
   Widget build(BuildContext context) {
     // The 30-day purge of the Corbeille, on the streets bound now and on
@@ -68,6 +99,11 @@ final class _TourneeAppState extends ConsumerState<TourneeApp> {
     // it and keeps it alive without redrawing the app when it ends; there
     // is nothing to show of it.
     ref.listen(corbeillePurgeProvider, (_, _) {});
+    // `ref.listen` runs the function at each new notice, without redrawing
+    // the app; listening also starts following the member's tournées.
+    ref.listen(tourneeLossProvider, (_, notice) {
+      if (notice != null) _tell(notice);
+    });
     // `select`: the app redraws when the theme changes, not when the name
     // does.
     final theme = ref.watch(settingsProvider.select((state) => state.theme));
@@ -111,6 +147,7 @@ final class _TourneeAppState extends ConsumerState<TourneeApp> {
       supportedLocales: AppLocalizations.supportedLocales,
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       routerConfig: router,
+      scaffoldMessengerKey: _messengerKey,
     );
   }
 }

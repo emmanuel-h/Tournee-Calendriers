@@ -206,9 +206,13 @@ final class FirestoreTourneeRepository implements TourneeRepository {
   /// server: the lists are read from it, so nothing only the server knows
   /// is left behind.
   ///
-  /// The creator's own member document goes last, with the tournée, its
-  /// code and its reservation in one batch: until then the security rules
-  /// still see an active creator deleting.
+  /// The campaigns and their streets go first, in batches. The members go
+  /// last, with the tournée, its code and its reservation in one batch:
+  /// until then the security rules still see an active creator deleting,
+  /// and a member's phone, which learns it lost the tournée when its own
+  /// member document goes, finds the reservation gone at the same instant
+  /// and says « supprimée », not « retiré » (`watchMembership`). A team is
+  /// far below the 500 writes of a batch.
   @override
   Future<Result<TourneeDeleted, TourneeWriteFailure>> delete(
     TourneeDeleted deletion,
@@ -240,10 +244,6 @@ final class FirestoreTourneeRepository implements TourneeRepository {
       _db,
       tournee.id,
     ).get(server);
-    contents.addAll([
-      for (final member in members.docs)
-        if (member.id != tournee.createdBy.value) member.reference,
-    ]);
     // A batch holds at most 500 writes.
     for (var start = 0; start < contents.length; start += 500) {
       final batch = _db.batch();
@@ -252,21 +252,21 @@ final class FirestoreTourneeRepository implements TourneeRepository {
       }
       await batch.commit();
     }
-    await (_db.batch()
-          ..delete(_joinCode(tournee.joinCode))
-          ..delete(
-            _db
-                .collection(FirestoreLayout.tourneeKeys)
-                .doc(tourneeKeyId(tournee.centre, tournee.number)),
-          )
-          ..delete(tourneeDoc)
-          ..delete(
-            FirestoreLayout.membersOf(
-              _db,
-              tournee.id,
-            ).doc(tournee.createdBy.value),
-          ))
-        .commit();
+    final last = _db.batch()
+      ..delete(_joinCode(tournee.joinCode))
+      ..delete(
+        _db
+            .collection(FirestoreLayout.tourneeKeys)
+            .doc(tourneeKeyId(tournee.centre, tournee.number)),
+      )
+      ..delete(tourneeDoc);
+    for (final member in members.docs) {
+      if (member.id != tournee.createdBy.value) last.delete(member.reference);
+    }
+    last.delete(
+      FirestoreLayout.membersOf(_db, tournee.id).doc(tournee.createdBy.value),
+    );
+    await last.commit();
     return Ok(deletion);
   }
 

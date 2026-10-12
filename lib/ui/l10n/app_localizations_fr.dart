@@ -964,6 +964,28 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String myTourneesWaiting(String centre, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count demandes en attente',
+      one: '1 demande en attente',
+    );
+    return '$centre · $_temp0';
+  }
+
+  @override
+  String myTourneesWaitingSemantics(String title, String centre, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count demandes en attente',
+      one: '1 demande en attente',
+    );
+    return '$title, $centre, $_temp0, ouvrir';
+  }
+
+  @override
   String myTourneesPendingSemantics(String title, String centre) {
     return '$title, $centre, votre demande est en attente';
   }
@@ -1501,4 +1523,14 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get joinRefused => 'Demande refusée';
+
+  @override
+  String tourneeRemoved(String number) {
+    return 'Vous avez été retiré de la tournée $number.';
+  }
+
+  @override
+  String tourneeDeleted(String number) {
+    return 'La tournée $number a été supprimée.';
+  }
 }

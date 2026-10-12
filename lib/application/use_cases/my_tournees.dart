@@ -5,11 +5,13 @@ import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/tournee/member.dart';
 import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_loss.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_summary.dart';
 
 // « Mes tournées » (PLAN §5.3, §6.3): the member's tournées on this phone,
-// which one is open, and what became of their requests to join. Everything
-// but following a request works offline.
+// which one is open, what became of their requests to join, and whether
+// they are still in each tournée. Everything but following a request or a
+// membership works offline; offline, neither ever forgets a tournée.
 
 /// The member's tournées as the phone keeps them. Synchronous: read once
 /// at start-up, so the open tournée shows from the first frame.
@@ -91,5 +93,81 @@ final class SettleJoinRequest {
       case MemberStatus.pending:
         break;
     }
+  }
+}
+
+/// Whether the member is still in [TourneeSummary], one of their tournées,
+/// from the server (`TourneeDirectory.watchMembership`): tells once they
+/// were removed or the tournée deleted, nothing otherwise.
+///
+/// A phone that never signed in cannot be in a tournée on the server:
+/// nothing to follow then.
+final class WatchMembership {
+  const WatchMembership(this._directory, this._account);
+
+  final TourneeDirectory _directory;
+  final MemberAccount _account;
+
+  Stream<TourneeLoss> call(TourneeSummary tournee) =>
+      switch (_account.signedInMember) {
+        final member? => _directory.watchMembership(tournee, member),
+        null => const Stream.empty(),
+      };
+}
+
+/// A tournée the phone forgot because the member lost it: [loss] tells
+/// how, [wasOpen] whether it was the one the app showed (the app then goes
+/// back to its start screen with none open).
+final class LostTournee {
+  const LostTournee({
+    required this.tournee,
+    required this.loss,
+    required this.wasOpen,
+  });
+
+  /// The tournée as the phone kept it: « la tournée 49 ».
+  final TourneeSummary tournee;
+  final TourneeLoss loss;
+  final bool wasOpen;
+
+  @override
+  bool operator ==(Object other) =>
+      other is LostTournee &&
+      other.tournee == tournee &&
+      other.loss == loss &&
+      other.wasOpen == wasOpen;
+
+  @override
+  int get hashCode => Object.hash(tournee, loss, wasOpen);
+
+  @override
+  String toString() =>
+      'LostTournee(${tournee.id.value}, ${loss.name}, '
+      '${wasOpen ? 'open' : 'closed'})';
+}
+
+/// Forgets the tournée [TourneeId] the member lost ([TourneeLoss]): it
+/// leaves « Mes tournées » and, when it was open, none is open any more.
+/// Returns what was forgotten, for the app to say it.
+///
+/// Returns null and changes nothing when the phone no longer knows the
+/// tournée (it was left or deleted from this phone in the meantime: nothing
+/// to tell) or knows it only as a request, which `SettleJoinRequest`
+/// follows.
+final class ForgetLostTournee {
+  const ForgetLostTournee(this._store);
+
+  final MyTourneesStore _store;
+
+  Future<LostTournee?> call(TourneeId id, TourneeLoss loss) async {
+    final mine = _store.myTournees;
+    final tournee = mine.find(id);
+    if (tournee == null || tournee.isPending) return null;
+    await _store.save(mine.forget(id));
+    return LostTournee(
+      tournee: tournee,
+      loss: loss,
+      wasOpen: mine.currentId == id,
+    );
   }
 }

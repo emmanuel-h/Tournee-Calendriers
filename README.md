@@ -34,14 +34,16 @@ Temporary M1 start screen (until the map arrives in M3):
   tournée (or the phone). Needs the network once; streets already imported keep their marks.
 - Top bar: the open tournée (« Tournée 49 · 2026 » over its centre de secours), or the
   app's name when none is open, opens « Mes tournées », to switch tournée (the app reopens
-  the last one at launch, offline too) or create or join one; 👥 opens Équipe (a dot while a
-  join request waits); ⚙ opens Paramètres: first name (the team sees the new one), « Mes tournées », theme (Système,
+  the last one at launch, offline too) or create or join one, with a dot on another
+  tournée where a join request waits; 👥 opens Équipe (a dot while a join request waits); ⚙ opens Paramètres: first name (the team sees the new one), « Mes tournées », theme (Système,
   Clair, Sombre), confidentialité, version and licences, data credits.
 - Équipe (👥): the join code (copy button: « Code copié ») and its QR code, « Partager »,
   « Nouveau code » (creator), the requests to join with « Accepter » / « Refuser » (any
   member), the members with « Retirer » (creator), the Corbeille, « Quitter la tournée » /
   « Supprimer la tournée » (creator).
   Answering, removing and leaving work offline; a new code and deleting need the network.
+  A member removed, or whose tournée was deleted, sees it leave « Mes tournées » with a
+  message (« Vous avez été retiré de la tournée 49. »); offline, nothing is forgotten.
 - Corbeille (from Équipe): the deleted streets and numbers, who deleted them and when, and
   « Restaurer », which brings them back with their marks. What stayed there more than 30 days
   is deleted for good by the first member's app that starts (no server).

@@ -10,14 +10,17 @@ import 'package:tournee_calendriers/domain/tournee/join_code.dart';
 import 'package:tournee_calendriers/domain/tournee/member.dart';
 import 'package:tournee_calendriers/domain/tournee/rescue_centre.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_loss.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_number.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_summary.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_layout.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/tournee_document_mapper.dart';
 
 /// The [TourneeDirectory] over Firestore, on the phone (Spark plan, PLAN
 /// Q20): a join code is read with an exact `get` of `joinCodes/{code}`
 /// (listing them is refused by the rules), the request is the newcomer's
-/// own pending member document.
+/// own pending member document. A member follows their own member
+/// document too, to learn they were removed or the tournée deleted.
 ///
 /// What must be true *now* (a code, a number taken) is asked of the server
 /// (`Source.server`): an answer from the phone's copy could be stale. The
@@ -92,6 +95,37 @@ final class FirestoreTourneeDirectory implements TourneeDirectory {
       _member(tournee, member).delete(),
     );
   }
+
+  /// Follows the member's own document, which the rules let them read
+  /// whatever happens to the tournée (PLAN §8.2). Once the server says it
+  /// is gone, the reservation of the tournée's number tells why: it stays
+  /// while the tournée does, and goes with it (`lossFromReservation`).
+  ///
+  /// A `permission-denied` here is not taken as a loss: the member may
+  /// always read their own document, so it can only mean something else
+  /// (App Check refusing the app, a rules change), which must not make
+  /// the phone forget a tournée. It is passed on as an error.
+  @override
+  Stream<TourneeLoss> watchMembership(
+    TourneeSummary tournee,
+    MemberId member,
+  ) => _member(tournee.id, member)
+      .snapshots()
+      .where(
+        (doc) => isMembershipGone(
+          exists: doc.exists,
+          fromCache: doc.metadata.isFromCache,
+          hasPendingWrites: doc.metadata.hasPendingWrites,
+        ),
+      )
+      // `asyncMap`: one read of the server per snapshot, in order.
+      .asyncMap((_) async {
+        final reservation = await _db
+            .collection(FirestoreLayout.tourneeKeys)
+            .doc(tourneeKeyId(tournee.centre, tournee.number))
+            .get(_server);
+        return lossFromReservation(tournee.id, reservation.data());
+      });
 
   @override
   Future<Result<bool, DirectoryFailure>> isTaken(

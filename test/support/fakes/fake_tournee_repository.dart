@@ -77,12 +77,23 @@ final class FakeTourneeRepository implements TourneeRepository {
     return _tournees[id];
   }
 
+  /// Every tournée [watch] was asked for, in order.
+  final watched = <TourneeId>[];
+
+  /// How many listen to each tournée now.
+  final _listeners = <TourneeId, int>{};
+
+  /// Whether someone still listens to the tournée [id].
+  bool isWatching(TourneeId id) => (_listeners[id] ?? 0) > 0;
+
   @override
   Stream<Tournee?> watch(TourneeId id) {
+    watched.add(id);
     late final StreamController<Tournee?> controller;
     StreamSubscription<void>? subscription;
     controller = StreamController<Tournee?>(
       onListen: () {
+        _listeners[id] = (_listeners[id] ?? 0) + 1;
         if (watchError case final error?) {
           controller.addError(error);
           return;
@@ -94,6 +105,7 @@ final class FakeTourneeRepository implements TourneeRepository {
       },
       // A listener that leaves stops the updates and frees the stream.
       onCancel: () async {
+        _listeners[id] = _listeners[id]! - 1;
         await subscription?.cancel();
         await controller.close();
       },

@@ -15,6 +15,7 @@ import '../../support/fakes/fake_member_account.dart';
 import '../../support/fakes/fake_my_tournees_store.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/fakes/fake_tournee_directory.dart';
+import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/results.dart';
 
 /// Lets every pending future run.
@@ -48,6 +49,8 @@ void main() {
         memberAccountProvider.overrideWithValue(account),
         tourneeDirectoryProvider.overrideWithValue(directory),
         myTourneesStoreProvider.overrideWithValue(store),
+        // « Mes tournées » follows the teams of the tournées not open.
+        tourneeRepositoryProvider.overrideWithValue(FakeTourneeRepository()),
         phoneStreetRepositoryProvider.overrideWithValue(phoneStreets),
       ],
     );
