@@ -492,6 +492,42 @@ final class NumberRestored extends StreetChange {
   String toString() => 'NumberRestored(${streetId.value}, ${number.label})';
 }
 
+/// Numbers that stayed in the Corbeille more than 30 days were dropped for
+/// good, with their marks (PLAN §5.11): [purged] lists them as they were
+/// there. Their numbers are free again.
+///
+/// Storage deletes each entry (`houses.14ter`), one write per number: the
+/// security rules check a write that drops one house, and refuse it while
+/// that house was removed 30 days ago or less. It cannot be undone.
+final class NumbersPurged extends StreetChange {
+  NumbersPurged({
+    required super.streetId,
+    required Iterable<RemovedHouse> purged,
+  }) : purged = List.unmodifiable(purged);
+
+  /// The houses dropped, in street order.
+  final List<RemovedHouse> purged;
+
+  /// Their numbers, in street order.
+  List<HouseNumber> get numbers => [
+    for (final removed in purged) removed.number,
+  ];
+
+  @override
+  bool operator ==(Object other) =>
+      other is NumbersPurged &&
+      other.streetId == streetId &&
+      sameItems(other.purged, purged);
+
+  @override
+  int get hashCode => Object.hash(streetId, Object.hashAll(purged));
+
+  @override
+  String toString() =>
+      'NumbersPurged(${streetId.value}, '
+      '[${numbers.map((number) => number.label).join(', ')}])';
+}
+
 /// The street was renamed from [before] to [name] (the name field of the
 /// edit mode, PLAN §5.5), for the whole team. Storage writes `name`; undo
 /// writes [before] back.

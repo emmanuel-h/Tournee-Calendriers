@@ -9,6 +9,9 @@ import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling_label.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
+// A prefix: the street's own `isPastRetention` would hide the function.
+import 'package:tournee_calendriers/domain/street/corbeille_retention.dart'
+    as retention;
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/progress.dart';
@@ -708,6 +711,40 @@ final class Street {
     );
   }
 
+  /// Whether the street has been in the Corbeille more than 30 days at
+  /// [now] (see `isPastRetention`): it may then be removed for good, with
+  /// its houses and their marks (`StreetRepository.purge`, PLAN §5.11).
+  bool isPastRetention({required DateTime now}) => switch (deletion) {
+    final deletion? => retention.isPastRetention(deletion, now: now),
+    null => false,
+  };
+
+  /// Drops for good the numbers removed more than 30 days before [now],
+  /// with their marks (PLAN §5.11); those removed since stay in the
+  /// Corbeille. Null when there is none to drop.
+  ///
+  /// Whether the street itself is in the Corbeille does not matter: each
+  /// number is kept 30 days from its own removal.
+  (Street, NumbersPurged)? purgeNumbers({required DateTime now}) {
+    final purged = [
+      for (final removed in removedHouses)
+        if (retention.isPastRetention(removed.removal, now: now)) removed,
+    ];
+    if (purged.isEmpty) return null;
+    return (
+      _copy(
+        name: name,
+        houses: houses,
+        // Still sorted: the numbers kept keep their order.
+        removedHouses: List.unmodifiable(
+          removedHouses.where((removed) => !purged.contains(removed)),
+        ),
+        deletion: deletion,
+      ),
+      NumbersPurged(streetId: id, purged: purged),
+    );
+  }
+
   /// Brings the street back from the Corbeille, houses untouched.
   (Street, StreetRestored) restore() => (
     _copy(
@@ -776,7 +813,9 @@ final class Street {
         StreetRenamed(streetId: id, before: name, name: before),
       )),
       StreetDeleted() => Ok(restore()),
-      NumbersAdded() || StreetRestored() => const Err(UndoFailure.notUndoable),
+      NumbersAdded() ||
+      StreetRestored() ||
+      NumbersPurged() => const Err(UndoFailure.notUndoable),
     };
   }
 

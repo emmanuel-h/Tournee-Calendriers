@@ -43,7 +43,8 @@ Temporary M1 start screen (until the map arrives in M3):
   « Supprimer la tournée » (creator).
   Answering, removing and leaving work offline; a new code and deleting need the network.
 - Corbeille (from Équipe): the deleted streets and numbers, who deleted them and when, and
-  « Restaurer », which brings them back with their marks.
+  « Restaurer », which brings them back with their marks. What stayed there more than 30 days
+  is deleted for good by the first member's app that starts (no server).
 - « ☁ Modifications de 3 rues en attente d'envoi » above « Importer des rues » while marks
   made offline in the open tournée have not reached the server yet.
 

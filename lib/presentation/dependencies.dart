@@ -43,6 +43,7 @@ import 'package:tournee_calendriers/application/use_cases/observe_pending_sync.d
 import 'package:tournee_calendriers/application/use_cases/observe_street.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_streets.dart';
 import 'package:tournee_calendriers/application/use_cases/phone_settings.dart';
+import 'package:tournee_calendriers/application/use_cases/purge_corbeille.dart';
 import 'package:tournee_calendriers/application/use_cases/search_communes.dart';
 import 'package:tournee_calendriers/application/use_cases/set_house_details.dart';
 import 'package:tournee_calendriers/application/use_cases/sign_in.dart';
@@ -229,6 +230,12 @@ final chooseThemeProvider = Provider(
 );
 final observeCorbeilleProvider = Provider(
   (ref) => ObserveCorbeille(ref.watch(streetRepositoryProvider)),
+);
+final purgeCorbeilleProvider = Provider(
+  (ref) => PurgeCorbeille(
+    ref.watch(streetRepositoryProvider),
+    ref.watch(clockProvider),
+  ),
 );
 final observePendingSyncProvider = Provider(
   (ref) => ObservePendingSync(ref.watch(pendingSyncProvider)),

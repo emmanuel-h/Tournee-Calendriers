@@ -59,6 +59,9 @@ final class ScriptedStreets implements StreetRepository {
   @override
   Future<void> save(Street street, StreetChange change) =>
       throw UnimplementedError();
+
+  @override
+  Future<void> purge(StreetId id) => throw UnimplementedError();
 }
 
 void main() {

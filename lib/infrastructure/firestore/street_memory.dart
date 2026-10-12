@@ -50,6 +50,13 @@ final class StreetMemory {
     _changes.add({street.id});
   }
 
+  /// Forgets the street [id], purged on this phone (the 30-day purge of the
+  /// Corbeille).
+  void remove(StreetId id) {
+    _streets.remove(id);
+    _changes.add({id});
+  }
+
   /// Takes what a snapshot of the listener says: each street of [changed]
   /// as it is now (null when it is gone or unreadable), and the [unsent]
   /// streets.

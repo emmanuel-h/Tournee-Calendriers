@@ -33,7 +33,7 @@ import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_docu
 ///
 /// One update per change, except « numéros en plus » bringing numbers back
 /// from the Corbeille: the new houses go in one update and each number
-/// restored in one of its own. The security rules check field by field a
+/// restored in one of its own; and the purge, one update per number. The security rules check field by field a
 /// write that changes one house already there, and only count the houses
 /// a write adds; they refuse a write that changes several houses already
 /// there, since they cannot check them one by one (PLAN §8.2).
@@ -100,6 +100,14 @@ List<Map<FieldPath, Object?>> streetUpdates(
     ],
     NumberRestored(:final number) => [
       _stampUpdate([_houses, number.label], null, 'deleted'),
+    ],
+    // One house dropped per update: the security rules check the house a
+    // write drops (removed more than 30 days ago), and cannot check several.
+    NumbersPurged(:final numbers) => [
+      for (final number in numbers)
+        {
+          _path([_houses, number.label]): removal,
+        },
     ],
     StreetRenamed(:final name) => [
       {

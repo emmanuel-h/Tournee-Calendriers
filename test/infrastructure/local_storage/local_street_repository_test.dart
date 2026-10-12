@@ -436,4 +436,71 @@ void main() {
       expect(all.clear, throwsUnsupportedError);
     });
   });
+  group('purge', () {
+    test('should remove the street and its file for good', () async {
+      final streets = restart();
+      final (deleted, _) = _street(
+        'lilas',
+        'Rue des Lilas',
+      ).delete(by: lea, at: twoPm);
+      await streets.add(deleted);
+      await streets.add(_street('roses', 'Allée des Roses'));
+
+      await streets.purge(StreetId('lilas'));
+
+      expect(await streets.find(StreetId('lilas')), isNull);
+      expect(fileNames(), ['roses.json']);
+      expect(await restart().find(StreetId('lilas')), isNull);
+      expect(await restart().find(StreetId('roses')), isNotNull);
+    });
+
+    test('should forget the street before its file is deleted', () async {
+      final streets = restart();
+      final (deleted, _) = _street(
+        'lilas',
+        'Rue des Lilas',
+      ).delete(by: lea, at: twoPm);
+      await streets.add(deleted);
+      final seen = <List<String>>[];
+      final subscription = streets.watchDeleted().listen(
+        (deleted) => seen.add([for (final street in deleted) street.id.value]),
+      );
+      await pumpEventQueue();
+
+      final purging = streets.purge(StreetId('lilas'));
+      final found = await streets.find(StreetId('lilas'));
+      await purging;
+      await pumpEventQueue();
+      await subscription.cancel();
+
+      expect(found, isNull);
+      expect(seen, [
+        ['lilas'],
+        isEmpty,
+      ]);
+    });
+
+    test('should delete the file after a save still being written', () async {
+      final streets = restart();
+      final lilas = _street('lilas', 'Rue des Lilas');
+      await streets.add(lilas);
+      final (deleted, change) = lilas.delete(by: lea, at: twoPm);
+
+      // Not awaited: the purge must wait for this write, not race it.
+      final saving = streets.save(deleted, change);
+      await streets.purge(StreetId('lilas'));
+      await saving;
+
+      expect(fileNames(), isEmpty);
+    });
+
+    test('should do nothing when the street has no file', () async {
+      final streets = restart();
+      await streets.add(_street('roses', 'Allée des Roses'));
+
+      await streets.purge(StreetId('lilas'));
+
+      expect(fileNames(), ['roses.json']);
+    });
+  });
 }

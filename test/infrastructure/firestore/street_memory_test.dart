@@ -68,6 +68,28 @@ void main() {
       expect(ids((await memory.streets()).values), ['roses']);
     });
 
+    test('should forget a street this phone purges at once', () async {
+      memory.receive({lilas.id: lilas, roses.id: roses}, const {});
+      final seen = <List<String>>[];
+      final subscription = memory
+          .observe(
+            (streets) => ids(streets.values),
+            (changed) => changed.contains(lilas.id),
+          )
+          .listen(seen.add);
+      await pumpEventQueue();
+
+      memory.remove(lilas.id);
+      await pumpEventQueue();
+      await subscription.cancel();
+
+      expect(ids((await memory.streets()).values), ['roses']);
+      expect(seen, [
+        ['lilas', 'roses'],
+        ['roses'],
+      ]);
+    });
+
     test('should throw what made the listener fail', () async {
       memory.fail(StateError('permission-denied'), StackTrace.current);
 

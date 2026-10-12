@@ -390,6 +390,28 @@ void main() {
       });
     });
 
+    test('should delete each purged number in an update of its own', () {
+      final street = valueOf(lilas.removeNumber(n('4'), by: paul, at: threePm))
+          .$1;
+      final (purged, change) = street.purgeNumbers(
+        now: threePm.add(const Duration(days: 31)),
+      )!;
+
+      final updates = streetUpdates(
+        purged,
+        change,
+        undoStamp: manuAtFour,
+        removal: removed,
+      );
+
+      // One house dropped per write: the security rules check the one
+      // house a write drops, not several.
+      expect(updates, [
+        {house('4'): removed},
+        {house('14ter'): removed},
+      ]);
+    });
+
     test('should move a renumbered house to its new key', () {
       final update = updateOf(
         lilas,

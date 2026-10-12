@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tournee_calendriers/presentation/corbeille/corbeille_purge.dart';
 import 'package:tournee_calendriers/presentation/launch/launch_place.dart';
 import 'package:tournee_calendriers/presentation/settings/settings_notifier.dart';
 import 'package:tournee_calendriers/presentation/settings/settings_state.dart';
@@ -62,6 +63,11 @@ final class _TourneeAppState extends ConsumerState<TourneeApp> {
 
   @override
   Widget build(BuildContext context) {
+    // The 30-day purge of the Corbeille, on the streets bound now and on
+    // those of each tournée opened later (PLAN §5.11). `ref.listen` starts
+    // it and keeps it alive without redrawing the app when it ends; there
+    // is nothing to show of it.
+    ref.listen(corbeillePurgeProvider, (_, _) {});
     // `select`: the app redraws when the theme changes, not when the name
     // does.
     final theme = ref.watch(settingsProvider.select((state) => state.theme));

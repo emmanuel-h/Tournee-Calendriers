@@ -28,7 +28,8 @@ rules_version = '2';
 // - Times (`at`, `requestedAt`…) are the phone's clock (PLAN §6.1): a mark
 //   made offline reaches the server hours later and keeps its time, so
 //   they are only required to be timestamps, never compared with
-//   `request.time`.
+//   `request.time` when written. The one comparison is the 30-day purge of
+//   the Corbeille, on a stored removal time (isPastRetention).
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -398,6 +399,15 @@ service cloud.firestore {
           && get(memberPath(tournee, house.deletedBy)).data.status == 'active');
     }
 
+    // The 30-day purge of the Corbeille (PLAN §5.11; `isPastRetention` in
+    // lib/domain/street/corbeille_retention.dart): a street or a number
+    // removed more than 30 days before the server's time may go for good.
+    // What was removed recently, or restored meanwhile, cannot.
+    function isPastRetention(item) {
+      return item.deletedAt is timestamp
+        && item.deletedAt < request.time - duration.value(30, 'd');
+    }
+
     // A new street (import from the BAN, PLAN §6.2): out of the Corbeille.
     // Its houses come in bulk: the rules cannot check them one by one.
     function isNewStreet(data) {
@@ -422,9 +432,10 @@ service cloud.firestore {
     }
 
     // What a write may do to the `houses` map: change one house in place,
-    // move one house to a new number, or add houses (« numéros en plus »).
-    // Restoring several numbers from the Corbeille is sent one write per
-    // number by the adapter, so each is checked.
+    // move one house to a new number, add houses (« numéros en plus »), or
+    // drop one house of the Corbeille past its 30 days (the purge).
+    // Restoring or purging several numbers is sent one write per number by
+    // the adapter, so each is checked.
     function isHousesChange(tournee, before, after) {
       let changes = after.diff(before);
       let changed = changes.changedKeys().size();
@@ -435,7 +446,9 @@ service cloud.firestore {
             after.values().removeAll(before.values())))
         || (changed == 0 && added == 1 && removed <= 1
           && isHouseAt(after.keys().removeAll(before.keys())[0], after, removed == 0))
-        || (changed == 0 && removed == 0 && added >= 2 && added <= 500);
+        || (changed == 0 && removed == 0 && added >= 2 && added <= 500)
+        || (changed == 0 && added == 0 && removed == 1
+          && isPastRetention(before[before.keys().removeAll(after.keys())[0]]));
     }
 
     // The rules cannot name the key that changed (a set has no index), so
@@ -525,9 +538,13 @@ service cloud.firestore {
           allow update: if isActiveMember(tournee)
             && year == string(get(tourneePath(tournee)).data.currentCampaign)
             && isStreetChange(tournee, resource.data, request.resource.data);
-          // Hard deletion only goes with the tournée; a street goes to the
-          // Corbeille by an update.
-          allow delete: if isCreator(tournee);
+          // A street goes to the Corbeille by an update. Hard deletion goes
+          // with the tournée (the creator), or is the 30-day purge, which
+          // any active member's app makes (no server, PLAN §5.11).
+          allow delete: if isCreator(tournee)
+            || (isActiveMember(tournee)
+              && year == string(get(tourneePath(tournee)).data.currentCampaign)
+              && isPastRetention(resource.data));
         }
       }
     }

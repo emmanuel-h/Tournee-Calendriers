@@ -11,6 +11,7 @@ import {
   getDoc,
   getDocs,
   setDoc,
+  Timestamp,
 } from 'firebase/firestore';
 import {
   buildingEntry,
@@ -715,5 +716,115 @@ describe('the street itself', () => {
   it('should let only the creator delete a street outright', async () => {
     await assertFails(deleteDoc(nationale(lea)));
     await assertSucceeds(deleteDoc(nationale(manu)));
+  });
+});
+
+describe('the 30-day purge of the Corbeille', () => {
+  const day = 24 * 60 * 60 * 1000;
+  const minute = 60 * 1000;
+
+  /** A time [ms] before now, as the emulator's clock reads it. */
+  const ago = (ms) => Timestamp.fromMillis(Date.now() - ms);
+
+  /** Rue Nationale with house 14 removed by Léa at [removedAt]. */
+  const seedRemoved = (removedAt) =>
+    seed(env, `${streetsPath}/nationale`, {
+      ...streetDoc(),
+      houses: {
+        ...streetDoc().houses,
+        14: houseEntry(14, { deletedAt: removedAt, deletedBy: lea }),
+      },
+    });
+
+  /** Rue Nationale in the Corbeille since [deletedAt], by Manu. */
+  const seedDeleted = (deletedAt, path = `${streetsPath}/nationale`) =>
+    seed(env, path, streetDoc({ deletedAt, deletedBy: manu }));
+
+  /** The purge of house 14 (NumbersPurged): its entry deleted. */
+  const dropFourteen = (uid = lea) =>
+    updateFields(nationale(uid), [[['houses', '14'], deleteField()]]);
+
+  it('should let a member drop a number removed 31 days ago', async () => {
+    await seedRemoved(ago(31 * day));
+    await assertSucceeds(dropFourteen());
+  });
+
+  it('should refuse to drop a number removed 29 days ago', async () => {
+    await seedRemoved(ago(29 * day));
+    await assertFails(dropFourteen());
+  });
+
+  it('should refuse a number just short of 30 days and accept it just past', async () => {
+    await seedRemoved(ago(30 * day - minute));
+    await assertFails(dropFourteen());
+    await seedRemoved(ago(30 * day + minute));
+    await assertSucceeds(dropFourteen());
+  });
+
+  it('should refuse to drop a number restored meanwhile', async () => {
+    await seedRemoved(null);
+    await assertFails(dropFourteen());
+  });
+
+  it('should refuse two numbers dropped in one write', async () => {
+    await seed(env, `${streetsPath}/nationale`, {
+      ...streetDoc(),
+      houses: {
+        ...streetDoc().houses,
+        14: houseEntry(14, { deletedAt: ago(40 * day), deletedBy: lea }),
+        '14ter': houseEntry(14, { sfx: 'ter', deletedAt: ago(40 * day), deletedBy: lea }),
+      },
+    });
+    await assertFails(
+      updateFields(nationale(), [
+        [['houses', '14'], deleteField()],
+        [['houses', '14ter'], deleteField()],
+      ]),
+    );
+  });
+
+  it('should refuse a number dropped with another change in the same write', async () => {
+    await seedRemoved(ago(31 * day));
+    await assertFails(
+      updateFields(nationale(), [
+        [['houses', '14'], deleteField()],
+        ...mark('4', 'NOBODY_HOME', null),
+      ]),
+    );
+  });
+
+  it('should refuse a pending member and someone outside the tournée', async () => {
+    await seedRemoved(ago(31 * day));
+    await assertFails(dropFourteen(paul));
+    await assertFails(dropFourteen(zoe));
+  });
+
+  it('should let a member remove a street deleted 31 days ago', async () => {
+    await seedDeleted(ago(31 * day));
+    await assertSucceeds(deleteDoc(nationale(lea)));
+  });
+
+  it('should refuse to remove a street deleted 29 days ago', async () => {
+    await seedDeleted(ago(29 * day));
+    await assertFails(deleteDoc(nationale(lea)));
+  });
+
+  it('should refuse a street just short of 30 days and accept it just past', async () => {
+    await seedDeleted(ago(30 * day - minute));
+    await assertFails(deleteDoc(nationale(lea)));
+    await seedDeleted(ago(30 * day + minute));
+    await assertSucceeds(deleteDoc(nationale(lea)));
+  });
+
+  it('should refuse to remove a street of the Corbeille for a pending member or an outsider', async () => {
+    await seedDeleted(ago(31 * day));
+    await assertFails(deleteDoc(nationale(paul)));
+    await assertFails(deleteDoc(nationale(zoe)));
+  });
+
+  it('should leave a previous campaign to the start of a new one', async () => {
+    const old = `${tourneePath}/campaigns/2025/streets/nationale`;
+    await seedDeleted(ago(40 * day), old);
+    await assertFails(deleteDoc(doc(phoneOf(env, lea), old)));
   });
 });

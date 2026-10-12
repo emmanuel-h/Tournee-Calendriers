@@ -268,6 +268,51 @@ void main() {
     });
   });
 
+  group('purge', () {
+    test('should forget the street on this phone at once', () async {
+      final streets = phone();
+      await streets.add(lilas);
+      await pumpEventQueue();
+
+      await streets.purge(lilas.id);
+
+      expect(await streets.find(lilas.id), isNull);
+    });
+
+    test('should delete the street document for the whole team', () async {
+      await phone().add(lilas);
+      await phone().add(_street('roses'));
+      await pumpEventQueue();
+
+      await phone().purge(lilas.id);
+      await pumpEventQueue();
+
+      expect((await db.doc('$streetsPath/lilas').get()).exists, isFalse);
+      expect((await db.doc('$streetsPath/roses').get()).exists, isTrue);
+      expect(await phone('paul').find(lilas.id), isNull);
+    });
+
+    test('should drop the purged numbers from the street document', () async {
+      final street = valueOf(
+        lilas.removeNumber(n('1'), by: MemberId('paul'), at: twoPm),
+      ).$1;
+      await phone().add(street);
+      await pumpEventQueue();
+      final streets = phone();
+      final (purged, change) = (await streets.find(lilas.id))!
+          .purgeNumbers(now: twoPm.add(const Duration(days: 31)))!;
+
+      await streets.save(purged, change);
+      await pumpEventQueue();
+
+      final data = (await db.doc('$streetsPath/lilas').get()).data()!;
+      expect((data['houses'] as Map<String, dynamic>).keys, ['2']);
+      final seen = (await phone('paul').find(lilas.id))!;
+      expect(seen.removedHouses, isEmpty);
+      expect(seen.houses.map((house) => house.number), [n('2')]);
+    });
+  });
+
   group('find', () {
     test('should find nothing in an empty campaign', () async {
       expect(await phone().find(lilas.id), isNull);

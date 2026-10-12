@@ -96,17 +96,34 @@ final class LocalStreetRepository implements StreetRepository {
     await _write(street);
   }
 
+  /// Removes the street from memory at once, then deletes its file after
+  /// the writes already asked (one of them may be this street's).
+  @override
+  Future<void> purge(StreetId id) async {
+    final streets = await _streets();
+    if (streets.remove(id) == null) return;
+    _written.add(id);
+    await _queue(() async {
+      final file = _fileOf(id);
+      // A street whose first write failed (a full disk) has no file.
+      if (file.existsSync()) await file.delete();
+    });
+  }
+
   /// Queues the write of [street]'s file after the writes already asked.
   Future<void> _write(Street street) {
     // The text is made now, so a later change cannot slip into this write.
     final text = jsonEncode(streetToJson(street));
-    final write = _lastWrite.then(
-      (_) => writeAtomically(_fileOf(street.id), text),
-    );
-    // A failed write must not block the ones after it; the caller still
-    // gets its error through `write`.
-    _lastWrite = write.then<void>((_) {}, onError: (Object _) {});
-    return write;
+    return _queue(() => writeAtomically(_fileOf(street.id), text));
+  }
+
+  /// Runs [task] on the disk once the tasks already queued are done.
+  Future<void> _queue(Future<void> Function() task) {
+    final run = _lastWrite.then((_) => task());
+    // A failed task must not block the ones after it; the caller still
+    // gets its error through `run`.
+    _lastWrite = run.then<void>((_) {}, onError: (Object _) {});
+    return run;
   }
 
   Future<Map<StreetId, Street>> _streets() => _loaded ??= _load();

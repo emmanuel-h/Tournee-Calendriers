@@ -93,6 +93,16 @@ final class FakeStreetRepository implements StreetRepository {
     _changed.add(null);
   }
 
+  /// Every street id given to [purge], in order.
+  final purged = <StreetId>[];
+
+  @override
+  Future<void> purge(StreetId id) async {
+    purged.add(id);
+    _streets.remove(id);
+    _changed.add(null);
+  }
+
   /// A stream that gives [read] now, then again after each write.
   Stream<T> _observe<T>(T Function() read) {
     late final StreamController<T> controller;

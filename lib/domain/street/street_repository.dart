@@ -59,4 +59,13 @@ abstract interface class StreetRepository {
   /// [change] names (`houses.12.status`), so two people marking different
   /// houses never overwrite each other (PLAN §6.2).
   Future<void> save(Street street, StreetChange change);
+
+  /// Removes the street [id] for good, with its houses and their marks: the
+  /// 30-day purge of the Corbeille (PLAN §5.11). Only for a street that
+  /// `Street.isPastRetention`; the security rules refuse any other.
+  ///
+  /// Memory first, as [add] and [save]: the street is gone from [find] and
+  /// the streams before the first wait. Nothing happens when there is no
+  /// such street (a teammate's phone purged it first).
+  Future<void> purge(StreetId id);
 }

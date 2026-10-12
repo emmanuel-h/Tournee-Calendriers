@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tournee_calendriers/presentation/corbeille/corbeille_purge.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/components/save_failed_alert.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
@@ -97,4 +98,27 @@ void main() {
       expect(find.text('Enregistrement impossible'), findsOneWidget);
     },
   );
+
+  testWidgets('should start the purge of the Corbeille when the app starts', (
+    tester,
+  ) async {
+    var started = 0;
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: [
+          ...emptyPhone(),
+          // What the purge does is tested with the provider; here, only
+          // that the app starts it, once.
+          corbeillePurgeProvider.overrideWith((ref) async {
+            started++;
+            return (streets: 0, numbers: 0);
+          }),
+        ],
+        child: const TourneeApp(),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(started, 1);
+  });
 }

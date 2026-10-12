@@ -986,8 +986,14 @@ Immeuble details fixed in T1.9 (`lib/presentation/building/`, `lib/ui/screens/bu
   the numbers removed from a deleted street come back in sight with it. A member no longer
   in the team reads « un membre ». « Restaurer » brings the item back at once for everyone,
   with its marks; nothing when empty but « La corbeille est vide. ». Works offline, with
-  whichever street storage is bound. Still to come: the 30-day purge (it needs a hard delete
-  the street port and the security rules do not offer yet).
+  whichever street storage is bound.
+- The 30-day purge (T2.6b) runs by itself, with nothing on screen, when the app starts and
+  each time a tournée is opened, on the streets bound (the tournée's, or the phone's own while
+  none is open): each street deleted more than 30 days ago goes for good, and each number
+  removed more than 30 days ago (counted from its own removal, the street deleted or not).
+  At 30 days exactly it is still kept. Offline, the phone's copy changes at once and the
+  deletes are sent later; the server refuses any that is not past 30 days by its own clock
+  (a teammate restored it meanwhile), and the item comes back.
 
 ---
 
@@ -1217,7 +1223,8 @@ Use cases and phone storage fixed in T1.6 (`lib/application/use_cases/`,
   `watchAll()` (not deleted) and `watchDeleted()` (the Corbeille's streets, T2.3) as `Stream`s
   that give the value now then after each change,
   `add(street)`, `save(street, change)` (each adapter writes what suits it: the whole street on
-  the phone, the change's fields in Firestore). Storage failures are exceptions, not failure
+  the phone, the change's fields in Firestore), `purge(id)` (T2.6b: the street removed for
+  good, memory first; the file deleted on the phone, the document in Firestore). Storage failures are exceptions, not failure
   values. Application ports: `Clock` (UTC), `IdGenerator` (ASCII letters and digits), and
   `IdentityProvider.currentMember`: in M1 a member id made once with `IdGenerator` and kept in a
   file; from M2 (T2.1) the uid of the phone's anonymous Firebase account
@@ -1406,6 +1413,17 @@ Onboarding fixed in T2.5 (`lib/application/use_cases/choose_start_point.dart`,
   street name (French order), street id, number. `ObserveCorbeille` combines `watchAll` and
   `watchDeleted` once both answered. « Restaurer » is `EditStreetNumbers` with `RestoreStreet`
   (new, `Street.restore`) or `RestoreNumber`.
+- **30-day purge** (T2.6b, `lib/domain/street/corbeille_retention.dart`,
+  `lib/application/use_cases/purge_corbeille.dart`): `corbeilleRetention` = 30 days and
+  `isPastRetention(removal, now)` (strictly more than 30 days). `Street.isPastRetention(now)`
+  (deleted, and past it) and `Street.purgeNumbers(now)` → `(Street, NumbersPurged)` or null
+  when none; `NumbersPurged(purged: [RemovedHouse])` frees the numbers, is `notUndoable`, and
+  is stored as one delete of `houses.<label>` per number. `PurgeCorbeille(streets, clock)`
+  reads `watchDeleted` and `watchAll` once, re-reads each street with `find`, `purge`s the
+  streets past 30 days and saves the `NumbersPurged` of the others; it returns
+  `(streets: n, numbers: n)`. `corbeillePurgeProvider` (presentation, `FutureProvider`, no
+  retries) runs it and is built again when another street storage is bound; `TourneeApp`
+  listens to it, which starts it.
 - **Presentation:** `teamProvider` (kept alive, follows `currentTourneeProvider`):
   `NoTeam` | `TeamLoading` | `TeamUnavailable` | `TeamShown` (number, centre, campaign, code,
   `qrData`, `iAmCreator`, `RequestRow`s, `MemberRow`s with `isMe`, `isCreator`, `canRemove`;
@@ -1608,6 +1626,8 @@ writes:
 | street renamed, deleted, restored | `name`; `deletedAt`, `deletedBy` (top level) |
 | undo of a house (`HouseReverted`) | as a layout change, or `houses.<old>` deleted and `houses.<n>` whole when it renumbers back; `by` / `at` = who undoes, now |
 | undo of a door (`DwellingReverted`) | `dwellings.<key>` whole, `by` / `at` = who undoes, now |
+| 30-day purge of numbers (`NumbersPurged`, T2.6b) | each `houses.<n>` deleted, in an update of its own |
+| 30-day purge of a street (`StreetRepository.purge`, T2.6b) | the street document deleted |
 
 A building is never written as one map that would replace the doors: two writes crossing (a
 door marked while a teammate lays the building out again) leave at most a door entry the
@@ -1788,7 +1808,10 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
 - **Times** are only required to be timestamps, never compared with `request.time`: the
   phone's clock stamps a mark made offline hours before it reaches the server, and a phone
   whose clock is ahead would see its marks refused and silently taken back, while a forged
-  time harms nothing (it is shown, never used to order writes).
+  time harms nothing (it is shown, never used to order writes). The one exception is the
+  30-day purge (T2.6b), which compares a **stored** `deletedAt` with `request.time`; so a
+  member who writes a removal time forged 30 days back can purge it at once (open point,
+  see the T2.6b report).
 - **Creating a tournée** is accepted only whole: the tournée checks with `getAfter` that the
   same transaction writes its reservation (create-only, so number + station stay unique), its
   code (create-only, so no one replaces another tournée's preview; the preview must repeat
@@ -1805,8 +1828,12 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
   one deleted in the same transaction. **Deleting** (creator): the contents first (campaigns,
   streets, other members), then one batch where the tournée goes only with its code, its
   reservation and the creator's member document. Previous campaigns are read-only (streets
-  are written only in `currentCampaign`); the creator alone deletes streets and campaigns
-  outright, which only the deletion does.
+  are written only in `currentCampaign`); the creator alone deletes campaigns outright, and
+  streets outright, which only the deletion does, except the 30-day purge below.
+- **30-day purge** (T2.6b): any active member deletes a street of the current campaign whose
+  `deletedAt` is more than 30 days before `request.time`, and drops one house of the
+  `houses` map per write whose `deletedAt` is too (nothing else changing in that write).
+  A street or a number removed 30 days ago or less, or restored, cannot be purged.
 - **Streets.** The rules language has no loops, and cannot name the key a write changed (a set
   has no index): the house or door is found by value (`values().removeAll(…)`: the one entry
   that is new; each holds its own number or stamp). So a write may:
@@ -1819,8 +1846,9 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
   - **add houses** (« numéros en plus »): one new house is checked whole (unmarked, not a
     building, under its label); several are only counted (≤ 500);
   - change the street's `name` or its deletion (`deletedBy` = caller), never its commune or BAN
-    id.
-  Anything else (two houses changed at once, a house deleted outright, a mark landing on a
+    id;
+  - **drop one house** of the Corbeille removed more than 30 days ago (the purge).
+  Anything else (two houses changed at once, a house deleted outright before its 30 days in the Corbeille, a mark landing on a
   number or a door that is no longer there) is refused. **What the rules cannot check one by
   one** — the houses of a new street and of several numbers added at once, and the doors and
   layout of a building written whole — are only counted (doors ≤ 500, layout rows ≤ 26 × 51);

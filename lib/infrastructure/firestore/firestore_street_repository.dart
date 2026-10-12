@@ -130,6 +130,16 @@ final class FirestoreStreetRepository implements StreetRepository, PendingSync {
     }
   }
 
+  /// Deletes the street's document, memory first. The security rules
+  /// accept it only when its `deletedAt` is more than 30 days before the
+  /// server's time; refused (a teammate restored it meanwhile), Firestore
+  /// puts it back on this phone at the next snapshot.
+  @override
+  Future<void> purge(StreetId id) async {
+    _ready.remove(id);
+    sendInBackground('purge ${id.value}', _streets.doc(id.value).delete());
+  }
+
   /// Stops listening: the composition root calls it when the tournée or
   /// the campaign changes.
   Future<void> close() async {
