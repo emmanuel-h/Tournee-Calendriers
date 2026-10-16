@@ -898,8 +898,8 @@
       "date": { "type": "DateTime", "format": "yMMMd", "example": "16 oct. 2026" }
     }
   },
-  "release100First": "Première version.",
-  "@release100First": { "description": "« Nouveautés », version 1.0.0: what it brings, one short line for the members." },
+  "release010First": "Première version de test.",
+  "@release010First": { "description": "« Nouveautés », version 0.1.0: what it brings, one short line for the members." },
   "settingsCredits": "Carte © contributeurs OpenStreetMap, OpenFreeMap. Adresses : Base Adresse Nationale.",
   "@settingsCredits": { "description": "Attribution of the map and address data at the bottom of Paramètres (PLAN §8.3)." },
   "settingsRowSemantics": "{label}, {value}",

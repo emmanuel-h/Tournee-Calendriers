@@ -1551,11 +1551,11 @@ abstract class AppLocalizations {
   /// **'{version} · {date}'**
   String changelogHeading(String version, DateTime date);
 
-  /// « Nouveautés », version 1.0.0: what it brings, one short line for the members.
+  /// « Nouveautés », version 0.1.0: what it brings, one short line for the members.
   ///
   /// In fr, this message translates to:
-  /// **'Première version.'**
-  String get release100First;
+  /// **'Première version de test.'**
+  String get release010First;
 
   /// Attribution of the map and address data at the bottom of Paramètres (PLAN §8.3).
   ///

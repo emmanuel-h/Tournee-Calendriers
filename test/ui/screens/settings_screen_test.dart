@@ -65,7 +65,7 @@ void main() {
     expect(find.bySemanticsLabel('Confidentialité'), findsOneWidget);
     // The version of pubspec.yaml, which `flutter test` gives too.
     expect(
-      find.bySemanticsLabel('Version 1.0.0, voir les nouveautés'),
+      find.bySemanticsLabel('Version 0.1.0, voir les nouveautés'),
       findsOneWidget,
     );
     expect(
@@ -223,7 +223,7 @@ void main() {
     await tester.tap(find.byKey(const Key('settings.version')));
     await tester.pumpAndSettle();
 
-    expect(find.bySemanticsLabel('1.0.0 · 16 oct. 2026'), findsOneWidget);
-    expect(find.bySemanticsLabel('Première version.'), findsOneWidget);
+    expect(find.bySemanticsLabel('0.1.0 · 16 oct. 2026'), findsOneWidget);
+    expect(find.bySemanticsLabel('Première version de test.'), findsOneWidget);
   });
 }

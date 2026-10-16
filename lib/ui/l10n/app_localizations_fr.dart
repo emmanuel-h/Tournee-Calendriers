@@ -1050,7 +1050,7 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get release100First => 'Première version.';
+  String get release010First => 'Première version de test.';
 
   @override
   String get settingsCredits =>

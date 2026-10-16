@@ -15,7 +15,7 @@ final class Release {
     required this.notes,
   });
 
-  /// As in `pubspec.yaml`: « 1.0.0 ».
+  /// As in `pubspec.yaml`: « 0.1.0 ».
   final String version;
 
   /// The day the version came out; only the day counts.
@@ -30,9 +30,9 @@ final class Release {
 /// day it is published, and its lines to `app_fr.arb`.
 final shippedReleases = [
   Release(
-    version: '1.0.0',
+    version: '0.1.0',
     date: DateTime(2026, 10, 16),
-    notes: (l10n) => [l10n.release100First],
+    notes: (l10n) => [l10n.release010First],
   ),
 ];
 

@@ -111,6 +111,14 @@ sed -i "s/^version:.*/version: ${NEW_NAME}+${NEW_CODE}/" pubspec.yaml
 grep '^version' pubspec.yaml
 ```
 
+Then the in-app « Nouveautés » (PLAN §5.9), which ships inside the app: add the version at
+the top of `shippedReleases` in `lib/ui/screens/settings/changelog.dart`, with today's
+date, and its lines to `lib/ui/l10n/app_fr.arb` as `release<digits>…` keys (e.g.
+`release020Map`), the same French lines as the Play notes of Step 10 (write those first).
+Run `flutter gen-l10n`, fix the tests that name the version
+(`test/ui/screens/settings_screen_test.dart`), then `flutter analyze`, `flutter test`
+and the coverage gate.
+
 ## Step 7 — Build and check the bundle
 
 ```bash
