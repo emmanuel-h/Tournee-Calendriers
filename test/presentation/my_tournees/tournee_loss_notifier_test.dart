@@ -1,6 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
+import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
+import 'package:tournee_calendriers/domain/tournee/member.dart';
 import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_change.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_loss.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
@@ -11,7 +15,10 @@ import '../../domain/tournee/my_tournees_fixtures.dart';
 import '../../domain/tournee/tournee_fixtures.dart';
 import '../../support/fakes/fake_member_account.dart';
 import '../../support/fakes/fake_my_tournees_store.dart';
+import '../../support/fakes/fake_phone_settings.dart';
+import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_tournee_directory.dart';
+import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/results.dart';
 
 /// The 49 (open), the 12 and the pending 7.
@@ -23,10 +30,39 @@ MyTournees _manusPhone() => valueOf(
       .open(tournee49.id),
 );
 
+/// The 7, created by Léa, where Manu was accepted as « Manu ».
+Tournee _tournee7Team() => valueOf(
+  Tournee.create(
+    id: tournee7.id,
+    number: tournee7.number,
+    centre: csVillefranche,
+    joinCode: codeOf('ABCDEF'),
+    createdBy: leaId,
+    createdAt: createdAt,
+    currentCampaign: campaign2026,
+    members: [
+      Member(
+        id: leaId,
+        name: nameOf('Léa'),
+        requestedAt: createdAt,
+        acceptance: ChangeStamp(by: leaId, at: createdAt),
+      ),
+      Member(
+        id: manuId,
+        name: nameOf('Manu'),
+        requestedAt: leaAskedAt,
+        acceptance: ChangeStamp(by: leaId, at: leaAcceptedAt),
+      ),
+    ],
+  ),
+);
+
 void main() {
   late FakeMyTourneesStore store;
   late FakeTourneeDirectory directory;
   late FakeMemberAccount account;
+  late FakePhoneSettings settings;
+  late FakeTourneeRepository tournees;
 
   /// The phone keeps [mine]; it signed in before unless [withAccount] says
   /// otherwise.
@@ -37,11 +73,17 @@ void main() {
     store = FakeMyTourneesStore(mine);
     directory = FakeTourneeDirectory();
     account = withAccount ?? FakeMemberAccount(signedInMember: manuId);
+    // Renamed « Emmanuel » in Paramètres.
+    settings = FakePhoneSettings(memberName: nameOf('Emmanuel'));
+    tournees = FakeTourneeRepository([team(), _tournee7Team()]);
     final container = ProviderContainer(
       overrides: [
         myTourneesStoreProvider.overrideWithValue(store),
         tourneeDirectoryProvider.overrideWithValue(directory),
         memberAccountProvider.overrideWithValue(account),
+        phoneSettingsProvider.overrideWithValue(settings),
+        tourneeRepositoryProvider.overrideWithValue(tournees),
+        identityProvider.overrideWithValue(FakeIdentity(manuId)),
       ],
     );
     addTearDown(container.dispose);
@@ -160,6 +202,106 @@ void main() {
     await store.save(valueOf(_manusPhone().open(tournee12.id)));
 
     expect(directory.memberships, hasLength(2));
+  });
+
+  group('the member\'s name', () {
+    test('should listen to the name the server holds in each tournée the '
+        'member is in, and not in their requests', () {
+      final container = containerWith(_manusPhone());
+
+      container.read(tourneeLossProvider);
+
+      expect(directory.ownNames, [
+        (tournee49.id, manuId),
+        (tournee12.id, manuId),
+      ]);
+    });
+
+    test('should send the new name to a tournée once the request made '
+        'before the rename is accepted', () async {
+      final container = containerWith(MyTournees.none.remember(tournee7));
+      container.read(tourneeLossProvider);
+      await store.save(MyTournees.none.remember(tournee7.accepted()));
+
+      directory.hearName(tournee7.id, nameOf('Manu'));
+      await pumpEventQueue();
+
+      final renamed = Member(
+        id: manuId,
+        name: nameOf('Emmanuel'),
+        requestedAt: leaAskedAt,
+        acceptance: ChangeStamp(by: leaId, at: leaAcceptedAt),
+      );
+      expect(
+        tournees.saved.single.$2,
+        MemberRenamed(tourneeId: tournee7.id, member: renamed),
+      );
+      expect(tournees[tournee7.id]!.memberOf(manuId), renamed);
+      expect(container.read(tourneeLossProvider), isNull);
+    });
+
+    test('should send nothing while the server holds the phone\'s '
+        'name', () async {
+      final container = containerWith(_manusPhone());
+      container.read(tourneeLossProvider);
+
+      directory.hearName(tournee49.id, nameOf('Emmanuel'));
+      await pumpEventQueue();
+
+      expect(tournees.saved, isEmpty);
+    });
+
+    test('should send nothing when the listener of the name fails', () async {
+      final container = containerWith(_manusPhone());
+      container.read(tourneeLossProvider);
+
+      directory.failOwnName(tournee49.id);
+      await pumpEventQueue();
+
+      expect(tournees.saved, isEmpty);
+      expect(container.read(tourneeLossProvider), isNull);
+      expect(directory.isHearingName(tournee49.id), isTrue);
+    });
+
+    test('should stop listening to the name in a tournée lost', () async {
+      final container = containerWith(_manusPhone());
+      container.read(tourneeLossProvider);
+
+      directory.lose(tournee49.id, TourneeLoss.removed);
+      await pumpEventQueue();
+
+      expect(directory.isHearingName(tournee49.id), isFalse);
+      expect(directory.isHearingName(tournee12.id), isTrue);
+    });
+
+    test('should listen to the name once a sign-in succeeds after '
+        'launch', () async {
+      final container = containerWith(
+        _manusPhone(),
+        withAccount: FakeMemberAccount(nextMember: manuId),
+      );
+      container.read(tourneeLossProvider);
+      expect(directory.ownNames, isEmpty);
+
+      await account.signInIfNeeded();
+      await pumpEventQueue();
+
+      expect(directory.ownNames, [
+        (tournee49.id, manuId),
+        (tournee12.id, manuId),
+      ]);
+      expect(directory.isHearingName(tournee49.id), isTrue);
+    });
+
+    test('should stop listening to the name when the app goes away', () {
+      final container = containerWith(_manusPhone());
+      container.read(tourneeLossProvider);
+
+      container.dispose();
+
+      expect(directory.isHearingName(tournee49.id), isFalse);
+      expect(directory.isHearingName(tournee12.id), isFalse);
+    });
   });
 
   group('on a phone that never signed in', () {

@@ -385,6 +385,15 @@ void main() {
       expect(tourneeDirectory.memberships, [(tournee49, MemberId('uid-kept'))]);
     });
 
+    test('should watch the own name in the bound directory as the bound '
+        'account', () {
+      account.signedInMember = MemberId('uid-kept');
+
+      container.read(watchOwnNameProvider)(tournee49.id);
+
+      expect(tourneeDirectory.ownNames, [(tournee49.id, MemberId('uid-kept'))]);
+    });
+
     test('should forget a lost tournée in the bound store', () async {
       await container.read(forgetLostTourneeProvider)(
         tournee49.id,
@@ -404,6 +413,13 @@ void main() {
 
       expect(settings.names, [nameOf('Emmanuel')]);
       expect(tournees[tourneeId]!.creator.name, nameOf('Emmanuel'));
+    });
+
+    test('should catch up the name of the bound settings in the bound '
+        'tournées, as the bound member', () async {
+      await asManu().read(catchUpMemberNameProvider)(tourneeId, nameOf('Manu'));
+
+      expect(tournees[tourneeId]!.creator.name, nameOf('Léa'));
     });
 
     test('should choose the theme in the bound settings', () async {

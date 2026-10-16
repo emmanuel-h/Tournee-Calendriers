@@ -275,6 +275,77 @@ void main() {
     );
   });
 
+  group('own name snapshot', () {
+    final activeData = <String, dynamic>{
+      ...memberToDocument(lea),
+      'displayName': '  Léa   Marie ',
+    };
+    final pendingData = <String, dynamic>{
+      ...joinRequestDocument(julie, firstCode),
+    };
+
+    test('should give the cleaned name of an active member the server '
+        'holds', () {
+      expect(
+        confirmedNamesIn(
+          'uid-lea',
+          activeData,
+          fromCache: false,
+          hasPendingWrites: false,
+        ),
+        [nameOf('Léa Marie')],
+      );
+    });
+
+    test('should give nothing from the phone\'s copy (offline)', () {
+      expect(
+        confirmedNamesIn(
+          'uid-lea',
+          activeData,
+          fromCache: true,
+          hasPendingWrites: false,
+        ),
+        isEmpty,
+      );
+    });
+
+    test('should give nothing while this phone\'s own write is not sent', () {
+      expect(
+        confirmedNamesIn(
+          'uid-lea',
+          activeData,
+          fromCache: false,
+          hasPendingWrites: true,
+        ),
+        isEmpty,
+      );
+    });
+
+    test('should give nothing while the request waits', () {
+      expect(
+        confirmedNamesIn(
+          'uid-julie',
+          pendingData,
+          fromCache: false,
+          hasPendingWrites: false,
+        ),
+        isEmpty,
+      );
+    });
+
+    test('should give nothing once the document is gone', () {
+      expect(
+        confirmedNamesIn(
+          'uid-lea',
+          null,
+          fromCache: false,
+          hasPendingWrites: false,
+        ),
+        isEmpty,
+      );
+    });
+  });
+
   group('membership snapshot', () {
     test('should tell the member is gone when the server has no document', () {
       expect(

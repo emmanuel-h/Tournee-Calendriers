@@ -3,7 +3,8 @@
 // request ([answer]), says which codes show a tournée ([previews]), which
 // numbers are taken ([taken]) and which centres are known ([centres]), or
 // cuts the network ([offline]). It records the requests sent and cancelled.
-// It also plays the server telling a member they lost a tournée ([lose]).
+// It also plays the server telling a member they lost a tournée ([lose])
+// and the name it holds for them in a tournée ([hearName]).
 import 'dart:async';
 
 import 'package:tournee_calendriers/application/ports/tournee_directory.dart';
@@ -11,6 +12,7 @@ import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/tournee/join_code.dart';
 import 'package:tournee_calendriers/domain/tournee/member.dart';
+import 'package:tournee_calendriers/domain/tournee/member_name.dart';
 import 'package:tournee_calendriers/domain/tournee/rescue_centre.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_loss.dart';
@@ -95,6 +97,30 @@ final class FakeTourneeDirectory implements TourneeDirectory {
   Stream<TourneeLoss> watchMembership(TourneeSummary tournee, MemberId member) {
     memberships.add((tournee, member));
     return _loss(tournee.id).stream;
+  }
+
+  /// Every (tournée, member) whose own name was watched, in order.
+  final ownNames = <(TourneeId, MemberId)>[];
+
+  final _names = <TourneeId, StreamController<MemberName>>{};
+
+  StreamController<MemberName> _name(TourneeId tournee) =>
+      _names.putIfAbsent(tournee, StreamController.broadcast);
+
+  /// The server tells the member's name in [tournee] is [name].
+  void hearName(TourneeId tournee, MemberName name) => _name(tournee).add(name);
+
+  /// The listener of the member's name in [tournee] fails (a server error).
+  void failOwnName(TourneeId tournee) =>
+      _name(tournee).addError(StateError('listener failed'));
+
+  /// Whether someone still listens to the member's name in [tournee].
+  bool isHearingName(TourneeId tournee) => _name(tournee).hasListener;
+
+  @override
+  Stream<MemberName> watchOwnName(TourneeId tournee, MemberId member) {
+    ownNames.add((tournee, member));
+    return _name(tournee).stream;
   }
 
   @override

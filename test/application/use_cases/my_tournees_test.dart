@@ -169,6 +169,50 @@ void main() {
     });
   });
 
+  group('WatchOwnName', () {
+    test('should follow the name the server holds for the signed-in '
+        'member', () async {
+      final directory = FakeTourneeDirectory();
+      final watch = WatchOwnName(
+        directory,
+        FakeMemberAccount(signedInMember: manuId),
+      );
+
+      final heard = watch(tournee12.id).take(2).toList();
+      directory
+        ..hearName(tournee12.id, nameOf('Manu'))
+        ..hearName(tournee12.id, nameOf('Emmanuel'));
+
+      expect(await heard, [nameOf('Manu'), nameOf('Emmanuel')]);
+      expect(directory.ownNames, [(tournee12.id, manuId)]);
+    });
+
+    test('should tell a name heard again only once, so a rename the server '
+        'refused is not sent over and over', () async {
+      final directory = FakeTourneeDirectory();
+      final watch = WatchOwnName(
+        directory,
+        FakeMemberAccount(signedInMember: manuId),
+      );
+
+      final heard = watch(tournee12.id).take(2).toList();
+      directory
+        ..hearName(tournee12.id, nameOf('Manu'))
+        ..hearName(tournee12.id, nameOf('Manu'))
+        ..hearName(tournee12.id, nameOf('Emmanuel'));
+
+      expect(await heard, [nameOf('Manu'), nameOf('Emmanuel')]);
+    });
+
+    test('should follow nothing when the phone never signed in', () async {
+      final directory = FakeTourneeDirectory();
+      final watch = WatchOwnName(directory, FakeMemberAccount());
+
+      expect(await watch(tournee12.id).isEmpty, isTrue);
+      expect(directory.ownNames, isEmpty);
+    });
+  });
+
   group('ForgetLostTournee', () {
     test('should forget the open tournée lost, none open any more, and say '
         'which it was', () async {

@@ -200,6 +200,82 @@ void main() {
     });
   });
 
+  group('CatchUpMemberName', () {
+    late FakePhoneSettings settings;
+    late FakeTourneeRepository tournees;
+
+    setUp(() {
+      settings = FakePhoneSettings(memberName: nameOf('Emmanuel'));
+      tournees = FakeTourneeRepository([tournee12Team()]);
+    });
+
+    CatchUpMemberName catchUp() =>
+        CatchUpMemberName(settings, tournees, FakeIdentity(manuId));
+
+    test('should send the phone\'s name to a tournée where the team sees '
+        'another one', () async {
+      // Renamed while the request to the 12 waited: the 12 still has
+      // « Manu ».
+      await catchUp()(TourneeId('t12'), nameOf('Manu'));
+
+      final in12 = Member(
+        id: manuId,
+        name: nameOf('Emmanuel'),
+        requestedAt: leaAskedAt,
+        acceptance: ChangeStamp(by: leaId, at: leaAcceptedAt),
+      );
+      expect(
+        tournees.saved.single.$2,
+        MemberRenamed(tourneeId: TourneeId('t12'), member: in12),
+      );
+      expect(tournees[TourneeId('t12')]!.memberOf(manuId), in12);
+    });
+
+    test('should send nothing when the team sees the phone\'s name', () async {
+      await catchUp()(TourneeId('t12'), nameOf('Emmanuel'));
+
+      expect(tournees.saved, isEmpty);
+    });
+
+    test('should send nothing when the phone keeps no name', () async {
+      settings = FakePhoneSettings();
+
+      await catchUp()(TourneeId('t12'), nameOf('Manu'));
+
+      expect(tournees.saved, isEmpty);
+    });
+
+    test('should skip a tournée that cannot be read', () async {
+      tournees.lose(TourneeId('t12'));
+
+      await catchUp()(TourneeId('t12'), nameOf('Manu'));
+
+      expect(tournees.saved, isEmpty);
+    });
+
+    test('should skip a tournée that refuses the rename', () async {
+      // Removed from the 12 meanwhile.
+      tournees.put(
+        valueOf(
+          Tournee.create(
+            id: TourneeId('t12'),
+            number: tournee12.number,
+            centre: csVillefranche,
+            joinCode: codeOf('ABCDEF'),
+            createdBy: leaId,
+            createdAt: createdAt,
+            currentCampaign: campaign2026,
+            members: [tournee12Team().creator],
+          ),
+        ),
+      );
+
+      await catchUp()(TourneeId('t12'), nameOf('Manu'));
+
+      expect(tournees.saved, isEmpty);
+    });
+  });
+
   group('ChooseTheme', () {
     test('should keep the theme chosen', () async {
       final settings = FakePhoneSettings();

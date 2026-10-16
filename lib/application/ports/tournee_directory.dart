@@ -3,6 +3,7 @@ import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/tournee/campaign_year.dart';
 import 'package:tournee_calendriers/domain/tournee/join_code.dart';
 import 'package:tournee_calendriers/domain/tournee/member.dart';
+import 'package:tournee_calendriers/domain/tournee/member_name.dart';
 import 'package:tournee_calendriers/domain/tournee/rescue_centre.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_loss.dart';
@@ -121,6 +122,16 @@ abstract interface class TourneeDirectory {
   /// change made on this phone (leaving, deleting), which the use cases
   /// settle themselves. Emits nothing while the member is in.
   Stream<TourneeLoss> watchMembership(TourneeSummary tournee, MemberId member);
+
+  /// The first name the server holds for [member] in [tournee], now and
+  /// after each change, while they are active in it (PLAN §5.9): what
+  /// Équipe shows the team. Cleaned as `MemberName` cleans it.
+  ///
+  /// Only the server's answer counts: nothing is told offline, while the
+  /// request still waits, or while a rename made on this phone is not yet
+  /// sent. Lets the phone send its current name where the team still
+  /// sees another one.
+  Stream<MemberName> watchOwnName(TourneeId tournee, MemberId member);
 
   /// Whether a tournée [number] already exists in [centre] (the same
   /// station, however written: `RescueCentre.isSameStationAs`), asked

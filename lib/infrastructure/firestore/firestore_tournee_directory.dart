@@ -8,6 +8,7 @@ import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/tournee/join_code.dart';
 import 'package:tournee_calendriers/domain/tournee/member.dart';
+import 'package:tournee_calendriers/domain/tournee/member_name.dart';
 import 'package:tournee_calendriers/domain/tournee/rescue_centre.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_loss.dart';
@@ -126,6 +127,20 @@ final class FirestoreTourneeDirectory implements TourneeDirectory {
             .get(_server);
         return lossFromReservation(tournee.id, reservation.data());
       });
+
+  /// Follows the member's own document, as [watchMembership] does, for
+  /// the name the server holds (`confirmedNamesIn`). `expand`: a snapshot
+  /// gives one name or none.
+  @override
+  Stream<MemberName> watchOwnName(TourneeId tournee, MemberId member) =>
+      _member(tournee, member).snapshots().expand(
+        (doc) => confirmedNamesIn(
+          doc.id,
+          doc.data(),
+          fromCache: doc.metadata.isFromCache,
+          hasPendingWrites: doc.metadata.hasPendingWrites,
+        ),
+      );
 
   @override
   Future<Result<bool, DirectoryFailure>> isTaken(

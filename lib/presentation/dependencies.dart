@@ -223,6 +223,12 @@ final watchMembershipProvider = Provider(
     ref.watch(memberAccountProvider),
   ),
 );
+final watchOwnNameProvider = Provider(
+  (ref) => WatchOwnName(
+    ref.watch(tourneeDirectoryProvider),
+    ref.watch(memberAccountProvider),
+  ),
+);
 final forgetLostTourneeProvider = Provider(
   (ref) => ForgetLostTournee(ref.watch(myTourneesStoreProvider)),
 );
@@ -235,6 +241,13 @@ final changeMemberNameProvider = Provider(
     ref.watch(tourneeRepositoryProvider),
     ref.watch(identityProvider),
     ref.watch(myTourneesStoreProvider),
+  ),
+);
+final catchUpMemberNameProvider = Provider(
+  (ref) => CatchUpMemberName(
+    ref.watch(phoneSettingsProvider),
+    ref.watch(tourneeRepositoryProvider),
+    ref.watch(identityProvider),
   ),
 );
 final chooseThemeProvider = Provider(

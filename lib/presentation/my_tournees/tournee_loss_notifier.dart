@@ -23,12 +23,21 @@ final tourneeLossProvider =
 /// Null until a tournée is lost. Offline the server says nothing, so no
 /// tournée is ever forgotten without the network (PLAN §7).
 ///
+/// While it follows a tournée it also listens to the member's first name
+/// the server holds there, and sends the phone's own when they differ
+/// (`CatchUpMemberName`, PLAN §5.9): a name changed while the request
+/// waited, or while the tournée could not be read offline, reaches the
+/// team as soon as the server is heard. This changes nothing in [state].
+///
 /// A phone that never signed in has no member to follow the tournées as:
 /// it follows nothing until a sign-in succeeds, then starts again from the
 /// tournées the phone keeps then.
 final class TourneeLossNotifier extends Notifier<TourneeLossNotice?> {
-  /// The listener of each tournée the member is in, by tournée.
-  final _memberships = <TourneeId, StreamSubscription<TourneeLoss>>{};
+  /// The listeners of each tournée the member is in, by tournée: its
+  /// membership and the member's name there. `Object?`: a subscription to
+  /// a stream of anything, so both fit in one list (`StreamSubscription`
+  /// is covariant in its type, like every Dart generic).
+  final _memberships = <TourneeId, List<StreamSubscription<Object?>>>{};
 
   @override
   TourneeLossNotice? build() {
@@ -59,10 +68,14 @@ final class TourneeLossNotifier extends Notifier<TourneeLossNotice?> {
   }
 
   void _stopAll() {
-    for (final membership in _memberships.values) {
-      unawaited(membership.cancel());
-    }
+    _memberships.values.forEach(_cancel);
     _memberships.clear();
+  }
+
+  void _cancel(List<StreamSubscription<Object?>> listeners) {
+    for (final listener in listeners) {
+      unawaited(listener.cancel());
+    }
   }
 
   /// Listens once to each tournée of [mine] the member is in (a request
@@ -74,19 +87,31 @@ final class TourneeLossNotifier extends Notifier<TourneeLossNotice?> {
         if (!tournee.isPending) tournee.id: tournee,
     };
     for (final id in _memberships.keys.toList()) {
-      if (!kept.containsKey(id)) unawaited(_memberships.remove(id)!.cancel());
+      if (!kept.containsKey(id)) _cancel(_memberships.remove(id)!);
     }
     for (final MapEntry(key: id, value: tournee) in kept.entries) {
       _memberships.putIfAbsent(
         id,
-        () => ref
-            .read(watchMembershipProvider)(tournee)
-            .listen(
-              (loss) => unawaited(_forget(id, loss)),
-              // A listener that fails (a server error) keeps the tournée:
-              // only the server's answer may make the phone forget it.
-              onError: (Object _) {},
-            ),
+        () => [
+          ref
+              .read(watchMembershipProvider)(tournee)
+              .listen(
+                (loss) => unawaited(_forget(id, loss)),
+                // A listener that fails (a server error) keeps the
+                // tournée: only the server's answer may make the phone
+                // forget it.
+                onError: (Object _) {},
+              ),
+          ref
+              .read(watchOwnNameProvider)(id)
+              .listen(
+                (heard) =>
+                    unawaited(ref.read(catchUpMemberNameProvider)(id, heard)),
+                // A listener that fails sends nothing: the name catches up
+                // at the next launch or sign-in.
+                onError: (Object _) {},
+              ),
+        ],
       );
     }
   }

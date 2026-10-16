@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mock_exceptions/mock_exceptions.dart';
 import 'package:tournee_calendriers/application/ports/tournee_directory.dart';
 import 'package:tournee_calendriers/domain/tournee/member.dart';
+import 'package:tournee_calendriers/domain/tournee/member_name.dart';
 import 'package:tournee_calendriers/domain/tournee/rescue_centre.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_loss.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_number.dart';
@@ -220,6 +221,46 @@ void main() {
       await subscription.cancel();
 
       expect(errors.single, isA<FirebaseException>());
+    });
+  });
+
+  group('own name', () {
+    Future<List<MemberName>> namesWhile(Future<void> Function() change) async {
+      final seen = <MemberName>[];
+      final subscription = directory
+          .watchOwnName(tourneeId, julieId)
+          .listen(seen.add);
+      await pumpEventQueue();
+      await change();
+      await pumpEventQueue();
+      await subscription.cancel();
+      return seen;
+    }
+
+    test('should tell the name once the request is accepted, then each '
+        'new one', () async {
+      await directory.requestToJoin(preview, julie);
+      await pumpEventQueue();
+
+      final seen = await namesWhile(() async {
+        await db.doc('tournees/t49/members/uid-julie').update({
+          'status': 'active',
+          'acceptedBy': 'uid-manu',
+          'acceptedAt': Timestamp.fromDate(leaAcceptedAt),
+        });
+        await pumpEventQueue();
+        await db.doc('tournees/t49/members/uid-julie').update({
+          'displayName': 'Juliette',
+        });
+      });
+
+      expect(seen, [nameOf('Julie'), nameOf('Juliette')]);
+    });
+
+    test('should tell nothing while there is no member document', () async {
+      final seen = await namesWhile(() async {});
+
+      expect(seen, isEmpty);
     });
   });
 

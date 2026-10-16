@@ -163,6 +163,27 @@ List<MemberStatus?> requestStatusesIn(
   null => const [null],
 };
 
+/// The name one snapshot of the member's own document `members/[uid]`
+/// holds on the server, once they are active in the tournée, cleaned as
+/// `MemberName` cleans it; nothing otherwise. A list rather than a
+/// nullable name, as [requestStatusesIn].
+///
+/// Only the server's word counts: the phone's copy ([fromCache]) may be
+/// stale, and a snapshot carrying this phone's own write not yet sent
+/// ([hasPendingWrites]) shows what the phone asked, not what the team
+/// sees. A pending request has no name to catch up (PLAN §8.2), nor has
+/// a document that is gone ([data] null).
+List<MemberName> confirmedNamesIn(
+  String uid,
+  Map<String, Object?>? data, {
+  required bool fromCache,
+  required bool hasPendingWrites,
+}) {
+  if (data == null || fromCache || hasPendingWrites) return const [];
+  final member = memberFromDocument(uid, data);
+  return member.isActive ? [member.name] : const [];
+}
+
 /// Whether a snapshot of the member's own document says they are no
 /// longer in the tournée: only the server's word, without the document,
 /// counts. The phone's copy without it ([fromCache]: offline, or never

@@ -3,6 +3,7 @@ import 'package:tournee_calendriers/application/ports/my_tournees_store.dart';
 import 'package:tournee_calendriers/application/ports/tournee_directory.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/tournee/member.dart';
+import 'package:tournee_calendriers/domain/tournee/member_name.dart';
 import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_loss.dart';
@@ -111,6 +112,30 @@ final class WatchMembership {
   Stream<TourneeLoss> call(TourneeSummary tournee) =>
       switch (_account.signedInMember) {
         final member? => _directory.watchMembership(tournee, member),
+        null => const Stream.empty(),
+      };
+}
+
+/// The first name the server holds for the member in [TourneeId], one of
+/// their tournées (`TourneeDirectory.watchOwnName`), for
+/// `CatchUpMemberName` to send the phone's name where it differs.
+///
+/// A name heard again just after itself is told once (`distinct`): if the
+/// server refused the rename sent (and went back to the old name), the
+/// phone does not send it again and again; it tries again at the next
+/// launch or sign-in.
+///
+/// A phone that never signed in cannot be in a tournée on the server:
+/// nothing to follow then.
+final class WatchOwnName {
+  const WatchOwnName(this._directory, this._account);
+
+  final TourneeDirectory _directory;
+  final MemberAccount _account;
+
+  Stream<MemberName> call(TourneeId tournee) =>
+      switch (_account.signedInMember) {
+        final member? => _directory.watchOwnName(tournee, member).distinct(),
         null => const Stream.empty(),
       };
 }

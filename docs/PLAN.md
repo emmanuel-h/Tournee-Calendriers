@@ -933,7 +933,9 @@ Immeuble details fixed in T1.9 (`lib/presentation/building/`, `lib/ui/screens/bu
   caractères. », the sheet stays. Kept on the phone, then written to the member's own
   document in every tournée of « Mes tournées » they are active in, so Équipe shows the new
   name to the team (T2.7b). Works offline (sent when the network is back); a pending request
-  keeps the name it was made with, and a tournée the phone cannot read is skipped.
+  (which cannot rename itself, 8.2) and a tournée the phone cannot read offline are skipped,
+  then caught up (T2.7c): whenever the server shows the member active in one of their
+  tournées under another name than the phone's, the phone sends its own.
 - **Mes tournées** shows the open one (« 49 · 2026 ») and opens the sheet of 5.3.
 - **Thème** opens « Système | Clair | Sombre »: a tap redraws the app at once and closes the
   sheet. « Sombre » uses the first dark palette, reviewed in T5.1.
@@ -1386,6 +1388,15 @@ Tournée rules fixed in T2.2 (`lib/domain/tournee/`):
   `TourneeLossNotice(tournee, number, loss, wasOpen)`;
   the app shows the message on its `ScaffoldMessenger` and goes to the start screen when it
   was the open one.
+- **A name to catch up** (T2.7c): `TourneeDirectory.watchOwnName(tournée, member)` emits the
+  name the server holds on the member's own document while it is active (never from the
+  phone's copy, a pending request, or a snapshot with `hasPendingWrites`). `WatchOwnName` (as
+  `MemberAccount.signedInMember`, nothing before the first sign-in; `distinct`, so a rename
+  the server refused is not sent in a loop) and `CatchUpMemberName(tournée, heard)`: when the
+  phone's `MemberName` differs from the one heard, the same `Tournee.rename` as « Prénom »;
+  equal cleaned names, no name on the phone, an unreadable tournée or a refused rename send
+  nothing. `TourneeLossNotifier` listens to it for each tournée it follows, so a rename made
+  while the request waited reaches the team once accepted, with no rules change.
 - **Port `PhoneSettings`** (application): `memberName` (null until given), `theme`
   (`ThemeChoice` system / light / dark), setters. Use cases `ReadPhoneSettings`,
   `ChangeMemberName` (`MemberName.create`, nothing kept when refused), `ChooseTheme`.
@@ -1515,7 +1526,7 @@ Firestore adapters fixed in T2.3 (`lib/infrastructure/firestore/`, `lib/applicat
   server has it no more — not `isFromCache`, not `hasPendingWrites` — the reservation
   `tourneeKeys/{key}` read from the server tells `removed` while it still names the tournée,
   `deleted` otherwise; a `permission-denied` is passed on as an error, never taken as a
-  loss); `isTaken(centre,
+  loss); `watchOwnName(tournée, member)` (T2.7c, the same document); `isTaken(centre,
   number)` and `rescueCentres()` (sorted by name) for « Créer », failing with
   `DirectoryFailure.noNetwork`. The code, the number and the centres are asked of the server,
   never answered from the phone's copy.
@@ -1863,7 +1874,9 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
   code. Any active member accepts (status, `acceptedBy` = caller, `acceptedAt` only) or refuses
   a request; the newcomer cancels it. The creator removes an active member; a member leaves.
   An active member renames themself: their own document, `displayName` only, a cleaned name
-  ≤ 30 (T2.7b); nobody renames someone else, not even the creator.
+  ≤ 30 (T2.7b); nobody renames someone else, not even the creator. A pending member cannot
+  rename themself: a name changed while the request waits is sent by the phone once accepted
+  (T2.7c), so the rules stay as they are.
   The creator's own document goes only in the batch that deletes the tournée.
 - **New code** (creator): only `joinCode` changes, the new code document is created and the old
   one deleted in the same transaction. **Deleting** (creator): the contents first (campaigns,
