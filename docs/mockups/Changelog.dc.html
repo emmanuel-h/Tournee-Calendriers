@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Nouveautés</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B3261E}a:hover{color:#8C1D18}
+.ib{width:48px;height:48px;border:0;background:transparent;color:#1B1F24;border-radius:24px;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;text-decoration:none;flex-shrink:0}
+.ib svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.rel{background:#FFFFFF;border-bottom:1px solid #E2DED5;padding:14px 20px 16px 20px;display:flex;flex-direction:column;gap:8px}
+.rel h2{margin:0;display:flex;align-items:baseline;gap:10px}
+.rel h2 .n{font:700 24px 'Barlow Condensed',sans-serif}
+.rel h2 .d{font-size:14px;font-weight:400;color:#4A5058}
+.rel ul{margin:0;padding:0 0 0 20px;display:flex;flex-direction:column;gap:6px;font-size:16px;line-height:1.4}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F3F1EC; color: #1B1F24; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; display: flex; flex-direction: column">
+  <div style="display: flex; align-items: center; gap: 4px; padding: 8px">
+    <a class="ib" href="Settings.dc.html" aria-label="Retour"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a>
+    <h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 28px">Nouveautés</h1>
+  </div>
+  <div style="border-top: 1px solid #E2DED5">
+    <section class="rel">
+      <h2><span class="n">1.1.0</span><span class="d">20 oct. 2026</span></h2>
+      <ul>
+        <li>Un bouton copie le code de la tournée.</li>
+        <li>Le nombre de passages s'affiche pour chaque rue.</li>
+      </ul>
+    </section>
+    <section class="rel">
+      <h2><span class="n">1.0.0</span><span class="d">12 oct. 2026</span></h2>
+      <ul>
+        <li>Première version.</li>
+      </ul>
+    </section>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>
