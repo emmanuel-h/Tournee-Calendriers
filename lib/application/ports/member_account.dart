@@ -24,6 +24,13 @@ abstract interface class MemberAccount {
   /// sign-in succeeded. Read from the phone: no network, no waiting.
   MemberId? get signedInMember;
 
+  /// The member, each time a sign-in gives the phone its account: at most
+  /// once per launch, and never when the phone had one at launch. Lets
+  /// what needs the account (following the member's tournées) start as
+  /// soon as a sign-in after launch succeeds, without restarting the app.
+  /// A broadcast stream: any number may listen, from when they start.
+  Stream<MemberId> get signIns;
+
   /// The member, signing in first when the phone has no account yet.
   ///
   /// Each call when there is still none tries again, so a phone started

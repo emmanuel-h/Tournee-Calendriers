@@ -42,4 +42,16 @@ void main() {
       expect(failure, SignInFailure.noNetwork);
     });
   });
+
+  group('ObserveSignIn', () {
+    test('should tell the member once a sign-in gives the phone its '
+        'account', () async {
+      final account = FakeMemberAccount(nextMember: lea);
+      final told = ObserveSignIn(account)().first;
+
+      await account.signInIfNeeded();
+
+      expect(await told, lea);
+    });
+  });
 }

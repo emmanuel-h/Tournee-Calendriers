@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:tournee_calendriers/application/ports/identity_provider.dart';
 import 'package:tournee_calendriers/application/ports/member_account.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
@@ -50,8 +52,23 @@ final class FirebaseIdentity implements IdentityProvider, MemberAccount {
     };
   }
 
+  /// Broadcast: every listener hears the sign-ins from when it starts.
+  /// Never closed: the identity lives as long as the app.
+  final _signIns = StreamController<MemberId>.broadcast();
+
+  @override
+  Stream<MemberId> get signIns => _signIns.stream;
+
   /// One sign-in, forgotten once over (even if it threw), so the next call
-  /// tries again: the network may be back by then.
-  Future<void> _signIn() =>
-      _auth.signIn().whenComplete(() => _signingIn = null);
+  /// tries again: the network may be back by then. Told on [signIns] when
+  /// it gave the phone its account; only one runs at a time, so each
+  /// account is told once however many callers waited for it.
+  Future<void> _signIn() async {
+    try {
+      await _auth.signIn();
+    } finally {
+      _signingIn = null;
+    }
+    if (signedInMember case final member?) _signIns.add(member);
+  }
 }

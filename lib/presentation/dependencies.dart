@@ -196,6 +196,9 @@ final readSignedInMemberProvider = Provider(
 final signInProvider = Provider(
   (ref) => SignIn(ref.watch(memberAccountProvider)),
 );
+final observeSignInProvider = Provider(
+  (ref) => ObserveSignIn(ref.watch(memberAccountProvider)),
+);
 final readMyTourneesProvider = Provider(
   (ref) => ReadMyTournees(ref.watch(myTourneesStoreProvider)),
 );

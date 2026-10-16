@@ -330,6 +330,14 @@ void main() {
       expect(account.signInCalls, 1);
     });
 
+    test('should observe the sign-ins of the bound account', () async {
+      final told = container.read(observeSignInProvider)().first;
+
+      await account.signInIfNeeded();
+
+      expect(await told, MemberId('uid-lea'));
+    });
+
     test('should read the tournées of the bound store', () {
       expect(container.read(readMyTourneesProvider)().tournees, [
         tournee49,

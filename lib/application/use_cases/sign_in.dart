@@ -26,3 +26,14 @@ final class SignIn {
 
   Future<Result<MemberId, SignInFailure>> call() => _account.signInIfNeeded();
 }
+
+/// The member, each time a sign-in gives the phone its account (the one
+/// started at launch, or a retry of « Créer » / « Rejoindre », PLAN §8.3).
+/// What needs the account starts then, without restarting the app.
+final class ObserveSignIn {
+  const ObserveSignIn(this._account);
+
+  final MemberAccount _account;
+
+  Stream<MemberId> call() => _account.signIns;
+}

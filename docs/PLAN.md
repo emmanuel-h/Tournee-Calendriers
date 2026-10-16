@@ -1251,7 +1251,9 @@ Use cases and phone storage fixed in T1.6 (`lib/application/use_cases/`,
   `signedInMember` (from the phone, null before the first sign-in) and `signInIfNeeded()`
   (`Result<MemberId, SignInFailure.noNetwork>`), which waits for the sign-in already on its
   way (one at a time, never two accounts) or tries again after a failed one, so the network
-  coming back is enough, no restart. Use cases `ReadSignedInMember` and `SignIn`; the
+  coming back is enough, no restart. `signIns` (a broadcast stream) tells the member each time
+  a sign-in gives the phone its account (T2.6e), so what needs the account starts then. Use
+  cases `ReadSignedInMember`, `SignIn` and `ObserveSignIn`; the
   onboarding screens show `AccountNotifier` (auto-disposed, so each opening of a screen is a
   new try): `AccountSigningIn` | `AccountSignedIn(member)` | `AccountOffline` (« hors ligne »,
   with « Réessayer » → `retry()`). Nothing of it runs on the marking path.
@@ -1379,7 +1381,9 @@ Tournée rules fixed in T2.2 (`lib/domain/tournee/`):
   `ForgetLostTournee(id, loss)` → `LostTournee(summary, loss, wasOpen)` after `forget`, or
   null (unknown any more, or still a request: nothing saved). `TourneeLossNotifier` (kept
   alive, listened to by `TourneeApp`) follows each active tournée of « Mes tournées » (a
-  failing listener keeps it) and gives a `TourneeLossNotice(tournee, number, loss, wasOpen)`;
+  failing listener keeps it; on a phone that never signed in, it starts again on the tournées
+  kept then once `ObserveSignIn` tells a sign-in, T2.6e) and gives a
+  `TourneeLossNotice(tournee, number, loss, wasOpen)`;
   the app shows the message on its `ScaffoldMessenger` and goes to the start screen when it
   was the open one.
 - **Port `PhoneSettings`** (application): `memberName` (null until given), `theme`

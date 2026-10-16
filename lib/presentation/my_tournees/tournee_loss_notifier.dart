@@ -22,6 +22,10 @@ final tourneeLossProvider =
 ///
 /// Null until a tournée is lost. Offline the server says nothing, so no
 /// tournée is ever forgotten without the network (PLAN §7).
+///
+/// A phone that never signed in has no member to follow the tournées as:
+/// it follows nothing until a sign-in succeeds, then starts again from the
+/// tournées the phone keeps then.
 final class TourneeLossNotifier extends Notifier<TourneeLossNotice?> {
   /// The listener of each tournée the member is in, by tournée.
   final _memberships = <TourneeId, StreamSubscription<TourneeLoss>>{};
@@ -31,15 +35,34 @@ final class TourneeLossNotifier extends Notifier<TourneeLossNotice?> {
     // Every change of « Mes tournées »: a request accepted adds a tournée
     // to follow, a tournée left or lost removes one.
     final changes = ref.watch(observeMyTourneesProvider)().listen(_follow);
+    // The account known at last (the sign-in started at launch, or a retry
+    // of « Créer » / « Rejoindre »): the tournées followed until now were
+    // followed as nobody, and heard nothing.
+    final signIns = ref
+        .watch(observeSignInProvider)()
+        .listen((_) => _restart());
     ref.onDispose(() {
       unawaited(changes.cancel());
-      for (final membership in _memberships.values) {
-        unawaited(membership.cancel());
-      }
-      _memberships.clear();
+      unawaited(signIns.cancel());
+      _stopAll();
     });
     _follow(ref.watch(readMyTourneesProvider)());
     return null;
+  }
+
+  /// Stops every listener and listens again to the tournées the phone
+  /// keeps now. `ref.read`, not `ref.watch`: outside `build`, reading must
+  /// not tie the notifier to the provider again.
+  void _restart() {
+    _stopAll();
+    _follow(ref.read(readMyTourneesProvider)());
+  }
+
+  void _stopAll() {
+    for (final membership in _memberships.values) {
+      unawaited(membership.cancel());
+    }
+    _memberships.clear();
   }
 
   /// Listens once to each tournée of [mine] the member is in (a request

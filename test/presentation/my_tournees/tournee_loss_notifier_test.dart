@@ -26,17 +26,22 @@ MyTournees _manusPhone() => valueOf(
 void main() {
   late FakeMyTourneesStore store;
   late FakeTourneeDirectory directory;
+  late FakeMemberAccount account;
 
-  ProviderContainer containerWith(MyTournees mine) {
+  /// The phone keeps [mine]; it signed in before unless [withAccount] says
+  /// otherwise.
+  ProviderContainer containerWith(
+    MyTournees mine, {
+    FakeMemberAccount? withAccount,
+  }) {
     store = FakeMyTourneesStore(mine);
     directory = FakeTourneeDirectory();
+    account = withAccount ?? FakeMemberAccount(signedInMember: manuId);
     final container = ProviderContainer(
       overrides: [
         myTourneesStoreProvider.overrideWithValue(store),
         tourneeDirectoryProvider.overrideWithValue(directory),
-        memberAccountProvider.overrideWithValue(
-          FakeMemberAccount(signedInMember: manuId),
-        ),
+        memberAccountProvider.overrideWithValue(account),
       ],
     );
     addTearDown(container.dispose);
@@ -155,6 +160,93 @@ void main() {
     await store.save(valueOf(_manusPhone().open(tournee12.id)));
 
     expect(directory.memberships, hasLength(2));
+  });
+
+  group('on a phone that never signed in', () {
+    ProviderContainer neverSignedIn() => containerWith(
+      _manusPhone(),
+      withAccount: FakeMemberAccount(nextMember: manuId),
+    );
+
+    test('should follow nothing before the sign-in', () {
+      final container = neverSignedIn();
+
+      container.read(tourneeLossProvider);
+
+      expect(directory.memberships, isEmpty);
+    });
+
+    test('should follow the member\'s tournées once a sign-in succeeds '
+        'after launch', () async {
+      final container = neverSignedIn();
+      container.read(tourneeLossProvider);
+
+      await account.signInIfNeeded();
+      await pumpEventQueue();
+
+      expect(directory.memberships, [(tournee49, manuId), (tournee12, manuId)]);
+      expect(directory.isFollowing(tournee49.id), isTrue);
+      expect(directory.isFollowing(tournee12.id), isTrue);
+      expect(directory.isFollowing(tournee7.id), isFalse);
+    });
+
+    test('should forget a tournée lost after the sign-in, and tell '
+        'it', () async {
+      final container = neverSignedIn();
+      container.read(tourneeLossProvider);
+      await account.signInIfNeeded();
+      await pumpEventQueue();
+
+      directory.lose(tournee12.id, TourneeLoss.deleted);
+      await pumpEventQueue();
+
+      expect(
+        container.read(tourneeLossProvider),
+        TourneeLossNotice(
+          tournee: tournee12.id,
+          number: 12,
+          loss: TourneeLoss.deleted,
+          wasOpen: false,
+        ),
+      );
+      expect(store.saves.single.tournees, [tournee49, tournee7]);
+    });
+
+    test('should follow the tournées the phone keeps at the sign-in, not '
+        'those of launch', () async {
+      final container = neverSignedIn();
+      container.read(tourneeLossProvider);
+      // Forgotten on this phone before the sign-in, without a change
+      // heard: only the list of now counts.
+      store.myTournees = _manusPhone().forget(tournee12.id);
+
+      await account.signInIfNeeded();
+      await pumpEventQueue();
+
+      expect(directory.memberships, [(tournee49, manuId)]);
+    });
+
+    test('should follow nothing while the sign-in fails', () async {
+      final container = containerWith(
+        _manusPhone(),
+        withAccount: FakeMemberAccount(),
+      );
+      container.read(tourneeLossProvider);
+
+      await account.signInIfNeeded();
+      await pumpEventQueue();
+
+      expect(directory.memberships, isEmpty);
+    });
+
+    test('should stop waiting for the sign-in when the app goes away', () {
+      final container = neverSignedIn();
+      container.read(tourneeLossProvider);
+
+      container.dispose();
+
+      expect(account.isWaitedFor, isFalse);
+    });
   });
 
   test('should stop following when the app goes away', () {

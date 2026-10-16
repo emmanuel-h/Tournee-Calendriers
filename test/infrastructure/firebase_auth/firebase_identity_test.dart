@@ -148,6 +148,86 @@ void main() {
       expect(auth.signInCalls, 1);
     });
 
+    test('should tell the new member once the sign-in succeeds', () async {
+      final auth = FakeAnonymousAuth(nextUid: 'uid-new')
+        ..gate = Completer<void>();
+      final identity = FirebaseIdentity(auth, beforeSignIn: phone);
+      final told = <MemberId>[];
+      identity.signIns.listen(told.add);
+
+      final signingIn = identity.signInIfNeeded();
+      await pumpEventQueue();
+      expect(told, isEmpty);
+      auth.gate.complete();
+      await signingIn;
+      await pumpEventQueue();
+
+      expect(told, [MemberId('uid-new')]);
+    });
+
+    test(
+      'should tell one sign-in however many callers waited for it',
+      () async {
+        final auth = FakeAnonymousAuth(nextUid: 'uid-new');
+        final identity = FirebaseIdentity(auth, beforeSignIn: phone);
+        final told = <MemberId>[];
+        identity.signIns.listen(told.add);
+
+        await Future.wait([
+          identity.signInIfNeeded(),
+          identity.signInIfNeeded(),
+        ]);
+        await identity.signInIfNeeded();
+        await pumpEventQueue();
+
+        expect(told, [MemberId('uid-new')]);
+      },
+    );
+
+    test('should tell nothing when the sign-in fails', () async {
+      final identity = FirebaseIdentity(
+        FakeAnonymousAuth(),
+        beforeSignIn: phone,
+      );
+      final told = <MemberId>[];
+      identity.signIns.listen(told.add);
+
+      await identity.signInIfNeeded();
+      await pumpEventQueue();
+
+      expect(told, isEmpty);
+    });
+
+    test('should tell nothing when the phone signed in before', () async {
+      final identity = FirebaseIdentity(
+        FakeAnonymousAuth(currentUid: 'uid-kept', nextUid: 'uid-new'),
+        beforeSignIn: phone,
+      );
+      final told = <MemberId>[];
+      identity.signIns.listen(told.add);
+
+      await identity.signInIfNeeded();
+      await pumpEventQueue();
+
+      expect(told, isEmpty);
+    });
+
+    test('should tell nothing when the sign-in threw', () async {
+      final auth = FakeAnonymousAuth(nextUid: 'uid-new')
+        ..error = const SocketException('unexpected');
+      final identity = FirebaseIdentity(auth, beforeSignIn: phone);
+      final told = <MemberId>[];
+      identity.signIns.listen(told.add);
+
+      await expectLater(
+        identity.signInIfNeeded(),
+        throwsA(isA<SocketException>()),
+      );
+      await pumpEventQueue();
+
+      expect(told, isEmpty);
+    });
+
     test('should sign in again after a sign-in that threw', () async {
       final auth = FakeAnonymousAuth(nextUid: 'uid-new')
         ..error = const SocketException('unexpected');
