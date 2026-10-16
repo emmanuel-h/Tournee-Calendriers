@@ -50,9 +50,13 @@ dart format --set-exit-if-changed lib test
 (cd firebase && npm test)                                # security rules in the emulator
 flutter build appbundle --release                        # release-only breakage
 python3 tool/publish_play.py --help                      # Play publishing (driven by /release-store)
-flutter test integration_test -d emulator-5554           # instrumented suite on the emulator
-flutter run                                              # on a connected Android phone
+flutter test integration_test -d emulator-5554 --dart-define-from-file=$HOME/.config/tournee-calendriers/app_check_debug.json
+flutter run --dart-define-from-file=$HOME/.config/tournee-calendriers/app_check_debug.json
 ```
+
+The `--dart-define-from-file` gives debug builds the App Check debug token registered in the
+Firebase console (`lib/bootstrap/firebase.dart`); without it they are refused once App Check
+is enforced. The file is local only (the token is a secret).
 
 Emulator: `~/Android/Sdk/emulator/emulator -avd Medium_Phone_API_36.1 -no-window -no-audio`
 (headless); screenshots with `adb exec-out screencap -p > shot.png`.

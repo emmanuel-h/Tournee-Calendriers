@@ -17,9 +17,11 @@ import 'package:tournee_calendriers/infrastructure/firebase_auth/firebase_anonym
 ///
 /// App Check proves to Firebase that the caller is this app (PLAN §8.1):
 /// Play Integrity in release builds. A debug build is not signed by the
-/// Play Store, so it uses the debug provider instead: it prints a token in
-/// the logs (`adb logcat | grep DebugAppCheckProvider`) to register in the
-/// Firebase console.
+/// Play Store, so it uses the debug provider instead, with the token
+/// registered in the Firebase console and passed at build time
+/// ([_appCheckDebugToken]). Without it the provider makes a new token on
+/// every install and prints it in the logs
+/// (`adb logcat | grep DebugAppCheckProvider`).
 Future<AnonymousAuth> startFirebase() async {
   // The instrumented suite starts the app several times in one process; the
   // project is connected once.
@@ -29,12 +31,25 @@ Future<AnonymousAuth> startFirebase() async {
     );
     await FirebaseAppCheck.instance.activate(
       providerAndroid: kDebugMode
-          ? const AndroidDebugProvider()
+          ? AndroidDebugProvider(
+              debugToken: _appCheckDebugToken.isEmpty
+                  ? null
+                  : _appCheckDebugToken,
+            )
           : const AndroidPlayIntegrityProvider(),
     );
   }
   return FirebaseAnonymousAuth(FirebaseAuth.instance);
 }
+
+/// The App Check debug token, fixed so that a reinstall (the instrumented
+/// suite reinstalls on every run) keeps passing once App Check is enforced.
+/// It lets anyone holding it past App Check, so it never enters the
+/// repository: it comes from
+/// `--dart-define-from-file=$HOME/.config/tournee-calendriers/app_check_debug.json`.
+/// `String.fromEnvironment` reads a `--dart-define` value at compile time;
+/// it is empty when none is given.
+const _appCheckDebugToken = String.fromEnvironment('APP_CHECK_DEBUG_TOKEN');
 
 /// The app's Firestore database, with the settings of PLAN §7 applied
 /// before anything asks it anything (Firestore refuses settings once it has

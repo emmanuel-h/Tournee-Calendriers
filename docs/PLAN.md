@@ -2047,8 +2047,10 @@ it: `flutterfire configure --out=lib/bootstrap/firebase_options.dart`) and
 `flutterfire` writes. CI writes the first two with `tool/write_firebase_config.sh` from the
 secrets `FIREBASE_OPTIONS_DART` and `GOOGLE_SERVICES_JSON` (each the base64 of its file, also
 set as Dependabot secrets). App Check (`bootstrap/firebase.dart`) uses Play Integrity in
-release builds and the debug provider in debug builds (its token, printed in `adb logcat`, is
-registered in the console).
+release builds and the debug provider in debug builds, with a fixed debug token registered in
+the console and passed by `--dart-define-from-file` (kept out of the repository). Both
+SHA-256 (upload key, Play app signing key) are registered on the Firebase Android app, and
+the Play Console app is linked to the Firebase Cloud project for Play Integrity.
 
 ---
 
