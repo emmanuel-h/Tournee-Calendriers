@@ -49,6 +49,7 @@ flutter analyze                                          # zero warnings
 dart format --set-exit-if-changed lib test
 (cd firebase && npm test)                                # security rules in the emulator
 flutter build appbundle --release                        # release-only breakage
+python3 tool/publish_play.py --help                      # Play publishing (driven by /release-store)
 flutter test integration_test -d emulator-5554           # instrumented suite on the emulator
 flutter run                                              # on a connected Android phone
 ```

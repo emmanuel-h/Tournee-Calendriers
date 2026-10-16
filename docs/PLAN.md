@@ -2029,7 +2029,7 @@ lib/
 | i18n | `flutter_localizations` + ARB, **French only** (`app_fr.arb`) |
 | Fonts | Atkinson Hyperlegible + Barlow Condensed bundled as assets (OFL), so they work offline |
 | Lint | `flutter_lints` + strict analysis options (`strict-casts`, `strict-raw-types`), architecture test |
-| Android | minSdk 26; release signing from env / `key.properties`; `flutter build appbundle` |
+| Android | minSdk 26; release signed with the upload key (`TOURNEE_RELEASE_*` from `~/.gradle/gradle.properties` or env, debug key as fallback so CI builds); `flutter build appbundle`; published to Play by the `release-store` skill (`tool/publish_play.py`), Play App Signing holds the app key |
 | iOS (later) | iOS 15+; built and signed in the cloud (Codemagic or GitHub Actions macOS runner) → TestFlight. Needs the Apple developer account only, no Mac |
 
 ### 10.3 Firebase setup (manual, done once by you)
