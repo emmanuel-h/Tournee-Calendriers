@@ -871,14 +871,35 @@
   "settingsPrivacy": "Confidentialité",
   "@settingsPrivacy": { "description": "Row of Paramètres that opens the privacy page, and its title." },
   "settingsVersion": "Version",
-  "@settingsVersion": { "description": "Row of Paramètres with the app's version; a tap opens the licences." },
-  "settingsVersionSemantics": "Version {version}, voir les licences",
+  "@settingsVersion": { "description": "Row of Paramètres with the app's version; a tap opens « Nouveautés »." },
+  "settingsVersionSemantics": "Version {version}, voir les nouveautés",
   "@settingsVersionSemantics": {
-    "description": "Screen-reader label of the version row: a tap opens the licences page.",
+    "description": "Screen-reader label of the version row: a tap opens « Nouveautés ».",
     "placeholders": {
       "version": { "type": "String", "example": "1.0.0" }
     }
   },
+  "settingsLicences": "Licences",
+  "@settingsLicences": { "description": "Row of Paramètres under the version: opens the licences of the packages and bundled fonts." },
+  "changelogTitle": "Nouveautés",
+  "@changelogTitle": { "description": "Title of the page opened by the version row of Paramètres: what changed in each version (Changelog mockup)." },
+  "changelogDate": "{date}",
+  "@changelogDate": {
+    "description": "The day a version came out, next to its number in « Nouveautés ».",
+    "placeholders": {
+      "date": { "type": "DateTime", "format": "yMMMd", "example": "16 oct. 2026" }
+    }
+  },
+  "changelogHeading": "{version} · {date}",
+  "@changelogHeading": {
+    "description": "Screen-reader label of a version's heading in « Nouveautés ».",
+    "placeholders": {
+      "version": { "type": "String", "example": "1.0.0" },
+      "date": { "type": "DateTime", "format": "yMMMd", "example": "16 oct. 2026" }
+    }
+  },
+  "release100First": "Première version.",
+  "@release100First": { "description": "« Nouveautés », version 1.0.0: what it brings, one short line for the members." },
   "settingsCredits": "Carte © contributeurs OpenStreetMap, OpenFreeMap. Adresses : Base Adresse Nationale.",
   "@settingsCredits": { "description": "Attribution of the map and address data at the bottom of Paramètres (PLAN §8.3)." },
   "settingsRowSemantics": "{label}, {value}",

@@ -923,8 +923,19 @@ Immeuble details fixed in T1.9 (`lib/presentation/building/`, `lib/ui/screens/bu
 │ APPLICATION                  │
 │ Thème         Système      › │
 │ Confidentialité            › │
+│ Version       1.0.0        › │  → Nouveautés
+│ Licences                   › │
 │ Données © OpenStreetMap, BAN │
-│ Version 1.0.0                │
+└──────────────────────────────┘
+
+  Nouveautés
+┌──────────────────────────────┐
+│ ← Nouveautés                 │
+│ 1.1.0  20 oct. 2026          │  (example of a later version)
+│ • Un bouton copie le code de │
+│   la tournée.                │
+│ 1.0.0  16 oct. 2026          │
+│ • Première version.          │
 └──────────────────────────────┘
 ```
 
@@ -941,8 +952,13 @@ Immeuble details fixed in T1.9 (`lib/presentation/building/`, `lib/ui/screens/bu
   sheet. « Sombre » uses the first dark palette, reviewed in T5.1.
 - **Confidentialité** opens a page saying 8.3 in French: compte, données enregistrées,
   position, hébergement, suppression.
-- **Version** (from `pubspec.yaml`, `appBuildName`) has a › : a tap opens the licences page
-  (packages and bundled fonts).
+- **Version** (from `pubspec.yaml`, `appBuildName`) has a › : a tap opens **« Nouveautés »**
+  (Changelog mockup): each version, newest first, with the day it came out (« 16 oct.
+  2026 ») and what it brings in short French lines for the members (not commit messages).
+  The list ships inside the app (`ui/screens/settings/changelog.dart`, its lines in
+  `app_fr.arb`), so it works offline. **Each release (#37) adds its entry at the top and
+  sets its date**; 1.0.0 « Première version. » is the only one so far.
+- **Licences** opens Flutter's licences page (packages and bundled fonts).
 - Credits under the list: « Carte © contributeurs OpenStreetMap, OpenFreeMap.
   Adresses{N}: Base Adresse Nationale. »
 - HORS-LIGNE comes with the download (T4.2).

@@ -1515,17 +1515,47 @@ abstract class AppLocalizations {
   /// **'Confidentialité'**
   String get settingsPrivacy;
 
-  /// Row of Paramètres with the app's version; a tap opens the licences.
+  /// Row of Paramètres with the app's version; a tap opens « Nouveautés ».
   ///
   /// In fr, this message translates to:
   /// **'Version'**
   String get settingsVersion;
 
-  /// Screen-reader label of the version row: a tap opens the licences page.
+  /// Screen-reader label of the version row: a tap opens « Nouveautés ».
   ///
   /// In fr, this message translates to:
-  /// **'Version {version}, voir les licences'**
+  /// **'Version {version}, voir les nouveautés'**
   String settingsVersionSemantics(String version);
+
+  /// Row of Paramètres under the version: opens the licences of the packages and bundled fonts.
+  ///
+  /// In fr, this message translates to:
+  /// **'Licences'**
+  String get settingsLicences;
+
+  /// Title of the page opened by the version row of Paramètres: what changed in each version (Changelog mockup).
+  ///
+  /// In fr, this message translates to:
+  /// **'Nouveautés'**
+  String get changelogTitle;
+
+  /// The day a version came out, next to its number in « Nouveautés ».
+  ///
+  /// In fr, this message translates to:
+  /// **'{date}'**
+  String changelogDate(DateTime date);
+
+  /// Screen-reader label of a version's heading in « Nouveautés ».
+  ///
+  /// In fr, this message translates to:
+  /// **'{version} · {date}'**
+  String changelogHeading(String version, DateTime date);
+
+  /// « Nouveautés », version 1.0.0: what it brings, one short line for the members.
+  ///
+  /// In fr, this message translates to:
+  /// **'Première version.'**
+  String get release100First;
 
   /// Attribution of the map and address data at the bottom of Paramètres (PLAN §8.3).
   ///

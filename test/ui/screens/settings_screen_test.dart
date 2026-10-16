@@ -7,6 +7,8 @@ import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/screens/my_tournees/my_tournees_sheet.dart';
+import 'package:tournee_calendriers/ui/screens/settings/changelog.dart';
+import 'package:tournee_calendriers/ui/screens/settings/changelog_screen.dart';
 import 'package:tournee_calendriers/ui/screens/settings/privacy_screen.dart';
 
 import '../../domain/tournee/my_tournees_fixtures.dart';
@@ -22,16 +24,25 @@ void main() {
 
   /// Paramètres over the start screen, on a phone where Manu has the 49
   /// open.
-  Future<void> pumpSettings(WidgetTester tester) async {
+  ///
+  /// [releases] replaces the versions shipped with the app in
+  /// « Nouveautés ».
+  Future<void> pumpSettings(
+    WidgetTester tester, {
+    List<Release>? releases,
+  }) async {
     settings = FakePhoneSettings(memberName: nameOf('Manu'));
     await tester.pumpWidget(
       ProviderScope(
-        overrides: fakePhone(
-          settings: settings,
-          myTournees: FakeMyTourneesStore(
-            valueOf(MyTournees.none.remember(tournee49).open(tournee49.id)),
+        overrides: [
+          ...fakePhone(
+            settings: settings,
+            myTournees: FakeMyTourneesStore(
+              valueOf(MyTournees.none.remember(tournee49).open(tournee49.id)),
+            ),
           ),
-        ),
+          if (releases != null) changelogProvider.overrideWithValue(releases),
+        ],
         child: const TourneeApp(showGallery: false),
       ),
     );
@@ -54,7 +65,7 @@ void main() {
     expect(find.bySemanticsLabel('Confidentialité'), findsOneWidget);
     // The version of pubspec.yaml, which `flutter test` gives too.
     expect(
-      find.bySemanticsLabel('Version 1.0.0, voir les licences'),
+      find.bySemanticsLabel('Version 1.0.0, voir les nouveautés'),
       findsOneWidget,
     );
     expect(
@@ -145,12 +156,74 @@ void main() {
     expect(find.text('DONNÉES ENREGISTRÉES'), findsOneWidget);
   });
 
-  testWidgets('should open the licences from the version', (tester) async {
+  testWidgets('should open the licences from their own row', (tester) async {
+    await pumpSettings(tester);
+
+    expect(find.bySemanticsLabel('Licences'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('settings.licences')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(LicensePage), findsOneWidget);
+    expect(find.byType(ChangelogScreen), findsNothing);
+  });
+
+  testWidgets('should open « Nouveautés » with the newest version first '
+      'when the version is tapped', (tester) async {
+    await pumpSettings(
+      tester,
+      releases: [
+        Release(
+          version: '1.2.0',
+          date: DateTime(2027, 3, 5),
+          notes: (_) => ['Une rue se partage en deux.'],
+        ),
+        Release(
+          version: '1.1.0',
+          date: DateTime(2026, 11, 20),
+          notes: (_) => [
+            'Un bouton copie le code de la tournée.',
+            "Le nombre de passages s'affiche pour chaque rue.",
+          ],
+        ),
+        Release(
+          version: '1.0.0',
+          date: DateTime(2026, 10, 16),
+          notes: (_) => ['Première version.'],
+        ),
+      ],
+    );
+
+    await tester.tap(find.byKey(const Key('settings.version')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(LicensePage), findsNothing);
+    expect(find.widgetWithText(AppBar, 'Nouveautés'), findsOneWidget);
+    // Top to bottom: each version, its date, then its lines.
+    final shown = [
+      '1.2.0 · 5 mars 2027',
+      'Une rue se partage en deux.',
+      '1.1.0 · 20 nov. 2026',
+      'Un bouton copie le code de la tournée.',
+      "Le nombre de passages s'affiche pour chaque rue.",
+      '1.0.0 · 16 oct. 2026',
+      'Première version.',
+    ];
+    final tops = [
+      for (final text in shown)
+        tester.getTopLeft(find.bySemanticsLabel(text)).dy,
+    ];
+    for (var i = 1; i < tops.length; i++) {
+      expect(tops[i], greaterThan(tops[i - 1]), reason: shown[i]);
+    }
+  });
+
+  testWidgets('should list the versions shipped with the app', (tester) async {
     await pumpSettings(tester);
 
     await tester.tap(find.byKey(const Key('settings.version')));
     await tester.pumpAndSettle();
 
-    expect(find.byType(LicensePage), findsOneWidget);
+    expect(find.bySemanticsLabel('1.0.0 · 16 oct. 2026'), findsOneWidget);
+    expect(find.bySemanticsLabel('Première version.'), findsOneWidget);
   });
 }

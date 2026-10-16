@@ -18,6 +18,7 @@ import 'package:tournee_calendriers/ui/screens/onboarding/join_pending_screen.da
 import 'package:tournee_calendriers/ui/screens/onboarding/join_tournee_screen.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/welcome_screen.dart';
 import 'package:tournee_calendriers/ui/screens/placeholder_screen.dart';
+import 'package:tournee_calendriers/ui/screens/settings/changelog_screen.dart';
 import 'package:tournee_calendriers/ui/screens/settings/privacy_screen.dart';
 import 'package:tournee_calendriers/ui/screens/settings/settings_screen.dart';
 import 'package:tournee_calendriers/ui/screens/start/start_screen.dart';
@@ -108,6 +109,10 @@ GoRouter buildAppRouter({
     GoRoute(
       path: AppRoutes.privacy,
       builder: (context, state) => const PrivacyScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.changelog,
+      builder: (context, state) => const ChangelogScreen(),
     ),
     _placeholder(AppRoutes.newCampaign, (l10n) => l10n.screenNewCampaign),
     GoRoute(

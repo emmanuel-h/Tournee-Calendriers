@@ -51,6 +51,9 @@ abstract final class AppRoutes {
 
   /// « Confidentialité », pushed from Paramètres.
   static const privacy = '/parametres/confidentialite';
+
+  /// « Nouveautés », pushed by the version row of Paramètres.
+  static const changelog = '/parametres/nouveautes';
   static const newCampaign = '/nouvelle-campagne';
   static const trash = '/corbeille';
 

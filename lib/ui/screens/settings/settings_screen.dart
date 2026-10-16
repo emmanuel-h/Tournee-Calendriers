@@ -18,7 +18,7 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
 /// Paramètres (⚙, PLAN §5.9, Settings mockup): the member's first name and
 /// « Mes tournées », then the theme, the privacy page, the version (a tap
-/// opens the licences) and the data credits. Works offline.
+/// opens « Nouveautés »), the licences and the data credits. Works offline.
 ///
 /// The « Hors-ligne » section of the mockup comes with the download of a
 /// tournée (M4).
@@ -82,6 +82,11 @@ final class SettingsScreen extends ConsumerWidget {
                   label: l10n.settingsVersion,
                   value: version,
                   semanticsLabel: l10n.settingsVersionSemantics(version),
+                  onTap: () => context.push(AppRoutes.changelog),
+                ),
+                _SettingRow(
+                  key: const Key('settings.licences'),
+                  label: l10n.settingsLicences,
                   // Flutter's own page lists every licence registered: the
                   // packages' and the bundled fonts' (`font_licenses.dart`).
                   onTap: () => showLicensePage(

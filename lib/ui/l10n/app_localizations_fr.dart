@@ -1024,8 +1024,33 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String settingsVersionSemantics(String version) {
-    return 'Version $version, voir les licences';
+    return 'Version $version, voir les nouveautés';
   }
+
+  @override
+  String get settingsLicences => 'Licences';
+
+  @override
+  String get changelogTitle => 'Nouveautés';
+
+  @override
+  String changelogDate(DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return '$dateString';
+  }
+
+  @override
+  String changelogHeading(String version, DateTime date) {
+    final intl.DateFormat dateDateFormat = intl.DateFormat.yMMMd(localeName);
+    final String dateString = dateDateFormat.format(date);
+
+    return '$version · $dateString';
+  }
+
+  @override
+  String get release100First => 'Première version.';
 
   @override
   String get settingsCredits =>
