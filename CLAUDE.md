@@ -33,8 +33,9 @@ screen, house sheet, buildings, edit mode; awaiting the user's field test (#15).
 M2 code delivered: onboarding (#21), Firebase (Spark) wired in `bootstrap/`, App Check,
 anonymous sign-in (#17, #67); Tournée aggregate (#18); Firestore adapters (#19); security rules in
 `firebase/` (#20); Équipe and Corbeille (#22); Mes tournées and Paramètres (#23); streets of the
-open tournée on Firestore, phone storage when none is open (#24); pending-sync line (#25). Awaiting
-the user's validation. `lib/bootstrap/firebase_options.dart` and `android/app/google-services.json`
+open tournée on Firestore, phone storage when none is open (#24); pending-sync line (#25). Validated
+by the user (2026-10-16); left in M2: App Check enforcement (#68, manual) and admins (#75, to
+design). `lib/bootstrap/firebase_options.dart` and `android/app/google-services.json`
 are gitignored: run `flutterfire configure --out=lib/bootstrap/firebase_options.dart` locally;
 CI writes them from secrets.
 
