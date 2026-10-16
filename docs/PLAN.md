@@ -1844,8 +1844,11 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
   whose clock is ahead would see its marks refused and silently taken back, while a forged
   time harms nothing (it is shown, never used to order writes). The one exception is the
   30-day purge (T2.6b), which compares a **stored** `deletedAt` with `request.time`; so a
-  member who writes a removal time forged 30 days back can purge it at once (open point,
-  see the T2.6b report).
+  member who writes a removal time forged 30 days back can purge it at once. **Accepted risk**
+  (decided 2026-10-16, T2.6d): members are trusted and the code is the secret; bounding a new
+  `deletedAt` to a window of `request.time` would refuse removals synced late, and would still
+  leave the undo of « Restaurer » open, which puts back a teammate's earlier removal with its
+  old time.
 - **Creating a tournée** is accepted only whole: the tournée checks with `getAfter` that the
   same transaction writes its reservation (create-only, so number + station stay unique), its
   code (create-only, so no one replaces another tournée's preview; the preview must repeat

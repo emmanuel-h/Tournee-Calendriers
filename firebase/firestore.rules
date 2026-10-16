@@ -403,6 +403,8 @@ service cloud.firestore {
     // lib/domain/street/corbeille_retention.dart): a street or a number
     // removed more than 30 days before the server's time may go for good.
     // What was removed recently, or restored meanwhile, cannot.
+    // `deletedAt` is the phone's time, so a member may backdate it and
+    // purge at once: an accepted risk (PLAN §8.2, #85).
     function isPastRetention(item) {
       return item.deletedAt is timestamp
         && item.deletedAt < request.time - duration.value(30, 'd');
