@@ -258,6 +258,10 @@ par votre équipe. » under it; « Prénom limité à 30 caractères. » when to
 `MemberName`. Either keeps the name on the phone (`ChangeMemberName`, the one of Paramètres)
 and opens its screen above « Bienvenue »; the field starts from the name kept.
 
+From #75 (5.12): « Créer une tournée » shows only for an admin (so a fresh install, never yet
+an admin, shows only « Rejoindre une tournée », in red), and the bottom of the screen shows
+« Identifiant de l'appareil : … » with a copy button.
+
 ### 5.2 Créer / Rejoindre
 
 ```
@@ -310,7 +314,8 @@ and opens its screen above « Bienvenue »; the field starts from the name kept.
   (`JoinCode.value`): no URL, no prefix. The scanner of « Rejoindre » reads it with
   `JoinCode.parse`, like a typed code, so any other QR code is refused as an invalid code. Drawn
   dark on white whatever the theme, so it scans.
-- The creator can regenerate the code from Équipe (old code stops working; members stay).
+- An admin can regenerate the code from Équipe (old code stops working; members stay).
+- **Only admins create a tournée** (and so add a centre de secours), from #75 (5.12).
 - Delivered in T2.5 (Create, CreateTaken, Join mockups). Both screens first need the phone's
   account (§6.1): a line « Connexion au serveur… » while it signs in, « Hors ligne : créer ou
   rejoindre une tournée demande le réseau. » with « Réessayer » when it cannot; the server
@@ -460,6 +465,8 @@ bottom sheet:
   rows close the sheet and open 5.2 above the screen; a phone without a name asks « Votre
   prénom » (Paramètres' sheet) first and opens nothing if it is closed without one. With no
   tournée open, the app's name in the title opens the sheet too.
+- From #75 (5.12): « + Créer une tournée » only for admins; admins also get « Toutes les
+  tournées › » under « Rejoindre », and a visited tournée shows « CS … · administrateur ».
 - Delivered in T2.6: 👥 sits left of ⚙ while a tournée is open (none otherwise) and opens
   Équipe; a red dot on it while a request waits in the open tournée, said by screen readers
   (« Équipe, 1 demande en attente »). The team is followed as long as a tournée is open.
@@ -863,21 +870,26 @@ Immeuble details fixed in T1.9 (`lib/presentation/building/`, `lib/ui/screens/bu
 │   CS Villefranche · 2026     │
 │  ▄▄▄▄ ▄ ▄▄▄▄ Code K7P-2QX [⧉]│  ← ⧉ copies the code
 │  █▄▄█ ▀ █▄▄█ [Partager]      │
-│              [Nouveau code]  │  ← creator only
+│              [Nouveau code]  │  ← admins only (#75)
 │ EN ATTENTE (1)               │  ← only when requests exist
 │ Julie · il y a 2 min         │
-│ [ Accepter ]  [ Refuser ]    │  ← any accepted member
+│ [ Accepter ]  [ Refuser ]    │  ← any accepted member, any admin
 │ MEMBRES (5)                  │
-│ Manu (vous) · créateur 5 rues│
-│ Léa                 3 rues [⋮]│  ← creator only: retirer
-│ Paul                0 rues [⋮]│
+│ Manu (vous) · admin   5 rues │
+│ Léa                 3 rues [⋮]│  ← admins only: retirer
+│ Paul · admin        0 rues [⋮]│
 │ Corbeille · 2 éléments     › │  ← 5.11
 │ CAMPAGNE 2026                │
-│ [ Démarrer une nouvelle campagne ] │  ← creator only, v1.1 (5.10)
-│ [  Quitter la tournée  ]     │
-│ [  Supprimer la tournée ]    │  ← creator only
+│ [ Démarrer une nouvelle campagne ] │  ← admins only, v1.1 (5.10)
+│ [  Quitter la tournée  ]     │  ← every member
+│ [  Supprimer la tournée ]    │  ← admins only
 └──────────────────────────────┘
 ```
+
+**From #75 (5.12) the creator has no power of their own:** read « the creator » below as « an
+admin » for « Nouveau code », « Retirer », « Supprimer » and the campaign; « · admin » replaces
+« · créateur »; every member may leave, admins and the creator included, so a member sees
+« Quitter » and an admin both « Quitter » and « Supprimer » (mockups Team, TeamMember).
 
 - A request shows the name the newcomer typed and how long ago it was sent. Any accepted member
   can accept or refuse, so nobody has to wait for the creator.
@@ -959,6 +971,8 @@ Immeuble details fixed in T1.9 (`lib/presentation/building/`, `lib/ui/screens/bu
   `app_fr.arb`), so it works offline. **Each release (#37) adds its entry at the top and
   sets its date**; 1.0.0 « Première version. » is the only one so far.
 - **Licences** opens Flutter's licences page (packages and bundled fonts).
+- **Identifiant de l'appareil** (#75, 5.12): the last row of APPLICATION, the uid shortened,
+  « · administrateur » when admin, and a copy button.
 - Credits under the list: « Carte © contributeurs OpenStreetMap, OpenFreeMap.
   Adresses{N}: Base Adresse Nationale. »
 - HORS-LIGNE comes with the download (T4.2).
@@ -1027,6 +1041,78 @@ Immeuble details fixed in T1.9 (`lib/presentation/building/`, `lib/ui/screens/bu
   At 30 days exactly it is still kept. Offline, the phone's copy changes at once and the
   deletes are sent later; the server refuses any that is not past 30 days by its own clock
   (a teammate restored it meanwhile), and the item comes back.
+
+### 5.12 Administrateurs (#75)
+
+```
+  Toutes les tournées (admin)        Accueil, admin not a member
+┌──────────────────────────────┐    ┌──────────────────────────────┐
+│ ← Toutes les tournées        │    │ Tournée 12 · 2026    [👥][⚙]│
+│   Administrateur · 4 tournées│    │ CS Gleizé                    │
+│ CS VILLEFRANCHE              │    │ ┌──────────────────────────┐ │
+│ Tournée 49 · 2026          › │    │ │🛡 Administrateur · pas    │ │
+│   5 membres · vous en êtes … │    │ │  membre       [Rejoindre]│ │
+│ CS GLEIZÉ                    │    │ └──────────────────────────┘ │
+│ Tournée 12 · 2026        • › │    │ (map)                        │
+│   3 membres · 1 demande …    │    ├──────────────────────────────┤
+│ CS ANSE                      │    │ Rues · 9/38                  │
+│ Tournée 7 · 2025           › │    │ Rue de la Gare        9/30   │
+│   Aucun membre               │    │ [   + Ajouter des rues   ]   │
+└──────────────────────────────┘    └──────────────────────────────┘
+```
+
+Decided with the user (2026-10-12 and 2026-10-16, issue #75; mockups AllTournees, HomeAdmin,
+TeamMember, and Welcome, Switcher, Team, Settings updated):
+
+- **Who is an admin.** An `admins/{uid}` document (no fields) added by hand in the Firebase
+  console; the rules check it, the app follows it (`AdminStatus`, cached by Firestore, so it is
+  known offline once read). Admins are **global**: an admin manages, joins and reads / adds /
+  removes streets in **every** tournée, member or not. Granting and revoking from the app: out
+  of scope. Anonymous auth loses the uid on reinstall or on a new phone: the admin reads the
+  new one on the phone (below) and adds it in the console again. Until the app has read the
+  document, the phone is not an admin (nothing admin-only shows).
+- **Identifiant de l'appareil** (the Firebase uid): a line at the bottom of Bienvenue
+  (« Identifiant de l'appareil : x7Fq…9kP2 » and a copy button, TalkBack « Copier
+  l'identifiant de l'appareil », « Identifiant copié »), and the last row of Paramètres →
+  APPLICATION (same copy button; « x7Fq…9kP2 · administrateur » when admin). The uid is shown
+  shortened (first 4 … last 4); the copy puts the whole uid on the clipboard. Bienvenue and
+  Paramètres sign in when they open (`signInIfNeeded`): offline with no account yet, the line
+  of Bienvenue is not shown and the row reads « Pas encore de compte : connectez-vous au
+  réseau. ».
+- **Non-admins** never see « Créer une tournée » (Bienvenue, « Mes tournées »), with no hint
+  in its place; only « Rejoindre une tournée ». Adding a centre de secours happens only in
+  « Nouvelle tournée », so it is admin-only too.
+- **Équipe** (5.8): « Nouveau code », ⋮ → « Retirer » and « Supprimer la tournée » for admins
+  only (member or not); the creator has no power of their own any more. Admins remove any
+  other active member, admins included. Accepter / Refuser: any active member and any admin.
+  « Quitter la tournée »: every member, admins included, even the last one (no guard: an empty
+  tournée stays and admins manage it from « Toutes les tournées »). A member row shows « ·
+  admin » for an admin (any signed-in user may `get` `admins/{uid}`); « · créateur » is gone.
+  Existing tournées are kept as they are.
+- **« Toutes les tournées »** (admins only): « Toutes les tournées › » under Créer and
+  Rejoindre in the « Mes tournées » sheet. Every tournée of the app, grouped under its centre
+  (« CS GLEIZÉ », centres by name, tournées by number then campaign), each row « Tournée 12 ·
+  2026 » over « 3 membres » (« 1 membre », « Aucun membre » in red), « · vous en êtes membre »
+  when the admin is an active member, « · 1 demande en attente » with a red dot (said by
+  TalkBack); « Administrateur · n tournées » under the title. It needs the network: « Pas de
+  réseau : la liste ne peut pas être affichée. » with « Réessayer ». A tap opens the tournée.
+- **Opening a tournée as an admin** who is not a member: it is remembered in « Mes tournées »
+  as **visited** (a third `MemberStatus`, `visiting`: row « CS Gleizé · administrateur », a
+  shield instead of the ring) and opened on the normal screens: map, streets panel (« Rues ·
+  9/38 » instead of « Mes rues »), streets, houses, marks, Corbeille and Équipe, all as a
+  member, plus the admin's powers. A banner under the title on Accueil: shield, « Administrateur
+  · pas membre » over « Vous n'êtes pas dans l'équipe de cette tournée. » and « Rejoindre »
+  (come-back blue, `#D6E6F5` / `#1D4E7A`). A visitor is not listed in MEMBRES. Their marks are
+  stamped with their uid; where a name is shown for a uid that is not a member: « un
+  administrateur ».
+  - **« Rejoindre »** makes the admin an active member at once (their own document, `active`,
+    accepted by themself, no code, no approval); the banner goes and the row becomes a normal
+    one. Offline: « Pas de réseau. Réessayez une fois connecté. ».
+  - At the bottom of Équipe a visitor has « Retirer de Mes tournées » (forgets it on the
+    phone, writes nothing) instead of « Quitter », and « Supprimer la tournée ».
+  - A visited tournée deleted, or the phone no longer an admin, is forgotten as in 5.3 « A
+    tournée lost », with « La tournée 12 a été supprimée. » or « Vous n'êtes plus
+    administrateur : la tournée 12 est retirée de Mes tournées. ».
 
 ---
 
@@ -1357,6 +1443,23 @@ Tournée rules fixed in T2.2 (`lib/domain/tournee/`):
 
   **The creator can neither leave nor be removed** (the tournée would have nobody to run it):
   they delete the tournée instead.
+
+  **From #75 (5.12) the commands take who acts as an `Actor`** (the member id and whether they
+  are an admin) instead of checking the creator: `accept` / `refuse` by an active member or an
+  admin; `remove(member, by)` by an admin (`notAdmin`) on any other active member, admins
+  included; `leave(by)` by any member, the creator too (`creatorStays` and `notCreator` go);
+  `regenerateCode` and `delete` by an admin (`notAdmin`), member or not; a new
+  `joinAsAdmin(member, at)` adds an admin who is not in it as active at once, accepted by
+  themself (`notAdmin`, `alreadyMember`) → `AdminJoined`; `rename` unchanged. `notAMember` /
+  `requestPending` stay for a non-admin. `Tournee.create` no longer requires the creator
+  among the active members (they may have left); `createdBy` stays as information only.
+  `MemberStatus` gains `visiting` for a `TourneeSummary` (an admin who opened a tournée they
+  are not in); `Member` itself stays pending / active. `TourneeLoss` gains `adminRevoked`.
+  Ports: **`AdminStatus`** (application) `watchIsAdmin()` (false until read; any signed-in
+  uid) and `isAdmin(uid)` for the « · admin » labels; `MemberAccount` exposes the uid for
+  « Identifiant de l'appareil »; `TourneeDirectory.watchAllTournees()` gives the rows of
+  « Toutes les tournées » (id, number, centre, campaign, active-member count, pending count,
+  whether the caller is active), `noNetwork` when the server cannot answer.
 - **Changes** (`TourneeChange`, sealed): `MemberAccepted` (the member as accepted),
   `MemberRefused`, `MemberRemoved`, `MemberLeft` (the member as they were), `MemberRenamed`
   (the member with the new name; storage writes `displayName` only),
@@ -1628,6 +1731,7 @@ and return aggregates and `StreetChange`s, never Firestore types.
 ### 6.2 Firestore layout
 
 ```
+admins/{uid}                                      ← no fields; added by hand in the console (#75)
 rescueCentres/{centreKey}                         ← "villefranche"; the CS picker lists these
     name: "CS Villefranche"
 tourneeKeys/{centreKey}_{number}                  ← "villefranche_49": guarantees number + CS is unique
@@ -1829,6 +1933,25 @@ photo of the QR) is even more likely. So **knowing a code must not be enough**:
   must keep the time it was made, so the rules cannot require `at == request.time`.
 - Only the creator: delete the tournée, regenerate the code, start a campaign. Previous
   campaigns are read-only.
+
+**Admins (#75, 5.12)** change the rules as follows; where they contradict the lines above and
+below, these win:
+
+- `isAdmin()` = `exists(/databases/$(database)/documents/admins/$(request.auth.uid))`.
+  `admins/{uid}`: `get` for signed-in users, never `list`, never written by a client.
+- **Creating** a tournée (its reservation, code, first campaign, creator member) and a
+  `rescueCentres` entry: admins only.
+- **Reading and listing** `tournees` and everything under them: active members **or admins**
+  (only admins may `list` `tournees` and query `members` of any tournée).
+- **Streets** (every write allowed to a member, the 30-day purge included): active members or
+  admins, `by` = the caller as before.
+- **Members:** accept / refuse a request: an active member or an admin. Delete an active
+  member: an admin (any member, admins included), or the member themself (*Quitter*, the
+  creator too: their document no longer waits for the deleting batch). An admin creates their
+  own document already `active`, `acceptedBy` = themself, without a code (« Rejoindre » of
+  5.12).
+- **New code, deleting the tournée, starting a campaign:** admins only, member or not. The
+  deleting batch deletes every remaining member document (there may be none).
 
 What the adapters write (T2.3), which the rules must allow:
 
@@ -2121,7 +2244,7 @@ exists. No invented data at any stage.
 | # | Question | Answer |
 |---|---|---|
 | Q1 | Join code | 6 random characters without look-alikes (`K7P-2QX`, ≈ 887 M combinations), shared as a QR code too. The tournée number is displayed but never used to join. |
-| Q2 | Who deletes what | Any member adds, edits and deletes streets. Only the creator deletes the tournée or removes members. |
+| Q2 | Who deletes what | Any member adds, edits and deletes streets. Only the creator deletes the tournée or removes members. **From #75: only admins** (5.12). |
 | Q3 | "Refused" status | **No.** The app never records residents' choices or amounts: only whether the door was visited. |
 | Q4 | Several tournées per person | Yes. The app opens the last one; the title on Accueil switches (Q21). |
 | Q5 | App id | `fr.mandarine.tourneecalendriers`, store name "Tournée Calendriers". |
@@ -2137,7 +2260,7 @@ exists. No invented data at any stage.
 | Q15 | Buildings | Described by floor (and staircase when several); one row per floor, top to bottom. |
 | Q16 | Tournée identity | Number + centre de secours + code. Number + CS unique; CS picked from a shared list. Joining needs only the code (or QR), with a confirmation of number + CS. |
 | Q17 | Next year | One campaign per year inside the tournée. New campaign keeps streets, numbers, buildings; resets statuses, *repasser*, assignees; *Reprendre mes rues 2026*; last year's result shown in the sheets. v1.1, model ready in v1. |
-| Q18 | Who starts a campaign, what is kept | The creator. Previous campaign read-only; the one before is deleted. |
+| Q18 | Who starts a campaign, what is kept | The creator (an admin from #75, 5.12). Previous campaign read-only; the one before is deleted. |
 | Q19 | Guessed / leaked codes | A code only creates a pending request; any accepted member accepts or refuses. App Check in v1. Soft delete with a 30-day Corbeille. |
 | Q20 | Infrastructure | **Decided at the M2 checkpoint (2026-10-05): Spark (free), Blaze-ready.** Join on the phone (`joinCodes` get → pending member) behind a `TourneeDirectory` port; App Check + approval are the guard; the Corbeille purge runs on members' phones (5.11). Move to Blaze (1 click, no data migration) and a rate-limited callable join + scheduled purge when real usage nears Spark's shared daily quota (50 k reads, 20 k writes for the whole app ≈ 10 busy tournées a day) or abuse shows up. Another backend was rejected: it loses Firestore's offline cache. |
 | Q21 | Switching / creating from Accueil | The title is a button: « Mes tournées » sheet with all my tournées (progress, pending requests), *Créer*, *Rejoindre*. |

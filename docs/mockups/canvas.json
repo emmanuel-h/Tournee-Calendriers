@@ -7,7 +7,7 @@
       "y": 0,
       "w": 390,
       "h": 844,
-      "title": "5.1 Bienvenue"
+      "title": "5.1 Bienvenue (pas administrateur)"
     },
     "Create.dc.html": {
       "x": 470,
@@ -88,7 +88,7 @@
       "y": 3792,
       "w": 390,
       "h": 844,
-      "title": "5.8 Équipe"
+      "title": "5.8 Équipe (administrateur)"
     },
     "Settings.dc.html": {
       "x": 470,
@@ -145,7 +145,7 @@
       "y": 1264,
       "w": 390,
       "h": 844,
-      "title": "5.3 Mes tournées (appui sur le titre)"
+      "title": "5.3 Mes tournées (administrateur)"
     },
     "Doors.dc.html": {
       "x": 2820,
@@ -160,6 +160,27 @@
       "w": 390,
       "h": 844,
       "title": "5.9 Nouveautés"
+    },
+    "AllTournees.dc.html": {
+      "x": 0,
+      "y": 5056,
+      "w": 390,
+      "h": 844,
+      "title": "5.12 Toutes les tournées (administrateur)"
+    },
+    "HomeAdmin.dc.html": {
+      "x": 470,
+      "y": 5056,
+      "w": 390,
+      "h": 844,
+      "title": "5.12 Accueil — administrateur hors équipe"
+    },
+    "TeamMember.dc.html": {
+      "x": 940,
+      "y": 5056,
+      "w": 390,
+      "h": 844,
+      "title": "5.8 Équipe (membre)"
     }
   },
   "createdOnFiles": {
@@ -202,6 +223,14 @@
       "w": 240,
       "x": 0,
       "y": 3492
+    },
+    "rowAdmin": {
+      "x": 0,
+      "y": 4756,
+      "text": "Administrateurs",
+      "kind": "title1",
+      "maxW": 1330,
+      "w": 240
     }
   },
   "order": [
@@ -225,7 +254,10 @@
     "Team.dc.html",
     "Settings.dc.html",
     "Campaign.dc.html",
-    "Trash.dc.html"
+    "Trash.dc.html",
+    "AllTournees.dc.html",
+    "HomeAdmin.dc.html",
+    "TeamMember.dc.html"
   ],
   "pages": [],
   "title": "Tournée Calendriers screens"
