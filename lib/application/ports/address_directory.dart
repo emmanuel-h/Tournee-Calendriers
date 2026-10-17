@@ -7,11 +7,13 @@ import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
 
 /// The national address base (BAN), as the app needs it: the streets of a
-/// commune, and the numbers of a street with where each entrance is.
+/// commune, the numbers of a street with where each entrance is, the street
+/// under a tap on the map and the streets whose name looks like a search.
 ///
 /// An outbound port: the application owns this interface, an adapter in
-/// `infrastructure/ban/` implements it over HTTP, and tests use a fake. The
-/// rest of the app never sees a URL or JSON.
+/// `infrastructure/ban/` implements it over HTTP (the BAN itself and its
+/// geocoder on the Géoplateforme, PLAN §9), and tests use a fake. The rest of
+/// the app never sees a URL or JSON.
 ///
 /// Every call needs the network. A failure the user can act on (no network,
 /// unknown code, the service is down) comes back as an [Err] holding an
@@ -32,6 +34,30 @@ abstract interface class AddressDirectory {
   Future<Result<StreetNumbers, AddressDirectoryFailure>> numbersOf(
     BanStreetId street,
   );
+
+  /// The BAN street nearest to [point], where the user tapped a road on the
+  /// map (« Ajouter des rues », PLAN §5.4).
+  ///
+  /// The geocoder measures the distance to one point of each street, not to
+  /// the road itself, and answers the nearest whatever the distance: the
+  /// street may be in the next commune, and a road the BAN does not know
+  /// (a private road) gives the nearest one it knows. The screen shows the
+  /// name found so the user can tell.
+  ///
+  /// [AddressDirectoryFailure.notFound] when no street is near at all.
+  Future<Result<StreetMatch, AddressDirectoryFailure>> streetAt(GeoPoint point);
+
+  /// The streets of [commune] whose name looks like [text] (« rue pierre »),
+  /// best first, at most ten; none when nothing does.
+  ///
+  /// Spaces around [text] and the signs before its first letter or digit
+  /// are ignored. The service needs 3 to 200 characters: a shorter or
+  /// longer text finds nothing, without asking it (so typing the first
+  /// letters costs no request).
+  Future<Result<List<StreetMatch>, AddressDirectoryFailure>> searchStreets(
+    String text, {
+    required InseeCode commune,
+  });
 }
 
 /// Why the [AddressDirectory] could not answer. Each case is phrased in
@@ -41,7 +67,8 @@ enum AddressDirectoryFailure {
   /// Trying again with a better signal may work.
   noNetwork,
 
-  /// The service has no commune or street with that code.
+  /// The service has no commune or street with that code, or no street near
+  /// the point asked.
   notFound,
 
   /// The service answered with an error or with something unreadable.
@@ -155,4 +182,39 @@ final class StreetNumbers {
   /// has the same number (the BAN sometimes lists a number twice, with two
   /// positions): the first one is kept.
   final int duplicateNumbers;
+}
+
+/// A street the [AddressDirectory] found at a point or by its name, before
+/// it is added: enough to name it on the street card and to centre the map
+/// on it. Its numbers come from [AddressDirectory.numbersOf].
+final class StreetMatch {
+  const StreetMatch({
+    required this.id,
+    required this.name,
+    required this.commune,
+    required this.position,
+  });
+
+  final BanStreetId id;
+  final StreetName name;
+  final Commune commune;
+
+  /// The one point the geocoder gives the street, on it or next to it:
+  /// where the map goes to show it.
+  final GeoPoint position;
+
+  @override
+  bool operator ==(Object other) =>
+      other is StreetMatch &&
+      other.id == id &&
+      other.name == name &&
+      other.commune == commune &&
+      other.position == position;
+
+  @override
+  int get hashCode => Object.hash(id, name, commune, position);
+
+  @override
+  String toString() =>
+      'StreetMatch(${id.value}, ${name.text}, ${commune.name}, $position)';
 }

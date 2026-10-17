@@ -1,0 +1,114 @@
+{
+  "version": 0.6,
+  "generator": "Overpass API 0.7.62.11 87bfad18",
+  "osm3s": {
+    "timestamp_osm_base": "2026-05-31T22:37:44Z",
+    "timestamp_areas_base": "2026-05-31T22:37:44Z",
+    "copyright": "The data included in this document is from www.openstreetmap.org. The data is made available under ODbL."
+  },
+  "elements": [
+
+{
+  "type": "way",
+  "id": 164311420,
+  "bounds": {
+    "minlat": 45.9870429,
+    "minlon": 4.7148978,
+    "maxlat": 45.9871100,
+    "maxlon": 4.7155087
+  },
+  "nodes": [
+    1688925578,
+    2352551057,
+    575917400
+  ],
+  "geometry": [
+    { "lat": 45.9870429, "lon": 4.7148978 },
+    { "lat": 45.9870642, "lon": 4.7150327 },
+    { "lat": 45.9871100, "lon": 4.7155087 }
+  ],
+  "tags": {
+    "cycleway:right": "no",
+    "highway": "tertiary",
+    "lanes": "2",
+    "maxspeed": "30",
+    "name": "Rue Pierre Morin",
+    "oneway": "yes",
+    "parking:both": "no",
+    "ref:FR:FANTOIR": "692641460P",
+    "sidewalk": "both",
+    "surface": "asphalt"
+  }
+},
+{
+  "type": "way",
+  "id": 165332774,
+  "bounds": {
+    "minlat": 45.9870889,
+    "minlon": 4.7155087,
+    "maxlat": 45.9871986,
+    "maxlon": 4.7167295
+  },
+  "nodes": [
+    575917400,
+    2352551060,
+    11251049941,
+    7214126420,
+    575917425
+  ],
+  "geometry": [
+    { "lat": 45.9871100, "lon": 4.7155087 },
+    { "lat": 45.9870889, "lon": 4.7156397 },
+    { "lat": 45.9871802, "lon": 4.7165707 },
+    { "lat": 45.9871866, "lon": 4.7166143 },
+    { "lat": 45.9871986, "lon": 4.7167295 }
+  ],
+  "tags": {
+    "cycleway:right": "no",
+    "highway": "tertiary",
+    "lane_markings": "no",
+    "maxspeed": "30",
+    "name": "Rue Pierre Morin",
+    "oneway": "yes",
+    "parking:both": "lane",
+    "parking:both:fee": "yes",
+    "parking:both:orientation": "parallel",
+    "ref:FR:FANTOIR": "692641460P",
+    "surface": "asphalt"
+  }
+},
+{
+  "type": "way",
+  "id": 772710629,
+  "bounds": {
+    "minlat": 45.9871986,
+    "minlon": 4.7167295,
+    "maxlat": 45.9872315,
+    "maxlon": 4.7170465
+  },
+  "nodes": [
+    575917425,
+    1768843814,
+    210759436
+  ],
+  "geometry": [
+    { "lat": 45.9871986, "lon": 4.7167295 },
+    { "lat": 45.9872165, "lon": 4.7169023 },
+    { "lat": 45.9872315, "lon": 4.7170465 }
+  ],
+  "tags": {
+    "cycleway:right": "no",
+    "highway": "tertiary",
+    "lane_markings": "no",
+    "maxspeed": "30",
+    "name": "Rue Pierre Morin",
+    "oneway": "yes",
+    "parking:both": "no",
+    "ref:FR:FANTOIR": "692641460P",
+    "sidewalk": "both",
+    "surface": "asphalt"
+  }
+}
+
+  ]
+}

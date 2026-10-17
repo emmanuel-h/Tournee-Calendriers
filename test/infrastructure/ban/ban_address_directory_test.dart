@@ -13,6 +13,7 @@ import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
 import 'package:tournee_calendriers/infrastructure/ban/ban_address_directory.dart';
 
+import '../../support/geo_fixtures.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 import 'ban_fixtures.dart';
@@ -234,13 +235,254 @@ void main() {
     );
   });
 
-  // The same transport rules for both calls: each case is run on both.
+  // A response carrying the geocoding [fixture], like the real service.
+  http.Response geopfResponse(String fixture, int status) =>
+      http.Response.bytes(
+        utf8.encode(geopfFixtureText(fixture)),
+        status,
+        headers: {'content-type': 'application/json; charset=utf-8'},
+      );
+
+  final pierreMorin = StreetMatch(
+    id: BanStreetId('69264_1460'),
+    name: valueOf(StreetName.create('Rue Pierre Morin')),
+    commune: villefranche,
+    position: at(45.987094, 4.7158),
+  );
+
+  group('streetAt', () {
+    test(
+      'should ask the reverse geocoder for the street at the point',
+      () async {
+        final requests = <http.Request>[];
+        final directory = directoryAnswering(
+          () async => geopfResponse('reverse_rue_pierre_morin.json', 200),
+          requests: requests,
+        );
+
+        await directory.streetAt(at(45.98718, 4.71618));
+
+        expect(requests, hasLength(1));
+        expect(requests.single.method, 'GET');
+        expect(
+          requests.single.url,
+          Uri.parse(
+            'https://data.geopf.fr/geocodage/reverse?lon=4.71618&lat=45.98718'
+            '&index=address&type=street&limit=1',
+          ),
+        );
+        expect(
+          requests.single.headers['User-Agent'],
+          BanAddressDirectory.userAgent,
+        );
+        expect(requests.single.headers['Accept'], 'application/json');
+      },
+    );
+
+    test('should return the street the geocoder finds', () async {
+      final directory = directoryAnswering(
+        () async => geopfResponse('reverse_rue_pierre_morin.json', 200),
+      );
+
+      expect(
+        valueOf(await directory.streetAt(at(45.98718, 4.71618))),
+        pierreMorin,
+      );
+    });
+
+    test('should fail with not found when no street is near', () async {
+      final directory = directoryAnswering(
+        () async => geopfResponse('reverse_nothing.json', 200),
+      );
+
+      expect(
+        failureOf(await directory.streetAt(at(0, 0))),
+        AddressDirectoryFailure.notFound,
+      );
+    });
+
+    test(
+      'should fail with not found when the only street is unreadable',
+      () async {
+        final directory = directoryAnswering(
+          () async => http.Response(
+            '{"features": [{"properties": {"id": "69264_1460"}}]}',
+            200,
+          ),
+        );
+
+        expect(
+          failureOf(await directory.streetAt(at(45.98718, 4.71618))),
+          AddressDirectoryFailure.notFound,
+        );
+      },
+    );
+
+    test(
+      'should fail with a service error when given a BAN document',
+      () async {
+        final directory = directoryAnswering(
+          () async => fixtureResponse('lookup_69264.json', 200),
+        );
+
+        expect(
+          failureOf(await directory.streetAt(at(45.98718, 4.71618))),
+          AddressDirectoryFailure.serviceError,
+        );
+      },
+    );
+  });
+
+  group('searchStreets', () {
+    test('should ask the geocoder for ten streets of the commune', () async {
+      final requests = <http.Request>[];
+      final directory = directoryAnswering(
+        () async => geopfResponse('search_rue_pierre.json', 200),
+        requests: requests,
+      );
+
+      await directory.searchStreets('rue pierre', commune: insee('69264'));
+
+      expect(requests, hasLength(1));
+      expect(requests.single.method, 'GET');
+      expect(
+        requests.single.url,
+        Uri.parse(
+          'https://data.geopf.fr/geocodage/search?q=rue+pierre&index=address'
+          '&type=street&citycode=69264&limit=10',
+        ),
+      );
+      expect(
+        requests.single.headers['User-Agent'],
+        BanAddressDirectory.userAgent,
+      );
+      expect(requests.single.headers['Accept'], 'application/json');
+    });
+
+    test('should return the streets found, best first', () async {
+      final directory = directoryAnswering(
+        () async => geopfResponse('search_rue_pierre.json', 200),
+      );
+
+      final matches = valueOf(
+        await directory.searchStreets('rue pierre', commune: insee('69264')),
+      );
+
+      expect(matches, hasLength(9));
+      expect(matches.first.name.text, 'Rue Pierre Berthier');
+      expect(matches[2], pierreMorin);
+    });
+
+    test('should return no street when the geocoder finds none', () async {
+      final directory = directoryAnswering(
+        () async => geopfResponse('search_none.json', 200),
+      );
+
+      expect(
+        valueOf(
+          await directory.searchStreets('zzzzqx', commune: insee('69264')),
+        ),
+        isEmpty,
+      );
+    });
+
+    test('should send the text without its surrounding spaces', () async {
+      final requests = <http.Request>[];
+      final directory = directoryAnswering(
+        () async => geopfResponse('search_none.json', 200),
+        requests: requests,
+      );
+
+      await directory.searchStreets('  rue  ', commune: insee('69264'));
+
+      expect(requests.single.url.queryParameters['q'], 'rue');
+    });
+
+    test('should send the text from its first letter or digit', () async {
+      final requests = <http.Request>[];
+      final directory = directoryAnswering(
+        () async => geopfResponse('search_none.json', 200),
+        requests: requests,
+      );
+
+      await directory.searchStreets('« (Écoles', commune: insee('69264'));
+      await directory.searchStreets('-11 Novembre', commune: insee('69264'));
+
+      expect(requests.map((request) => request.url.queryParameters['q']), [
+        'Écoles',
+        '11 Novembre',
+      ]);
+    });
+
+    // The service refuses a text outside 3 to 200 characters (HTTP 400,
+    // `search_too_short.json`): such a text finds nothing, unasked.
+    final lengths = <String, (String, bool)>{
+      'nothing': ('', false),
+      'only spaces': ('    ', false),
+      'only signs': ('« - »', false),
+      '2 characters': ('ru', false),
+      '2 characters once trimmed': ('  ru  ', false),
+      '2 characters after the signs': ('« ru', false),
+      '3 characters': ('rue', true),
+      // `𝒜` is one character but two UTF-16 code units: the length is
+      // counted in characters.
+      '2 characters of two code units each': ('𝒜𝒜', false),
+      '200 characters': ('r' * 200, true),
+      '200 characters of two code units each': ('𝒜' * 200, true),
+      '201 characters': ('r' * 201, false),
+    };
+
+    lengths.forEach((description, entry) {
+      final (text, asked) = entry;
+      test(
+        'should ${asked ? '' : 'not '}ask the geocoder for $description',
+        () async {
+          final requests = <http.Request>[];
+          final directory = directoryAnswering(
+            () async => geopfResponse('search_none.json', 200),
+            requests: requests,
+          );
+
+          final result = await directory.searchStreets(
+            text,
+            commune: insee('69264'),
+          );
+
+          expect(requests, hasLength(asked ? 1 : 0));
+          expect(valueOf(result), isEmpty);
+        },
+      );
+    });
+
+    test(
+      'should fail with a service error when the service refuses the text',
+      () async {
+        final directory = directoryAnswering(
+          () async => geopfResponse('search_too_short.json', 400),
+        );
+
+        expect(
+          failureOf(
+            await directory.searchStreets('rue', commune: insee('69264')),
+          ),
+          AddressDirectoryFailure.serviceError,
+        );
+      },
+    );
+  });
+
+  // The same transport rules for every call: each case is run on each.
   final calls =
       <String, Future<Object> Function(BanAddressDirectory directory)>{
         'streetsOf': (directory) async =>
             failureOf(await directory.streetsOf(insee('69264'))),
         'numbersOf': (directory) async =>
             failureOf(await directory.numbersOf(BanStreetId('69264_0246'))),
+        'streetAt': (directory) async =>
+            failureOf(await directory.streetAt(at(45.98718, 4.71618))),
+        'searchStreets': (directory) async => failureOf(
+          await directory.searchStreets('rue pierre', commune: insee('69264')),
+        ),
       };
 
   calls.forEach((name, failureFrom) {

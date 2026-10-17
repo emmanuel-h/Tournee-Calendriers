@@ -1733,6 +1733,33 @@ Geometry and map layers fixed in T3.1 (`lib/domain/geometry/`, `lib/domain/map/`
   side farthest from the equator, clamped at the poles and ±180°) also serve the communes'
   points of #78.
 
+Address and shape adapters fixed in T3.2 (`lib/application/ports/address_directory.dart`,
+`street_shapes.dart`, `lib/infrastructure/ban/`, `lib/infrastructure/overpass/`):
+
+- **`AddressDirectory.streetAt(GeoPoint)`** → `StreetMatch` (BAN id, `StreetName`, `Commune`,
+  the geocoder's one `GeoPoint` for the street). The Géoplateforme reverse geocoder (`type=street`,
+  `limit=1`) measures the distance to that one point, not to the road, and answers the nearest
+  street **whatever the distance**, possibly in the next commune; the card shows the name found.
+  `notFound` only when it answers nothing (or nothing readable).
+- **`AddressDirectory.searchStreets(text, commune:)`** → the `StreetMatch`es of one commune, best
+  first, at most 10 (one call per commune of the tournée). The text is trimmed and cut before its
+  first letter or digit; under 3 or over 200 characters (counted as code points) it finds nothing
+  without a request (the service refuses it with HTTP 400). Same failures as the BAN lookup
+  (`noNetwork`, `notFound` on 404, `serviceError`); an unreadable feature is left out. One
+  adapter, `BanAddressDirectory`, serves the four calls (same timeout, 15 s).
+- **Port `StreetShapes.shapeOf(name:, commune:)`** → `StreetShape` as OpenStreetMap gives it,
+  **not simplified** (the caller calls `simplified()` before storing), `StreetShape.none` when no
+  road matches; `StreetShapesFailure.noNetwork | serviceError` (any status but 200 — Overpass
+  is often busy: 429, 502, 504 —, a body that is not JSON, or a `remark`, which Overpass adds
+  when it stopped on an error and may have given a partial answer).
+- **The Overpass query** (POST, form field `data`): the ways tagged `highway` inside the
+  commune's boundary (`area["ref:INSEE"=…]["boundary"="administrative"]["admin_level"="8"]`)
+  whose `name` matches the whole BAN name **ignoring case and accents** (each vowel and `c` an
+  alternation of its accented forms), either apostrophe, and a hyphen for a space; `out geom`,
+  server timeout 15 s, client 20 s. Measured on Villefranche-sur-Saône: 284 of 312 BAN streets
+  find a way (215 with an exact name), since the BAN often drops accents. A way with an
+  unreadable point is left out whole.
+
 Firestore adapters fixed in T2.3 (`lib/infrastructure/firestore/`, `lib/application/ports/`):
 
 - **Port `TourneeDirectory`** (application, Q20): what someone outside a tournée asks of the
@@ -2190,12 +2217,12 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
 | Purpose | Endpoint | Notes |
 |---|---|---|
 | Map tiles + style | `https://tiles.openfreemap.org/styles/liberty` (or `positron`) | OSM vector tiles for MapLibre. Offline download through `maplibre_gl` offline regions; check OpenFreeMap's terms on bulk download in the spike task |
-| Street under a tap | `https://data.geopf.fr/geocodage/reverse?lon={lon}&lat={lat}&index=address&type=street&limit=1` | Returns BAN `id` = idVoie (`69264_1460`), `name`, `citycode` |
-| Street search by name | `https://data.geopf.fr/geocodage/search?q={q}&type=street&citycode={code}` | For the search box |
+| Street under a tap | `https://data.geopf.fr/geocodage/reverse?lon={lon}&lat={lat}&index=address&type=street&limit=1` | Returns BAN `id` = idVoie (`69264_1460`), `name`, `citycode`, `city`, one point of the street; always the nearest street, whatever the distance |
+| Street search by name | `https://data.geopf.fr/geocodage/search?q={q}&index=address&type=street&citycode={code}&limit=10` | For the search box; `q` 3–200 characters starting with a letter or digit, else HTTP 400 |
 | Commune by name | `https://geo.api.gouv.fr/communes?nom={q}&fields=nom,code,codesPostaux&boost=population&limit=5` | Temporary import screen (5.0): `nom`, `code` (INSEE), `codesPostaux`; `[]` when nothing matches |
 | Streets of a commune | `https://plateforme.adresse.data.gouv.fr/lookup/{inseeCode}` | `voies[]`: `idVoie`, `nomVoie`, `nbNumeros`, `type`; 404 for an unknown commune |
 | Numbers of a street | `https://plateforme.adresse.data.gouv.fr/lookup/{idVoie}` | `numeros[]`: `numero`, `suffixe`, `position.coordinates` [lon, lat]; a number may appear twice; 404 for an unknown street |
-| Shape of a street | Overpass `https://overpass-api.de/api/interpreter`, query `way(area INSEE)["highway"]["name"="…"]; out geom;` | Needs a `User-Agent`. One call per added street. Fallback when empty: no shape, house dots only |
+| Shape of a street | Overpass `https://overpass-api.de/api/interpreter` (POST `data=`), query `way(area INSEE)["highway"]["name"~"<accent-tolerant name>",i]; out geom;` (§6.1, T3.2) | Needs a `User-Agent`. One call per added street. Fallback when empty: no shape, house dots only. Often busy (502 / 504 for an hour on 2026-10-17) |
 
 All of them are wrapped behind domain interfaces (`AddressDirectory`, `CommuneSearch`, `StreetShapes`), so the rest
 of the app never sees HTTP or JSON, and tests use fakes. Parsing is tested against JSON fixtures
@@ -2216,7 +2243,7 @@ lib/
 ├── application/     Use cases (one class per use case, a single `call` method), outbound
 │   ├── use_cases/   ports for external services (AddressDirectory, StreetShapes,
 │   └── ports/       OfflineMapStore, IdentityProvider, Clock, IdGenerator). Depends on domain only.
-├── infrastructure/  Adapters implementing the ports: firestore/, geopf/ + ban/ (http),
+├── infrastructure/  Adapters implementing the ports: firestore/, ban/ (BAN + geopf, http),
 │                    overpass/, maplibre_offline/, firebase_auth/, preferences/, mappers.
 │                    The only place Firebase, http, MapLibre, shared_preferences appear.
 ├── presentation/    Riverpod Notifiers + immutable view states. Call use cases only.

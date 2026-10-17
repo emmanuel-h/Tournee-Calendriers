@@ -24,6 +24,7 @@ import 'package:tournee_calendriers/application/ports/moved_streets_log.dart';
 import 'package:tournee_calendriers/application/ports/my_tournees_store.dart';
 import 'package:tournee_calendriers/application/ports/pending_sync.dart';
 import 'package:tournee_calendriers/application/ports/phone_settings.dart';
+import 'package:tournee_calendriers/application/ports/street_shapes.dart';
 import 'package:tournee_calendriers/application/ports/street_view_preferences.dart';
 import 'package:tournee_calendriers/application/ports/tournee_directory.dart';
 import 'package:tournee_calendriers/application/use_cases/admins.dart';
@@ -81,6 +82,9 @@ final addressDirectoryProvider = Provider<AddressDirectory>(
 );
 final communeSearchProvider = Provider<CommuneSearch>(
   (ref) => _unbound('CommuneSearch'),
+);
+final streetShapesProvider = Provider<StreetShapes>(
+  (ref) => _unbound('StreetShapes'),
 );
 final clockProvider = Provider<Clock>((ref) => _unbound('Clock'));
 final idGeneratorProvider = Provider<IdGenerator>(

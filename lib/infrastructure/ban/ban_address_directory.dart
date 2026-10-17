@@ -4,19 +4,22 @@ import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
+import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/shared/insee_code.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/infrastructure/ban/mappers/ban_lookup_mapper.dart';
+import 'package:tournee_calendriers/infrastructure/ban/mappers/geopf_geocoding_mapper.dart';
 import 'package:tournee_calendriers/infrastructure/http/app_user_agent.dart';
 
-/// The [AddressDirectory] backed by the BAN `lookup` API of
-/// plateforme.adresse.data.gouv.fr (PLAN §9): no key, one GET per call.
+/// The [AddressDirectory] backed by the BAN (PLAN §9): its `lookup` API on
+/// plateforme.adresse.data.gouv.fr for a commune's streets and a street's
+/// numbers, and its geocoder on the Géoplateforme (data.geopf.fr) for the
+/// street under a tap and the search by name. No key, one GET per call.
 ///
 /// This class only does the transport (URL, headers, timeout, status code)
 /// and turns every way it can go wrong into an [AddressDirectoryFailure];
-/// reading the JSON is the job of the pure functions in
-/// `mappers/ban_lookup_mapper.dart`.
+/// reading the JSON is the job of the pure functions in `mappers/`.
 final class BanAddressDirectory implements AddressDirectory {
   /// [client] is given rather than created here so tests can pass a
   /// `MockClient`, and so the composition root decides when it is closed.
@@ -32,6 +35,20 @@ final class BanAddressDirectory implements AddressDirectory {
   static const userAgent = appUserAgent;
 
   static const _host = 'plateforme.adresse.data.gouv.fr';
+  static const _geocoderHost = 'data.geopf.fr';
+
+  /// How many streets a search gives at most: what fits on the screen
+  /// above the keyboard.
+  static const _searchLimit = 10;
+
+  /// The service refuses a search text outside these lengths (HTTP 400).
+  static const _minSearchLength = 3;
+  static const _maxSearchLength = 200;
+
+  /// The signs before the first letter or digit of a search text, which
+  /// the service refuses too. `\p{L}` is any letter and `\p{N}` any digit,
+  /// accented or not; they need `unicode: true`.
+  static final _leadingSigns = RegExp(r'^[^\p{L}\p{N}]+', unicode: true);
 
   final http.Client _client;
 
@@ -48,16 +65,65 @@ final class BanAddressDirectory implements AddressDirectory {
     BanStreetId street,
   ) => _lookup(street.value, streetNumbersFromJson);
 
-  /// GETs `/lookup/[id]` and reads the answer with [read], which throws a
-  /// [FormatException] when the document is not what it expects.
+  @override
+  Future<Result<StreetMatch, AddressDirectoryFailure>> streetAt(
+    GeoPoint point,
+  ) async {
+    final url = Uri.https(_geocoderHost, '/geocodage/reverse', {
+      'lon': '${point.longitude}',
+      'lat': '${point.latitude}',
+      'index': 'address',
+      'type': 'street',
+      'limit': '1',
+    });
+    return switch (await _get(url, streetMatchesFromJson)) {
+      Ok(value: [final nearest, ...]) => Ok(nearest),
+      // The geocoder found nothing near, or nothing it could read.
+      Ok() => const Err(AddressDirectoryFailure.notFound),
+      Err(:final failure) => Err(failure),
+    };
+  }
+
+  @override
+  Future<Result<List<StreetMatch>, AddressDirectoryFailure>> searchStreets(
+    String text, {
+    required InseeCode commune,
+  }) async {
+    final query = text.trim().replaceFirst(_leadingSigns, '');
+    // Counted in characters (`runes`), as the service counts them, not in
+    // UTF-16 code units (`length`).
+    final length = query.runes.length;
+    if (length < _minSearchLength || length > _maxSearchLength) {
+      return const Ok([]);
+    }
+    final url = Uri.https(_geocoderHost, '/geocodage/search', {
+      'q': query,
+      'index': 'address',
+      'type': 'street',
+      'citycode': commune.value,
+      'limit': '$_searchLimit',
+    });
+    return _get(url, streetMatchesFromJson);
+  }
+
+  /// GETs `/lookup/[id]` from the BAN.
   Future<Result<T, AddressDirectoryFailure>> _lookup<T>(
     String id,
     T Function(Object? json) read,
-  ) async {
-    // `pathSegments` percent-encodes each segment, so an id holding a `/`
-    // cannot reach another path of the service.
-    final url = Uri(scheme: 'https', host: _host, pathSegments: ['lookup', id]);
+  ) =>
+      // `pathSegments` percent-encodes each segment, so an id holding a `/`
+      // cannot reach another path of the service.
+      _get(
+        Uri(scheme: 'https', host: _host, pathSegments: ['lookup', id]),
+        read,
+      );
 
+  /// GETs [url] and reads the answer with [read], which throws a
+  /// [FormatException] when the document is not what it expects.
+  Future<Result<T, AddressDirectoryFailure>> _get<T>(
+    Uri url,
+    T Function(Object? json) read,
+  ) async {
     final http.Response response;
     try {
       response = await _client

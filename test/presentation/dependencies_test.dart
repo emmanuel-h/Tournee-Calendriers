@@ -161,6 +161,7 @@ void main() {
       'StreetRepository': streetRepositoryProvider,
       'AddressDirectory': addressDirectoryProvider,
       'CommuneSearch': communeSearchProvider,
+      'StreetShapes': streetShapesProvider,
       'Clock': clockProvider,
       'IdGenerator': idGeneratorProvider,
       'IdentityProvider': identityProvider,

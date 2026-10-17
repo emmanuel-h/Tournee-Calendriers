@@ -223,4 +223,66 @@ void main() {
       );
     });
   });
+
+  group('StreetMatch', () {
+    // Only Villefranche-sur-Saône may be named (location privacy): another
+    // commune is the same code under another name.
+    final otherCommune = valueOf(
+      Commune.create(inseeCode: '69264', name: 'Villefranche'),
+    );
+
+    StreetMatch match({
+      String id = '69264_1460',
+      StreetName? name,
+      Commune? commune,
+      GeoPoint? position,
+    }) => StreetMatch(
+      id: BanStreetId(id),
+      name: name ?? pierreMorin,
+      commune: commune ?? villefranche,
+      position: position ?? entrance,
+    );
+
+    test('should keep its id, name, commune and position', () {
+      final made = match();
+
+      expect(made.id, BanStreetId('69264_1460'));
+      expect(made.name, pierreMorin);
+      expect(made.commune, villefranche);
+      expect(made.position, entrance);
+    });
+
+    test('should be equal when every field is equal', () {
+      expect(match(), match());
+      expect(match().hashCode, match().hashCode);
+    });
+
+    test('should differ when the ids differ', () {
+      expect(match(), isNot(match(id: '69264_1270')));
+    });
+
+    test('should differ when the names differ', () {
+      expect(match(), isNot(match(name: nationale)));
+    });
+
+    test('should differ when the communes differ', () {
+      expect(match(), isNot(match(commune: otherCommune)));
+    });
+
+    test('should differ when the positions differ', () {
+      expect(match(), isNot(match(position: otherEntrance)));
+    });
+
+    test('should differ from a value of another type', () {
+      expect(match(), isNot('69264_1460'));
+    });
+
+    test('should show its id, name, commune and position when printed', () {
+      expect(
+        match().toString(),
+        'StreetMatch(69264_1460, Rue Pierre Morin, Villefranche-sur-Saône, '
+        'GeoPoint(45.987173, 4.716138))',
+      );
+    });
+  });
 }
