@@ -283,7 +283,7 @@ describe('who covers a street', () => {
 });
 
 describe('marking a house', () => {
-  it('should accept the status, the hint and the stamp of the caller', async () => {
+  it('should accept the status, the time and the stamp of the caller', async () => {
     await assertSucceeds(updateFields(nationale(), mark('4bis', 'DONE', null)));
     await assertSucceeds(updateFields(nationale(), mark('4bis', 'NOBODY_HOME', null)));
     await assertSucceeds(updateFields(nationale(), mark('4bis', 'COME_BACK', '')));
@@ -318,34 +318,52 @@ describe('marking a house', () => {
     await assertFails(updateFields(nationale(), mark('4bis', 'done', null)));
   });
 
-  it('should refuse a hint on a house that is not « repasser »', async () => {
-    await assertFails(updateFields(nationale(), mark('4bis', 'DONE', 'après 19h')));
+  it('should refuse a time on a house that is not « repasser »', async () => {
+    await assertFails(updateFields(nationale(), mark('4bis', 'DONE', '2026-11-07')));
   });
 
-  it('should refuse « repasser » without its hint field', async () => {
+  it('should refuse « repasser » without its time field', async () => {
     await assertFails(updateFields(nationale(), mark('4bis', 'COME_BACK', null)));
   });
 
-  it('should accept a hint of 20 characters and refuse 21, counted as code points', async () => {
-    await assertSucceeds(updateFields(nationale(), mark('4bis', 'COME_BACK', fire.repeat(20))));
-    await assertFails(updateFields(nationale(), mark('4bis', 'COME_BACK', fire.repeat(21))));
-    await assertSucceeds(updateFields(nationale(), mark('4bis', 'COME_BACK', 'a'.repeat(20))));
-    await assertFails(updateFields(nationale(), mark('4bis', 'COME_BACK', 'a'.repeat(21))));
+  it('should accept a day, and a day with an hour of 8 to 21', async () => {
+    for (const time of ['2026-11-07', '2026-11-07T08', '2026-11-07T18', '2026-11-07T21',
+      '2027-01-31', '2026-12-01T10']) {
+      await assertSucceeds(updateFields(nationale(), mark('4bis', 'COME_BACK', time)));
+    }
   });
 
-  it('should refuse a hint that is not trimmed', async () => {
-    await assertFails(updateFields(nationale(), mark('4bis', 'COME_BACK', ' après 19h')));
-    await assertFails(updateFields(nationale(), mark('4bis', 'COME_BACK', 'après 19h\n')));
+  it('should refuse an hour before 8 or after 21, or not on two digits', async () => {
+    for (const time of ['2026-11-07T07', '2026-11-07T22', '2026-11-07T8', '2026-11-07T']) {
+      await assertFails(updateFields(nationale(), mark('4bis', 'COME_BACK', time)));
+    }
   });
 
-  it('should accept setting the hint alone (ComeBackSet)', async () => {
+  it('should refuse a day that is not a date of the app', async () => {
+    for (const time of ['2026-13-01', '2026-00-10', '2026-11-00', '2026-11-32', '1999-11-07',
+      '26-11-07', ' 2026-11-07', '2026-11-07 ']) {
+      await assertFails(updateFields(nationale(), mark('4bis', 'COME_BACK', time)));
+    }
+  });
+
+  it('should refuse the free hint of before #81 in a write', async () => {
+    await assertFails(updateFields(nationale(), mark('4bis', 'COME_BACK', 'après 19h')));
+    await assertFails(updateFields(nationale(), mark('4bis', 'COME_BACK', 'samedi')));
+    await assertFails(updateFields(nationale(), mark('4bis', 'COME_BACK', 18)));
+  });
+
+  it('should accept setting the time alone (ComeBackSet) over a free hint of before #81', async () => {
     await assertSucceeds(
       updateFields(nationale(), [
-        [['houses', '6', 'comeBack'], 'samedi'],
+        [['houses', '6', 'comeBack'], '2026-11-07T19'],
         [['houses', '6', 'by'], lea],
         [['houses', '6', 'at'], threePm],
       ]),
     );
+  });
+
+  it('should accept marking a house that holds a free hint of before #81', async () => {
+    await assertSucceeds(updateFields(nationale(), mark('6', 'DONE', null)));
   });
 
   it('should refuse a `note` field on a house', async () => {
@@ -491,12 +509,13 @@ describe('a building', () => {
     await assertSucceeds(updateFields(nationale(), doorMark('A0-Porte 1.2', 'DONE', null)));
   });
 
-  it('should accept the hint of a door « repasser », up to 20 characters', async () => {
+  it('should accept the time of a door « repasser » and refuse a free hint', async () => {
     await assertSucceeds(
-      updateFields(nationale(), doorMark('A0-Gauche', 'COME_BACK', fire.repeat(20))),
+      updateFields(nationale(), doorMark('A0-Gauche', 'COME_BACK', '2026-11-07T18')),
     );
+    await assertSucceeds(updateFields(nationale(), doorMark('A0-Gauche', 'COME_BACK', '')));
     await assertFails(
-      updateFields(nationale(), doorMark('A0-Gauche', 'COME_BACK', fire.repeat(21))),
+      updateFields(nationale(), doorMark('A0-Gauche', 'COME_BACK', 'le soir')),
     );
   });
 
@@ -561,14 +580,15 @@ describe('a building', () => {
   });
 
   it('should accept the building’s own « repasser » and refuse a status of its own', async () => {
-    const ownComeBack = (hint) =>
+    const ownComeBack = (time) =>
       updateFields(nationale(), [
-        [['houses', '8', 'comeBack'], hint],
+        [['houses', '8', 'comeBack'], time],
         [['houses', '8', 'by'], lea],
         [['houses', '8', 'at'], threePm],
       ]);
-    await assertSucceeds(ownComeBack(fire.repeat(20)));
-    await assertFails(ownComeBack(fire.repeat(21)));
+    await assertSucceeds(ownComeBack('2026-11-07T10'));
+    await assertSucceeds(ownComeBack(''));
+    await assertFails(ownComeBack('gardien'));
     await assertSucceeds(ownComeBack(null));
     await assertFails(updateFields(nationale(), mark('8', 'DONE', null)));
   });

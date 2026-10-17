@@ -1,5 +1,6 @@
 // Literal values shared by the street tests. Every place is in
 // Villefranche-sur-Saône (INSEE 69264): the only real place tests may name.
+import 'package:tournee_calendriers/domain/shared/calendar_day.dart';
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
 import 'package:tournee_calendriers/domain/shared/commune.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
@@ -17,8 +18,16 @@ import 'results.dart';
 /// A house number the test knows is valid: `n('12bis')`.
 HouseNumber n(String text) => valueOf(HouseNumber.parse(text));
 
-/// A « repasser » with a hint the test knows is valid.
-ComeBack comeBack(String hint) => valueOf(ComeBack.create(hint));
+/// A calendar day the test knows is valid: `day('2026-11-07')`.
+CalendarDay day(String iso) {
+  final [year, month, date] = iso.split('-').map(int.parse).toList();
+  return valueOf(CalendarDay.create(year, month, date));
+}
+
+/// A « repasser » on a day (and an hour) the test knows is valid:
+/// `comeBack('2026-11-07', hour: 19)`.
+ComeBack comeBack(String iso, {int? hour}) =>
+    valueOf(ComeBack.create(day: day(iso), hour: hour));
 
 /// A count of tries with nobody home the test knows is valid: `tries(3)`.
 NobodyHomeTries tries(int count) => valueOf(NobodyHomeTries.create(count));

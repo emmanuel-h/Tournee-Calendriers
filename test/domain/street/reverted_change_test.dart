@@ -19,7 +19,10 @@ void main() {
     status: VisitStatus.done,
     lastChange: leaAtTwo,
   );
-  final twelve = House(number: n('12'), comeBack: comeBack('après 19h'));
+  final twelve = House(
+    number: n('12'),
+    comeBack: comeBack('2026-11-07', hour: 19),
+  );
 
   group('HouseReverted', () {
     HouseReverted reverted({

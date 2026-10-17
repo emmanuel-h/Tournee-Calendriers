@@ -42,7 +42,7 @@ final class House {
   ///   (see `Building.status`); it keeps the [comeBack] it is given, its own;
   /// - a single house has a [comeBack] exactly when it is
   ///   [VisitStatus.comeBack] (see [ComeBack.keptBy]): « repasser » without
-  ///   hint when none is given, and none at all with another status;
+  ///   time when none is given, and none at all with another status;
   /// - a single house keeps the [tries] its status allows (see
   ///   [NobodyHomeTries.keptBy]: none when to do, at least one when nobody
   ///   is home); a building has none, its doors count theirs.
@@ -73,7 +73,7 @@ final class House {
   /// whose status is `building.status`.
   final VisitStatus status;
 
-  /// What goes with the « repasser » status (its hint); null with any other
+  /// What goes with the « repasser » status (when to come back); null with any other
   /// status. A building, always to do itself, keeps its own here
   /// (« Repasser » under the grid) apart from its doors'.
   final ComeBack? comeBack;

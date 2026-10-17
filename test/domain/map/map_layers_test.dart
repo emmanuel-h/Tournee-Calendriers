@@ -177,7 +177,12 @@ void main() {
       test('should show come back when the building has its own', () {
         final done = marked(marked(street, door01), door02);
         final (comingBack, _) = valueOf(
-          done.setComeBack(n('7'), comeBack('soir'), by: lea, at: twoPm),
+          done.setComeBack(
+            n('7'),
+            comeBack('2026-11-03', hour: 18),
+            by: lea,
+            at: twoPm,
+          ),
         );
 
         expect(_dotOf(comingBack).status, HouseDotStatus.comeBack);

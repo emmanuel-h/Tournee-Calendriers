@@ -199,7 +199,8 @@ void main() {
   });
   testWidgets(
     'should keep the marks across a restart when a house is marked, undone, '
-    'marked again and another held to come back, then found nobody home twice',
+    'marked again and another tapped to come back tomorrow at 18 h, then '
+    'found nobody home twice',
     (tester) async {
       final semantics = tester.ensureSemantics();
       final storage = await _knownPhone('mark_flow');
@@ -244,19 +245,34 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.getSemantics(tile).label, 'Numéro 33, fait');
 
-      // Hold 34: its sheet opens; « Repasser » is chosen and « après 19h »
-      // typed in « Quand repasser ? », the sheet closed by a tap on the
-      // dimmed street, and the tile shows ↻.
+      // Tap 34 three times (✓, ✗, ↻): the third opens its sheet by itself
+      // (#81), where « Demain » and « 18 h » say when to come back; « OK »
+      // closes it and the tile shows ↻.
       final other = find.byKey(const ValueKey('street.tile.34'));
-      await tester.longPress(other);
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('house.status.comeBack')));
-      await tester.pumpAndSettle();
-      await tester.enterText(
-        find.byKey(const Key('house.comeBackHint.field')),
-        'après 19h',
+      for (var tap = 0; tap < 3; tap++) {
+        await tester.tap(other);
+        await tester.pumpAndSettle();
+      }
+      expect(find.byKey(const Key('house.ok')), findsOneWidget);
+      final now = DateTime.now();
+      final tomorrow = DateTime(now.year, now.month, now.day + 1);
+      String two(int value) => '$value'.padLeft(2, '0');
+      await tester.tap(
+        find.byKey(
+          ValueKey(
+            'house.comeBackDay.${tomorrow.year}-${two(tomorrow.month)}-'
+            '${two(tomorrow.day)}',
+          ),
+        ),
       );
-      await tester.tapAt(const Offset(200, 40));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('house.comeBackHour')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('18 h').last);
+      await tester.pumpAndSettle();
+      final summary = find.byKey(const Key('house.comeBackSummary'));
+      expect(tester.widget<Text>(summary).data, 'Demain vers 18 h');
+      await tester.tap(find.byKey(const Key('house.ok')));
       await tester.pumpAndSettle();
       expect(tester.getSemantics(other).label, 'Numéro 34, repasser');
       // The phone storage writes its file just after the tap: let it land.
@@ -285,15 +301,24 @@ void main() {
       expect(tester.getSemantics(comingBack).label, 'Numéro 34, repasser');
       await tester.longPress(comingBack);
       await tester.pumpAndSettle();
-      expect(find.text('après 19h'), findsOneWidget);
+      expect(
+        tester
+            .widget<Text>(find.byKey(const Key('house.comeBackSummary')))
+            .data,
+        'Demain vers 18 h',
+      );
 
-      // Came back, still nobody (#80): « personne », its first try. Then 32,
-      // found nobody home by taps (✓, ✗: its first try), held: once more,
-      // its second, which the tile now says.
+      // Came back, still nobody (#80): « personne », its second try (the ✗
+      // of the taps was the first). Then 32, found nobody home by taps (✓,
+      // ✗: its first try), held: once more, its second, which the tile now
+      // says.
       await tester.tap(find.byKey(const Key('house.nobodyHomeAgain')));
       await tester.pumpAndSettle();
-      expect(findArrowText('34 → Personne'), findsOneWidget);
-      expect(tester.getSemantics(comingBack).label, 'Numéro 34, personne');
+      expect(findArrowText('34 → Personne (2e passage)'), findsOneWidget);
+      expect(
+        tester.getSemantics(comingBack).label,
+        'Numéro 34, personne, 2e passage',
+      );
       final twice = find.byKey(const ValueKey('street.tile.32'));
       await tester.tap(twice);
       await tester.pumpAndSettle();

@@ -104,7 +104,7 @@ service cloud.firestore {
       return text is string && text.matches('(?s).{0,' + string(max) + '}');
     }
 
-    // Trimmed at both ends, possibly empty (a « repasser » without hint).
+    // Trimmed at both ends, possibly empty.
     function isTrimmed(text) {
       return text is string && text.matches('(?s)([^\\s](.*[^\\s])?)?');
     }
@@ -392,17 +392,22 @@ service cloud.firestore {
       return status in ['TO_DO', 'DONE', 'NOBODY_HOME', 'COME_BACK'];
     }
 
-    // The « repasser » hint: trimmed, at most 20 characters (ComeBack);
-    // empty when none was given. The only free text kept about a house:
-    // there is no `note` field anywhere (PLAN §8.3).
-    function isHint(hint) {
-      return hasAtMost(hint, 20) && isTrimmed(hint);
+    // When to come back (ComeBack, #81, come_back_text.dart): "" for no
+    // time set, a day "2026-10-24", or a day and an hour of 8 to 21
+    // "2026-10-24T18". Structured, not free text: nothing about the people
+    // living there can be kept about a house, there is no `note` field
+    // anywhere either (PLAN §8.3). The free hint of before #81 is refused
+    // in a write; one already stored is only replaced when the house is
+    // next written whole or marked.
+    function isComeBackTime(text) {
+      return text is string
+        && text.matches('(2[0-9]{3}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])(T(0[89]|1[0-9]|2[01]))?)?');
     }
 
-    // A single house or a door has a hint exactly when it is « repasser ».
+    // A single house or a door has a time exactly when it is « repasser ».
     function hasMarks(entry) {
       return isStatus(entry.status)
-        && (entry.status == 'COME_BACK' ? isHint(entry.comeBack) : entry.comeBack == null)
+        && (entry.status == 'COME_BACK' ? isComeBackTime(entry.comeBack) : entry.comeBack == null)
         && hasTries(entry);
     }
 
@@ -427,7 +432,7 @@ service cloud.firestore {
     // checked one by one: at most 500 doors, 26 staircases of floors 0–50.
     function isBuilding(house) {
       return house.status == 'TO_DO'
-        && (house.comeBack == null || isHint(house.comeBack))
+        && (house.comeBack == null || isComeBackTime(house.comeBack))
         && hasTries(house)
         && house.labelStyle in ['FLOOR_AND_NUMBER', 'FLOOR_AND_LETTER', 'FREE']
         && house.layout is list && house.layout.size() >= 1 && house.layout.size() <= 26 * 51
@@ -586,7 +591,7 @@ service cloud.firestore {
           && isCallerStamp(new.by, new.at));
     }
 
-    // One door marked, its hint set, or put back by an undo: the door
+    // One door marked, its time set, or put back by an undo: the door
     // entry is whole and carries the caller's stamp. Found by its value,
     // as a house is: the new door carries its own stamp.
     function isOneDoorEdited(old, new) {

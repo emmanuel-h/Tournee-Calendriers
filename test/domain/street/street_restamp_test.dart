@@ -26,7 +26,7 @@ void main() {
   final five = House(
     number: n('5'),
     status: VisitStatus.comeBack,
-    comeBack: comeBack('après 19h'),
+    comeBack: comeBack('2026-11-07', hour: 19),
     lastChange: phoneAt(twoPm),
     position: townHallDoor,
   );
@@ -47,13 +47,13 @@ void main() {
         Dwelling(
           label: d('12'),
           status: VisitStatus.comeBack,
-          comeBack: comeBack('sonner fort'),
+          comeBack: comeBack('2026-11-06', hour: 8),
           lastChange: phoneAt(twoPm),
         ),
       );
   final eight = House(
     number: n('8'),
-    comeBack: comeBack('digicode'),
+    comeBack: comeBack('2026-11-05'),
     lastChange: phoneAt(threePm),
     building: eightDoors,
     position: northDoor,
@@ -83,7 +83,7 @@ void main() {
     final house = moved.houseAt(n('5'))!;
     expect(house.lastChange, manuAtTwo);
     expect(house.status, VisitStatus.comeBack);
-    expect(house.comeBack, comeBack('après 19h'));
+    expect(house.comeBack, comeBack('2026-11-07', hour: 19));
     expect(house.position, townHallDoor);
   });
 
@@ -98,7 +98,7 @@ void main() {
 
     final house = moved.houseAt(n('8'))!;
     expect(house.lastChange, manuAtThree);
-    expect(house.comeBack, comeBack('digicode'));
+    expect(house.comeBack, comeBack('2026-11-05'));
     expect(house.position, northDoor);
     final doors = house.building!;
     expect(doors.style, eightDoors.style);
@@ -120,7 +120,7 @@ void main() {
     );
     expect(
       doors.dwellingAt(DwellingKey(escA, 1, d('12')))!.comeBack,
-      comeBack('sonner fort'),
+      comeBack('2026-11-06', hour: 8),
     );
     // A door nobody marked keeps no stamp.
     expect(doors.dwellingAt(DwellingKey(escA, 1, d('11')))!.lastChange, isNull);

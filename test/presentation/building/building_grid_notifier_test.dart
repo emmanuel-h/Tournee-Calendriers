@@ -51,7 +51,7 @@ final _eight = valueOf(
               Dwelling(
                 label: d('01'),
                 status: VisitStatus.comeBack,
-                comeBack: comeBack('soir'),
+                comeBack: comeBack('2026-11-03', hour: 18),
               ),
               Dwelling(label: d('02')),
             ],
@@ -306,7 +306,7 @@ void main() {
 
         await notifier('8').cycle(_key('A', 1, '11'));
         expect(doorNow(_key('A', 1, '11')).status, VisitStatus.comeBack);
-        expect(doorNow(_key('A', 1, '11')).comeBack, ComeBack.withoutHint);
+        expect(doorNow(_key('A', 1, '11')).comeBack, ComeBack.withoutTime);
 
         await notifier('8').cycle(_key('A', 1, '11'));
         expect(doorNow(_key('A', 1, '11')).status, VisitStatus.toDo);

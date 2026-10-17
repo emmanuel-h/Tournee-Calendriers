@@ -10,13 +10,14 @@
 //     assignees: [uid, …],                                ← who covers it, [] for nobody
 //     houses: { "<label>": house } }                       ← "12", "3bis", "3A"
 //   house    = { n: 3, sfx: "bis" | null, lat | null, lon | null,
-//                status, comeBack: hint | null, by: uid | null, at: time | null,
+//                status, comeBack: when | null, by: uid | null, at: time | null,
 //                tries: 1–99,                                    ← only from the first try
 //                deletedAt: time | null, deletedBy: uid | null,   ← number in the Corbeille
 //                and on a building only: labelStyle, layout, dwellings }
 //   layout   = [ { esc: "A", floor: 5 | null, doors: ["51", "52"] } ]
 //   dwellings = { "A5-51": { status, comeBack, by, at, tries } }   ← tries as a house's
 //   status   = "TO_DO" | "DONE" | "NOBODY_HOME" | "COME_BACK"
+//   when     = "" | "2026-10-24" | "2026-10-24T18"   ← see come_back_text.dart
 //   labelStyle = "FLOOR_AND_NUMBER" | "FLOOR_AND_LETTER" | "FREE"
 //   time     = a Firestore Timestamp
 //
@@ -37,6 +38,10 @@
 // domain then gives a « personne » without a count its first try
 // (`NobodyHomeTries.keptBy`), and drops a count an older app left on a
 // house it put back to do.
+//
+// `comeBack` held a free hint (« après 19h ») before #81; such a text reads
+// as « repasser » with no time set (`comeBackFrom`), and is replaced when
+// the house is next written.
 //
 // Reading goes back through the domain's own checks (Street.create,
 // Building.create, ComeBack.create…), so stored data can never build a
@@ -70,6 +75,7 @@ import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/stored_values.dart';
+import 'package:tournee_calendriers/infrastructure/shared/mappers/come_back_text.dart';
 
 /// The document of [street], for a `set` when the street is new.
 Map<String, Object?> streetToDocument(Street street) => {
@@ -96,7 +102,7 @@ Map<String, Object?> houseEntry(House house, {ChangeStamp? removal}) => {
   'lat': house.position?.latitude,
   'lon': house.position?.longitude,
   'status': statusName(house.status),
-  'comeBack': house.comeBack?.hint,
+  'comeBack': _comeBackTextOrNull(house.comeBack),
   ...stampFields(house.lastChange, by: 'by', at: 'at'),
   ...triesField(house.tries),
   ...stampFields(removal, by: 'deletedBy', at: 'deletedAt'),
@@ -138,7 +144,7 @@ Iterable<(DwellingKey, Dwelling)> doorsOf(Building building) => [
 /// says where it is.
 Map<String, Object?> dwellingEntry(Dwelling dwelling) => {
   'status': statusName(dwelling.status),
-  'comeBack': dwelling.comeBack?.hint,
+  'comeBack': _comeBackTextOrNull(dwelling.comeBack),
   ...stampFields(dwelling.lastChange, by: 'by', at: 'at'),
   ...triesField(dwelling.tries),
 };
@@ -395,8 +401,11 @@ NobodyHomeTries _triesFrom(Object? json) => switch (json) {
   _ => throw const FormatException('Not stored tries'),
 };
 
-ComeBack? _comeBackOrNull(String? hint) =>
-    hint == null ? null : valid(ComeBack.create(hint), '« repasser » hint');
+String? _comeBackTextOrNull(ComeBack? comeBack) =>
+    comeBack == null ? null : comeBackText(comeBack);
+
+ComeBack? _comeBackOrNull(String? text) =>
+    text == null ? null : comeBackFrom(text);
 
 VisitStatus _statusFrom(String text) => switch (text) {
   'TO_DO' => VisitStatus.toDo,

@@ -6,6 +6,7 @@ import 'package:tournee_calendriers/domain/street/building/building.dart';
 import 'package:tournee_calendriers/domain/street/building/building_plan.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase.dart';
+import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/removed_house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
@@ -107,7 +108,7 @@ void main() {
             House(
               number: n('3bis'),
               status: VisitStatus.comeBack,
-              comeBack: comeBack('après 19h'),
+              comeBack: comeBack('2026-11-07', hour: 19),
               lastChange: leaAtTwo,
               position: townHallDoor,
             ),
@@ -130,7 +131,7 @@ void main() {
           {
             'number': '3bis',
             'status': 'comeBack',
-            'comeBack': 'après 19h',
+            'comeBack': '2026-11-07T19',
             'lastChange': {'by': 'lea', 'at': '2026-11-02T14:02:00.000Z'},
             'position': {'latitude': 45.98915, 'longitude': 4.71862},
             'building': null,
@@ -243,10 +244,11 @@ void main() {
 
   group('stored files', () {
     /// The street every fixture file holds: houses 5 and 7 and doors 02 and
-    /// 12 « repasser » (each with its hint, or none), building 4 with its
-    /// own « repasser », and number 11 « repasser » in the Corbeille. The
-    /// files of versions 1 and 2 also hold notes on 4, its door 12, 5 and
-    /// 11, which reading drops.
+    /// 12 « repasser », building 4 with its own « repasser », and number 11
+    /// « repasser » in the Corbeille. The files were written before #81:
+    /// some of these hold a free hint (« après 19h »), which reads as no
+    /// time set. The files of versions 1 and 2 also hold notes on 4, its
+    /// door 12, 5 and 11, which reading drops.
     final rueNationale = valueOf(
       Street.create(
         id: StreetId('x7Kq2LmP9sTb4VnW1cZd'),
@@ -262,7 +264,7 @@ void main() {
           ),
           House(
             number: n('4'),
-            comeBack: comeBack('samedi'),
+            comeBack: ComeBack.withoutTime,
             lastChange: paulAtThree,
             building: valueOf(
               Building.create(
@@ -282,7 +284,6 @@ void main() {
                           Dwelling(
                             label: d('12'),
                             status: VisitStatus.comeBack,
-                            comeBack: comeBack('le soir'),
                             lastChange: leaAtTwo,
                           ),
                         ],
@@ -306,7 +307,6 @@ void main() {
           House(
             number: n('5'),
             status: VisitStatus.comeBack,
-            comeBack: comeBack('après 19h'),
             lastChange: leaAtTwo,
           ),
           House(
@@ -322,11 +322,7 @@ void main() {
         ],
         removedHouses: [
           RemovedHouse(
-            house: House(
-              number: n('11'),
-              status: VisitStatus.comeBack,
-              comeBack: comeBack('dimanche'),
-            ),
+            house: House(number: n('11'), status: VisitStatus.comeBack),
             removal: paulAtThree,
           ),
         ],
@@ -337,7 +333,8 @@ void main() {
       File('test/fixtures/local_storage/$name').readAsStringSync(),
     );
 
-    test('should read the file a phone wrote in version 3', () {
+    test('should read the file a phone wrote in version 3, its free hints '
+        'as no time', () {
       expectSameStreet(streetFromJson(fixture('street_v3.json')), rueNationale);
     });
 
@@ -346,8 +343,8 @@ void main() {
       expectSameStreet(streetFromJson(fixture('street_v2.json')), rueNationale);
     });
 
-    test('should turn every « repasser » flag of version 1 into the status, '
-        'hint kept', () {
+    test('should turn every « repasser » flag of version 1 into the '
+        'status', () {
       expectSameStreet(streetFromJson(fixture('street_v1.json')), rueNationale);
     });
 
@@ -389,54 +386,40 @@ void main() {
     });
   });
 
-  group('hints longer than 20 characters in an older file', () {
-    // Versions 1 and 2 allowed 50 characters; version 3 allows 20 (Q23).
-    for (final version in [1, 2]) {
-      /// The rich street stored in [version] with long hints on house
-      /// 3bis, building 8, its door 12 and removed 14ter, read back.
-      Street readWithLongHints() => streetFromJson(
-        storedRichStreet((json) {
-          json['version'] = version;
-          if (version == 1) _asFlags(json);
-          // The 20th character is a space: the cut hint is trimmed.
-          houseAt(json, 1)['comeBack'] = '${'a' * 19} bbbb';
-          houseAt(json, 4)['comeBack'] = '🔔' * 25;
-          doorTwelve(json)['comeBack'] = 'c' * 21;
-          final removed = _at(json['removedHouses'], 0);
-          (removed['house']! as Map<String, Object?>)
-            ..['status'] = version == 1 ? 'toDo' : 'comeBack'
-            ..['comeBack'] = '${'d' * 20}e';
-        }),
-      );
-
-      test('should cut each hint of version $version to its first 20 '
-          'characters, trimmed', () {
-        final street = readWithLongHints();
-
-        expect(street.houses[1].status, VisitStatus.comeBack);
-        expect(street.houses[1].comeBack, comeBack('a' * 19));
-        expect(street.houses[4].comeBack, comeBack('🔔' * 20));
-        final door = street.houses[4].building!.dwellingAt(
-          DwellingKey(escA, 1, d('12')),
-        )!;
-        expect(door.status, VisitStatus.comeBack);
-        expect(door.comeBack, comeBack('c' * 20));
-        expect(street.removedHouses.single.house.comeBack, comeBack('d' * 20));
-      });
-
-      test('should keep a hint of version $version of 20 characters or '
-          'fewer as it is', () {
+  group('free hints of before #81', () {
+    for (final version in [1, 2, 3]) {
+      test('should read every hint of version $version as « repasser » '
+          'with no time set, status kept', () {
         final street = streetFromJson(
           storedRichStreet((json) {
             json['version'] = version;
             if (version == 1) _asFlags(json);
-            houseAt(json, 4)['comeBack'] = 'e' * 20;
+            houseAt(json, 1)['comeBack'] = 'après 19h';
+            houseAt(json, 4)['comeBack'] = '🔔' * 25;
+            doorTwelve(json)['comeBack'] = 'le soir';
           }),
         );
 
-        expect(street.houses[4].comeBack, comeBack('e' * 20));
+        expect(street.houses[1].status, VisitStatus.comeBack);
+        expect(street.houses[1].comeBack, ComeBack.withoutTime);
+        expect(street.houses[4].comeBack, ComeBack.withoutTime);
+        final door = street.houses[4].building!.dwellingAt(
+          DwellingKey(escA, 1, d('12')),
+        )!;
+        expect(door.status, VisitStatus.comeBack);
+        expect(door.comeBack, ComeBack.withoutTime);
       });
     }
+
+    test('should write a hint read as no time back as an empty time', () {
+      final json = streetToJson(
+        streetFromJson(
+          storedRichStreet((json) => houseAt(json, 1)['comeBack'] = 'samedi'),
+        ),
+      );
+
+      expect(houseAt(json, 1)['comeBack'], '');
+    });
   });
 
   group('lenient reading', () {
@@ -533,9 +516,8 @@ void main() {
       'a house number is not one': (json) =>
           houseAt(json, 0)['number'] = '12-1',
       'a status is unknown': (json) => houseAt(json, 0)['status'] = 'DONE',
-      'a hint is too long': (json) => houseAt(json, 1)['comeBack'] = 'x' * 21,
-      'a building hint is too long': (json) =>
-          houseAt(json, 4)['comeBack'] = 'x' * 21,
+      'a « repasser » time is not text': (json) =>
+          houseAt(json, 1)['comeBack'] = 18,
       'a last change is not a stamp': (json) =>
           houseAt(json, 1)['lastChange'] = 12,
       'a position is out of range': (json) =>
@@ -560,8 +542,6 @@ void main() {
       'a door label is blank': (json) => doorTwelve(json)['label'] = ' ',
       'a door status is unknown': (json) =>
           doorTwelve(json)['status'] = 'absent',
-      'a door hint is too long': (json) =>
-          doorTwelve(json)['comeBack'] = 'x' * 21,
       'a door has no last change field': (json) =>
           doorTwelve(json).remove('lastChange'),
       'the shape is not a list': (json) => json['shape'] = 'abc',

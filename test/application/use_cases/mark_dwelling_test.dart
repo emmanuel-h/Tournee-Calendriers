@@ -67,13 +67,16 @@ void main() {
         lilasId,
         n('8'),
         rdc('02'),
-        ComeBackMark(comeBack('soir')),
+        ComeBackMark(comeBack('2026-11-03', hour: 18)),
       ),
     );
 
     expect(change, isA<DwellingComeBackSet>());
-    expect((change as DwellingComeBackSet).comeBack, comeBack('soir'));
-    expect(doorOf('02')!.comeBack, comeBack('soir'));
+    expect(
+      (change as DwellingComeBackSet).comeBack,
+      comeBack('2026-11-03', hour: 18),
+    );
+    expect(doorOf('02')!.comeBack, comeBack('2026-11-03', hour: 18));
   });
 
   test('should add a try to a door when nobody is home again', () async {
@@ -124,7 +127,7 @@ void main() {
         lilasId,
         n('8'),
         rdc('01'),
-        ComeBackMark(comeBack('soir')),
+        ComeBackMark(comeBack('2026-11-03', hour: 18)),
       ),
     );
 

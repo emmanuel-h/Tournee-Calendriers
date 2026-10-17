@@ -85,7 +85,7 @@ final lilas = valueOf(
       House(number: n('4'), status: VisitStatus.done, lastChange: leaAtTwo),
       House(
         number: n('8'),
-        comeBack: comeBack('gardien'),
+        comeBack: comeBack('2026-11-03', hour: 10),
         building: twoStaircases,
         position: townHallDoor,
       ),
@@ -97,7 +97,7 @@ final lilas = valueOf(
 
 void main() {
   group('house', () {
-    test('should write the status, the hint and the stamp of a mark', () {
+    test('should write the status, the time and the stamp of a mark', () {
       final update = updateOf(
         lilas,
         (s) =>
@@ -141,7 +141,7 @@ void main() {
       });
     });
 
-    test('should write an empty hint when a house becomes « repasser »', () {
+    test('should write an empty time when a house becomes « repasser »', () {
       final update = updateOf(
         lilas,
         (s) => s.markHouse(n('4'), VisitStatus.comeBack, by: paul, at: threePm),
@@ -151,19 +151,23 @@ void main() {
       expect(update[house('4', ['comeBack'])], '');
     });
 
-    test('should write the hint and the stamp of a « repasser »', () {
+    test('should write the time and the stamp of a « repasser »', () {
       final comingBack = valueOf(
         lilas.markHouse(n('4'), VisitStatus.comeBack, by: lea, at: twoPm),
       ).$1;
 
       final update = updateOf(
         comingBack,
-        (s) =>
-            s.setComeBack(n('4'), comeBack('après 19h'), by: paul, at: threePm),
+        (s) => s.setComeBack(
+          n('4'),
+          comeBack('2026-11-07', hour: 19),
+          by: paul,
+          at: threePm,
+        ),
       );
 
       expect(update, {
-        house('4', ['comeBack']): 'après 19h',
+        house('4', ['comeBack']): '2026-11-07T19',
         house('4', ['by']): 'paul',
         house('4', ['at']): at(threePm),
       });
@@ -268,20 +272,20 @@ void main() {
       ]);
     });
 
-    test('should write the hint and the stamp of a door « repasser »', () {
+    test('should write the time and the stamp of a door « repasser »', () {
       final update = updateOf(
         lilas,
         (s) => s.setDwellingComeBack(
           n('8'),
           DwellingKey(escB, 0, d('01')),
-          comeBack('samedi'),
+          comeBack('2026-11-07'),
           by: paul,
           at: threePm,
         ),
       );
 
       expect(update, {
-        door('8', 'B0-01', 'comeBack'): 'samedi',
+        door('8', 'B0-01', 'comeBack'): '2026-11-07',
         door('8', 'B0-01', 'by'): 'paul',
         door('8', 'B0-01', 'at'): at(threePm),
       });
@@ -354,7 +358,7 @@ void main() {
       });
       expect(update[house('8', ['dwellings', 'A1-12'])], removed);
       expect(update[house('8', ['dwellings', 'B0-01'])], removed);
-      expect(update[house('8', ['comeBack'])], 'gardien');
+      expect(update[house('8', ['comeBack'])], '2026-11-03T10');
       expect(update[house('8', ['layout'])], [
         {
           'esc': 'A',
@@ -378,7 +382,7 @@ void main() {
 
       expect(update, {
         house('8', ['status']): 'COME_BACK',
-        house('8', ['comeBack']): 'gardien',
+        house('8', ['comeBack']): '2026-11-03T10',
         house('8', ['tries']): removed,
         house('8', ['by']): 'paul',
         house('8', ['at']): at(threePm),
@@ -495,7 +499,7 @@ void main() {
         house('8bis'): houseEntry(
           House(
             number: n('8bis'),
-            comeBack: comeBack('gardien'),
+            comeBack: comeBack('2026-11-03', hour: 10),
             lastChange: paulAtThree,
             building: twoStaircases,
             position: townHallDoor,
@@ -609,14 +613,14 @@ void main() {
         );
 
         expect(update[house('8', ['status'])], 'TO_DO');
-        expect(update[house('8', ['comeBack'])], 'gardien');
+        expect(update[house('8', ['comeBack'])], '2026-11-03T10');
         expect(update[house('8', ['by'])], 'manu');
         expect(update[house('8', ['labelStyle'])], 'FLOOR_AND_NUMBER');
         expect(update[house('8', ['layout'])], layoutOf(twoStaircases));
         // Each door keeps its own last change.
         expect(update[house('8', ['dwellings', 'A1-12'])], {
           'status': 'COME_BACK',
-          'comeBack': 'le soir',
+          'comeBack': '2026-11-04T18',
           'by': 'paul',
           'at': at(threePm),
         });

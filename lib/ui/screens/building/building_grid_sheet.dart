@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
+import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/presentation/building/building_grid_notifier.dart';
 import 'package:tournee_calendriers/presentation/building/building_grid_state.dart';
 import 'package:tournee_calendriers/presentation/street/street_view_state.dart';
@@ -49,8 +50,9 @@ Future<BuildingGridExit?> showBuildingGrid(
 );
 
 /// The floors of one staircase from the top down, four doors a row; a tap
-/// cycles a door `○ → ✓ → ✗ → ↻ → ○` with « Annuler » for 4 s, a hold
-/// opens its sheet. The header counts the doors of the whole building; the
+/// cycles a door `○ → ✓ → ✗ → ↻ → ○` with « Annuler » for 4 s (the tap to
+/// ↻ opens the door's sheet instead, to say when, #81), a hold opens its
+/// sheet. The header counts the doors of the whole building; the
 /// staircase control shows when there are several. « Gérer l'immeuble »
 /// holds every change to the building itself. Works offline.
 ///
@@ -156,15 +158,42 @@ final class _BuildingGridSheetState extends ConsumerState<BuildingGridSheet>
   /// shown in the snackbar (« 51 → Fait »).
   Future<void> _cycle(DwellingKey door) async {
     unawaited(HapticFeedback.lightImpact());
-    _tell(await _notifier.cycle(door));
+    final marked = await _notifier.cycle(door);
+    if (marked?.status == VisitStatus.comeBack) {
+      await _openDoorOfTap(marked!);
+    } else {
+      _tell(marked);
+    }
   }
 
-  /// Says [marked] aloud for screen readers and shows it in the snackbar,
-  /// with « Annuler »; nothing when nothing changed.
-  void _tell(MarkedDoor? marked) {
-    if (marked == null || !mounted) return;
-    final l10n = AppLocalizations.of(context);
+  /// The tap made [marked] « Repasser »: it is said aloud, and the door's
+  /// sheet opens by itself with « Annuler » and « OK » rather than the
+  /// snackbar (#81). « Annuler » there undoes the tap.
+  Future<void> _openDoorOfTap(MarkedDoor marked) async {
+    if (!mounted) return;
+    _announce(marked);
+    hideUndo();
     final notifier = _notifier;
+    final exit = await showDoorSheet(context, (
+      street: widget.building.street,
+      number: widget.building.number,
+      door: marked.key,
+    ), openedByTap: true);
+    if (!mounted) return;
+    switch (exit) {
+      case DoorSheetExit.cancelTap:
+        await notifier.undo();
+      case DoorSheetExit.nobodyHomeAgain:
+        _tell(await notifier.nobodyHomeAgain(marked.key));
+      case null:
+        return;
+    }
+  }
+
+  /// Says [marked] aloud for screen readers: « Escalier A, 5e, porte 51,
+  /// fait ».
+  void _announce(MarkedDoor marked) {
+    final l10n = AppLocalizations.of(context);
     unawaited(
       SemanticsService.sendAnnouncement(
         View.of(context),
@@ -177,6 +206,15 @@ final class _BuildingGridSheetState extends ConsumerState<BuildingGridSheet>
         Directionality.of(context),
       ),
     );
+  }
+
+  /// Says [marked] aloud for screen readers and shows it in the snackbar,
+  /// with « Annuler »; nothing when nothing changed.
+  void _tell(MarkedDoor? marked) {
+    if (marked == null || !mounted) return;
+    final l10n = AppLocalizations.of(context);
+    final notifier = _notifier;
+    _announce(marked);
     showUndo(
       message: markedMessage(
         l10n,
@@ -201,6 +239,7 @@ final class _BuildingGridSheetState extends ConsumerState<BuildingGridSheet>
       number: widget.building.number,
       door: door,
     ));
+    // « Annuler » is only on a sheet a tap opened.
     if (exit != DoorSheetExit.nobodyHomeAgain || !mounted) return;
     _tell(await notifier.nobodyHomeAgain(door));
   }

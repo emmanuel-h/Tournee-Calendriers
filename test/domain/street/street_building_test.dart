@@ -37,7 +37,7 @@ final _eightDoors = building(topFloor: 0, doors: 2).withDwelling(
 );
 final _eight = House(
   number: n('8'),
-  comeBack: comeBack('gardien'),
+  comeBack: comeBack('2026-11-03', hour: 10),
   lastChange: paulAtThree,
   building: _eightDoors,
 );
@@ -53,7 +53,7 @@ void main() {
         House(
           number: n('8'),
           status: VisitStatus.comeBack,
-          comeBack: comeBack('après 19h'),
+          comeBack: comeBack('2026-11-07', hour: 19),
         ),
       ]);
 
@@ -66,7 +66,7 @@ void main() {
         described.houses.single,
         House(
           number: n('8'),
-          comeBack: comeBack('après 19h'),
+          comeBack: comeBack('2026-11-07', hour: 19),
           lastChange: leaAtTwo,
           building: building(),
         ),
@@ -121,7 +121,7 @@ void main() {
         _street8.describeBuilding(n('8'), plan(), by: lea, at: twoPm),
       );
 
-      expect(described.houses[1].comeBack, comeBack('gardien'));
+      expect(described.houses[1].comeBack, comeBack('2026-11-03', hour: 10));
       expect(described.houses[1].lastChange, leaAtTwo);
     });
 
@@ -195,10 +195,10 @@ void main() {
         ]);
 
         final (changed, _) = valueOf(
-          street.setComeBack(n('8'), ComeBack.withoutHint, by: lea, at: twoPm),
+          street.setComeBack(n('8'), ComeBack.withoutTime, by: lea, at: twoPm),
         );
 
-        expect(changed.houses.single.comeBack, ComeBack.withoutHint);
+        expect(changed.houses.single.comeBack, ComeBack.withoutTime);
       },
     );
   });
@@ -254,7 +254,7 @@ void main() {
         _eightDoors.dwellingAt(_a('01')),
       );
       expect(house.lastChange, paulAtThree);
-      expect(house.comeBack, comeBack('gardien'));
+      expect(house.comeBack, comeBack('2026-11-03', hour: 10));
       expect(marked.houses[0], _six);
     });
 
@@ -272,7 +272,7 @@ void main() {
         comingBack.setDwellingComeBack(
           n('8'),
           _a('02'),
-          comeBack('le soir'),
+          comeBack('2026-11-04', hour: 18),
           by: lea,
           at: twoPm,
         ),
@@ -296,7 +296,7 @@ void main() {
         ),
       );
       expect(change.comeBack, isNull);
-      expect(change.before.comeBack, comeBack('le soir'));
+      expect(change.before.comeBack, comeBack('2026-11-04', hour: 18));
     });
 
     test('should make the building done once its last door is done', () {
@@ -430,7 +430,7 @@ void main() {
         comingBack.setDwellingComeBack(
           n('8'),
           _a('02'),
-          comeBack('samedi'),
+          comeBack('2026-11-07'),
           by: lea,
           at: twoPm,
         ),
@@ -441,7 +441,7 @@ void main() {
         Dwelling(
           label: d('02'),
           status: VisitStatus.comeBack,
-          comeBack: comeBack('samedi'),
+          comeBack: comeBack('2026-11-07'),
           lastChange: leaAtTwo,
         ),
       );
@@ -454,14 +454,14 @@ void main() {
           level: 0,
           before: before,
           stamp: leaAtTwo,
-          comeBack: comeBack('samedi'),
+          comeBack: comeBack('2026-11-07'),
         ),
       );
     });
 
     final refused = <String, (Street, String, ComeBack?)>{
-      'the door is done': (_street8, '01', ComeBack.withoutHint),
-      'the door is to do': (_street8, '02', comeBack('samedi')),
+      'the door is done': (_street8, '01', ComeBack.withoutTime),
+      'the door is to do': (_street8, '02', comeBack('2026-11-07')),
       'no hint is given to a door « repasser »': (comingBack, '02', null),
     };
     refused.forEach((when, given) {
@@ -509,7 +509,7 @@ void main() {
         changed.houses[1],
         House(
           number: n('8'),
-          comeBack: comeBack('gardien'),
+          comeBack: comeBack('2026-11-03', hour: 10),
           lastChange: leaAtTwo,
           building: expected,
         ),
@@ -626,7 +626,7 @@ void main() {
         House(
           number: n('8'),
           status: VisitStatus.comeBack,
-          comeBack: comeBack('gardien'),
+          comeBack: comeBack('2026-11-03', hour: 10),
           lastChange: leaAtTwo,
         ),
       );
@@ -639,7 +639,7 @@ void main() {
           status: VisitStatus.comeBack,
         ),
       );
-      expect(change.comeBack, comeBack('gardien'));
+      expect(change.comeBack, comeBack('2026-11-03', hour: 10));
       expect(changed.houses[0], _six);
     });
 
@@ -665,7 +665,11 @@ void main() {
         Dwelling(label: d('02'), status: VisitStatus.done),
       );
       final street = _street([
-        House(number: n('8'), comeBack: comeBack('gardien'), building: allDone),
+        House(
+          number: n('8'),
+          comeBack: comeBack('2026-11-03', hour: 10),
+          building: allDone,
+        ),
       ]);
 
       final (changed, change) = valueOf(

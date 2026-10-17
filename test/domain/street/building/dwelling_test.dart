@@ -22,20 +22,20 @@ void main() {
       final dwelling = Dwelling(
         label: d('Gauche'),
         status: VisitStatus.comeBack,
-        comeBack: comeBack('après 19h'),
+        comeBack: comeBack('2026-11-07', hour: 19),
         lastChange: leaAtTwo,
       );
 
       expect(dwelling.label, d('Gauche'));
       expect(dwelling.status, VisitStatus.comeBack);
-      expect(dwelling.comeBack, comeBack('après 19h'));
+      expect(dwelling.comeBack, comeBack('2026-11-07', hour: 19));
       expect(dwelling.lastChange, leaAtTwo);
     });
 
     test('should come back without hint when « repasser » has none', () {
       final dwelling = Dwelling(label: d('52'), status: VisitStatus.comeBack);
 
-      expect(dwelling.comeBack, ComeBack.withoutHint);
+      expect(dwelling.comeBack, ComeBack.withoutTime);
     });
 
     for (final status in [
@@ -47,7 +47,7 @@ void main() {
         final dwelling = Dwelling(
           label: d('52'),
           status: status,
-          comeBack: comeBack('samedi'),
+          comeBack: comeBack('2026-11-07'),
         );
 
         expect(dwelling.status, status);
@@ -59,7 +59,7 @@ void main() {
       final dwelling = Dwelling(
         label: d('53'),
         status: VisitStatus.comeBack,
-        comeBack: comeBack('samedi'),
+        comeBack: comeBack('2026-11-07'),
       );
 
       expect(dwelling.progress, Progress.of(VisitStatus.comeBack));
@@ -69,7 +69,7 @@ void main() {
       Dwelling full() => Dwelling(
         label: d('51'),
         status: VisitStatus.comeBack,
-        comeBack: comeBack('après 19h'),
+        comeBack: comeBack('2026-11-07', hour: 19),
         lastChange: leaAtTwo,
       );
 
@@ -82,7 +82,7 @@ void main() {
         'label': Dwelling(
           label: d('52'),
           status: VisitStatus.comeBack,
-          comeBack: comeBack('après 19h'),
+          comeBack: comeBack('2026-11-07', hour: 19),
           lastChange: leaAtTwo,
         ),
         'status': Dwelling(
@@ -93,19 +93,19 @@ void main() {
         'come-back': Dwelling(
           label: d('51'),
           status: VisitStatus.comeBack,
-          comeBack: comeBack('après 20h'),
+          comeBack: comeBack('2026-11-07', hour: 20),
           lastChange: leaAtTwo,
         ),
         'last change': Dwelling(
           label: d('51'),
           status: VisitStatus.comeBack,
-          comeBack: comeBack('après 19h'),
+          comeBack: comeBack('2026-11-07', hour: 19),
           lastChange: paulAtThree,
         ),
         'tries': Dwelling(
           label: d('51'),
           status: VisitStatus.comeBack,
-          comeBack: comeBack('après 19h'),
+          comeBack: comeBack('2026-11-07', hour: 19),
           lastChange: leaAtTwo,
           tries: tries(2),
         ),

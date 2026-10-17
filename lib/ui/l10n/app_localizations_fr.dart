@@ -154,25 +154,120 @@ class AppLocalizationsFr extends AppLocalizations {
   String get comeBackWhenLabel => 'Quand repasser ?';
 
   @override
-  String get comeBackWhenPlaceholder => 'ex. après 19h';
+  String get comeBackDayGroup => 'Jour';
 
   @override
-  String get comeBackHintPlaceholder => 'Quand ? ex. après 19h';
+  String get comeBackToday => 'Aujourd\'hui';
 
   @override
-  String comeBackHintTooLong(int max) {
-    return 'Précision limitée à $max caractères.';
+  String get comeBackTomorrow => 'Demain';
+
+  @override
+  String get comeBackYesterday => 'Hier';
+
+  @override
+  String comeBackChipDay(DateTime day) {
+    final intl.DateFormat dayDateFormat = intl.DateFormat('E d', localeName);
+    final String dayString = dayDateFormat.format(day);
+
+    return '$dayString';
   }
 
   @override
-  String textCount(int count, int max) {
-    return '$count/$max';
+  String comeBackChipDaySemantics(DateTime day) {
+    final intl.DateFormat dayDateFormat = intl.DateFormat.MMMMEEEEd(localeName);
+    final String dayString = dayDateFormat.format(day);
+
+    return '$dayString';
   }
 
   @override
-  String textCountSemantics(int count, int max) {
-    return '$count caractères sur $max';
+  String get comeBackHourLabel => 'Heure';
+
+  @override
+  String get comeBackNoHour => 'Pas d\'heure';
+
+  @override
+  String comeBackHour(int hour) {
+    return '$hour h';
   }
+
+  @override
+  String get comeBackNoDay => 'Pas de jour choisi';
+
+  @override
+  String get comeBackOnToday => 'Aujourd\'hui';
+
+  @override
+  String comeBackOnTodayAt(int hour) {
+    return 'Aujourd\'hui vers $hour h';
+  }
+
+  @override
+  String get comeBackOnTomorrow => 'Demain';
+
+  @override
+  String comeBackOnTomorrowAt(int hour) {
+    return 'Demain vers $hour h';
+  }
+
+  @override
+  String get comeBackOnYesterday => 'C\'était hier';
+
+  @override
+  String comeBackOnYesterdayAt(int hour) {
+    return 'C\'était hier vers $hour h';
+  }
+
+  @override
+  String comeBackOnDay(DateTime day) {
+    final intl.DateFormat dayDateFormat = intl.DateFormat(
+      'EEEE d MMM',
+      localeName,
+    );
+    final String dayString = dayDateFormat.format(day);
+
+    return 'Le $dayString';
+  }
+
+  @override
+  String comeBackOnDayAt(DateTime day, int hour) {
+    final intl.DateFormat dayDateFormat = intl.DateFormat(
+      'EEEE d MMM',
+      localeName,
+    );
+    final String dayString = dayDateFormat.format(day);
+
+    return 'Le $dayString vers $hour h';
+  }
+
+  @override
+  String comeBackPastDay(DateTime day) {
+    final intl.DateFormat dayDateFormat = intl.DateFormat(
+      'EEEE d MMM',
+      localeName,
+    );
+    final String dayString = dayDateFormat.format(day);
+
+    return 'C\'était le $dayString';
+  }
+
+  @override
+  String comeBackPastDayAt(DateTime day, int hour) {
+    final intl.DateFormat dayDateFormat = intl.DateFormat(
+      'EEEE d MMM',
+      localeName,
+    );
+    final String dayString = dayDateFormat.format(day);
+
+    return 'C\'était le $dayString vers $hour h';
+  }
+
+  @override
+  String get comeBackSheetCancel => 'Annuler';
+
+  @override
+  String get comeBackSheetOk => 'OK';
 
   @override
   String houseChangedToday(DateTime time) {

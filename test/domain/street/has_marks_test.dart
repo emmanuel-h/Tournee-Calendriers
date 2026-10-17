@@ -2,6 +2,7 @@
 // removing such a number asks for confirmation first (PLAN §5.5).
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
+import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
@@ -90,7 +91,7 @@ void main() {
       expect(
         House(
           number: n('8'),
-          comeBack: comeBack(''),
+          comeBack: ComeBack.withoutTime,
           building: building(),
         ).hasMarks,
         isTrue,

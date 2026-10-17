@@ -7,6 +7,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/presentation/street/street_notifier.dart';
 import 'package:tournee_calendriers/presentation/street/street_view_state.dart';
 import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
@@ -24,7 +25,8 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
 /// Rue, the screen used 95 % of the time (PLAN §5.6,
 /// `docs/mockups/Main.dc.html`): odd numbers on the left, even on the
-/// right; a tap cycles a house `○ → ✓ → ✗ → ○` with « Annuler » for 4 s.
+/// right; a tap cycles a house `○ → ✓ → ✗ → ↻ → ○` with « Annuler » for 4 s,
+/// except the tap to ↻, which opens the Fiche maison to say when (#81).
 /// Works offline: everything it reads and writes is on the phone.
 ///
 /// A hold on a house opens its Fiche maison (PLAN §5.7); a tap on a
@@ -124,10 +126,44 @@ final class _MarkingScreenState extends ConsumerState<_MarkingScreen>
   }
 
   /// A tap on a house tile: a light haptic tick at once, then the new
-  /// status, said aloud for screen readers and shown in the snackbar.
+  /// status, said aloud for screen readers and shown in the snackbar. A
+  /// tap to « Repasser » opens the sheet instead of the snackbar, to say
+  /// when (#81).
   Future<void> _cycle(HouseNumber number) async {
     unawaited(HapticFeedback.lightImpact());
-    _tell(await _notifier.cycle(number));
+    final marked = await _notifier.cycle(number);
+    if (marked?.status == VisitStatus.comeBack) {
+      await _openSheetOfTap(marked!);
+    } else {
+      _tell(marked);
+    }
+  }
+
+  /// The tap made [marked] « Repasser »: it is said aloud, and its sheet
+  /// opens by itself with « Annuler » and « OK » rather than the snackbar.
+  /// « Annuler » there undoes the tap as the snackbar's would (the changes
+  /// made in the sheet go with it); « OK », or the sheet closed any other
+  /// way, keeps it.
+  Future<void> _openSheetOfTap(MarkedHouse marked) async {
+    if (!mounted) return;
+    _announce(marked);
+    hideUndo();
+    final notifier = _notifier;
+    final number = marked.number;
+    final exit = await showHouseSheet(context, (
+      street: widget.streetId,
+      number: number,
+    ), openedByTap: true);
+    if (!mounted) return;
+    switch (exit) {
+      case HouseSheetExit.cancelTap:
+        await notifier.undo();
+      case HouseSheetExit.nobodyHomeAgain:
+        await _nobodyHomeAgain(number);
+      // « Transformer en immeuble… » is not on a sheet a tap opened.
+      case HouseSheetExit.toBuilding || null:
+        return;
+    }
   }
 
   /// « Repassé, toujours personne », chosen in the Fiche maison of
@@ -143,20 +179,26 @@ final class _MarkingScreenState extends ConsumerState<_MarkingScreen>
     final l10n = AppLocalizations.of(context);
     final notifier = _notifier;
     final label = marked.number.label;
-    unawaited(
-      SemanticsService.sendAnnouncement(
-        View.of(context),
-        l10n.houseTileSemantics(
-          label,
-          spokenMarked(l10n, marked.status, marked.tries),
-        ),
-        Directionality.of(context),
-      ),
-    );
+    _announce(marked);
     showUndo(
       message: markedMessage(l10n, label, marked.status, marked.tries),
       undoLabel: l10n.undo,
       onUndo: () => unawaited(notifier.undo()),
+    );
+  }
+
+  /// Says [marked] aloud for screen readers: « Numéro 7, personne ».
+  void _announce(MarkedHouse marked) {
+    final l10n = AppLocalizations.of(context);
+    unawaited(
+      SemanticsService.sendAnnouncement(
+        View.of(context),
+        l10n.houseTileSemantics(
+          marked.number.label,
+          spokenMarked(l10n, marked.status, marked.tries),
+        ),
+        Directionality.of(context),
+      ),
     );
   }
 
@@ -180,7 +222,8 @@ final class _MarkingScreenState extends ConsumerState<_MarkingScreen>
         await _showGrid(number);
       case HouseSheetExit.nobodyHomeAgain:
         await _nobodyHomeAgain(number);
-      case null:
+      // « Annuler » is only on a sheet a tap opened.
+      case HouseSheetExit.cancelTap || null:
         return;
     }
   }

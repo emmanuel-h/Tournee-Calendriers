@@ -55,7 +55,7 @@ final twoStaircases = valueOf(
               Dwelling(
                 label: d('12'),
                 status: VisitStatus.comeBack,
-                comeBack: comeBack('le soir'),
+                comeBack: comeBack('2026-11-04', hour: 18),
                 lastChange: paulAtThree,
               ),
             ],
@@ -108,7 +108,7 @@ final everyKindOfHouse = [
   House(
     number: n('3bis'),
     status: VisitStatus.comeBack,
-    comeBack: comeBack('après 19h'),
+    comeBack: comeBack('2026-11-07', hour: 19),
     lastChange: leaAtTwo,
     position: northDoor,
   ),
@@ -116,7 +116,7 @@ final everyKindOfHouse = [
   House(number: n('5'), status: VisitStatus.nobodyHome, tries: tries(3)),
   House(
     number: n('8'),
-    comeBack: comeBack('gardien'),
+    comeBack: comeBack('2026-11-03', hour: 10),
     lastChange: leaAtTwo,
     building: twoStaircases,
     position: townHallDoor,

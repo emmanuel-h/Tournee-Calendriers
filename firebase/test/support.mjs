@@ -204,6 +204,7 @@ export const streetDoc = (overrides = {}) => ({
   houses: {
     4: houseEntry(4, { status: 'DONE', by: lea, at: twoPm }),
     '4bis': houseEntry(4, { sfx: 'bis' }),
+    // « Repasser » with the free hint an app of before #81 wrote.
     6: houseEntry(6, {
       status: 'COME_BACK',
       comeBack: 'après 19h',

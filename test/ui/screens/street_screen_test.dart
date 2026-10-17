@@ -40,7 +40,7 @@ final _lilas = valueOf(
       House(
         number: n('5'),
         status: VisitStatus.comeBack,
-        comeBack: comeBack('après 19h'),
+        comeBack: comeBack('2026-11-07', hour: 19),
       ),
       House(number: n('7')),
       House(number: n('2'), status: VisitStatus.done),
@@ -162,12 +162,18 @@ void main() {
       await tester.tap(_tile('1'));
       await tester.pumpAndSettle();
 
-      expect(labelOf(tester, _tile('1')), 'Numéro 1, repasser');
+      // To « Repasser », the house sheet opens to say when (#81), in place
+      // of the snackbar; « OK » closes it.
       expect(
         tester.takeAnnouncements().map((announcement) => announcement.message),
         ['Numéro 1, repasser'],
       );
-      expect(findArrowText('1 → Repasser'), findsOneWidget);
+      expect(find.byKey(const Key('house.number')), findsOneWidget);
+      expect(findArrowText('1 → Repasser'), findsNothing);
+      expect(findArrowText('1 → Personne'), findsNothing);
+      await tester.tap(find.byKey(const Key('house.ok')));
+      await tester.pumpAndSettle();
+      expect(labelOf(tester, _tile('1')), 'Numéro 1, repasser');
       expect(
         labelOf(tester, find.byKey(const Key('street.counts'))),
         '3 sur 9 faits, 1 personne, 2 à repasser',

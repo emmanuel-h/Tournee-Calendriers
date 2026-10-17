@@ -89,13 +89,13 @@ void main() {
     final house = House(
       number: n('3bis'),
       status: VisitStatus.comeBack,
-      comeBack: comeBack('après 19h'),
+      comeBack: comeBack('2026-11-07', hour: 19),
       lastChange: leaAtTwo,
     );
 
     expect(house.number, n('3bis'));
     expect(house.status, VisitStatus.comeBack);
-    expect(house.comeBack, comeBack('après 19h'));
+    expect(house.comeBack, comeBack('2026-11-07', hour: 19));
     expect(house.lastChange, leaAtTwo);
   });
 
@@ -103,7 +103,7 @@ void main() {
     final house = House(number: n('5'), status: VisitStatus.comeBack);
 
     expect(house.status, VisitStatus.comeBack);
-    expect(house.comeBack, ComeBack.withoutHint);
+    expect(house.comeBack, ComeBack.withoutTime);
   });
 
   for (final status in [
@@ -115,7 +115,7 @@ void main() {
       final house = House(
         number: n('5'),
         status: status,
-        comeBack: comeBack('après 19h'),
+        comeBack: comeBack('2026-11-07', hour: 19),
       );
 
       expect(house.status, status);
@@ -145,11 +145,11 @@ void main() {
       final house = House(
         number: n('8'),
         status: VisitStatus.done,
-        comeBack: comeBack('gardien'),
+        comeBack: comeBack('2026-11-03', hour: 10),
         building: building(),
       );
 
-      expect(house.comeBack, comeBack('gardien'));
+      expect(house.comeBack, comeBack('2026-11-03', hour: 10));
     });
   });
 
@@ -164,7 +164,7 @@ void main() {
       final house = House(
         number: n('7'),
         status: VisitStatus.comeBack,
-        comeBack: comeBack('samedi'),
+        comeBack: comeBack('2026-11-07'),
       );
 
       expect(house.progress, Progress.of(VisitStatus.comeBack));
@@ -194,7 +194,7 @@ void main() {
       final doors = building(topFloor: 0, doors: 2);
       final house = House(
         number: n('8'),
-        comeBack: ComeBack.withoutHint,
+        comeBack: ComeBack.withoutTime,
         building: doors,
       );
 
@@ -209,7 +209,7 @@ void main() {
     House full() => House(
       number: n('3bis'),
       status: VisitStatus.comeBack,
-      comeBack: comeBack('après 19h'),
+      comeBack: comeBack('2026-11-07', hour: 19),
       lastChange: leaAtTwo,
     );
 
@@ -222,7 +222,7 @@ void main() {
       'number': House(
         number: n('3ter'),
         status: VisitStatus.comeBack,
-        comeBack: comeBack('après 19h'),
+        comeBack: comeBack('2026-11-07', hour: 19),
         lastChange: leaAtTwo,
       ),
       'status': House(
@@ -233,26 +233,26 @@ void main() {
       'come-back': House(
         number: n('3bis'),
         status: VisitStatus.comeBack,
-        comeBack: comeBack('après 20h'),
+        comeBack: comeBack('2026-11-07', hour: 20),
         lastChange: leaAtTwo,
       ),
       'last change': House(
         number: n('3bis'),
         status: VisitStatus.comeBack,
-        comeBack: comeBack('après 19h'),
+        comeBack: comeBack('2026-11-07', hour: 19),
         lastChange: paulAtThree,
       ),
       'position': House(
         number: n('3bis'),
         status: VisitStatus.comeBack,
-        comeBack: comeBack('après 19h'),
+        comeBack: comeBack('2026-11-07', hour: 19),
         lastChange: leaAtTwo,
         position: townHallDoor,
       ),
       'tries': House(
         number: n('3bis'),
         status: VisitStatus.comeBack,
-        comeBack: comeBack('après 19h'),
+        comeBack: comeBack('2026-11-07', hour: 19),
         lastChange: leaAtTwo,
         tries: tries(2),
       ),
@@ -305,13 +305,13 @@ void main() {
     final house = House(
       number: n('12'),
       status: VisitStatus.comeBack,
-      comeBack: comeBack('après 19h'),
+      comeBack: comeBack('2026-11-07', hour: 19),
       lastChange: leaAtTwo,
     );
 
     expect(
       house.toString(),
-      'House(12, VisitStatus.comeBack, ComeBack(après 19h), '
+      'House(12, VisitStatus.comeBack, ComeBack(2026-11-07 19h), '
       'ChangeStamp(lea, 2026-11-02 14:02:00.000Z))',
     );
   });

@@ -315,7 +315,20 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('building.comeBack')));
     await tester.pumpAndSettle();
 
-    expect(stored('8').comeBack, ComeBack.withoutHint);
+    expect(stored('8').comeBack, ComeBack.withoutTime);
+    expect(
+      tester
+          .widget<Text>(find.byKey(const Key('building.comeBackSummary')))
+          .data,
+      'Pas de jour choisi',
+    );
+
+    await tester.tap(
+      find.byKey(const ValueKey('building.comeBackDay.2026-11-03')),
+    );
+    await tester.pumpAndSettle();
+
+    expect(stored('8').comeBack, comeBack('2026-11-03'));
   });
 
   testWidgets('should ask before a building with marks becomes a house, then '
@@ -544,5 +557,68 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('building.nobodyHomeAgain')), findsNothing);
+  });
+
+  testWidgets(
+    'should open the door sheet when a tap brings a door to ↻, store its '
+    'day, and put the door back with Annuler',
+    (tester) async {
+      final semantics = tester.ensureSemantics();
+      await openStreet(tester);
+      await tester.tap(_tile('8'));
+      await tester.pumpAndSettle();
+      final key = DwellingKey(escA, 0, d('01'));
+
+      await tester.tap(_door('A0-01'));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('door.number')), findsOneWidget);
+      expect(storedDoor(key).status, VisitStatus.comeBack);
+      expect(find.byKey(const Key('door.ok')), findsOneWidget);
+      expect(findArrowText('01 → Repasser'), findsNothing);
+      expect(
+        tester.takeAnnouncements().map((announcement) => announcement.message),
+        ['Escalier A, RdC, porte 01, repasser, 2 passages sans personne'],
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('door.comeBackDay.2026-11-03')),
+      );
+      await tester.pumpAndSettle();
+      expect(storedDoor(key).comeBack, comeBack('2026-11-03'));
+
+      await tester.tap(find.byKey(const Key('door.cancelTap')));
+      await tester.pumpAndSettle();
+
+      // Back on the grid, the door as before the tap.
+      expect(find.byKey(const Key('door.number')), findsNothing);
+      expect(storedDoor(key).status, VisitStatus.nobodyHome);
+      expect(storedDoor(key).comeBack, isNull);
+      expect(storedDoor(key).tries, tries(2));
+      expect(
+        labelOf(tester, _door('A0-01')),
+        'Escalier A, RdC, porte 01, personne, 2e passage',
+      );
+      semantics.dispose();
+    },
+  );
+
+  testWidgets('should keep the door ↻ with its day when OK is tapped', (
+    tester,
+  ) async {
+    await openStreet(tester);
+    await tester.tap(_tile('8'));
+    await tester.pumpAndSettle();
+    await tester.tap(_door('A0-01'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('door.comeBackDay.2026-11-02')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('door.ok')));
+    await tester.pumpAndSettle();
+
+    final door = storedDoor(DwellingKey(escA, 0, d('01')));
+    expect(find.byKey(const Key('door.number')), findsNothing);
+    expect(door.status, VisitStatus.comeBack);
+    expect(door.comeBack, comeBack('2026-11-02'));
   });
 }

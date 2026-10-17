@@ -150,7 +150,7 @@ void main() {
         'lat': 45.99210,
         'lon': 4.71705,
         'status': 'COME_BACK',
-        'comeBack': 'après 19h',
+        'comeBack': '2026-11-07T19',
         'by': 'lea',
         'at': twoPmStamp,
         'deletedAt': null,
@@ -206,7 +206,7 @@ void main() {
       final building = house['8']! as Map<String, Object?>;
 
       expect(building['status'], 'TO_DO');
-      expect(building['comeBack'], 'gardien');
+      expect(building['comeBack'], '2026-11-03T10');
       expect(building['labelStyle'], 'FLOOR_AND_NUMBER');
       expect(building['layout'], [
         {
@@ -230,7 +230,7 @@ void main() {
         },
         'A1-12': {
           'status': 'COME_BACK',
-          'comeBack': 'le soir',
+          'comeBack': '2026-11-04T18',
           'by': 'paul',
           'at': threePmStamp,
         },
@@ -605,10 +605,29 @@ void main() {
       });
     });
 
-    test('should refuse a hint longer than the domain allows', () {
+    test('should read the free hint of an app of before #81 as no time', () {
+      final data = storedRich((data) {
+        (housesOf(data)['3bis'] as Map<String, dynamic>)['comeBack'] =
+            'après 19h';
+        final doors = eight(data)['dwellings'] as Map<String, dynamic>;
+        (doors['A1-12'] as Map<String, dynamic>)['comeBack'] = 'x' * 50;
+      });
+
+      final houses = read(data).houses;
+      final threeBis = houses.singleWhere((h) => h.number == n('3bis'));
+      final door = houses
+          .singleWhere((h) => h.number == n('8'))
+          .building!
+          .dwellingAt(DwellingKey(escA, 1, d('12')))!;
+      expect(threeBis.status, VisitStatus.comeBack);
+      expect(threeBis.comeBack, ComeBack.withoutTime);
+      expect(door.status, VisitStatus.comeBack);
+      expect(door.comeBack, ComeBack.withoutTime);
+    });
+
+    test('should refuse a « repasser » time that is not text', () {
       expectUnreadable((data) {
-        final threeBis = housesOf(data)['3bis'] as Map<String, dynamic>;
-        threeBis['comeBack'] = 'x' * (ComeBack.maxHintLength + 1);
+        (housesOf(data)['3bis'] as Map<String, dynamic>)['comeBack'] = 19;
       });
     });
 

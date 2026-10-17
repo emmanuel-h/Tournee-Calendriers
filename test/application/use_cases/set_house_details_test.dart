@@ -85,7 +85,11 @@ void main() {
 
   test('should save the hint typed in the sheet', () async {
     final change = valueOf(
-      await setHouseDetails(lilasId, n('5'), ComeBackMark(comeBack('samedi'))),
+      await setHouseDetails(
+        lilasId,
+        n('5'),
+        ComeBackMark(comeBack('2026-11-07')),
+      ),
     );
 
     expect(
@@ -94,15 +98,19 @@ void main() {
         streetId: lilasId,
         before: five,
         stamp: leaAtTwo,
-        comeBack: comeBack('samedi'),
+        comeBack: comeBack('2026-11-07'),
       ),
     );
-    expect(houseOf(streets[lilasId]!, '5').comeBack, comeBack('samedi'));
+    expect(houseOf(streets[lilasId]!, '5').comeBack, comeBack('2026-11-07'));
   });
 
   test('should remove the building\'s own come-back when unticked', () async {
     valueOf(
-      await setHouseDetails(lilasId, n('8'), ComeBackMark(comeBack('gardien'))),
+      await setHouseDetails(
+        lilasId,
+        n('8'),
+        ComeBackMark(comeBack('2026-11-03', hour: 10)),
+      ),
     );
 
     final change = valueOf(
@@ -147,7 +155,11 @@ void main() {
 
   test('should refuse a hint on a house that is not « repasser »', () async {
     final failure = failureOf(
-      await setHouseDetails(lilasId, n('7'), ComeBackMark(comeBack('samedi'))),
+      await setHouseDetails(
+        lilasId,
+        n('7'),
+        ComeBackMark(comeBack('2026-11-07')),
+      ),
     );
 
     expect(failure, const CommandRefused(HouseChangeFailure.notComeBack));

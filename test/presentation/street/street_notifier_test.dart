@@ -29,13 +29,13 @@ final _houses = [
   House(
     number: n('5'),
     status: VisitStatus.comeBack,
-    comeBack: comeBack('après 19h'),
+    comeBack: comeBack('2026-11-07', hour: 19),
   ),
   House(number: n('7')),
   House(number: n('2'), status: VisitStatus.done),
   House(
     number: n('8'),
-    comeBack: comeBack('gardien'),
+    comeBack: comeBack('2026-11-03', hour: 10),
     building: building(
       topFloor: 0,
       doors: 2,

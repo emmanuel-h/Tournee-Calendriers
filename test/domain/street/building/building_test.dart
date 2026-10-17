@@ -104,7 +104,7 @@ void main() {
             Dwelling(
               label: d('21'),
               status: VisitStatus.nobodyHome,
-              comeBack: comeBack('après 19h'),
+              comeBack: comeBack('2026-11-07', hour: 19),
               lastChange: paulAtThree,
             ),
           )
@@ -1004,7 +1004,7 @@ void main() {
       Dwelling(
         label: d('11'),
         status: VisitStatus.nobodyHome,
-        comeBack: comeBack('le soir'),
+        comeBack: comeBack('2026-11-04', hour: 18),
         lastChange: leaAtTwo,
       ),
     );
@@ -1019,7 +1019,7 @@ void main() {
         Dwelling(
           label: d('Gauche'),
           status: VisitStatus.nobodyHome,
-          comeBack: comeBack('le soir'),
+          comeBack: comeBack('2026-11-04', hour: 18),
           lastChange: leaAtTwo,
         ),
       );

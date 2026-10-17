@@ -75,10 +75,12 @@ Street screen (« Rue »):
 - Odd numbers on the left, even on the right, scrolling together (one column when the street
   has one side only); counts « done/total · ✗ · ↻ » and a progress bar.
 - A tap cycles a house ○ → ✓ → ✗ → ↻ → ○ (à faire, fait, personne, repasser) with a light vibration and a screen-reader announcement;
-  « Annuler » for 4 s undoes the last tap.
+  « Annuler » for 4 s undoes the last tap. The tap to ↻ opens the house's (or door's) sheet by
+  itself to say when to come back, with « Annuler » (undoes the tap) and « OK ».
 - « Masquer faits » hides the done houses, remembered per street on the phone.
 - Hold a house for its sheet (« Fiche maison »): status « À faire | Fait | Personne | Repasser »,
-  « Quand repasser ? » (greyed unless « Repasser », 20 characters at most) and when it was
+  « Quand repasser ? » (greyed unless « Repasser »: a day among the next week's chips, an hour
+  8 h–21 h or « Pas d'heure », and « Le samedi 24 oct. vers 18 h ») and when it was
   last changed. No free note: too likely to hold personal data, so the app keeps none (notes
   stored by an earlier version are erased). Each control is stored at once; the tile follows.
 - Tries with nobody home: the sheet counts them (« 2 passages sans personne ») and, while the

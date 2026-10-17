@@ -48,7 +48,7 @@ List<HouseNumber> _numbers(List<String> labels) => [
 final _three = House(
   number: n('3'),
   status: VisitStatus.nobodyHome,
-  comeBack: comeBack('après 19h'),
+  comeBack: comeBack('2026-11-07', hour: 19),
   lastChange: leaAtTwo,
 );
 final _four = House(number: n('4'));
@@ -536,7 +536,7 @@ void main() {
       final renamed = House(
         number: n('3bis'),
         status: VisitStatus.nobodyHome,
-        comeBack: comeBack('après 19h'),
+        comeBack: comeBack('2026-11-07', hour: 19),
         lastChange: paulAtThree,
       );
       expect(changed.houses, [renamed, _four, _five]);

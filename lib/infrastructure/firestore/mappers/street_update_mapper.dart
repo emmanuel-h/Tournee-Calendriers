@@ -170,7 +170,7 @@ List<Map<FieldPath, Object?>> streetUpdates(
 }
 
 /// The fields a status changes on a house or a door: the status, its
-/// hint, its tries with nobody home, and who changed it when.
+/// « repasser » time, its tries with nobody home, and who changed it when.
 const _markFields = ['status', 'comeBack', 'tries', 'by', 'at'];
 
 const _houses = 'houses';

@@ -1,60 +1,89 @@
+import 'package:tournee_calendriers/domain/shared/calendar_day.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
-import 'package:tournee_calendriers/domain/shared/text_length.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
-/// Why a hint cannot go with a [ComeBack].
+/// Why a day and an hour cannot be the time of a [ComeBack].
 enum ComeBackFailure {
-  /// More than [ComeBack.maxHintLength] characters once trimmed.
-  hintTooLong,
+  /// An hour was given without a day.
+  hourWithoutDay,
+
+  /// The hour is before [ComeBack.firstHour] or after [ComeBack.lastHour].
+  hourOutOfRange,
 }
 
-/// What goes with a « repasser »: the optional [hint] such as « après 19h »
-/// (PLAN §2).
+/// What goes with a « repasser »: when to come back, a [day] and maybe an
+/// [hour] (« Le samedi 24 oct. vers 18 h », PLAN §2, §5.7, #81), or no
+/// time at all.
 ///
 /// « Repasser » is a status of its own ([VisitStatus.comeBack]): a house or
 /// a door has a `ComeBack` exactly when it has that status (see
 /// [ComeBack.keptBy]). A building, which has no status of its own, may
-/// carry one for itself (« Repasser » under its grid). The hint is trimmed
-/// and holds at most [maxHintLength] characters as counted by
-/// [characterCount].
+/// carry one for itself (« Repasser » under its grid).
+///
+/// The time is structured, not free text, so the reminders (#82) can read
+/// it, and so nothing about the people living there can be typed in
+/// (PLAN §8.3).
 final class ComeBack {
-  const ComeBack._(this.hint);
+  const ComeBack._(this.day, this.hour);
 
-  /// « Repasser » with nothing more said.
-  static const withoutHint = ComeBack._('');
+  /// « Repasser » with no time set yet.
+  static const withoutTime = ComeBack._(null, null);
 
-  /// The longest hint, in characters: room for a time or a day
-  /// (« samedi après 19h »), not for text about the people living there
-  /// (PLAN §8.3, Q23). The security rules enforce the same limit
-  /// (PLAN §8.2).
-  static const maxHintLength = 20;
+  /// The earliest hour offered (« 8 h »): the team calls in the daytime.
+  static const firstHour = 8;
 
-  /// Builds the « repasser » flag with [hint] once trimmed (a blank hint
-  /// means none), or fails with [ComeBackFailure.hintTooLong].
-  static Result<ComeBack, ComeBackFailure> create(String hint) {
-    final trimmed = hint.trim();
-    if (characterCount(trimmed) > maxHintLength) {
-      return const Err(ComeBackFailure.hintTooLong);
+  /// The latest hour offered (« 21 h »). The security rules allow the same
+  /// hours (PLAN §8.2).
+  static const lastHour = 21;
+
+  /// Every hour offered, [firstHour] to [lastHour].
+  static List<int> get hours => [
+    for (var hour = firstHour; hour <= lastHour; hour++) hour,
+  ];
+
+  /// When to come back: on [day], at about [hour] when given; no time at
+  /// all when neither is. Refused with [ComeBackFailure.hourWithoutDay]
+  /// when there is an hour but no day, with
+  /// [ComeBackFailure.hourOutOfRange] for an hour outside [hours].
+  ///
+  /// Any day is taken, a past one too: a « repasser » set for yesterday is
+  /// still what the team was told, the sheet says it is past.
+  static Result<ComeBack, ComeBackFailure> create({
+    CalendarDay? day,
+    int? hour,
+  }) {
+    if (hour != null) {
+      if (day == null) return const Err(ComeBackFailure.hourWithoutDay);
+      if (hour < firstHour || hour > lastHour) {
+        return const Err(ComeBackFailure.hourOutOfRange);
+      }
     }
-    return Ok(ComeBack._(trimmed));
+    return Ok(day == null ? withoutTime : ComeBack._(day, hour));
   }
 
   /// The come-back a house or a door with [status] keeps of [comeBack]:
-  /// only a door « repasser » has one, without hint unless one is given;
-  /// any other status has none. The `House` and `Dwelling` factories run
-  /// it, so no house is ever « personne » and « repasser » at once.
+  /// only a « repasser » has one, without time unless one is given; any
+  /// other status has none. The `House` and `Dwelling` factories run it,
+  /// so no house is ever « personne » and « repasser » at once.
   static ComeBack? keptBy(VisitStatus status, ComeBack? comeBack) =>
-      status == VisitStatus.comeBack ? comeBack ?? withoutHint : null;
+      status == VisitStatus.comeBack ? comeBack ?? withoutTime : null;
 
-  /// The trimmed hint; empty when none was given.
-  final String hint;
+  /// The day to come back; null when no time is set.
+  final CalendarDay? day;
 
-  @override
-  bool operator ==(Object other) => other is ComeBack && other.hint == hint;
-
-  @override
-  int get hashCode => hint.hashCode;
+  /// The hour, [firstHour] to [lastHour]; null when only the day is set
+  /// (« Pas d'heure »), and always null without a [day].
+  final int? hour;
 
   @override
-  String toString() => 'ComeBack($hint)';
+  bool operator ==(Object other) =>
+      other is ComeBack && other.day == day && other.hour == hour;
+
+  @override
+  int get hashCode => Object.hash(day, hour);
+
+  /// `ComeBack(2026-10-24 18h)`, `ComeBack(2026-10-24)`, `ComeBack()`.
+  @override
+  String toString() =>
+      'ComeBack(${[?day, if (hour case final hour?) '${hour}h'].join(' ')})';
 }

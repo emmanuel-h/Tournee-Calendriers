@@ -22,7 +22,7 @@ final _lilas = StreetId('rue-des-lilas');
 final _five = House(
   number: n('5'),
   status: VisitStatus.comeBack,
-  comeBack: comeBack('après 19h'),
+  comeBack: comeBack('2026-11-07', hour: 19),
   lastChange: paulAtThree,
   position: townHallDoor,
 );
@@ -87,7 +87,8 @@ void main() {
     test('should put the come-back back when its change is undone', () {
       final (street, _) = _undone(
         _street,
-        (s) => s.setComeBack(n('5'), comeBack('samedi'), by: lea, at: twoPm),
+        (s) =>
+            s.setComeBack(n('5'), comeBack('2026-11-07'), by: lea, at: twoPm),
       );
 
       expect(_house(street, '5'), _five);
@@ -229,7 +230,7 @@ void main() {
         (s) => s.setDwellingComeBack(
           n('8'),
           _rdc('02'),
-          comeBack('samedi'),
+          comeBack('2026-11-07'),
           by: lea,
           at: twoPm,
         ),
@@ -252,7 +253,7 @@ void main() {
         comingBack.setDwellingComeBack(
           n('8'),
           _rdc('02'),
-          comeBack('samedi'),
+          comeBack('2026-11-07'),
           by: paul,
           at: threePm,
         ),
@@ -271,7 +272,7 @@ void main() {
 
       expect(
         street.houses[2].building!.dwellingAt(_rdc('02'))!.comeBack,
-        comeBack('samedi'),
+        comeBack('2026-11-07'),
       );
     });
 

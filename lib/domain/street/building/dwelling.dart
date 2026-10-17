@@ -10,7 +10,7 @@ import 'package:tournee_calendriers/domain/street/visit_status.dart';
 /// One door of a building (« Logement », PLAN §2): an entity of the `Street`
 /// aggregate, identified on its floor by its [label].
 ///
-/// A dwelling carries the same marks as a single house (status, the hint of
+/// A dwelling carries the same marks as a single house (status, the time of
 /// its « repasser », its tries with nobody home, last change) and follows
 /// the same rules: it has a [comeBack] exactly when it is « repasser », and
 /// the [tries] its status allows. It is immutable; the street replaces it
@@ -45,7 +45,7 @@ final class Dwelling {
   final DwellingLabel label;
   final VisitStatus status;
 
-  /// The hint of its « repasser »; null unless it is « repasser ».
+  /// The time of its « repasser »; null unless it is « repasser ».
   final ComeBack? comeBack;
 
   /// Who changed the dwelling last and when; null when nobody has yet.

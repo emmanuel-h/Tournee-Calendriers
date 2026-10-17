@@ -5,6 +5,7 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
@@ -20,7 +21,8 @@ import '../support/finders.dart';
 
 final _id = StreetId('lilas');
 
-/// 1 to do, 5 « repasser » « après 19h », 7 to do, 9 nobody home twice.
+/// 1 to do, 5 « repasser » Saturday 7 at 19 h, 7 to do, 9 nobody home
+/// twice, 11 « repasser » yesterday at 19 h (today is Monday 2 November).
 final _lilas = valueOf(
   Street.create(
     id: _id,
@@ -31,24 +33,26 @@ final _lilas = valueOf(
       House(
         number: n('5'),
         status: VisitStatus.comeBack,
-        comeBack: comeBack('après 19h'),
+        comeBack: comeBack('2026-11-07', hour: 19),
       ),
       House(number: n('7')),
       House(number: n('9'), status: VisitStatus.nobodyHome, tries: tries(2)),
+      House(
+        number: n('11'),
+        status: VisitStatus.comeBack,
+        comeBack: comeBack('2026-11-01', hour: 19),
+      ),
     ],
   ),
 );
 
 Finder _tile(String number) => find.byKey(ValueKey('street.tile.$number'));
 
-/// A family emoji: one symbol on screen, five code points.
-const _family = '👨‍👩‍👧';
-
 void main() {
   late FakeStreetRepository streets;
 
-  /// Opens the street screen of [_lilas], then holds the tile of [number].
-  Future<void> holdTile(WidgetTester tester, String number) async {
+  /// Opens the street screen of [_lilas].
+  Future<void> openStreet(WidgetTester tester) async {
     // A phone-sized screen (411 × 914 dp): on the default 800 × 600 test
     // surface the sheet reaches the top, leaving no dimmed street to tap.
     tester.view
@@ -66,6 +70,11 @@ void main() {
     final router = GoRouter.of(tester.element(find.byType(Scaffold).first));
     router.push<void>(AppRoutes.streetOf(_id)).ignore();
     await tester.pumpAndSettle();
+  }
+
+  /// Opens the street screen of [_lilas], then holds the tile of [number].
+  Future<void> holdTile(WidgetTester tester, String number) async {
+    await openStreet(tester);
     await tester.longPress(_tile(number));
     await tester.pumpAndSettle();
   }
@@ -76,6 +85,28 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  Finder dayChip(String iso) => find.byKey(ValueKey('house.comeBackDay.$iso'));
+
+  String? summary(WidgetTester tester) =>
+      tester.widget<Text>(find.byKey(const Key('house.comeBackSummary'))).data;
+
+  /// Scrolls the row of days to the chip of [iso], then taps it.
+  Future<void> tapDay(WidgetTester tester, String iso) async {
+    await tester.ensureVisible(dayChip(iso));
+    await tester.pumpAndSettle();
+    await tester.tap(dayChip(iso));
+  }
+
+  /// Opens the hour list of the sheet and picks [label] (« 18 h »).
+  Future<void> chooseHour(WidgetTester tester, String label) async {
+    await tester.tap(find.byKey(const Key('house.comeBackHour')));
+    await tester.pumpAndSettle();
+    // The open list shows its items over the sheet; the last one found is
+    // in the list, the first is the one shown in the closed field.
+    await tester.tap(find.text(label).last);
+    await tester.pumpAndSettle();
+  }
+
   House stored(String number) =>
       streets[_id]!.houses.singleWhere((house) => house.number == n(number));
 
@@ -83,7 +114,8 @@ void main() {
       tester.getSemantics(finder).getSemanticsData();
 
   testWidgets(
-    'should show ↻ on the tile when Repasser is chosen in the held house sheet',
+    'should show ↻ on the tile when Repasser is chosen in the held house '
+    'sheet, then store the day and hour chosen',
     (tester) async {
       final semantics = tester.ensureSemantics();
       await holdTile(tester, '1');
@@ -94,14 +126,19 @@ void main() {
       expect(find.textContaining('Note'), findsNothing);
       expect(find.textContaining("N'écrivez"), findsNothing);
       expect(find.byKey(const Key('house.lastChange')), findsNothing);
-      final hint = find.byKey(const Key('house.comeBackHint.field'));
-      expect(tester.widget<TextField>(hint).enabled, isFalse);
-      expect(find.text('Quand repasser\u00a0?'), findsOneWidget);
+      // Held, not tapped: no « Annuler » / « OK ».
+      expect(find.byKey(const Key('house.ok')), findsNothing);
+      expect(find.byKey(const Key('house.cancelTap')), findsNothing);
+      expect(find.text('Quand repasser ?'), findsOneWidget);
+      expect(summary(tester), 'Pas de jour choisi');
+      // Greyed: the days answer nothing.
+      await tapDay(tester, '2026-11-03');
+      await tester.pumpAndSettle();
+      expect(streets.saved, isEmpty);
 
       await tester.tap(find.byKey(const ValueKey('house.status.comeBack')));
       await tester.pumpAndSettle();
 
-      expect(tester.widget<TextField>(hint).enabled, isTrue);
       expect(
         semanticsOf(
           tester,
@@ -109,31 +146,65 @@ void main() {
         ).flagsCollection.isChecked,
         CheckedState.isTrue,
       );
-      await tester.enterText(hint, 'après 19h');
+      await tapDay(tester, '2026-11-03');
+      await tester.pumpAndSettle();
+      expect(summary(tester), 'Demain');
+      expect(
+        semanticsOf(tester, dayChip('2026-11-03')).flagsCollection.isChecked,
+        CheckedState.isTrue,
+      );
+      await chooseHour(tester, '18 h');
+      expect(summary(tester), 'Demain vers 18 h');
       await closeSheet(tester);
 
       expect(find.byKey(const Key('house.number')), findsNothing);
       expect(tester.getSemantics(_tile('1')).label, 'Numéro 1, repasser');
       expect(stored('1').status, VisitStatus.comeBack);
-      expect(stored('1').comeBack, comeBack('après 19h'));
+      expect(stored('1').comeBack, comeBack('2026-11-03', hour: 18));
       semantics.dispose();
     },
   );
 
   testWidgets(
-    'should grey the hint field and drop its hint when Fait is chosen',
+    'should offer a week of days from today, the dated ones read in full',
     (tester) async {
       final semantics = tester.ensureSemantics();
       await holdTile(tester, '5');
-      final hint = find.byKey(const Key('house.comeBackHint.field'));
-      expect(tester.widget<TextField>(hint).enabled, isTrue);
-      expect(find.text('après 19h'), findsOneWidget);
+
+      // Monday 2 November 2026 is today (the fake clock).
+      for (final (iso, label) in [
+        ('2026-11-02', "Aujourd'hui"),
+        ('2026-11-03', 'Demain'),
+        ('2026-11-04', 'Mer. 4'),
+        ('2026-11-08', 'Dim. 8'),
+      ]) {
+        expect(
+          find.descendant(of: dayChip(iso), matching: find.text(label)),
+          findsOneWidget,
+          reason: iso,
+        );
+      }
+      expect(dayChip('2026-11-09'), findsNothing);
+      expect(
+        semanticsOf(tester, dayChip('2026-11-07')).label,
+        'samedi 7 novembre',
+      );
+      expect(summary(tester), 'Le samedi 7 nov. vers 19 h');
+      semantics.dispose();
+    },
+  );
+
+  testWidgets(
+    'should grey « Quand repasser ? » and drop its time when Fait is chosen',
+    (tester) async {
+      final semantics = tester.ensureSemantics();
+      await holdTile(tester, '5');
+      expect(summary(tester), 'Le samedi 7 nov. vers 19 h');
 
       await tester.tap(find.byKey(const ValueKey('house.status.done')));
       await tester.pumpAndSettle();
 
-      expect(tester.widget<TextField>(hint).enabled, isFalse);
-      expect(find.text('après 19h'), findsNothing);
+      expect(summary(tester), 'Pas de jour choisi');
       expect(
         semanticsOf(
           tester,
@@ -154,18 +225,18 @@ void main() {
   );
 
   testWidgets(
-    'should keep the sheet and its fields in place whichever of the four '
+    'should keep the sheet and its blocks in place whichever of the four '
     'statuses is chosen',
     (tester) async {
       await holdTile(tester, '1');
       // The house was never changed: the first choice stamps it, and the
       // line « Modifié à … » appears in a place kept for it.
       Rect sheet() => tester.getRect(find.byType(BottomSheet));
-      Rect hint() =>
-          tester.getRect(find.byKey(const Key('house.comeBackHint.field')));
+      Rect time() =>
+          tester.getRect(find.byKey(const Key('house.comeBackBlock')));
       Rect action() =>
           tester.getRect(find.byKey(const Key('house.toBuilding')));
-      final before = (sheet(), hint(), action());
+      final before = (sheet(), time(), action());
 
       for (final status in [
         VisitStatus.done,
@@ -177,39 +248,45 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(stored('1').status, status);
-        expect((sheet(), hint(), action()), before, reason: '$status');
+        expect((sheet(), time(), action()), before, reason: '$status');
       }
     },
   );
 
   testWidgets(
-    'should refuse a hint over 20 characters counted as the domain does',
+    'should leave no time when the chosen day is tapped again, and keep the '
+    'day with « Pas d\'heure »',
     (tester) async {
       await holdTile(tester, '5');
-      final field = find.byKey(const Key('house.comeBackHint.field'));
-      final count = find.byKey(const Key('house.comeBackHint.count'));
-      expect(tester.widget<Text>(count).data, '9/20');
 
-      // 16 letters and the emoji: 17 symbols, 21 code points.
-      await tester.enterText(field, '${'a' * 16}$_family');
-      await tester.pump();
+      await chooseHour(tester, "Pas d'heure");
+      expect(summary(tester), 'Le samedi 7 nov.');
+      expect(stored('5').comeBack, comeBack('2026-11-07'));
 
-      expect(find.text('après 19h'), findsOneWidget);
-      expect(find.text('Précision limitée à 20 caractères.'), findsOneWidget);
-      expect(tester.widget<Text>(count).data, '9/20');
+      await tapDay(tester, '2026-11-07');
+      await tester.pumpAndSettle();
 
-      final longest = '${'a' * 15}$_family';
-      await tester.enterText(field, longest);
-      await tester.pump();
-
-      expect(find.text('Précision limitée à 20 caractères.'), findsNothing);
-      expect(tester.widget<Text>(count).data, '20/20');
-
-      await closeSheet(tester);
-
-      expect(stored('5').comeBack, comeBack(longest));
+      expect(summary(tester), 'Pas de jour choisi');
+      expect(stored('5').status, VisitStatus.comeBack);
+      expect(stored('5').comeBack, ComeBack.withoutTime);
     },
   );
+
+  testWidgets('should say a day gone by is past, with a chip of its own', (
+    tester,
+  ) async {
+    await holdTile(tester, '11');
+
+    expect(summary(tester), "C'était hier vers 19 h");
+    expect(
+      find.descendant(of: dayChip('2026-11-01'), matching: find.text('Hier')),
+      findsOneWidget,
+    );
+    expect(
+      tester.getTopLeft(dayChip('2026-11-01')).dx,
+      lessThan(tester.getTopLeft(dayChip('2026-11-02')).dx),
+    );
+  });
 
   testWidgets(
     'should mark the house nobody home once more from its sheet, then put it '
@@ -252,7 +329,7 @@ void main() {
   );
 
   testWidgets(
-    'should store the hint before « Repassé, toujours personne » marks the '
+    'should store the day before « Repassé, toujours personne » marks the '
     'house',
     (tester) async {
       await holdTile(tester, '5');
@@ -261,22 +338,19 @@ void main() {
         tester.widget<Text>(find.byKey(const Key('house.tries'))).data,
         '0 passage sans personne',
       );
-      await tester.enterText(
-        find.byKey(const Key('house.comeBackHint.field')),
-        'samedi',
-      );
+      await tapDay(tester, '2026-11-04');
 
       await tester.tap(find.byKey(const Key('house.nobodyHomeAgain')));
       await tester.pumpAndSettle();
 
       expect(stored('5').status, VisitStatus.nobodyHome);
       expect(stored('5').tries, tries(1));
-      // The hint was stored first, then dropped with « repasser »: Annuler
+      // The day was stored first, then dropped with « repasser »: Annuler
       // gives the house back with it.
       expect(findArrowText('5 → Personne'), findsOneWidget);
       await tester.tap(find.text('Annuler'));
       await tester.pumpAndSettle();
-      expect(stored('5').comeBack, comeBack('samedi'));
+      expect(stored('5').comeBack, comeBack('2026-11-04', hour: 19));
     },
   );
 
@@ -312,4 +386,87 @@ void main() {
       );
     },
   );
+
+  group('opened by a tap to ↻', () {
+    testWidgets(
+      'should open the sheet when a tap brings the house to ↻, without the '
+      'snackbar, and store the day chosen',
+      (tester) async {
+        await openStreet(tester);
+
+        await tester.tap(_tile('9'));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('house.number')), findsOneWidget);
+        expect(stored('9').status, VisitStatus.comeBack);
+        expect(find.byKey(const Key('house.ok')), findsOneWidget);
+        expect(find.byKey(const Key('house.cancelTap')), findsOneWidget);
+        // The time is what it opened for: no « Transformer en immeuble… ».
+        expect(find.byKey(const Key('house.toBuilding')), findsNothing);
+        // The tries stay, enabled on ↻.
+        expect(find.byKey(const Key('house.nobodyHomeAgain')), findsOneWidget);
+        expect(findArrowText('9 → Repasser'), findsNothing);
+
+        await tapDay(tester, '2026-11-03');
+        await tester.pumpAndSettle();
+        await chooseHour(tester, '20 h');
+        await tester.tap(find.byKey(const Key('house.ok')));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('house.number')), findsNothing);
+        expect(findArrowText('9 → Repasser'), findsNothing);
+        expect(stored('9').status, VisitStatus.comeBack);
+        expect(stored('9').comeBack, comeBack('2026-11-03', hour: 20));
+        expect(stored('9').tries, tries(2));
+      },
+    );
+
+    testWidgets(
+      'should put the house back as before the tap with Annuler, the day '
+      'chosen with it',
+      (tester) async {
+        await openStreet(tester);
+        await tester.tap(_tile('9'));
+        await tester.pumpAndSettle();
+        await tapDay(tester, '2026-11-04');
+
+        await tester.tap(find.byKey(const Key('house.cancelTap')));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('house.number')), findsNothing);
+        expect(stored('9').status, VisitStatus.nobodyHome);
+        expect(stored('9').comeBack, isNull);
+        expect(stored('9').tries, tries(2));
+        // Nothing left to undo: no snackbar.
+        expect(find.text('Annuler'), findsNothing);
+      },
+    );
+
+    testWidgets('should keep ↻ when the sheet is closed another way', (
+      tester,
+    ) async {
+      await openStreet(tester);
+      await tester.tap(_tile('9'));
+      await tester.pumpAndSettle();
+
+      await closeSheet(tester);
+
+      expect(find.byKey(const Key('house.number')), findsNothing);
+      expect(stored('9').status, VisitStatus.comeBack);
+      expect(stored('9').comeBack, ComeBack.withoutTime);
+    });
+
+    testWidgets('should not open the sheet on a tap to another status', (
+      tester,
+    ) async {
+      await openStreet(tester);
+
+      await tester.tap(_tile('1'));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('house.number')), findsNothing);
+      expect(stored('1').status, VisitStatus.done);
+      expect(findArrowText('1 → Fait'), findsOneWidget);
+    });
+  });
 }

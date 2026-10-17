@@ -75,7 +75,7 @@ final class HouseMarked extends HouseChange {
   final VisitStatus status;
 
   /// The come-back the house has after the change, which storage writes
-  /// with the status: the hint it already had when it stays « repasser »,
+  /// with the status: the time it already had when it stays « repasser »,
   /// none when it becomes « repasser », null with any other status (see
   /// `ComeBack.keptBy`). Its tries follow the status the same way
   /// (`NobodyHomeTries.keptBy`), and are written with it too.
@@ -95,7 +95,7 @@ final class HouseMarked extends HouseChange {
 
 /// « Repassé, toujours personne » on the house at [number] (#80): it is
 /// « personne » with one more try, [tries] in all, and has no « repasser »
-/// hint any more.
+/// time any more.
 ///
 /// Storage writes the same fields as a [HouseMarked]: `status`,
 /// `comeBack`, `tries`, `by` and `at`, by field path.
@@ -125,7 +125,7 @@ final class HouseNobodyHomeAgain extends HouseChange {
       '×${tries.count}, $stamp)';
 }
 
-/// The « repasser » hint of the house at [number] was set to [comeBack];
+/// The « repasser » time of the house at [number] was set to [comeBack];
 /// on a building, its own « repasser » was set, or removed when
 /// [comeBack] is null.
 final class ComeBackSet extends HouseChange {
@@ -382,7 +382,7 @@ final class DwellingNobodyHomeAgain extends DwellingChange {
       'DwellingNobodyHomeAgain($_where, ×${tries.count}, $stamp)';
 }
 
-/// The « repasser » hint of the door at [key] was set to [comeBack].
+/// The « repasser » time of the door at [key] was set to [comeBack].
 final class DwellingComeBackSet extends DwellingChange {
   const DwellingComeBackSet({
     required super.streetId,

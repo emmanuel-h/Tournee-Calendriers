@@ -11,13 +11,10 @@ import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_repository.dart';
 
 /// One control of the Fiche maison (hold a tile, PLAN §5.7): the status,
-/// the hint of the « repasser », or « Repassé, toujours personne » of a
+/// the time of the « repasser », or « Repassé, toujours personne » of a
 /// house. On a building it sets the
 /// building's own « repasser » (« Repasser » under the grid); its status is
 /// refused, its doors carry the statuses. Needs no network.
-///
-/// The text of a hint is checked by the sheet first (`ComeBack.create`), so
-/// it can say « trop long » before anything is sent.
 final class SetHouseDetails {
   const SetHouseDetails(this._streets, this._clock, this._identity);
 

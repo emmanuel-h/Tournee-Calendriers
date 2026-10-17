@@ -38,7 +38,7 @@ enum HouseChangeFailure {
   /// The street has no house with that number.
   unknownHouse,
 
-  /// A « repasser » hint was given to (or taken from) a single house that
+  /// A « repasser » time was given to (or taken from) a single house that
   /// is not « repasser »: its « repasser » is its status, set with
   /// `markHouse`.
   notComeBack,
@@ -87,7 +87,7 @@ enum DwellingChangeFailure {
   /// The building has no door with that staircase, floor and label.
   unknownDwelling,
 
-  /// A « repasser » hint was given to (or taken from) a door that is not
+  /// A « repasser » time was given to (or taken from) a door that is not
   /// « repasser »: its « repasser » is its status, set with `markDwelling`.
   notComeBack,
 
@@ -132,7 +132,7 @@ enum UndoFailure {
 ///   [removedHouses] together (the number is the key in storage);
 /// - [houses] and [removedHouses] are sorted by [HouseNumber]
 ///   (`3 < 3bis < 3A < 4`);
-/// - a single house or a door has a « repasser » hint exactly when its
+/// - a single house or a door has a « repasser » exactly when its
 ///   status is « repasser » (see [House], [Dwelling]);
 /// - a single house or a door has no tries with nobody home when it is to
 ///   do, and at least one when nobody is home (see [NobodyHomeTries]);
@@ -326,9 +326,9 @@ final class Street {
 
   /// Gives the house at [number] the [status], as [by] at [at].
   ///
-  /// The hint of a « repasser » goes with that status: leaving « repasser »
-  /// drops it, coming to « repasser » starts without one (the sheet's field
-  /// then gives it), see [HouseMarked.comeBack]. So do its tries with nobody
+  /// The time of a « repasser » goes with that status: leaving « repasser »
+  /// drops it, coming to « repasser » starts without one (the sheet's day
+  /// and hour then give it), see [HouseMarked.comeBack]. So do its tries with nobody
   /// home: back to none when to do, the first one when it becomes
   /// « personne » without any, kept otherwise ([NobodyHomeTries.keptBy]).
   /// Only [markNobodyHomeAgain] adds a try to a house that already has one.
@@ -363,11 +363,11 @@ final class Street {
   }
 
   /// Sets the « repasser » of the house at [number] to [comeBack], as [by]
-  /// at [at] (the hint field of its sheet).
+  /// at [at] (« Quand repasser ? » on its sheet).
   ///
   /// On a building, it is the building's own « repasser » (its doors keep
   /// theirs), removed when [comeBack] is null. On a single house only the
-  /// hint changes: « repasser » is its status, given with [markHouse] and
+  /// time changes: « repasser » is its status, given with [markHouse] and
   /// left by giving another. So it is refused with
   /// [HouseChangeFailure.notComeBack] when the single house is not
   /// « repasser », or when [comeBack] is null: dropping the request
@@ -408,7 +408,7 @@ final class Street {
 
   /// « Repassé, toujours personne » on the house at [number], as [by] at
   /// [at] (its sheet, #80): it is « personne » with one more try
-  /// ([NobodyHomeTries.next]); a « repasser » loses its hint, as any other
+  /// ([NobodyHomeTries.next]); a « repasser » loses its time, as any other
   /// status but « repasser » does.
   ///
   /// Refused with [HouseChangeFailure.notToVisitAgain] unless the house is
@@ -518,7 +518,7 @@ final class Street {
   /// Turns the building at [number] back into a single house, as [by] at
   /// [at] (« or back to a single house », PLAN §5.5). Its doors are
   /// dropped (the screen asks first); the house is done when every door
-  /// was done; otherwise it is « repasser », with its hint, when the
+  /// was done; otherwise it is « repasser », with its time, when the
   /// building had its own « repasser », and to do when not.
   Result<(Street, BuildingRemoved), BuildingChangeFailure> removeBuilding(
     HouseNumber number, {
@@ -558,7 +558,7 @@ final class Street {
   }
 
   /// Gives the door at [key] of the building at [number] the [status], as
-  /// [by] at [at] (a tap on the door). The hint of a « repasser » goes with
+  /// [by] at [at] (a tap on the door). The time of a « repasser » goes with
   /// that status, as a house's.
   ///
   /// The house itself is untouched (its last change included): the door
@@ -597,7 +597,7 @@ final class Street {
     }
   }
 
-  /// Sets the hint of the « repasser » of the door at [key] of the building
+  /// Sets the time of the « repasser » of the door at [key] of the building
   /// at [number] to [comeBack], as [by] at [at]. Refused with
   /// [DwellingChangeFailure.notComeBack] when the door is not « repasser »
   /// or [comeBack] is null, for the reason given in [setComeBack].

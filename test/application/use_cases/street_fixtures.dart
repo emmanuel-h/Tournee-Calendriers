@@ -18,7 +18,7 @@ final lilasId = StreetId('rue-des-lilas');
 final five = House(
   number: n('5'),
   status: VisitStatus.comeBack,
-  comeBack: comeBack('après 19h'),
+  comeBack: comeBack('2026-11-07', hour: 19),
   lastChange: paulAtThree,
   position: townHallDoor,
 );

@@ -249,7 +249,7 @@ void main() {
           House(
             number: n('3bis'),
             status: VisitStatus.comeBack,
-            comeBack: comeBack('après 19h'),
+            comeBack: comeBack('2026-11-07', hour: 19),
           ),
         ],
       ),
@@ -271,7 +271,7 @@ void main() {
       expect(saved.isDeleted, isFalse);
       expect(saved.houses, deleted.houses);
       expect(saved.houses.single.status, VisitStatus.comeBack);
-      expect(saved.houses.single.comeBack, comeBack('après 19h'));
+      expect(saved.houses.single.comeBack, comeBack('2026-11-07', hour: 19));
       expect(streets.added, isEmpty);
     });
 

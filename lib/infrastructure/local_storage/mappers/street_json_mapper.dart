@@ -8,7 +8,7 @@
 //     deletion: stamp | null, shape: ["<encoded polyline>", …],
 //     assignees: [memberId, …], houses: [house], removedHouses: [{ house,
 //     removal: stamp }] }
-//   house    = { number: "3bis", status, comeBack: hint | null,
+//   house    = { number: "3bis", status, comeBack: when | null,
 //                lastChange: stamp | null, tries: 1–99,   ← only from the first try
 //                position: { latitude, longitude } | null,
 //                building: building | null }
@@ -17,23 +17,27 @@
 //                              lastChange, tries }] }] }] }
 //   stamp    = { by: memberId, at: "2026-11-02T14:02:00.000Z" }  (UTC)
 //   status   = "toDo" | "done" | "nobodyHome" | "comeBack"
+//   when     = "" | "2026-10-24" | "2026-10-24T18"   ← see come_back_text.dart
 //
-// A house or door « comeBack » has its hint in `comeBack` ("" for none); any
+// A house or door « comeBack » has its time in `comeBack` ("" for none); any
 // other status has `comeBack: null`. A building keeps its own « repasser »
 // there, its status being always "toDo".
 //
 // Version 1 (T1.6 to T1.12) had no "comeBack" status: « repasser » was a
 // flag beside the status. Reading it, a house or door to do or nobody home
-// with a come-back becomes « comeBack », hint kept (a done one never had a
-// come-back); a building keeps its own.
+// with a come-back becomes « comeBack » (a done one never had a come-back);
+// a building keeps its own.
 //
-// Versions 1 and 2 (up to T1.19) allowed « repasser » hints of 50
-// characters: reading cuts a longer one to its first 20 (code points),
-// trimmed. They also held a free `note` on each house and door. Notes were
-// removed for privacy (PLAN §8.3, Q23): reading an older file ignores them,
-// so the street comes back without any. The file is written again in
-// version 3 as soon as it is read (see `LocalStreetRepository`), so no note
-// and no long hint stays on the phone. Every other mark is kept.
+// Versions 1 and 2 (up to T1.19) held a free `note` on each house and door.
+// Notes were removed for privacy (PLAN §8.3, Q23): reading an older file
+// ignores them, so the street comes back without any. The file is written
+// again in version 3 as soon as it is read (see `LocalStreetRepository`),
+// so no note stays on the phone. Every other mark is kept.
+//
+// Until #81, `comeBack` held a free hint (« après 19h »), in every version.
+// The time replaced it without a new version: such a text reads as
+// « repasser » with no time set (`comeBackFrom`), and goes from the file
+// the next time the street is written.
 //
 // `shape` (one encoded polyline per line, see `StreetShape.encode`) and
 // `assignees` came with the map (T3.3) without a new version: they only
@@ -72,6 +76,7 @@ import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
+import 'package:tournee_calendriers/infrastructure/shared/mappers/come_back_text.dart';
 
 /// The schema version this code writes. It reads it and versions 1 and 2
 /// (see the top of this file); a file of any other version is refused
@@ -195,7 +200,7 @@ Set<MemberId> _assigneesFromJson(Object? json) => switch (json) {
 Map<String, Object?> _houseToJson(House house) => {
   'number': house.number.label,
   'status': _statusToJson(house.status),
-  'comeBack': house.comeBack?.hint,
+  'comeBack': _comeBackToJson(house.comeBack),
   'lastChange': _stampToJson(house.lastChange),
   ..._triesToJson(house.tries),
   'position': switch (house.position) {
@@ -230,7 +235,7 @@ House _houseFromJson(Object? json, int version) {
       // On a building the House factory makes it to do again, keeping the
       // come-back as the building's own.
       status: _statusFromJson(status, comeBack: comeBack, version: version),
-      comeBack: _comeBackOrNull(comeBack, version),
+      comeBack: _comeBackOrNull(comeBack),
       lastChange: _stampOrNull(lastChange),
       position: position == null ? null : _positionFromJson(position),
       building: building == null ? null : _buildingFromJson(building, version),
@@ -341,7 +346,7 @@ Floor _floorFromJson(Object? json, int version) {
 Map<String, Object?> _dwellingToJson(Dwelling dwelling) => {
   'label': dwelling.label.text,
   'status': _statusToJson(dwelling.status),
-  'comeBack': dwelling.comeBack?.hint,
+  'comeBack': _comeBackToJson(dwelling.comeBack),
   'lastChange': _stampToJson(dwelling.lastChange),
   ..._triesToJson(dwelling.tries),
 };
@@ -358,7 +363,7 @@ Dwelling _dwellingFromJson(Object? json, int version) {
     return Dwelling(
       label: _valid(DwellingLabel.parse(label), 'door label'),
       status: _statusFromJson(status, comeBack: comeBack, version: version),
-      comeBack: _comeBackOrNull(comeBack, version),
+      comeBack: _comeBackOrNull(comeBack),
       lastChange: _stampOrNull(lastChange),
       tries: _triesFromJson(dwelling['tries']),
     );
@@ -398,20 +403,11 @@ ChangeStamp _stamp(Object? json) {
   throw const FormatException('Not a stored stamp');
 }
 
-/// The come-back stored as [hint] in a file of schema [version].
-///
-/// Versions 1 and 2 allowed hints of 50 characters; version 3 allows
-/// [ComeBack.maxHintLength]. A longer hint of an older file keeps its first
-/// characters (code points, as the domain counts them), trimmed, rather
-/// than making the whole street unreadable. A version 3 file is written by
-/// this code, so a hint too long there is damaged data.
-ComeBack? _comeBackOrNull(String? hint, int version) {
-  if (hint == null) return null;
-  final kept = version < storedStreetVersion
-      ? String.fromCharCodes(hint.trim().runes.take(ComeBack.maxHintLength))
-      : hint;
-  return _valid(ComeBack.create(kept), '« repasser » hint');
-}
+String? _comeBackToJson(ComeBack? comeBack) =>
+    comeBack == null ? null : comeBackText(comeBack);
+
+ComeBack? _comeBackOrNull(String? text) =>
+    text == null ? null : comeBackFrom(text);
 
 String _statusToJson(VisitStatus status) => switch (status) {
   VisitStatus.toDo => 'toDo',
@@ -420,7 +416,7 @@ String _statusToJson(VisitStatus status) => switch (status) {
   VisitStatus.comeBack => 'comeBack',
 };
 
-/// The status stored as [text], next to the stored [comeBack] hint, in a
+/// The status stored as [text], next to the stored [comeBack], in a
 /// file of schema [version]. In version 1 a come-back on a house or door
 /// not done was the « repasser » flag: it is that status now.
 VisitStatus _statusFromJson(

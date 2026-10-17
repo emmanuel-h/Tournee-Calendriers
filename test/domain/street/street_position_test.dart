@@ -50,7 +50,12 @@ void main() {
 
   test('should keep the position when a come-back is set', () {
     final (street, _) = valueOf(
-      _street.setComeBack(n('5'), comeBack('soir'), by: lea, at: twoPm),
+      _street.setComeBack(
+        n('5'),
+        comeBack('2026-11-03', hour: 18),
+        by: lea,
+        at: twoPm,
+      ),
     );
 
     expect(_positionOf(street, '5'), townHallDoor);

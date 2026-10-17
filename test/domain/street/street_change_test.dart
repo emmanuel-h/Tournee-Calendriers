@@ -14,7 +14,7 @@ void main() {
   final twelve = House(
     number: n('12'),
     status: VisitStatus.comeBack,
-    comeBack: comeBack('après 19h'),
+    comeBack: comeBack('2026-11-07', hour: 19),
   );
   final twelveDone = House(number: n('12'), status: VisitStatus.done);
 
@@ -54,14 +54,14 @@ void main() {
     test('should keep the hint when the house stays « repasser »', () {
       expect(
         marked(status: VisitStatus.comeBack).comeBack,
-        comeBack('après 19h'),
+        comeBack('2026-11-07', hour: 19),
       );
     });
 
     test('should come back without hint when the house becomes it', () {
       expect(
         marked(before: twelveDone, status: VisitStatus.comeBack).comeBack,
-        ComeBack.withoutHint,
+        ComeBack.withoutTime,
       );
     });
 
@@ -110,7 +110,7 @@ void main() {
     ComeBackSet set({
       StreetId? streetId,
       House? before,
-      ComeBack? comeBack = ComeBack.withoutHint,
+      ComeBack? comeBack = ComeBack.withoutTime,
       ChangeStamp? stamp,
     }) => ComeBackSet(
       streetId: streetId ?? lilas,
@@ -120,12 +120,12 @@ void main() {
     );
 
     test('should carry the new come-back and the house before', () {
-      final change = set(comeBack: comeBack('le samedi'));
+      final change = set(comeBack: comeBack('2026-11-14'));
 
       expect(change.streetId, lilas);
       expect(change.number, n('12'));
       expect(change.before, twelve);
-      expect(change.comeBack, comeBack('le samedi'));
+      expect(change.comeBack, comeBack('2026-11-14'));
       expect(change.stamp, leaAtTwo);
     });
 

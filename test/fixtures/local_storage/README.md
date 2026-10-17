@@ -18,6 +18,10 @@ house. All three files must read as the same street, without any note, and
 versions 1 and 2 must be written back exactly as the version 3 file: that is
 the migration test.
 
+All three were written before #81, when « Quand repasser ? » was a free hint
+(« après 19h », « samedi »): those hints must read as « repasser » with no time
+set, never make the street unreadable.
+
 Houses and floors are out of order on purpose: reading must not depend on the
 order.
 

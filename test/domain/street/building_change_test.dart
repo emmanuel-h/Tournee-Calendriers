@@ -94,7 +94,7 @@ void main() {
 
     final eightComingBack = House(
       number: n('8'),
-      comeBack: comeBack('gardien'),
+      comeBack: comeBack('2026-11-03', hour: 10),
       building: building(),
     );
 
@@ -108,7 +108,7 @@ void main() {
     test('should keep the building\'s come-back when the house is it', () {
       expect(
         removed(before: eightComingBack, status: VisitStatus.comeBack).comeBack,
-        comeBack('gardien'),
+        comeBack('2026-11-03', hour: 10),
       );
     });
 
@@ -142,7 +142,7 @@ void main() {
     final door = Dwelling(
       label: d('51'),
       status: VisitStatus.comeBack,
-      comeBack: comeBack('le soir'),
+      comeBack: comeBack('2026-11-04', hour: 18),
     );
     final otherDoor = Dwelling(label: d('52'));
 
@@ -191,14 +191,14 @@ void main() {
       test('should keep the hint when the door stays « repasser »', () {
         expect(
           marked(status: VisitStatus.comeBack).comeBack,
-          comeBack('le soir'),
+          comeBack('2026-11-04', hour: 18),
         );
       });
 
       test('should come back without hint when the door becomes it', () {
         expect(
           marked(before: otherDoor, status: VisitStatus.comeBack).comeBack,
-          ComeBack.withoutHint,
+          ComeBack.withoutTime,
         );
       });
 
@@ -249,7 +249,7 @@ void main() {
     group('DwellingComeBackSet', () {
       DwellingComeBackSet set({
         Dwelling? before,
-        ComeBack? comeBack = ComeBack.withoutHint,
+        ComeBack? comeBack = ComeBack.withoutTime,
       }) => DwellingComeBackSet(
         streetId: lilas,
         number: n('8'),
@@ -261,11 +261,11 @@ void main() {
       );
 
       test('should carry the new come-back and the door before', () {
-        final change = set(comeBack: comeBack('samedi'));
+        final change = set(comeBack: comeBack('2026-11-07'));
 
         expect(change.key, DwellingKey(escA, null, d('51')));
         expect(change.before, door);
-        expect(change.comeBack, comeBack('samedi'));
+        expect(change.comeBack, comeBack('2026-11-07'));
       });
 
       test('should be equal when every field is equal', () {

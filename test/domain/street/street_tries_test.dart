@@ -121,10 +121,12 @@ void main() {
   group('setComeBack', () {
     test('should keep the tries when the hint is set', () {
       final (changed, _) = valueOf(
-        _seven(
-          VisitStatus.comeBack,
-          count: 2,
-        ).setComeBack(n('7'), comeBack('après 19h'), by: lea, at: twoPm),
+        _seven(VisitStatus.comeBack, count: 2).setComeBack(
+          n('7'),
+          comeBack('2026-11-07', hour: 19),
+          by: lea,
+          at: twoPm,
+        ),
       );
 
       expect(_houseOf(changed).tries, tries(2));
@@ -178,7 +180,7 @@ void main() {
         House(
           number: n('7'),
           status: VisitStatus.comeBack,
-          comeBack: comeBack('après 19h'),
+          comeBack: comeBack('2026-11-07', hour: 19),
           tries: tries(1),
         ),
       ]);
@@ -290,7 +292,7 @@ void main() {
         _eight(VisitStatus.comeBack, count: 2).setDwellingComeBack(
           n('8'),
           _door,
-          comeBack('samedi'),
+          comeBack('2026-11-07'),
           by: lea,
           at: twoPm,
         ),

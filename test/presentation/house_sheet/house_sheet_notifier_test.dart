@@ -1,9 +1,11 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
+import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
@@ -12,6 +14,7 @@ import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_summary.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
+import 'package:tournee_calendriers/presentation/house_sheet/come_back_time.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_notifier.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_state.dart';
 
@@ -27,7 +30,7 @@ import '../../support/street_fixtures.dart';
 
 final _id = StreetId('lilas');
 
-/// 3 changed by Paul yesterday evening; 5 to come back « après 19h »; 7
+/// 3 changed by Paul yesterday evening; 5 to come back Saturday 7 at 19 h; 7
 /// never changed; 8 a building.
 final _yesterday = DateTime(2026, 11, 1, 18, 30);
 final _houses = [
@@ -39,7 +42,7 @@ final _houses = [
   House(
     number: n('5'),
     status: VisitStatus.comeBack,
-    comeBack: comeBack('après 19h'),
+    comeBack: comeBack('2026-11-07', hour: 19),
   ),
   House(number: n('7')),
   House(number: n('8'), building: building(topFloor: 0, doors: 2)),
@@ -200,7 +203,10 @@ void main() {
       expect(state.number, n('5'));
       expect(state.status, VisitStatus.comeBack);
       expect(state.comeBack, isTrue);
-      expect(state.comeBackHint, 'après 19h');
+      expect(state.comeBackTime.chosen, isNotNull);
+      expect(state.comeBackTime.chosen!.day, day('2026-11-07'));
+      expect(state.comeBackTime.chosen!.fromToday, DayFromToday.later);
+      expect(state.comeBackTime.hour, 19);
       expect(state.lastChange, isNull);
       expect(state.tries, 0);
     });
@@ -214,7 +220,8 @@ void main() {
 
       expect(state.status, VisitStatus.nobodyHome);
       expect(state.comeBack, isFalse);
-      expect(state.comeBackHint, '');
+      expect(state.comeBackTime.chosen, isNull);
+      expect(state.comeBackTime.hour, isNull);
       expect(state.lastChange, ChangedEarlier(_yesterday));
       // Nobody home, once.
       expect(state.tries, 1);
@@ -310,7 +317,7 @@ void main() {
       },
     );
 
-    test('should come back without hint when « Repasser » is chosen', () async {
+    test('should come back without time when « Repasser » is chosen', () async {
       phoneWith(_street());
       open('7');
       await settled('7');
@@ -329,10 +336,10 @@ void main() {
       final state = await shown('7');
       expect(state.status, VisitStatus.comeBack);
       expect(state.comeBack, isTrue);
-      expect(state.comeBackHint, '');
+      expect(state.comeBackTime.chosen, isNull);
     });
 
-    test('should drop the hint when done is chosen', () async {
+    test('should drop the time when done is chosen', () async {
       phoneWith(_street());
       open('5');
       await settled('5');
@@ -342,7 +349,8 @@ void main() {
       final state = await shown('5');
       expect(state.status, VisitStatus.done);
       expect(state.comeBack, isFalse);
-      expect(state.comeBackHint, '');
+      expect(state.comeBackTime.chosen, isNull);
+      expect(state.comeBackTime.hour, isNull);
       expect(houseNow('5').comeBack, isNull);
     });
 
@@ -393,18 +401,44 @@ void main() {
         await notifier('5').setComeBack(on: false);
 
         expect(streets.saved, isEmpty);
-        expect(houseNow('5').comeBack, comeBack('après 19h'));
+        expect(houseNow('5').comeBack, comeBack('2026-11-07', hour: 19));
       },
     );
   });
 
-  group('saveComeBackHint', () {
-    test('should store the trimmed hint when it changed', () async {
+  group('the days offered', () {
+    test('should start today on the phone\'s calendar', () async {
+      phoneWith(_street());
+      open('7');
+
+      final days = (await shown('7')).comeBackTime.days;
+
+      expect(days.first, ComeBackDay(day('2026-11-02'), DayFromToday.today));
+      expect(days, hasLength(ComeBackTime.dayCount));
+    });
+
+    test('should follow the clock when the street is shown again', () async {
+      phoneWith(_street());
+      open('7');
+      await settled('7');
+      clock.time = DateTime.utc(2026, 11, 4, 9);
+
+      await notifier('7').setStatus(VisitStatus.comeBack);
+
+      expect(
+        (await shown('7')).comeBackTime.days.first,
+        ComeBackDay(day('2026-11-04'), DayFromToday.today),
+      );
+    });
+  });
+
+  group('chooseComeBackDay', () {
+    test('should store the day, keeping the hour already chosen', () async {
       phoneWith(_street());
       open('5');
       await settled('5');
 
-      await notifier('5').saveComeBackHint('  samedi matin ');
+      await notifier('5').chooseComeBackDay(day('2026-11-03'));
 
       expect(
         streets.saved.single.$2,
@@ -412,44 +446,125 @@ void main() {
           streetId: _id,
           before: houseBefore('5'),
           stamp: leaAtTwo,
-          comeBack: comeBack('samedi matin'),
+          comeBack: comeBack('2026-11-03', hour: 19),
         ),
       );
-      expect((await shown('5')).comeBackHint, 'samedi matin');
+      final time = (await shown('5')).comeBackTime;
+      expect(
+        time.chosen,
+        ComeBackDay(day('2026-11-03'), DayFromToday.tomorrow),
+      );
+      expect(time.hour, 19);
     });
 
-    test(
-      'should store nothing when the hint is the same once trimmed',
-      () async {
-        phoneWith(_street());
-        open('5');
-        await settled('5');
+    test('should store a day alone on a « repasser » without time', () async {
+      phoneWith(_street());
+      open('7');
+      await settled('7');
+      await notifier('7').setStatus(VisitStatus.comeBack);
 
-        await notifier('5').saveComeBackHint(' après 19h ');
+      await notifier('7').chooseComeBackDay(day('2026-11-02'));
 
-        expect(streets.saved, isEmpty);
-      },
-    );
+      expect(houseNow('7').comeBack, comeBack('2026-11-02'));
+      expect(streets.saved, hasLength(2));
+    });
+
+    test('should leave no time, the hour with it, when the day is '
+        'unchosen', () async {
+      phoneWith(_street());
+      open('5');
+      await settled('5');
+
+      await notifier('5').chooseComeBackDay(null);
+
+      expect(houseNow('5').comeBack, ComeBack.withoutTime);
+      expect(houseNow('5').status, VisitStatus.comeBack);
+      final time = (await shown('5')).comeBackTime;
+      expect(time.chosen, isNull);
+      expect(time.hour, isNull);
+    });
+
+    test('should store nothing when the day is the one stored', () async {
+      phoneWith(_street());
+      open('5');
+      await settled('5');
+
+      await notifier('5').chooseComeBackDay(day('2026-11-07'));
+
+      expect(streets.saved, isEmpty);
+    });
 
     test('should store nothing when the house is not « repasser »', () async {
       phoneWith(_street());
       open('7');
       await settled('7');
 
-      await notifier('7').saveComeBackHint('samedi');
+      await notifier('7').chooseComeBackDay(day('2026-11-07'));
 
       expect(streets.saved, isEmpty);
     });
+  });
 
-    test('should store nothing when the hint is too long', () async {
+  group('chooseComeBackHour', () {
+    test('should store the hour on the day stored', () async {
       phoneWith(_street());
       open('5');
       await settled('5');
 
-      await notifier('5').saveComeBackHint('a' * 21);
+      await notifier('5').chooseComeBackHour(8);
+
+      expect(
+        streets.saved.single.$2,
+        ComeBackSet(
+          streetId: _id,
+          before: houseBefore('5'),
+          stamp: leaAtTwo,
+          comeBack: comeBack('2026-11-07', hour: 8),
+        ),
+      );
+      expect((await shown('5')).comeBackTime.hour, 8);
+    });
+
+    test('should store « Pas d\'heure », the day kept', () async {
+      phoneWith(_street());
+      open('5');
+      await settled('5');
+
+      await notifier('5').chooseComeBackHour(null);
+
+      expect(houseNow('5').comeBack, comeBack('2026-11-07'));
+    });
+
+    test('should store nothing when the hour is the one stored', () async {
+      phoneWith(_street());
+      open('5');
+      await settled('5');
+
+      await notifier('5').chooseComeBackHour(19);
 
       expect(streets.saved, isEmpty);
-      expect(houseNow('5').comeBack, comeBack('après 19h'));
+    });
+
+    test('should store nothing before a day is chosen', () async {
+      phoneWith(_street());
+      open('7');
+      await settled('7');
+      await notifier('7').setStatus(VisitStatus.comeBack);
+
+      await notifier('7').chooseComeBackHour(18);
+
+      expect(houseNow('7').comeBack, ComeBack.withoutTime);
+      expect(streets.saved, hasLength(1));
+    });
+
+    test('should store nothing when the house is not « repasser »', () async {
+      phoneWith(_street());
+      open('7');
+      await settled('7');
+
+      await notifier('7').chooseComeBackHour(18);
+
+      expect(streets.saved, isEmpty);
     });
   });
 
@@ -462,11 +577,11 @@ void main() {
         await settled('7');
         final sheet = notifier('7');
 
-        // Not awaited in between: « Repasser » is tapped and the hint
-        // leaves its field at once. Run together, the hint would be judged
-        // on a house not « repasser » yet, and dropped.
+        // Not awaited in between: « Repasser » then a day tapped at once.
+        // Run together, the day would be judged on a house not « repasser »
+        // yet, and dropped.
         final first = sheet.setStatus(VisitStatus.comeBack);
-        final second = sheet.saveComeBackHint('samedi');
+        final second = sheet.chooseComeBackDay(day('2026-11-07'));
         await Future.wait([first, second]);
 
         expect(streets.saved.map((saved) => saved.$2.runtimeType), [
@@ -474,7 +589,7 @@ void main() {
           ComeBackSet,
         ]);
         expect(houseNow('7').status, VisitStatus.comeBack);
-        expect(houseNow('7').comeBack, comeBack('samedi'));
+        expect(houseNow('7').comeBack, comeBack('2026-11-07'));
       },
     );
 
@@ -488,27 +603,39 @@ void main() {
         streets.failNextSave = const FileSystemException('disk full');
 
         final failed = sheet.setStatus(VisitStatus.done);
-        final next = sheet.saveComeBackHint('samedi');
+        final next = sheet.chooseComeBackDay(day('2026-11-08'));
 
         await expectLater(failed, throwsA(isA<FileSystemException>()));
         await next;
         expect(houseNow('5').status, VisitStatus.comeBack);
-        expect(houseNow('5').comeBack, comeBack('samedi'));
+        expect(houseNow('5').comeBack, comeBack('2026-11-08', hour: 19));
       },
     );
 
-    test('should store the text when the sheet has just closed', () async {
+    test('should be settled once every change asked is stored', () async {
       phoneWith(_street());
-      final subscription = open('5');
+      open('5');
       await settled('5');
       final sheet = notifier('5');
 
-      // The sheet saves its hint as it goes away: the notifier is then
-      // about to be disposed.
-      subscription.close();
-      await sheet.saveComeBackHint('samedi');
+      unawaited(sheet.chooseComeBackDay(day('2026-11-08')));
+      unawaited(sheet.chooseComeBackHour(20));
+      await sheet.settled;
 
-      expect(houseNow('5').comeBack, comeBack('samedi'));
+      expect(houseNow('5').comeBack, comeBack('2026-11-08', hour: 20));
+    });
+
+    test('should be settled even when a change failed', () async {
+      phoneWith(_street());
+      open('5');
+      await settled('5');
+      final sheet = notifier('5');
+      streets.failNextSave = const FileSystemException('disk full');
+
+      final failed = sheet.chooseComeBackHour(20);
+
+      await expectLater(sheet.settled, completes);
+      await expectLater(failed, throwsA(isA<FileSystemException>()));
     });
   });
 }

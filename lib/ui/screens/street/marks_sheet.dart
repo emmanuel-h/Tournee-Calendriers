@@ -5,8 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_notifier.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_state.dart';
+import 'package:tournee_calendriers/ui/components/app_buttons.dart';
 import 'package:tournee_calendriers/ui/components/come_back_block.dart';
-import 'package:tournee_calendriers/ui/components/limited_text_field.dart';
+import 'package:tournee_calendriers/ui/components/come_back_time_picker.dart';
 import 'package:tournee_calendriers/ui/components/nobody_home_block.dart';
 import 'package:tournee_calendriers/ui/components/segmented_choice.dart';
 import 'package:tournee_calendriers/ui/components/sheet_scaffold.dart';
@@ -18,26 +19,23 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 import 'package:tournee_calendriers/ui/theme/status_look.dart';
 
 /// The sheet of marks of a house, a door or a building itself (PLAN §5.7,
-/// `docs/mockups/House.dc.html`): a title, the status control « À faire |
-/// Fait | Personne | Repasser », the tries with nobody home and « Repassé,
-/// toujours personne » (`HouseNobody.dc.html`, enabled while it is
-/// « Personne » or « Repasser »), the « Quand repasser ? » field (a
-/// building itself has the « Repasser » box instead of both), an optional
-/// [action], and the last change. Every control is stored as soon as it
-/// changes; the tile behind follows at once.
+/// `docs/mockups/House.dc.html`, `HouseComeBack.dc.html`): a title, the
+/// status control « À faire | Fait | Personne | Repasser », the tries with
+/// nobody home and « Repassé, toujours personne » (`HouseNobody.dc.html`,
+/// enabled while it is « Personne » or « Repasser »), « Quand repasser ? »
+/// (a building itself has the « Repasser » box instead of both), an
+/// optional [action], « Annuler » and « OK » on a sheet a tap opened
+/// ([onCancelTap]), and the last change. Every control is stored as soon as
+/// it changes; the tile behind follows at once.
 ///
 /// Choosing a status moves nothing on the sheet: the block of the tries and
-/// the « Quand repasser ? » field are always there, greyed unless their
-/// statuses are chosen, and the line of the last change keeps its place
-/// before the first change.
+/// « Quand repasser ? » are always there, greyed unless their statuses are
+/// chosen, and the line of the last change keeps its place before the
+/// first change.
 ///
-/// The hint field is stored when it could otherwise be lost: when
-/// the field loses focus (« OK » on the keyboard), before
-/// another control of the sheet is used, when the sheet closes (however it
-/// is closed), and when the app goes to the background (Android may then
-/// end it without warning). Not at each key: that would stamp the house and
-/// rewrite the street at every letter.
-final class MarksSheet extends ConsumerStatefulWidget {
+/// A `ConsumerWidget`: the sheet keeps nothing of its own, every choice
+/// goes to the notifier at once.
+final class MarksSheet extends ConsumerWidget {
   const MarksSheet({
     super.key,
     required this.provider,
@@ -46,12 +44,14 @@ final class MarksSheet extends ConsumerStatefulWidget {
     required this.title,
     this.action,
     this.onNobodyHomeAgain,
+    this.onCancelTap,
   });
 
   /// The notifier of what the sheet shows (`houseSheetProvider(key)`…).
   final NotifierProvider<MarksSheetNotifier, HouseSheetState> provider;
 
-  /// Names the parts for tests: `<name>.status.done`, `<name>.comeBackHint.field`…
+  /// Names the parts for tests: `<name>.status.done`,
+  /// `<name>.comeBackDay.2026-10-24`…
   final String name;
 
   /// Shown when what the sheet shows is no longer on the phone.
@@ -60,155 +60,82 @@ final class MarksSheet extends ConsumerStatefulWidget {
   /// The title of the sheet (« 5 Rue des Lilas »).
   final Widget Function(HouseSheetShown state) title;
 
-  /// A button under the « repasser » (« Transformer en immeuble… »).
+  /// A button under « Quand repasser ? » (« Transformer en immeuble… »).
   final Widget? action;
 
-  /// « Repassé, toujours personne »: called once the hint is stored, to
-  /// close the sheet so the screen behind marks the house or door and
-  /// offers « Annuler ». Null on a building's own sheet, which has no
-  /// status.
+  /// « Repassé, toujours personne »: called once every change asked before
+  /// is stored, to close the sheet so the screen behind marks the house or
+  /// door and offers « Annuler ». Null on a building's own sheet, which has
+  /// no status.
   final VoidCallback? onNobodyHomeAgain;
 
-  @override
-  ConsumerState<MarksSheet> createState() => _MarksSheetState();
-}
-
-final class _MarksSheetState extends ConsumerState<MarksSheet> {
-  final _hint = TextEditingController();
-  final _hintFocus = FocusNode();
-
-  /// Kept to store the hint in [dispose], where `ref` is no longer
-  /// usable. The notifier still lives then: the sheet's subscription to it
-  /// ends just after.
-  late final MarksSheetNotifier _notifier;
-
-  /// Tells when the app goes to the background.
-  late final AppLifecycleListener _lifecycle;
-
-  /// The hint field got the stored text once; after that it holds what is
-  /// typed, whatever the street says.
-  var _filled = false;
+  /// Given on a sheet a tap to « Repasser » opened (#81): the sheet then
+  /// ends with « Annuler » and « OK ». « Annuler » waits for every change
+  /// asked to be stored, then calls this to close the sheet so the screen
+  /// behind undoes the tap; « OK » just closes.
+  final VoidCallback? onCancelTap;
 
   @override
-  void initState() {
-    super.initState();
-    // `listenManual` (not `ref.listen` in `build`): runs once now with the
-    // current state (`fireImmediately`), then at each change, outside any
-    // build, so it may set the fields' texts. Listening first keeps the
-    // auto-disposed notifier alive for the `read` below.
-    ref.listenManual(widget.provider, _follow, fireImmediately: true);
-    _notifier = ref.read(widget.provider.notifier);
-    _hintFocus.addListener(() {
-      if (!_hintFocus.hasFocus) _saveHint();
-    });
-    _lifecycle = AppLifecycleListener(onHide: _saveHint);
-  }
-
-  void _follow(HouseSheetState? previous, HouseSheetState next) {
-    if (next is! HouseSheetShown) return;
-    if (!_filled) {
-      _filled = true;
-      _hint.text = next.comeBackHint;
-    } else if (previous is HouseSheetShown &&
-        previous.comeBack &&
-        !next.comeBack) {
-      // Another status than « Repasser » was chosen (or the building's box
-      // unticked): its hint is gone.
-      _hint.clear();
-    }
-  }
-
-  @override
-  void dispose() {
-    _saveHint();
-    _lifecycle.dispose();
-    _hint.dispose();
-    _hintFocus.dispose();
-    super.dispose();
-  }
-
-  void _saveHint() => unawaited(_notifier.saveComeBackHint(_hint.text));
-
-  /// Another control is used: the hint is stored first, so the change that
-  /// follows starts from it (the notifier runs changes in order).
-  void _setStatus(VisitStatus status) {
-    _saveHint();
-    unawaited(_notifier.setStatus(status));
-  }
-
-  void _setComeBack(bool on) {
-    _saveHint();
-    unawaited(_notifier.setComeBack(on: on));
-  }
-
-  /// « Repassé, toujours personne »: the hint typed is stored first (and
-  /// every change asked before it, which the notifier runs in order), so
-  /// the mark the screen then makes starts from it rather than racing it.
-  Future<void> _nobodyHomeAgain(VoidCallback leave) async {
-    try {
-      await _notifier.saveComeBackHint(_hint.text);
-    } finally {
-      if (mounted) leave();
-    }
-  }
-
-  @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final colors = AppColors.of(context);
-    final state = ref.watch(widget.provider);
-    final name = widget.name;
+    // `ref.watch`: the sheet redraws at each change of the house, made here
+    // or by a teammate; it also keeps the auto-disposed notifier alive
+    // while the sheet shows.
+    final state = ref.watch(provider);
+    // `ref.read`, in the callbacks only: reading the notifier asks for no
+    // redraw.
+    MarksSheetNotifier notifier() => ref.read(provider.notifier);
     return SheetScaffold(
       children: switch (state) {
         HouseSheetLoading() => const [],
         HouseSheetGone() => [
           Text(
-            widget.goneMessage,
+            goneMessage,
             key: ValueKey('$name.gone'),
             style: AppTextStyles.body.copyWith(color: colors.muted),
           ),
         ],
         HouseSheetShown(:final status) => [
-          widget.title(state),
+          title(state),
           ...switch (status) {
             // A building itself: no status, its own « Repasser » box.
             null => [
               ComeBackBlock(
                 name: name,
                 ticked: state.comeBack,
-                onChanged: _setComeBack,
-                hint: _hintField(
-                  placeholder: l10n.comeBackHintPlaceholder,
-                  enabled: true,
-                ),
+                onChanged: (on) => unawaited(notifier().setComeBack(on: on)),
+                time: _timePicker(state, notifier),
               ),
             ],
             final VisitStatus status => [
               _StatusControl(
                 name: name,
                 status: status,
-                onSelected: _setStatus,
+                onSelected: (status) => unawaited(notifier().setStatus(status)),
               ),
-              if (widget.onNobodyHomeAgain case final leave?)
+              if (onNobodyHomeAgain case final leave?)
                 NobodyHomeBlock(
                   name: name,
                   tries: state.tries,
                   onNobodyHomeAgain: state.offersNobodyHomeAgain
-                      ? () => unawaited(_nobodyHomeAgain(leave))
+                      ? () => unawaited(_afterChanges(notifier(), leave))
                       : null,
                 ),
-              _ComeBackHint(
+              _ComeBackTimeBlock(
                 name: name,
                 on: state.comeBack,
-                field: _hintField(
-                  label: l10n.comeBackWhenLabel,
-                  placeholder: l10n.comeBackWhenPlaceholder,
-                  enabled: state.comeBack,
-                ),
+                picker: _timePicker(state, notifier),
               ),
             ],
           },
-          ?widget.action,
+          ?action,
+          if (onCancelTap case final cancel?)
+            _TapButtons(
+              name: name,
+              onCancel: () => unawaited(_afterChanges(notifier(), cancel)),
+              onOk: () => Navigator.of(context).pop(),
+            ),
           // An empty line until the first change, so that change does not
           // move the sheet either.
           switch (state.lastChange) {
@@ -225,25 +152,66 @@ final class _MarksSheetState extends ConsumerState<MarksSheet> {
     );
   }
 
-  /// The field of the « repasser » hint, the same text and focus whichever
-  /// block holds it.
-  Widget _hintField({
-    String? label,
-    required String placeholder,
-    required bool enabled,
-  }) {
+  /// « Quand repasser ? » of [state], each choice stored at once.
+  Widget _timePicker(
+    HouseSheetShown state,
+    MarksSheetNotifier Function() notifier,
+  ) => ComeBackTimePicker(
+    name: name,
+    time: state.comeBackTime,
+    enabled: state.comeBack,
+    onDay: (day) => unawaited(notifier().chooseComeBackDay(day)),
+    onHour: (hour) => unawaited(notifier().chooseComeBackHour(hour)),
+  );
+
+  /// Calls [leave] once every change asked so far is stored, so what the
+  /// screen behind does next (mark the house « personne » again, undo the
+  /// tap) starts from them rather than racing them.
+  static Future<void> _afterChanges(
+    MarksSheetNotifier notifier,
+    VoidCallback leave,
+  ) async {
+    await notifier.settled;
+    leave();
+  }
+}
+
+/// « Annuler » and « OK » side by side, on a sheet a tap opened
+/// (mockup HouseComeBack): « Annuler » outlined, « OK » in the accent red.
+final class _TapButtons extends StatelessWidget {
+  const _TapButtons({
+    required this.name,
+    required this.onCancel,
+    required this.onOk,
+  });
+
+  final String name;
+  final VoidCallback onCancel;
+  final VoidCallback onOk;
+
+  @override
+  Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final colors = AppColors.of(context);
-    return LimitedTextField(
-      name: '${widget.name}.comeBackHint',
-      controller: _hint,
-      focusNode: _hintFocus,
-      limit: TextLimit.comeBackHint,
-      tooLongMessage: l10n.comeBackHintTooLong(TextLimit.comeBackHint.max),
-      label: label,
-      placeholder: placeholder,
-      enabled: enabled,
-      borderColor: enabled ? colors.comeBackBorder : null,
+    return Row(
+      spacing: 12,
+      children: [
+        Expanded(
+          child: SecondaryButton(
+            key: ValueKey('$name.cancelTap'),
+            label: l10n.comeBackSheetCancel,
+            compact: true,
+            onPressed: onCancel,
+          ),
+        ),
+        Expanded(
+          child: PrimaryButton(
+            key: ValueKey('$name.ok'),
+            label: l10n.comeBackSheetOk,
+            compact: true,
+            onPressed: onOk,
+          ),
+        ),
+      ],
     );
   }
 }
@@ -251,17 +219,17 @@ final class _MarksSheetState extends ConsumerState<MarksSheet> {
 /// « Quand repasser ? » under the status control of a house or a door: in
 /// the blue of « Repasser » when that status is chosen ([on]), greyed
 /// otherwise, always the same size.
-final class _ComeBackHint extends StatelessWidget {
-  const _ComeBackHint({
+final class _ComeBackTimeBlock extends StatelessWidget {
+  const _ComeBackTimeBlock({
     required this.name,
     required this.on,
-    required this.field,
+    required this.picker,
   });
 
   /// Names the block for tests: `<name>.comeBackBlock`.
   final String name;
   final bool on;
-  final Widget field;
+  final Widget picker;
 
   @override
   Widget build(BuildContext context) {
@@ -273,7 +241,7 @@ final class _ComeBackHint extends StatelessWidget {
         color: on ? colors.comeBack : colors.ground,
         borderRadius: BorderRadius.circular(AppSizes.segmentRadius),
       ),
-      child: field,
+      child: picker,
     );
   }
 }

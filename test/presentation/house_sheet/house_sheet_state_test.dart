@@ -1,64 +1,11 @@
 import 'package:test/test.dart';
-import 'package:tournee_calendriers/domain/shared/result.dart';
-import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
+import 'package:tournee_calendriers/presentation/house_sheet/come_back_time.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_state.dart';
 
 import '../../support/street_fixtures.dart';
 
-/// [count] letters `a`.
-String _letters(int count) => 'a' * count;
-
-/// A family emoji: one symbol on screen, five code points (three people
-/// joined by two invisible joiners).
-const _family = '👨‍👩‍👧';
-
 void main() {
-  group('TextLimit.comeBackHint', () {
-    test('should allow 20 characters', () {
-      expect(TextLimit.comeBackHint.max, 20);
-    });
-
-    test('should accept a hint of exactly the limit', () {
-      expect(TextLimit.comeBackHint.accepts(_letters(20)), isTrue);
-    });
-
-    test('should refuse a hint one character over the limit', () {
-      expect(TextLimit.comeBackHint.accepts(_letters(21)), isFalse);
-    });
-
-    test('should count code points when the text holds emoji', () {
-      // 16 + 5 = 21 code points, though a person sees 17 symbols.
-      final text = '${_letters(16)}$_family';
-
-      expect(TextLimit.comeBackHint.count(text), 21);
-      expect(TextLimit.comeBackHint.accepts(text), isFalse);
-    });
-
-    test('should not count the spaces around the text', () {
-      final text = '  ${_letters(20)}\n ';
-
-      expect(TextLimit.comeBackHint.count(text), 20);
-      expect(TextLimit.comeBackHint.accepts(text), isTrue);
-    });
-
-    test('should agree with ComeBack.create on both sides of the limit', () {
-      for (final text in [
-        _letters(19),
-        _letters(20),
-        _letters(21),
-        '${_letters(15)}$_family',
-        '${_letters(16)}$_family',
-      ]) {
-        expect(
-          TextLimit.comeBackHint.accepts(text),
-          ComeBack.create(text) is Ok,
-          reason: '${text.runes.length} code points',
-        );
-      }
-    });
-  });
-
   group('LastChange.of', () {
     // Local times: the screen shows the phone's time, whatever the zone the
     // tests run in.
@@ -207,7 +154,7 @@ void main() {
       number: n('5'),
       status: status,
       comeBack: false,
-      comeBackHint: '',
+      comeBackTime: ComeBackTime.of(null, today: day('2026-11-02')),
       lastChange: null,
     );
 
@@ -234,7 +181,7 @@ void main() {
         number: n('5'),
         status: VisitStatus.toDo,
         comeBack: false,
-        comeBackHint: '',
+        comeBackTime: ComeBackTime.of(null, today: day('2026-11-02')),
         lastChange: null,
       );
 

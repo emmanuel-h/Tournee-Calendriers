@@ -72,7 +72,7 @@ final class StreetsMoved {
 /// à la tournée »), as the member using the phone, then remembers that
 /// this tournée received them.
 ///
-/// - Each street goes as it is — marks, buildings, « repasser » hints,
+/// - Each street goes as it is — marks, buildings, « repasser » times,
 ///   numbers in its Corbeille — with every stamp made by the member at
 ///   the time it had (`Street.restampedBy`): the tournée knows no phone
 ///   id, and its rules want the caller's uid (PLAN §8.2).

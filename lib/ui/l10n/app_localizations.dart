@@ -321,41 +321,143 @@ abstract class AppLocalizations {
   /// **'Repasser'**
   String get comeBack;
 
-  /// Label of the hint field of the house and door sheets; the field is greyed unless the status is « Repasser ».
+  /// Title of the block of the house, door and building sheets that says when to come back: day chips, an hour list and a summary line (HouseComeBack mockup, #81). Greyed unless the status is « Repasser ».
   ///
   /// In fr, this message translates to:
   /// **'Quand repasser ?'**
   String get comeBackWhenLabel;
 
-  /// Placeholder of the « Quand repasser ? » field of the house and door sheets.
+  /// Screen-reader name of the row of day chips of « Quand repasser ? ».
   ///
   /// In fr, this message translates to:
-  /// **'ex. après 19h'**
-  String get comeBackWhenPlaceholder;
+  /// **'Jour'**
+  String get comeBackDayGroup;
 
-  /// Placeholder and screen-reader name of the field saying when to come back.
+  /// Day chip of « Quand repasser ? »: today.
   ///
   /// In fr, this message translates to:
-  /// **'Quand ? ex. après 19h'**
-  String get comeBackHintPlaceholder;
+  /// **'Aujourd\'hui'**
+  String get comeBackToday;
 
-  /// Shown when typing or pasting would make the come-back hint longer than allowed; the edit is refused.
+  /// Day chip of « Quand repasser ? »: tomorrow.
   ///
   /// In fr, this message translates to:
-  /// **'Précision limitée à {max} caractères.'**
-  String comeBackHintTooLong(int max);
+  /// **'Demain'**
+  String get comeBackTomorrow;
 
-  /// Characters used / allowed, under a text field with a limit.
+  /// Day chip of « Quand repasser ? »: yesterday, shown only when that day was chosen before.
   ///
   /// In fr, this message translates to:
-  /// **'{count}/{max}'**
-  String textCount(int count, int max);
+  /// **'Hier'**
+  String get comeBackYesterday;
 
-  /// Screen-reader label of the characters counter.
+  /// Day chip of « Quand repasser ? » for another day: its short weekday and its date (« sam. 24 »); the screen writes its first letter in capital (« Sam. 24 »).
   ///
   /// In fr, this message translates to:
-  /// **'{count} caractères sur {max}'**
-  String textCountSemantics(int count, int max);
+  /// **'{day}'**
+  String comeBackChipDay(DateTime day);
+
+  /// What a screen reader says for a day chip of another day: « samedi 24 octobre ».
+  ///
+  /// In fr, this message translates to:
+  /// **'{day}'**
+  String comeBackChipDaySemantics(DateTime day);
+
+  /// Label of the hour list of « Quand repasser ? ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Heure'**
+  String get comeBackHourLabel;
+
+  /// First choice of the hour list of « Quand repasser ? »: the day only.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pas d\'heure'**
+  String get comeBackNoHour;
+
+  /// An hour of the list of « Quand repasser ? », 8 to 21.
+  ///
+  /// In fr, this message translates to:
+  /// **'{hour} h'**
+  String comeBackHour(int hour);
+
+  /// Summary line of « Quand repasser ? » while no day is chosen.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pas de jour choisi'**
+  String get comeBackNoDay;
+
+  /// Summary line of « Quand repasser ? »: today, without hour.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aujourd\'hui'**
+  String get comeBackOnToday;
+
+  /// Summary line of « Quand repasser ? »: today at about an hour.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aujourd\'hui vers {hour} h'**
+  String comeBackOnTodayAt(int hour);
+
+  /// Summary line of « Quand repasser ? »: tomorrow, without hour.
+  ///
+  /// In fr, this message translates to:
+  /// **'Demain'**
+  String get comeBackOnTomorrow;
+
+  /// Summary line of « Quand repasser ? »: tomorrow at about an hour.
+  ///
+  /// In fr, this message translates to:
+  /// **'Demain vers {hour} h'**
+  String comeBackOnTomorrowAt(int hour);
+
+  /// Summary line of « Quand repasser ? » when the day chosen was yesterday: it is past.
+  ///
+  /// In fr, this message translates to:
+  /// **'C\'était hier'**
+  String get comeBackOnYesterday;
+
+  /// Summary line of « Quand repasser ? » when the time chosen was yesterday at about an hour: it is past.
+  ///
+  /// In fr, this message translates to:
+  /// **'C\'était hier vers {hour} h'**
+  String comeBackOnYesterdayAt(int hour);
+
+  /// Summary line of « Quand repasser ? »: a day after tomorrow, without hour (« Le samedi 24 oct. »).
+  ///
+  /// In fr, this message translates to:
+  /// **'Le {day}'**
+  String comeBackOnDay(DateTime day);
+
+  /// Summary line of « Quand repasser ? »: a day after tomorrow at about an hour (« Le samedi 24 oct. vers 18 h », mockup HouseComeBack).
+  ///
+  /// In fr, this message translates to:
+  /// **'Le {day} vers {hour} h'**
+  String comeBackOnDayAt(DateTime day, int hour);
+
+  /// Summary line of « Quand repasser ? » when the day chosen is before yesterday: it is past (« C'était le mercredi 14 oct. »).
+  ///
+  /// In fr, this message translates to:
+  /// **'C\'était le {day}'**
+  String comeBackPastDay(DateTime day);
+
+  /// Summary line of « Quand repasser ? » when the time chosen is before yesterday at about an hour: it is past.
+  ///
+  /// In fr, this message translates to:
+  /// **'C\'était le {day} vers {hour} h'**
+  String comeBackPastDayAt(DateTime day, int hour);
+
+  /// Button of the sheet a tap to « Repasser » opened by itself: puts back the status before that tap and closes (#81).
+  ///
+  /// In fr, this message translates to:
+  /// **'Annuler'**
+  String get comeBackSheetCancel;
+
+  /// Button of the sheet a tap to « Repasser » opened by itself: closes it, the house stays « Repasser » (#81).
+  ///
+  /// In fr, this message translates to:
+  /// **'OK'**
+  String get comeBackSheetOk;
 
   /// Last change of a house, made today, by nobody the phone can name.
   ///

@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tournee_calendriers/application/use_cases/mark.dart';
+import 'package:tournee_calendriers/domain/shared/calendar_day.dart';
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
@@ -11,6 +12,7 @@ import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
+import 'package:tournee_calendriers/presentation/house_sheet/come_back_time.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_state.dart';
 import 'package:tournee_calendriers/presentation/my_tournees/my_tournees_notifier.dart';
 import 'package:tournee_calendriers/presentation/street/follows_street.dart';
@@ -59,22 +61,22 @@ typedef _Marks = ({
 
 /// Follows one house, building or door of a street on the phone
 /// (`ObserveStreet`, offline) and stores each control of its sheet: the
-/// status (« Repasser » among them) and the hint of the « repasser »; on a
-/// building itself, its own « Repasser » box instead of a status.
+/// status (« Repasser » among them) and the day and hour of the
+/// « repasser »; on a building itself, its own « Repasser » box instead of
+/// a status.
 /// « Repassé, toujours personne » is not stored here: the sheet closes and
 /// the screen behind stores it, so its snackbar offers « Annuler »
 /// (`StreetNotifier.nobodyHomeAgain`). The three
 /// sheets differ only in what they read ([_marksIn]) and the use case that
 /// stores ([_storer]); the rules below are written once.
 ///
-/// - **Nothing changed, nothing stored.** The sheet saves its text fields
-///   whenever they could be lost (closed, sent to the background…); a text
-///   equal to the stored one, or a status already there, stores nothing,
-///   so opening and closing a sheet stamps nothing.
+/// - **Nothing changed, nothing stored.** A status, a day or an hour
+///   already there stores nothing, so opening and closing a sheet stamps
+///   nothing.
 /// - **One change at a time.** Each change waits for the previous one to be
 ///   stored, then decides on the marks as they then are. Started together
-///   (the hint leaves its field as « Fait » is tapped), two changes would
-///   both start from the same street, and the second would erase the first.
+///   (a day chosen, then « Fait » tapped at once), two changes would both
+///   start from the same street, and the second would erase the first.
 ///
 /// `abstract base`: a class to extend, not to use alone; `base` keeps its
 /// subclasses `final`, so nobody outside this file can change the rules.
@@ -140,7 +142,7 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState>
   }
 
   /// The status control: gives [status]. Leaving « Repasser » drops its
-  /// hint (PLAN §6.1). Nothing happens on a building's own sheet, which has
+  /// time (PLAN §6.1). Nothing happens on a building's own sheet, which has
   /// no status.
   Future<void> setStatus(VisitStatus status) => _change(
     (marks) => switch (marks.status) {
@@ -151,25 +153,56 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState>
   );
 
   /// The « Repasser » box of a building's own sheet, ticked ([on]) or not.
-  /// Ticking gives a « repasser » without hint, which the hint field then
-  /// completes; unticking drops the hint too. Nothing happens on a house or
+  /// Ticking gives a « repasser » without time, which « Quand repasser ? »
+  /// then completes; unticking drops the time too. Nothing happens on a house or
   /// a door, whose « repasser » is a status ([setStatus]).
   Future<void> setComeBack({required bool on}) => _change(
     (marks) => marks.status != null || (marks.comeBack != null) == on
         ? null
-        : ComeBackMark(on ? ComeBack.withoutHint : null),
+        : ComeBackMark(on ? ComeBack.withoutTime : null),
   );
 
-  /// The hint field (« après 19h »), stored once trimmed. Nothing happens
-  /// without a « repasser » (the field is greyed then) or when the hint is
-  /// too long (the field refuses such a text first, see [TextLimit]).
-  Future<void> saveComeBackHint(String text) => _change(
-    (marks) => switch ((marks.comeBack, ComeBack.create(text))) {
-      (null, _) || (_, Err()) => null,
-      (final stored, Ok(:final value)) =>
-        value == stored ? null : ComeBackMark(value),
-    },
+  /// A day chip of « Quand repasser ? »: comes back on [day], at the hour
+  /// already chosen; null (the chosen chip tapped again) leaves no time at
+  /// all, the hour with it. Nothing happens without a « repasser » (the
+  /// block is greyed then).
+  Future<void> chooseComeBackDay(CalendarDay? day) => _change(
+    (marks) => _comeBackMark(
+      marks,
+      (stored) =>
+          ComeBack.create(day: day, hour: day == null ? null : stored.hour),
+    ),
   );
+
+  /// The hour list of « Quand repasser ? »: [hour], or « Pas d'heure »
+  /// (null). Nothing happens without a « repasser », nor before a day is
+  /// chosen (the list is greyed then: an hour needs a day).
+  Future<void> chooseComeBackHour(int? hour) => _change(
+    (marks) => _comeBackMark(
+      marks,
+      (stored) => ComeBack.create(day: stored.day, hour: hour),
+    ),
+  );
+
+  /// The mark giving the « repasser » of [marks] the time [timeFrom] makes
+  /// of it; null when there is no « repasser », when the time is refused,
+  /// or when it is the one already stored.
+  static Mark? _comeBackMark(
+    _Marks marks,
+    Result<ComeBack, ComeBackFailure> Function(ComeBack stored) timeFrom,
+  ) {
+    final stored = marks.comeBack;
+    if (stored == null) return null;
+    return switch (timeFrom(stored)) {
+      Ok(:final value) when value != stored => ComeBackMark(value),
+      Ok() || Err() => null,
+    };
+  }
+
+  /// Ends once every change asked so far is stored (or failed): « Annuler »
+  /// of a sheet opened by a tap waits for it, so the undo of the tap comes
+  /// after a day chosen just before, not under it.
+  Future<void> get settled => _pending;
 
   /// Queues the change [markFor] makes on the marks as they are when its
   /// turn comes (null: nothing to change). A refused change leaves them as
@@ -200,23 +233,24 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState>
     final marks = _marks;
     if (marks == null) return const HouseSheetGone();
     final stamp = marks.lastChange;
+    // The clock tells « today » from « earlier »; reading it here, and not
+    // `DateTime.now()`, lets the tests fix the day.
+    final now = ref.read(clockProvider).now();
     return HouseSheetShown(
       streetName: street!.name.text,
       number: _number,
       subject: marks.subject,
       status: marks.status,
       comeBack: marks.comeBack != null,
-      comeBackHint: marks.comeBack?.hint ?? '',
+      // The days offered start today on the phone's calendar.
+      comeBackTime: ComeBackTime.of(
+        marks.comeBack,
+        today: CalendarDay.of(now.toLocal()),
+      ),
       tries: marks.tries.count,
-      // The clock tells « today » from « earlier »; reading it here, and
-      // not `DateTime.now()`, lets the tests fix the day.
       lastChange: stamp == null
           ? null
-          : LastChange.of(
-              stamp.at,
-              now: ref.read(clockProvider).now(),
-              by: _authorOf(stamp),
-            ),
+          : LastChange.of(stamp.at, now: now, by: _authorOf(stamp)),
     );
   }
 }

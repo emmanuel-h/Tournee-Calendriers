@@ -11,37 +11,48 @@ enum DoorSheetExit {
   /// « Repassé, toujours personne »: the grid makes the door « personne »
   /// with one more try, and offers « Annuler ».
   nobodyHomeAgain,
+
+  /// « Annuler » of a sheet a tap opened (#81): the grid undoes that tap.
+  cancelTap,
 }
 
 /// Opens the sheet of one door (hold a door of the Immeuble grid, PLAN
 /// §5.7): the controls of the Fiche maison, without « Transformer en
 /// immeuble… ». Its title is the door, then where it is: « 51 · Esc. A ·
-/// 5e · 8 Rue des Lilas ». Returns [DoorSheetExit.nobodyHomeAgain] when
-/// left by « Repassé, toujours personne », null otherwise.
-Future<DoorSheetExit?> showDoorSheet(BuildContext context, DoorSheetKey door) =>
-    showAppBottomSheet<DoorSheetExit>(
-      context: context,
-      builder: (context) {
-        final l10n = AppLocalizations.of(context);
-        return MarksSheet(
-          provider: doorSheetProvider(door),
-          name: 'door',
-          goneMessage: l10n.doorGone,
-          title: (state) => MarksSheetTitle(
-            name: 'door',
-            big: door.door.label.text,
-            beside: [
-              if (state.subject case DoorSubject(:final staircase?))
-                l10n.staircaseShort(staircase.letter),
-              if (door.door.level case final level?) floorName(l10n, level),
-              '${state.number.label} ${state.streetName}',
-            ].join(' · '),
-          ),
-          onNobodyHomeAgain: () =>
-              Navigator.of(context).pop(DoorSheetExit.nobodyHomeAgain),
-        );
-      },
+/// 5e · 8 Rue des Lilas ». Opened by a tap that made the door « Repasser »
+/// ([openedByTap], #81), it ends with « Annuler » and « OK ». Returns how
+/// it was left when the grid has something to do next ([DoorSheetExit]),
+/// null otherwise.
+Future<DoorSheetExit?> showDoorSheet(
+  BuildContext context,
+  DoorSheetKey door, {
+  bool openedByTap = false,
+}) => showAppBottomSheet<DoorSheetExit>(
+  context: context,
+  builder: (context) {
+    final l10n = AppLocalizations.of(context);
+    return MarksSheet(
+      provider: doorSheetProvider(door),
+      name: 'door',
+      goneMessage: l10n.doorGone,
+      title: (state) => MarksSheetTitle(
+        name: 'door',
+        big: door.door.label.text,
+        beside: [
+          if (state.subject case DoorSubject(:final staircase?))
+            l10n.staircaseShort(staircase.letter),
+          if (door.door.level case final level?) floorName(l10n, level),
+          '${state.number.label} ${state.streetName}',
+        ].join(' · '),
+      ),
+      onNobodyHomeAgain: () =>
+          Navigator.of(context).pop(DoorSheetExit.nobodyHomeAgain),
+      onCancelTap: openedByTap
+          ? () => Navigator.of(context).pop(DoorSheetExit.cancelTap)
+          : null,
     );
+  },
+);
 
 /// Opens the building's own « repasser » (« Repasser » under the grid, or
 /// hold a building tile): no status, its doors carry them.

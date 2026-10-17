@@ -15,8 +15,8 @@ enum VisitStatus {
   nobodyHome,
 
   /// « Repasser »: the residents asked the team to come back later. Only a
-  /// door with this status carries a `ComeBack` (its optional hint, « après
-  /// 19h »).
+  /// door with this status carries a `ComeBack` (when to come back, if
+  /// set: « samedi vers 18 h »).
   comeBack;
 
   /// The status a tap on the tile moves to:

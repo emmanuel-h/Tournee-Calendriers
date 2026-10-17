@@ -1,38 +1,12 @@
-import 'package:tournee_calendriers/domain/shared/text_length.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
-import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
+import 'package:tournee_calendriers/presentation/house_sheet/come_back_time.dart';
 
 // The view state of the Fiche maison (PLAN §5.7, mockup House): what the
 // sheet of one house shows, as plain data tested without widgets. The sheet
 // of a door of a building, and the building's own « Repasser », show the
 // same controls and share this state.
-
-/// The length limit of the hint field of the sheet, counted exactly as the
-/// domain counts it: Unicode code points of the trimmed text
-/// ([characterCount]).
-///
-/// Flutter's `TextField.maxLength` counts what the eye sees as one symbol
-/// (a family emoji is 1 there, 5 code points here), so the field could hold
-/// a text the domain refuses. The sheet asks this instead, and refuses the
-/// edit with a message rather than letting such a text in.
-final class TextLimit {
-  const TextLimit._(this.max);
-
-  /// The hint of a « repasser »: [ComeBack.maxHintLength] characters.
-  static const comeBackHint = TextLimit._(ComeBack.maxHintLength);
-
-  /// The most characters the text may hold.
-  final int max;
-
-  /// The characters of [text] that count: the spaces and line breaks
-  /// around it are dropped when it is stored, so they do not count.
-  int count(String text) => characterCount(text.trim());
-
-  /// Whether the domain takes [text] (`ComeBack.create`).
-  bool accepts(String text) => count(text) <= max;
-}
 
 /// Who made the last change, as the sheet names them (PLAN §5.7).
 ///
@@ -196,7 +170,7 @@ final class HouseSheetShown extends HouseSheetState {
     required this.number,
     required this.status,
     required this.comeBack,
-    required this.comeBackHint,
+    required this.comeBackTime,
     required this.lastChange,
     this.subject = const HouseSubject(),
     this.tries = 0,
@@ -209,13 +183,13 @@ final class HouseSheetShown extends HouseSheetState {
   final VisitStatus? status;
 
   /// « Repasser » is the status of the house or door, or is ticked for a
-  /// building itself. The hint field takes text only then: on a house or
-  /// door it is always shown, greyed otherwise, so choosing a status never
-  /// moves the sheet.
+  /// building itself. « Quand repasser ? » takes a day and an hour only
+  /// then: on a house or door it is always shown, greyed otherwise, so
+  /// choosing a status never moves the sheet.
   final bool comeBack;
 
-  /// The hint of the « repasser »; empty when there is none.
-  final String comeBackHint;
+  /// « Quand repasser ? »: the days offered, the day and hour chosen.
+  final ComeBackTime comeBackTime;
 
   /// Null when nobody has changed it yet.
   final LastChange? lastChange;

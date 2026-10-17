@@ -7,7 +7,7 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 import 'package:tournee_calendriers/ui/theme/status_look.dart';
 
 /// The blue block of a building's own sheet (« Repasser »):
-/// « ☑ ↻ Repasser » and, once ticked, when to come back ([hint]). A house
+/// « ☑ ↻ Repasser » and, once ticked, when to come back ([time]). A house
 /// or a door has no box: « Repasser » is one of its statuses.
 final class ComeBackBlock extends StatelessWidget {
   const ComeBackBlock({
@@ -15,7 +15,7 @@ final class ComeBackBlock extends StatelessWidget {
     required this.name,
     required this.ticked,
     required this.onChanged,
-    required this.hint,
+    required this.time,
   });
 
   /// Names the box for tests: `<name>.comeBack`.
@@ -24,8 +24,8 @@ final class ComeBackBlock extends StatelessWidget {
   final bool ticked;
   final ValueChanged<bool> onChanged;
 
-  /// The hint field, shown while « Repasser » is ticked.
-  final Widget hint;
+  /// « Quand repasser ? », shown while « Repasser » is ticked.
+  final Widget time;
 
   @override
   Widget build(BuildContext context) {
@@ -87,7 +87,7 @@ final class ComeBackBlock extends StatelessWidget {
               ),
             ),
           ),
-          if (ticked) hint,
+          if (ticked) time,
         ],
       ),
     );

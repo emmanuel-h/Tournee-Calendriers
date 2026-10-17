@@ -21,7 +21,7 @@ House _building(
       .withDwelling(escA, 0, Dwelling(label: d('02'), status: second)),
 );
 
-final comeBackHint = comeBack('après 19h');
+final comeBackHint = comeBack('2026-11-07', hour: 19);
 
 void main() {
   group('TileMark.of', () {

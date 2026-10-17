@@ -131,32 +131,95 @@
   "comeBack": "Repasser",
   "@comeBack": { "description": "Box of the building's own « Repasser » sheet: the residents asked the team to come back later." },
   "comeBackWhenLabel": "Quand repasser ?",
-  "@comeBackWhenLabel": { "description": "Label of the hint field of the house and door sheets; the field is greyed unless the status is « Repasser »." },
-  "comeBackWhenPlaceholder": "ex. après 19h",
-  "@comeBackWhenPlaceholder": { "description": "Placeholder of the « Quand repasser ? » field of the house and door sheets." },
-  "comeBackHintPlaceholder": "Quand ? ex. après 19h",
-  "@comeBackHintPlaceholder": { "description": "Placeholder and screen-reader name of the field saying when to come back." },
-  "comeBackHintTooLong": "Précision limitée à {max} caractères.",
-  "@comeBackHintTooLong": {
-    "description": "Shown when typing or pasting would make the come-back hint longer than allowed; the edit is refused.",
-    "placeholders": { "max": { "type": "int", "example": "20" } }
-  },
-  "textCount": "{count}/{max}",
-  "@textCount": {
-    "description": "Characters used / allowed, under a text field with a limit.",
+  "@comeBackWhenLabel": { "description": "Title of the block of the house, door and building sheets that says when to come back: day chips, an hour list and a summary line (HouseComeBack mockup, #81). Greyed unless the status is « Repasser »." },
+  "comeBackDayGroup": "Jour",
+  "@comeBackDayGroup": { "description": "Screen-reader name of the row of day chips of « Quand repasser ? »." },
+  "comeBackToday": "Aujourd'hui",
+  "@comeBackToday": { "description": "Day chip of « Quand repasser ? »: today." },
+  "comeBackTomorrow": "Demain",
+  "@comeBackTomorrow": { "description": "Day chip of « Quand repasser ? »: tomorrow." },
+  "comeBackYesterday": "Hier",
+  "@comeBackYesterday": { "description": "Day chip of « Quand repasser ? »: yesterday, shown only when that day was chosen before." },
+  "comeBackChipDay": "{day}",
+  "@comeBackChipDay": {
+    "description": "Day chip of « Quand repasser ? » for another day: its short weekday and its date (« sam. 24 »); the screen writes its first letter in capital (« Sam. 24 »).",
     "placeholders": {
-      "count": { "type": "int", "example": "9" },
-      "max": { "type": "int", "example": "20" }
+      "day": { "type": "DateTime", "format": "E d", "isCustomDateFormat": "true", "example": "sam. 24" }
     }
   },
-  "textCountSemantics": "{count} caractères sur {max}",
-  "@textCountSemantics": {
-    "description": "Screen-reader label of the characters counter.",
+  "comeBackChipDaySemantics": "{day}",
+  "@comeBackChipDaySemantics": {
+    "description": "What a screen reader says for a day chip of another day: « samedi 24 octobre ».",
     "placeholders": {
-      "count": { "type": "int", "example": "9" },
-      "max": { "type": "int", "example": "20" }
+      "day": { "type": "DateTime", "format": "MMMMEEEEd", "example": "samedi 24 octobre" }
     }
   },
+  "comeBackHourLabel": "Heure",
+  "@comeBackHourLabel": { "description": "Label of the hour list of « Quand repasser ? »." },
+  "comeBackNoHour": "Pas d'heure",
+  "@comeBackNoHour": { "description": "First choice of the hour list of « Quand repasser ? »: the day only." },
+  "comeBackHour": "{hour} h",
+  "@comeBackHour": {
+    "description": "An hour of the list of « Quand repasser ? », 8 to 21.",
+    "placeholders": { "hour": { "type": "int", "example": "18" } }
+  },
+  "comeBackNoDay": "Pas de jour choisi",
+  "@comeBackNoDay": { "description": "Summary line of « Quand repasser ? » while no day is chosen." },
+  "comeBackOnToday": "Aujourd'hui",
+  "@comeBackOnToday": { "description": "Summary line of « Quand repasser ? »: today, without hour." },
+  "comeBackOnTodayAt": "Aujourd'hui vers {hour} h",
+  "@comeBackOnTodayAt": {
+    "description": "Summary line of « Quand repasser ? »: today at about an hour.",
+    "placeholders": { "hour": { "type": "int", "example": "18" } }
+  },
+  "comeBackOnTomorrow": "Demain",
+  "@comeBackOnTomorrow": { "description": "Summary line of « Quand repasser ? »: tomorrow, without hour." },
+  "comeBackOnTomorrowAt": "Demain vers {hour} h",
+  "@comeBackOnTomorrowAt": {
+    "description": "Summary line of « Quand repasser ? »: tomorrow at about an hour.",
+    "placeholders": { "hour": { "type": "int", "example": "18" } }
+  },
+  "comeBackOnYesterday": "C'était hier",
+  "@comeBackOnYesterday": { "description": "Summary line of « Quand repasser ? » when the day chosen was yesterday: it is past." },
+  "comeBackOnYesterdayAt": "C'était hier vers {hour} h",
+  "@comeBackOnYesterdayAt": {
+    "description": "Summary line of « Quand repasser ? » when the time chosen was yesterday at about an hour: it is past.",
+    "placeholders": { "hour": { "type": "int", "example": "18" } }
+  },
+  "comeBackOnDay": "Le {day}",
+  "@comeBackOnDay": {
+    "description": "Summary line of « Quand repasser ? »: a day after tomorrow, without hour (« Le samedi 24 oct. »).",
+    "placeholders": {
+      "day": { "type": "DateTime", "format": "EEEE d MMM", "isCustomDateFormat": "true", "example": "samedi 24 oct." }
+    }
+  },
+  "comeBackOnDayAt": "Le {day} vers {hour} h",
+  "@comeBackOnDayAt": {
+    "description": "Summary line of « Quand repasser ? »: a day after tomorrow at about an hour (« Le samedi 24 oct. vers 18 h », mockup HouseComeBack).",
+    "placeholders": {
+      "day": { "type": "DateTime", "format": "EEEE d MMM", "isCustomDateFormat": "true", "example": "samedi 24 oct." },
+      "hour": { "type": "int", "example": "18" }
+    }
+  },
+  "comeBackPastDay": "C'était le {day}",
+  "@comeBackPastDay": {
+    "description": "Summary line of « Quand repasser ? » when the day chosen is before yesterday: it is past (« C'était le mercredi 14 oct. »).",
+    "placeholders": {
+      "day": { "type": "DateTime", "format": "EEEE d MMM", "isCustomDateFormat": "true", "example": "mercredi 14 oct." }
+    }
+  },
+  "comeBackPastDayAt": "C'était le {day} vers {hour} h",
+  "@comeBackPastDayAt": {
+    "description": "Summary line of « Quand repasser ? » when the time chosen is before yesterday at about an hour: it is past.",
+    "placeholders": {
+      "day": { "type": "DateTime", "format": "EEEE d MMM", "isCustomDateFormat": "true", "example": "mercredi 14 oct." },
+      "hour": { "type": "int", "example": "18" }
+    }
+  },
+  "comeBackSheetCancel": "Annuler",
+  "@comeBackSheetCancel": { "description": "Button of the sheet a tap to « Repasser » opened by itself: puts back the status before that tap and closes (#81)." },
+  "comeBackSheetOk": "OK",
+  "@comeBackSheetOk": { "description": "Button of the sheet a tap to « Repasser » opened by itself: closes it, the house stays « Repasser » (#81)." },
   "houseChangedToday": "Modifié à {time}",
   "@houseChangedToday": {
     "description": "Last change of a house, made today, by nobody the phone can name.",

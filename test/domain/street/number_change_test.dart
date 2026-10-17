@@ -23,7 +23,7 @@ void main() {
   final three = House(
     number: n('3'),
     status: VisitStatus.nobodyHome,
-    comeBack: comeBack('après 19h'),
+    comeBack: comeBack('2026-11-07', hour: 19),
     lastChange: leaAtTwo,
   );
 
@@ -246,7 +246,7 @@ void main() {
         House(
           number: n('3bis'),
           status: VisitStatus.nobodyHome,
-          comeBack: comeBack('après 19h'),
+          comeBack: comeBack('2026-11-07', hour: 19),
           lastChange: paulAtThree,
         ),
       );

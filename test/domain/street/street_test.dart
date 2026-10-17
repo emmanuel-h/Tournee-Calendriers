@@ -221,7 +221,7 @@ void main() {
         House(
           number: n('6'),
           status: VisitStatus.comeBack,
-          comeBack: comeBack('après 19h'),
+          comeBack: comeBack('2026-11-07', hour: 19),
         ),
         House(number: n('7')),
         House(number: n('8')),
@@ -246,7 +246,7 @@ void main() {
       House(
         number: n('3'),
         status: VisitStatus.comeBack,
-        comeBack: comeBack('après 19h'),
+        comeBack: comeBack('2026-11-07', hour: 19),
         lastChange: paulAtThree,
       ),
       House(number: n('4'), status: VisitStatus.done),
@@ -296,7 +296,7 @@ void main() {
       );
       expect(marked.houses[1].comeBack, isNull);
       expect(change.comeBack, isNull);
-      expect(change.before.comeBack, comeBack('après 19h'));
+      expect(change.before.comeBack, comeBack('2026-11-07', hour: 19));
     });
 
     test('should drop the hint when done', () {
@@ -317,10 +317,10 @@ void main() {
       );
 
       expect(marked.houses[2].status, VisitStatus.comeBack);
-      expect(marked.houses[2].comeBack, ComeBack.withoutHint);
+      expect(marked.houses[2].comeBack, ComeBack.withoutTime);
       expect(marked.houses[2].lastChange, leaAtTwo);
       expect(change.status, VisitStatus.comeBack);
-      expect(change.comeBack, ComeBack.withoutHint);
+      expect(change.comeBack, ComeBack.withoutTime);
     });
 
     test('should keep the hint when a house stays « repasser »', () {
@@ -328,7 +328,7 @@ void main() {
         street.markHouse(n('3'), VisitStatus.comeBack, by: lea, at: twoPm),
       );
 
-      expect(marked.houses[1].comeBack, comeBack('après 19h'));
+      expect(marked.houses[1].comeBack, comeBack('2026-11-07', hour: 19));
     });
 
     test('should move a done house back to do', () {
@@ -391,7 +391,12 @@ void main() {
 
     test('should set the hint and keep the status when « repasser »', () {
       final (changed, change) = valueOf(
-        street.setComeBack(n('1'), comeBack('après 19h'), by: lea, at: twoPm),
+        street.setComeBack(
+          n('1'),
+          comeBack('2026-11-07', hour: 19),
+          by: lea,
+          at: twoPm,
+        ),
       );
 
       expect(
@@ -399,7 +404,7 @@ void main() {
         House(
           number: n('1'),
           status: VisitStatus.comeBack,
-          comeBack: comeBack('après 19h'),
+          comeBack: comeBack('2026-11-07', hour: 19),
           lastChange: leaAtTwo,
         ),
       );
@@ -408,15 +413,15 @@ void main() {
         ComeBackSet(
           streetId: _lilas,
           before: street.houses[0],
-          comeBack: comeBack('après 19h'),
+          comeBack: comeBack('2026-11-07', hour: 19),
           stamp: leaAtTwo,
         ),
       );
     });
 
     final refused = <String, (String, ComeBack?)>{
-      'nobody was home': ('2', ComeBack.withoutHint),
-      'the house is done': ('4', comeBack('samedi')),
+      'nobody was home': ('2', ComeBack.withoutTime),
+      'the house is done': ('4', comeBack('2026-11-07')),
       'no hint is given to a house « repasser »': ('1', null),
     };
     refused.forEach((when, given) {
@@ -432,7 +437,7 @@ void main() {
 
     test('should leave the other houses alone', () {
       final (changed, _) = valueOf(
-        street.setComeBack(n('1'), ComeBack.withoutHint, by: lea, at: twoPm),
+        street.setComeBack(n('1'), ComeBack.withoutTime, by: lea, at: twoPm),
       );
 
       expect(changed.houses.sublist(1), street.houses.sublist(1));
@@ -442,7 +447,7 @@ void main() {
     test('should fail when the street has no such number', () {
       expect(
         failureOf(
-          street.setComeBack(n('3'), ComeBack.withoutHint, by: lea, at: twoPm),
+          street.setComeBack(n('3'), ComeBack.withoutTime, by: lea, at: twoPm),
         ),
         HouseChangeFailure.unknownHouse,
       );

@@ -15,7 +15,7 @@ streets, and a team (one *tournée*) shares the whole sector. The app lets each 
 
 - pick the streets they cover **by tapping them on a map**, and add missing streets or numbers by hand,
 - mark every house as **done / to do / nobody home**, quickly, with one hand, in the street,
-- add details to a house: apartments handled one by one, "come back later" with a short hint,
+- add details to a house: apartments handled one by one, "come back later" with a day and an hour,
 - see on a map what is done, partly done and still to do, live, across the whole team.
 
 Once a tournée has been downloaded, the app works **fully offline** (map included) and syncs
@@ -27,15 +27,15 @@ with the server whenever the network is available.
 - Map of the tournée: streets coloured by progress, houses as coloured dots when zoomed in
 - Street selection on the map (tap a road), backed by the national address base (BAN)
 - Manual entry of missing streets and numbers
-- House status (« repasser » with an optional short hint), apartment units
+- House status (« repasser » with an optional day and hour, #81), apartment units
 - Live team sync, full offline mode after download
 - French only, light + dark
 
 ### Out of scope for v1 (possible later)
 
 - Donations, amounts, residents' answers: never recorded
-- Free-text notes on houses and doors: removed for privacy (§8.3, Q23); only the « repasser »
-  hint (≤ 20 characters) is free text
+- Free-text notes on houses and doors: removed for privacy (§8.3, Q23); since #81 the
+  « repasser » hint is a day and an hour, so no free text is kept about a house
 - English or other languages
 - Starting next year's campaign from this year's (v1.1). **The v1 data model is built for it** (§6): a tournée holds
   one campaign per year, so nothing needs migrating when the button ships
@@ -57,7 +57,7 @@ Code uses English names, the UI uses French.
 | Numéro / maison | `House` | One address on a street (`12`, `12bis`), with its position when known |
 | Logement | `Dwelling` | One unit inside a building (`Apt 3`, `B2`) |
 | Statut | `VisitStatus` | `TO_DO` (à faire), `DONE` (fait), `NOBODY_HOME` (personne), `COME_BACK` (repasser): exactly one per house or door |
-| Repasser | `VisitStatus.comeBack` + `ComeBack` | A status: the resident asked to come back later, with an optional hint ("après 19h", the `ComeBack` value). A building, which has no status, may carry its own « repasser » |
+| Repasser | `VisitStatus.comeBack` + `ComeBack` | A status: the resident asked to come back later, optionally on a day and at about an hour (« samedi vers 18 h », the `ComeBack` value, #81). A building, which has no status, may carry its own « repasser » |
 | Mes rues | assignees | Streets the current member has taken |
 | Libre | — | A street in the tournée that nobody has taken |
 
@@ -124,11 +124,11 @@ In the street (often offline):
 
 1. Open the app → the map shows my streets coloured; the panel lists them.
 2. Tap *Rue des Lilas* → Street screen: odd side on the left, even side on the right.
-3. Each door: **tap the tile** → ✓ fait. Again → ✗ personne. Again → ↻ repasser. Again → ○ à
-   faire. Undo snackbar.
+3. Each door: **tap the tile** → ✓ fait. Again → ✗ personne. Again → ↻ repasser, which opens
+   the house's sheet to say when (#81). Again → ○ à faire. Undo snackbar.
 4. Building at n°8: tap → unit grid → tap each unit the same way.
-5. "Repassez ce soir" → **hold** the tile → sheet → *↻ Repasser* + "après 19h" in « Quand
-   repasser ? » (or tap the tile up to ↻, without hint).
+5. "Repassez ce soir" → tap the tile up to ↻: its sheet opens by itself → « Aujourd'hui »,
+   « 19 h » in « Quand repasser ? » → « OK » (or **hold** the tile → sheet → *↻ Repasser*).
 6. Back in range: queued changes sync; the team map updates.
 
 ---
@@ -214,7 +214,7 @@ shows instead. Mockups: `docs/mockups/Start.dc.html` and `docs/mockups/Import.dc
   ajoutées, 2 déjà dans la tournée » (« Aucune rue ajoutée, … » when all were there), and the
   card never comes back for that tournée (another tournée may still be offered them). « Plus
   tard » hides it for that tournée until the next launch. Each street goes as it is (marks,
-  buildings, hints, removed numbers) with every stamp's `by` made the member's, times kept;
+  buildings, « repasser » times, removed numbers) with every stamp's `by` made the member's, times kept;
   a street whose BAN street (or id) the tournée already has is skipped and counted. The
   phone keeps its copies, only no longer shown while a tournée is open. No network needed to
   start: Firestore queues the new streets.
@@ -719,6 +719,8 @@ map with « « Chemin des Vignes » ajoutée à vos rues. ».
 - Tile: number, status glyph, tinted background per status, and « ×3 » after the glyph once
   the house was tried twice or more with nobody home (#80). Nothing else: no note (§8.3).
 - **Tap** cycles `○ → ✓ → ✗ → ↻ → ○` (light haptic tick); **hold** opens the Fiche maison.
+  The tap that brings a house to **↻ opens its Fiche maison by itself** (#81), to say when to
+  come back; see §5.7.
 - Building tile: tap opens the Immeuble grid. Whatever its status (○, `◐ n/m`, ✓, ↻), it shows
   the building icon (▦, the one of « Transformer en immeuble… ») before its number and a « › »
   at its right edge, in the colour of its text; single houses have neither (T1.21). TalkBack
@@ -743,7 +745,8 @@ Details fixed in T1.7 (`lib/presentation/street/`, `lib/ui/screens/street/`):
   The single column is decided on all the street's numbers, not on the visible ones.
 - A tap gives a light haptic tick at once, then TalkBack hears « Numéro 7, personne » and the
   snackbar « 7 → Personne [Annuler] » shows for 4 s, replacing any previous one; « Annuler »
-  undoes that last tap only. The snackbar belongs to the screen and leaves with it. While no
+  undoes that last tap only. A tap to ↻ shows no snackbar (the previous one goes too): TalkBack
+  hears « Numéro 7, repasser » and the sheet opens, with its own « Annuler » (#81, §5.7). The snackbar belongs to the screen and leaves with it. While no
   snackbar shows, the hint « Appui : ○ → ✓ → ✗ → ↻ → ○ · Appui long : détails » floats in its
   place. A refused undo (the number was removed meanwhile) does nothing.
 - A street missing from the phone, or in the Corbeille, shows « Cette rue n'est plus sur ce
@@ -782,7 +785,9 @@ Tries with nobody home, fixed in #80 (`NobodyHomeTries`, §6.1):
 │ [Repassé, toujours personne] │    │ 1er [11○][12✓][13✓][14✗]     │
 │  (yellow on ✗ / ↻, else grey)│    │ RdC [01✓][02○]               │
 │ Quand repasser ? (grey ≠ ↻)  │    │                              │
-│   [ après 19h             ]  │    │                              │
+│ (Aujourd'hui)(Demain)(Sam. 24)…→   │                              │
+│ Heure [ 18 h            ▾ ]  │    │                              │
+│ Le samedi 24 oct. vers 18 h  │    │                              │
 │ [ Transformer en immeuble… ] │    │                              │
 │ Modifié par Léa · 14:02      │    │                              │
 └──────────────────────────────┘    │                              │
@@ -802,8 +807,8 @@ Tries with nobody home, fixed in #80 (`NobodyHomeTries`, §6.1):
 - A building whose floors are unknown is a single row labelled "Logements".
 - Building status is derived, never stored: done when all doors are done, to do when none are,
   otherwise partial (`◐ done/total`).
-- No free note on a house, a door or a building (T1.20, §8.3): only the status and the short
-  « Quand repasser ? » hint.
+- No free note on a house, a door or a building (T1.20, §8.3): only the status and « Quand
+  repasser ? », a day and an hour (#81), no free text.
 
 Fiche maison details fixed in T1.8 (`lib/presentation/house_sheet/`,
 `lib/ui/screens/street/house_sheet.dart`):
@@ -812,6 +817,16 @@ Fiche maison details fixed in T1.8 (`lib/presentation/house_sheet/`,
   snackbar of the last tap: its « Annuler » would put the whole house back, wiping the sheet's
   changes. The sheet shows « 5 Rue des Lilas », the status control (screen readers: a radio
   group « Statut »), the « Quand repasser ? » block, and the last change.
+- **A tap to ↻ opens the sheet by itself** (#81, mockup HouseComeBack), on the street screen
+  and on a door of the Immeuble grid alike: the tap is stored and said as any tap, but instead
+  of its snackbar the sheet opens, so the day can be given at once. That sheet has no
+  *Transformer en immeuble…*; it keeps the tries block (on ↻ it is enabled), and ends with
+  « Annuler » (outlined) and « OK » (accent red), 52 dp, side by side. « Annuler » waits for the
+  choices already made to be stored, then puts back the house (or door) as it was before the
+  tap — status, time, tries — through the same undo as the snackbar's, and closes; nothing else
+  is offered to undo afterwards. « OK », a swipe down or a tap on the dimmed street close it,
+  the house staying ↻ with what was chosen. A held sheet has neither button. Every sheet
+  scrolls when it is taller than the screen.
 - **Each control is stored at once** through `SetHouseDetails` (one change each, stamped); the
   tile behind follows live. A control set to what the house already has stores nothing, so
   opening and closing a sheet never stamps a house. Changes run one after the other, each on
@@ -820,17 +835,23 @@ Fiche maison details fixed in T1.8 (`lib/presentation/house_sheet/`,
   glyph above the word, 64 dp high, a visible line between two choices, the chosen one in ink
   (the rounded outline clips it at either end).
 - **« Quand repasser ? »** (T1.16): a block always under the status control, so choosing a
-  status never moves the sheet — blue with the field enabled while « Repasser » is chosen,
-  greyed (field disabled, « ex. après 19h ») otherwise. Choosing « Repasser » starts without a
-  hint; choosing another status drops the hint (§6.1). The line of the last change keeps its
-  place before the first change, so that change does not move the sheet either.
-- **Hint field** (≤ 20 since T1.20, was 50; counted as the domain counts: code points of the
-  trimmed text) shows a « 9/20 » counter. An edit that would pass the limit (a key or a paste)
-  is refused whole and « Précision limitée à 20 caractères. » shows until the next edit that fits; nothing is cut.
-  The hint is stored when
-  the field loses focus (« OK » on the keyboard), before another control is used, when the
-  sheet closes (however it is closed) and when the app goes to the background — not at every
-  key, which would stamp the house each letter.
+  status never moves the sheet — blue while « Repasser » is chosen, greyed (nothing answers)
+  otherwise. Choosing « Repasser » starts without a time; choosing another status drops it
+  (§6.1). The line of the last change keeps its place before the first change, so that change
+  does not move the sheet either.
+- **Day and hour** (#81, replacing the free hint of ≤ 20 characters; mockup HouseComeBack): the
+  block holds « Quand repasser ? », a row of **day chips** scrolling sideways — « Aujourd'hui »,
+  « Demain », then the next five days as « Sam. 24 » (a week in all, from today on the phone's
+  calendar and clock, `Clock` port) — 40 dp pills in a 48 dp tap target, the chosen one filled
+  in the come-back blue; screen readers hear a radio group « Jour » and the dated chips whole
+  (« samedi 24 octobre »). Then « Heure » and a list « Pas d'heure », « 8 h » … « 21 h », greyed
+  until a day is chosen. Then a summary line: « Pas de jour choisi », « Aujourd'hui »,
+  « Demain vers 18 h », « Le samedi 24 oct. vers 18 h ». A day already gone shows as past:
+  « C'était hier vers 18 h », « C'était le mercredi 14 oct. »; such a day (or one a teammate
+  set past the week) gets a chip of its own, in date order (« Hier » before « Aujourd'hui »).
+  Each choice is stored at once (one `ComeBackSet` each, stamped); a new day keeps the hour
+  chosen; tapping the chosen day again leaves no time at all (the hour with it): « ↻ » without
+  time stays valid. A building's own « Repasser » (ticked) shows the same block.
 - **Last change**: « Modifié par Léa · 14:02 » today, « Modifié par Léa · 3 oct. à 14:02 »
   before, in the phone's time zone; « par vous » for the member on the phone; nothing when the
   house was never changed. The name is read from the open tournée's team (offline from the
@@ -845,11 +866,11 @@ Fiche maison details fixed in T1.8 (`lib/presentation/house_sheet/`,
   otherwise. It is **always there**, like « Quand repasser ? », so choosing a status never moves
   the sheet: a block appearing on ✗ would push the status control up and bring the button under
   the finger for a second tap.
-- **« Repassé, toujours personne »** stores the hint field first (and any change asked before),
-  then closes the sheet; the screen behind makes the house ✗ with one more try (a ↻ loses its
-  hint, as with any other status), stamped like any mark, and shows « 7 → Personne (3e passage)
+- **« Repassé, toujours personne »** waits for every change asked before to be stored, then
+  closes the sheet; the screen behind makes the house ✗ with one more try (a ↻ loses its
+  time, as with any other status), stamped like any mark, and shows « 7 → Personne (3e passage)
   [Annuler] » with the announcement « Numéro 7, personne, 3e passage ». « Annuler » puts the
-  house back as it was (status, hint, tries). The door sheet does the same over the grid
+  house back as it was (status, time, tries). The door sheet does the same over the grid
   (« 51 → Personne (3e passage) »); the building's own sheet has no such block.
 
 Immeuble details fixed in T1.9 (`lib/presentation/building/`, `lib/ui/screens/building/`):
@@ -857,7 +878,7 @@ Immeuble details fixed in T1.9 (`lib/presentation/building/`, `lib/ui/screens/bu
 - **Tap** a building tile opens the grid, a full-height sheet (a 40 dp strip of the street
   stays visible). **Hold** a building tile opens the building's own « Repasser » sheet, as the
   button under the grid does: no status (a building's status comes from its doors), the blue
-  « ☐ ↻ Repasser » box (ticking it shows « Quand ? ex. après 19h »), no
+  « ☐ ↻ Repasser » box (ticking it shows « Quand repasser ? », its day chips and hour), no
   *Transformer en immeuble…*.
 - Header « ✕ 8 Rue des Lilas  ◐ 15/24 »: the ◐ glyph is always drawn, the count covers every
   staircase. A long street name ends with « … », the count always shows.
@@ -881,7 +902,8 @@ Immeuble details fixed in T1.9 (`lib/presentation/building/`, `lib/ui/screens/bu
   [Annuler] ». Opening the menu hides the snackbar of the last door.
 - **Tap** a door: light haptic tick, TalkBack hears « Escalier A, 5e, porte 51, fait » (the
   staircase is named only when there are several; « Logements » is not said), and the snackbar
-  « 51 → Fait [Annuler] » shows for 4 s over the hint « Appui : ○ → ✓ → ✗ → ↻ → ○ · Appui
+  « 51 → Fait [Annuler] » shows for 4 s (a tap to ↻ opens the door's sheet instead, with
+  « Annuler » and « OK », as on the street screen, #81) over the hint « Appui : ○ → ✓ → ✗ → ↻ → ○ · Appui
   long : détails », as on the street screen. The snackbar belongs to the grid and leaves with it;
   opening any sheet over the grid hides it.
 - **Hold** a door: the door sheet, the Fiche maison's controls (four statuses, the tries with
@@ -1301,7 +1323,7 @@ Value objects (immutable, validated at construction, equal by value): `JoinCode`
 the alphabet), `RescueCentreKey` (normalised name), `TourneeNumber`, `MemberName`,
 `HouseNumber` (12 + "bis", with the
 French ordering), `StreetName`, `InseeCode` (the five-character commune code, `2A`/`2B`
-in Corsica), `VisitStatus` (`toDo`, `done`, `nobodyHome`, `comeBack`), `ComeBack` (the optional hint of « repasser »),
+in Corsica), `VisitStatus` (`toDo`, `done`, `nobodyHome`, `comeBack`), `ComeBack` (when to come back: an optional day and hour, #81), `CalendarDay` (a date without time or zone, #81),
 `NobodyHomeTries` (the tries with nobody home, #80),
 `GeoPoint`, `StreetShape`, `Progress`, `ProgressLevel`
 (`free`, `toDo`, `partial`, `done`), `CampaignYear`. Each house and dwelling also keeps its
@@ -1316,10 +1338,17 @@ Value-object rules fixed in T1.1 (`lib/domain/street/`):
   Latin multiplicatives lowercase and glued (`12bis`), any other suffix uppercase (`3A`).
   Order: integer part, then no suffix, then `bis ter quater quinquies sexies septies octies
   nonies decies`, then every other suffix alphabetically. Odd/even comes from the integer part.
-- **`ComeBack`** hint (≤ 20, T1.20; it was 50): trimmed at both ends, blank means none (`""`), length counted in
-  Unicode code points (🚒 = 1, `characterCount`). It is the only free text kept about a house:
-  the free `Note` was removed for privacy (T1.20, §8.3). The security
-  rules must count the same way (checked with emoji in the rules tests, T2.4).
+- **`ComeBack`** (#81, replacing the free hint of ≤ 20 characters of T1.20): when to come
+  back, a `day` (`CalendarDay`) and an optional `hour` of `8..21` (`ComeBack.hours`), or no
+  time at all (`ComeBack.withoutTime`). `create(day:, hour:)` refuses an hour without a day
+  (`hourWithoutDay`) and an hour outside 8–21 (`hourOutOfRange`); any day is taken, a past one
+  too (the sheet says it is past). Structured so the reminders (#82) can read it, and so no free
+  text is kept about a house at all: the free `Note` was removed for privacy (T1.20, §8.3).
+- **`CalendarDay`** (#81, `lib/domain/shared/`): a date of the calendar, years 2000–2999,
+  without time or time zone, so two phones agree on « samedi » whatever their clocks;
+  `create(year, month, day)` refuses a date that does not exist (`noSuchDay`); `of(time)` takes
+  the day of a `DateTime` as it reads (the screens give the phone's local time); `plusDays`,
+  `daysSince`, `weekday` count whole calendar days (in UTC, free of summer time).
 - **`NobodyHomeTries`** (#80): a count `0..99` (`create` refuses others: `outOfRange`; `none`
   = 0); `next` adds one, `99` stays `99`. `keptBy(status, tries)` is the rule a status puts on
   it: to do → none; nobody home → at least one (the first « personne » is a try); done and
@@ -1340,19 +1369,19 @@ Value-object rules fixed in T1.1 (`lib/domain/street/`):
   (`duplicateHouseNumber`); `houses`, `oddHouses`, `evenHouses` are read-only lists (0 is even).
 - **« Repasser » is a status** (T1.16, replacing the T1.2 flag): a single house or a door has
   exactly one of the four statuses, never « personne » and « repasser » at once. It carries a
-  `ComeBack` (its hint, possibly empty) **exactly when** its status is `comeBack`: the `House` and
+  `ComeBack` (its time, possibly none) **exactly when** its status is `comeBack`: the `House` and
   `Dwelling` factories enforce it (`ComeBack.keptBy(status, comeBack)`), so `markHouse` to
-  `comeBack` starts without hint (or keeps the hint it already had) and any other status drops
-  the hint. `setComeBack(number, hint)` on a single house only sets the hint of a house
+  `comeBack` starts without time (or keeps the time it already had) and any other status drops
+  the time. `setComeBack(number, comeBack)` on a single house only sets the time of a house
   « repasser »; on a house not « repasser », or with null, it is refused (`notComeBack`).
 - **Tries with nobody home** (#80): a single house or a door has the `tries` its status allows
   (`NobodyHomeTries.keptBy`); `markHouse` / `markDwelling` give the new status and the tries
   follow it (never one more). `markNobodyHomeAgain(number)` / `markDwellingNobodyHomeAgain(number,
-  key)` (« Repassé, toujours personne ») make it « personne » with `tries.next`, its hint
+  key)` (« Repassé, toujours personne ») make it « personne » with `tries.next`, its time
   dropped, stamped; refused unless it is « personne » or « repasser » (`notToVisitAgain`), and
   on a building (`houseIsBuilding`). They return `HouseNobodyHomeAgain` /
   `DwellingNobodyHomeAgain` (the new `tries`, `before`, the stamp), undone like any house or door
-  change. Every other command keeps the tries (hint, rename, renumber, layout keeping a door);
+  change. Every other command keeps the tries (time, rename, renumber, layout keeping a door);
   a house laid out as a building loses its own (its doors count theirs).
 - Commands `markHouse` and `setComeBack` stamp the house with
   `by`/`at` and return `Result<(Street, Change), HouseChangeFailure>`; an unknown number is
@@ -1361,7 +1390,7 @@ Value-object rules fixed in T1.1 (`lib/domain/street/`):
 - Each **house change** (`HouseMarked`, `ComeBackSet`) carries the street id, the
   new value, the stamp and **the house as it was** (`before`): undo restores that exact house
   without re-reading, and storage writes only the named fields (`HouseMarked` writes the status
-  with `HouseMarked.comeBack`, the hint the house has after it: kept, empty, or null).
+  with `HouseMarked.comeBack`, the time the house has after it: kept, none, or null).
 - `Progress` counts the doors done, nobody home, come back and to do (the four partition
   `total`), plus `buildingComeBacks` (buildings with their own « repasser », not doors); the
   header's ↻ is `toComeBack` = doors « repasser » + those buildings.
@@ -1412,7 +1441,7 @@ Building rules fixed in T1.3 (`lib/domain/street/building/`):
 - **A building is to do itself**: the `House` factory sets a building's own status to to do; its
   doors carry the statuses. It keeps its own « repasser » (« Repasser » under the grid), free of the rule above since it has no status; that « repasser » counts in the street's
   ↻ (`Progress.buildingComeBack`) but not as a door. A single house « repasser » described as a
-  building gives its « repasser » (hint kept) to the building.
+  building gives its « repasser » (time kept) to the building.
   The street's progress counts the building's doors instead of the house.
 - **Commands** (on `Street`, each stamped with `by`/`at`):
   - `markHouse` on a building is refused (`houseIsBuilding`); `setComeBack` on a building sets
@@ -1429,15 +1458,15 @@ Building rules fixed in T1.3 (`lib/domain/street/building/`):
     door (`lastDwelling`) and leaves an emptied floor in place. `renameDoor` keeps the door's marks
     and refuses a label another door of the same floor has (`duplicateLabel`).
   - `removeBuilding(number)` turns it back into a single house: done if every door was done
-    (its « repasser » then dropped), otherwise « repasser » with the building's hint when it had
+    (its « repasser » then dropped), otherwise « repasser » with the building's time when it had
     its own, to do when not; doors dropped.
-  - `markDwelling` and `setDwellingComeBack` (the hint of a door « repasser »; refused
+  - `markDwelling` and `setDwellingComeBack` (the time of a door « repasser »; refused
     otherwise: `notComeBack`) change one door and stamp only that door.
 - **Changes.** Layout commands return `BuildingLaidOut` (the new building + the whole house
   `before`): storage rewrites that house's building, undo puts `before` back. A layout change is
   rare and made from « Gérer l'immeuble », so a teammate marking a door of the same building at that same
   instant may be overwritten. `BuildingRemoved` carries the new status (and `comeBack`, the
-  hint the single house keeps). Door commands return a `DwellingChange` (`DwellingMarked`, `DwellingComeBackSet`) with the house number, the staircase, the floor level, the door `before`
+  time the single house keeps). Door commands return a `DwellingChange` (`DwellingMarked`, `DwellingComeBackSet`) with the house number, the staircase, the floor level, the door `before`
   and its `key`, so storage writes field paths such as `houses.8.dwellings.A5-51.status` and
   undo restores that door.
 
@@ -2102,8 +2131,10 @@ tournees/{tourneeId}
                                           ← key = the number's label ("3bis", "3A"), n + sfx
                                             say the same; lat / lon null without position;
                                             status TO_DO | DONE | NOBODY_HOME | COME_BACK;
-                                            comeBack = hint ("" for none) only when COME_BACK
-                                            (on a building: its own « repasser »)
+                                            comeBack = when, only when COME_BACK (on a
+                                            building: its own « repasser »): "" for no
+                                            time, "2026-10-24" a day, "2026-10-24T18" a
+                                            day and an hour 8–21 (#81)
                  by: uid, at: timestamp,  ← last change, both null before any
                  tries: 2,                ← tries with nobody home (#80), 1–99; absent = 0
                                             (written from the first try, removed when 0)
@@ -2130,14 +2161,18 @@ has neither and reads as no shape, nobody covering it. `tries` (#80) is written 
 first try and read as 0 when absent (or null), so older documents, and the marks of an app
 older than #80 (which leave the field as it was), need no rewriting: the domain reads it
 through the status (none when to do, at least one when nobody is home).
+`comeBack` held a free hint (« après 19h ») before #81 (`infrastructure/shared/mappers/
+come_back_text.dart` reads and writes the time for both stores): any text that is not a time
+the app writes reads as « repasser » with no time set, never as unreadable, and is replaced the
+next time the house (or door) is written; nothing is migrated in bulk.
 **Writes name field paths by segments** (`FieldPath(['houses', '8', 'dwellings', 'A0-Porte
 1.2', 'status'])`), never dotted text: a typed door label may hold a dot. What each change
 writes:
 
 | Change | Fields written (under `houses.<n>` unless said) |
 |---|---|
-| mark, « Repassé, toujours personne », « repasser » of a house | `status`, `comeBack`, `tries` (the count, or deleted when 0), `by`, `at` (« repasser » hint: `comeBack`, `by`, `at`) |
-| mark, « Repassé, toujours personne », « repasser » of a door | `dwellings.<key>.status`, `.comeBack`, `.tries`, `.by`, `.at` (hint: no `status`, no `tries`) |
+| mark, « Repassé, toujours personne », « repasser » of a house | `status`, `comeBack`, `tries` (the count, or deleted when 0), `by`, `at` (« repasser » day or hour: `comeBack`, `by`, `at`) |
+| mark, « Repassé, toujours personne », « repasser » of a door | `dwellings.<key>.status`, `.comeBack`, `.tries`, `.by`, `.at` (day or hour: no `status`, no `tries`) |
 | layout (describe, add / remove / rename a door) | `status`, `comeBack`, `tries` (deleted), `by`, `at`, `labelStyle`, `layout`, then each door `dwellings.<key>` whole; each door dropped is deleted |
 | back to a single house | `status`, `comeBack`, `tries` (deleted), `by`, `at`; `labelStyle`, `layout`, `dwellings` deleted |
 | numbers added | each new `houses.<n>` whole in one update; each one restored: `deletedAt`, `deletedBy` = null, in an update of its own (the rules check one by one only a write changing one house, T2.4) |
@@ -2185,16 +2220,17 @@ can never drift.
   `infrastructure/local_storage/`, in the app support folder (private, kept across updates).
   One JSON file per street, `streets/<id>.json` (a commune of ≈ 300 streets / 6 000 numbers would
   make one file of a few MB rewritten at every tap; a street's file is a few kB to ≈ 100 kB).
-  Schema `version: 3` (T1.20: no `note`; T1.16: status `comeBack`, hint in `comeBack` only
-  then; T3.3 added `shape`, the encoded lines, and `assignees`, member ids, without a new
+  Schema `version: 3` (T1.20: no `note`; T1.16: status `comeBack`, its time in `comeBack` only
+  then — the same text as in Firestore since #81, "" / "2026-10-24" / "2026-10-24T18"; T3.3 added `shape`, the encoded lines, and `assignees`, member ids, without a new
   version: a file without them reads as no shape, nobody; #80 added `tries` on houses and doors
   the same way, written from the first try, absent = 0), written and read by pure mappers (`mappers/street_json_mapper.dart`). Version 1 files
   (« repasser » as a flag) are still read: a house or door to do or nobody home with a
-  `comeBack` becomes « repasser », hint kept. Version 1 and 2 files allowed hints of 50
-  characters: a longer one than 20 is cut to its first 20 (code points), trimmed. They held a
+  `comeBack` becomes « repasser ». Every file written before #81 may hold a free hint in
+  `comeBack` (« après 19h »): it reads as « repasser » with no time set (no new version: the
+  text goes the next time the street is written). Version 1 and 2 files held a
   free `note` on houses, doors and buildings: reading drops it (every other mark kept), and
   **a file of an older version is written again in version 3 as soon as it is read** (not at
-  the next change), so no note and no long hint stays on the phone. Mappers go
+  the next change), so no note stays on the phone. Mappers go
   through the domain's checks (`Street.create`, `Building.create`, `ComeBack.create`…); statuses and
   label styles under fixed names, times as ISO 8601 UTC. Every file is read once into memory,
   which answers all reads and is updated at once on a write (listeners told), then the file is
@@ -2281,9 +2317,11 @@ photo of the QR) is even more likely. So **knowing a code must not be enough**:
   absent; never updated; deleted only with the tournée.
 - `rescueCentres`: readable by signed-in users (station names only), create-only.
 - Street and house writes: field-path updates only on `status`, `comeBack`, `tries`, `by`, `at`,
-  `assignees`, `deletedAt/By`, numbers and dwellings; `status` in the enum; the `comeBack` hint
-  ≤ 20 chars (code points, as the domain counts them, §6.1); no other free-text field (no
-  `note`, §8.3); `tries` (#80, on a house or a door, `hasTries`) optional, an integer 1–99 when
+  `assignees`, `deletedAt/By`, numbers and dwellings; `status` in the enum; `comeBack` a time
+  as the app writes it (#81, `isComeBackTime`: "", a day "2026-10-24" of the years 2000–2999,
+  or a day and an hour "2026-10-24T18" of 08–21), so no free text at all (no `note`, §8.3; the
+  free hint of before #81 is refused in a write, one already stored only goes when the house is
+  next written); `tries` (#80, on a house or a door, `hasTries`) optional, an integer 1–99 when
   present, absent on a number just added; not tied to the status, so a mark by an app older
   than #80, which leaves it as it was, is still accepted;
   `by` must equal the caller's uid; `at` must be a timestamp. It is the phone's time of the
@@ -2354,8 +2392,8 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
   (one line, trimmed, single spaces): member ≤ 30, centre ≤ 80, street ≤ 150; commune code
   `69264` / `2A004`; house number 0–99999 with a suffix of ≤ 16 lowercase letters and digits,
   stored under its label; position in range or both null; statuses and label styles among
-  their fixed names; a hint exactly on « repasser » (a building may keep its own), trimmed,
-  ≤ 20; a stamp a write sets is the caller's (`by` = uid, `at` a timestamp), a new house has
+  their fixed names; a `comeBack` time exactly on « repasser » (a building may keep its own);
+  a stamp a write sets is the caller's (`by` = uid, `at` a timestamp), a new house has
   none; no `note` anywhere. Lengths are counted in code points
   with a pattern (`matches('(?s).{0,20}')`): the rules' `size()` counts UTF-16 units
   (🚒 = 2), the patterns count 🚒 as 1, as `characterCount` does.
@@ -2397,7 +2435,7 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
 - **Streets.** The rules language has no loops, and cannot name the key a write changed (a set
   has no index): the house or door is found by value (`values().removeAll(…)`: the one entry
   that is new; each holds its own number or stamp). So a write may:
-  - change **one house in place**: its marks (status, hint, `by` = caller, `at`), its layout
+  - change **one house in place**: its marks (status, time, `by` = caller, `at`), its layout
     (labelStyle, layout, doors; house stamp = caller), its removal (`deletedBy` = caller, or
     null to restore it), each checked field by field;
   - change **one door** of a building: the door entry whole and valid, `by` = caller;
@@ -2440,9 +2478,9 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
 - **Auth:** anonymous Firebase account created on first launch. The uid is the member id.
   Reinstalling the app creates a new uid, so the person rejoins with the code and is approved
   again (their old member row can be removed by the creator).
-- **Data stored:** addresses and their positions (public data), visit statuses, the short
-  « repasser » hint (≤ 20 characters, « après 19h »), first names of the members. No free text
-  beyond that hint: the free note on houses, doors and buildings was removed (T1.20, Q23) as
+- **Data stored:** addresses and their positions (public data), visit statuses, when to come
+  back (a day and an hour, #81), first names of the members. No free text about a house: the
+  « repasser » hint of ≤ 20 characters became a day and an hour (#81), and the free note on houses, doors and buildings was removed (T1.20, Q23) as
   too likely to hold personal data (GDPR), and notes already stored on a phone are erased when
   the app reads them. No donations, no residents' names, no residents' answers.
 - **Location:** the phone's position is used only on screen ("locate me"), never stored or
@@ -2643,7 +2681,7 @@ exists. No invented data at any stage.
 | Q20 | Infrastructure | **Decided at the M2 checkpoint (2026-10-05): Spark (free), Blaze-ready.** Join on the phone (`joinCodes` get → pending member) behind a `TourneeDirectory` port; App Check + approval are the guard; the Corbeille purge runs on members' phones (5.11). Move to Blaze (1 click, no data migration) and a rate-limited callable join + scheduled purge when real usage nears Spark's shared daily quota (50 k reads, 20 k writes for the whole app ≈ 10 busy tournées a day) or abuse shows up. Another backend was rejected: it loses Firestore's offline cache. |
 | Q21 | Switching / creating from Accueil | The title is a button: « Mes tournées » sheet with all my tournées (progress, pending requests), *Créer*, *Rejoindre*. |
 | Q22 | Technical stack | **Flutter + Riverpod**, strict DDD (hexagonal: domain, use cases, ports, adapters). Android first; iOS later from the same code, built in the cloud (no Mac). Mutation gate dropped (no Dart tool); 100 % coverage gate kept. |
-| Q23 | Notes | **Removed for privacy, 2026-10-05** (after the phone test of M1): a free note on a house, door or building is too likely to hold personal data (GDPR). No note field anywhere; notes already on a phone are erased when the app reads them (storage schema v3). The « repasser » hint stays, limited to 20 characters (was 50); longer hints already on a phone are cut to their first 20 when read. |
+| Q23 | Notes | **Removed for privacy, 2026-10-05** (after the phone test of M1): a free note on a house, door or building is too likely to hold personal data (GDPR). No note field anywhere; notes already on a phone are erased when the app reads them (storage schema v3). The « repasser » hint stayed, limited to 20 characters (was 50); since #81 it is a day and an hour, no free text. |
 
 ---
 

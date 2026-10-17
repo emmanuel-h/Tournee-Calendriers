@@ -27,7 +27,7 @@ final _yesterday = DateTime(2026, 11, 1, 18, 30);
 final _door11 = Dwelling(
   label: d('11'),
   status: VisitStatus.comeBack,
-  comeBack: comeBack('soir'),
+  comeBack: comeBack('2026-11-03', hour: 18),
   lastChange: ChangeStamp(by: paul, at: _yesterday.toUtc()),
   tries: tries(2),
 );
@@ -37,7 +37,7 @@ final _door11 = Dwelling(
 final _houses = [
   House(
     number: n('8'),
-    comeBack: comeBack('mardi'),
+    comeBack: comeBack('2026-11-10'),
     lastChange: leaAtTwo,
     building: building(
       staircases: 2,
@@ -115,7 +115,8 @@ void main() {
       expect(state.number, n('8'));
       expect(state.status, VisitStatus.comeBack);
       expect(state.comeBack, isTrue);
-      expect(state.comeBackHint, 'soir');
+      expect(state.comeBackTime.chosen?.day, day('2026-11-03'));
+      expect(state.comeBackTime.hour, 18);
       expect(state.lastChange, ChangedEarlier(_yesterday));
       expect(state.tries, 2);
     });
@@ -189,11 +190,11 @@ void main() {
       );
     });
 
-    test('should store the hint of the door « repasser »', () async {
+    test('should store the day of the door « repasser »', () async {
       phoneWith(_street());
       await door('8', a11);
 
-      await doorNotifier('8', a11).saveComeBackHint('samedi');
+      await doorNotifier('8', a11).chooseComeBackDay(day('2026-11-07'));
 
       expect(
         streets.saved.single.$2,
@@ -204,7 +205,7 @@ void main() {
           level: 1,
           before: _door11,
           stamp: leaAtTwo,
-          comeBack: comeBack('samedi'),
+          comeBack: comeBack('2026-11-07', hour: 18),
         ),
       );
     });
@@ -229,7 +230,8 @@ void main() {
       expect(state.number, n('8'));
       expect(state.status, isNull);
       expect(state.comeBack, isTrue);
-      expect(state.comeBackHint, 'mardi');
+      expect(state.comeBackTime.chosen?.day, day('2026-11-10'));
+      expect(state.comeBackTime.hour, isNull);
       expect(state.tries, 0);
       expect(
         state.lastChange,
@@ -261,11 +263,11 @@ void main() {
       expect(streets.saved, isEmpty);
     });
 
-    test('should store the hint of the building own « repasser »', () async {
+    test('should store the hour of the building own « repasser »', () async {
       phoneWith(_street());
       await details('8');
 
-      await detailsNotifier('8').saveComeBackHint(' jeudi ');
+      await detailsNotifier('8').chooseComeBackHour(14);
 
       expect(
         streets.saved.single.$2,
@@ -273,7 +275,7 @@ void main() {
           streetId: _id,
           before: _houses.first,
           stamp: leaAtTwo,
-          comeBack: comeBack('jeudi'),
+          comeBack: comeBack('2026-11-10', hour: 14),
         ),
       );
     });
@@ -284,7 +286,7 @@ void main() {
 
       await detailsNotifier('10').setComeBack(on: true);
 
-      expect(streets[_id]!.houses.last.comeBack, ComeBack.withoutHint);
+      expect(streets[_id]!.houses.last.comeBack, ComeBack.withoutTime);
       expect(streets[_id]!.houses.last.status, VisitStatus.toDo);
     });
 

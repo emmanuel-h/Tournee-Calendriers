@@ -9,7 +9,7 @@ import '../../../support/street_fixtures.dart';
 
 void main() {
   final fiftyOne = Dwelling(label: d('51'), status: VisitStatus.done);
-  final fiftyTwo = Dwelling(label: d('52'), comeBack: ComeBack.withoutHint);
+  final fiftyTwo = Dwelling(label: d('52'), comeBack: ComeBack.withoutTime);
   final fortyOne = Dwelling(label: d('41'), status: VisitStatus.nobodyHome);
 
   group('Floor', () {
