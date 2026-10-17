@@ -23,6 +23,7 @@ the colours, type, spacing and status treatments below are the design tokens.
 | Alert | `#FBE9E7` bg, accent border, ⚠ | a warning (« La tournée 49 … existe déjà ») |
 | Done | `#1E6B47` bg, white text, `✓` | |
 | Nobody home | `#F2B33D` bg, ink text, `✗` | |
+| Nobody home, tries block | `#FDF3DC` bg, button outlined `#D99A22`; greyed (`#F3F1EC`) unless ✗ / ↻ | house and door sheets (#80); tiles add « ×N » from 2 tries |
 | Come back | `#D6E6F5` bg, `#1D4E7A` text, `↻` | |
 | Building partial | `#EFE9DD` bg, dashed border, `◐ n/m` | |
 | Building (any status) | 20px building icon before the number, 10×20 `›` at the right edge, text colour | tap opens the grid |

@@ -175,6 +175,25 @@ void main() {
       expect(json['assignees'], isEmpty);
     });
 
+    test(
+      'should write the tries of a house and a door once they have some',
+      () {
+        final json = storedRichStreet((_) {})! as Map<String, Object?>;
+
+        // House 5, after three tries; door B0-01 of building 8, after two.
+        expect(houseAt(json, 3)['tries'], 3);
+        final staircaseB = _at(buildingOfEight(json)['staircases'], 1);
+        expect(_at(_at(staircaseB['floors'], 0)['dwellings'], 0)['tries'], 2);
+      },
+    );
+
+    test('should write no tries for a house or a door without any', () {
+      final json = storedRichStreet((_) {})! as Map<String, Object?>;
+
+      expect(houseAt(json, 2).containsKey('tries'), isFalse);
+      expect(doorTwelve(json).containsKey('tries'), isFalse);
+    });
+
     test('should write a removed house with its removal', () {
       final json = streetToJson(richStreet);
 
@@ -447,6 +466,27 @@ void main() {
       expect(streetFromJson(json).assignees, isEmpty);
     });
 
+    // Files written before the tries (#80) have none.
+    test('should read the first try of a house nobody answered when the '
+        'file has no tries', () {
+      final json = storedRichStreet((json) => houseAt(json, 3).remove('tries'));
+
+      expect(streetFromJson(json).houseAt(n('5'))!.tries, tries(1));
+    });
+
+    test('should read no tries for a door when the file has none', () {
+      final json = storedRichStreet((json) {
+        final staircaseB = _at(buildingOfEight(json)['staircases'], 1);
+        _at(_at(staircaseB['floors'], 0)['dwellings'], 0).remove('tries');
+      });
+
+      final door = streetFromJson(json)
+          .houseAt(n('8'))!
+          .building!
+          .dwellingAt(DwellingKey(escB, 0, d('01')));
+      expect(door!.tries.count, 0);
+    });
+
     test('should read a time written with an offset as UTC', () {
       final street = streetFromJson(
         storedRichStreet(
@@ -530,6 +570,10 @@ void main() {
       'the assignees are not a list': (json) => json['assignees'] = 'lea',
       'an assignee is not text': (json) => json['assignees'] = [12],
       'an assignee is blank': (json) => json['assignees'] = [''],
+      'the tries are text': (json) => houseAt(json, 3)['tries'] = '3',
+      'the tries pass the limit': (json) => houseAt(json, 3)['tries'] = 100,
+      'the tries of a door are negative': (json) =>
+          doorTwelve(json)['tries'] = -1,
     };
 
     cases.forEach((what, change) {

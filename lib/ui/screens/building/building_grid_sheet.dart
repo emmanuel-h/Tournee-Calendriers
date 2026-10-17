@@ -9,6 +9,7 @@ import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
 import 'package:tournee_calendriers/presentation/building/building_grid_notifier.dart';
 import 'package:tournee_calendriers/presentation/building/building_grid_state.dart';
+import 'package:tournee_calendriers/presentation/street/street_view_state.dart';
 import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
 import 'package:tournee_calendriers/ui/components/close_icon_button.dart';
 import 'package:tournee_calendriers/ui/components/confirm_dialog.dart';
@@ -16,6 +17,7 @@ import 'package:tournee_calendriers/ui/components/segmented_choice.dart';
 import 'package:tournee_calendriers/ui/components/sheet_scaffold.dart';
 import 'package:tournee_calendriers/ui/components/status_glyph.dart';
 import 'package:tournee_calendriers/ui/components/tap_hint.dart';
+import 'package:tournee_calendriers/ui/components/tries_words.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/screens/building/building_menu_sheet.dart';
@@ -114,7 +116,7 @@ final class _BuildingGridSheetState extends ConsumerState<BuildingGridSheet>
                         child: _Floors(
                           state: state,
                           onTap: _cycle,
-                          onHold: _openDoor,
+                          onHold: (door) => unawaited(_openDoor(door)),
                         ),
                       ),
                       // Gives way to the snackbar, which floats here.
@@ -154,31 +156,33 @@ final class _BuildingGridSheetState extends ConsumerState<BuildingGridSheet>
   /// shown in the snackbar (« 51 → Fait »).
   Future<void> _cycle(DwellingKey door) async {
     unawaited(HapticFeedback.lightImpact());
-    // Read now: after the `await`, this context may be gone.
-    final l10n = AppLocalizations.of(context);
-    final view = View.of(context);
-    final direction = Directionality.of(context);
-    final notifier = _notifier;
+    _tell(await _notifier.cycle(door));
+  }
 
-    final marked = await notifier.cycle(door);
+  /// Says [marked] aloud for screen readers and shows it in the snackbar,
+  /// with « Annuler »; nothing when nothing changed.
+  void _tell(MarkedDoor? marked) {
     if (marked == null || !mounted) return;
-
+    final l10n = AppLocalizations.of(context);
+    final notifier = _notifier;
     unawaited(
       SemanticsService.sendAnnouncement(
-        view,
+        View.of(context),
         doorSpoken(
           l10n,
           marked.key,
           namesStaircase: marked.namesStaircase,
-          status: spokenStatus(l10n, marked.status),
+          status: spokenMarked(l10n, marked.status, marked.tries),
         ),
-        direction,
+        Directionality.of(context),
       ),
     );
     showUndo(
-      message: l10n.houseMarked(
+      message: markedMessage(
+        l10n,
         marked.key.label.text,
-        statusName(l10n, marked.status),
+        marked.status,
+        marked.tries,
       ),
       undoLabel: l10n.undo,
       onUndo: () => unawaited(notifier.undo()),
@@ -186,16 +190,19 @@ final class _BuildingGridSheetState extends ConsumerState<BuildingGridSheet>
   }
 
   /// A hold on a door opens its sheet. The snackbar goes: its « Annuler »
-  /// would put the whole door back, wiping what the sheet changes.
-  void _openDoor(DwellingKey door) {
+  /// would put the whole door back, wiping what the sheet changes. Left by
+  /// « Repassé, toujours personne », the door is marked here, with its
+  /// snackbar over the grid.
+  Future<void> _openDoor(DwellingKey door) async {
     hideUndo();
-    unawaited(
-      showDoorSheet(context, (
-        street: widget.building.street,
-        number: widget.building.number,
-        door: door,
-      )),
-    );
+    final notifier = _notifier;
+    final exit = await showDoorSheet(context, (
+      street: widget.building.street,
+      number: widget.building.number,
+      door: door,
+    ));
+    if (exit != DoorSheetExit.nobodyHomeAgain || !mounted) return;
+    _tell(await notifier.nobodyHomeAgain(door));
   }
 
   /// « Gérer l'immeuble »: the menu, then the choice. The snackbar goes
@@ -483,8 +490,14 @@ final class _DoorButton extends StatelessWidget {
       l10n,
       door.key,
       namesStaircase: namesStaircase,
-      status: spokenMark(l10n, door.mark),
+      status: spokenWithTries(
+        l10n,
+        spokenMark(l10n, door.mark),
+        nobodyHome: door.mark is NobodyHomeMark,
+        tries: door.tries,
+      ),
     );
+    final tries = door.tries;
     return Semantics(
       key: ValueKey('grid.door.${door.key.id}'),
       label: spoken,
@@ -524,6 +537,13 @@ final class _DoorButton extends StatelessWidget {
                       size: AppSizes.doorGlyph,
                       color: look.foreground,
                     ),
+                    if (tries != null)
+                      Text(
+                        l10n.tileTries(tries),
+                        style: AppTextStyles.tileCount.copyWith(
+                          color: look.foreground,
+                        ),
+                      ),
                   ],
                 ),
               ),

@@ -81,6 +81,10 @@ Street screen (« Rue »):
   « Quand repasser ? » (greyed unless « Repasser », 20 characters at most) and when it was
   last changed. No free note: too likely to hold personal data, so the app keeps none (notes
   stored by an earlier version are erased). Each control is stored at once; the tile follows.
+- Tries with nobody home: the sheet counts them (« 2 passages sans personne ») and, while the
+  house is « Personne » or « Repasser », « Repassé, toujours personne » adds one (« 7 →
+  Personne (3e passage) » with « Annuler »); tiles and doors show « ×3 » from two tries,
+  kept once done; back to « À faire » starts again at 0.
 - « Transformer en immeuble… » in the sheet describes a building (« Décrire l'immeuble »):
   staircases, floors (RdC–5e, or « Inconnus »), doors per floor — the same for every staircase,
   or each its own (« Même chose pour chaque escalier » unticked) —, door labels « 51, 52… |

@@ -92,6 +92,12 @@ service cloud.firestore {
       return data.keys().hasAll(fields) && data.keys().hasOnly(fields);
     }
 
+    // A document holding every one of [fields], and maybe some of
+    // [optional], nothing else.
+    function hasFields(data, fields, optional) {
+      return data.keys().hasAll(fields) && data.keys().hasOnly(fields.concat(optional));
+    }
+
     // At most [max] characters, counted in code points. `(?s)`: a line
     // break counts too.
     function hasAtMost(text, max) {
@@ -370,6 +376,8 @@ service cloud.firestore {
         'deletedBy', 'houses'];
     }
 
+    // The fields every house entry has; `tries` is added from the first
+    // try with nobody home (hasTries).
     function houseFields() {
       return ['n', 'sfx', 'lat', 'lon', 'status', 'comeBack', 'by', 'at',
         'deletedAt', 'deletedBy'];
@@ -394,7 +402,18 @@ service cloud.firestore {
     // A single house or a door has a hint exactly when it is « repasser ».
     function hasMarks(entry) {
       return isStatus(entry.status)
-        && (entry.status == 'COME_BACK' ? isHint(entry.comeBack) : entry.comeBack == null);
+        && (entry.status == 'COME_BACK' ? isHint(entry.comeBack) : entry.comeBack == null)
+        && hasTries(entry);
+    }
+
+    // The tries with nobody home (#80, NobodyHomeTries): written only from
+    // the first try, 1 to 99. Not tied to the status: an app older than
+    // the tries leaves them as they were when it marks a house, and the
+    // domain reads them through the status (none when to do, at least one
+    // when nobody is home), so such a write stays harmless and accepted.
+    function hasTries(entry) {
+      return !('tries' in entry)
+        || (entry.tries is int && entry.tries >= 1 && entry.tries <= 99);
     }
 
     function isPosition(lat, lon) {
@@ -409,6 +428,7 @@ service cloud.firestore {
     function isBuilding(house) {
       return house.status == 'TO_DO'
         && (house.comeBack == null || isHint(house.comeBack))
+        && hasTries(house)
         && house.labelStyle in ['FLOOR_AND_NUMBER', 'FLOOR_AND_LETTER', 'FREE']
         && house.layout is list && house.layout.size() >= 1 && house.layout.size() <= 26 * 51
         && house.dwellings is map && house.dwellings.size() >= 1 && house.dwellings.size() <= 500;
@@ -419,8 +439,8 @@ service cloud.firestore {
     function isHouse(house) {
       return house is map
         && (('layout' in house)
-          ? hasExactly(house, houseFields().concat(buildingFields())) && isBuilding(house)
-          : hasExactly(house, houseFields()) && hasMarks(house))
+          ? hasFields(house, houseFields().concat(buildingFields()), ['tries']) && isBuilding(house)
+          : hasFields(house, houseFields(), ['tries']) && hasMarks(house))
         && house.n is int && house.n >= 0 && house.n <= 99999
         && (house.sfx == null || (house.sfx is string && house.sfx.matches('[a-z][a-z0-9]{0,15}')))
         && isPosition(house.lat, house.lon);
@@ -441,7 +461,7 @@ service cloud.firestore {
     // caller's (isOneDoorEdited).
     function isDoor(door) {
       return door is map
-        && hasExactly(door, ['status', 'comeBack', 'by', 'at'])
+        && hasFields(door, ['status', 'comeBack', 'by', 'at'], ['tries'])
         && hasMarks(door);
     }
 
@@ -561,7 +581,7 @@ service cloud.firestore {
       return (fields.hasOnly(['deletedAt', 'deletedBy']) && isNumberRemoval(tournee, new))
         || (fields.hasOnly(['dwellings'])
           && isOneDoorEdited(old.dwellings, new.dwellings))
-        || (fields.hasOnly(['status', 'comeBack', 'by', 'at'].concat(buildingFields()))
+        || (fields.hasOnly(['status', 'comeBack', 'tries', 'by', 'at'].concat(buildingFields()))
           && isHouse(new)
           && isCallerStamp(new.by, new.at));
     }
@@ -590,6 +610,7 @@ service cloud.firestore {
         && house.deletedAt == null && house.deletedBy == null
         && (isNew
           ? !('layout' in house) && house.status == 'TO_DO'
+            && !('tries' in house)
             && house.by == null && house.at == null
           : isCallerStamp(house.by, house.at));
     }

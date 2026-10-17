@@ -9,12 +9,12 @@
 //     assignees: [memberId, …], houses: [house], removedHouses: [{ house,
 //     removal: stamp }] }
 //   house    = { number: "3bis", status, comeBack: hint | null,
-//                lastChange: stamp | null,
+//                lastChange: stamp | null, tries: 1–99,   ← only from the first try
 //                position: { latitude, longitude } | null,
 //                building: building | null }
 //   building = { style, staircases: [{ name: "A", floors: [{ level | null,
 //                dwellings: [{ label, status, comeBack,
-//                              lastChange }] }] }] }
+//                              lastChange, tries }] }] }] }
 //   stamp    = { by: memberId, at: "2026-11-02T14:02:00.000Z" }  (UTC)
 //   status   = "toDo" | "done" | "nobodyHome" | "comeBack"
 //
@@ -38,7 +38,10 @@
 // `shape` (one encoded polyline per line, see `StreetShape.encode`) and
 // `assignees` came with the map (T3.3) without a new version: they only
 // add to version 3, so a file written before reads as a street without
-// shape that nobody covers, and nothing in it needs rewriting.
+// shape that nobody covers, and nothing in it needs rewriting. `tries`
+// (the tries with nobody home, #80) came the same way: written only from
+// the first try, a missing one reads as none (and a « personne » without
+// it as its first try, see `NobodyHomeTries.keptBy`).
 //
 // Statuses and label styles are written under fixed names chosen here, not
 // the Dart enum names, so renaming an enum value in the code cannot make
@@ -63,6 +66,7 @@ import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
+import 'package:tournee_calendriers/domain/street/nobody_home_tries.dart';
 import 'package:tournee_calendriers/domain/street/removed_house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
@@ -193,6 +197,7 @@ Map<String, Object?> _houseToJson(House house) => {
   'status': _statusToJson(house.status),
   'comeBack': house.comeBack?.hint,
   'lastChange': _stampToJson(house.lastChange),
+  ..._triesToJson(house.tries),
   'position': switch (house.position) {
     null => null,
     final GeoPoint point => {
@@ -210,14 +215,16 @@ Map<String, Object?> _houseToJson(House house) => {
 /// `note` of a version 1 or 2 house or door is simply not read: it is
 /// dropped.
 House _houseFromJson(Object? json, int version) {
-  if (json case {
-    'number': final String number,
-    'status': final String status,
-    'comeBack': final String? comeBack,
-    'lastChange': final Object? lastChange,
-    'position': final Object? position,
-    'building': final Object? building,
-  }) {
+  if (json
+      case final Map<String, Object?> house &&
+          {
+            'number': final String number,
+            'status': final String status,
+            'comeBack': final String? comeBack,
+            'lastChange': final Object? lastChange,
+            'position': final Object? position,
+            'building': final Object? building,
+          }) {
     return House(
       number: _valid(HouseNumber.parse(number), 'house number'),
       // On a building the House factory makes it to do again, keeping the
@@ -227,6 +234,7 @@ House _houseFromJson(Object? json, int version) {
       lastChange: _stampOrNull(lastChange),
       position: position == null ? null : _positionFromJson(position),
       building: building == null ? null : _buildingFromJson(building, version),
+      tries: _triesFromJson(house['tries']),
     );
   }
   throw const FormatException('Not a stored house');
@@ -335,24 +343,40 @@ Map<String, Object?> _dwellingToJson(Dwelling dwelling) => {
   'status': _statusToJson(dwelling.status),
   'comeBack': dwelling.comeBack?.hint,
   'lastChange': _stampToJson(dwelling.lastChange),
+  ..._triesToJson(dwelling.tries),
 };
 
 Dwelling _dwellingFromJson(Object? json, int version) {
-  if (json case {
-    'label': final String label,
-    'status': final String status,
-    'comeBack': final String? comeBack,
-    'lastChange': final Object? lastChange,
-  }) {
+  if (json
+      case final Map<String, Object?> dwelling &&
+          {
+            'label': final String label,
+            'status': final String status,
+            'comeBack': final String? comeBack,
+            'lastChange': final Object? lastChange,
+          }) {
     return Dwelling(
       label: _valid(DwellingLabel.parse(label), 'door label'),
       status: _statusFromJson(status, comeBack: comeBack, version: version),
       comeBack: _comeBackOrNull(comeBack, version),
       lastChange: _stampOrNull(lastChange),
+      tries: _triesFromJson(dwelling['tries']),
     );
   }
   throw const FormatException('Not a stored door');
 }
+
+/// The `tries` of a house or door: none before the first try.
+Map<String, Object?> _triesToJson(NobodyHomeTries tries) => {
+  if (tries.count > 0) 'tries': tries.count,
+};
+
+/// The tries stored as [json]; none when there is no `tries`.
+NobodyHomeTries _triesFromJson(Object? json) => switch (json) {
+  null => NobodyHomeTries.none,
+  final int count => _valid(NobodyHomeTries.create(count), 'tries'),
+  _ => throw const FormatException('Not stored tries'),
+};
 
 Map<String, Object?>? _stampToJson(ChangeStamp? stamp) => switch (stamp) {
   null => null,

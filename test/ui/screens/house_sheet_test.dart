@@ -16,10 +16,11 @@ import '../../support/fakes/fake_street_repository.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 import '../support/app_overrides.dart';
+import '../support/finders.dart';
 
 final _id = StreetId('lilas');
 
-/// 1 to do, 5 « repasser » « après 19h », 7 to do.
+/// 1 to do, 5 « repasser » « après 19h », 7 to do, 9 nobody home twice.
 final _lilas = valueOf(
   Street.create(
     id: _id,
@@ -33,6 +34,7 @@ final _lilas = valueOf(
         comeBack: comeBack('après 19h'),
       ),
       House(number: n('7')),
+      House(number: n('9'), status: VisitStatus.nobodyHome, tries: tries(2)),
     ],
   ),
 );
@@ -206,6 +208,108 @@ void main() {
       await closeSheet(tester);
 
       expect(stored('5').comeBack, comeBack(longest));
+    },
+  );
+
+  testWidgets(
+    'should mark the house nobody home once more from its sheet, then put it '
+    'back with Annuler',
+    (tester) async {
+      final semantics = tester.ensureSemantics();
+      await holdTile(tester, '9');
+      expect(
+        tester.widget<Text>(find.byKey(const Key('house.tries'))).data,
+        '2 passages sans personne',
+      );
+
+      await tester.tap(find.byKey(const Key('house.nobodyHomeAgain')));
+      await tester.pumpAndSettle();
+
+      // The sheet closed; the street tells what changed, as after a tap.
+      expect(find.byKey(const Key('house.number')), findsNothing);
+      expect(stored('9').status, VisitStatus.nobodyHome);
+      expect(stored('9').tries, tries(3));
+      expect(findArrowText('9 → Personne (3e passage)'), findsOneWidget);
+      expect(
+        find.descendant(of: _tile('9'), matching: find.text('×3')),
+        findsOneWidget,
+      );
+      expect(
+        tester.getSemantics(_tile('9')).label,
+        'Numéro 9, personne, 3e passage',
+      );
+
+      await tester.tap(find.text('Annuler'));
+      await tester.pumpAndSettle();
+
+      expect(stored('9').tries, tries(2));
+      expect(
+        find.descendant(of: _tile('9'), matching: find.text('×2')),
+        findsOneWidget,
+      );
+      semantics.dispose();
+    },
+  );
+
+  testWidgets(
+    'should store the hint before « Repassé, toujours personne » marks the '
+    'house',
+    (tester) async {
+      await holdTile(tester, '5');
+      // Its first try: the block counts none yet.
+      expect(
+        tester.widget<Text>(find.byKey(const Key('house.tries'))).data,
+        '0 passage sans personne',
+      );
+      await tester.enterText(
+        find.byKey(const Key('house.comeBackHint.field')),
+        'samedi',
+      );
+
+      await tester.tap(find.byKey(const Key('house.nobodyHomeAgain')));
+      await tester.pumpAndSettle();
+
+      expect(stored('5').status, VisitStatus.nobodyHome);
+      expect(stored('5').tries, tries(1));
+      // The hint was stored first, then dropped with « repasser »: Annuler
+      // gives the house back with it.
+      expect(findArrowText('5 → Personne'), findsOneWidget);
+      await tester.tap(find.text('Annuler'));
+      await tester.pumpAndSettle();
+      expect(stored('5').comeBack, comeBack('samedi'));
+    },
+  );
+
+  testWidgets(
+    'should grey « Repassé, toujours personne » while the house is not '
+    'nobody home or to come back',
+    (tester) async {
+      await holdTile(tester, '1');
+      final again = find.byKey(const Key('house.nobodyHomeAgain'));
+      expect(
+        tester
+            .widget<OutlinedButton>(
+              find.descendant(of: again, matching: find.byType(OutlinedButton)),
+            )
+            .onPressed,
+        isNull,
+      );
+
+      await tester.tap(find.byKey(const ValueKey('house.status.nobodyHome')));
+      await tester.pumpAndSettle();
+
+      expect(
+        tester
+            .widget<OutlinedButton>(
+              find.descendant(of: again, matching: find.byType(OutlinedButton)),
+            )
+            .onPressed,
+        isNotNull,
+      );
+      expect(
+        tester.widget<Text>(find.byKey(const Key('house.tries'))).data,
+        '1 passage sans personne',
+      );
     },
   );
 }

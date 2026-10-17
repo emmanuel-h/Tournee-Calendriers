@@ -4,7 +4,10 @@ import 'package:tournee_calendriers/application/use_cases/mark.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
+import 'package:tournee_calendriers/domain/street/nobody_home_tries.dart';
+import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/street/follows_street.dart';
 import 'package:tournee_calendriers/presentation/street/street_view_state.dart';
@@ -57,8 +60,40 @@ final class StreetNotifier extends Notifier<StreetViewState>
     switch (result) {
       case Ok(value: final change):
         keepForUndo(change);
-        return MarkedHouse(number: number, status: status);
+        return MarkedHouse(
+          number: number,
+          status: status,
+          // The tries the house keeps with its new status, as the street
+          // just stored them.
+          tries: shownTries(NobodyHomeTries.keptBy(status, house.tries)),
+        );
       case Err():
+        return null;
+    }
+  }
+
+  /// « Repassé, toujours personne », chosen in the Fiche maison of
+  /// [number] (which then closed): the house is « personne » with one more
+  /// try. Returns what changed, for the snackbar « 7 → Personne (3e
+  /// passage) » and its « Annuler » ([undo]); null when the street refused
+  /// (the house is no longer « personne » or « repasser », or gone).
+  Future<MarkedHouse?> nobodyHomeAgain(HouseNumber number) async {
+    final result = await ref.read(setHouseDetailsProvider)(
+      streetId,
+      number,
+      const NobodyHomeAgainMark(),
+    );
+    switch (result) {
+      case Ok(value: final HouseNobodyHomeAgain change):
+        keepForUndo(change);
+        return MarkedHouse(
+          number: number,
+          status: VisitStatus.nobodyHome,
+          tries: shownTries(change.tries),
+        );
+      // The use case makes no other change of this mark; `Ok` of another
+      // change is listed only so the `switch` covers every result.
+      case Ok() || Err():
         return null;
     }
   }

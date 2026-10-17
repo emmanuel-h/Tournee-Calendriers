@@ -408,6 +408,84 @@ describe('marking a house', () => {
   });
 });
 
+describe('tries with nobody home', () => {
+  /** A mark with the tries it writes: a count, or the field removed. */
+  const markWithTries = (label, status, tries, comeBack = null) => [
+    ...mark(label, status, comeBack),
+    [['houses', label, 'tries'], tries],
+  ];
+
+  it('should accept the first try and one more (« Repassé, toujours personne »)', async () => {
+    await assertSucceeds(updateFields(nationale(), markWithTries('4bis', 'NOBODY_HOME', 1)));
+    await assertSucceeds(updateFields(nationale(), markWithTries('4bis', 'NOBODY_HOME', 2)));
+  });
+
+  it('should accept the tries removed when the house is to do again', async () => {
+    await updateFields(nationale(), markWithTries('4bis', 'NOBODY_HOME', 3));
+
+    await assertSucceeds(
+      updateFields(nationale(), markWithTries('4bis', 'TO_DO', deleteField())),
+    );
+  });
+
+  it('should accept 99 tries and refuse 0, 100 or tries that are not a whole number', async () => {
+    await assertSucceeds(updateFields(nationale(), markWithTries('4bis', 'DONE', 99)));
+    for (const tries of [0, 100, -1, 1.5, '2', null]) {
+      await assertFails(updateFields(nationale(), markWithTries('4bis', 'NOBODY_HOME', tries)));
+    }
+  });
+
+  it('should accept a mark of an older app that leaves the tries as they were', async () => {
+    await updateFields(nationale(), markWithTries('4bis', 'NOBODY_HOME', 3));
+
+    await assertSucceeds(updateFields(nationale(), mark('4bis', 'TO_DO', null)));
+  });
+
+  it('should accept the tries of a door and refuse them out of range', async () => {
+    await assertSucceeds(
+      updateFields(nationale(), [
+        ...doorMark('A0-Gauche', 'NOBODY_HOME', null),
+        [['houses', '8', 'dwellings', 'A0-Gauche', 'tries'], 2],
+      ]),
+    );
+    await assertFails(
+      updateFields(nationale(), [
+        ...doorMark('A0-Gauche', 'NOBODY_HOME', null),
+        [['houses', '8', 'dwellings', 'A0-Gauche', 'tries'], 100],
+      ]),
+    );
+  });
+
+  it('should accept a door put back whole with its tries by an undo', async () => {
+    await assertSucceeds(
+      updateFields(nationale(), [
+        [
+          ['houses', '8', 'dwellings', 'A0-Gauche'],
+          doorEntry({ status: 'NOBODY_HOME', by: lea, at: threePm, tries: 2 }),
+        ],
+      ]),
+    );
+  });
+
+  it('should accept a house renumbered with its tries', async () => {
+    await assertSucceeds(
+      updateFields(nationale(), [
+        [['houses', '4bis'], deleteField()],
+        [
+          ['houses', '4ter'],
+          houseEntry(4, { sfx: 'ter', status: 'NOBODY_HOME', by: lea, at: threePm, tries: 2 }),
+        ],
+      ]),
+    );
+  });
+
+  it('should refuse a number added with tries', async () => {
+    await assertFails(
+      updateFields(nationale(), [[['houses', '20'], houseEntry(20, { tries: 1 })]]),
+    );
+  });
+});
+
 describe('a building', () => {
   it('should accept marking a door whose key holds a dot', async () => {
     await assertSucceeds(updateFields(nationale(), doorMark('A0-Porte 1.2', 'DONE', null)));

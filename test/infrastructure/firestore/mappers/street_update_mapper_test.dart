@@ -107,6 +107,35 @@ void main() {
       expect(update, {
         house('4', ['status']): 'NOBODY_HOME',
         house('4', ['comeBack']): null,
+        house('4', ['tries']): 1,
+        house('4', ['by']): 'paul',
+        house('4', ['at']): at(threePm),
+      });
+    });
+
+    test('should remove the tries when a house is to do again', () {
+      final update = updateOf(
+        lilas,
+        (s) => s.markHouse(n('4'), VisitStatus.toDo, by: paul, at: threePm),
+      );
+
+      expect(update[house('4', ['tries'])], removed);
+    });
+
+    test('should write one more try when nobody is home again', () {
+      final nobody = valueOf(
+        lilas.markHouse(n('4'), VisitStatus.nobodyHome, by: lea, at: twoPm),
+      ).$1;
+
+      final update = updateOf(
+        nobody,
+        (s) => s.markNobodyHomeAgain(n('4'), by: paul, at: threePm),
+      );
+
+      expect(update, {
+        house('4', ['status']): 'NOBODY_HOME',
+        house('4', ['comeBack']): null,
+        house('4', ['tries']): 2,
         house('4', ['by']): 'paul',
         house('4', ['at']): at(threePm),
       });
@@ -170,8 +199,39 @@ void main() {
       expect(update, {
         door('8', 'A1-12', 'status'): 'DONE',
         door('8', 'A1-12', 'comeBack'): null,
+        door('8', 'A1-12', 'tries'): removed,
         door('8', 'A1-12', 'by'): 'lea',
         door('8', 'A1-12', 'at'): at(twoPm),
+      });
+    });
+
+    test('should write one more try of a door when nobody is home again', () {
+      final nobody = valueOf(
+        lilas.markDwelling(
+          n('8'),
+          DwellingKey(escA, 1, d('12')),
+          VisitStatus.nobodyHome,
+          by: lea,
+          at: twoPm,
+        ),
+      ).$1;
+
+      final update = updateOf(
+        nobody,
+        (s) => s.markDwellingNobodyHomeAgain(
+          n('8'),
+          DwellingKey(escA, 1, d('12')),
+          by: paul,
+          at: threePm,
+        ),
+      );
+
+      expect(update, {
+        door('8', 'A1-12', 'status'): 'NOBODY_HOME',
+        door('8', 'A1-12', 'comeBack'): null,
+        door('8', 'A1-12', 'tries'): 2,
+        door('8', 'A1-12', 'by'): 'paul',
+        door('8', 'A1-12', 'at'): at(threePm),
       });
     });
 
@@ -243,6 +303,7 @@ void main() {
       expect(update, {
         house('4', ['status']): 'TO_DO',
         house('4', ['comeBack']): null,
+        house('4', ['tries']): removed,
         house('4', ['by']): 'paul',
         house('4', ['at']): at(threePm),
         house('4', ['labelStyle']): 'FLOOR_AND_NUMBER',
@@ -318,6 +379,7 @@ void main() {
       expect(update, {
         house('8', ['status']): 'COME_BACK',
         house('8', ['comeBack']): 'gardien',
+        house('8', ['tries']): removed,
         house('8', ['by']): 'paul',
         house('8', ['at']): at(threePm),
         house('8', ['labelStyle']): removed,
@@ -517,9 +579,25 @@ void main() {
       expect(update, {
         house('4', ['status']): 'DONE',
         house('4', ['comeBack']): null,
+        house('4', ['tries']): removed,
         house('4', ['by']): 'manu',
         house('4', ['at']): at(fourPm),
       });
+    });
+
+    test('should put the tries back when « personne » again is undone', () {
+      final twice = valueOf(
+        lilas.markHouse(n('4'), VisitStatus.nobodyHome, by: lea, at: twoPm),
+      ).$1;
+
+      final update = undoOf(
+        twice,
+        (s) => s.markNobodyHomeAgain(n('4'), by: paul, at: threePm),
+      );
+
+      expect(update[house('4', ['status'])], 'NOBODY_HOME');
+      expect(update[house('4', ['tries'])], 1);
+      expect(update[house('4', ['by'])], 'manu');
     });
 
     test(
@@ -558,6 +636,7 @@ void main() {
       expect(update, {
         house('4', ['status']): 'DONE',
         house('4', ['comeBack']): null,
+        house('4', ['tries']): removed,
         house('4', ['by']): 'manu',
         house('4', ['at']): at(fourPm),
         house('4', ['labelStyle']): removed,
@@ -586,6 +665,51 @@ void main() {
         });
       },
     );
+
+    test('should put the door back with its tries when undone', () {
+      final nobody = valueOf(
+        lilas.markDwelling(
+          n('8'),
+          DwellingKey(escA, 1, d('11')),
+          VisitStatus.nobodyHome,
+          by: lea,
+          at: twoPm,
+        ),
+      ).$1;
+
+      final update = undoOf(
+        nobody,
+        (s) => s.markDwellingNobodyHomeAgain(
+          n('8'),
+          DwellingKey(escA, 1, d('11')),
+          by: paul,
+          at: threePm,
+        ),
+      );
+
+      expect(update, {
+        house('8', ['dwellings', 'A1-11']): {
+          'status': 'NOBODY_HOME',
+          'comeBack': null,
+          'by': 'manu',
+          'at': at(fourPm),
+          'tries': 1,
+        },
+      });
+    });
+
+    test('should move a house back with its tries when renumbered', () {
+      final nobody = valueOf(
+        lilas.markHouse(n('4'), VisitStatus.nobodyHome, by: lea, at: twoPm),
+      ).$1;
+
+      final update = undoOf(
+        nobody,
+        (s) => s.renameNumber(n('4'), n('4bis'), by: paul, at: threePm),
+      );
+
+      expect((update[house('4')]! as Map)['tries'], 1);
+    });
 
     test('should put the door back whole, stamped with who undoes', () {
       final update = undoOf(

@@ -1,6 +1,7 @@
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
+import 'package:tournee_calendriers/domain/street/nobody_home_tries.dart';
 import 'package:tournee_calendriers/domain/street/progress.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
@@ -101,12 +102,74 @@ void main() {
           comeBack: comeBack('après 19h'),
           lastChange: paulAtThree,
         ),
+        'tries': Dwelling(
+          label: d('51'),
+          status: VisitStatus.comeBack,
+          comeBack: comeBack('après 19h'),
+          lastChange: leaAtTwo,
+          tries: tries(2),
+        ),
       };
       others.forEach((field, other) {
         test('should differ when the ${field}s differ', () {
           expect(full(), isNot(other));
         });
       });
+    });
+
+    group('tries', () {
+      test('should have none when new', () {
+        expect(Dwelling(label: d('51')).tries, NobodyHomeTries.none);
+      });
+
+      test('should keep its tries when nobody is home', () {
+        final dwelling = Dwelling(
+          label: d('51'),
+          status: VisitStatus.nobodyHome,
+          tries: tries(3),
+        );
+
+        expect(dwelling.tries, tries(3));
+      });
+
+      test('should count one try when nobody is home without any given', () {
+        final dwelling = Dwelling(
+          label: d('51'),
+          status: VisitStatus.nobodyHome,
+        );
+
+        expect(dwelling.tries, tries(1));
+      });
+
+      test('should drop its tries when to do', () {
+        final dwelling = Dwelling(label: d('51'), tries: tries(3));
+
+        expect(dwelling.tries, NobodyHomeTries.none);
+      });
+
+      test('should keep its tries when restamped', () {
+        final dwelling = Dwelling(
+          label: d('51'),
+          status: VisitStatus.done,
+          tries: tries(2),
+          lastChange: leaAtTwo,
+        );
+
+        expect(dwelling.restampedBy(paul).tries, tries(2));
+      });
+    });
+
+    test('should show its tries after its fields when it has some', () {
+      final dwelling = Dwelling(
+        label: d('51'),
+        status: VisitStatus.done,
+        tries: tries(2),
+      );
+
+      expect(
+        dwelling.toString(),
+        'Dwelling(51, VisitStatus.done, null, null, ×2)',
+      );
     });
 
     test('should show its fields when printed', () {

@@ -11,10 +11,11 @@
 //     houses: { "<label>": house } }                       ← "12", "3bis", "3A"
 //   house    = { n: 3, sfx: "bis" | null, lat | null, lon | null,
 //                status, comeBack: hint | null, by: uid | null, at: time | null,
+//                tries: 1–99,                                    ← only from the first try
 //                deletedAt: time | null, deletedBy: uid | null,   ← number in the Corbeille
 //                and on a building only: labelStyle, layout, dwellings }
 //   layout   = [ { esc: "A", floor: 5 | null, doors: ["51", "52"] } ]
-//   dwellings = { "A5-51": { status, comeBack, by, at } }
+//   dwellings = { "A5-51": { status, comeBack, by, at, tries } }   ← tries as a house's
 //   status   = "TO_DO" | "DONE" | "NOBODY_HOME" | "COME_BACK"
 //   labelStyle = "FLOOR_AND_NUMBER" | "FLOOR_AND_LETTER" | "FREE"
 //   time     = a Firestore Timestamp
@@ -29,6 +30,13 @@
 //
 // `shape` and `assignees` came with the map (T3.3): a street written before
 // has neither, and reads as having no shape and nobody covering it.
+//
+// `tries` (the tries with nobody home, #80) is written only when there is
+// at least one, and a missing field reads as none: the houses and doors
+// written before it, and those an older app marks, need no rewriting. The
+// domain then gives a « personne » without a count its first try
+// (`NobodyHomeTries.keptBy`), and drops a count an older app left on a
+// house it put back to do.
 //
 // Reading goes back through the domain's own checks (Street.create,
 // Building.create, ComeBack.create…), so stored data can never build a
@@ -55,6 +63,7 @@ import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
+import 'package:tournee_calendriers/domain/street/nobody_home_tries.dart';
 import 'package:tournee_calendriers/domain/street/removed_house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
@@ -89,6 +98,7 @@ Map<String, Object?> houseEntry(House house, {ChangeStamp? removal}) => {
   'status': statusName(house.status),
   'comeBack': house.comeBack?.hint,
   ...stampFields(house.lastChange, by: 'by', at: 'at'),
+  ...triesField(house.tries),
   ...stampFields(removal, by: 'deletedBy', at: 'deletedAt'),
   if (house.building case final building?) ...buildingFields(building),
 };
@@ -130,6 +140,12 @@ Map<String, Object?> dwellingEntry(Dwelling dwelling) => {
   'status': statusName(dwelling.status),
   'comeBack': dwelling.comeBack?.hint,
   ...stampFields(dwelling.lastChange, by: 'by', at: 'at'),
+  ...triesField(dwelling.tries),
+};
+
+/// The `tries` field of a house or door: none before the first try.
+Map<String, Object?> triesField(NobodyHomeTries tries) => {
+  if (tries.count > 0) 'tries': tries.count,
 };
 
 /// The fields [by] and [at] of [stamp]; both null without one.
@@ -270,6 +286,7 @@ Set<MemberId> _assigneesFrom(Object? json) => switch (json) {
       lastChange: stampOrNull(by, at),
       building: entry.containsKey('layout') ? _buildingFrom(entry) : null,
       position: _positionOrNull(latitude, longitude),
+      tries: _triesFrom(entry['tries']),
     );
     return (house, stampOrNull(deletedBy, deletedAt));
   }
@@ -352,21 +369,31 @@ Dwelling _dwellingFrom(
     'door label',
   );
   final key = DwellingKey(staircase, level, label);
-  if (dwellings[key.id] case {
-    'status': final String status,
-    'comeBack': final String? comeBack,
-    'by': final String? by,
-    'at': final Object? at,
-  }) {
+  if (dwellings[key.id]
+      case final Map<String, Object?> entry &&
+          {
+            'status': final String status,
+            'comeBack': final String? comeBack,
+            'by': final String? by,
+            'at': final Object? at,
+          }) {
     return Dwelling(
       label: label,
       status: _statusFrom(status),
       comeBack: _comeBackOrNull(comeBack),
       lastChange: stampOrNull(by, at),
+      tries: _triesFrom(entry['tries']),
     );
   }
   throw FormatException('Not a stored door', key.id);
 }
+
+/// The tries stored as [json]; none when the field is missing (or null).
+NobodyHomeTries _triesFrom(Object? json) => switch (json) {
+  null => NobodyHomeTries.none,
+  final int count => valid(NobodyHomeTries.create(count), 'tries'),
+  _ => throw const FormatException('Not stored tries'),
+};
 
 ComeBack? _comeBackOrNull(String? hint) =>
     hint == null ? null : valid(ComeBack.create(hint), '« repasser » hint');

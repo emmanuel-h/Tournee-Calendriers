@@ -9,6 +9,7 @@ import 'package:tournee_calendriers/domain/street/building/dwelling_label.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
+import 'package:tournee_calendriers/domain/street/nobody_home_tries.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
 
 import 'results.dart';
@@ -18,6 +19,9 @@ HouseNumber n(String text) => valueOf(HouseNumber.parse(text));
 
 /// A « repasser » with a hint the test knows is valid.
 ComeBack comeBack(String hint) => valueOf(ComeBack.create(hint));
+
+/// A count of tries with nobody home the test knows is valid: `tries(3)`.
+NobodyHomeTries tries(int count) => valueOf(NobodyHomeTries.create(count));
 
 /// A street name the test knows is valid.
 StreetName streetName(String text) => valueOf(StreetName.create(text));

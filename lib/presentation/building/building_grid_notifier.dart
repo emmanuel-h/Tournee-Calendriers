@@ -4,7 +4,10 @@ import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/building/building.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
+import 'package:tournee_calendriers/domain/street/nobody_home_tries.dart';
+import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/presentation/building/building_grid_state.dart';
 import 'package:tournee_calendriers/presentation/building/chooses_staircase.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
@@ -60,15 +63,45 @@ final class BuildingGridNotifier extends Notifier<BuildingGridState>
     switch (result) {
       case Ok(value: final change):
         keepForUndo(change);
+        final status = dwelling.status.next;
         return (
           key: door,
-          status: dwelling.status.next,
+          status: status,
           namesStaircase: building.staircases.length > 1,
+          tries: shownTries(NobodyHomeTries.keptBy(status, dwelling.tries)),
         );
       // The door was there a moment ago; a refusal can only come from a
       // teammate's change in between (M2): the grid shows the building as
       // it is.
       case Err():
+        return null;
+    }
+  }
+
+  /// « Repassé, toujours personne », chosen in the sheet of [door] (which
+  /// then closed): the door is « personne » with one more try. Returns
+  /// what changed, for the snackbar and its « Annuler »; null when the
+  /// street refused.
+  Future<MarkedDoor?> nobodyHomeAgain(DwellingKey door) async {
+    final building = _building;
+    if (building == null) return null;
+    final result = await ref.read(markDwellingProvider)(
+      key.street,
+      key.number,
+      door,
+      const NobodyHomeAgainMark(),
+    );
+    switch (result) {
+      case Ok(value: final DwellingNobodyHomeAgain change):
+        keepForUndo(change);
+        return (
+          key: door,
+          status: VisitStatus.nobodyHome,
+          namesStaircase: building.staircases.length > 1,
+          tries: shownTries(change.tries),
+        );
+      // No other change comes of this mark; listed for a complete `switch`.
+      case Ok() || Err():
         return null;
     }
   }
@@ -108,6 +141,7 @@ final class BuildingGridNotifier extends Notifier<BuildingGridState>
                   (
                     key: DwellingKey(shown.name, floor.level, dwelling.label),
                     mark: TileMark.ofDwelling(dwelling),
+                    tries: shownTries(dwelling.tries),
                   ),
               ],
             ),

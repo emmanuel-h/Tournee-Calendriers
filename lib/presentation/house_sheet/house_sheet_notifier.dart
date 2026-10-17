@@ -5,6 +5,7 @@ import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
+import 'package:tournee_calendriers/domain/street/nobody_home_tries.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
@@ -53,12 +54,16 @@ typedef _Marks = ({
   VisitStatus? status,
   ComeBack? comeBack,
   ChangeStamp? lastChange,
+  NobodyHomeTries tries,
 });
 
 /// Follows one house, building or door of a street on the phone
 /// (`ObserveStreet`, offline) and stores each control of its sheet: the
 /// status (« Repasser » among them) and the hint of the « repasser »; on a
-/// building itself, its own « Repasser » box instead of a status. The three
+/// building itself, its own « Repasser » box instead of a status.
+/// « Repassé, toujours personne » is not stored here: the sheet closes and
+/// the screen behind stores it, so its snackbar offers « Annuler »
+/// (`StreetNotifier.nobodyHomeAgain`). The three
 /// sheets differ only in what they read ([_marksIn]) and the use case that
 /// stores ([_storer]); the rules below are written once.
 ///
@@ -202,6 +207,7 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState>
       status: marks.status,
       comeBack: marks.comeBack != null,
       comeBackHint: marks.comeBack?.hint ?? '',
+      tries: marks.tries.count,
       // The clock tells « today » from « earlier »; reading it here, and
       // not `DateTime.now()`, lets the tests fix the day.
       lastChange: stamp == null
@@ -235,6 +241,7 @@ final class HouseSheetNotifier extends MarksSheetNotifier {
       status: house.status,
       comeBack: house.comeBack,
       lastChange: house.lastChange,
+      tries: house.tries,
     ),
     _ => null,
   };
@@ -267,6 +274,7 @@ final class BuildingDetailsNotifier extends MarksSheetNotifier {
       status: null,
       comeBack: house.comeBack,
       lastChange: house.lastChange,
+      tries: NobodyHomeTries.none,
     ),
     _ => null,
   };
@@ -303,6 +311,7 @@ final class DoorSheetNotifier extends MarksSheetNotifier {
       status: door.status,
       comeBack: door.comeBack,
       lastChange: door.lastChange,
+      tries: door.tries,
     );
   }
 

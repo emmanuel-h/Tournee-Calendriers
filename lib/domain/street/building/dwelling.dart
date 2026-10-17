@@ -3,6 +3,7 @@ import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling_label.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
+import 'package:tournee_calendriers/domain/street/nobody_home_tries.dart';
 import 'package:tournee_calendriers/domain/street/progress.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
@@ -10,22 +11,36 @@ import 'package:tournee_calendriers/domain/street/visit_status.dart';
 /// aggregate, identified on its floor by its [label].
 ///
 /// A dwelling carries the same marks as a single house (status, the hint of
-/// its « repasser », last change) and follows the same rule: it has a
-/// [comeBack] exactly when it is « repasser ». It is immutable; the street
-/// replaces it to change it.
+/// its « repasser », its tries with nobody home, last change) and follows
+/// the same rules: it has a [comeBack] exactly when it is « repasser », and
+/// the [tries] its status allows. It is immutable; the street replaces it
+/// to change it.
 final class Dwelling {
-  const Dwelling._(this.label, this.status, this.comeBack, this.lastChange);
+  const Dwelling._(
+    this.label,
+    this.status,
+    this.comeBack,
+    this.lastChange,
+    this.tries,
+  );
 
   /// A dwelling labelled [label]; by default not visited yet, with no
-  /// change recorded. Its [comeBack] follows its status
-  /// ([ComeBack.keptBy]; see `House` for why a factory does it).
+  /// change recorded. Its [comeBack] and [tries] follow its status
+  /// ([ComeBack.keptBy], [NobodyHomeTries.keptBy]; see `House` for why a
+  /// factory does it).
   factory Dwelling({
     required DwellingLabel label,
     VisitStatus status = VisitStatus.toDo,
     ComeBack? comeBack,
     ChangeStamp? lastChange,
-  }) =>
-      Dwelling._(label, status, ComeBack.keptBy(status, comeBack), lastChange);
+    NobodyHomeTries tries = NobodyHomeTries.none,
+  }) => Dwelling._(
+    label,
+    status,
+    ComeBack.keptBy(status, comeBack),
+    lastChange,
+    NobodyHomeTries.keptBy(status, tries),
+  );
 
   final DwellingLabel label;
   final VisitStatus status;
@@ -36,6 +51,9 @@ final class Dwelling {
   /// Who changed the dwelling last and when; null when nobody has yet.
   final ChangeStamp? lastChange;
 
+  /// How many times nobody was home (#80), as on a single house.
+  final NobodyHomeTries tries;
+
   /// Whether someone marked the door: a status other than to do
   /// (« repasser » included). Its [lastChange] alone is not a mark.
   bool get hasMarks => status != VisitStatus.toDo;
@@ -45,8 +63,13 @@ final class Dwelling {
 
   /// This door with its last change made by [member], at the same time
   /// (see `Street.restampedBy`).
-  Dwelling restampedBy(MemberId member) =>
-      Dwelling._(label, status, comeBack, lastChange?.restampedBy(member));
+  Dwelling restampedBy(MemberId member) => Dwelling._(
+    label,
+    status,
+    comeBack,
+    lastChange?.restampedBy(member),
+    tries,
+  );
 
   @override
   bool operator ==(Object other) =>
@@ -54,14 +77,19 @@ final class Dwelling {
       other.label == label &&
       other.status == status &&
       other.comeBack == comeBack &&
-      other.lastChange == lastChange;
+      other.lastChange == lastChange &&
+      other.tries == tries;
 
   @override
-  int get hashCode => Object.hash(label, status, comeBack, lastChange);
+  int get hashCode => Object.hash(label, status, comeBack, lastChange, tries);
 
+  /// « ×2 » at the end only when the door has tries, so a failing test
+  /// stays short.
   @override
-  String toString() =>
-      'Dwelling(${label.text}, $status, $comeBack, $lastChange)';
+  String toString() {
+    final ends = tries.count > 0 ? ', ×${tries.count}' : '';
+    return 'Dwelling(${label.text}, $status, $comeBack, $lastChange$ends)';
+  }
 }
 
 /// Where a dwelling is in its building: its [staircase], the [level] of its

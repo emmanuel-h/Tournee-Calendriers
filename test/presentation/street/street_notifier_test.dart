@@ -25,7 +25,7 @@ final _id = StreetId('lilas');
 final _houses = [
   House(number: n('1')),
   House(number: n('3'), status: VisitStatus.done),
-  House(number: n('3bis'), status: VisitStatus.nobodyHome),
+  House(number: n('3bis'), status: VisitStatus.nobodyHome, tries: tries(2)),
   House(
     number: n('5'),
     status: VisitStatus.comeBack,
@@ -52,8 +52,17 @@ Street _street({List<House>? houses, String name = 'Rue des Lilas'}) => valueOf(
   ),
 );
 
-HouseTile _tile(String number, TileMark mark, {bool isBuilding = false}) =>
-    HouseTile(number: n(number), mark: mark, isBuilding: isBuilding);
+HouseTile _tile(
+  String number,
+  TileMark mark, {
+  bool isBuilding = false,
+  int? tries,
+}) => HouseTile(
+  number: n(number),
+  mark: mark,
+  isBuilding: isBuilding,
+  tries: tries,
+);
 
 void main() {
   late FakeStreetRepository streets;
@@ -113,7 +122,7 @@ void main() {
       expect(state.odd, [
         _tile('1', const ToDoMark()),
         _tile('3', const DoneMark()),
-        _tile('3bis', const NobodyHomeMark()),
+        _tile('3bis', const NobodyHomeMark(), tries: 2),
         _tile('5', const ComeBackMark()),
         _tile('7', const ToDoMark()),
       ]);
@@ -313,9 +322,12 @@ void main() {
 
       expect(
         marked,
-        MarkedHouse(number: n('3bis'), status: VisitStatus.comeBack),
+        MarkedHouse(number: n('3bis'), status: VisitStatus.comeBack, tries: 2),
       );
-      expect((await shown()).odd[2], _tile('3bis', const ComeBackMark()));
+      expect(
+        (await shown()).odd[2],
+        _tile('3bis', const ComeBackMark(), tries: 2),
+      );
       expect((await shown()).comeBack, 3);
     });
 
@@ -351,6 +363,68 @@ void main() {
 
       expect(await notifier().cycle(n('99')), isNull);
       expect(streets.saved, isEmpty);
+    });
+  });
+
+  group('nobodyHomeAgain', () {
+    test('should add a try to the house and say what changed', () async {
+      phoneWith(_street());
+      await settled();
+
+      final marked = await notifier().nobodyHomeAgain(n('3bis'));
+
+      expect(
+        marked,
+        MarkedHouse(
+          number: n('3bis'),
+          status: VisitStatus.nobodyHome,
+          tries: 3,
+        ),
+      );
+      final (_, change) = streets.saved.single;
+      expect(change, isA<HouseNobodyHomeAgain>());
+      expect((change as HouseNobodyHomeAgain).stamp, leaAtTwo);
+      expect(
+        (await shown()).odd[2],
+        _tile('3bis', const NobodyHomeMark(), tries: 3),
+      );
+    });
+
+    test('should make a come-back house nobody home again', () async {
+      phoneWith(_street());
+      await settled();
+
+      final marked = await notifier().nobodyHomeAgain(n('5'));
+
+      // Its first try: no count shown yet.
+      expect(
+        marked,
+        MarkedHouse(number: n('5'), status: VisitStatus.nobodyHome),
+      );
+      expect((await shown()).odd[3], _tile('5', const NobodyHomeMark()));
+    });
+
+    test('should change nothing when the house is done', () async {
+      phoneWith(_street());
+      await settled();
+
+      expect(await notifier().nobodyHomeAgain(n('3')), isNull);
+      expect(streets.saved, isEmpty);
+    });
+
+    test('should put the house back when Annuler is tapped', () async {
+      final street = _street();
+      phoneWith(street);
+      await settled();
+      await notifier().nobodyHomeAgain(n('3bis'));
+
+      await notifier().undo();
+
+      expect(streets[_id]!.houses, street.houses);
+      expect(
+        (await shown()).odd[2],
+        _tile('3bis', const NobodyHomeMark(), tries: 2),
+      );
     });
   });
 

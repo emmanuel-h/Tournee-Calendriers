@@ -3,6 +3,7 @@ import 'package:tournee_calendriers/domain/street/building/building_status.dart'
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
+import 'package:tournee_calendriers/domain/street/nobody_home_tries.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
 // The view state of the street screen (PLAN §5.6, mockup Main). The rules
@@ -86,12 +87,18 @@ final class PartialBuildingMark extends TileMark {
   String toString() => 'PartialBuildingMark($done/$total)';
 }
 
+/// The tries a tile shows next to its glyph (« ×3 », #80): the count from
+/// two tries on, whatever the status (a house done after three tries keeps
+/// its « ×3 »); null below two, where « personne » alone says it all.
+int? shownTries(NobodyHomeTries tries) => tries.count >= 2 ? tries.count : null;
+
 /// One tile of the street screen.
 final class HouseTile {
   const HouseTile({
     required this.number,
     required this.mark,
     required this.isBuilding,
+    this.tries,
   });
 
   /// The tile of [house].
@@ -99,6 +106,7 @@ final class HouseTile {
     number: house.number,
     mark: TileMark.of(house),
     isBuilding: house.isBuilding,
+    tries: shownTries(house.tries),
   );
 
   /// Which house; its `label` is what the tile shows (`3bis`).
@@ -108,19 +116,24 @@ final class HouseTile {
   /// A tap opens the building's grid instead of cycling a status.
   final bool isBuilding;
 
+  /// « ×3 » next to the glyph; null when not shown ([shownTries]).
+  final int? tries;
+
   @override
   bool operator ==(Object other) =>
       other is HouseTile &&
       other.number == number &&
       other.mark == mark &&
-      other.isBuilding == isBuilding;
+      other.isBuilding == isBuilding &&
+      other.tries == tries;
 
   @override
-  int get hashCode => Object.hash(number, mark, isBuilding);
+  int get hashCode => Object.hash(number, mark, isBuilding, tries);
 
   @override
   String toString() =>
-      'HouseTile(${number.label}, $mark, building: $isBuilding)';
+      'HouseTile(${number.label}, $mark, building: $isBuilding, '
+      'tries: $tries)';
 }
 
 /// Which columns the screen shows. Decided on every house of the street,
@@ -200,23 +213,30 @@ final class StreetShown extends StreetViewState {
   double get fraction => total == 0 ? 0 : done / total;
 }
 
-/// What a tap changed, for the snackbar « 7 → Personne » and the
-/// screen-reader announcement.
+/// What a tap (or « Repassé, toujours personne ») changed, for the
+/// snackbar « 7 → Personne (3e passage) » and the screen-reader
+/// announcement.
 final class MarkedHouse {
-  const MarkedHouse({required this.number, required this.status});
+  const MarkedHouse({required this.number, required this.status, this.tries});
 
   final HouseNumber number;
 
   /// The status the house now has.
   final VisitStatus status;
 
+  /// The tries the house now shows ([shownTries]); null below two.
+  final int? tries;
+
   @override
   bool operator ==(Object other) =>
-      other is MarkedHouse && other.number == number && other.status == status;
+      other is MarkedHouse &&
+      other.number == number &&
+      other.status == status &&
+      other.tries == tries;
 
   @override
-  int get hashCode => Object.hash(number, status);
+  int get hashCode => Object.hash(number, status, tries);
 
   @override
-  String toString() => 'MarkedHouse(${number.label}, $status)';
+  String toString() => 'MarkedHouse(${number.label}, $status, tries: $tries)';
 }

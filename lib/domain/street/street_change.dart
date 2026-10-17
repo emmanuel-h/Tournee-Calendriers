@@ -7,6 +7,7 @@ import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
+import 'package:tournee_calendriers/domain/street/nobody_home_tries.dart';
 import 'package:tournee_calendriers/domain/street/removed_house.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
@@ -76,7 +77,8 @@ final class HouseMarked extends HouseChange {
   /// The come-back the house has after the change, which storage writes
   /// with the status: the hint it already had when it stays « repasser »,
   /// none when it becomes « repasser », null with any other status (see
-  /// `ComeBack.keptBy`).
+  /// `ComeBack.keptBy`). Its tries follow the status the same way
+  /// (`NobodyHomeTries.keptBy`), and are written with it too.
   ComeBack? get comeBack => ComeBack.keptBy(status, before.comeBack);
 
   @override
@@ -89,6 +91,38 @@ final class HouseMarked extends HouseChange {
   @override
   String toString() =>
       'HouseMarked(${streetId.value}, ${number.label}, $status, $stamp)';
+}
+
+/// « Repassé, toujours personne » on the house at [number] (#80): it is
+/// « personne » with one more try, [tries] in all, and has no « repasser »
+/// hint any more.
+///
+/// Storage writes the same fields as a [HouseMarked]: `status`,
+/// `comeBack`, `tries`, `by` and `at`, by field path.
+final class HouseNobodyHomeAgain extends HouseChange {
+  const HouseNobodyHomeAgain({
+    required super.streetId,
+    required super.before,
+    required super.stamp,
+    required this.tries,
+  });
+
+  /// The tries the house has after the change.
+  final NobodyHomeTries tries;
+
+  @override
+  bool operator ==(Object other) =>
+      other is HouseNobodyHomeAgain &&
+      _sameHouseChange(other) &&
+      other.tries == tries;
+
+  @override
+  int get hashCode => Object.hash(streetId, before, stamp, tries);
+
+  @override
+  String toString() =>
+      'HouseNobodyHomeAgain(${streetId.value}, ${number.label}, '
+      '×${tries.count}, $stamp)';
 }
 
 /// The « repasser » hint of the house at [number] was set to [comeBack];
@@ -214,6 +248,7 @@ final class NumberRenamed extends HouseChange {
     lastChange: stamp,
     building: before.building,
     position: before.position,
+    tries: before.tries,
   );
 
   @override
@@ -312,6 +347,39 @@ final class DwellingMarked extends DwellingChange {
 
   @override
   String toString() => 'DwellingMarked($_where, $status, $stamp)';
+}
+
+/// « Repassé, toujours personne » on the door at [key] of the building
+/// [number] (#80): « personne » with [tries] tries in all, as
+/// [HouseNobodyHomeAgain] for a house. Storage writes the door's `status`,
+/// `comeBack`, `tries`, `by` and `at`.
+final class DwellingNobodyHomeAgain extends DwellingChange {
+  const DwellingNobodyHomeAgain({
+    required super.streetId,
+    required super.number,
+    required super.staircase,
+    required super.level,
+    required super.before,
+    required super.stamp,
+    required this.tries,
+  });
+
+  /// The tries the door has after the change.
+  final NobodyHomeTries tries;
+
+  @override
+  bool operator ==(Object other) =>
+      other is DwellingNobodyHomeAgain &&
+      _sameDwellingChange(other) &&
+      other.tries == tries;
+
+  @override
+  int get hashCode =>
+      Object.hash(streetId, number, staircase, level, before, stamp, tries);
+
+  @override
+  String toString() =>
+      'DwellingNobodyHomeAgain($_where, ×${tries.count}, $stamp)';
 }
 
 /// The « repasser » hint of the door at [key] was set to [comeBack].

@@ -4,6 +4,7 @@ import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/building/building.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
+import 'package:tournee_calendriers/domain/street/nobody_home_tries.dart';
 import 'package:tournee_calendriers/domain/street/progress.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
@@ -26,6 +27,7 @@ final class House {
     this.lastChange,
     this.building,
     this.position,
+    this.tries,
   );
 
   /// A house with [number]; by default a single house not visited yet, with
@@ -40,7 +42,10 @@ final class House {
   ///   (see `Building.status`); it keeps the [comeBack] it is given, its own;
   /// - a single house has a [comeBack] exactly when it is
   ///   [VisitStatus.comeBack] (see [ComeBack.keptBy]): « repasser » without
-  ///   hint when none is given, and none at all with another status.
+  ///   hint when none is given, and none at all with another status;
+  /// - a single house keeps the [tries] its status allows (see
+  ///   [NobodyHomeTries.keptBy]: none when to do, at least one when nobody
+  ///   is home); a building has none, its doors count theirs.
   factory House({
     required HouseNumber number,
     VisitStatus status = VisitStatus.toDo,
@@ -48,6 +53,7 @@ final class House {
     ChangeStamp? lastChange,
     Building? building,
     GeoPoint? position,
+    NobodyHomeTries tries = NobodyHomeTries.none,
   }) {
     final isSingle = building == null;
     return House._(
@@ -57,6 +63,7 @@ final class House {
       lastChange,
       building,
       position,
+      isSingle ? NobodyHomeTries.keptBy(status, tries) : NobodyHomeTries.none,
     );
   }
 
@@ -85,12 +92,17 @@ final class House {
   /// command keeps it: a mark or a new number does not move the door.
   final GeoPoint? position;
 
+  /// How many times nobody was home (#80): « ×3 » on the tile from two.
+  /// Always none on a building.
+  final NobodyHomeTries tries;
+
   /// Whether the house is a building.
   bool get isBuilding => building != null;
 
   /// Whether someone marked the house: a status other than to do, a
   /// « repasser », or a mark on a door of its building. Its
-  /// [lastChange] alone is not a mark, nor is a building's layout.
+  /// [lastChange] alone is not a mark, nor is a building's layout. Its
+  /// [tries] need no check: a house to do has none.
   ///
   /// The edit mode asks before removing a number that has marks
   /// (PLAN §5.5); the house still goes to the Corbeille with them.
@@ -120,6 +132,7 @@ final class House {
     lastChange?.restampedBy(member),
     building?.restampedBy(member),
     position,
+    tries,
   );
 
   @override
@@ -130,18 +143,34 @@ final class House {
       other.comeBack == comeBack &&
       other.lastChange == lastChange &&
       other.building == building &&
-      other.position == position;
+      other.position == position &&
+      other.tries == tries;
 
   @override
-  int get hashCode =>
-      Object.hash(number, status, comeBack, lastChange, building, position);
+  int get hashCode => Object.hash(
+    number,
+    status,
+    comeBack,
+    lastChange,
+    building,
+    position,
+    tries,
+  );
 
-  /// A single house prints as before buildings existed; a building adds
-  /// itself at the end. The position is left out: it never changes after
-  /// the import, and the line stays readable in a failing test.
+  /// A single house prints as before buildings existed, with « ×3 » when
+  /// it has tries; a building adds itself at the end. The position is left
+  /// out: it never changes after the import, and the line stays readable
+  /// in a failing test.
   @override
   String toString() {
-    final fields = '${number.label}, $status, $comeBack, $lastChange';
-    return building == null ? 'House($fields)' : 'House($fields, $building)';
+    final fields = [
+      number.label,
+      status,
+      comeBack,
+      lastChange,
+      if (tries.count > 0) '×${tries.count}',
+      ?building,
+    ];
+    return 'House(${fields.join(', ')})';
   }
 }

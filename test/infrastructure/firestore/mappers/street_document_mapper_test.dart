@@ -239,6 +239,7 @@ void main() {
           'comeBack': '',
           'by': null,
           'at': null,
+          'tries': 2,
         },
       });
     });
@@ -283,7 +284,29 @@ void main() {
         'comeBack': null,
         'by': 'paul',
         'at': threePmStamp,
+        'tries': 1,
       });
+    });
+
+    test('should write the tries of a house once it has some', () {
+      final houses =
+          streetToDocument(richStreet)['houses']! as Map<String, Object?>;
+
+      expect((houses['5']! as Map<String, Object?>)['tries'], 3);
+    });
+
+    test('should write no tries for a house without any', () {
+      final house = houseEntry(House(number: n('7'), status: VisitStatus.done));
+
+      expect(house.containsKey('tries'), isFalse);
+    });
+
+    test('should write no tries for a door without any', () {
+      final door = dwellingEntry(
+        Dwelling(label: d('51'), status: VisitStatus.done),
+      );
+
+      expect(door.containsKey('tries'), isFalse);
     });
   });
 
@@ -410,6 +433,53 @@ void main() {
       final data = storedRich((data) => data.remove('assignees'));
 
       expect(read(data).assignees, isEmpty);
+    });
+
+    test('should read the first try of a house nobody answered when it has '
+        'no tries', () {
+      final street = read(
+        storedRich((data) {
+          (housesOf(data)['5'] as Map<String, dynamic>).remove('tries');
+        }),
+      );
+
+      expect(street.houseAt(n('5'))!.tries, tries(1));
+    });
+
+    test('should read no tries for a door without the field', () {
+      final street = read(
+        storedRich((data) {
+          ((eight(data)['dwellings'] as Map<String, dynamic>)['B0-01']
+                  as Map<String, dynamic>)
+              .remove('tries');
+        }),
+      );
+
+      final door = street
+          .houseAt(n('8'))!
+          .building!
+          .dwellingAt(DwellingKey(escB, 0, d('01')));
+      expect(door!.tries.count, 0);
+    });
+
+    test('should read no tries when the field is null', () {
+      final street = read(
+        storedRich((data) {
+          (housesOf(data)['3A'] as Map<String, dynamic>)['tries'] = null;
+        }),
+      );
+
+      expect(street.houseAt(n('3A'))!.tries.count, 0);
+    });
+
+    test('should drop the tries an older app left on a house to do', () {
+      final street = read(
+        storedRich((data) {
+          (housesOf(data)['1'] as Map<String, dynamic>)['tries'] = 2;
+        }),
+      );
+
+      expect(street.houseAt(n('1'))!.tries.count, 0);
     });
 
     test('should read a time in UTC', () {
@@ -546,6 +616,22 @@ void main() {
       expectUnreadable((data) {
         (housesOf(data)['14ter'] as Map<String, dynamic>)['deletedBy'] = null;
       });
+    });
+
+    test('should refuse tries that are not a whole number', () {
+      expectUnreadable(
+        (data) => (housesOf(data)['5'] as Map<String, dynamic>)['tries'] = '3',
+      );
+    });
+
+    test('should refuse tries the domain refuses', () {
+      expectUnreadable(
+        (data) => (housesOf(data)['5'] as Map<String, dynamic>)['tries'] = 100,
+      );
+    });
+
+    test('should refuse door tries the domain refuses', () {
+      expectUnreadable((data) => doorEleven(data)['tries'] = -1);
     });
 
     test('should refuse a label style it does not know', () {

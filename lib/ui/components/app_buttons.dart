@@ -54,6 +54,7 @@ final class SecondaryButton extends StatelessWidget {
     this.leading,
     this.destructive = false,
     this.strong = false,
+    this.outline,
   });
 
   final String label;
@@ -61,6 +62,11 @@ final class SecondaryButton extends StatelessWidget {
 
   /// 52 dp instead of 56 dp, for buttons inside sheets or side by side.
   final bool compact;
+
+  /// The colour of the outline when it is not the light line, for a
+  /// button on a tinted block (the yellow of « Repassé, toujours
+  /// personne »).
+  final Color? outline;
 
   /// Drawn before the label (the building of « Transformer en
   /// immeuble… »); decoration only, the label names the action. A widget
@@ -87,10 +93,13 @@ final class SecondaryButton extends StatelessWidget {
               BorderSide(color: accent, width: AppSizes.borderWidth),
             ),
           )
-        : strong
+        : strong || outline != null
         ? _sizeStyle(compact).copyWith(
             side: WidgetStatePropertyAll(
-              BorderSide(color: colors.ink, width: AppSizes.borderWidth),
+              BorderSide(
+                color: outline ?? colors.ink,
+                width: AppSizes.borderWidth,
+              ),
             ),
           )
         : _sizeStyle(compact);

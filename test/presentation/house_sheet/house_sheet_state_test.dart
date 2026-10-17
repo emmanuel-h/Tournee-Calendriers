@@ -202,6 +202,32 @@ void main() {
       );
     });
 
+    HouseSheetShown withStatus(VisitStatus? status) => HouseSheetShown(
+      streetName: 'Rue des Lilas',
+      number: n('5'),
+      status: status,
+      comeBack: false,
+      comeBackHint: '',
+      lastChange: null,
+    );
+
+    test('should have no tries by default', () {
+      expect(withStatus(VisitStatus.toDo).tries, 0);
+    });
+
+    for (final (status, offers) in [
+      (VisitStatus.toDo, false),
+      (VisitStatus.done, false),
+      (VisitStatus.nobodyHome, true),
+      (VisitStatus.comeBack, true),
+      (null, false),
+    ]) {
+      test('should ${offers ? '' : 'not '}offer « Repassé, toujours '
+          'personne » when the status is $status', () {
+        expect(withStatus(status).offersNobodyHomeAgain, offers);
+      });
+    }
+
     test('should be about a house by default', () {
       final state = HouseSheetShown(
         streetName: 'Rue des Lilas',

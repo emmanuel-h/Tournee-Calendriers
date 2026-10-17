@@ -12,12 +12,16 @@ enum HouseSheetExit {
   /// « Transformer en immeuble… »: the street screen opens « Décrire
   /// l'immeuble ».
   toBuilding,
+
+  /// « Repassé, toujours personne »: the street screen makes the house
+  /// « personne » with one more try, and offers « Annuler ».
+  nobodyHomeAgain,
 }
 
 /// Opens the Fiche maison of one house over the street screen (hold a
-/// tile, PLAN §5.7, `docs/mockups/House.dc.html`). Returns
-/// [HouseSheetExit.toBuilding] when it was left by « Transformer en
-/// immeuble… », null otherwise.
+/// tile, PLAN §5.7, `docs/mockups/House.dc.html`). Returns how it was left
+/// when the street screen has something to do next ([HouseSheetExit]),
+/// null otherwise.
 ///
 /// The sheet closes before the next one opens, rather than stacking two
 /// sheets: the street screen then opens « Décrire l'immeuble ».
@@ -29,8 +33,9 @@ Future<HouseSheetExit?> showHouseSheet(
   builder: (_) => HouseSheet(house: house),
 );
 
-/// The Fiche maison: number and street, the status control, « Repasser »
-/// with its hint, « Transformer en immeuble… », and the last change.
+/// The Fiche maison: number and street, the status control, the tries with
+/// « Repassé, toujours personne », « Repasser » with its hint,
+/// « Transformer en immeuble… », and the last change.
 final class HouseSheet extends StatelessWidget {
   const HouseSheet({super.key, required this.house});
 
@@ -55,6 +60,8 @@ final class HouseSheet extends StatelessWidget {
         leading: const BuildingIcon(size: AppSizes.smallIcon),
         onPressed: () => Navigator.of(context).pop(HouseSheetExit.toBuilding),
       ),
+      onNobodyHomeAgain: () =>
+          Navigator.of(context).pop(HouseSheetExit.nobodyHomeAgain),
     );
   }
 }

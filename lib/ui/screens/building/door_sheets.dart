@@ -6,12 +6,20 @@ import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/screens/building/floor_names.dart';
 import 'package:tournee_calendriers/ui/screens/street/marks_sheet.dart';
 
+/// How a door sheet was left, when the grid has something to do next.
+enum DoorSheetExit {
+  /// « Repassé, toujours personne »: the grid makes the door « personne »
+  /// with one more try, and offers « Annuler ».
+  nobodyHomeAgain,
+}
+
 /// Opens the sheet of one door (hold a door of the Immeuble grid, PLAN
 /// §5.7): the controls of the Fiche maison, without « Transformer en
 /// immeuble… ». Its title is the door, then where it is: « 51 · Esc. A ·
-/// 5e · 8 Rue des Lilas ».
-Future<void> showDoorSheet(BuildContext context, DoorSheetKey door) =>
-    showAppBottomSheet<void>(
+/// 5e · 8 Rue des Lilas ». Returns [DoorSheetExit.nobodyHomeAgain] when
+/// left by « Repassé, toujours personne », null otherwise.
+Future<DoorSheetExit?> showDoorSheet(BuildContext context, DoorSheetKey door) =>
+    showAppBottomSheet<DoorSheetExit>(
       context: context,
       builder: (context) {
         final l10n = AppLocalizations.of(context);
@@ -29,6 +37,8 @@ Future<void> showDoorSheet(BuildContext context, DoorSheetKey door) =>
               '${state.number.label} ${state.streetName}',
             ].join(' · '),
           ),
+          onNobodyHomeAgain: () =>
+              Navigator.of(context).pop(DoorSheetExit.nobodyHomeAgain),
         );
       },
     );

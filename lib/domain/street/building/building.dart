@@ -336,6 +336,7 @@ final class Building {
       status: before.status,
       comeBack: before.comeBack,
       lastChange: before.lastChange,
+      tries: before.tries,
     );
     return Ok(
       _withFloor(

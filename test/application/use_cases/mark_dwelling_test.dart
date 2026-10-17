@@ -76,6 +76,48 @@ void main() {
     expect(doorOf('02')!.comeBack, comeBack('soir'));
   });
 
+  test('should add a try to a door when nobody is home again', () async {
+    valueOf(
+      await markDwelling(
+        lilasId,
+        n('8'),
+        rdc('02'),
+        const StatusMark(VisitStatus.nobodyHome),
+      ),
+    );
+
+    final change = valueOf(
+      await markDwelling(
+        lilasId,
+        n('8'),
+        rdc('02'),
+        const NobodyHomeAgainMark(),
+      ),
+    );
+
+    expect(change, isA<DwellingNobodyHomeAgain>());
+    expect((change as DwellingNobodyHomeAgain).tries, tries(2));
+    expect(doorOf('02')!.tries, tries(2));
+    expect(doorOf('02')!.lastChange, leaAtTwo);
+  });
+
+  test('should refuse nobody home again on a door done', () async {
+    final failure = failureOf(
+      await markDwelling(
+        lilasId,
+        n('8'),
+        rdc('01'),
+        const NobodyHomeAgainMark(),
+      ),
+    );
+
+    expect(
+      failure,
+      const CommandRefused(DwellingChangeFailure.notToVisitAgain),
+    );
+    expect(streets.saved, isEmpty);
+  });
+
   test('should fail when the door is done and a hint is given', () async {
     final failure = failureOf(
       await markDwelling(

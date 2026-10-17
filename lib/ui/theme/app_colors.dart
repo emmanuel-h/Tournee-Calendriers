@@ -32,6 +32,7 @@ final class AppColors extends ThemeExtension<AppColors> {
     required this.nobodyHome,
     required this.onNobodyHome,
     required this.nobodyHomeBorder,
+    required this.nobodyHomePale,
     required this.comeBack,
     required this.onComeBack,
     required this.comeBackBorder,
@@ -75,6 +76,7 @@ final class AppColors extends ThemeExtension<AppColors> {
     nobodyHome: Color(0xFFF2B33D),
     onNobodyHome: Color(0xFF1B1F24),
     nobodyHomeBorder: Color(0xFFD99A22),
+    nobodyHomePale: Color(0xFFFDF3DC),
     comeBack: Color(0xFFD6E6F5),
     onComeBack: Color(0xFF1D4E7A),
     comeBackBorder: Color(0xFFA9C8E6),
@@ -120,6 +122,7 @@ final class AppColors extends ThemeExtension<AppColors> {
     nobodyHome: Color(0xFFF2B33D),
     onNobodyHome: Color(0xFF1B1F24),
     nobodyHomeBorder: Color(0xFFD99A22),
+    nobodyHomePale: Color(0xFF3A2F17),
     comeBack: Color(0xFF1D3B57),
     onComeBack: Color(0xFFD6E6F5),
     comeBackBorder: Color(0xFF3A6A96),
@@ -188,6 +191,10 @@ final class AppColors extends ThemeExtension<AppColors> {
   final Color nobodyHome;
   final Color onNobodyHome;
   final Color nobodyHomeBorder;
+
+  /// The pale yellow behind « 2 passages sans personne » and « Repassé,
+  /// toujours personne » in a house or door sheet (HouseNobody mockup).
+  final Color nobodyHomePale;
   final Color comeBack;
   final Color onComeBack;
   final Color comeBackBorder;

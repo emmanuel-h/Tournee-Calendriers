@@ -7,6 +7,7 @@ import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_notifie
 import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_state.dart';
 import 'package:tournee_calendriers/ui/components/come_back_block.dart';
 import 'package:tournee_calendriers/ui/components/limited_text_field.dart';
+import 'package:tournee_calendriers/ui/components/nobody_home_block.dart';
 import 'package:tournee_calendriers/ui/components/segmented_choice.dart';
 import 'package:tournee_calendriers/ui/components/sheet_scaffold.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
@@ -18,14 +19,17 @@ import 'package:tournee_calendriers/ui/theme/status_look.dart';
 
 /// The sheet of marks of a house, a door or a building itself (PLAN §5.7,
 /// `docs/mockups/House.dc.html`): a title, the status control « À faire |
-/// Fait | Personne | Repasser » and the « Quand repasser ? » field under it
-/// (a building itself has the « Repasser » box instead), an optional
-/// [action], and the last change. Every control is stored as soon
-/// as it changes; the tile behind follows at once.
+/// Fait | Personne | Repasser », the tries with nobody home and « Repassé,
+/// toujours personne » (`HouseNobody.dc.html`, enabled while it is
+/// « Personne » or « Repasser »), the « Quand repasser ? » field (a
+/// building itself has the « Repasser » box instead of both), an optional
+/// [action], and the last change. Every control is stored as soon as it
+/// changes; the tile behind follows at once.
 ///
-/// Choosing a status moves nothing on the sheet: the « Quand repasser ? »
-/// field is always there, greyed unless « Repasser » is chosen, and the
-/// line of the last change keeps its place before the first change.
+/// Choosing a status moves nothing on the sheet: the block of the tries and
+/// the « Quand repasser ? » field are always there, greyed unless their
+/// statuses are chosen, and the line of the last change keeps its place
+/// before the first change.
 ///
 /// The hint field is stored when it could otherwise be lost: when
 /// the field loses focus (« OK » on the keyboard), before
@@ -41,6 +45,7 @@ final class MarksSheet extends ConsumerStatefulWidget {
     required this.goneMessage,
     required this.title,
     this.action,
+    this.onNobodyHomeAgain,
   });
 
   /// The notifier of what the sheet shows (`houseSheetProvider(key)`…).
@@ -57,6 +62,12 @@ final class MarksSheet extends ConsumerStatefulWidget {
 
   /// A button under the « repasser » (« Transformer en immeuble… »).
   final Widget? action;
+
+  /// « Repassé, toujours personne »: called once the hint is stored, to
+  /// close the sheet so the screen behind marks the house or door and
+  /// offers « Annuler ». Null on a building's own sheet, which has no
+  /// status.
+  final VoidCallback? onNobodyHomeAgain;
 
   @override
   ConsumerState<MarksSheet> createState() => _MarksSheetState();
@@ -130,6 +141,17 @@ final class _MarksSheetState extends ConsumerState<MarksSheet> {
     unawaited(_notifier.setComeBack(on: on));
   }
 
+  /// « Repassé, toujours personne »: the hint typed is stored first (and
+  /// every change asked before it, which the notifier runs in order), so
+  /// the mark the screen then makes starts from it rather than racing it.
+  Future<void> _nobodyHomeAgain(VoidCallback leave) async {
+    try {
+      await _notifier.saveComeBackHint(_hint.text);
+    } finally {
+      if (mounted) leave();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -167,6 +189,14 @@ final class _MarksSheetState extends ConsumerState<MarksSheet> {
                 status: status,
                 onSelected: _setStatus,
               ),
+              if (widget.onNobodyHomeAgain case final leave?)
+                NobodyHomeBlock(
+                  name: name,
+                  tries: state.tries,
+                  onNobodyHomeAgain: state.offersNobodyHomeAgain
+                      ? () => unawaited(_nobodyHomeAgain(leave))
+                      : null,
+                ),
               _ComeBackHint(
                 name: name,
                 on: state.comeBack,

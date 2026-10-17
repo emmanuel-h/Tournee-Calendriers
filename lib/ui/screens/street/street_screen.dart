@@ -127,25 +127,34 @@ final class _MarkingScreenState extends ConsumerState<_MarkingScreen>
   /// status, said aloud for screen readers and shown in the snackbar.
   Future<void> _cycle(HouseNumber number) async {
     unawaited(HapticFeedback.lightImpact());
-    // Read now: after the `await`, this context may be gone.
-    final l10n = AppLocalizations.of(context);
-    final view = View.of(context);
-    final direction = Directionality.of(context);
-    final notifier = _notifier;
+    _tell(await _notifier.cycle(number));
+  }
 
-    final marked = await notifier.cycle(number);
+  /// « Repassé, toujours personne », chosen in the Fiche maison of
+  /// [number]: « personne » with one more try, said and shown as a tap is
+  /// (« 7 → Personne (3e passage) »), with « Annuler ».
+  Future<void> _nobodyHomeAgain(HouseNumber number) async =>
+      _tell(await _notifier.nobodyHomeAgain(number));
+
+  /// Says [marked] aloud for screen readers and shows it in the snackbar,
+  /// with « Annuler »; nothing when nothing changed.
+  void _tell(MarkedHouse? marked) {
     if (marked == null || !mounted) return;
-
+    final l10n = AppLocalizations.of(context);
+    final notifier = _notifier;
     final label = marked.number.label;
     unawaited(
       SemanticsService.sendAnnouncement(
-        view,
-        l10n.houseTileSemantics(label, spokenStatus(l10n, marked.status)),
-        direction,
+        View.of(context),
+        l10n.houseTileSemantics(
+          label,
+          spokenMarked(l10n, marked.status, marked.tries),
+        ),
+        Directionality.of(context),
       ),
     );
     showUndo(
-      message: l10n.houseMarked(label, statusName(l10n, marked.status)),
+      message: markedMessage(l10n, label, marked.status, marked.tries),
       undoLabel: l10n.undo,
       onUndo: () => unawaited(notifier.undo()),
     );
@@ -157,15 +166,23 @@ final class _MarkingScreenState extends ConsumerState<_MarkingScreen>
   ///
   /// Left by « Transformer en immeuble… », the sheet gives way to
   /// « Décrire l'immeuble », then, once validated, to the new building's
-  /// grid: one sheet at a time.
+  /// grid: one sheet at a time. Left by « Repassé, toujours personne », the
+  /// house is marked here, so its snackbar shows over the street.
   Future<void> _openSheet(HouseNumber number) async {
     hideUndo();
     final house = (street: widget.streetId, number: number);
     final exit = await showHouseSheet(context, house);
-    if (exit != HouseSheetExit.toBuilding || !mounted) return;
-    final laidOut = await showBuildingSetup(context, house);
-    if (!laidOut || !mounted) return;
-    await _showGrid(number);
+    if (!mounted) return;
+    switch (exit) {
+      case HouseSheetExit.toBuilding:
+        final laidOut = await showBuildingSetup(context, house);
+        if (!laidOut || !mounted) return;
+        await _showGrid(number);
+      case HouseSheetExit.nobodyHomeAgain:
+        await _nobodyHomeAgain(number);
+      case null:
+        return;
+    }
   }
 
   /// A tap on a building tile opens its grid.

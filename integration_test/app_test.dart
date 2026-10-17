@@ -199,7 +199,7 @@ void main() {
   });
   testWidgets(
     'should keep the marks across a restart when a house is marked, undone, '
-    'marked again and another held to come back',
+    'marked again and another held to come back, then found nobody home twice',
     (tester) async {
       final semantics = tester.ensureSemantics();
       final storage = await _knownPhone('mark_flow');
@@ -286,6 +286,29 @@ void main() {
       await tester.longPress(comingBack);
       await tester.pumpAndSettle();
       expect(find.text('après 19h'), findsOneWidget);
+
+      // Came back, still nobody (#80): « personne », its first try. Then 32,
+      // found nobody home by taps (✓, ✗: its first try), held: once more,
+      // its second, which the tile now says.
+      await tester.tap(find.byKey(const Key('house.nobodyHomeAgain')));
+      await tester.pumpAndSettle();
+      expect(findArrowText('34 → Personne'), findsOneWidget);
+      expect(tester.getSemantics(comingBack).label, 'Numéro 34, personne');
+      final twice = find.byKey(const ValueKey('street.tile.32'));
+      await tester.tap(twice);
+      await tester.pumpAndSettle();
+      await tester.tap(twice);
+      await tester.pumpAndSettle();
+      await tester.longPress(twice);
+      await tester.pumpAndSettle();
+      expect(find.text('1 passage sans personne'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('house.nobodyHomeAgain')));
+      await tester.pumpAndSettle();
+      expect(findArrowText('32 → Personne (2e passage)'), findsOneWidget);
+      expect(
+        tester.getSemantics(twice).label,
+        'Numéro 32, personne, 2e passage',
+      );
       semantics.dispose();
     },
   );

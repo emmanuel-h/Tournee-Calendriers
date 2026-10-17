@@ -214,6 +214,36 @@ abstract class AppLocalizations {
   /// **'Repasser'**
   String get statusComeBack;
 
+  /// Undo snackbar after « Repassé, toujours personne » or a tap to « Personne » on a house or door tried with nobody home two times or more (#80), e.g. « 7 → Personne (3e passage) ».
+  ///
+  /// In fr, this message translates to:
+  /// **'{number} → {status} ({count}e passage)'**
+  String houseMarkedTries(String number, String status, int count);
+
+  /// Next to the status glyph of a tile or a door tried two times or more with nobody home (#80), e.g. « ×3 ».
+  ///
+  /// In fr, this message translates to:
+  /// **'×{count}'**
+  String tileTries(int count);
+
+  /// Screen-reader end of the label of a house or door « personne » tried two times or more: « Numéro 7, personne, 3e passage ».
+  ///
+  /// In fr, this message translates to:
+  /// **'{count}e passage'**
+  String tileTriesNobodyHome(int count);
+
+  /// How many times nobody was home, in a house or door sheet (#80), and at the end of the screen-reader label of a tile done or « repasser » tried two times or more: « Numéro 7, fait, 2 passages sans personne ».
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, one{{count} passage sans personne} other{{count} passages sans personne}}'**
+  String nobodyHomeTries(int count);
+
+  /// Button of a house or door sheet while it is « personne » or « repasser » (#80): one more try with nobody home, the status « Personne ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Repassé, toujours personne'**
+  String get nobodyHomeAgain;
+
   /// Undo snackbar after a tap on a house tile (PLAN §5.6). The « → » is drawn as a vector arrow; screen readers hear the text as written.
   ///
   /// In fr, this message translates to:

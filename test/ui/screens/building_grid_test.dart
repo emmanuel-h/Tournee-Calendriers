@@ -21,8 +21,8 @@ import '../support/finders.dart';
 final _id = StreetId('lilas');
 
 /// 7: a single house. 8: two staircases, RdC–1er, two doors a floor; A 11
-/// done, B 01 done: 2 of 8 doors done. 10: the RdC alone, two
-/// doors, no mark.
+/// done, B 01 done: 2 of 8 doors done; A 01 nobody home twice. 10: the RdC
+/// alone, two doors, no mark.
 final _lilas = valueOf(
   Street.create(
     id: _id,
@@ -43,6 +43,15 @@ final _lilas = valueOf(
               escB,
               0,
               Dwelling(label: d('01'), status: VisitStatus.done),
+            )
+            .withDwelling(
+              escA,
+              0,
+              Dwelling(
+                label: d('01'),
+                status: VisitStatus.nobodyHome,
+                tries: tries(2),
+              ),
             ),
       ),
     ],
@@ -479,5 +488,61 @@ void main() {
     expect(find.byKey(const Key('edit.ok')), findsOneWidget);
     expect(find.text('N° 10 changé en maison'), findsOneWidget);
     expect(stored('10').isBuilding, isFalse);
+  });
+
+  testWidgets(
+    'should mark a door nobody home once more from its sheet, then put it '
+    'back with Annuler',
+    (tester) async {
+      final semantics = tester.ensureSemantics();
+      await openStreet(tester);
+      await tester.tap(_tile('8'));
+      await tester.pumpAndSettle();
+      expect(
+        labelOf(tester, _door('A0-01')),
+        'Escalier A, RdC, porte 01, personne, 2e passage',
+      );
+      expect(
+        find.descendant(of: _door('A0-01'), matching: find.text('×2')),
+        findsOneWidget,
+      );
+
+      await tester.longPress(_door('A0-01'));
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<Text>(find.byKey(const Key('door.tries'))).data,
+        '2 passages sans personne',
+      );
+      await tester.tap(find.byKey(const Key('door.nobodyHomeAgain')));
+      await tester.pumpAndSettle();
+
+      // Back on the grid, which tells what changed.
+      expect(find.byKey(const Key('door.number')), findsNothing);
+      final key = DwellingKey(escA, 0, d('01'));
+      expect(storedDoor(key).tries, tries(3));
+      expect(findArrowText('01 → Personne (3e passage)'), findsOneWidget);
+      expect(
+        tester.takeAnnouncements().map((announcement) => announcement.message),
+        ['Escalier A, RdC, porte 01, personne, 3e passage'],
+      );
+
+      await tester.tap(find.text('Annuler'));
+      await tester.pumpAndSettle();
+
+      expect(storedDoor(key).tries, tries(2));
+      semantics.dispose();
+    },
+  );
+
+  testWidgets('should have no « Repassé, toujours personne » on the building '
+      'own sheet', (tester) async {
+    await openStreet(tester);
+    await tester.tap(_tile('8'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('grid.details')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('building.nobodyHomeAgain')), findsNothing);
   });
 }

@@ -15,6 +15,10 @@
 // the tests use): a building is written door by door, the doors a new
 // layout drops are removed one by one.
 //
+// A field the entry of a house or door leaves out is removed: `tries` is
+// stored only from the first try (see street_document_mapper.dart), so a
+// house to do again loses the field rather than holding 0.
+//
 // An undo writes the house or door back as it was, with one exception: it
 // is stamped with who undoes and when, not with the old stamp, since the
 // security rules accept only the caller's own uid as `by` (PLAN §8.2).
@@ -62,16 +66,20 @@ List<Map<FieldPath, Object?>> streetUpdates(
     );
     return {
       for (final field in fields)
-        _path([_houses, number.label, _dwellings, key.id, field]): entry[field],
+        _path([_houses, number.label, _dwellings, key.id, field]): _valueOf(
+          entry,
+          field,
+          removal,
+        ),
     };
   }
 
   return switch (change) {
-    HouseMarked(:final number) => [
-      _houseFields(street, number, const ['status', 'comeBack', 'by', 'at']),
+    HouseMarked(:final number) || HouseNobodyHomeAgain(:final number) => [
+      _houseFields(street, number, _markFields, removal),
     ],
     ComeBackSet(:final number) => [
-      _houseFields(street, number, const ['comeBack', 'by', 'at']),
+      _houseFields(street, number, const ['comeBack', 'by', 'at'], removal),
     ],
     BuildingLaidOut(:final before) || BuildingRemoved(:final before) => [
       _houseRewritten(before, _houseIn(street, before.number), removal),
@@ -82,9 +90,11 @@ List<Map<FieldPath, Object?>> streetUpdates(
         _path([_houses, after.number.label]): houseEntry(after),
       },
     ],
-    DwellingMarked(:final number, :final key) => [
-      doorUpdate(number, key, const ['status', 'comeBack', 'by', 'at']),
-    ],
+    DwellingMarked(:final number, :final key) ||
+    DwellingNobodyHomeAgain(
+      :final number,
+      :final key,
+    ) => [doorUpdate(number, key, _markFields)],
     DwellingComeBackSet(:final number, :final key) => [
       doorUpdate(number, key, const ['comeBack', 'by', 'at']),
     ],
@@ -151,12 +161,17 @@ List<Map<FieldPath, Object?>> streetUpdates(
             status: dwelling.status,
             comeBack: dwelling.comeBack,
             lastChange: undoStamp,
+            tries: dwelling.tries,
           ),
         ),
       },
     ],
   };
 }
+
+/// The fields a status changes on a house or a door: the status, its
+/// hint, its tries with nobody home, and who changed it when.
+const _markFields = ['status', 'comeBack', 'tries', 'by', 'at'];
 
 const _houses = 'houses';
 const _assignees = 'assignees';
@@ -173,16 +188,22 @@ Map<FieldPath, Object?> _houseFields(
   Street street,
   HouseNumber number,
   List<String> fields,
+  Object removal,
 ) {
   final entry = houseEntry(_houseIn(street, number));
   return {
     for (final field in fields)
-      _path([_houses, number.label, field]): entry[field],
+      _path([_houses, number.label, field]): _valueOf(entry, field, removal),
   };
 }
 
+/// The value of [field] in [entry], or [removal] when the entry leaves it
+/// out (`tries` before the first try).
+Object? _valueOf(Map<String, Object?> entry, String field, Object removal) =>
+    entry.containsKey(field) ? entry[field] : removal;
+
 /// [after] written over [before], both under the same number: its status,
-/// « repasser » and stamp, and its building door by door (the doors
+/// « repasser », tries and stamp, and its building door by door (the doors
 /// [before] had and [after] has not are removed). The number, the position
 /// and the removal do not change.
 Map<FieldPath, Object?> _houseRewritten(
@@ -194,8 +215,7 @@ Map<FieldPath, Object?> _houseRewritten(
   final entry = houseEntry(after);
   FieldPath field(String name) => _path([_houses, label, name]);
   final update = <FieldPath, Object?>{
-    for (final name in const ['status', 'comeBack', 'by', 'at'])
-      field(name): entry[name],
+    for (final name in _markFields) field(name): _valueOf(entry, name, removal),
   };
   final building = after.building;
   if (building == null) {
@@ -247,4 +267,5 @@ House _stamped(House house, ChangeStamp stamp) => House(
   lastChange: stamp,
   building: house.building,
   position: house.position,
+  tries: house.tries,
 );

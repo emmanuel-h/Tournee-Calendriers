@@ -1,6 +1,7 @@
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
+import 'package:tournee_calendriers/domain/street/nobody_home_tries.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/presentation/street/street_view_state.dart';
 
@@ -179,6 +180,15 @@ void main() {
       expect(tile(), isNot(tile(number: '3')));
       expect(tile(), isNot(tile(mark: const DoneMark())));
       expect(tile(), isNot(tile(isBuilding: true)));
+      expect(
+        HouseTile(
+          number: n('1'),
+          mark: const ToDoMark(),
+          isBuilding: false,
+          tries: 2,
+        ),
+        isNot(tile()),
+      );
     });
 
     test('should name every field when printed', () {
@@ -186,12 +196,63 @@ void main() {
         number: n('3bis'),
         mark: const NobodyHomeMark(),
         isBuilding: false,
+        tries: 3,
       );
 
       expect(
         tile.toString(),
-        "HouseTile(3bis, Instance of 'NobodyHomeMark', building: false)",
+        "HouseTile(3bis, Instance of 'NobodyHomeMark', building: false, "
+        'tries: 3)',
       );
+    });
+
+    test('should show no tries when nobody was home once', () {
+      final tile = HouseTile.of(
+        House(number: n('7'), status: VisitStatus.nobodyHome),
+      );
+
+      expect(tile.tries, isNull);
+    });
+
+    test('should show the tries when nobody was home twice', () {
+      final tile = HouseTile.of(
+        House(number: n('7'), status: VisitStatus.nobodyHome, tries: tries(2)),
+      );
+
+      expect(tile.tries, 2);
+    });
+
+    test('should keep showing the tries when the house is done', () {
+      final tile = HouseTile.of(
+        House(number: n('7'), status: VisitStatus.done, tries: tries(3)),
+      );
+
+      expect(tile.mark, const DoneMark());
+      expect(tile.tries, 3);
+    });
+
+    test('should show no tries on a building', () {
+      final tile = HouseTile.of(_building(VisitStatus.done, VisitStatus.toDo));
+
+      expect(tile.tries, isNull);
+    });
+  });
+
+  group('shownTries', () {
+    test('should show nothing when there is no try', () {
+      expect(shownTries(NobodyHomeTries.none), isNull);
+    });
+
+    test('should show nothing when there is one try', () {
+      expect(shownTries(tries(1)), isNull);
+    });
+
+    test('should show the count from two tries', () {
+      expect(shownTries(tries(2)), 2);
+    });
+
+    test('should show the count when there are more', () {
+      expect(shownTries(tries(3)), 3);
     });
   });
 
@@ -236,10 +297,21 @@ void main() {
       );
     });
 
-    test('should name the number and the status when printed', () {
+    test('should differ when the tries differ', () {
       expect(
-        MarkedHouse(number: n('7'), status: VisitStatus.done).toString(),
-        'MarkedHouse(7, VisitStatus.done)',
+        MarkedHouse(number: n('7'), status: VisitStatus.done, tries: 2),
+        isNot(MarkedHouse(number: n('7'), status: VisitStatus.done)),
+      );
+    });
+
+    test('should name the number, the status and the tries when printed', () {
+      expect(
+        MarkedHouse(
+          number: n('7'),
+          status: VisitStatus.nobodyHome,
+          tries: 3,
+        ).toString(),
+        'MarkedHouse(7, VisitStatus.nobodyHome, tries: 3)',
       );
     });
   });

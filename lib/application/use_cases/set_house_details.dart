@@ -10,8 +10,9 @@ import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_repository.dart';
 
-/// One control of the Fiche maison (hold a tile, PLAN §5.7): the status or
-/// the hint of the « repasser » of a house. On a building it sets the
+/// One control of the Fiche maison (hold a tile, PLAN §5.7): the status,
+/// the hint of the « repasser », or « Repassé, toujours personne » of a
+/// house. On a building it sets the
 /// building's own « repasser » (« Repasser » under the grid); its status is
 /// refused, its doors carry the statuses. Needs no network.
 ///
@@ -38,6 +39,11 @@ final class SetHouseDetails {
         StatusMark(:final status) => street.markHouse(
           number,
           status,
+          by: by,
+          at: at,
+        ),
+        NobodyHomeAgainMark() => street.markNobodyHomeAgain(
+          number,
           by: by,
           at: at,
         ),

@@ -25,7 +25,7 @@ import '../../support/street_fixtures.dart';
 final _id = StreetId('lilas');
 
 /// 8: staircase A RdC–1er with two doors a floor, B the RdC alone with
-/// two doors. A 11 done, A 12 nobody home, A 01 to come back,
+/// two doors. A 11 done, A 12 nobody home (three tries), A 01 to come back,
 /// B 01 done: 2 doors done of 6. 9: a single house; 10: unknown floors.
 final _eight = valueOf(
   Building.create(
@@ -38,7 +38,11 @@ final _eight = valueOf(
             level: 1,
             dwellings: [
               Dwelling(label: d('11'), status: VisitStatus.done),
-              Dwelling(label: d('12'), status: VisitStatus.nobodyHome),
+              Dwelling(
+                label: d('12'),
+                status: VisitStatus.nobodyHome,
+                tries: tries(3),
+              ),
             ],
           ),
           Floor(
@@ -159,12 +163,12 @@ void main() {
       expect(state.selected, escA);
       expect(state.floors.map((floor) => floor.level), [1, 0]);
       expect(state.floors[0].doors, [
-        (key: _key('A', 1, '11'), mark: const DoneMark()),
-        (key: _key('A', 1, '12'), mark: const NobodyHomeMark()),
+        (key: _key('A', 1, '11'), mark: const DoneMark(), tries: null),
+        (key: _key('A', 1, '12'), mark: const NobodyHomeMark(), tries: 3),
       ]);
       expect(state.floors[1].doors, [
-        (key: _key('A', 0, '01'), mark: const ComeBackMark()),
-        (key: _key('A', 0, '02'), mark: const ToDoMark()),
+        (key: _key('A', 0, '01'), mark: const ComeBackMark(), tries: null),
+        (key: _key('A', 0, '02'), mark: const ToDoMark(), tries: null),
       ]);
     });
 
@@ -272,6 +276,7 @@ void main() {
         key: _key('A', 0, '02'),
         status: VisitStatus.done,
         namesStaircase: true,
+        tries: null,
       ));
       expect(
         streets.saved.single.$2,
@@ -308,6 +313,16 @@ void main() {
         expect(doorNow(_key('A', 1, '11')).comeBack, isNull);
       },
     );
+
+    test('should tell the tries a door keeps with its new status', () async {
+      phoneWith(_street());
+      await settled('8');
+
+      final marked = await notifier('8').cycle(_key('A', 1, '12'));
+
+      expect(marked?.status, VisitStatus.comeBack);
+      expect(marked?.tries, 3);
+    });
 
     test('should not name the staircase when the building has one', () async {
       phoneWith(_street());
@@ -357,6 +372,72 @@ void main() {
 
       expect(marked, isNull);
       expect(streets.saved, isEmpty);
+    });
+  });
+
+  group('nobodyHomeAgain', () {
+    test('should add a try to the door and say what changed', () async {
+      phoneWith(_street());
+      await settled('8');
+
+      final marked = await notifier('8').nobodyHomeAgain(_key('A', 1, '12'));
+
+      expect(marked, (
+        key: _key('A', 1, '12'),
+        status: VisitStatus.nobodyHome,
+        namesStaircase: true,
+        tries: 4,
+      ));
+      expect(doorNow(_key('A', 1, '12')).tries, tries(4));
+      expect(doorNow(_key('A', 1, '12')).lastChange, leaAtTwo);
+      expect((await shown('8')).floors[0].doors[1].tries, 4);
+    });
+
+    test('should show no count when it is the first try', () async {
+      phoneWith(_street());
+      await settled('8');
+
+      final marked = await notifier('8').nobodyHomeAgain(_key('A', 0, '01'));
+
+      expect(marked?.status, VisitStatus.nobodyHome);
+      expect(marked?.tries, isNull);
+      expect(doorNow(_key('A', 0, '01')).tries, tries(1));
+    });
+
+    test('should change nothing when the door is done', () async {
+      phoneWith(_street());
+      await settled('8');
+
+      final marked = await notifier('8').nobodyHomeAgain(_key('A', 1, '11'));
+
+      expect(marked, isNull);
+      expect(streets.saved, isEmpty);
+    });
+
+    test('should change nothing before the street is read', () async {
+      phoneWith(_street());
+
+      final marked = await notifier('8').nobodyHomeAgain(_key('A', 1, '12'));
+
+      expect(marked, isNull);
+      expect(streets.saved, isEmpty);
+    });
+
+    test('should put the door back when Annuler is tapped', () async {
+      phoneWith(_street());
+      await settled('8');
+      await notifier('8').nobodyHomeAgain(_key('A', 1, '12'));
+
+      await notifier('8').undo();
+
+      expect(
+        doorNow(_key('A', 1, '12')),
+        Dwelling(
+          label: d('12'),
+          status: VisitStatus.nobodyHome,
+          tries: tries(3),
+        ),
+      );
     });
   });
 

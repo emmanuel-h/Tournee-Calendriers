@@ -113,6 +113,38 @@ void main() {
     expect(houseOf(streets[lilasId]!, '8').comeBack, isNull);
   });
 
+  test('should add a try when nobody is home again', () async {
+    final change = valueOf(
+      await setHouseDetails(
+        lilasId,
+        n('5'),
+        // ignore: prefer_const_constructors
+        NobodyHomeAgainMark(),
+      ),
+    );
+
+    expect(
+      change,
+      HouseNobodyHomeAgain(
+        streetId: lilasId,
+        before: five,
+        stamp: leaAtTwo,
+        tries: tries(1),
+      ),
+    );
+    expect(streets.saved.single.$2, change);
+    expect(houseOf(streets[lilasId]!, '5').status, VisitStatus.nobodyHome);
+  });
+
+  test('should refuse nobody home again on a house to do', () async {
+    final failure = failureOf(
+      await setHouseDetails(lilasId, n('7'), const NobodyHomeAgainMark()),
+    );
+
+    expect(failure, const CommandRefused(HouseChangeFailure.notToVisitAgain));
+    expect(streets.saved, isEmpty);
+  });
+
   test('should refuse a hint on a house that is not « repasser »', () async {
     final failure = failureOf(
       await setHouseDetails(lilasId, n('7'), ComeBackMark(comeBack('samedi'))),

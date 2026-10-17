@@ -326,4 +326,62 @@ void main() {
       },
     );
   });
+
+  group('tries', () {
+    for (final (name, status, label) in [
+      ('nobody home', const NobodyHomeTile(), 'Numéro 7, personne, 3e passage'),
+      ('done', const DoneTile(), 'Numéro 7, fait, 3 passages sans personne'),
+      (
+        'come back',
+        const ComeBackTile(),
+        'Numéro 7, repasser, 3 passages sans personne',
+      ),
+    ]) {
+      testWidgets('should show « ×3 » after the glyph and say the tries when '
+          'the status is $name', (tester) async {
+        final semantics = tester.ensureSemantics();
+        await tester.pumpWidget(
+          testApp(
+            Center(
+              child: SizedBox(
+                width: 170,
+                child: StatusTile(
+                  key: const Key('tile'),
+                  number: '7',
+                  status: status,
+                  tries: 3,
+                  onTap: () {},
+                ),
+              ),
+            ),
+          ),
+        );
+
+        expect(find.text('×3'), findsOneWidget);
+        expect(
+          tester.getCenter(find.text('×3')).dx,
+          greaterThan(tester.getCenter(find.byType(StatusGlyph)).dx),
+        );
+        expect(tester.getSemantics(find.byKey(const Key('tile'))).label, label);
+        semantics.dispose();
+      });
+    }
+
+    testWidgets('should show no count when the tile has no tries', (
+      tester,
+    ) async {
+      await tester.pumpWidget(
+        testApp(
+          const Center(
+            child: SizedBox(
+              width: 170,
+              child: StatusTile(number: '7', status: NobodyHomeTile()),
+            ),
+          ),
+        ),
+      );
+
+      expect(find.textContaining('×'), findsNothing);
+    });
+  });
 }

@@ -3,6 +3,7 @@ import 'package:tournee_calendriers/ui/components/building_icon.dart';
 import 'package:tournee_calendriers/ui/components/dashed_outline.dart';
 import 'package:tournee_calendriers/ui/components/open_chevron.dart';
 import 'package:tournee_calendriers/ui/components/status_glyph.dart';
+import 'package:tournee_calendriers/ui/components/tries_words.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
@@ -16,15 +17,20 @@ import 'package:tournee_calendriers/ui/theme/status_look.dart';
 /// the right edge, whatever its status: a tap opens it instead of changing
 /// a status.
 ///
+/// A house tried twice or more with nobody home shows « ×3 » after its
+/// glyph, whatever its status (#80).
+///
 /// Status is never shown by colour alone: the glyph is always drawn, and
-/// screen readers hear one French sentence (« Numéro 3bis, fait ») instead of
-/// the number and count texts.
+/// screen readers hear one French sentence (« Numéro 3bis, fait »,
+/// « Numéro 7, personne, 3e passage ») instead of the number and count
+/// texts.
 final class StatusTile extends StatelessWidget {
   const StatusTile({
     super.key,
     required this.number,
     required this.status,
     this.isBuilding = false,
+    this.tries,
     this.onTap,
     this.onLongPress,
   }) : assert(
@@ -38,6 +44,9 @@ final class StatusTile extends StatelessWidget {
 
   /// A building: icon, « › », and « immeuble … ouvrir » for screen readers.
   final bool isBuilding;
+
+  /// « ×3 »: the tries with nobody home, from two; null shows none.
+  final int? tries;
 
   /// Tap cycles the status, or opens a building (PLAN §5).
   final VoidCallback? onTap;
@@ -80,7 +89,11 @@ final class StatusTile extends StatelessWidget {
               if (isBuilding)
                 BuildingIcon(size: AppSizes.smallIcon, color: look.foreground),
               Expanded(
-                child: _NumberAndStatus(number: number, look: look),
+                child: _NumberAndStatus(
+                  number: number,
+                  look: look,
+                  tries: tries,
+                ),
               ),
               if (isBuilding)
                 OpenChevron(height: AppSizes.smallIcon, color: look.foreground),
@@ -111,31 +124,55 @@ final class StatusTile extends StatelessWidget {
   String _semanticsLabel(AppLocalizations l10n) => switch (status) {
     ToDoTile() => _withStatus(l10n, l10n.tileStatusToDo),
     DoneTile() => _withStatus(l10n, l10n.tileStatusDone),
-    NobodyHomeTile() => _withStatus(l10n, l10n.tileStatusNobodyHome),
+    NobodyHomeTile() => _withStatus(
+      l10n,
+      l10n.tileStatusNobodyHome,
+      nobodyHome: true,
+    ),
     ComeBackTile() => _withStatus(l10n, l10n.tileStatusComeBack),
     BuildingPartialTile(:final done, :final total) =>
       l10n.buildingTileSemantics(number, done, total),
   };
 
-  /// « Numéro 3bis, fait », or « Numéro 8, immeuble, fait, ouvrir ».
-  String _withStatus(AppLocalizations l10n, String spokenStatus) => isBuilding
+  /// « Numéro 3bis, fait », « Numéro 7, personne, 3e passage », or
+  /// « Numéro 8, immeuble, fait, ouvrir ».
+  String _withStatus(
+    AppLocalizations l10n,
+    String spokenStatus, {
+    bool nobodyHome = false,
+  }) => isBuilding
       ? l10n.buildingStatusTileSemantics(number, spokenStatus)
-      : l10n.houseTileSemantics(number, spokenStatus);
+      : l10n.houseTileSemantics(
+          number,
+          spokenWithTries(
+            l10n,
+            spokenStatus,
+            nobodyHome: nobodyHome,
+            tries: tries,
+          ),
+        );
 }
 
-/// The number, then the status glyph and a building's count (`◐ 7/12`).
+/// The number, then the status glyph and a building's count (`◐ 7/12`) or
+/// a house's tries (`✗ ×3`).
 ///
 /// The number gives way first: it is cut with an ellipsis when the row is
 /// short. But it always keeps [AppSizes.tileNumberMinWidth]; on a narrow
 /// phone with large text, the glyph and count shrink to leave it that.
 final class _NumberAndStatus extends StatelessWidget {
-  const _NumberAndStatus({required this.number, required this.look});
+  const _NumberAndStatus({
+    required this.number,
+    required this.look,
+    required this.tries,
+  });
 
   final String number;
   final StatusLook look;
+  final int? tries;
 
   @override
   Widget build(BuildContext context) {
+    final tries = this.tries;
     final status = Row(
       // As narrow as its content, not as wide as the space it is given.
       mainAxisSize: MainAxisSize.min,
@@ -145,6 +182,11 @@ final class _NumberAndStatus extends StatelessWidget {
         if (look.count case final count?)
           Text(
             count,
+            style: AppTextStyles.tileCount.copyWith(color: look.foreground),
+          ),
+        if (tries != null)
+          Text(
+            AppLocalizations.of(context).tileTries(tries),
             style: AppTextStyles.tileCount.copyWith(color: look.foreground),
           ),
       ],

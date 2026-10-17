@@ -199,6 +199,7 @@ final class HouseSheetShown extends HouseSheetState {
     required this.comeBackHint,
     required this.lastChange,
     this.subject = const HouseSubject(),
+    this.tries = 0,
   });
 
   final String streetName;
@@ -220,4 +221,13 @@ final class HouseSheetShown extends HouseSheetState {
   final LastChange? lastChange;
 
   final SheetSubject subject;
+
+  /// How many times nobody was home (#80): « 2 passages sans personne ».
+  final int tries;
+
+  /// « Repassé, toujours personne » shows, with the count of tries, while
+  /// the house or door is « personne » or « repasser »: the ones the team
+  /// comes back to. Never on a building itself, which has no status.
+  bool get offersNobodyHomeAgain =>
+      status == VisitStatus.nobodyHome || status == VisitStatus.comeBack;
 }

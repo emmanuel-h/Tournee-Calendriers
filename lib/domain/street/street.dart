@@ -14,6 +14,7 @@ import 'package:tournee_calendriers/domain/street/corbeille_retention.dart'
     as retention;
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
+import 'package:tournee_calendriers/domain/street/nobody_home_tries.dart';
 import 'package:tournee_calendriers/domain/street/progress.dart';
 import 'package:tournee_calendriers/domain/street/removed_house.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
@@ -45,6 +46,10 @@ enum HouseChangeFailure {
   /// A building was to be marked as a whole: its doors are marked one by
   /// one, and its status follows from them.
   houseIsBuilding,
+
+  /// « Repassé, toujours personne » on a house that is neither
+  /// « personne » nor « repasser »: nobody was to come back to it.
+  notToVisitAgain,
 }
 
 /// Why a change to the numbers of a [Street] (edit mode, PLAN §5.5) was
@@ -85,6 +90,10 @@ enum DwellingChangeFailure {
   /// A « repasser » hint was given to (or taken from) a door that is not
   /// « repasser »: its « repasser » is its status, set with `markDwelling`.
   notComeBack,
+
+  /// « Repassé, toujours personne » on a door that is neither « personne »
+  /// nor « repasser ».
+  notToVisitAgain,
 }
 
 /// Why a member could not take or release a [Street] (« Mes rues »).
@@ -125,6 +134,8 @@ enum UndoFailure {
 ///   (`3 < 3bis < 3A < 4`);
 /// - a single house or a door has a « repasser » hint exactly when its
 ///   status is « repasser » (see [House], [Dwelling]);
+/// - a single house or a door has no tries with nobody home when it is to
+///   do, and at least one when nobody is home (see [NobodyHomeTries]);
 /// - a building is to do itself, its doors carry the statuses (see [House]);
 /// - the invariants of each [Building].
 ///
@@ -317,7 +328,10 @@ final class Street {
   ///
   /// The hint of a « repasser » goes with that status: leaving « repasser »
   /// drops it, coming to « repasser » starts without one (the sheet's field
-  /// then gives it), see [HouseMarked.comeBack].
+  /// then gives it), see [HouseMarked.comeBack]. So do its tries with nobody
+  /// home: back to none when to do, the first one when it becomes
+  /// « personne » without any, kept otherwise ([NobodyHomeTries.keptBy]).
+  /// Only [markNobodyHomeAgain] adds a try to a house that already has one.
   ///
   /// Refused with [HouseChangeFailure.houseIsBuilding] on a building: mark
   /// its doors with [markDwelling].
@@ -332,13 +346,15 @@ final class Street {
     final before = houses[index];
     if (before.isBuilding) return const Err(HouseChangeFailure.houseIsBuilding);
     final stamp = ChangeStamp(by: by, at: at);
-    // The House factory keeps the come-back only for « repasser ».
+    // The House factory keeps the come-back only for « repasser », and the
+    // tries the new status allows.
     final after = House(
       number: number,
       status: status,
       comeBack: before.comeBack,
       lastChange: stamp,
       position: before.position,
+      tries: before.tries,
     );
     return Ok((
       _withHouseAt(index, after),
@@ -377,6 +393,7 @@ final class Street {
       lastChange: stamp,
       building: before.building,
       position: before.position,
+      tries: before.tries,
     );
     return Ok((
       _withHouseAt(index, after),
@@ -385,6 +402,48 @@ final class Street {
         before: before,
         stamp: stamp,
         comeBack: comeBack,
+      ),
+    ));
+  }
+
+  /// « Repassé, toujours personne » on the house at [number], as [by] at
+  /// [at] (its sheet, #80): it is « personne » with one more try
+  /// ([NobodyHomeTries.next]); a « repasser » loses its hint, as any other
+  /// status but « repasser » does.
+  ///
+  /// Refused with [HouseChangeFailure.notToVisitAgain] unless the house is
+  /// « personne » or « repasser » (the sheet shows the button only then),
+  /// and with [HouseChangeFailure.houseIsBuilding] on a building: its doors
+  /// count their own ([markDwellingNobodyHomeAgain]).
+  Result<(Street, HouseNobodyHomeAgain), HouseChangeFailure>
+  markNobodyHomeAgain(
+    HouseNumber number, {
+    required MemberId by,
+    required DateTime at,
+  }) {
+    final index = _indexOf(number);
+    if (index < 0) return const Err(HouseChangeFailure.unknownHouse);
+    final before = houses[index];
+    if (before.isBuilding) return const Err(HouseChangeFailure.houseIsBuilding);
+    if (!_isToVisitAgain(before.status)) {
+      return const Err(HouseChangeFailure.notToVisitAgain);
+    }
+    final stamp = ChangeStamp(by: by, at: at);
+    final tries = before.tries.next;
+    final after = House(
+      number: number,
+      status: VisitStatus.nobodyHome,
+      lastChange: stamp,
+      position: before.position,
+      tries: tries,
+    );
+    return Ok((
+      _withHouseAt(index, after),
+      HouseNobodyHomeAgain(
+        streetId: id,
+        before: before,
+        stamp: stamp,
+        tries: tries,
       ),
     ));
   }
@@ -521,6 +580,7 @@ final class Street {
           status: status,
           comeBack: before.comeBack,
           lastChange: stamp,
+          tries: before.tries,
         );
         return Ok((
           _withDwellingAt(index, key, after),
@@ -562,6 +622,7 @@ final class Street {
           status: before.status,
           comeBack: comeBack,
           lastChange: stamp,
+          tries: before.tries,
         );
         return Ok((
           _withDwellingAt(index, key, after),
@@ -573,6 +634,48 @@ final class Street {
             before: before,
             stamp: stamp,
             comeBack: comeBack,
+          ),
+        ));
+    }
+  }
+
+  /// « Repassé, toujours personne » on the door at [key] of the building at
+  /// [number], as [by] at [at] (its sheet): as [markNobodyHomeAgain] on a
+  /// house, only that door stamped. Refused with
+  /// [DwellingChangeFailure.notToVisitAgain] unless the door is
+  /// « personne » or « repasser ».
+  Result<(Street, DwellingNobodyHomeAgain), DwellingChangeFailure>
+  markDwellingNobodyHomeAgain(
+    HouseNumber number,
+    DwellingKey key, {
+    required MemberId by,
+    required DateTime at,
+  }) {
+    switch (_dwellingAt(number, key)) {
+      case Err(:final failure):
+        return Err(failure);
+      case Ok(value: (final index, final before)):
+        if (!_isToVisitAgain(before.status)) {
+          return const Err(DwellingChangeFailure.notToVisitAgain);
+        }
+        final stamp = ChangeStamp(by: by, at: at);
+        final tries = before.tries.next;
+        final after = Dwelling(
+          label: before.label,
+          status: VisitStatus.nobodyHome,
+          lastChange: stamp,
+          tries: tries,
+        );
+        return Ok((
+          _withDwellingAt(index, key, after),
+          DwellingNobodyHomeAgain(
+            streetId: id,
+            number: number,
+            staircase: key.staircase,
+            level: key.level,
+            before: before,
+            stamp: stamp,
+            tries: tries,
           ),
         ));
     }
@@ -927,6 +1030,11 @@ final class Street {
       ),
     )),
   };
+
+  /// Whether a house or door with [status] is one to come back to:
+  /// « personne » or « repasser ».
+  static bool _isToVisitAgain(VisitStatus status) =>
+      status == VisitStatus.nobodyHome || status == VisitStatus.comeBack;
 
   /// The position of [number] in [houses], or -1 when the street has none.
   int _indexOf(HouseNumber number) =>

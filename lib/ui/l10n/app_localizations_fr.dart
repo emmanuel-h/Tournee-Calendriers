@@ -76,6 +76,35 @@ class AppLocalizationsFr extends AppLocalizations {
   String get statusComeBack => 'Repasser';
 
   @override
+  String houseMarkedTries(String number, String status, int count) {
+    return '$number → $status (${count}e passage)';
+  }
+
+  @override
+  String tileTries(int count) {
+    return '×$count';
+  }
+
+  @override
+  String tileTriesNobodyHome(int count) {
+    return '${count}e passage';
+  }
+
+  @override
+  String nobodyHomeTries(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count passages sans personne',
+      one: '$count passage sans personne',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get nobodyHomeAgain => 'Repassé, toujours personne';
+
+  @override
   String houseMarked(String number, String status) {
     return '$number → $status';
   }

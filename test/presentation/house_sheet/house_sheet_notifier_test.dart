@@ -202,6 +202,7 @@ void main() {
       expect(state.comeBack, isTrue);
       expect(state.comeBackHint, 'après 19h');
       expect(state.lastChange, isNull);
+      expect(state.tries, 0);
     });
 
     test('should show the status and the day of the last change when it '
@@ -215,6 +216,9 @@ void main() {
       expect(state.comeBack, isFalse);
       expect(state.comeBackHint, '');
       expect(state.lastChange, ChangedEarlier(_yesterday));
+      // Nobody home, once.
+      expect(state.tries, 1);
+      expect(state.offersNobodyHomeAgain, isTrue);
     });
 
     test('should show the time only when the change was made today', () async {

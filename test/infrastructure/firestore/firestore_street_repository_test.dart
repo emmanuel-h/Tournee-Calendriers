@@ -222,6 +222,37 @@ void main() {
       },
     );
 
+    test(
+      'should store the tries of a house and drop them when to do again',
+      () async {
+        await phone().add(lilas);
+        await pumpEventQueue();
+        final streets = phone();
+        final lea = MemberId('lea');
+        var street = (await streets.find(lilas.id))!;
+        final (nobody, first) = valueOf(
+          street.markHouse(n('1'), VisitStatus.nobodyHome, by: lea, at: twoPm),
+        );
+        await streets.save(nobody, first);
+        final (again, second) = valueOf(
+          nobody.markNobodyHomeAgain(n('1'), by: lea, at: twoPm),
+        );
+        await streets.save(again, second);
+        await pumpEventQueue();
+
+        expect((await storedHouse('lilas', '1'))['tries'], 2);
+
+        street = (await streets.find(lilas.id))!;
+        final (toDo, reset) = valueOf(
+          street.markHouse(n('1'), VisitStatus.toDo, by: lea, at: twoPm),
+        );
+        await streets.save(toDo, reset);
+        await pumpEventQueue();
+
+        expect((await storedHouse('lilas', '1')).containsKey('tries'), isFalse);
+      },
+    );
+
     test('should stamp an undo with who undoes and when', () async {
       await phone().add(lilas);
       await pumpEventQueue();

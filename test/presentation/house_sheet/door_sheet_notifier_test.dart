@@ -22,13 +22,14 @@ import '../../support/street_fixtures.dart';
 final _id = StreetId('lilas');
 final _yesterday = DateTime(2026, 11, 1, 18, 30);
 
-/// Door 11 of staircase A of number 8, to come back « soir », changed by
-/// Paul yesterday.
+/// Door 11 of staircase A of number 8, to come back « soir » after two
+/// tries with nobody home, changed by Paul yesterday.
 final _door11 = Dwelling(
   label: d('11'),
   status: VisitStatus.comeBack,
   comeBack: comeBack('soir'),
   lastChange: ChangeStamp(by: paul, at: _yesterday.toUtc()),
+  tries: tries(2),
 );
 
 /// 8: two staircases, RdC and 1er, two doors a floor, with its own
@@ -116,6 +117,7 @@ void main() {
       expect(state.comeBack, isTrue);
       expect(state.comeBackHint, 'soir');
       expect(state.lastChange, ChangedEarlier(_yesterday));
+      expect(state.tries, 2);
     });
 
     test(
@@ -228,6 +230,7 @@ void main() {
       expect(state.status, isNull);
       expect(state.comeBack, isTrue);
       expect(state.comeBackHint, 'mardi');
+      expect(state.tries, 0);
       expect(
         state.lastChange,
         ChangedToday(twoPm.toLocal(), by: const ChangedByMe()),

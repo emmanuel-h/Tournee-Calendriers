@@ -704,7 +704,7 @@ map with « « Chemin des Vignes » ajoutée à vos rues. ».
 ├──────────────┼───────────────┤
 │ [ 1     ○ ]  │ [ 2     ✓ ]   │
 │ [ 3     ✓ ]  │ [ 4     ✓ ]   │
-│ [ 3bis  ✗ ]  │ [ 6     ○ ]   │
+│ [ 3bis ✗×2]  │ [ 6     ○ ]   │
 │ [ 5     ↻ ]  │ [▦ 8 ◐7/12 ›] │
 │ [ 7     ○ ]  │ [10     ○ ]   │
 │ [ 9     ○ ]  │ [12     ✗ ]   │
@@ -716,7 +716,8 @@ map with « « Chemin des Vignes » ajoutée à vos rues. ».
 
 - Odd numbers on the left, even on the right, each column sorted ascending
   (`3 < 3bis < 3ter < 3quater < 3A < 4`). Both columns scroll together.
-- Tile: number, status glyph, tinted background per status. Nothing else: no note (§8.3).
+- Tile: number, status glyph, tinted background per status, and « ×3 » after the glyph once
+  the house was tried twice or more with nobody home (#80). Nothing else: no note (§8.3).
 - **Tap** cycles `○ → ✓ → ✗ → ↻ → ○` (light haptic tick); **hold** opens the Fiche maison.
 - Building tile: tap opens the Immeuble grid. Whatever its status (○, `◐ n/m`, ✓, ↻), it shows
   the building icon (▦, the one of « Transformer en immeuble… ») before its number and a « › »
@@ -748,6 +749,23 @@ Details fixed in T1.7 (`lib/presentation/street/`, `lib/ui/screens/street/`):
 - A street missing from the phone, or in the Corbeille, shows « Cette rue n'est plus sur ce
   téléphone. » with the back arrow.
 
+Tries with nobody home, fixed in #80 (`NobodyHomeTries`, §6.1):
+
+- A house (or a door) counts its **tries with nobody home**: the first « personne » is try 1;
+  « Repassé, toujours personne » in its sheet (§5.7) adds one. The tap cycle is unchanged
+  (`○ → ✓ → ✗ → ↻ → ○`): moving into ✗, by a tap or the status control, never adds a try, it
+  only makes sure there is at least one; ↻ → ○ (the end of the tap cycle) resets the count, so
+  ✗ → ↻ → ○ → ✓ → ✗ by taps starts again at 1. The count is kept on ✓ and ↻.
+- The tile shows « ×N » after the glyph **from 2 tries**, on ✗, ✓ and ↻ alike (a house done
+  at the third visit keeps its « ×2 »); door tiles of the grid too. A building tile shows none.
+- TalkBack: « Numéro 7, personne, 3e passage » on ✗; « Numéro 7, fait, 2 passages sans
+  personne » (or « repasser, … ») on the other statuses; nothing more below 2 tries. The
+  announcement after a tap uses the same words.
+- The snackbar says « 7 → Personne (3e passage) [Annuler] » whenever a house becomes ✗ with
+  2 tries or more (« Repassé, toujours personne », or a tap from ✓ that keeps an earlier
+  count); « 7 → Personne » below.
+- A new campaign (v1.1, §5.10) starts every house to do, hence at 0 tries.
+
 ### 5.7 Fiche maison (hold a tile) and Immeuble (by floor)
 
 ```
@@ -760,9 +778,12 @@ Details fixed in T1.7 (`lib/presentation/street/`, `lib/ui/screens/street/`):
 │ │  ○   │  ✓   │  ✗   │  ↻  │ │    │ 5e  [51✓][52○][53✗][54↻]     │
 │ │À fai.│ Fait │Pers. │Rep. │ │    │ 4e  [41✓][42✓][43✓][44○]     │
 │ └──────┴──────┴──────┴─────┘ │    │ 3e  [31✗][32✓][33✓][34✓]     │
-│ Quand repasser ? (grey ≠ ↻)  │    │ 2e  [21✓][22✓][23○][24✓]     │
-│   [ après 19h             ]  │    │ 1er [11○][12✓][13✓][14✗]     │
-│ [ Transformer en immeuble… ] │    │ RdC [01✓][02○]               │
+│ ✗ 2 passages sans personne   │    │ 2e  [21✓][22✓][23○][24✓]     │
+│ [Repassé, toujours personne] │    │ 1er [11○][12✓][13✓][14✗]     │
+│  (yellow on ✗ / ↻, else grey)│    │ RdC [01✓][02○]               │
+│ Quand repasser ? (grey ≠ ↻)  │    │                              │
+│   [ après 19h             ]  │    │                              │
+│ [ Transformer en immeuble… ] │    │                              │
 │ Modifié par Léa · 14:02      │    │                              │
 └──────────────────────────────┘    │                              │
                                     │ Appui : ○→✓→✗→↻→○ · détails  │
@@ -817,6 +838,19 @@ Fiche maison details fixed in T1.8 (`lib/presentation/house_sheet/`,
   team) the line is « Modifié à 14:02 » / « Modifié le 3 oct. à 14:02 » (#89).
 - *Transformer en immeuble…* (with the building icon of the mockup) closes the sheet and opens
   « Décrire l'immeuble »; « Valider » there opens the new building's grid (one sheet at a time).
+- **Tries with nobody home** (#80, mockup HouseNobody): a block between the status control and
+  « Quand repasser ? »: « ✗ 2 passages sans personne » (« 1 passage… », « 0 passage… ») and the
+  button « Repassé, toujours personne » (52 dp). Pale yellow (`#FDF3DC`, the button outlined
+  `#D99A22`) with the button enabled while the status is ✗ or ↻; greyed, button disabled,
+  otherwise. It is **always there**, like « Quand repasser ? », so choosing a status never moves
+  the sheet: a block appearing on ✗ would push the status control up and bring the button under
+  the finger for a second tap.
+- **« Repassé, toujours personne »** stores the hint field first (and any change asked before),
+  then closes the sheet; the screen behind makes the house ✗ with one more try (a ↻ loses its
+  hint, as with any other status), stamped like any mark, and shows « 7 → Personne (3e passage)
+  [Annuler] » with the announcement « Numéro 7, personne, 3e passage ». « Annuler » puts the
+  house back as it was (status, hint, tries). The door sheet does the same over the grid
+  (« 51 → Personne (3e passage) »); the building's own sheet has no such block.
 
 Immeuble details fixed in T1.9 (`lib/presentation/building/`, `lib/ui/screens/building/`):
 
@@ -850,8 +884,8 @@ Immeuble details fixed in T1.9 (`lib/presentation/building/`, `lib/ui/screens/bu
   « 51 → Fait [Annuler] » shows for 4 s over the hint « Appui : ○ → ✓ → ✗ → ↻ → ○ · Appui
   long : détails », as on the street screen. The snackbar belongs to the grid and leaves with it;
   opening any sheet over the grid hides it.
-- **Hold** a door: the door sheet, the Fiche maison's controls (four statuses, « Quand
-  repasser ? ») without *Transformer en immeuble…*, titled « 51 · Esc. B · RdC · 8 Rue des Lilas » (staircase only when several).
+- **Hold** a door: the door sheet, the Fiche maison's controls (four statuses, the tries with
+  « Repassé, toujours personne », « Quand repasser ? ») without *Transformer en immeuble…*, titled « 51 · Esc. B · RdC · 8 Rue des Lilas » (staircase only when several).
   Stored through `MarkDwelling`: only that door is stamped.
 
 « Décrire l'immeuble » details fixed in T1.9:
@@ -1268,6 +1302,7 @@ the alphabet), `RescueCentreKey` (normalised name), `TourneeNumber`, `MemberName
 `HouseNumber` (12 + "bis", with the
 French ordering), `StreetName`, `InseeCode` (the five-character commune code, `2A`/`2B`
 in Corsica), `VisitStatus` (`toDo`, `done`, `nobodyHome`, `comeBack`), `ComeBack` (the optional hint of « repasser »),
+`NobodyHomeTries` (the tries with nobody home, #80),
 `GeoPoint`, `StreetShape`, `Progress`, `ProgressLevel`
 (`free`, `toDo`, `partial`, `done`), `CampaignYear`. Each house and dwelling also keeps its
 `previousStatus` (last campaign's result, read-only).
@@ -1285,6 +1320,11 @@ Value-object rules fixed in T1.1 (`lib/domain/street/`):
   Unicode code points (🚒 = 1, `characterCount`). It is the only free text kept about a house:
   the free `Note` was removed for privacy (T1.20, §8.3). The security
   rules must count the same way (checked with emoji in the rules tests, T2.4).
+- **`NobodyHomeTries`** (#80): a count `0..99` (`create` refuses others: `outOfRange`; `none`
+  = 0); `next` adds one, `99` stays `99`. `keptBy(status, tries)` is the rule a status puts on
+  it: to do → none; nobody home → at least one (the first « personne » is a try); done and
+  « repasser » → kept. The `House` and `Dwelling` factories run it (a building has none), so a
+  stored « personne » without a count reads as its first try.
 - Invalid input returns a failure value (`Result` = `Ok` | `Err`, `lib/domain/shared/`),
   never an exception.
 - **Identifiers** (`MemberId`, `StreetId`, `BanStreetId`) are opaque, made by adapters, never
@@ -1305,6 +1345,15 @@ Value-object rules fixed in T1.1 (`lib/domain/street/`):
   `comeBack` starts without hint (or keeps the hint it already had) and any other status drops
   the hint. `setComeBack(number, hint)` on a single house only sets the hint of a house
   « repasser »; on a house not « repasser », or with null, it is refused (`notComeBack`).
+- **Tries with nobody home** (#80): a single house or a door has the `tries` its status allows
+  (`NobodyHomeTries.keptBy`); `markHouse` / `markDwelling` give the new status and the tries
+  follow it (never one more). `markNobodyHomeAgain(number)` / `markDwellingNobodyHomeAgain(number,
+  key)` (« Repassé, toujours personne ») make it « personne » with `tries.next`, its hint
+  dropped, stamped; refused unless it is « personne » or « repasser » (`notToVisitAgain`), and
+  on a building (`houseIsBuilding`). They return `HouseNobodyHomeAgain` /
+  `DwellingNobodyHomeAgain` (the new `tries`, `before`, the stamp), undone like any house or door
+  change. Every other command keeps the tries (hint, rename, renumber, layout keeping a door);
+  a house laid out as a building loses its own (its doors count theirs).
 - Commands `markHouse` and `setComeBack` stamp the house with
   `by`/`at` and return `Result<(Street, Change), HouseChangeFailure>`; an unknown number is
   `unknownHouse`. `delete(by, at)` / `restore()` set and clear the street's `deletion`
@@ -1499,7 +1548,7 @@ Use cases and phone storage fixed in T1.6 (`lib/application/use_cases/`,
 - **Use cases** (one class, one `call`; each loads the street, runs the root's command, saves,
   returns the change for « Annuler »; refusals are `CommandFailure<F>` = `StreetNotFound` |
   `CommandRefused(reason)`, `F` being the street's failure enum): `SetHouseDetails`
-  (one `Mark` of a house: `StatusMark`, `ComeBackMark`; a tap on a tile is a `StatusMark`
+  (one `Mark` of a house: `StatusMark`, `ComeBackMark`, `NobodyHomeAgainMark` (#80); a tap on a tile is a `StatusMark`
   of the next status, the house sheet stores each control on its own), `MarkDwelling` (same `Mark`s on a door),
   `DescribeBuilding` (`LayOutBuilding`, `AddDoor`, `RemoveDoor`, `RenameDoor`,
   `BackToSingleHouse`), `EditStreetNumbers` (`AddNumbers`, `RemoveNumber`, `RestoreNumber`,
@@ -1979,6 +2028,7 @@ final class Street {                       // aggregate root
   // setComeBack, delete, restore;
   // buildings (T1.3): describeBuilding, addDoor, removeDoor, renameDoor, removeBuilding,
   //                   markDwelling, setDwellingComeBack;
+  // tries (#80): markNobodyHomeAgain, markDwellingNobodyHomeAgain;
   // edit mode (T1.4): Street.manual, addNumbers, removeNumber (soft), restoreNumber,
   //                   renameNumber, renameStreet
   // undo (T1.6): undo(change) → (Street, HouseReverted | DwellingReverted | …)
@@ -1987,16 +2037,18 @@ final class Street {                       // aggregate root
 
 final class House { HouseNumber number; VisitStatus status; ComeBack? comeBack;
                     ChangeStamp? lastChange; Building? building;     // building: status is toDo
-                    GeoPoint? position; }                            // the map dot (T1.6)
+                    GeoPoint? position;                              // the map dot (T1.6)
+                    NobodyHomeTries tries; }                         // « ×3 » (#80); none on a building
 final class Building { DoorLabelStyle style; List<Staircase> staircases;   // A, B…
                        BuildingStatus get status; Progress get progress; }
 // Staircase { StaircaseName name; List<Floor> floors /* top first */ }
 // Floor { int? level /* null = « Logements » */; List<Dwelling> dwellings }
 // Dwelling { DwellingLabel label /* unique on its floor */; VisitStatus status; ComeBack? comeBack;
-//            ChangeStamp? lastChange }   — named by DwellingKey(staircase, level, label)
+//            ChangeStamp? lastChange; NobodyHomeTries tries }   — named by DwellingKey(staircase, level, label)
 
 sealed class StreetChange { /* HouseMarked, ComeBackSet, BuildingLaidOut,
                                BuildingRemoved, DwellingMarked, DwellingComeBackSet,
+                               HouseNobodyHomeAgain, DwellingNobodyHomeAgain (#80),
                                StreetDeleted, StreetRestored,
                                NumbersAdded, NumberRemoved, NumberRestored,
                                NumberRenamed, StreetRenamed,
@@ -2053,6 +2105,8 @@ tournees/{tourneeId}
                                             comeBack = hint ("" for none) only when COME_BACK
                                             (on a building: its own « repasser »)
                  by: uid, at: timestamp,  ← last change, both null before any
+                 tries: 2,                ← tries with nobody home (#80), 1–99; absent = 0
+                                            (written from the first try, removed when 0)
                  deletedAt: null, deletedBy: null },   ← set = number in the Corbeille
         "8":   { n: 8, …, status: "TO_DO",        ← a building is always TO_DO itself
                  labelStyle: "FLOOR_AND_NUMBER",  ← FLOOR_AND_NUMBER | FLOOR_AND_LETTER | FREE
@@ -2061,7 +2115,7 @@ tournees/{tourneeId}
                                           ← staircases A→Z, floors top first (floor null for
                                             the « Logements » row), doors left to right; it
                                             keeps the doors' order and the emptied floors
-                 dwellings: { "A5-51": { status, comeBack, by, at }, … } }
+                 dwellings: { "A5-51": { status, comeBack, by, at, tries? }, … } }
                                           ← the marks of each door; key = letter + level +
                                             "-" + label ("A0-Gauche"; "A-Gauche" when the
                                             floors are unknown). A single house has none of
@@ -2072,17 +2126,20 @@ tournees/{tourneeId}
 The street document fixed in T2.3 (`infrastructure/firestore/mappers/`): field names above,
 statuses and label styles under fixed names. `prev` (last campaign's status) comes with the new
 campaign (v1.1). `shape` and `assignees` came with the map (T3.3): a document written before
-has neither and reads as no shape, nobody covering it.
+has neither and reads as no shape, nobody covering it. `tries` (#80) is written only from the
+first try and read as 0 when absent (or null), so older documents, and the marks of an app
+older than #80 (which leave the field as it was), need no rewriting: the domain reads it
+through the status (none when to do, at least one when nobody is home).
 **Writes name field paths by segments** (`FieldPath(['houses', '8', 'dwellings', 'A0-Porte
 1.2', 'status'])`), never dotted text: a typed door label may hold a dot. What each change
 writes:
 
 | Change | Fields written (under `houses.<n>` unless said) |
 |---|---|
-| mark, « repasser » of a house | `status`, `comeBack`, `by`, `at` (« repasser » hint: `comeBack`, `by`, `at`) |
-| mark, « repasser » of a door | `dwellings.<key>.status`, `.comeBack`, `.by`, `.at` (hint: no `status`) |
-| layout (describe, add / remove / rename a door) | `status`, `comeBack`, `by`, `at`, `labelStyle`, `layout`, then each door `dwellings.<key>` whole; each door dropped is deleted |
-| back to a single house | `status`, `comeBack`, `by`, `at`; `labelStyle`, `layout`, `dwellings` deleted |
+| mark, « Repassé, toujours personne », « repasser » of a house | `status`, `comeBack`, `tries` (the count, or deleted when 0), `by`, `at` (« repasser » hint: `comeBack`, `by`, `at`) |
+| mark, « Repassé, toujours personne », « repasser » of a door | `dwellings.<key>.status`, `.comeBack`, `.tries`, `.by`, `.at` (hint: no `status`, no `tries`) |
+| layout (describe, add / remove / rename a door) | `status`, `comeBack`, `tries` (deleted), `by`, `at`, `labelStyle`, `layout`, then each door `dwellings.<key>` whole; each door dropped is deleted |
+| back to a single house | `status`, `comeBack`, `tries` (deleted), `by`, `at`; `labelStyle`, `layout`, `dwellings` deleted |
 | numbers added | each new `houses.<n>` whole in one update; each one restored: `deletedAt`, `deletedBy` = null, in an update of its own (the rules check one by one only a write changing one house, T2.4) |
 | number removed / restored | `deletedAt`, `deletedBy` (set / null) |
 | number renamed | `houses.<old>` deleted, `houses.<new>` whole |
@@ -2130,7 +2187,8 @@ can never drift.
   make one file of a few MB rewritten at every tap; a street's file is a few kB to ≈ 100 kB).
   Schema `version: 3` (T1.20: no `note`; T1.16: status `comeBack`, hint in `comeBack` only
   then; T3.3 added `shape`, the encoded lines, and `assignees`, member ids, without a new
-  version: a file without them reads as no shape, nobody), written and read by pure mappers (`mappers/street_json_mapper.dart`). Version 1 files
+  version: a file without them reads as no shape, nobody; #80 added `tries` on houses and doors
+  the same way, written from the first try, absent = 0), written and read by pure mappers (`mappers/street_json_mapper.dart`). Version 1 files
   (« repasser » as a flag) are still read: a house or door to do or nobody home with a
   `comeBack` becomes « repasser », hint kept. Version 1 and 2 files allowed hints of 50
   characters: a longer one than 20 is cut to its first 20 (code points), trimmed. They held a
@@ -2222,10 +2280,12 @@ photo of the QR) is even more likely. So **knowing a code must not be enough**:
 - `tourneeKeys/{key}`: `get` allowed (creation must know the pair is taken); create only if
   absent; never updated; deleted only with the tournée.
 - `rescueCentres`: readable by signed-in users (station names only), create-only.
-- Street and house writes: field-path updates only on `status`, `comeBack`, `by`, `at`,
+- Street and house writes: field-path updates only on `status`, `comeBack`, `tries`, `by`, `at`,
   `assignees`, `deletedAt/By`, numbers and dwellings; `status` in the enum; the `comeBack` hint
   ≤ 20 chars (code points, as the domain counts them, §6.1); no other free-text field (no
-  `note`, §8.3);
+  `note`, §8.3); `tries` (#80, on a house or a door, `hasTries`) optional, an integer 1–99 when
+  present, absent on a number just added; not tied to the status, so a mark by an app older
+  than #80, which leaves it as it was, is still accepted;
   `by` must equal the caller's uid; `at` must be a timestamp. It is the phone's time of the
   change, not the server's (T2.3): a mark queued offline reaches the server hours later and
   must keep the time it was made, so the rules cannot require `at == request.time`.

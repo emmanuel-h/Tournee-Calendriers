@@ -2,6 +2,7 @@ import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
+import 'package:tournee_calendriers/domain/street/nobody_home_tries.dart';
 import 'package:tournee_calendriers/domain/street/progress.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
@@ -19,6 +20,63 @@ void main() {
     expect(house.building, isNull);
     expect(house.isBuilding, isFalse);
     expect(house.position, isNull);
+    expect(house.tries, NobodyHomeTries.none);
+  });
+
+  group('tries', () {
+    test('should keep its tries when nobody is home', () {
+      final house = House(
+        number: n('7'),
+        status: VisitStatus.nobodyHome,
+        tries: tries(3),
+      );
+
+      expect(house.tries, tries(3));
+    });
+
+    test('should count one try when nobody is home without any given', () {
+      final house = House(number: n('7'), status: VisitStatus.nobodyHome);
+
+      expect(house.tries, tries(1));
+    });
+
+    test('should keep its tries when done', () {
+      final house = House(
+        number: n('7'),
+        status: VisitStatus.done,
+        tries: tries(2),
+      );
+
+      expect(house.tries, tries(2));
+    });
+
+    test('should drop its tries when to do', () {
+      final house = House(number: n('7'), tries: tries(2));
+
+      expect(house.tries, NobodyHomeTries.none);
+    });
+
+    test('should have no tries when it is a building', () {
+      final house = House(
+        number: n('8'),
+        status: VisitStatus.nobodyHome,
+        tries: tries(2),
+        building: building(),
+      );
+
+      expect(house.tries, NobodyHomeTries.none);
+    });
+
+    test('should keep its tries when restamped', () {
+      final house = House(
+        number: n('7'),
+        status: VisitStatus.nobodyHome,
+        tries: tries(4),
+        lastChange: leaAtTwo,
+      );
+
+      expect(house.restampedBy(paul).tries, tries(4));
+    });
   });
 
   test('should keep its position when given one', () {
@@ -191,6 +249,13 @@ void main() {
         lastChange: leaAtTwo,
         position: townHallDoor,
       ),
+      'tries': House(
+        number: n('3bis'),
+        status: VisitStatus.comeBack,
+        comeBack: comeBack('après 19h'),
+        lastChange: leaAtTwo,
+        tries: tries(2),
+      ),
     };
 
     test('should be equal when the positions are equal', () {
@@ -248,6 +313,19 @@ void main() {
       house.toString(),
       'House(12, VisitStatus.comeBack, ComeBack(après 19h), '
       'ChangeStamp(lea, 2026-11-02 14:02:00.000Z))',
+    );
+  });
+
+  test('should show its tries after its fields when it has some', () {
+    final house = House(
+      number: n('7'),
+      status: VisitStatus.nobodyHome,
+      tries: tries(3),
+    );
+
+    expect(
+      house.toString(),
+      'House(7, VisitStatus.nobodyHome, null, null, ×3)',
     );
   });
 

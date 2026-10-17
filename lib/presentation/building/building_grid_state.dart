@@ -13,8 +13,9 @@ import 'package:tournee_calendriers/presentation/street/street_view_state.dart';
 /// One button of the staircase control: « Esc. A · 7/12 ».
 typedef StaircaseTab = ({StaircaseName name, int done, int total});
 
-/// One door of the grid: its label (`key.label`) and its look.
-typedef DoorTile = ({DwellingKey key, TileMark mark});
+/// One door of the grid: its label (`key.label`), its look and the tries it
+/// shows (« ×3 », null below two: see `shownTries`).
+typedef DoorTile = ({DwellingKey key, TileMark mark, int? tries});
 
 /// One floor of the grid: its label (« RdC », « 1er »…, « Logements » when
 /// [level] is null) and its doors, left to right.
@@ -86,12 +87,14 @@ final class BuildingGridShown extends BuildingGridState {
   bool get showsStaircases => staircases.length > 1;
 }
 
-/// What a tap on a door changed, for the snackbar « 51 → Fait » and the
-/// announcement « Escalier A, 5e, porte 51, fait ». [namesStaircase] is
-/// false when the building has a single staircase: it is not named then,
-/// as the grid shows no staircase control.
+/// What a tap on a door (or « Repassé, toujours personne ») changed, for
+/// the snackbar « 51 → Fait » and the announcement « Escalier A, 5e, porte
+/// 51, fait ». [namesStaircase] is false when the building has a single
+/// staircase: it is not named then, as the grid shows no staircase
+/// control. [tries] is what the door now shows (null below two).
 typedef MarkedDoor = ({
   DwellingKey key,
   VisitStatus status,
   bool namesStaircase,
+  int? tries,
 });
