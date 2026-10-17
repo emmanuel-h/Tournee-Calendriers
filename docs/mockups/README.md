@@ -6,7 +6,7 @@ Source of the visual mockups for `docs/PLAN.md` §5, one `.dc.html` file per scr
 `Doors.dc.html` is « Modifier les portes » (PLAN §5.7), opened from « Gérer l'immeuble » under a
 building's grid (`Building.dc.html`). `AllTournees.dc.html`, `HomeAdmin.dc.html` and `TeamMember.dc.html` are the admin
 screens of PLAN §5.12 (#75): `Team.dc.html` is Équipe seen by an admin, `TeamMember.dc.html` by a
-member; `Welcome.dc.html` shows a phone that is not an admin. All copy is French, as in the app. Live canvas: https://claude.ai/artifact/7ym7Qvi5Xpp8VwEDnyn5dL
+member; `Welcome.dc.html` shows a phone that is not an admin. `AddList.dc.html` is the « Liste » tab of « Ajouter des rues » (#78, next to the map's « Carte » tab in `Pick.dc.html`); `Create.dc.html` picks the tournée's communes (#78). `HouseNobody.dc.html` shows the tries with nobody home and « Repassé, toujours personne » (#80); `HouseComeBack.dc.html` is the sheet a tap to ↻ opens, with the day + hour « Quand repasser ? » that replaces the free hint on every sheet (#81). All copy is French, as in the app. Live canvas: https://claude.ai/artifact/7ym7Qvi5Xpp8VwEDnyn5dL
 
 Status: **awaiting approval**. Once approved, these are the visual reference for the `ui/` code:
 the colours, type, spacing and status treatments below are the design tokens.

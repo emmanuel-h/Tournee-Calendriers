@@ -26,6 +26,13 @@ a{color:#B3261E}a:hover{color:#8C1D18}
   <div style="display: flex; flex-direction: column; gap: 16px; padding: 4px 24px 0 24px">
     <div style="display: flex; flex-direction: column; gap: 6px"><label class="lbl" for="cs">Centre de secours</label>
       <div style="position: relative"><input class="in" id="cs" value="CS Villefranche" style="padding-right: 44px"><svg viewBox="0 0 24 24" style="position: absolute; right: 14px; top: 16px; width: 20px; height: 20px; fill: none; stroke: #4A5058; stroke-width: 2; stroke-linecap: round"><path d="M6 9l6 6 6-6"/></svg></div></div>
+    <!-- #78: one or more communes, at least one. Chips with ✕ (48 dp target), then a field that
+         searches geo.api.gouv.fr as « Importer des rues » did; a pick adds a chip and clears it. -->
+    <div style="display: flex; flex-direction: column; gap: 8px"><span class="lbl">Communes</span>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px">
+        <span style="height: 40px; display: inline-flex; align-items: center; gap: 4px; padding: 0 4px 0 14px; border-radius: 20px; background: #FFFFFF; border: 1.5px solid #CFC9BD; font-size: 15px">Villefranche-sur-Saône (69400)<button class="ib" aria-label="Retirer Villefranche-sur-Saône" style="width: 36px; height: 36px"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span>
+      </div>
+      <div style="position: relative"><input class="in" id="commune" placeholder="Ajouter une commune…" style="padding-left: 44px"><svg viewBox="0 0 24 24" style="position: absolute; left: 14px; top: 16px; width: 20px; height: 20px; fill: none; stroke: #4A5058; stroke-width: 2; stroke-linecap: round"><path d="M12 5v14M5 12h14"/></svg></div></div>
     <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
       <div style="display: flex; flex-direction: column; gap: 6px"><label class="lbl" for="num">N° de tournée</label><input class="in" id="num" value="49"></div>
       <div style="display: flex; flex-direction: column; gap: 6px"><label class="lbl" for="yr">Année</label><input class="in" id="yr" value="2026"></div>

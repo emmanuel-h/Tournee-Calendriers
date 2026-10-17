@@ -22,6 +22,12 @@ a{color:#B3261E}a:hover{color:#8C1D18}
     <a class="ib" href="Home.dc.html" aria-label="Fermer"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></a>
     <h1 style="flex: 1; margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 28px">Ajouter des rues</h1>
   </div>
+  <!-- #78: two tabs. « Carte » is this map mode; « Liste » is the checkbox list of the tournée's
+       communes (AddList.dc.html, the former « Importer des rues »). 48 dp, chosen one in ink. -->
+  <div role="tablist" style="margin: 0 16px 10px 16px; display: flex; border: 1.5px solid #CFC9BD; border-radius: 24px; overflow: hidden; height: 48px">
+    <button role="tab" aria-selected="true" style="flex: 1; border: 0; background: #1B1F24; color: #FFFFFF; font: 700 16px 'Atkinson Hyperlegible', sans-serif">Carte</button>
+    <a role="tab" aria-selected="false" href="AddList.dc.html" style="flex: 1; background: #FFFFFF; color: #1B1F24; font-weight: 700; font-size: 16px; display: flex; align-items: center; justify-content: center; text-decoration: none">Liste</a>
+  </div>
   <div style="padding: 0 16px 10px 16px">
     <div style="position: relative">
       <svg viewBox="0 0 24 24" style="position: absolute; left: 14px; top: 14px; width: 20px; height: 20px; fill: none; stroke: #4A5058; stroke-width: 2; stroke-linecap: round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>

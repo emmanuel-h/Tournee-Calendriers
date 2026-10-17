@@ -181,6 +181,27 @@
       "w": 390,
       "h": 844,
       "title": "5.8 Équipe (membre)"
+    },
+    "AddList.dc.html": {
+      "x": 3290,
+      "y": 1264,
+      "w": 390,
+      "h": 844,
+      "title": "5.4 Ajouter des rues — Liste (#78)"
+    },
+    "HouseNobody.dc.html": {
+      "x": 3760,
+      "y": 2528,
+      "w": 390,
+      "h": 844,
+      "title": "5.7 Fiche maison — personne, 2e passage (#80)"
+    },
+    "HouseComeBack.dc.html": {
+      "x": 4230,
+      "y": 2528,
+      "w": 390,
+      "h": 844,
+      "title": "5.7 Fiche maison — quand repasser (#81)"
     }
   },
   "createdOnFiles": {
@@ -243,11 +264,14 @@
     "HomeZoom.dc.html",
     "Switcher.dc.html",
     "Pick.dc.html",
+    "AddList.dc.html",
     "Manual.dc.html",
     "Main.dc.html",
     "Edit.dc.html",
     "Numbers.dc.html",
     "House.dc.html",
+    "HouseNobody.dc.html",
+    "HouseComeBack.dc.html",
     "Building.dc.html",
     "BuildingSetup.dc.html",
     "Doors.dc.html",
