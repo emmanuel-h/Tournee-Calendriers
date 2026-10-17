@@ -149,4 +149,30 @@ void main() {
       expect(addStreetsArea(const [], [_street('b')]), isNull);
     });
   });
+
+  group('homeArea', () {
+    final placed = _street(
+      'a',
+      houses: [House(number: n('1'), position: at(45.99210, 4.71500))],
+    );
+    final commune = TourneeCommune(
+      commune: villefranche,
+      centre: at(45.9837, 4.726),
+    );
+
+    test('should show the streets when one has a place on the map', () {
+      expect(homeArea([commune], [placed]), tourneeArea([placed]));
+    });
+
+    test('should show the communes when no street has a place', () {
+      expect(homeArea([commune], [_street('b')]), communesArea([commune]));
+    });
+
+    test('should be null when neither has a place on the map', () {
+      expect(
+        homeArea([TourneeCommune(commune: villefranche)], [_street('b')]),
+        isNull,
+      );
+    });
+  });
 }

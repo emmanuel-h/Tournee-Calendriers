@@ -1,43 +1,25 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:tournee_calendriers/presentation/my_tournees/my_tournees_notifier.dart';
 import 'package:tournee_calendriers/presentation/street_list/street_list_notifier.dart';
 import 'package:tournee_calendriers/presentation/street_list/street_list_state.dart';
 import 'package:tournee_calendriers/ui/components/app_buttons.dart';
 import 'package:tournee_calendriers/ui/components/filter_field.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
-import 'package:tournee_calendriers/ui/screens/my_tournees/my_tournees_sheet.dart';
-import 'package:tournee_calendriers/ui/screens/my_tournees/tournee_title_button.dart';
-import 'package:tournee_calendriers/ui/screens/start/admin_visit_banner.dart';
-import 'package:tournee_calendriers/ui/screens/start/move_streets_card.dart';
-import 'package:tournee_calendriers/ui/screens/start/pending_sync_line.dart';
+import 'package:tournee_calendriers/ui/screens/start/start_app_bar.dart';
 import 'package:tournee_calendriers/ui/screens/start/street_row.dart';
-import 'package:tournee_calendriers/ui/screens/team/team_button.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
-/// « Mes rues », the temporary start screen of M1 (PLAN §5.0,
-/// `docs/mockups/Start.dc.html`): the streets on the phone with their
-/// progress, a filter, and « Importer des rues ». Works offline; while
-/// changes made offline wait to be sent, a line above the button says so.
+/// « Mes rues », the start screen while no tournée is open (PLAN §5.0,
+/// `docs/mockups/Start.dc.html`): the streets kept on the phone since M1
+/// with their progress, a filter, and « Importer des rues ». Works offline.
+/// With a tournée open, Accueil (§5.3, `HomeScreen`) shows instead.
 ///
-/// Its top bar is Accueil's (PLAN §5.3, Home mockup): the open tournée
-/// (« Tournée 49 · 2026 ▾ » over its centre) opens « Mes tournées », 👥
-/// opens Équipe (with a dot while a request waits), ⚙ opens Paramètres.
-/// With no tournée open, the app's name stays, opens « Mes tournées » too,
-/// and there is no 👥.
-///
-/// The streets are those of the open tournée, the phone's own when none is
-/// open; a card on top offers the phone's streets to the open tournée. An
-/// admin who visits the open tournée without being in it sees « Rues »
-/// rather than « Mes rues », under the banner « Administrateur · pas
-/// membre » and its « Rejoindre » (PLAN §5.12).
-///
-/// Temporary: Accueil (the map and its « Mes rues » panel, PLAN §5.3)
-/// replaces it in M3.
+/// Its top bar is Accueil's ([StartAppBar]): the app's name opens « Mes
+/// tournées ».
 ///
 /// A `ConsumerWidget` is a `StatelessWidget` that can read providers:
 /// `ref.watch` redraws it whenever the list's state changes.
@@ -51,49 +33,12 @@ final class StartScreen extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final state = ref.watch(streetListProvider);
-    final tournee = ref.watch(currentTourneeProvider);
     return Scaffold(
-      appBar: AppBar(
-        toolbarHeight: tournee == null
-            ? null
-            : AppSizes.titleBarWithSubtitleHeight,
-        title: tournee == null
-            ? AppTitleButton(
-                key: const Key('home.appTitle'),
-                onPressed: () => showMyTourneesSheet(context),
-              )
-            : TourneeTitleButton(
-                tournee: tournee,
-                onPressed: () => showMyTourneesSheet(context),
-              ),
-        titleSpacing: AppSizes.gutter,
-        actions: [
-          if (showGallery)
-            IconButton(
-              key: const Key('home.gallery'),
-              tooltip: l10n.galleryTitle,
-              icon: const Icon(Icons.widgets_outlined),
-              // `push` stacks the gallery on top, so it offers a back arrow.
-              onPressed: () => context.push(AppRoutes.gallery),
-            ),
-          if (tournee != null) const TeamButton(key: Key('home.team')),
-          IconButton(
-            key: const Key('home.settings'),
-            tooltip: l10n.screenSettings,
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () => context.push(AppRoutes.settings),
-          ),
-        ],
-      ),
+      appBar: StartAppBar(tournee: null, showGallery: showGallery),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Only while an admin visits the open tournée.
-            const AdminVisitBanner(),
-            // The phone's streets offered to the open tournée (nothing
-            // when there is none to offer).
-            const MoveStreetsCard(),
             Expanded(
               child: state.loading
                   ? const SizedBox.shrink()
@@ -101,9 +46,6 @@ final class StartScreen extends ConsumerWidget {
                   ? const _EmptyState()
                   : _StreetList(state: state),
             ),
-            // « ☁ Modifications de 3 rues en attente d'envoi », only while
-            // some wait to be sent.
-            const PendingSyncLine(),
             Padding(
               padding: const EdgeInsets.fromLTRB(
                 AppSizes.gutter,
@@ -114,16 +56,8 @@ final class StartScreen extends ConsumerWidget {
               child: PrimaryButton(
                 key: const Key('start.import'),
                 icon: Icons.add,
-                // With a tournée open, « Ajouter des rues » (« Carte |
-                // Liste »); with none, the phone's own import of M1.
-                label: tournee == null
-                    ? l10n.importStreetsAction
-                    : l10n.addStreetsTitle,
-                onPressed: () => context.push(
-                  tournee == null
-                      ? AppRoutes.importStreets
-                      : AppRoutes.addStreets,
-                ),
+                label: l10n.importStreetsAction,
+                onPressed: () => context.push(AppRoutes.importStreets),
               ),
             ),
           ],
@@ -175,9 +109,6 @@ final class _StreetList extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final colors = AppColors.of(context);
-    final visiting = ref.watch(
-      currentTourneeProvider.select((tournee) => tournee?.isVisiting ?? false),
-    );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
@@ -194,9 +125,7 @@ final class _StreetList extends ConsumerWidget {
             spacing: 12,
             children: [
               Text(
-                visiting
-                    ? l10n.startStreetsHeaderVisitor(state.streetCount)
-                    : l10n.startStreetsHeader(state.streetCount),
+                l10n.startStreetsHeader(state.streetCount),
                 key: const Key('start.streetsHeader'),
                 style: AppTextStyles.listHeader.copyWith(color: colors.ink),
               ),

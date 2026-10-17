@@ -44,6 +44,7 @@ import 'package:tournee_calendriers/application/use_cases/mark_dwelling.dart';
 import 'package:tournee_calendriers/application/use_cases/move_streets_into_tournee.dart';
 import 'package:tournee_calendriers/application/use_cases/my_tournees.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_corbeille.dart';
+import 'package:tournee_calendriers/application/use_cases/observe_my_streets.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_pending_sync.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_street.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_streets.dart';
@@ -142,6 +143,12 @@ final observeStreetProvider = Provider(
 );
 final observeStreetsProvider = Provider(
   (ref) => ObserveStreets(ref.watch(streetRepositoryProvider)),
+);
+final observeMyStreetsProvider = Provider(
+  (ref) => ObserveMyStreets(
+    ref.watch(streetRepositoryProvider),
+    ref.watch(identityProvider),
+  ),
 );
 final setHouseDetailsProvider = Provider(
   (ref) => SetHouseDetails(

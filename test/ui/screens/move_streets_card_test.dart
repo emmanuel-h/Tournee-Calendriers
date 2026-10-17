@@ -20,6 +20,7 @@ import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 import '../support/app_overrides.dart';
+import '../support/fake_map_view.dart';
 
 // The card « 2 rues sont enregistrées sur ce téléphone. » of the start
 // screen (PLAN §5.0).
@@ -78,10 +79,10 @@ void main() {
     );
     expect(find.text('Les ajouter à la tournée'), findsOneWidget);
     expect(find.text('Plus tard'), findsOneWidget);
-    // Above the empty tournée's message.
+    // Above Accueil's map and its panel.
     expect(
       tester.getBottomLeft(card).dy,
-      lessThan(tester.getTopLeft(find.text("Aucune rue pour l'instant")).dy),
+      lessThanOrEqualTo(tester.getTopLeft(find.byType(FakeMapView)).dy),
     );
     expect(
       tester.getSize(find.byKey(const Key('start.moveStreetsLater'))).height,
@@ -104,6 +105,9 @@ void main() {
 
     expect(find.text('2 rues ajoutées à la tournée'), findsOneWidget);
     expect(card, findsNothing);
+    // The whole list of Accueil's panel.
+    await tester.tap(find.byKey(const Key('home.panel.handle')));
+    await tester.pumpAndSettle();
     expect(find.text('Rue Nationale'), findsOneWidget);
     expect(find.text('Rue Pierre Morin'), findsOneWidget);
     expect(log.remembered, [tournee49.id]);

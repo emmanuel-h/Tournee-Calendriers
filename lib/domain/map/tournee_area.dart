@@ -43,3 +43,12 @@ GeoBounds? addStreetsArea(
   Iterable<TourneeCommune> communes,
   Iterable<Street> streets,
 ) => communesArea(communes) ?? tourneeArea(streets);
+
+/// Where Accueil's map starts (PLAN §5.3): on the tournée's [streets],
+/// where the team walks; on its [communes] while no street has a place on
+/// the map (none added yet, or all typed in by hand); null (all of France)
+/// when neither has one.
+GeoBounds? homeArea(
+  Iterable<TourneeCommune> communes,
+  Iterable<Street> streets,
+) => tourneeArea(streets) ?? communesArea(communes);

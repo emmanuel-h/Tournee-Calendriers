@@ -13,6 +13,7 @@ import 'package:tournee_calendriers/ui/screens/building/adjust_doors_screen.dart
 import 'package:tournee_calendriers/ui/screens/component_gallery_screen.dart';
 import 'package:tournee_calendriers/ui/screens/corbeille/corbeille_screen.dart';
 import 'package:tournee_calendriers/ui/screens/edit_street/edit_street_screen.dart';
+import 'package:tournee_calendriers/ui/screens/home/start_or_home.dart';
 import 'package:tournee_calendriers/ui/screens/import_streets/import_screen.dart';
 import 'package:tournee_calendriers/ui/screens/map_gallery_screen.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/create_tournee_screen.dart';
@@ -22,7 +23,6 @@ import 'package:tournee_calendriers/ui/screens/onboarding/welcome_screen.dart';
 import 'package:tournee_calendriers/ui/screens/settings/changelog_screen.dart';
 import 'package:tournee_calendriers/ui/screens/settings/privacy_screen.dart';
 import 'package:tournee_calendriers/ui/screens/settings/settings_screen.dart';
-import 'package:tournee_calendriers/ui/screens/start/start_screen.dart';
 import 'package:tournee_calendriers/ui/screens/street/street_screen.dart';
 import 'package:tournee_calendriers/ui/screens/team/team_screen.dart';
 
@@ -46,7 +46,8 @@ GoRouter buildAppRouter({
   routes: [
     GoRoute(
       path: AppRoutes.home,
-      builder: (context, state) => StartScreen(showGallery: showGallery),
+      // Accueil while a tournée is open, the phone's streets otherwise.
+      builder: (context, state) => StartOrHome(showGallery: showGallery),
     ),
     GoRoute(
       path: AppRoutes.importStreets,

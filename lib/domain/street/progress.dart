@@ -66,6 +66,13 @@ final class Progress {
   /// buildings with their own « repasser ».
   int get toComeBack => comeBack + buildingComeBacks;
 
+  /// The share of the doors done, in whole percent (« Équipe : 41 % »,
+  /// PLAN §5.3); 0 without any door.
+  ///
+  /// Rounded down, so 100 % means every door is done: 199 of 200 is 99,
+  /// not a 100 that would tell the team it has finished.
+  int get donePercent => total == 0 ? 0 : done * 100 ~/ total;
+
   /// The progress of both groups together.
   Progress operator +(Progress other) => Progress._(
     done: done + other.done,

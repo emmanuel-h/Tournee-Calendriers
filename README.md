@@ -22,11 +22,16 @@ Onboarding:
   tournée shown, « Demander à rejoindre »; « Demande envoyée » waits, offline too, and opens
   the tournée once a member accepts (« Demande refusée » otherwise, « Annuler la demande »).
 
-Temporary M1 start screen (until the map arrives in M3):
+Start screen:
 
-- « Mes rues »: the streets of the open tournée, shared live with the team (Firestore), or
-  the streets on the phone while no tournée is open; their progress, a filter that ignores
-  accents and case; works offline.
+- Accueil (a tournée open): the tournée's map, its streets coloured by progress (« faite »,
+  « en partie », « à faire », « libre ») and, from street zoom, a dot per house; a legend
+  chip that folds away and explains the dots once zoomed in. Below, the « Mes rues » panel
+  (drag it up for the whole list, down for the totals): « Mes rues · 43/62 », « Équipe :
+  41 % », the member's streets, then « Autres rues de la tournée »; a row opens the street.
+  A street tapped on the map offers « Ouvrir Rue … · 31/42 ». Works offline.
+- « Mes rues » (no tournée open): the streets on the phone, their progress, a filter that
+  ignores accents and case; works offline.
 - With a tournée open, a card offers the streets kept on the phone: « Les ajouter à la
   tournée » moves them with their marks (once per tournée; a street the tournée already has
   is skipped), « Plus tard » hides the card until the next launch.

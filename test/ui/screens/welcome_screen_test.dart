@@ -6,6 +6,7 @@ import 'package:tournee_calendriers/domain/tournee/member.dart';
 import 'package:tournee_calendriers/domain/tournee/member_name.dart';
 import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
 import 'package:tournee_calendriers/ui/app.dart';
+import 'package:tournee_calendriers/ui/screens/home/home_screen.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/create_tournee_screen.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/join_pending_screen.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/join_tournee_screen.dart';
@@ -93,7 +94,7 @@ void main() {
         mine: valueOf(MyTournees.none.remember(tournee49).open(tournee49.id)),
       );
 
-      expect(find.byType(StartScreen), findsOneWidget);
+      expect(find.byType(HomeScreen), findsOneWidget);
       expect(find.text('Tournée 49 · 2026'), findsOneWidget);
     });
 

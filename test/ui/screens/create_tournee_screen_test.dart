@@ -9,9 +9,10 @@ import 'package:tournee_calendriers/domain/tournee/rescue_centre.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_repository.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
+import 'package:tournee_calendriers/ui/screens/home/home_screen.dart';
+import 'package:tournee_calendriers/ui/screens/home/start_or_home.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/create_tournee_screen.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/join_tournee_screen.dart';
-import 'package:tournee_calendriers/ui/screens/start/start_screen.dart';
 
 import '../../domain/tournee/tournee_fixtures.dart';
 import '../../support/fakes/fake_commune_search.dart';
@@ -70,7 +71,7 @@ void main() {
       ),
     );
     unawaitedPush(
-      GoRouter.of(tester.element(find.byType(StartScreen))),
+      GoRouter.of(tester.element(find.byType(StartOrHome))),
       AppRoutes.create,
     );
     await tester.pumpAndSettle();
@@ -264,7 +265,7 @@ void main() {
       await tapVisible(tester, find.byKey(const Key('create.continue')));
       await tester.pumpAndSettle();
 
-      expect(find.byType(StartScreen), findsOneWidget);
+      expect(find.byType(HomeScreen), findsOneWidget);
       expect(find.text('Tournée 49 · 2026'), findsOneWidget);
     },
   );

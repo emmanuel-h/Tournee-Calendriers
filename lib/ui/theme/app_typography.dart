@@ -120,6 +120,13 @@ abstract final class AppTextStyles {
     fontSize: 14,
   );
 
+  /// The words of the map's legend (« en partie »).
+  static const legend = TextStyle(
+    fontFamily: AppFonts.text,
+    fontWeight: FontWeight.w700,
+    fontSize: 13,
+  );
+
   /// Labels of pill buttons (« Tout cocher »).
   static const pill = TextStyle(
     fontFamily: AppFonts.text,

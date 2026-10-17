@@ -41,6 +41,10 @@ final class FakeStreetRepository implements StreetRepository {
   /// tournée.
   Object? watchError;
 
+  /// When set, every stream gives nothing until it completes: the phone
+  /// has not read the streets yet.
+  Completer<void>? holdWatches;
+
   /// The street [id] as stored now.
   Street? operator [](StreetId id) => _streets[id];
 
@@ -108,11 +112,12 @@ final class FakeStreetRepository implements StreetRepository {
     late final StreamController<T> controller;
     StreamSubscription<void>? subscription;
     controller = StreamController<T>(
-      onListen: () {
+      onListen: () async {
         if (watchError case final error?) {
           controller.addError(error);
           return;
         }
+        if (holdWatches case final hold?) await hold.future;
         controller.add(read());
         subscription = _changed.stream.listen((_) => controller.add(read()));
       },

@@ -38,6 +38,7 @@ final class TourneeMap extends StatefulWidget {
     this.area,
     this.onStreetTapped,
     this.onMapTapped,
+    this.onZoomChanged,
     this.padding = EdgeInsets.zero,
     this.phoneLocation = const GeolocatorPhoneLocation(),
   });
@@ -59,6 +60,11 @@ final class TourneeMap extends StatefulWidget {
 
   /// A tap anywhere else on the map: where the finger was.
   final ValueChanged<GeoPoint>? onMapTapped;
+
+  /// The map's zoom level, each time the camera stops after a move (a
+  /// pinch, « Me localiser », a fit): Accueil switches its legend at street
+  /// zoom.
+  final ValueChanged<double>? onZoomChanged;
 
   /// The room other widgets take over the map's edges (a banner on top, a
   /// panel at the bottom): « Me localiser », the attribution and the fitted
@@ -123,6 +129,9 @@ final class _TourneeMapState extends State<TourneeMap> {
   }
 
   Future<void> _addOurLayers() async {
+    // The style may finish loading after the map left the screen (the app
+    // closed, or another screen took the start's place): nothing to add.
+    if (!mounted) return;
     final controller = _controller!;
     // Read before the first `await`: the context must not be used across
     // asynchronous gaps, the widget may have changed by then.
@@ -234,6 +243,12 @@ final class _TourneeMapState extends State<TourneeMap> {
     }
   }
 
+  void _onCameraIdle() {
+    if (_controller?.cameraPosition case final camera?) {
+      widget.onZoomChanged?.call(camera.zoom);
+    }
+  }
+
   void _onLocated(GeoPoint position) {
     setState(() => _showPhone = true);
     final controller = _controller;
@@ -259,8 +274,17 @@ final class _TourneeMapState extends State<TourneeMap> {
             onMapCreated: _onMapCreated,
             onStyleLoadedCallback: _onStyleLoaded,
             onMapClick: _onMapClick,
+            // Keeps `controller.cameraPosition` up to date, read when the
+            // camera stops.
+            trackCameraPosition: true,
+            onCameraIdle: _onCameraIdle,
             // A map that turns or tilts under a gloved finger in the street
             // is harder to read than it is useful: north stays up.
+            // Our streets and dots are sources and layers of our own: none
+            // of MapLibre's annotation layers is needed. Without them, the
+            // style loading also adds nothing that could fail once the map
+            // has left the screen.
+            annotationOrder: const [],
             rotateGesturesEnabled: false,
             tiltGesturesEnabled: false,
             compassEnabled: false,

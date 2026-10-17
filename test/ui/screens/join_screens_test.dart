@@ -7,9 +7,10 @@ import 'package:tournee_calendriers/domain/tournee/member.dart';
 import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
+import 'package:tournee_calendriers/ui/screens/home/home_screen.dart';
+import 'package:tournee_calendriers/ui/screens/home/start_or_home.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/join_pending_screen.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/welcome_screen.dart';
-import 'package:tournee_calendriers/ui/screens/start/start_screen.dart';
 
 import '../../domain/tournee/my_tournees_fixtures.dart';
 import '../../domain/tournee/tournee_fixtures.dart';
@@ -64,7 +65,7 @@ void main() {
     (tester) async {
       await launch(tester, MyTournees.none.remember(tournee12));
       unawaitedPush(
-        GoRouter.of(tester.element(find.byType(StartScreen))),
+        GoRouter.of(tester.element(find.byType(StartOrHome))),
         AppRoutes.join,
       );
       await tester.pumpAndSettle();
@@ -94,7 +95,7 @@ void main() {
   testWidgets('should say a character no code has is typed', (tester) async {
     await launch(tester, MyTournees.none.remember(tournee12));
     unawaitedPush(
-      GoRouter.of(tester.element(find.byType(StartScreen))),
+      GoRouter.of(tester.element(find.byType(StartOrHome))),
       AppRoutes.join,
     );
     await tester.pumpAndSettle();
@@ -115,7 +116,7 @@ void main() {
     (tester) async {
       await launch(tester, MyTournees.none.remember(tournee12));
       unawaitedPush(
-        GoRouter.of(tester.element(find.byType(StartScreen))),
+        GoRouter.of(tester.element(find.byType(StartOrHome))),
         AppRoutes.join,
       );
       await tester.pumpAndSettle();
@@ -137,7 +138,7 @@ void main() {
     (tester) async {
       await launch(tester, MyTournees.none.remember(tournee12));
       unawaitedPush(
-        GoRouter.of(tester.element(find.byType(StartScreen))),
+        GoRouter.of(tester.element(find.byType(StartOrHome))),
         AppRoutes.join,
       );
       await tester.pumpAndSettle();
@@ -162,7 +163,7 @@ void main() {
       directory.answer(tourneeId, MemberStatus.active);
       await tester.pumpAndSettle();
 
-      expect(find.byType(StartScreen), findsOneWidget);
+      expect(find.byType(HomeScreen), findsOneWidget);
       expect(find.text('Tournée 49 · 2026'), findsOneWidget);
     });
 
@@ -203,14 +204,14 @@ void main() {
                 .open(tournee12.id),
           ),
         );
-        GoRouter.of(tester.element(find.byType(StartScreen)))
+        GoRouter.of(tester.element(find.byType(StartOrHome)))
             .go(AppRoutes.joinPendingOf(tourneeId));
         await tester.pumpAndSettle();
 
         await tester.tap(find.byKey(const Key('pending.back')));
         await tester.pumpAndSettle();
 
-        expect(find.byType(StartScreen), findsOneWidget);
+        expect(find.byType(HomeScreen), findsOneWidget);
         expect(find.text('Tournée 12 · 2026'), findsOneWidget);
       },
     );

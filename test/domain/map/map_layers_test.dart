@@ -319,6 +319,18 @@ void main() {
       expect(dot.toString(), 'HouseDot(rue-de-la-paix, 3, done)');
     });
   });
+
+  group('showsHouseDots', () {
+    test('should show the dots from street zoom', () {
+      expect(MapLayers.showsHouseDots(16), isTrue);
+      expect(MapLayers.showsHouseDots(17.5), isTrue);
+    });
+
+    test('should not show them under street zoom', () {
+      expect(MapLayers.showsHouseDots(15.99), isFalse);
+      expect(MapLayers.showsHouseDots(12), isFalse);
+    });
+  });
 }
 
 /// A street of one [house].

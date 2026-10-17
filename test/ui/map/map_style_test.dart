@@ -1,11 +1,26 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:tournee_calendriers/domain/map/map_layers.dart';
+import 'package:tournee_calendriers/domain/street/progress_level.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/ui/map/map_style.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 
 void main() {
+  group('streetLineColor', () {
+    test('should colour each level with its map token', () {
+      const colors = AppColors.light;
+
+      expect(streetLineColor(ProgressLevel.done, colors), colors.mapStreetDone);
+      expect(
+        streetLineColor(ProgressLevel.partial, colors),
+        colors.mapStreetPartial,
+      );
+      expect(streetLineColor(ProgressLevel.toDo, colors), colors.mapStreetToDo);
+      expect(streetLineColor(ProgressLevel.free, colors), colors.mapStreetFree);
+    });
+  });
+
   group('tappedStreet', () {
     test('should name the street when a solid street line is tapped', () {
       expect(
@@ -17,6 +32,13 @@ void main() {
     test('should name the street when a « libre » line is tapped', () {
       expect(
         tappedStreet(MapIds.freeStreetLines, 'rue-de-la-paix'),
+        StreetId('rue-de-la-paix'),
+      );
+    });
+
+    test('should name the street when the line under « libre » is tapped', () {
+      expect(
+        tappedStreet(MapIds.freeStreetBase, 'rue-de-la-paix'),
         StreetId('rue-de-la-paix'),
       );
     });
@@ -71,12 +93,14 @@ void main() {
     test('should stack streets, then the picked road, then the dots', () {
       expect(layers.map((l) => l.id), [
         MapIds.streetLines,
+        MapIds.freeStreetBase,
         MapIds.freeStreetLines,
         MapIds.selectedCasing,
         MapIds.selectedCore,
         MapIds.houseDots,
       ]);
       expect(layers.map((l) => l.source), [
+        MapIds.streetsSource,
         MapIds.streetsSource,
         MapIds.streetsSource,
         MapIds.selectedSource,
@@ -89,6 +113,7 @@ void main() {
       expect(layers.map((l) => l.belowLabels), [
         true,
         true,
+        true,
         false,
         false,
         false,
@@ -97,6 +122,7 @@ void main() {
 
     test('should answer taps on streets and dots, not on the picked road', () {
       expect(layers.map((l) => l.interactive), [
+        true,
         true,
         true,
         false,
@@ -119,12 +145,14 @@ void main() {
           'free',
         ],
       ]);
-      expect(layer(MapIds.freeStreetLines).filter, [
-        '==',
-        ['get', 'level'],
-        'free',
-      ]);
-      expect(layers.where((l) => l.filter != null), hasLength(2));
+      for (final id in [MapIds.freeStreetBase, MapIds.freeStreetLines]) {
+        expect(layer(id).filter, [
+          '==',
+          ['get', 'level'],
+          'free',
+        ]);
+      }
+      expect(layers.where((l) => l.filter != null), hasLength(3));
     });
 
     test('should colour each street line by its level with the map tokens', () {
@@ -142,7 +170,28 @@ void main() {
         '#6b7078',
       ];
       expect(json(MapIds.streetLines)['line-color'], byLevel);
+      expect(json(MapIds.freeStreetBase)['line-color'], byLevel);
       expect(json(MapIds.freeStreetLines)['line-color'], byLevel);
+    });
+
+    test('should draw a faint solid line under the « libre » dashes', () {
+      expect(json(MapIds.freeStreetBase), {
+        'line-color': isA<List<Object>>(),
+        'line-width': [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          12,
+          2.5,
+          16,
+          5,
+          19,
+          9,
+        ],
+        'line-opacity': 0.35,
+        'line-cap': 'round',
+        'line-join': 'round',
+      });
     });
 
     test('should draw solid round lines that widen with the zoom', () {

@@ -152,8 +152,9 @@ value taken behaves as with a button. **Typography:** French texts put a non-bre
 
 ### 5.0 Mes rues and Importer des rues
 
-Until Accueil (5.3) exists in M3, the app opens on a plain list so the street screen can be
-used on a real area. Mockups: `docs/mockups/Start.dc.html` and `docs/mockups/Import.dc.html`.
+In M1 the app opened on a plain list so the street screen could be used on a real area. From
+T3.5 (#30) it is the start screen while no tournée is open; with one open, Accueil (5.3)
+shows instead. Mockups: `docs/mockups/Start.dc.html` and `docs/mockups/Import.dc.html`.
 
 ```
 ┌──────────────────────────────┐     ┌──────────────────────────────┐
@@ -191,7 +192,7 @@ used on a real area. Mockups: `docs/mockups/Start.dc.html` and `docs/mockups/Imp
 - **Moving the phone's streets into the tournée** (T2.8): while a tournée is open, the member
   is one of its active members (as the phone last read it), the phone still holds streets
   (Corbeille left out) and they never went into this tournée, a card sits above the list
-  (above « Aucune rue pour l'instant » too):
+  (above « Aucune rue pour l'instant » too; on Accueil from T3.5, above the map):
 
 ```
 ┌──────────────────────────────┐
@@ -218,8 +219,8 @@ used on a real area. Mockups: `docs/mockups/Start.dc.html` and `docs/mockups/Imp
   phone keeps its copies, only no longer shown while a tournée is open. No network needed to
   start: Firestore queues the new streets.
 - **Pending sync** (T2.9): while a tournée is open and changes made on the phone have not
-  reached the server, a line sits above « Importer des rues », as on Accueil (5.3, Home
-  mockup): a cloud glyph and « Modifications de 3 rues en attente d'envoi » (« … d'une rue … »
+  reached the server, a line sits above « Ajouter des rues » on Accueil (5.3, Home mockup;
+  above « Importer des rues » on this list until T3.5): a cloud glyph and « Modifications de 3 rues en attente d'envoi » (« … d'une rue … »
   for one), read out as such. It goes away once all is sent (§7).
 - **Importer des rues**: the commune field searches geo.api.gouv.fr as you type (from two
   characters, after a 300 ms pause; a late answer to older text is ignored); a suggestion shows
@@ -434,6 +435,27 @@ an admin, shows only « Rejoindre une tournée », in red), and the bottom of th
   point. North stays up (no rotation, no tilt). « Me localiser » (48 dp round, top right)
   centres at zoom 17 and then shows the phone's dot; refused, off or no fix: a message
   (« Réglages » when refused for good). The ⓘ attribution stays visible.
+- Delivered in T3.5 (#30, Home and HomeZoom mockups; `ui/screens/home/`): Accueil is the
+  start screen while a tournée is open (`/`; with none, « Mes rues » of 5.0 as in M1). Under
+  the top bar of 5.0 and its cards (« Administrateur · pas membre », the phone's streets to
+  move), the map fills the screen. **Legend** top left, clear of « Me localiser »: line
+  samples « faite · en partie · à faire · libre », or, once the map is at zoom ≥ 16, house
+  dots « fait · personne · repasser · à faire »; a tap folds it into a « Légende » chip, a tap
+  on the chip unfolds it (said « Masquer / Afficher la légende »). **Panel**: handle and
+  totals « Mes rues · 31/50 » (doors done of the member's streets; « Rues · 9/38 » over every
+  street for a visiting admin) and « Équipe : 43 % »; then the member's streets, « Vous n'avez
+  pas encore de rue. » when they cover none, and **« AUTRES RUES DE LA TOURNÉE (n) »** with the
+  others (free or someone else's), so no street of the tournée is out of reach before anyone
+  takes one; « Aucune rue dans la tournée pour l'instant. » with none. Then the pending-sync
+  line and « Ajouter des rues ». It rests on half the room; dragging the handle up shows the
+  whole list, down only the totals (a quick flick goes one step, a slow release to the nearest
+  height); a tap on the handle shows the whole list, or from there brings it back to rest.
+  The map keeps « Me localiser », the attribution and its fit clear of the panel at rest.
+  **A street tapped on the map** turns the panel into the totals and a dark « Ouvrir Rue des
+  Lilas · 31/42 » (HomeZoom mockup), which opens the street; a tap elsewhere on the map brings
+  the list back. The full street card of 5.4 (« Me l'attribuer », « Ne plus la faire »…)
+  comes with #31. The map opens on the tournée's streets, else its communes, and stays where
+  the member puts it when the team adds a street. Not yet: the download banner (M4).
 
 **Mes tournées (tap the title).** The title "Tournée 49 · 2026 ▾" is a button that opens a
 bottom sheet:
@@ -1849,6 +1871,20 @@ Communes of a tournée fixed in #78 (`lib/domain/tournee/`, `lib/application/use
   team; none while the tournée cannot be read). `CreateTournee(…, communes:)`.
 - **Map area**: `communesArea(communes)` = the centres plus 2 km (`communeMarginMetres`), null
   without centre; `addStreetsArea(communes, streets)` = that, else `tourneeArea(streets)`.
+
+Accueil fixed in T3.5 (#30, `lib/domain/street/my_streets.dart`, `lib/presentation/home/`):
+
+- **`MyStreets.of(streets, member)`**: `mine` (the streets whose `assignees` hold the member:
+  « Mes rues »), `others` (free or someone else's) and `all`, each in the order given,
+  Corbeille left out; `myProgress` and `teamProgress` add up their doors. `MyStreets.none`
+  before the streets are read. `ObserveMyStreets()` gives them in French order for the member
+  on the phone (`IdentityProvider`), now and on each change, offline.
+- **`Progress.donePercent`**: the doors done in whole percent, rounded down (199 of 200 is
+  99: 100 % means finished), 0 without door; « Équipe : 41 % ».
+- **`homeArea(communes, streets)`**: `tourneeArea(streets)`, else `communesArea(communes)`.
+  Accueil decides it once, when the streets are first read, so a street added meanwhile
+  never moves the map. `MapLayers.showsHouseDots(zoom)`: zoom ≥ 16, when the legend explains
+  the dots.
 
 Firestore adapters fixed in T2.3 (`lib/infrastructure/firestore/`, `lib/application/ports/`):
 

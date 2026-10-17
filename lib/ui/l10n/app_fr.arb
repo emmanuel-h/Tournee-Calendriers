@@ -1470,13 +1470,6 @@
   "@adminBannerJoin": { "description": "Button of the banner: the admin joins the team at once (PLAN §5.12)." },
   "teamForgetVisit": "Retirer de Mes tournées",
   "@teamForgetVisit": { "description": "Button of Équipe for an admin who only visits the tournée: forgets it on the phone, writes nothing (PLAN §5.12)." },
-  "startStreetsHeaderVisitor": "Rues · {count}",
-  "@startStreetsHeaderVisitor": {
-    "description": "Header of the streets of a tournée an admin visits without being in it (PLAN §5.12), instead of « Mes rues ».",
-    "placeholders": {
-      "count": { "type": "int", "example": "38" }
-    }
-  },
   "corbeilleAdmin": "un administrateur",
   "@corbeilleAdmin": { "description": "« supprimée par un administrateur »: an admin of the app who is not in the team (PLAN §5.12)." },
   "mapLabel": "Carte de la tournée",
@@ -1564,5 +1557,41 @@
       "failed": { "type": "int", "example": "1" },
       "reason": { "type": "String", "example": "Pas de réseau." }
     }
-  }
+  },
+  "homeMyStreets": "Mes rues · {done}/{total}",
+  "@homeMyStreets": {"description": "Header of Accueil's panel (PLAN §5.3): the doors done of the member's streets, out of all their doors.", "placeholders": {"done": {"type": "int", "example": "43"}, "total": {"type": "int", "example": "62"}}},
+  "homeMyStreetsSemantics": "Mes rues, {done} sur {total} faits",
+  "@homeMyStreetsSemantics": {"description": "What screen readers say for « Mes rues · 43/62 ».", "placeholders": {"done": {"type": "int", "example": "43"}, "total": {"type": "int", "example": "62"}}},
+  "homeStreetsVisitor": "Rues · {done}/{total}",
+  "@homeStreetsVisitor": {"description": "Header of Accueil's panel for an admin who visits the tournée (PLAN §5.12): the doors done of every street.", "placeholders": {"done": {"type": "int", "example": "9"}, "total": {"type": "int", "example": "38"}}},
+  "homeStreetsVisitorSemantics": "Rues, {done} sur {total} faits",
+  "@homeStreetsVisitorSemantics": {"description": "What screen readers say for « Rues · 9/38 ».", "placeholders": {"done": {"type": "int", "example": "9"}, "total": {"type": "int", "example": "38"}}},
+  "homeTeamProgress": "Équipe : {percent} %",
+  "@homeTeamProgress": {"description": "Right of the panel's header: the share of the whole tournée's doors done, rounded down.", "placeholders": {"percent": {"type": "int", "example": "41"}}},
+  "homeOtherStreets": "Autres rues de la tournée ({count})",
+  "@homeOtherStreets": {"description": "Section of Accueil's panel under « Mes rues »: the streets of the tournée the member does not cover, free or someone else's.", "placeholders": {"count": {"type": "int", "example": "12"}}},
+  "homeNoStreetOfMine": "Vous n'avez pas encore de rue.",
+  "@homeNoStreetOfMine": {"description": "Accueil's panel, under « Mes rues · 0/0 », when the member covers no street."},
+  "homeNoStreet": "Aucune rue dans la tournée pour l'instant.",
+  "@homeNoStreet": {"description": "Accueil's panel when the tournée has no street at all."},
+  "homeOpenStreet": "Ouvrir {name} · {done}/{total}",
+  "@homeOpenStreet": {"description": "Dark button of Accueil's panel after a street was tapped on the map (HomeZoom mockup): opens the street.", "placeholders": {"name": {"type": "String", "example": "Rue des Lilas"}, "done": {"type": "int", "example": "31"}, "total": {"type": "int", "example": "42"}}},
+  "homePanelExpand": "Afficher toute la liste",
+  "@homePanelExpand": {"description": "Screen-reader name of the handle of Accueil's panel: shows the whole list of streets."},
+  "homePanelReduce": "Réduire la liste",
+  "@homePanelReduce": {"description": "Screen-reader name of the handle of Accueil's panel once it shows the whole list: brings back the map."},
+  "mapLegend": "Légende",
+  "@mapLegend": {"description": "The map's legend once folded: a small chip that unfolds it."},
+  "mapLegendShow": "Afficher la légende",
+  "@mapLegendShow": {"description": "Screen-reader name of the folded legend chip."},
+  "mapLegendHide": "Masquer la légende",
+  "@mapLegendHide": {"description": "Screen-reader name of the unfolded legend: a tap folds it."},
+  "mapLegendStreetDone": "faite",
+  "@mapLegendStreetDone": {"description": "Legend of the map: a street with every door done (green line)."},
+  "mapLegendStreetPartial": "en partie",
+  "@mapLegendStreetPartial": {"description": "Legend of the map: a street partly visited (orange line)."},
+  "mapLegendStreetToDo": "à faire",
+  "@mapLegendStreetToDo": {"description": "Legend of the map: a street taken, nothing visited yet (blue line)."},
+  "mapLegendStreetFree": "libre",
+  "@mapLegendStreetFree": {"description": "Legend of the map: a street nobody took (grey dashed line)."}
 }

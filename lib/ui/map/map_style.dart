@@ -30,6 +30,7 @@ abstract final class MapIds {
   static const selectedSource = 'tc-selected';
 
   static const streetLines = 'tc-street-lines';
+  static const freeStreetBase = 'tc-free-street-base';
   static const freeStreetLines = 'tc-free-street-lines';
   static const selectedCasing = 'tc-selected-casing';
   static const selectedCore = 'tc-selected-core';
@@ -46,6 +47,7 @@ String houseDotImage(HouseDotStatus status) => 'tc-house-${status.name}';
 /// street's id as its own (see `map_geojson.dart`).
 StreetId? tappedStreet(String layerId, String featureId) => switch (layerId) {
   MapIds.streetLines ||
+  MapIds.freeStreetBase ||
   MapIds.freeStreetLines ||
   MapIds.houseDots => StreetId(featureId),
   _ => null,
@@ -77,7 +79,7 @@ final class MapLayerSpec {
 }
 
 /// Every layer the map adds, bottom to top: the streets (solid, then the
-/// dashed « libre » ones), the road picked on « Ajouter des rues » (dark
+/// « libre » ones, dashed over a faint solid line), the road picked on « Ajouter des rues » (dark
 /// casing, white core, mockups README), then the house dots from street
 /// zoom (PLAN §5.3). Colours are the map tokens of [colors].
 List<MapLayerSpec> tourneeMapLayers(AppColors colors) {
@@ -93,6 +95,23 @@ List<MapLayerSpec> tourneeMapLayers(AppColors colors) {
         lineJoin: 'round',
       ),
       filter: ['!', isFree],
+      belowLabels: true,
+      interactive: true,
+    ),
+    // A faint solid line under the dashes: some GPUs (the emulator's at
+    // least) draw no dashed line at all, and a « libre » street must never
+    // vanish from the map. Where the dashes draw, it only tints their gaps.
+    MapLayerSpec(
+      id: MapIds.freeStreetBase,
+      source: MapIds.streetsSource,
+      properties: LineLayerProperties(
+        lineColor: _levelColor(colors),
+        lineWidth: _byZoom(const {12: 2.5, 16: 5, 19: 9}),
+        lineOpacity: 0.35,
+        lineCap: 'round',
+        lineJoin: 'round',
+      ),
+      filter: isFree,
       belowLabels: true,
       interactive: true,
     ),
@@ -183,12 +202,14 @@ List<Object> _levelColor(AppColors colors) => [
   _level,
   for (final level in ProgressLevel.values) ...[
     level.name,
-    _colorOf(level, colors).toHexStringRGB(),
+    streetLineColor(level, colors).toHexStringRGB(),
   ],
   colors.mapStreetFree.toHexStringRGB(),
 ];
 
-Color _colorOf(ProgressLevel level, AppColors colors) => switch (level) {
+/// The colour of a street line at [level], from the map tokens of
+/// [colors]; the legend under the map draws its samples with it too.
+Color streetLineColor(ProgressLevel level, AppColors colors) => switch (level) {
   ProgressLevel.free => colors.mapStreetFree,
   ProgressLevel.toDo => colors.mapStreetToDo,
   ProgressLevel.partial => colors.mapStreetPartial,

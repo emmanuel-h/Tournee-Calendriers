@@ -210,6 +210,15 @@ void main() {
       expect(all, [same(lilas)]);
     });
 
+    test('should observe the streets the bound member covers', () async {
+      valueOf(await container.read(takeStreetProvider)(lilasId));
+
+      final streets = await container.read(observeMyStreetsProvider)().first;
+
+      expect([for (final street in streets.mine) street.id], [lilasId]);
+      expect(streets.others, isEmpty);
+    });
+
     test('should set a detail of a house', () async {
       final change = valueOf(
         await container.read(setHouseDetailsProvider)(

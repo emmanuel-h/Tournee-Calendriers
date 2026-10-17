@@ -260,4 +260,17 @@ abstract final class AppSizes {
   static const mapButton = 48.0;
   static const mapButtonIcon = 22.0;
   static const mapControlsMargin = 12.0;
+
+  /// The map's legend (Home and HomeZoom mockups): a white card of this
+  /// radius; each entry a 22 dp line sample or an 18 dp house dot before
+  /// its word.
+  static const legendRadius = 12.0;
+  static const legendLineSample = 22.0;
+  static const legendDot = 18.0;
+
+  /// Accueil's « Mes rues » panel (Home mockup): folded down, only its
+  /// handle and its totals show, in this height; at rest it takes this
+  /// share of the room under the top bar.
+  static const homePanelFolded = 76.0;
+  static const homePanelRestShare = 0.5;
 }

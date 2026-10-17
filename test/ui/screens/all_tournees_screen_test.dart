@@ -12,8 +12,8 @@ import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_number.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
+import 'package:tournee_calendriers/ui/screens/home/home_screen.dart';
 import 'package:tournee_calendriers/ui/screens/settings/name_sheet.dart';
-import 'package:tournee_calendriers/ui/screens/start/start_screen.dart';
 
 import '../../domain/tournee/my_tournees_fixtures.dart';
 import '../../domain/tournee/tournee_fixtures.dart';
@@ -162,9 +162,10 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('allTournees.t49')));
     await tester.pumpAndSettle();
 
-    expect(find.byType(StartScreen), findsOneWidget);
+    expect(find.byType(HomeScreen), findsOneWidget);
     expect(find.text('Tournée 49 · 2026'), findsOneWidget);
     expect(find.text('Administrateur · pas membre'), findsOneWidget);
+    expect(find.text('Rues · 0/0'), findsOneWidget);
     expect(
       find.text("Vous n'êtes pas dans l'équipe de cette tournée."),
       findsOneWidget,

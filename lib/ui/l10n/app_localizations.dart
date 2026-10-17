@@ -2433,12 +2433,6 @@ abstract class AppLocalizations {
   /// **'Retirer de Mes tournées'**
   String get teamForgetVisit;
 
-  /// Header of the streets of a tournée an admin visits without being in it (PLAN §5.12), instead of « Mes rues ».
-  ///
-  /// In fr, this message translates to:
-  /// **'Rues · {count}'**
-  String startStreetsHeaderVisitor(int count);
-
   /// « supprimée par un administrateur »: an admin of the app who is not in the team (PLAN §5.12).
   ///
   /// In fr, this message translates to:
@@ -2618,6 +2612,114 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'{added, plural, =0{Aucune rue ajoutée} =1{1 rue ajoutée} other{{added} rues ajoutées}}, {failed, plural, =1{1 en échec} other{{failed} en échec}}. {reason} Les rues encore cochées restent à ajouter.'**
   String addPartial(int added, int failed, String reason);
+
+  /// Header of Accueil's panel (PLAN §5.3): the doors done of the member's streets, out of all their doors.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mes rues · {done}/{total}'**
+  String homeMyStreets(int done, int total);
+
+  /// What screen readers say for « Mes rues · 43/62 ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Mes rues, {done} sur {total} faits'**
+  String homeMyStreetsSemantics(int done, int total);
+
+  /// Header of Accueil's panel for an admin who visits the tournée (PLAN §5.12): the doors done of every street.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rues · {done}/{total}'**
+  String homeStreetsVisitor(int done, int total);
+
+  /// What screen readers say for « Rues · 9/38 ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Rues, {done} sur {total} faits'**
+  String homeStreetsVisitorSemantics(int done, int total);
+
+  /// Right of the panel's header: the share of the whole tournée's doors done, rounded down.
+  ///
+  /// In fr, this message translates to:
+  /// **'Équipe : {percent} %'**
+  String homeTeamProgress(int percent);
+
+  /// Section of Accueil's panel under « Mes rues »: the streets of the tournée the member does not cover, free or someone else's.
+  ///
+  /// In fr, this message translates to:
+  /// **'Autres rues de la tournée ({count})'**
+  String homeOtherStreets(int count);
+
+  /// Accueil's panel, under « Mes rues · 0/0 », when the member covers no street.
+  ///
+  /// In fr, this message translates to:
+  /// **'Vous n\'avez pas encore de rue.'**
+  String get homeNoStreetOfMine;
+
+  /// Accueil's panel when the tournée has no street at all.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune rue dans la tournée pour l\'instant.'**
+  String get homeNoStreet;
+
+  /// Dark button of Accueil's panel after a street was tapped on the map (HomeZoom mockup): opens the street.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ouvrir {name} · {done}/{total}'**
+  String homeOpenStreet(String name, int done, int total);
+
+  /// Screen-reader name of the handle of Accueil's panel: shows the whole list of streets.
+  ///
+  /// In fr, this message translates to:
+  /// **'Afficher toute la liste'**
+  String get homePanelExpand;
+
+  /// Screen-reader name of the handle of Accueil's panel once it shows the whole list: brings back the map.
+  ///
+  /// In fr, this message translates to:
+  /// **'Réduire la liste'**
+  String get homePanelReduce;
+
+  /// The map's legend once folded: a small chip that unfolds it.
+  ///
+  /// In fr, this message translates to:
+  /// **'Légende'**
+  String get mapLegend;
+
+  /// Screen-reader name of the folded legend chip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Afficher la légende'**
+  String get mapLegendShow;
+
+  /// Screen-reader name of the unfolded legend: a tap folds it.
+  ///
+  /// In fr, this message translates to:
+  /// **'Masquer la légende'**
+  String get mapLegendHide;
+
+  /// Legend of the map: a street with every door done (green line).
+  ///
+  /// In fr, this message translates to:
+  /// **'faite'**
+  String get mapLegendStreetDone;
+
+  /// Legend of the map: a street partly visited (orange line).
+  ///
+  /// In fr, this message translates to:
+  /// **'en partie'**
+  String get mapLegendStreetPartial;
+
+  /// Legend of the map: a street taken, nothing visited yet (blue line).
+  ///
+  /// In fr, this message translates to:
+  /// **'à faire'**
+  String get mapLegendStreetToDo;
+
+  /// Legend of the map: a street nobody took (grey dashed line).
+  ///
+  /// In fr, this message translates to:
+  /// **'libre'**
+  String get mapLegendStreetFree;
 }
 
 class _AppLocalizationsDelegate

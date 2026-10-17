@@ -5,15 +5,11 @@ import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
-import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/components/status_glyph.dart';
 import 'package:tournee_calendriers/ui/screens/import_streets/import_screen.dart';
 import 'package:tournee_calendriers/ui/screens/street/street_screen.dart';
 
-import '../../domain/tournee/my_tournees_fixtures.dart';
-import '../../support/fakes/fake_my_tournees_store.dart';
-import '../../support/fakes/fake_pending_sync.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
@@ -36,17 +32,10 @@ Street _street(String id, String name, {int done = 0, int total = 1}) =>
     );
 
 void main() {
-  Future<void> pumpApp(
-    WidgetTester tester,
-    List<Street> streets, {
-    FakePendingSync? pending,
-  }) async {
+  Future<void> pumpApp(WidgetTester tester, List<Street> streets) async {
     await tester.pumpWidget(
       ProviderScope(
-        overrides: fakePhone(
-          streets: FakeStreetRepository(streets),
-          pending: pending,
-        ),
+        overrides: fakePhone(streets: FakeStreetRepository(streets)),
         child: const TourneeApp(showGallery: false),
       ),
     );
@@ -150,76 +139,4 @@ void main() {
       expect(find.byType(BackButton), findsOneWidget);
     },
   );
-
-  testWidgets(
-    'should say how many streets wait to be sent while some do, above the import button',
-    (tester) async {
-      final pending = FakePendingSync();
-      await pumpApp(tester, [
-        _street('nationale', 'Rue Nationale'),
-      ], pending: pending);
-      final line = find.byKey(const Key('start.pendingSync'));
-
-      expect(line, findsNothing);
-
-      pending.unsent(2);
-      await tester.pumpAndSettle();
-
-      expect(
-        find.text("Modifications de 2 rues en attente d'envoi"),
-        findsOneWidget,
-      );
-      // A glyph next to the text, and the text read out: never a colour.
-      expect(
-        find.descendant(of: line, matching: find.byIcon(Icons.cloud_outlined)),
-        findsOneWidget,
-      );
-      expect(
-        find.bySemanticsLabel("Modifications de 2 rues en attente d'envoi"),
-        findsOneWidget,
-      );
-      expect(
-        tester.getBottomLeft(line).dy,
-        lessThanOrEqualTo(
-          tester.getTopLeft(find.byKey(const Key('start.import'))).dy,
-        ),
-      );
-
-      pending.unsent(1);
-      await tester.pumpAndSettle();
-
-      expect(
-        find.text("Modifications d'une rue en attente d'envoi"),
-        findsOneWidget,
-      );
-
-      pending.unsent(0);
-      await tester.pumpAndSettle();
-
-      expect(line, findsNothing);
-    },
-  );
-
-  testWidgets('should list « Rues », not « Mes rues », of a tournée an '
-      'admin visits', (tester) async {
-    await tester.pumpWidget(
-      ProviderScope(
-        overrides: fakePhone(
-          streets: FakeStreetRepository([_street('lilas', 'Rue des Lilas')]),
-          myTournees: FakeMyTourneesStore(
-            valueOf(
-              MyTournees.none
-                  .remember(tournee12Visited)
-                  .open(tournee12Visited.id),
-            ),
-          ),
-        ),
-        child: const TourneeApp(showGallery: false),
-      ),
-    );
-    await tester.pumpAndSettle();
-
-    expect(find.text('Rues · 1'), findsOneWidget);
-    expect(find.byKey(const Key('home.adminBanner')), findsOneWidget);
-  });
 }

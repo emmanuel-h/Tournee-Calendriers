@@ -26,6 +26,7 @@ import 'package:tournee_calendriers/main.dart' as app;
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/screens/add_streets/add_streets_screen.dart';
+import 'package:tournee_calendriers/ui/screens/home/home_screen.dart';
 import 'package:tournee_calendriers/ui/screens/team/team_screen.dart';
 
 import '../test/support/fakes/fake_address_directory.dart';
@@ -589,6 +590,27 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Tournée 49 · 2026'), findsOneWidget);
       expect(find.text('CS Villefranche'), findsOneWidget);
+
+      // Accueil (#30), offline: the map of the tournée under the legend,
+      // and the « Mes rues » panel. The tournée was never read, so it has
+      // no street; a tap on the handle shows the whole list, another
+      // brings the map back.
+      expect(find.byType(HomeScreen), findsOneWidget);
+      expect(find.byKey(const Key('home.map')), findsOneWidget);
+      expect(find.byKey(const Key('map.legend')), findsOneWidget);
+      expect(find.text('Mes rues · 0/0'), findsOneWidget);
+      expect(
+        find.text("Aucune rue dans la tournée pour l'instant."),
+        findsOneWidget,
+      );
+      final panel = find.byKey(const Key('home.panel'));
+      final atRest = tester.getSize(panel).height;
+      await tester.tap(find.byKey(const Key('home.panel.handle')));
+      await tester.pumpAndSettle();
+      expect(tester.getSize(panel).height, greaterThan(atRest));
+      await tester.tap(find.byKey(const Key('home.panel.handle')));
+      await tester.pumpAndSettle();
+      expect(tester.getSize(panel).height, atRest);
 
       // 👥 opens Équipe, which follows the tournée in Firestore (the first
       // use of the real database, with its offline settings), offline: the

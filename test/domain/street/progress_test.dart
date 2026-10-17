@@ -157,4 +157,39 @@ void main() {
       'buildingComeBacks: 1, total: 2)',
     );
   });
+
+  group('donePercent', () {
+    Progress doors({required int done, required int toDo}) => [
+      for (var i = 0; i < done; i++) Progress.of(VisitStatus.done),
+      for (var i = 0; i < toDo; i++) Progress.of(VisitStatus.toDo),
+    ].fold(Progress.empty, (sum, door) => sum + door);
+
+    test('should be 0 when there is no door', () {
+      expect(Progress.empty.donePercent, 0);
+    });
+
+    test('should round down, so 100 % means every door done', () {
+      // 199 of 200: 99.5 %, which rounding would make 100.
+      expect(doors(done: 199, toDo: 1).donePercent, 99);
+    });
+
+    test('should be 100 when every door is done', () {
+      expect(doors(done: 3, toDo: 0).donePercent, 100);
+    });
+
+    test('should count only done doors, not those visited', () {
+      final progress =
+          doors(done: 2, toDo: 1) +
+          Progress.of(VisitStatus.nobodyHome) +
+          Progress.of(VisitStatus.comeBack) +
+          Progress.buildingComeBack;
+
+      // 2 of 5 doors.
+      expect(progress.donePercent, 40);
+    });
+
+    test('should be 41 for 41 doors done of 100', () {
+      expect(doors(done: 41, toDo: 59).donePercent, 41);
+    });
+  });
 }

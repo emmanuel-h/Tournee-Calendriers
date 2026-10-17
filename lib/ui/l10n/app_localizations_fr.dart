@@ -1714,11 +1714,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get teamForgetVisit => 'Retirer de Mes tournées';
 
   @override
-  String startStreetsHeaderVisitor(int count) {
-    return 'Rues · $count';
-  }
-
-  @override
   String get corbeilleAdmin => 'un administrateur';
 
   @override
@@ -1870,4 +1865,72 @@ class AppLocalizationsFr extends AppLocalizations {
     );
     return '$_temp0, $_temp1. $reason Les rues encore cochées restent à ajouter.';
   }
+
+  @override
+  String homeMyStreets(int done, int total) {
+    return 'Mes rues · $done/$total';
+  }
+
+  @override
+  String homeMyStreetsSemantics(int done, int total) {
+    return 'Mes rues, $done sur $total faits';
+  }
+
+  @override
+  String homeStreetsVisitor(int done, int total) {
+    return 'Rues · $done/$total';
+  }
+
+  @override
+  String homeStreetsVisitorSemantics(int done, int total) {
+    return 'Rues, $done sur $total faits';
+  }
+
+  @override
+  String homeTeamProgress(int percent) {
+    return 'Équipe : $percent %';
+  }
+
+  @override
+  String homeOtherStreets(int count) {
+    return 'Autres rues de la tournée ($count)';
+  }
+
+  @override
+  String get homeNoStreetOfMine => 'Vous n\'avez pas encore de rue.';
+
+  @override
+  String get homeNoStreet => 'Aucune rue dans la tournée pour l\'instant.';
+
+  @override
+  String homeOpenStreet(String name, int done, int total) {
+    return 'Ouvrir $name · $done/$total';
+  }
+
+  @override
+  String get homePanelExpand => 'Afficher toute la liste';
+
+  @override
+  String get homePanelReduce => 'Réduire la liste';
+
+  @override
+  String get mapLegend => 'Légende';
+
+  @override
+  String get mapLegendShow => 'Afficher la légende';
+
+  @override
+  String get mapLegendHide => 'Masquer la légende';
+
+  @override
+  String get mapLegendStreetDone => 'faite';
+
+  @override
+  String get mapLegendStreetPartial => 'en partie';
+
+  @override
+  String get mapLegendStreetToDo => 'à faire';
+
+  @override
+  String get mapLegendStreetFree => 'libre';
 }

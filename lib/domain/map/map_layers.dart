@@ -56,6 +56,10 @@ final class MapLayers {
   /// §5.3); under it, only the street lines.
   static const houseDotsMinZoom = 16;
 
+  /// Whether the map shows the house dots at [zoom]: then its legend
+  /// explains the dots' statuses rather than the streets' colours.
+  static bool showsHouseDots(double zoom) => zoom >= houseDotsMinZoom;
+
   /// One line per street with a shape, in the order of the streets. The
   /// list cannot be modified.
   final List<StreetLine> lines;
