@@ -136,9 +136,13 @@ build inside the loop.
 - Widget tests only for the critical interactions the task lists (PLAN §11). Find widgets by
   `Key` or semantics label, not by position.
 - If the task adds a user-visible **flow** (not just a widget), add or extend one test in the
-  instrumented suite `integration_test/` (keep it ≤ 10 tests overall). If an emulator is running
-  (`adb devices`), run `flutter test integration_test -d emulator-5554`; otherwise say in the
-  report that the main session must run it.
+  instrumented suite `integration_test/` (keep it ≤ 10 tests overall, both files together):
+  `app_test.dart` runs on the real project, offline; `admin_test.dart` holds the admin flows and
+  runs on the local Firebase emulators. Never run the whole folder. If an emulator is running
+  (`adb devices`), run `flutter test integration_test/app_test.dart -d emulator-5554
+  --dart-define-from-file=$HOME/.config/tournee-calendriers/app_check_debug.json`, and
+  `tool/admin_e2e.sh` when the task touches admin flows; otherwise say in the report that the
+  main session must run them.
 
 ### Step 6 — Gates (once, at the end)
 
