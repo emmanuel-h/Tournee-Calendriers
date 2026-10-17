@@ -34,55 +34,106 @@ final class TextLimit {
   bool accepts(String text) => count(text) <= max;
 }
 
-/// When the house was last changed, for the line « Modifié à 14:02 » or
-/// « Modifié le 3 oct. à 14:02 ».
+/// Who made the last change, as the sheet names them (PLAN §5.7).
+///
+/// `sealed`: the sheet words each case its own way.
+sealed class ChangeAuthor {
+  const ChangeAuthor();
+}
+
+/// The member using the phone: « Modifié par vous ».
+final class ChangedByMe extends ChangeAuthor {
+  const ChangedByMe();
+
+  @override
+  bool operator ==(Object other) => other is ChangedByMe;
+
+  @override
+  int get hashCode => (ChangedByMe).hashCode;
+
+  @override
+  String toString() => 'ChangedByMe';
+}
+
+/// A member of the open tournée, by their first name: « Modifié par Léa ».
+final class ChangedByMember extends ChangeAuthor {
+  const ChangedByMember(this.name);
+
+  final String name;
+
+  @override
+  bool operator ==(Object other) =>
+      other is ChangedByMember && other.name == name;
+
+  @override
+  int get hashCode => name.hashCode;
+
+  @override
+  String toString() => 'ChangedByMember($name)';
+}
+
+/// When the house was last changed, and by whom when it is known, for the
+/// line « Modifié par Léa · 14:02 » or « Modifié le 3 oct. à 14:02 ».
 ///
 /// `sealed`: the sheet words each case its own way.
 sealed class LastChange {
-  const LastChange(this.at);
+  const LastChange(this.at, {this.by});
 
-  /// The change made at [at] (UTC, as stored), seen at [now] (UTC, from the
-  /// `Clock`): today or earlier, judged on the phone's calendar day.
-  factory LastChange.of(DateTime at, {required DateTime now}) {
+  /// The change made at [at] (UTC, as stored) by [by], seen at [now] (UTC,
+  /// from the `Clock`): today or earlier, judged on the phone's calendar
+  /// day.
+  factory LastChange.of(
+    DateTime at, {
+    required DateTime now,
+    ChangeAuthor? by,
+  }) {
     final local = at.toLocal();
     final today = now.toLocal();
     final sameDay =
         local.year == today.year &&
         local.month == today.month &&
         local.day == today.day;
-    return sameDay ? ChangedToday(local) : ChangedEarlier(local);
+    return sameDay
+        ? ChangedToday(local, by: by)
+        : ChangedEarlier(local, by: by);
   }
 
   /// The time of the change, in the phone's time zone.
   final DateTime at;
+
+  /// Who made it; null when the phone cannot name them (no tournée open,
+  /// or a member no longer in its team).
+  final ChangeAuthor? by;
 }
 
 /// Changed today: only the time is shown.
 final class ChangedToday extends LastChange {
-  const ChangedToday(super.at);
+  const ChangedToday(super.at, {super.by});
 
   @override
-  bool operator ==(Object other) => other is ChangedToday && other.at == at;
+  bool operator ==(Object other) =>
+      other is ChangedToday && other.at == at && other.by == by;
 
   @override
-  int get hashCode => Object.hash(ChangedToday, at);
+  int get hashCode => Object.hash(ChangedToday, at, by);
 
   @override
-  String toString() => 'ChangedToday($at)';
+  String toString() => 'ChangedToday($at, $by)';
 }
 
 /// Changed before today: the day and the time are shown.
 final class ChangedEarlier extends LastChange {
-  const ChangedEarlier(super.at);
+  const ChangedEarlier(super.at, {super.by});
 
   @override
-  bool operator ==(Object other) => other is ChangedEarlier && other.at == at;
+  bool operator ==(Object other) =>
+      other is ChangedEarlier && other.at == at && other.by == by;
 
   @override
-  int get hashCode => Object.hash(ChangedEarlier, at);
+  int get hashCode => Object.hash(ChangedEarlier, at, by);
 
   @override
-  String toString() => 'ChangedEarlier($at)';
+  String toString() => 'ChangedEarlier($at, $by)';
 }
 
 /// What a sheet of marks is about. `sealed`: the sheet titles each case

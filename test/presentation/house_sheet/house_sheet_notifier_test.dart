@@ -3,18 +3,25 @@ import 'dart:io';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
+import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
+import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_summary.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_notifier.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_state.dart';
 
+import '../../domain/tournee/my_tournees_fixtures.dart';
+import '../../domain/tournee/tournee_fixtures.dart' as crew;
 import '../../support/building_fixtures.dart';
+import '../../support/fakes/fake_my_tournees_store.dart';
 import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_street_repository.dart';
+import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 
@@ -53,8 +60,13 @@ void main() {
   late ProviderContainer container;
 
   /// A container whose phone holds [street] (none when null), with Léa
-  /// changing houses at [twoPm].
-  void phoneWith(Street? street) {
+  /// changing houses at [twoPm]; no tournée is open unless [open] is, its
+  /// team kept in [tournees].
+  void phoneWith(
+    Street? street, {
+    TourneeSummary? open,
+    FakeTourneeRepository? tournees,
+  }) {
     streets = FakeStreetRepository([?street]);
     clock = FakeClock(twoPm);
     container = ProviderContainer(
@@ -62,6 +74,17 @@ void main() {
         streetRepositoryProvider.overrideWithValue(streets),
         clockProvider.overrideWithValue(clock),
         identityProvider.overrideWithValue(FakeIdentity(lea)),
+        myTourneesStoreProvider.overrideWithValue(
+          FakeMyTourneesStore(switch (open) {
+            final open? => valueOf(
+              MyTournees.none.remember(open).open(open.id),
+            ),
+            null => MyTournees.none,
+          }),
+        ),
+        tourneeRepositoryProvider.overrideWithValue(
+          tournees ?? FakeTourneeRepository(),
+        ),
       ],
     );
     addTearDown(container.dispose);
@@ -91,6 +114,70 @@ void main() {
 
   House houseBefore(String number) =>
       _houses.singleWhere((house) => house.number == n(number));
+
+  group('who made the last change', () {
+    /// The street with 3 changed by [by] yesterday evening.
+    Street changedBy(MemberId by) => valueOf(
+      Street.create(
+        id: _id,
+        name: 'Rue des Lilas',
+        commune: villefranche,
+        houses: [
+          House(
+            number: n('3'),
+            status: VisitStatus.done,
+            lastChange: ChangeStamp(by: by, at: _yesterday.toUtc()),
+          ),
+        ],
+      ),
+    );
+
+    test('should name a member of the open tournée', () async {
+      phoneWith(
+        changedBy(crew.manuId),
+        open: tournee49,
+        tournees: FakeTourneeRepository([crew.team()]),
+      );
+      open('3');
+      await pumpEventQueue();
+
+      final state = await shown('3');
+
+      expect(
+        state.lastChange,
+        ChangedEarlier(_yesterday, by: const ChangedByMember('Manu')),
+      );
+    });
+
+    test('should name nobody who is no longer in the team', () async {
+      phoneWith(
+        changedBy(crew.paulId),
+        open: tournee49,
+        tournees: FakeTourneeRepository([crew.team()]),
+      );
+      open('3');
+      await pumpEventQueue();
+
+      expect((await shown('3')).lastChange, ChangedEarlier(_yesterday));
+    });
+
+    test('should name nobody when the team cannot be read', () async {
+      final tournees = FakeTourneeRepository([crew.team()])
+        ..watchError = StateError('removed');
+      phoneWith(changedBy(crew.manuId), open: tournee49, tournees: tournees);
+      open('3');
+      await pumpEventQueue();
+
+      expect((await shown('3')).lastChange, ChangedEarlier(_yesterday));
+    });
+
+    test('should name nobody but the phone when no tournée is open', () async {
+      phoneWith(changedBy(crew.manuId));
+      open('3');
+
+      expect((await shown('3')).lastChange, ChangedEarlier(_yesterday));
+    });
+  });
 
   group('state', () {
     test('should be loading before the street is read', () {
@@ -138,7 +225,10 @@ void main() {
 
       final state = await shown('7');
 
-      expect(state.lastChange, ChangedToday(twoPm.toLocal()));
+      expect(
+        state.lastChange,
+        ChangedToday(twoPm.toLocal(), by: const ChangedByMe()),
+      );
     });
 
     test('should follow the house when it changes elsewhere', () async {

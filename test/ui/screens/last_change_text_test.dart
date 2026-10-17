@@ -42,4 +42,40 @@ void main() {
       'Modifié le 21 mai à 18:40',
     );
   });
+
+  test('should name the member who made the change today', () {
+    expect(
+      lastChangeText(
+        l10n,
+        ChangedToday(
+          DateTime(2026, 10, 4, 14, 2),
+          by: const ChangedByMember('Léa'),
+        ),
+      ),
+      'Modifié par Léa · 14:02',
+    );
+  });
+
+  test('should name the member before the day of an earlier change', () {
+    expect(
+      lastChangeText(
+        l10n,
+        ChangedEarlier(
+          DateTime(2026, 10, 3, 14, 2),
+          by: const ChangedByMember('Léa'),
+        ),
+      ),
+      'Modifié par Léa · 3 oct. à 14:02',
+    );
+  });
+
+  test('should say « vous » for the member on the phone', () {
+    expect(
+      lastChangeText(
+        l10n,
+        ChangedToday(DateTime(2026, 10, 4, 14, 2), by: const ChangedByMe()),
+      ),
+      'Modifié par vous · 14:02',
+    );
+  });
 }

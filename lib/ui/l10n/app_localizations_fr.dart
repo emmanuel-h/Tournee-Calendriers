@@ -164,6 +164,27 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String houseChangedByToday(String name, DateTime time) {
+    final intl.DateFormat timeDateFormat = intl.DateFormat.Hm(localeName);
+    final String timeString = timeDateFormat.format(time);
+
+    return 'Modifié par $name · $timeString';
+  }
+
+  @override
+  String houseChangedByOn(String name, DateTime day, DateTime time) {
+    final intl.DateFormat dayDateFormat = intl.DateFormat.MMMd(localeName);
+    final String dayString = dayDateFormat.format(day);
+    final intl.DateFormat timeDateFormat = intl.DateFormat.Hm(localeName);
+    final String timeString = timeDateFormat.format(time);
+
+    return 'Modifié par $name · $dayString à $timeString';
+  }
+
+  @override
+  String get houseChangedByMe => 'vous';
+
+  @override
   String get houseGone => 'Ce numéro n\'est plus dans cette rue.';
 
   @override

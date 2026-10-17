@@ -8,8 +8,10 @@ import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_state.dart';
+import 'package:tournee_calendriers/presentation/my_tournees/my_tournees_notifier.dart';
 import 'package:tournee_calendriers/presentation/street/follows_street.dart';
 
 /// Which house a sheet shows. A record: two records with the same fields
@@ -76,6 +78,10 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState>
   /// The last change asked; the next one starts when it ends.
   Future<void> _pending = Future.value();
 
+  /// The open tournée as last read, for the name of who made the last
+  /// change; null while none is open or it cannot be read.
+  Tournee? _team;
+
   StreetId get _streetId;
   HouseNumber get _number;
 
@@ -90,7 +96,42 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState>
   @override
   HouseSheetState build() {
     followStreet(_streetId);
+    _followTeam();
     return render();
+  }
+
+  /// Follows the open tournée's team (`ObserveTeam`, from the phone's copy
+  /// offline), which names who made the last change. Nothing to follow
+  /// while no tournée is open: the phone's own streets name nobody but
+  /// the member on the phone.
+  void _followTeam() {
+    // Riverpod keeps the notifier when it builds again (another tournée
+    // opened): the old team must not name anyone.
+    _team = null;
+    final tournee = ref.watch(currentTourneeProvider);
+    if (tournee == null) return;
+    final subscription = ref.watch(observeTeamProvider)(tournee.id).listen(
+      (team) {
+        _team = team;
+        state = render();
+      },
+      // The team cannot be read (the member left): the sheet still
+      // shows the time, without a name.
+      onError: (Object _) {},
+    );
+    ref.onDispose(subscription.cancel);
+  }
+
+  /// Who made the change stamped [stamp], as the sheet names them: the
+  /// member on the phone, a member of the open tournée, or nobody known.
+  ChangeAuthor? _authorOf(ChangeStamp stamp) {
+    if (stamp.by == ref.read(readCurrentMemberProvider)()) {
+      return const ChangedByMe();
+    }
+    return switch (_team?.memberOf(stamp.by)) {
+      final member? => ChangedByMember(member.name.text),
+      null => null,
+    };
   }
 
   /// The status control: gives [status]. Leaving « Repasser » drops its
@@ -165,7 +206,11 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState>
       // not `DateTime.now()`, lets the tests fix the day.
       lastChange: stamp == null
           ? null
-          : LastChange.of(stamp.at, now: ref.read(clockProvider).now()),
+          : LastChange.of(
+              stamp.at,
+              now: ref.read(clockProvider).now(),
+              by: _authorOf(stamp),
+            ),
     );
   }
 }

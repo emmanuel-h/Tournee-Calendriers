@@ -723,9 +723,11 @@ Fiche maison details fixed in T1.8 (`lib/presentation/house_sheet/`,
   the field loses focus (« OK » on the keyboard), before another control is used, when the
   sheet closes (however it is closed) and when the app goes to the background — not at every
   key, which would stamp the house each letter.
-- **Last change**: « Modifié à 14:02 » today, « Modifié le 3 oct. à 14:02 » before, in the
-  phone's time zone; nothing when the house was never changed. Names (« par Léa ») come with
-  identities in M2.
+- **Last change**: « Modifié par Léa · 14:02 » today, « Modifié par Léa · 3 oct. à 14:02 »
+  before, in the phone's time zone; « par vous » for the member on the phone; nothing when the
+  house was never changed. The name is read from the open tournée's team (offline from the
+  phone's copy); when the phone cannot name anyone (no tournée open, a member no longer in the
+  team) the line is « Modifié à 14:02 » / « Modifié le 3 oct. à 14:02 » (#89).
 - *Transformer en immeuble…* (with the building icon of the mockup) closes the sheet and opens
   « Décrire l'immeuble »; « Valider » there opens the new building's grid (one sheet at a time).
 

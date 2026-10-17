@@ -106,8 +106,51 @@ void main() {
       expect(ChangedToday(at), isNot(ChangedToday(DateTime(2026, 10, 4, 14))));
       expect(ChangedEarlier(at).hashCode, ChangedEarlier(at).hashCode);
       expect(ChangedEarlier(at), isNot(ChangedToday(at)));
-      expect(ChangedToday(at).toString(), 'ChangedToday($at)');
-      expect(ChangedEarlier(at).toString(), 'ChangedEarlier($at)');
+      expect(
+        ChangedToday(at, by: const ChangedByMe()),
+        isNot(ChangedToday(at)),
+      );
+      expect(
+        ChangedEarlier(at, by: const ChangedByMember('Léa')),
+        ChangedEarlier(at, by: const ChangedByMember('Léa')),
+      );
+      expect(ChangedToday(at).toString(), 'ChangedToday($at, null)');
+      expect(ChangedEarlier(at).toString(), 'ChangedEarlier($at, null)');
+    });
+
+    test('should keep who made the change', () {
+      final change = LastChange.of(
+        twoPm,
+        now: twoPm,
+        by: const ChangedByMember('Léa'),
+      );
+
+      expect(change.by, const ChangedByMember('Léa'));
+    });
+  });
+
+  group('ChangeAuthor', () {
+    test('should be equal by kind and name', () {
+      // Built at run time: a `const` would be built by the compiler, so
+      // the constructor lines would never count as covered.
+      final name = 'Léa'.trim();
+
+      // ignore: prefer_const_constructors
+      expect(ChangedByMe(), const ChangedByMe());
+      // ignore: prefer_const_constructors
+      expect(ChangedByMe().hashCode, const ChangedByMe().hashCode);
+      expect(ChangedByMember(name), const ChangedByMember('Léa'));
+      expect(
+        ChangedByMember(name).hashCode,
+        const ChangedByMember('Léa').hashCode,
+      );
+      expect(ChangedByMember(name), isNot(const ChangedByMember('Paul')));
+      expect(const ChangedByMe(), isNot(ChangedByMember(name)));
+    });
+
+    test('should name itself', () {
+      expect('${const ChangedByMe()}', 'ChangedByMe');
+      expect('${const ChangedByMember('Léa')}', 'ChangedByMember(Léa)');
     });
   });
 

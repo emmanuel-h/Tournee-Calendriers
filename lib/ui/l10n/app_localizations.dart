@@ -327,7 +327,7 @@ abstract class AppLocalizations {
   /// **'{count} caractères sur {max}'**
   String textCountSemantics(int count, int max);
 
-  /// Last change of a house, made today (no member names before M2).
+  /// Last change of a house, made today, by nobody the phone can name.
   ///
   /// In fr, this message translates to:
   /// **'Modifié à {time}'**
@@ -338,6 +338,24 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Modifié le {day} à {time}'**
   String houseChangedOn(DateTime day, DateTime time);
+
+  /// Last change of a house, made today by a member: « Modifié par Léa · 14:02 » (PLAN §5.7).
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifié par {name} · {time}'**
+  String houseChangedByToday(String name, DateTime time);
+
+  /// Last change of a house, made before today by a member: « Modifié par Léa · 3 oct. à 14:02 ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifié par {name} · {day} à {time}'**
+  String houseChangedByOn(String name, DateTime day, DateTime time);
+
+  /// The name of the member on the phone in « Modifié par vous · 14:02 ».
+  ///
+  /// In fr, this message translates to:
+  /// **'vous'**
+  String get houseChangedByMe;
 
   /// House sheet of a number that was removed meanwhile, or whose street went to the Corbeille.
   ///

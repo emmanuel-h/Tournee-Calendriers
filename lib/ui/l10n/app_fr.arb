@@ -133,7 +133,7 @@
   },
   "houseChangedToday": "Modifié à {time}",
   "@houseChangedToday": {
-    "description": "Last change of a house, made today (no member names before M2).",
+    "description": "Last change of a house, made today, by nobody the phone can name.",
     "placeholders": {
       "time": { "type": "DateTime", "format": "Hm", "example": "14:02" }
     }
@@ -146,6 +146,25 @@
       "time": { "type": "DateTime", "format": "Hm", "example": "14:02" }
     }
   },
+  "houseChangedByToday": "Modifié par {name} · {time}",
+  "@houseChangedByToday": {
+    "description": "Last change of a house, made today by a member: « Modifié par Léa · 14:02 » (PLAN §5.7).",
+    "placeholders": {
+      "name": { "type": "String", "example": "Léa" },
+      "time": { "type": "DateTime", "format": "Hm", "example": "14:02" }
+    }
+  },
+  "houseChangedByOn": "Modifié par {name} · {day} à {time}",
+  "@houseChangedByOn": {
+    "description": "Last change of a house, made before today by a member: « Modifié par Léa · 3 oct. à 14:02 ».",
+    "placeholders": {
+      "name": { "type": "String", "example": "Léa" },
+      "day": { "type": "DateTime", "format": "MMMd", "example": "3 oct." },
+      "time": { "type": "DateTime", "format": "Hm", "example": "14:02" }
+    }
+  },
+  "houseChangedByMe": "vous",
+  "@houseChangedByMe": { "description": "The name of the member on the phone in « Modifié par vous · 14:02 »." },
   "houseGone": "Ce numéro n'est plus dans cette rue.",
   "@houseGone": { "description": "House sheet of a number that was removed meanwhile, or whose street went to the Corbeille." },
   "transformToBuilding": "Transformer en immeuble…",

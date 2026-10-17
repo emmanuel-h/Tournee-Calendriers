@@ -142,7 +142,7 @@ void main() {
       final local = twoPm.toLocal();
       String two(int value) => value.toString().padLeft(2, '0');
       expect(
-        find.text('Modifié à ${two(local.hour)}:${two(local.minute)}'),
+        find.text('Modifié par vous · ${two(local.hour)}:${two(local.minute)}'),
         findsOneWidget,
       );
       expect(stored('5').status, VisitStatus.done);
