@@ -40,13 +40,17 @@ import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_docu
 ///
 /// [undoStamp] (who is undoing, now) stamps what an undo puts back.
 /// [removal] is the value that removes a field, `FieldValue.delete()`;
-/// passed in so this mapping needs no Firestore platform and its tests can
-/// recognise it.
+/// [arrayUnion] and [arrayRemove] make the values that add one item to an
+/// array, or remove it, leaving the others (`FieldValue.arrayUnion([item])`,
+/// `FieldValue.arrayRemove([item])`). They are passed in so this mapping
+/// needs no Firestore platform and its tests can recognise them.
 List<Map<FieldPath, Object?>> streetUpdates(
   Street street,
   StreetChange change, {
   required ChangeStamp undoStamp,
   required Object removal,
+  required Object Function(Object item) arrayUnion,
+  required Object Function(Object item) arrayRemove,
 }) {
   Map<FieldPath, Object?> doorUpdate(
     HouseNumber number,
@@ -86,6 +90,18 @@ List<Map<FieldPath, Object?>> streetUpdates(
     ],
     StreetDeleted(:final deletion) => [_stampUpdate([], deletion, 'deleted')],
     StreetRestored() => [_stampUpdate([], null, 'deleted')],
+    // The member alone, never the whole array: a teammate taking the same
+    // street at the same moment is not overwritten.
+    StreetTaken(:final member) => [
+      {
+        _path([_assignees]): arrayUnion(member.value),
+      },
+    ],
+    StreetReleased(:final member) => [
+      {
+        _path([_assignees]): arrayRemove(member.value),
+      },
+    ],
     NumbersAdded(:final added, :final restored) => [
       if (added.isNotEmpty)
         {
@@ -143,6 +159,7 @@ List<Map<FieldPath, Object?>> streetUpdates(
 }
 
 const _houses = 'houses';
+const _assignees = 'assignees';
 const _dwellings = 'dwellings';
 
 FieldPath _path(List<String> segments) => FieldPath(segments);

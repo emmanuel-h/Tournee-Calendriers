@@ -2,7 +2,8 @@
 // position and none, every status, « repasser » with and without hint (a
 // building's own too),
 // last changes, buildings of every shape (two staircases, unknown
-// floors, free labels, an emptied floor), a removed number and a deletion.
+// floors, free labels, an emptied floor), a removed number, a deletion, a
+// shape of two lines and two members covering it.
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/street/building/building.dart';
 import 'package:tournee_calendriers/domain/street/building/building_plan.dart';
@@ -12,6 +13,7 @@ import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/removed_house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
 import '../../support/results.dart';
@@ -127,20 +129,31 @@ final removedFourteen = RemovedHouse(
   removal: paulAtThree,
 );
 
-/// The Rue des Lilas with every kind of house, in the Corbeille.
+/// Where the Rue des Lilas runs: two pieces of road, points to the
+/// 0.00001° the stored shape keeps.
+final lilasShape = StreetShape([
+  [townHallDoor, northDoor],
+  [northDoor, townHallDoor, northDoor],
+]);
+
+/// The Rue des Lilas with every kind of house, in the Corbeille, covered by
+/// Léa and Paul.
 final richStreet = valueOf(
   Street.create(
     id: StreetId('aB3dE5gH7jK9mN1pQ2sT'),
     name: 'Rue des Lilas',
     commune: villefranche,
     banId: BanStreetId('69264_0420'),
+    shape: lilasShape,
+    assignees: {lea, paul},
     houses: everyKindOfHouse,
     removedHouses: [removedFourteen],
     deletion: leaAtTwo,
   ),
 );
 
-/// A street typed in by hand: no BAN id, no position, not deleted.
+/// A street typed in by hand: no BAN id, no position, no shape, nobody
+/// covering it, not deleted.
 final manualStreet = valueOf(
   Street.create(
     id: StreetId('manual-1'),
@@ -157,6 +170,8 @@ void expectSameStreet(Street actual, Street expected) {
   expect(actual.name, expected.name);
   expect(actual.commune, expected.commune);
   expect(actual.banId, expected.banId);
+  expect(actual.shape, expected.shape);
+  expect(actual.assignees, expected.assignees);
   expect(actual.houses, expected.houses);
   expect(actual.removedHouses, expected.removedHouses);
   expect(actual.deletion, expected.deletion);

@@ -28,14 +28,15 @@ final _door1 = at(45.98920, 4.71860);
 final _door2 = at(45.98930, 4.71850);
 final _door3 = at(45.98940, 4.71840);
 
-/// Rue Nationale: 1 done, 2 to do, both placed; 4 typed in by hand (no
-/// position).
+/// Rue Nationale, covered by Léa: 1 done, 2 to do, both placed; 4 typed in
+/// by hand (no position).
 final _nationaleStreet = valueOf(
   Street.create(
     id: _nationale,
     name: 'Rue Nationale',
     commune: villefranche,
     shape: _nationaleShape,
+    assignees: {lea},
     houses: [
       House(number: n('1'), status: VisitStatus.done, position: _door1),
       House(number: n('2'), position: _door2),
@@ -44,7 +45,7 @@ final _nationaleStreet = valueOf(
   ),
 );
 
-/// Rue de la Paix: one house, to do.
+/// Rue de la Paix: one house, to do; nobody covers it.
 final _paixStreet = valueOf(
   Street.create(
     id: _paix,
@@ -58,10 +59,7 @@ final _paixStreet = valueOf(
 void main() {
   group('lines', () {
     test('should draw each street with its shape and its level', () {
-      final layers = MapLayers.of(
-        [_nationaleStreet, _paixStreet],
-        taken: {_nationale},
-      );
+      final layers = MapLayers.of([_nationaleStreet, _paixStreet]);
 
       expect(layers.lines, [
         StreetLine(
@@ -74,7 +72,9 @@ void main() {
     });
 
     test('should be « à faire » when taken and nothing visited', () {
-      final layers = MapLayers.of([_paixStreet], taken: {_paix});
+      final (taken, _) = valueOf(_paixStreet.take(paul));
+
+      final layers = MapLayers.of([taken]);
 
       expect(layers.lines.single.level, ProgressLevel.toDo);
     });
@@ -87,7 +87,7 @@ void main() {
         numbers: [n('1')],
       );
 
-      final layers = MapLayers.of([manual, _paixStreet], taken: {});
+      final layers = MapLayers.of([manual, _paixStreet]);
 
       expect(layers.lines.map((line) => line.street), [_paix]);
     });
@@ -95,7 +95,7 @@ void main() {
     test('should leave out a street in the Corbeille', () {
       final (deleted, _) = _nationaleStreet.delete(by: lea, at: twoPm);
 
-      final layers = MapLayers.of([deleted, _paixStreet], taken: {});
+      final layers = MapLayers.of([deleted, _paixStreet]);
 
       expect(layers.lines.map((line) => line.street), [_paix]);
       expect(layers.dots.map((dot) => dot.street), [_paix]);
@@ -104,7 +104,7 @@ void main() {
 
   group('dots', () {
     test('should place each house that has a position, with its status', () {
-      final layers = MapLayers.of([_nationaleStreet, _paixStreet], taken: {});
+      final layers = MapLayers.of([_nationaleStreet, _paixStreet]);
 
       expect(layers.dots, [
         HouseDot(
@@ -190,7 +190,7 @@ void main() {
   });
 
   test('should give lists that cannot be modified', () {
-    final layers = MapLayers.of([_paixStreet], taken: {});
+    final layers = MapLayers.of([_paixStreet]);
 
     expect(layers.lines.clear, throwsUnsupportedError);
     expect(layers.dots.clear, throwsUnsupportedError);
@@ -332,5 +332,4 @@ Street _withHouse(House house) => valueOf(
 );
 
 /// The only dot of [street].
-HouseDot _dotOf(Street street) =>
-    MapLayers.of([street], taken: {_paix}).dots.single;
+HouseDot _dotOf(Street street) => MapLayers.of([street]).dots.single;

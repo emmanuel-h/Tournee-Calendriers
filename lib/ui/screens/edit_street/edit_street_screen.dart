@@ -27,8 +27,8 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
 /// « Modifier la rue », the edit mode of a street (PLAN §5.5,
 /// `docs/mockups/Edit.dc.html`), opened by ✏ on the street screen: the
-/// name, the numbers of each side with ✕, « + numéros », and « Supprimer
-/// la rue ». Works offline.
+/// name, the numbers of each side with ✕, « + numéros », « Ne plus la
+/// faire » and « Supprimer la rue ». Works offline.
 ///
 /// Each change to the numbers is stored at once, with « Annuler » for 4 s.
 /// The name is stored when the screen is left (« OK », ✕ or back), the
@@ -166,7 +166,11 @@ final class _EditScreenState extends ConsumerState<_EditScreen>
             ),
           },
           bottomNavigationBar: switch (state) {
-            EditStreetShown(:final name) => _BottomActions(
+            EditStreetShown(:final name, :final isMine) => _BottomActions(
+              // Only to a member who covers the street.
+              onStopCovering: isMine
+                  ? () => unawaited(_notifier.stopCovering())
+                  : null,
               onDelete: () => unawaited(_deleteStreet(name)),
             ),
             EditStreetLoading() || EditStreetGone() => null,
@@ -401,16 +405,22 @@ final class _NameField extends StatelessWidget {
   }
 }
 
-/// The white bar at the bottom: « Supprimer la rue ». « Ne plus la faire »
-/// joins it with assignees (M3): before them, nobody is « on » a street.
+/// The white bar at the bottom: « Ne plus la faire » (when the member
+/// covers the street) and « Supprimer la rue », side by side as in the
+/// Edit mockup; « Supprimer la rue » alone takes the whole width.
 final class _BottomActions extends StatelessWidget {
-  const _BottomActions({required this.onDelete});
+  const _BottomActions({required this.onStopCovering, required this.onDelete});
 
+  /// Null when the member does not cover the street: the button is left
+  /// out rather than disabled, there is nothing to stop.
+  final VoidCallback? onStopCovering;
   final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
+    final l10n = AppLocalizations.of(context);
+    final onStopCovering = this.onStopCovering;
     return DecoratedBox(
       decoration: BoxDecoration(
         color: colors.surface,
@@ -428,12 +438,29 @@ final class _BottomActions extends StatelessWidget {
             AppSizes.gutter,
             0,
           ),
-          child: SecondaryButton(
-            key: const Key('edit.deleteStreet'),
-            label: AppLocalizations.of(context).deleteStreetAction,
-            compact: true,
-            destructive: true,
-            onPressed: onDelete,
+          child: Row(
+            children: [
+              if (onStopCovering != null) ...[
+                Expanded(
+                  child: SecondaryButton(
+                    key: const Key('edit.stopCovering'),
+                    label: l10n.stopCoveringStreetAction,
+                    compact: true,
+                    onPressed: onStopCovering,
+                  ),
+                ),
+                const SizedBox(width: 10),
+              ],
+              Expanded(
+                child: SecondaryButton(
+                  key: const Key('edit.deleteStreet'),
+                  label: l10n.deleteStreetAction,
+                  compact: true,
+                  destructive: true,
+                  onPressed: onDelete,
+                ),
+              ),
+            ],
           ),
         ),
       ),
@@ -441,7 +468,6 @@ final class _BottomActions extends StatelessWidget {
   }
 }
 
-/// « Cette rue n'est plus sur ce téléphone. »
 final class _GoneMessage extends StatelessWidget {
   const _GoneMessage();
 

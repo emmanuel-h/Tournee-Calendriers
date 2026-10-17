@@ -9,9 +9,11 @@ import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_document_mapper.dart';
 
+import '../../../support/results.dart';
 import '../../../support/street_fixtures.dart';
 import '../../local_storage/stored_street_fixtures.dart';
 
@@ -100,16 +102,35 @@ void main() {
         'banId',
         'deletedAt',
         'deletedBy',
+        'shape',
+        'assignees',
         'houses',
       });
     });
 
-    test('should write null for what a street typed by hand lacks', () {
+    test('should write the shape as one encoded polyline per line', () {
+      final data = streetToDocument(richStreet);
+
+      expect(data['shape'], lilasShape.encode());
+      expect(data['shape'], hasLength(2));
+    });
+
+    test('should write the assignees as their ids, sorted', () {
+      final (street, _) = valueOf(manualStreet.take(paul));
+      final (both, _) = valueOf(street.take(lea));
+
+      expect(streetToDocument(both)['assignees'], ['lea', 'paul']);
+    });
+
+    test('should write null or empty for what a street typed by hand '
+        'lacks', () {
       final data = streetToDocument(manualStreet);
 
       expect(data['banId'], isNull);
       expect(data['deletedAt'], isNull);
       expect(data['deletedBy'], isNull);
+      expect(data['shape'], isEmpty);
+      expect(data['assignees'], isEmpty);
     });
 
     test('should key each house by its label, removed ones included', () {
@@ -377,6 +398,20 @@ void main() {
       expect(read(data).deletion, isNull);
     });
 
+    // Streets written before the map (T3.3) have neither field.
+    test('should read no shape when the document has none', () {
+      final data = storedRich((data) => data.remove('shape'));
+
+      expect(read(data).shape, StreetShape.none);
+    });
+
+    test('should read nobody covering the street when the document has no '
+        'assignees', () {
+      final data = storedRich((data) => data.remove('assignees'));
+
+      expect(read(data).assignees, isEmpty);
+    });
+
     test('should read a time in UTC', () {
       final street = read(asRead(streetToDocument(richStreet)));
 
@@ -396,6 +431,30 @@ void main() {
     Map<String, dynamic> doorEleven(Map<String, dynamic> data) =>
         (eight(data)['dwellings'] as Map<String, dynamic>)['A1-11']
             as Map<String, dynamic>;
+
+    test('should refuse a shape that is not a list', () {
+      expectUnreadable((data) => data['shape'] = 'abc');
+    });
+
+    test('should refuse a line of the shape that is not text', () {
+      expectUnreadable((data) => data['shape'] = [12]);
+    });
+
+    test('should refuse a line that is not an encoded polyline', () {
+      expectUnreadable((data) => data['shape'] = [' ']);
+    });
+
+    test('should refuse assignees that are not a list', () {
+      expectUnreadable((data) => data['assignees'] = 'lea');
+    });
+
+    test('should refuse an assignee that is not text', () {
+      expectUnreadable((data) => data['assignees'] = [12]);
+    });
+
+    test('should refuse a blank assignee', () {
+      expectUnreadable((data) => data['assignees'] = [' ']);
+    });
 
     test('should refuse a document without a name', () {
       expectUnreadable((data) => data.remove('name'));

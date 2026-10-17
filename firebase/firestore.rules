@@ -432,10 +432,28 @@ service cloud.firestore {
         && item.deletedAt < request.time - duration.value(30, 'd');
     }
 
+    // What the map added to a street (T3.3): where it runs and who covers
+    // it. Optional, so a street written by an app of before the map is
+    // still accepted; read as no shape and nobody.
+    function mapFields() {
+      return ['shape', 'assignees'];
+    }
+
+    // A shape: one encoded polyline per piece of road, written once with
+    // the street, never changed. Counted, not checked line by line (no
+    // loops); a street has a few dozen pieces at most.
+    function isShape(shape) {
+      return shape is list && shape.size() <= 1000;
+    }
+
     // A new street (import from the BAN, PLAN §6.2): out of the Corbeille.
     // Its houses come in bulk: the rules cannot check them one by one.
+    // Nobody covers it, or only the caller (« Ajouter et me l'attribuer »).
     function isNewStreet(data) {
-      return hasExactly(data, streetFields())
+      return data.keys().hasAll(streetFields())
+        && data.keys().hasOnly(streetFields().concat(mapFields()))
+        && (!('shape' in data) || isShape(data.shape))
+        && (!('assignees' in data) || data.assignees == [] || data.assignees == [uid()])
         && isName(data.name, 150)
         && hasAtMost(data.communeName, 150) && isTrimmed(data.communeName) && data.communeName != ''
         && data.communeCode is string && data.communeCode.matches('([0-9]{2}|2A|2B)[0-9]{3}')
@@ -445,14 +463,26 @@ service cloud.firestore {
     }
 
     // A change of a street (the table of PLAN §6.2): its name, its
-    // deletion (Corbeille), or its houses. The commune and the BAN id
-    // never change.
+    // deletion (Corbeille), who covers it, or its houses. The commune, the
+    // BAN id and the shape never change.
     function isStreetChange(tournee, before, after) {
-      return after.diff(before).affectedKeys().hasOnly(['name', 'deletedAt', 'deletedBy', 'houses'])
+      return after.diff(before).affectedKeys().hasOnly(['name', 'deletedAt', 'deletedBy', 'houses', 'assignees'])
         && (after.name == before.name || isName(after.name, 150))
+        && (after.get('assignees', []) == before.get('assignees', [])
+          || isOwnAssignment(before.get('assignees', []), after.assignees))
         && ((after.deletedAt == before.deletedAt && after.deletedBy == before.deletedBy)
           || isRemovalStamp(after))
         && (after.houses == before.houses || isHousesChange(tournee, before.houses, after.houses));
+    }
+
+    // The caller takes the street (`arrayUnion`) or stops covering it
+    // (`arrayRemove`), for themself only: the others who cover it stay,
+    // and nobody is put on a street or taken off it by someone else.
+    function isOwnAssignment(old, new) {
+      return new is list
+        && new.size() == new.toSet().size()
+        && (new.toSet() == old.toSet().union([uid()].toSet())
+          || new.toSet() == old.toSet().difference([uid()].toSet()));
     }
 
     // What a write may do to the `houses` map: change one house in place,

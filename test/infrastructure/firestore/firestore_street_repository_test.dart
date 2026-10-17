@@ -131,6 +131,40 @@ void main() {
       expect(both.houses.last.lastChange!.by, MemberId('paul'));
     });
 
+    test('should keep two members taking the street at once', () async {
+      await phone().add(lilas);
+      await pumpEventQueue();
+      final lea = phone('lea');
+      final paul = phone('paul');
+      final leaSees = (await lea.find(lilas.id))!;
+      final paulSees = (await paul.find(lilas.id))!;
+
+      final (leaTook, leaChange) = valueOf(leaSees.take(MemberId('lea')));
+      final (paulTook, paulChange) = valueOf(paulSees.take(MemberId('paul')));
+      await lea.save(leaTook, leaChange);
+      await paul.save(paulTook, paulChange);
+      await pumpEventQueue();
+
+      final both = (await phone('manu').find(lilas.id))!;
+      expect(both.assignees, {MemberId('lea'), MemberId('paul')});
+    });
+
+    test('should keep a teammate covering the street when one releases '
+        'it', () async {
+      final (shared, _) = valueOf(lilas.take(MemberId('lea')));
+      await phone().add(valueOf(shared.take(MemberId('paul'))).$1);
+      await pumpEventQueue();
+      final lea = phone('lea');
+      final leaSees = (await lea.find(lilas.id))!;
+
+      final (released, change) = valueOf(leaSees.release(MemberId('lea')));
+      await lea.save(released, change);
+      await pumpEventQueue();
+
+      final stored = (await db.doc('$streetsPath/lilas').get()).data()!;
+      expect(stored['assignees'], ['paul']);
+    });
+
     test('should write only the fields the change names', () async {
       await phone().add(lilas);
       await pumpEventQueue();

@@ -10,6 +10,7 @@ import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/removed_house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/mappers/street_json_mapper.dart';
 
@@ -98,6 +99,10 @@ void main() {
           name: 'Rue des Lilas',
           commune: villefranche,
           banId: BanStreetId('69264_0420'),
+          shape: StreetShape([
+            [townHallDoor, northDoor],
+          ]),
+          assignees: {paul, lea},
           houses: [
             House(
               number: n('3bis'),
@@ -119,6 +124,8 @@ void main() {
         'commune': {'inseeCode': '69264', 'name': 'Villefranche-sur-Saône'},
         'banId': '69264_0420',
         'deletion': {'by': 'paul', 'at': '2026-11-02T15:00:00.000Z'},
+        'shape': ['eguwGkrx[mQxH'],
+        'assignees': ['lea', 'paul'],
         'houses': [
           {
             'number': '3bis',
@@ -159,6 +166,13 @@ void main() {
         ],
         'removedHouses': <Object?>[],
       });
+    });
+
+    test('should write no line and nobody for a street typed in by hand', () {
+      final json = streetToJson(manualStreet);
+
+      expect(json['shape'], isEmpty);
+      expect(json['assignees'], isEmpty);
     });
 
     test('should write a removed house with its removal', () {
@@ -419,6 +433,20 @@ void main() {
       expect(street.houses.first.position!.longitude, 5.0);
     });
 
+    // Files written before the map (T3.3) have neither field.
+    test('should read no shape when the file has none', () {
+      final json = storedRichStreet((json) => json.remove('shape'));
+
+      expect(streetFromJson(json).shape, StreetShape.none);
+    });
+
+    test('should read nobody covering the street when the file has no '
+        'assignees', () {
+      final json = storedRichStreet((json) => json.remove('assignees'));
+
+      expect(streetFromJson(json).assignees, isEmpty);
+    });
+
     test('should read a time written with an offset as UTC', () {
       final street = streetFromJson(
         storedRichStreet(
@@ -496,6 +524,12 @@ void main() {
           doorTwelve(json)['comeBack'] = 'x' * 21,
       'a door has no last change field': (json) =>
           doorTwelve(json).remove('lastChange'),
+      'the shape is not a list': (json) => json['shape'] = 'abc',
+      'a line of the shape is not text': (json) => json['shape'] = [12],
+      'a line is not an encoded polyline': (json) => json['shape'] = [' '],
+      'the assignees are not a list': (json) => json['assignees'] = 'lea',
+      'an assignee is not text': (json) => json['assignees'] = [12],
+      'an assignee is blank': (json) => json['assignees'] = [''],
     };
 
     cases.forEach((what, change) {

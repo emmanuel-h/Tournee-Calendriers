@@ -5,7 +5,8 @@
 // The schema, version 3 (PLAN §6.3):
 //
 //   { version: 3, id, name, commune: { inseeCode, name }, banId | null,
-//     deletion: stamp | null, houses: [house], removedHouses: [{ house,
+//     deletion: stamp | null, shape: ["<encoded polyline>", …],
+//     assignees: [memberId, …], houses: [house], removedHouses: [{ house,
 //     removal: stamp }] }
 //   house    = { number: "3bis", status, comeBack: hint | null,
 //                lastChange: stamp | null,
@@ -34,6 +35,11 @@
 // version 3 as soon as it is read (see `LocalStreetRepository`), so no note
 // and no long hint stays on the phone. Every other mark is kept.
 //
+// `shape` (one encoded polyline per line, see `StreetShape.encode`) and
+// `assignees` came with the map (T3.3) without a new version: they only
+// add to version 3, so a file written before reads as a street without
+// shape that nobody covers, and nothing in it needs rewriting.
+//
 // Statuses and label styles are written under fixed names chosen here, not
 // the Dart enum names, so renaming an enum value in the code cannot make
 // the streets already on a phone unreadable.
@@ -60,6 +66,7 @@ import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/removed_house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
 /// The schema version this code writes. It reads it and versions 1 and 2
@@ -93,6 +100,9 @@ Map<String, Object?> streetToJson(Street street) => {
   },
   'banId': street.banId?.value,
   'deletion': _stampToJson(street.deletion),
+  'shape': street.shape.encode(),
+  // Sorted, so the same street always makes the same file.
+  'assignees': [for (final member in street.assignees) member.value]..sort(),
   'houses': [for (final house in street.houses) _houseToJson(house)],
   'removedHouses': [
     for (final removed in street.removedHouses)
@@ -134,6 +144,10 @@ Street streetFromJson(Object? json) {
           'commune',
         ),
         banId: banId == null ? null : _identifier(banId, BanStreetId.new),
+        // Read apart: a map pattern requires its keys, and files written
+        // before the map have neither.
+        shape: _shapeFromJson(json['shape']),
+        assignees: _assigneesFromJson(json['assignees']),
         houses: [for (final house in houses) _houseFromJson(house, version)],
         removedHouses: [
           for (final removed in removedHouses)
@@ -146,6 +160,33 @@ Street streetFromJson(Object? json) {
   }
   throw const FormatException('Not a stored street of this version');
 }
+
+/// The shape stored as [json]; none when the field is missing.
+StreetShape _shapeFromJson(Object? json) => switch (json) {
+  null => StreetShape.none,
+  final List<Object?> lines => _valid(
+    StreetShape.decode([
+      for (final line in lines)
+        line is String
+            ? line
+            : throw const FormatException('Not a stored line of a shape'),
+    ]),
+    'shape',
+  ),
+  _ => throw const FormatException('Not a stored shape'),
+};
+
+/// The members stored as [json]; nobody when the field is missing.
+Set<MemberId> _assigneesFromJson(Object? json) => switch (json) {
+  null => const {},
+  final List<Object?> ids => {
+    for (final id in ids)
+      id is String
+          ? _identifier(id, MemberId.new)
+          : throw const FormatException('Not a stored assignee'),
+  },
+  _ => throw const FormatException('Not stored assignees'),
+};
 
 Map<String, Object?> _houseToJson(House house) => {
   'number': house.number.label,

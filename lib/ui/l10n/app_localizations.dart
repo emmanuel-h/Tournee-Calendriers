@@ -669,6 +669,12 @@ abstract class AppLocalizations {
   /// **'Supprimer la rue'**
   String get deleteStreetAction;
 
+  /// Bottom button of the edit mode, shown when the member covers the street: takes them off it; the street stays in the tournée for the others.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ne plus la faire'**
+  String get stopCoveringStreetAction;
+
   /// Undo snackbar after ✕ on a number.
   ///
   /// In fr, this message translates to:

@@ -23,6 +23,12 @@ import '../../local_storage/stored_street_fixtures.dart';
 /// `FieldValue.delete()`).
 const removed = #removed;
 
+/// What the test passes for « add [value] to the array » and « remove it
+/// from the array » (the adapter passes `FieldValue.arrayUnion([value])`
+/// and `FieldValue.arrayRemove([value])`): records, equal by value.
+(String, Object) union(Object value) => ('union', value);
+(String, Object) without(Object value) => ('without', value);
+
 /// Who undoes, and when: Manu, at four.
 final manu = MemberId('manu');
 final fourPm = DateTime.utc(2026, 11, 2, 16);
@@ -47,6 +53,8 @@ List<Map<FieldPath, Object?>> updatesOf<C extends StreetChange, F>(
     change,
     undoStamp: manuAtFour,
     removal: removed,
+    arrayUnion: union,
+    arrayRemove: without,
   );
 }
 
@@ -402,6 +410,8 @@ void main() {
         change,
         undoStamp: manuAtFour,
         removal: removed,
+        arrayUnion: union,
+        arrayRemove: without,
       );
 
       // One house dropped per write: the security rules check the one
@@ -434,6 +444,27 @@ void main() {
   });
 
   group('street', () {
+    // Only the member is added or removed: two members taking the same
+    // street at the same moment both stay (PLAN §6.2).
+    test('should add the member who takes the street to its assignees', () {
+      final update = updateOf(lilas, (s) => s.take(paul));
+
+      expect(update, {
+        FieldPath(const ['assignees']): union('paul'),
+      });
+    });
+
+    test('should remove the member who releases the street from its '
+        'assignees', () {
+      final (taken, _) = valueOf(lilas.take(paul));
+
+      final update = updateOf(taken, (s) => s.release(paul));
+
+      expect(update, {
+        FieldPath(const ['assignees']): without('paul'),
+      });
+    });
+
     test('should write the new name of the street', () {
       final update = updateOf(
         lilas,

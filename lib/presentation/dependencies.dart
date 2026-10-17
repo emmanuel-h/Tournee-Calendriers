@@ -27,6 +27,8 @@ import 'package:tournee_calendriers/application/ports/phone_settings.dart';
 import 'package:tournee_calendriers/application/ports/street_shapes.dart';
 import 'package:tournee_calendriers/application/ports/street_view_preferences.dart';
 import 'package:tournee_calendriers/application/ports/tournee_directory.dart';
+import 'package:tournee_calendriers/application/use_cases/add_manual_street.dart';
+import 'package:tournee_calendriers/application/use_cases/add_street_from_map.dart';
 import 'package:tournee_calendriers/application/use_cases/admins.dart';
 import 'package:tournee_calendriers/application/use_cases/choose_start_point.dart';
 import 'package:tournee_calendriers/application/use_cases/create_tournee.dart';
@@ -37,6 +39,7 @@ import 'package:tournee_calendriers/application/use_cases/hide_done.dart';
 import 'package:tournee_calendriers/application/use_cases/import_reference_area.dart';
 import 'package:tournee_calendriers/application/use_cases/join_tournee.dart';
 import 'package:tournee_calendriers/application/use_cases/list_commune_streets.dart';
+import 'package:tournee_calendriers/application/use_cases/look_up_street.dart';
 import 'package:tournee_calendriers/application/use_cases/mark_dwelling.dart';
 import 'package:tournee_calendriers/application/use_cases/move_streets_into_tournee.dart';
 import 'package:tournee_calendriers/application/use_cases/my_tournees.dart';
@@ -47,8 +50,10 @@ import 'package:tournee_calendriers/application/use_cases/observe_streets.dart';
 import 'package:tournee_calendriers/application/use_cases/phone_settings.dart';
 import 'package:tournee_calendriers/application/use_cases/purge_corbeille.dart';
 import 'package:tournee_calendriers/application/use_cases/search_communes.dart';
+import 'package:tournee_calendriers/application/use_cases/search_street.dart';
 import 'package:tournee_calendriers/application/use_cases/set_house_details.dart';
 import 'package:tournee_calendriers/application/use_cases/sign_in.dart';
+import 'package:tournee_calendriers/application/use_cases/street_assignment.dart';
 import 'package:tournee_calendriers/application/use_cases/team.dart';
 import 'package:tournee_calendriers/application/use_cases/undo_last_change.dart';
 import 'package:tournee_calendriers/domain/street/street_repository.dart';
@@ -165,6 +170,42 @@ final editStreetNumbersProvider = Provider(
     ref.watch(clockProvider),
     ref.watch(identityProvider),
   ),
+);
+final takeStreetProvider = Provider(
+  (ref) => TakeStreet(
+    ref.watch(streetRepositoryProvider),
+    ref.watch(identityProvider),
+  ),
+);
+final releaseStreetProvider = Provider(
+  (ref) => ReleaseStreet(
+    ref.watch(streetRepositoryProvider),
+    ref.watch(identityProvider),
+  ),
+);
+final lookUpStreetProvider = Provider(
+  (ref) => LookUpStreet(
+    ref.watch(addressDirectoryProvider),
+    ref.watch(streetRepositoryProvider),
+  ),
+);
+final addStreetFromMapProvider = Provider(
+  (ref) => AddStreetFromMap(
+    ref.watch(streetShapesProvider),
+    ref.watch(streetRepositoryProvider),
+    ref.watch(idGeneratorProvider),
+    ref.watch(identityProvider),
+  ),
+);
+final addManualStreetProvider = Provider(
+  (ref) => AddManualStreet(
+    ref.watch(streetRepositoryProvider),
+    ref.watch(idGeneratorProvider),
+    ref.watch(identityProvider),
+  ),
+);
+final searchStreetProvider = Provider(
+  (ref) => SearchStreet(ref.watch(addressDirectoryProvider)),
 );
 final undoLastChangeProvider = Provider(
   (ref) => UndoLastChange(ref.watch(streetRepositoryProvider)),

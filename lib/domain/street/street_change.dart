@@ -1,4 +1,5 @@
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
+import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/same_items.dart';
 import 'package:tournee_calendriers/domain/street/building/building.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
@@ -376,6 +377,54 @@ final class StreetRestored extends StreetChange {
 
   @override
   String toString() => 'StreetRestored(${streetId.value})';
+}
+
+/// [member] took the street: « Me l'attribuer », « La faire aussi », or
+/// « Ajouter et me l'attribuer » (PLAN §5.4). It is now in their « Mes
+/// rues ».
+///
+/// Storage adds [member] to the `assignees` array of the street (Firestore's
+/// `arrayUnion`), never writes the whole array: two members taking the same
+/// street at the same moment both stay. Undo releases it.
+final class StreetTaken extends StreetChange {
+  const StreetTaken({required super.streetId, required this.member});
+
+  final MemberId member;
+
+  @override
+  bool operator ==(Object other) =>
+      other is StreetTaken &&
+      other.streetId == streetId &&
+      other.member == member;
+
+  @override
+  int get hashCode => Object.hash(streetId, member);
+
+  @override
+  String toString() => 'StreetTaken(${streetId.value}, ${member.value})';
+}
+
+/// [member] stopped covering the street (« Ne plus la faire », PLAN §5.4,
+/// §5.5). The street, its houses and their marks stay in the tournée.
+///
+/// Storage removes [member] from the `assignees` array (`arrayRemove`),
+/// leaving the other members who cover it. Undo takes it again.
+final class StreetReleased extends StreetChange {
+  const StreetReleased({required super.streetId, required this.member});
+
+  final MemberId member;
+
+  @override
+  bool operator ==(Object other) =>
+      other is StreetReleased &&
+      other.streetId == streetId &&
+      other.member == member;
+
+  @override
+  int get hashCode => Object.hash(streetId, member);
+
+  @override
+  String toString() => 'StreetReleased(${streetId.value}, ${member.value})';
 }
 
 /// Numbers were added to the street from the « Ajouter des numéros » sheet

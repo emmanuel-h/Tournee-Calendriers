@@ -1,9 +1,12 @@
 // The streets of a campaign: who reads them, and every write of the table
 // in PLAN §6.2, as FirestoreStreetRepository sends it (field paths by
 // segments), plus what the rules refuse.
+import assert from 'node:assert/strict';
 import { after, before, beforeEach, describe, it } from 'node:test';
 import { assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
 import {
+  arrayRemove,
+  arrayUnion,
   collection,
   deleteDoc,
   deleteField,
@@ -178,6 +181,104 @@ describe('creating a street', () => {
 
   it('should refuse a street whose houses are not a map', async () => {
     await assertFails(newStreet(lea, streetDoc({ houses: [] })));
+  });
+
+  it('should accept a street written before the map, without shape or assignees', async () => {
+    const { shape, assignees, ...beforeTheMap } = streetDoc();
+
+    await assertSucceeds(newStreet(lea, beforeTheMap));
+  });
+
+  it('should accept a street given to the caller (« Ajouter et me l’attribuer »)', async () => {
+    await assertSucceeds(newStreet(lea, streetDoc({ assignees: [lea] })));
+  });
+
+  it('should refuse a new street given to someone else', async () => {
+    await assertFails(newStreet(lea, streetDoc({ assignees: [manu] })));
+    await assertFails(newStreet(lea, streetDoc({ assignees: [lea, manu] })));
+    await assertFails(newStreet(lea, streetDoc({ assignees: lea })));
+  });
+
+  it('should accept a street without a line and refuse a shape that is not a list', async () => {
+    await assertSucceeds(newStreet(lea, streetDoc({ shape: [] })));
+    await assertFails(newStreet(lea, streetDoc({ shape: 'eguwGkrx[mQxH' })));
+  });
+
+  it('should accept a shape of 1 000 lines and refuse 1 001', async () => {
+    const lines = (count) => Array.from({ length: count }, () => 'eguwGkrx[mQxH');
+
+    await assertSucceeds(newStreet(lea, streetDoc({ shape: lines(1000) })));
+    await assertFails(newStreet(lea, streetDoc({ shape: lines(1001) })));
+  });
+});
+
+describe('who covers a street', () => {
+  /** Rue Nationale covered by [assignees] (absent: written before the map). */
+  const coveredBy = (assignees) => {
+    const data = streetDoc({ assignees });
+    if (assignees === undefined) delete data.assignees;
+    return seed(env, `${streetsPath}/nationale`, data);
+  };
+
+  const take = (uid, member = uid) =>
+    updateFields(nationale(uid), [[['assignees'], arrayUnion(member)]]);
+  const release = (uid, member = uid) =>
+    updateFields(nationale(uid), [[['assignees'], arrayRemove(member)]]);
+
+  it('should let a member take a street nobody covers', async () => {
+    await assertSucceeds(take(lea));
+
+    const stored = await getDoc(nationale(lea));
+    assert.deepEqual(stored.data().assignees, [lea]);
+  });
+
+  it('should let a member take a street a teammate covers (« La faire aussi »)', async () => {
+    await coveredBy([manu]);
+
+    await assertSucceeds(take(lea));
+  });
+
+  it('should let a member take a street written before the map', async () => {
+    await coveredBy(undefined);
+
+    await assertSucceeds(take(lea));
+  });
+
+  it('should let a member stop covering a street, the teammates staying', async () => {
+    await coveredBy([manu, lea]);
+
+    await assertSucceeds(release(lea));
+  });
+
+  it('should refuse to put a teammate on a street', async () => {
+    await assertFails(take(lea, manu));
+  });
+
+  it('should refuse to take a teammate off a street', async () => {
+    await coveredBy([manu, lea]);
+
+    await assertFails(release(lea, manu));
+  });
+
+  it('should refuse the whole list written over the teammates', async () => {
+    await coveredBy([manu]);
+
+    await assertFails(updateFields(nationale(lea), [[['assignees'], [lea]]]));
+    await assertFails(updateFields(nationale(lea), [[['assignees'], [manu, lea, lea]]]));
+    await assertFails(updateFields(nationale(lea), [[['assignees'], 'lea']]));
+  });
+
+  it('should refuse a pending member and an outsider', async () => {
+    await assertFails(take(paul));
+    await assertFails(take(zoe));
+  });
+
+  it('should refuse any change of the shape', async () => {
+    await assertFails(updateFields(nationale(), [[['shape'], []]]));
+    await coveredBy(undefined);
+    const { shape, ...beforeTheMap } = streetDoc();
+    await seed(env, `${streetsPath}/nationale`, beforeTheMap);
+    await assertFails(updateFields(nationale(), [[['shape'], ['eguwGkrx[mQxH']]]));
   });
 });
 

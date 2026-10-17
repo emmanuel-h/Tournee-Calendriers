@@ -394,6 +394,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get deleteStreetAction => 'Supprimer la rue';
 
   @override
+  String get stopCoveringStreetAction => 'Ne plus la faire';
+
+  @override
   String numberRemoved(String number) {
     return 'N° $number supprimé';
   }

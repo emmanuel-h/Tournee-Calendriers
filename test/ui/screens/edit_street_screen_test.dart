@@ -46,12 +46,13 @@ void main() {
   /// Starts the app with the Rue des Lilas on the phone, opens its street
   /// screen, then its edit mode with ✏, on a tall phone so every row of
   /// the test street is built.
-  Future<void> openEditMode(WidgetTester tester) async {
+  /// [street] replaces the Rue des Lilas as it is stored.
+  Future<void> openEditMode(WidgetTester tester, {Street? street}) async {
     tester.view
       ..physicalSize = const Size(393 * 3, 1100 * 3)
       ..devicePixelRatio = 3;
     addTearDown(tester.view.reset);
-    streets = FakeStreetRepository([_lilas]);
+    streets = FakeStreetRepository([street ?? _lilas]);
     await tester.pumpWidget(
       ProviderScope(
         overrides: fakePhone(streets: streets),
@@ -275,5 +276,28 @@ void main() {
 
     expect(find.text("Aucune rue pour l'instant"), findsOneWidget);
     expect(streets[_id]!.isDeleted, isTrue);
+  });
+
+  testWidgets('should take Léa off the street with « Ne plus la faire », '
+      'Paul staying', (tester) async {
+    final (pauls, _) = valueOf(_lilas.take(paul));
+    final (shared, _) = valueOf(pauls.take(lea));
+    await openEditMode(tester, street: shared);
+
+    await tester.tap(find.byKey(const Key('edit.stopCovering')));
+    await tester.pumpAndSettle();
+
+    expect(streets[_id]!.assignees, {paul});
+    expect(find.byKey(const Key('edit.stopCovering')), findsNothing);
+    expect(find.byKey(const Key('edit.deleteStreet')), findsOneWidget);
+  });
+
+  testWidgets('should not offer « Ne plus la faire » on a street Léa does '
+      'not cover', (tester) async {
+    final (pauls, _) = valueOf(_lilas.take(paul));
+    await openEditMode(tester, street: pauls);
+
+    expect(find.text('Ne plus la faire'), findsNothing);
+    expect(find.text('Supprimer la rue'), findsOneWidget);
   });
 }

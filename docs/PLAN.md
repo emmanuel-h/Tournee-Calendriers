@@ -593,8 +593,11 @@ Edit mode details fixed in T1.10 (`lib/presentation/edit_street/`,
   closes it back to the edit mode with « N° 8 changé en maison [Annuler] ».
 - **« Supprimer la rue »** (red outline) asks « Supprimer la rue ? — « Rue des Lilas » part à
   la Corbeille avec ses numéros et leurs marques, pour toute l'équipe. » then goes back to
-  « Mes rues », where the street no longer shows. **« Ne plus la faire » is not shown before
-  M3**: it removes me from the street's assignees, which come with Accueil (§6.1 sketch).
+  « Mes rues », where the street no longer shows. **« Ne plus la faire »** (T3.3, dark
+  outline, left of « Supprimer la rue », both half width) shows only to a member who covers the
+  street: it removes them from its assignees at once (`ReleaseStreet`, no confirmation, no
+  « Annuler »), the edit mode stays open and the button goes. Otherwise « Supprimer la rue »
+  takes the whole width.
 - Not yet: the Corbeille screen (§5.11) comes in M2.
 
 ```
@@ -1705,8 +1708,7 @@ Geometry and map layers fixed in T3.1 (`lib/domain/geometry/`, `lib/domain/map/`
 - **`StreetShape`**: the lines of a street (one per OSM way), each of two points or more (a
   shorter one is dropped); `StreetShape.none` for a street typed in by hand or unknown to OSM.
   `Street.create(shape:)` takes it (none by default), `Street.manual` has none, and no command
-  changes it. Equal by value, line by line. Not stored yet: the task that first writes a shape
-  (T3.3) maps it and extends the rules.
+  changes it. Equal by value, line by line. Stored from T3.3 (§6.2, §6.3).
 - **Simplification** (`simplifyLine`, Douglas–Peucker): a point is kept only when *strictly*
   farther than the tolerance from the simplified line; distances are measured on a plane tangent
   at the segment's start (`metresFromSegment`, to the closest point of the segment, ends
@@ -1720,12 +1722,12 @@ Geometry and map layers fixed in T3.1 (`lib/domain/geometry/`, `lib/domain/map/`
   `free` when nobody took it; otherwise `toDo` when every door is to do, `partial` when any door
   was visited (« personne » and « repasser » count as visited, not done). A street without any
   door is never done.
-- **`MapLayers.of(streets, taken:)`**: a `StreetLine` (street id, shape, level) per street with a
+- **`MapLayers.of(streets)`**: a `StreetLine` (street id, shape, level) per street with a
   shape and a `HouseDot` (street id, number, position, `HouseDotStatus`) per house with a
   position, streets in the Corbeille left out. A single house's dot shows its status; a
   building's shows `comeBack` when it has its own « repasser », otherwise `toDo` / `partial` /
-  `done` from its doors. Dots show from zoom 16 (`MapLayers.houseDotsMinZoom`). Until streets
-  carry their assignees (T3.3), the caller says which streets are taken.
+  `done` from its doors. Dots show from zoom 16 (`MapLayers.houseDotsMinZoom`). A street is
+  taken when it has an assignee (T3.3).
 - **`tourneeArea(streets)`**: the `GeoBounds` (south, west, north, east; never across the
   antimeridian) around every shape point and house position of the streets, Corbeille included
   (a street may be restored offline), plus 300 m; null when no street has a place on the map.
@@ -1759,6 +1761,38 @@ Address and shape adapters fixed in T3.2 (`lib/application/ports/address_directo
   server timeout 15 s, client 20 s. Measured on Villefranche-sur-Saône: 284 of 312 BAN streets
   find a way (215 with an exact name), since the BAN often drops accents. A way with an
   unreadable point is left out whole.
+
+Street picking fixed in T3.3 (`lib/domain/street/street.dart`, `lib/application/use_cases/`):
+
+- **`Street.assignees`** (`Set<MemberId>`, read-only): the members who cover the street (their
+  « Mes rues »); empty is « libre ». `Street.create(assignees:)` and `Street.manual(assignees:)`
+  take them (none by default). `take(member)` → `StreetTaken` (refused `alreadyAssigned`),
+  `release(member)` → `StreetReleased` (refused `notAssigned`), `AssignmentFailure`; the other
+  assignees stay, nothing else changes. Undo releases a take and takes a release back (`gone`
+  when it was undone by hand meanwhile). `restampedBy(member)` makes a covered street
+  covered by `member` alone (the phone's own id of M1 is no member of the tournée).
+- **`LookUpStreet(StreetLookup)`** — `StreetAtPoint(GeoPoint)` (a tap: the geocoder) or
+  `FoundStreet(StreetMatch)` (a search result) — gives the street card's subject:
+  `StreetOfTheTournee(match, street)` when the tournée has its BAN id out of the Corbeille (its
+  numbers are not asked), otherwise `StreetToAdd(match, numbers)` with the BAN's numbers and
+  positions (`numberCount`). Failures are the `AddressDirectoryFailure`s: `notFound` (no BAN
+  match), `noNetwork` (offline), `serviceError`. Changes nothing.
+- **`AddStreetFromMap(numbers, assignToMe:)`** stores a `StreetToAdd`'s street: the shape is
+  asked of Overpass and stored `simplified()`; **any Overpass failure** (busy, timeout, no
+  network) **or no road found adds the street without shape** (house dots only). A street of
+  the Corbeille with that BAN id comes back with its marks instead (no Overpass), and is taken
+  when asked and not yet covered. `AddStreetFailure.alreadyInTournee` (checked before Overpass
+  and again after it: a teammate or a second tap may have added it) and `serviceError` (the
+  BAN gave a number twice). `assignToMe` puts the member on the phone in `assignees` (the
+  card's two buttons).
+- **`AddManualStreet(name, commune, numbers, assignToMe:)`** (« Rue à la main »): `Street.manual`,
+  offline, assigned to the member when asked (a street without shape cannot be tapped on the
+  map to be taken).
+- **`TakeStreet(streetId)`** / **`ReleaseStreet(streetId)`**: the member on the phone, through
+  the root; offline; `CommandFailure<AssignmentFailure>`.
+- **`SearchStreet(text, communes:)`**: `AddressDirectory.searchStreets` for each commune in turn
+  (the tournée's communes, passed in until #78 stores them), results in commune order, a BAN id
+  listed once; the first failure fails the search; no commune → nothing, no request.
 
 Firestore adapters fixed in T2.3 (`lib/infrastructure/firestore/`, `lib/application/ports/`):
 
@@ -1808,7 +1842,7 @@ final class Street {                       // aggregate root
   final Commune commune;
   final BanStreetId? banId;                // null when entered by hand
   final StreetShape shape;                 // map (T3.1): none when entered by hand
-  // final Set<MemberId> assignees;        // "Mes rues" panel (M3)
+  final Set<MemberId> assignees;          // "Mes rues" (T3.3): who covers it, empty = libre
   final List<House> houses;                // always sorted by HouseNumber, numbers unique
   final List<RemovedHouse> removedHouses;  // numbers in the Corbeille, with their marks (T1.4)
   final ChangeStamp? deletion;             // set = in the Corbeille
@@ -1875,8 +1909,10 @@ tournees/{tourneeId}
       startedAt, previousYear: null | 2026
     streets/{streetId}
       name, communeName, communeCode, banId,
-      shape: ["<encoded polyline>", …],           ← one per OSM way, simplified, ≈ 1 KB a street (M3)
-      assignees: [uid, …],                        ← (M3)
+      shape: ["<encoded polyline>", …],           ← one per OSM way, simplified, ≈ 1 KB a street;
+                                                    [] for none; written once, never changed (T3.3)
+      assignees: [uid, …],                        ← who covers it, sorted when the street is
+                                                    written; [] for nobody (T3.3)
       deletedAt, deletedBy                        ← set = in the Corbeille (5.11); null otherwise
       houses: {                                   ← a map inside the street document
         "12":  { n: 12, sfx: null, lat, lon, status: "DONE", comeBack: null,
@@ -1904,7 +1940,8 @@ tournees/{tourneeId}
 
 The street document fixed in T2.3 (`infrastructure/firestore/mappers/`): field names above,
 statuses and label styles under fixed names. `prev` (last campaign's status) comes with the new
-campaign (v1.1), `shape` and `assignees` with the map (M3); this version does not write them.
+campaign (v1.1). `shape` and `assignees` came with the map (T3.3): a document written before
+has neither and reads as no shape, nobody covering it.
 **Writes name field paths by segments** (`FieldPath(['houses', '8', 'dwellings', 'A0-Porte
 1.2', 'status'])`), never dotted text: a typed door label may hold a dot. What each change
 writes:
@@ -1919,6 +1956,7 @@ writes:
 | number removed / restored | `deletedAt`, `deletedBy` (set / null) |
 | number renamed | `houses.<old>` deleted, `houses.<new>` whole |
 | street renamed, deleted, restored | `name`; `deletedAt`, `deletedBy` (top level) |
+| street taken, released (T3.3) | `assignees`: `arrayUnion([uid])` / `arrayRemove([uid])`, never the whole array, so two members taking it at once both stay |
 | undo of a house (`HouseReverted`) | as a layout change, or `houses.<old>` deleted and `houses.<n>` whole when it renumbers back; `by` / `at` = who undoes, now |
 | undo of a door (`DwellingReverted`) | `dwellings.<key>` whole, `by` / `at` = who undoes, now |
 | 30-day purge of numbers (`NumbersPurged`, T2.6b) | each `houses.<n>` deleted, in an update of its own |
@@ -1959,7 +1997,8 @@ can never drift.
   One JSON file per street, `streets/<id>.json` (a commune of ≈ 300 streets / 6 000 numbers would
   make one file of a few MB rewritten at every tap; a street's file is a few kB to ≈ 100 kB).
   Schema `version: 3` (T1.20: no `note`; T1.16: status `comeBack`, hint in `comeBack` only
-  then), written and read by pure mappers (`mappers/street_json_mapper.dart`). Version 1 files
+  then; T3.3 added `shape`, the encoded lines, and `assignees`, member ids, without a new
+  version: a file without them reads as no shape, nobody), written and read by pure mappers (`mappers/street_json_mapper.dart`). Version 1 files
   (« repasser » as a flag) are still read: a house or door to do or nobody home with a
   `comeBack` becomes « repasser », hint kept. Version 1 and 2 files allowed hints of 50
   characters: a longer one than 20 is cut to its first 20 (code points), trimmed. They held a
@@ -2186,8 +2225,13 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
   rules accept a number's `deletedBy` that is the caller or an active member of the tournée
   (so a member could also name a teammate as the remover of a number; the stricter choice,
   stamping that undo with who undoes as for houses and doors, would change T2.3's undo).
-- Fields no adapter writes yet (`assignees`, `shape`, `communes` in M3; `prev` and a new
-  campaign in v1.1) are refused: the task that writes them extends the rules and their tests.
+- Fields no adapter writes yet (`communes` in M3; `prev` and a new campaign in v1.1) are
+  refused: the task that writes them extends the rules and their tests.
+- **Shape and assignees** (T3.3): optional on a new street (an app of before the map writes
+  neither); `shape` a list of at most 1 000 lines (counted, not checked line by line), never
+  changed afterwards; `assignees` on a new street `[]` or `[caller]`. An update may change
+  `assignees` only by adding or removing **the caller** (set comparison, no duplicate): nobody
+  puts a teammate on a street or takes them off it.
 - Indexes (`firebase/firestore.indexes.json`): `houses` of `streets` is exempt from
   single-field indexing (its thousands of sub-fields would count against the index limits and
   slow every write); no query of the adapters needs a composite index.

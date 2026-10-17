@@ -15,6 +15,7 @@ final class FakeAddressDirectory implements AddressDirectory {
     this.streets = const {},
     this.places = const {},
     this.searches = const {},
+    this.searchesByCommune = const {},
   });
 
   /// The answer for each INSEE code; any other is not found.
@@ -30,6 +31,11 @@ final class FakeAddressDirectory implements AddressDirectory {
   /// The answer for each search text; any other finds nothing.
   final Map<String, Result<List<StreetMatch>, AddressDirectoryFailure>>
   searches;
+
+  /// The answer for each commune's INSEE code, whatever the text; it comes
+  /// before [searches].
+  final Map<String, Result<List<StreetMatch>, AddressDirectoryFailure>>
+  searchesByCommune;
 
   /// Every point asked, in order.
   final pointsAsked = <GeoPoint>[];
@@ -91,6 +97,6 @@ final class FakeAddressDirectory implements AddressDirectory {
     required InseeCode commune,
   }) async {
     searchesAsked.add((text, commune.value));
-    return searches[text] ?? const Ok([]);
+    return searchesByCommune[commune.value] ?? searches[text] ?? const Ok([]);
   }
 }

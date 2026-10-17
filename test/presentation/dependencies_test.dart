@@ -13,6 +13,7 @@ import 'package:tournee_calendriers/application/use_cases/describe_building.dart
 import 'package:tournee_calendriers/application/use_cases/edit_street_numbers.dart';
 import 'package:tournee_calendriers/application/use_cases/find_imported_streets.dart';
 import 'package:tournee_calendriers/application/use_cases/import_reference_area.dart';
+import 'package:tournee_calendriers/application/use_cases/look_up_street.dart';
 import 'package:tournee_calendriers/application/use_cases/mark.dart';
 import 'package:tournee_calendriers/application/use_cases/move_streets_into_tournee.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
@@ -53,6 +54,7 @@ import '../support/fakes/fake_pending_sync.dart';
 import '../support/fakes/fake_phone_settings.dart';
 import '../support/fakes/fake_ports.dart';
 import '../support/fakes/fake_street_repository.dart';
+import '../support/fakes/fake_street_shapes.dart';
 import '../support/fakes/fake_street_view_preferences.dart';
 import '../support/fakes/fake_tournee_directory.dart';
 import '../support/fakes/fake_tournee_repository.dart';
@@ -65,6 +67,7 @@ void main() {
   late FakeStreetRepository phoneStreets;
   late FakeMovedStreetsLog movedStreets;
   late FakeAddressDirectory directory;
+  late FakeStreetShapes shapes;
   late FakeCommuneSearch communes;
   late FakeStreetViewPreferences preferences;
   late FakeMemberAccount account;
@@ -84,6 +87,7 @@ void main() {
     movedStreetsLogProvider.overrideWithValue(movedStreets),
     pendingSyncProvider.overrideWithValue(pending),
     addressDirectoryProvider.overrideWithValue(directory),
+    streetShapesProvider.overrideWithValue(shapes),
     communeSearchProvider.overrideWithValue(communes),
     clockProvider.overrideWithValue(FakeClock(twoPm)),
     idGeneratorProvider.overrideWithValue(FakeIdGenerator('street')),
@@ -131,6 +135,7 @@ void main() {
         ),
       },
     );
+    shapes = FakeStreetShapes();
     communes = FakeCommuneSearch(
       answers: {
         'Villef': Ok([
@@ -264,6 +269,87 @@ void main() {
       valueOf(await container.read(undoLastChangeProvider)(change));
 
       expect(houseOf(streets[lilasId]!, '7'), seven);
+    });
+
+    test('should take a street of the bound repository as the bound '
+        'member', () async {
+      valueOf(await container.read(takeStreetProvider)(lilasId));
+
+      expect(streets[lilasId]!.assignees, {lea});
+    });
+
+    test('should release a street of the bound repository as the bound '
+        'member', () async {
+      valueOf(await container.read(takeStreetProvider)(lilasId));
+
+      valueOf(await container.read(releaseStreetProvider)(lilasId));
+
+      expect(streets[lilasId]!.assignees, isEmpty);
+    });
+
+    test('should look a street up in the bound directory and '
+        'repository', () async {
+      final found = valueOf(
+        await container.read(lookUpStreetProvider)(
+          FoundStreet(
+            StreetMatch(
+              id: lilas.banId!,
+              name: lilas.name,
+              commune: villefranche,
+              position: townHallDoor,
+            ),
+          ),
+        ),
+      );
+
+      expect((found as StreetOfTheTournee).street, same(lilas));
+    });
+
+    test('should add a street from the map with the bound shapes, ids and '
+        'member', () async {
+      final street = valueOf(
+        await container.read(addStreetFromMapProvider)(
+          StreetNumbers(
+            id: BanStreetId('69264_1460'),
+            name: streetName('Rue Pierre Morin'),
+            commune: villefranche,
+            numbers: const [],
+            invalidNumbers: 0,
+            duplicateNumbers: 0,
+          ),
+          assignToMe: true,
+        ),
+      );
+
+      expect(street.id, StreetId('street-1'));
+      expect(street.assignees, {lea});
+      expect(shapes.asked, [('Rue Pierre Morin', '69264')]);
+      expect(streets[StreetId('street-1')], same(street));
+    });
+
+    test('should add a street typed in by hand with the bound ids and '
+        'member', () async {
+      final street = await container.read(addManualStreetProvider)(
+        name: streetName('Chemin des Vignes'),
+        commune: villefranche,
+        numbers: [n('1')],
+        assignToMe: true,
+      );
+
+      expect(street.id, StreetId('street-1'));
+      expect(street.assignees, {lea});
+      expect(streets[StreetId('street-1')], same(street));
+    });
+
+    test('should search streets in the bound directory', () async {
+      valueOf(
+        await container.read(searchStreetProvider)(
+          'morin',
+          communes: [insee('69264')],
+        ),
+      );
+
+      expect(directory.searchesAsked, [('morin', '69264')]);
     });
 
     test('should list the streets of a commune from the directory', () async {

@@ -83,10 +83,12 @@ Street screen (« Rue »):
   adds a number, a list or a range (`12bis, 21-25`) with a live preview, each on its side
   (numbers in the Corbeille come back with their marks). Tap a number to change it
   (`3` → `3bis`), make it a building, or open a building's grid (« Ouvrir l'immeuble »).
-  « Supprimer la rue » sends the street to the Corbeille.
+  « Ne plus la faire », shown to a member who covers the street, takes them off it (the
+  street stays for the others); « Supprimer la rue » sends the street to the Corbeille.
 - « Modifier les portes » (« Gérer l'immeuble » under the grid): floor by floor, « + » adds a
   door, ✕ removes one (with « Annuler »; asks first when it has a mark), a tap renames it
   (« Gauche », « Droite » on every floor). The other doors keep their marks.
 - Works offline, cold start included: marks are kept on the phone (Firestore's cache for a
   tournée) and sent to the team when the network is back.
-- Not yet: « Ne plus la faire » (M3).
+- Not yet: the map, « Mes rues » as the streets one covers, and « Ajouter des rues » (M3;
+  the street-picking use cases are there, no screen uses them yet).

@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
+import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
@@ -48,11 +49,13 @@ Street _street({
   List<House>? houses,
   List<RemovedHouse> removed = const [],
   ChangeStamp? deletion,
+  Set<MemberId> assignees = const {},
 }) => valueOf(
   Street.create(
     id: _id,
     name: 'Rue des Lilas',
     commune: villefranche,
+    assignees: assignees,
     houses: houses ?? _houses,
     removedHouses: removed,
     deletion: deletion,
@@ -424,6 +427,42 @@ void main() {
       await settled();
 
       expect(await edit().backToSingleHouse(n('1')), const EditFailed());
+      expect(streets.saved, isEmpty);
+    });
+  });
+
+  group('Ne plus la faire', () {
+    test('should say the street is mine when I cover it', () async {
+      phoneWith(_street(assignees: {paul, lea}));
+
+      expect((await shown()).isMine, isTrue);
+    });
+
+    test('should say the street is not mine when only a teammate covers '
+        'it', () async {
+      phoneWith(_street(assignees: {paul}));
+
+      expect((await shown()).isMine, isFalse);
+    });
+
+    test('should take me off the street, the teammates staying', () async {
+      phoneWith(_street(assignees: {paul, lea}));
+      await settled();
+
+      expect(await edit().stopCovering(), isTrue);
+      expect(
+        streets.saved.single.$2,
+        StreetReleased(streetId: _id, member: lea),
+      );
+      expect(stored().assignees, {paul});
+      expect((await shown()).isMine, isFalse);
+    });
+
+    test('should fail when I do not cover the street', () async {
+      phoneWith(_street(assignees: {paul}));
+      await settled();
+
+      expect(await edit().stopCovering(), isFalse);
       expect(streets.saved, isEmpty);
     });
   });

@@ -15,16 +15,13 @@ import 'package:tournee_calendriers/domain/street/visit_status.dart';
 final class MapLayers {
   const MapLayers._(this.lines, this.dots);
 
-  /// The layers of [streets]. A street is « libre » unless its id is in
-  /// [taken] (some member has it in « Mes rues »).
+  /// The layers of [streets]. A street is « libre » while nobody covers
+  /// it (no assignee: it is in nobody's « Mes rues »).
   ///
   /// Streets in the Corbeille are left out. A street without shape (typed
   /// in by hand, unknown to OpenStreetMap) has no line, and a house without
   /// position (typed in by hand) no dot: they appear only in the lists.
-  factory MapLayers.of(
-    Iterable<Street> streets, {
-    required Set<StreetId> taken,
-  }) {
+  factory MapLayers.of(Iterable<Street> streets) {
     final shown = streets.where((street) => !street.isDeleted);
     return MapLayers._(
       List.unmodifiable([
@@ -35,7 +32,7 @@ final class MapLayers {
               shape: street.shape,
               level: ProgressLevel.of(
                 street.progress,
-                taken: taken.contains(street.id),
+                taken: street.assignees.isNotEmpty,
               ),
             ),
       ]),

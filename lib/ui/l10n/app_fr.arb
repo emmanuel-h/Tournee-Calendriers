@@ -343,6 +343,8 @@
   "@editHint": { "description": "Under the numbers of the edit mode." },
   "deleteStreetAction": "Supprimer la rue",
   "@deleteStreetAction": { "description": "Bottom button of the edit mode: sends the street to the Corbeille after a confirmation." },
+  "stopCoveringStreetAction": "Ne plus la faire",
+  "@stopCoveringStreetAction": { "description": "Bottom button of the edit mode, shown when the member covers the street: takes them off it; the street stays in the tournée for the others." },
   "numberRemoved": "N° {number} supprimé",
   "@numberRemoved": {
     "description": "Undo snackbar after ✕ on a number.",

@@ -25,7 +25,8 @@ final editStreetProvider = NotifierProvider.autoDispose
 /// The edit mode of a street (PLAN §5.5): follows the street on the phone
 /// (`ObserveStreet`, offline), and removes, renumbers or renames through
 /// `EditStreetNumbers`, turns a building back into a house through
-/// `DescribeBuilding`, and undoes the last of these (`UndoLastChange`).
+/// `DescribeBuilding`, takes the member off the street (`ReleaseStreet`),
+/// and undoes the last of these (`UndoLastChange`).
 /// Needs no network.
 ///
 /// Whether marks would go with a change is asked of the domain
@@ -115,6 +116,15 @@ final class EditStreetNotifier extends Notifier<EditStreetState>
     ),
   );
 
+  /// « Ne plus la faire »: the member on the phone stops covering the
+  /// street, which stays in the tournée for the others. Returns whether it
+  /// was done.
+  Future<bool> stopCovering() async =>
+      switch (await ref.read(releaseStreetProvider)(streetId)) {
+        Ok() => true,
+        Err() => false,
+      };
+
   /// « Supprimer la rue », once confirmed: the street goes to the Corbeille
   /// with its houses and marks. Returns whether it went.
   Future<bool> deleteStreet() async => switch (await ref.read(
@@ -149,6 +159,9 @@ final class EditStreetNotifier extends Notifier<EditStreetState>
     final even = street.evenHouses;
     return EditStreetShown(
       name: street.name.text,
+      // `ref.read`: who is on the phone does not change while the screen
+      // is open; the street, which does, is followed by `followStreet`.
+      isMine: street.assignees.contains(ref.read(readCurrentMemberProvider)()),
       columns: StreetColumns.of(odd: odd.length, even: even.length),
       odd: [for (final house in odd) EditTile.of(house)],
       even: [for (final house in even) EditTile.of(house)],

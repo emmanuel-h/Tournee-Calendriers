@@ -87,6 +87,15 @@ enum DwellingChangeFailure {
   notComeBack,
 }
 
+/// Why a member could not take or release a [Street] (« Mes rues »).
+enum AssignmentFailure {
+  /// The member already covers the street.
+  alreadyAssigned,
+
+  /// The member does not cover the street.
+  notAssigned,
+}
+
 /// Why a change could not be undone (« Annuler » of the snackbar).
 enum UndoFailure {
   /// The change was made on another street.
@@ -130,6 +139,7 @@ final class Street {
     required this.commune,
     required this.banId,
     required this.shape,
+    required this.assignees,
     required this.houses,
     required this.removedHouses,
     required this.deletion,
@@ -137,7 +147,8 @@ final class Street {
 
   /// Builds a street from its identity and its [houses], given in any order
   /// (from the BAN, or from storage with its [removedHouses]), with its
-  /// [shape] on the map when it has one.
+  /// [shape] on the map when it has one and the members who cover it
+  /// ([assignees]).
   ///
   /// The [name] is cleaned like a typed [StreetName]. Fails with
   /// [NewStreetFailure.invalidName] when it is not one, and with
@@ -150,6 +161,7 @@ final class Street {
     required Commune commune,
     BanStreetId? banId,
     StreetShape shape = StreetShape.none,
+    Iterable<MemberId> assignees = const {},
     Iterable<House> houses = const [],
     Iterable<RemovedHouse> removedHouses = const [],
     ChangeStamp? deletion,
@@ -180,6 +192,7 @@ final class Street {
         commune: commune,
         banId: banId,
         shape: shape,
+        assignees: Set.unmodifiable(assignees),
         houses: _sortedHouses(houses),
         removedHouses: _sortedRemoved(removedHouses),
         deletion: deletion,
@@ -191,18 +204,20 @@ final class Street {
   /// no shape on the map, and a new house, to do, for each of the [numbers]
   /// (each once, whatever the order; usually from `manualStreetNumbers`).
   /// It cannot fail: the [name] is already valid and repeated numbers are
-  /// merged.
+  /// merged. Covered by [assignees] (the member who typed it, or nobody).
   factory Street.manual({
     required StreetId id,
     required StreetName name,
     required Commune commune,
     required Iterable<HouseNumber> numbers,
+    Iterable<MemberId> assignees = const {},
   }) => Street._(
     id: id,
     name: name,
     commune: commune,
     banId: null,
     shape: StreetShape.none,
+    assignees: Set.unmodifiable(assignees),
     houses: _sortedHouses([
       for (final number in numbers.toSet()) House(number: number),
     ]),
@@ -225,6 +240,11 @@ final class Street {
   /// in by hand or one OpenStreetMap does not know. No command changes it.
   final StreetShape shape;
 
+  /// The members who cover the street: it is in their « Mes rues » (PLAN
+  /// §5.3). Empty when nobody took it (« libre » on the map). The set
+  /// cannot be modified: it changes only through [take] and [release].
+  final Set<MemberId> assignees;
+
   /// Every house, sorted by number. The list cannot be modified (it throws
   /// an `UnsupportedError`): houses change only through the commands below.
   final List<House> houses;
@@ -243,7 +263,8 @@ final class Street {
 
   /// This street with every stamp made by [member] at the time it had: the
   /// last change of each house and door, the removal of each number in the
-  /// Corbeille, the street's own deletion. Nothing else changes.
+  /// Corbeille, the street's own deletion; and a street someone covered is
+  /// covered by [member] alone. Nothing else changes.
   ///
   /// It is the street as [member] brings it from the phone into a tournée
   /// (« Les ajouter à la tournée », PLAN §5.0): the marks made in M1 are
@@ -259,6 +280,8 @@ final class Street {
     commune: commune,
     banId: banId,
     shape: shape,
+    // The phone's streets were only ever covered by the phone's own id.
+    assignees: Set.unmodifiable({if (assignees.isNotEmpty) member}),
     // The order and the numbers are those of this street: still sorted,
     // still unique.
     houses: List.unmodifiable([
@@ -707,6 +730,32 @@ final class Street {
     StreetRenamed(streetId: id, before: this.name, name: name),
   );
 
+  /// [member] takes the street (« Me l'attribuer », « La faire aussi »):
+  /// it joins their « Mes rues », next to the other members who cover it.
+  /// Refused with [AssignmentFailure.alreadyAssigned] when they already do.
+  Result<(Street, StreetTaken), AssignmentFailure> take(MemberId member) {
+    if (assignees.contains(member)) {
+      return const Err(AssignmentFailure.alreadyAssigned);
+    }
+    return Ok((
+      _withAssignees({...assignees, member}),
+      StreetTaken(streetId: id, member: member),
+    ));
+  }
+
+  /// [member] stops covering the street (« Ne plus la faire »); the others
+  /// who cover it go on. Refused with [AssignmentFailure.notAssigned] when
+  /// [member] does not cover it.
+  Result<(Street, StreetReleased), AssignmentFailure> release(MemberId member) {
+    if (!assignees.contains(member)) {
+      return const Err(AssignmentFailure.notAssigned);
+    }
+    return Ok((
+      _withAssignees(assignees.difference({member})),
+      StreetReleased(streetId: id, member: member),
+    ));
+  }
+
   /// Sends the street to the Corbeille, as [by] at [at]: it is hidden but
   /// keeps its houses and their marks (PLAN §5.11). Deleting a street
   /// already in the Corbeille records the latest deletion.
@@ -780,7 +829,8 @@ final class Street {
   ///   is overwritten, as a teammate's later write would be.
   /// - A removed number comes back from the Corbeille, a restored one goes
   ///   back there with its old removal, a renamed street gets its old name,
-  ///   a deleted street comes back.
+  ///   a deleted street comes back, a member who took the street releases
+  ///   it and one who released it takes it again.
   ///
   /// Refused with an [UndoFailure] when the change is not this street's,
   /// when what it touched is gone, when the old number is taken again, or
@@ -821,6 +871,12 @@ final class Street {
         StreetRenamed(streetId: id, before: name, name: before),
       )),
       StreetDeleted() => Ok(restore()),
+      StreetTaken(:final member) => release(
+        member,
+      ).mapFailure((_) => UndoFailure.gone),
+      StreetReleased(:final member) => take(
+        member,
+      ).mapFailure((_) => UndoFailure.gone),
       NumbersAdded() ||
       StreetRestored() ||
       NumbersPurged() => const Err(UndoFailure.notUndoable),
@@ -998,8 +1054,21 @@ final class Street {
     );
   }
 
-  /// This street, same id, commune, BAN id and shape, with the other fields
-  /// given.
+  /// This street with [assignees] covering it, nothing else changed.
+  Street _withAssignees(Set<MemberId> assignees) => Street._(
+    id: id,
+    name: name,
+    commune: commune,
+    banId: banId,
+    shape: shape,
+    assignees: Set.unmodifiable(assignees),
+    houses: houses,
+    removedHouses: removedHouses,
+    deletion: deletion,
+  );
+
+  /// This street, same id, commune, BAN id, shape and assignees, with the
+  /// other fields given.
   /// They are all required so no call can forget one (null is a real value
   /// of [deletion]: not in the Corbeille). The lists must already be sorted
   /// and unmodifiable.
@@ -1014,6 +1083,7 @@ final class Street {
     commune: commune,
     banId: banId,
     shape: shape,
+    assignees: assignees,
     houses: houses,
     removedHouses: removedHouses,
     deletion: deletion,

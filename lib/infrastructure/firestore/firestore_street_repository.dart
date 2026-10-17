@@ -110,6 +110,8 @@ final class FirestoreStreetRepository implements StreetRepository, PendingSync {
       change,
       undoStamp: ChangeStamp(by: _identity.currentMember, at: _clock.now()),
       removal: FieldValue.delete(),
+      arrayUnion: (item) => FieldValue.arrayUnion([item]),
+      arrayRemove: (item) => FieldValue.arrayRemove([item]),
     );
     final doc = _streets.doc(street.id.value);
     // Sent one after the other: Firestore keeps the order of the writes of

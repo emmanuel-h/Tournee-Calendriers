@@ -42,6 +42,7 @@ void main() {
   group('EditStreetShown.tileOf', () {
     final state = EditStreetShown(
       name: 'Rue des Lilas',
+      isMine: false,
       columns: StreetColumns.both,
       odd: [EditTile(number: n('1'), isBuilding: false)],
       even: [EditTile(number: n('8'), isBuilding: true)],
