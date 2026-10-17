@@ -1668,6 +1668,9 @@ class AppLocalizationsFr extends AppLocalizations {
       'Pas de réseau : la liste ne peut pas être affichée.';
 
   @override
+  String get notAdminAnyMore => 'Vous n\'êtes plus administrateur.';
+
+  @override
   String get allTourneesHint =>
       'Ouvrez une tournée pour la gérer : code, équipe, rues. Vous n\'y entrez comme membre que si vous la rejoignez.';
 

@@ -196,6 +196,16 @@ void main() {
         expect(store.saves, isEmpty);
       },
     );
+
+    test('should fail and open nothing when the server says the creator is '
+        'no longer an admin', () async {
+      tournees.addFailure = AddTourneeFailure.notAdmin;
+
+      final failure = failureOf(await _create(tournees, account, store, now));
+
+      expect(failure, CreateTourneeFailure.notAdmin);
+      expect(store.saves, isEmpty);
+    });
   });
 }
 

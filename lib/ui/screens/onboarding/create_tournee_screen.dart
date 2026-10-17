@@ -190,6 +190,13 @@ final class _CreateTourneeScreenState
                       const SizedBox(height: 12),
                       ScreenMessage(l10n.onboardingOffline),
                     ],
+                    if (state.run is CreateNotAdmin) ...[
+                      const SizedBox(height: 12),
+                      ScreenMessage(
+                        l10n.notAdminAnyMore,
+                        key: const Key('create.notAdmin'),
+                      ),
+                    ],
                     if (taken) ...[
                       const SizedBox(height: 12),
                       SecondaryButton(

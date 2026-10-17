@@ -340,9 +340,22 @@ void main() {
       expect(failureOf(all), DirectoryFailure.noNetwork);
     });
 
+    test(
+      'should tell when the server says the caller is not an admin',
+      () async {
+        await db.doc('tournees/t49').set(tourneeToDocument(team()));
+        // What the security rules answer once `admins/{uid}` is gone.
+        offline(db.doc('tournees/t49'), 'permission-denied');
+
+        final all = await directory.allTournees(samId);
+
+        expect(failureOf(all), DirectoryFailure.notAdmin);
+      },
+    );
+
     test('should throw any other failure of the server', () async {
       await db.doc('tournees/t49').set(tourneeToDocument(team()));
-      offline(db.doc('tournees/t49'), 'permission-denied');
+      offline(db.doc('tournees/t49'), 'internal');
 
       await expectLater(
         directory.allTournees(samId),

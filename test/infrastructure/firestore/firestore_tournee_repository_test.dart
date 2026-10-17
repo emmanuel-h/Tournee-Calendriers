@@ -152,10 +152,22 @@ void main() {
       expect(failureOf(result), AddTourneeFailure.noNetwork);
     });
 
-    test('should throw any other failure of the server', () async {
+    test('should tell when the server says the creator is not an '
+        'admin', () async {
+      // What the security rules answer once `admins/{uid}` is gone.
       whenCalling(Invocation.method(#get, null))
           .on(db.doc('tourneeKeys/villefranche_49'))
           .thenThrow(firestoreError('permission-denied'));
+
+      final result = await repository().add(created);
+
+      expect(failureOf(result), AddTourneeFailure.notAdmin);
+    });
+
+    test('should throw any other failure of the server', () async {
+      whenCalling(Invocation.method(#get, null))
+          .on(db.doc('tourneeKeys/villefranche_49'))
+          .thenThrow(firestoreError('internal'));
 
       await expectLater(
         repository().add(created),
@@ -409,12 +421,27 @@ void main() {
       expect(await stored('tournees/t49/members/uid-sam'), isNull);
     });
 
-    test('should throw any other failure of the server', () async {
+    test('should tell and write nothing when the server says the phone is '
+        'not an admin\'s', () async {
       await repository().add(created);
       final (joined, change) = samJoins();
       whenCalling(Invocation.method(#get, [isA<GetOptions>()]))
           .on(db.doc('tournees/t49'))
           .thenThrow(firestoreError('permission-denied'));
+
+      final saved = await repository().save(joined, change);
+      await pumpEventQueue();
+
+      expect(failureOf(saved), TourneeWriteFailure.notAdmin);
+      expect(await stored('tournees/t49/members/uid-sam'), isNull);
+    });
+
+    test('should throw any other failure of the server', () async {
+      await repository().add(created);
+      final (joined, change) = samJoins();
+      whenCalling(Invocation.method(#get, [isA<GetOptions>()]))
+          .on(db.doc('tournees/t49'))
+          .thenThrow(firestoreError('internal'));
 
       await expectLater(
         repository().save(joined, change),
@@ -441,7 +468,8 @@ void main() {
     expect((await stored('tournees/t49'))!['joinCode'], 'K7P2QX');
   });
 
-  test('should throw any other failure of a new code', () async {
+  test('should tell when the server says a new code is not the phone\'s '
+      'to ask', () async {
     await repository().add(created);
     final (renewed, change) = valueOf(
       team().regenerateCode(
@@ -452,6 +480,24 @@ void main() {
     whenCalling(Invocation.method(#get, null))
         .on(db.doc('joinCodes/234567'))
         .thenThrow(firestoreError('permission-denied'));
+
+    final saved = await repository().save(renewed, change);
+
+    expect(failureOf(saved), TourneeWriteFailure.notAdmin);
+    expect((await stored('tournees/t49'))!['joinCode'], 'K7P2QX');
+  });
+
+  test('should throw any other failure of a new code', () async {
+    await repository().add(created);
+    final (renewed, change) = valueOf(
+      team().regenerateCode(
+        by: manuAsAdmin,
+        random: ScriptedRandom(draws234567),
+      ),
+    );
+    whenCalling(Invocation.method(#get, null))
+        .on(db.doc('joinCodes/234567'))
+        .thenThrow(firestoreError('internal'));
 
     await expectLater(
       repository().save(renewed, change),
@@ -573,11 +619,44 @@ void main() {
       expect(await stored('tournees/t49/campaigns/2026'), isNotNull);
     });
 
+    test('should tell and delete nothing when the server says the phone '
+        'is not an admin\'s', () async {
+      await repository().add(created);
+      whenCalling(Invocation.method(#get, [isA<GetOptions>()]))
+          .on(db.doc('tournees/t49'))
+          .thenThrow(firestoreError('permission-denied'));
+
+      final deleted = await repository().delete(
+        valueOf(team().delete(by: manuAsAdmin)),
+      );
+
+      expect(failureOf(deleted), TourneeWriteFailure.notAdmin);
+      expect(await stored('tournees/t49'), isNotNull);
+      expect(await stored('tournees/t49/campaigns/2026'), isNotNull);
+    });
+
+    test('should tell and delete nothing when the server refuses a member '
+        'no longer an admin what only an admin deletes', () async {
+      // A member may read the tournée, not delete its streets: the first
+      // deletion is refused, before anything goes.
+      await repository().add(created);
+      whenCalling(Invocation.method(#delete, null))
+          .on(db.doc('tournees/t49/campaigns/2026'))
+          .thenThrow(firestoreError('permission-denied'));
+
+      final deleted = await repository().delete(
+        valueOf(team().delete(by: manuAsAdmin)),
+      );
+
+      expect(failureOf(deleted), TourneeWriteFailure.notAdmin);
+      expect(await stored('tournees/t49'), isNotNull);
+    });
+
     test('should throw any other failure of the server', () async {
       await repository().add(created);
       whenCalling(Invocation.method(#get, null))
           .on(db.doc('tournees/t49'))
-          .thenThrow(firestoreError('permission-denied'));
+          .thenThrow(firestoreError('internal'));
 
       await expectLater(
         repository().delete(valueOf(team().delete(by: manuAsAdmin))),

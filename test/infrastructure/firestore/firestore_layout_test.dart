@@ -37,4 +37,14 @@ void main() {
       );
     });
   });
+
+  group('isRefused', () {
+    test('should be true when the security rules refuse the request', () {
+      expect(isRefused(firestoreError('permission-denied')), isTrue);
+    });
+
+    test('should be false for another failure of the server', () {
+      expect(isRefused(firestoreError('unavailable')), isFalse);
+    });
+  });
 }

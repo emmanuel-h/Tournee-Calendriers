@@ -56,11 +56,13 @@ void main() {
     WidgetTester tester, {
     List<TourneeOverview> all = const [],
     bool offline = false,
+    bool notAdmin = false,
     bool withName = true,
   }) async {
     directory = FakeTourneeDirectory()
       ..overviews = all
-      ..offline = offline;
+      ..offline = offline
+      ..notAdmin = notAdmin;
     store = FakeMyTourneesStore();
     // The 49 of Manu, Léa and Julie, which Sam is not in.
     tournees = FakeTourneeRepository([team()]);
@@ -144,6 +146,15 @@ void main() {
     expect(find.text('CS VILLEFRANCHE'), findsOneWidget);
   });
 
+  testWidgets('should say the phone is no longer an admin\'s when the server '
+      'refuses the list, with nothing to try again', (tester) async {
+    await pumpAll(tester, notAdmin: true);
+
+    expect(find.text("Vous n'êtes plus administrateur."), findsOneWidget);
+    expect(find.byKey(const Key('allTournees.notAdmin')), findsOneWidget);
+    expect(find.byKey(const Key('allTournees.retry')), findsNothing);
+  });
+
   testWidgets('should open a tournée the admin is not in on Accueil, under '
       'the banner, with « Rues »', (tester) async {
     await pumpAll(tester, all: [overview('t49', 49)]);
@@ -191,6 +202,20 @@ void main() {
       find.text('Pas de réseau. Réessayez une fois connecté.'),
       findsOneWidget,
     );
+    expect(find.byKey(const Key('home.adminBanner')), findsOneWidget);
+  });
+
+  testWidgets('should say « Rejoindre » is refused to a phone no longer an '
+      'admin\'s', (tester) async {
+    await pumpAll(tester, all: [overview('t49', 49)]);
+    await tester.tap(find.byKey(const ValueKey('allTournees.t49')));
+    await tester.pumpAndSettle();
+    tournees.notAdmin = true;
+
+    await tester.tap(find.byKey(const Key('home.adminJoin')));
+    await tester.pumpAndSettle();
+
+    expect(find.text("Vous n'êtes plus administrateur."), findsOneWidget);
     expect(find.byKey(const Key('home.adminBanner')), findsOneWidget);
   });
 

@@ -156,6 +156,7 @@ final class FirestoreTourneeRepository implements TourneeRepository {
       });
     } on FirebaseException catch (error) {
       if (isNoNetwork(error)) return const Err(AddTourneeFailure.noNetwork);
+      if (isRefused(error)) return const Err(AddTourneeFailure.notAdmin);
       rethrow;
     }
   }
@@ -194,9 +195,7 @@ final class FirestoreTourneeRepository implements TourneeRepository {
             tournee.id,
           ).get(const GetOptions(source: Source.server));
         } on FirebaseException catch (error) {
-          if (isNoNetwork(error)) {
-            return const Err(TourneeWriteFailure.noNetwork);
-          }
+          if (_writeFailureOf(error) case final failure?) return Err(failure);
           rethrow;
         }
         sendInBackground(
@@ -218,9 +217,7 @@ final class FirestoreTourneeRepository implements TourneeRepository {
           });
           return Ok(free == code ? tournee : _withCode(tournee, free));
         } on FirebaseException catch (error) {
-          if (isNoNetwork(error)) {
-            return const Err(TourneeWriteFailure.noNetwork);
-          }
+          if (_writeFailureOf(error) case final failure?) return Err(failure);
           rethrow;
         }
     }
@@ -250,10 +247,23 @@ final class FirestoreTourneeRepository implements TourneeRepository {
       // Asked of the server first: offline it fails at once, before
       // anything is deleted (a batch would wait on the phone instead).
       await tourneeDoc.get(server);
+      await _deleteAll(tournee, tourneeDoc);
+      return Ok(deletion);
     } on FirebaseException catch (error) {
-      if (isNoNetwork(error)) return const Err(TourneeWriteFailure.noNetwork);
+      if (_writeFailureOf(error) case final failure?) return Err(failure);
       rethrow;
     }
+  }
+
+  /// Deletes what [tournee] holds, then [tourneeDoc] with its code, its
+  /// reservation and its members (see [delete]). A phone no longer an
+  /// admin's is refused at the first batch, before anything goes: a
+  /// member may read the tournée but not delete its campaigns.
+  Future<void> _deleteAll(
+    Tournee tournee,
+    DocumentReference<Map<String, dynamic>> tourneeDoc,
+  ) async {
+    const server = GetOptions(source: Source.server);
     final contents = <DocumentReference<Map<String, dynamic>>>[];
     final campaigns = await tourneeDoc
         .collection(FirestoreLayout.campaigns)
@@ -290,7 +300,15 @@ final class FirestoreTourneeRepository implements TourneeRepository {
       last.delete(member.reference);
     }
     await last.commit();
-    return Ok(deletion);
+  }
+
+  /// What [error] of a write that needs the server tells the use case: no
+  /// network, or not an admin. Null for any other failure, which the
+  /// caller throws on.
+  TourneeWriteFailure? _writeFailureOf(FirebaseException error) {
+    if (isNoNetwork(error)) return TourneeWriteFailure.noNetwork;
+    if (isRefused(error)) return TourneeWriteFailure.notAdmin;
+    return null;
   }
 
   DocumentReference<Map<String, dynamic>> _joinCode(JoinCode code) =>

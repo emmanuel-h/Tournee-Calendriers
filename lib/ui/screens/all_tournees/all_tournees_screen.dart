@@ -50,9 +50,16 @@ final class AllTourneesScreen extends ConsumerWidget {
           AllTourneesLoading() => const Center(
             child: CircularProgressIndicator(),
           ),
-          AllTourneesOffline() => _Offline(
+          AllTourneesOffline() => _Problem(
+            message: l10n.allTourneesOffline,
+            messageKey: const Key('allTournees.offline'),
             onRetry: () =>
                 unawaited(ref.read(allTourneesProvider.notifier).retry()),
+          ),
+          // Asking again would be refused again: no « Réessayer ».
+          AllTourneesNotAdmin() => _Problem(
+            message: l10n.notAdminAnyMore,
+            messageKey: const Key('allTournees.notAdmin'),
           ),
           AllTourneesShown(:final groups) => ListView(
             children: [
@@ -107,17 +114,25 @@ final class AllTourneesScreen extends ConsumerWidget {
   }
 }
 
-/// « Pas de réseau : la liste ne peut pas être affichée. » and
-/// « Réessayer ».
-final class _Offline extends StatelessWidget {
-  const _Offline({required this.onRetry});
+/// Why the list cannot be shown, centred: « Pas de réseau : la liste ne
+/// peut pas être affichée. » with « Réessayer » ([onRetry]), or « Vous
+/// n'êtes plus administrateur. » alone.
+final class _Problem extends StatelessWidget {
+  const _Problem({
+    required this.message,
+    required this.messageKey,
+    this.onRetry,
+  });
 
-  final VoidCallback onRetry;
+  final String message;
+  final Key messageKey;
+  final VoidCallback? onRetry;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final colors = AppColors.of(context);
+    final onRetry = this.onRetry;
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(32),
@@ -128,17 +143,18 @@ final class _Offline extends StatelessWidget {
             Semantics(
               liveRegion: true,
               child: Text(
-                l10n.allTourneesOffline,
-                key: const Key('allTournees.offline'),
+                message,
+                key: messageKey,
                 textAlign: TextAlign.center,
                 style: AppTextStyles.body.copyWith(color: colors.muted),
               ),
             ),
-            PillButton(
-              key: const Key('allTournees.retry'),
-              label: l10n.retry,
-              onPressed: onRetry,
-            ),
+            if (onRetry != null)
+              PillButton(
+                key: const Key('allTournees.retry'),
+                label: l10n.retry,
+                onPressed: onRetry,
+              ),
           ],
         ),
       ),

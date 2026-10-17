@@ -69,6 +69,13 @@ final class CreateOffline extends CreateRun {
   const CreateOffline();
 }
 
+/// The server refused: the member is no longer an admin (« Vous n'êtes
+/// plus administrateur. »). « Créer » stays off: asking again would be
+/// refused again.
+final class CreateNotAdmin extends CreateRun {
+  const CreateNotAdmin();
+}
+
 /// The tournée exists and is open on the phone: its code and QR code to
 /// show the team (Create mockup).
 final class TourneeCreated extends CreateRun {

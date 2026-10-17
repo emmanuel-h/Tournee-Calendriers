@@ -161,6 +161,9 @@ final class NewTourneeNotifier extends Notifier<NewTourneeState> {
       Err(failure: CreateTourneeFailure.noNetwork) => state.copyWith(
         run: const CreateOffline(),
       ),
+      Err(failure: CreateTourneeFailure.notAdmin) => state.copyWith(
+        run: const CreateNotAdmin(),
+      ),
     };
   }
 }

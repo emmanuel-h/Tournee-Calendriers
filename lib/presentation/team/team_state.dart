@@ -14,6 +14,12 @@ enum TeamActionFailure {
 
   /// Joining as an admin needs a first name, and the phone has none.
   noName,
+
+  /// A command of an admin (« Nouveau code », « Retirer », « Supprimer la
+  /// tournée », « Rejoindre ») from a phone no longer an admin's: the
+  /// server refused it, or the phone learnt it just before (« Vous n'êtes
+  /// plus administrateur. »).
+  notAdmin,
 }
 
 /// What Équipe (PLAN §5.8) and the 👥 of the start screen show of the open

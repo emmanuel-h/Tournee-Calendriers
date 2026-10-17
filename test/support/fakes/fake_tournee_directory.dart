@@ -5,7 +5,8 @@
 // cuts the network ([offline]). It records the requests sent and cancelled.
 // It also plays the server telling a member they lost a tournée ([lose])
 // and the name it holds for them in a tournée ([hearName]), and lists every
-// tournée of the app for an admin ([overviews]).
+// tournée of the app for an admin ([overviews]), or refuses it to a phone
+// no longer an admin's ([notAdmin]).
 import 'dart:async';
 
 import 'package:tournee_calendriers/application/ports/tournee_directory.dart';
@@ -168,12 +169,17 @@ final class FakeTourneeDirectory implements TourneeDirectory {
   /// Every admin [allTournees] was asked for, in order.
   final allAsked = <MemberId>[];
 
+  /// Plays a server that no longer takes the phone for an admin's:
+  /// [allTournees] fails with `notAdmin`.
+  var notAdmin = false;
+
   @override
   Future<Result<List<TourneeOverview>, DirectoryFailure>> allTournees(
     MemberId caller,
   ) async {
     allAsked.add(caller);
     if (offline) return const Err(DirectoryFailure.noNetwork);
+    if (notAdmin) return const Err(DirectoryFailure.notAdmin);
     return Ok(overviews);
   }
 

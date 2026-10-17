@@ -151,6 +151,12 @@ final class TeamNotifier extends Notifier<TeamState> {
     if (tournee == null) return TeamActionFailure.teamChanged;
     return switch (await command(tournee.id)) {
       Ok() => null,
+      // The admin status changed since the screen offered the command: the
+      // tournée refused it as it would refuse any non-admin.
+      Err(failure: TeamNotAdmin()) ||
+      Err(
+        failure: TeamCommandRefused(reason: TourneeCommandFailure.notAdmin),
+      ) => TeamActionFailure.notAdmin,
       Err(failure: TourneeGone() || TeamCommandRefused()) =>
         TeamActionFailure.teamChanged,
       Err(failure: TeamOffline()) => TeamActionFailure.offline,

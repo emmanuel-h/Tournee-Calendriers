@@ -57,6 +57,10 @@ enum CreateTourneeFailure {
   /// The phone could not reach the server, for the sign-in or the
   /// creation.
   noNetwork,
+
+  /// The server refused: the member is no longer an admin, though the
+  /// phone still showed « Créer » (« Vous n'êtes plus administrateur. »).
+  notAdmin,
 }
 
 /// « Créer »: signs in when the phone has no account yet, then stores a new
@@ -116,6 +120,7 @@ final class CreateTournee {
         return Err(switch (failure) {
           AddTourneeFailure.alreadyExists => CreateTourneeFailure.alreadyExists,
           AddTourneeFailure.noNetwork => CreateTourneeFailure.noNetwork,
+          AddTourneeFailure.notAdmin => CreateTourneeFailure.notAdmin,
         });
       case Ok(value: final stored):
         await _open(stored);

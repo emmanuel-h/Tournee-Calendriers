@@ -93,6 +93,29 @@ final class TeamNoName extends TeamFailure {
   String toString() => 'TeamNoName';
 }
 
+/// The server refused an admin's command (« Nouveau code », « Supprimer la
+/// tournée », « Rejoindre » as an admin): the member on the phone is no
+/// longer an admin, though the phone still believed it. Nothing was
+/// changed.
+final class TeamNotAdmin extends TeamFailure {
+  const TeamNotAdmin();
+
+  @override
+  bool operator ==(Object other) => other is TeamNotAdmin;
+
+  @override
+  int get hashCode => (TeamNotAdmin).hashCode;
+
+  @override
+  String toString() => 'TeamNotAdmin';
+}
+
+/// What [failure] of the storage means for Équipe.
+TeamFailure _teamFailureOf(TourneeWriteFailure failure) => switch (failure) {
+  TourneeWriteFailure.noNetwork => const TeamOffline(),
+  TourneeWriteFailure.notAdmin => const TeamNotAdmin(),
+};
+
 /// Who acts on the phone: the member, and whether they are an admin as
 /// [admins] last knew it (false until known, so an admin's command is then
 /// refused rather than sent to a server that would refuse it).
@@ -122,7 +145,7 @@ _runOnTournee<C extends TourneeChange>(
     case Ok(value: (final changed, final change)):
       return switch (await tournees.save(changed, change)) {
         Ok(:final value) => Ok((value, change)),
-        Err(failure: TourneeWriteFailure.noNetwork) => const Err(TeamOffline()),
+        Err(:final failure) => Err(_teamFailureOf(failure)),
       };
   }
 }
@@ -304,8 +327,8 @@ final class DeleteTournee {
         return Err(TeamCommandRefused(failure));
       case Ok(value: final deletion):
         switch (await _tournees.delete(deletion)) {
-          case Err(failure: TourneeWriteFailure.noNetwork):
-            return const Err(TeamOffline());
+          case Err(:final failure):
+            return Err(_teamFailureOf(failure));
           case Ok():
             await _myTournees.save(_myTournees.myTournees.forget(id));
             return Ok(deletion);

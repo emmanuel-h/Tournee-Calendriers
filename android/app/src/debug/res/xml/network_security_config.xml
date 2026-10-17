@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Debug builds only (src/debug): lets the app reach the local Firebase
+     emulators over plain HTTP. 10.0.2.2 is how the Android emulator sees
+     the computer it runs on (tool/admin_e2e.sh, integration_test/admin_test.dart).
+     Android refuses cleartext HTTP by default; everything else keeps
+     that default, and release builds never get this file. -->
+<network-security-config>
+    <domain-config cleartextTrafficPermitted="true">
+        <domain includeSubdomains="false">10.0.2.2</domain>
+    </domain-config>
+</network-security-config>

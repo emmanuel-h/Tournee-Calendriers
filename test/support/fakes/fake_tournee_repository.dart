@@ -35,6 +35,12 @@ final class FakeTourneeRepository implements TourneeRepository {
   /// nothing.
   var offline = false;
 
+  /// Plays a server that no longer takes the phone for an admin's (its
+  /// `admins/{uid}` removed): what only an admin does on the server (a new
+  /// code, an admin joining, deleting) fails with `notAdmin` and stores
+  /// nothing.
+  var notAdmin = false;
+
   /// When set, a new code is stored as this one instead of the code drawn,
   /// as the server does when another tournée holds the drawn one.
   JoinCode? codeTaken;
@@ -147,11 +153,11 @@ final class FakeTourneeRepository implements TourneeRepository {
     TourneeChange change,
   ) async {
     var stored = tournee;
-    if (change is AdminJoined && offline) {
-      return const Err(TourneeWriteFailure.noNetwork);
+    if (change is AdminJoined || change is JoinCodeRegenerated) {
+      if (offline) return const Err(TourneeWriteFailure.noNetwork);
+      if (notAdmin) return const Err(TourneeWriteFailure.notAdmin);
     }
     if (change is JoinCodeRegenerated) {
-      if (offline) return const Err(TourneeWriteFailure.noNetwork);
       if (codeTaken case final code?) stored = _withCode(tournee, code);
     }
     saved.add((tournee, change));
@@ -164,6 +170,7 @@ final class FakeTourneeRepository implements TourneeRepository {
     TourneeDeleted deletion,
   ) async {
     if (offline) return const Err(TourneeWriteFailure.noNetwork);
+    if (notAdmin) return const Err(TourneeWriteFailure.notAdmin);
     deleted.add(deletion);
     lose(deletion.tournee.id);
     return Ok(deletion);

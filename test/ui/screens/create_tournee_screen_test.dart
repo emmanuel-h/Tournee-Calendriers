@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/tournee/rescue_centre.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_repository.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/create_tournee_screen.dart';
@@ -133,6 +134,21 @@ void main() {
       expect(isEnabled(tester, createButton), isTrue);
     },
   );
+
+  testWidgets('should say the phone is no longer an admin\'s and keep '
+      '« Créer » off when the server refuses the creation', (tester) async {
+    await open(tester);
+    tournees.addFailure = AddTourneeFailure.notAdmin;
+    await fillIn(tester);
+
+    await tester.tap(createButton);
+    await tester.pumpAndSettle();
+
+    expect(find.text("Vous n'êtes plus administrateur."), findsOneWidget);
+    expect(find.byKey(const Key('create.notAdmin')), findsOneWidget);
+    expect(isEnabled(tester, createButton), isFalse);
+    expect(store.saves, isEmpty);
+  });
 
   testWidgets('should say nothing exists when the number is free', (
     tester,

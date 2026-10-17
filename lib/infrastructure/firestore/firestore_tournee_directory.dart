@@ -254,6 +254,8 @@ final class FirestoreTourneeDirectory implements TourneeDirectory {
       return Ok(List.unmodifiable(overviews));
     } on FirebaseException catch (error) {
       if (isNoNetwork(error)) return const Err(DirectoryFailure.noNetwork);
+      // Only an admin may list the tournées: the phone is no longer one.
+      if (isRefused(error)) return const Err(DirectoryFailure.notAdmin);
       rethrow;
     }
   }

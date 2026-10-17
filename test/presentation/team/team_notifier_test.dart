@@ -386,6 +386,32 @@ void main() {
       expect(failure, TeamActionFailure.offline);
     });
 
+    test('should tell the phone is no longer an admin\'s when the server '
+        'refuses a new code', () async {
+      final container = phoneOf(manuId);
+      await shown(container);
+      tournees.notAdmin = true;
+
+      final failure = await container
+          .read(teamProvider.notifier)
+          .regenerateCode();
+
+      expect(failure, TeamActionFailure.notAdmin);
+    });
+
+    test('should tell the phone is no longer an admin\'s when it learnt it '
+        'before the tournée refused the command', () async {
+      // The admin status already says no, the screen still shows « Retirer »:
+      // the tournée refuses it with `notAdmin`, not as a team change.
+      final container = phoneOf(manuId, admin: false);
+      await shown(container);
+
+      final failure = await container.read(teamProvider.notifier).remove(leaId);
+
+      expect(failure, TeamActionFailure.notAdmin);
+      expect(tournees.saved, isEmpty);
+    });
+
     test('should leave the tournée, which the phone forgets', () async {
       final container = phoneOf(leaId);
       await shown(container);
@@ -422,6 +448,20 @@ void main() {
           .deleteTournee();
 
       expect(failure, TeamActionFailure.offline);
+      expect(store.myTournees.find(tourneeId), isNotNull);
+    });
+
+    test('should tell the phone is no longer an admin\'s when the server '
+        'refuses deleting', () async {
+      final container = phoneOf(manuId);
+      await shown(container);
+      tournees.notAdmin = true;
+
+      final failure = await container
+          .read(teamProvider.notifier)
+          .deleteTournee();
+
+      expect(failure, TeamActionFailure.notAdmin);
       expect(store.myTournees.find(tourneeId), isNotNull);
     });
 
@@ -490,6 +530,20 @@ void main() {
             .joinAsAdmin();
 
         expect(failure, TeamActionFailure.offline);
+      });
+
+      test('should tell the phone is no longer an admin\'s when the server '
+          'refuses joining', () async {
+        final container = phoneOf(samId, mine: visiting());
+        await shown(container);
+        tournees.notAdmin = true;
+
+        final failure = await container
+            .read(teamProvider.notifier)
+            .joinAsAdmin();
+
+        expect(failure, TeamActionFailure.notAdmin);
+        expect(store.myTournees.current!.isVisiting, isTrue);
       });
 
       test('should tell joining needs a first name', () async {

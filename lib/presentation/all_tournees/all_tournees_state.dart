@@ -19,6 +19,12 @@ final class AllTourneesOffline extends AllTourneesState {
   const AllTourneesOffline();
 }
 
+/// The server refused the list: the phone is no longer an admin's (« Vous
+/// n'êtes plus administrateur. »).
+final class AllTourneesNotAdmin extends AllTourneesState {
+  const AllTourneesNotAdmin();
+}
+
 /// Every tournée of the app, grouped under its centre de secours.
 final class AllTourneesShown extends AllTourneesState {
   AllTourneesShown(List<CentreGroup> groups)

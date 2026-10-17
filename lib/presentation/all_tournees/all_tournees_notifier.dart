@@ -56,6 +56,8 @@ final class AllTourneesNotifier extends Notifier<AllTourneesState> {
         state = AllTourneesShown.of(value);
       case Err(failure: DirectoryFailure.noNetwork):
         state = const AllTourneesOffline();
+      case Err(failure: DirectoryFailure.notAdmin):
+        state = const AllTourneesNotAdmin();
     }
   }
 }

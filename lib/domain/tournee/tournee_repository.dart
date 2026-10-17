@@ -13,6 +13,11 @@ enum AddTourneeFailure {
   /// network, since only the server knows whether the pair is taken
   /// (PLAN §7).
   noNetwork,
+
+  /// The server refused: only an admin creates a tournée, and the member
+  /// on the phone is no longer one (their `admins/{uid}` was removed while
+  /// the phone still showed « Créer », PLAN §5.12).
+  notAdmin,
 }
 
 /// Why a change to a stored tournée that needs the server was not made
@@ -22,6 +27,10 @@ enum TourneeWriteFailure {
   /// against every other tournée's, and deleting reads what the tournée
   /// holds from the server: neither can wait in a queue (PLAN §7).
   noNetwork,
+
+  /// The server refused: a new code, an admin joining and deleting are an
+  /// admin's, and the member on the phone is no longer one (PLAN §5.12).
+  notAdmin,
 }
 
 /// Where the tournées the member belongs to are kept: Firestore from M2
@@ -56,7 +65,9 @@ abstract interface class TourneeRepository {
   ///
   /// Fails with [AddTourneeFailure.alreadyExists] when the number is taken
   /// in that centre, even by someone creating it at the same second
-  /// (PLAN §6.2), and with [AddTourneeFailure.noNetwork] offline.
+  /// (PLAN §6.2), with [AddTourneeFailure.noNetwork] offline, and with
+  /// [AddTourneeFailure.notAdmin] when the server says the creator is not
+  /// an admin.
   Future<Result<Tournee, AddTourneeFailure>> add(Tournee tournee);
 
   /// Stores [change], which turned the stored tournée into [tournee], and
@@ -70,7 +81,9 @@ abstract interface class TourneeRepository {
   /// phone at once and sent when the network is back: it never fails. A
   /// new join code needs the server, which checks no other tournée holds
   /// it: one that does is replaced by another (the stored tournée then has that
-  /// one), and offline it fails with [TourneeWriteFailure.noNetwork].
+  /// one), and offline it fails with [TourneeWriteFailure.noNetwork]. A new
+  /// code or an admin joining fails with [TourneeWriteFailure.notAdmin] when
+  /// the server says the member is not an admin.
   Future<Result<Tournee, TourneeWriteFailure>> save(
     Tournee tournee,
     TourneeChange change,
@@ -82,7 +95,9 @@ abstract interface class TourneeRepository {
   ///
   /// Needs the server, which alone knows everything the tournée holds:
   /// offline it deletes nothing and fails with
-  /// [TourneeWriteFailure.noNetwork].
+  /// [TourneeWriteFailure.noNetwork]. It fails with
+  /// [TourneeWriteFailure.notAdmin], deleting nothing, when the server says
+  /// the member is not an admin.
   Future<Result<TourneeDeleted, TourneeWriteFailure>> delete(
     TourneeDeleted deletion,
   );

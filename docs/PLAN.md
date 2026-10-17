@@ -1115,6 +1115,18 @@ TeamMember, and Welcome, Switcher, Team, Settings updated):
   - A visited tournée deleted, or the phone no longer an admin, is forgotten as in 5.3 « A
     tournée lost », with « La tournée 12 a été supprimée. » or « Vous n'êtes plus
     administrateur : la tournée 12 est retirée de Mes tournées. ».
+- **A revoked admin** (#87): the phone may still believe it is an admin's for a moment after
+  `admins/{uid}` is removed (« Créer » or « Nouveau code » still on screen). The server refuses
+  the admin's command and the screen says « Vous n'êtes plus administrateur. » where it says
+  « Pas de réseau » for the same command: under « Créer » in « Nouvelle tournée » (« Créer »
+  then stays off), in place of the list in « Toutes les tournées » (no « Réessayer »), in the
+  snackbar of Équipe (« Nouveau code », « Retirer », « Supprimer la tournée ») and of the banner
+  (« Rejoindre »). The same message when the phone already knows it (the tournée refuses the
+  command itself). « Retirer », « Accepter » and « Refuser » are sent in the background (they
+  work offline): a refusal by the server only takes the change back on the screen, as for any
+  queued write (PLAN §7). The listeners of a visited tournée that may no longer be read never
+  show an error: Équipe reads « unavailable », the streets show none, and the revocation is told
+  by the `admins/{uid}` listener as above.
 - Delivered in #75 (`lib/presentation/admin/`, `all_tournees/`, `account/device_id_state.dart`,
   `lib/ui/screens/all_tournees/`, `start/admin_visit_banner.dart`):
   - « Toutes les tournées » is read once each time it opens (and on « Réessayer »), not
@@ -2252,7 +2264,7 @@ but they run once per task and in CI.
 | Architecture | import rules between layers | Dart VM | every run | < 1 s |
 | Coverage | **100 % line coverage** on `domain/`, `application/`, `presentation/` and the adapters' mapping code, checked by a script on `coverage/lcov.info` | — | end of task, CI | piggybacks |
 | Rules | Firestore security rules in the Firebase emulator (`@firebase/rules-unit-testing`, `node --test`): `cd firebase && npm ci && npm test` starts the emulator itself (`firebase emulators:exec`, demo project, versions pinned for Node 18+, Java 11+) | Node + emulator | when `firebase/` or the Firestore adapters change, CI | < 1 min |
-| Instrumented | `integration_test/`: a handful of end-to-end flows in the real app (launch, mark a house + undo, building, edit a street, offline cold start…), ≤ 10 tests | Android emulator (`Medium_Phone_API_36.1`), run by Claude | before every push to `main` | < 3 min |
+| Instrumented | `integration_test/`: a handful of end-to-end flows in the real app, ≤ 10 tests over both files. `app_test.dart` (launch, mark a house + undo, building, edit a street, offline cold start…) on the real project, Firestore offline. `admin_test.dart` (create a tournée, « Toutes les tournées » → Rejoindre, revocation → « Vous n'êtes plus administrateur. ») against the local Auth + Firestore emulators with the real rules: the test adds and removes `admins/{uid}` itself (`tool/admin_e2e.sh`) | Android emulator (`Medium_Phone_API_36.1`), run by Claude | before every push to `main` | < 3 min |
 | Device | Manual checklist on your phone: map render, tap-to-add, offline download, **airplane-mode day** (cold start, mark, restart, reconnect, sync), QR scan | your phone | after every task, and the full checklist before release | — |
 
 **No mutation-testing gate:** Dart has no maintained equivalent of Pitest. To compensate, the

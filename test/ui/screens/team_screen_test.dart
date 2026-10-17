@@ -229,6 +229,18 @@ void main() {
     expect(find.text('K7P-2QX'), findsOneWidget);
   });
 
+  testWidgets('should say the phone is no longer an admin\'s when the server '
+      'refuses a new code', (tester) async {
+    await pumpTeam(tester, manuId);
+    tournees.notAdmin = true;
+
+    await tester.tap(find.byKey(const Key('team.newCode')));
+    await tester.pumpAndSettle();
+
+    expect(find.text("Vous n'êtes plus administrateur."), findsOneWidget);
+    expect(find.text('K7P-2QX'), findsOneWidget);
+  });
+
   testWidgets('should go back to the start screen with no tournée open once '
       'an admin deletes it', (tester) async {
     await pumpTeam(tester, manuId);

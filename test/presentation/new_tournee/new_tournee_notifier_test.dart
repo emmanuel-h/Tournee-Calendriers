@@ -490,6 +490,20 @@ void main() {
       expect(store.saves, isEmpty);
     });
 
+    test('should say the phone is no longer an admin\'s and not let it be '
+        'tried again', () async {
+      tournees.addFailure = AddTourneeFailure.notAdmin;
+      await open(name: nameOf('Manu'));
+      await fill();
+
+      await form().create();
+
+      expect(state().run, const CreateNotAdmin());
+      expect(state().canCreate, isFalse);
+      expect(state().isCreated, isFalse);
+      expect(store.saves, isEmpty);
+    });
+
     test('should create nothing without a name kept', () async {
       await open();
       await fill();

@@ -96,6 +96,7 @@ final class AdminVisitBanner extends ConsumerWidget {
         TeamActionFailure.offline => l10n.teamOffline,
         TeamActionFailure.teamChanged => l10n.teamChanged,
         TeamActionFailure.noName => l10n.nameBlank,
+        TeamActionFailure.notAdmin => l10n.notAdminAnyMore,
       },
     );
   }

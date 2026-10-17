@@ -1,8 +1,10 @@
 # The quality gates of CLAUDE.md, run by GitHub on every push to main and on
 # every pull request (Dependabot's included). Nothing reaches main red.
 #
-# The instrumented suite (integration_test/) is not run here: it needs an
-# Android emulator and is run by Claude on one before each push.
+# The instrumented suite (integration_test/app_test.dart) is not run here:
+# it needs an Android emulator and is run by Claude on one before each push.
+# Neither are the admin flows (integration_test/admin_test.dart), which also
+# need the local Firebase emulators (tool/admin_e2e.sh).
 name: checks
 
 on:

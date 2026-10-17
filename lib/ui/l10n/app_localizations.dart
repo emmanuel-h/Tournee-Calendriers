@@ -2373,6 +2373,12 @@ abstract class AppLocalizations {
   /// **'Pas de réseau : la liste ne peut pas être affichée.'**
   String get allTourneesOffline;
 
+  /// Under « Créer », in « Toutes les tournées », or in a snackbar of Équipe and of the admin banner, when the server refused an admin's command because the phone's admins/{uid} was removed (PLAN §5.12).
+  ///
+  /// In fr, this message translates to:
+  /// **'Vous n\'êtes plus administrateur.'**
+  String get notAdminAnyMore;
+
   /// Under the list of « Toutes les tournées » (AllTournees mockup).
   ///
   /// In fr, this message translates to:

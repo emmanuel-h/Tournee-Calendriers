@@ -71,12 +71,17 @@ void main() {
       expect(const TourneeGone(), isNot(const TeamOffline()));
       expect(const TeamOffline(), isNot(const TourneeGone()));
       expect(const TeamNoName(), isNot(const TeamOffline()));
+      expect(const TeamNotAdmin(), const TeamNotAdmin());
+      expect(const TeamNotAdmin().hashCode, const TeamNotAdmin().hashCode);
+      expect(const TeamNotAdmin(), isNot(const TeamOffline()));
+      expect(const TeamOffline(), isNot(const TeamNotAdmin()));
     });
 
     test('should name itself', () {
       expect('${const TourneeGone()}', 'TourneeGone');
       expect('${const TeamOffline()}', 'TeamOffline');
       expect('${const TeamNoName()}', 'TeamNoName');
+      expect('${const TeamNotAdmin()}', 'TeamNotAdmin');
       expect(
         '${const TeamCommandRefused(TourneeCommandFailure.notAdmin)}',
         'TeamCommandRefused(TourneeCommandFailure.notAdmin)',
@@ -363,6 +368,23 @@ void main() {
       expect(failure, const TeamOffline());
       expect(tournees[tourneeId]!.joinCode, firstCode);
     });
+
+    test('should tell when the server says the phone is no longer an '
+        'admin\'s', () async {
+      tournees.notAdmin = true;
+
+      final failure = failureOf(
+        await RegenerateJoinCode(
+          tournees,
+          FakeIdentity(manuId),
+          admin,
+          ScriptedRandom(draws234567),
+        )(tourneeId),
+      );
+
+      expect(failure, const TeamNotAdmin());
+      expect(tournees[tourneeId]!.joinCode, firstCode);
+    });
   });
 
   group('DeleteTournee', () {
@@ -412,6 +434,21 @@ void main() {
       );
 
       expect(failure, const TeamOffline());
+      expect(tournees[tourneeId], isNotNull);
+      expect(store.saves, isEmpty);
+    });
+
+    test('should keep everything when the server says the phone is no '
+        'longer an admin\'s', () async {
+      tournees.notAdmin = true;
+
+      final failure = failureOf(
+        await DeleteTournee(tournees, FakeIdentity(manuId), admin, store)(
+          tourneeId,
+        ),
+      );
+
+      expect(failure, const TeamNotAdmin());
       expect(tournees[tourneeId], isNotNull);
       expect(store.saves, isEmpty);
     });
@@ -482,6 +519,17 @@ void main() {
       final failure = failureOf(await joinAs(admin)(tourneeId));
 
       expect(failure, const TeamOffline());
+      expect(tournees[tourneeId]!.memberOf(samId), isNull);
+      expect(store.saves, isEmpty);
+    });
+
+    test('should change nothing when the server says the phone is no '
+        'longer an admin\'s', () async {
+      tournees.notAdmin = true;
+
+      final failure = failureOf(await joinAs(admin)(tourneeId));
+
+      expect(failure, const TeamNotAdmin());
       expect(tournees[tourneeId]!.memberOf(samId), isNull);
       expect(store.saves, isEmpty);
     });

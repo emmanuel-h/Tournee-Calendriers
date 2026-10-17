@@ -1437,6 +1437,8 @@
   },
   "allTourneesOffline": "Pas de réseau : la liste ne peut pas être affichée.",
   "@allTourneesOffline": { "description": "« Toutes les tournées » when the server cannot be reached; « Réessayer » under it." },
+  "notAdminAnyMore": "Vous n'êtes plus administrateur.",
+  "@notAdminAnyMore": { "description": "Under « Créer », in « Toutes les tournées », or in a snackbar of Équipe and of the admin banner, when the server refused an admin's command because the phone's admins/{uid} was removed (PLAN §5.12)." },
   "allTourneesHint": "Ouvrez une tournée pour la gérer : code, équipe, rues. Vous n'y entrez comme membre que si vous la rejoignez.",
   "@allTourneesHint": { "description": "Under the list of « Toutes les tournées » (AllTournees mockup)." },
   "allTourneesEmpty": "Aucune tournée pour l'instant.",

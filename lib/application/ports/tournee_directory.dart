@@ -127,6 +127,11 @@ enum DirectoryFailure {
   /// The phone could not reach the server: creating a tournée needs the
   /// network (PLAN §7).
   noNetwork,
+
+  /// The server refused: only an admin lists every tournée
+  /// ([TourneeDirectory.allTournees]), and the member on the phone is no
+  /// longer one (PLAN §5.12).
+  notAdmin,
 }
 
 /// What someone outside a tournée needs from the server: the newcomer who
@@ -216,7 +221,9 @@ abstract interface class TourneeDirectory {
   /// §5.12), in no particular order; [caller] is the admin asking, to tell
   /// the tournées they are an active member of. Asked of the server, never
   /// answered from the phone's copy, which may miss tournées: fails with
-  /// [DirectoryFailure.noNetwork] offline.
+  /// [DirectoryFailure.noNetwork] offline, and with
+  /// [DirectoryFailure.notAdmin] when the server says [caller] is not an
+  /// admin.
   Future<Result<List<TourneeOverview>, DirectoryFailure>> allTournees(
     MemberId caller,
   );

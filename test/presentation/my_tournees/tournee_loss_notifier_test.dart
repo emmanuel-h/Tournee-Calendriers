@@ -128,6 +128,37 @@ void main() {
     expect(store.myTournees.currentId, isNull);
   });
 
+  test('should still forget a visited tournée once the admin is revoked '
+      'after its listener failed', () async {
+    // Revoked, the admin may no longer read the tournée: its listener
+    // fails (permission-denied) before their own `admins/{uid}` listener
+    // tells the revocation. The failure shows nothing; the revocation is
+    // told as usual.
+    final container = containerWith(
+      valueOf(
+        MyTournees.none.remember(tournee12Visited).open(tournee12Visited.id),
+      ),
+    );
+    container.read(tourneeLossProvider);
+
+    directory.failMembership(tournee12Visited.id);
+    await pumpEventQueue();
+    expect(container.read(tourneeLossProvider), isNull);
+    directory.lose(tournee12Visited.id, TourneeLoss.adminRevoked);
+    await pumpEventQueue();
+
+    expect(
+      container.read(tourneeLossProvider),
+      TourneeLossNotice(
+        tournee: tournee12Visited.id,
+        number: 12,
+        loss: TourneeLoss.adminRevoked,
+        wasOpen: true,
+      ),
+    );
+    expect(store.myTournees.tournees, isEmpty);
+  });
+
   test('should follow a visited tournée as a member once the admin has '
       'joined it', () async {
     final container = containerWith(MyTournees.none.remember(tournee12Visited));

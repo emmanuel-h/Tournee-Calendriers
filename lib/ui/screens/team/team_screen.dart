@@ -138,6 +138,7 @@ final class _Team extends ConsumerWidget {
             // Only « Rejoindre » of the banner asks for a name, which it
             // gets first: said here should it ever happen.
             TeamActionFailure.noName => l10n.nameBlank,
+            TeamActionFailure.notAdmin => l10n.notAdminAnyMore,
           },
         );
       }

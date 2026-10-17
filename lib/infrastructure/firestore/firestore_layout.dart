@@ -52,6 +52,13 @@ abstract final class FirestoreLayout {
 bool isNoNetwork(FirebaseException error) =>
     error.code == 'unavailable' || error.code == 'deadline-exceeded';
 
+/// Whether [error] means the security rules refused a request. For what
+/// only an admin may do (create a tournée, a new code, delete, join
+/// without a code, list every tournée), it means the phone is no longer an
+/// admin's: its `admins/{uid}` was removed while the phone still showed
+/// the command (PLAN §5.12).
+bool isRefused(FirebaseException error) => error.code == 'permission-denied';
+
 /// Whether [error] means this member may no longer read what a listener
 /// follows: removed from the tournée, left it, or refused. Listeners take
 /// it as « nothing there » rather than as a failure.

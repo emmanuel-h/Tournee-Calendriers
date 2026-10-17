@@ -149,6 +149,15 @@ void main() {
     expect(container.read(allTourneesProvider), isA<AllTourneesShown>());
   });
 
+  test('should say when the server says the phone is no longer an '
+      'admin\'s', () async {
+    directory.notAdmin = true;
+    final container = open();
+    await pumpEventQueue();
+
+    expect(container.read(allTourneesProvider), const AllTourneesNotAdmin());
+  });
+
   test('should drop the answer once the screen has closed', () async {
     // The phone signs in first; the screen closes meanwhile.
     account = FakeMemberAccount(nextMember: samId)..gate = Completer<void>();
@@ -256,5 +265,6 @@ void main() {
     );
     expect(AllTourneesShown([group]), isNot(AllTourneesShown(const [])));
     expect(const AllTourneesLoading(), isNot(const AllTourneesOffline()));
+    expect(const AllTourneesOffline(), isNot(const AllTourneesNotAdmin()));
   });
 }

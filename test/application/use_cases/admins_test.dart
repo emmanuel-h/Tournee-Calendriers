@@ -103,6 +103,20 @@ void main() {
 
       expect(failure, DirectoryFailure.noNetwork);
     });
+
+    test('should tell when the server says the phone is no longer an '
+        'admin\'s', () async {
+      directory.notAdmin = true;
+
+      final failure = failureOf(
+        await ListAllTournees(
+          directory,
+          FakeMemberAccount(signedInMember: samId),
+        )(),
+      );
+
+      expect(failure, DirectoryFailure.notAdmin);
+    });
   });
 
   group('OpenAsAdmin', () {
