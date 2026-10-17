@@ -255,16 +255,13 @@ final class Building {
   Result<Building, BuildingChangeFailure> withDoorAdded(
     StaircaseName staircase,
     int? level,
-  ) => switch (nextDoor(staircase, level)) {
-    Err(:final failure) => Err(failure),
-    Ok(value: final key) => Ok(
-      _withFloor(
-        staircase,
-        level,
-        (floor) => [...floor.dwellings, Dwelling(label: key.label)],
-      ),
+  ) => nextDoor(staircase, level).map(
+    (key) => _withFloor(
+      staircase,
+      level,
+      (floor) => [...floor.dwellings, Dwelling(label: key.label)],
     ),
-  };
+  );
 
   /// Where [withDoorAdded] would put a door on the floor at [level] of
   /// [staircase], its label included, or why it would refuse. Nothing

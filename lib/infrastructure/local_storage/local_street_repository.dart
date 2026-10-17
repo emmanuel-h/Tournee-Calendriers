@@ -8,10 +8,11 @@ import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_repository.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/atomic_file.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/mappers/street_json_mapper.dart';
+import 'package:tournee_calendriers/infrastructure/shared/load_then_follow.dart';
 
-/// The [StreetRepository] of M1: the streets live on the phone, one JSON
-/// file per street in [directory] (PLAN §6.3), until Firestore replaces
-/// this storage in M2 behind the same port. No network, ever.
+/// The [StreetRepository] of the phone: the streets used while no tournée
+/// is open (those imported before joining one, PLAN §5.0), one JSON file
+/// per street in [directory] (PLAN §6.3). No network, ever.
 ///
 /// - **One file per street.** A commune can hold ≈ 300 streets and 6 000
 ///   numbers (a few MB of JSON): one file for all would be rewritten whole
@@ -85,7 +86,7 @@ final class LocalStreetRepository implements StreetRepository {
   Future<void> add(Street street) => _put(street);
 
   /// Saves the whole [street]: a file holds a street, so the [change] is not
-  /// needed here (Firestore will write only its fields).
+  /// needed here (Firestore writes only its fields).
   @override
   Future<void> save(Street street, StreetChange change) => _put(street);
 
@@ -164,26 +165,10 @@ final class LocalStreetRepository implements StreetRepository {
   Stream<T> _observe<T>(
     T Function(Map<StreetId, Street> streets) read,
     bool Function(StreetId written) concerns,
-  ) {
-    late final StreamController<T> controller;
-    StreamSubscription<StreetId>? subscription;
-    controller = StreamController<T>(
-      onListen: () => unawaited(
-        _streets().then((streets) {
-          // The listener may have left while the files were being read.
-          if (!controller.hasListener) return;
-          controller.add(read(streets));
-          subscription = _written.stream
-              .where(concerns)
-              .listen((_) => controller.add(read(streets)));
-        }, onError: controller.addError),
-      ),
-      // A listener that leaves stops the updates and frees the stream.
-      onCancel: () async {
-        await subscription?.cancel();
-        await controller.close();
-      },
-    );
-    return controller.stream;
-  }
+  ) => loadThenFollow(
+    load: _streets,
+    changes: _written.stream,
+    concerns: concerns,
+    read: read,
+  );
 }

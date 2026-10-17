@@ -1,4 +1,4 @@
-/// Domain layer: aggregates (`Street`; `Tournee` from M2), entities, value
+/// Domain layer: aggregates (`Street`, `Tournee`), entities, value
 /// objects, domain services and repository ports (PLAN §6, §10.1).
 ///
 /// Pure Dart: it imports nothing but `dart:core`, `dart:math`,

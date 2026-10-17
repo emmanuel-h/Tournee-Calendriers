@@ -1,5 +1,5 @@
 /// Makes the identifiers the app creates itself: a new street's id, the
-/// phone's member id in M1 (PLAN §6.1: identifiers are opaque and never
+/// phone's own member id before its first sign-in (PLAN §6.1: identifiers are opaque and never
 /// typed by a person).
 ///
 /// A port so tests get predictable ids (`street-1`, `street-2`…) and assert

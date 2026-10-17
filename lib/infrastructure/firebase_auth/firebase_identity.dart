@@ -14,7 +14,7 @@ import 'package:tournee_calendriers/infrastructure/firebase_auth/anonymous_auth.
 /// uid is known at every start, offline included, and stays the same until
 /// the app is removed. Before that first sign-in (the very first start,
 /// when offline) the marks are stamped with [beforeSignIn], the id the
-/// phone made for itself in M1: marking never waits for the network.
+/// phone made for itself: marking never waits for the network.
 final class FirebaseIdentity implements IdentityProvider, MemberAccount {
   // `this._beforeSignIn` as a named parameter: callers write it without the
   // underscore, `beforeSignIn:`.

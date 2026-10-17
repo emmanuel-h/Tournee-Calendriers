@@ -2,15 +2,15 @@ import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 
-/// Where the streets of the tournée are kept: on the phone in M1, in
-/// Firestore from M2 (PLAN §6.1, §6.2). A repository port: the domain owns
+/// Where the streets are kept: in Firestore for the open tournée, on the
+/// phone while none is open (PLAN §6.1, §6.2, §6.3). A repository port: the domain owns
 /// this interface, an adapter in `infrastructure/` implements it, and tests
 /// use an in-memory fake.
 ///
 /// It takes and returns [Street] aggregates and [StreetChange]s, never a
 /// storage type. Everything here works without the network once the streets
 /// are on the phone (PLAN §7): reads come from the phone, writes are applied
-/// on the phone at once and, from M2, sent when the network is back.
+/// on the phone at once and, for a tournée, sent when the network is back.
 ///
 /// A storage failure (a full disk) is not something the user can act on in
 /// the street, so it is thrown as an exception, not returned as a failure.
@@ -55,7 +55,7 @@ abstract interface class StreetRepository {
   /// Stores [change], which turned the stored street into [street].
   ///
   /// Both are given so each adapter writes what suits it: the phone storage
-  /// of M1 saves the whole [street]; Firestore writes only the fields
+  /// saves the whole [street]; Firestore writes only the fields
   /// [change] names (`houses.12.status`), so two people marking different
   /// houses never overwrite each other (PLAN §6.2).
   Future<void> save(Street street, StreetChange change);

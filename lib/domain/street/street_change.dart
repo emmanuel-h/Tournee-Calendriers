@@ -13,11 +13,11 @@ import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
 /// What one command of a `Street` changed, returned next to the new street.
 ///
-/// Storage writes only what a change names: from M2 the Firestore adapter
+/// Storage writes only what a change names: the Firestore adapter
 /// turns a [HouseMarked] on house `12` into a write of the field paths
 /// `houses.12.status`, `houses.12.by` and `houses.12.at` (PLAN §6.2), so two
 /// people marking different houses of the same street never overwrite each
-/// other. The phone storage of M1 (T1.6) can simply save the new street.
+/// other. The phone storage simply saves the new street.
 ///
 /// `sealed`: these classes are the only changes, so a `switch` over a
 /// `StreetChange` in an adapter must handle each one, and a new change

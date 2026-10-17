@@ -308,19 +308,27 @@ final class Tournee {
       code = JoinCode.generate(random);
     } while (code == joinCode);
     return Ok((
-      Tournee._(
-        id: id,
-        number: number,
-        centre: centre,
-        joinCode: code,
-        createdBy: createdBy,
-        createdAt: createdAt,
-        currentCampaign: currentCampaign,
-        members: members,
-      ),
+      withJoinCode(code),
       JoinCodeRegenerated(tourneeId: id, before: joinCode, code: code),
     ));
   }
+
+  /// This tournée holding [code] as its join code, everything else kept.
+  ///
+  /// Not a command: it is the tournée as storage keeps it when the code
+  /// drawn on the phone turned out to be another tournée's, and the server
+  /// gave it another one (a code is unique across tournées, which only the
+  /// server can tell, `TourneeRepository.add` and `save`).
+  Tournee withJoinCode(JoinCode code) => Tournee._(
+    id: id,
+    number: number,
+    centre: centre,
+    joinCode: code,
+    createdBy: createdBy,
+    createdAt: createdAt,
+    currentCampaign: currentCampaign,
+    members: members,
+  );
 
   /// Deletes the tournée, as [by] (« Supprimer la tournée »). Only an
   /// admin may, member or not. Nothing is left to return but the deletion

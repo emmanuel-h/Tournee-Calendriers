@@ -202,19 +202,6 @@ void main() {
       expect(all, [same(lilas)]);
     });
 
-    test('should mark a house with the bound clock and member', () async {
-      final change = valueOf(
-        await container.read(markHouseProvider)(
-          lilasId,
-          n('7'),
-          VisitStatus.done,
-        ),
-      );
-
-      expect(change.stamp, leaAtTwo);
-      expect(streets.saved, hasLength(1));
-    });
-
     test('should set a detail of a house', () async {
       final change = valueOf(
         await container.read(setHouseDetailsProvider)(
@@ -225,6 +212,7 @@ void main() {
       );
 
       expect(change.stamp, leaAtTwo);
+      expect(streets.saved, hasLength(1));
     });
 
     test('should mark a door', () async {
@@ -265,10 +253,10 @@ void main() {
 
     test('should undo a change', () async {
       final change = valueOf(
-        await container.read(markHouseProvider)(
+        await container.read(setHouseDetailsProvider)(
           lilasId,
           n('7'),
-          VisitStatus.done,
+          const StatusMark(VisitStatus.done),
         ),
       );
 

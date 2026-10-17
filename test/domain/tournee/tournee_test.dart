@@ -360,6 +360,21 @@ void main() {
     });
   });
 
+  group('withJoinCode', () {
+    test('should hold the code given and keep everything else', () {
+      final tournee = team().withJoinCode(codeOf('ABCDEF'));
+
+      expect(tournee.joinCode, codeOf('ABCDEF'));
+      expect(tournee.members, team().members);
+      expect(tournee.id, tourneeId);
+      expect(tournee.number, number49);
+      expect(tournee.centre, csVillefranche);
+      expect(tournee.createdBy, manuId);
+      expect(tournee.createdAt, createdAt);
+      expect(tournee.currentCampaign, campaign2026);
+    });
+  });
+
   group('delete', () {
     test('should hand the whole tournée to storage when an admin deletes '
         'it', () {

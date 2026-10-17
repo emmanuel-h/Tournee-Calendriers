@@ -118,18 +118,6 @@ abstract class AppLocalizations {
   /// **'Demande envoyée'**
   String get screenJoinPending;
 
-  /// Title of the map mode that adds streets (PLAN §5.4).
-  ///
-  /// In fr, this message translates to:
-  /// **'Ajouter des rues'**
-  String get screenAddStreets;
-
-  /// Title of the manual street form (PLAN §5.5).
-  ///
-  /// In fr, this message translates to:
-  /// **'Rue à la main'**
-  String get screenManualStreet;
-
   /// Placeholder title of the street screen; the real one shows the street's name (PLAN §5.6).
   ///
   /// In fr, this message translates to:
@@ -153,12 +141,6 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Paramètres'**
   String get screenSettings;
-
-  /// Title of the new campaign screen (PLAN §5.10).
-  ///
-  /// In fr, this message translates to:
-  /// **'Nouvelle campagne'**
-  String get screenNewCampaign;
 
   /// Title of the trash screen (PLAN §5.11).
   ///

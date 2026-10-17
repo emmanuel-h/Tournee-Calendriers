@@ -20,4 +20,29 @@ void main() {
 
     expect(describe(Err(failure)), 'failure TROP LONG');
   });
+
+  test('should transform the value and keep a failure when mapped', () {
+    final value = int.parse('13');
+    final failure = 'trop long'.toUpperCase();
+
+    expect(describe(Ok<int, String>(value).map((v) => v + 1)), 'value 14');
+    expect(
+      describe(Err<int, String>(failure).map((v) => v + 1)),
+      'failure TROP LONG',
+    );
+  });
+
+  test('should transform the failure and keep a value when mapped', () {
+    final value = int.parse('13');
+    final failure = 'trop long'.toUpperCase();
+
+    expect(
+      describe(Err<int, String>(failure).mapFailure((f) => f.toLowerCase())),
+      'failure trop long',
+    );
+    expect(
+      describe(Ok<int, String>(value).mapFailure((f) => f.toLowerCase())),
+      'value 13',
+    );
+  });
 }

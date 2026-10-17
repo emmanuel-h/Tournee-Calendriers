@@ -22,12 +22,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get screenJoinPending => 'Demande envoyée';
 
   @override
-  String get screenAddStreets => 'Ajouter des rues';
-
-  @override
-  String get screenManualStreet => 'Rue à la main';
-
-  @override
   String get screenStreet => 'Rue';
 
   @override
@@ -38,9 +32,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get screenSettings => 'Paramètres';
-
-  @override
-  String get screenNewCampaign => 'Nouvelle campagne';
 
   @override
   String get screenTrash => 'Corbeille';

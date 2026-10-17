@@ -3,7 +3,7 @@ import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_repository.dart';
 
 /// The Rue screen's source (PLAN §5.6): the street now, then again after
-/// each change, made on this phone or (from M2) by a teammate. Works
+/// each change, made on this phone or by a teammate. Works
 /// offline: it reads what the phone holds.
 final class ObserveStreet {
   const ObserveStreet(this._streets);

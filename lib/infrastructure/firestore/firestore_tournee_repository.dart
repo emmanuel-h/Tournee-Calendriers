@@ -24,8 +24,9 @@ import 'package:tournee_calendriers/infrastructure/firestore/mappers/tournee_doc
 ///   drawn from [random], up to [maxCodeDraws] times: with 887 million
 ///   codes it does not happen in practice, and the user would have nothing
 ///   to do about it.
-/// - **Accepting, refusing, removing, leaving, renaming** are applied on the phone at
-///   once and sent when the network allows ([sendInBackground]).
+/// - **Accepting, refusing, removing, leaving, renaming** are applied on
+///   the phone at once and sent when the network allows
+///   ([sendInBackground]).
 /// - **An admin joining** (PLAN §5.12) first asks the server for the
 ///   tournée, so offline it fails at once; then their member document is
 ///   sent like the other member writes.
@@ -122,7 +123,7 @@ final class FirestoreTourneeRepository implements TourneeRepository {
         final code = await _freeCode(transaction, tournee.joinCode);
         final stored = code == tournee.joinCode
             ? tournee
-            : _withCode(tournee, code);
+            : tournee.withJoinCode(code);
         final centre = _db
             .collection(FirestoreLayout.rescueCentres)
             .doc(stored.centre.key.value);
@@ -215,7 +216,7 @@ final class FirestoreTourneeRepository implements TourneeRepository {
               ..set(_joinCode(free), joinCodeDocument(tournee));
             return free;
           });
-          return Ok(free == code ? tournee : _withCode(tournee, free));
+          return Ok(free == code ? tournee : tournee.withJoinCode(free));
         } on FirebaseException catch (error) {
           if (_writeFailureOf(error) case final failure?) return Err(failure);
           rethrow;
@@ -330,20 +331,4 @@ final class FirestoreTourneeRepository implements TourneeRepository {
     }
     throw StateError('No free join code after $maxCodeDraws draws');
   }
-
-  /// [tournee] with the join code [code], every other field kept.
-  Tournee _withCode(Tournee tournee, JoinCode code) => switch (Tournee.create(
-    id: tournee.id,
-    number: tournee.number,
-    centre: tournee.centre,
-    joinCode: code,
-    createdBy: tournee.createdBy,
-    createdAt: tournee.createdAt,
-    currentCampaign: tournee.currentCampaign,
-    members: tournee.members,
-  )) {
-    Ok(:final value) => value,
-    // The members come from a valid tournée: they stay valid.
-    Err(:final failure) => throw StateError('$failure'),
-  };
 }

@@ -48,12 +48,8 @@ void main() {
     );
   });
 
-  group('TeamFailure', () {
-    test('should be equal by kind and reason', () {
-      expect(const TourneeGone(), const TourneeGone());
-      expect(const TourneeGone().hashCode, const TourneeGone().hashCode);
-      expect(const TeamOffline(), const TeamOffline());
-      expect(const TeamOffline().hashCode, const TeamOffline().hashCode);
+  group('TeamCommandRefused', () {
+    test('should be equal by reason', () {
       expect(
         const TeamCommandRefused(TourneeCommandFailure.notAdmin),
         const TeamCommandRefused(TourneeCommandFailure.notAdmin),
@@ -66,22 +62,9 @@ void main() {
         const TeamCommandRefused(TourneeCommandFailure.notAdmin),
         isNot(const TeamCommandRefused(TourneeCommandFailure.notAMember)),
       );
-      expect(const TeamNoName(), const TeamNoName());
-      expect(const TeamNoName().hashCode, const TeamNoName().hashCode);
-      expect(const TourneeGone(), isNot(const TeamOffline()));
-      expect(const TeamOffline(), isNot(const TourneeGone()));
-      expect(const TeamNoName(), isNot(const TeamOffline()));
-      expect(const TeamNotAdmin(), const TeamNotAdmin());
-      expect(const TeamNotAdmin().hashCode, const TeamNotAdmin().hashCode);
-      expect(const TeamNotAdmin(), isNot(const TeamOffline()));
-      expect(const TeamOffline(), isNot(const TeamNotAdmin()));
     });
 
     test('should name itself', () {
-      expect('${const TourneeGone()}', 'TourneeGone');
-      expect('${const TeamOffline()}', 'TeamOffline');
-      expect('${const TeamNoName()}', 'TeamNoName');
-      expect('${const TeamNotAdmin()}', 'TeamNotAdmin');
       expect(
         '${const TeamCommandRefused(TourneeCommandFailure.notAdmin)}',
         'TeamCommandRefused(TourneeCommandFailure.notAdmin)',
@@ -179,6 +162,21 @@ void main() {
       );
     });
 
+    test('should still let a member accept when the admin status cannot be '
+        'read', () async {
+      final unreadable = FakeAdminStatus(phoneIsAdmin: true)..unreadable = true;
+      final accept = AcceptMember(
+        tournees,
+        FakeClock(acceptedAt),
+        FakeIdentity(leaId),
+        unreadable,
+      );
+
+      final change = valueOf(await accept(tourneeId, julieId));
+
+      expect(change.member.acceptance, ChangeStamp(by: leaId, at: acceptedAt));
+    });
+
     test('should tell when the tournée cannot be read any more', () async {
       final accept = AcceptMember(
         tournees,
@@ -189,7 +187,7 @@ void main() {
 
       final failure = failureOf(await accept(TourneeId('gone'), julieId));
 
-      expect(failure, const TourneeGone());
+      expect(failure, TeamProblem.tourneeGone);
       expect(tournees.saved, isEmpty);
     });
   });
@@ -353,6 +351,20 @@ void main() {
       expect(tournees.saved, isEmpty);
     });
 
+    test('should be refused when the admin status cannot be read', () async {
+      final failure = failureOf(
+        await RegenerateJoinCode(
+          tournees,
+          FakeIdentity(manuId),
+          FakeAdminStatus(phoneIsAdmin: true)..unreadable = true,
+          ScriptedRandom(draws234567),
+        )(tourneeId),
+      );
+
+      expect(failure, const TeamCommandRefused(TourneeCommandFailure.notAdmin));
+      expect(tournees.saved, isEmpty);
+    });
+
     test('should tell when the server cannot be reached', () async {
       tournees.offline = true;
 
@@ -365,7 +377,7 @@ void main() {
         )(tourneeId),
       );
 
-      expect(failure, const TeamOffline());
+      expect(failure, TeamProblem.offline);
       expect(tournees[tourneeId]!.joinCode, firstCode);
     });
 
@@ -382,7 +394,7 @@ void main() {
         )(tourneeId),
       );
 
-      expect(failure, const TeamNotAdmin());
+      expect(failure, TeamProblem.notAdmin);
       expect(tournees[tourneeId]!.joinCode, firstCode);
     });
   });
@@ -433,7 +445,7 @@ void main() {
         ),
       );
 
-      expect(failure, const TeamOffline());
+      expect(failure, TeamProblem.offline);
       expect(tournees[tourneeId], isNotNull);
       expect(store.saves, isEmpty);
     });
@@ -448,7 +460,7 @@ void main() {
         ),
       );
 
-      expect(failure, const TeamNotAdmin());
+      expect(failure, TeamProblem.notAdmin);
       expect(tournees[tourneeId], isNotNull);
       expect(store.saves, isEmpty);
     });
@@ -460,7 +472,7 @@ void main() {
         ),
       );
 
-      expect(failure, const TourneeGone());
+      expect(failure, TeamProblem.tourneeGone);
       expect(store.saves, isEmpty);
     });
   });
@@ -518,7 +530,7 @@ void main() {
 
       final failure = failureOf(await joinAs(admin)(tourneeId));
 
-      expect(failure, const TeamOffline());
+      expect(failure, TeamProblem.offline);
       expect(tournees[tourneeId]!.memberOf(samId), isNull);
       expect(store.saves, isEmpty);
     });
@@ -529,7 +541,7 @@ void main() {
 
       final failure = failureOf(await joinAs(admin)(tourneeId));
 
-      expect(failure, const TeamNotAdmin());
+      expect(failure, TeamProblem.notAdmin);
       expect(tournees[tourneeId]!.memberOf(samId), isNull);
       expect(store.saves, isEmpty);
     });
@@ -539,14 +551,14 @@ void main() {
         await joinAs(admin, settings: FakePhoneSettings())(tourneeId),
       );
 
-      expect(failure, const TeamNoName());
+      expect(failure, TeamProblem.noName);
       expect(tournees.saved, isEmpty);
     });
 
     test('should tell when the tournée cannot be read any more', () async {
       final failure = failureOf(await joinAs(admin)(TourneeId('gone')));
 
-      expect(failure, const TourneeGone());
+      expect(failure, TeamProblem.tourneeGone);
       expect(store.saves, isEmpty);
     });
 

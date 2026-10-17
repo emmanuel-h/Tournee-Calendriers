@@ -5,10 +5,10 @@ import 'package:tournee_calendriers/application/ports/identity_provider.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/atomic_file.dart';
 
-/// The [IdentityProvider] of M1, before the team exists: the phone makes a
-/// member id once, keeps it in a file, and reads it back at every start, so
-/// the stamps of its changes stay the same person. From M2 the Firebase uid
-/// replaces it (PLAN §6.1).
+/// The phone's own [IdentityProvider]: the phone makes a member id once,
+/// keeps it in a file, and reads it back at every start, so the stamps of
+/// its changes stay the same person. The Firebase uid replaces it once the
+/// phone has signed in (`FirebaseIdentity`, PLAN §6.1).
 final class LocalIdentity implements IdentityProvider {
   const LocalIdentity._(this.currentMember);
 

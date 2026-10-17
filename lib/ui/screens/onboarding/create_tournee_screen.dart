@@ -9,7 +9,7 @@ import 'package:tournee_calendriers/domain/tournee/tournee_number.dart';
 import 'package:tournee_calendriers/presentation/new_tournee/new_tournee_notifier.dart';
 import 'package:tournee_calendriers/presentation/new_tournee/new_tournee_state.dart';
 import 'package:tournee_calendriers/ui/components/app_buttons.dart';
-import 'package:tournee_calendriers/ui/components/copy_code_button.dart';
+import 'package:tournee_calendriers/ui/components/join_code_text.dart';
 import 'package:tournee_calendriers/ui/components/join_qr_code.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
@@ -510,28 +510,11 @@ final class _CodeCard extends StatelessWidget {
             children: [
               // The code and its copy button stay together on one line
               // should « Partager » not fit beside them.
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  // Shrinks the code rather than overflow when the screen is narrow
-                  // or the phone's text is set large: the copy button stays.
-                  Flexible(
-                    child: FittedBox(
-                      fit: BoxFit.scaleDown,
-                      child: Text(
-                        created.code,
-                        key: const Key('create.code'),
-                        style: AppTextStyles.createdCode.copyWith(
-                          color: colors.ink,
-                        ),
-                      ),
-                    ),
-                  ),
-                  CopyCodeButton(
-                    key: const Key('create.copy'),
-                    code: created.code,
-                  ),
-                ],
+              JoinCodeText(
+                code: created.code,
+                style: AppTextStyles.createdCode,
+                codeKey: const Key('create.code'),
+                copyKey: const Key('create.copy'),
               ),
               PillButton(
                 key: const Key('create.share'),

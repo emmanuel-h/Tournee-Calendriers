@@ -35,7 +35,7 @@ final class TextLimit {
 }
 
 /// When the house was last changed, for the line « Modifié à 14:02 » or
-/// « Modifié le 3 oct. à 14:02 ». No name yet: members get one in M2.
+/// « Modifié le 3 oct. à 14:02 ».
 ///
 /// `sealed`: the sheet words each case its own way.
 sealed class LastChange {

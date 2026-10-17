@@ -1401,9 +1401,9 @@ Use cases and phone storage fixed in T1.6 (`lib/application/use_cases/`,
   with « Réessayer » → `retry()`). Nothing of it runs on the marking path.
 - **Use cases** (one class, one `call`; each loads the street, runs the root's command, saves,
   returns the change for « Annuler »; refusals are `CommandFailure<F>` = `StreetNotFound` |
-  `CommandRefused(reason)`, `F` being the street's failure enum): `MarkHouse` (tap),
-  `SetHouseDetails` (one `Mark` of the house sheet: `StatusMark`, `ComeBackMark`; the
-  sheet stores each control on its own), `MarkDwelling` (same `Mark`s on a door),
+  `CommandRefused(reason)`, `F` being the street's failure enum): `SetHouseDetails`
+  (one `Mark` of a house: `StatusMark`, `ComeBackMark`; a tap on a tile is a `StatusMark`
+  of the next status, the house sheet stores each control on its own), `MarkDwelling` (same `Mark`s on a door),
   `DescribeBuilding` (`LayOutBuilding`, `AddDoor`, `RemoveDoor`, `RenameDoor`,
   `BackToSingleHouse`), `EditStreetNumbers` (`AddNumbers`, `RemoveNumber`, `RestoreNumber`,
   `RenameNumber`, `RenameStreet`, `DeleteStreet`), `UndoLastChange(change)` (the screen keeps the
@@ -1518,7 +1518,7 @@ Tournée rules fixed in T2.2 (`lib/domain/tournee/`):
   of the member document. Use cases (`lib/application/use_cases/admins.dart`, `team.dart`):
   `ObserveAdminStatus`, `IsMemberAdmin`, `ListAllTournees` (signs in first), `OpenAsAdmin`
   (kept active when the admin is in it, `visiting` otherwise, then opened), `JoinAsAdmin`
-  (the phone's name; none → `TeamNoName`; then the summary accepted), `ForgetVisitedTournee`.
+  (the phone's name; none → `TeamProblem.noName`; then the summary accepted), `ForgetVisitedTournee`.
   Presentation: `adminProvider` (kept alive, false until known or on error), `deviceIdProvider`
   (on `accountProvider`, so the screen showing it signs in), `allTourneesProvider`;
   `TeamShown` has `iAmAdmin`, `iAmIn` and `MemberRow.isAdmin` (each other member asked
@@ -1625,8 +1625,8 @@ Onboarding fixed in T2.5 (`lib/application/use_cases/choose_start_point.dart`,
   `AcceptMember` (stamped with the `Clock`), `RefuseMember`, `RemoveMember`, `LeaveTournee`
   and `DeleteTournee` (both then `forget` the tournée in « Mes tournées »),
   `RegenerateJoinCode` (draws from the injected `Random`, `Random.secure()` in the app;
-  returns the code as stored). Refusals are `TeamFailure` = `TourneeGone` (cannot be read) |
-  `TeamCommandRefused(TourneeCommandFailure)` | `TeamOffline`.
+  returns the code as stored). Refusals are `TeamFailure` = a `TeamProblem` (`tourneeGone`: cannot be
+  read, `offline`, `noName`, `notAdmin`) | `TeamCommandRefused(TourneeCommandFailure)`.
 - **`TourneeRepository.save`** returns the tournée as stored and **`delete`** the deletion,
   or `TourneeWriteFailure.noNetwork` for what needs the server: a new code (the transaction)
   and deleting (which first reads the tournée from the server, so offline it fails before
@@ -2197,7 +2197,7 @@ lib/
   Riverpod but not Flutter. Firebase / http / shared_preferences appear only in
   `infrastructure` and `bootstrap`; MapLibre only in `ui/map` and `infrastructure/maplibre_offline`. A fast architecture
   test (`test/architecture_test.dart`) reads every import in `lib/` and fails on a forbidden one.
-- **Use cases** are the only entry point to behaviour: `MarkHouse`, `AddStreetFromMap`,
+- **Use cases** are the only entry point to behaviour: `SetHouseDetails`, `AddStreetFromMap`,
   `AddManualStreet`, `EditStreetNumbers`, `DescribeBuilding`, `CreateTournee`,
   `RequestToJoin`, `AcceptMember`, `DownloadTournee`, `StartCampaign`, … A use case loads the
   aggregate through its port, calls the root, saves the `StreetChange` through the port.

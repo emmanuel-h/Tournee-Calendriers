@@ -36,8 +36,12 @@ final class FakeAdminStatus implements AdminStatus {
   /// The listener of the phone's admin status fails.
   void fail() => _changes.addError(StateError('listener failed'));
 
+  /// Whether the phone's admin status fails before its first answer.
+  bool unreadable = false;
+
   @override
   Stream<bool> watchIsAdmin() async* {
+    if (unreadable) throw StateError('admin status unreadable');
     yield _phoneIsAdmin;
     yield* _changes.stream;
   }

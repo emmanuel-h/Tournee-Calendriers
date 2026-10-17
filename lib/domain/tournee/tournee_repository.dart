@@ -33,7 +33,7 @@ enum TourneeWriteFailure {
   notAdmin,
 }
 
-/// Where the tournées the member belongs to are kept: Firestore from M2
+/// Where the tournées the member belongs to are kept: Firestore
 /// (`tournees/{id}` and its `members`, PLAN §6.2). A repository port: the
 /// domain owns this interface, an adapter in `infrastructure/` implements
 /// it, and tests use an in-memory fake.

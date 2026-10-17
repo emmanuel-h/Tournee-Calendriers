@@ -69,7 +69,7 @@ final class _MarkingScreenState extends ConsumerState<_MarkingScreen>
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     // `ref.watch`: the screen redraws whenever the street or « Masquer
-    // faits » changes, on this phone or (from M2) on a teammate's.
+    // faits » changes, on this phone or on a teammate's.
     final state = ref.watch(streetProvider(widget.streetId));
     return ScaffoldMessenger(
       key: messengerKey,

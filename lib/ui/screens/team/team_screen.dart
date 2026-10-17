@@ -9,7 +9,7 @@ import 'package:tournee_calendriers/presentation/team/team_state.dart';
 import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
 import 'package:tournee_calendriers/ui/components/app_buttons.dart';
 import 'package:tournee_calendriers/ui/components/confirm_dialog.dart';
-import 'package:tournee_calendriers/ui/components/copy_code_button.dart';
+import 'package:tournee_calendriers/ui/components/join_code_text.dart';
 import 'package:tournee_calendriers/ui/components/join_qr_code.dart';
 import 'package:tournee_calendriers/ui/components/recent_time_text.dart';
 import 'package:tournee_calendriers/ui/components/section_header.dart';
@@ -353,27 +353,11 @@ final class _CodeCard extends StatelessWidget {
                   l10n.teamCodeLabel,
                   style: AppTextStyles.small.copyWith(color: colors.muted),
                 ),
-                Row(
-                  children: [
-                    // Shrinks the code rather than overflow when the screen is narrow
-                    // or the phone's text is set large: the copy button stays.
-                    Flexible(
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          state.code,
-                          key: const Key('team.code'),
-                          style: AppTextStyles.joinCode.copyWith(
-                            color: colors.ink,
-                          ),
-                        ),
-                      ),
-                    ),
-                    CopyCodeButton(
-                      key: const Key('team.copy'),
-                      code: state.code,
-                    ),
-                  ],
+                JoinCodeText(
+                  code: state.code,
+                  style: AppTextStyles.joinCode,
+                  codeKey: const Key('team.code'),
+                  copyKey: const Key('team.copy'),
                 ),
                 Wrap(
                   spacing: 6,

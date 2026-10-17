@@ -26,8 +26,6 @@ abstract final class AppRoutes {
   /// `/rejoindre/attente?id=…`.
   static String joinPendingOf(TourneeId tournee) =>
       Uri(path: joinPending, queryParameters: {'id': tournee.value}).toString();
-  static const addStreets = '/ajouter-des-rues';
-  static const manualStreet = '/rue-a-la-main';
   static const street = '/rue';
 
   /// The street screen of the street [id]: `/rue?id=…`.
@@ -58,7 +56,6 @@ abstract final class AppRoutes {
 
   /// « Nouveautés », pushed by the version row of Paramètres.
   static const changelog = '/parametres/nouveautes';
-  static const newCampaign = '/nouvelle-campagne';
   static const trash = '/corbeille';
 
   /// Debug builds only: every shared component on one screen.

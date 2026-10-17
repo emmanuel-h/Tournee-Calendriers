@@ -791,18 +791,14 @@ final class Street {
         _revertDwelling(number, key, before),
       DwellingReverted(:final number, :final key, :final replaced) =>
         _revertDwelling(number, key, replaced),
-      NumberRemoved(:final number) => switch (restoreNumber(number)) {
-        Ok(:final value) => Ok(value),
-        Err() => const Err(UndoFailure.gone),
-      },
-      NumberRestored(:final removed) => switch (removeNumber(
+      NumberRemoved(:final number) => restoreNumber(
+        number,
+      ).mapFailure((_) => UndoFailure.gone),
+      NumberRestored(:final removed) => removeNumber(
         removed.number,
         by: removed.removal.by,
         at: removed.removal.at,
-      )) {
-        Ok(:final value) => Ok(value),
-        Err() => const Err(UndoFailure.gone),
-      },
+      ).mapFailure((_) => UndoFailure.gone),
       StreetRenamed(:final before) => Ok((
         _copy(
           name: before,

@@ -1,5 +1,5 @@
 // Translation between a Street and the JSON the phone storage keeps for it
-// (M1, until Firestore replaces that storage in M2). Pure functions: no file
+// (the streets used while no tournée is open). Pure functions: no file
 // here, so they are tested alone.
 //
 // The schema, version 3 (PLAN §6.3):

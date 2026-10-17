@@ -55,14 +55,14 @@ final httpClientProvider = Provider<http.Client>((ref) {
 ///   tournée's team and streets, whether the phone is an admin), so a
 ///   phone that shows none of them never touches it. It serves the
 ///   phone's copy first, so an offline cold start works.
+/// - [addressDirectory]: replaces the BAN, so the instrumented suite can
+///   import streets without the network.
+/// - [communeSearch]: replaces geo.api.gouv.fr, for the same reason.
 ///
 /// The streets follow the open tournée: those of its current campaign in
 /// Firestore while one is open, the phone's own (M1) while none is. So does
 /// the pending sync: the Firestore streets' own count of unsent streets,
 /// always 0 for the phone's streets.
-/// - [addressDirectory]: replaces the BAN, so the instrumented suite can
-///   import streets without the network.
-/// - [communeSearch]: replaces geo.api.gouv.fr, for the same reason.
 ///
 /// Async because the member id, the street view preferences, « Mes
 /// tournées » and the settings are read from the phone before the first

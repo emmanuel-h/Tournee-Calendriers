@@ -6,7 +6,6 @@ import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 import 'package:tournee_calendriers/presentation/building/building_grid_notifier.dart';
 import 'package:tournee_calendriers/presentation/launch/launch_place.dart';
-import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/screens/all_tournees/all_tournees_screen.dart';
 import 'package:tournee_calendriers/ui/screens/building/adjust_doors_screen.dart';
@@ -18,7 +17,6 @@ import 'package:tournee_calendriers/ui/screens/onboarding/create_tournee_screen.
 import 'package:tournee_calendriers/ui/screens/onboarding/join_pending_screen.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/join_tournee_screen.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/welcome_screen.dart';
-import 'package:tournee_calendriers/ui/screens/placeholder_screen.dart';
 import 'package:tournee_calendriers/ui/screens/settings/changelog_screen.dart';
 import 'package:tournee_calendriers/ui/screens/settings/privacy_screen.dart';
 import 'package:tournee_calendriers/ui/screens/settings/settings_screen.dart';
@@ -26,7 +24,8 @@ import 'package:tournee_calendriers/ui/screens/start/start_screen.dart';
 import 'package:tournee_calendriers/ui/screens/street/street_screen.dart';
 import 'package:tournee_calendriers/ui/screens/team/team_screen.dart';
 
-/// Builds the app's navigation: one route per screen of PLAN §5.
+/// Builds the app's navigation: one route per screen of PLAN §5 built so
+/// far (a screen still to build gets its route with it).
 ///
 /// `go_router` maps a path (`/equipe`) to a screen, so any screen can be
 /// opened by its path from anywhere (`context.go` replaces the stack,
@@ -96,8 +95,6 @@ GoRouter buildAppRouter({
       builder: (context, state) =>
           JoinPendingScreen(tournee: _tourneeIdOf(state)!),
     ),
-    _placeholder(AppRoutes.addStreets, (l10n) => l10n.screenAddStreets),
-    _placeholder(AppRoutes.manualStreet, (l10n) => l10n.screenManualStreet),
     // Pushed by 👥 on the start screen; Équipe pushes the Corbeille.
     GoRoute(
       path: AppRoutes.team,
@@ -120,7 +117,6 @@ GoRouter buildAppRouter({
       path: AppRoutes.changelog,
       builder: (context, state) => const ChangelogScreen(),
     ),
-    _placeholder(AppRoutes.newCampaign, (l10n) => l10n.screenNewCampaign),
     GoRoute(
       path: AppRoutes.trash,
       builder: (context, state) => const CorbeilleScreen(),
@@ -170,11 +166,3 @@ BuildingGridKey? _buildingOf(GoRouterState state) {
     _ => null,
   };
 }
-
-/// A route to an empty screen whose title is picked from the translations.
-GoRoute _placeholder(String path, String Function(AppLocalizations) title) =>
-    GoRoute(
-      path: path,
-      builder: (context, state) =>
-          PlaceholderScreen(title: title(AppLocalizations.of(context))),
-    );

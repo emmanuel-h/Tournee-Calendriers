@@ -3,7 +3,7 @@ import 'package:tournee_calendriers/application/use_cases/command_failure.dart';
 import 'package:tournee_calendriers/application/use_cases/edit_street_numbers.dart';
 import 'package:tournee_calendriers/application/use_cases/mark.dart';
 import 'package:tournee_calendriers/application/use_cases/mark_dwelling.dart';
-import 'package:tournee_calendriers/application/use_cases/mark_house.dart';
+import 'package:tournee_calendriers/application/use_cases/set_house_details.dart';
 import 'package:tournee_calendriers/application/use_cases/undo_last_change.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
@@ -26,8 +26,18 @@ void main() {
   });
 
   test('should put the exact previous house back after a tap', () async {
-    final markHouse = MarkHouse(streets, clockAtTwo(), leaOnThePhone());
-    final marked = valueOf(await markHouse(lilasId, n('5'), VisitStatus.done));
+    final setHouseDetails = SetHouseDetails(
+      streets,
+      clockAtTwo(),
+      leaOnThePhone(),
+    );
+    final marked = valueOf(
+      await setHouseDetails(
+        lilasId,
+        n('5'),
+        const StatusMark(VisitStatus.done),
+      ),
+    );
 
     final change = valueOf(await undo(marked));
 

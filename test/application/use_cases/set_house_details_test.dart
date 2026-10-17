@@ -47,6 +47,42 @@ void main() {
     expect(houseOf(streets[lilasId]!, '5').status, VisitStatus.toDo);
   });
 
+  test('should stamp the change with the clock and the member', () async {
+    final clock = clockAtTwo()..time = threePm;
+    setHouseDetails = SetHouseDetails(streets, clock, leaOnThePhone());
+
+    final change = valueOf(
+      await setHouseDetails(
+        lilasId,
+        n('7'),
+        const StatusMark(VisitStatus.nobodyHome),
+      ),
+    );
+
+    expect(change.stamp.at, threePm);
+    expect(change.stamp.by, lea);
+  });
+
+  test('should keep a second quick tap on another house', () async {
+    // Two taps are two events: the second starts on a later turn of the
+    // event loop (`Duration.zero`), even before the first one's save ends.
+    final first = setHouseDetails(
+      lilasId,
+      n('5'),
+      const StatusMark(VisitStatus.done),
+    );
+    await Future<void>.delayed(Duration.zero);
+    final second = setHouseDetails(
+      lilasId,
+      n('7'),
+      const StatusMark(VisitStatus.done),
+    );
+    await Future.wait([first, second]);
+
+    expect(houseOf(streets[lilasId]!, '5').status, VisitStatus.done);
+    expect(houseOf(streets[lilasId]!, '7').status, VisitStatus.done);
+  });
+
   test('should save the hint typed in the sheet', () async {
     final change = valueOf(
       await setHouseDetails(lilasId, n('5'), ComeBackMark(comeBack('samedi'))),
@@ -97,6 +133,7 @@ void main() {
 
     expect(failure, const CommandRefused(HouseChangeFailure.houseIsBuilding));
     expect(streets.saved, isEmpty);
+    expect(streets[lilasId], same(lilas));
   });
 
   test('should fail when the street is unknown', () async {
@@ -109,5 +146,6 @@ void main() {
     );
 
     expect(failure, const StreetNotFound<HouseChangeFailure>());
+    expect(streets.saved, isEmpty);
   });
 }

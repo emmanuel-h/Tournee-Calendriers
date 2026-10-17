@@ -2,7 +2,7 @@
 /// `presentation/`, and the ports those use cases need.
 ///
 /// A provider is a global, lazily built value that a notifier reads with
-/// `ref.watch(markHouseProvider)`. The **ports** are declared here, where
+/// `ref.watch(setHouseDetailsProvider)`. The **ports** are declared here, where
 /// the layer rules let `presentation/` see them, but have no adapter here:
 /// `presentation/` must not import `infrastructure/`. The composition root
 /// (`bootstrap/`) binds each one to its adapter by *overriding* it in the
@@ -37,7 +37,6 @@ import 'package:tournee_calendriers/application/use_cases/import_reference_area.
 import 'package:tournee_calendriers/application/use_cases/join_tournee.dart';
 import 'package:tournee_calendriers/application/use_cases/list_commune_streets.dart';
 import 'package:tournee_calendriers/application/use_cases/mark_dwelling.dart';
-import 'package:tournee_calendriers/application/use_cases/mark_house.dart';
 import 'package:tournee_calendriers/application/use_cases/move_streets_into_tournee.dart';
 import 'package:tournee_calendriers/application/use_cases/my_tournees.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_corbeille.dart';
@@ -134,13 +133,6 @@ final observeStreetProvider = Provider(
 );
 final observeStreetsProvider = Provider(
   (ref) => ObserveStreets(ref.watch(streetRepositoryProvider)),
-);
-final markHouseProvider = Provider(
-  (ref) => MarkHouse(
-    ref.watch(streetRepositoryProvider),
-    ref.watch(clockProvider),
-    ref.watch(identityProvider),
-  ),
 );
 final setHouseDetailsProvider = Provider(
   (ref) => SetHouseDetails(

@@ -6,6 +6,7 @@ import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/phone_settings.dart';
+import 'package:tournee_calendriers/application/use_cases/mark.dart';
 import 'package:tournee_calendriers/bootstrap/bindings.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
@@ -443,7 +444,11 @@ void main() {
       await pumpEventQueue();
 
       valueOf(
-        await lea.read(markHouseProvider)(morin.id, n('32'), VisitStatus.done),
+        await lea.read(setHouseDetailsProvider)(
+          morin.id,
+          n('32'),
+          const StatusMark(VisitStatus.done),
+        ),
       );
       await pumpEventQueue();
 

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/infrastructure/shared/load_then_follow.dart';
 
 /// The streets of one campaign as this phone knows them: what the
 /// Firestore listener gave last, with this phone's own changes taken the
@@ -87,31 +88,12 @@ final class StreetMemory {
   Stream<T> observe<T>(
     T Function(Map<StreetId, Street> streets) read,
     bool Function(Set<StreetId> changed) concerns,
-  ) {
-    late final StreamController<T> controller;
-    StreamSubscription<Set<StreetId>>? subscription;
-    controller = StreamController<T>(
-      onListen: () => unawaited(
-        streets().then((streets) {
-          // The listener may have left while waiting for the first answer.
-          if (!controller.hasListener) return;
-          controller.add(read(streets));
-          subscription = _changes.stream
-              .where(concerns)
-              .listen(
-                (_) => controller.add(read(streets)),
-                onError: controller.addError,
-              );
-        }, onError: controller.addError),
-      ),
-      // A listener that leaves stops the updates and frees the stream.
-      onCancel: () async {
-        await subscription?.cancel();
-        await controller.close();
-      },
-    );
-    return controller.stream;
-  }
+  ) => loadThenFollow(
+    load: streets,
+    changes: _changes.stream,
+    concerns: concerns,
+    read: read,
+  );
 
   /// The number of streets with writes waiting, now and each time it
   /// changes.

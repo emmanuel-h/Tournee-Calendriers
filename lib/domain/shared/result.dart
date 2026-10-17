@@ -22,6 +22,21 @@
 /// breaks the build wherever it must be handled.
 sealed class Result<T, F> {
   const Result();
+
+  /// This result with [transform] applied to its value; a failure is kept
+  /// as it is. Spares the `switch` that only passes the failure on:
+  /// `run().map((pair) => pair.$2)`.
+  Result<U, F> map<U>(U Function(T value) transform) => switch (this) {
+    Ok(:final value) => Ok(transform(value)),
+    Err(:final failure) => Err(failure),
+  };
+
+  /// This result with [transform] applied to its failure; a value is kept
+  /// as it is. For a caller that words the failure its own way.
+  Result<T, G> mapFailure<G>(G Function(F failure) transform) => switch (this) {
+    Ok(:final value) => Ok(value),
+    Err(:final failure) => Err(transform(failure)),
+  };
 }
 
 /// A successful [Result] holding [value].

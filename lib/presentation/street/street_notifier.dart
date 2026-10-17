@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tournee_calendriers/application/use_cases/describe_building.dart';
+import 'package:tournee_calendriers/application/use_cases/mark.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
@@ -18,7 +19,7 @@ final streetProvider = NotifierProvider.autoDispose
     .family<StreetNotifier, StreetViewState, StreetId>(StreetNotifier.new);
 
 /// Follows a street on the phone (`ObserveStreet`, which works offline),
-/// cycles a house's status on a tap (`MarkHouse`), turns a building back
+/// cycles a house's status on a tap (`SetHouseDetails`), turns a building back
 /// into a house (`DescribeBuilding`), undoes the last of those
 /// (`UndoLastChange`) and keeps « Masquer faits » for the street.
 final class StreetNotifier extends Notifier<StreetViewState>
@@ -47,15 +48,16 @@ final class StreetNotifier extends Notifier<StreetViewState>
   Future<MarkedHouse?> cycle(HouseNumber number) async {
     final house = street?.houseAt(number);
     if (house == null) return null;
-    final result = await ref.read(markHouseProvider)(
+    final status = house.status.next;
+    final result = await ref.read(setHouseDetailsProvider)(
       streetId,
       number,
-      house.status.next,
+      StatusMark(status),
     );
     switch (result) {
       case Ok(value: final change):
         keepForUndo(change);
-        return MarkedHouse(number: number, status: change.status);
+        return MarkedHouse(number: number, status: status);
       case Err():
         return null;
     }

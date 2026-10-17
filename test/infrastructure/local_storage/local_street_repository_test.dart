@@ -6,7 +6,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:test/test.dart';
-import 'package:tournee_calendriers/application/use_cases/mark_house.dart';
+import 'package:tournee_calendriers/application/use_cases/mark.dart';
+import 'package:tournee_calendriers/application/use_cases/set_house_details.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
@@ -108,13 +109,25 @@ void main() {
     test('should keep two quick taps on two houses', () async {
       final streets = restart();
       await streets.add(_street('lilas', 'Rue des Lilas'));
-      final markHouse = MarkHouse(streets, FakeClock(twoPm), FakeIdentity(lea));
+      final setHouseDetails = SetHouseDetails(
+        streets,
+        FakeClock(twoPm),
+        FakeIdentity(lea),
+      );
 
       // Two taps are two events: the second comes on a later turn of the
       // event loop, while the first one's file may still be written.
-      final first = markHouse(StreetId('lilas'), n('1'), VisitStatus.done);
+      final first = setHouseDetails(
+        StreetId('lilas'),
+        n('1'),
+        const StatusMark(VisitStatus.done),
+      );
       await Future<void>.delayed(Duration.zero);
-      final second = markHouse(StreetId('lilas'), n('2'), VisitStatus.done);
+      final second = setHouseDetails(
+        StreetId('lilas'),
+        n('2'),
+        const StatusMark(VisitStatus.done),
+      );
       await Future.wait([first, second]);
 
       final found = await restart().find(StreetId('lilas'));

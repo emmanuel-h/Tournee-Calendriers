@@ -21,33 +21,39 @@ import 'package:tournee_calendriers/domain/tournee/tournee_repository.dart';
 // Accepting, refusing, removing and leaving work offline (queued by
 // storage); a new code, an admin joining and deleting need the server.
 
-/// Why a command of Équipe was not done.
+/// Why a command of Équipe was not done: one of the [TeamProblem]s, or
+/// [TeamCommandRefused] with the tournée's reason.
 ///
 /// `sealed`: these are the only cases, so the screen's `switch` handles
-/// each one.
-sealed class TeamFailure {
-  const TeamFailure();
-}
+/// each one. An enum may implement a sealed class of its own library, so
+/// the cases without data need no class each.
+sealed class TeamFailure {}
 
-/// The tournée cannot be read any more: deleted, or the member was
-/// removed from it.
-final class TourneeGone extends TeamFailure {
-  const TourneeGone();
+/// The failures of Équipe that carry no data.
+enum TeamProblem implements TeamFailure {
+  /// The tournée cannot be read any more: deleted, or the member was
+  /// removed from it.
+  tourneeGone,
 
-  @override
-  bool operator ==(Object other) => other is TourneeGone;
+  /// The command needs the server and the phone could not reach it
+  /// (« Nouveau code », « Supprimer la tournée »). Nothing was changed.
+  offline,
 
-  @override
-  int get hashCode => (TourneeGone).hashCode;
+  /// The phone has no first name to give the team: « Rejoindre » as an
+  /// admin needs one (PLAN §5.12). Nothing was changed.
+  noName,
 
-  @override
-  String toString() => 'TourneeGone';
+  /// The server refused an admin's command (« Nouveau code », « Supprimer
+  /// la tournée », « Rejoindre » as an admin): the member on the phone is
+  /// no longer an admin, though the phone still believed it. Nothing was
+  /// changed.
+  notAdmin,
 }
 
 /// The tournée refused the command for [reason]: the team changed in the
 /// meantime (the request was already answered, the member already left),
 /// since the screen offers each command only to whom may run it.
-final class TeamCommandRefused extends TeamFailure {
+final class TeamCommandRefused implements TeamFailure {
   const TeamCommandRefused(this.reason);
 
   final TourneeCommandFailure reason;
@@ -63,67 +69,28 @@ final class TeamCommandRefused extends TeamFailure {
   String toString() => 'TeamCommandRefused($reason)';
 }
 
-/// The command needs the server and the phone could not reach it
-/// (« Nouveau code », « Supprimer la tournée »). Nothing was changed.
-final class TeamOffline extends TeamFailure {
-  const TeamOffline();
-
-  @override
-  bool operator ==(Object other) => other is TeamOffline;
-
-  @override
-  int get hashCode => (TeamOffline).hashCode;
-
-  @override
-  String toString() => 'TeamOffline';
-}
-
-/// The phone has no first name to give the team: « Rejoindre » as an admin
-/// needs one (PLAN §5.12). Nothing was changed.
-final class TeamNoName extends TeamFailure {
-  const TeamNoName();
-
-  @override
-  bool operator ==(Object other) => other is TeamNoName;
-
-  @override
-  int get hashCode => (TeamNoName).hashCode;
-
-  @override
-  String toString() => 'TeamNoName';
-}
-
-/// The server refused an admin's command (« Nouveau code », « Supprimer la
-/// tournée », « Rejoindre » as an admin): the member on the phone is no
-/// longer an admin, though the phone still believed it. Nothing was
-/// changed.
-final class TeamNotAdmin extends TeamFailure {
-  const TeamNotAdmin();
-
-  @override
-  bool operator ==(Object other) => other is TeamNotAdmin;
-
-  @override
-  int get hashCode => (TeamNotAdmin).hashCode;
-
-  @override
-  String toString() => 'TeamNotAdmin';
-}
-
 /// What [failure] of the storage means for Équipe.
 TeamFailure _teamFailureOf(TourneeWriteFailure failure) => switch (failure) {
-  TourneeWriteFailure.noNetwork => const TeamOffline(),
-  TourneeWriteFailure.notAdmin => const TeamNotAdmin(),
+  TourneeWriteFailure.noNetwork => TeamProblem.offline,
+  TourneeWriteFailure.notAdmin => TeamProblem.notAdmin,
 };
 
 /// Who acts on the phone: the member, and whether they are an admin as
 /// [admins] last knew it (false until known, so an admin's command is then
 /// refused rather than sent to a server that would refuse it).
-Future<Actor> _actorOf(IdentityProvider identity, AdminStatus admins) async =>
-    Actor(
-      member: identity.currentMember,
-      isAdmin: await admins.watchIsAdmin().first,
-    );
+///
+/// A status that cannot be read counts as not an admin too: the member's
+/// own commands still run, and an admin's is refused with a reason the
+/// screen words, instead of an error it cannot.
+Future<Actor> _actorOf(IdentityProvider identity, AdminStatus admins) async {
+  bool isAdmin;
+  try {
+    isAdmin = await admins.watchIsAdmin().first;
+  } on Object {
+    isAdmin = false;
+  }
+  return Actor(member: identity.currentMember, isAdmin: isAdmin);
+}
 
 /// The steps every command of Équipe shares: load the tournée [id], run
 /// [command] on it, store the change it made, and return the tournée as
@@ -138,7 +105,7 @@ _runOnTournee<C extends TourneeChange>(
   Result<(Tournee, C), TourneeCommandFailure> Function(Tournee tournee) command,
 ) async {
   final tournee = await tournees.find(id);
-  if (tournee == null) return const Err(TourneeGone());
+  if (tournee == null) return const Err(TeamProblem.tourneeGone);
   switch (command(tournee)) {
     case Err(:final failure):
       return Err(TeamCommandRefused(failure));
@@ -186,14 +153,11 @@ final class AcceptMember {
   ) async {
     final by = await _actorOf(_identity, _admins);
     final at = _clock.now();
-    return switch (await _runOnTournee(
+    return (await _runOnTournee(
       _tournees,
       tournee,
       (tournee) => tournee.accept(member, by: by, at: at),
-    )) {
-      Ok(value: (_, final change)) => Ok(change),
-      Err(:final failure) => Err(failure),
-    };
+    )).map((stored) => stored.$2);
   }
 }
 
@@ -210,14 +174,11 @@ final class RefuseMember {
     MemberId member,
   ) async {
     final by = await _actorOf(_identity, _admins);
-    return switch (await _runOnTournee(
+    return (await _runOnTournee(
       _tournees,
       tournee,
       (tournee) => tournee.refuse(member, by: by),
-    )) {
-      Ok(value: (_, final change)) => Ok(change),
-      Err(:final failure) => Err(failure),
-    };
+    )).map((stored) => stored.$2);
   }
 }
 
@@ -235,14 +196,11 @@ final class RemoveMember {
     MemberId member,
   ) async {
     final by = await _actorOf(_identity, _admins);
-    return switch (await _runOnTournee(
+    return (await _runOnTournee(
       _tournees,
       tournee,
       (tournee) => tournee.remove(member, by: by),
-    )) {
-      Ok(value: (_, final change)) => Ok(change),
-      Err(:final failure) => Err(failure),
-    };
+    )).map((stored) => stored.$2);
   }
 }
 
@@ -292,14 +250,11 @@ final class RegenerateJoinCode {
 
   Future<Result<JoinCode, TeamFailure>> call(TourneeId tournee) async {
     final by = await _actorOf(_identity, _admins);
-    return switch (await _runOnTournee(
+    return (await _runOnTournee(
       _tournees,
       tournee,
       (tournee) => tournee.regenerateCode(by: by, random: _random),
-    )) {
-      Ok(value: (final stored, _)) => Ok(stored.joinCode),
-      Err(:final failure) => Err(failure),
-    };
+    )).map((stored) => stored.$1.joinCode);
   }
 }
 
@@ -321,7 +276,7 @@ final class DeleteTournee {
 
   Future<Result<TourneeDeleted, TeamFailure>> call(TourneeId id) async {
     final tournee = await _tournees.find(id);
-    if (tournee == null) return const Err(TourneeGone());
+    if (tournee == null) return const Err(TeamProblem.tourneeGone);
     switch (tournee.delete(by: await _actorOf(_identity, _admins))) {
       case Err(:final failure):
         return Err(TeamCommandRefused(failure));
@@ -361,7 +316,7 @@ final class JoinAsAdmin {
 
   Future<Result<AdminJoined, TeamFailure>> call(TourneeId id) async {
     final name = _settings.memberName;
-    if (name == null) return const Err(TeamNoName());
+    if (name == null) return const Err(TeamProblem.noName);
     final by = await _actorOf(_identity, _admins);
     final at = _clock.now();
     switch (await _runOnTournee(
