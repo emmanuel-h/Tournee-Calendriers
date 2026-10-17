@@ -900,6 +900,8 @@
   },
   "release010First": "Première version de test.",
   "@release010First": { "description": "« Nouveautés », version 0.1.0: what it brings, one short line for the members." },
+  "release030DeviceId": "L'identifiant de l'appareil s'affiche en entier dans Paramètres et sur l'écran de bienvenue.",
+  "@release030DeviceId": { "description": "« Nouveautés », version 0.3.0: the whole device identifier." },
   "release020Admins": "Seuls les administrateurs créent une tournée ; les autres la rejoignent avec un code.",
   "@release020Admins": { "description": "« Nouveautés », version 0.2.0: only admins create a tournée." },
   "release020AllTournees": "Les administrateurs voient toutes les tournées, les gèrent et peuvent les rejoindre directement.",

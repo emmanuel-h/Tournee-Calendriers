@@ -1557,6 +1557,12 @@ abstract class AppLocalizations {
   /// **'Première version de test.'**
   String get release010First;
 
+  /// « Nouveautés », version 0.3.0: the whole device identifier.
+  ///
+  /// In fr, this message translates to:
+  /// **'L\'identifiant de l\'appareil s\'affiche en entier dans Paramètres et sur l\'écran de bienvenue.'**
+  String get release030DeviceId;
+
   /// « Nouveautés », version 0.2.0: only admins create a tournée.
   ///
   /// In fr, this message translates to:

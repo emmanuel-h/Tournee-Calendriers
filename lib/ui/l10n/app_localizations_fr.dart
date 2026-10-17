@@ -1053,6 +1053,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get release010First => 'Première version de test.';
 
   @override
+  String get release030DeviceId =>
+      'L\'identifiant de l\'appareil s\'affiche en entier dans Paramètres et sur l\'écran de bienvenue.';
+
+  @override
   String get release020Admins =>
       'Seuls les administrateurs créent une tournée ; les autres la rejoignent avec un code.';
 
