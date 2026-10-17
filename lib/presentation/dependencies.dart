@@ -14,6 +14,7 @@ import 'dart:math';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
+import 'package:tournee_calendriers/application/ports/admin_status.dart';
 import 'package:tournee_calendriers/application/ports/clock.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
 import 'package:tournee_calendriers/application/ports/id_generator.dart';
@@ -25,6 +26,7 @@ import 'package:tournee_calendriers/application/ports/pending_sync.dart';
 import 'package:tournee_calendriers/application/ports/phone_settings.dart';
 import 'package:tournee_calendriers/application/ports/street_view_preferences.dart';
 import 'package:tournee_calendriers/application/ports/tournee_directory.dart';
+import 'package:tournee_calendriers/application/use_cases/admins.dart';
 import 'package:tournee_calendriers/application/use_cases/choose_start_point.dart';
 import 'package:tournee_calendriers/application/use_cases/create_tournee.dart';
 import 'package:tournee_calendriers/application/use_cases/describe_building.dart';
@@ -108,6 +110,9 @@ final tourneeRepositoryProvider = Provider<TourneeRepository>(
 );
 final movedStreetsLogProvider = Provider<MovedStreetsLog>(
   (ref) => _unbound('MovedStreetsLog'),
+);
+final adminStatusProvider = Provider<AdminStatus>(
+  (ref) => _unbound('AdminStatus'),
 );
 
 /// The source join codes are drawn from: `Random.secure()` in the app
@@ -276,18 +281,21 @@ final acceptMemberProvider = Provider(
     ref.watch(tourneeRepositoryProvider),
     ref.watch(clockProvider),
     ref.watch(identityProvider),
+    ref.watch(adminStatusProvider),
   ),
 );
 final refuseMemberProvider = Provider(
   (ref) => RefuseMember(
     ref.watch(tourneeRepositoryProvider),
     ref.watch(identityProvider),
+    ref.watch(adminStatusProvider),
   ),
 );
 final removeMemberProvider = Provider(
   (ref) => RemoveMember(
     ref.watch(tourneeRepositoryProvider),
     ref.watch(identityProvider),
+    ref.watch(adminStatusProvider),
   ),
 );
 final leaveTourneeProvider = Provider(
@@ -301,6 +309,7 @@ final regenerateJoinCodeProvider = Provider(
   (ref) => RegenerateJoinCode(
     ref.watch(tourneeRepositoryProvider),
     ref.watch(identityProvider),
+    ref.watch(adminStatusProvider),
     ref.watch(randomProvider),
   ),
 );
@@ -308,8 +317,37 @@ final deleteTourneeProvider = Provider(
   (ref) => DeleteTournee(
     ref.watch(tourneeRepositoryProvider),
     ref.watch(identityProvider),
+    ref.watch(adminStatusProvider),
     ref.watch(myTourneesStoreProvider),
   ),
+);
+final joinAsAdminProvider = Provider(
+  (ref) => JoinAsAdmin(
+    ref.watch(tourneeRepositoryProvider),
+    ref.watch(identityProvider),
+    ref.watch(adminStatusProvider),
+    ref.watch(clockProvider),
+    ref.watch(phoneSettingsProvider),
+    ref.watch(myTourneesStoreProvider),
+  ),
+);
+final forgetVisitedTourneeProvider = Provider(
+  (ref) => ForgetVisitedTournee(ref.watch(myTourneesStoreProvider)),
+);
+final observeAdminStatusProvider = Provider(
+  (ref) => ObserveAdminStatus(ref.watch(adminStatusProvider)),
+);
+final isMemberAdminProvider = Provider(
+  (ref) => IsMemberAdmin(ref.watch(adminStatusProvider)),
+);
+final listAllTourneesProvider = Provider(
+  (ref) => ListAllTournees(
+    ref.watch(tourneeDirectoryProvider),
+    ref.watch(memberAccountProvider),
+  ),
+);
+final openAsAdminProvider = Provider(
+  (ref) => OpenAsAdmin(ref.watch(myTourneesStoreProvider)),
 );
 final countStreetsToMoveProvider = Provider(
   (ref) => CountStreetsToMove(

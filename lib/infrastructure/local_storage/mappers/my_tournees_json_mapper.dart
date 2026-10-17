@@ -6,7 +6,12 @@
 //   { version: 1,
 //     open: tourneeId | null,                    ← the tournée the app shows
 //     tournees: [ { id, number: 49, centre: "CS Villefranche",
-//                   campaign: 2026, status: "active" | "pending" }, … ] }
+//                   campaign: 2026,
+//                   status: "active" | "pending" | "visiting" }, … ] }
+//
+// "visiting" (PLAN §5.12, #75) is a tournée an admin opened without being
+// in its team. An app older than #75 cannot read a file holding one, and
+// starts with none: only an admin's phone ever writes it.
 //
 // Statuses under fixed names, so renaming the Dart enum never changes what
 // is on the phone. Every value goes through the domain's checks.
@@ -24,6 +29,7 @@ const storedMyTourneesVersion = 1;
 
 const _active = 'active';
 const _pending = 'pending';
+const _visiting = 'visiting';
 
 /// The stored form of [mine].
 Map<String, Object?> myTourneesToJson(MyTournees mine) => {
@@ -39,6 +45,7 @@ Map<String, Object?> myTourneesToJson(MyTournees mine) => {
         'status': switch (tournee.status) {
           MemberStatus.active => _active,
           MemberStatus.pending => _pending,
+          MemberStatus.visiting => _visiting,
         },
       },
   ],
@@ -89,6 +96,7 @@ TourneeSummary _tourneeFromJson(Object? json) {
       status: switch (status) {
         _active => MemberStatus.active,
         _pending => MemberStatus.pending,
+        _visiting => MemberStatus.visiting,
         _ => throw FormatException('Not a status: $status'),
       },
     );

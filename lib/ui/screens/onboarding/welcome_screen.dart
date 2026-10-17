@@ -2,8 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/domain/tournee/member_name.dart';
+import 'package:tournee_calendriers/presentation/account/device_id_state.dart';
+import 'package:tournee_calendriers/presentation/admin/admin_notifier.dart';
 import 'package:tournee_calendriers/presentation/welcome/welcome_notifier.dart';
 import 'package:tournee_calendriers/ui/components/app_buttons.dart';
+import 'package:tournee_calendriers/ui/components/copy_button.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/onboarding_parts.dart';
@@ -12,9 +15,12 @@ import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
 /// « Bienvenue » (PLAN §5.1, Welcome mockup): where a phone the app knows
-/// nothing of opens. The member's first name, then « Créer une tournée »
-/// or « Rejoindre une tournée », both disabled until the name is valid.
-/// The name is kept on the phone before either opens.
+/// nothing of opens. The member's first name, then « Rejoindre une
+/// tournée » (and « Créer une tournée » above it for an admin, PLAN
+/// §5.12), disabled until the name is valid. The name is kept on the phone
+/// before either opens. At the bottom, « Identifiant de l'appareil » with
+/// its copy button, once the phone has its account: the screen signs in
+/// when it opens, so a fresh install can be made an admin.
 final class WelcomeScreen extends ConsumerStatefulWidget {
   const WelcomeScreen({super.key});
 
@@ -49,6 +55,10 @@ final class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     final colors = AppColors.of(context);
     final state = ref.watch(welcomeProvider);
     final goOn = state.canGoOn;
+    // Only an admin creates a tournée; nothing hints at it otherwise.
+    final isAdmin = ref.watch(adminProvider);
+    // Watching it signs the phone in (`accountProvider`).
+    final deviceId = ref.watch(deviceIdProvider);
     return Scaffold(
       body: SafeArea(
         // The content, then the buttons at the bottom of the screen; it
@@ -123,20 +133,43 @@ final class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
               child: Align(
                 alignment: Alignment.bottomCenter,
                 child: Padding(
-                  padding: const EdgeInsets.fromLTRB(24, 32, 24, 32),
+                  padding: const EdgeInsets.fromLTRB(24, 32, 24, 8),
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     spacing: 12,
                     children: [
-                      PrimaryButton(
-                        key: const Key('welcome.create'),
-                        label: l10n.createTourneeAction,
-                        onPressed: goOn ? () => _goOn(AppRoutes.create) : null,
-                      ),
-                      SecondaryButton(
-                        key: const Key('welcome.join'),
-                        label: l10n.joinTourneeAction,
-                        onPressed: goOn ? () => _goOn(AppRoutes.join) : null,
+                      if (isAdmin) ...[
+                        PrimaryButton(
+                          key: const Key('welcome.create'),
+                          label: l10n.createTourneeAction,
+                          onPressed: goOn
+                              ? () => _goOn(AppRoutes.create)
+                              : null,
+                        ),
+                        SecondaryButton(
+                          key: const Key('welcome.join'),
+                          label: l10n.joinTourneeAction,
+                          onPressed: goOn ? () => _goOn(AppRoutes.join) : null,
+                        ),
+                      ] else
+                        // The only way in for a member: the red button.
+                        PrimaryButton(
+                          key: const Key('welcome.join'),
+                          label: l10n.joinTourneeAction,
+                          onPressed: goOn ? () => _goOn(AppRoutes.join) : null,
+                        ),
+                      // Room kept even without the line, so the buttons do
+                      // not move when the account arrives.
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          minHeight: AppSizes.minTapTarget,
+                        ),
+                        child: switch (deviceId) {
+                          DeviceIdShown(:final id, :final short) =>
+                            _DeviceIdLine(id: id, short: short),
+                          DeviceIdSigningIn() ||
+                          DeviceIdOffline() => const SizedBox.shrink(),
+                        },
                       ),
                     ],
                   ),
@@ -146,6 +179,38 @@ final class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// « Identifiant de l'appareil : x7Fq…9kP2 » and its copy button.
+final class _DeviceIdLine extends StatelessWidget {
+  const _DeviceIdLine({required this.id, required this.short});
+
+  final String id;
+  final String short;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = AppColors.of(context);
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        Flexible(
+          child: Text(
+            l10n.deviceIdLine(short),
+            key: const Key('welcome.deviceId'),
+            style: AppTextStyles.helper.copyWith(color: colors.muted),
+          ),
+        ),
+        DeviceIdCopyButton(
+          key: const Key('welcome.copyDeviceId'),
+          id: id,
+          color: colors.muted,
+          iconSize: AppSizes.smallIcon,
+        ),
+      ],
     );
   }
 }

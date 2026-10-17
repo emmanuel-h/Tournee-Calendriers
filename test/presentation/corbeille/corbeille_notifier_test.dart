@@ -15,6 +15,7 @@ import 'package:tournee_calendriers/presentation/shared/recent_time.dart';
 import '../../application/use_cases/street_fixtures.dart';
 import '../../domain/tournee/my_tournees_fixtures.dart';
 import '../../domain/tournee/tournee_fixtures.dart';
+import '../../support/fakes/fake_admin_status.dart';
 import '../../support/fakes/fake_my_tournees_store.dart';
 import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_street_repository.dart';
@@ -46,10 +47,13 @@ Street gambettaDeleted({MemberId? by}) => valueOf(
 
 void main() {
   late FakeStreetRepository streets;
+  late FakeAdminStatus admins;
 
   /// Manu's phone; the 49 is open unless [noTournee].
   ProviderContainer phone(Iterable<Street> stored, {bool noTournee = false}) {
     streets = FakeStreetRepository(stored);
+    // Sam is an admin of the app, not in the team of the 49.
+    admins = FakeAdminStatus(admins: [samId]);
     final container = ProviderContainer(
       overrides: [
         streetRepositoryProvider.overrideWithValue(streets),
@@ -68,6 +72,7 @@ void main() {
         ),
         identityProvider.overrideWithValue(FakeIdentity(manuId)),
         clockProvider.overrideWithValue(FakeClock(now)),
+        adminStatusProvider.overrideWithValue(admins),
       ],
     );
     addTearDown(container.dispose);
@@ -129,6 +134,39 @@ void main() {
     expect(container.read(corbeilleProvider).rows.single.removedBy, isNull);
   });
 
+  test('should say an admin outside the team deleted it', () async {
+    final container = phone([gambettaDeleted(by: samId)]);
+    await pumpEventQueue();
+
+    final row = container.read(corbeilleProvider).rows.single;
+    expect(row.removedBy, isNull);
+    expect(row.removedByAdmin, isTrue);
+  });
+
+  test('should not say a former member is an admin', () async {
+    final container = phone([gambettaDeleted(by: paulId)]);
+    await pumpEventQueue();
+
+    expect(
+      container.read(corbeilleProvider).rows.single.removedByAdmin,
+      isFalse,
+    );
+    // Équipe asks about the members too; Paul is asked about once.
+    expect(admins.asked.where((id) => id == paulId), [paulId]);
+  });
+
+  test('should ask about each one who is not in the team once', () async {
+    final container = phone([gambettaDeleted(by: samId), lilasWithoutSeven()]);
+    await pumpEventQueue();
+
+    await container
+        .read(corbeilleProvider.notifier)
+        .restore(container.read(corbeilleProvider).rows.last);
+    await pumpEventQueue();
+
+    expect(admins.asked.where((id) => id == samId), [samId]);
+  });
+
   test('should name nobody when no tournée is open', () async {
     final container = phone([gambettaDeleted(by: leaId)], noTournee: true);
     await pumpEventQueue();
@@ -182,6 +220,15 @@ void main() {
     expect(row().hashCode, row().hashCode);
     expect(row(count: 2), isNot(row()));
     expect(row(by: null), isNot(row()));
+    expect(
+      CorbeilleRow(
+        item: row().item,
+        removedBy: null,
+        removedAt: const JustNow(),
+        removedByAdmin: true,
+      ),
+      isNot(row(by: null)),
+    );
     expect(row(at: const Yesterday()), isNot(row()));
   });
 

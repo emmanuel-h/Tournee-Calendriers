@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tournee_calendriers/presentation/admin/admin_notifier.dart';
 import 'package:tournee_calendriers/presentation/my_tournees/my_tournees_notifier.dart';
 import 'package:tournee_calendriers/presentation/my_tournees/my_tournees_state.dart';
 import 'package:tournee_calendriers/presentation/settings/settings_notifier.dart';
@@ -19,8 +20,8 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 import 'package:tournee_calendriers/ui/theme/status_look.dart';
 
 /// Opens « Mes tournées » (tap the title, or Paramètres → Mes tournées,
-/// PLAN §5.3, Switcher mockup), then « Nouvelle tournée » or « Rejoindre
-/// une tournée » when the sheet's buttons chose one.
+/// PLAN §5.3, Switcher mockup), then « Nouvelle tournée », « Rejoindre une
+/// tournée » or « Toutes les tournées » when the sheet's buttons chose one.
 Future<void> showMyTourneesSheet(BuildContext context) async {
   // The sheet closes with the screen to open, if any.
   final location = await showAppBottomSheet<String>(
@@ -35,22 +36,27 @@ Future<void> showMyTourneesSheet(BuildContext context) async {
 /// Opens [location] once the member has a first name, which the team will
 /// see: « Votre prénom » first when the phone has none yet.
 Future<void> _openWithName(BuildContext context, String location) async {
-  // The providers of the app, read from outside a widget's `build`.
-  final container = ProviderScope.containerOf(context, listen: false);
-  if (container.read(settingsProvider).name == null) {
-    await showNameSheet(context);
-    if (!context.mounted || container.read(settingsProvider).name == null) {
-      return;
-    }
-  }
+  if (!await ensureMemberName(context) || !context.mounted) return;
   // Not awaited: `push` ends only when the screen opened is closed.
   unawaited(context.push(location));
 }
 
+/// Whether the phone has a first name for the team to see, asking for it
+/// (« Votre prénom ») when it has none yet: false when the sheet is closed
+/// without one. Before creating, joining, or joining as an admin.
+Future<bool> ensureMemberName(BuildContext context) async {
+  // The providers of the app, read from outside a widget's `build`.
+  final container = ProviderScope.containerOf(context, listen: false);
+  if (container.read(settingsProvider).name != null) return true;
+  await showNameSheet(context);
+  return context.mounted && container.read(settingsProvider).name != null;
+}
+
 /// The member's tournées: the open one (● and ✓), the others (a tap opens
 /// one at once, and the app reopens it next time), and their requests not
-/// accepted yet, which cannot be opened; then « Créer une tournée » and
-/// « Rejoindre une tournée ».
+/// accepted yet, which cannot be opened; then « Créer une tournée » (an
+/// admin only, PLAN §5.12) and « Rejoindre une tournée », and for an admin
+/// « Toutes les tournées ›».
 final class MyTourneesSheet extends ConsumerWidget {
   const MyTourneesSheet({super.key});
 
@@ -59,6 +65,7 @@ final class MyTourneesSheet extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final colors = AppColors.of(context);
     final rows = ref.watch(myTourneesProvider).rows;
+    final isAdmin = ref.watch(adminProvider);
     return SheetScaffold(
       title: l10n.myTourneesTitle,
       spacing: 6,
@@ -88,19 +95,39 @@ final class MyTourneesSheet extends ConsumerWidget {
         // The current tournée stays open until the new one is ready (or
         // accepted, PLAN §5.3).
         const SizedBox(height: 10),
-        PrimaryButton(
-          key: const Key('myTournees.create'),
-          label: l10n.createTourneeAction,
-          icon: Icons.add,
-          compact: true,
-          onPressed: () => Navigator.of(context).pop(AppRoutes.create),
-        ),
+        // Only admins create a tournée; nothing hints at it otherwise.
+        if (isAdmin)
+          PrimaryButton(
+            key: const Key('myTournees.create'),
+            label: l10n.createTourneeAction,
+            icon: Icons.add,
+            compact: true,
+            onPressed: () => Navigator.of(context).pop(AppRoutes.create),
+          ),
         SecondaryButton(
           key: const Key('myTournees.join'),
           label: l10n.joinTourneeAction,
           compact: true,
           onPressed: () => Navigator.of(context).pop(AppRoutes.join),
         ),
+        if (isAdmin)
+          TextButton.icon(
+            key: const Key('myTournees.all'),
+            onPressed: () => Navigator.of(context).pop(AppRoutes.allTournees),
+            style: TextButton.styleFrom(
+              foregroundColor: colors.ink,
+              minimumSize: const Size.fromHeight(AppSizes.minTapTarget),
+              textStyle: AppTextStyles.compactButton,
+            ),
+            icon: const Icon(Icons.shield_outlined, size: AppSizes.smallIcon),
+            label: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(l10n.myTourneesAll),
+                const Icon(Icons.chevron_right, size: AppSizes.smallIcon),
+              ],
+            ),
+          ),
       ],
     );
   }
@@ -125,6 +152,10 @@ final class _TourneeRowTile extends StatelessWidget {
     final colors = AppColors.of(context);
     final title = l10n.tourneeTitle('${row.number}', '${row.campaign}');
     final (subtitle, label) = switch (row.status) {
+      TourneeRowStatus.open when row.visited => (
+        l10n.myTourneesVisited(row.centre),
+        l10n.myTourneesVisitedOpenSemantics(title, row.centre),
+      ),
       TourneeRowStatus.open => (
         row.centre,
         l10n.myTourneesOpenSemantics(title, row.centre),
@@ -132,6 +163,10 @@ final class _TourneeRowTile extends StatelessWidget {
       TourneeRowStatus.closed when row.waitingRequests > 0 => (
         l10n.myTourneesWaiting(row.centre, row.waitingRequests),
         l10n.myTourneesWaitingSemantics(title, row.centre, row.waitingRequests),
+      ),
+      TourneeRowStatus.closed when row.visited => (
+        l10n.myTourneesVisited(row.centre),
+        l10n.myTourneesVisitedSemantics(title, row.centre),
       ),
       TourneeRowStatus.closed => (
         row.centre,
@@ -163,7 +198,19 @@ final class _TourneeRowTile extends StatelessWidget {
           child: Row(
             spacing: 14,
             children: [
-              _TourneeMark(status: row.status),
+              if (row.visited)
+                // A shield instead of the ring: an admin who is not in the
+                // team (PLAN §5.12). Said by the row's label.
+                Icon(
+                  Icons.shield_outlined,
+                  key: Key('myTournees.${row.id.value}.shield'),
+                  size: AppSizes.tourneeMark,
+                  color: row.status == TourneeRowStatus.open
+                      ? colors.done
+                      : colors.muted,
+                )
+              else
+                _TourneeMark(status: row.status),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,

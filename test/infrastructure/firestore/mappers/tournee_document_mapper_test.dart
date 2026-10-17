@@ -117,11 +117,12 @@ void main() {
       );
     });
 
-    test('should refuse a tournée whose creator is not a member', () {
-      expect(
-        () => read(members: (members) => members.remove('uid-manu')),
-        throwsFormatException,
-      );
+    test('should read a tournée whose creator left', () {
+      // From #75 everyone may leave, the creator too (PLAN §5.12).
+      final tournee = read(members: (members) => members.remove('uid-manu'));
+
+      expect(tournee.createdBy, manuId);
+      expect(tournee.members, [lea, julie]);
     });
   });
 
@@ -346,10 +347,44 @@ void main() {
     });
   });
 
+  group('overviewOf', () {
+    test('should count the members and requests and see the caller in '
+        'it', () {
+      expect(
+        overviewOf(team(), leaId),
+        TourneeOverview(
+          id: tourneeId,
+          number: number49,
+          centre: csVillefranche,
+          campaign: campaign2026,
+          activeMembers: 2,
+          pendingRequests: 1,
+          callerIsActive: true,
+        ),
+      );
+    });
+
+    test('should not count the caller in it while their request '
+        'waits', () {
+      expect(overviewOf(team(), julieId).callerIsActive, isFalse);
+    });
+
+    test('should not count the caller in it when they are not', () {
+      expect(overviewOf(team(), samId).callerIsActive, isFalse);
+    });
+
+    test('should count nobody in a tournée everyone left', () {
+      final empty = overviewOf(team(members: []), samId);
+
+      expect(empty.activeMembers, 0);
+      expect(empty.pendingRequests, 0);
+    });
+  });
+
   group('membership snapshot', () {
     test('should tell the member is gone when the server has no document', () {
       expect(
-        isMembershipGone(
+        isGoneOnServer(
           exists: false,
           fromCache: false,
           hasPendingWrites: false,
@@ -360,11 +395,7 @@ void main() {
 
     test('should tell nothing while the member document is there', () {
       expect(
-        isMembershipGone(
-          exists: true,
-          fromCache: false,
-          hasPendingWrites: false,
-        ),
+        isGoneOnServer(exists: true, fromCache: false, hasPendingWrites: false),
         isFalse,
       );
     });
@@ -372,11 +403,7 @@ void main() {
     test('should tell nothing when only the phone\'s copy lacks it '
         '(offline, never read)', () {
       expect(
-        isMembershipGone(
-          exists: false,
-          fromCache: true,
-          hasPendingWrites: false,
-        ),
+        isGoneOnServer(exists: false, fromCache: true, hasPendingWrites: false),
         isFalse,
       );
     });
@@ -384,11 +411,7 @@ void main() {
     test('should tell nothing when this phone deleted it itself '
         '(leaving, deleting)', () {
       expect(
-        isMembershipGone(
-          exists: false,
-          fromCache: false,
-          hasPendingWrites: true,
-        ),
+        isGoneOnServer(exists: false, fromCache: false, hasPendingWrites: true),
         isFalse,
       );
     });

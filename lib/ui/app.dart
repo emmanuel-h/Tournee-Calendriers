@@ -73,8 +73,9 @@ final class _TourneeAppState extends ConsumerState<TourneeApp> {
     initialLocation: location,
   );
 
-  /// « Vous avez été retiré de la tournée 49. » or « La tournée 49 a été
-  /// supprimée. », as « Demande refusée » is told: a message over the next
+  /// « Vous avez été retiré de la tournée 49. », « La tournée 49 a été
+  /// supprimée. » or « Vous n'êtes plus administrateur… » (a tournée only
+  /// visited, PLAN §5.12), as « Demande refusée » is told: a message over the next
   /// screen. Nothing is shown before the app has its first screen.
   void _tell(TourneeLossNotice notice) {
     final messenger = _messengerKey.currentState;
@@ -86,6 +87,9 @@ final class _TourneeAppState extends ConsumerState<TourneeApp> {
       message: switch (notice.loss) {
         TourneeLoss.removed => l10n.tourneeRemoved('${notice.number}'),
         TourneeLoss.deleted => l10n.tourneeDeleted('${notice.number}'),
+        TourneeLoss.adminRevoked => l10n.tourneeAdminRevoked(
+          '${notice.number}',
+        ),
       },
     );
     // Its screens (Équipe, its streets) show a tournée the phone forgot.

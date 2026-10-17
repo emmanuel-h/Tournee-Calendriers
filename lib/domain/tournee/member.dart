@@ -10,6 +10,12 @@ enum MemberStatus {
 
   /// Accepted (or the creator): sees and marks the whole tournée.
   active,
+
+  /// Not in the tournée at all, but an admin who opened it (« Toutes les
+  /// tournées », PLAN §5.12): sees and marks it as a member does. Only a
+  /// `TourneeSummary` of the phone is ever visiting; a [Member] is pending
+  /// or active.
+  visiting,
 }
 
 /// A firefighter in a tournée, or someone asking to join it (PLAN §2): an

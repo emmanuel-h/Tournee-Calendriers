@@ -39,6 +39,12 @@ final class TourneeLossNotifier extends Notifier<TourneeLossNotice?> {
   /// is covariant in its type, like every Dart generic).
   final _memberships = <TourneeId, List<StreamSubscription<Object?>>>{};
 
+  /// Whether each tournée followed is followed as one an admin only
+  /// visits (PLAN §5.12): it is followed otherwise (the tournée and the
+  /// admin document, not the member document), so once the admin joins it
+  /// it must be followed again, as a member's.
+  final _visits = <TourneeId, bool>{};
+
   @override
   TourneeLossNotice? build() {
     // Every change of « Mes tournées »: a request accepted adds a tournée
@@ -70,6 +76,7 @@ final class TourneeLossNotifier extends Notifier<TourneeLossNotice?> {
   void _stopAll() {
     _memberships.values.forEach(_cancel);
     _memberships.clear();
+    _visits.clear();
   }
 
   void _cancel(List<StreamSubscription<Object?>> listeners) {
@@ -87,9 +94,13 @@ final class TourneeLossNotifier extends Notifier<TourneeLossNotice?> {
         if (!tournee.isPending) tournee.id: tournee,
     };
     for (final id in _memberships.keys.toList()) {
-      if (!kept.containsKey(id)) _cancel(_memberships.remove(id)!);
+      final tournee = kept[id];
+      if (tournee == null || tournee.isVisiting != _visits.remove(id)) {
+        _cancel(_memberships.remove(id)!);
+      }
     }
     for (final MapEntry(key: id, value: tournee) in kept.entries) {
+      _visits[id] = tournee.isVisiting;
       _memberships.putIfAbsent(
         id,
         () => [

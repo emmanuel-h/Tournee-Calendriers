@@ -26,6 +26,7 @@ final class TourneeRow {
     required this.centre,
     required this.status,
     this.waitingRequests = 0,
+    this.visited = false,
   });
 
   /// Which tournée the row opens.
@@ -44,6 +45,10 @@ final class TourneeRow {
   /// Followed only for the tournées not open: the open one's show on 👥.
   final int waitingRequests;
 
+  /// An admin opened it without being in its team (PLAN §5.12): a shield
+  /// instead of the ring, « CS … · administrateur ».
+  final bool visited;
+
   @override
   bool operator ==(Object other) =>
       other is TourneeRow &&
@@ -52,11 +57,19 @@ final class TourneeRow {
       other.campaign == campaign &&
       other.centre == centre &&
       other.status == status &&
-      other.waitingRequests == waitingRequests;
+      other.waitingRequests == waitingRequests &&
+      other.visited == visited;
 
   @override
-  int get hashCode =>
-      Object.hash(id, number, campaign, centre, status, waitingRequests);
+  int get hashCode => Object.hash(
+    id,
+    number,
+    campaign,
+    centre,
+    status,
+    waitingRequests,
+    visited,
+  );
 }
 
 /// What « Mes tournées » and the title of the start screen show (PLAN
@@ -85,6 +98,7 @@ final class MyTourneesState {
               ? TourneeRowStatus.pending
               : TourneeRowStatus.closed,
           waitingRequests: waiting[tournee.id] ?? 0,
+          visited: tournee.isVisiting,
         ),
     ],
     current: mine.current,

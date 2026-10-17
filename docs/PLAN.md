@@ -1113,6 +1113,30 @@ TeamMember, and Welcome, Switcher, Team, Settings updated):
   - A visited tournée deleted, or the phone no longer an admin, is forgotten as in 5.3 « A
     tournée lost », with « La tournée 12 a été supprimée. » or « Vous n'êtes plus
     administrateur : la tournée 12 est retirée de Mes tournées. ».
+- Delivered in #75 (`lib/presentation/admin/`, `all_tournees/`, `account/device_id_state.dart`,
+  `lib/ui/screens/all_tournees/`, `start/admin_visit_banner.dart`):
+  - « Toutes les tournées » is read once each time it opens (and on « Réessayer »), not
+    followed live. Centres are ordered by their station key (the name without « CS » / « CIS »,
+    French order), so « CS Villefranche » comes before « CIS Villefranche Est »; a centre is
+    named as its first tournée names it. A tap opens the tournée and goes back to Accueil.
+    « Toutes les tournées › » goes through « Votre prénom » first when the phone has no
+    name, like « Créer » and « Rejoindre » (joining as an admin needs one); so does
+    « Rejoindre » of the banner. Under the list, the mockup's line « Ouvrez une tournée pour
+    la gérer… »; « Aucune tournée pour l'instant. » when there is none.
+  - The banner sits at the top of the start screen (the map comes in M3); its header reads
+    « Rues · 38 » instead of « Mes rues · 38 ». In « Mes tournées » a visited tournée has a
+    shield (green when open, grey otherwise) and ✓ when open.
+  - Équipe: an admin's bottom row holds « Quitter la tournée » (or « Retirer de Mes
+    tournées » for a visitor, no confirmation: nothing is written) and « Supprimer la
+    tournée » side by side; a non-admin has « Quitter » alone (« Retirer de Mes tournées »
+    alone for a visitor no longer an admin). The dark avatar marks « (vous) » (both
+    mockups), no longer the creator. An admin may « Retirer » any other member.
+  - Corbeille: someone not in the team is « un administrateur » when `admins/{uid}` says so
+    (asked once per uid while the Corbeille shows), « un membre » otherwise.
+  - Paramètres: « Connexion au serveur… » while the screen signs in. Bienvenue keeps the
+    room of its line while it signs in, so the buttons do not move.
+  - Not done: the instrumented suite has no admin flow (it would need a real `admins/{uid}`
+    document for the emulator's uid); widget tests cover the flows.
 
 ---
 
@@ -1460,6 +1484,31 @@ Tournée rules fixed in T2.2 (`lib/domain/tournee/`):
   « Identifiant de l'appareil »; `TourneeDirectory.watchAllTournees()` gives the rows of
   « Toutes les tournées » (id, number, centre, campaign, active-member count, pending count,
   whether the caller is active), `noNetwork` when the server cannot answer.
+
+  Delivered in #75: **`Actor(member, isAdmin)`** (`lib/domain/tournee/actor.dart`) is taken by
+  `accept`, `refuse`, `remove`, `regenerateCode`, `delete` and `joinAsAdmin(by, name, at)`;
+  `leave(by)` and `rename(name, by)` keep a `MemberId` (being an admin changes nothing for
+  them). A non-admin hears first what keeps them from acting at all (`notAMember`,
+  `requestPending`), then `notAdmin`; `joinAsAdmin` checks `notAdmin` before
+  `alreadyMember`. An admin may `remove` themself (it is a leave; no failure was specified).
+  `NewTourneeFailure` keeps only `duplicateMember`; `Tournee.creator` and `isCreator` are
+  gone. `AdminJoined` is a `MemberChange`; storage first asks the server for the tournée
+  (offline: `TourneeWriteFailure.noNetwork`), then sends the member document like the other
+  member writes. **`AdminStatus`** (application port): `watchIsAdmin()` and `Future<bool>
+  isAdmin(uid)` (false when it cannot tell); the use cases read the phone's flag with
+  `watchIsAdmin().first` (false until known). `MemberAccount` needed no change: its
+  `signedInMember` is the uid. The directory method is **`allTournees(caller)`**, one read
+  of the server (a `Future`, not a stream: the screen reads it when it opens). For a
+  `visiting` summary, `watchMembership` follows the tournée document (gone on the server →
+  `deleted`) and the phone's own `admins/{uid}` (gone on the server → `adminRevoked`) instead
+  of the member document. Use cases (`lib/application/use_cases/admins.dart`, `team.dart`):
+  `ObserveAdminStatus`, `IsMemberAdmin`, `ListAllTournees` (signs in first), `OpenAsAdmin`
+  (kept active when the admin is in it, `visiting` otherwise, then opened), `JoinAsAdmin`
+  (the phone's name; none → `TeamNoName`; then the summary accepted), `ForgetVisitedTournee`.
+  Presentation: `adminProvider` (kept alive, false until known or on error), `deviceIdProvider`
+  (on `accountProvider`, so the screen showing it signs in), `allTourneesProvider`;
+  `TeamShown` has `iAmAdmin`, `iAmIn` and `MemberRow.isAdmin` (each other member asked
+  once), `TeamActionFailure.noName`.
 - **Changes** (`TourneeChange`, sealed): `MemberAccepted` (the member as accepted),
   `MemberRefused`, `MemberRemoved`, `MemberLeft` (the member as they were), `MemberRenamed`
   (the member with the new name; storage writes `displayName` only),
@@ -1853,7 +1902,8 @@ can never drift.
   means nothing hidden.
 - `my_tournees.json` in the same folder (port `MyTourneesStore`, T2.7): « Mes tournées » and
   the open one, `{ version: 1, open: id | null, tournees: [{ id, number, centre, campaign,
-  status: "active" | "pending" }] }`, read once at start-up, so the last tournée reopens after
+  status: "active" | "pending" | "visiting" }] }` (`visiting` from #75; an older app reads
+  such a file as unreadable, so as none), read once at start-up, so the last tournée reopens after
   an offline cold start. `settings.json` (port `PhoneSettings`): `{ version: 1, name: "Manu" |
   null, theme: "system" | "light" | "dark" }`. Same writing as the streets (`.tmp` then
   rename, queued); an unreadable file means none / defaults and is left until the next save.
@@ -1952,6 +2002,14 @@ below, these win:
   5.12).
 - **New code, deleting the tournée, starting a campaign:** admins only, member or not. The
   deleting batch deletes every remaining member document (there may be none).
+- Delivered in #75 (`firebase/firestore.rules`, `firebase/test/admins.test.mjs`): the
+  deletion no longer requires the deleter's member document to go (the rules cannot list
+  the members; the adapter deletes those that exist, since deleting a missing member
+  document is refused). The undo of « Restaurer » may name an admin as the remover of a
+  number (`exists(admins/{deletedBy})`), as an admin outside the team may have removed it.
+  An admin's own active document (creation or « Rejoindre ») is one rule,
+  `isAdminMembership`. The rules tests seed `admins/manu` (the creator) and `admins/sam`
+  (in no tournée); the older tests that gave the creator powers now name an admin.
 
 What the adapters write (T2.3), which the rules must allow:
 

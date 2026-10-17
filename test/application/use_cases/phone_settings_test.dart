@@ -162,7 +162,7 @@ void main() {
             createdBy: leaId,
             createdAt: createdAt,
             currentCampaign: campaign2026,
-            members: [tournee12Team().creator],
+            members: [tournee12Team().memberOf(leaId)!],
           ),
         ),
       );
@@ -265,7 +265,7 @@ void main() {
             createdBy: leaId,
             createdAt: createdAt,
             currentCampaign: campaign2026,
-            members: [tournee12Team().creator],
+            members: [tournee12Team().memberOf(leaId)!],
           ),
         ),
       );

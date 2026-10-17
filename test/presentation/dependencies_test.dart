@@ -40,9 +40,11 @@ import '../domain/tournee/tournee_fixtures.dart'
         manuId,
         nameOf,
         number49,
+        samId,
         team,
         tourneeId;
 import '../support/fakes/fake_address_directory.dart';
+import '../support/fakes/fake_admin_status.dart';
 import '../support/fakes/fake_commune_search.dart';
 import '../support/fakes/fake_member_account.dart';
 import '../support/fakes/fake_moved_streets_log.dart';
@@ -71,6 +73,7 @@ void main() {
   late FakeTourneeDirectory tourneeDirectory;
   late FakeTourneeRepository tournees;
   late FakePendingSync pending;
+  late FakeAdminStatus admins;
   late ProviderContainer container;
 
   /// Every port bound to the fakes, the member on the phone being
@@ -91,6 +94,7 @@ void main() {
     phoneSettingsProvider.overrideWithValue(settings),
     tourneeDirectoryProvider.overrideWithValue(tourneeDirectory),
     tourneeRepositoryProvider.overrideWithValue(tournees),
+    adminStatusProvider.overrideWithValue(admins),
     // The indexes of `2`…`7` in the alphabet: the code `234567`.
     randomProvider.overrideWithValue(ScriptedRandom([23, 24, 25, 26, 27, 28])),
   ];
@@ -143,6 +147,8 @@ void main() {
     tourneeDirectory = FakeTourneeDirectory();
     tournees = FakeTourneeRepository([team()]);
     pending = FakePendingSync(2);
+    // The phone is an admin's, and Manu is one.
+    admins = FakeAdminStatus(phoneIsAdmin: true, admins: [manuId]);
     // A ProviderContainer is what a ProviderScope holds, without widgets:
     // the overrides bind the ports to the fakes.
     container = ProviderContainer(overrides: overridesAs(lea));
@@ -168,6 +174,7 @@ void main() {
       'MovedStreetsLog': movedStreetsLogProvider,
       'PendingSync': pendingSyncProvider,
       'Random': randomProvider,
+      'AdminStatus': adminStatusProvider,
     };
     ports.forEach((name, port) {
       test('should name $name when nobody bound it', () {
@@ -412,14 +419,14 @@ void main() {
       await asManu().read(changeMemberNameProvider)('Emmanuel');
 
       expect(settings.names, [nameOf('Emmanuel')]);
-      expect(tournees[tourneeId]!.creator.name, nameOf('Emmanuel'));
+      expect(tournees[tourneeId]!.memberOf(manuId)!.name, nameOf('Emmanuel'));
     });
 
     test('should catch up the name of the bound settings in the bound '
         'tournées, as the bound member', () async {
       await asManu().read(catchUpMemberNameProvider)(tourneeId, nameOf('Manu'));
 
-      expect(tournees[tourneeId]!.creator.name, nameOf('Léa'));
+      expect(tournees[tourneeId]!.memberOf(manuId)!.name, nameOf('Léa'));
     });
 
     test('should choose the theme in the bound settings', () async {
@@ -500,6 +507,63 @@ void main() {
       );
 
       expect(code, codeOf('234567'));
+    });
+
+    test('should let an admin join with the bound name, clock and '
+        'store', () async {
+      final samsPhone = ProviderContainer(overrides: overridesAs(samId));
+      addTearDown(samsPhone.dispose);
+      await myTournees.save(
+        MyTournees.none.remember(
+          summaryOf('t49', 49, status: MemberStatus.visiting),
+        ),
+      );
+
+      final change = valueOf(
+        await samsPhone.read(joinAsAdminProvider)(tourneeId),
+      );
+
+      expect(change.member.name, nameOf('Léa'));
+      expect(change.member.requestedAt, twoPm);
+      expect(myTournees.myTournees.find(tourneeId), tournee49);
+    });
+
+    test('should forget a visited tournée in the bound store', () async {
+      await container.read(forgetVisitedTourneeProvider)(tournee49.id);
+
+      expect(myTournees.myTournees.find(tournee49.id), isNull);
+    });
+
+    test('should follow the bound admin status', () async {
+      expect(await container.read(observeAdminStatusProvider)().first, isTrue);
+    });
+
+    test('should ask the bound admin status about a member', () async {
+      expect(await container.read(isMemberAdminProvider)(manuId), isTrue);
+      expect(admins.asked, [manuId]);
+    });
+
+    test('should list every tournée from the bound directory as the bound '
+        'account', () async {
+      valueOf(await container.read(listAllTourneesProvider)());
+
+      expect(tourneeDirectory.allAsked, [MemberId('uid-lea')]);
+    });
+
+    test('should open a tournée as an admin in the bound store', () async {
+      await container.read(openAsAdminProvider)(
+        TourneeOverview(
+          id: tournee12.id,
+          number: tournee12.number,
+          centre: csVillefranche,
+          campaign: campaign2026,
+          activeMembers: 1,
+          pendingRequests: 0,
+          callerIsActive: true,
+        ),
+      );
+
+      expect(myTournees.myTournees.current, tournee12);
     });
 
     test(

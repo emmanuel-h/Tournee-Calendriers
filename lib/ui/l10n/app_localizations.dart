@@ -1713,7 +1713,7 @@ abstract class AppLocalizations {
   /// **'Code copié'**
   String get teamCodeCopied;
 
-  /// Creator-only button of Équipe: replaces the join code (PLAN §5.8).
+  /// Admin-only button of Équipe: replaces the join code (PLAN §5.8, §5.12).
   ///
   /// In fr, this message translates to:
   /// **'Nouveau code'**
@@ -1767,13 +1767,13 @@ abstract class AppLocalizations {
   /// **'{name} (vous)'**
   String teamMemberYou(String name);
 
-  /// The creator in Équipe ({name} may already read « Manu (vous) »).
+  /// An administrator of the app in Équipe (PLAN §5.12; {name} may already read « Manu (vous) »).
   ///
   /// In fr, this message translates to:
-  /// **'{name} · créateur'**
-  String teamMemberCreator(String name);
+  /// **'{name} · admin'**
+  String teamMemberAdmin(String name);
 
-  /// Screen-reader name of the ⋮ of a member (creator only).
+  /// Screen-reader name of the ⋮ of a member (admins only).
   ///
   /// In fr, this message translates to:
   /// **'Options pour {name}'**
@@ -1803,7 +1803,7 @@ abstract class AppLocalizations {
   /// **'{count, plural, =0{Corbeille · vide} =1{Corbeille · 1 élément} other{Corbeille · {count} éléments}}'**
   String teamCorbeille(int count);
 
-  /// Button of Équipe for every member but the creator.
+  /// Button of Équipe for every member, admins and the creator included (PLAN §5.12).
   ///
   /// In fr, this message translates to:
   /// **'Quitter la tournée'**
@@ -1827,7 +1827,7 @@ abstract class AppLocalizations {
   /// **'Quitter'**
   String get teamLeaveConfirm;
 
-  /// Creator-only button of Équipe.
+  /// Admin-only button of Équipe (PLAN §5.12).
   ///
   /// In fr, this message translates to:
   /// **'Supprimer la tournée'**
@@ -1869,7 +1869,7 @@ abstract class AppLocalizations {
   /// **'L\'équipe a changé entre-temps.'**
   String get teamChanged;
 
-  /// Snackbar of Équipe when a new code or deleting the tournée needs the network.
+  /// Snackbar of Équipe when a new code, joining as an admin or deleting the tournée needs the network.
   ///
   /// In fr, this message translates to:
   /// **'Pas de réseau. Réessayez une fois connecté.'**
@@ -2235,7 +2235,7 @@ abstract class AppLocalizations {
   /// **'Demande refusée'**
   String get joinRefused;
 
-  /// Message over the next screen once the server said the creator removed the member from a tournée, which the phone then forgot (PLAN §5.3).
+  /// Message over the next screen once the server said an admin removed the member from a tournée, which the phone then forgot (PLAN §5.3).
   ///
   /// In fr, this message translates to:
   /// **'Vous avez été retiré de la tournée {number}.'**
@@ -2246,6 +2246,156 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'La tournée {number} a été supprimée.'**
   String tourneeDeleted(String number);
+
+  /// Message over the next screen once the server said the phone is no longer an admin, so a tournée it only visited was forgotten (PLAN §5.12).
+  ///
+  /// In fr, this message translates to:
+  /// **'Vous n\'êtes plus administrateur : la tournée {number} est retirée de Mes tournées.'**
+  String tourneeAdminRevoked(String number);
+
+  /// Bottom of Bienvenue: the phone's uid, shortened, for an admin to type in the console (PLAN §5.12).
+  ///
+  /// In fr, this message translates to:
+  /// **'Identifiant de l\'appareil : {id}'**
+  String deviceIdLine(String id);
+
+  /// Last row of Paramètres › Application: the phone's uid (PLAN §5.12).
+  ///
+  /// In fr, this message translates to:
+  /// **'Identifiant de l\'appareil'**
+  String get deviceIdLabel;
+
+  /// The phone's uid in Paramètres when it is an admin's.
+  ///
+  /// In fr, this message translates to:
+  /// **'{id} · administrateur'**
+  String deviceIdAdmin(String id);
+
+  /// Screen-reader name and tooltip of the copy button of the phone's uid.
+  ///
+  /// In fr, this message translates to:
+  /// **'Copier l\'identifiant de l\'appareil'**
+  String get deviceIdCopy;
+
+  /// Snackbar once the phone's uid is on the clipboard.
+  ///
+  /// In fr, this message translates to:
+  /// **'Identifiant copié'**
+  String get deviceIdCopied;
+
+  /// Paramètres row of the phone's uid when the phone has no account and is offline.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pas encore de compte : connectez-vous au réseau.'**
+  String get deviceIdNoAccount;
+
+  /// Admin-only link of « Mes tournées » to every tournée of the app, and that screen's title (PLAN §5.12).
+  ///
+  /// In fr, this message translates to:
+  /// **'Toutes les tournées'**
+  String get myTourneesAll;
+
+  /// Second line of a tournée an admin opened without being in its team (Switcher mockup).
+  ///
+  /// In fr, this message translates to:
+  /// **'{centre} · administrateur'**
+  String myTourneesVisited(String centre);
+
+  /// Screen-reader label of a visited tournée not open in « Mes tournées ».
+  ///
+  /// In fr, this message translates to:
+  /// **'{title}, {centre}, administrateur, ouvrir'**
+  String myTourneesVisitedSemantics(String title, String centre);
+
+  /// Screen-reader label of the open tournée in « Mes tournées » when the admin only visits it.
+  ///
+  /// In fr, this message translates to:
+  /// **'{title}, {centre}, administrateur, tournée ouverte'**
+  String myTourneesVisitedOpenSemantics(String title, String centre);
+
+  /// Under the title of « Toutes les tournées » (AllTournees mockup).
+  ///
+  /// In fr, this message translates to:
+  /// **'Administrateur · {count, plural, =0{aucune tournée} =1{1 tournée} other{{count} tournées}}'**
+  String allTourneesSubtitle(int count);
+
+  /// Second line of a tournée of « Toutes les tournées »: its active members (« Aucun membre » in red).
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, =0{Aucun membre} =1{1 membre} other{{count} membres}}'**
+  String allTourneesMembers(int count);
+
+  /// Second line of a tournée the admin is an active member of.
+  ///
+  /// In fr, this message translates to:
+  /// **'{members} · vous en êtes membre'**
+  String allTourneesMine(String members);
+
+  /// Second line of a tournée where join requests wait, beside a red dot.
+  ///
+  /// In fr, this message translates to:
+  /// **'{details} · {count, plural, =1{1 demande en attente} other{{count} demandes en attente}}'**
+  String allTourneesWaiting(String details, int count);
+
+  /// Screen-reader label of a tournée of « Toutes les tournées »: the dot is said in the details.
+  ///
+  /// In fr, this message translates to:
+  /// **'{title}, {details}, ouvrir'**
+  String allTourneesRowSemantics(String title, String details);
+
+  /// « Toutes les tournées » when the server cannot be reached; « Réessayer » under it.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pas de réseau : la liste ne peut pas être affichée.'**
+  String get allTourneesOffline;
+
+  /// Under the list of « Toutes les tournées » (AllTournees mockup).
+  ///
+  /// In fr, this message translates to:
+  /// **'Ouvrez une tournée pour la gérer : code, équipe, rues. Vous n\'y entrez comme membre que si vous la rejoignez.'**
+  String get allTourneesHint;
+
+  /// « Toutes les tournées » when the app has none.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune tournée pour l\'instant.'**
+  String get allTourneesEmpty;
+
+  /// Banner on Accueil when an admin opened a tournée they are not in (HomeAdmin mockup).
+  ///
+  /// In fr, this message translates to:
+  /// **'Administrateur · pas membre'**
+  String get adminBannerTitle;
+
+  /// Second line of the banner of an admin who is not in the tournée.
+  ///
+  /// In fr, this message translates to:
+  /// **'Vous n\'êtes pas dans l\'équipe de cette tournée.'**
+  String get adminBannerBody;
+
+  /// Button of the banner: the admin joins the team at once (PLAN §5.12).
+  ///
+  /// In fr, this message translates to:
+  /// **'Rejoindre'**
+  String get adminBannerJoin;
+
+  /// Button of Équipe for an admin who only visits the tournée: forgets it on the phone, writes nothing (PLAN §5.12).
+  ///
+  /// In fr, this message translates to:
+  /// **'Retirer de Mes tournées'**
+  String get teamForgetVisit;
+
+  /// Header of the streets of a tournée an admin visits without being in it (PLAN §5.12), instead of « Mes rues ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Rues · {count}'**
+  String startStreetsHeaderVisitor(int count);
+
+  /// « supprimée par un administrateur »: an admin of the app who is not in the team (PLAN §5.12).
+  ///
+  /// In fr, this message translates to:
+  /// **'un administrateur'**
+  String get corbeilleAdmin;
 }
 
 class _AppLocalizationsDelegate

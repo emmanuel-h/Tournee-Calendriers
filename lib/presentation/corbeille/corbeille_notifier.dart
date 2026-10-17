@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tournee_calendriers/application/use_cases/edit_street_numbers.dart';
+import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/corbeille.dart';
 import 'package:tournee_calendriers/presentation/corbeille/corbeille_state.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
@@ -27,7 +30,15 @@ final corbeilleProvider =
 /// Shows the Corbeille (PLAN §5.11) with who deleted each item and when,
 /// and brings an item back. Works offline, with whichever street storage
 /// is bound.
+///
+/// Someone no longer in the team is asked about once: an admin of the app
+/// who is not in it reads « un administrateur » (PLAN §5.12).
 final class CorbeilleNotifier extends Notifier<CorbeilleState> {
+  /// What each one asked about turned out to be: admin or not. A notifier
+  /// is kept when it builds again (only its `ref` is new), so the answers
+  /// stay while the Corbeille is shown.
+  final _admins = <MemberId, bool>{};
+
   @override
   CorbeilleState build() {
     final read = ref.watch(corbeilleItemsProvider);
@@ -42,16 +53,38 @@ final class CorbeilleNotifier extends Notifier<CorbeilleState> {
       loading: false,
       rows: [
         for (final item in items)
-          CorbeilleRow(
-            item: item,
-            // Removed members keep their deletions, unnamed.
-            removedBy: switch (team) {
-              TeamShown() => team.nameOf(item.removal.by),
-              NoTeam() || TeamLoading() || TeamUnavailable() => null,
-            },
-            removedAt: RecentTime.of(item.removal.at, now: now),
-          ),
+          switch (team) {
+            TeamShown() => _row(item, team.nameOf(item.removal.by), now),
+            NoTeam() || TeamLoading() || TeamUnavailable() => CorbeilleRow(
+              item: item,
+              removedBy: null,
+              removedAt: RecentTime.of(item.removal.at, now: now),
+            ),
+          },
       ],
+    );
+  }
+
+  /// [item] deleted by a member named [name], or by someone no longer in
+  /// the team (unnamed) when it is null: whether they are an admin is
+  /// asked once, and the Corbeille shown again with the answer.
+  CorbeilleRow _row(CorbeilleItem item, String? name, DateTime now) {
+    final by = item.removal.by;
+    if (name == null && !_admins.containsKey(by)) {
+      // Not asked twice while the answer is on its way.
+      _admins[by] = false;
+      unawaited(
+        ref.read(isMemberAdminProvider)(by).then((isAdmin) {
+          _admins[by] = isAdmin;
+          if (ref.mounted && isAdmin) ref.invalidateSelf();
+        }),
+      );
+    }
+    return CorbeilleRow(
+      item: item,
+      removedBy: name,
+      removedAt: RecentTime.of(item.removal.at, now: now),
+      removedByAdmin: name == null && (_admins[by] ?? false),
     );
   }
 

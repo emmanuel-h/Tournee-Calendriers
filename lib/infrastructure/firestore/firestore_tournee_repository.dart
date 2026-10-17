@@ -26,6 +26,9 @@ import 'package:tournee_calendriers/infrastructure/firestore/mappers/tournee_doc
 ///   to do about it.
 /// - **Accepting, refusing, removing, leaving, renaming** are applied on the phone at
 ///   once and sent when the network allows ([sendInBackground]).
+/// - **An admin joining** (PLAN §5.12) first asks the server for the
+///   tournée, so offline it fails at once; then their member document is
+///   sent like the other member writes.
 /// - **Reading** follows the tournée document and its members with two
 ///   listeners, served from the phone's copy first.
 final class FirestoreTourneeRepository implements TourneeRepository {
@@ -135,7 +138,8 @@ final class FirestoreTourneeRepository implements TourneeRepository {
               _db,
               stored.id,
             ).doc(stored.createdBy.value),
-            memberToDocument(stored.creator),
+            // `!`: a tournée just created holds its creator (`createdBy`).
+            memberToDocument(stored.memberOf(stored.createdBy)!),
           )
           ..set(
             tourneeDoc
@@ -180,6 +184,26 @@ final class FirestoreTourneeRepository implements TourneeRepository {
           MemberLeft(:final member):
         sendInBackground('$change', members.doc(member.id.value).delete());
         return Ok(tournee);
+      case AdminJoined(:final member):
+        try {
+          // Asked of the server first: offline the admin is told at once
+          // (« Pas de réseau », PLAN §5.12) instead of believing they
+          // joined while the write waits on the phone.
+          await FirestoreLayout.tournee(
+            _db,
+            tournee.id,
+          ).get(const GetOptions(source: Source.server));
+        } on FirebaseException catch (error) {
+          if (isNoNetwork(error)) {
+            return const Err(TourneeWriteFailure.noNetwork);
+          }
+          rethrow;
+        }
+        sendInBackground(
+          '$change',
+          members.doc(member.id.value).set(memberToDocument(member)),
+        );
+        return Ok(tournee);
       case JoinCodeRegenerated(:final before, :final code):
         try {
           final free = await _db.runTransaction((transaction) async {
@@ -206,13 +230,15 @@ final class FirestoreTourneeRepository implements TourneeRepository {
   /// server: the lists are read from it, so nothing only the server knows
   /// is left behind.
   ///
-  /// The campaigns and their streets go first, in batches. The members go
-  /// last, with the tournée, its code and its reservation in one batch:
-  /// until then the security rules still see an active creator deleting,
-  /// and a member's phone, which learns it lost the tournée when its own
+  /// The campaigns and their streets go first, in batches. The members
+  /// still in it (there may be none: everyone may leave, the creator too)
+  /// go last, with the tournée, its code and its reservation in one batch:
+  /// a member's phone, which learns it lost the tournée when its own
   /// member document goes, finds the reservation gone at the same instant
-  /// and says « supprimée », not « retiré » (`watchMembership`). A team is
-  /// far below the 500 writes of a batch.
+  /// and says « supprimée », not « retiré » (`watchMembership`). Only the
+  /// documents that exist are deleted: the security rules refuse deleting
+  /// a member document that is not there. A team is far below the 500
+  /// writes of a batch.
   @override
   Future<Result<TourneeDeleted, TourneeWriteFailure>> delete(
     TourneeDeleted deletion,
@@ -261,11 +287,8 @@ final class FirestoreTourneeRepository implements TourneeRepository {
       )
       ..delete(tourneeDoc);
     for (final member in members.docs) {
-      if (member.id != tournee.createdBy.value) last.delete(member.reference);
+      last.delete(member.reference);
     }
-    last.delete(
-      FirestoreLayout.membersOf(_db, tournee.id).doc(tournee.createdBy.value),
-    );
     await last.commit();
     return Ok(deletion);
   }

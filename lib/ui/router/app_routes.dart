@@ -47,6 +47,10 @@ abstract final class AppRoutes {
     queryParameters: {'id': id.value, 'numero': number.label},
   ).toString();
   static const team = '/equipe';
+
+  /// « Toutes les tournées », for admins, pushed from « Mes tournées »
+  /// (§5.12).
+  static const allTournees = '/toutes-les-tournees';
   static const settings = '/parametres';
 
   /// « Confidentialité », pushed from Paramètres.

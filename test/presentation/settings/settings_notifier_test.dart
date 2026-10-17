@@ -68,7 +68,7 @@ void main() {
       expect(container.read(settingsProvider).name, 'Emmanuel');
       expect(container.read(settingsProvider).theme, AppTheme.dark);
       expect(settings.names, [nameOf('Emmanuel')]);
-      expect(tournees[tourneeId]!.creator.name, nameOf('Emmanuel'));
+      expect(tournees[tourneeId]!.memberOf(manuId)!.name, nameOf('Emmanuel'));
     });
 
     test(

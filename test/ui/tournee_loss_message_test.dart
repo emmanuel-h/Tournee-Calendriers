@@ -1,6 +1,6 @@
 // The message the app shows over the next screen when the member lost one
-// of their tournées (PLAN §5.3): removed by the creator, or the tournée
-// deleted.
+// of their tournées (PLAN §5.3): removed by an admin, the tournée deleted,
+// or (a tournée only visited) the phone no longer an admin (PLAN §5.12).
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -71,6 +71,26 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('La tournée 12 a été supprimée.'), findsOneWidget);
+      expect(find.text('Tournée 49 · 2026'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'should say the phone is no longer an admin when a visited tournée is '
+    'forgotten',
+    (tester) async {
+      await pumpApp(tester);
+
+      directory.lose(tournee12.id, TourneeLoss.adminRevoked);
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(
+          'Vous n\'êtes plus administrateur\u00a0: la tournée 12 est '
+          'retirée de Mes tournées.',
+        ),
+        findsOneWidget,
+      );
       expect(find.text('Tournée 49 · 2026'), findsOneWidget);
     },
   );

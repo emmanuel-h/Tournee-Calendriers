@@ -17,6 +17,7 @@ import 'package:tournee_calendriers/presentation/street_list/street_list_notifie
 import '../application/use_cases/street_fixtures.dart';
 import '../domain/tournee/my_tournees_fixtures.dart';
 import '../domain/tournee/tournee_fixtures.dart';
+import '../support/fakes/fake_admin_status.dart';
 import '../support/fakes/fake_my_tournees_store.dart';
 import '../support/fakes/fake_ports.dart';
 import '../support/fakes/fake_street_repository.dart';
@@ -74,6 +75,7 @@ void main() {
         ),
         clockProvider.overrideWithValue(FakeClock(DateTime.utc(2026, 11, 4))),
         identityProvider.overrideWithValue(FakeIdentity(leaId)),
+        adminStatusProvider.overrideWithValue(FakeAdminStatus()),
       ],
     );
     addTearDown(container.dispose);

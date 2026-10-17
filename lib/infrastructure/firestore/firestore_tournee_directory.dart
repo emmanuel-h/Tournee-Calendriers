@@ -21,7 +21,9 @@ import 'package:tournee_calendriers/infrastructure/firestore/mappers/tournee_doc
 /// Q20): a join code is read with an exact `get` of `joinCodes/{code}`
 /// (listing them is refused by the rules), the request is the newcomer's
 /// own pending member document. A member follows their own member
-/// document too, to learn they were removed or the tournée deleted.
+/// document too, to learn they were removed or the tournée deleted; an
+/// admin who only visits a tournée follows the tournée and their own
+/// `admins/{uid}` instead (PLAN §5.12). An admin lists every tournée.
 ///
 /// What must be true *now* (a code, a number taken) is asked of the server
 /// (`Source.server`): an answer from the phone's copy could be stale. The
@@ -110,23 +112,63 @@ final class FirestoreTourneeDirectory implements TourneeDirectory {
   Stream<TourneeLoss> watchMembership(
     TourneeSummary tournee,
     MemberId member,
-  ) => _member(tournee.id, member)
-      .snapshots()
-      .where(
-        (doc) => isMembershipGone(
-          exists: doc.exists,
-          fromCache: doc.metadata.isFromCache,
-          hasPendingWrites: doc.metadata.hasPendingWrites,
-        ),
-      )
-      // `asyncMap`: one read of the server per snapshot, in order.
-      .asyncMap((_) async {
-        final reservation = await _db
-            .collection(FirestoreLayout.tourneeKeys)
-            .doc(tourneeKeyId(tournee.centre, tournee.number))
-            .get(_server);
-        return lossFromReservation(tournee.id, reservation.data());
-      });
+  ) => tournee.isVisiting
+      ? _watchVisit(tournee, member)
+      : _member(tournee.id, member)
+            .snapshots()
+            .where(
+              (doc) => isGoneOnServer(
+                exists: doc.exists,
+                fromCache: doc.metadata.isFromCache,
+                hasPendingWrites: doc.metadata.hasPendingWrites,
+              ),
+            )
+            // `asyncMap`: one read of the server per snapshot, in order.
+            .asyncMap((_) async {
+              final reservation = await _db
+                  .collection(FirestoreLayout.tourneeKeys)
+                  .doc(tourneeKeyId(tournee.centre, tournee.number))
+                  .get(_server);
+              return lossFromReservation(tournee.id, reservation.data());
+            });
+
+  /// A tournée the admin [member] only visits (PLAN §5.12): they have no
+  /// member document to follow. The tournée tells it was deleted once the
+  /// server has it no more; their own `admins/{uid}`, which the rules let
+  /// any signed-in phone read, tells they are no longer an admin once the
+  /// server has it no more. Both listeners run at once, in one stream.
+  Stream<TourneeLoss> _watchVisit(TourneeSummary tournee, MemberId member) {
+    bool gone(DocumentSnapshot<Object?> doc) => isGoneOnServer(
+      exists: doc.exists,
+      fromCache: doc.metadata.isFromCache,
+      hasPendingWrites: doc.metadata.hasPendingWrites,
+    );
+    final losses = [
+      FirestoreLayout.tournee(
+        _db,
+        tournee.id,
+      ).snapshots().where(gone).map((_) => TourneeLoss.deleted),
+      FirestoreLayout.admin(
+        _db,
+        member,
+      ).snapshots().where(gone).map((_) => TourneeLoss.adminRevoked),
+    ];
+    late final StreamController<TourneeLoss> controller;
+    final listeners = <StreamSubscription<TourneeLoss>>[];
+    controller = StreamController<TourneeLoss>(
+      onListen: () => listeners.addAll([
+        for (final stream in losses)
+          stream.listen(controller.add, onError: controller.addError),
+      ]),
+      onCancel: () async {
+        for (final listener in listeners) {
+          await listener.cancel();
+        }
+        await controller.close();
+      },
+    );
+    return controller.stream;
+  }
 
   /// Follows the member's own document, as [watchMembership] does, for
   /// the name the server holds (`confirmedNamesIn`). `expand`: a snapshot
@@ -177,6 +219,39 @@ final class FirestoreTourneeDirectory implements TourneeDirectory {
       }
       centres.sort((a, b) => searchKey(a.name).compareTo(searchKey(b.name)));
       return Ok(List.unmodifiable(centres));
+    } on FirebaseException catch (error) {
+      if (isNoNetwork(error)) return const Err(DirectoryFailure.noNetwork);
+      rethrow;
+    }
+  }
+
+  /// Reads every tournée from the server, then the members of each (at the
+  /// same time), as the security rules let only an admin do. A tournée
+  /// that cannot be read is left out, not fatal: it is only a list.
+  @override
+  Future<Result<List<TourneeOverview>, DirectoryFailure>> allTournees(
+    MemberId caller,
+  ) async {
+    try {
+      final tournees = await _db
+          .collection(FirestoreLayout.tournees)
+          .get(_server);
+      final teams = await Future.wait([
+        for (final doc in tournees.docs)
+          FirestoreLayout.membersOf(_db, TourneeId(doc.id)).get(_server),
+      ]);
+      final overviews = <TourneeOverview>[];
+      for (final (index, doc) in tournees.docs.indexed) {
+        try {
+          final tournee = tourneeFromDocuments(doc.id, doc.data(), {
+            for (final member in teams[index].docs) member.id: member.data(),
+          });
+          overviews.add(overviewOf(tournee, caller));
+        } on FormatException catch (error) {
+          debugPrint('Unreadable tournée ${doc.id}: $error');
+        }
+      }
+      return Ok(List.unmodifiable(overviews));
     } on FirebaseException catch (error) {
       if (isNoNetwork(error)) return const Err(DirectoryFailure.noNetwork);
       rethrow;

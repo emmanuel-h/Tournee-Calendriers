@@ -7,7 +7,8 @@ import 'package:tournee_calendriers/domain/tournee/tournee_number.dart';
 /// What the phone keeps of one of the member's tournées, so « Mes
 /// tournées » and the title « Tournée 49 · 2026 » show without the network
 /// (PLAN §5.3, §6.3): its number, its centre de secours, the year being
-/// worked on, and whether the member is in or still waiting.
+/// worked on, and whether the member is in, still waiting, or an admin
+/// visiting it without being in the team (PLAN §5.12).
 ///
 /// A pending newcomer cannot read the tournée itself (PLAN §8.2): for a
 /// request, this is what the join preview showed. An immutable value,
@@ -28,14 +29,19 @@ final class TourneeSummary {
   /// The year whose streets the team works on.
   final CampaignYear campaign;
 
-  /// Whether the member is in the tournée or their request still waits.
+  /// Whether the member is in the tournée, their request still waits, or
+  /// they visit it as an admin.
   final MemberStatus status;
 
   /// The request has not been accepted yet (« votre demande est en
   /// attente »): the tournée cannot be opened.
   bool get isPending => status == MemberStatus.pending;
 
-  /// The same tournée once the member's request has been accepted.
+  /// An admin opened it without being in its team (« · administrateur »).
+  bool get isVisiting => status == MemberStatus.visiting;
+
+  /// The same tournée once the member's request has been accepted, or the
+  /// visiting admin has joined it.
   TourneeSummary accepted() => TourneeSummary(
     id: id,
     number: number,

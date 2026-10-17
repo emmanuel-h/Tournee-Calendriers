@@ -10,13 +10,14 @@ across a team. Flutter + Riverpod, Android first. The UI is in French.
 
 Onboarding:
 
-- « Bienvenue » on a phone that holds nothing yet: the first name, then « Créer une
-  tournée » or « Rejoindre une tournée » (disabled until a name is typed). A phone with
-  streets of its own opens on « Mes rues » as before.
+- « Bienvenue » on a phone that holds nothing yet: the first name, then « Rejoindre une
+  tournée » (and « Créer une tournée » for an admin), disabled until a name is typed;
+  « Identifiant de l'appareil » with a copy button at the bottom. A phone with streets of
+  its own opens on « Mes rues » as before.
 - « Nouvelle tournée »: the centre de secours picked from the known ones as you type (or
   added), the number checked as you type (« … existe déjà » with « Rejoindre avec un
   code »), the year; then the code (with a copy button), its QR code and « Partager ».
-  Needs the network.
+  Admins only. Needs the network.
 - « Rejoindre une tournée »: scan the QR code or type the code in two boxes, check the
   tournée shown, « Demander à rejoindre »; « Demande envoyée » waits, offline too, and opens
   the tournée once a member accepts (« Demande refusée » otherwise, « Annuler la demande »).
@@ -38,12 +39,17 @@ Temporary M1 start screen (until the map arrives in M3):
   tournée where a join request waits; 👥 opens Équipe (a dot while a join request waits); ⚙ opens Paramètres: first name (the team sees the new one), « Mes tournées », theme (Système,
   Clair, Sombre), confidentialité, version (opens « Nouveautés », what each version brings), licences, data credits.
 - Équipe (👥): the join code (copy button: « Code copié ») and its QR code, « Partager »,
-  « Nouveau code » (creator), the requests to join with « Accepter » / « Refuser » (any
-  member), the members with « Retirer » (creator), the Corbeille, « Quitter la tournée » /
-  « Supprimer la tournée » (creator).
+  « Nouveau code » (admins), the requests to join with « Accepter » / « Refuser » (any
+  member or admin), the members (« · admin ») with « Retirer » (admins), the Corbeille,
+  « Quitter la tournée » (every member) and « Supprimer la tournée » (admins).
   Answering, removing and leaving work offline; a new code and deleting need the network.
   A member removed, or whose tournée was deleted, sees it leave « Mes tournées » with a
   message (« Vous avez été retiré de la tournée 49. »); offline, nothing is forgotten.
+- Administrators (an `admins/{uid}` document added by hand in the Firebase console): they
+  create tournées, manage every one, and see them all in « Toutes les tournées » (from
+  « Mes tournées », needs the network). A tournée an admin opens without being in it shows
+  « Administrateur · pas membre » with « Rejoindre » (a member at once); « Retirer de Mes
+  tournées » forgets it. Paramètres shows « Identifiant de l'appareil » (« · administrateur »).
 - Corbeille (from Équipe): the deleted streets and numbers, who deleted them and when, and
   « Restaurer », which brings them back with their marks. What stayed there more than 30 days
   is deleted for good by the first member's app that starts (no server).

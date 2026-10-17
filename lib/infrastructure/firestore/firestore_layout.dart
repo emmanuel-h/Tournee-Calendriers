@@ -2,11 +2,12 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/tournee/campaign_year.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 
-/// Where each document lives (PLAN §6.2), in one place for the three
-/// Firestore adapters.
+/// Where each document lives (PLAN §6.2), in one place for the Firestore
+/// adapters.
 abstract final class FirestoreLayout {
   static const tournees = 'tournees';
   static const members = 'members';
@@ -15,6 +16,13 @@ abstract final class FirestoreLayout {
   static const joinCodes = 'joinCodes';
   static const tourneeKeys = 'tourneeKeys';
   static const rescueCentres = 'rescueCentres';
+  static const admins = 'admins';
+
+  /// `admins/{member}`: there when [member] is an admin (PLAN §5.12).
+  static DocumentReference<Map<String, dynamic>> admin(
+    FirebaseFirestore db,
+    MemberId member,
+  ) => db.collection(admins).doc(member.value);
 
   /// `tournees/{tournee}`.
   static DocumentReference<Map<String, dynamic>> tournee(

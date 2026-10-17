@@ -10,6 +10,7 @@ import 'package:tournee_calendriers/presentation/launch/launch_place.dart';
 import 'package:tournee_calendriers/presentation/new_tournee/new_tournee_notifier.dart';
 
 import '../../support/fakes/fake_address_directory.dart';
+import '../../support/fakes/fake_admin_status.dart';
 import '../../support/fakes/fake_commune_search.dart';
 import '../../support/fakes/fake_member_account.dart';
 import '../../support/fakes/fake_moved_streets_log.dart';
@@ -33,7 +34,8 @@ import '../../support/street_fixtures.dart';
 /// sent by default); [member] (Léa by
 /// default) uses the phone and marks the houses at [now] (two o'clock by
 /// default); [account] is the phone's account (none by default, and no
-/// network to get one). The commune search and the duplicate check of
+/// network to get one); [admins] says whether the phone, and which
+/// members, are admins of the app (none by default). The commune search and the duplicate check of
 /// « Nouvelle tournée » answer without waiting for a pause in the typing;
 /// a new join code is `234567`.
 ///
@@ -55,6 +57,7 @@ List<Override> fakePhone({
   MemberId? member,
   DateTime? now,
   FakeMemberAccount? account,
+  FakeAdminStatus? admins,
   bool chooseLaunch = false,
 }) => [
   if (!chooseLaunch)
@@ -90,6 +93,7 @@ List<Override> fakePhone({
   tourneeRepositoryProvider.overrideWithValue(
     tournees ?? FakeTourneeRepository(),
   ),
+  adminStatusProvider.overrideWithValue(admins ?? FakeAdminStatus()),
   // The indexes of `2`…`7` in the code alphabet: the code `234567`.
   randomProvider.overrideWithValue(ScriptedRandom([23, 24, 25, 26, 27, 28])),
 ];

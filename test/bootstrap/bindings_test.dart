@@ -16,6 +16,7 @@ import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 import 'package:tournee_calendriers/infrastructure/ban/ban_address_directory.dart';
 import 'package:tournee_calendriers/infrastructure/firebase_auth/firebase_identity.dart';
+import 'package:tournee_calendriers/infrastructure/firestore/firestore_admin_status.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_street_repository.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_tournee_directory.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_tournee_repository.dart';
@@ -106,6 +107,7 @@ void main() {
       container.read(tourneeRepositoryProvider),
       isA<FirestoreTourneeRepository>(),
     );
+    expect(container.read(adminStatusProvider), isA<FirestoreAdminStatus>());
     // One database for every Firestore adapter.
     expect(firestoreAsked, 1);
     expect(container.read(randomProvider), isA<Random>());

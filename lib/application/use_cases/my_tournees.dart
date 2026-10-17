@@ -91,7 +91,9 @@ final class SettleJoinRequest {
         await _store.save(mine.remember(request.accepted()));
       case null:
         await _store.save(mine.forget(id));
-      case MemberStatus.pending:
+      // Still waiting; and a request is never « visiting », which only the
+      // phone's own summary of an admin's visit is.
+      case MemberStatus.pending || MemberStatus.visiting:
         break;
     }
   }

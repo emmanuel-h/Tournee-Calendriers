@@ -35,6 +35,7 @@ final class CorbeilleRow {
     required this.item,
     required this.removedBy,
     required this.removedAt,
+    this.removedByAdmin = false,
   });
 
   /// The street or number, with its street's name.
@@ -45,13 +46,18 @@ final class CorbeilleRow {
   final String? removedBy;
   final RecentTime removedAt;
 
+  /// Who deleted it is not in the team but is an admin of the app (PLAN
+  /// §5.12): « un administrateur » rather than « un membre ».
+  final bool removedByAdmin;
+
   @override
   bool operator ==(Object other) =>
       other is CorbeilleRow &&
       other.item == item &&
       other.removedBy == removedBy &&
-      other.removedAt == removedAt;
+      other.removedAt == removedAt &&
+      other.removedByAdmin == removedByAdmin;
 
   @override
-  int get hashCode => Object.hash(item, removedBy, removedAt);
+  int get hashCode => Object.hash(item, removedBy, removedAt, removedByAdmin);
 }

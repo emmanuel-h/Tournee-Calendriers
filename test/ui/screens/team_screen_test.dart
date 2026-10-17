@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
+import 'package:tournee_calendriers/domain/tournee/member.dart';
 import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_change.dart';
 import 'package:tournee_calendriers/ui/app.dart';
@@ -11,6 +12,7 @@ import 'package:tournee_calendriers/ui/screens/corbeille/corbeille_screen.dart';
 
 import '../../domain/tournee/my_tournees_fixtures.dart';
 import '../../domain/tournee/tournee_fixtures.dart';
+import '../../support/fakes/fake_admin_status.dart';
 import '../../support/fakes/fake_my_tournees_store.dart';
 import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/results.dart';
@@ -26,7 +28,8 @@ void main() {
   late FakeMyTourneesStore store;
 
   /// Équipe over the start screen, on the phone of [member] where the 49
-  /// of Manu, Léa and Julie (pending) is open.
+  /// of Manu, Léa and Julie (pending) is open. Manu and Sam are admins of
+  /// the app; Sam is not in the 49, which his phone keeps as visited.
   Future<void> pumpTeam(WidgetTester tester, MemberId member) async {
     // A phone's screen (the mockup's), so the buttons at the bottom show.
     tester.view
@@ -34,8 +37,11 @@ void main() {
       ..devicePixelRatio = 3;
     addTearDown(tester.view.reset);
     tournees = FakeTourneeRepository([team()]);
+    final kept = member == samId
+        ? summaryOf('t49', 49, status: MemberStatus.visiting)
+        : tournee49;
     store = FakeMyTourneesStore(
-      valueOf(MyTournees.none.remember(tournee49).open(tournee49.id)),
+      valueOf(MyTournees.none.remember(kept).open(tournee49.id)),
     );
     await tester.pumpWidget(
       ProviderScope(
@@ -44,6 +50,10 @@ void main() {
           tournees: tournees,
           member: member,
           now: twoMinutesLater,
+          admins: FakeAdminStatus(
+            phoneIsAdmin: member == manuId || member == samId,
+            admins: [manuId, samId],
+          ),
         ),
         child: const TourneeApp(showGallery: false),
       ),
@@ -61,8 +71,8 @@ void main() {
     matching: finder,
   );
 
-  testWidgets('should show the code, the request and the members as the '
-      'creator sees them', (tester) async {
+  testWidgets('should show the code, the request and the members as an '
+      'admin in the team sees them', (tester) async {
     await pumpTeam(tester, manuId);
 
     expect(find.text('Tournée 49'), findsOneWidget);
@@ -79,13 +89,43 @@ void main() {
       findsOneWidget,
     );
     expect(find.text('MEMBRES (2)'), findsOneWidget);
-    expect(find.text('Manu (vous) · créateur'), findsOneWidget);
+    expect(find.text('Manu (vous) · admin'), findsOneWidget);
     expect(find.text('Léa'), findsOneWidget);
     expect(find.bySemanticsLabel('Corbeille · vide'), findsOneWidget);
     expect(find.byKey(const Key('team.newCode')), findsOneWidget);
     expect(find.byTooltip('Options pour Léa'), findsOneWidget);
     expect(find.byKey(const Key('team.delete')), findsOneWidget);
+    expect(find.byKey(const Key('team.leave')), findsOneWidget);
+    expect(find.byKey(const Key('team.forgetVisit')), findsNothing);
+  });
+
+  testWidgets('should give an admin who is not in the team the admin\'s '
+      'commands, and « Retirer de Mes tournées » instead of « Quitter »', (
+    tester,
+  ) async {
+    await pumpTeam(tester, samId);
+
+    expect(find.text('MEMBRES (2)'), findsOneWidget);
+    expect(find.text('Manu · admin'), findsOneWidget);
+    expect(find.textContaining('(vous)'), findsNothing);
+    expect(find.byKey(const Key('team.newCode')), findsOneWidget);
+    expect(find.byTooltip('Options pour Manu'), findsOneWidget);
+    expect(find.byTooltip('Options pour Léa'), findsOneWidget);
+    expect(find.byKey(const Key('team.delete')), findsOneWidget);
     expect(find.byKey(const Key('team.leave')), findsNothing);
+    expect(find.byKey(const Key('team.forgetVisit')), findsOneWidget);
+  });
+
+  testWidgets('should forget a visited tournée on the phone, writing '
+      'nothing, and go back to the start screen', (tester) async {
+    await pumpTeam(tester, samId);
+
+    await tester.tap(find.byKey(const Key('team.forgetVisit')));
+    await tester.pumpAndSettle();
+
+    expect(tournees.saved, isEmpty);
+    expect(store.myTournees.tournees, isEmpty);
+    expect(find.text('Tournée des calendriers'), findsOneWidget);
   });
 
   testWidgets('should put the code on the clipboard and say so when the '
@@ -135,11 +175,11 @@ void main() {
     expect(find.text('Julie'), findsNothing);
   });
 
-  testWidgets('should keep the creator\'s commands from another member and '
-      'offer to leave', (tester) async {
+  testWidgets('should keep the admin\'s commands from a member who is not '
+      'one, label the admins and offer to leave', (tester) async {
     await pumpTeam(tester, leaId);
 
-    expect(find.text('Manu · créateur'), findsOneWidget);
+    expect(find.text('Manu · admin'), findsOneWidget);
     expect(find.text('Léa (vous)'), findsOneWidget);
     expect(find.text('K7P-2QX'), findsOneWidget);
     expect(find.byKey(const Key('team.share')), findsOneWidget);
@@ -149,9 +189,7 @@ void main() {
     expect(find.byKey(const Key('team.leave')), findsOneWidget);
   });
 
-  testWidgets('should remove a member once the creator confirms', (
-    tester,
-  ) async {
+  testWidgets('should remove a member once an admin confirms', (tester) async {
     await pumpTeam(tester, manuId);
 
     await tester.tap(find.byTooltip('Options pour Léa'));
@@ -192,7 +230,7 @@ void main() {
   });
 
   testWidgets('should go back to the start screen with no tournée open once '
-      'the creator deletes it', (tester) async {
+      'an admin deletes it', (tester) async {
     await pumpTeam(tester, manuId);
 
     await tester.tap(find.byKey(const Key('team.delete')));

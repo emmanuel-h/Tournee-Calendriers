@@ -6,10 +6,14 @@
 /// losses: the member did it, the phone forgets the tournée at once and
 /// has nothing to tell.
 enum TourneeLoss {
-  /// The creator removed the member (« Retirer »); the tournée goes on
+  /// An admin removed the member (« Retirer »); the tournée goes on
   /// without them.
   removed,
 
   /// The tournée was deleted, with everything it held.
   deleted,
+
+  /// The phone is no longer an admin, and it only visited the tournée
+  /// (PLAN §5.12): it may not read it any more.
+  adminRevoked,
 }

@@ -10,7 +10,9 @@ import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 
 import '../../domain/tournee/my_tournees_fixtures.dart';
 import '../../domain/tournee/tournee_fixtures.dart';
+import '../../support/fakes/fake_admin_status.dart';
 import '../../support/fakes/fake_my_tournees_store.dart';
+import '../../support/fakes/fake_phone_settings.dart';
 import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/results.dart';
@@ -27,6 +29,10 @@ final draws234567 = [
 void main() {
   late FakeTourneeRepository tournees;
   late FakeMyTourneesStore store;
+
+  /// The phone of a member who is not an admin, and of one who is.
+  final member = FakeAdminStatus();
+  final admin = FakeAdminStatus(phoneIsAdmin: true);
 
   // The 49 of Manu, Léa and Julie; the phone has it open and also knows
   // the 12.
@@ -49,27 +55,31 @@ void main() {
       expect(const TeamOffline(), const TeamOffline());
       expect(const TeamOffline().hashCode, const TeamOffline().hashCode);
       expect(
-        const TeamCommandRefused(TourneeCommandFailure.notCreator),
-        const TeamCommandRefused(TourneeCommandFailure.notCreator),
+        const TeamCommandRefused(TourneeCommandFailure.notAdmin),
+        const TeamCommandRefused(TourneeCommandFailure.notAdmin),
       );
       expect(
-        const TeamCommandRefused(TourneeCommandFailure.notCreator).hashCode,
-        const TeamCommandRefused(TourneeCommandFailure.notCreator).hashCode,
+        const TeamCommandRefused(TourneeCommandFailure.notAdmin).hashCode,
+        const TeamCommandRefused(TourneeCommandFailure.notAdmin).hashCode,
       );
       expect(
-        const TeamCommandRefused(TourneeCommandFailure.notCreator),
+        const TeamCommandRefused(TourneeCommandFailure.notAdmin),
         isNot(const TeamCommandRefused(TourneeCommandFailure.notAMember)),
       );
+      expect(const TeamNoName(), const TeamNoName());
+      expect(const TeamNoName().hashCode, const TeamNoName().hashCode);
       expect(const TourneeGone(), isNot(const TeamOffline()));
       expect(const TeamOffline(), isNot(const TourneeGone()));
+      expect(const TeamNoName(), isNot(const TeamOffline()));
     });
 
     test('should name itself', () {
       expect('${const TourneeGone()}', 'TourneeGone');
       expect('${const TeamOffline()}', 'TeamOffline');
+      expect('${const TeamNoName()}', 'TeamNoName');
       expect(
-        '${const TeamCommandRefused(TourneeCommandFailure.notCreator)}',
-        'TeamCommandRefused(TourneeCommandFailure.notCreator)',
+        '${const TeamCommandRefused(TourneeCommandFailure.notAdmin)}',
+        'TeamCommandRefused(TourneeCommandFailure.notAdmin)',
       );
     });
   });
@@ -101,6 +111,7 @@ void main() {
         tournees,
         FakeClock(acceptedAt),
         FakeIdentity(leaId),
+        member,
       );
 
       final change = valueOf(await accept(tourneeId, julieId));
@@ -121,6 +132,7 @@ void main() {
         tournees,
         FakeClock(acceptedAt),
         FakeIdentity(manuId),
+        admin,
       );
 
       final failure = failureOf(await accept(tourneeId, leaId));
@@ -132,11 +144,42 @@ void main() {
       expect(tournees.saved, isEmpty);
     });
 
+    test('should let in a request answered by an admin who is not in the '
+        'team', () async {
+      final accept = AcceptMember(
+        tournees,
+        FakeClock(acceptedAt),
+        FakeIdentity(samId),
+        admin,
+      );
+
+      final change = valueOf(await accept(tourneeId, julieId));
+
+      expect(change.member.acceptance, ChangeStamp(by: samId, at: acceptedAt));
+    });
+
+    test('should be refused to someone outside who is not an admin', () async {
+      final accept = AcceptMember(
+        tournees,
+        FakeClock(acceptedAt),
+        FakeIdentity(samId),
+        member,
+      );
+
+      final failure = failureOf(await accept(tourneeId, julieId));
+
+      expect(
+        failure,
+        const TeamCommandRefused(TourneeCommandFailure.notAMember),
+      );
+    });
+
     test('should tell when the tournée cannot be read any more', () async {
       final accept = AcceptMember(
         tournees,
         FakeClock(acceptedAt),
         FakeIdentity(manuId),
+        admin,
       );
 
       final failure = failureOf(await accept(TourneeId('gone'), julieId));
@@ -149,7 +192,10 @@ void main() {
   group('RefuseMember', () {
     test('should take the request out', () async {
       final change = valueOf(
-        await RefuseMember(tournees, FakeIdentity(leaId))(tourneeId, julieId),
+        await RefuseMember(tournees, FakeIdentity(leaId), member)(
+          tourneeId,
+          julieId,
+        ),
       );
 
       expect(change, MemberRefused(tourneeId: tourneeId, member: julie));
@@ -159,7 +205,10 @@ void main() {
 
     test('should be refused to a pending member', () async {
       final failure = failureOf(
-        await RefuseMember(tournees, FakeIdentity(julieId))(tourneeId, julieId),
+        await RefuseMember(tournees, FakeIdentity(julieId), member)(
+          tourneeId,
+          julieId,
+        ),
       );
 
       expect(
@@ -169,10 +218,27 @@ void main() {
     });
   });
 
-  group('RemoveMember', () {
-    test('should take the member out when the creator asks', () async {
+  group('RefuseMember as an admin', () {
+    test('should take the request out when an admin outside the team '
+        'refuses it', () async {
       final change = valueOf(
-        await RemoveMember(tournees, FakeIdentity(manuId))(tourneeId, leaId),
+        await RefuseMember(tournees, FakeIdentity(samId), admin)(
+          tourneeId,
+          julieId,
+        ),
+      );
+
+      expect(change, MemberRefused(tourneeId: tourneeId, member: julie));
+    });
+  });
+
+  group('RemoveMember', () {
+    test('should take the member out when an admin asks', () async {
+      final change = valueOf(
+        await RemoveMember(tournees, FakeIdentity(samId), admin)(
+          tourneeId,
+          leaId,
+        ),
       );
 
       expect(change, MemberRemoved(tourneeId: tourneeId, member: lea));
@@ -180,15 +246,17 @@ void main() {
       expect(tournees[tourneeId]!.memberOf(leaId), isNull);
     });
 
-    test('should be refused to another member than the creator', () async {
+    test('should be refused to a member who is not an admin, the creator '
+        'too', () async {
+      // Manu created the 49, but here his phone is not an admin.
       final failure = failureOf(
-        await RemoveMember(tournees, FakeIdentity(leaId))(tourneeId, leaId),
+        await RemoveMember(tournees, FakeIdentity(manuId), member)(
+          tourneeId,
+          leaId,
+        ),
       );
 
-      expect(
-        failure,
-        const TeamCommandRefused(TourneeCommandFailure.notCreator),
-      );
+      expect(failure, const TeamCommandRefused(TourneeCommandFailure.notAdmin));
       expect(tournees.saved, isEmpty);
     });
   });
@@ -206,15 +274,24 @@ void main() {
       expect(store.myTournees.currentId, isNull);
     });
 
-    test('should keep the tournée on the phone when the creator '
-        'asks', () async {
-      final failure = failureOf(
+    test('should let the creator leave too', () async {
+      final change = valueOf(
         await LeaveTournee(tournees, FakeIdentity(manuId), store)(tourneeId),
+      );
+
+      expect(change, MemberLeft(tourneeId: tourneeId, member: manu));
+      expect(store.myTournees.tournees, [tournee12]);
+    });
+
+    test('should keep the tournée on the phone when the member is not in '
+        'it', () async {
+      final failure = failureOf(
+        await LeaveTournee(tournees, FakeIdentity(samId), store)(tourneeId),
       );
 
       expect(
         failure,
-        const TeamCommandRefused(TourneeCommandFailure.creatorStays),
+        const TeamCommandRefused(TourneeCommandFailure.notAMember),
       );
       expect(store.saves, isEmpty);
     });
@@ -226,6 +303,7 @@ void main() {
         await RegenerateJoinCode(
           tournees,
           FakeIdentity(manuId),
+          admin,
           ScriptedRandom(draws234567),
         )(tourneeId),
       );
@@ -248,6 +326,7 @@ void main() {
         await RegenerateJoinCode(
           tournees,
           FakeIdentity(manuId),
+          admin,
           ScriptedRandom(draws234567),
         )(tourneeId),
       );
@@ -255,19 +334,17 @@ void main() {
       expect(code, codeOf('765432'));
     });
 
-    test('should be refused to another member than the creator', () async {
+    test('should be refused to a member who is not an admin', () async {
       final failure = failureOf(
         await RegenerateJoinCode(
           tournees,
           FakeIdentity(leaId),
+          member,
           ScriptedRandom(draws234567),
         )(tourneeId),
       );
 
-      expect(
-        failure,
-        const TeamCommandRefused(TourneeCommandFailure.notCreator),
-      );
+      expect(failure, const TeamCommandRefused(TourneeCommandFailure.notAdmin));
       expect(tournees.saved, isEmpty);
     });
 
@@ -278,6 +355,7 @@ void main() {
         await RegenerateJoinCode(
           tournees,
           FakeIdentity(manuId),
+          admin,
           ScriptedRandom(draws234567),
         )(tourneeId),
       );
@@ -290,7 +368,9 @@ void main() {
   group('DeleteTournee', () {
     test('should delete the tournée and forget it on the phone', () async {
       final deletion = valueOf(
-        await DeleteTournee(tournees, FakeIdentity(manuId), store)(tourneeId),
+        await DeleteTournee(tournees, FakeIdentity(manuId), admin, store)(
+          tourneeId,
+        ),
       );
 
       expect(deletion.tournee.id, tourneeId);
@@ -300,15 +380,24 @@ void main() {
       expect(store.myTournees.currentId, isNull);
     });
 
-    test('should be refused to another member than the creator', () async {
-      final failure = failureOf(
-        await DeleteTournee(tournees, FakeIdentity(leaId), store)(tourneeId),
+    test('should let an admin who is not in the team delete it', () async {
+      final deletion = valueOf(
+        await DeleteTournee(tournees, FakeIdentity(samId), admin, store)(
+          tourneeId,
+        ),
       );
 
-      expect(
-        failure,
-        const TeamCommandRefused(TourneeCommandFailure.notCreator),
+      expect(tournees.deleted, [deletion]);
+    });
+
+    test('should be refused to a member who is not an admin', () async {
+      final failure = failureOf(
+        await DeleteTournee(tournees, FakeIdentity(leaId), member, store)(
+          tourneeId,
+        ),
       );
+
+      expect(failure, const TeamCommandRefused(TourneeCommandFailure.notAdmin));
       expect(tournees.deleted, isEmpty);
       expect(store.saves, isEmpty);
     });
@@ -317,7 +406,9 @@ void main() {
       tournees.offline = true;
 
       final failure = failureOf(
-        await DeleteTournee(tournees, FakeIdentity(manuId), store)(tourneeId),
+        await DeleteTournee(tournees, FakeIdentity(manuId), admin, store)(
+          tourneeId,
+        ),
       );
 
       expect(failure, const TeamOffline());
@@ -327,13 +418,107 @@ void main() {
 
     test('should tell when the tournée cannot be read any more', () async {
       final failure = failureOf(
-        await DeleteTournee(tournees, FakeIdentity(manuId), store)(
+        await DeleteTournee(tournees, FakeIdentity(manuId), admin, store)(
           TourneeId('gone'),
         ),
       );
 
       expect(failure, const TourneeGone());
       expect(store.saves, isEmpty);
+    });
+  });
+
+  group('JoinAsAdmin', () {
+    final joinedAt = DateTime.utc(2026, 11, 2, 10);
+
+    // Sam, an admin, visits the 49 from « Toutes les tournées ».
+    setUp(() {
+      store.myTournees = valueOf(
+        MyTournees.none
+            .remember(summaryOf('t49', 49, status: MemberStatus.visiting))
+            .remember(tournee12)
+            .open(tourneeId),
+      );
+    });
+
+    JoinAsAdmin joinAs(FakeAdminStatus admins, {FakePhoneSettings? settings}) =>
+        JoinAsAdmin(
+          tournees,
+          FakeIdentity(samId),
+          admins,
+          FakeClock(joinedAt),
+          settings ?? FakePhoneSettings(memberName: nameOf('Sam')),
+          store,
+        );
+
+    test('should make the admin an active member, accepted by themself, '
+        'and the tournée theirs on the phone', () async {
+      final change = valueOf(await joinAs(admin)(tourneeId));
+
+      final sam = Member(
+        id: samId,
+        name: nameOf('Sam'),
+        requestedAt: joinedAt,
+        acceptance: ChangeStamp(by: samId, at: joinedAt),
+      );
+      expect(change, AdminJoined(tourneeId: tourneeId, member: sam));
+      expect(tournees.saved.single.$2, change);
+      expect(tournees[tourneeId]!.activeMembers, [manu, lea, sam]);
+      expect(store.myTournees.tournees, [tournee49, tournee12]);
+      expect(store.myTournees.currentId, tourneeId);
+    });
+
+    test('should be refused to someone who is no longer an admin', () async {
+      final failure = failureOf(await joinAs(member)(tourneeId));
+
+      expect(failure, const TeamCommandRefused(TourneeCommandFailure.notAdmin));
+      expect(tournees.saved, isEmpty);
+      expect(store.saves, isEmpty);
+    });
+
+    test('should change nothing when the server cannot be reached', () async {
+      tournees.offline = true;
+
+      final failure = failureOf(await joinAs(admin)(tourneeId));
+
+      expect(failure, const TeamOffline());
+      expect(tournees[tourneeId]!.memberOf(samId), isNull);
+      expect(store.saves, isEmpty);
+    });
+
+    test('should ask for a first name when the phone has none', () async {
+      final failure = failureOf(
+        await joinAs(admin, settings: FakePhoneSettings())(tourneeId),
+      );
+
+      expect(failure, const TeamNoName());
+      expect(tournees.saved, isEmpty);
+    });
+
+    test('should tell when the tournée cannot be read any more', () async {
+      final failure = failureOf(await joinAs(admin)(TourneeId('gone')));
+
+      expect(failure, const TourneeGone());
+      expect(store.saves, isEmpty);
+    });
+
+    test('should save nothing on the phone when it no longer knows the '
+        'tournée', () async {
+      store.myTournees = MyTournees.none;
+
+      valueOf(await joinAs(admin)(tourneeId));
+
+      expect(store.saves, isEmpty);
+    });
+  });
+
+  group('ForgetVisitedTournee', () {
+    test('should forget the tournée on the phone and write nothing', () async {
+      await ForgetVisitedTournee(store)(tourneeId);
+
+      expect(store.myTournees.tournees, [tournee12]);
+      expect(store.myTournees.currentId, isNull);
+      expect(tournees.saved, isEmpty);
     });
   });
 }

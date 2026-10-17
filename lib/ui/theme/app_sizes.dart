@@ -189,6 +189,12 @@ abstract final class AppSizes {
   /// card.
   static const moveStreetsCardRadius = requestCardRadius;
 
+  /// The banner « Administrateur · pas membre » on Accueil (HomeAdmin
+  /// mockup): 14 radius, a 22 dp shield, a 40 dp-high « Rejoindre » pill
+  /// kept 48 dp tall to the finger.
+  static const adminBannerRadius = 14.0;
+  static const adminBannerIcon = 22.0;
+
   /// The round initial before a member or a request (« M », « J »).
   static const avatar = 36.0;
 

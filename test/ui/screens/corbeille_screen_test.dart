@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
@@ -12,6 +13,7 @@ import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import '../../application/use_cases/street_fixtures.dart';
 import '../../domain/tournee/my_tournees_fixtures.dart';
 import '../../domain/tournee/tournee_fixtures.dart';
+import '../../support/fakes/fake_admin_status.dart';
 import '../../support/fakes/fake_my_tournees_store.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/fakes/fake_tournee_repository.dart';
@@ -33,15 +35,15 @@ Street lilasWithoutSeven() => valueOf(
 ).$1;
 
 /// Rue Gambetta (two numbers), deleted on 3 October by Paul, who has left
-/// the team since.
-Street gambettaDeleted() => valueOf(
+/// the team since, or by [by].
+Street gambettaDeleted({MemberId? by}) => valueOf(
   Street.create(
     id: StreetId('gambetta'),
     name: 'Rue Gambetta',
     commune: villefranche,
     houses: lilas.houses.take(2),
   ),
-).delete(by: paulId, at: DateTime(2026, 10, 3, 18)).$1;
+).delete(by: by ?? paulId, at: DateTime(2026, 10, 3, 18)).$1;
 
 void main() {
   late FakeStreetRepository streets;
@@ -63,6 +65,8 @@ void main() {
           tournees: FakeTourneeRepository([team()]),
           member: manuId,
           now: now,
+          // Sam is an admin of the app, not in the team of the 49.
+          admins: FakeAdminStatus(admins: [samId]),
         ),
         child: const TourneeApp(showGallery: false),
       ),
@@ -117,6 +121,22 @@ void main() {
     expect(
       tester.getTopLeft(row('rue-des-lilas.7')).dy,
       lessThan(tester.getTopLeft(row('gambetta')).dy),
+    );
+  });
+
+  testWidgets('should say an admin outside the team deleted a street', (
+    tester,
+  ) async {
+    await pumpCorbeille(tester, [gambettaDeleted(by: samId)]);
+
+    expect(
+      find.descendant(
+        of: row('gambetta'),
+        matching: find.text(
+          '2 numéros · supprimée par un administrateur · 3 oct.',
+        ),
+      ),
+      findsOneWidget,
     );
   });
 

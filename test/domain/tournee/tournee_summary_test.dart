@@ -24,6 +24,23 @@ void main() {
     expect(tournee49.isPending, isFalse);
   });
 
+  test('should be visited when an admin opened it without being in it', () {
+    expect(tournee12Visited.isVisiting, isTrue);
+    expect(tournee12Visited.isPending, isFalse);
+    expect(tournee49.isVisiting, isFalse);
+    expect(tournee7.isVisiting, isFalse);
+  });
+
+  test('should be active, all else kept, once the visiting admin joins', () {
+    final joined = tournee12Visited.accepted();
+
+    expect(joined.status, MemberStatus.active);
+    expect(joined.id, tournee12Visited.id);
+    expect(joined.number, tournee12Visited.number);
+    expect(joined.centre, tournee12Visited.centre);
+    expect(joined.campaign, tournee12Visited.campaign);
+  });
+
   test('should be active, all else kept, once the request is accepted', () {
     final accepted = tournee7.accepted();
 

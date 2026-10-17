@@ -13,6 +13,7 @@ import 'package:tournee_calendriers/application/ports/pending_sync.dart';
 import 'package:tournee_calendriers/infrastructure/ban/ban_address_directory.dart';
 import 'package:tournee_calendriers/infrastructure/firebase_auth/anonymous_auth.dart';
 import 'package:tournee_calendriers/infrastructure/firebase_auth/firebase_identity.dart';
+import 'package:tournee_calendriers/infrastructure/firestore/firestore_admin_status.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_street_repository.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_tournee_directory.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_tournee_repository.dart';
@@ -51,8 +52,9 @@ final httpClientProvider = Provider<http.Client>((ref) {
 ///   and creating or joining a tournée signs in again (`MemberAccount`).
 /// - [firestore]: gives the Firestore database, asked once, only when a
 ///   screen first needs it (following a request to join, the open
-///   tournée's team and streets), so a phone with no tournée never touches
-///   it. It serves the phone's copy first, so an offline cold start works.
+///   tournée's team and streets, whether the phone is an admin), so a
+///   phone that shows none of them never touches it. It serves the
+///   phone's copy first, so an offline cold start works.
 ///
 /// The streets follow the open tournée: those of its current campaign in
 /// Firestore while one is open, the phone's own (M1) while none is. So does
@@ -168,6 +170,11 @@ Future<List<Override>> bindAdapters({
       (ref) => FirestoreTourneeRepository(db, random: random),
     ),
     randomProvider.overrideWithValue(random),
+    // Whether the phone, or a member, is an admin (PLAN §5.12): the
+    // phone's own `admins/{uid}` once it has an account.
+    adminStatusProvider.overrideWith(
+      (ref) => FirestoreAdminStatus(db, identity),
+    ),
   ];
 }
 

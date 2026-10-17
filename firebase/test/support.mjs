@@ -61,11 +61,13 @@ export const twoPm = at('2026-11-02T14:00:00Z');
 export const threePm = at('2026-11-02T15:00:00Z');
 
 // The team: Manu created the tournée, Léa was accepted, Paul is waiting
-// for an answer, Zoé is in no tournée.
+// for an answer, Zoé is in no tournée. Manu is an administrator of the app
+// (`admins/manu`, PLAN §5.12), and so is Sam, who is in no tournée.
 export const manu = 'manu';
 export const lea = 'lea';
 export const paul = 'paul';
 export const zoe = 'zoe';
+export const sam = 'sam';
 
 export const tourneeId = 't49';
 export const code = 'K7P2QX';
@@ -192,9 +194,12 @@ export const streetDoc = (overrides = {}) => ({
 /**
  * Stores the team of Tournée 49 as the adapters leave it after creating
  * it, accepting Léa and receiving Paul's request, with Rue Nationale in
- * the campaign 2026.
+ * the campaign 2026; and the two administrators, added by hand in the
+ * console (no fields).
  */
 export async function seedTeam(env) {
+  await seed(env, `admins/${manu}`, {});
+  await seed(env, `admins/${sam}`, {});
   await seed(env, tourneePath, tourneeDoc());
   await seed(env, memberPath(manu), activeMemberDoc('Manu', manu));
   await seed(env, memberPath(lea), {

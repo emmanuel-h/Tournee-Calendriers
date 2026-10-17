@@ -1,8 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/application/ports/phone_settings.dart';
+import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
@@ -13,10 +16,13 @@ import 'package:tournee_calendriers/ui/screens/settings/privacy_screen.dart';
 
 import '../../domain/tournee/my_tournees_fixtures.dart';
 import '../../domain/tournee/tournee_fixtures.dart';
+import '../../support/fakes/fake_admin_status.dart';
+import '../../support/fakes/fake_member_account.dart';
 import '../../support/fakes/fake_my_tournees_store.dart';
 import '../../support/fakes/fake_phone_settings.dart';
 import '../../support/results.dart';
 import '../support/app_overrides.dart';
+import '../support/clipboard.dart';
 import '../support/navigation.dart';
 
 void main() {
@@ -30,6 +36,8 @@ void main() {
   Future<void> pumpSettings(
     WidgetTester tester, {
     List<Release>? releases,
+    FakeMemberAccount? account,
+    bool admin = false,
   }) async {
     settings = FakePhoneSettings(memberName: nameOf('Manu'));
     await tester.pumpWidget(
@@ -37,6 +45,8 @@ void main() {
         overrides: [
           ...fakePhone(
             settings: settings,
+            account: account,
+            admins: FakeAdminStatus(phoneIsAdmin: admin),
             myTournees: FakeMyTourneesStore(
               valueOf(MyTournees.none.remember(tournee49).open(tournee49.id)),
             ),
@@ -225,5 +235,81 @@ void main() {
 
     expect(find.bySemanticsLabel('0.1.0 · 16 oct. 2026'), findsOneWidget);
     expect(find.bySemanticsLabel('Première version de test.'), findsOneWidget);
+  });
+
+  group('Identifiant de l\'appareil (PLAN §5.12)', () {
+    final uid = MemberId('x7FqA1b2C3d4E5f6G7h8I9j0k9kP2');
+    final row = find.byKey(const Key('settings.deviceId'));
+
+    Future<void> scrollToIt(WidgetTester tester) async {
+      await tester.scrollUntilVisible(row, 100);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('should show the device id shortened and copy it whole', (
+      tester,
+    ) async {
+      final clipboard = FakeClipboard.install(tester);
+      await pumpSettings(
+        tester,
+        account: FakeMemberAccount(signedInMember: uid),
+      );
+      await scrollToIt(tester);
+
+      expect(find.text('x7Fq…9kP2'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('settings.copyDeviceId')));
+      await tester.pump();
+
+      expect(clipboard.text, uid.value);
+      expect(find.text('Identifiant copié'), findsOneWidget);
+    });
+
+    testWidgets('should say administrateur on an admin\'s phone', (
+      tester,
+    ) async {
+      await pumpSettings(
+        tester,
+        account: FakeMemberAccount(signedInMember: uid),
+        admin: true,
+      );
+      await scrollToIt(tester);
+
+      expect(find.text('x7Fq…9kP2 · administrateur'), findsOneWidget);
+    });
+
+    testWidgets('should sign in when it opens, then show the device id', (
+      tester,
+    ) async {
+      final account = FakeMemberAccount(nextMember: uid);
+      await pumpSettings(tester, account: account);
+      await scrollToIt(tester);
+
+      expect(account.signInCalls, greaterThanOrEqualTo(1));
+      expect(find.text('x7Fq…9kP2'), findsOneWidget);
+    });
+
+    testWidgets('should say there is no account yet offline, with nothing '
+        'to copy', (tester) async {
+      await pumpSettings(tester, account: FakeMemberAccount());
+      await scrollToIt(tester);
+
+      expect(
+        find.text('Pas encore de compte\u00a0: connectez-vous au réseau.'),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('settings.copyDeviceId')), findsNothing);
+    });
+
+    testWidgets('should say it is signing in while the sign-in is on its '
+        'way', (tester) async {
+      final account = FakeMemberAccount(nextMember: uid)
+        ..gate = Completer<void>();
+      await pumpSettings(tester, account: account);
+      await scrollToIt(tester);
+
+      expect(find.text('Connexion au serveur…'), findsOneWidget);
+      account.gate.complete();
+      await tester.pumpAndSettle();
+    });
   });
 }

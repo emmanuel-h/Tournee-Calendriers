@@ -82,6 +82,14 @@ void main() {
       );
     });
 
+    test('should open a tournée an admin visits without being in it', () {
+      final mine = valueOf(
+        MyTournees.none.remember(tournee12Visited).open(tournee12Visited.id),
+      );
+
+      expect(mine.current, tournee12Visited);
+    });
+
     test('should refuse a tournée whose request is still pending', () {
       expect(
         failureOf(manusPhone().open(tournee7.id)),

@@ -634,14 +634,14 @@ void main() {
       await bootstrap(storage: storage);
       await tester.pumpAndSettle();
       expect(find.text('Visible par votre équipe.'), findsOneWidget);
-      expect(enabled('welcome.create'), isFalse);
+      // « Créer une tournée » shows only on an admin's phone (PLAN §5.12),
+      // which depends on the real project: only « Rejoindre » is checked.
       expect(enabled('welcome.join'), isFalse);
 
       await tester.enterText(find.byKey(const Key('welcome.name')), 'Léa');
       // « OK » on the keyboard, which then leaves the buttons in sight.
       await tester.testTextInput.receiveAction(TextInputAction.done);
       await tester.pumpAndSettle();
-      expect(enabled('welcome.create'), isTrue);
       expect(enabled('welcome.join'), isTrue);
 
       // « Rejoindre » asks the server nothing until a code is typed: no
@@ -663,7 +663,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.widgetWithText(TextField, 'Léa'), findsOneWidget);
-      expect(enabled('welcome.create'), isTrue);
+      expect(enabled('welcome.join'), isTrue);
     },
   );
 }

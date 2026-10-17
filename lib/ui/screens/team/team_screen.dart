@@ -24,9 +24,11 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 /// leaving or deleting the tournée.
 ///
 /// Every member sees the code and answers requests; « Nouveau code »,
-/// « Retirer » and « Supprimer la tournée » are the creator's, who cannot
-/// leave. The team is followed live; it opens offline from the phone's
-/// copy, where a new code and deleting say they need the network.
+/// « Retirer » and « Supprimer la tournée » are the admins' (PLAN §5.12),
+/// member or not; every member may « Quitter », and an admin who only
+/// visits the tournée « Retirer de Mes tournées ». The team is followed
+/// live; it opens offline from the phone's copy, where a new code and
+/// deleting say they need the network.
 ///
 /// The members' street counts (« 5 rues ») come with the streets taken by
 /// each member (M3), and « Démarrer une nouvelle campagne » with v1.1.
@@ -133,6 +135,9 @@ final class _Team extends ConsumerWidget {
           message: switch (failure) {
             TeamActionFailure.teamChanged => l10n.teamChanged,
             TeamActionFailure.offline => l10n.teamOffline,
+            // Only « Rejoindre » of the banner asks for a name, which it
+            // gets first: said here should it ever happen.
+            TeamActionFailure.noName => l10n.nameBlank,
           },
         );
       }
@@ -217,48 +222,7 @@ final class _Team extends ConsumerWidget {
                 AppSizes.gutter,
                 20,
               ),
-              child: state.iAmCreator
-                  ? SecondaryButton(
-                      key: const Key('team.delete'),
-                      label: l10n.teamDelete,
-                      compact: true,
-                      destructive: true,
-                      onPressed: () async {
-                        final confirmed = await showConfirmDialog(
-                          context,
-                          name: 'team.confirmDelete',
-                          title: l10n.teamDeleteTitle('${state.number}'),
-                          body: l10n.teamDeleteBody,
-                          confirmLabel: l10n.teamDeleteConfirm,
-                          destructive: true,
-                        );
-                        if (!confirmed) return;
-                        if (await run(notifier.deleteTournee) &&
-                            context.mounted) {
-                          context.go(AppRoutes.home);
-                        }
-                      },
-                    )
-                  // The creator cannot leave (PLAN §6.1): they delete.
-                  : SecondaryButton(
-                      key: const Key('team.leave'),
-                      label: l10n.teamLeave,
-                      compact: true,
-                      onPressed: () async {
-                        final confirmed = await showConfirmDialog(
-                          context,
-                          name: 'team.confirmLeave',
-                          title: l10n.teamLeaveTitle('${state.number}'),
-                          body: l10n.teamLeaveBody,
-                          confirmLabel: l10n.teamLeaveConfirm,
-                          destructive: true,
-                        );
-                        if (!confirmed) return;
-                        if (await run(notifier.leave) && context.mounted) {
-                          context.go(AppRoutes.home);
-                        }
-                      },
-                    ),
+              child: _BottomActions(state: state, run: run),
             ),
           ),
         ),
@@ -267,8 +231,86 @@ final class _Team extends ConsumerWidget {
   }
 }
 
+/// At the bottom: « Quitter la tournée » for a member (« Retirer de Mes
+/// tournées » for an admin who only visits it), and beside it « Supprimer
+/// la tournée » for an admin (Team and TeamMember mockups). Each one then
+/// goes back to the start screen with no tournée open.
+final class _BottomActions extends ConsumerWidget {
+  const _BottomActions({required this.state, required this.run});
+
+  final TeamShown state;
+
+  /// Runs a command of Équipe; true once done.
+  final Future<bool> Function(Future<TeamActionFailure?> Function()) run;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final notifier = ref.read(teamProvider.notifier);
+    final first = state.iAmIn
+        ? SecondaryButton(
+            key: const Key('team.leave'),
+            label: l10n.teamLeave,
+            compact: true,
+            onPressed: () async {
+              final confirmed = await showConfirmDialog(
+                context,
+                name: 'team.confirmLeave',
+                title: l10n.teamLeaveTitle('${state.number}'),
+                body: l10n.teamLeaveBody,
+                confirmLabel: l10n.teamLeaveConfirm,
+                destructive: true,
+              );
+              if (!confirmed) return;
+              if (await run(notifier.leave) && context.mounted) {
+                context.go(AppRoutes.home);
+              }
+            },
+          )
+        // Writes nothing (they were never in the team): no confirmation.
+        : SecondaryButton(
+            key: const Key('team.forgetVisit'),
+            label: l10n.teamForgetVisit,
+            compact: true,
+            onPressed: () async {
+              await notifier.forgetVisit();
+              if (context.mounted) context.go(AppRoutes.home);
+            },
+          );
+    if (!state.iAmAdmin) return first;
+    return Row(
+      spacing: 10,
+      children: [
+        Expanded(child: first),
+        Expanded(
+          child: SecondaryButton(
+            key: const Key('team.delete'),
+            label: l10n.teamDelete,
+            compact: true,
+            destructive: true,
+            onPressed: () async {
+              final confirmed = await showConfirmDialog(
+                context,
+                name: 'team.confirmDelete',
+                title: l10n.teamDeleteTitle('${state.number}'),
+                body: l10n.teamDeleteBody,
+                confirmLabel: l10n.teamDeleteConfirm,
+                destructive: true,
+              );
+              if (!confirmed) return;
+              if (await run(notifier.deleteTournee) && context.mounted) {
+                context.go(AppRoutes.home);
+              }
+            },
+          ),
+        ),
+      ],
+    );
+  }
+}
+
 /// The QR code beside « Code K7P-2QX » and its copy button, « Partager »
-/// and, for the creator, « Nouveau code ».
+/// and, for an admin, « Nouveau code ».
 final class _CodeCard extends StatelessWidget {
   const _CodeCard({
     required this.state,
@@ -341,7 +383,7 @@ final class _CodeCard extends StatelessWidget {
                       label: l10n.teamShare,
                       onPressed: onShare,
                     ),
-                    if (state.iAmCreator)
+                    if (state.iAmAdmin)
                       TextButton(
                         key: const Key('team.newCode'),
                         onPressed: onNewCode,
@@ -473,8 +515,8 @@ final class _RequestCard extends StatelessWidget {
   }
 }
 
-/// A member: « Manu (vous) · créateur », and for the creator a ⋮ on the
-/// others that offers « Retirer ».
+/// A member: « Manu (vous) · admin », and for an admin a ⋮ on the others
+/// that offers « Retirer ». The member on the phone has the dark avatar.
 final class _MemberTile extends StatelessWidget {
   const _MemberTile({super.key, required this.member, required this.onRemove});
 
@@ -486,7 +528,7 @@ final class _MemberTile extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final colors = AppColors.of(context);
     final named = member.isMe ? l10n.teamMemberYou(member.name) : member.name;
-    final label = member.isCreator ? l10n.teamMemberCreator(named) : named;
+    final label = member.isAdmin ? l10n.teamMemberAdmin(named) : named;
     return Container(
       constraints: const BoxConstraints(minHeight: AppSizes.memberRowHeight),
       padding: EdgeInsets.fromLTRB(16, 0, member.canRemove ? 4 : 16, 0),
@@ -497,7 +539,7 @@ final class _MemberTile extends StatelessWidget {
       child: Row(
         spacing: 12,
         children: [
-          member.isCreator
+          member.isMe
               ? _Avatar(
                   name: member.name,
                   background: colors.ink,

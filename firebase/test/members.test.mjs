@@ -243,7 +243,7 @@ describe('refusing, cancelling, removing, leaving', () => {
     await assertFails(deleteDoc(memberOf(zoe, paul)));
   });
 
-  it('should let the creator remove an active member', async () => {
+  it('should let an admin, here the creator, remove an active member', async () => {
     await assertSucceeds(deleteDoc(memberOf(manu, lea)));
   });
 
@@ -261,11 +261,12 @@ describe('refusing, cancelling, removing, leaving', () => {
     await assertFails(deleteDoc(memberOf(paul, lea)));
   });
 
-  it('should refuse the creator leaving while the tournée exists', async () => {
-    await assertFails(deleteDoc(memberOf(manu, manu)));
+  it('should let the creator leave, the tournée going on', async () => {
+    // The creator has no power of their own any more (PLAN §5.12).
+    await assertSucceeds(deleteDoc(memberOf(manu, manu)));
   });
 
-  it('should refuse anyone removing the creator', async () => {
+  it('should refuse a member who is not an admin removing the creator', async () => {
     await assertFails(deleteDoc(memberOf(lea, manu)));
   });
 });

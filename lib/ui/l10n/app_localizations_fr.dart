@@ -1196,8 +1196,8 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String teamMemberCreator(String name) {
-    return '$name · créateur';
+  String teamMemberAdmin(String name) {
+    return '$name · admin';
   }
 
   @override
@@ -1558,4 +1558,127 @@ class AppLocalizationsFr extends AppLocalizations {
   String tourneeDeleted(String number) {
     return 'La tournée $number a été supprimée.';
   }
+
+  @override
+  String tourneeAdminRevoked(String number) {
+    return 'Vous n\'êtes plus administrateur : la tournée $number est retirée de Mes tournées.';
+  }
+
+  @override
+  String deviceIdLine(String id) {
+    return 'Identifiant de l\'appareil : $id';
+  }
+
+  @override
+  String get deviceIdLabel => 'Identifiant de l\'appareil';
+
+  @override
+  String deviceIdAdmin(String id) {
+    return '$id · administrateur';
+  }
+
+  @override
+  String get deviceIdCopy => 'Copier l\'identifiant de l\'appareil';
+
+  @override
+  String get deviceIdCopied => 'Identifiant copié';
+
+  @override
+  String get deviceIdNoAccount =>
+      'Pas encore de compte : connectez-vous au réseau.';
+
+  @override
+  String get myTourneesAll => 'Toutes les tournées';
+
+  @override
+  String myTourneesVisited(String centre) {
+    return '$centre · administrateur';
+  }
+
+  @override
+  String myTourneesVisitedSemantics(String title, String centre) {
+    return '$title, $centre, administrateur, ouvrir';
+  }
+
+  @override
+  String myTourneesVisitedOpenSemantics(String title, String centre) {
+    return '$title, $centre, administrateur, tournée ouverte';
+  }
+
+  @override
+  String allTourneesSubtitle(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count tournées',
+      one: '1 tournée',
+      zero: 'aucune tournée',
+    );
+    return 'Administrateur · $_temp0';
+  }
+
+  @override
+  String allTourneesMembers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count membres',
+      one: '1 membre',
+      zero: 'Aucun membre',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String allTourneesMine(String members) {
+    return '$members · vous en êtes membre';
+  }
+
+  @override
+  String allTourneesWaiting(String details, int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count demandes en attente',
+      one: '1 demande en attente',
+    );
+    return '$details · $_temp0';
+  }
+
+  @override
+  String allTourneesRowSemantics(String title, String details) {
+    return '$title, $details, ouvrir';
+  }
+
+  @override
+  String get allTourneesOffline =>
+      'Pas de réseau : la liste ne peut pas être affichée.';
+
+  @override
+  String get allTourneesHint =>
+      'Ouvrez une tournée pour la gérer : code, équipe, rues. Vous n\'y entrez comme membre que si vous la rejoignez.';
+
+  @override
+  String get allTourneesEmpty => 'Aucune tournée pour l\'instant.';
+
+  @override
+  String get adminBannerTitle => 'Administrateur · pas membre';
+
+  @override
+  String get adminBannerBody =>
+      'Vous n\'êtes pas dans l\'équipe de cette tournée.';
+
+  @override
+  String get adminBannerJoin => 'Rejoindre';
+
+  @override
+  String get teamForgetVisit => 'Retirer de Mes tournées';
+
+  @override
+  String startStreetsHeaderVisitor(int count) {
+    return 'Rues · $count';
+  }
+
+  @override
+  String get corbeilleAdmin => 'un administrateur';
 }

@@ -21,12 +21,13 @@ sealed class TourneeChange {
   final TourneeId tourneeId;
 }
 
-/// A change about one member: let in, taken out, or renamed.
+/// A change about one member: let in, taken out, joined, or renamed.
 sealed class MemberChange extends TourneeChange {
   const MemberChange({required super.tourneeId, required this.member});
 
-  /// For [MemberAccepted] and [MemberRenamed], the member as they are now;
-  /// otherwise the member as they were before leaving the tournée.
+  /// For [MemberAccepted], [MemberRenamed] and [AdminJoined], the member as
+  /// they are now; otherwise the member as they were before leaving the
+  /// tournée.
   final Member member;
 
   /// Equal when of the same kind and about the same member: the
@@ -43,7 +44,7 @@ sealed class MemberChange extends TourneeChange {
   int get hashCode => Object.hash(runtimeType, tourneeId, member);
 }
 
-/// An active member accepted the request of [member] (« Accepter », PLAN
+/// An active member or an admin accepted the request of [member] (« Accepter », PLAN
 /// §5.8): storage writes the member's status, `acceptedBy` and `acceptedAt`.
 final class MemberAccepted extends MemberChange {
   const MemberAccepted({required super.tourneeId, required super.member});
@@ -52,7 +53,7 @@ final class MemberAccepted extends MemberChange {
   String toString() => 'MemberAccepted(${tourneeId.value}, $member)';
 }
 
-/// An active member refused the pending request of [member] (« Refuser »):
+/// An active member or an admin refused the pending request of [member] (« Refuser »):
 /// storage deletes the request.
 final class MemberRefused extends MemberChange {
   const MemberRefused({required super.tourneeId, required super.member});
@@ -61,7 +62,7 @@ final class MemberRefused extends MemberChange {
   String toString() => 'MemberRefused(${tourneeId.value}, $member)';
 }
 
-/// The creator removed [member] (« Retirer »): their access is cut at once,
+/// An admin removed [member] (« Retirer »): their access is cut at once,
 /// their marks stay stamped with their name.
 final class MemberRemoved extends MemberChange {
   const MemberRemoved({required super.tourneeId, required super.member});
@@ -88,7 +89,17 @@ final class MemberRenamed extends MemberChange {
   String toString() => 'MemberRenamed(${tourneeId.value}, $member)';
 }
 
-/// The creator replaced the join code [before] by [code] (« Nouveau
+/// An admin who was not in the tournée joined it at once (« Rejoindre »,
+/// PLAN §5.12): [member] is active, accepted by themself, with no code and
+/// no request. Storage creates their member document, already active.
+final class AdminJoined extends MemberChange {
+  const AdminJoined({required super.tourneeId, required super.member});
+
+  @override
+  String toString() => 'AdminJoined(${tourneeId.value}, $member)';
+}
+
+/// An admin replaced the join code [before] by [code] (« Nouveau
 /// code »): the old code stops working, the members stay.
 ///
 /// Storage writes the tournée's `joinCode`, removes `joinCodes/{before}`
@@ -119,7 +130,7 @@ final class JoinCodeRegenerated extends TourneeChange {
       '${code.display})';
 }
 
-/// The creator deleted [tournee] (« Supprimer la tournée »): every member,
+/// An admin deleted [tournee] (« Supprimer la tournée »): every member,
 /// campaign and street goes, with the join code and the number + centre
 /// reservation (PLAN §8.3: deleting the tournée deletes its data).
 ///

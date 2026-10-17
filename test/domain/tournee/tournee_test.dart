@@ -2,6 +2,7 @@ import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
+import 'package:tournee_calendriers/domain/tournee/actor.dart';
 import 'package:tournee_calendriers/domain/tournee/campaign_year.dart';
 import 'package:tournee_calendriers/domain/tournee/member.dart';
 import 'package:tournee_calendriers/domain/tournee/rescue_centre.dart';
@@ -54,8 +55,7 @@ void main() {
           acceptance: ChangeStamp(by: leaId, at: at),
         ),
       ]);
-      expect(tournee.creator.id, leaId);
-      expect(tournee.creator.isActive, isTrue);
+      expect(tournee.memberOf(leaId)!.isActive, isTrue);
     });
   });
 
@@ -95,24 +95,18 @@ void main() {
       );
     });
 
-    test('should refuse the members when the creator is not among them', () {
-      expect(
-        failureOf(_restore([lea, julie])),
-        NewTourneeFailure.creatorNotActive,
-      );
+    test('should keep a tournée whose creator left', () {
+      // The creator has no power of their own any more (PLAN §5.12): they
+      // may leave like anyone, and the tournée goes on.
+      final tournee = valueOf(_restore([lea, julie]));
+
+      expect(tournee.createdBy, manuId);
+      expect(tournee.members, [lea, julie]);
     });
 
-    test('should refuse the members when the creator is pending', () {
-      final pendingManu = Member(
-        id: manuId,
-        name: nameOf('Manu'),
-        requestedAt: createdAt,
-      );
-
-      expect(
-        failureOf(_restore([pendingManu, lea])),
-        NewTourneeFailure.creatorNotActive,
-      );
+    test('should keep a tournée with no member left', () {
+      // Even the last member may leave: admins manage the empty tournée.
+      expect(valueOf(_restore([])).members, isEmpty);
     });
 
     test('should refuse the members when two share an id', () {
@@ -134,10 +128,6 @@ void main() {
   });
 
   group('queries', () {
-    test('should list the creator when asked for it', () {
-      expect(team().creator, manu);
-    });
-
     test('should list the pending requests apart when asked for them', () {
       expect(team().pendingMembers, [julie]);
     });
@@ -153,14 +143,6 @@ void main() {
     test('should find nobody when the id is not in the tournée', () {
       expect(team().memberOf(paulId), isNull);
     });
-
-    test('should tell the creator apart when asked', () {
-      final tournee = team();
-
-      expect(tournee.isCreator(manuId), isTrue);
-      expect(tournee.isCreator(leaId), isFalse);
-      expect(tournee.isCreator(paulId), isFalse);
-    });
   });
 
   group('accept', () {
@@ -169,7 +151,7 @@ void main() {
     test('should make the request active, stamped, when an active member '
         'accepts it', () {
       final (tournee, change) = valueOf(
-        team().accept(julieId, by: leaId, at: at),
+        team().accept(julieId, by: leaActing, at: at),
       );
 
       final accepted = Member(
@@ -185,21 +167,32 @@ void main() {
     });
 
     test('should keep the rest of the tournée when a request is accepted', () {
-      final (tournee, _) = valueOf(team().accept(julieId, by: manuId, at: at));
+      final (tournee, _) = valueOf(
+        team().accept(julieId, by: manuAsAdmin, at: at),
+      );
 
       _expectSameIdentity(tournee, team());
     });
 
+    test('should stamp the admin who is not in the tournée when they '
+        'accept a request', () {
+      final (_, change) = valueOf(
+        team().accept(julieId, by: samAsAdmin, at: at),
+      );
+
+      expect(change.member.acceptance, ChangeStamp(by: samId, at: at));
+    });
+
     test('should refuse when the member is unknown', () {
       expect(
-        failureOf(team().accept(paulId, by: manuId, at: at)),
+        failureOf(team().accept(paulId, by: manuAsAdmin, at: at)),
         TourneeCommandFailure.unknownMember,
       );
     });
 
     test('should refuse when the member is already active', () {
       expect(
-        failureOf(team().accept(leaId, by: manuId, at: at)),
+        failureOf(team().accept(leaId, by: manuAsAdmin, at: at)),
         TourneeCommandFailure.alreadyActive,
       );
     });
@@ -207,7 +200,7 @@ void main() {
 
   group('refuse', () {
     test('should remove the request when an active member refuses it', () {
-      final (tournee, change) = valueOf(team().refuse(julieId, by: leaId));
+      final (tournee, change) = valueOf(team().refuse(julieId, by: leaActing));
 
       expect(tournee.members, [manu, lea]);
       expect(change.tourneeId, tourneeId);
@@ -217,22 +210,22 @@ void main() {
 
     test('should refuse when the member is unknown', () {
       expect(
-        failureOf(team().refuse(paulId, by: manuId)),
+        failureOf(team().refuse(paulId, by: manuAsAdmin)),
         TourneeCommandFailure.unknownMember,
       );
     });
 
     test('should refuse when the member is already active', () {
       expect(
-        failureOf(team().refuse(leaId, by: manuId)),
+        failureOf(team().refuse(leaId, by: manuAsAdmin)),
         TourneeCommandFailure.alreadyActive,
       );
     });
   });
 
   group('remove', () {
-    test('should cut the member out when the creator removes them', () {
-      final (tournee, change) = valueOf(team().remove(leaId, by: manuId));
+    test('should cut the member out when an admin removes them', () {
+      final (tournee, change) = valueOf(team().remove(leaId, by: manuAsAdmin));
 
       expect(tournee.members, [manu, julie]);
       expect(change.tourneeId, tourneeId);
@@ -242,21 +235,22 @@ void main() {
 
     test('should refuse when the member is unknown', () {
       expect(
-        failureOf(team().remove(paulId, by: manuId)),
+        failureOf(team().remove(paulId, by: manuAsAdmin)),
         TourneeCommandFailure.unknownMember,
       );
     });
 
-    test('should refuse when the creator removes themself', () {
-      expect(
-        failureOf(team().remove(manuId, by: manuId)),
-        TourneeCommandFailure.creatorStays,
-      );
+    test('should remove an admin, the creator too, when another admin '
+        'removes them', () {
+      final (tournee, change) = valueOf(team().remove(manuId, by: samAsAdmin));
+
+      expect(tournee.members, [lea, julie]);
+      expect(change.member, manu);
     });
 
     test('should refuse when the member is a pending request', () {
       expect(
-        failureOf(team().remove(julieId, by: manuId)),
+        failureOf(team().remove(julieId, by: manuAsAdmin)),
         TourneeCommandFailure.memberPending,
       );
     });
@@ -277,6 +271,20 @@ void main() {
 
       expect(tournee.members, [manu, lea]);
       expect(change.member, julie);
+    });
+
+    test('should take the creator out when they leave', () {
+      final (tournee, change) = valueOf(team().leave(by: manuId));
+
+      expect(tournee.members, [lea, julie]);
+      expect(tournee.createdBy, manuId);
+      expect(change.member, manu);
+    });
+
+    test('should leave nobody when the last member leaves', () {
+      final (tournee, _) = valueOf(team(members: [manu]).leave(by: manuId));
+
+      expect(tournee.members, isEmpty);
     });
   });
 
@@ -304,9 +312,9 @@ void main() {
         team().rename(nameOf('Emmanuel'), by: manuId),
       );
 
-      expect(tournee.creator.name, nameOf('Emmanuel'));
+      expect(tournee.memberOf(manuId)!.name, nameOf('Emmanuel'));
       expect(
-        tournee.creator.acceptance,
+        tournee.memberOf(manuId)!.acceptance,
         ChangeStamp(by: manuId, at: createdAt),
       );
       expect(change.member.name, nameOf('Emmanuel'));
@@ -315,29 +323,26 @@ void main() {
   });
 
   group('regenerateCode', () {
-    test(
-      'should give a new code drawn from the source when the creator asks',
-      () {
-        // A, B, C, D, E, F: positions 0 to 5 of the alphabet.
-        final random = ScriptedRandom([0, 1, 2, 3, 4, 5]);
+    test('should give a new code drawn from the source when an admin asks', () {
+      // A, B, C, D, E, F: positions 0 to 5 of the alphabet.
+      final random = ScriptedRandom([0, 1, 2, 3, 4, 5]);
 
-        final (tournee, change) = valueOf(
-          team().regenerateCode(by: manuId, random: random),
-        );
+      final (tournee, change) = valueOf(
+        team().regenerateCode(by: manuAsAdmin, random: random),
+      );
 
-        expect(tournee.joinCode, codeOf('ABCDEF'));
-        expect(change.tourneeId, tourneeId);
-        expect(change.before, firstCode);
-        expect(change.code, codeOf('ABCDEF'));
-        expect(tournee.members, team().members);
-        expect(tournee.id, tourneeId);
-        expect(tournee.number, number49);
-        expect(tournee.centre, csVillefranche);
-        expect(tournee.createdBy, manuId);
-        expect(tournee.createdAt, createdAt);
-        expect(tournee.currentCampaign, campaign2026);
-      },
-    );
+      expect(tournee.joinCode, codeOf('ABCDEF'));
+      expect(change.tourneeId, tourneeId);
+      expect(change.before, firstCode);
+      expect(change.code, codeOf('ABCDEF'));
+      expect(tournee.members, team().members);
+      expect(tournee.id, tourneeId);
+      expect(tournee.number, number49);
+      expect(tournee.centre, csVillefranche);
+      expect(tournee.createdBy, manuId);
+      expect(tournee.createdAt, createdAt);
+      expect(tournee.currentCampaign, campaign2026);
+    });
 
     test('should draw again when the new code is the old one', () {
       // K7P2QX first (the current code), then AAAAAA.
@@ -347,7 +352,7 @@ void main() {
       ]);
 
       final (tournee, change) = valueOf(
-        team().regenerateCode(by: manuId, random: random),
+        team().regenerateCode(by: manuAsAdmin, random: random),
       );
 
       expect(tournee.joinCode, codeOf('AAAAAA'));
@@ -356,13 +361,35 @@ void main() {
   });
 
   group('delete', () {
-    test('should hand the whole tournée to storage when the creator deletes '
+    test('should hand the whole tournée to storage when an admin deletes '
         'it', () {
       final tournee = team();
 
-      final deleted = valueOf(tournee.delete(by: manuId));
+      final deleted = valueOf(tournee.delete(by: samAsAdmin));
 
       expect(deleted.tournee, same(tournee));
+    });
+  });
+
+  group('joinAsAdmin', () {
+    final at = DateTime.utc(2026, 11, 2, 10);
+
+    test('should add the admin as an active member accepted by themself', () {
+      final (tournee, change) = valueOf(
+        team().joinAsAdmin(by: samAsAdmin, name: nameOf('Sam'), at: at),
+      );
+
+      final sam = Member(
+        id: samId,
+        name: nameOf('Sam'),
+        requestedAt: at,
+        acceptance: ChangeStamp(by: samId, at: at),
+      );
+      expect(tournee.members, [manu, lea, julie, sam]);
+      expect(tournee.activeMembers, [manu, lea, sam]);
+      expect(change.tourneeId, tourneeId);
+      expect(change.member, sam);
+      _expectSameIdentity(tournee, team());
     });
   });
 
@@ -371,71 +398,47 @@ void main() {
   });
 
   group('permissions', () {
-    // Who may run each command (PLAN §5.8, §6.1, §8.2): `null` means the
+    // Who may run each command (PLAN §5.12, §6.1, §8.2): `null` means the
     // command is allowed, otherwise the failure it returns. Manu created
-    // the tournée, Léa is active, Julie is pending, Paul is not in it.
+    // the tournée and is an admin, Léa is active, Julie is pending, Paul is
+    // not in it; Sam is an admin who is not in it, and Julie is tried once
+    // more as an admin whose own request still waits.
     final at = DateTime.utc(2026, 11, 2, 9);
-    final commands = <String, Object? Function(Tournee, MemberId)>{
+    final commands = <String, Object? Function(Tournee, Actor)>{
       'accept a request': (t, by) => t.accept(julieId, by: by, at: at),
       'refuse a request': (t, by) => t.refuse(julieId, by: by),
       'remove Léa': (t, by) => t.remove(leaId, by: by),
-      'leave': (t, by) => t.leave(by: by),
+      'leave': (t, by) => t.leave(by: by.member),
       'regenerate the code': (t, by) =>
           t.regenerateCode(by: by, random: ScriptedRandom([0, 0, 0, 0, 0, 0])),
       'delete the tournée': (t, by) => t.delete(by: by),
-      'rename themself': (t, by) => t.rename(nameOf('Zoé'), by: by),
+      'rename themself': (t, by) => t.rename(nameOf('Zoé'), by: by.member),
+      'join as an admin': (t, by) =>
+          t.joinAsAdmin(by: by, name: nameOf('Zoé'), at: at),
     };
     const TourneeCommandFailure? ok = null;
+    const pending = TourneeCommandFailure.requestPending;
+    const outsider = TourneeCommandFailure.notAMember;
+    const notAdmin = TourneeCommandFailure.notAdmin;
+    const inIt = TourneeCommandFailure.alreadyMember;
     const matrix = <String, List<TourneeCommandFailure?>>{
-      //                      Manu, Léa, Julie, Paul
-      'accept a request': [
-        ok,
-        ok,
-        TourneeCommandFailure.requestPending,
-        TourneeCommandFailure.notAMember,
-      ],
-      'refuse a request': [
-        ok,
-        ok,
-        TourneeCommandFailure.requestPending,
-        TourneeCommandFailure.notAMember,
-      ],
-      'remove Léa': [
-        ok,
-        TourneeCommandFailure.notCreator,
-        TourneeCommandFailure.requestPending,
-        TourneeCommandFailure.notAMember,
-      ],
-      'leave': [
-        TourneeCommandFailure.creatorStays,
-        ok,
-        ok,
-        TourneeCommandFailure.notAMember,
-      ],
-      'regenerate the code': [
-        ok,
-        TourneeCommandFailure.notCreator,
-        TourneeCommandFailure.requestPending,
-        TourneeCommandFailure.notAMember,
-      ],
-      'delete the tournée': [
-        ok,
-        TourneeCommandFailure.notCreator,
-        TourneeCommandFailure.requestPending,
-        TourneeCommandFailure.notAMember,
-      ],
-      'rename themself': [
-        ok,
-        ok,
-        TourneeCommandFailure.requestPending,
-        TourneeCommandFailure.notAMember,
-      ],
+      //                 Manu, Léa, Julie, Paul, Sam, Julie (admin)
+      'accept a request': [ok, ok, pending, outsider, ok, ok],
+      'refuse a request': [ok, ok, pending, outsider, ok, ok],
+      'remove Léa': [ok, notAdmin, pending, outsider, ok, ok],
+      'leave': [ok, ok, ok, outsider, outsider, ok],
+      'regenerate the code': [ok, notAdmin, pending, outsider, ok, ok],
+      'delete the tournée': [ok, notAdmin, pending, outsider, ok, ok],
+      'rename themself': [ok, ok, pending, outsider, outsider, pending],
+      'join as an admin': [inIt, notAdmin, notAdmin, notAdmin, ok, inIt],
     };
     final actors = {
-      'Manu (creator)': manuId,
-      'Léa (active)': leaId,
-      'Julie (pending)': julieId,
-      'Paul (outsider)': paulId,
+      'Manu (active admin)': manuAsAdmin,
+      'Léa (active)': leaActing,
+      'Julie (pending)': julieActing,
+      'Paul (outsider)': paulActing,
+      'Sam (admin, outsider)': samAsAdmin,
+      'Julie (pending admin)': Actor(member: julieId, isAdmin: true),
     };
 
     for (final MapEntry(key: command, value: run) in commands.entries) {

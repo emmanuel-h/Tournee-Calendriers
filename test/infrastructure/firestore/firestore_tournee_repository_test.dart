@@ -210,7 +210,7 @@ void main() {
       await pumpEventQueue();
       final (accepted, change) = valueOf(
         team(members: [manu, julie])
-            .accept(julieId, by: manuId, at: leaAcceptedAt),
+            .accept(julieId, by: manuAsAdmin, at: leaAcceptedAt),
       );
       await repository().save(accepted, change);
       await pumpEventQueue();
@@ -229,7 +229,7 @@ void main() {
       final subscription = repository().watch(tourneeId).listen(seen.add);
       await pumpEventQueue();
 
-      await repository().delete(valueOf(team().delete(by: manuId)));
+      await repository().delete(valueOf(team().delete(by: manuAsAdmin)));
       await pumpEventQueue();
       await subscription.cancel();
 
@@ -253,7 +253,7 @@ void main() {
           .set(joinRequestDocument(julie, firstCode));
       final (accepted, change) = valueOf(
         team(members: [manu, julie])
-            .accept(julieId, by: manuId, at: leaAcceptedAt),
+            .accept(julieId, by: manuAsAdmin, at: leaAcceptedAt),
       );
 
       final saved = await repository().save(accepted, change);
@@ -298,8 +298,8 @@ void main() {
             ),
           )
         >[
-          ('refused', (t) => t.refuse(julieId, by: leaId)),
-          ('removed', (t) => t.remove(leaId, by: manuId)),
+          ('refused', (t) => t.refuse(julieId, by: leaActing)),
+          ('removed', (t) => t.remove(leaId, by: manuAsAdmin)),
           ('leaving', (t) => t.leave(by: leaId)),
           ('cancelling', (t) => t.leave(by: julieId)),
         ]) {
@@ -325,7 +325,10 @@ void main() {
     test('should replace the join code everywhere it is stored', () async {
       await repository().add(created);
       final (renewed, change) = valueOf(
-        team().regenerateCode(by: manuId, random: ScriptedRandom(draws234567)),
+        team().regenerateCode(
+          by: manuAsAdmin,
+          random: ScriptedRandom(draws234567),
+        ),
       );
 
       final saved = await repository().save(renewed, change);
@@ -340,7 +343,10 @@ void main() {
       await repository().add(created);
       await db.doc('joinCodes/234567').set({'tourneeId': 'other'});
       final (renewed, change) = valueOf(
-        team().regenerateCode(by: manuId, random: ScriptedRandom(draws234567)),
+        team().regenerateCode(
+          by: manuAsAdmin,
+          random: ScriptedRandom(draws234567),
+        ),
       );
       // The adapter draws `K7P2QX` first, the old code: drawn again.
       final draws = [
@@ -363,10 +369,67 @@ void main() {
     });
   });
 
+  group('an admin joining', () {
+    // Sam, an admin outside the team, joins the 49 (PLAN §5.12).
+    final joinedAt = DateTime.utc(2026, 11, 2, 10);
+
+    (Tournee, TourneeChange) samJoins() => valueOf(
+      team().joinAsAdmin(by: samAsAdmin, name: nameOf('Sam'), at: joinedAt),
+    );
+
+    test('should write their own member document, already active', () async {
+      await repository().add(created);
+      final (joined, change) = samJoins();
+
+      final saved = await repository().save(joined, change);
+      await pumpEventQueue();
+
+      expect(valueOf(saved), same(joined));
+      expect(await stored('tournees/t49/members/uid-sam'), {
+        'displayName': 'Sam',
+        'status': 'active',
+        'requestedAt': Timestamp.fromDate(joinedAt),
+        'acceptedBy': 'uid-sam',
+        'acceptedAt': Timestamp.fromDate(joinedAt),
+      });
+    });
+
+    test('should tell and write nothing when the server cannot be '
+        'reached', () async {
+      await repository().add(created);
+      final (joined, change) = samJoins();
+      whenCalling(Invocation.method(#get, [isA<GetOptions>()]))
+          .on(db.doc('tournees/t49'))
+          .thenThrow(firestoreError('unavailable'));
+
+      final saved = await repository().save(joined, change);
+      await pumpEventQueue();
+
+      expect(failureOf(saved), TourneeWriteFailure.noNetwork);
+      expect(await stored('tournees/t49/members/uid-sam'), isNull);
+    });
+
+    test('should throw any other failure of the server', () async {
+      await repository().add(created);
+      final (joined, change) = samJoins();
+      whenCalling(Invocation.method(#get, [isA<GetOptions>()]))
+          .on(db.doc('tournees/t49'))
+          .thenThrow(firestoreError('permission-denied'));
+
+      await expectLater(
+        repository().save(joined, change),
+        throwsA(isA<FirebaseException>()),
+      );
+    });
+  });
+
   test('should tell when a new code is asked offline', () async {
     await repository().add(created);
     final (renewed, change) = valueOf(
-      team().regenerateCode(by: manuId, random: ScriptedRandom(draws234567)),
+      team().regenerateCode(
+        by: manuAsAdmin,
+        random: ScriptedRandom(draws234567),
+      ),
     );
     whenCalling(Invocation.method(#get, null))
         .on(db.doc('joinCodes/234567'))
@@ -381,7 +444,10 @@ void main() {
   test('should throw any other failure of a new code', () async {
     await repository().add(created);
     final (renewed, change) = valueOf(
-      team().regenerateCode(by: manuId, random: ScriptedRandom(draws234567)),
+      team().regenerateCode(
+        by: manuAsAdmin,
+        random: ScriptedRandom(draws234567),
+      ),
     );
     whenCalling(Invocation.method(#get, null))
         .on(db.doc('joinCodes/234567'))
@@ -404,7 +470,7 @@ void main() {
         'name': 'Allée des Roses',
       });
 
-      final deletion = valueOf(team().delete(by: manuId));
+      final deletion = valueOf(team().delete(by: manuAsAdmin));
 
       final deleted = await repository().delete(deletion);
 
@@ -440,11 +506,39 @@ void main() {
           .listen(seen.add);
       await pumpEventQueue();
 
-      await repository().delete(valueOf(team().delete(by: manuId)));
+      await repository().delete(valueOf(team().delete(by: manuAsAdmin)));
       await pumpEventQueue();
       await leasPhone.cancel();
 
       expect(seen, [TourneeLoss.deleted]);
+    });
+
+    test('should delete a tournée its creator left, with the members '
+        'left in it', () async {
+      await repository().add(created);
+      await db.doc('tournees/t49/members/uid-manu').delete();
+      await db.doc('tournees/t49/members/uid-lea').set(memberToDocument(lea));
+
+      final deleted = await repository().delete(
+        valueOf(team(members: [lea]).delete(by: samAsAdmin)),
+      );
+
+      expect(deleted, isA<Ok<TourneeDeleted, TourneeWriteFailure>>());
+      expect(await stored('tournees/t49'), isNull);
+      expect(await stored('tournees/t49/members/uid-lea'), isNull);
+      expect(await stored('tournees/t49/members/uid-manu'), isNull);
+    });
+
+    test('should delete a tournée nobody is in any more', () async {
+      await repository().add(created);
+      await db.doc('tournees/t49/members/uid-manu').delete();
+
+      await repository().delete(
+        valueOf(team(members: []).delete(by: samAsAdmin)),
+      );
+
+      expect(await stored('tournees/t49'), isNull);
+      expect(await stored('joinCodes/K7P2QX'), isNull);
     });
 
     test('should delete in batches of at most 500 writes', () async {
@@ -453,7 +547,7 @@ void main() {
         await db.doc('tournees/t49/campaigns/2026/streets/s$i').set({'n': i});
       }
 
-      await repository().delete(valueOf(team().delete(by: manuId)));
+      await repository().delete(valueOf(team().delete(by: manuAsAdmin)));
 
       final left = await db
           .collection('tournees/t49/campaigns/2026/streets')
@@ -471,7 +565,7 @@ void main() {
           .thenThrow(firestoreError('unavailable'));
 
       final deleted = await repository().delete(
-        valueOf(team().delete(by: manuId)),
+        valueOf(team().delete(by: manuAsAdmin)),
       );
 
       expect(failureOf(deleted), TourneeWriteFailure.noNetwork);
@@ -486,7 +580,7 @@ void main() {
           .thenThrow(firestoreError('permission-denied'));
 
       await expectLater(
-        repository().delete(valueOf(team().delete(by: manuId))),
+        repository().delete(valueOf(team().delete(by: manuAsAdmin))),
         throwsA(isA<FirebaseException>()),
       );
     });

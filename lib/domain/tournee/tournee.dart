@@ -3,6 +3,7 @@ import 'dart:math';
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
+import 'package:tournee_calendriers/domain/tournee/actor.dart';
 import 'package:tournee_calendriers/domain/tournee/campaign_year.dart';
 import 'package:tournee_calendriers/domain/tournee/join_code.dart';
 import 'package:tournee_calendriers/domain/tournee/member.dart';
@@ -14,28 +15,25 @@ import 'package:tournee_calendriers/domain/tournee/tournee_number.dart';
 
 /// Why stored members cannot make a [Tournee].
 enum NewTourneeFailure {
-  /// The creator is not among the members, or is only pending: a tournée
-  /// always has its creator, active.
-  creatorNotActive,
-
   /// Two members have the same id.
   duplicateMember,
 }
 
 /// Why a command on a [Tournee] was refused. The screens only offer each
-/// command to whom may run it (PLAN §5.8), so most of these mean the team
-/// changed in the meantime (« vous avez été retiré »).
+/// command to whom may run it (PLAN §5.8, §5.12), so most of these mean the
+/// team changed in the meantime (« vous avez été retiré »).
 enum TourneeCommandFailure {
-  /// The one acting is not in the tournée: never joined, removed, or left.
+  /// The one acting is not in the tournée (never joined, removed, or left)
+  /// and is not an admin.
   notAMember,
 
-  /// The one acting is still waiting to be accepted: they can do nothing
-  /// but cancel their request (`leave`).
+  /// The one acting is still waiting to be accepted and is not an admin:
+  /// they can do nothing but cancel their request (`leave`).
   requestPending,
 
-  /// Only the creator removes members, regenerates the code and deletes
-  /// the tournée.
-  notCreator,
+  /// Only an admin removes members, regenerates the code, deletes the
+  /// tournée and joins it without a code.
+  notAdmin,
 
   /// The member acted on is not in the tournée (any more).
   unknownMember,
@@ -46,9 +44,8 @@ enum TourneeCommandFailure {
   /// The member to remove is a pending request: refuse it instead.
   memberPending,
 
-  /// The creator can neither be removed nor leave: the tournée would have
-  /// nobody to run it. They delete it instead.
-  creatorStays,
+  /// The admin who asks to join is already in the tournée.
+  alreadyMember,
 }
 
 /// A team's round (« Tournée 49 · CS Villefranche », PLAN §2): the
@@ -56,19 +53,24 @@ enum TourneeCommandFailure {
 /// (PLAN §6.1, §8).
 ///
 /// Invariants, true of every `Tournee`:
-/// - exactly one creator, [createdBy], always an active member;
 /// - each member appears once, pending or active ([Member.status]);
 /// - [members] are sorted by request time, then by id.
 ///
+/// The creator ([createdBy]) has no power of their own (PLAN §5.12): the
+/// app's admins run the tournée, member of it or not, and anyone may
+/// leave, the creator and the last member included. Who acts comes as an
+/// [Actor]: their id and whether they are an admin.
+///
 /// Permissions (each command returns a [TourneeCommandFailure] otherwise):
 ///
-/// | command                    | creator | active | pending      | outsider |
-/// |----------------------------|---------|--------|--------------|----------|
-/// | [accept], [refuse]         | yes     | yes    | no           | no       |
-/// | [remove]                   | yes     | no     | no           | no       |
-/// | [leave]                    | no      | yes    | yes (cancel) | no       |
-/// | [regenerateCode], [delete] | yes     | no     | no           | no       |
-/// | [rename] (themself)        | yes     | yes    | no           | no       |
+/// | command                    | admin      | active | pending      | outsider |
+/// |----------------------------|------------|--------|--------------|----------|
+/// | [accept], [refuse]         | yes        | yes    | no           | no       |
+/// | [remove]                   | yes        | no     | no           | no       |
+/// | [leave]                    | if in it   | yes    | yes (cancel) | no       |
+/// | [regenerateCode], [delete] | yes        | no     | no           | no       |
+/// | [joinAsAdmin]              | if not in  | no     | no           | no       |
+/// | [rename] (themself)        | if active  | yes    | no           | no       |
 ///
 /// A `Tournee` is immutable. Each command returns a new tournée together
 /// with the [TourneeChange] it made, as a Dart record `(Tournee, Change)`;
@@ -118,10 +120,10 @@ final class Tournee {
   );
 
   /// Rebuilds a stored tournée with its [members], given in any order.
+  /// The creator may be gone, and the team empty: everyone may leave.
   ///
   /// Fails with [NewTourneeFailure.duplicateMember] when two members share
-  /// an id, and with [NewTourneeFailure.creatorNotActive] when the creator
-  /// is missing or pending.
+  /// an id.
   static Result<Tournee, NewTourneeFailure> create({
     required TourneeId id,
     required TourneeNumber number,
@@ -138,10 +140,6 @@ final class Tournee {
       if (!ids.add(member.id)) {
         return const Err(NewTourneeFailure.duplicateMember);
       }
-    }
-    final creator = members.where((member) => member.id == createdBy);
-    if (creator.isEmpty || !creator.single.isActive) {
-      return const Err(NewTourneeFailure.creatorNotActive);
     }
     return Ok(
       Tournee._(
@@ -164,8 +162,8 @@ final class Tournee {
   /// The secret to ask to join; changed by [regenerateCode].
   final JoinCode joinCode;
 
-  /// The member who created the tournée: the only one who removes members,
-  /// regenerates the code and deletes it.
+  /// The member who created the tournée (an admin at the time). Kept as
+  /// information only: they may have left, and have no power of their own.
   final MemberId createdBy;
 
   final DateTime createdAt;
@@ -178,14 +176,11 @@ final class Tournee {
   /// change only through the commands below.
   final List<Member> members;
 
-  /// The creator, always an active member.
-  Member get creator => memberOf(createdBy)!;
-
   /// The requests waiting for an answer (« En attente », PLAN §5.8).
   List<Member> get pendingMembers =>
       List.unmodifiable(members.where((member) => !member.isActive));
 
-  /// The accepted members, the creator included (« Membres »).
+  /// The accepted members (« Membres »).
   List<Member> get activeMembers =>
       List.unmodifiable(members.where((member) => member.isActive));
 
@@ -197,17 +192,14 @@ final class Tournee {
     return null;
   }
 
-  /// Whether [id] is the creator.
-  bool isCreator(MemberId id) => id == createdBy;
-
   /// Lets the pending [member] in, as [by] at [at] (« Accepter »). Any
-  /// active member may: nobody has to wait for the creator.
+  /// active member or admin may: nobody has to wait for someone else.
   Result<(Tournee, MemberAccepted), TourneeCommandFailure> accept(
     MemberId member, {
-    required MemberId by,
+    required Actor by,
     required DateTime at,
   }) {
-    if (_activeActor(by) case final failure?) return Err(failure);
+    if (_teamActor(by) case final failure?) return Err(failure);
     final request = memberOf(member);
     if (request == null) return const Err(TourneeCommandFailure.unknownMember);
     if (request.isActive) return const Err(TourneeCommandFailure.alreadyActive);
@@ -215,7 +207,7 @@ final class Tournee {
       id: request.id,
       name: request.name,
       requestedAt: request.requestedAt,
-      acceptance: ChangeStamp(by: by, at: at),
+      acceptance: ChangeStamp(by: by.member, at: at),
     );
     return Ok((
       _withMembers([
@@ -227,12 +219,12 @@ final class Tournee {
   }
 
   /// Turns down the pending request of [member], as [by] (« Refuser »).
-  /// Any active member may.
+  /// Any active member or admin may.
   Result<(Tournee, MemberRefused), TourneeCommandFailure> refuse(
     MemberId member, {
-    required MemberId by,
+    required Actor by,
   }) {
-    if (_activeActor(by) case final failure?) return Err(failure);
+    if (_teamActor(by) case final failure?) return Err(failure);
     final request = memberOf(member);
     if (request == null) return const Err(TourneeCommandFailure.unknownMember);
     if (request.isActive) return const Err(TourneeCommandFailure.alreadyActive);
@@ -243,16 +235,16 @@ final class Tournee {
   }
 
   /// Takes the active [member] out of the tournée, as [by] (« Retirer »).
-  /// Only the creator may; combined with [regenerateCode] when the code
-  /// has leaked (PLAN §5.8).
+  /// Only an admin may, on any active member, admins and the creator
+  /// included; combined with [regenerateCode] when the code has leaked
+  /// (PLAN §5.8).
   Result<(Tournee, MemberRemoved), TourneeCommandFailure> remove(
     MemberId member, {
-    required MemberId by,
+    required Actor by,
   }) {
-    if (_creatorActor(by) case final failure?) return Err(failure);
+    if (_adminActor(by) case final failure?) return Err(failure);
     final removed = memberOf(member);
     if (removed == null) return const Err(TourneeCommandFailure.unknownMember);
-    if (isCreator(member)) return const Err(TourneeCommandFailure.creatorStays);
     if (!removed.isActive) {
       return const Err(TourneeCommandFailure.memberPending);
     }
@@ -263,14 +255,14 @@ final class Tournee {
   }
 
   /// Takes [by] out of the tournée (« Quitter la tournée »), or cancels
-  /// their request when still pending (« Annuler la demande »). The creator
-  /// cannot leave: they delete the tournée.
+  /// their request when still pending (« Annuler la demande »). Any member
+  /// may, the creator and the last one included: an empty tournée stays,
+  /// for the admins to manage (PLAN §5.12).
   Result<(Tournee, MemberLeft), TourneeCommandFailure> leave({
     required MemberId by,
   }) {
     final leaving = memberOf(by);
     if (leaving == null) return const Err(TourneeCommandFailure.notAMember);
-    if (isCreator(by)) return const Err(TourneeCommandFailure.creatorStays);
     return Ok((_without(by), MemberLeft(tourneeId: id, member: leaving)));
   }
 
@@ -301,13 +293,14 @@ final class Tournee {
   }
 
   /// Replaces the join code by a new one drawn from [random], as [by]
-  /// (« Nouveau code »). Only the creator may. The new code always differs
-  /// from the old one, which stops working; the members stay.
+  /// (« Nouveau code »). Only an admin may, member or not. The new code
+  /// always differs from the old one, which stops working; the members
+  /// stay.
   Result<(Tournee, JoinCodeRegenerated), TourneeCommandFailure> regenerateCode({
-    required MemberId by,
+    required Actor by,
     required Random random,
   }) {
-    if (_creatorActor(by) case final failure?) return Err(failure);
+    if (_adminActor(by) case final failure?) return Err(failure);
     JoinCode code;
     // One draw in 887 million gives the same code again: draw once more,
     // or the old code would keep working.
@@ -329,15 +322,41 @@ final class Tournee {
     ));
   }
 
-  /// Deletes the tournée, as [by] (« Supprimer la tournée »). Only the
-  /// creator may. Nothing is left to return but the deletion itself.
-  Result<TourneeDeleted, TourneeCommandFailure> delete({required MemberId by}) {
-    if (_creatorActor(by) case final failure?) return Err(failure);
+  /// Deletes the tournée, as [by] (« Supprimer la tournée »). Only an
+  /// admin may, member or not. Nothing is left to return but the deletion
+  /// itself.
+  Result<TourneeDeleted, TourneeCommandFailure> delete({required Actor by}) {
+    if (_adminActor(by) case final failure?) return Err(failure);
     return Ok(TourneeDeleted(this));
   }
 
-  /// Why [by] may not act for the team, or null when they are an active
-  /// member.
+  /// Makes the admin [by], who is not in the tournée, an active member at
+  /// once under [name] (« Rejoindre » of the banner « Administrateur · pas
+  /// membre », PLAN §5.12): no code, no request to answer, accepted by
+  /// themself at [at], as the creator was.
+  Result<(Tournee, AdminJoined), TourneeCommandFailure> joinAsAdmin({
+    required Actor by,
+    required MemberName name,
+    required DateTime at,
+  }) {
+    if (!by.isAdmin) return const Err(TourneeCommandFailure.notAdmin);
+    if (memberOf(by.member) != null) {
+      return const Err(TourneeCommandFailure.alreadyMember);
+    }
+    final joined = Member(
+      id: by.member,
+      name: name,
+      requestedAt: at,
+      acceptance: ChangeStamp(by: by.member, at: at),
+    );
+    return Ok((
+      _withMembers([...members, joined]),
+      AdminJoined(tourneeId: id, member: joined),
+    ));
+  }
+
+  /// Why [by] may not act for the team as a member, or null when they are
+  /// an active one.
   TourneeCommandFailure? _activeActor(MemberId by) {
     final actor = memberOf(by);
     if (actor == null) return TourneeCommandFailure.notAMember;
@@ -345,14 +364,17 @@ final class Tournee {
     return null;
   }
 
-  /// Why [by] may not run a creator's command, or null when they are the
-  /// creator.
-  TourneeCommandFailure? _creatorActor(MemberId by) {
-    final failure = _activeActor(by);
-    if (failure != null) return failure;
-    if (!isCreator(by)) return TourneeCommandFailure.notCreator;
-    return null;
-  }
+  /// Why [by] may not answer a request, or null when they are an admin or
+  /// an active member.
+  TourneeCommandFailure? _teamActor(Actor by) =>
+      by.isAdmin ? null : _activeActor(by.member);
+
+  /// Why [by] may not run an admin's command, or null when they are an
+  /// admin. A non-admin hears first what keeps them from acting at all
+  /// (not in the tournée, still pending), as before.
+  TourneeCommandFailure? _adminActor(Actor by) => by.isAdmin
+      ? null
+      : _activeActor(by.member) ?? TourneeCommandFailure.notAdmin;
 
   Tournee _without(MemberId member) =>
       _withMembers(members.where((other) => other.id != member));

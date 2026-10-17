@@ -49,7 +49,7 @@ Map<String, Object?> tourneeToDocument(Tournee tournee) => {
 /// The document `members/{uid}` of [member].
 Map<String, Object?> memberToDocument(Member member) => {
   'displayName': member.name.text,
-  'status': _statusName(member.status),
+  'status': _statusName(member),
   'requestedAt': Timestamp.fromDate(member.requestedAt),
   ...acceptanceFields(member),
 };
@@ -63,7 +63,7 @@ Map<String, Object?> joinRequestDocument(Member request, JoinCode code) => {
 /// The fields an acceptance changes on [member]'s document: its status,
 /// who accepted and when.
 Map<String, Object?> acceptanceFields(Member member) => {
-  'status': _statusName(member.status),
+  'status': _statusName(member),
   'acceptedBy': member.acceptance?.by.value,
   'acceptedAt': switch (member.acceptance) {
     null => null,
@@ -134,7 +134,7 @@ Member memberFromDocument(String uid, Map<String, Object?> data) {
     );
     // The status is derived from the acceptance in the domain; a stored
     // one that disagrees is damaged data.
-    if (_statusName(member.status) != status) {
+    if (_statusName(member) != status) {
       throw FormatException('Status not matching the acceptance', status);
     }
     return member;
@@ -184,13 +184,15 @@ List<MemberName> confirmedNamesIn(
   return member.isActive ? [member.name] : const [];
 }
 
-/// Whether a snapshot of the member's own document says they are no
-/// longer in the tournée: only the server's word, without the document,
-/// counts. The phone's copy without it ([fromCache]: offline, or never
-/// read) tells nothing, nor does a deletion made on this phone and not yet
-/// sent ([hasPendingWrites]: leaving, deleting), which the use cases
-/// settle themselves.
-bool isMembershipGone({
+/// Whether a snapshot of a document the phone follows says it is gone:
+/// the member's own document (no longer in the tournée), the tournée an
+/// admin visits (deleted), the phone's `admins/{uid}` (no longer an
+/// admin). Only the server's word, without the document, counts. The
+/// phone's copy without it ([fromCache]: offline, or never read) tells
+/// nothing, nor does a deletion made on this phone and not yet sent
+/// ([hasPendingWrites]: leaving, deleting), which the use cases settle
+/// themselves.
+bool isGoneOnServer({
   required bool exists,
   required bool fromCache,
   required bool hasPendingWrites,
@@ -209,6 +211,19 @@ TourneeLoss lossFromReservation(
     TourneeLoss.removed,
   _ => TourneeLoss.deleted,
 };
+
+/// What « Toutes les tournées » shows of [tournee] to the admin [caller]
+/// (PLAN §5.12): its members and requests counted, and whether [caller] is
+/// in its team.
+TourneeOverview overviewOf(Tournee tournee, MemberId caller) => TourneeOverview(
+  id: tournee.id,
+  number: tournee.number,
+  centre: tournee.centre,
+  campaign: tournee.currentCampaign,
+  activeMembers: tournee.activeMembers.length,
+  pendingRequests: tournee.pendingMembers.length,
+  callerIsActive: tournee.memberOf(caller)?.isActive ?? false,
+);
 
 /// The document `joinCodes/{code}` of [tournee]: only what the join screen
 /// shows (PLAN §8.2).
@@ -276,7 +291,6 @@ RescueCentre rescueCentreFromDocument(Map<String, Object?> data) {
   throw const FormatException('Not a centre de secours document');
 }
 
-String _statusName(MemberStatus status) => switch (status) {
-  MemberStatus.pending => 'pending',
-  MemberStatus.active => 'active',
-};
+/// A member is pending or active; only the phone's own summary of a
+/// tournée is ever « visiting » (PLAN §5.12), never a member document.
+String _statusName(Member member) => member.isActive ? 'active' : 'pending';

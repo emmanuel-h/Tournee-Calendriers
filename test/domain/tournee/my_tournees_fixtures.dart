@@ -1,6 +1,8 @@
 // The tournées of Manu's phone (« Mes tournées », PLAN §5.3): the 49, which
 // he created, the 12 he was accepted in, and the 7 where his request is
 // still pending. All of the CS Villefranche (location privacy, CLAUDE.md).
+// `tournee12Visited` is the 12 as an admin who is not in it keeps it
+// (PLAN §5.12).
 import 'package:tournee_calendriers/domain/tournee/campaign_year.dart';
 import 'package:tournee_calendriers/domain/tournee/member.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
@@ -29,3 +31,4 @@ TourneeSummary summaryOf(
 final tournee49 = summaryOf('t49', 49);
 final tournee12 = summaryOf('t12', 12);
 final tournee7 = summaryOf('t7', 7, status: MemberStatus.pending);
+final tournee12Visited = summaryOf('t12', 12, status: MemberStatus.visiting);

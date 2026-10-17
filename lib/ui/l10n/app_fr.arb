@@ -992,7 +992,7 @@
   "teamCodeCopied": "Code copié",
   "@teamCodeCopied": { "description": "Short message once the join code is on the clipboard." },
   "teamNewCode": "Nouveau code",
-  "@teamNewCode": { "description": "Creator-only button of Équipe: replaces the join code (PLAN §5.8)." },
+  "@teamNewCode": { "description": "Admin-only button of Équipe: replaces the join code (PLAN §5.8, §5.12)." },
   "teamWaitingHeader": "En attente ({count})",
   "@teamWaitingHeader": {
     "description": "Header of the join requests in Équipe.",
@@ -1039,16 +1039,16 @@
       "name": { "type": "String", "example": "Manu" }
     }
   },
-  "teamMemberCreator": "{name} · créateur",
-  "@teamMemberCreator": {
-    "description": "The creator in Équipe ({name} may already read « Manu (vous) »).",
+  "teamMemberAdmin": "{name} · admin",
+  "@teamMemberAdmin": {
+    "description": "An administrator of the app in Équipe (PLAN §5.12; {name} may already read « Manu (vous) »).",
     "placeholders": {
       "name": { "type": "String", "example": "Manu (vous)" }
     }
   },
   "teamMemberOptions": "Options pour {name}",
   "@teamMemberOptions": {
-    "description": "Screen-reader name of the ⋮ of a member (creator only).",
+    "description": "Screen-reader name of the ⋮ of a member (admins only).",
     "placeholders": {
       "name": { "type": "String", "example": "Léa" }
     }
@@ -1077,7 +1077,7 @@
     }
   },
   "teamLeave": "Quitter la tournée",
-  "@teamLeave": { "description": "Button of Équipe for every member but the creator." },
+  "@teamLeave": { "description": "Button of Équipe for every member, admins and the creator included (PLAN §5.12)." },
   "teamLeaveTitle": "Quitter la tournée {number} ?",
   "@teamLeaveTitle": {
     "description": "Title of the confirmation before leaving.",
@@ -1090,7 +1090,7 @@
   "teamLeaveConfirm": "Quitter",
   "@teamLeaveConfirm": { "description": "Confirm button of the confirmation before leaving." },
   "teamDelete": "Supprimer la tournée",
-  "@teamDelete": { "description": "Creator-only button of Équipe." },
+  "@teamDelete": { "description": "Admin-only button of Équipe (PLAN §5.12)." },
   "teamDeleteTitle": "Supprimer la tournée {number} ?",
   "@teamDeleteTitle": {
     "description": "Title of the confirmation before deleting the tournée.",
@@ -1109,7 +1109,7 @@
   "teamChanged": "L'équipe a changé entre-temps.",
   "@teamChanged": { "description": "Snackbar of Équipe when a command was refused because a teammate acted first." },
   "teamOffline": "Pas de réseau. Réessayez une fois connecté.",
-  "@teamOffline": { "description": "Snackbar of Équipe when a new code or deleting the tournée needs the network." },
+  "@teamOffline": { "description": "Snackbar of Équipe when a new code, joining as an admin or deleting the tournée needs the network." },
   "recentJustNow": "à l'instant",
   "@recentJustNow": { "description": "Less than a minute ago." },
   "recentMinutes": "il y a {count} min",
@@ -1334,7 +1334,7 @@
   "@joinRefused": { "description": "Message once the member's request was refused." },
   "tourneeRemoved": "Vous avez été retiré de la tournée {number}.",
   "@tourneeRemoved": {
-    "description": "Message over the next screen once the server said the creator removed the member from a tournée, which the phone then forgot (PLAN §5.3).",
+    "description": "Message over the next screen once the server said an admin removed the member from a tournée, which the phone then forgot (PLAN §5.3).",
     "placeholders": {
       "number": { "type": "String", "example": "49" }
     }
@@ -1345,5 +1345,119 @@
     "placeholders": {
       "number": { "type": "String", "example": "49" }
     }
-  }
+  },
+  "tourneeAdminRevoked": "Vous n'êtes plus administrateur : la tournée {number} est retirée de Mes tournées.",
+  "@tourneeAdminRevoked": {
+    "description": "Message over the next screen once the server said the phone is no longer an admin, so a tournée it only visited was forgotten (PLAN §5.12).",
+    "placeholders": {
+      "number": { "type": "String", "example": "12" }
+    }
+  },
+  "deviceIdLine": "Identifiant de l'appareil : {id}",
+  "@deviceIdLine": {
+    "description": "Bottom of Bienvenue: the phone's uid, shortened, for an admin to type in the console (PLAN §5.12).",
+    "placeholders": {
+      "id": { "type": "String", "example": "x7Fq…9kP2" }
+    }
+  },
+  "deviceIdLabel": "Identifiant de l'appareil",
+  "@deviceIdLabel": { "description": "Last row of Paramètres › Application: the phone's uid (PLAN §5.12)." },
+  "deviceIdAdmin": "{id} · administrateur",
+  "@deviceIdAdmin": {
+    "description": "The phone's uid in Paramètres when it is an admin's.",
+    "placeholders": {
+      "id": { "type": "String", "example": "x7Fq…9kP2" }
+    }
+  },
+  "deviceIdCopy": "Copier l'identifiant de l'appareil",
+  "@deviceIdCopy": { "description": "Screen-reader name and tooltip of the copy button of the phone's uid." },
+  "deviceIdCopied": "Identifiant copié",
+  "@deviceIdCopied": { "description": "Snackbar once the phone's uid is on the clipboard." },
+  "deviceIdNoAccount": "Pas encore de compte : connectez-vous au réseau.",
+  "@deviceIdNoAccount": { "description": "Paramètres row of the phone's uid when the phone has no account and is offline." },
+  "myTourneesAll": "Toutes les tournées",
+  "@myTourneesAll": { "description": "Admin-only link of « Mes tournées » to every tournée of the app, and that screen's title (PLAN §5.12)." },
+  "myTourneesVisited": "{centre} · administrateur",
+  "@myTourneesVisited": {
+    "description": "Second line of a tournée an admin opened without being in its team (Switcher mockup).",
+    "placeholders": {
+      "centre": { "type": "String", "example": "CS Villefranche" }
+    }
+  },
+  "myTourneesVisitedSemantics": "{title}, {centre}, administrateur, ouvrir",
+  "@myTourneesVisitedSemantics": {
+    "description": "Screen-reader label of a visited tournée not open in « Mes tournées ».",
+    "placeholders": {
+      "title": { "type": "String", "example": "Tournée 12 · 2026" },
+      "centre": { "type": "String", "example": "CS Villefranche" }
+    }
+  },
+  "myTourneesVisitedOpenSemantics": "{title}, {centre}, administrateur, tournée ouverte",
+  "@myTourneesVisitedOpenSemantics": {
+    "description": "Screen-reader label of the open tournée in « Mes tournées » when the admin only visits it.",
+    "placeholders": {
+      "title": { "type": "String", "example": "Tournée 12 · 2026" },
+      "centre": { "type": "String", "example": "CS Villefranche" }
+    }
+  },
+  "allTourneesSubtitle": "Administrateur · {count, plural, =0{aucune tournée} =1{1 tournée} other{{count} tournées}}",
+  "@allTourneesSubtitle": {
+    "description": "Under the title of « Toutes les tournées » (AllTournees mockup).",
+    "placeholders": {
+      "count": { "type": "int", "example": "4" }
+    }
+  },
+  "allTourneesMembers": "{count, plural, =0{Aucun membre} =1{1 membre} other{{count} membres}}",
+  "@allTourneesMembers": {
+    "description": "Second line of a tournée of « Toutes les tournées »: its active members (« Aucun membre » in red).",
+    "placeholders": {
+      "count": { "type": "int", "example": "3" }
+    }
+  },
+  "allTourneesMine": "{members} · vous en êtes membre",
+  "@allTourneesMine": {
+    "description": "Second line of a tournée the admin is an active member of.",
+    "placeholders": {
+      "members": { "type": "String", "example": "5 membres" }
+    }
+  },
+  "allTourneesWaiting": "{details} · {count, plural, =1{1 demande en attente} other{{count} demandes en attente}}",
+  "@allTourneesWaiting": {
+    "description": "Second line of a tournée where join requests wait, beside a red dot.",
+    "placeholders": {
+      "details": { "type": "String", "example": "3 membres" },
+      "count": { "type": "int", "example": "1" }
+    }
+  },
+  "allTourneesRowSemantics": "{title}, {details}, ouvrir",
+  "@allTourneesRowSemantics": {
+    "description": "Screen-reader label of a tournée of « Toutes les tournées »: the dot is said in the details.",
+    "placeholders": {
+      "title": { "type": "String", "example": "Tournée 12 · 2026" },
+      "details": { "type": "String", "example": "3 membres · 1 demande en attente" }
+    }
+  },
+  "allTourneesOffline": "Pas de réseau : la liste ne peut pas être affichée.",
+  "@allTourneesOffline": { "description": "« Toutes les tournées » when the server cannot be reached; « Réessayer » under it." },
+  "allTourneesHint": "Ouvrez une tournée pour la gérer : code, équipe, rues. Vous n'y entrez comme membre que si vous la rejoignez.",
+  "@allTourneesHint": { "description": "Under the list of « Toutes les tournées » (AllTournees mockup)." },
+  "allTourneesEmpty": "Aucune tournée pour l'instant.",
+  "@allTourneesEmpty": { "description": "« Toutes les tournées » when the app has none." },
+  "adminBannerTitle": "Administrateur · pas membre",
+  "@adminBannerTitle": { "description": "Banner on Accueil when an admin opened a tournée they are not in (HomeAdmin mockup)." },
+  "adminBannerBody": "Vous n'êtes pas dans l'équipe de cette tournée.",
+  "@adminBannerBody": { "description": "Second line of the banner of an admin who is not in the tournée." },
+  "adminBannerJoin": "Rejoindre",
+  "@adminBannerJoin": { "description": "Button of the banner: the admin joins the team at once (PLAN §5.12)." },
+  "teamForgetVisit": "Retirer de Mes tournées",
+  "@teamForgetVisit": { "description": "Button of Équipe for an admin who only visits the tournée: forgets it on the phone, writes nothing (PLAN §5.12)." },
+  "startStreetsHeaderVisitor": "Rues · {count}",
+  "@startStreetsHeaderVisitor": {
+    "description": "Header of the streets of a tournée an admin visits without being in it (PLAN §5.12), instead of « Mes rues ».",
+    "placeholders": {
+      "count": { "type": "int", "example": "38" }
+    }
+  },
+  "corbeilleAdmin": "un administrateur",
+  "@corbeilleAdmin": { "description": "« supprimée par un administrateur »: an admin of the app who is not in the team (PLAN §5.12)." }
 }

@@ -1,8 +1,11 @@
 // Shared values for the tournée tests: the team of the tournée 49 of the
 // CS Villefranche (PLAN §5.8), with Manu who created it, Léa who was
 // accepted, and Julie whose request is pending. Paul never asked to join.
+// Manu and Sam are administrators of the app (PLAN §5.12); Sam is in no
+// tournée.
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
+import 'package:tournee_calendriers/domain/tournee/actor.dart';
 import 'package:tournee_calendriers/domain/tournee/campaign_year.dart';
 import 'package:tournee_calendriers/domain/tournee/join_code.dart';
 import 'package:tournee_calendriers/domain/tournee/member.dart';
@@ -28,6 +31,18 @@ final manuId = MemberId('uid-manu');
 final leaId = MemberId('uid-lea');
 final julieId = MemberId('uid-julie');
 final paulId = MemberId('uid-paul');
+final samId = MemberId('uid-sam');
+
+/// Manu acting as the administrator he is.
+final manuAsAdmin = Actor(member: manuId, isAdmin: true);
+
+/// Léa, Julie and Paul acting: none of them is an administrator.
+final leaActing = Actor(member: leaId, isAdmin: false);
+final julieActing = Actor(member: julieId, isAdmin: false);
+final paulActing = Actor(member: paulId, isAdmin: false);
+
+/// Sam, an administrator who is not in the tournée.
+final samAsAdmin = Actor(member: samId, isAdmin: true);
 
 final createdAt = DateTime.utc(2026, 10, 1, 18);
 final leaAskedAt = DateTime.utc(2026, 10, 2, 9);

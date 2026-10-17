@@ -8,8 +8,12 @@ enum TeamActionFailure {
   /// first, the member was removed): the screen already shows it as it is.
   teamChanged,
 
-  /// A new code and deleting the tournée need the network.
+  /// A new code, joining as an admin and deleting the tournée need the
+  /// network.
   offline,
+
+  /// Joining as an admin needs a first name, and the phone has none.
+  noName,
 }
 
 /// What Équipe (PLAN §5.8) and the 👥 of the start screen show of the open
@@ -45,26 +49,31 @@ final class TeamShown extends TeamState {
     required this.campaign,
     required this.code,
     required this.qrData,
-    required this.iAmCreator,
+    required this.iAmAdmin,
+    required this.iAmIn,
     required List<RequestRow> requests,
     required List<MemberRow> members,
   }) : requests = List.unmodifiable(requests),
        members = List.unmodifiable(members);
 
-  /// [tournee] as [me] sees it at [now] (« il y a 2 min »).
+  /// [tournee] as [me] sees it at [now] (« il y a 2 min »): [iAmAdmin]
+  /// when the phone is an admin's, [admins] the other members known to be
+  /// admins.
   factory TeamShown.of(
     Tournee tournee, {
     required MemberId me,
     required DateTime now,
+    required bool iAmAdmin,
+    required Set<MemberId> admins,
   }) {
-    final iAmCreator = tournee.isCreator(me);
     return TeamShown(
       number: tournee.number.value,
       centre: tournee.centre.name,
       campaign: tournee.currentCampaign.value,
       code: tournee.joinCode.display,
       qrData: tournee.joinCode.value,
-      iAmCreator: iAmCreator,
+      iAmAdmin: iAmAdmin,
+      iAmIn: tournee.memberOf(me) != null,
       requests: [
         for (final request in tournee.pendingMembers)
           RequestRow(
@@ -79,9 +88,11 @@ final class TeamShown extends TeamState {
             id: member.id,
             name: member.name.text,
             isMe: member.id == me,
-            isCreator: tournee.isCreator(member.id),
-            // The creator stays (PLAN §6.1): nobody removes them.
-            canRemove: iAmCreator && !tournee.isCreator(member.id),
+            // The phone knows about itself first (`adminProvider`).
+            isAdmin: member.id == me ? iAmAdmin : admins.contains(member.id),
+            // An admin removes any other member, admins included; leaving
+            // is « Quitter » (PLAN §5.12).
+            canRemove: iAmAdmin && member.id != me,
           ),
       ],
     );
@@ -102,15 +113,21 @@ final class TeamShown extends TeamState {
   /// §5.2), which « Rejoindre » reads like a typed code.
   final String qrData;
 
-  /// Whether the member on the phone created the tournée: « Nouveau
-  /// code », « Retirer » and « Supprimer la tournée » are theirs; they
-  /// cannot leave.
-  final bool iAmCreator;
+  /// Whether the phone is an admin's (PLAN §5.12): « Nouveau code »,
+  /// « Retirer » and « Supprimer la tournée » are theirs, member of the
+  /// tournée or not.
+  final bool iAmAdmin;
 
-  /// « En attente »: the requests, oldest first. Any member may answer.
+  /// Whether the member on the phone is in the team: they may « Quitter »
+  /// it. Otherwise they are an admin visiting it, who « Retirer de Mes
+  /// tournées » instead and is not listed in « Membres ».
+  final bool iAmIn;
+
+  /// « En attente »: the requests, oldest first. Any member or admin may
+  /// answer.
   final List<RequestRow> requests;
 
-  /// « Membres »: the accepted members, the creator first.
+  /// « Membres »: the accepted members, oldest first.
   final List<MemberRow> members;
 
   @override
@@ -150,13 +167,13 @@ final class RequestRow {
   int get hashCode => Object.hash(id, name, asked);
 }
 
-/// A member in « Membres »: « Manu (vous) · créateur », « Léa [⋮] ».
+/// A member in « Membres »: « Manu (vous) · admin », « Léa [⋮] ».
 final class MemberRow {
   const MemberRow({
     required this.id,
     required this.name,
     required this.isMe,
-    required this.isCreator,
+    required this.isAdmin,
     required this.canRemove,
   });
 
@@ -165,7 +182,9 @@ final class MemberRow {
 
   /// The member on the phone: « (vous) ».
   final bool isMe;
-  final bool isCreator;
+
+  /// An administrator of the app: « · admin ».
+  final bool isAdmin;
 
   /// The member on the phone may « Retirer » this one (⋮).
   final bool canRemove;
@@ -176,9 +195,9 @@ final class MemberRow {
       other.id == id &&
       other.name == name &&
       other.isMe == isMe &&
-      other.isCreator == isCreator &&
+      other.isAdmin == isAdmin &&
       other.canRemove == canRemove;
 
   @override
-  int get hashCode => Object.hash(id, name, isMe, isCreator, canRemove);
+  int get hashCode => Object.hash(id, name, isMe, isAdmin, canRemove);
 }

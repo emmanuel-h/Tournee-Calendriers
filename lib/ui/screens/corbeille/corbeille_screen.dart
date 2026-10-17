@@ -94,7 +94,11 @@ final class _CorbeilleTile extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final colors = AppColors.of(context);
     final item = row.item;
-    final by = row.removedBy ?? l10n.corbeilleSomeone;
+    // Someone no longer in the team is not named: « un administrateur »
+    // for an admin of the app (PLAN §5.12), « un membre » otherwise.
+    final by =
+        row.removedBy ??
+        (row.removedByAdmin ? l10n.corbeilleAdmin : l10n.corbeilleSomeone);
     final when = recentTimeText(l10n, row.removedAt);
     final (title, details) = switch (item) {
       DeletedStreet(:final streetName, :final numberCount) => (

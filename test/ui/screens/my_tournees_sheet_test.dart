@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tournee_calendriers/domain/tournee/member.dart';
 import 'package:tournee_calendriers/domain/tournee/member_name.dart';
 import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
 import 'package:tournee_calendriers/ui/app.dart';
+import 'package:tournee_calendriers/ui/screens/all_tournees/all_tournees_screen.dart';
 import 'package:tournee_calendriers/ui/screens/my_tournees/my_tournees_sheet.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/create_tournee_screen.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/join_tournee_screen.dart';
@@ -11,9 +13,12 @@ import 'package:tournee_calendriers/ui/screens/settings/name_sheet.dart';
 import 'package:tournee_calendriers/ui/screens/settings/settings_screen.dart';
 
 import '../../domain/tournee/my_tournees_fixtures.dart';
-import '../../domain/tournee/tournee_fixtures.dart' show nameOf, team;
+import '../../domain/tournee/tournee_fixtures.dart' show nameOf, samId, team;
+import '../../support/fakes/fake_admin_status.dart';
+import '../../support/fakes/fake_member_account.dart';
 import '../../support/fakes/fake_my_tournees_store.dart';
 import '../../support/fakes/fake_phone_settings.dart';
+import '../../support/fakes/fake_tournee_directory.dart';
 import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/results.dart';
 import '../support/app_overrides.dart';
@@ -31,11 +36,13 @@ void main() {
   late FakeMyTourneesStore store;
   late FakePhoneSettings settings;
 
+  /// The app on a phone keeping [mine]; an admin's when [admin] says so.
   Future<void> pumpApp(
     WidgetTester tester,
     MyTournees mine, {
     MemberName? name,
     FakeTourneeRepository? tournees,
+    bool admin = false,
   }) async {
     store = FakeMyTourneesStore(mine);
     settings = FakePhoneSettings(memberName: name);
@@ -45,6 +52,9 @@ void main() {
           myTournees: store,
           settings: settings,
           tournees: tournees,
+          admins: FakeAdminStatus(phoneIsAdmin: admin),
+          account: FakeMemberAccount(signedInMember: samId),
+          tourneeDirectory: FakeTourneeDirectory(),
         ),
         child: const TourneeApp(showGallery: false),
       ),
@@ -233,7 +243,7 @@ void main() {
   testWidgets(
     'should open « Nouvelle tournée » from the sheet, the open tournée kept',
     (tester) async {
-      await pumpApp(tester, _manusPhone(), name: nameOf('Manu'));
+      await pumpApp(tester, _manusPhone(), name: nameOf('Manu'), admin: true);
       await openSheet(tester);
 
       await tester.tap(find.byKey(const Key('myTournees.create')));
@@ -264,7 +274,7 @@ void main() {
   testWidgets('should open nothing when the name sheet is closed without one', (
     tester,
   ) async {
-    await pumpApp(tester, _manusPhone());
+    await pumpApp(tester, _manusPhone(), admin: true);
     await openSheet(tester);
     await tester.tap(find.byKey(const Key('myTournees.create')));
     await tester.pumpAndSettle();
@@ -276,5 +286,80 @@ void main() {
     expect(find.byType(NameSheet), findsNothing);
     expect(find.byType(CreateTourneeScreen), findsNothing);
     expect(find.text('Tournée 49 · 2026'), findsOneWidget);
+  });
+
+  group('admins (PLAN §5.12)', () {
+    testWidgets('should offer neither « Créer » nor « Toutes les tournées » '
+        'to a phone that is not an admin\'s', (tester) async {
+      await pumpApp(tester, _manusPhone());
+      await openSheet(tester);
+
+      expect(find.byKey(const Key('myTournees.create')), findsNothing);
+      expect(find.byKey(const Key('myTournees.all')), findsNothing);
+      expect(find.byKey(const Key('myTournees.join')), findsOneWidget);
+    });
+
+    testWidgets('should open « Toutes les tournées » for an admin', (
+      tester,
+    ) async {
+      await pumpApp(tester, _manusPhone(), name: nameOf('Sam'), admin: true);
+      await openSheet(tester);
+
+      expect(find.byKey(const Key('myTournees.create')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('myTournees.all')));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AllTourneesScreen), findsOneWidget);
+    });
+
+    testWidgets('should show a visited tournée with a shield and '
+        '« administrateur »', (tester) async {
+      await pumpApp(
+        tester,
+        valueOf(
+          MyTournees.none
+              .remember(tournee49)
+              .remember(summaryOf('t12', 12, status: MemberStatus.visiting))
+              .open(tournee49.id),
+        ),
+        admin: true,
+      );
+      await openSheet(tester);
+
+      expect(find.text('CS Villefranche · administrateur'), findsOneWidget);
+      expect(find.byKey(const Key('myTournees.t12.shield')), findsOneWidget);
+      expect(
+        find.bySemanticsLabel(
+          'Tournée 12 · 2026, CS Villefranche, administrateur, ouvrir',
+        ),
+        findsOneWidget,
+      );
+
+      await tester.tap(find.byKey(const ValueKey('myTournees.t12')));
+      await tester.pumpAndSettle();
+
+      expect(store.myTournees.currentId, tournee12.id);
+    });
+
+    testWidgets('should say an open visited tournée is open', (tester) async {
+      await pumpApp(
+        tester,
+        valueOf(
+          MyTournees.none
+              .remember(summaryOf('t12', 12, status: MemberStatus.visiting))
+              .open(tournee12.id),
+        ),
+        admin: true,
+      );
+      await openSheet(tester);
+
+      expect(
+        find.bySemanticsLabel(
+          'Tournée 12 · 2026, CS Villefranche, administrateur, tournée '
+          'ouverte',
+        ),
+        findsOneWidget,
+      );
+    });
   });
 }

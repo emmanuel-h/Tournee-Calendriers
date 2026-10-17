@@ -65,6 +65,34 @@ void main() {
     });
   });
 
+  group('a visited tournée', () {
+    // The 12 that an admin opened without being in its team (PLAN §5.12).
+    final visited = valueOf(
+      MyTournees.none.remember(tournee12Visited).open(tournee12Visited.id),
+    );
+    final stored = {
+      'version': 1,
+      'open': 't12',
+      'tournees': [
+        {
+          'id': 't12',
+          'number': 12,
+          'centre': 'CS Villefranche',
+          'campaign': 2026,
+          'status': 'visiting',
+        },
+      ],
+    };
+
+    test('should write it as visiting', () {
+      expect(myTourneesToJson(visited), stored);
+    });
+
+    test('should read it back as visiting, open', () {
+      expect(myTourneesFromJson(stored), visited);
+    });
+  });
+
   group('myTourneesFromJson', () {
     test('should read back what was written', () {
       expect(myTourneesFromJson(_stored()), _manusPhone());

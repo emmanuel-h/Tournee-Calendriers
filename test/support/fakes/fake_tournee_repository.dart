@@ -31,7 +31,8 @@ final class FakeTourneeRepository implements TourneeRepository {
   final deleted = <TourneeDeleted>[];
 
   /// Plays a phone without network for what needs the server (a new code,
-  /// deleting): those fail with `noNetwork` and store nothing.
+  /// an admin joining, deleting): those fail with `noNetwork` and store
+  /// nothing.
   var offline = false;
 
   /// When set, a new code is stored as this one instead of the code drawn,
@@ -146,6 +147,9 @@ final class FakeTourneeRepository implements TourneeRepository {
     TourneeChange change,
   ) async {
     var stored = tournee;
+    if (change is AdminJoined && offline) {
+      return const Err(TourneeWriteFailure.noNetwork);
+    }
     if (change is JoinCodeRegenerated) {
       if (offline) return const Err(TourneeWriteFailure.noNetwork);
       if (codeTaken case final code?) stored = _withCode(tournee, code);

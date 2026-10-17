@@ -71,8 +71,18 @@ service cloud.firestore {
         && get(memberPath(tournee, uid())).data.status == 'active';
     }
 
-    function isCreator(tournee) {
-      return signedIn() && get(tourneePath(tournee)).data.createdBy == uid();
+    // An administrator of the app (PLAN §5.12): an `admins/{uid}` document,
+    // added by hand in the console. Admins are global: they manage every
+    // tournée, member of it or not. The creator has no power of their own.
+    function isAdmin() {
+      return signedIn()
+        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
+    // An active member or an admin: who reads a tournée and works on its
+    // streets.
+    function isMemberOrAdmin(tournee) {
+      return isActiveMember(tournee) || isAdmin();
     }
 
     // ------------------------------------------------------------ values
@@ -132,9 +142,11 @@ service cloud.firestore {
     // ----------------------------------------------------- the directory
 
     // `tourneeKeys/{centreKey}_{number}`: its existence reserves the number
-    // in the station. Written by the creator, for the tournée's own pair.
+    // in the station. Written by the creator, an admin, for the tournée's
+    // own pair.
     function isReservation(key, data) {
-      return hasExactly(data, ['tourneeId'])
+      return isAdmin()
+        && hasExactly(data, ['tourneeId'])
         && isId(data.tourneeId)
         && getAfter(tourneePath(data.tourneeId)).data.createdBy == uid()
         && key == getAfter(tourneePath(data.tourneeId)).data.centreKey + '_'
@@ -142,12 +154,12 @@ service cloud.firestore {
     }
 
     // `joinCodes/{code}`: what « Rejoindre » shows before the request, and
-    // nothing else (PLAN §8.2). Written by the creator with the tournée or
-    // a new code, and it must say what the tournée says.
+    // nothing else (PLAN §8.2). Written by an admin with the tournée or a
+    // new code, and it must say what the tournée says.
     function isPreview(code, data) {
-      return hasExactly(data, ['tourneeId', 'number', 'centreName', 'campaign'])
+      return isAdmin()
+        && hasExactly(data, ['tourneeId', 'number', 'centreName', 'campaign'])
         && isId(data.tourneeId)
-        && getAfter(tourneePath(data.tourneeId)).data.createdBy == uid()
         && getAfter(tourneePath(data.tourneeId)).data.joinCode == code
         && data.number == getAfter(tourneePath(data.tourneeId)).data.number
         && data.centreName == getAfter(tourneePath(data.tourneeId)).data.centreName
@@ -155,21 +167,29 @@ service cloud.firestore {
     }
 
     // A code or a reservation goes when its tournée goes, or (a code) when
-    // the creator draws a new one.
-    function isFreedByCreator(tourneeId) {
-      return isCreator(tourneeId) && !existsAfter(tourneePath(tourneeId));
+    // an admin draws a new one.
+    function isFreedByAdmin(tourneeId) {
+      return isAdmin() && !existsAfter(tourneePath(tourneeId));
     }
 
     function isCodeFreed(code, data) {
-      return isCreator(data.tourneeId)
+      return isAdmin()
         && (!existsAfter(tourneePath(data.tourneeId))
           || getAfter(tourneePath(data.tourneeId)).data.joinCode != code);
     }
 
+    // `admins/{uid}`: no fields, added and removed by hand in the console,
+    // never by the app. Any signed-in phone may ask whether one uid is an
+    // admin (its own, or a member's « · admin »); nobody lists them.
+    match /admins/{admin} {
+      allow get: if signedIn();
+    }
+
     match /rescueCentres/{centreKey} {
       // Listed by « Créer » (station names only); the first name stays.
+      // Only admins create tournées, hence stations (PLAN §5.12).
       allow read: if signedIn();
-      allow create: if signedIn()
+      allow create: if isAdmin()
         && isCentreKey(centreKey)
         && hasExactly(request.resource.data, ['name'])
         && isName(request.resource.data.name, 80);
@@ -179,7 +199,7 @@ service cloud.firestore {
       // `get` only: « Créer » asks whether one pair is taken.
       allow get: if signedIn();
       allow create: if signedIn() && isReservation(key, request.resource.data);
-      allow delete: if isFreedByCreator(resource.data.tourneeId);
+      allow delete: if isFreedByAdmin(resource.data.tourneeId);
     }
 
     match /joinCodes/{code} {
@@ -198,11 +218,13 @@ service cloud.firestore {
         'createdAt', 'currentCampaign'];
     }
 
-    // Created in one batch with its reservation, its code, its creator
-    // (already active) and its first campaign (PLAN §8.2): the reservation
-    // can only be created if absent, which makes number + station unique.
+    // Created by an admin in one batch with its reservation, its code, its
+    // creator (already active) and its first campaign (PLAN §8.2): the
+    // reservation can only be created if absent, which makes number +
+    // station unique.
     function isNewTournee(tournee, data) {
-      return hasExactly(data, tourneeFields())
+      return isAdmin()
+        && hasExactly(data, tourneeFields())
         && isTourneeNumber(data.number)
         && isCentreKey(data.centreKey)
         && isName(data.centreName, 80)
@@ -216,26 +238,25 @@ service cloud.firestore {
         && existsAfter(campaignPath(tournee, string(data.currentCampaign)));
     }
 
-    // A new code (creator only): the new code document comes with it and
-    // the old one goes, in the same transaction.
+    // A new code (admins only, member or not): the new code document comes
+    // with it and the old one goes, in the same transaction.
     function isNewCode(tournee, before, after) {
-      return signedIn()
-        && before.createdBy == uid()
+      return isAdmin()
         && after.diff(before).affectedKeys().hasOnly(['joinCode'])
         && isJoinCode(after.joinCode)
         && getAfter(joinCodePath(after.joinCode)).data.tourneeId == tournee
         && !existsAfter(joinCodePath(before.joinCode));
     }
 
-    // Deleting (creator only) is the last batch: the code, the reservation
-    // and the creator's own member document go with the tournée, after
-    // its campaigns, streets and other members (PLAN §8.2).
-    function isTourneeDeletion(tournee, data) {
-      return signedIn()
-        && data.createdBy == uid()
+    // Deleting (admins only, member or not) is the last batch: the code
+    // and the reservation go with the tournée, after its campaigns and
+    // streets, with whichever member documents remain (there may be none:
+    // everyone may leave, PLAN §8.2). The rules cannot list the members,
+    // so they do not check that every one goes.
+    function isTourneeDeletion(data) {
+      return isAdmin()
         && !existsAfter(joinCodePath(data.joinCode))
-        && !existsAfter(tourneeKeyPath(data.centreKey + '_' + string(data.number)))
-        && !existsAfter(memberPath(tournee, uid()));
+        && !existsAfter(tourneeKeyPath(data.centreKey + '_' + string(data.number)));
     }
 
     // ------------------------------------------------------- the members
@@ -256,20 +277,23 @@ service cloud.firestore {
         && data.joinCode == get(tourneePath(tournee)).data.joinCode;
     }
 
-    // The creator, accepted by themself, written with the tournée.
-    function isCreatorMembership(tournee, data) {
-      return hasExactly(data, memberFields())
+    // An admin's own document, active at once and accepted by themself,
+    // without a code: the creator's, written with the tournée, or an admin
+    // joining a tournée they are not in (« Rejoindre », PLAN §5.12).
+    function isAdminMembership(data) {
+      return isAdmin()
+        && hasExactly(data, memberFields())
         && isName(data.displayName, 30)
         && data.status == 'active'
         && data.requestedAt is timestamp
         && data.acceptedBy == uid()
-        && data.acceptedAt is timestamp
-        && getAfter(tourneePath(tournee)).data.createdBy == uid();
+        && data.acceptedAt is timestamp;
     }
 
-    // Any active member accepts a pending one: status, who and when only.
+    // Any active member or admin accepts a pending one: status, who and
+    // when only.
     function isAcceptance(tournee, before, after) {
-      return isActiveMember(tournee)
+      return isMemberOrAdmin(tournee)
         && before.status == 'pending'
         && after.diff(before).affectedKeys().hasOnly(['status', 'acceptedBy', 'acceptedAt'])
         && after.status == 'active'
@@ -286,18 +310,14 @@ service cloud.firestore {
         && isName(after.displayName, 30);
     }
 
-    // Refuse or cancel a request; remove (creator) or leave (the member)
-    // an active one. The creator can neither leave nor be removed: their
-    // member document goes only with the tournée (PLAN §6.1).
+    // Refuse or cancel a request; remove (an admin, any member, admins
+    // included) or leave (the member, the creator too, even the last one)
+    // an active one (PLAN §5.12).
     function isMemberDeletion(tournee, member, data) {
       return signedIn() && (
-        (data.status == 'pending' && (member == uid() || isActiveMember(tournee)))
-        || (data.status == 'active'
-          && member != get(tourneePath(tournee)).data.createdBy
-          && (member == uid() || isCreator(tournee)))
-        || (member == uid()
-          && isCreator(tournee)
-          && !existsAfter(tourneePath(tournee))));
+        member == uid()
+        || isAdmin()
+        || (data.status == 'pending' && isActiveMember(tournee)));
     }
 
     // ------------------------------------------------------- the streets
@@ -391,12 +411,14 @@ service cloud.firestore {
 
     // The same for a number, and one more case: the undo of « Restaurer »
     // puts back the removal it undoes, which may be a teammate's (PLAN
-    // §6.2). Then it must name an active member of the tournée.
+    // §6.2). Then it must name an active member of the tournée, or an
+    // admin, who may have removed it without being in the team.
     function isNumberRemoval(tournee, house) {
       return isRemovalStamp(house)
         || (isId(house.deletedBy)
           && house.deletedAt is timestamp
-          && get(memberPath(tournee, house.deletedBy)).data.status == 'active');
+          && (get(memberPath(tournee, house.deletedBy)).data.status == 'active'
+            || exists(/databases/$(database)/documents/admins/$(house.deletedBy))));
     }
 
     // The 30-day purge of the Corbeille (PLAN §5.11; `isPastRetention` in
@@ -500,51 +522,54 @@ service cloud.firestore {
     }
 
     match /tournees/{tournee} {
-      // No `list`: a tournée is reached by its id, from its code.
-      allow get: if isActiveMember(tournee);
-      allow create: if signedIn() && isNewTournee(tournee, request.resource.data);
+      // A member reaches a tournée by its id, from its code; only admins
+      // list them all (« Toutes les tournées », PLAN §5.12).
+      allow get: if isMemberOrAdmin(tournee);
+      allow list: if isAdmin();
+      allow create: if isNewTournee(tournee, request.resource.data);
       allow update: if isNewCode(tournee, resource.data, request.resource.data);
-      allow delete: if isTourneeDeletion(tournee, resource.data);
+      allow delete: if isTourneeDeletion(resource.data);
 
       match /members/{member} {
         // A pending newcomer reads their own document (« Demande envoyée »
         // follows it), and nothing else.
-        allow get: if (signedIn() && member == uid()) || isActiveMember(tournee);
-        allow list: if isActiveMember(tournee);
+        allow get: if (signedIn() && member == uid()) || isMemberOrAdmin(tournee);
+        allow list: if isMemberOrAdmin(tournee);
         allow create: if signedIn() && member == uid()
           && (isJoinRequest(tournee, request.resource.data)
-            || isCreatorMembership(tournee, request.resource.data));
+            || isAdminMembership(request.resource.data));
         allow update: if isAcceptance(tournee, resource.data, request.resource.data)
           || isRename(tournee, member, resource.data, request.resource.data);
         allow delete: if isMemberDeletion(tournee, member, resource.data);
       }
 
       match /campaigns/{year} {
-        allow read: if isActiveMember(tournee);
-        // The first campaign, written by the creator with the tournée. A new
-        // campaign (v1.1) extends this rule when it is written.
-        allow create: if signedIn()
+        allow read: if isMemberOrAdmin(tournee);
+        // The first campaign, written by the creator (an admin) with the
+        // tournée. A new campaign (v1.1) extends this rule when it is
+        // written.
+        allow create: if isAdmin()
           && hasExactly(request.resource.data, ['startedAt', 'previousYear'])
           && request.resource.data.startedAt is timestamp
           && request.resource.data.previousYear == null
           && getAfter(tourneePath(tournee)).data.createdBy == uid()
           && year == string(getAfter(tourneePath(tournee)).data.currentCampaign);
-        allow delete: if isCreator(tournee);
+        allow delete: if isAdmin();
 
         match /streets/{street} {
-          allow read: if isActiveMember(tournee);
+          allow read: if isMemberOrAdmin(tournee);
           // Previous campaigns are read-only.
-          allow create: if isActiveMember(tournee)
+          allow create: if isMemberOrAdmin(tournee)
             && year == string(get(tourneePath(tournee)).data.currentCampaign)
             && isNewStreet(request.resource.data);
-          allow update: if isActiveMember(tournee)
+          allow update: if isMemberOrAdmin(tournee)
             && year == string(get(tourneePath(tournee)).data.currentCampaign)
             && isStreetChange(tournee, resource.data, request.resource.data);
           // A street goes to the Corbeille by an update. Hard deletion goes
-          // with the tournée (the creator), or is the 30-day purge, which
-          // any active member's app makes (no server, PLAN §5.11).
-          allow delete: if isCreator(tournee)
-            || (isActiveMember(tournee)
+          // with the tournée (an admin), or is the 30-day purge, which any
+          // active member's or admin's app makes (no server, PLAN §5.11).
+          allow delete: if isAdmin()
+            || (isMemberOrAdmin(tournee)
               && year == string(get(tourneePath(tournee)).data.currentCampaign)
               && isPastRetention(resource.data));
         }

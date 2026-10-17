@@ -5,11 +5,14 @@ import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
+import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/components/status_glyph.dart';
 import 'package:tournee_calendriers/ui/screens/import_streets/import_screen.dart';
 import 'package:tournee_calendriers/ui/screens/street/street_screen.dart';
 
+import '../../domain/tournee/my_tournees_fixtures.dart';
+import '../../support/fakes/fake_my_tournees_store.dart';
 import '../../support/fakes/fake_pending_sync.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/results.dart';
@@ -196,4 +199,27 @@ void main() {
       expect(line, findsNothing);
     },
   );
+
+  testWidgets('should list « Rues », not « Mes rues », of a tournée an '
+      'admin visits', (tester) async {
+    await tester.pumpWidget(
+      ProviderScope(
+        overrides: fakePhone(
+          streets: FakeStreetRepository([_street('lilas', 'Rue des Lilas')]),
+          myTournees: FakeMyTourneesStore(
+            valueOf(
+              MyTournees.none
+                  .remember(tournee12Visited)
+                  .open(tournee12Visited.id),
+            ),
+          ),
+        ),
+        child: const TourneeApp(showGallery: false),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Rues · 1'), findsOneWidget);
+    expect(find.byKey(const Key('home.adminBanner')), findsOneWidget);
+  });
 }

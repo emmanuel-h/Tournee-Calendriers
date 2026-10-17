@@ -8,6 +8,7 @@ import 'package:tournee_calendriers/presentation/building/building_grid_notifier
 import 'package:tournee_calendriers/presentation/launch/launch_place.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
+import 'package:tournee_calendriers/ui/screens/all_tournees/all_tournees_screen.dart';
 import 'package:tournee_calendriers/ui/screens/building/adjust_doors_screen.dart';
 import 'package:tournee_calendriers/ui/screens/component_gallery_screen.dart';
 import 'package:tournee_calendriers/ui/screens/corbeille/corbeille_screen.dart';
@@ -101,6 +102,11 @@ GoRouter buildAppRouter({
     GoRoute(
       path: AppRoutes.team,
       builder: (context, state) => const TeamScreen(),
+    ),
+    // Pushed by « Toutes les tournées › » of « Mes tournées » (admins).
+    GoRoute(
+      path: AppRoutes.allTournees,
+      builder: (context, state) => const AllTourneesScreen(),
     ),
     GoRoute(
       path: AppRoutes.settings,

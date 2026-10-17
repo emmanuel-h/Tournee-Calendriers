@@ -14,6 +14,7 @@ void main() {
     String centre = 'CS Villefranche',
     TourneeRowStatus status = TourneeRowStatus.open,
     int waitingRequests = 0,
+    bool visited = false,
   }) => TourneeRow(
     id: TourneeId(id),
     number: number,
@@ -21,6 +22,7 @@ void main() {
     centre: centre,
     status: status,
     waitingRequests: waitingRequests,
+    visited: visited,
   );
 
   test('should compare rows field by field', () {
@@ -33,6 +35,7 @@ void main() {
       row(centre: 'CS Villefranche-sur-Saône'),
       row(status: TourneeRowStatus.closed),
       row(waitingRequests: 1),
+      row(visited: true),
     ]) {
       expect(row() == other, isFalse, reason: '$other');
     }
@@ -80,5 +83,28 @@ void main() {
     final state = MyTourneesState.of(mine, waiting: {tournee12.id: 2});
 
     expect(state.rows.map((row) => row.waitingRequests), [0, 2]);
+  });
+
+  test('should mark the tournées an admin visits, open or not', () {
+    final mine = valueOf(
+      MyTournees.none
+          .remember(tournee49)
+          .remember(tournee12Visited)
+          .open(tournee12Visited.id),
+    );
+
+    final rows = MyTourneesState.of(mine).rows;
+
+    expect(rows.map((row) => row.visited), [false, true]);
+    expect(rows.last.status, TourneeRowStatus.open);
+  });
+
+  test('should show a visited tournée not open as one to open', () {
+    final mine = MyTournees.none.remember(tournee12Visited);
+
+    final row = MyTourneesState.of(mine).rows.single;
+
+    expect(row.status, TourneeRowStatus.closed);
+    expect(row.visited, isTrue);
   });
 }

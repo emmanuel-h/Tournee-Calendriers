@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
+import 'package:tournee_calendriers/domain/tournee/member.dart';
 import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_change.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
@@ -11,7 +12,9 @@ import 'package:tournee_calendriers/presentation/team/team_state.dart';
 
 import '../../domain/tournee/my_tournees_fixtures.dart';
 import '../../domain/tournee/tournee_fixtures.dart';
+import '../../support/fakes/fake_admin_status.dart';
 import '../../support/fakes/fake_my_tournees_store.dart';
+import '../../support/fakes/fake_phone_settings.dart';
 import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/results.dart';
@@ -26,9 +29,21 @@ const draws234567 = [23, 24, 25, 26, 27, 28];
 void main() {
   late FakeTourneeRepository tournees;
   late FakeMyTourneesStore store;
+  late FakeAdminStatus admins;
 
-  /// The phone of [member], with the 49 open (or [mine]).
-  ProviderContainer phoneOf(MemberId member, {MyTournees? mine}) {
+  /// The phone of [member], with the 49 open (or [mine]). Manu and Sam are
+  /// admins of the app; the phone is an admin's when [member] is one of
+  /// them, unless [admin] says otherwise.
+  ProviderContainer phoneOf(
+    MemberId member, {
+    MyTournees? mine,
+    bool? admin,
+    FakePhoneSettings? settings,
+  }) {
+    admins = FakeAdminStatus(
+      phoneIsAdmin: admin ?? (member == manuId || member == samId),
+      admins: [manuId, samId],
+    );
     tournees = FakeTourneeRepository([team()]);
     store = FakeMyTourneesStore(
       mine ??
@@ -46,6 +61,10 @@ void main() {
         identityProvider.overrideWithValue(FakeIdentity(member)),
         clockProvider.overrideWithValue(FakeClock(twoMinutesLater)),
         randomProvider.overrideWithValue(ScriptedRandom(draws234567)),
+        adminStatusProvider.overrideWithValue(admins),
+        phoneSettingsProvider.overrideWithValue(
+          settings ?? FakePhoneSettings(memberName: nameOf('Sam')),
+        ),
       ],
     );
     addTearDown(container.dispose);
@@ -82,7 +101,7 @@ void main() {
     });
 
     test('should show the tournée, its code, the requests and the members '
-        'as the creator sees them', () async {
+        'as an admin in the team sees them', () async {
       final team = await shown(phoneOf(manuId));
 
       expect(team.number, 49);
@@ -90,7 +109,8 @@ void main() {
       expect(team.campaign, 2026);
       expect(team.code, 'K7P-2QX');
       expect(team.qrData, 'K7P2QX');
-      expect(team.iAmCreator, isTrue);
+      expect(team.iAmAdmin, isTrue);
+      expect(team.iAmIn, isTrue);
       expect(team.requests, [
         RequestRow(id: julieId, name: 'Julie', asked: const MinutesAgo(2)),
       ]);
@@ -100,39 +120,75 @@ void main() {
           id: manuId,
           name: 'Manu',
           isMe: true,
-          isCreator: true,
+          isAdmin: true,
           canRemove: false,
         ),
         MemberRow(
           id: leaId,
           name: 'Léa',
           isMe: false,
-          isCreator: false,
+          isAdmin: false,
           canRemove: true,
         ),
       ]);
     });
 
-    test('should offer the creator\'s commands to the creator only', () async {
+    test('should offer an admin\'s commands to admins only, and label the '
+        'admins', () async {
       final team = await shown(phoneOf(leaId));
 
-      expect(team.iAmCreator, isFalse);
+      expect(team.iAmAdmin, isFalse);
+      expect(team.iAmIn, isTrue);
       expect(team.members, [
         MemberRow(
           id: manuId,
           name: 'Manu',
           isMe: false,
-          isCreator: true,
+          isAdmin: true,
           canRemove: false,
         ),
         MemberRow(
           id: leaId,
           name: 'Léa',
           isMe: true,
-          isCreator: false,
+          isAdmin: false,
           canRemove: false,
         ),
       ]);
+    });
+
+    test('should ask once whether each other member is an admin', () async {
+      // The phone knows about itself already (`adminProvider`).
+      final container = phoneOf(leaId);
+      await shown(container);
+
+      tournees.put(team(members: [manu, lea]));
+      await pumpEventQueue();
+
+      expect(admins.asked, [manuId]);
+    });
+
+    test('should show an admin outside the team as a visitor, not among '
+        'the members', () async {
+      final team = await shown(phoneOf(samId));
+
+      expect(team.iAmAdmin, isTrue);
+      expect(team.iAmIn, isFalse);
+      expect(team.members.map((member) => member.id), [manuId, leaId]);
+      expect(team.members.every((member) => member.canRemove), isTrue);
+    });
+
+    test('should take the admin powers away when the phone stops being an '
+        'admin', () async {
+      final container = phoneOf(manuId);
+      await shown(container);
+
+      admins.phoneIsAdmin = false;
+      await pumpEventQueue();
+
+      final state = container.read(teamProvider) as TeamShown;
+      expect(state.iAmAdmin, isFalse);
+      expect(state.members.first.canRemove, isFalse);
     });
 
     test('should name a member of the team, and nobody else', () async {
@@ -226,13 +282,13 @@ void main() {
         MemberId? id,
         String name = 'Léa',
         bool isMe = false,
-        bool isCreator = false,
+        bool isAdmin = false,
         bool canRemove = true,
       }) => MemberRow(
         id: id ?? leaId,
         name: name,
         isMe: isMe,
-        isCreator: isCreator,
+        isAdmin: isAdmin,
         canRemove: canRemove,
       );
 
@@ -241,7 +297,7 @@ void main() {
       expect(row(id: paulId), isNot(row()));
       expect(row(name: 'Paul'), isNot(row()));
       expect(row(isMe: true), isNot(row()));
-      expect(row(isCreator: true), isNot(row()));
+      expect(row(isAdmin: true), isNot(row()));
       expect(row(canRemove: false), isNot(row()));
     });
   });
@@ -394,8 +450,74 @@ void main() {
       expect(await notifier.regenerateCode(), TeamActionFailure.teamChanged);
       expect(await notifier.leave(), TeamActionFailure.teamChanged);
       expect(await notifier.deleteTournee(), TeamActionFailure.teamChanged);
+      expect(await notifier.joinAsAdmin(), TeamActionFailure.teamChanged);
+      await notifier.forgetVisit();
       expect(tournees.saved, isEmpty);
       expect(tournees.deleted, isEmpty);
+      expect(store.saves, isEmpty);
+    });
+
+    group('as an admin visiting', () {
+      MyTournees visiting() => valueOf(
+        MyTournees.none
+            .remember(summaryOf('t49', 49, status: MemberStatus.visiting))
+            .open(tourneeId),
+      );
+
+      test('should join the team at once', () async {
+        final container = phoneOf(samId, mine: visiting());
+        await shown(container);
+
+        final failure = await container
+            .read(teamProvider.notifier)
+            .joinAsAdmin();
+        await pumpEventQueue();
+
+        expect(failure, isNull);
+        expect(tournees.saved.single.$2, isA<AdminJoined>());
+        expect(store.myTournees.current, tournee49);
+        final state = container.read(teamProvider) as TeamShown;
+        expect(state.iAmIn, isTrue);
+      });
+
+      test('should tell joining needs the network', () async {
+        final container = phoneOf(samId, mine: visiting());
+        await shown(container);
+        tournees.offline = true;
+
+        final failure = await container
+            .read(teamProvider.notifier)
+            .joinAsAdmin();
+
+        expect(failure, TeamActionFailure.offline);
+      });
+
+      test('should tell joining needs a first name', () async {
+        final container = phoneOf(
+          samId,
+          mine: visiting(),
+          settings: FakePhoneSettings(),
+        );
+        await shown(container);
+
+        final failure = await container
+            .read(teamProvider.notifier)
+            .joinAsAdmin();
+
+        expect(failure, TeamActionFailure.noName);
+      });
+
+      test('should forget the tournée on the phone only', () async {
+        final container = phoneOf(samId, mine: visiting());
+        await shown(container);
+
+        await container.read(teamProvider.notifier).forgetVisit();
+        await pumpEventQueue();
+
+        expect(store.myTournees.find(tourneeId), isNull);
+        expect(tournees.saved, isEmpty);
+        expect(container.read(teamProvider), isA<NoTeam>());
+      });
     });
   });
 }

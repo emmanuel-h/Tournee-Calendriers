@@ -4,8 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tournee_calendriers/presentation/account/device_id_state.dart';
 import 'package:tournee_calendriers/presentation/my_tournees/my_tournees_notifier.dart';
 import 'package:tournee_calendriers/presentation/settings/settings_notifier.dart';
+import 'package:tournee_calendriers/ui/components/copy_button.dart';
 import 'package:tournee_calendriers/ui/components/section_header.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
@@ -18,7 +20,9 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
 /// Paramètres (⚙, PLAN §5.9, Settings mockup): the member's first name and
 /// « Mes tournées », then the theme, the privacy page, the version (a tap
-/// opens « Nouveautés »), the licences and the data credits. Works offline.
+/// opens « Nouveautés »), the licences, the phone's uid (« Identifiant de
+/// l'appareil », PLAN §5.12) and the data credits. Works offline; the
+/// screen signs the phone in when it opens, so the uid shows once online.
 ///
 /// The « Hors-ligne » section of the mockup comes with the download of a
 /// tournée (M4).
@@ -31,6 +35,8 @@ final class SettingsScreen extends ConsumerWidget {
     final colors = AppColors.of(context);
     final settings = ref.watch(settingsProvider);
     final tournee = ref.watch(currentTourneeProvider);
+    // Watching it signs the phone in (`accountProvider`).
+    final deviceId = ref.watch(deviceIdProvider);
     // Null only for a build without a version in `pubspec.yaml`.
     const version = appBuildName ?? '';
     return Scaffold(
@@ -95,6 +101,7 @@ final class SettingsScreen extends ConsumerWidget {
                     applicationVersion: version,
                   ),
                 ),
+                _DeviceIdRow(deviceId: deviceId),
               ],
             ),
             Padding(
@@ -110,6 +117,66 @@ final class SettingsScreen extends ConsumerWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// « Identifiant de l'appareil » over the uid shortened (« x7Fq…9kP2 ·
+/// administrateur »), and its copy button; « Pas encore de compte… »
+/// offline before any account. Not a button itself: the copy button is.
+final class _DeviceIdRow extends StatelessWidget {
+  const _DeviceIdRow({required this.deviceId});
+
+  final DeviceIdState deviceId;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = AppColors.of(context);
+    final value = switch (deviceId) {
+      DeviceIdShown(:final short, isAdmin: true) => l10n.deviceIdAdmin(short),
+      DeviceIdShown(:final short) => short,
+      DeviceIdSigningIn() => l10n.accountSigningIn,
+      DeviceIdOffline() => l10n.deviceIdNoAccount,
+    };
+    return Container(
+      key: const Key('settings.deviceId'),
+      constraints: const BoxConstraints(minHeight: AppSizes.settingRowHeight),
+      padding: const EdgeInsets.fromLTRB(16, 8, 4, 8),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        border: Border(bottom: BorderSide(color: colors.divider)),
+      ),
+      child: Row(
+        spacing: 12,
+        children: [
+          Expanded(
+            // One node for screen readers: the label and its value.
+            child: MergeSemantics(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                spacing: 2,
+                children: [
+                  Text(
+                    l10n.deviceIdLabel,
+                    style: AppTextStyles.bodyLarge.copyWith(
+                      color: colors.ink,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  Text(
+                    value,
+                    key: const Key('settings.deviceIdValue'),
+                    style: AppTextStyles.small.copyWith(color: colors.muted),
+                  ),
+                ],
+              ),
+            ),
+          ),
+          if (deviceId case DeviceIdShown(:final id))
+            DeviceIdCopyButton(key: const Key('settings.copyDeviceId'), id: id),
+        ],
       ),
     );
   }

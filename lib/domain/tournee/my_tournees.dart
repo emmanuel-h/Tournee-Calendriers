@@ -70,8 +70,8 @@ final class MyTournees {
   }
 
   /// Makes the tournée [id] the one the app shows (tap in « Mes
-  /// tournées »). Fails when the phone does not know it or the member's
-  /// request is still pending.
+  /// tournées »), one the member is in or one an admin visits. Fails when
+  /// the phone does not know it or the member's request is still pending.
   Result<MyTournees, OpenTourneeFailure> open(TourneeId id) {
     final tournee = find(id);
     if (tournee == null) return const Err(OpenTourneeFailure.unknownTournee);

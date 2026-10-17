@@ -99,6 +99,52 @@ void main() {
     expect(directory.memberships, [(tournee49, manuId), (tournee12, manuId)]);
   });
 
+  test('should follow a tournée an admin visits, and forget it once they '
+      'are no longer an admin', () async {
+    final container = containerWith(
+      valueOf(
+        MyTournees.none
+            .remember(tournee49)
+            .remember(tournee12Visited)
+            .open(tournee12Visited.id),
+      ),
+    );
+    container.read(tourneeLossProvider);
+
+    directory.lose(tournee12Visited.id, TourneeLoss.adminRevoked);
+    await pumpEventQueue();
+
+    expect(directory.memberships.last, (tournee12Visited, manuId));
+    expect(
+      container.read(tourneeLossProvider),
+      TourneeLossNotice(
+        tournee: tournee12Visited.id,
+        number: 12,
+        loss: TourneeLoss.adminRevoked,
+        wasOpen: true,
+      ),
+    );
+    expect(store.myTournees.tournees, [tournee49]);
+    expect(store.myTournees.currentId, isNull);
+  });
+
+  test('should follow a visited tournée as a member once the admin has '
+      'joined it', () async {
+    final container = containerWith(MyTournees.none.remember(tournee12Visited));
+    container.read(tourneeLossProvider);
+
+    await store.save(store.myTournees.remember(tournee12Visited.accepted()));
+    await pumpEventQueue();
+
+    expect(directory.memberships, [
+      (tournee12Visited, manuId),
+      (tournee12, manuId),
+    ]);
+    // The visit is no longer followed: a revoked admin keeps a tournée
+    // they are in.
+    expect(directory.isFollowing(tournee12.id), isTrue);
+  });
+
   test('should tell nothing while no tournée is lost', () {
     final container = containerWith(_manusPhone());
 

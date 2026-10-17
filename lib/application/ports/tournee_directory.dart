@@ -52,6 +52,65 @@ final class JoinPreview {
       '${centre.name}, ${campaign.value})';
 }
 
+/// One tournée of the app as « Toutes les tournées » lists it for an admin
+/// (PLAN §5.12): « Tournée 12 · 2026 » under its centre, « 3 membres · 1
+/// demande en attente », « · vous en êtes membre ».
+final class TourneeOverview {
+  const TourneeOverview({
+    required this.id,
+    required this.number,
+    required this.centre,
+    required this.campaign,
+    required this.activeMembers,
+    required this.pendingRequests,
+    required this.callerIsActive,
+  });
+
+  final TourneeId id;
+  final TourneeNumber number;
+  final RescueCentre centre;
+
+  /// The year being worked on.
+  final CampaignYear campaign;
+
+  /// How many members are in the team (accepted); 0 once all left.
+  final int activeMembers;
+
+  /// How many requests to join wait for an answer.
+  final int pendingRequests;
+
+  /// Whether the admin asking is an active member of it.
+  final bool callerIsActive;
+
+  @override
+  bool operator ==(Object other) =>
+      other is TourneeOverview &&
+      other.id == id &&
+      other.number == number &&
+      other.centre == centre &&
+      other.campaign == campaign &&
+      other.activeMembers == activeMembers &&
+      other.pendingRequests == pendingRequests &&
+      other.callerIsActive == callerIsActive;
+
+  @override
+  int get hashCode => Object.hash(
+    id,
+    number,
+    centre,
+    campaign,
+    activeMembers,
+    pendingRequests,
+    callerIsActive,
+  );
+
+  @override
+  String toString() =>
+      'TourneeOverview(${id.value}, ${number.value}, ${centre.name}, '
+      '${campaign.value}, $activeMembers active, $pendingRequests pending, '
+      'caller ${callerIsActive ? 'in' : 'out'})';
+}
+
 /// Why a join code shows no tournée (« Rejoindre », PLAN §5.2).
 enum JoinFailure {
   /// No tournée has this code: mistyped, or replaced by a new one (« Nouveau
@@ -71,7 +130,8 @@ enum DirectoryFailure {
 }
 
 /// What someone outside a tournée needs from the server: the newcomer who
-/// joins with a code, the member who creates a tournée (PLAN Q20, §8.1).
+/// joins with a code, the admin who creates a tournée or looks at all of
+/// them (PLAN Q20, §8.1, §5.12).
 ///
 /// An application port: the use cases own this interface, an adapter in
 /// `infrastructure/` implements it with Firestore (a `joinCodes/{code}` get
@@ -116,6 +176,11 @@ abstract interface class TourneeDirectory {
   /// their tournées (PLAN §5.3): [TourneeLoss.removed] while the tournée
   /// goes on without them, [TourneeLoss.deleted] once it is gone.
   ///
+  /// For a tournée the member only visits as an admin (PLAN §5.12, its
+  /// status `visiting`), whether they may still see it:
+  /// [TourneeLoss.deleted] once it is gone, [TourneeLoss.adminRevoked]
+  /// once they are no longer an admin.
+  ///
   /// Only the server's answer counts: the phone's copy alone (offline, or
   /// a tournée never read on this phone) never says a tournée is lost, so
   /// an offline phone keeps all its tournées (PLAN §7). Neither does a
@@ -142,8 +207,17 @@ abstract interface class TourneeDirectory {
     TourneeNumber number,
   );
 
-  /// The centres de secours already known to the app, for the creator to
+  /// The centres de secours already known to the app, for the admin to
   /// pick from (PLAN §5.2), one per station, by name. Fails with
   /// [DirectoryFailure.noNetwork] offline.
   Future<Result<List<RescueCentre>, DirectoryFailure>> rescueCentres();
+
+  /// Every tournée of the app, for an admin (« Toutes les tournées », PLAN
+  /// §5.12), in no particular order; [caller] is the admin asking, to tell
+  /// the tournées they are an active member of. Asked of the server, never
+  /// answered from the phone's copy, which may miss tournées: fails with
+  /// [DirectoryFailure.noNetwork] offline.
+  Future<Result<List<TourneeOverview>, DirectoryFailure>> allTournees(
+    MemberId caller,
+  );
 }

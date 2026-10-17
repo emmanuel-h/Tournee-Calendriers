@@ -30,6 +30,7 @@ import {
   previewDoc,
   requestDoc,
   rulesEnvironment,
+  sam,
   seed,
   seedTeam,
   streetDoc,
@@ -54,13 +55,14 @@ beforeEach(async () => {
 });
 
 /**
- * Zoé creates Tournée 12 of CS Villefranche, in one transaction as the
- * adapter does: it reads the reservation, the code and the station, then
- * writes them with the tournée, her member document and the first
- * campaign. [change] edits the documents before they are written; a
- * document set to `null` is left out of the transaction.
+ * Sam, an admin (only admins create a tournée, PLAN §5.12), creates
+ * Tournée 12 of CS Villefranche, in one transaction as the adapter does:
+ * it reads the reservation, the code and the station, then writes them
+ * with the tournée, his member document and the first campaign. [change]
+ * edits the documents before they are written; a document set to `null`
+ * is left out of the transaction.
  */
-function createTournee(change = (docs) => docs, uid = zoe) {
+function createTournee(change = (docs) => docs, uid = sam) {
   // `extra`: more documents written in the same transaction, `[path, data]`.
   const tournee = tourneeDoc({ number: 12, joinCode: 'M4N8RT', createdBy: uid, createdAt: twoPm });
   const docs = change({
@@ -69,7 +71,7 @@ function createTournee(change = (docs) => docs, uid = zoe) {
     key: `${tournee.centreKey}_${tournee.number}`,
     keyDoc: { tourneeId: 't12' },
     preview: { tourneeId: 't12', number: 12, centreName: tournee.centreName, campaign: 2026 },
-    member: activeMemberDoc('Zoé', uid, { acceptedAt: twoPm }),
+    member: activeMemberDoc('Sam', uid, { acceptedAt: twoPm }),
     year: '2026',
     campaign: campaignDoc(),
     centre: null,
@@ -101,6 +103,12 @@ function createTournee(change = (docs) => docs, uid = zoe) {
   });
 }
 
+/** An empty database but for Sam, still an admin, to create again. */
+async function restart() {
+  await env.clearFirestore();
+  await seed(env, `admins/${sam}`, {});
+}
+
 /** The tournée [docs] with [fields] changed in it, the preview following. */
 function withTournee(docs, fields) {
   const tournee = { ...docs.tournee, ...fields };
@@ -121,6 +129,21 @@ function withTournee(docs, fields) {
 describe('creating a tournée', () => {
   it('should accept the tournée with its code, reservation, creator and campaign', async () => {
     await assertSucceeds(createTournee());
+  });
+
+  it('should refuse a tournée created by someone who is not an admin', async () => {
+    await assertFails(
+      createTournee(
+        (docs) => ({ ...docs, member: activeMemberDoc('Zoé', zoe, { acceptedAt: twoPm }) }),
+        zoe,
+      ),
+    );
+  });
+
+  it('should refuse a new station written by someone who is not an admin', async () => {
+    await assertFails(
+      setDoc(doc(phoneOf(env, zoe), 'rescueCentres/villefranche-nord'), { name: 'CS Villefranche Nord' }),
+    );
   });
 
   it('should accept a new station, written once with the tournée', async () => {
@@ -187,7 +210,7 @@ describe('creating a tournée', () => {
 
   it('should refuse a creator who is not active', async () => {
     await assertFails(
-      createTournee((docs) => ({ ...docs, member: requestDoc('Zoé', { joinCode: 'M4N8RT' }) })),
+      createTournee((docs) => ({ ...docs, member: requestDoc('Sam', { joinCode: 'M4N8RT' }) })),
     );
   });
 
@@ -223,7 +246,7 @@ describe('creating a tournée', () => {
     );
   });
 
-  it('should refuse a preview written by someone other than the creator', async () => {
+  it('should refuse a preview written by someone who is not an admin', async () => {
     // Even for the tournée's own code, were its document missing.
     await env.withSecurityRulesDisabled((context) =>
       deleteDoc(doc(context.firestore(), `joinCodes/${code}`)),
@@ -239,18 +262,18 @@ describe('creating a tournée', () => {
 
   it('should accept numbers 1 and 9999 and refuse 0 and 10000', async () => {
     await assertSucceeds(createTournee((docs) => withTournee(docs, { number: 1 })));
-    await env.clearFirestore();
+    await restart();
     await assertSucceeds(createTournee((docs) => withTournee(docs, { number: 9999 })));
-    await env.clearFirestore();
+    await restart();
     await assertFails(createTournee((docs) => withTournee(docs, { number: 0 })));
     await assertFails(createTournee((docs) => withTournee(docs, { number: 10000 })));
   });
 
   it('should accept the years 2000 and 2099 and refuse 1999 and 2100', async () => {
     await assertSucceeds(createTournee((docs) => withTournee(docs, { currentCampaign: 2000 })));
-    await env.clearFirestore();
+    await restart();
     await assertSucceeds(createTournee((docs) => withTournee(docs, { currentCampaign: 2099 })));
-    await env.clearFirestore();
+    await restart();
     await assertFails(createTournee((docs) => withTournee(docs, { currentCampaign: 1999 })));
     await assertFails(createTournee((docs) => withTournee(docs, { currentCampaign: 2100 })));
   });
@@ -259,7 +282,7 @@ describe('creating a tournée', () => {
     await assertSucceeds(
       createTournee((docs) => withTournee(docs, { centreName: '🚒'.repeat(80) })),
     );
-    await env.clearFirestore();
+    await restart();
     await assertFails(
       createTournee((docs) => withTournee(docs, { centreName: '🚒'.repeat(81) })),
     );
@@ -284,7 +307,7 @@ describe('creating a tournée', () => {
     await assertFails(createTournee((docs) => withTournee(docs, { communes: ['69264'] })));
   });
 
-  it('should refuse an active member document added to an existing tournée', async () => {
+  it('should refuse an active member document added to an existing tournée by a non-admin', async () => {
     await assertFails(
       setDoc(doc(phoneOf(env, zoe), memberPath(zoe)), activeMemberDoc('Zoé', zoe)),
     );
@@ -331,15 +354,15 @@ describe('the directory', () => {
     await assertFails(getDocs(collection(phoneOf(env, null), 'rescueCentres')));
   });
 
-  it('should accept a new station and refuse changing or deleting one', async () => {
-    const db = phoneOf(env, zoe);
+  it('should accept a new station by an admin and refuse changing or deleting one', async () => {
+    const db = phoneOf(env, sam);
     await assertSucceeds(setDoc(doc(db, 'rescueCentres/villefranche-nord'), { name: 'CS Villefranche Nord' }));
     await assertFails(setDoc(doc(db, 'rescueCentres/villefranche'), { name: 'CS Ville' }));
     await assertFails(deleteDoc(doc(db, 'rescueCentres/villefranche')));
   });
 
   it('should refuse a station with a bad key, a long name or another field', async () => {
-    const db = phoneOf(env, zoe);
+    const db = phoneOf(env, sam);
     await assertFails(setDoc(doc(db, 'rescueCentres/Villefranche-Nord'), { name: 'CS Villefranche Nord' }));
     await assertFails(setDoc(doc(db, 'rescueCentres/villefranche-nord'), { name: '🚒'.repeat(81) }));
     await assertSucceeds(setDoc(doc(db, 'rescueCentres/villefranche-nord'), { name: '🚒'.repeat(80) }));
@@ -362,7 +385,7 @@ describe('a new code', () => {
     });
   }
 
-  it('should let the creator replace the code', async () => {
+  it('should let an admin, here the creator, replace the code', async () => {
     await assertSucceeds(newCode(manu));
   });
 
@@ -412,7 +435,7 @@ describe('deleting a tournée', () => {
     await batch.commit();
   }
 
-  function lastBatch(uid, { keepMember = false, keepCode = false, keepKey = false } = {}) {
+  function lastBatch(uid, { keepCode = false, keepKey = false } = {}) {
     const db = phoneOf(env, uid);
     const batch = writeBatch(db);
     if (!keepCode) batch.delete(doc(db, `joinCodes/${code}`));
@@ -420,18 +443,18 @@ describe('deleting a tournée', () => {
     batch.delete(doc(db, tourneePath));
     batch.delete(doc(db, memberPath(lea)));
     batch.delete(doc(db, memberPath(paul)));
-    if (!keepMember) batch.delete(doc(db, memberPath(manu)));
+    batch.delete(doc(db, memberPath(manu)));
     return batch.commit();
   }
 
-  it('should let the creator delete everything, the members with the tournée', async () => {
+  it('should let an admin, here the creator, delete everything, the members with the tournée', async () => {
     await assertSucceeds(deleteContents(manu));
     await assertSucceeds(lastBatch(manu));
   });
 
-  it('should let the creator delete a batch of 500 streets', async () => {
-    // Each delete reads the tournée and the creator's member document: in a
-    // batch the rules read each document once, whatever the count.
+  it('should let an admin delete a batch of 500 streets', async () => {
+    // Each delete reads the admin document: in a batch the rules read each
+    // document once, whatever the count.
     const ids = Array.from({ length: 500 }, (_, i) => `street${i}`);
     await Promise.all(ids.map((id) => seed(env, `${streetsPath}/${id}`, streetDoc({ houses: {} }))));
     const db = phoneOf(env, manu);
@@ -446,10 +469,11 @@ describe('deleting a tournée', () => {
     await assertFails(lastBatch(lea));
   });
 
-  it('should refuse a tournée deleted without its code, reservation or creator', async () => {
+  it('should refuse a tournée deleted without its code or reservation', async () => {
+    // The members are no longer checked: the creator may have left, and
+    // the batch deletes whichever member documents remain (PLAN §8.2).
     await assertFails(lastBatch(manu, { keepCode: true }));
     await assertFails(lastBatch(manu, { keepKey: true }));
-    await assertFails(lastBatch(manu, { keepMember: true }));
   });
 
   it('should refuse another member deleting a campaign', async () => {

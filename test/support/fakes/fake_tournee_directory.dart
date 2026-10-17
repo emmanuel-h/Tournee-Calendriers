@@ -4,7 +4,8 @@
 // numbers are taken ([taken]) and which centres are known ([centres]), or
 // cuts the network ([offline]). It records the requests sent and cancelled.
 // It also plays the server telling a member they lost a tournée ([lose])
-// and the name it holds for them in a tournée ([hearName]).
+// and the name it holds for them in a tournée ([hearName]), and lists every
+// tournée of the app for an admin ([overviews]).
 import 'dart:async';
 
 import 'package:tournee_calendriers/application/ports/tournee_directory.dart';
@@ -159,6 +160,21 @@ final class FakeTourneeDirectory implements TourneeDirectory {
     if (takenGates.isNotEmpty) await takenGates.removeAt(0).future;
     if (offline) return const Err(DirectoryFailure.noNetwork);
     return Ok(taken.contains((centre.key, number)));
+  }
+
+  /// Every tournée of the app, as « Toutes les tournées » lists them.
+  List<TourneeOverview> overviews = const [];
+
+  /// Every admin [allTournees] was asked for, in order.
+  final allAsked = <MemberId>[];
+
+  @override
+  Future<Result<List<TourneeOverview>, DirectoryFailure>> allTournees(
+    MemberId caller,
+  ) async {
+    allAsked.add(caller);
+    if (offline) return const Err(DirectoryFailure.noNetwork);
+    return Ok(overviews);
   }
 
   @override

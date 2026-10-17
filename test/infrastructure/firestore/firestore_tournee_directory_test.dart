@@ -8,6 +8,8 @@ import 'package:tournee_calendriers/application/ports/tournee_directory.dart';
 import 'package:tournee_calendriers/domain/tournee/member.dart';
 import 'package:tournee_calendriers/domain/tournee/member_name.dart';
 import 'package:tournee_calendriers/domain/tournee/rescue_centre.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_loss.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_number.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_tournee_directory.dart';
@@ -221,6 +223,131 @@ void main() {
       await subscription.cancel();
 
       expect(errors.single, isA<FirebaseException>());
+    });
+  });
+
+  group('visit', () {
+    // Sam, an admin, opened the 49 without being in its team (PLAN §5.12).
+    final visited = summaryOf('t49', 49, status: MemberStatus.visiting);
+
+    Future<List<TourneeLoss>> lossesWhile(
+      Future<void> Function() change,
+    ) async {
+      final seen = <TourneeLoss>[];
+      final subscription = directory
+          .watchMembership(visited, samId)
+          .listen(seen.add);
+      await pumpEventQueue();
+      await change();
+      await pumpEventQueue();
+      await subscription.cancel();
+      return seen;
+    }
+
+    setUp(() async {
+      await db.doc('admins/uid-sam').set(<String, Object?>{});
+      await db.doc('tourneeKeys/villefranche_49').set({'tourneeId': 't49'});
+      await db.doc('tournees/t49').set(tourneeToDocument(team()));
+    });
+
+    test('should tell nothing while the tournée stays and the phone is an '
+        'admin', () async {
+      final seen = await lossesWhile(() async {});
+
+      expect(seen, isEmpty);
+    });
+
+    test('should not take the missing member document for a '
+        'removal', () async {
+      // A visitor has none: following it would say « retiré » at once.
+      final seen = await lossesWhile(
+        () => db.doc('tournees/t49/members/uid-sam').delete(),
+      );
+
+      expect(seen, isEmpty);
+    });
+
+    test('should tell deleted once the tournée goes', () async {
+      final seen = await lossesWhile(() => db.doc('tournees/t49').delete());
+
+      expect(seen, [TourneeLoss.deleted]);
+    });
+
+    test('should tell the admin was revoked once their admin document '
+        'goes', () async {
+      final seen = await lossesWhile(() => db.doc('admins/uid-sam').delete());
+
+      expect(seen, [TourneeLoss.adminRevoked]);
+    });
+  });
+
+  group('allTournees', () {
+    test('should list every tournée with its team counted for the '
+        'caller', () async {
+      await db.doc('tournees/t49').set(tourneeToDocument(team()));
+      for (final member in [manu, lea, julie]) {
+        await db
+            .doc('tournees/t49/members/${member.id.value}')
+            .set(memberToDocument(member));
+      }
+      await db.doc('tournees/t12').set({
+        ...tourneeToDocument(team()),
+        'number': 12,
+      });
+
+      final all = valueOf(await directory.allTournees(leaId));
+
+      expect(all, [
+        overviewOf(team(), leaId),
+        overviewOf(
+          valueOf(
+            Tournee.create(
+              id: TourneeId('t12'),
+              number: valueOf(TourneeNumber.create(12)),
+              centre: csVillefranche,
+              joinCode: firstCode,
+              createdBy: manuId,
+              createdAt: createdAt,
+              currentCampaign: campaign2026,
+              members: const [],
+            ),
+          ),
+          leaId,
+        ),
+      ]);
+    });
+
+    test('should leave out a tournée it cannot read', () async {
+      await db.doc('tournees/t49').set(tourneeToDocument(team()));
+      await db.doc('tournees/broken').set({'number': 'quarante'});
+
+      final all = valueOf(await directory.allTournees(samId));
+
+      expect(all.map((tournee) => tournee.id), [tourneeId]);
+    });
+
+    test('should list nothing when the app has no tournée', () async {
+      expect(valueOf(await directory.allTournees(samId)), isEmpty);
+    });
+
+    test('should tell when the server cannot be reached', () async {
+      await db.doc('tournees/t49').set(tourneeToDocument(team()));
+      // The in-memory Firestore reads a collection document by document.
+      offline(db.doc('tournees/t49'));
+
+      final all = await directory.allTournees(samId);
+
+      expect(failureOf(all), DirectoryFailure.noNetwork);
+    });
+
+    test('should throw any other failure of the server', () async {
+      await db.doc('tournees/t49').set(tourneeToDocument(team()));
+      offline(db.doc('tournees/t49'), 'permission-denied');
+
+      await expectLater(
+        directory.allTournees(samId),
+        throwsA(isA<FirebaseException>()),
+      );
     });
   });
 
