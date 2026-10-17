@@ -29,7 +29,7 @@ dependencies:
   flutter_localizations:
     sdk: flutter
   flutter_riverpod: 3.4.3
-  go_router: 18.0.2
+  go_router: 18.1.0
   # Address and map services over HTTP (BAN, geopf, Overpass), only in
   # infrastructure/ (PLAN §10.2).
   http: 1.6.0
