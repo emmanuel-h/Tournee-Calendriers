@@ -28,9 +28,9 @@ introduce them.
 ## Status
 
 Scaffolded with design system (T0.1–T0.2): Flutter 3.47.6 / Dart 3.13.5, layers, theme, French l10n, go_router shell, components. CI on every push and pull request (T0.3).
-M1 code delivered (#5–#14, #46, #15): street domain, BAN import, phone storage, start screen, street
-screen, house sheet, buildings, edit mode; awaiting the user's field test (#15).
-M2 code delivered: onboarding (#21), Firebase (Spark) wired in `bootstrap/`, App Check,
+M1 done, milestone closed (2026-10-17) (#5–#14, #46, #15): street domain, BAN import, phone storage,
+start screen, street screen, house sheet, buildings, edit mode; field-tested by the user.
+M2 done, milestone closed (2026-10-17): onboarding (#21), Firebase (Spark) wired in `bootstrap/`, App Check,
 anonymous sign-in (#17, #67); Tournée aggregate (#18); Firestore adapters (#19); security rules in
 `firebase/` (#20); Équipe and Corbeille (#22); Mes tournées and Paramètres (#23); streets of the
 open tournée on Firestore, phone storage when none is open (#24); pending-sync line (#25). Validated
