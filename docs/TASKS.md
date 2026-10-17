@@ -103,6 +103,8 @@ later screen could be checked with real streets (decided with you on 2026-10-04)
 | [#78](https://github.com/emmanuel-h/Tournee-Calendriers/issues/78) | A tournée's commune: map centred on it, map and list to add streets | checkpoint |
 | [#80](https://github.com/emmanuel-h/Tournee-Calendriers/issues/80) | Count the visits to a house: « still nobody » on a return |  |
 | [#81](https://github.com/emmanuel-h/Tournee-Calendriers/issues/81) | The third tap opens the details to set when to come back |  |
+| [#91](https://github.com/emmanuel-h/Tournee-Calendriers/issues/91) | Release the streets of a member removed from the tournée |  |
+| [#92](https://github.com/emmanuel-h/Tournee-Calendriers/issues/92) | Fetch a street's shape again when Overpass failed |  |
 
 ## M4 Offline
 
