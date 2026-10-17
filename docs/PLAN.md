@@ -1699,6 +1699,40 @@ Streets on Firestore fixed in T2.8 (`lib/bootstrap/bindings.dart`,
   a map, not checked one by one), so no bulk limit refuses a big street; the 1 MB document
   limit is far off (a street of 1 500 numbers and a 500-door building ≈ 300 kB, rules test).
 
+Geometry and map layers fixed in T3.1 (`lib/domain/geometry/`, `lib/domain/map/`,
+`lib/domain/street/street_shape.dart`, `progress_level.dart`):
+
+- **`StreetShape`**: the lines of a street (one per OSM way), each of two points or more (a
+  shorter one is dropped); `StreetShape.none` for a street typed in by hand or unknown to OSM.
+  `Street.create(shape:)` takes it (none by default), `Street.manual` has none, and no command
+  changes it. Equal by value, line by line. Not stored yet: the task that first writes a shape
+  (T3.3) maps it and extends the rules.
+- **Simplification** (`simplifyLine`, Douglas–Peucker): a point is kept only when *strictly*
+  farther than the tolerance from the simplified line; distances are measured on a plane tangent
+  at the segment's start (`metresFromSegment`, to the closest point of the segment, ends
+  included). `StreetShape.simplified()` uses 2 m.
+- **Codec** (`encodePolyline` / `decodePolyline`): Google's encoded polyline, precision 5
+  (0.00001°, rounded to nearest); one text per line (`StreetShape.encode` / `decode`). Decoding
+  fails with `malformed` (character outside `?`…`~`, value cut short or over six 5-bit chunks,
+  a latitude without its longitude) or `outOfRange` (a point off Earth), never throws.
+- **`ProgressLevel.of(progress, taken:)`**: `done` when every door is done and nothing is left
+  to come back to (no building « repasser »), whether or not someone holds the street; otherwise
+  `free` when nobody took it; otherwise `toDo` when every door is to do, `partial` when any door
+  was visited (« personne » and « repasser » count as visited, not done). A street without any
+  door is never done.
+- **`MapLayers.of(streets, taken:)`**: a `StreetLine` (street id, shape, level) per street with a
+  shape and a `HouseDot` (street id, number, position, `HouseDotStatus`) per house with a
+  position, streets in the Corbeille left out. A single house's dot shows its status; a
+  building's shows `comeBack` when it has its own « repasser », otherwise `toDo` / `partial` /
+  `done` from its doors. Dots show from zoom 16 (`MapLayers.houseDotsMinZoom`). Until streets
+  carry their assignees (T3.3), the caller says which streets are taken.
+- **`tourneeArea(streets)`**: the `GeoBounds` (south, west, north, east; never across the
+  antimeridian) around every shape point and house position of the streets, Corbeille included
+  (a street may be restored offline), plus 300 m; null when no street has a place on the map.
+  `GeoBounds.around(points)` and `expandedBy(metres)` (longitude margin counted at the widened
+  side farthest from the equator, clamped at the poles and ±180°) also serve the communes'
+  points of #78.
+
 Firestore adapters fixed in T2.3 (`lib/infrastructure/firestore/`, `lib/application/ports/`):
 
 - **Port `TourneeDirectory`** (application, Q20): what someone outside a tournée asks of the
@@ -1746,7 +1780,7 @@ final class Street {                       // aggregate root
   final String name;
   final Commune commune;
   final BanStreetId? banId;                // null when entered by hand
-  // final StreetShape shape;              // map (M3): empty when entered by hand
+  final StreetShape shape;                 // map (T3.1): none when entered by hand
   // final Set<MemberId> assignees;        // "Mes rues" panel (M3)
   final List<House> houses;                // always sorted by HouseNumber, numbers unique
   final List<RemovedHouse> removedHouses;  // numbers in the Corbeille, with their marks (T1.4)

@@ -19,6 +19,7 @@ import 'package:tournee_calendriers/domain/street/removed_house.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
+import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
 /// Why a list of houses cannot make a [Street].
@@ -128,13 +129,15 @@ final class Street {
     required this.name,
     required this.commune,
     required this.banId,
+    required this.shape,
     required this.houses,
     required this.removedHouses,
     required this.deletion,
   });
 
   /// Builds a street from its identity and its [houses], given in any order
-  /// (from the BAN, or from storage with its [removedHouses]).
+  /// (from the BAN, or from storage with its [removedHouses]), with its
+  /// [shape] on the map when it has one.
   ///
   /// The [name] is cleaned like a typed [StreetName]. Fails with
   /// [NewStreetFailure.invalidName] when it is not one, and with
@@ -146,6 +149,7 @@ final class Street {
     required String name,
     required Commune commune,
     BanStreetId? banId,
+    StreetShape shape = StreetShape.none,
     Iterable<House> houses = const [],
     Iterable<RemovedHouse> removedHouses = const [],
     ChangeStamp? deletion,
@@ -175,6 +179,7 @@ final class Street {
         name: streetName,
         commune: commune,
         banId: banId,
+        shape: shape,
         houses: _sortedHouses(houses),
         removedHouses: _sortedRemoved(removedHouses),
         deletion: deletion,
@@ -183,9 +188,10 @@ final class Street {
   }
 
   /// A street typed in by hand (« Rue à la main », PLAN §5.5): no BAN id,
-  /// and a new house, to do, for each of the [numbers] (each once, whatever
-  /// the order; usually from `manualStreetNumbers`). It cannot fail: the
-  /// [name] is already valid and repeated numbers are merged.
+  /// no shape on the map, and a new house, to do, for each of the [numbers]
+  /// (each once, whatever the order; usually from `manualStreetNumbers`).
+  /// It cannot fail: the [name] is already valid and repeated numbers are
+  /// merged.
   factory Street.manual({
     required StreetId id,
     required StreetName name,
@@ -196,6 +202,7 @@ final class Street {
     name: name,
     commune: commune,
     banId: null,
+    shape: StreetShape.none,
     houses: _sortedHouses([
       for (final number in numbers.toSet()) House(number: number),
     ]),
@@ -213,6 +220,10 @@ final class Street {
 
   /// The street in the BAN; null for a street typed in by hand.
   final BanStreetId? banId;
+
+  /// Where the street runs on the map; [StreetShape.none] for a street typed
+  /// in by hand or one OpenStreetMap does not know. No command changes it.
+  final StreetShape shape;
 
   /// Every house, sorted by number. The list cannot be modified (it throws
   /// an `UnsupportedError`): houses change only through the commands below.
@@ -247,6 +258,7 @@ final class Street {
     name: name,
     commune: commune,
     banId: banId,
+    shape: shape,
     // The order and the numbers are those of this street: still sorted,
     // still unique.
     houses: List.unmodifiable([
@@ -986,7 +998,8 @@ final class Street {
     );
   }
 
-  /// This street, same id, commune and BAN id, with the other fields given.
+  /// This street, same id, commune, BAN id and shape, with the other fields
+  /// given.
   /// They are all required so no call can forget one (null is a real value
   /// of [deletion]: not in the Corbeille). The lists must already be sorted
   /// and unmodifiable.
@@ -1000,6 +1013,7 @@ final class Street {
     name: name,
     commune: commune,
     banId: banId,
+    shape: shape,
     houses: houses,
     removedHouses: removedHouses,
     deletion: deletion,
