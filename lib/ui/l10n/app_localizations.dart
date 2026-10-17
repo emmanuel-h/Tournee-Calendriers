@@ -1557,6 +1557,30 @@ abstract class AppLocalizations {
   /// **'Première version de test.'**
   String get release010First;
 
+  /// « Nouveautés », version 0.2.0: only admins create a tournée.
+  ///
+  /// In fr, this message translates to:
+  /// **'Seuls les administrateurs créent une tournée ; les autres la rejoignent avec un code.'**
+  String get release020Admins;
+
+  /// « Nouveautés », version 0.2.0: admins see and manage every tournée.
+  ///
+  /// In fr, this message translates to:
+  /// **'Les administrateurs voient toutes les tournées, les gèrent et peuvent les rejoindre directement.'**
+  String get release020AllTournees;
+
+  /// « Nouveautés », version 0.2.0: Équipe actions for admins, anyone may leave.
+  ///
+  /// In fr, this message translates to:
+  /// **'Équipe : « Nouveau code », « Retirer » et « Supprimer » sont réservés aux administrateurs ; chacun peut quitter la tournée.'**
+  String get release020Team;
+
+  /// « Nouveautés », version 0.2.0: the device identifier in Paramètres.
+  ///
+  /// In fr, this message translates to:
+  /// **'Paramètres affiche l\'identifiant de l\'appareil, à donner pour devenir administrateur.'**
+  String get release020DeviceId;
+
   /// Attribution of the map and address data at the bottom of Paramètres (PLAN §8.3).
   ///
   /// In fr, this message translates to:

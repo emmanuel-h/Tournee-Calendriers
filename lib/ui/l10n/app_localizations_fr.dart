@@ -1053,6 +1053,22 @@ class AppLocalizationsFr extends AppLocalizations {
   String get release010First => 'Première version de test.';
 
   @override
+  String get release020Admins =>
+      'Seuls les administrateurs créent une tournée ; les autres la rejoignent avec un code.';
+
+  @override
+  String get release020AllTournees =>
+      'Les administrateurs voient toutes les tournées, les gèrent et peuvent les rejoindre directement.';
+
+  @override
+  String get release020Team =>
+      'Équipe : « Nouveau code », « Retirer » et « Supprimer » sont réservés aux administrateurs ; chacun peut quitter la tournée.';
+
+  @override
+  String get release020DeviceId =>
+      'Paramètres affiche l\'identifiant de l\'appareil, à donner pour devenir administrateur.';
+
+  @override
   String get settingsCredits =>
       'Carte © contributeurs OpenStreetMap, OpenFreeMap. Adresses : Base Adresse Nationale.';
 
