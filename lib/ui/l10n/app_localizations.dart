@@ -1557,6 +1557,18 @@ abstract class AppLocalizations {
   /// **'Première version de test.'**
   String get release010First;
 
+  /// « Nouveautés », version 0.4.0: who made the last change.
+  ///
+  /// In fr, this message translates to:
+  /// **'Les fiches des maisons et des portes disent qui les a modifiées en dernier : « Modifié par Léa · 14:02 ».'**
+  String get release040LastChangeBy;
+
+  /// « Nouveautés », version 0.4.0: a revoked admin is told.
+  ///
+  /// In fr, this message translates to:
+  /// **'Un administrateur dont les droits ont été retirés en est averti : « Vous n\'êtes plus administrateur. »'**
+  String get release040AdminRevoked;
+
   /// « Nouveautés », version 0.3.0: the whole device identifier.
   ///
   /// In fr, this message translates to:

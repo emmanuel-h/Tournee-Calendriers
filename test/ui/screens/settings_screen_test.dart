@@ -75,7 +75,7 @@ void main() {
     expect(find.bySemanticsLabel('Confidentialité'), findsOneWidget);
     // The version of pubspec.yaml, which `flutter test` gives too.
     expect(
-      find.bySemanticsLabel('Version 0.3.0, voir les nouveautés'),
+      find.bySemanticsLabel('Version 0.4.0, voir les nouveautés'),
       findsOneWidget,
     );
     expect(
@@ -233,6 +233,14 @@ void main() {
     await tester.tap(find.byKey(const Key('settings.version')));
     await tester.pumpAndSettle();
 
+    expect(find.bySemanticsLabel('0.4.0 · 17 oct. 2026'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel(
+        'Les fiches des maisons et des portes disent qui les a modifiées en '
+        'dernier\u00a0: «\u00a0Modifié par Léa · 14:02\u00a0».',
+      ),
+      findsOneWidget,
+    );
     expect(find.bySemanticsLabel('0.3.0 · 17 oct. 2026'), findsOneWidget);
     expect(
       find.bySemanticsLabel(
@@ -248,6 +256,11 @@ void main() {
         'rejoignent avec un code.',
       ),
       findsOneWidget,
+    );
+    // The oldest version is below the fold once the list grows.
+    await tester.scrollUntilVisible(
+      find.bySemanticsLabel('Première version de test.'),
+      100,
     );
     expect(find.bySemanticsLabel('0.1.0 · 16 oct. 2026'), findsOneWidget);
     expect(find.bySemanticsLabel('Première version de test.'), findsOneWidget);

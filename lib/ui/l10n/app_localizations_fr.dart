@@ -1065,6 +1065,14 @@ class AppLocalizationsFr extends AppLocalizations {
   String get release010First => 'Première version de test.';
 
   @override
+  String get release040LastChangeBy =>
+      'Les fiches des maisons et des portes disent qui les a modifiées en dernier : « Modifié par Léa · 14:02 ».';
+
+  @override
+  String get release040AdminRevoked =>
+      'Un administrateur dont les droits ont été retirés en est averti : « Vous n\'êtes plus administrateur. »';
+
+  @override
   String get release030DeviceId =>
       'L\'identifiant de l\'appareil s\'affiche en entier dans Paramètres et sur l\'écran de bienvenue.';
 
