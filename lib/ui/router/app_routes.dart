@@ -60,4 +60,8 @@ abstract final class AppRoutes {
 
   /// Debug builds only: every shared component on one screen.
   static const gallery = '/composants';
+
+  /// Debug builds only: the map widget on sample streets, pushed from the
+  /// gallery.
+  static const galleryMap = '/composants/carte';
 }

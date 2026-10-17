@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
 import 'package:tournee_calendriers/ui/components/app_buttons.dart';
 import 'package:tournee_calendriers/ui/components/section_header.dart';
 import 'package:tournee_calendriers/ui/components/sheet_scaffold.dart';
 import 'package:tournee_calendriers/ui/components/status_tile.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
+import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/status_look.dart';
 
@@ -127,6 +129,15 @@ final class ComponentGalleryScreen extends StatelessWidget {
                   ),
                 ),
               ],
+            ),
+          ),
+          SectionHeader(l10n.galleryMap),
+          Padding(
+            padding: gutter,
+            child: SecondaryButton(
+              key: const Key('gallery.openMap'),
+              label: l10n.galleryOpenMap,
+              onPressed: () => context.push(AppRoutes.galleryMap),
             ),
           ),
         ],

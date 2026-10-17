@@ -11,6 +11,16 @@
          so the app's manifest says what it uses. -->
     <uses-permission android:name="android.permission.CAMERA"/>
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
+    <!-- « Me localiser » on the map (geolocator, PLAN §5.3). The permission
+         is asked only the first time that button is tapped, never at
+         launch; the position is shown on the map and never stored. Coarse
+         alone lets the user grant « approximate » only (Android 12+).
+         MapLibre and geolocator declare both too: written here so the
+         app's manifest says what it uses. A phone without GPS still
+         installs the app. -->
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-feature android:name="android.hardware.location.gps" android:required="false"/>
     <application
         android:label="Tournée des calendriers"
         android:name="${applicationName}"

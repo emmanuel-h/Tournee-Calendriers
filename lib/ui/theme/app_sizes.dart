@@ -249,4 +249,15 @@ abstract final class AppSizes {
 
   /// A row of the list of centres de secours.
   static const optionRowHeight = 48.0;
+
+  /// A house dot on the map at street zoom 18 (HomeZoom mockup), and the
+  /// status glyph in it; drawn smaller further out (see `map_style.dart`).
+  static const houseDot = 30.0;
+  static const houseDotGlyph = 16.0;
+
+  /// The round buttons over the map (« Me localiser »), their icon, and
+  /// their distance from the map's edges.
+  static const mapButton = 48.0;
+  static const mapButtonIcon = 22.0;
+  static const mapControlsMargin = 12.0;
 }

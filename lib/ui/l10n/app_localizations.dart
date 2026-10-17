@@ -2444,6 +2444,78 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'un administrateur'**
   String get corbeilleAdmin;
+
+  /// What screen readers say for the map (Accueil, Ajouter des rues).
+  ///
+  /// In fr, this message translates to:
+  /// **'Carte de la tournée'**
+  String get mapLabel;
+
+  /// Round button over the map that centres it on the phone's position (PLAN §5.3); said by screen readers and shown as its tooltip.
+  ///
+  /// In fr, this message translates to:
+  /// **'Me localiser'**
+  String get mapLocateMe;
+
+  /// Snackbar after « Me localiser » when the phone's location service (GPS) is off.
+  ///
+  /// In fr, this message translates to:
+  /// **'La localisation du téléphone est désactivée.'**
+  String get mapLocationServiceOff;
+
+  /// Snackbar after « Me localiser » when the user refused the system's location dialog; the next tap asks again.
+  ///
+  /// In fr, this message translates to:
+  /// **'Autorisez la localisation pour vous situer sur la carte.'**
+  String get mapLocationRefused;
+
+  /// Snackbar after « Me localiser » when the location access was refused for good; its action opens the phone's settings.
+  ///
+  /// In fr, this message translates to:
+  /// **'La localisation est refusée pour l\'application. Autorisez-la dans les réglages.'**
+  String get mapLocationRefusedForever;
+
+  /// Action of the snackbar above: opens the app's page of the phone's settings.
+  ///
+  /// In fr, this message translates to:
+  /// **'Réglages'**
+  String get mapLocationSettings;
+
+  /// Snackbar after « Me localiser » when the phone gives no position (no GPS fix yet).
+  ///
+  /// In fr, this message translates to:
+  /// **'Position introuvable pour l\'instant. Réessayez dans un moment.'**
+  String get mapPositionUnavailable;
+
+  /// Gallery section: the map widget, and the title of its debug screen.
+  ///
+  /// In fr, this message translates to:
+  /// **'Carte'**
+  String get galleryMap;
+
+  /// Gallery button opening the debug screen of the map widget.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ouvrir la carte'**
+  String get galleryOpenMap;
+
+  /// Debug map screen: shows or hides the highlighted « selected road ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Sélectionner une route'**
+  String get galleryMapSelectRoad;
+
+  /// Debug map screen: a street of the sample was tapped.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rue touchée : {street}'**
+  String galleryMapStreetTapped(String street);
+
+  /// Debug map screen: the map was tapped outside the sample streets.
+  ///
+  /// In fr, this message translates to:
+  /// **'Touché en {latitude}, {longitude}'**
+  String galleryMapTapped(String latitude, String longitude);
 }
 
 class _AppLocalizationsDelegate

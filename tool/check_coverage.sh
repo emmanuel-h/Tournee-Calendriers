@@ -15,6 +15,7 @@ GATED_PATTERNS=(
   '^lib/application/'
   '^lib/presentation/'
   '^lib/infrastructure/(.+/)?mappers/'
+  '^lib/ui/map/(map_geojson|map_style|map_camera|house_dot_image|phone_location)\.dart$'
 )
 
 # Gated paths deliberately left out of the gate, one regular expression per

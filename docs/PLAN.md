@@ -416,6 +416,14 @@ an admin, shows only « Rejoindre une tournée », in red), and the bottom of th
   leaves only the handle and the totals.
 - A "locate me" button centres the map on the phone's position (location permission asked
   the first time it is tapped, never at launch).
+- Delivered in T3.4 (`ui/map/TourneeMap`, used by 5.3 and 5.4): OpenFreeMap « liberty »;
+  street lines under the map's labels (« libre » dashed), widening with the zoom; from zoom 16
+  a 30 dp dot per house with the tile glyphs (`✓` fait, `✗`, `↻`, `○`, `◐` building in part,
+  dashed ring) and its number under it; the road picked on 5.4 as a dark casing with a white
+  core. A tap on a street or on one of its dots names the street; elsewhere it gives the
+  point. North stays up (no rotation, no tilt). « Me localiser » (48 dp round, top right)
+  centres at zoom 17 and then shows the phone's dot; refused, off or no fix: a message
+  (« Réglages » when refused for good). The ⓘ attribution stays visible.
 
 **Mes tournées (tap the title).** The title "Tournée 49 · 2026 ▾" is a button that opens a
 bottom sheet:

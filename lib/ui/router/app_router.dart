@@ -13,6 +13,7 @@ import 'package:tournee_calendriers/ui/screens/component_gallery_screen.dart';
 import 'package:tournee_calendriers/ui/screens/corbeille/corbeille_screen.dart';
 import 'package:tournee_calendriers/ui/screens/edit_street/edit_street_screen.dart';
 import 'package:tournee_calendriers/ui/screens/import_streets/import_screen.dart';
+import 'package:tournee_calendriers/ui/screens/map_gallery_screen.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/create_tournee_screen.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/join_pending_screen.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/join_tournee_screen.dart';
@@ -125,6 +126,11 @@ GoRouter buildAppRouter({
       GoRoute(
         path: AppRoutes.gallery,
         builder: (context, state) => const ComponentGalleryScreen(),
+      ),
+    if (showGallery)
+      GoRoute(
+        path: AppRoutes.galleryMap,
+        builder: (context, state) => const MapGalleryScreen(),
       ),
   ],
 );

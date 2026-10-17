@@ -26,9 +26,14 @@ void main() {
       await pumpGallery(tester);
 
       // Section headers: written normally, shown in capitals.
-      expect(find.byType(SectionHeader), findsNWidgets(3));
+      expect(find.byType(SectionHeader), findsNWidgets(4));
       expect(find.text('BOUTONS'), findsOneWidget);
       expect(find.text('TUILES DE STATUT'), findsOneWidget);
+      expect(find.text('CARTE'), findsOneWidget);
+      expect(
+        find.widgetWithText(SecondaryButton, 'Ouvrir la carte'),
+        findsOneWidget,
+      );
 
       // Buttons: 56 dp, or 52 dp when compact; null `onPressed` disables.
       expect(

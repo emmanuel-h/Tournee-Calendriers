@@ -1720,4 +1720,48 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get corbeilleAdmin => 'un administrateur';
+
+  @override
+  String get mapLabel => 'Carte de la tournée';
+
+  @override
+  String get mapLocateMe => 'Me localiser';
+
+  @override
+  String get mapLocationServiceOff =>
+      'La localisation du téléphone est désactivée.';
+
+  @override
+  String get mapLocationRefused =>
+      'Autorisez la localisation pour vous situer sur la carte.';
+
+  @override
+  String get mapLocationRefusedForever =>
+      'La localisation est refusée pour l\'application. Autorisez-la dans les réglages.';
+
+  @override
+  String get mapLocationSettings => 'Réglages';
+
+  @override
+  String get mapPositionUnavailable =>
+      'Position introuvable pour l\'instant. Réessayez dans un moment.';
+
+  @override
+  String get galleryMap => 'Carte';
+
+  @override
+  String get galleryOpenMap => 'Ouvrir la carte';
+
+  @override
+  String get galleryMapSelectRoad => 'Sélectionner une route';
+
+  @override
+  String galleryMapStreetTapped(String street) {
+    return 'Rue touchée : $street';
+  }
+
+  @override
+  String galleryMapTapped(String latitude, String longitude) {
+    return 'Touché en $latitude, $longitude';
+  }
 }
