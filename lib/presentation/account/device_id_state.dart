@@ -37,19 +37,14 @@ final class DeviceIdOffline extends DeviceIdState {
   const DeviceIdOffline();
 }
 
-/// The phone's uid [id], and whether it is an admin (« · administrateur »).
+/// The phone's uid [id], and whether it is an admin (« Administrateur »).
 final class DeviceIdShown extends DeviceIdState {
   const DeviceIdShown(this.id, {required this.isAdmin});
 
-  /// The whole uid: what the copy button puts on the clipboard.
+  /// The whole uid, shown in full and put on the clipboard by the copy
+  /// button.
   final String id;
   final bool isAdmin;
-
-  /// The uid as shown, `x7Fq…9kP2`: its first and last four characters,
-  /// enough to compare with the console. Short ids are shown whole.
-  String get short => id.length <= 9
-      ? id
-      : '${id.substring(0, 4)}…${id.substring(id.length - 4)}';
 
   @override
   bool operator ==(Object other) =>

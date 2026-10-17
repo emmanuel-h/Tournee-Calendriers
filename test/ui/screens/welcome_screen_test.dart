@@ -205,16 +205,12 @@ void main() {
       );
     });
 
-    testWidgets('should show the device id shortened, and copy it whole', (
-      tester,
-    ) async {
+    testWidgets('should show the whole device id, and copy it', (tester) async {
       final clipboard = FakeClipboard.install(tester);
       await launch(tester);
 
-      expect(
-        find.text('Identifiant de l\'appareil\u00a0: x7Fq…9kP2'),
-        findsOneWidget,
-      );
+      expect(find.text('Identifiant de l\'appareil'), findsOneWidget);
+      expect(find.text('x7FqA1b2C3d4E5f6G7h8I9j0k9kP2'), findsOneWidget);
 
       await tester.tap(find.byTooltip('Copier l\'identifiant de l\'appareil'));
       await tester.pump();

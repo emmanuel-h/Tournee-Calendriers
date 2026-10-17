@@ -165,8 +165,7 @@ final class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                           minHeight: AppSizes.minTapTarget,
                         ),
                         child: switch (deviceId) {
-                          DeviceIdShown(:final id, :final short) =>
-                            _DeviceIdLine(id: id, short: short),
+                          DeviceIdShown(:final id) => _DeviceIdLine(id: id),
                           DeviceIdSigningIn() ||
                           DeviceIdOffline() => const SizedBox.shrink(),
                         },
@@ -183,32 +182,41 @@ final class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
   }
 }
 
-/// « Identifiant de l'appareil : x7Fq…9kP2 » and its copy button.
+/// « Identifiant de l'appareil » and its copy button, over the whole uid
+/// (selectable, in monospace so `l` and `1` differ).
 final class _DeviceIdLine extends StatelessWidget {
-  const _DeviceIdLine({required this.id, required this.short});
+  const _DeviceIdLine({required this.id});
 
   final String id;
-  final String short;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final colors = AppColors.of(context);
-    return Row(
-      mainAxisAlignment: MainAxisAlignment.center,
+    return Column(
+      key: const Key('welcome.deviceId'),
       children: [
-        Flexible(
-          child: Text(
-            l10n.deviceIdLine(short),
-            key: const Key('welcome.deviceId'),
-            style: AppTextStyles.helper.copyWith(color: colors.muted),
-          ),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Flexible(
+              child: Text(
+                l10n.deviceIdLabel,
+                style: AppTextStyles.helper.copyWith(color: colors.muted),
+              ),
+            ),
+            DeviceIdCopyButton(
+              key: const Key('welcome.copyDeviceId'),
+              id: id,
+              color: colors.muted,
+              iconSize: AppSizes.smallIcon,
+            ),
+          ],
         ),
-        DeviceIdCopyButton(
-          key: const Key('welcome.copyDeviceId'),
-          id: id,
-          color: colors.muted,
-          iconSize: AppSizes.smallIcon,
+        SelectableText(
+          id,
+          textAlign: TextAlign.center,
+          style: AppTextStyles.identifier.copyWith(color: colors.muted),
         ),
       ],
     );

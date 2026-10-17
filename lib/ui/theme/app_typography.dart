@@ -7,6 +7,10 @@ abstract final class AppFonts {
 
   /// Numbers and titles: condensed, so long house numbers fit on a tile.
   static const display = 'Barlow Condensed';
+
+  /// The phone's own monospace font (not bundled): only for the device
+  /// identifier, where telling `l` from `1` and `O` from `0` matters.
+  static const mono = 'monospace';
 }
 
 /// The text styles of the mockups. Colours are left out on purpose: they come
@@ -144,6 +148,13 @@ abstract final class AppTextStyles {
     fontFamily: AppFonts.text,
     fontWeight: FontWeight.w400,
     fontSize: 13,
+  );
+
+  /// The device identifier in full (« r2iKq8ZtW3hLmN0pXvB7cYd5Jgx1 »).
+  static const identifier = TextStyle(
+    fontFamily: AppFonts.mono,
+    fontWeight: FontWeight.w400,
+    fontSize: 14,
   );
 
   /// The count of the grid's header (« ◐ 15/24 »).

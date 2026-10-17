@@ -1581,17 +1581,10 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String deviceIdLine(String id) {
-    return 'Identifiant de l\'appareil : $id';
-  }
-
-  @override
   String get deviceIdLabel => 'Identifiant de l\'appareil';
 
   @override
-  String deviceIdAdmin(String id) {
-    return '$id · administrateur';
-  }
+  String get deviceIdIsAdmin => 'Administrateur';
 
   @override
   String get deviceIdCopy => 'Copier l\'identifiant de l\'appareil';

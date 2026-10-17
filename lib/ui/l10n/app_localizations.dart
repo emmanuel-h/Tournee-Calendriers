@@ -2277,23 +2277,17 @@ abstract class AppLocalizations {
   /// **'Vous n\'êtes plus administrateur : la tournée {number} est retirée de Mes tournées.'**
   String tourneeAdminRevoked(String number);
 
-  /// Bottom of Bienvenue: the phone's uid, shortened, for an admin to type in the console (PLAN §5.12).
-  ///
-  /// In fr, this message translates to:
-  /// **'Identifiant de l\'appareil : {id}'**
-  String deviceIdLine(String id);
-
   /// Last row of Paramètres › Application: the phone's uid (PLAN §5.12).
   ///
   /// In fr, this message translates to:
   /// **'Identifiant de l\'appareil'**
   String get deviceIdLabel;
 
-  /// The phone's uid in Paramètres when it is an admin's.
+  /// Paramètres, under the phone's uid when it is an admin's (PLAN §5.12).
   ///
   /// In fr, this message translates to:
-  /// **'{id} · administrateur'**
-  String deviceIdAdmin(String id);
+  /// **'Administrateur'**
+  String get deviceIdIsAdmin;
 
   /// Screen-reader name and tooltip of the copy button of the phone's uid.
   ///

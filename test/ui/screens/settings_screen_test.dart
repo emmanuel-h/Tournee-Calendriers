@@ -250,13 +250,16 @@ void main() {
     final row = find.byKey(const Key('settings.deviceId'));
 
     Future<void> scrollToIt(WidgetTester tester) async {
-      await tester.scrollUntilVisible(row, 100);
+      // The screen's list: the selectable uid has a scrollable of its own.
+      await tester.scrollUntilVisible(
+        row,
+        100,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.pumpAndSettle();
     }
 
-    testWidgets('should show the device id shortened and copy it whole', (
-      tester,
-    ) async {
+    testWidgets('should show the whole device id and copy it', (tester) async {
       final clipboard = FakeClipboard.install(tester);
       await pumpSettings(
         tester,
@@ -264,7 +267,7 @@ void main() {
       );
       await scrollToIt(tester);
 
-      expect(find.text('x7Fq…9kP2'), findsOneWidget);
+      expect(find.text(uid.value), findsOneWidget);
       await tester.tap(find.byKey(const Key('settings.copyDeviceId')));
       await tester.pump();
 
@@ -282,7 +285,8 @@ void main() {
       );
       await scrollToIt(tester);
 
-      expect(find.text('x7Fq…9kP2 · administrateur'), findsOneWidget);
+      expect(find.text(uid.value), findsOneWidget);
+      expect(find.text('Administrateur'), findsOneWidget);
     });
 
     testWidgets('should sign in when it opens, then show the device id', (
@@ -293,7 +297,7 @@ void main() {
       await scrollToIt(tester);
 
       expect(account.signInCalls, greaterThanOrEqualTo(1));
-      expect(find.text('x7Fq…9kP2'), findsOneWidget);
+      expect(find.text(uid.value), findsOneWidget);
     });
 
     testWidgets('should say there is no account yet offline, with nothing '

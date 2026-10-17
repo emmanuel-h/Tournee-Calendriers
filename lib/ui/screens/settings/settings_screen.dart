@@ -122,9 +122,10 @@ final class SettingsScreen extends ConsumerWidget {
   }
 }
 
-/// « Identifiant de l'appareil » over the uid shortened (« x7Fq…9kP2 ·
-/// administrateur »), and its copy button; « Pas encore de compte… »
-/// offline before any account. Not a button itself: the copy button is.
+/// « Identifiant de l'appareil » over the whole uid (selectable, in
+/// monospace so `l` and `1` differ), « Administrateur » under it on an
+/// admin's phone, and its copy button; « Pas encore de compte… » offline
+/// before any account. Not a button itself: the copy button is.
 final class _DeviceIdRow extends StatelessWidget {
   const _DeviceIdRow({required this.deviceId});
 
@@ -134,12 +135,7 @@ final class _DeviceIdRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final colors = AppColors.of(context);
-    final value = switch (deviceId) {
-      DeviceIdShown(:final short, isAdmin: true) => l10n.deviceIdAdmin(short),
-      DeviceIdShown(:final short) => short,
-      DeviceIdSigningIn() => l10n.accountSigningIn,
-      DeviceIdOffline() => l10n.deviceIdNoAccount,
-    };
+    final muted = AppTextStyles.small.copyWith(color: colors.muted);
     return Container(
       key: const Key('settings.deviceId'),
       constraints: const BoxConstraints(minHeight: AppSizes.settingRowHeight),
@@ -165,11 +161,26 @@ final class _DeviceIdRow extends StatelessWidget {
                       fontWeight: FontWeight.w700,
                     ),
                   ),
-                  Text(
-                    value,
-                    key: const Key('settings.deviceIdValue'),
-                    style: AppTextStyles.small.copyWith(color: colors.muted),
-                  ),
+                  ...switch (deviceId) {
+                    DeviceIdShown(:final id, :final isAdmin) => [
+                      // A long press selects it, for whoever prefers that
+                      // to the copy button.
+                      SelectableText(
+                        id,
+                        key: const Key('settings.deviceIdValue'),
+                        style: AppTextStyles.identifier.copyWith(
+                          color: colors.ink,
+                        ),
+                      ),
+                      if (isAdmin) Text(l10n.deviceIdIsAdmin, style: muted),
+                    ],
+                    DeviceIdSigningIn() => [
+                      Text(l10n.accountSigningIn, style: muted),
+                    ],
+                    DeviceIdOffline() => [
+                      Text(l10n.deviceIdNoAccount, style: muted),
+                    ],
+                  },
                 ],
               ),
             ),

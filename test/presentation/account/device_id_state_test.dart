@@ -14,23 +14,11 @@ final uid = MemberId('x7FqA1b2C3d4E5f6G7h8I9j0k9kP2');
 
 void main() {
   group('DeviceIdShown', () {
-    test('should shorten the id to its first and last four characters', () {
+    test('should keep the whole id and the admin flag', () {
       final shown = DeviceIdShown(uid.value, isAdmin: false);
 
       expect(shown.id, 'x7FqA1b2C3d4E5f6G7h8I9j0k9kP2');
-      expect(shown.short, 'x7Fq…9kP2');
       expect(shown.isAdmin, isFalse);
-    });
-
-    test('should show an id of nine characters or fewer whole', () {
-      expect(
-        const DeviceIdShown('abcdefghi', isAdmin: false).short,
-        'abcdefghi',
-      );
-      expect(
-        const DeviceIdShown('abcdefghij', isAdmin: false).short,
-        'abcd…ghij',
-      );
     });
 
     test('should be equal when the id and the admin flag are', () {

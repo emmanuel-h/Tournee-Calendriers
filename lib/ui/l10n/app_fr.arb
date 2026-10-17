@@ -1361,22 +1361,10 @@
       "number": { "type": "String", "example": "12" }
     }
   },
-  "deviceIdLine": "Identifiant de l'appareil : {id}",
-  "@deviceIdLine": {
-    "description": "Bottom of Bienvenue: the phone's uid, shortened, for an admin to type in the console (PLAN §5.12).",
-    "placeholders": {
-      "id": { "type": "String", "example": "x7Fq…9kP2" }
-    }
-  },
   "deviceIdLabel": "Identifiant de l'appareil",
   "@deviceIdLabel": { "description": "Last row of Paramètres › Application: the phone's uid (PLAN §5.12)." },
-  "deviceIdAdmin": "{id} · administrateur",
-  "@deviceIdAdmin": {
-    "description": "The phone's uid in Paramètres when it is an admin's.",
-    "placeholders": {
-      "id": { "type": "String", "example": "x7Fq…9kP2" }
-    }
-  },
+  "deviceIdIsAdmin": "Administrateur",
+  "@deviceIdIsAdmin": { "description": "Paramètres, under the phone's uid when it is an admin's (PLAN §5.12)." },
   "deviceIdCopy": "Copier l'identifiant de l'appareil",
   "@deviceIdCopy": { "description": "Screen-reader name and tooltip of the copy button of the phone's uid." },
   "deviceIdCopied": "Identifiant copié",

@@ -971,8 +971,8 @@ admin » for « Nouveau code », « Retirer », « Supprimer » and the campaign
   `app_fr.arb`), so it works offline. **Each release (#37) adds its entry at the top and
   sets its date**; 1.0.0 « Première version. » is the only one so far.
 - **Licences** opens Flutter's licences page (packages and bundled fonts).
-- **Identifiant de l'appareil** (#75, 5.12): the last row of APPLICATION, the uid shortened,
-  « · administrateur » when admin, and a copy button.
+- **Identifiant de l'appareil** (#75, 5.12): the last row of APPLICATION, the whole uid,
+  « Administrateur » under it when admin, and a copy button.
 - Credits under the list: « Carte © contributeurs OpenStreetMap, OpenFreeMap.
   Adresses{N}: Base Adresse Nationale. »
 - HORS-LIGNE comes with the download (T4.2).
@@ -1072,10 +1072,12 @@ TeamMember, and Welcome, Switcher, Team, Settings updated):
   new one on the phone (below) and adds it in the console again. Until the app has read the
   document, the phone is not an admin (nothing admin-only shows).
 - **Identifiant de l'appareil** (the Firebase uid): a line at the bottom of Bienvenue
-  (« Identifiant de l'appareil : x7Fq…9kP2 » and a copy button, TalkBack « Copier
-  l'identifiant de l'appareil », « Identifiant copié »), and the last row of Paramètres →
-  APPLICATION (same copy button; « x7Fq…9kP2 · administrateur » when admin). The uid is shown
-  shortened (first 4 … last 4); the copy puts the whole uid on the clipboard. Bienvenue and
+  (« Identifiant de l'appareil » and a copy button, TalkBack « Copier l'identifiant de
+  l'appareil », « Identifiant copié », the uid under them), and the last row of Paramètres →
+  APPLICATION (the uid under the label, « Administrateur » under it when admin, same copy
+  button). The uid is shown **whole** (asked after the phone test, 2026-10-17), in the
+  phone's monospace font and selectable by a long press; it wraps rather than being cut
+  when the text is large. The copy puts it on the clipboard. Bienvenue and
   Paramètres sign in when they open (`signInIfNeeded`): offline with no account yet, the line
   of Bienvenue is not shown and the row reads « Pas encore de compte : connectez-vous au
   réseau. ».
