@@ -35,8 +35,12 @@ anonymous sign-in (#17, #67); Tournée aggregate (#18); Firestore adapters (#19)
 `firebase/` (#20); Équipe and Corbeille (#22); Mes tournées and Paramètres (#23); streets of the
 open tournée on Firestore, phone storage when none is open (#24); pending-sync line (#25). Validated
 by the user (2026-10-16); App Check enforced on Firestore and Auth (#68). Admins (#75): global `admins/{uid}` added by hand in the console, « Toutes les tournées », admin visit; validated by the user and closed (2026-10-17), rules deployed. Revoked admins and the emulator-based admin flow (#87) closed (2026-10-17).
-Release signing and Play publishing pulled forward from M5 (#37): 0.1.0 is on the internal
-track; publish with the `release-store` skill. `lib/bootstrap/firebase_options.dart` and `android/app/google-services.json`
+Code audit clean-up (#88) and « Modifié par Léa » on the house and door sheets (#89) closed
+(2026-10-17). #90 open: go_router 18.1 done; Firebase (Firestore 7…) waits for
+`fake_cloud_firestore` to support it. `tool/admin_e2e.sh` fails ~1 run in 4 from stale reads of
+the Firestore emulator (firebase-tools 13.35.1); the fix is its upgrade (#69, needs Node ≥ 20).
+Release signing and Play publishing pulled forward from M5 (#37): 0.4.0 (code 4) is on the
+internal track; publish with the `release-store` skill. `lib/bootstrap/firebase_options.dart` and `android/app/google-services.json`
 are gitignored: run `flutterfire configure --out=lib/bootstrap/firebase_options.dart` locally;
 CI writes them from secrets.
 
