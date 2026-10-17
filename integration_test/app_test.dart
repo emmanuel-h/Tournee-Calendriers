@@ -25,6 +25,7 @@ import 'package:tournee_calendriers/domain/street/street_name.dart';
 import 'package:tournee_calendriers/main.dart' as app;
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/ui/app.dart';
+import 'package:tournee_calendriers/ui/screens/add_streets/add_streets_screen.dart';
 import 'package:tournee_calendriers/ui/screens/team/team_screen.dart';
 
 import '../test/support/fakes/fake_address_directory.dart';
@@ -598,6 +599,19 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(TeamScreen), findsOneWidget);
       await tester.tap(find.byTooltip('Retour'));
+      await tester.pumpAndSettle();
+
+      // « Ajouter des rues » (#78): « Carte | Liste », offline. The tournée
+      // was never read, so it has no commune: the list searches one, and
+      // the map opens on France with MapLibre on the device.
+      await tester.tap(find.byKey(const Key('start.import')));
+      await tester.pumpAndSettle();
+      expect(find.byType(AddStreetsScreen), findsOneWidget);
+      expect(find.byKey(const Key('import.commune')), findsOneWidget);
+      await tester.tap(find.byKey(const Key('addStreets.tab.map')));
+      await tester.pump(const Duration(seconds: 2));
+      expect(find.byKey(const Key('addStreets.map')), findsOneWidget);
+      await tester.tap(find.byTooltip('Fermer'));
       await tester.pumpAndSettle();
 
       await tester.tap(find.byKey(const Key('home.tournee')));

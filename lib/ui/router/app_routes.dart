@@ -11,8 +11,12 @@ abstract final class AppRoutes {
   /// (§5.0); Accueil (§5.3) from M3.
   static const home = '/';
 
-  /// « Importer des rues », the temporary import screen of M1 (§5.0).
+  /// « Importer des rues », with no tournée open (§5.0).
   static const importStreets = '/importer-des-rues';
+
+  /// « Ajouter des rues », « Carte | Liste », while a tournée is open
+  /// (§5.4).
+  static const addStreets = '/ajouter-des-rues';
 
   /// « Bienvenue », where a phone the app knows nothing of opens (§5.1).
   static const welcome = '/bienvenue';

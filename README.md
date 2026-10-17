@@ -15,8 +15,8 @@ Onboarding:
   « Identifiant de l'appareil » with a copy button at the bottom. A phone with streets of
   its own opens on « Mes rues » as before.
 - « Nouvelle tournée »: the centre de secours picked from the known ones as you type (or
-  added), the number checked as you type (« … existe déjà » with « Rejoindre avec un
-  code »), the year; then the code (with a copy button), its QR code and « Partager ».
+  added), its communes (one or more, searched on geo.api.gouv.fr), the number checked as
+  you type (« … existe déjà » with « Rejoindre avec un code »), the year; then the code (with a copy button), its QR code and « Partager ».
   Admins only. Needs the network.
 - « Rejoindre une tournée »: scan the QR code or type the code in two boxes, check the
   tournée shown, « Demander à rejoindre »; « Demande envoyée » waits, offline too, and opens
@@ -30,9 +30,12 @@ Temporary M1 start screen (until the map arrives in M3):
 - With a tournée open, a card offers the streets kept on the phone: « Les ajouter à la
   tournée » moves them with their marks (once per tournée; a street the tournée already has
   is skipped), « Plus tard » hides the card until the next launch.
-- « Importer des rues »: find a commune by name (geo.api.gouv.fr), tick some of its streets
-  (national address base, BAN) and import them with their house numbers, into the open
-  tournée (or the phone). Needs the network once; streets already imported keep their marks.
+- « Importer des rues » (no tournée open): find a commune by name (geo.api.gouv.fr), tick
+  some of its streets (national address base, BAN) and import them with their house numbers
+  onto the phone. Needs the network once; streets already imported keep their marks.
+- « Ajouter des rues » (a tournée open): tabs « Carte | Liste ». « Liste » ticks the streets
+  of the tournée's communes (a chip per commune) and adds them to the tournée; « Carte »
+  shows the tournée's map, opened on its communes, offline too.
 - Top bar: the open tournée (« Tournée 49 · 2026 » over its centre de secours), or the
   app's name when none is open, opens « Mes tournées », to switch tournée (the app reopens
   the last one at launch, offline too) or create or join one, with a dot on another
@@ -41,6 +44,7 @@ Temporary M1 start screen (until the map arrives in M3):
 - Équipe (👥): the join code (copy button: « Code copié ») and its QR code, « Partager »,
   « Nouveau code » (admins), the requests to join with « Accepter » / « Refuser » (any
   member or admin), the members (« · admin ») with « Retirer » (admins), the Corbeille,
+  the tournée's communes (« + Ajouter une commune », ✕ but on the last one),
   « Quitter la tournée » (every member) and « Supprimer la tournée » (admins).
   Answering, removing and leaving work offline; a new code and deleting need the network.
   A member removed, or whose tournée was deleted, sees it leave « Mes tournées » with a

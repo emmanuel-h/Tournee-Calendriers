@@ -1,6 +1,7 @@
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
 
+import '../../support/geo_fixtures.dart';
 import '../../support/street_fixtures.dart';
 
 void main() {
@@ -26,6 +27,30 @@ void main() {
   test('should be equal when the commune and postcodes are equal', () {
     expect(match(), match());
     expect(match().hashCode, match().hashCode);
+  });
+
+  test('should keep the centre given', () {
+    final made = CommuneMatch(
+      commune: villefranche,
+      postcodes: const ['69400'],
+      centre: at(45.9837, 4.726),
+    );
+
+    expect(made.centre, at(45.9837, 4.726));
+  });
+
+  test('should have no centre when none is given', () {
+    expect(match().centre, isNull);
+  });
+
+  test('should differ when the centre differs', () {
+    final centred = CommuneMatch(
+      commune: villefranche,
+      postcodes: const ['69400'],
+      centre: at(45.9837, 4.726),
+    );
+
+    expect(centred, isNot(match()));
   });
 
   test('should differ when the postcodes differ', () {

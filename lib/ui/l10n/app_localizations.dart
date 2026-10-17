@@ -2516,6 +2516,108 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Touché en {latitude}, {longitude}'**
   String galleryMapTapped(String latitude, String longitude);
+
+  /// Label of the communes of « Nouvelle tournée » (#78), and header of the communes in Équipe.
+  ///
+  /// In fr, this message translates to:
+  /// **'Communes'**
+  String get communesLabel;
+
+  /// Placeholder of the field that searches a commune to add to a tournée (« Nouvelle tournée », Équipe).
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter une commune…'**
+  String get communeAddHint;
+
+  /// Screen-reader label and tooltip of the ✕ of a commune chip or row.
+  ///
+  /// In fr, this message translates to:
+  /// **'Retirer {name}'**
+  String communeRemove(String name);
+
+  /// Header of the tournée's communes in Équipe.
+  ///
+  /// In fr, this message translates to:
+  /// **'Communes ({count})'**
+  String teamCommunesHeader(int count);
+
+  /// Button under the communes of Équipe, and title of the sheet it opens.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter une commune'**
+  String get teamAddCommune;
+
+  /// Snackbar of Équipe: the commune picked is already one of the tournée's.
+  ///
+  /// In fr, this message translates to:
+  /// **'Cette commune est déjà dans la tournée.'**
+  String get teamCommuneAlreadyIn;
+
+  /// Snackbar of Équipe: the tournée covers as many communes as it may.
+  ///
+  /// In fr, this message translates to:
+  /// **'Une tournée a au plus {max} communes.'**
+  String teamTooManyCommunes(int max);
+
+  /// Button of the start screen while a tournée is open, and title of the screen it opens (PLAN §5.4).
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter des rues'**
+  String get addStreetsTitle;
+
+  /// Screen-reader name of the « Carte | Liste » tabs of « Ajouter des rues ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter depuis'**
+  String get addStreetsModes;
+
+  /// Tab of « Ajouter des rues »: the map.
+  ///
+  /// In fr, this message translates to:
+  /// **'Carte'**
+  String get addStreetsMapTab;
+
+  /// Tab of « Ajouter des rues »: the checklist of a commune's streets.
+  ///
+  /// In fr, this message translates to:
+  /// **'Liste'**
+  String get addStreetsListTab;
+
+  /// Right of a street of the « Liste » tab that the tournée already has.
+  ///
+  /// In fr, this message translates to:
+  /// **'déjà dans la tournée'**
+  String get alreadyInTournee;
+
+  /// Button of the « Liste » tab: adds the ticked streets to the tournée.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, =0{Ajouter} =1{Ajouter 1 rue} other{Ajouter {count} rues}}'**
+  String addButton(int count);
+
+  /// In place of the button of the « Liste » tab while streets are added.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajout en cours… {done}/{total}'**
+  String addProgress(int done, int total);
+
+  /// Snackbar once every street ticked in the « Liste » tab is in the tournée.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, =0{Aucune nouvelle rue} =1{1 rue ajoutée à la tournée} other{{count} rues ajoutées à la tournée}}'**
+  String addDone(int count);
+
+  /// Snackbar once the streets ticked are in the tournée, some back from the Corbeille.
+  ///
+  /// In fr, this message translates to:
+  /// **'{added, plural, =1{1 rue ajoutée} other{{added} rues ajoutées}}, {restored, plural, =1{1 restaurée} other{{restored} restaurées}}'**
+  String addDoneAndRestored(int added, int restored);
+
+  /// Under the checklist of the « Liste » tab when some streets could not be added.
+  ///
+  /// In fr, this message translates to:
+  /// **'{added, plural, =0{Aucune rue ajoutée} =1{1 rue ajoutée} other{{added} rues ajoutées}}, {failed, plural, =1{1 en échec} other{{failed} en échec}}. {reason} Les rues encore cochées restent à ajouter.'**
+  String addPartial(int added, int failed, String reason);
 }
 
 class _AppLocalizationsDelegate

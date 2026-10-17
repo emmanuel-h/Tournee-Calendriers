@@ -15,21 +15,43 @@ import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
-/// « Importer des rues », the temporary import screen of M1 (PLAN §5.0,
-/// `docs/mockups/Import.dc.html`): type a commune, choose it among the
-/// suggestions, tick its streets, import them. Needs the network.
-///
-/// A `ConsumerStatefulWidget`: like a `StatefulWidget`, plus `ref`. The
-/// state object owns the commune field's `TextEditingController`, which
-/// must live as long as the screen.
-final class ImportScreen extends ConsumerStatefulWidget {
+/// « Importer des rues » (PLAN §5.0, `docs/mockups/Import.dc.html`), the
+/// screen of a phone with no tournée open: type a commune, choose it among
+/// the suggestions, tick its streets, import them. Needs the network.
+final class ImportScreen extends StatelessWidget {
   const ImportScreen({super.key});
 
   @override
-  ConsumerState<ImportScreen> createState() => _ImportScreenState();
+  Widget build(BuildContext context) => Scaffold(
+    // The mockup puts the title right after the back arrow.
+    appBar: AppBar(
+      title: Text(AppLocalizations.of(context).importStreetsAction),
+      titleSpacing: 0,
+    ),
+    body: const SafeArea(child: ImportList()),
+  );
 }
 
-final class _ImportScreenState extends ConsumerState<ImportScreen> {
+/// The import checklist, shown by « Importer des rues » and by the
+/// « Liste » tab of « Ajouter des rues » (PLAN §5.4, AddList mockup).
+///
+/// With a tournée open that has communes, there is no commune field: a
+/// chip per commune when there are several, the streets of the one chosen,
+/// « déjà dans la tournée » and « Ajouter N rues ». Otherwise the commune
+/// is searched as in M1. Once every street ticked is stored, the screen
+/// closes with a message.
+///
+/// A `ConsumerStatefulWidget`: like a `StatefulWidget`, plus `ref`. The
+/// state object owns the commune field's `TextEditingController`, which
+/// must live as long as the list.
+final class ImportList extends ConsumerStatefulWidget {
+  const ImportList({super.key});
+
+  @override
+  ConsumerState<ImportList> createState() => _ImportListState();
+}
+
+final class _ImportListState extends ConsumerState<ImportList> {
   final _commune = TextEditingController();
 
   @override
@@ -49,45 +71,148 @@ final class _ImportScreenState extends ConsumerState<ImportScreen> {
     ref.listen(importProvider.select((state) => state.run), (_, run) {
       if (run case ImportFinished(:final summary) when summary.complete) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(importDoneMessage(l10n, summary))),
+          SnackBar(
+            content: Text(
+              importDoneMessage(l10n, summary, inTournee: state.inTournee),
+            ),
+          ),
         );
         context.pop();
       }
     });
     // The notifier writes the chosen commune's label in the field.
     if (_commune.text != state.query) _commune.text = state.query;
+    final communes = state.tourneeCommunes;
 
     return PopScope(
-      // No way back while streets are being written to the phone.
+      // No way back while streets are being written.
       canPop: !state.importing,
-      child: Scaffold(
-        // The mockup puts the title right after the back arrow.
-        appBar: AppBar(title: Text(l10n.importStreetsAction), titleSpacing: 0),
-        body: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Padding(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: AppSizes.gutter,
-                ),
-                child: _CommuneField(
-                  controller: _commune,
-                  state: state,
-                  onChanged: (text) => unawaited(notifier.typeCommune(text)),
-                ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          if (communes.isEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSizes.gutter),
+              child: _CommuneField(
+                controller: _commune,
+                state: state,
+                onChanged: (text) => unawaited(notifier.typeCommune(text)),
               ),
-              Expanded(
-                child: state.commune == null
-                    ? _Suggestions(state: state)
-                    : _Streets(state: state),
-              ),
-            ],
+            )
+          else if (communes.length > 1)
+            _CommuneChoice(state: state),
+          Expanded(
+            child: state.commune == null
+                ? _Suggestions(state: state)
+                : _Streets(state: state),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// A chip per commune of the tournée, the chosen one in ink (AddList
+/// mockup); screen readers hear radio buttons named « Commune ».
+final class _CommuneChoice extends ConsumerWidget {
+  const _CommuneChoice({required this.state});
+
+  final ImportState state;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final colors = AppColors.of(context);
+    final chosen = state.commune?.inseeCode;
+    return Semantics(
+      container: true,
+      label: l10n.communeLabel,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: AppSizes.gutter),
+        child: Wrap(
+          spacing: 8,
+          runSpacing: 8,
+          children: [
+            for (final commune in state.tourneeCommunes)
+              if (commune.inseeCode == chosen)
+                _CommunePill(
+                  key: ValueKey('import.commune.${commune.inseeCode.value}'),
+                  name: commune.name,
+                  selected: true,
+                  background: colors.ink,
+                  foreground: colors.surface,
+                  onTap: null,
+                )
+              else
+                _CommunePill(
+                  key: ValueKey('import.commune.${commune.inseeCode.value}'),
+                  name: commune.name,
+                  selected: false,
+                  background: colors.surface,
+                  foreground: colors.ink,
+                  onTap: state.importing
+                      ? null
+                      : () => unawaited(
+                          ref
+                              .read(importProvider.notifier)
+                              .chooseCommune(commune, label: commune.name),
+                        ),
+                ),
+          ],
         ),
       ),
     );
   }
+}
+
+/// One commune of [_CommuneChoice]: a pill of 48 dp at least.
+final class _CommunePill extends StatelessWidget {
+  const _CommunePill({
+    super.key,
+    required this.name,
+    required this.selected,
+    required this.background,
+    required this.foreground,
+    required this.onTap,
+  });
+
+  final String name;
+  final bool selected;
+  final Color background;
+  final Color foreground;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    inMutuallyExclusiveGroup: true,
+    checked: selected,
+    button: true,
+    label: name,
+    excludeSemantics: true,
+    child: Material(
+      color: background,
+      shape: StadiumBorder(
+        side: BorderSide(
+          color: selected ? background : AppColors.of(context).line,
+          width: AppSizes.borderWidth,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          constraints: const BoxConstraints(minHeight: AppSizes.minTapTarget),
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(name, style: AppTextStyles.pill.copyWith(color: foreground)),
+            ],
+          ),
+        ),
+      ),
+    ),
+  );
 }
 
 /// « Commune » and its field, darker once a commune is chosen.
@@ -309,6 +434,7 @@ final class _Checklist extends ConsumerWidget {
                   itemCount: visible.length,
                   itemBuilder: (context, index) => _ChoiceRow(
                     street: visible[index],
+                    inTournee: state.inTournee,
                     enabled: !state.importing,
                     onToggle: notifier.toggle,
                   ),
@@ -327,11 +453,13 @@ final class _Checklist extends ConsumerWidget {
             children: [
               ..._outcome(l10n, colors),
               if (state.run case ImportRunning(:final done, :final total))
-                _Progress(done: done, total: total)
+                _Progress(done: done, total: total, inTournee: state.inTournee)
               else
                 PrimaryButton(
                   key: const Key('import.button'),
-                  label: l10n.importButton(state.checkedCount),
+                  label: state.inTournee
+                      ? l10n.addButton(state.checkedCount)
+                      : l10n.importButton(state.checkedCount),
                   onPressed: state.canImport
                       ? () => unawaited(notifier.import())
                       : null,
@@ -348,12 +476,7 @@ final class _Checklist extends ConsumerWidget {
     final message = switch (state.run) {
       ImportFailed(:final failure) => addressFailureMessage(l10n, failure),
       ImportFinished(:final summary) when !summary.complete =>
-        l10n.importPartial(
-          // The streets back from the Corbeille are on the phone too.
-          summary.imported + summary.restored,
-          summary.failed,
-          addressFailureMessage(l10n, summary.failure!),
-        ),
+        importPartialMessage(l10n, summary, inTournee: state.inTournee),
       ImportNotStarted() || ImportRunning() || ImportFinished() => null,
     };
     return [
@@ -373,11 +496,15 @@ final class _Checklist extends ConsumerWidget {
 final class _ChoiceRow extends StatelessWidget {
   const _ChoiceRow({
     required this.street,
+    required this.inTournee,
     required this.enabled,
     required this.onToggle,
   });
 
   final StreetChoice street;
+
+  /// « déjà dans la tournée » rather than « déjà importée ».
+  final bool inTournee;
   final bool enabled;
   final ValueChanged<BanStreetId> onToggle;
 
@@ -407,7 +534,7 @@ final class _ChoiceRow extends StatelessWidget {
         ),
         secondary: Text(
           street.alreadyImported
-              ? l10n.alreadyImported
+              ? (inTournee ? l10n.alreadyInTournee : l10n.alreadyImported)
               : street.inCorbeille
               ? l10n.inCorbeille
               : l10n.streetNumberCount(street.numberCount),
@@ -470,10 +597,17 @@ final class _Message extends StatelessWidget {
 
 /// « Import en cours… 2/5 » over a bar, in place of the import button.
 final class _Progress extends StatelessWidget {
-  const _Progress({required this.done, required this.total});
+  const _Progress({
+    required this.done,
+    required this.total,
+    required this.inTournee,
+  });
 
   final int done;
   final int total;
+
+  /// « Ajout en cours… » rather than « Import en cours… ».
+  final bool inTournee;
 
   @override
   Widget build(BuildContext context) => SizedBox(
@@ -485,7 +619,9 @@ final class _Progress extends StatelessWidget {
       spacing: 8,
       children: [
         Text(
-          AppLocalizations.of(context).importProgress(done, total),
+          inTournee
+              ? AppLocalizations.of(context).addProgress(done, total)
+              : AppLocalizations.of(context).importProgress(done, total),
           textAlign: TextAlign.center,
           style: AppTextStyles.fieldLabel,
         ),

@@ -1,5 +1,6 @@
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
+import 'package:tournee_calendriers/domain/shared/commune.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/tournee/actor.dart';
@@ -7,11 +8,14 @@ import 'package:tournee_calendriers/domain/tournee/campaign_year.dart';
 import 'package:tournee_calendriers/domain/tournee/member.dart';
 import 'package:tournee_calendriers/domain/tournee/rescue_centre.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_change.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_commune.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_number.dart';
 
 import '../../support/results.dart';
 import '../../support/scripted_random.dart';
+import '../../support/street_fixtures.dart' show insee;
 import 'tournee_fixtures.dart';
 
 void main() {
@@ -21,7 +25,7 @@ void main() {
     final year = valueOf(CampaignYear.create(2027));
     final at = DateTime.utc(2026, 12, 5, 19, 30);
 
-    Tournee created() => Tournee.createdBy(
+    Tournee created({List<TourneeCommune>? communes}) => Tournee.createdBy(
       id: TourneeId('t12'),
       number: number,
       centre: centre,
@@ -30,7 +34,38 @@ void main() {
       creator: leaId,
       creatorName: nameOf('Léa'),
       at: at,
+      communes: communes ?? [gleizeCommune, villefrancheCommune],
     );
+
+    test('should cover the communes picked, in their order', () {
+      expect(created().communes, [gleizeCommune, villefrancheCommune]);
+    });
+
+    test('should take as many communes as allowed', () {
+      final communes = _communes(Tournee.maxCommunes);
+
+      expect(created(communes: communes).communes, communes);
+    });
+
+    test('should throw when no commune is given', () {
+      expect(() => created(communes: []), throwsArgumentError);
+    });
+
+    test('should throw when two communes share a code', () {
+      final otherCentre = TourneeCommune(commune: villefrancheCommune.commune);
+
+      expect(
+        () => created(communes: [villefrancheCommune, otherCentre]),
+        throwsArgumentError,
+      );
+    });
+
+    test('should throw when given more communes than allowed', () {
+      expect(
+        () => created(communes: _communes(Tournee.maxCommunes + 1)),
+        throwsArgumentError,
+      );
+    });
 
     test('should keep its identity when a member creates it', () {
       final tournee = created();
@@ -70,6 +105,49 @@ void main() {
       expect(tournee.createdBy, manuId);
       expect(tournee.createdAt, createdAt);
       expect(tournee.currentCampaign, campaign2026);
+    });
+
+    test('should have no commune when stored before the communes', () {
+      expect(team().communes, isEmpty);
+    });
+
+    test('should keep the stored communes in their order', () {
+      expect(team(communes: [villefrancheCommune, gleizeCommune]).communes, [
+        villefrancheCommune,
+        gleizeCommune,
+      ]);
+    });
+
+    test('should keep as many communes as allowed', () {
+      final communes = _communes(Tournee.maxCommunes);
+
+      expect(valueOf(_restore([manu], communes: communes)).communes, communes);
+    });
+
+    test('should refuse two communes of the same code', () {
+      final otherCentre = TourneeCommune(commune: villefrancheCommune.commune);
+
+      expect(
+        failureOf(
+          _restore([manu], communes: [villefrancheCommune, otherCentre]),
+        ),
+        NewTourneeFailure.duplicateCommune,
+      );
+    });
+
+    test('should refuse more communes than allowed', () {
+      expect(
+        failureOf(
+          _restore([manu], communes: _communes(Tournee.maxCommunes + 1)),
+        ),
+        NewTourneeFailure.tooManyCommunes,
+      );
+    });
+
+    test('should not let the communes be changed from outside', () {
+      final communes = team(communes: [villefrancheCommune]).communes;
+
+      expect(() => communes.add(gleizeCommune), throwsUnsupportedError);
     });
 
     test('should sort the members by request time when they come in any '
@@ -362,9 +440,11 @@ void main() {
 
   group('withJoinCode', () {
     test('should hold the code given and keep everything else', () {
-      final tournee = team().withJoinCode(codeOf('ABCDEF'));
+      final tournee = team(communes: [villefrancheCommune])
+          .withJoinCode(codeOf('ABCDEF'));
 
       expect(tournee.joinCode, codeOf('ABCDEF'));
+      expect(tournee.communes, [villefrancheCommune]);
       expect(tournee.members, team().members);
       expect(tournee.id, tourneeId);
       expect(tournee.number, number49);
@@ -408,6 +488,106 @@ void main() {
     });
   });
 
+  group('addCommune', () {
+    test('should add the commune after the others when a member adds it', () {
+      final before = team(communes: [villefrancheCommune]);
+
+      final (tournee, change) = valueOf(
+        before.addCommune(gleizeCommune, by: leaActing),
+      );
+
+      expect(tournee.communes, [villefrancheCommune, gleizeCommune]);
+      expect(
+        change,
+        CommuneAdded(tourneeId: tourneeId, commune: gleizeCommune),
+      );
+      expect(tournee.members, before.members);
+      _expectSameIdentity(tournee, before);
+    });
+
+    test('should give a tournée without commune its first one', () {
+      final (tournee, _) = valueOf(
+        team().addCommune(villefrancheCommune, by: leaActing),
+      );
+
+      expect(tournee.communes, [villefrancheCommune]);
+    });
+
+    test('should refuse a commune of a code the tournée already has', () {
+      final otherCentre = TourneeCommune(commune: villefrancheCommune.commune);
+      final tournee = team(communes: [villefrancheCommune]);
+
+      expect(
+        failureOf(tournee.addCommune(otherCentre, by: leaActing)),
+        TourneeCommandFailure.communeAlreadyIn,
+      );
+    });
+
+    test('should add the last commune allowed', () {
+      final tournee = team(communes: _communes(Tournee.maxCommunes - 1));
+
+      final (added, _) = valueOf(
+        tournee.addCommune(villefrancheCommune, by: leaActing),
+      );
+
+      expect(added.communes, hasLength(Tournee.maxCommunes));
+    });
+
+    test('should refuse a commune beyond those allowed', () {
+      final tournee = team(communes: _communes(Tournee.maxCommunes));
+
+      expect(
+        failureOf(tournee.addCommune(villefrancheCommune, by: leaActing)),
+        TourneeCommandFailure.tooManyCommunes,
+      );
+    });
+  });
+
+  group('removeCommune', () {
+    test('should take the commune out when a member removes it', () {
+      final before = team(communes: [villefrancheCommune, gleizeCommune]);
+
+      final (tournee, change) = valueOf(
+        before.removeCommune(insee('69264'), by: leaActing),
+      );
+
+      expect(tournee.communes, [gleizeCommune]);
+      expect(
+        change,
+        CommuneRemoved(tourneeId: tourneeId, commune: villefrancheCommune),
+      );
+      expect(tournee.members, before.members);
+      _expectSameIdentity(tournee, before);
+    });
+
+    test('should refuse a commune the tournée does not have', () {
+      final tournee = team(communes: [villefrancheCommune, gleizeCommune]);
+
+      expect(
+        failureOf(tournee.removeCommune(insee('69001'), by: leaActing)),
+        TourneeCommandFailure.unknownCommune,
+      );
+    });
+
+    test('should refuse to remove the last commune', () {
+      final tournee = team(communes: [villefrancheCommune]);
+
+      expect(
+        failureOf(tournee.removeCommune(insee('69264'), by: leaActing)),
+        TourneeCommandFailure.lastCommune,
+      );
+    });
+  });
+
+  test('should keep the communes when a member command changes the team', () {
+    final (tournee, _) = valueOf(
+      team(communes: [villefrancheCommune])
+          .accept(julieId, by: leaActing, at: DateTime.utc(2026, 11, 3)),
+    );
+
+    expect(tournee.communes, [villefrancheCommune]);
+  });
+
   test('should show its id, number, centre and campaign when printed', () {
     expect(team().toString(), 'Tournee(t49, 49, CS Villefranche, 2026)');
   });
@@ -430,6 +610,10 @@ void main() {
       'rename themself': (t, by) => t.rename(nameOf('Zoé'), by: by.member),
       'join as an admin': (t, by) =>
           t.joinAsAdmin(by: by, name: nameOf('Zoé'), at: at),
+      'add a commune': (t, by) => t.addCommune(gleizeCommune, by: by),
+      'remove a commune': (t, by) =>
+          team(communes: [villefrancheCommune, gleizeCommune])
+              .removeCommune(insee('69092'), by: by),
     };
     const TourneeCommandFailure? ok = null;
     const pending = TourneeCommandFailure.requestPending;
@@ -446,6 +630,8 @@ void main() {
       'delete the tournée': [ok, notAdmin, pending, outsider, ok, ok],
       'rename themself': [ok, ok, pending, outsider, outsider, pending],
       'join as an admin': [inIt, notAdmin, notAdmin, notAdmin, ok, inIt],
+      'add a commune': [ok, ok, pending, outsider, ok, ok],
+      'remove a commune': [ok, ok, pending, outsider, ok, ok],
     };
     final actors = {
       'Manu (active admin)': manuAsAdmin,
@@ -483,17 +669,34 @@ void main() {
   });
 }
 
-Result<Tournee, NewTourneeFailure> _restore(List<Member> members) =>
-    Tournee.create(
-      id: tourneeId,
-      number: number49,
-      centre: csVillefranche,
-      joinCode: firstCode,
-      createdBy: manuId,
-      createdAt: createdAt,
-      currentCampaign: campaign2026,
-      members: members,
-    );
+Result<Tournee, NewTourneeFailure> _restore(
+  List<Member> members, {
+  List<TourneeCommune> communes = const [],
+}) => Tournee.create(
+  id: tourneeId,
+  number: number49,
+  centre: csVillefranche,
+  joinCode: firstCode,
+  createdBy: manuId,
+  createdAt: createdAt,
+  currentCampaign: campaign2026,
+  members: members,
+  communes: communes,
+);
+
+/// [count] different communes of the Rhône (69001, 69002…), without
+/// centre: only their number matters.
+List<TourneeCommune> _communes(int count) => [
+  for (var i = 1; i <= count; i++)
+    TourneeCommune(
+      commune: valueOf(
+        Commune.create(
+          inseeCode: '69${'$i'.padLeft(3, '0')}',
+          name: 'Commune $i',
+        ),
+      ),
+    ),
+];
 
 /// Checks that a command on members left the rest of the tournée as it was.
 void _expectSameIdentity(Tournee actual, Tournee expected) {

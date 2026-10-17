@@ -13,8 +13,11 @@ import 'package:tournee_calendriers/ui/components/join_code_text.dart';
 import 'package:tournee_calendriers/ui/components/join_qr_code.dart';
 import 'package:tournee_calendriers/ui/components/recent_time_text.dart';
 import 'package:tournee_calendriers/ui/components/section_header.dart';
+import 'package:tournee_calendriers/ui/components/sheet_scaffold.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
+import 'package:tournee_calendriers/ui/screens/communes/commune_picker_field.dart';
+import 'package:tournee_calendriers/ui/screens/team/team_messages.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
@@ -132,14 +135,7 @@ final class _Team extends ConsumerWidget {
       if (context.mounted) {
         showMessageSnackBar(
           ScaffoldMessenger.of(context),
-          message: switch (failure) {
-            TeamActionFailure.teamChanged => l10n.teamChanged,
-            TeamActionFailure.offline => l10n.teamOffline,
-            // Only « Rejoindre » of the banner asks for a name, which it
-            // gets first: said here should it ever happen.
-            TeamActionFailure.noName => l10n.nameBlank,
-            TeamActionFailure.notAdmin => l10n.notAdminAnyMore,
-          },
+          message: teamActionMessage(l10n, failure),
         );
       }
       return false;
@@ -210,6 +206,7 @@ final class _Team extends ConsumerWidget {
                 ],
               ),
             ),
+            _Communes(state: state, run: run),
           ],
         ),
         SliverFillRemaining(
@@ -668,6 +665,119 @@ final class _Avatar extends StatelessWidget {
       ),
     ),
   );
+}
+
+/// « Communes (2) »: the tournée's communes, each with ✕ but the last
+/// one, then « + Ajouter une commune », which opens a sheet that searches
+/// geo.api.gouv.fr (#78). A tournée created before the communes shows
+/// only the button. Only an active member or an admin changes them.
+final class _Communes extends ConsumerWidget {
+  const _Communes({required this.state, required this.run});
+
+  final TeamShown state;
+
+  /// Runs a command of Équipe; true once done.
+  final Future<bool> Function(Future<TeamActionFailure?> Function()) run;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final colors = AppColors.of(context);
+    final notifier = ref.read(teamProvider.notifier);
+    if (state.communes.isEmpty && !state.canChangeCommunes) {
+      return const SizedBox.shrink();
+    }
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SectionHeader(l10n.teamCommunesHeader(state.communes.length)),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            border: Border(top: BorderSide(color: colors.divider)),
+          ),
+          child: Column(
+            children: [
+              for (final commune in state.communes)
+                Container(
+                  key: ValueKey('team.commune.${commune.inseeCode.value}'),
+                  constraints: const BoxConstraints(
+                    minHeight: AppSizes.memberRowHeight,
+                  ),
+                  padding: EdgeInsets.fromLTRB(
+                    16,
+                    0,
+                    commune.removable ? 4 : 16,
+                    0,
+                  ),
+                  decoration: BoxDecoration(
+                    color: colors.surface,
+                    border: Border(bottom: BorderSide(color: colors.divider)),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          commune.name,
+                          style: AppTextStyles.bodyLarge.copyWith(
+                            color: colors.ink,
+                          ),
+                        ),
+                      ),
+                      if (commune.removable)
+                        IconButton(
+                          key: const Key('team.commune.remove'),
+                          tooltip: l10n.communeRemove(commune.name),
+                          icon: Icon(Icons.close, color: colors.ink),
+                          onPressed: () => unawaited(
+                            run(
+                              () => notifier.removeCommune(commune.inseeCode),
+                            ),
+                          ),
+                        ),
+                    ],
+                  ),
+                ),
+            ],
+          ),
+        ),
+        if (state.canChangeCommunes)
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSizes.gutter,
+              12,
+              AppSizes.gutter,
+              0,
+            ),
+            child: SecondaryButton(
+              key: const Key('team.addCommune'),
+              leading: const Icon(Icons.add),
+              label: l10n.teamAddCommune,
+              compact: true,
+              onPressed: () => _addCommune(context, notifier),
+            ),
+          ),
+      ],
+    );
+  }
+
+  /// Opens the sheet that searches a commune; the one picked is added and
+  /// the sheet closes.
+  Future<void> _addCommune(BuildContext context, TeamNotifier notifier) =>
+      showAppBottomSheet<void>(
+        context: context,
+        builder: (sheet) => SheetScaffold(
+          title: AppLocalizations.of(sheet).teamAddCommune,
+          children: [
+            CommunePickerField(
+              autofocus: true,
+              onPick: (commune) {
+                Navigator.of(sheet).pop();
+                unawaited(run(() => notifier.addCommune(commune)));
+              },
+            ),
+          ],
+        ),
+      );
 }
 
 /// What the ⋮ of a member offers.

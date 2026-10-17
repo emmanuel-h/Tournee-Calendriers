@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tournee_calendriers/application/ports/commune_search.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
+import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/tournee/rescue_centre.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_repository.dart';
 import 'package:tournee_calendriers/ui/app.dart';
@@ -12,6 +14,7 @@ import 'package:tournee_calendriers/ui/screens/onboarding/join_tournee_screen.da
 import 'package:tournee_calendriers/ui/screens/start/start_screen.dart';
 
 import '../../domain/tournee/tournee_fixtures.dart';
+import '../../support/fakes/fake_commune_search.dart';
 import '../../support/fakes/fake_member_account.dart';
 import '../../support/fakes/fake_my_tournees_store.dart';
 import '../../support/fakes/fake_phone_settings.dart';
@@ -44,6 +47,24 @@ void main() {
           myTournees: store,
           settings: FakePhoneSettings(memberName: nameOf('Léa')),
           account: FakeMemberAccount(signedInMember: MemberId('uid-lea')),
+          communes: FakeCommuneSearch(
+            answers: {
+              'Villef': Ok([
+                CommuneMatch(
+                  commune: villefrancheCommune.commune,
+                  postcodes: const ['69400'],
+                  centre: villefrancheCommune.centre,
+                ),
+              ]),
+              'Gleiz': Ok([
+                CommuneMatch(
+                  commune: gleizeCommune.commune,
+                  postcodes: const ['69400'],
+                  centre: gleizeCommune.centre,
+                ),
+              ]),
+            },
+          ),
         ),
         child: const TourneeApp(showGallery: false),
       ),
@@ -55,12 +76,26 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  /// Types « villef » and picks the CS Villefranche, then types 49.
+  /// Picks the commune found for [typed] under « Ajouter une commune… ».
+  Future<void> pickCommune(
+    WidgetTester tester,
+    String typed,
+    String code,
+  ) async {
+    await tester.enterText(find.byKey(const Key('communes.field')), typed);
+    await tester.pumpAndSettle();
+    await tapVisible(tester, find.byKey(ValueKey('communes.suggestion.$code')));
+    await tester.pumpAndSettle();
+  }
+
+  /// Types « villef » and picks the CS Villefranche, picks
+  /// Villefranche-sur-Saône, then types 49.
   Future<void> fillIn(WidgetTester tester) async {
     await tester.enterText(find.byKey(const Key('create.centre')), 'villef');
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('create.centre.villefranche')));
     await tester.pumpAndSettle();
+    await pickCommune(tester, 'Villef', '69264');
     await tester.enterText(find.byKey(const Key('create.number')), '49');
     await tester.pumpAndSettle();
   }
@@ -70,6 +105,46 @@ void main() {
   setUp(() {
     directory = FakeTourneeDirectory()
       ..centres = [csVillefranche, csVillefrancheSurSaone];
+  });
+
+  testWidgets('should keep « Créer » off until a commune is picked, then '
+      'create the tournée on the communes picked', (tester) async {
+    await open(tester);
+    await tester.enterText(find.byKey(const Key('create.centre')), 'villef');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('create.centre.villefranche')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('create.number')), '49');
+    await tester.pumpAndSettle();
+    expect(isEnabled(tester, createButton), isFalse);
+
+    await pickCommune(tester, 'Villef', '69264');
+    await pickCommune(tester, 'Gleiz', '69092');
+
+    expect(find.text('Villefranche-sur-Saône (69400)'), findsOneWidget);
+    expect(find.text('Gleizé (69400)'), findsOneWidget);
+    expect(
+      tester
+          .widget<TextField>(find.byKey(const Key('communes.field')))
+          .controller!
+          .text,
+      '',
+    );
+    expect(isEnabled(tester, createButton), isTrue);
+
+    await tester.tap(
+      find.descendant(
+        of: find.byKey(const ValueKey('create.commune.69264')),
+        matching: find.byTooltip('Retirer Villefranche-sur-Saône'),
+      ),
+    );
+    await tester.pumpAndSettle();
+    expect(find.text('Villefranche-sur-Saône (69400)'), findsNothing);
+
+    await tapVisible(tester, createButton);
+    await tester.pumpAndSettle();
+
+    expect(tournees.added.single.communes, [gleizeCommune]);
   });
 
   testWidgets(
@@ -112,7 +187,7 @@ void main() {
       );
       expect(isEnabled(tester, createButton), isFalse);
 
-      await tester.tap(find.byKey(const Key('create.joinWithCode')));
+      await tapVisible(tester, find.byKey(const Key('create.joinWithCode')));
       await tester.pumpAndSettle();
 
       expect(find.byType(JoinTourneeScreen), findsOneWidget);
@@ -141,7 +216,7 @@ void main() {
     tournees.addFailure = AddTourneeFailure.notAdmin;
     await fillIn(tester);
 
-    await tester.tap(createButton);
+    await tapVisible(tester, createButton);
     await tester.pumpAndSettle();
 
     expect(find.text("Vous n'êtes plus administrateur."), findsOneWidget);
@@ -169,7 +244,7 @@ void main() {
       await open(tester);
       await fillIn(tester);
 
-      await tester.tap(createButton);
+      await tapVisible(tester, createButton);
       await tester.pumpAndSettle();
 
       expect(
@@ -185,19 +260,8 @@ void main() {
       );
       expect(tournees.added.single.number, number49);
 
-      final continueButton = find.byKey(const Key('create.continue'));
       // Built only once scrolled to: the code card fills the screen.
-      await tester.scrollUntilVisible(
-        continueButton,
-        200,
-        scrollable: find
-            .descendant(
-              of: find.byType(CustomScrollView),
-              matching: find.byType(Scrollable),
-            )
-            .first,
-      );
-      await tester.tap(continueButton);
+      await tapVisible(tester, find.byKey(const Key('create.continue')));
       await tester.pumpAndSettle();
 
       expect(find.byType(StartScreen), findsOneWidget);
@@ -209,7 +273,7 @@ void main() {
       'copy button is tapped', (tester) async {
     await open(tester);
     await fillIn(tester);
-    await tester.tap(createButton);
+    await tapVisible(tester, createButton);
     await tester.pumpAndSettle();
     final clipboard = FakeClipboard.install(tester);
 

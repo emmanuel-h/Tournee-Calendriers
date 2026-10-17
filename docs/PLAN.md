@@ -150,7 +150,7 @@ value taken behaves as with a button. **Typography:** French texts put a non-bre
 (U+00A0) inside « » and before : ; ? !, so a line never wraps between a sign and its word
 (checked on `app_fr.arb` by a test).
 
-### 5.0 Mes rues and Importer des rues (temporary, M1 only)
+### 5.0 Mes rues and Importer des rues
 
 Until Accueil (5.3) exists in M3, the app opens on a plain list so the street screen can be
 used on a real area. Mockups: `docs/mockups/Start.dc.html` and `docs/mockups/Import.dc.html`.
@@ -234,7 +234,10 @@ used on a real area. Mockups: `docs/mockups/Start.dc.html` and `docs/mockups/Imp
   M restaurées »; some failed → the screen stays, says why (no network
   first) and keeps them ticked so « Importer » tries them again. No network, service error and
   unknown commune each have a French message, with « Réessayer » for the street list.
-- Replaced by Accueil (5.3) and Ajouter des rues (5.4) in M3.
+- **Kept** (#78, decided 2026-10-17): « Mes rues » gives way to Accueil (5.3); « Importer des
+  rues » stays as it is for a phone with no tournée open, and becomes the « Liste » tab of
+  « Ajouter des rues » (5.4) while a tournée is open. The start button then reads « Ajouter des
+  rues » and opens that screen.
 
 ### 5.1 Bienvenue (first launch only)
 
@@ -316,6 +319,13 @@ an admin, shows only « Rejoindre une tournée », in red), and the bottom of th
   dark on white whatever the theme, so it scans.
 - An admin can regenerate the code from Équipe (old code stops working; members stay).
 - **Only admins create a tournée** (and so add a centre de secours), from #75 (5.12).
+- **Communes** (#78, Create mockup): between « Centre de secours » and « N° de tournée »,
+  « Communes », a chip per commune picked (« Villefranche-sur-Saône (69400) » and ✕, a 48 dp
+  target) then the field « + Ajouter une commune… », which searches geo.api.gouv.fr as « Importer
+  des rues » does (two characters, 300 ms pause, late answers ignored); a suggestion tapped
+  becomes a chip and empties the field, one already picked is not added twice. « Créer » stays
+  off until at least one commune is picked; at most 50 (`Tournee.maxCommunes`). Each commune
+  keeps the centre geo.api.gouv.fr gives (`centre`), so the map of 5.4 is centred offline.
 - Delivered in T2.5 (Create, CreateTaken, Join mockups). Both screens first need the phone's
   account (§6.1): a line « Connexion au serveur… » while it signs in, « Hors ligne : créer ou
   rejoindre une tournée demande le réseau. » with « Réessayer » when it cannot; the server
@@ -518,6 +528,17 @@ The street card adapts to the street's state:
 - The search box finds a street by name (BAN search, limited to the tournée's communes) and
   centres the map on it.
 - A road with no BAN match (private road, new estate): the card says so and offers manual entry.
+- **Carte | Liste** (#78, Pick and AddList mockups): under the title (✕ closes), two 48 dp
+  tabs, the chosen one in ink. **Carte** is the map above, opened on the tournée's communes
+  (their centres, 2 km around each, `communesArea`), on its streets when no commune has a
+  centre (`tourneeArea`), on France when neither; works offline. **Liste** is the checklist of
+  « Importer des rues » (5.0) on the tournée's communes: no commune field, a chip per commune
+  when there are several (the first chosen at once), « déjà dans la tournée » on a street the
+  tournée has, « Ajouter N rues », « Ajout en cours… n/N », then back with « N rues ajoutées à
+  la tournée ». A tournée without commune (created before #78) searches the commune as in
+  5.0. Delivered in #78: the tabs, the map opened on the communes and the list; the street
+  card, the search and « Saisir une rue à la main » on the map come with #31. Until then the
+  screen opens on « Liste », the tab that adds streets.
 
 ### 5.5 Keeping streets true to reality: manual street, edit mode
 
@@ -927,6 +948,14 @@ admin » for « Nouveau code », « Retirer », « Supprimer » and the campaign
   « L'équipe ne peut pas être affichée : … ». Times: « à l'instant », « il y a 2 min », « il
   y a 3 h », « hier », then the day (« 3 oct. »). Still to come: the street counts « 5 rues »
   (with the assignees, M3) and « CAMPAGNE » / « Démarrer une nouvelle campagne » (v1.1).
+- **Communes** (#78): after the Corbeille, « COMMUNES (n) », a row per commune of the tournée
+  with ✕ (« Retirer Gleizé » for screen readers), never on the last one, then « + Ajouter une
+  commune », which opens a sheet with the field of « Nouvelle tournée » (5.2); a commune picked
+  is added and the sheet closes. A tournée created before the communes shows only the button.
+  Any active member or admin may change them, offline too (sent later); a pending member sees
+  them without ✕ or button. « Cette commune est déjà dans la tournée. », « Une tournée a au
+  plus 50 communes. », or « L'équipe a changé entre-temps. » when a teammate removed one
+  meanwhile. Removing a commune keeps the streets added from it.
 - From T2.6c a member removed, or a tournée deleted, is forgotten by the phone as soon as the
   server says so, with a message (« Vous avez été retiré de la tournée 49. », 5.3), which
   closes Équipe; « L'équipe ne peut pas être affichée » stays for a tournée never read
@@ -1176,7 +1205,7 @@ inside an aggregate changes only through its root, which enforces the invariants
 
 | Aggregate (root) | Contains | Invariants it guards |
 |---|---|---|
-| `Tournee` | `Member`s, `JoinCode`, `RescueCentre`, current campaign year | one creator; members are pending or active; only active members accept others; only the creator removes members, regenerates the code, starts a campaign |
+| `Tournee` | `Member`s, `JoinCode`, `RescueCentre`, current campaign year, `TourneeCommune`s (#78) | one creator; members are pending or active; only active members accept others; only the creator removes members, regenerates the code, starts a campaign; communes unique by INSEE code, 1–50 from creation, never the last one removed |
 | `Street` (one per campaign) | `House` entities, each with an optional `Building` → `Staircase` → `Floor` → `Dwelling` | numbers unique in the street; a building's status is derived, never set; deleting is soft (Corbeille) |
 
 Value objects (immutable, validated at construction, equal by value): `JoinCode` (6 chars from
@@ -1799,8 +1828,27 @@ Street picking fixed in T3.3 (`lib/domain/street/street.dart`, `lib/application/
 - **`TakeStreet(streetId)`** / **`ReleaseStreet(streetId)`**: the member on the phone, through
   the root; offline; `CommandFailure<AssignmentFailure>`.
 - **`SearchStreet(text, communes:)`**: `AddressDirectory.searchStreets` for each commune in turn
-  (the tournée's communes, passed in until #78 stores them), results in commune order, a BAN id
-  listed once; the first failure fails the search; no commune → nothing, no request.
+  (the tournée's communes, which #78 stores; #31 passes them in), results in commune order, a
+  BAN id listed once; the first failure fails the search; no commune → nothing, no request.
+
+Communes of a tournée fixed in #78 (`lib/domain/tournee/`, `lib/application/use_cases/team.dart`):
+
+- **`TourneeCommune`**: a `Commune` (INSEE code + name) and an optional `GeoPoint` centre, the
+  one geo.api.gouv.fr gives at pick time (`CommuneMatch.centre`, from its `centre` field,
+  `[longitude, latitude]`), equal by value. `Tournee.communes` keeps them in the order added,
+  read-only.
+- `Tournee.createdBy(…, communes:)` takes one to `maxCommunes` (50) communes of different codes
+  (anything else throws an `ArgumentError`: « Nouvelle tournée » never sends it).
+  `Tournee.create` (storage) takes none to 50 (`duplicateCommune`, `tooManyCommunes`), so a
+  tournée created before #78 reads with none.
+- **Commands** (any active member or admin, like answering a request): `addCommune(commune,
+  by:)` → `CommuneAdded` (refused `communeAlreadyIn` by INSEE code, `tooManyCommunes`);
+  `removeCommune(code, by:)` → `CommuneRemoved` with the commune as stored (refused
+  `unknownCommune`, `lastCommune`). Use cases `AddCommune`, `RemoveCommune` (offline, queued)
+  and `ObserveTourneeCommunes(id)` (the communes now and on each change of them, not of the
+  team; none while the tournée cannot be read). `CreateTournee(…, communes:)`.
+- **Map area**: `communesArea(communes)` = the centres plus 2 km (`communeMarginMetres`), null
+  without centre; `addStreetsArea(communes, streets)` = that, else `tourneeArea(streets)`.
 
 Firestore adapters fixed in T2.3 (`lib/infrastructure/firestore/`, `lib/application/ports/`):
 
@@ -1909,7 +1957,13 @@ joinCodes/{code}                                  ← "K7P2QX": readable only by
 
 tournees/{tourneeId}
     number: 49, centreKey, centreName, joinCode, createdBy, createdAt,
-    currentCampaign: 2026, communes: ["69264", …]  ← communes: M3, not written yet
+    currentCampaign: 2026,
+    communes: [ { code: "69264", name: "Villefranche-sur-Saône",
+                  lat: 45.9837 | null, lon: 4.726 | null }, … ]
+                                                  ← #78: in the order added; absent on a
+                                                    tournée created before (reads as none);
+                                                    an unreadable entry, or a second one of a
+                                                    code, is skipped when read, at most 50 kept
   members/{uid}
     displayName: "Manu", status: "pending" | "active", requestedAt, acceptedBy, acceptedAt,
     joinCode                                      ← only on a newcomer's request: the code used
@@ -1969,6 +2023,7 @@ writes:
 | undo of a door (`DwellingReverted`) | `dwellings.<key>` whole, `by` / `at` = who undoes, now |
 | 30-day purge of numbers (`NumbersPurged`, T2.6b) | each `houses.<n>` deleted, in an update of its own |
 | 30-day purge of a street (`StreetRepository.purge`, T2.6b) | the street document deleted |
+| commune added / removed (#78, on `tournees/{id}`) | `communes`: `arrayUnion([entry])` / `arrayRemove([entry])`, never the whole list, so two members adding at once both stay |
 
 A building is never written as one map that would replace the doors: two writes crossing (a
 door marked while a teammate lays the building out again) leave at most a door entry the
@@ -2233,8 +2288,15 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
   rules accept a number's `deletedBy` that is the caller or an active member of the tournée
   (so a member could also name a teammate as the remover of a number; the stricter choice,
   stamping that undo with who undoes as for houses and doors, would change T2.3's undo).
-- Fields no adapter writes yet (`communes` in M3; `prev` and a new campaign in v1.1) are
-  refused: the task that writes them extends the rules and their tests.
+- Fields no adapter writes yet (`prev` and a new campaign in v1.1) are refused: the task that
+  writes them extends the rules and their tests.
+- **Communes** (#78): a new tournée must hold `communes`, a list of 1 to 50 entries; the first
+  entry is checked whole (`code` an INSEE code, `name` trimmed, not blank, ≤ 100, `lat` / `lon`
+  in range or both null, nothing else), the others only counted. Any active member or admin
+  updates `communes` alone, by one entry: an addition (checked whole, ≤ 50 in all) or a
+  removal that leaves at least one. A tournée stored before has no list: it counts as empty, so
+  its first commune can be added. Duplicates of a code cannot be ruled out (no loops): the
+  reader skips them.
 - **Shape and assignees** (T3.3): optional on a new street (an app of before the map writes
   neither); `shape` a list of at most 1 000 lines (counted, not checked line by line), never
   changed afterwards; `assignees` on a new street `[]` or `[caller]`. An update may change
@@ -2271,7 +2333,7 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
 | Map tiles + style | `https://tiles.openfreemap.org/styles/liberty` (or `positron`) | OSM vector tiles for MapLibre. Offline download through `maplibre_gl` offline regions; check OpenFreeMap's terms on bulk download in the spike task |
 | Street under a tap | `https://data.geopf.fr/geocodage/reverse?lon={lon}&lat={lat}&index=address&type=street&limit=1` | Returns BAN `id` = idVoie (`69264_1460`), `name`, `citycode`, `city`, one point of the street; always the nearest street, whatever the distance |
 | Street search by name | `https://data.geopf.fr/geocodage/search?q={q}&index=address&type=street&citycode={code}&limit=10` | For the search box; `q` 3–200 characters starting with a letter or digit, else HTTP 400 |
-| Commune by name | `https://geo.api.gouv.fr/communes?nom={q}&fields=nom,code,codesPostaux&boost=population&limit=5` | Temporary import screen (5.0): `nom`, `code` (INSEE), `codesPostaux`; `[]` when nothing matches |
+| Commune by name | `https://geo.api.gouv.fr/communes?nom={q}&fields=nom,code,codesPostaux,centre&boost=population&limit=5` | Import screen (5.0), the communes of a tournée (5.2, 5.8): `nom`, `code` (INSEE), `codesPostaux`, `centre` (GeoJSON point); `[]` when nothing matches |
 | Streets of a commune | `https://plateforme.adresse.data.gouv.fr/lookup/{inseeCode}` | `voies[]`: `idVoie`, `nomVoie`, `nbNumeros`, `type`; 404 for an unknown commune |
 | Numbers of a street | `https://plateforme.adresse.data.gouv.fr/lookup/{idVoie}` | `numeros[]`: `numero`, `suffixe`, `position.coordinates` [lon, lat]; a number may appear twice; 404 for an unknown street |
 | Shape of a street | Overpass `https://overpass-api.de/api/interpreter` (POST `data=`), query `way(area INSEE)["highway"]["name"~"<accent-tolerant name>",i]; out geom;` (§6.1, T3.2) | Needs a `User-Agent`. One call per added street. Fallback when empty: no shape, house dots only. Often busy (502 / 504 for an hour on 2026-10-17) |

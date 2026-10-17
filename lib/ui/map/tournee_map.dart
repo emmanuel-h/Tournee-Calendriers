@@ -3,6 +3,7 @@ import 'dart:math' show Point;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/map/map_layers.dart';
@@ -108,7 +109,20 @@ final class _TourneeMapState extends State<TourneeMap> {
   }
 
   /// Adds our pictures, sources and layers to the style just loaded.
+  ///
+  /// The screen may close while they are added (« Ajouter des rues » left
+  /// at once): the map's platform side is then gone, and the call on its
+  /// way fails with a [MissingPluginException], which means nothing to a
+  /// map no longer shown.
   Future<void> _onStyleLoaded() async {
+    try {
+      await _addOurLayers();
+    } on MissingPluginException {
+      if (mounted) rethrow;
+    }
+  }
+
+  Future<void> _addOurLayers() async {
     final controller = _controller!;
     // Read before the first `await`: the context must not be used across
     // asynchronous gaps, the widget may have changed by then.
@@ -116,6 +130,7 @@ final class _TourneeMapState extends State<TourneeMap> {
     final pixelRatio = MediaQuery.devicePixelRatioOf(context);
 
     for (final status in HouseDotStatus.values) {
+      if (!mounted) return;
       await controller.addImage(
         houseDotImage(status),
         await houseDotPng(HouseDotLook.of(status, colors), pixelRatio),
@@ -138,6 +153,7 @@ final class _TourneeMapState extends State<TourneeMap> {
     );
     final below = lineLayersBelow(await controller.getLayerIds());
     for (final layer in tourneeMapLayers(colors)) {
+      if (!mounted) return;
       await controller.addLayer(
         layer.source,
         layer.id,

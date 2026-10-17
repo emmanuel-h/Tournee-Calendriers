@@ -2,13 +2,17 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
+import 'package:tournee_calendriers/application/ports/commune_search.dart';
+import 'package:tournee_calendriers/domain/shared/commune.dart';
 import 'package:tournee_calendriers/domain/tournee/campaign_year.dart';
 import 'package:tournee_calendriers/domain/tournee/member_name.dart';
 import 'package:tournee_calendriers/domain/tournee/rescue_centre.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_number.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_repository.dart';
 import 'package:tournee_calendriers/presentation/account/account_notifier.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
+import 'package:tournee_calendriers/presentation/import_streets/import_state.dart';
 import 'package:tournee_calendriers/presentation/new_tournee/new_tournee_notifier.dart';
 import 'package:tournee_calendriers/presentation/new_tournee/new_tournee_state.dart';
 
@@ -30,6 +34,24 @@ Future<void> _settle() async {
 }
 
 RescueCentre _centre(String name) => valueOf(RescueCentre.create(name));
+
+/// Villefranche-sur-Saône as the commune search suggests it.
+final villefrancheOption = CommuneOption.of(
+  CommuneMatch(
+    commune: villefrancheCommune.commune,
+    postcodes: const ['69400'],
+    centre: villefrancheCommune.centre,
+  ),
+);
+
+/// Gleizé as the commune search suggests it.
+final gleizeOption = CommuneOption.of(
+  CommuneMatch(
+    commune: gleizeCommune.commune,
+    postcodes: const ['69400'],
+    centre: gleizeCommune.centre,
+  ),
+);
 
 void main() {
   final csAnse = _centre('CS Anse');
@@ -72,9 +94,10 @@ void main() {
   NewTourneeState state() => container.read(newTourneeProvider);
   NewTourneeNotifier form() => container.read(newTourneeProvider.notifier);
 
-  /// Picks the CS Villefranche and types 49.
+  /// Picks the CS Villefranche, Villefranche-sur-Saône and types 49.
   Future<void> fill() async {
     form().chooseCentre(csVillefranche);
+    form().addCommune(villefrancheOption);
     form().typeNumber('49');
     await _settle();
   }
@@ -266,6 +289,74 @@ void main() {
     });
   });
 
+  group('the communes', () {
+    setUp(() => open(name: nameOf('Manu')));
+
+    test('should start without commune, one to add', () {
+      expect(state().communes, isEmpty);
+      expect(state().canAddCommune, isTrue);
+    });
+
+    test('should add each commune picked after the others', () {
+      form()
+        ..addCommune(villefrancheOption)
+        ..addCommune(gleizeOption);
+
+      expect(state().communes, [villefrancheOption, gleizeOption]);
+    });
+
+    test('should not add a commune picked twice', () {
+      form()
+        ..addCommune(villefrancheOption)
+        ..addCommune(villefrancheOption);
+
+      expect(state().communes, [villefrancheOption]);
+    });
+
+    test('should remove the commune of the chip', () {
+      form()
+        ..addCommune(villefrancheOption)
+        ..addCommune(gleizeOption)
+        ..removeCommune(villefrancheOption.inseeCode);
+
+      expect(state().communes, [gleizeOption]);
+    });
+
+    test('should add up to the most communes a tournée covers, no more', () {
+      final options = [
+        for (var i = 1; i <= Tournee.maxCommunes + 1; i++)
+          CommuneOption(
+            commune: valueOf(
+              Commune.create(
+                inseeCode: '69${'$i'.padLeft(3, '0')}',
+                name: 'Commune $i',
+              ),
+            ),
+            postcodes: const [],
+          ),
+      ];
+      for (final option in options.take(Tournee.maxCommunes - 1)) {
+        form().addCommune(option);
+      }
+      expect(state().canAddCommune, isTrue);
+
+      form().addCommune(options[Tournee.maxCommunes - 1]);
+      expect(state().canAddCommune, isFalse);
+      form().addCommune(options.last);
+
+      expect(state().communes, hasLength(Tournee.maxCommunes));
+    });
+
+    test('should add no commune once the tournée is created', () async {
+      await fill();
+      await form().create();
+
+      expect(state().canAddCommune, isFalse);
+      form().addCommune(gleizeOption);
+      expect(state().communes, [villefrancheOption]);
+    });
+  });
+
   group('the number and the year', () {
     setUp(() => open(name: nameOf('Manu')));
 
@@ -438,6 +529,7 @@ void main() {
       expect(created.number, number49);
       expect(created.currentCampaign, campaign2026);
       expect(created.members.single.name, nameOf('Manu'));
+      expect(created.communes, [villefrancheCommune]);
       expect(store.myTournees.currentId, created.id);
     });
 
@@ -521,6 +613,16 @@ void main() {
 
       await form().create();
 
+      expect(tournees.added, isEmpty);
+    });
+
+    test('should create nothing without a commune', () async {
+      await open(name: nameOf('Manu'));
+      await fill();
+      form().removeCommune(villefrancheOption.inseeCode);
+
+      expect(state().canCreate, isFalse);
+      await form().create();
       expect(tournees.added, isEmpty);
     });
 

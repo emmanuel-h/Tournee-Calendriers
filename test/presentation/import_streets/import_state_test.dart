@@ -1,9 +1,14 @@
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
+import 'package:tournee_calendriers/domain/shared/commune.dart';
+import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_commune.dart';
 import 'package:tournee_calendriers/presentation/import_streets/import_state.dart';
 
+import '../../support/geo_fixtures.dart';
+import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 
 StreetChoice _choice(
@@ -238,11 +243,7 @@ void main() {
 
   test('should keep the communes found and the streets read-only', () {
     final found = CommunesFound([
-      CommuneOption(
-        name: 'Villefranche-sur-Saône',
-        inseeCode: insee('69264'),
-        postcodes: ['69400'],
-      ),
+      CommuneOption(commune: villefranche, postcodes: ['69400']),
     ]);
     final loaded = StreetsLoaded([_choice('a', 'A')]);
 
@@ -280,47 +281,57 @@ void main() {
   });
 
   group('CommuneOption', () {
-    CommuneOption option([List<String> postcodes = const ['69400']]) =>
-        CommuneOption(
-          name: 'Villefranche-sur-Saône',
-          inseeCode: insee('69264'),
-          postcodes: postcodes,
-        );
+    final gleize = valueOf(Commune.create(inseeCode: '69092', name: 'Gleizé'));
 
-    test('should take the name, code and postcodes of a match', () {
+    CommuneOption option({
+      Commune? commune,
+      List<String> postcodes = const ['69400'],
+      GeoPoint? centre,
+    }) => CommuneOption(
+      commune: commune ?? villefranche,
+      postcodes: postcodes,
+      centre: centre ?? at(45.9837, 4.726),
+    );
+
+    test('should take the commune, postcodes and centre of a match', () {
       final made = CommuneOption.of(
-        CommuneMatch(commune: villefranche, postcodes: ['69400', '69401']),
+        CommuneMatch(
+          commune: villefranche,
+          postcodes: ['69400', '69401'],
+          centre: at(45.9837, 4.726),
+        ),
       );
 
+      expect(made.commune, villefranche);
       expect(made.name, 'Villefranche-sur-Saône');
       expect(made.inseeCode.value, '69264');
       expect(made.postcodes, ['69400', '69401']);
+      expect(made.centre, at(45.9837, 4.726));
+    });
+
+    test('should take the commune and centre of a tournée, no postcode', () {
+      final made = CommuneOption.ofTournee(
+        TourneeCommune(commune: gleize, centre: at(45.9915, 4.6883)),
+      );
+
+      expect(made.commune, gleize);
+      expect(made.postcodes, isEmpty);
+      expect(made.centre, at(45.9915, 4.6883));
+    });
+
+    test('should give the commune as a tournée keeps it', () {
+      expect(
+        option().tourneeCommune,
+        TourneeCommune(commune: villefranche, centre: at(45.9837, 4.726)),
+      );
     });
 
     test('should be equal only when every field is equal', () {
       expect(option(), option());
       expect(option().hashCode, option().hashCode);
-      expect(option(), isNot(option(['69401'])));
-      expect(
-        option(),
-        isNot(
-          CommuneOption(
-            name: 'X',
-            inseeCode: insee('69264'),
-            postcodes: ['69400'],
-          ),
-        ),
-      );
-      expect(
-        option(),
-        isNot(
-          CommuneOption(
-            name: 'Villefranche-sur-Saône',
-            inseeCode: insee('69265'),
-            postcodes: ['69400'],
-          ),
-        ),
-      );
+      expect(option(), isNot(option(postcodes: ['69401'])));
+      expect(option(), isNot(option(commune: gleize)));
+      expect(option(), isNot(option(centre: at(45.9915, 4.6883))));
     });
 
     test('should name its fields when printed', () {

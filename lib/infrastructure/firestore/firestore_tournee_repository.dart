@@ -24,9 +24,9 @@ import 'package:tournee_calendriers/infrastructure/firestore/mappers/tournee_doc
 ///   drawn from [random], up to [maxCodeDraws] times: with 887 million
 ///   codes it does not happen in practice, and the user would have nothing
 ///   to do about it.
-/// - **Accepting, refusing, removing, leaving, renaming** are applied on
-///   the phone at once and sent when the network allows
-///   ([sendInBackground]).
+/// - **Accepting, refusing, removing, leaving, renaming**, and **adding or
+///   removing a commune** are applied on the phone at once and sent when
+///   the network allows ([sendInBackground]).
 /// - **An admin joining** (PLAN §5.12) first asks the server for the
 ///   tournée, so offline it fails at once; then their member document is
 ///   sent like the other member writes.
@@ -202,6 +202,26 @@ final class FirestoreTourneeRepository implements TourneeRepository {
         sendInBackground(
           '$change',
           members.doc(member.id.value).set(memberToDocument(member)),
+        );
+        return Ok(tournee);
+      case CommuneAdded(:final commune):
+        // `arrayUnion`: only this entry is added to the stored list, so a
+        // teammate's commune added at the same time stays.
+        sendInBackground(
+          '$change',
+          FirestoreLayout.tournee(_db, tournee.id).update({
+            'communes': FieldValue.arrayUnion([communeEntry(commune)]),
+          }),
+        );
+        return Ok(tournee);
+      case CommuneRemoved(:final commune):
+        // `arrayRemove` takes out the entries equal to this one, as it was
+        // read: the security rules refuse it when it would empty the list.
+        sendInBackground(
+          '$change',
+          FirestoreLayout.tournee(_db, tournee.id).update({
+            'communes': FieldValue.arrayRemove([communeEntry(commune)]),
+          }),
         );
         return Ok(tournee);
       case JoinCodeRegenerated(:final before, :final code):

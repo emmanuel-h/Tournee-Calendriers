@@ -1,6 +1,7 @@
 import 'package:tournee_calendriers/domain/tournee/join_code.dart';
 import 'package:tournee_calendriers/domain/tournee/member.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_commune.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 
 /// What one command of a [Tournee] changed, returned next to the new
@@ -128,6 +129,46 @@ final class JoinCodeRegenerated extends TourneeChange {
   String toString() =>
       'JoinCodeRegenerated(${tourneeId.value}, ${before.display} → '
       '${code.display})';
+}
+
+/// A change of the communes the tournée covers (Équipe, PLAN §5.8).
+///
+/// Storage adds or removes only [commune] in the tournée's list
+/// (`arrayUnion` / `arrayRemove`), never the whole list, so two members
+/// adding two communes at once both stay.
+sealed class CommuneChange extends TourneeChange {
+  const CommuneChange({required super.tourneeId, required this.commune});
+
+  /// The commune added, or the one removed as it was stored.
+  final TourneeCommune commune;
+
+  /// Equal when of the same kind and about the same commune.
+  @override
+  bool operator ==(Object other) =>
+      other is CommuneChange &&
+      other.runtimeType == runtimeType &&
+      other.tourneeId == tourneeId &&
+      other.commune == commune;
+
+  @override
+  int get hashCode => Object.hash(runtimeType, tourneeId, commune);
+}
+
+/// An active member or an admin added [commune] (« + Ajouter une
+/// commune »).
+final class CommuneAdded extends CommuneChange {
+  const CommuneAdded({required super.tourneeId, required super.commune});
+
+  @override
+  String toString() => 'CommuneAdded(${tourneeId.value}, $commune)';
+}
+
+/// An active member or an admin removed [commune] (✕): never the last.
+final class CommuneRemoved extends CommuneChange {
+  const CommuneRemoved({required super.tourneeId, required super.commune});
+
+  @override
+  String toString() => 'CommuneRemoved(${tourneeId.value}, $commune)';
 }
 
 /// An admin deleted [tournee] (« Supprimer la tournée »): every member,

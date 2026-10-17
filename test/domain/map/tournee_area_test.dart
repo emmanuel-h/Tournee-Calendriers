@@ -1,10 +1,12 @@
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/map/tournee_area.dart';
+import 'package:tournee_calendriers/domain/shared/commune.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_commune.dart';
 
 import '../../support/geo_fixtures.dart';
 import '../../support/results.dart';
@@ -83,5 +85,68 @@ void main() {
 
   test('should be null when there is no street', () {
     expect(tourneeArea([]), isNull);
+  });
+
+  group('communesArea', () {
+    final villefrancheCentre = at(45.9837, 4.726);
+    final gleizeCentre = at(45.9915, 4.6883);
+    final gleize = valueOf(Commune.create(inseeCode: '69092', name: 'Gleizé'));
+
+    test('should add a margin of 2 km', () {
+      expect(communeMarginMetres, 2000);
+    });
+
+    test('should hold every commune centre, with the margin', () {
+      expect(
+        communesArea([
+          TourneeCommune(commune: villefranche, centre: villefrancheCentre),
+          TourneeCommune(commune: gleize, centre: gleizeCentre),
+        ]),
+        GeoBounds.around([at(45.9837, 4.6883), at(45.9915, 4.726)])!
+            .expandedBy(2000),
+      );
+    });
+
+    test('should leave out a commune without centre', () {
+      expect(
+        communesArea([
+          TourneeCommune(commune: villefranche, centre: villefrancheCentre),
+          TourneeCommune(commune: gleize),
+        ]),
+        GeoBounds.around([villefrancheCentre])!.expandedBy(2000),
+      );
+    });
+
+    test('should be null when no commune has a centre', () {
+      expect(communesArea([TourneeCommune(commune: gleize)]), isNull);
+      expect(communesArea(const []), isNull);
+    });
+  });
+
+  group('addStreetsArea', () {
+    final placed = _street(
+      'a',
+      houses: [House(number: n('1'), position: at(45.99210, 4.71500))],
+    );
+
+    test('should show the communes when one has a centre', () {
+      final commune = TourneeCommune(
+        commune: villefranche,
+        centre: at(45.9837, 4.726),
+      );
+
+      expect(addStreetsArea([commune], [placed]), communesArea([commune]));
+    });
+
+    test('should show the streets when no commune has a centre', () {
+      expect(
+        addStreetsArea([TourneeCommune(commune: villefranche)], [placed]),
+        tourneeArea([placed]),
+      );
+    });
+
+    test('should be null when neither has a place on the map', () {
+      expect(addStreetsArea(const [], [_street('b')]), isNull);
+    });
   });
 }

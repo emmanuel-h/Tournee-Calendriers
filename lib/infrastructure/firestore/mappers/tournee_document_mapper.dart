@@ -3,7 +3,10 @@
 //
 //   tournees/{id}            { number, centreKey, centreName, joinCode,
 //                              createdBy: uid, createdAt: time,
-//                              currentCampaign: 2026 }
+//                              currentCampaign: 2026,
+//                              communes: [{ code: "69264",
+//                                name: "Villefranche-sur-Saône",
+//                                lat: 45.98 | null, lon: 4.72 | null }] }
 //     members/{uid}          { displayName, status: "pending" | "active",
 //                              requestedAt: time, acceptedBy: uid | null,
 //                              acceptedAt: time | null,
@@ -18,17 +21,26 @@
 // cannot read the tournée to prove it otherwise.
 //
 // Reading goes back through the domain's checks (Tournee.create,
-// MemberName.create…); anything they refuse is a FormatException.
+// MemberName.create…); anything they refuse is a FormatException. The
+// communes are the exception: a tournée written before them has none, and
+// one entry the domain refuses (or a second entry of the same code, which
+// the security rules cannot rule out) is left out, so the team still
+// reads its tournée.
 import 'package:cloud_firestore/cloud_firestore.dart' show Timestamp;
 import 'package:tournee_calendriers/application/ports/tournee_directory.dart';
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
+import 'package:tournee_calendriers/domain/shared/commune.dart';
+import 'package:tournee_calendriers/domain/shared/geo_point.dart';
+import 'package:tournee_calendriers/domain/shared/insee_code.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
+import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/tournee/campaign_year.dart';
 import 'package:tournee_calendriers/domain/tournee/join_code.dart';
 import 'package:tournee_calendriers/domain/tournee/member.dart';
 import 'package:tournee_calendriers/domain/tournee/member_name.dart';
 import 'package:tournee_calendriers/domain/tournee/rescue_centre.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_commune.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_loss.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_number.dart';
@@ -44,6 +56,17 @@ Map<String, Object?> tourneeToDocument(Tournee tournee) => {
   'createdBy': tournee.createdBy.value,
   'createdAt': Timestamp.fromDate(tournee.createdAt),
   'currentCampaign': tournee.currentCampaign.value,
+  'communes': [for (final commune in tournee.communes) communeEntry(commune)],
+};
+
+/// The entry of [commune] in the tournée's `communes` list. Adding or
+/// removing one names the whole entry (`arrayUnion` / `arrayRemove`
+/// compare entries by value), so it is always written the same way.
+Map<String, Object?> communeEntry(TourneeCommune commune) => {
+  'code': commune.inseeCode.value,
+  'name': commune.name,
+  'lat': commune.centre?.latitude,
+  'lon': commune.centre?.longitude,
 };
 
 /// The document `members/{uid}` of [member].
@@ -110,11 +133,57 @@ Tournee tourneeFromDocuments(
           for (final MapEntry(:key, :value) in members.entries)
             memberFromDocument(key, value),
         ],
+        communes: communesFrom(data['communes']),
       ),
       'tournée',
     );
   }
   throw const FormatException('Not a tournée document');
+}
+
+/// The communes of a tournée's stored `communes` list, in their order:
+/// none when there is no list (a tournée written before them). An entry
+/// that cannot be read, or whose code an earlier entry has, is left out;
+/// beyond [Tournee.maxCommunes] the rest is ignored.
+List<TourneeCommune> communesFrom(Object? json) {
+  final communes = <InseeCode, TourneeCommune>{};
+  if (json is List<Object?>) {
+    for (final entry in json) {
+      final commune = _communeFrom(entry);
+      if (commune == null || communes.length == Tournee.maxCommunes) continue;
+      // `putIfAbsent`: the first entry of a code wins.
+      communes.putIfAbsent(commune.inseeCode, () => commune);
+    }
+  }
+  return communes.values.toList();
+}
+
+/// The commune of one stored entry; null when it cannot be read: not a
+/// commune, a centre out of range, or half a centre.
+TourneeCommune? _communeFrom(Object? entry) {
+  if (entry case {
+    'code': final String code,
+    'name': final String name,
+    'lat': final num? latitude,
+    'lon': final num? longitude,
+  }) {
+    if (Commune.create(inseeCode: code, name: name) case Ok(
+      value: final commune,
+    )) {
+      if (latitude == null || longitude == null) {
+        // Both null: no centre. Only one: half a centre, not to be trusted.
+        return latitude == longitude ? TourneeCommune(commune: commune) : null;
+      }
+      if (GeoPoint.create(
+            latitude: latitude.toDouble(),
+            longitude: longitude.toDouble(),
+          )
+          case Ok(value: final centre)) {
+        return TourneeCommune(commune: commune, centre: centre);
+      }
+    }
+  }
+  return null;
 }
 
 /// The member stored in `members/[uid]` as [data].

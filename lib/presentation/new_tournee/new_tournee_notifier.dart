@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tournee_calendriers/application/use_cases/create_tournee.dart';
+import 'package:tournee_calendriers/domain/shared/insee_code.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/tournee/campaign_year.dart';
 import 'package:tournee_calendriers/domain/tournee/rescue_centre.dart';
@@ -9,6 +10,7 @@ import 'package:tournee_calendriers/domain/tournee/tournee_number.dart';
 import 'package:tournee_calendriers/presentation/account/account_notifier.dart';
 import 'package:tournee_calendriers/presentation/account/account_state.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
+import 'package:tournee_calendriers/presentation/import_streets/import_state.dart';
 import 'package:tournee_calendriers/presentation/new_tournee/new_tournee_state.dart';
 
 /// How long the duplicate check waits after the last change of the centre
@@ -25,8 +27,9 @@ final newTourneeProvider =
     );
 
 /// « Nouvelle tournée » (PLAN §5.2): the centre de secours picked from the
-/// known ones or added, the number checked as it is typed, the year, then
-/// « Créer », which shows the code and the QR code once done.
+/// known ones or added, the communes it covers, the number checked as it
+/// is typed, the year, then « Créer », which shows the code and the QR
+/// code once done.
 ///
 /// Everything asked of the server waits for the phone's account
 /// (`accountProvider`): after an offline first start, « Réessayer » there
@@ -95,6 +98,24 @@ final class NewTourneeNotifier extends Notifier<NewTourneeState> {
     unawaited(_check());
   }
 
+  /// A commune picked under « Ajouter une commune… »: a chip after the
+  /// others. One already picked, or one too many, changes nothing.
+  void addCommune(CommuneOption commune) {
+    if (!state.canAddCommune) return;
+    if (state.communes.any((other) => other.inseeCode == commune.inseeCode)) {
+      return;
+    }
+    state = state.copyWith(communes: [...state.communes, commune]);
+  }
+
+  /// ✕ on the chip of the commune [code].
+  void removeCommune(InseeCode code) => state = state.copyWith(
+    communes: [
+      for (final commune in state.communes)
+        if (commune.inseeCode != code) commune,
+    ],
+  );
+
   /// « N° de tournée » changed to [text].
   void typeNumber(String text) {
     final number = TourneeNumber.parse(text);
@@ -150,6 +171,7 @@ final class NewTourneeNotifier extends Notifier<NewTourneeState> {
       number: number,
       campaign: year,
       creatorName: name,
+      communes: [for (final commune in state.communes) commune.tourneeCommune],
     );
     if (!ref.mounted) return;
     state = switch (created) {

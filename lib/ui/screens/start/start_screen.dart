@@ -114,8 +114,16 @@ final class StartScreen extends ConsumerWidget {
               child: PrimaryButton(
                 key: const Key('start.import'),
                 icon: Icons.add,
-                label: l10n.importStreetsAction,
-                onPressed: () => context.push(AppRoutes.importStreets),
+                // With a tournée open, « Ajouter des rues » (« Carte |
+                // Liste »); with none, the phone's own import of M1.
+                label: tournee == null
+                    ? l10n.importStreetsAction
+                    : l10n.addStreetsTitle,
+                onPressed: () => context.push(
+                  tournee == null
+                      ? AppRoutes.importStreets
+                      : AppRoutes.addStreets,
+                ),
               ),
             ),
           ],

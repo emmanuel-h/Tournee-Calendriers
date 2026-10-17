@@ -1,9 +1,12 @@
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
+import 'package:tournee_calendriers/domain/shared/commune.dart';
 import 'package:tournee_calendriers/domain/shared/french_text.dart';
+import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/shared/insee_code.dart';
 import 'package:tournee_calendriers/domain/shared/same_items.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_commune.dart';
 
 // The view state of « Importer des rues » (PLAN §5.0), made of small
 // `sealed` families: the screen `switch`es over each one, and a new case
@@ -36,38 +39,56 @@ enum ImportProblem {
       };
 }
 
-/// A commune suggested under the field (« Villefranche-sur-Saône (69400) »).
+/// A commune suggested under the field (« Villefranche-sur-Saône (69400) »),
+/// or one of the open tournée's communes (its chips).
 final class CommuneOption {
   CommuneOption({
-    required this.name,
-    required this.inseeCode,
+    required this.commune,
     required List<String> postcodes,
+    this.centre,
   }) : postcodes = List.unmodifiable(postcodes);
 
   /// The option of a commune the search found.
   factory CommuneOption.of(CommuneMatch match) => CommuneOption(
-    name: match.commune.name,
-    inseeCode: match.commune.inseeCode,
+    commune: match.commune,
     postcodes: match.postcodes,
+    centre: match.centre,
   );
 
-  final String name;
+  /// The option of one of the tournée's communes: their postcodes are not
+  /// kept, the chips show the name alone.
+  factory CommuneOption.ofTournee(TourneeCommune commune) => CommuneOption(
+    commune: commune.commune,
+    postcodes: const [],
+    centre: commune.centre,
+  );
 
-  /// Which commune: the import asks the BAN for it.
-  final InseeCode inseeCode;
+  final Commune commune;
 
   /// Five-digit postcodes, possibly none. Read-only.
   final List<String> postcodes;
 
+  /// Where the commune's map starts, when the search gave it.
+  final GeoPoint? centre;
+
+  String get name => commune.name;
+
+  /// Which commune: the import asks the BAN for it.
+  InseeCode get inseeCode => commune.inseeCode;
+
+  /// The commune as a tournée keeps it (« Nouvelle tournée », Équipe).
+  TourneeCommune get tourneeCommune =>
+      TourneeCommune(commune: commune, centre: centre);
+
   @override
   bool operator ==(Object other) =>
       other is CommuneOption &&
-      other.name == name &&
-      other.inseeCode == inseeCode &&
-      sameItems(other.postcodes, postcodes);
+      other.commune == commune &&
+      sameItems(other.postcodes, postcodes) &&
+      other.centre == centre;
 
   @override
-  int get hashCode => Object.hash(name, inseeCode, Object.hashAll(postcodes));
+  int get hashCode => Object.hash(commune, Object.hashAll(postcodes), centre);
 
   @override
   String toString() => 'CommuneOption(${inseeCode.value}, $name, $postcodes)';
@@ -255,10 +276,13 @@ final class ImportSummary {
   bool get complete => failed == 0;
 }
 
-/// Everything « Importer des rues » shows. Immutable: each intent of the
-/// notifier makes a new one.
+/// Everything « Importer des rues » shows, and the « Liste » tab of
+/// « Ajouter des rues » while a tournée is open (PLAN §5.4). Immutable:
+/// each intent of the notifier makes a new one.
 final class ImportState {
   const ImportState({
+    this.inTournee = false,
+    this.tourneeCommunes = const [],
     this.query = '',
     this.searching = false,
     this.suggestions = const NoSuggestions(),
@@ -267,6 +291,16 @@ final class ImportState {
     this.filter = '',
     this.run = const ImportNotStarted(),
   });
+
+  /// A tournée is open: the streets go into it (« Ajouter N rues », « déjà
+  /// dans la tournée »), not onto the phone alone.
+  final bool inTournee;
+
+  /// The open tournée's communes, whose streets the list offers: a chip
+  /// each when there are several, and no commune field. None with no
+  /// tournée open, or for a tournée created before the communes: the
+  /// commune is then searched as in M1. Read-only.
+  final List<CommuneOption> tourneeCommunes;
 
   /// The text of the « Commune » field.
   final String query;
@@ -321,6 +355,7 @@ final class ImportState {
   bool get canImport => checkedCount > 0 && !importing;
 
   ImportState copyWith({
+    List<CommuneOption>? tourneeCommunes,
     String? query,
     bool? searching,
     CommuneSuggestions? suggestions,
@@ -329,6 +364,8 @@ final class ImportState {
     String? filter,
     ImportRun? run,
   }) => ImportState(
+    inTournee: inTournee,
+    tourneeCommunes: tourneeCommunes ?? this.tourneeCommunes,
     query: query ?? this.query,
     searching: searching ?? this.searching,
     suggestions: suggestions ?? this.suggestions,

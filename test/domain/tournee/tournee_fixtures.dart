@@ -4,6 +4,8 @@
 // Manu and Sam are administrators of the app (PLAN §5.12); Sam is in no
 // tournée.
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
+import 'package:tournee_calendriers/domain/shared/commune.dart';
+import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/tournee/actor.dart';
 import 'package:tournee_calendriers/domain/tournee/campaign_year.dart';
@@ -12,6 +14,7 @@ import 'package:tournee_calendriers/domain/tournee/member.dart';
 import 'package:tournee_calendriers/domain/tournee/member_name.dart';
 import 'package:tournee_calendriers/domain/tournee/rescue_centre.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_commune.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_number.dart';
 
@@ -73,8 +76,27 @@ final julie = Member(
   requestedAt: julieAskedAt,
 );
 
-/// The tournée with Manu, Léa and Julie, as storage gives it back.
-Tournee team({JoinCode? joinCode, Iterable<Member>? members}) => valueOf(
+/// Villefranche-sur-Saône with its centre, as geo.api.gouv.fr gives it.
+final villefrancheCommune = TourneeCommune(
+  commune: valueOf(
+    Commune.create(inseeCode: '69264', name: 'Villefranche-sur-Saône'),
+  ),
+  centre: valueOf(GeoPoint.create(latitude: 45.9837, longitude: 4.726)),
+);
+
+/// Gleizé, its neighbour to the west, with its centre.
+final gleizeCommune = TourneeCommune(
+  commune: valueOf(Commune.create(inseeCode: '69092', name: 'Gleizé')),
+  centre: valueOf(GeoPoint.create(latitude: 45.9915, longitude: 4.6883)),
+);
+
+/// The tournée with Manu, Léa and Julie, as storage gives it back. No
+/// commune by default: a tournée created before they existed.
+Tournee team({
+  JoinCode? joinCode,
+  Iterable<Member>? members,
+  List<TourneeCommune> communes = const [],
+}) => valueOf(
   Tournee.create(
     id: tourneeId,
     number: number49,
@@ -84,5 +106,6 @@ Tournee team({JoinCode? joinCode, Iterable<Member>? members}) => valueOf(
     createdAt: createdAt,
     currentCampaign: campaign2026,
     members: members ?? [manu, lea, julie],
+    communes: communes,
   ),
 );

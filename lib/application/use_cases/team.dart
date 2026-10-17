@@ -5,21 +5,25 @@ import 'package:tournee_calendriers/application/ports/clock.dart';
 import 'package:tournee_calendriers/application/ports/identity_provider.dart';
 import 'package:tournee_calendriers/application/ports/my_tournees_store.dart';
 import 'package:tournee_calendriers/application/ports/phone_settings.dart';
+import 'package:tournee_calendriers/domain/shared/insee_code.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
+import 'package:tournee_calendriers/domain/shared/same_items.dart';
 import 'package:tournee_calendriers/domain/tournee/actor.dart';
 import 'package:tournee_calendriers/domain/tournee/join_code.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_change.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_commune.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_repository.dart';
 
 // Équipe (PLAN §5.8, §5.12): who is in the open tournée, the requests to
-// answer, the join code, and leaving or deleting the tournée. The member
+// answer, the join code, its communes, and leaving or deleting the tournée. The member
 // acting is the one on the phone (`IdentityProvider`), with whether they
 // are an admin (`AdminStatus`): the tournée's root checks they may do it.
-// Accepting, refusing, removing and leaving work offline (queued by
-// storage); a new code, an admin joining and deleting need the server.
+// Accepting, refusing, removing, leaving and changing the communes work
+// offline (queued by storage); a new code, an admin joining and deleting
+// need the server.
 
 /// Why a command of Équipe was not done: one of the [TeamProblem]s, or
 /// [TeamCommandRefused] with the tournée's reason.
@@ -128,6 +132,24 @@ final class ObserveTeam {
   Stream<Tournee?> call(TourneeId id) => _tournees.watch(id);
 }
 
+/// The communes of the tournée [TourneeId] now, then again each time they
+/// change (« Ajouter des rues » lists their streets, its map is centred on
+/// them, PLAN §5.4); none while the tournée cannot be read, or when it
+/// was created before the communes. Works offline, from the phone's copy.
+///
+/// A change of the team alone (a request, an acceptance) is not told: the
+/// screens would list the same streets again for nothing.
+final class ObserveTourneeCommunes {
+  const ObserveTourneeCommunes(this._tournees);
+
+  final TourneeRepository _tournees;
+
+  Stream<List<TourneeCommune>> call(TourneeId id) => _tournees
+      .watch(id)
+      .map((tournee) => tournee?.communes ?? const <TourneeCommune>[])
+      .distinct(sameItems);
+}
+
 /// The member using the phone: Équipe shows « (vous) » next to them.
 final class ReadCurrentMember {
   const ReadCurrentMember(this._identity);
@@ -200,6 +222,51 @@ final class RemoveMember {
       _tournees,
       tournee,
       (tournee) => tournee.remove(member, by: by),
+    )).map((stored) => stored.$2);
+  }
+}
+
+/// « + Ajouter une commune » (Équipe): the tournée covers [TourneeCommune]
+/// too. Any active member or admin may. Works offline (sent later); the
+/// commune itself was found online (geo.api.gouv.fr).
+final class AddCommune {
+  const AddCommune(this._tournees, this._identity, this._admins);
+
+  final TourneeRepository _tournees;
+  final IdentityProvider _identity;
+  final AdminStatus _admins;
+
+  Future<Result<CommuneAdded, TeamFailure>> call(
+    TourneeId tournee,
+    TourneeCommune commune,
+  ) async {
+    final by = await _actorOf(_identity, _admins);
+    return (await _runOnTournee(
+      _tournees,
+      tournee,
+      (tournee) => tournee.addCommune(commune, by: by),
+    )).map((stored) => stored.$2);
+  }
+}
+
+/// ✕ on a commune (Équipe): the tournée no longer covers it; the streets
+/// added from it stay. Never the last one. Works offline.
+final class RemoveCommune {
+  const RemoveCommune(this._tournees, this._identity, this._admins);
+
+  final TourneeRepository _tournees;
+  final IdentityProvider _identity;
+  final AdminStatus _admins;
+
+  Future<Result<CommuneRemoved, TeamFailure>> call(
+    TourneeId tournee,
+    InseeCode commune,
+  ) async {
+    final by = await _actorOf(_identity, _admins);
+    return (await _runOnTournee(
+      _tournees,
+      tournee,
+      (tournee) => tournee.removeCommune(commune, by: by),
     )).map((stored) => stored.$2);
   }
 }

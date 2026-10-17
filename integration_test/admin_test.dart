@@ -23,9 +23,28 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:tournee_calendriers/application/ports/commune_search.dart';
 import 'package:tournee_calendriers/bootstrap/bootstrap.dart';
 import 'package:tournee_calendriers/bootstrap/firebase.dart';
 import 'package:tournee_calendriers/bootstrap/firebase_options.dart';
+import 'package:tournee_calendriers/domain/shared/commune.dart';
+import 'package:tournee_calendriers/domain/shared/geo_point.dart';
+import 'package:tournee_calendriers/domain/shared/result.dart';
+
+import '../test/support/fakes/fake_commune_search.dart';
+
+/// The value of [result], which the test data guarantees.
+T _ok<T, F>(Result<T, F> result) => switch (result) {
+  Ok(:final value) => value,
+  Err(:final failure) => throw StateError('$failure'),
+};
+
+final _villefranche = _ok(
+  Commune.create(inseeCode: '69264', name: 'Villefranche-sur-Saône'),
+);
+final _villefrancheCentre = _ok(
+  GeoPoint.create(latitude: 45.9837, longitude: 4.726),
+);
 
 /// How the Android emulator reaches the computer it runs on, where the
 /// Firebase emulators listen (`firebase/firebase.json`).
@@ -162,7 +181,22 @@ void main() {
       final storage = await Directory.systemTemp.createTemp('admin_flow');
       addTearDown(() => storage.delete(recursive: true));
 
-      await bootstrap(storage: storage);
+      // geo.api.gouv.fr played by a fake: the commune of « Nouvelle
+      // tournée » needs no network outside the emulators.
+      await bootstrap(
+        storage: storage,
+        communeSearch: FakeCommuneSearch(
+          answers: {
+            'Villef': Ok([
+              CommuneMatch(
+                commune: _villefranche,
+                postcodes: const ['69400'],
+                centre: _villefrancheCentre,
+              ),
+            ]),
+          },
+        ),
+      );
       await tester.pumpAndSettle();
       // The anonymous sign-in runs in the background, against the Auth
       // emulator.
@@ -186,6 +220,9 @@ void main() {
       // since the 12), number 49, the year as given, « Créer ».
       await tester.enterText(find.byKey(const Key('create.centre')), 'villef');
       await _tap(tester, const ValueKey('create.centre.villefranche'));
+      await tester.enterText(find.byKey(const Key('communes.field')), 'Villef');
+      await tester.pumpAndSettle();
+      await _tap(tester, const ValueKey('communes.suggestion.69264'));
       await tester.enterText(find.byKey(const Key('create.number')), '49');
       await tester.pumpAndSettle(const Duration(milliseconds: 400));
       await _tap(tester, const Key('create.create'));
@@ -196,6 +233,12 @@ void main() {
       // Équipe: the creator is in the team, as an admin.
       await _tap(tester, const Key('home.team'));
       await _waitFor(tester, find.text('Sam (vous) · admin'));
+      // The commune went with the tournée, through the rules (#78).
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('team.commune.69264')),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
       await tester.tap(find.byTooltip('Retour'));
       await tester.pumpAndSettle();
 
@@ -215,6 +258,9 @@ void main() {
       await _tap(tester, const Key('myTournees.create'));
       await tester.enterText(find.byKey(const Key('create.centre')), 'villef');
       await _tap(tester, const ValueKey('create.centre.villefranche'));
+      await tester.enterText(find.byKey(const Key('communes.field')), 'Villef');
+      await tester.pumpAndSettle();
+      await _tap(tester, const ValueKey('communes.suggestion.69264'));
       await tester.enterText(find.byKey(const Key('create.number')), '50');
       await tester.pumpAndSettle(const Duration(milliseconds: 400));
       expect(await _asOwner('DELETE', 'admins/$uid'), 200);

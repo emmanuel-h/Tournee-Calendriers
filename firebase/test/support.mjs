@@ -76,6 +76,31 @@ export const campaignPath = `${tourneePath}/campaigns/2026`;
 export const streetsPath = `${campaignPath}/streets`;
 export const memberPath = (uid) => `${tourneePath}/members/${uid}`;
 
+/** communeEntry of Villefranche-sur-Saône, with its centre. */
+export const villefrancheEntry = {
+  code: '69264',
+  name: 'Villefranche-sur-Saône',
+  lat: 45.9837,
+  lon: 4.726,
+};
+
+/** communeEntry of Gleizé, its neighbour, with its centre. */
+export const gleizeEntry = {
+  code: '69092',
+  name: 'Gleizé',
+  lat: 45.9915,
+  lon: 4.6883,
+};
+
+/** [count] different communes of the Rhône (69001…), without centre. */
+export const communeEntries = (count) =>
+  Array.from({ length: count }, (_, i) => ({
+    code: `69${String(i + 1).padStart(3, '0')}`,
+    name: `Commune ${i + 1}`,
+    lat: null,
+    lon: null,
+  }));
+
 /** tourneeToDocument. */
 export const tourneeDoc = (overrides = {}) => ({
   number: 49,
@@ -85,6 +110,7 @@ export const tourneeDoc = (overrides = {}) => ({
   createdBy: manu,
   createdAt: twoPm,
   currentCampaign: 2026,
+  communes: [villefrancheEntry],
   ...overrides,
 });
 

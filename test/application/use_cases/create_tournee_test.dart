@@ -108,6 +108,7 @@ void main() {
       expect(created.joinCode, codeOf('234567'));
       expect(created.createdBy, manuId);
       expect(created.createdAt, now);
+      expect(created.communes, [villefrancheCommune, gleizeCommune]);
       expect(created.members, [
         Member(
           id: manuId,
@@ -227,4 +228,5 @@ Future<Result<Tournee, CreateTourneeFailure>> _create(
       number: number49,
       campaign: campaign2026,
       creatorName: nameOf('Manu'),
+      communes: [villefrancheCommune, gleizeCommune],
     );

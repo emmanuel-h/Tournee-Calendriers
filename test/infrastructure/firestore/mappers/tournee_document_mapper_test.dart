@@ -1,12 +1,14 @@
 // The documents of a tournée in Firestore (PLAN §6.2): the tournée and its
 // members, the join code's preview, the number + centre reservation and
 // the shared list of centres de secours.
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:cloud_firestore/cloud_firestore.dart' show Timestamp;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tournee_calendriers/application/ports/tournee_directory.dart';
+import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/tournee/member.dart';
 import 'package:tournee_calendriers/domain/tournee/rescue_centre.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_commune.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_loss.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_number.dart';
@@ -16,6 +18,9 @@ import '../../../domain/tournee/tournee_fixtures.dart';
 import '../../../support/results.dart';
 
 Timestamp at(DateTime time) => Timestamp.fromDate(time);
+
+/// The point at latitude 46, longitude 5.
+final at46_5 = valueOf(GeoPoint.create(latitude: 46, longitude: 5));
 
 /// [team]'s documents as Firestore gives them back.
 Map<String, dynamic> tourneeData() => <String, dynamic>{
@@ -57,6 +62,7 @@ void main() {
         'createdBy': 'uid-manu',
         'createdAt': at(createdAt),
         'currentCampaign': 2026,
+        'communes': <Object?>[],
       });
     });
 
@@ -123,6 +129,123 @@ void main() {
 
       expect(tournee.createdBy, manuId);
       expect(tournee.members, [lea, julie]);
+    });
+  });
+
+  group('communes', () {
+    final villefrancheEntry = {
+      'code': '69264',
+      'name': 'Villefranche-sur-Saône',
+      'lat': 45.9837,
+      'lon': 4.726,
+    };
+    final gleizeEntry = {
+      'code': '69092',
+      'name': 'Gleizé',
+      'lat': 45.9915,
+      'lon': 4.6883,
+    };
+
+    test('should write each commune with its code, name and centre, in '
+        'order', () {
+      final tournee = team(communes: [villefrancheCommune, gleizeCommune]);
+
+      expect(tourneeToDocument(tournee)['communes'], [
+        villefrancheEntry,
+        gleizeEntry,
+      ]);
+    });
+
+    test('should write a commune without centre with null coordinates', () {
+      expect(
+        communeEntry(TourneeCommune(commune: villefrancheCommune.commune)),
+        {
+          'code': '69264',
+          'name': 'Villefranche-sur-Saône',
+          'lat': null,
+          'lon': null,
+        },
+      );
+    });
+
+    test('should give back the same communes when read again', () {
+      final back = read(
+        tournee: (data) => data['communes'] = [villefrancheEntry, gleizeEntry],
+      );
+
+      expect(back.communes, [villefrancheCommune, gleizeCommune]);
+    });
+
+    test('should read a tournée stored before the communes with none', () {
+      expect(
+        read(tournee: (data) => data.remove('communes')).communes,
+        isEmpty,
+      );
+    });
+
+    test('should read a commune without centre', () {
+      expect(
+        communesFrom([
+          {...villefrancheEntry, 'lat': null, 'lon': null},
+        ]),
+        [TourneeCommune(commune: villefrancheCommune.commune)],
+      );
+    });
+
+    test('should read a centre stored as whole numbers', () {
+      expect(
+        communesFrom([
+          {...villefrancheEntry, 'lat': 46, 'lon': 5},
+        ]).single.centre,
+        at46_5,
+      );
+    });
+
+    final unreadable = <String, Object?>{
+      'not a map': 'Villefranche',
+      'a code the domain refuses': {...villefrancheEntry, 'code': '6926'},
+      'a blank name': {...villefrancheEntry, 'name': ' '},
+      'no name': {'code': '69264', 'lat': 45.9837, 'lon': 4.726},
+      'a latitude only': {...villefrancheEntry, 'lon': null},
+      'a longitude only': {...villefrancheEntry, 'lat': null},
+      'a latitude out of range': {...villefrancheEntry, 'lat': 91},
+      'a centre that is not a number': {...villefrancheEntry, 'lat': '45'},
+    };
+    for (final MapEntry(key: what, value: entry) in unreadable.entries) {
+      test('should leave out an entry with $what, and keep the others', () {
+        expect(communesFrom([entry, gleizeEntry]), [gleizeCommune]);
+      });
+    }
+
+    test('should keep the first entry of a code stored twice', () {
+      expect(
+        communesFrom([
+          gleizeEntry,
+          {...gleizeEntry, 'lat': null, 'lon': null},
+        ]),
+        [gleizeCommune],
+      );
+    });
+
+    test('should keep no more communes than a tournée may cover', () {
+      final entries = [
+        for (var i = 1; i <= Tournee.maxCommunes + 1; i++)
+          {
+            'code': '69${'$i'.padLeft(3, '0')}',
+            'name': 'Commune $i',
+            'lat': null,
+            'lon': null,
+          },
+      ];
+
+      final communes = communesFrom(entries);
+
+      expect(communes, hasLength(Tournee.maxCommunes));
+      expect(communes.last.name, 'Commune ${Tournee.maxCommunes}');
+    });
+
+    test('should read no commune from something that is not a list', () {
+      expect(communesFrom({'0': villefrancheEntry}), isEmpty);
     });
   });
 

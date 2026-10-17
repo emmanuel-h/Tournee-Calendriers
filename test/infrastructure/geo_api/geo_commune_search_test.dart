@@ -9,6 +9,7 @@ import 'package:tournee_calendriers/application/ports/commune_search.dart';
 import 'package:tournee_calendriers/infrastructure/geo_api/geo_commune_search.dart';
 import 'package:tournee_calendriers/infrastructure/http/app_user_agent.dart';
 
+import '../../support/geo_fixtures.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 import 'geo_api_fixtures.dart';
@@ -48,7 +49,7 @@ void main() {
       requests.single.url,
       Uri.parse(
         'https://geo.api.gouv.fr/communes?nom=Villefranche+sur'
-        '&fields=nom%2Ccode%2CcodesPostaux&boost=population&limit=5',
+        '&fields=nom%2Ccode%2CcodesPostaux%2Ccentre&boost=population&limit=5',
       ),
     );
     expect(requests.single.headers['User-Agent'], appUserAgent);
@@ -64,7 +65,11 @@ void main() {
     );
 
     expect(valueOf(await search.search('Villefranche')), [
-      CommuneMatch(commune: villefranche, postcodes: const ['69400']),
+      CommuneMatch(
+        commune: villefranche,
+        postcodes: const ['69400'],
+        centre: at(45.9837, 4.726),
+      ),
     ]);
   });
 

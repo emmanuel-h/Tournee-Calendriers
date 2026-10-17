@@ -1,4 +1,5 @@
 import 'package:tournee_calendriers/domain/shared/commune.dart';
+import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/shared/same_items.dart';
 
@@ -27,14 +28,22 @@ enum CommuneSearchFailure {
 }
 
 /// A commune the [CommuneSearch] found, with its postcodes so two communes
-/// of the same name can be told apart (« Villefranche-sur-Saône (69400) »).
+/// of the same name can be told apart (« Villefranche-sur-Saône (69400) »),
+/// and its centre, where the map of a tournée covering it starts.
 final class CommuneMatch {
   /// [postcodes] is copied, so changing the list given here afterwards does
   /// not change this value.
-  CommuneMatch({required this.commune, required List<String> postcodes})
-    : postcodes = List.unmodifiable(postcodes);
+  CommuneMatch({
+    required this.commune,
+    required List<String> postcodes,
+    this.centre,
+  }) : postcodes = List.unmodifiable(postcodes);
 
   final Commune commune;
+
+  /// The commune's centre as the service gives it; null when it gives
+  /// none.
+  final GeoPoint? centre;
 
   /// The five-digit postcodes of the commune, in the service's order;
   /// several for a large town, possibly none. Read-only.
@@ -44,10 +53,11 @@ final class CommuneMatch {
   bool operator ==(Object other) =>
       other is CommuneMatch &&
       other.commune == commune &&
-      sameItems(other.postcodes, postcodes);
+      sameItems(other.postcodes, postcodes) &&
+      other.centre == centre;
 
   @override
-  int get hashCode => Object.hash(commune, Object.hashAll(postcodes));
+  int get hashCode => Object.hash(commune, Object.hashAll(postcodes), centre);
 
   @override
   String toString() => 'CommuneMatch(${commune.name}, $postcodes)';

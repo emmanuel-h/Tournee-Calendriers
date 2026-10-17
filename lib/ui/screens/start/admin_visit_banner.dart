@@ -4,10 +4,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tournee_calendriers/presentation/my_tournees/my_tournees_notifier.dart';
 import 'package:tournee_calendriers/presentation/team/team_notifier.dart';
-import 'package:tournee_calendriers/presentation/team/team_state.dart';
 import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/screens/my_tournees/my_tournees_sheet.dart';
+import 'package:tournee_calendriers/ui/screens/team/team_messages.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
@@ -90,14 +90,6 @@ final class AdminVisitBanner extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final failure = await ref.read(teamProvider.notifier).joinAsAdmin();
     if (failure == null) return;
-    showMessageSnackBar(
-      messenger,
-      message: switch (failure) {
-        TeamActionFailure.offline => l10n.teamOffline,
-        TeamActionFailure.teamChanged => l10n.teamChanged,
-        TeamActionFailure.noName => l10n.nameBlank,
-        TeamActionFailure.notAdmin => l10n.notAdminAnyMore,
-      },
-    );
+    showMessageSnackBar(messenger, message: teamActionMessage(l10n, failure));
   }
 }

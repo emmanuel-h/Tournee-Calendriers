@@ -13,6 +13,7 @@ import 'package:tournee_calendriers/domain/tournee/member.dart';
 import 'package:tournee_calendriers/domain/tournee/member_name.dart';
 import 'package:tournee_calendriers/domain/tournee/rescue_centre.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_commune.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_number.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_repository.dart';
@@ -64,8 +65,9 @@ enum CreateTourneeFailure {
 }
 
 /// « Créer »: signs in when the phone has no account yet, then stores a new
-/// tournée whose only member is the creator, with a join code drawn from
-/// the secure source, and opens it on the phone (« Mes tournées », PLAN
+/// tournée whose only member is the creator, covering the communes
+/// picked, with a join code drawn from the secure source, and opens it on
+/// the phone (« Mes tournées », PLAN
 /// §5.3). Returns the tournée as stored: the server may have replaced a
 /// code another tournée held.
 final class CreateTournee {
@@ -93,6 +95,7 @@ final class CreateTournee {
     required TourneeNumber number,
     required CampaignYear campaign,
     required MemberName creatorName,
+    required List<TourneeCommune> communes,
   }) async {
     // The server lets in the account's uid only (PLAN §8.2): the phone's
     // own id cannot stand in for it here.
@@ -114,6 +117,7 @@ final class CreateTournee {
       creator: creator,
       creatorName: creatorName,
       at: _clock.now(),
+      communes: communes,
     );
     switch (await _tournees.add(tournee)) {
       case Err(:final failure):

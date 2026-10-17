@@ -6,14 +6,21 @@ import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
+import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_commune.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/import_streets/import_notifier.dart';
 import 'package:tournee_calendriers/presentation/import_streets/import_state.dart';
 
+import '../../domain/tournee/my_tournees_fixtures.dart';
+import '../../domain/tournee/tournee_fixtures.dart'
+    show gleizeCommune, team, tourneeId, villefrancheCommune;
 import '../../support/fakes/fake_address_directory.dart';
 import '../../support/fakes/fake_commune_search.dart';
+import '../../support/fakes/fake_my_tournees_store.dart';
 import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_street_repository.dart';
+import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 
@@ -108,6 +115,8 @@ void main() {
         idGeneratorProvider.overrideWithValue(FakeIdGenerator('street')),
         // Zero, so the debounce is a single turn of the event loop.
         communeSearchDelayProvider.overrideWithValue(Duration.zero),
+        // No tournée open: the phone's own streets, as in M1.
+        myTourneesStoreProvider.overrideWithValue(FakeMyTourneesStore()),
       ],
     );
     addTearDown(container.dispose);
@@ -154,11 +163,7 @@ void main() {
       expect(communes.searched, ['Villef']);
       expect(state().searching, isFalse);
       expect((state().suggestions as CommunesFound).communes, [
-        CommuneOption(
-          name: 'Villefranche-sur-Saône',
-          inseeCode: insee('69264'),
-          postcodes: const ['69400'],
-        ),
+        CommuneOption(commune: villefranche, postcodes: const ['69400']),
       ]);
     });
 
@@ -683,5 +688,113 @@ void main() {
         expect(streets.added.single.banId, _morin);
       },
     );
+  });
+
+  group('with a tournée open', () {
+    late FakeTourneeRepository tournees;
+    late ProviderContainer phone;
+
+    ImportState tab() => phone.read(importProvider);
+
+    final gleizeStreets = CommuneStreets(
+      commune: gleizeCommune.commune,
+      streets: [_listed(BanStreetId('69092_0010'), 'Rue du Bourg', 30)],
+      skippedStreets: 0,
+    );
+
+    /// The « Liste » tab of the 49, open, covering [covered].
+    Future<void> openTab(List<TourneeCommune> covered) async {
+      listings['69092'] = Ok(gleizeStreets);
+      tournees = FakeTourneeRepository([team(communes: covered)]);
+      phone = ProviderContainer(
+        overrides: [
+          communeSearchProvider.overrideWithValue(communes),
+          addressDirectoryProvider.overrideWithValue(directory),
+          streetRepositoryProvider.overrideWithValue(streets),
+          tourneeRepositoryProvider.overrideWithValue(tournees),
+          myTourneesStoreProvider.overrideWithValue(
+            FakeMyTourneesStore(
+              valueOf(MyTournees.none.remember(tournee49).open(tourneeId)),
+            ),
+          ),
+          communeSearchDelayProvider.overrideWithValue(Duration.zero),
+        ],
+      );
+      addTearDown(phone.dispose);
+      phone.listen(importProvider, (_, _) {});
+      await _settle();
+    }
+
+    test('should offer the tournée\'s communes and list the first one\'s '
+        'streets', () async {
+      await openTab([villefrancheCommune, gleizeCommune]);
+
+      expect(tab().inTournee, isTrue);
+      expect(tab().tourneeCommunes, [
+        CommuneOption.ofTournee(villefrancheCommune),
+        CommuneOption.ofTournee(gleizeCommune),
+      ]);
+      expect(tab().commune, CommuneOption.ofTournee(villefrancheCommune));
+      expect(tab().streetCount, 4);
+      expect(communes.searched, isEmpty);
+    });
+
+    test('should list the streets of the commune whose chip is '
+        'chosen', () async {
+      await openTab([villefrancheCommune, gleizeCommune]);
+
+      await phone
+          .read(importProvider.notifier)
+          .chooseCommune(
+            CommuneOption.ofTournee(gleizeCommune),
+            label: 'Gleizé',
+          );
+
+      expect(tab().commune!.inseeCode, gleizeCommune.inseeCode);
+      expect(tab().visibleStreets.single.name, 'Rue du Bourg');
+    });
+
+    test('should keep the commune chosen when the communes change around '
+        'it', () async {
+      await openTab([villefrancheCommune, gleizeCommune]);
+      await phone
+          .read(importProvider.notifier)
+          .chooseCommune(
+            CommuneOption.ofTournee(gleizeCommune),
+            label: 'Gleizé',
+          );
+
+      tournees.put(team(communes: [gleizeCommune]));
+      await _settle();
+
+      expect(tab().tourneeCommunes, [CommuneOption.ofTournee(gleizeCommune)]);
+      expect(tab().commune!.inseeCode, gleizeCommune.inseeCode);
+    });
+
+    test('should move to the first commune when the one chosen is '
+        'removed', () async {
+      await openTab([villefrancheCommune, gleizeCommune]);
+
+      tournees.put(team(communes: [gleizeCommune]));
+      await _settle();
+
+      expect(tab().commune!.inseeCode, gleizeCommune.inseeCode);
+      expect(tab().visibleStreets.single.name, 'Rue du Bourg');
+    });
+
+    test('should search the commune of a tournée created before the '
+        'communes', () async {
+      await openTab([]);
+
+      expect(tab().inTournee, isTrue);
+      expect(tab().tourneeCommunes, isEmpty);
+      expect(tab().commune, isNull);
+      expect(tab().streets, isA<NoCommuneChosen>());
+    });
+  });
+
+  test('should not be in a tournée when none is open', () {
+    expect(state().inTournee, isFalse);
+    expect(state().tourneeCommunes, isEmpty);
   });
 }

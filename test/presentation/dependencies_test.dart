@@ -34,6 +34,8 @@ import '../domain/tournee/my_tournees_fixtures.dart';
 import '../domain/tournee/tournee_fixtures.dart'
     show
         campaign2026,
+        gleizeCommune,
+        villefrancheCommune,
         codeOf,
         csVillefranche,
         julieId,
@@ -535,6 +537,38 @@ void main() {
       expect(tournee, same(tournees[tourneeId]));
     });
 
+    test('should observe the communes in the bound repository', () async {
+      tournees.put(team(communes: [villefrancheCommune]));
+
+      final communes = await container
+          .read(observeTourneeCommunesProvider)(tourneeId)
+          .first;
+
+      expect(communes, [villefrancheCommune]);
+    });
+
+    test('should add a commune as the bound member', () async {
+      final change = valueOf(
+        await asManu().read(addCommuneProvider)(tourneeId, gleizeCommune),
+      );
+
+      expect(change.commune, gleizeCommune);
+      expect(tournees[tourneeId]!.communes, [gleizeCommune]);
+    });
+
+    test('should remove a commune as the bound member', () async {
+      tournees.put(team(communes: [villefrancheCommune, gleizeCommune]));
+
+      final change = valueOf(
+        await asManu().read(removeCommuneProvider)(
+          tourneeId,
+          villefrancheCommune.inseeCode,
+        ),
+      );
+
+      expect(change.commune, villefrancheCommune);
+    });
+
     test('should read the bound member', () {
       expect(container.read(readCurrentMemberProvider)(), lea);
     });
@@ -719,10 +753,12 @@ void main() {
           number: number49,
           campaign: campaign2026,
           creatorName: nameOf('Léa'),
+          communes: [villefrancheCommune],
         ),
       );
 
       expect(tournees.added, [created]);
+      expect(created.communes, [villefrancheCommune]);
       expect(created.id.value, 'street-1');
       expect(created.createdBy, MemberId('uid-lea'));
       expect(created.createdAt, twoPm);

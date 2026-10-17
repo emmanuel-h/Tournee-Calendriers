@@ -30,6 +30,7 @@ final created = Tournee.createdBy(
   creator: manuId,
   creatorName: nameOf('Manu'),
   at: createdAt,
+  communes: [villefrancheCommune],
 );
 
 /// The indexes of `2`, `3`, `4`, `5`, `6`, `7` in the code alphabet: the
@@ -258,6 +259,48 @@ void main() {
   });
 
   group('save', () {
+    test('should add the commune to the stored list only', () async {
+      await repository().add(created);
+      final (added, change) = valueOf(
+        team(communes: [villefrancheCommune])
+            .addCommune(gleizeCommune, by: leaActing),
+      );
+
+      final saved = await repository().save(added, change);
+      await pumpEventQueue();
+
+      expect(valueOf(saved), same(added));
+      expect((await stored('tournees/t49'))!['communes'], [
+        {
+          'code': '69264',
+          'name': 'Villefranche-sur-Saône',
+          'lat': 45.9837,
+          'lon': 4.726,
+        },
+        {'code': '69092', 'name': 'Gleizé', 'lat': 45.9915, 'lon': 4.6883},
+      ]);
+      expect(await repository().find(tourneeId), isA<Tournee>());
+    });
+
+    test('should take the commune out of the stored list only', () async {
+      await repository().add(created);
+      await db.doc('tournees/t49').update({
+        'communes': FieldValue.arrayUnion([communeEntry(gleizeCommune)]),
+      });
+      final (removed, change) = valueOf(
+        team(communes: [villefrancheCommune, gleizeCommune])
+            .removeCommune(villefrancheCommune.inseeCode, by: leaActing),
+      );
+
+      final saved = await repository().save(removed, change);
+      await pumpEventQueue();
+
+      expect(valueOf(saved), same(removed));
+      expect((await stored('tournees/t49'))!['communes'], [
+        communeEntry(gleizeCommune),
+      ]);
+    });
+
     test('should write the acceptance on the member only', () async {
       await repository().add(created);
       await db

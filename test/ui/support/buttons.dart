@@ -12,3 +12,23 @@ bool isEnabled(WidgetTester tester, Finder button) => tester
       ),
     )
     .enabled;
+
+/// Scrolls the screen's `CustomScrollView` until [finder] is in sight,
+/// then taps it: a long screen builds what is below the fold of the
+/// test's 800 × 600 window only once scrolled to.
+Future<void> tapVisible(WidgetTester tester, Finder finder) async {
+  await tester.scrollUntilVisible(
+    finder,
+    200,
+    scrollable: find
+        .descendant(
+          of: find.byType(CustomScrollView),
+          matching: find.byType(Scrollable),
+        )
+        .first,
+  );
+  // Whole, not only its first pixels.
+  await tester.ensureVisible(finder);
+  await tester.pumpAndSettle();
+  await tester.tap(finder);
+}

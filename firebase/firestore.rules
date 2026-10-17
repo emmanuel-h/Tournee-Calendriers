@@ -215,7 +215,49 @@ service cloud.firestore {
 
     function tourneeFields() {
       return ['number', 'centreKey', 'centreName', 'joinCode', 'createdBy',
-        'createdAt', 'currentCampaign'];
+        'createdAt', 'currentCampaign', 'communes'];
+    }
+
+    // The most communes a tournée covers (Tournee.maxCommunes).
+    function maxCommunes() {
+      return 50;
+    }
+
+    // One entry of a tournée's `communes` (#78, TourneeCommune): an INSEE
+    // code, the name as geo.api.gouv.fr gives it (trimmed, not blank), and
+    // its centre or nothing.
+    function isCommuneEntry(entry) {
+      return entry is map
+        && hasExactly(entry, ['code', 'name', 'lat', 'lon'])
+        && entry.code is string && entry.code.matches('([0-9]{2}|2A|2B)[0-9]{3}')
+        && hasAtMost(entry.name, 100) && entry.name.size() > 0 && isTrimmed(entry.name)
+        && isPosition(entry.lat, entry.lon);
+    }
+
+    // The communes of a new tournée: 1 to maxCommunes(). No loops: the
+    // first entry is checked whole, the others are only counted (PLAN
+    // §8.2).
+    function isCommuneList(communes) {
+      return communes is list
+        && communes.size() >= 1 && communes.size() <= maxCommunes()
+        && isCommuneEntry(communes[0]);
+    }
+
+    // Any active member or admin adds or removes one commune (Équipe,
+    // `arrayUnion` / `arrayRemove` of one entry): only `communes` changes,
+    // by one entry, an added one checked whole; the list never empties.
+    // A tournée stored before the communes has no list: it counts as
+    // empty, so its first commune can be added.
+    function isCommunesChange(tournee, before, after) {
+      let old = before.get('communes', []);
+      let now = after.communes;
+      return isMemberOrAdmin(tournee)
+        && after.diff(before).affectedKeys().hasOnly(['communes'])
+        && now is list
+        && now.size() >= 1 && now.size() <= maxCommunes()
+        && ((now.size() == old.size() + 1 && now.hasAll(old)
+            && isCommuneEntry(now.removeAll(old)[0]))
+          || (now.size() == old.size() - 1 && old.hasAll(now)));
     }
 
     // Created by an admin in one batch with its reservation, its code, its
@@ -232,6 +274,7 @@ service cloud.firestore {
         && data.createdBy == uid()
         && data.createdAt is timestamp
         && isCampaignYear(data.currentCampaign)
+        && isCommuneList(data.communes)
         && getAfter(tourneeKeyPath(data.centreKey + '_' + string(data.number))).data.tourneeId == tournee
         && getAfter(joinCodePath(data.joinCode)).data.tourneeId == tournee
         && getAfter(memberPath(tournee, uid())).data.status == 'active'
@@ -557,7 +600,8 @@ service cloud.firestore {
       allow get: if isMemberOrAdmin(tournee);
       allow list: if isAdmin();
       allow create: if isNewTournee(tournee, request.resource.data);
-      allow update: if isNewCode(tournee, resource.data, request.resource.data);
+      allow update: if isNewCode(tournee, resource.data, request.resource.data)
+        || isCommunesChange(tournee, resource.data, request.resource.data);
       allow delete: if isTourneeDeletion(resource.data);
 
       match /members/{member} {

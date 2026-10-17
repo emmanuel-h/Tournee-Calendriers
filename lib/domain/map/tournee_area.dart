@@ -1,5 +1,6 @@
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_commune.dart';
 
 /// The margin around a tournée's streets, in metres: the map downloaded for
 /// offline use reaches that far beyond them (PLAN §7), so a team member
@@ -21,3 +22,24 @@ GeoBounds? tourneeArea(Iterable<Street> streets) => GeoBounds.around([
     for (final house in street.houses) ?house.position,
   ],
 ])?.expandedBy(tourneeMarginMetres);
+
+/// The margin around a commune's centre, in metres: a commune of a few
+/// thousand people spreads over 1 to 3 km around its town hall, so the
+/// map of « Ajouter des rues » shows most of it at once.
+const communeMarginMetres = 2000.0;
+
+/// The area around the [communes]' centres, plus [communeMarginMetres] on
+/// each side; null when none has a centre (none given by the service, or
+/// a tournée created before the communes).
+GeoBounds? communesArea(Iterable<TourneeCommune> communes) =>
+    GeoBounds.around([for (final commune in communes) ?commune.centre])
+        ?.expandedBy(communeMarginMetres);
+
+/// Where the map of « Ajouter des rues » starts (PLAN §5.4): on the
+/// tournée's [communes], where the streets to add are; on its [streets]
+/// when no commune has a centre; null (all of France) when neither has a
+/// place on the map.
+GeoBounds? addStreetsArea(
+  Iterable<TourneeCommune> communes,
+  Iterable<Street> streets,
+) => communesArea(communes) ?? tourneeArea(streets);

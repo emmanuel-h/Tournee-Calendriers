@@ -4,6 +4,7 @@ import 'package:tournee_calendriers/domain/tournee/campaign_year.dart';
 import 'package:tournee_calendriers/domain/tournee/rescue_centre.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_number.dart';
+import 'package:tournee_calendriers/presentation/import_streets/import_state.dart';
 
 /// The centres de secours the app knows, as far as the screen got them.
 /// `sealed`: the picker handles each case.
@@ -121,7 +122,7 @@ final class TourneeCreated extends CreateRun {
 /// What « Nouvelle tournée » shows (PLAN §5.2, Create and CreateTaken
 /// mockups). Immutable: the notifier replaces it with [copyWith].
 final class NewTourneeState {
-  const NewTourneeState({
+  NewTourneeState({
     required this.signedIn,
     required this.hasName,
     required this.centreQuery,
@@ -134,7 +135,8 @@ final class NewTourneeState {
     required this.yearInvalid,
     required this.duplicate,
     required this.run,
-  });
+    List<CommuneOption> communes = const [],
+  }) : communes = List.unmodifiable(communes);
 
   /// The form as it opens: the year pre-filled with [initialYear].
   factory NewTourneeState.start({
@@ -194,6 +196,15 @@ final class NewTourneeState {
   final DuplicateCheck duplicate;
   final CreateRun run;
 
+  /// « Communes »: the communes picked, in the order picked (a chip each,
+  /// with ✕). At least one is needed to « Créer ».
+  final List<CommuneOption> communes;
+
+  /// « Ajouter une commune… » shows: the form is not done with, and the
+  /// tournée may cover one more commune.
+  bool get canAddCommune =>
+      communes.length < Tournee.maxCommunes && run is! TourneeCreated;
+
   /// The centre typed, as a station (null when blank or too long).
   RescueCentre? get _typedCentre => switch (RescueCentre.create(centreQuery)) {
     Ok(:final value) => value,
@@ -239,6 +250,7 @@ final class NewTourneeState {
       signedIn &&
       hasName &&
       centre != null &&
+      communes.isNotEmpty &&
       number != null &&
       year != null &&
       duplicate != DuplicateCheck.taken &&
@@ -260,6 +272,7 @@ final class NewTourneeState {
     bool? yearInvalid,
     DuplicateCheck? duplicate,
     CreateRun? run,
+    List<CommuneOption>? communes,
   }) => NewTourneeState(
     signedIn: signedIn ?? this.signedIn,
     hasName: hasName,
@@ -273,5 +286,6 @@ final class NewTourneeState {
     yearInvalid: yearInvalid ?? this.yearInvalid,
     duplicate: duplicate ?? this.duplicate,
     run: run ?? this.run,
+    communes: communes ?? this.communes,
   );
 }

@@ -13,6 +13,8 @@ import 'package:tournee_calendriers/ui/components/join_code_text.dart';
 import 'package:tournee_calendriers/ui/components/join_qr_code.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
+import 'package:tournee_calendriers/ui/screens/communes/commune_picker_field.dart';
+import 'package:tournee_calendriers/ui/screens/import_streets/import_messages.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/account_line.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/onboarding_parts.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
@@ -130,6 +132,8 @@ final class _CreateTourneeScreenState
                       ),
                     ],
                     const SizedBox(height: 16),
+                    _Communes(state: state),
+                    const SizedBox(height: 16),
                     Row(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       spacing: 12,
@@ -234,6 +238,47 @@ final class _CreateTourneeScreenState
           ),
         ),
       ),
+    );
+  }
+}
+
+/// « Communes »: a chip with ✕ for each commune picked, then « + Ajouter
+/// une commune… », which searches geo.api.gouv.fr (Create mockup, #78).
+/// At least one is needed to « Créer ».
+final class _Communes extends ConsumerWidget {
+  const _Communes({required this.state});
+
+  final NewTourneeState state;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final notifier = ref.read(newTourneeProvider.notifier);
+    final editable = !state.isCreated;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      spacing: 8,
+      children: [
+        FieldLabel(l10n.communesLabel),
+        if (state.communes.isNotEmpty)
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: [
+              for (final commune in state.communes)
+                CommuneChip(
+                  key: ValueKey('create.commune.${commune.inseeCode.value}'),
+                  label: communeLabel(l10n, commune),
+                  name: commune.name,
+                  onRemove: editable
+                      ? () => notifier.removeCommune(commune.inseeCode)
+                      : null,
+                ),
+            ],
+          ),
+        if (state.canAddCommune)
+          CommunePickerField(onPick: notifier.addCommune),
+      ],
     );
   }
 }

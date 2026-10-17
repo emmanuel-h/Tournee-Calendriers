@@ -35,10 +35,11 @@ final class GeoCommuneSearch implements CommuneSearch {
   ) async {
     // `boost=population` puts the large towns first, so « Villefranche »
     // suggests the one most people mean; five fit on the screen above the
-    // keyboard.
+    // keyboard. `centre` is where the map of a tournée covering the
+    // commune starts (PLAN §5.4).
     final url = Uri.https('geo.api.gouv.fr', '/communes', {
       'nom': name,
-      'fields': 'nom,code,codesPostaux',
+      'fields': 'nom,code,codesPostaux,centre',
       'boost': 'population',
       'limit': '5',
     });

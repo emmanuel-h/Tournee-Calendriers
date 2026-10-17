@@ -310,6 +310,23 @@ final observePendingSyncProvider = Provider(
 final observeTeamProvider = Provider(
   (ref) => ObserveTeam(ref.watch(tourneeRepositoryProvider)),
 );
+final observeTourneeCommunesProvider = Provider(
+  (ref) => ObserveTourneeCommunes(ref.watch(tourneeRepositoryProvider)),
+);
+final addCommuneProvider = Provider(
+  (ref) => AddCommune(
+    ref.watch(tourneeRepositoryProvider),
+    ref.watch(identityProvider),
+    ref.watch(adminStatusProvider),
+  ),
+);
+final removeCommuneProvider = Provider(
+  (ref) => RemoveCommune(
+    ref.watch(tourneeRepositoryProvider),
+    ref.watch(identityProvider),
+    ref.watch(adminStatusProvider),
+  ),
+);
 final readCurrentMemberProvider = Provider(
   (ref) => ReadCurrentMember(ref.watch(identityProvider)),
 );

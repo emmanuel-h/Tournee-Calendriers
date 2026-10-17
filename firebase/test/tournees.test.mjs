@@ -5,6 +5,8 @@
 import { after, before, beforeEach, describe, it } from 'node:test';
 import { assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
 import {
+  arrayRemove,
+  arrayUnion,
   collection,
   deleteDoc,
   doc,
@@ -20,6 +22,9 @@ import {
 import {
   activeMemberDoc,
   campaignDoc,
+  communeEntries,
+  gleizeEntry,
+  villefrancheEntry,
   campaignPath,
   code,
   lea,
@@ -304,7 +309,58 @@ describe('creating a tournée', () => {
   });
 
   it('should refuse a field the tournée document does not have', async () => {
-    await assertFails(createTournee((docs) => withTournee(docs, { communes: ['69264'] })));
+    await assertFails(createTournee((docs) => withTournee(docs, { note: 'Secteur nord' })));
+  });
+
+  it('should accept several communes, and up to 50', async () => {
+    await assertSucceeds(
+      createTournee((docs) => withTournee(docs, { communes: [villefrancheEntry, gleizeEntry] })),
+    );
+    await restart();
+    await assertSucceeds(
+      createTournee((docs) => withTournee(docs, { communes: communeEntries(50) })),
+    );
+  });
+
+  it('should refuse a tournée without commune, or more than 50', async () => {
+    await assertFails(
+      createTournee((docs) => {
+        // An app of before the communes writes none.
+        const { communes, ...older } = docs.tournee;
+        return { ...docs, tournee: older };
+      }),
+    );
+    await assertFails(createTournee((docs) => withTournee(docs, { communes: [] })));
+    await assertFails(createTournee((docs) => withTournee(docs, { communes: communeEntries(51) })));
+    await assertFails(createTournee((docs) => withTournee(docs, { communes: villefrancheEntry })));
+  });
+
+  it('should refuse a first commune that is not one', async () => {
+    for (const entry of [
+      '69264',
+      { ...villefrancheEntry, code: '6926' },
+      { ...villefrancheEntry, code: 69264 },
+      { ...villefrancheEntry, name: '' },
+      { ...villefrancheEntry, name: ' Villefranche' },
+      { ...villefrancheEntry, name: 'V'.repeat(101) },
+      { ...villefrancheEntry, lat: null },
+      { ...villefrancheEntry, lat: 91 },
+      { ...villefrancheEntry, lon: '4.726' },
+      { ...villefrancheEntry, postcode: '69400' },
+    ]) {
+      await assertFails(createTournee((docs) => withTournee(docs, { communes: [entry] })));
+    }
+  });
+
+  it('should accept a first commune without centre, of Corsica, or named in 100 characters', async () => {
+    for (const entry of [
+      { ...villefrancheEntry, lat: null, lon: null },
+      { ...villefrancheEntry, code: '2A004', name: 'Ajaccio' },
+      { ...villefrancheEntry, name: 'V'.repeat(100) },
+    ]) {
+      await assertSucceeds(createTournee((docs) => withTournee(docs, { communes: [entry] })));
+      await restart();
+    }
   });
 
   it('should refuse an active member document added to an existing tournée by a non-admin', async () => {
@@ -317,6 +373,80 @@ describe('creating a tournée', () => {
     const db = phoneOf(env, manu);
     await assertFails(setDoc(doc(db, 'tourneeKeys/villefranche_50'), { tourneeId: 't49' }));
     await assertFails(setDoc(doc(db, `${tourneePath}/campaigns/2027`), campaignDoc()));
+  });
+});
+
+describe('the communes', () => {
+  /** [uid] adds [entry] to the tournée's communes, as the adapter does. */
+  const add = (uid, entry) =>
+    updateDoc(doc(phoneOf(env, uid), tourneePath), { communes: arrayUnion(entry) });
+
+  /** [uid] removes [entry] from them. */
+  const remove = (uid, entry) =>
+    updateDoc(doc(phoneOf(env, uid), tourneePath), { communes: arrayRemove(entry) });
+
+  it('should let an active member or any admin add a commune', async () => {
+    await assertSucceeds(add(lea, gleizeEntry));
+    await seed(env, tourneePath, tourneeDoc());
+    await assertSucceeds(add(sam, gleizeEntry));
+  });
+
+  it('should refuse a pending member or someone outside adding a commune', async () => {
+    await assertFails(add(paul, gleizeEntry));
+    await assertFails(add(zoe, gleizeEntry));
+  });
+
+  it('should refuse adding an entry that is not a commune', async () => {
+    for (const entry of [
+      { ...gleizeEntry, code: '6909' },
+      { ...gleizeEntry, name: '' },
+      { ...gleizeEntry, lat: null },
+      { ...gleizeEntry, postcode: '69400' },
+    ]) {
+      await assertFails(add(lea, entry));
+    }
+  });
+
+  it('should give a tournée stored before the communes its first one', async () => {
+    const { communes, ...older } = tourneeDoc();
+    await seed(env, tourneePath, older);
+
+    await assertSucceeds(add(lea, villefrancheEntry));
+  });
+
+  it('should refuse a 51st commune', async () => {
+    await seed(env, tourneePath, tourneeDoc({ communes: communeEntries(50) }));
+
+    await assertFails(add(lea, gleizeEntry));
+  });
+
+  it('should refuse two communes added in one write, or another field changed', async () => {
+    const db = phoneOf(env, lea);
+    await assertFails(
+      updateDoc(doc(db, tourneePath), { communes: [villefrancheEntry, gleizeEntry, { ...gleizeEntry, code: '69091' }] }),
+    );
+    await assertFails(
+      updateDoc(doc(db, tourneePath), { communes: arrayUnion(gleizeEntry), currentCampaign: 2027 }),
+    );
+  });
+
+  it('should let a member remove a commune, never the last one', async () => {
+    await seed(env, tourneePath, tourneeDoc({ communes: [villefrancheEntry, gleizeEntry] }));
+
+    await assertSucceeds(remove(lea, villefrancheEntry));
+    await assertFails(remove(lea, gleizeEntry));
+  });
+
+  it('should refuse replacing a commune by another in one write', async () => {
+    await assertFails(
+      updateDoc(doc(phoneOf(env, lea), tourneePath), { communes: [gleizeEntry] }),
+    );
+  });
+
+  it('should refuse a pending member removing a commune', async () => {
+    await seed(env, tourneePath, tourneeDoc({ communes: [villefrancheEntry, gleizeEntry] }));
+
+    await assertFails(remove(paul, gleizeEntry));
   });
 });
 

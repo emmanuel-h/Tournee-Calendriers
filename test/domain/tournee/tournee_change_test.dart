@@ -1,6 +1,7 @@
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/tournee/member.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_change.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_commune.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 
 import 'tournee_fixtures.dart';
@@ -66,6 +67,65 @@ void main() {
     expect(
       MemberRenamed(tourneeId: tourneeId, member: lea),
       isNot(MemberAccepted(tourneeId: tourneeId, member: lea)),
+    );
+  });
+
+  // Each commune change, built for a tournée and a commune.
+  final communeChanges =
+      <String, CommuneChange Function(TourneeId, TourneeCommune)>{
+        'CommuneAdded': (id, commune) =>
+            CommuneAdded(tourneeId: id, commune: commune),
+        'CommuneRemoved': (id, commune) =>
+            CommuneRemoved(tourneeId: id, commune: commune),
+      };
+
+  for (final MapEntry(key: kind, value: make) in communeChanges.entries) {
+    group(kind, () {
+      test('should keep the tournée and the commune when built', () {
+        final change = make(tourneeId, gleizeCommune);
+
+        expect(change.tourneeId, tourneeId);
+        expect(change.commune, gleizeCommune);
+      });
+
+      test('should be equal when the tournée and the commune are equal', () {
+        expect(
+          make(tourneeId, gleizeCommune),
+          make(TourneeId('t49'), gleizeCommune),
+        );
+        expect(
+          make(tourneeId, gleizeCommune).hashCode,
+          make(TourneeId('t49'), gleizeCommune).hashCode,
+        );
+      });
+
+      test('should differ when the tournée differs', () {
+        expect(
+          make(tourneeId, gleizeCommune),
+          isNot(make(TourneeId('t12'), gleizeCommune)),
+        );
+      });
+
+      test('should differ when the commune differs', () {
+        expect(
+          make(tourneeId, gleizeCommune),
+          isNot(make(tourneeId, villefrancheCommune)),
+        );
+      });
+
+      test('should show its kind, tournée and commune when printed', () {
+        expect(
+          make(tourneeId, gleizeCommune).toString(),
+          '$kind(t49, TourneeCommune(69092, Gleizé, GeoPoint(45.9915, 4.6883)))',
+        );
+      });
+    });
+  }
+
+  test('should differ when two commune changes are of different kinds', () {
+    expect(
+      CommuneAdded(tourneeId: tourneeId, commune: gleizeCommune),
+      isNot(CommuneRemoved(tourneeId: tourneeId, commune: gleizeCommune)),
     );
   });
 

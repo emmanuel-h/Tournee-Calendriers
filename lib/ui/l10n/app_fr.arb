@@ -1502,5 +1502,67 @@
   "galleryMapStreetTapped": "Rue touchée : {street}",
   "@galleryMapStreetTapped": { "description": "Debug map screen: a street of the sample was tapped.", "placeholders": { "street": { "type": "String" } } },
   "galleryMapTapped": "Touché en {latitude}, {longitude}",
-  "@galleryMapTapped": { "description": "Debug map screen: the map was tapped outside the sample streets.", "placeholders": { "latitude": { "type": "String" }, "longitude": { "type": "String" } } }
+  "@galleryMapTapped": { "description": "Debug map screen: the map was tapped outside the sample streets.", "placeholders": { "latitude": { "type": "String" }, "longitude": { "type": "String" } } },
+  "communesLabel": "Communes",
+  "@communesLabel": { "description": "Label of the communes of « Nouvelle tournée » (#78), and header of the communes in Équipe." },
+  "communeAddHint": "Ajouter une commune…",
+  "@communeAddHint": { "description": "Placeholder of the field that searches a commune to add to a tournée (« Nouvelle tournée », Équipe)." },
+  "communeRemove": "Retirer {name}",
+  "@communeRemove": {
+    "description": "Screen-reader label and tooltip of the ✕ of a commune chip or row.",
+    "placeholders": { "name": { "type": "String", "example": "Gleizé" } }
+  },
+  "teamCommunesHeader": "Communes ({count})",
+  "@teamCommunesHeader": {
+    "description": "Header of the tournée's communes in Équipe.",
+    "placeholders": { "count": { "type": "int", "example": "2" } }
+  },
+  "teamAddCommune": "Ajouter une commune",
+  "@teamAddCommune": { "description": "Button under the communes of Équipe, and title of the sheet it opens." },
+  "teamCommuneAlreadyIn": "Cette commune est déjà dans la tournée.",
+  "@teamCommuneAlreadyIn": { "description": "Snackbar of Équipe: the commune picked is already one of the tournée's." },
+  "teamTooManyCommunes": "Une tournée a au plus {max} communes.",
+  "@teamTooManyCommunes": {
+    "description": "Snackbar of Équipe: the tournée covers as many communes as it may.",
+    "placeholders": { "max": { "type": "int", "example": "50" } }
+  },
+  "addStreetsTitle": "Ajouter des rues",
+  "@addStreetsTitle": { "description": "Button of the start screen while a tournée is open, and title of the screen it opens (PLAN §5.4)." },
+  "addStreetsModes": "Ajouter depuis",
+  "@addStreetsModes": { "description": "Screen-reader name of the « Carte | Liste » tabs of « Ajouter des rues »." },
+  "addStreetsMapTab": "Carte",
+  "@addStreetsMapTab": { "description": "Tab of « Ajouter des rues »: the map." },
+  "addStreetsListTab": "Liste",
+  "@addStreetsListTab": { "description": "Tab of « Ajouter des rues »: the checklist of a commune's streets." },
+  "alreadyInTournee": "déjà dans la tournée",
+  "@alreadyInTournee": { "description": "Right of a street of the « Liste » tab that the tournée already has." },
+  "addButton": "{count, plural, =0{Ajouter} =1{Ajouter 1 rue} other{Ajouter {count} rues}}",
+  "@addButton": {
+    "description": "Button of the « Liste » tab: adds the ticked streets to the tournée.",
+    "placeholders": { "count": { "type": "int", "example": "3" } }
+  },
+  "addProgress": "Ajout en cours… {done}/{total}",
+  "@addProgress": {
+    "description": "In place of the button of the « Liste » tab while streets are added.",
+    "placeholders": { "done": { "type": "int", "example": "2" }, "total": { "type": "int", "example": "5" } }
+  },
+  "addDone": "{count, plural, =0{Aucune nouvelle rue} =1{1 rue ajoutée à la tournée} other{{count} rues ajoutées à la tournée}}",
+  "@addDone": {
+    "description": "Snackbar once every street ticked in the « Liste » tab is in the tournée.",
+    "placeholders": { "count": { "type": "int", "example": "3" } }
+  },
+  "addDoneAndRestored": "{added, plural, =1{1 rue ajoutée} other{{added} rues ajoutées}}, {restored, plural, =1{1 restaurée} other{{restored} restaurées}}",
+  "@addDoneAndRestored": {
+    "description": "Snackbar once the streets ticked are in the tournée, some back from the Corbeille.",
+    "placeholders": { "added": { "type": "int", "example": "2" }, "restored": { "type": "int", "example": "1" } }
+  },
+  "addPartial": "{added, plural, =0{Aucune rue ajoutée} =1{1 rue ajoutée} other{{added} rues ajoutées}}, {failed, plural, =1{1 en échec} other{{failed} en échec}}. {reason} Les rues encore cochées restent à ajouter.",
+  "@addPartial": {
+    "description": "Under the checklist of the « Liste » tab when some streets could not be added.",
+    "placeholders": {
+      "added": { "type": "int", "example": "2" },
+      "failed": { "type": "int", "example": "1" },
+      "reason": { "type": "String", "example": "Pas de réseau." }
+    }
+  }
 }

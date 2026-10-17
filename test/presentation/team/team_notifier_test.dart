@@ -1,10 +1,15 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
+import 'package:tournee_calendriers/application/ports/commune_search.dart';
+import 'package:tournee_calendriers/domain/shared/commune.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/tournee/member.dart';
 import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_change.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_commune.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
+import 'package:tournee_calendriers/presentation/import_streets/import_state.dart';
 import 'package:tournee_calendriers/presentation/my_tournees/my_tournees_notifier.dart';
 import 'package:tournee_calendriers/presentation/shared/recent_time.dart';
 import 'package:tournee_calendriers/presentation/team/team_notifier.dart';
@@ -19,6 +24,15 @@ import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/results.dart';
 import '../../support/scripted_random.dart';
+
+/// Gleizé as the commune search suggests it.
+final _gleizeOption = CommuneOption.of(
+  CommuneMatch(
+    commune: gleizeCommune.commune,
+    postcodes: const ['69400'],
+    centre: gleizeCommune.centre,
+  ),
+);
 
 /// Two minutes after Julie asked to join.
 final twoMinutesLater = DateTime.utc(2026, 11, 2, 8, 14);
@@ -241,6 +255,179 @@ void main() {
 
       // The fake knows only the 49.
       expect(container.read(teamProvider), isA<TeamUnavailable>());
+    });
+  });
+
+  group('communes', () {
+    test('should list the communes, each removable by a member when there '
+        'are several', () async {
+      final container = phoneOf(leaId);
+      tournees.put(team(communes: [villefrancheCommune, gleizeCommune]));
+
+      final shownTeam = await shown(container);
+
+      expect(shownTeam.canChangeCommunes, isTrue);
+      expect(shownTeam.communes, [
+        CommuneRow(
+          inseeCode: villefrancheCommune.inseeCode,
+          name: 'Villefranche-sur-Saône',
+          removable: true,
+        ),
+        CommuneRow(
+          inseeCode: gleizeCommune.inseeCode,
+          name: 'Gleizé',
+          removable: true,
+        ),
+      ]);
+    });
+
+    test('should not let the last commune be removed', () async {
+      final container = phoneOf(leaId);
+      tournees.put(team(communes: [villefrancheCommune]));
+
+      final shownTeam = await shown(container);
+
+      expect(shownTeam.communes.single.removable, isFalse);
+    });
+
+    test('should list none for a tournée created before the communes, and '
+        'still let one be added', () async {
+      final shownTeam = await shown(phoneOf(leaId));
+
+      expect(shownTeam.communes, isEmpty);
+      expect(shownTeam.canChangeCommunes, isTrue);
+    });
+
+    test('should let an admin outside the team change them', () async {
+      final container = phoneOf(samId);
+      tournees.put(team(communes: [villefrancheCommune, gleizeCommune]));
+
+      final shownTeam = await shown(container);
+
+      expect(shownTeam.canChangeCommunes, isTrue);
+      expect(shownTeam.communes.first.removable, isTrue);
+    });
+
+    test('should not let a member still pending change them', () async {
+      final container = phoneOf(julieId);
+      tournees.put(team(communes: [villefrancheCommune, gleizeCommune]));
+
+      final shownTeam = await shown(container);
+
+      expect(shownTeam.canChangeCommunes, isFalse);
+      expect(shownTeam.communes.first.removable, isFalse);
+    });
+
+    test('should add the commune picked', () async {
+      final container = phoneOf(leaId);
+      tournees.put(team(communes: [villefrancheCommune]));
+      await shown(container);
+
+      final failure = await container
+          .read(teamProvider.notifier)
+          .addCommune(_gleizeOption);
+      await pumpEventQueue();
+
+      expect(failure, isNull);
+      expect(
+        tournees.saved.single.$2,
+        CommuneAdded(tourneeId: tourneeId, commune: gleizeCommune),
+      );
+      final state = container.read(teamProvider) as TeamShown;
+      expect(state.communes.map((commune) => commune.name), [
+        'Villefranche-sur-Saône',
+        'Gleizé',
+      ]);
+    });
+
+    test('should tell a commune is already in the tournée', () async {
+      final container = phoneOf(leaId);
+      tournees.put(team(communes: [gleizeCommune]));
+      await shown(container);
+
+      expect(
+        await container.read(teamProvider.notifier).addCommune(_gleizeOption),
+        TeamActionFailure.communeAlreadyIn,
+      );
+    });
+
+    test('should tell the tournée covers as many communes as it may', () async {
+      final container = phoneOf(leaId);
+      tournees.put(
+        team(
+          communes: [
+            for (var i = 1; i <= Tournee.maxCommunes; i++)
+              TourneeCommune(
+                commune: valueOf(
+                  Commune.create(
+                    inseeCode: '69${'$i'.padLeft(3, '0')}',
+                    name: 'Commune $i',
+                  ),
+                ),
+              ),
+          ],
+        ),
+      );
+      await shown(container);
+
+      expect(
+        await container.read(teamProvider.notifier).addCommune(_gleizeOption),
+        TeamActionFailure.tooManyCommunes,
+      );
+    });
+
+    test('should remove the commune of the ✕', () async {
+      final container = phoneOf(leaId);
+      tournees.put(team(communes: [villefrancheCommune, gleizeCommune]));
+      await shown(container);
+
+      final failure = await container
+          .read(teamProvider.notifier)
+          .removeCommune(villefrancheCommune.inseeCode);
+
+      expect(failure, isNull);
+      expect(
+        tournees.saved.single.$2,
+        CommuneRemoved(tourneeId: tourneeId, commune: villefrancheCommune),
+      );
+    });
+
+    test('should tell the team changed when the last commune is '
+        'removed meanwhile', () async {
+      final container = phoneOf(leaId);
+      tournees.put(team(communes: [villefrancheCommune]));
+      await shown(container);
+
+      expect(
+        await container
+            .read(teamProvider.notifier)
+            .removeCommune(villefrancheCommune.inseeCode),
+        TeamActionFailure.teamChanged,
+      );
+    });
+
+    test('should compare communes by value', () {
+      CommuneRow row({String name = 'Gleizé', bool removable = true}) =>
+          CommuneRow(
+            inseeCode: gleizeCommune.inseeCode,
+            name: name,
+            removable: removable,
+          );
+
+      expect(row(), row());
+      expect(row().hashCode, row().hashCode);
+      expect(row(), isNot(row(name: 'Gleize')));
+      expect(row(), isNot(row(removable: false)));
+      expect(
+        row(),
+        isNot(
+          CommuneRow(
+            inseeCode: villefrancheCommune.inseeCode,
+            name: 'Gleizé',
+            removable: true,
+          ),
+        ),
+      );
     });
   });
 

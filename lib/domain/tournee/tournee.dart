@@ -1,6 +1,7 @@
 import 'dart:math';
 
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
+import 'package:tournee_calendriers/domain/shared/insee_code.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/tournee/actor.dart';
@@ -10,6 +11,7 @@ import 'package:tournee_calendriers/domain/tournee/member.dart';
 import 'package:tournee_calendriers/domain/tournee/member_name.dart';
 import 'package:tournee_calendriers/domain/tournee/rescue_centre.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_change.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_commune.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_number.dart';
 
@@ -17,6 +19,12 @@ import 'package:tournee_calendriers/domain/tournee/tournee_number.dart';
 enum NewTourneeFailure {
   /// Two members have the same id.
   duplicateMember,
+
+  /// Two communes have the same INSEE code.
+  duplicateCommune,
+
+  /// More than [Tournee.maxCommunes] communes.
+  tooManyCommunes,
 }
 
 /// Why a command on a [Tournee] was refused. The screens only offer each
@@ -46,6 +54,19 @@ enum TourneeCommandFailure {
 
   /// The admin who asks to join is already in the tournée.
   alreadyMember,
+
+  /// The commune to add is already one of the tournée's.
+  communeAlreadyIn,
+
+  /// The tournée has [Tournee.maxCommunes] communes already.
+  tooManyCommunes,
+
+  /// The commune to remove is not one of the tournée's (any more).
+  unknownCommune,
+
+  /// The commune to remove is the tournée's last one: a tournée keeps at
+  /// least one, which « Ajouter des rues » starts on.
+  lastCommune,
 }
 
 /// A team's round (« Tournée 49 · CS Villefranche », PLAN §2): the
@@ -54,7 +75,11 @@ enum TourneeCommandFailure {
 ///
 /// Invariants, true of every `Tournee`:
 /// - each member appears once, pending or active ([Member.status]);
-/// - [members] are sorted by request time, then by id.
+/// - [members] are sorted by request time, then by id;
+/// - no two [communes] share an INSEE code, and there are at most
+///   [Tournee.maxCommunes]. A tournée created from #78 on has at least
+///   one, and [removeCommune] never takes the last; one created before may
+///   have none.
 ///
 /// The creator ([createdBy]) has no power of their own (PLAN §5.12): the
 /// app's admins run the tournée, member of it or not, and anyone may
@@ -71,6 +96,7 @@ enum TourneeCommandFailure {
 /// | [regenerateCode], [delete] | yes        | no     | no           | no       |
 /// | [joinAsAdmin]              | if not in  | no     | no           | no       |
 /// | [rename] (themself)        | if active  | yes    | no           | no       |
+/// | [addCommune], [removeCommune] | yes     | yes    | no           | no       |
 ///
 /// A `Tournee` is immutable. Each command returns a new tournée together
 /// with the [TourneeChange] it made, as a Dart record `(Tournee, Change)`;
@@ -85,13 +111,22 @@ final class Tournee {
     required this.createdAt,
     required this.currentCampaign,
     required Iterable<Member> members,
-  }) : members = List.unmodifiable(members.toList()..sort(_byRequest));
+    required Iterable<TourneeCommune> communes,
+  }) : members = List.unmodifiable(members.toList()..sort(_byRequest)),
+       communes = List.unmodifiable(communes);
+
+  /// The most communes a tournée may cover: far more than a team walks,
+  /// and a bound the security rules check (PLAN §8.2).
+  static const maxCommunes = 50;
 
   /// A new tournée, created by [creator] at [at] (« Créer », PLAN §5.2):
-  /// they are its only member, active, accepted by themself.
+  /// they are its only member, active, accepted by themself. It covers
+  /// [communes], in the order picked.
   ///
-  /// It cannot fail: every value is already valid. Whether number + centre
-  /// is free is for storage to tell, as only it knows the other tournées.
+  /// Whether number + centre is free is for storage to tell, as only it
+  /// knows the other tournées. « Nouvelle tournée » lets « Créer » be
+  /// pressed only with one to [maxCommunes] different communes, so other
+  /// [communes] are a bug: they throw an [ArgumentError].
   factory Tournee.createdBy({
     required TourneeId id,
     required TourneeNumber number,
@@ -101,29 +136,43 @@ final class Tournee {
     required MemberId creator,
     required MemberName creatorName,
     required DateTime at,
-  }) => Tournee._(
-    id: id,
-    number: number,
-    centre: centre,
-    joinCode: joinCode,
-    createdBy: creator,
-    createdAt: at,
-    currentCampaign: campaign,
-    members: [
-      Member(
-        id: creator,
-        name: creatorName,
-        requestedAt: at,
-        acceptance: ChangeStamp(by: creator, at: at),
-      ),
-    ],
-  );
+    required List<TourneeCommune> communes,
+  }) {
+    if (communes.isEmpty) {
+      throw ArgumentError.value(communes, 'communes', 'No commune');
+    }
+    if (_communesFailure(communes) case final failure?) {
+      throw ArgumentError.value(communes, 'communes', '$failure');
+    }
+    return Tournee._(
+      id: id,
+      number: number,
+      centre: centre,
+      joinCode: joinCode,
+      createdBy: creator,
+      createdAt: at,
+      currentCampaign: campaign,
+      members: [
+        Member(
+          id: creator,
+          name: creatorName,
+          requestedAt: at,
+          acceptance: ChangeStamp(by: creator, at: at),
+        ),
+      ],
+      communes: communes,
+    );
+  }
 
-  /// Rebuilds a stored tournée with its [members], given in any order.
-  /// The creator may be gone, and the team empty: everyone may leave.
+  /// Rebuilds a stored tournée with its [members], given in any order,
+  /// and its [communes], in their stored order. The creator may be gone,
+  /// and the team empty: everyone may leave. A tournée created before #78
+  /// has no commune.
   ///
   /// Fails with [NewTourneeFailure.duplicateMember] when two members share
-  /// an id.
+  /// an id, [NewTourneeFailure.duplicateCommune] when two communes share
+  /// an INSEE code, [NewTourneeFailure.tooManyCommunes] beyond
+  /// [maxCommunes].
   static Result<Tournee, NewTourneeFailure> create({
     required TourneeId id,
     required TourneeNumber number,
@@ -133,6 +182,7 @@ final class Tournee {
     required DateTime createdAt,
     required CampaignYear currentCampaign,
     required Iterable<Member> members,
+    List<TourneeCommune> communes = const [],
   }) {
     final ids = <MemberId>{};
     for (final member in members) {
@@ -141,6 +191,7 @@ final class Tournee {
         return const Err(NewTourneeFailure.duplicateMember);
       }
     }
+    if (_communesFailure(communes) case final failure?) return Err(failure);
     return Ok(
       Tournee._(
         id: id,
@@ -151,8 +202,20 @@ final class Tournee {
         createdAt: createdAt,
         currentCampaign: currentCampaign,
         members: members,
+        communes: communes,
       ),
     );
+  }
+
+  /// What is wrong with [communes] for a tournée, or null when nothing is.
+  static NewTourneeFailure? _communesFailure(List<TourneeCommune> communes) {
+    if (communes.length > maxCommunes) {
+      return NewTourneeFailure.tooManyCommunes;
+    }
+    final codes = {for (final commune in communes) commune.inseeCode};
+    return codes.length < communes.length
+        ? NewTourneeFailure.duplicateCommune
+        : null;
   }
 
   final TourneeId id;
@@ -175,6 +238,13 @@ final class Tournee {
   /// The list cannot be modified (it throws an `UnsupportedError`): members
   /// change only through the commands below.
   final List<Member> members;
+
+  /// The communes the tournée covers, in the order they were added: the
+  /// map of « Ajouter des rues » is centred on them and its list shows
+  /// their streets (PLAN §5.4). Possibly none for a tournée created before
+  /// they existed. The list cannot be modified: they change only through
+  /// [addCommune] and [removeCommune].
+  final List<TourneeCommune> communes;
 
   /// The requests waiting for an answer (« En attente », PLAN §5.8).
   List<Member> get pendingMembers =>
@@ -319,16 +389,7 @@ final class Tournee {
   /// drawn on the phone turned out to be another tournée's, and the server
   /// gave it another one (a code is unique across tournées, which only the
   /// server can tell, `TourneeRepository.add` and `save`).
-  Tournee withJoinCode(JoinCode code) => Tournee._(
-    id: id,
-    number: number,
-    centre: centre,
-    joinCode: code,
-    createdBy: createdBy,
-    createdAt: createdAt,
-    currentCampaign: currentCampaign,
-    members: members,
-  );
+  Tournee withJoinCode(JoinCode code) => _copy(joinCode: code);
 
   /// Deletes the tournée, as [by] (« Supprimer la tournée »). Only an
   /// admin may, member or not. Nothing is left to return but the deletion
@@ -363,6 +424,56 @@ final class Tournee {
     ));
   }
 
+  /// Adds [commune] after the tournée's others, as [by] (« + Ajouter une
+  /// commune » in Équipe, PLAN §5.8). Any active member or admin may.
+  /// Refused when the tournée already covers that commune (same INSEE
+  /// code) or has [maxCommunes].
+  Result<(Tournee, CommuneAdded), TourneeCommandFailure> addCommune(
+    TourneeCommune commune, {
+    required Actor by,
+  }) {
+    if (_teamActor(by) case final failure?) return Err(failure);
+    if (_communeOf(commune.inseeCode) != null) {
+      return const Err(TourneeCommandFailure.communeAlreadyIn);
+    }
+    if (communes.length >= maxCommunes) {
+      return const Err(TourneeCommandFailure.tooManyCommunes);
+    }
+    return Ok((
+      _copy(communes: [...communes, commune]),
+      CommuneAdded(tourneeId: id, commune: commune),
+    ));
+  }
+
+  /// Takes the commune [code] out of the tournée, as [by] (✕ in Équipe).
+  /// Any active member or admin may; the streets already added from it
+  /// stay. Never the last commune: « Ajouter des rues » needs one.
+  Result<(Tournee, CommuneRemoved), TourneeCommandFailure> removeCommune(
+    InseeCode code, {
+    required Actor by,
+  }) {
+    if (_teamActor(by) case final failure?) return Err(failure);
+    final removed = _communeOf(code);
+    if (removed == null) {
+      return const Err(TourneeCommandFailure.unknownCommune);
+    }
+    if (communes.length == 1) {
+      return const Err(TourneeCommandFailure.lastCommune);
+    }
+    return Ok((
+      _copy(communes: communes.where((commune) => commune != removed)),
+      CommuneRemoved(tourneeId: id, commune: removed),
+    ));
+  }
+
+  /// The tournée's commune [code], or null when it has none of that code.
+  TourneeCommune? _communeOf(InseeCode code) {
+    for (final commune in communes) {
+      if (commune.inseeCode == code) return commune;
+    }
+    return null;
+  }
+
   /// Why [by] may not act for the team as a member, or null when they are
   /// an active one.
   TourneeCommandFailure? _activeActor(MemberId by) {
@@ -387,15 +498,24 @@ final class Tournee {
   Tournee _without(MemberId member) =>
       _withMembers(members.where((other) => other.id != member));
 
-  Tournee _withMembers(Iterable<Member> newMembers) => Tournee._(
+  Tournee _withMembers(Iterable<Member> newMembers) =>
+      _copy(members: newMembers);
+
+  /// This tournée with the given parts replaced, the others kept.
+  Tournee _copy({
+    JoinCode? joinCode,
+    Iterable<Member>? members,
+    Iterable<TourneeCommune>? communes,
+  }) => Tournee._(
     id: id,
     number: number,
     centre: centre,
-    joinCode: joinCode,
+    joinCode: joinCode ?? this.joinCode,
     createdBy: createdBy,
     createdAt: createdAt,
     currentCampaign: currentCampaign,
-    members: newMembers,
+    members: members ?? this.members,
+    communes: communes ?? this.communes,
   );
 
   /// Oldest request first; the id breaks ties so the order never depends

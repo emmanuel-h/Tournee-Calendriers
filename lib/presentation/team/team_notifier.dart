@@ -2,12 +2,14 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tournee_calendriers/application/use_cases/team.dart';
+import 'package:tournee_calendriers/domain/shared/insee_code.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 import 'package:tournee_calendriers/presentation/admin/admin_notifier.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
+import 'package:tournee_calendriers/presentation/import_streets/import_state.dart';
 import 'package:tournee_calendriers/presentation/my_tournees/my_tournees_notifier.dart';
 import 'package:tournee_calendriers/presentation/team/team_state.dart';
 
@@ -119,6 +121,16 @@ final class TeamNotifier extends Notifier<TeamState> {
   Future<TeamActionFailure?> regenerateCode() =>
       _run(ref.read(regenerateJoinCodeProvider).call);
 
+  /// « + Ajouter une commune »: the tournée covers [commune] too. Works
+  /// offline (sent later).
+  Future<TeamActionFailure?> addCommune(CommuneOption commune) => _run(
+    (tournee) => ref.read(addCommuneProvider)(tournee, commune.tourneeCommune),
+  );
+
+  /// ✕ on the commune [code]: the tournée no longer covers it.
+  Future<TeamActionFailure?> removeCommune(InseeCode code) =>
+      _run((tournee) => ref.read(removeCommuneProvider)(tournee, code));
+
   /// « Quitter la tournée »: the phone forgets it, so no tournée is open
   /// any more.
   Future<TeamActionFailure?> leave() =>
@@ -157,6 +169,18 @@ final class TeamNotifier extends Notifier<TeamState> {
       Err(
         failure: TeamCommandRefused(reason: TourneeCommandFailure.notAdmin),
       ) => TeamActionFailure.notAdmin,
+      Err(
+        failure: TeamCommandRefused(
+          reason: TourneeCommandFailure.communeAlreadyIn,
+        ),
+      ) =>
+        TeamActionFailure.communeAlreadyIn,
+      Err(
+        failure: TeamCommandRefused(
+          reason: TourneeCommandFailure.tooManyCommunes,
+        ),
+      ) =>
+        TeamActionFailure.tooManyCommunes,
       Err(failure: TeamProblem.tourneeGone || TeamCommandRefused()) =>
         TeamActionFailure.teamChanged,
       Err(failure: TeamProblem.offline) => TeamActionFailure.offline,

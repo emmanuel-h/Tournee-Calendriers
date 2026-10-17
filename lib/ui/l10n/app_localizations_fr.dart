@@ -1764,4 +1764,110 @@ class AppLocalizationsFr extends AppLocalizations {
   String galleryMapTapped(String latitude, String longitude) {
     return 'Touché en $latitude, $longitude';
   }
+
+  @override
+  String get communesLabel => 'Communes';
+
+  @override
+  String get communeAddHint => 'Ajouter une commune…';
+
+  @override
+  String communeRemove(String name) {
+    return 'Retirer $name';
+  }
+
+  @override
+  String teamCommunesHeader(int count) {
+    return 'Communes ($count)';
+  }
+
+  @override
+  String get teamAddCommune => 'Ajouter une commune';
+
+  @override
+  String get teamCommuneAlreadyIn => 'Cette commune est déjà dans la tournée.';
+
+  @override
+  String teamTooManyCommunes(int max) {
+    return 'Une tournée a au plus $max communes.';
+  }
+
+  @override
+  String get addStreetsTitle => 'Ajouter des rues';
+
+  @override
+  String get addStreetsModes => 'Ajouter depuis';
+
+  @override
+  String get addStreetsMapTab => 'Carte';
+
+  @override
+  String get addStreetsListTab => 'Liste';
+
+  @override
+  String get alreadyInTournee => 'déjà dans la tournée';
+
+  @override
+  String addButton(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Ajouter $count rues',
+      one: 'Ajouter 1 rue',
+      zero: 'Ajouter',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String addProgress(int done, int total) {
+    return 'Ajout en cours… $done/$total';
+  }
+
+  @override
+  String addDone(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count rues ajoutées à la tournée',
+      one: '1 rue ajoutée à la tournée',
+      zero: 'Aucune nouvelle rue',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String addDoneAndRestored(int added, int restored) {
+    String _temp0 = intl.Intl.pluralLogic(
+      added,
+      locale: localeName,
+      other: '$added rues ajoutées',
+      one: '1 rue ajoutée',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      restored,
+      locale: localeName,
+      other: '$restored restaurées',
+      one: '1 restaurée',
+    );
+    return '$_temp0, $_temp1';
+  }
+
+  @override
+  String addPartial(int added, int failed, String reason) {
+    String _temp0 = intl.Intl.pluralLogic(
+      added,
+      locale: localeName,
+      other: '$added rues ajoutées',
+      one: '1 rue ajoutée',
+      zero: 'Aucune rue ajoutée',
+    );
+    String _temp1 = intl.Intl.pluralLogic(
+      failed,
+      locale: localeName,
+      other: '$failed en échec',
+      one: '1 en échec',
+    );
+    return '$_temp0, $_temp1. $reason Les rues encore cochées restent à ajouter.';
+  }
 }

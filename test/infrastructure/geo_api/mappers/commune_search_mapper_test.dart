@@ -2,6 +2,7 @@ import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
 import 'package:tournee_calendriers/infrastructure/geo_api/mappers/commune_search_mapper.dart';
 
+import '../../../support/geo_fixtures.dart';
 import '../../../support/street_fixtures.dart';
 import '../geo_api_fixtures.dart';
 
@@ -14,15 +15,63 @@ void main() {
     ...changes,
   };
 
-  test('should read the commune and its postcodes from the fixture', () {
+  test('should read the commune, its postcodes and its centre from the '
+      'fixture', () {
     final matches = communeMatchesFromJson(
       geoApiFixture('communes_villefranche.json'),
     );
 
     expect(matches, [
-      CommuneMatch(commune: villefranche, postcodes: const ['69400']),
+      CommuneMatch(
+        commune: villefranche,
+        postcodes: const ['69400'],
+        centre: at(45.9837, 4.726),
+      ),
     ]);
   });
+
+  test('should read a centre written as whole numbers', () {
+    final matches = communeMatchesFromJson([
+      entry({
+        'centre': {
+          'type': 'Point',
+          'coordinates': [5, 46],
+        },
+      }),
+    ]);
+
+    expect(matches.single.centre, at(46, 5));
+  });
+
+  final noCentre = <String, Object?>{
+    'no centre': null,
+    'not a point': {
+      'type': 'Polygon',
+      'coordinates': [4.726, 45.9837],
+    },
+    'one coordinate': {
+      'type': 'Point',
+      'coordinates': [4.726],
+    },
+    'coordinates that are not numbers': {
+      'type': 'Point',
+      'coordinates': ['4.726', '45.9837'],
+    },
+    'a latitude out of range': {
+      'type': 'Point',
+      'coordinates': [4.726, 95.0],
+    },
+  };
+  for (final MapEntry(key: what, value: centre) in noCentre.entries) {
+    test('should keep the commune without centre when it has $what', () {
+      final match = communeMatchesFromJson([
+        entry({'centre': centre}),
+      ]).single;
+
+      expect(match.commune, villefranche);
+      expect(match.centre, isNull);
+    });
+  }
 
   test('should read no commune from an empty answer', () {
     expect(

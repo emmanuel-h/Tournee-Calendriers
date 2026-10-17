@@ -7,16 +7,18 @@
 // unreadable entry is only left out, so the other suggestions still show.
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
 import 'package:tournee_calendriers/domain/shared/commune.dart';
+import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 
 final _postcodeShape = RegExp(r'^\d{5}$');
 
 /// Reads the answer of `/communes?nom=…`: a list of `{nom, code,
-/// codesPostaux}`, in the service's order.
+/// codesPostaux, centre}`, in the service's order.
 ///
 /// An entry without a valid [Commune] (INSEE `code`, non-blank `nom`) is
 /// left out; so is a postcode that is not five digits. A missing
-/// `codesPostaux` means none.
+/// `codesPostaux` means none; a missing or unreadable `centre` (a GeoJSON
+/// point, `[longitude, latitude]`), no centre.
 ///
 /// Throws a [FormatException] when [json] is not a list.
 List<CommuneMatch> communeMatchesFromJson(Object? json) {
@@ -33,7 +35,26 @@ CommuneMatch? _match(Object? entry) {
       Ok(:final value) => CommuneMatch(
         commune: value,
         postcodes: _postcodes(entry['codesPostaux']),
+        centre: _centre(entry['centre']),
       ),
+      Err() => null,
+    };
+  }
+  return null;
+}
+
+/// The point of a GeoJSON `Point` [json]; null when it is not one or out
+/// of range.
+GeoPoint? _centre(Object? json) {
+  if (json case {
+    'type': 'Point',
+    'coordinates': [final num longitude, final num latitude],
+  }) {
+    return switch (GeoPoint.create(
+      latitude: latitude.toDouble(),
+      longitude: longitude.toDouble(),
+    )) {
+      Ok(:final value) => value,
       Err() => null,
     };
   }

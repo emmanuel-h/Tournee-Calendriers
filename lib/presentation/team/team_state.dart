@@ -1,3 +1,4 @@
+import 'package:tournee_calendriers/domain/shared/insee_code.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee.dart';
 import 'package:tournee_calendriers/presentation/shared/recent_time.dart';
@@ -20,6 +21,12 @@ enum TeamActionFailure {
   /// server refused it, or the phone learnt it just before (« Vous n'êtes
   /// plus administrateur. »).
   notAdmin,
+
+  /// The commune picked is already one of the tournée's.
+  communeAlreadyIn,
+
+  /// The tournée covers as many communes as it may.
+  tooManyCommunes,
 }
 
 /// What Équipe (PLAN §5.8) and the 👥 of the start screen show of the open
@@ -59,8 +66,11 @@ final class TeamShown extends TeamState {
     required this.iAmIn,
     required List<RequestRow> requests,
     required List<MemberRow> members,
+    this.canChangeCommunes = false,
+    List<CommuneRow> communes = const [],
   }) : requests = List.unmodifiable(requests),
-       members = List.unmodifiable(members);
+       members = List.unmodifiable(members),
+       communes = List.unmodifiable(communes);
 
   /// [tournee] as [me] sees it at [now] (« il y a 2 min »): [iAmAdmin]
   /// when the phone is an admin's, [admins] the other members known to be
@@ -72,7 +82,21 @@ final class TeamShown extends TeamState {
     required bool iAmAdmin,
     required Set<MemberId> admins,
   }) {
+    // An active member or an admin changes the communes (PLAN §5.8);
+    // never the last one.
+    final canChangeCommunes =
+        iAmAdmin || (tournee.memberOf(me)?.isActive ?? false);
+    final lastOne = tournee.communes.length == 1;
     return TeamShown(
+      canChangeCommunes: canChangeCommunes,
+      communes: [
+        for (final commune in tournee.communes)
+          CommuneRow(
+            inseeCode: commune.inseeCode,
+            name: commune.name,
+            removable: canChangeCommunes && !lastOne,
+          ),
+      ],
       number: tournee.number.value,
       centre: tournee.centre.name,
       campaign: tournee.currentCampaign.value,
@@ -136,6 +160,14 @@ final class TeamShown extends TeamState {
   /// « Membres »: the accepted members, oldest first.
   final List<MemberRow> members;
 
+  /// The member on the phone may add and remove communes: « + Ajouter une
+  /// commune » shows.
+  final bool canChangeCommunes;
+
+  /// « Communes »: the tournée's, in the order they were added; none for a
+  /// tournée created before them.
+  final List<CommuneRow> communes;
+
   @override
   int get waitingRequests => requests.length;
 
@@ -150,6 +182,32 @@ final class TeamShown extends TeamState {
     }
     return null;
   }
+}
+
+/// A commune in « Communes »: « Villefranche-sur-Saône [✕] ».
+final class CommuneRow {
+  const CommuneRow({
+    required this.inseeCode,
+    required this.name,
+    required this.removable,
+  });
+
+  final InseeCode inseeCode;
+  final String name;
+
+  /// ✕ shows: the member may change the communes and this is not the
+  /// last one.
+  final bool removable;
+
+  @override
+  bool operator ==(Object other) =>
+      other is CommuneRow &&
+      other.inseeCode == inseeCode &&
+      other.name == name &&
+      other.removable == removable;
+
+  @override
+  int get hashCode => Object.hash(inseeCode, name, removable);
 }
 
 /// A request in « En attente »: « Julie · il y a 2 min ».

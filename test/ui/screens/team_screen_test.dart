@@ -2,10 +2,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tournee_calendriers/application/ports/commune_search.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
+import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/tournee/member.dart';
 import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_change.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_commune.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/screens/corbeille/corbeille_screen.dart';
@@ -13,10 +16,12 @@ import 'package:tournee_calendriers/ui/screens/corbeille/corbeille_screen.dart';
 import '../../domain/tournee/my_tournees_fixtures.dart';
 import '../../domain/tournee/tournee_fixtures.dart';
 import '../../support/fakes/fake_admin_status.dart';
+import '../../support/fakes/fake_commune_search.dart';
 import '../../support/fakes/fake_my_tournees_store.dart';
 import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/results.dart';
 import '../support/app_overrides.dart';
+import '../support/buttons.dart';
 import '../support/clipboard.dart';
 import '../support/navigation.dart';
 
@@ -30,13 +35,18 @@ void main() {
   /// Équipe over the start screen, on the phone of [member] where the 49
   /// of Manu, Léa and Julie (pending) is open. Manu and Sam are admins of
   /// the app; Sam is not in the 49, which his phone keeps as visited.
-  Future<void> pumpTeam(WidgetTester tester, MemberId member) async {
+  Future<void> pumpTeam(
+    WidgetTester tester,
+    MemberId member, {
+    List<TourneeCommune> communes = const [],
+    FakeCommuneSearch? search,
+  }) async {
     // A phone's screen (the mockup's), so the buttons at the bottom show.
     tester.view
       ..physicalSize = const Size(393 * 3, 852 * 3)
       ..devicePixelRatio = 3;
     addTearDown(tester.view.reset);
-    tournees = FakeTourneeRepository([team()]);
+    tournees = FakeTourneeRepository([team(communes: communes)]);
     final kept = member == samId
         ? summaryOf('t49', 49, status: MemberStatus.visiting)
         : tournee49;
@@ -50,6 +60,7 @@ void main() {
           tournees: tournees,
           member: member,
           now: twoMinutesLater,
+          communes: search,
           admins: FakeAdminStatus(
             phoneIsAdmin: member == manuId || member == samId,
             admins: [manuId, samId],
@@ -120,7 +131,7 @@ void main() {
       'nothing, and go back to the start screen', (tester) async {
     await pumpTeam(tester, samId);
 
-    await tester.tap(find.byKey(const Key('team.forgetVisit')));
+    await tapVisible(tester, find.byKey(const Key('team.forgetVisit')));
     await tester.pumpAndSettle();
 
     expect(tournees.saved, isEmpty);
@@ -245,7 +256,7 @@ void main() {
       'an admin deletes it', (tester) async {
     await pumpTeam(tester, manuId);
 
-    await tester.tap(find.byKey(const Key('team.delete')));
+    await tapVisible(tester, find.byKey(const Key('team.delete')));
     await tester.pumpAndSettle();
     expect(find.text('Supprimer la tournée 49 ?'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('team.confirmDelete.ok')));
@@ -262,7 +273,7 @@ void main() {
   ) async {
     await pumpTeam(tester, manuId);
 
-    await tester.tap(find.byKey(const Key('team.delete')));
+    await tapVisible(tester, find.byKey(const Key('team.delete')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('team.confirmDelete.cancel')));
     await tester.pumpAndSettle();
@@ -276,7 +287,7 @@ void main() {
   ) async {
     await pumpTeam(tester, leaId);
 
-    await tester.tap(find.byKey(const Key('team.leave')));
+    await tapVisible(tester, find.byKey(const Key('team.leave')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('team.confirmLeave.ok')));
     await tester.pumpAndSettle();
@@ -284,6 +295,60 @@ void main() {
     expect(tournees.saved.single.$2, isA<MemberLeft>());
     expect(store.myTournees.tournees, isEmpty);
     expect(find.text('Tournée des calendriers'), findsOneWidget);
+  });
+
+  testWidgets('should list the communes, with ✕ but on the last one, and '
+      'remove one', (tester) async {
+    await pumpTeam(
+      tester,
+      leaId,
+      communes: [villefrancheCommune, gleizeCommune],
+    );
+    final villefrancheRow = find.byKey(const ValueKey('team.commune.69264'));
+    await tester.scrollUntilVisible(
+      villefrancheRow,
+      200,
+      scrollable: find.byType(Scrollable).first,
+    );
+
+    expect(find.text('COMMUNES (2)'), findsOneWidget);
+    await tester.tap(find.byTooltip('Retirer Villefranche-sur-Saône'));
+    await tester.pumpAndSettle();
+
+    expect(tournees.saved.single.$2, isA<CommuneRemoved>());
+    expect(find.text('COMMUNES (1)'), findsOneWidget);
+    expect(find.byTooltip('Retirer Gleizé'), findsNothing);
+  });
+
+  testWidgets('should add the commune picked in the sheet of « Ajouter une '
+      'commune », even to a tournée without any', (tester) async {
+    await pumpTeam(
+      tester,
+      leaId,
+      search: FakeCommuneSearch(
+        answers: {
+          'Gleiz': Ok([
+            CommuneMatch(
+              commune: gleizeCommune.commune,
+              postcodes: const ['69400'],
+              centre: gleizeCommune.centre,
+            ),
+          ]),
+        },
+      ),
+    );
+    expect(find.text('COMMUNES (0)'), findsOneWidget);
+
+    await tapVisible(tester, find.byKey(const Key('team.addCommune')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('communes.field')), 'Gleiz');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('communes.suggestion.69092')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('communes.field')), findsNothing);
+    expect(tournees[tourneeId]!.communes, [gleizeCommune]);
+    expect(find.byKey(const ValueKey('team.commune.69092')), findsOneWidget);
   });
 
   testWidgets('should open the Corbeille', (tester) async {

@@ -9,8 +9,10 @@ import 'package:tournee_calendriers/domain/shared/french_text.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/shared/text_length.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_commune.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/import_streets/import_state.dart';
+import 'package:tournee_calendriers/presentation/my_tournees/my_tournees_notifier.dart';
 
 /// How long the « Commune » field waits after the last key before
 /// searching, so typing « Villefranche » sends one request, not twelve.
@@ -26,9 +28,13 @@ final importProvider =
       ImportNotifier.new,
     );
 
-/// The import flow of the temporary start screen (PLAN §5.0): search a
-/// commune, choose it, tick streets, import them. Each method is an intent
-/// of the screen.
+/// The import flow (PLAN §5.0, §5.4): search a commune, choose it, tick
+/// streets, import them. Each method is an intent of the screen.
+///
+/// While a tournée is open it is the « Liste » tab of « Ajouter des rues »:
+/// the commune is one of the tournée's (the first at once, another by its
+/// chip), followed live and offline from the phone's copy; a tournée
+/// without commune searches one as with none open.
 final class ImportNotifier extends Notifier<ImportState> {
   /// Raised by each key typed and each commune chosen. A search remembers
   /// the value it started with and gives up when it has changed since:
@@ -41,7 +47,31 @@ final class ImportNotifier extends Notifier<ImportState> {
   var _listing = 0;
 
   @override
-  ImportState build() => const ImportState();
+  ImportState build() {
+    // `ref.watch`: opening another tournée builds the list again.
+    final tournee = ref.watch(currentTourneeProvider);
+    if (tournee == null) return const ImportState();
+    final listening = ref
+        .watch(observeTourneeCommunesProvider)(tournee.id)
+        .listen(_showCommunes);
+    ref.onDispose(listening.cancel);
+    return const ImportState(inTournee: true);
+  }
+
+  /// The tournée's communes are [communes]: chips for them, and the streets
+  /// of the first while the one chosen is not among them.
+  void _showCommunes(List<TourneeCommune> communes) {
+    final options = List<CommuneOption>.unmodifiable([
+      for (final commune in communes) CommuneOption.ofTournee(commune),
+    ]);
+    state = state.copyWith(tourneeCommunes: options);
+    final chosen = state.commune?.inseeCode;
+    if (options.isEmpty ||
+        options.any((option) => option.inseeCode == chosen)) {
+      return;
+    }
+    unawaited(chooseCommune(options.first, label: options.first.name));
+  }
 
   /// The « Commune » field changed to [text]: forgets any chosen commune
   /// and, after a short pause in the typing, searches.

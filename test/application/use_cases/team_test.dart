@@ -6,6 +6,7 @@ import 'package:tournee_calendriers/domain/tournee/member.dart';
 import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_change.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_commune.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 
 import '../../domain/tournee/my_tournees_fixtures.dart';
@@ -17,6 +18,7 @@ import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/results.dart';
 import '../../support/scripted_random.dart';
+import '../../support/street_fixtures.dart' show insee;
 
 final acceptedAt = DateTime.utc(2026, 11, 2, 8, 20);
 
@@ -83,6 +85,163 @@ void main() {
       await pumpEventQueue();
 
       expect(seen.map((tournee) => tournee?.members.length), [3, 2]);
+    });
+  });
+
+  group('ObserveTourneeCommunes', () {
+    test('should give the communes then each change of them, not of the '
+        'team', () async {
+      tournees.put(team(communes: [villefrancheCommune]));
+      final seen = <List<TourneeCommune>>[];
+      final listening = ObserveTourneeCommunes(tournees)(tourneeId)
+          .listen(seen.add);
+      addTearDown(listening.cancel);
+      await pumpEventQueue();
+
+      tournees.put(team(members: [manu, lea], communes: [villefrancheCommune]));
+      await pumpEventQueue();
+      tournees.put(team(communes: [villefrancheCommune, gleizeCommune]));
+      await pumpEventQueue();
+
+      expect(seen, [
+        [villefrancheCommune],
+        [villefrancheCommune, gleizeCommune],
+      ]);
+    });
+
+    test('should give none when the tournée cannot be read', () async {
+      tournees.put(team(communes: [villefrancheCommune]));
+      final seen = <List<TourneeCommune>>[];
+      final listening = ObserveTourneeCommunes(tournees)(tourneeId)
+          .listen(seen.add);
+      addTearDown(listening.cancel);
+      await pumpEventQueue();
+
+      tournees.lose(tourneeId);
+      await pumpEventQueue();
+
+      expect(seen, [
+        [villefrancheCommune],
+        <TourneeCommune>[],
+      ]);
+    });
+  });
+
+  group('AddCommune', () {
+    test('should add the commune for a member and store the change', () async {
+      tournees.put(team(communes: [villefrancheCommune]));
+
+      final change = valueOf(
+        await AddCommune(tournees, FakeIdentity(leaId), member)(
+          tourneeId,
+          gleizeCommune,
+        ),
+      );
+
+      expect(
+        change,
+        CommuneAdded(tourneeId: tourneeId, commune: gleizeCommune),
+      );
+      expect(tournees.saved.single.$2, change);
+      expect(tournees[tourneeId]!.communes, [
+        villefrancheCommune,
+        gleizeCommune,
+      ]);
+    });
+
+    test('should let an admin outside the team add one', () async {
+      final change = valueOf(
+        await AddCommune(tournees, FakeIdentity(samId), admin)(
+          tourneeId,
+          gleizeCommune,
+        ),
+      );
+
+      expect(change.commune, gleizeCommune);
+    });
+
+    test('should be refused when the tournée already covers it', () async {
+      tournees.put(team(communes: [gleizeCommune]));
+
+      final failure = failureOf(
+        await AddCommune(tournees, FakeIdentity(leaId), member)(
+          tourneeId,
+          gleizeCommune,
+        ),
+      );
+
+      expect(
+        failure,
+        const TeamCommandRefused(TourneeCommandFailure.communeAlreadyIn),
+      );
+      expect(tournees.saved, isEmpty);
+    });
+
+    test('should fail when the tournée is gone', () async {
+      tournees.lose(tourneeId);
+
+      final failure = failureOf(
+        await AddCommune(tournees, FakeIdentity(leaId), member)(
+          tourneeId,
+          gleizeCommune,
+        ),
+      );
+
+      expect(failure, TeamProblem.tourneeGone);
+    });
+  });
+
+  group('RemoveCommune', () {
+    test('should remove the commune for a member and store the '
+        'change', () async {
+      tournees.put(team(communes: [villefrancheCommune, gleizeCommune]));
+
+      final change = valueOf(
+        await RemoveCommune(tournees, FakeIdentity(leaId), member)(
+          tourneeId,
+          insee('69264'),
+        ),
+      );
+
+      expect(
+        change,
+        CommuneRemoved(tourneeId: tourneeId, commune: villefrancheCommune),
+      );
+      expect(tournees.saved.single.$2, change);
+      expect(tournees[tourneeId]!.communes, [gleizeCommune]);
+    });
+
+    test('should be refused for the last commune', () async {
+      tournees.put(team(communes: [villefrancheCommune]));
+
+      final failure = failureOf(
+        await RemoveCommune(tournees, FakeIdentity(samId), admin)(
+          tourneeId,
+          insee('69264'),
+        ),
+      );
+
+      expect(
+        failure,
+        const TeamCommandRefused(TourneeCommandFailure.lastCommune),
+      );
+      expect(tournees.saved, isEmpty);
+    });
+
+    test('should be refused for a pending member', () async {
+      tournees.put(team(communes: [villefrancheCommune, gleizeCommune]));
+
+      final failure = failureOf(
+        await RemoveCommune(tournees, FakeIdentity(julieId), member)(
+          tourneeId,
+          insee('69092'),
+        ),
+      );
+
+      expect(
+        failure,
+        const TeamCommandRefused(TourneeCommandFailure.requestPending),
+      );
     });
   });
 
