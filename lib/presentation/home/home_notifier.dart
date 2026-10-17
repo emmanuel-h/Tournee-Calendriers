@@ -9,6 +9,8 @@ import 'package:tournee_calendriers/domain/tournee/tournee_commune.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/home/home_state.dart';
 import 'package:tournee_calendriers/presentation/my_tournees/my_tournees_notifier.dart';
+import 'package:tournee_calendriers/presentation/street_card/follows_team.dart';
+import 'package:tournee_calendriers/presentation/street_card/street_card.dart';
 import 'package:tournee_calendriers/presentation/street_list/street_list_state.dart';
 
 /// The state of Accueil. `autoDispose`: it follows the streets and the
@@ -17,9 +19,11 @@ final homeProvider = NotifierProvider.autoDispose<HomeNotifier, HomeState>(
   HomeNotifier.new,
 );
 
-/// Follows the open tournée's streets (`ObserveMyStreets`) and communes,
-/// from the phone's copy, offline too, and the street tapped on the map.
-final class HomeNotifier extends Notifier<HomeState> {
+/// Follows the open tournée's streets (`ObserveMyStreets`), communes and
+/// team, from the phone's copy, offline too, and the street tapped on the
+/// map, which the member may take or release from its card.
+final class HomeNotifier extends Notifier<HomeState>
+    with FollowsTeam<HomeState> {
   /// The last streets read, null until the first arrive.
   MyStreets? _streets;
   var _communes = const <TourneeCommune>[];
@@ -54,13 +58,19 @@ final class HomeNotifier extends Notifier<HomeState> {
     if (tournee != null) {
       final communes = ref
           .watch(observeTourneeCommunesProvider)(tournee)
-          .listen((communes) {
-            _communes = communes;
-            _show();
-          });
+          .listen(
+            (communes) {
+              _communes = communes;
+              _show();
+            },
+            // The tournée can no longer be read (the member was removed):
+            // the communes last read stay.
+            onError: (Object _) {},
+          );
       ref.onDispose(communes.cancel);
     }
-    return _view();
+    followTeam();
+    return render();
   }
 
   void _showStreets(MyStreets streets) {
@@ -80,9 +90,27 @@ final class HomeNotifier extends Notifier<HomeState> {
     _show();
   }
 
-  void _show() => state = _view();
+  /// « Me l'attribuer » or « La faire aussi » on the card: the member
+  /// covers the street tapped. Works offline. A street that changed
+  /// meanwhile (taken already, gone) changes nothing; the card follows it.
+  Future<void> take() async {
+    if (_selected case final street?) {
+      await ref.read(takeStreetProvider)(street);
+    }
+  }
 
-  HomeState _view() {
+  /// « Ne plus la faire » on the card: the member stops covering the street
+  /// tapped. Works offline.
+  Future<void> release() async {
+    if (_selected case final street?) {
+      await ref.read(releaseStreetProvider)(street);
+    }
+  }
+
+  void _show() => state = render();
+
+  @override
+  HomeState render() {
     final streets = _streets ?? MyStreets.none;
     // `ref.read`: whether the member visits is read with the rest, the
     // notifier needs no build of its own for it.
@@ -99,10 +127,15 @@ final class HomeNotifier extends Notifier<HomeState> {
       others: visiting ? const [] : _rows(streets.others),
       layers: MapLayers.of(streets.all),
       area: _area,
-      selected: switch (_selected) {
-        final selected? => _rows(
-          streets.all.where((street) => street.id == selected),
-        ).firstOrNull,
+      card: switch (streets.all
+          .where((street) => street.id == _selected)
+          .firstOrNull) {
+        final street? => StreetCardInTournee.of(
+          street,
+          me: ref.read(readCurrentMemberProvider)(),
+          team: team,
+        ),
+        // None tapped, or the street went to the Corbeille.
         null => null,
       },
     );

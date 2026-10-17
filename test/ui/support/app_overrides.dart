@@ -20,6 +20,7 @@ import '../../support/fakes/fake_pending_sync.dart';
 import '../../support/fakes/fake_phone_settings.dart';
 import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_street_repository.dart';
+import '../../support/fakes/fake_street_shapes.dart';
 import '../../support/fakes/fake_street_view_preferences.dart';
 import '../../support/fakes/fake_tournee_directory.dart';
 import '../../support/fakes/fake_tournee_repository.dart';
@@ -28,7 +29,8 @@ import '../../support/street_fixtures.dart';
 import 'fake_map_view.dart';
 
 /// Every port the screens use, bound to [streets] (empty by default: the
-/// start screen shows its first-launch state), [directory], [communes],
+/// start screen shows its first-launch state), [directory], [shapes] (no
+/// road known by default), [communes],
 /// [preferences], [myTournees] (none by default), [settings] and
 /// [tourneeDirectory], [tournees] (none by default), [phoneStreets] (the
 /// streets kept on the phone since M1, none by default: no card offers
@@ -48,6 +50,7 @@ import 'fake_map_view.dart';
 List<Override> fakePhone({
   FakeStreetRepository? streets,
   FakeAddressDirectory? directory,
+  FakeStreetShapes? shapes,
   FakeCommuneSearch? communes,
   FakeStreetViewPreferences? preferences,
   FakeMyTourneesStore? myTournees,
@@ -78,6 +81,7 @@ List<Override> fakePhone({
   addressDirectoryProvider.overrideWithValue(
     directory ?? FakeAddressDirectory(),
   ),
+  streetShapesProvider.overrideWithValue(shapes ?? FakeStreetShapes()),
   communeSearchProvider.overrideWithValue(communes ?? FakeCommuneSearch()),
   idGeneratorProvider.overrideWithValue(FakeIdGenerator('street')),
   clockProvider.overrideWithValue(FakeClock(now ?? twoPm)),

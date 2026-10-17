@@ -1903,11 +1903,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get homeNoStreet => 'Aucune rue dans la tournée pour l\'instant.';
 
   @override
-  String homeOpenStreet(String name, int done, int total) {
-    return 'Ouvrir $name · $done/$total';
-  }
-
-  @override
   String get homePanelExpand => 'Afficher toute la liste';
 
   @override
@@ -1933,4 +1928,175 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get mapLegendStreetFree => 'libre';
+
+  @override
+  String get addStreetsSearchHint => 'Rechercher une rue';
+
+  @override
+  String get addStreetsSearchClear => 'Effacer la recherche';
+
+  @override
+  String get addStreetsSearchNone => 'Aucune rue trouvée.';
+
+  @override
+  String get addStreetsSearchNoNetwork =>
+      'Connexion nécessaire pour chercher une rue.';
+
+  @override
+  String get addStreetsSearchError =>
+      'Le service des adresses ne répond pas. Réessayez dans un moment.';
+
+  @override
+  String get addStreetsManual => 'Saisir une rue à la main';
+
+  @override
+  String get streetCardLoading => 'Recherche de la rue…';
+
+  @override
+  String streetCardNumbers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count numéros',
+      one: '1 numéro',
+      zero: 'Aucun numéro',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get streetCardNotInTournee => 'Pas encore dans la tournée';
+
+  @override
+  String get streetCardAddMine => 'Ajouter et me l\'attribuer';
+
+  @override
+  String get streetCardAddFree => 'Ajouter sans m\'attribuer';
+
+  @override
+  String get streetCardAdding => 'Ajout en cours…';
+
+  @override
+  String get streetCardAddFailed =>
+      'Les numéros donnés par la Base Adresse Nationale sont incohérents : la rue n\'a pas été ajoutée. Saisissez-la à la main.';
+
+  @override
+  String get streetCardManualLink =>
+      'Rue absente de la carte ? Saisir à la main';
+
+  @override
+  String streetCardProgress(int done, int total) {
+    return '$done/$total faits';
+  }
+
+  @override
+  String streetCardProgressSemantics(int done, int total) {
+    return '$done sur $total faits';
+  }
+
+  @override
+  String get streetCardFree => 'Libre';
+
+  @override
+  String get streetCardMine => 'Vous la faites';
+
+  @override
+  String streetCardMineWith(String names) {
+    return 'Vous la faites avec $names';
+  }
+
+  @override
+  String streetCardOthers(String names) {
+    return 'Faite par $names';
+  }
+
+  @override
+  String get streetCardOthersUnknown => 'Faite par un autre membre';
+
+  @override
+  String get streetCardTake => 'Me l\'attribuer';
+
+  @override
+  String get streetCardTakeToo => 'La faire aussi';
+
+  @override
+  String get streetCardRelease => 'Ne plus la faire';
+
+  @override
+  String get streetCardOpen => 'Ouvrir';
+
+  @override
+  String get streetCardNoNetwork => 'Connexion nécessaire pour ajouter une rue';
+
+  @override
+  String get streetCardNoNetworkHint =>
+      'Les rues déjà dans la tournée se prennent et s\'ouvrent sans réseau.';
+
+  @override
+  String get streetCardNoStreetHere => 'Aucune rue connue ici';
+
+  @override
+  String get streetCardNoStreetHereHint =>
+      'Chemin privé, nouveau lotissement ? Saisissez la rue à la main.';
+
+  @override
+  String get streetCardServiceError => 'Le service des adresses ne répond pas';
+
+  @override
+  String get streetCardServiceErrorHint =>
+      'Réessayez dans un moment, ou saisissez la rue à la main.';
+
+  @override
+  String namesAnd(String first, String last) {
+    return '$first et $last';
+  }
+
+  @override
+  String get manualTitle => 'Rue à la main';
+
+  @override
+  String get manualName => 'Nom de la rue';
+
+  @override
+  String get manualCommune => 'Commune';
+
+  @override
+  String get manualNoCommune =>
+      'La tournée n\'a pas encore de commune : cherchez celle de la rue.';
+
+  @override
+  String get manualFrom => 'Du n°';
+
+  @override
+  String get manualTo => 'Au n°';
+
+  @override
+  String get manualSides => 'Côtés';
+
+  @override
+  String get manualBothSides => 'Les deux';
+
+  @override
+  String get manualOddSide => 'Impairs';
+
+  @override
+  String get manualEvenSide => 'Pairs';
+
+  @override
+  String get manualExtras => 'Numéros en plus';
+
+  @override
+  String get manualExtrasHelper => 'Séparés par des virgules.';
+
+  @override
+  String get manualOffline =>
+      'Fonctionne sans réseau. La rue n\'aura pas de tracé sur la carte.';
+
+  @override
+  String get manualAdd => 'Ajouter la rue';
+
+  @override
+  String manualAdded(String name) {
+    return '« $name » ajoutée à vos rues.';
+  }
 }

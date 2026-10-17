@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:math' show max;
 
 import 'package:flutter/material.dart';
@@ -5,6 +6,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tournee_calendriers/domain/map/map_layers.dart';
 import 'package:tournee_calendriers/presentation/home/home_notifier.dart';
 import 'package:tournee_calendriers/presentation/my_tournees/my_tournees_notifier.dart';
+import 'package:tournee_calendriers/ui/components/size_reporter.dart';
+import 'package:tournee_calendriers/ui/components/street_card_sheet.dart';
 import 'package:tournee_calendriers/ui/map/map_legend.dart';
 import 'package:tournee_calendriers/ui/map/map_view.dart';
 import 'package:tournee_calendriers/ui/map/tournee_map.dart';
@@ -60,8 +63,9 @@ PanelSize snapPanel(
 /// progress and, from street zoom, its houses; the legend chip; the
 /// « Mes rues » panel at the bottom. Its top bar is the start screen's.
 ///
-/// A tap on one of the tournée's streets on the map offers « Ouvrir … »
-/// in the panel (the full street card of §5.4 comes with #31). Works
+/// A tap on one of the tournée's streets on the map shows its street card
+/// (§5.4) in place of the panel: « Ouvrir », and « Me l'attribuer » or
+/// « Ne plus la faire »; a tap elsewhere brings the panel back. Works
 /// offline: the streets come from the phone's copy, the map from the
 /// tiles it keeps.
 ///
@@ -86,6 +90,9 @@ final class _HomeScreenState extends ConsumerState<HomeScreen> {
 
   /// The map shows the house dots: the legend explains them.
   var _houses = false;
+
+  /// How tall the street card is, so the map keeps clear of it.
+  var _cardHeight = 0.0;
 
   @override
   Widget build(BuildContext context) {
@@ -119,15 +126,11 @@ final class _HomeScreenState extends ConsumerState<HomeScreen> {
                     ),
                     PanelSize.full: max(AppSizes.homePanelFolded, room),
                   };
-                  final selected = state.selected;
-                  // The room the panel takes over the map once at rest:
-                  // « Me localiser », the attribution and the area the map
-                  // fits stay clear of it.
-                  final covered = selected == null
-                      ? heights[_size]!
-                      : AppSizes.homePanelFolded +
-                            AppSizes.compactButtonHeight +
-                            AppSizes.gutter;
+                  final card = state.card;
+                  // The room the panel (or the street card) takes over the
+                  // map once at rest: « Me localiser », the attribution and
+                  // the area the map fits stay clear of it.
+                  final covered = card == null ? heights[_size]! : _cardHeight;
                   return Stack(
                     children: [
                       Positioned.fill(
@@ -158,7 +161,7 @@ final class _HomeScreenState extends ConsumerState<HomeScreen> {
                         left: 0,
                         right: 0,
                         bottom: 0,
-                        child: selected == null
+                        child: card == null
                             ? HomePanel(
                                 key: const Key('home.panel'),
                                 state: state,
@@ -188,10 +191,18 @@ final class _HomeScreenState extends ConsumerState<HomeScreen> {
                                       : PanelSize.full;
                                 }),
                               )
-                            : SelectedStreetPanel(
-                                key: const Key('home.selected'),
-                                state: state,
-                                street: selected,
+                            : SizeReporter(
+                                onHeight: (height) {
+                                  if (mounted) {
+                                    setState(() => _cardHeight = height);
+                                  }
+                                },
+                                child: StreetCardSheet(
+                                  key: const Key('home.selected'),
+                                  card: card,
+                                  onTake: () => unawaited(home.take()),
+                                  onRelease: () => unawaited(home.release()),
+                                ),
                               ),
                       ),
                     ],

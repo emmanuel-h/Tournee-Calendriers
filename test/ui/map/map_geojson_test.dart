@@ -164,4 +164,30 @@ void main() {
       });
     });
   });
+
+  group('selectedPointGeoJson', () {
+    test('should write the point tapped as one Point', () {
+      expect(selectedPointGeoJson(at(45.98915, 4.71862)), {
+        'type': 'FeatureCollection',
+        'features': [
+          {
+            'type': 'Feature',
+            'id': 'selected-point',
+            'properties': <String, Object>{},
+            'geometry': {
+              'type': 'Point',
+              'coordinates': [4.71862, 45.98915],
+            },
+          },
+        ],
+      });
+    });
+
+    test('should write an empty collection without a point', () {
+      expect(selectedPointGeoJson(null), {
+        'type': 'FeatureCollection',
+        'features': <Object>[],
+      });
+    });
+  });
 }

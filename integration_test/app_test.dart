@@ -26,6 +26,7 @@ import 'package:tournee_calendriers/main.dart' as app;
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/screens/add_streets/add_streets_screen.dart';
+import 'package:tournee_calendriers/ui/screens/add_streets/manual_street_screen.dart';
 import 'package:tournee_calendriers/ui/screens/home/home_screen.dart';
 import 'package:tournee_calendriers/ui/screens/team/team_screen.dart';
 
@@ -568,6 +569,10 @@ void main() {
     'should reopen the last tournée at launch and switch from the title',
     (tester) async {
       final storage = await _freshStorage('tournees_flow');
+      // The 49's id is new at each run: the street typed in by hand below
+      // waits in Firestore's offline cache, which outlives the run, and
+      // must not show in the next one.
+      final t49 = 't49-${storage.path.split('/').last}';
       // What « Créer » and « Rejoindre » will leave on the phone: two
       // tournées of the CS Villefranche, the 49 open. Nothing of it needs
       // the network.
@@ -581,12 +586,20 @@ void main() {
       File('${storage.path}/my_tournees.json').writeAsStringSync(
         jsonEncode({
           'version': 1,
-          'open': 't49',
-          'tournees': [tournee('t49', 49), tournee('t12', 12)],
+          'open': t49,
+          'tournees': [tournee(t49, 49), tournee('t12', 12)],
         }),
       );
+      // The commune of the street typed in by hand, found without network.
+      final communes = FakeCommuneSearch(
+        answers: {
+          'Villef': Ok([
+            CommuneMatch(commune: _villefranche, postcodes: const ['69400']),
+          ]),
+        },
+      );
 
-      await bootstrap(storage: storage);
+      await bootstrap(storage: storage, communeSearch: communes);
       await tester.pumpAndSettle();
       expect(find.text('Tournée 49 · 2026'), findsOneWidget);
       expect(find.text('CS Villefranche'), findsOneWidget);
@@ -623,18 +636,53 @@ void main() {
       await tester.tap(find.byTooltip('Retour'));
       await tester.pumpAndSettle();
 
-      // « Ajouter des rues » (#78): « Carte | Liste », offline. The tournée
-      // was never read, so it has no commune: the list searches one, and
-      // the map opens on France with MapLibre on the device.
+      // « Ajouter des rues » (#78, #31): « Carte | Liste », offline. The
+      // map comes first, on France with MapLibre on the device: the
+      // tournée was never read, so it has no commune.
       await tester.tap(find.byKey(const Key('start.import')));
-      await tester.pumpAndSettle();
-      expect(find.byType(AddStreetsScreen), findsOneWidget);
-      expect(find.byKey(const Key('import.commune')), findsOneWidget);
-      await tester.tap(find.byKey(const Key('addStreets.tab.map')));
       await tester.pump(const Duration(seconds: 2));
+      expect(find.byType(AddStreetsScreen), findsOneWidget);
       expect(find.byKey(const Key('addStreets.map')), findsOneWidget);
+
+      // « Saisir une rue à la main » works offline (#31): the commune is
+      // searched (here without network), the street joins « Mes rues ».
+      await tester.tap(find.byKey(const Key('addStreets.manual')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('communes.field')), 'Villef');
+      // The search waits for a pause in the typing.
+      await tester.pumpAndSettle(const Duration(milliseconds: 400));
+      await tester.tap(find.byKey(const ValueKey('communes.suggestion.69264')));
+      await tester.pumpAndSettle();
+      await tester.enterText(
+        find.byKey(const Key('manual.name')),
+        'Chemin des Vignes',
+      );
+      await tester.enterText(find.byKey(const Key('manual.from')), '1');
+      await tester.enterText(find.byKey(const Key('manual.to')), '5');
+      await tester.testTextInput.receiveAction(TextInputAction.done);
+      await tester.pumpAndSettle();
+      await tester.scrollUntilVisible(
+        find.text('1, 2, 3, 4, 5'),
+        100,
+        scrollable: find
+            .descendant(
+              of: find.byType(ManualStreetScreen),
+              matching: find.byType(Scrollable),
+            )
+            .first,
+      );
+      await tester.tap(find.byKey(const Key('manual.add')));
+      await tester.pump(const Duration(seconds: 2));
+      expect(find.byType(AddStreetsScreen), findsOneWidget);
+
+      // The list still searches a commune: the tournée has none.
+      await tester.tap(find.byKey(const Key('addStreets.tab.list')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('import.commune')), findsOneWidget);
       await tester.tap(find.byTooltip('Fermer'));
       await tester.pumpAndSettle();
+      expect(find.text('Mes rues · 0/5'), findsOneWidget);
+      expect(find.text('Chemin des Vignes'), findsOneWidget);
 
       await tester.tap(find.byKey(const Key('home.tournee')));
       await tester.pumpAndSettle();

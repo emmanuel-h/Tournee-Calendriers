@@ -40,6 +40,7 @@ import 'package:tournee_calendriers/application/use_cases/import_reference_area.
 import 'package:tournee_calendriers/application/use_cases/join_tournee.dart';
 import 'package:tournee_calendriers/application/use_cases/list_commune_streets.dart';
 import 'package:tournee_calendriers/application/use_cases/look_up_street.dart';
+import 'package:tournee_calendriers/application/use_cases/look_up_street_shape.dart';
 import 'package:tournee_calendriers/application/use_cases/mark_dwelling.dart';
 import 'package:tournee_calendriers/application/use_cases/move_streets_into_tournee.dart';
 import 'package:tournee_calendriers/application/use_cases/my_tournees.dart';
@@ -203,6 +204,9 @@ final addStreetFromMapProvider = Provider(
     ref.watch(idGeneratorProvider),
     ref.watch(identityProvider),
   ),
+);
+final lookUpStreetShapeProvider = Provider(
+  (ref) => LookUpStreetShape(ref.watch(streetShapesProvider)),
 );
 final addManualStreetProvider = Provider(
   (ref) => AddManualStreet(

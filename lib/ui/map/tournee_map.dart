@@ -35,6 +35,7 @@ final class TourneeMap extends StatefulWidget {
     super.key,
     required this.layers,
     this.selectedRoad = StreetShape.none,
+    this.selectedPoint,
     this.area,
     this.onStreetTapped,
     this.onMapTapped,
@@ -49,6 +50,10 @@ final class TourneeMap extends StatefulWidget {
   /// The road picked on « Ajouter des rues », drawn over the others; none
   /// by default.
   final StreetShape selectedRoad;
+
+  /// Where the finger tapped on « Ajouter des rues », marked by a dot until
+  /// the road shows; none by default.
+  final GeoPoint? selectedPoint;
 
   /// The area to show: the map fits it when it opens, and again each time
   /// it changes (another tournée opened, a street found by the search).
@@ -89,6 +94,7 @@ final class _TourneeMapState extends State<TourneeMap> {
   List<StreetLine>? _shownLines;
   List<HouseDot>? _shownDots;
   StreetShape? _shownRoad;
+  GeoPoint? _shownPoint;
 
   /// The phone's dot shows once « Me localiser » found it: MapLibre then
   /// follows the position itself, with the access already granted.
@@ -117,13 +123,17 @@ final class _TourneeMapState extends State<TourneeMap> {
   /// Adds our pictures, sources and layers to the style just loaded.
   ///
   /// The screen may close while they are added (« Ajouter des rues » left
-  /// at once): the map's platform side is then gone, and the call on its
-  /// way fails with a [MissingPluginException], which means nothing to a
-  /// map no longer shown.
+  /// at once, the app restarted): the map's platform side is then gone, and
+  /// the call on its way fails with a [MissingPluginException] or a
+  /// [PlatformException] (« MAP_NOT_READY »), which mean nothing to a map
+  /// no longer shown.
   Future<void> _onStyleLoaded() async {
     try {
       await _addOurLayers();
     } on MissingPluginException {
+      if (mounted) rethrow;
+    } on PlatformException {
+      // « MAP_NOT_READY »: the map view was torn down under the call.
       if (mounted) rethrow;
     }
   }
@@ -148,6 +158,7 @@ final class _TourneeMapState extends State<TourneeMap> {
     _shownLines = widget.layers.lines;
     _shownDots = widget.layers.dots;
     _shownRoad = widget.selectedRoad;
+    _shownPoint = widget.selectedPoint;
     await controller.addGeoJsonSource(
       MapIds.streetsSource,
       streetLinesGeoJson(_shownLines!),
@@ -159,6 +170,10 @@ final class _TourneeMapState extends State<TourneeMap> {
     await controller.addGeoJsonSource(
       MapIds.selectedSource,
       selectedRoadGeoJson(_shownRoad!),
+    );
+    await controller.addGeoJsonSource(
+      MapIds.selectedPointSource,
+      selectedPointGeoJson(_shownPoint),
     );
     final below = lineLayersBelow(await controller.getLayerIds());
     for (final layer in tourneeMapLayers(colors)) {
@@ -203,6 +218,13 @@ final class _TourneeMapState extends State<TourneeMap> {
       await controller.setGeoJsonSource(
         MapIds.selectedSource,
         selectedRoadGeoJson(_shownRoad!),
+      );
+    }
+    if (_shownPoint != widget.selectedPoint) {
+      _shownPoint = widget.selectedPoint;
+      await controller.setGeoJsonSource(
+        MapIds.selectedPointSource,
+        selectedPointGeoJson(_shownPoint),
       );
     }
   }

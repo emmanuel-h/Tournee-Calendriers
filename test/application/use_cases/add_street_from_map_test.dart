@@ -135,6 +135,32 @@ void main() {
       expect(streets.added, hasLength(1));
     });
 
+    // The card asked Overpass already, to highlight the road
+    // (`LookUpStreetShape`): asking again would take another 20 seconds.
+    test('should store the shape the card found, without asking '
+        'Overpass', () async {
+      final found = StreetShape([
+        [_start, _end],
+      ]);
+
+      final street = valueOf(
+        await add(_morinNumbers, assignToMe: false, shape: found),
+      );
+
+      expect(street.shape, found);
+      expect(shapes.asked, isEmpty);
+    });
+
+    test('should store no shape when the card found the road unknown to '
+        'OpenStreetMap, without asking Overpass', () async {
+      final street = valueOf(
+        await add(_morinNumbers, assignToMe: false, shape: StreetShape.none),
+      );
+
+      expect(street.shape, StreetShape.none);
+      expect(shapes.asked, isEmpty);
+    });
+
     test('should refuse numbers the BAN gave twice', () async {
       final twice = StreetNumbers(
         id: _morinId,

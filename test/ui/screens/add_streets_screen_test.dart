@@ -21,6 +21,7 @@ import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 import '../support/app_overrides.dart';
+import '../support/fake_map_view.dart';
 
 final _morin = BanStreetId('69264_1460');
 final _bordelan = BanStreetId('69264_0246');
@@ -111,6 +112,13 @@ void main() {
     expect(find.byType(AddStreetsScreen), findsOneWidget);
     expect(find.bySemanticsLabel('Carte'), findsOneWidget);
     expect(find.bySemanticsLabel('Liste'), findsOneWidget);
+    // « Carte » first: it adds streets one by one (#31).
+    expect(find.byType(FakeMapView), findsOneWidget);
+    expect(find.byType(ImportList), findsNothing);
+
+    await tester.tap(find.byKey(const Key('addStreets.tab.list')));
+    await tester.pumpAndSettle();
+
     expect(find.byType(ImportList), findsOneWidget);
     expect(find.byKey(const Key('import.commune')), findsNothing);
     expect(find.byKey(const ValueKey('import.commune.69264')), findsOneWidget);
@@ -129,6 +137,8 @@ void main() {
       'ticked to the tournée', (tester) async {
     await pumpStart(tester, [villefrancheCommune]);
     await tester.tap(find.byKey(const Key('start.import')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('addStreets.tab.list')));
     await tester.pumpAndSettle();
 
     expect(find.byKey(const ValueKey('import.commune.69264')), findsNothing);
@@ -149,6 +159,8 @@ void main() {
   ) async {
     await pumpStart(tester, []);
     await tester.tap(find.byKey(const Key('start.import')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('addStreets.tab.list')));
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('import.commune')), findsOneWidget);

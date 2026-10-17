@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/map/map_layers.dart';
 import 'package:tournee_calendriers/domain/map/tournee_area.dart';
+import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/progress_level.dart';
@@ -11,15 +12,27 @@ import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
+import 'package:tournee_calendriers/domain/tournee/member.dart';
 import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_summary.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/home/home_notifier.dart';
+import 'package:tournee_calendriers/presentation/street_card/street_card.dart';
 import 'package:tournee_calendriers/presentation/street_list/street_list_state.dart';
 
 import '../../domain/tournee/my_tournees_fixtures.dart';
 import '../../domain/tournee/tournee_fixtures.dart'
-    show gleizeCommune, team, tourneeId, villefrancheCommune;
+    show
+        createdAt,
+        gleizeCommune,
+        julie,
+        lea,
+        manu,
+        manuId,
+        nameOf,
+        team,
+        tourneeId,
+        villefrancheCommune;
 import '../../support/fakes/fake_my_tournees_store.dart';
 import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_street_repository.dart';
@@ -30,6 +43,14 @@ import '../../support/street_fixtures.dart' hide lea;
 
 final _lea = MemberId('lea');
 final _paul = MemberId('paul');
+
+/// Paul in the team, so the cards name him.
+final _paulMember = Member(
+  id: _paul,
+  name: nameOf('Paul'),
+  requestedAt: createdAt,
+  acceptance: ChangeStamp(by: manuId, at: createdAt),
+);
 
 final _nationaleShape = StreetShape([
   [at(45.98915, 4.71862), at(45.99210, 4.71705)],
@@ -156,7 +177,10 @@ void main() {
   setUp(() {
     streets = FakeStreetRepository([_nationale, _emile, _paix, _hugo]);
     tournees = FakeTourneeRepository([
-      team(communes: [villefrancheCommune, gleizeCommune]),
+      team(
+        communes: [villefrancheCommune, gleizeCommune],
+        members: [manu, lea, julie, _paulMember],
+      ),
     ]);
   });
 
@@ -345,16 +369,39 @@ void main() {
   });
 
   group('street tapped on the map', () {
-    test('should offer the street tapped', () async {
+    test('should show the card of the street tapped', () async {
       final container = phone();
       await pumpEventQueue();
 
       container.read(homeProvider.notifier).select(StreetId('hugo'));
 
-      expect(container.read(homeProvider).selected, _hugoRow);
+      expect(
+        container.read(homeProvider).card,
+        StreetCardInTournee(
+          id: StreetId('hugo'),
+          name: 'Rue Victor Hugo',
+          commune: 'Villefranche-sur-Saône',
+          done: 0,
+          total: 4,
+          coverage: StreetCoverage.others,
+          coveredBy: const ['Paul'],
+        ),
+      );
     });
 
-    test('should offer nothing once the map is tapped elsewhere', () async {
+    test('should show a street of the member\'s as theirs, naming who '
+        'covers it too', () async {
+      final container = phone();
+      await pumpEventQueue();
+
+      container.read(homeProvider.notifier).select(StreetId('emile'));
+
+      final card = container.read(homeProvider).card!;
+      expect(card.coverage, StreetCoverage.mine);
+      expect(card.coveredBy, ['Paul']);
+    });
+
+    test('should show nothing once the map is tapped elsewhere', () async {
       final container = phone();
       await pumpEventQueue();
       final notifier = container.read(homeProvider.notifier);
@@ -362,7 +409,7 @@ void main() {
 
       notifier.unselect();
 
-      expect(container.read(homeProvider).selected, isNull);
+      expect(container.read(homeProvider).card, isNull);
     });
 
     test('should follow the progress of the street tapped', () async {
@@ -376,18 +423,12 @@ void main() {
       await streets.save(marked, change);
       await pumpEventQueue();
 
-      expect(
-        container.read(homeProvider).selected,
-        StreetRow(
-          id: StreetId('emile'),
-          name: 'Allée Émile Zola',
-          done: 1,
-          total: 1,
-        ),
-      );
+      final card = container.read(homeProvider).card!;
+      expect(card.done, 1);
+      expect(card.total, 1);
     });
 
-    test('should offer nothing when the street tapped is gone', () async {
+    test('should show nothing when the street tapped is gone', () async {
       final container = phone();
       await pumpEventQueue();
       container.read(homeProvider.notifier).select(StreetId('hugo'));
@@ -396,7 +437,61 @@ void main() {
       await streets.save(deleted, change);
       await pumpEventQueue();
 
-      expect(container.read(homeProvider).selected, isNull);
+      expect(container.read(homeProvider).card, isNull);
+    });
+
+    test('should give the street tapped to the member with « La faire '
+        'aussi »', () async {
+      final container = phone();
+      await pumpEventQueue();
+      final notifier = container.read(homeProvider.notifier);
+      notifier.select(StreetId('hugo'));
+
+      await notifier.take();
+      await pumpEventQueue();
+
+      expect(streets[StreetId('hugo')]!.assignees, {_paul, _lea});
+      final card = container.read(homeProvider).card!;
+      expect(card.coverage, StreetCoverage.mine);
+      expect(card.coveredBy, ['Paul']);
+    });
+
+    test('should take the member off the street tapped with « Ne plus la '
+        'faire »', () async {
+      final container = phone();
+      await pumpEventQueue();
+      final notifier = container.read(homeProvider.notifier);
+      notifier.select(StreetId('nationale'));
+
+      await notifier.release();
+      await pumpEventQueue();
+
+      expect(streets[StreetId('nationale')]!.assignees, isEmpty);
+      expect(container.read(homeProvider).card!.coverage, StreetCoverage.free);
+    });
+
+    test('should name nobody on the card when the team cannot be '
+        'read', () async {
+      tournees.watchError = StateError('removed');
+      final container = phone();
+      await pumpEventQueue();
+
+      container.read(homeProvider.notifier).select(StreetId('hugo'));
+
+      final card = container.read(homeProvider).card!;
+      expect(card.coverage, StreetCoverage.others);
+      expect(card.coveredBy, isEmpty);
+    });
+
+    test('should take or release nothing while no street is tapped', () async {
+      final container = phone();
+      await pumpEventQueue();
+      final notifier = container.read(homeProvider.notifier);
+
+      await notifier.take();
+      await notifier.release();
+
+      expect(streets.saved, isEmpty);
     });
   });
 

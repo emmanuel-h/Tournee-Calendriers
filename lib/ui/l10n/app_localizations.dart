@@ -2661,12 +2661,6 @@ abstract class AppLocalizations {
   /// **'Aucune rue dans la tournée pour l\'instant.'**
   String get homeNoStreet;
 
-  /// Dark button of Accueil's panel after a street was tapped on the map (HomeZoom mockup): opens the street.
-  ///
-  /// In fr, this message translates to:
-  /// **'Ouvrir {name} · {done}/{total}'**
-  String homeOpenStreet(String name, int done, int total);
-
   /// Screen-reader name of the handle of Accueil's panel: shows the whole list of streets.
   ///
   /// In fr, this message translates to:
@@ -2720,6 +2714,288 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'libre'**
   String get mapLegendStreetFree;
+
+  /// Placeholder and screen-reader name of the search box of « Ajouter des rues » (Pick mockup).
+  ///
+  /// In fr, this message translates to:
+  /// **'Rechercher une rue'**
+  String get addStreetsSearchHint;
+
+  /// Tooltip of the ✕ of the search box: empties it and closes the results.
+  ///
+  /// In fr, this message translates to:
+  /// **'Effacer la recherche'**
+  String get addStreetsSearchClear;
+
+  /// Under the search box when the BAN finds no street of that name in the tournée's communes.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune rue trouvée.'**
+  String get addStreetsSearchNone;
+
+  /// Under the search box when the phone is offline.
+  ///
+  /// In fr, this message translates to:
+  /// **'Connexion nécessaire pour chercher une rue.'**
+  String get addStreetsSearchNoNetwork;
+
+  /// Under the search box when the address service failed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le service des adresses ne répond pas. Réessayez dans un moment.'**
+  String get addStreetsSearchError;
+
+  /// Button under the search box of « Ajouter des rues » (always shown, works offline), and on the street card when no street could be shown.
+  ///
+  /// In fr, this message translates to:
+  /// **'Saisir une rue à la main'**
+  String get addStreetsManual;
+
+  /// Street card while the street tapped is looked up.
+  ///
+  /// In fr, this message translates to:
+  /// **'Recherche de la rue…'**
+  String get streetCardLoading;
+
+  /// Chip of the card of a street to add: how many numbers it brings.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, =0{Aucun numéro} =1{1 numéro} other{{count} numéros}}'**
+  String streetCardNumbers(int count);
+
+  /// Chip of the card of a street the tournée does not have.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pas encore dans la tournée'**
+  String get streetCardNotInTournee;
+
+  /// Red button of the card of a street to add: adds it, in the member's streets.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter et me l\'attribuer'**
+  String get streetCardAddMine;
+
+  /// Second button of the card of a street to add: adds it, free.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter sans m\'attribuer'**
+  String get streetCardAddFree;
+
+  /// In place of the buttons' labels while the street is added (its road may take a while).
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajout en cours…'**
+  String get streetCardAdding;
+
+  /// On the card when the numbers of the BAN cannot make a street (a number twice).
+  ///
+  /// In fr, this message translates to:
+  /// **'Les numéros donnés par la Base Adresse Nationale sont incohérents : la rue n\'a pas été ajoutée. Saisissez-la à la main.'**
+  String get streetCardAddFailed;
+
+  /// Link under the buttons of the card of a street to add.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rue absente de la carte ? Saisir à la main'**
+  String get streetCardManualLink;
+
+  /// Chip of the card of a street of the tournée: its doors done.
+  ///
+  /// In fr, this message translates to:
+  /// **'{done}/{total} faits'**
+  String streetCardProgress(int done, int total);
+
+  /// What screen readers say for « 31/42 faits ».
+  ///
+  /// In fr, this message translates to:
+  /// **'{done} sur {total} faits'**
+  String streetCardProgressSemantics(int done, int total);
+
+  /// Chip of the card of a street nobody covers.
+  ///
+  /// In fr, this message translates to:
+  /// **'Libre'**
+  String get streetCardFree;
+
+  /// Chip of the card of a street the member covers alone.
+  ///
+  /// In fr, this message translates to:
+  /// **'Vous la faites'**
+  String get streetCardMine;
+
+  /// Chip of the card of a street the member covers with others.
+  ///
+  /// In fr, this message translates to:
+  /// **'Vous la faites avec {names}'**
+  String streetCardMineWith(String names);
+
+  /// Chip of the card of a street others cover.
+  ///
+  /// In fr, this message translates to:
+  /// **'Faite par {names}'**
+  String streetCardOthers(String names);
+
+  /// Chip of the card of a street others cover, when the phone cannot name them.
+  ///
+  /// In fr, this message translates to:
+  /// **'Faite par un autre membre'**
+  String get streetCardOthersUnknown;
+
+  /// Red button of the card of a free street.
+  ///
+  /// In fr, this message translates to:
+  /// **'Me l\'attribuer'**
+  String get streetCardTake;
+
+  /// Red button of the card of a street others cover.
+  ///
+  /// In fr, this message translates to:
+  /// **'La faire aussi'**
+  String get streetCardTakeToo;
+
+  /// Second button of the card of a street of the member's.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ne plus la faire'**
+  String get streetCardRelease;
+
+  /// Button of the card of a street of the tournée: opens the street.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ouvrir'**
+  String get streetCardOpen;
+
+  /// Title of the card when the phone is offline (PLAN §5.4).
+  ///
+  /// In fr, this message translates to:
+  /// **'Connexion nécessaire pour ajouter une rue'**
+  String get streetCardNoNetwork;
+
+  /// Under « Connexion nécessaire pour ajouter une rue ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Les rues déjà dans la tournée se prennent et s\'ouvrent sans réseau.'**
+  String get streetCardNoNetworkHint;
+
+  /// Title of the card when the BAN knows no street at the point tapped.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune rue connue ici'**
+  String get streetCardNoStreetHere;
+
+  /// Under « Aucune rue connue ici ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Chemin privé, nouveau lotissement ? Saisissez la rue à la main.'**
+  String get streetCardNoStreetHereHint;
+
+  /// Title of the card when the address service failed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le service des adresses ne répond pas'**
+  String get streetCardServiceError;
+
+  /// Under « Le service des adresses ne répond pas ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Réessayez dans un moment, ou saisissez la rue à la main.'**
+  String get streetCardServiceErrorHint;
+
+  /// Joins the last two first names of a list (« Manu et Julie »).
+  ///
+  /// In fr, this message translates to:
+  /// **'{first} et {last}'**
+  String namesAnd(String first, String last);
+
+  /// Title of the manual street form (PLAN §5.5, Manual mockup).
+  ///
+  /// In fr, this message translates to:
+  /// **'Rue à la main'**
+  String get manualTitle;
+
+  /// Label of the name field of « Rue à la main ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Nom de la rue'**
+  String get manualName;
+
+  /// Label of the commune of « Rue à la main ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Commune'**
+  String get manualCommune;
+
+  /// Over the commune search of « Rue à la main » for a tournée without commune nor street.
+  ///
+  /// In fr, this message translates to:
+  /// **'La tournée n\'a pas encore de commune : cherchez celle de la rue.'**
+  String get manualNoCommune;
+
+  /// Label of the first number of the range of « Rue à la main ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Du n°'**
+  String get manualFrom;
+
+  /// Label of the last number of the range of « Rue à la main ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Au n°'**
+  String get manualTo;
+
+  /// Screen-reader name of « Les deux | Impairs | Pairs ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Côtés'**
+  String get manualSides;
+
+  /// Both sides of the street.
+  ///
+  /// In fr, this message translates to:
+  /// **'Les deux'**
+  String get manualBothSides;
+
+  /// Odd numbers only.
+  ///
+  /// In fr, this message translates to:
+  /// **'Impairs'**
+  String get manualOddSide;
+
+  /// Even numbers only.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pairs'**
+  String get manualEvenSide;
+
+  /// Label of the extra numbers of « Rue à la main ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Numéros en plus'**
+  String get manualExtras;
+
+  /// Under the extra numbers field.
+  ///
+  /// In fr, this message translates to:
+  /// **'Séparés par des virgules.'**
+  String get manualExtrasHelper;
+
+  /// Under the preview of « Rue à la main ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Fonctionne sans réseau. La rue n\'aura pas de tracé sur la carte.'**
+  String get manualOffline;
+
+  /// Button of « Rue à la main ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter la rue'**
+  String get manualAdd;
+
+  /// Snackbar once a street typed in by hand is added.
+  ///
+  /// In fr, this message translates to:
+  /// **'« {name} » ajoutée à vos rues.'**
+  String manualAdded(String name);
 }
 
 class _AppLocalizationsDelegate

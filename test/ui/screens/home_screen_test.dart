@@ -348,37 +348,62 @@ void main() {
       expect(map.area, tourneeArea(streets));
     });
 
-    testWidgets('should offer « Ouvrir » for a street tapped on the map, and '
-        'open it', (tester) async {
+    testWidgets('should show the card of a street tapped on the map in '
+        'place of the panel, and take it with « La faire aussi »', (
+      tester,
+    ) async {
       await pumpHome(tester);
 
       shownMap(tester).onStreetTapped!(StreetId('carnot'));
       await tester.pumpAndSettle();
 
       expect(panel(), findsNothing);
-      expect(find.text('Mes rues · 31/50'), findsOneWidget);
-      await tester.tap(find.text('Ouvrir Rue Carnot · 0/38'));
+      expect(find.byKey(const Key('home.selected')), findsOneWidget);
+      expect(find.text('Rue Carnot'), findsOneWidget);
+      expect(find.text('0/38 faits'), findsOneWidget);
+      // Paul is not in the team the phone knows: he is not named.
+      expect(find.text('Faite par un autre membre'), findsOneWidget);
+
+      await tester.tap(find.text('La faire aussi'));
       await tester.pumpAndSettle();
 
-      expect(find.widgetWithText(AppBar, 'Rue Carnot'), findsOneWidget);
+      expect(find.text('Vous la faites'), findsOneWidget);
+      expect(find.text('Ne plus la faire'), findsOneWidget);
     });
 
-    testWidgets('should bring the list back when the map is tapped away from '
-        'the streets', (tester) async {
+    testWidgets('should release a street of the member\'s from its card, '
+        'and open a street from it', (tester) async {
+      await pumpHome(tester);
+      shownMap(tester).onStreetTapped!(StreetId('lilas'));
+      await tester.pumpAndSettle();
+      expect(find.text('31/42 faits'), findsOneWidget);
+      expect(find.bySemanticsLabel('31 sur 42 faits'), findsOneWidget);
+
+      await tester.tap(find.text('Ne plus la faire'));
+      await tester.pumpAndSettle();
+      expect(find.text('Libre'), findsOneWidget);
+      expect(find.text("Me l'attribuer"), findsOneWidget);
+
+      await tester.tap(find.text('Ouvrir'));
+      await tester.pumpAndSettle();
+
+      expect(find.widgetWithText(AppBar, 'Rue des Lilas'), findsOneWidget);
+    });
+
+    testWidgets('should keep the map clear of the card, and bring the list '
+        'back when the map is tapped away from the streets', (tester) async {
       await pumpHome(tester);
       shownMap(tester).onStreetTapped!(StreetId('carnot'));
       await tester.pumpAndSettle();
       expect(
         shownMap(tester).padding.bottom,
-        AppSizes.homePanelFolded +
-            AppSizes.compactButtonHeight +
-            AppSizes.gutter,
+        tester.getSize(find.byKey(const Key('home.selected'))).height,
       );
 
       shownMap(tester).onMapTapped!(townHallDoor);
       await tester.pumpAndSettle();
 
-      expect(find.byKey(const Key('home.openStreet')), findsNothing);
+      expect(find.byKey(const Key('home.selected')), findsNothing);
       expect(panel(), findsOneWidget);
     });
   });

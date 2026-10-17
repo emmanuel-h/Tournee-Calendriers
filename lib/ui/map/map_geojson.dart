@@ -56,6 +56,18 @@ Map<String, Object> selectedRoadGeoJson(StreetShape shape) => _collection([
     _feature(id: 'selected', properties: {}, geometry: _multiLine(shape)),
 ]);
 
+/// Where the finger tapped on « Ajouter des rues », or where the street
+/// found by the search is (PLAN §5.4): one `Point`, marked until the road
+/// shows; an empty collection when there is none.
+Map<String, Object> selectedPointGeoJson(GeoPoint? point) => _collection([
+  if (point != null)
+    _feature(
+      id: 'selected-point',
+      properties: {},
+      geometry: {'type': 'Point', 'coordinates': _position(point)},
+    ),
+]);
+
 Map<String, Object> _collection(List<Map<String, Object>> features) => {
   'type': 'FeatureCollection',
   'features': features,

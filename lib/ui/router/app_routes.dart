@@ -18,6 +18,9 @@ abstract final class AppRoutes {
   /// (§5.4).
   static const addStreets = '/ajouter-des-rues';
 
+  /// « Rue à la main », pushed from « Ajouter des rues » (§5.5).
+  static const manualStreet = '/ajouter-des-rues/a-la-main';
+
   /// « Bienvenue », where a phone the app knows nothing of opens (§5.1).
   static const welcome = '/bienvenue';
 

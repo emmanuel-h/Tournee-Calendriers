@@ -451,10 +451,10 @@ an admin, shows only « Rejoindre une tournée », in red), and the bottom of th
   whole list, down only the totals (a quick flick goes one step, a slow release to the nearest
   height); a tap on the handle shows the whole list, or from there brings it back to rest.
   The map keeps « Me localiser », the attribution and its fit clear of the panel at rest.
-  **A street tapped on the map** turns the panel into the totals and a dark « Ouvrir Rue des
-  Lilas · 31/42 » (HomeZoom mockup), which opens the street; a tap elsewhere on the map brings
-  the list back. The full street card of 5.4 (« Me l'attribuer », « Ne plus la faire »…)
-  comes with #31. The map opens on the tournée's streets, else its communes, and stays where
+  **A street tapped on the map** replaces the panel by its street card (5.4, since #31; it
+  replaced HomeZoom's « Ouvrir Rue des Lilas · 31/42 »): name, commune, « 31/42 faits » and who
+  covers it, « Ouvrir » and « Me l'attribuer » / « La faire aussi » / « Ne plus la faire »,
+  offline; a tap elsewhere on the map brings the list back. The map opens on the tournée's streets, else its communes, and stays where
   the member puts it when the team adds a street. Not yet: the download banner (M4).
 
 **Mes tournées (tap the title).** The title "Tournée 49 · 2026 ▾" is a button that opens a
@@ -558,9 +558,31 @@ The street card adapts to the street's state:
   when there are several (the first chosen at once), « déjà dans la tournée » on a street the
   tournée has, « Ajouter N rues », « Ajout en cours… n/N », then back with « N rues ajoutées à
   la tournée ». A tournée without commune (created before #78) searches the commune as in
-  5.0. Delivered in #78: the tabs, the map opened on the communes and the list; the street
-  card, the search and « Saisir une rue à la main » on the map come with #31. Until then the
-  screen opens on « Liste », the tab that adds streets.
+  5.0. Delivered in #78: the tabs, the map opened on the communes and the list.
+- **Delivered in #31** (`presentation/add_streets/`, `presentation/street_card/`,
+  `ui/components/street_card_sheet.dart`): the screen opens on **Carte**. Under the tabs, the
+  search pill « Rechercher une rue » (48 dp; the keyboard's search key asks, ✕ empties it) and
+  « ✎ Saisir une rue à la main » (48 dp outline, always there, offline). **A tap on a road**
+  marks the point (dark dot in a faint halo) and shows the card « Recherche de la rue… »,
+  then the street; for a street to add, its road is asked of Overpass at once
+  (`LookUpStreetShape`) and highlighted when it comes (only the point otherwise), and that
+  road is the one stored by « Ajouter… », so Overpass is asked once. **A tap on a tournée
+  street's line or dot** shows its card at once, offline, with its own road. The card (white
+  sheet, handle, name in 28 dp titles over the commune, facts in grey chips, red then outline
+  button): to add « 19 numéros · Pas encore dans la tournée », « Ajouter et me l'attribuer »,
+  « Ajouter sans m'attribuer » (« Ajout en cours… » meanwhile), « Rue absente de la carte ?
+  Saisir à la main »; once added it becomes the street's card. A tournée street « 31/42
+  faits » and « Libre » / « Vous la faites (avec Manu) » / « Faite par Manu et Julie »
+  (teammates named in the team's order; « Faite par un autre membre » when none can be
+  named), with the actions of the table; take and release need no network and have no
+  « Annuler » (the other button undoes it). Failures: « Connexion nécessaire pour ajouter une
+  rue » (offline), « Aucune rue connue ici » (no BAN match), « Le service des adresses ne
+  répond pas », each with a hint and « Saisir une rue à la main ». The back gesture closes the
+  card first; ✕ closes the screen. **The search** lists « name / commune » rows over the map
+  (« Aucune rue trouvée. », « Connexion nécessaire pour chercher une rue. »); it searches the
+  tournée's communes, or the communes of its streets for a tournée without commune; picking a
+  row moves the map 200 m around the street and shows its card. A newer tap or search always
+  wins over a late answer.
 
 ### 5.5 Keeping streets true to reality: manual street, edit mode
 
@@ -650,6 +672,17 @@ Edit mode details fixed in T1.10 (`lib/presentation/edit_street/`,
   « Annuler »), the edit mode stays open and the button goes. Otherwise « Supprimer la rue »
   takes the whole width.
 - Not yet: the Corbeille screen (§5.11) comes in M2.
+
+« Rue à la main » delivered in #31 (Manual mockup, `/ajouter-des-rues/a-la-main`,
+`presentation/manual_street/`): « ← Rue à la main »; « Nom de la rue » (« Nom limité à 150
+caractères. »; a blank name only disables the button); « Commune », a list of the tournée's
+communes (else those of its streets), the first chosen; a tournée with neither searches its
+commune as « Ajouter une commune… » does (network); « Du n° » / « Au n° » (digits), « Les deux |
+Impairs | Pairs », « Numéros en plus » (« Séparés par des virgules. »); « APERÇU · 59 NUMÉROS »
+with the numbers (the add-numbers sheet's short list) or the item that is wrong; « Fonctionne
+sans réseau. La rue n'aura pas de tracé sur la carte. »; « Ajouter la rue » (enabled with a
+name, a commune and a number) gives the street to the member who typed it and goes back to the
+map with « « Chemin des Vignes » ajoutée à vos rues. ».
 
 ```
   number sheet of a building (T1.18)

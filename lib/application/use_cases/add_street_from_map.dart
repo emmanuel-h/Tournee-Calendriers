@@ -49,9 +49,14 @@ final class AddStreetFromMap {
   final IdentityProvider _identity;
 
   /// Adds the street of [numbers] to the tournée and returns it as stored.
+  ///
+  /// [shape] is the road the card found already (`LookUpStreetShape`,
+  /// simplified): stored as it is, without asking Overpass again. Null
+  /// when the card has none (Overpass failed then, or was not asked).
   Future<Result<Street, AddStreetFailure>> call(
     StreetNumbers numbers, {
     required bool assignToMe,
+    StreetShape? shape,
   }) async {
     final known = await _streets.findByBanId(numbers.id);
     if (known != null) {
@@ -59,7 +64,8 @@ final class AddStreetFromMap {
       return Ok(await _bringBack(known, assignToMe: assignToMe));
     }
 
-    final shape = switch (await _shapes.shapeOf(
+    // `??`: the shape given, else Overpass's answer.
+    shape ??= switch (await _shapes.shapeOf(
       name: numbers.name,
       commune: numbers.commune.inseeCode,
     )) {

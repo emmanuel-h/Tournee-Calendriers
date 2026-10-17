@@ -115,60 +115,6 @@ final class HomePanel extends StatelessWidget {
   }
 }
 
-/// The panel once a street was tapped on the map (HomeZoom mockup): the
-/// totals and « Ouvrir Rue des Lilas · 31/42 », which opens the street. A
-/// tap elsewhere on the map brings the list back.
-final class SelectedStreetPanel extends StatelessWidget {
-  const SelectedStreetPanel({
-    super.key,
-    required this.state,
-    required this.street,
-  });
-
-  final HomeState state;
-  final StreetRow street;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final colors = AppColors.of(context);
-    return _PanelSheet(
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          _Totals(state: state),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSizes.gutter,
-              6,
-              AppSizes.gutter,
-              AppSizes.gutter,
-            ),
-            child: FilledButton(
-              key: const Key('home.openStreet'),
-              style: FilledButton.styleFrom(
-                backgroundColor: colors.ink,
-                foregroundColor: colors.surface,
-                minimumSize: const Size.fromHeight(
-                  AppSizes.compactButtonHeight,
-                ),
-                textStyle: AppTextStyles.compactButton,
-              ),
-              onPressed: () => _open(context, street),
-              child: Text(
-                l10n.homeOpenStreet(street.name, street.done, street.total),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 /// Opens the street screen of [street]. The name travels along, so the
 /// screen has its title before the street is read.
 void _open(BuildContext context, StreetRow street) =>

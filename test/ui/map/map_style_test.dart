@@ -97,6 +97,8 @@ void main() {
         MapIds.freeStreetLines,
         MapIds.selectedCasing,
         MapIds.selectedCore,
+        MapIds.selectedPointHalo,
+        MapIds.selectedPointDot,
         MapIds.houseDots,
       ]);
       expect(layers.map((l) => l.source), [
@@ -105,6 +107,8 @@ void main() {
         MapIds.streetsSource,
         MapIds.selectedSource,
         MapIds.selectedSource,
+        MapIds.selectedPointSource,
+        MapIds.selectedPointSource,
         MapIds.housesSource,
       ]);
     });
@@ -117,6 +121,8 @@ void main() {
         false,
         false,
         false,
+        false,
+        false,
       ]);
     });
 
@@ -125,6 +131,8 @@ void main() {
         true,
         true,
         true,
+        false,
+        false,
         false,
         false,
         true,
@@ -267,11 +275,25 @@ void main() {
       });
     });
 
+    test('should mark the point tapped as a dark dot in a faint halo', () {
+      expect(json(MapIds.selectedPointHalo), {
+        'circle-radius': 18,
+        'circle-color': '#1b1f24',
+        'circle-opacity': 0.12,
+      });
+      expect(json(MapIds.selectedPointDot), {
+        'circle-radius': 6,
+        'circle-color': '#1b1f24',
+      });
+    });
+
     test('should take the picked road colours from the palette', () {
       final dark = tourneeMapLayers(AppColors.dark);
       final casing = dark.singleWhere((l) => l.id == MapIds.selectedCasing);
       final core = dark.singleWhere((l) => l.id == MapIds.selectedCore);
 
+      final point = dark.singleWhere((l) => l.id == MapIds.selectedPointDot);
+      expect(point.properties.toJson()['circle-color'], '#ffffff');
       expect(casing.properties.toJson()['line-color'], '#ffffff');
       expect(core.properties.toJson()['line-color'], '#1b1f24');
     });

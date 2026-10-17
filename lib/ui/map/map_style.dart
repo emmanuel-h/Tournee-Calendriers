@@ -28,12 +28,15 @@ abstract final class MapIds {
   static const streetsSource = 'tc-streets';
   static const housesSource = 'tc-houses';
   static const selectedSource = 'tc-selected';
+  static const selectedPointSource = 'tc-selected-point';
 
   static const streetLines = 'tc-street-lines';
   static const freeStreetBase = 'tc-free-street-base';
   static const freeStreetLines = 'tc-free-street-lines';
   static const selectedCasing = 'tc-selected-casing';
   static const selectedCore = 'tc-selected-core';
+  static const selectedPointHalo = 'tc-selected-point-halo';
+  static const selectedPointDot = 'tc-selected-point-dot';
   static const houseDots = 'tc-house-dots';
 }
 
@@ -79,9 +82,11 @@ final class MapLayerSpec {
 }
 
 /// Every layer the map adds, bottom to top: the streets (solid, then the
-/// « libre » ones, dashed over a faint solid line), the road picked on « Ajouter des rues » (dark
-/// casing, white core, mockups README), then the house dots from street
-/// zoom (PLAN §5.3). Colours are the map tokens of [colors].
+/// « libre » ones, dashed over a faint solid line), the road picked on
+/// « Ajouter des rues » (dark casing, white core, mockups README) and the
+/// point tapped (a dark dot in a faint halo, Pick mockup), then the house
+/// dots from street zoom (PLAN §5.3). Colours are the map tokens of
+/// [colors].
 List<MapLayerSpec> tourneeMapLayers(AppColors colors) {
   final isFree = ['==', _level, ProgressLevel.free.name];
   return [
@@ -152,6 +157,27 @@ List<MapLayerSpec> tourneeMapLayers(AppColors colors) {
         lineWidth: _byZoom(const {12: 3, 16: 6, 19: 10}),
         lineCap: 'round',
         lineJoin: 'round',
+      ),
+      belowLabels: false,
+      interactive: false,
+    ),
+    MapLayerSpec(
+      id: MapIds.selectedPointHalo,
+      source: MapIds.selectedPointSource,
+      properties: CircleLayerProperties(
+        circleColor: colors.mapSelectedCasing.toHexStringRGB(),
+        circleRadius: 18,
+        circleOpacity: 0.12,
+      ),
+      belowLabels: false,
+      interactive: false,
+    ),
+    MapLayerSpec(
+      id: MapIds.selectedPointDot,
+      source: MapIds.selectedPointSource,
+      properties: CircleLayerProperties(
+        circleColor: colors.mapSelectedCasing.toHexStringRGB(),
+        circleRadius: 6,
       ),
       belowLabels: false,
       interactive: false,

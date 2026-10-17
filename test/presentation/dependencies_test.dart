@@ -338,6 +338,21 @@ void main() {
       expect(streets[StreetId('street-1')], same(street));
     });
 
+    test('should look up the road of a street with the bound shapes', () async {
+      valueOf(
+        await container.read(lookUpStreetShapeProvider)(
+          StreetMatch(
+            id: BanStreetId('69264_1460'),
+            name: streetName('Rue Pierre Morin'),
+            commune: villefranche,
+            position: townHallDoor,
+          ),
+        ),
+      );
+
+      expect(shapes.asked, [('Rue Pierre Morin', '69264')]);
+    });
+
     test('should add a street typed in by hand with the bound ids and '
         'member', () async {
       final street = await container.read(addManualStreetProvider)(

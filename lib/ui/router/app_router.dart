@@ -8,6 +8,7 @@ import 'package:tournee_calendriers/presentation/building/building_grid_notifier
 import 'package:tournee_calendriers/presentation/launch/launch_place.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/screens/add_streets/add_streets_screen.dart';
+import 'package:tournee_calendriers/ui/screens/add_streets/manual_street_screen.dart';
 import 'package:tournee_calendriers/ui/screens/all_tournees/all_tournees_screen.dart';
 import 'package:tournee_calendriers/ui/screens/building/adjust_doors_screen.dart';
 import 'package:tournee_calendriers/ui/screens/component_gallery_screen.dart';
@@ -56,6 +57,10 @@ GoRouter buildAppRouter({
     GoRoute(
       path: AppRoutes.addStreets,
       builder: (context, state) => const AddStreetsScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.manualStreet,
+      builder: (context, state) => const ManualStreetScreen(),
     ),
     // `/rue?id=…`; the start list passes the street's name as `extra`, so
     // the title shows before the street is read.

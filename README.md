@@ -29,7 +29,8 @@ Start screen:
   chip that folds away and explains the dots once zoomed in. Below, the « Mes rues » panel
   (drag it up for the whole list, down for the totals): « Mes rues · 43/62 », « Équipe :
   41 % », the member's streets, then « Autres rues de la tournée »; a row opens the street.
-  A street tapped on the map offers « Ouvrir Rue … · 31/42 ». Works offline.
+  A street tapped on the map shows its card: progress, who covers it, « Ouvrir » and « Me
+  l'attribuer » / « La faire aussi » / « Ne plus la faire ». Works offline.
 - « Mes rues » (no tournée open): the streets on the phone, their progress, a filter that
   ignores accents and case; works offline.
 - With a tournée open, a card offers the streets kept on the phone: « Les ajouter à la
@@ -40,7 +41,11 @@ Start screen:
   onto the phone. Needs the network once; streets already imported keep their marks.
 - « Ajouter des rues » (a tournée open): tabs « Carte | Liste ». « Liste » ticks the streets
   of the tournée's communes (a chip per commune) and adds them to the tournée; « Carte »
-  shows the tournée's map, opened on its communes, offline too.
+  (first) shows the tournée's map, opened on its communes: a tap on a road highlights it and
+  shows its street card (« Ajouter et me l'attribuer », « Ajouter sans m'attribuer », or take /
+  open a street of the tournée), the search box finds a street of the communes by name, and
+  « Saisir une rue à la main » adds a street the map lacks, offline (« Connexion nécessaire
+  pour ajouter une rue » otherwise).
 - Top bar: the open tournée (« Tournée 49 · 2026 » over its centre de secours), or the
   app's name when none is open, opens « Mes tournées », to switch tournée (the app reopens
   the last one at launch, offline too) or create or join one, with a dot on another
@@ -99,5 +104,4 @@ Street screen (« Rue »):
   (« Gauche », « Droite » on every floor). The other doors keep their marks.
 - Works offline, cold start included: marks are kept on the phone (Firestore's cache for a
   tournée) and sent to the team when the network is back.
-- Not yet: the map, « Mes rues » as the streets one covers, and « Ajouter des rues » (M3;
-  the street-picking use cases are there, no screen uses them yet).
+- Not yet: the offline map download (M4).

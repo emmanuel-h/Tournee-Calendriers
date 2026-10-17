@@ -1,5 +1,6 @@
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/map/map_layers.dart';
+import 'package:tournee_calendriers/presentation/street_card/street_card.dart';
 import 'package:tournee_calendriers/presentation/street_list/street_list_state.dart';
 
 /// What Accueil shows (PLAN §5.3, Home and HomeZoom mockups): the map of
@@ -16,7 +17,7 @@ final class HomeState {
     required List<StreetRow> others,
     required this.layers,
     required this.area,
-    required this.selected,
+    required this.card,
   }) : mine = List.unmodifiable(mine),
        others = List.unmodifiable(others);
 
@@ -52,9 +53,10 @@ final class HomeState {
   /// team never moves the map under the member's finger.
   final GeoBounds? area;
 
-  /// The street tapped on the map, offered as « Ouvrir Rue des Lilas ·
-  /// 31/42 » (HomeZoom mockup); null when none is.
-  final StreetRow? selected;
+  /// The card of the street tapped on the map (PLAN §5.4): its progress,
+  /// who covers it, « Ouvrir » and « Me l'attribuer » or « Ne plus la
+  /// faire »; null when none is.
+  final StreetCardInTournee? card;
 
   /// The tournée has no street yet.
   bool get hasNoStreet => !loading && mine.isEmpty && others.isEmpty;

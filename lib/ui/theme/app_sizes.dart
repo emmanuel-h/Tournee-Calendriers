@@ -273,4 +273,16 @@ abstract final class AppSizes {
   /// share of the room under the top bar.
   static const homePanelFolded = 76.0;
   static const homePanelRestShare = 0.5;
+
+  /// The street card (Pick mockup): its facts in grey chips of this radius,
+  /// this far apart from the blocks around them.
+  static const chipRadius = 10.0;
+  static const cardGap = 12.0;
+
+  /// The search box of « Ajouter des rues »: a white pill (Pick mockup).
+  static const searchRadius = 24.0;
+
+  /// The tallest the search results may grow over the map, as a share of
+  /// its height.
+  static const searchResultsShare = 0.6;
 }
