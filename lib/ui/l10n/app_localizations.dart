@@ -1695,6 +1695,24 @@ abstract class AppLocalizations {
   /// **'Première version de test.'**
   String get release010First;
 
+  /// « Nouveautés », version 0.5.1: street lines from the map tiles.
+  ///
+  /// In fr, this message translates to:
+  /// **'Les rues de la tournée apparaissent enfin sur la carte : leur tracé vient du fond de carte, et les rues déjà ajoutées reçoivent le leur.'**
+  String get release051Lines;
+
+  /// « Nouveautés », version 0.5.1: adding a street no longer waits.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter une rue depuis la carte est immédiat, et la route touchée s\'allume tout de suite.'**
+  String get release051AddAtOnce;
+
+  /// « Nouveautés », version 0.5.1: take a street from the list.
+  ///
+  /// In fr, this message translates to:
+  /// **'Une rue des « Autres rues de la tournée » s\'ouvre sur la carte pour se l\'attribuer.'**
+  String get release051TakeFromList;
+
   /// « Nouveautés », version 0.5.0: the tournée's map on Accueil.
   ///
   /// In fr, this message translates to:

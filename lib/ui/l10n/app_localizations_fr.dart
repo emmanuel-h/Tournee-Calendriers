@@ -1192,6 +1192,18 @@ class AppLocalizationsFr extends AppLocalizations {
   String get release010First => 'Première version de test.';
 
   @override
+  String get release051Lines =>
+      'Les rues de la tournée apparaissent enfin sur la carte : leur tracé vient du fond de carte, et les rues déjà ajoutées reçoivent le leur.';
+
+  @override
+  String get release051AddAtOnce =>
+      'Ajouter une rue depuis la carte est immédiat, et la route touchée s\'allume tout de suite.';
+
+  @override
+  String get release051TakeFromList =>
+      'Une rue des « Autres rues de la tournée » s\'ouvre sur la carte pour se l\'attribuer.';
+
+  @override
   String get release050Map =>
       'Accueil montre la carte de la tournée : ses rues, ses maisons, une légende et le panneau « Mes rues ».';
 

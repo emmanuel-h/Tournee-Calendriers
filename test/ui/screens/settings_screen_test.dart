@@ -75,7 +75,7 @@ void main() {
     expect(find.bySemanticsLabel('Confidentialité'), findsOneWidget);
     // The version of pubspec.yaml, which `flutter test` gives too.
     expect(
-      find.bySemanticsLabel('Version 0.5.0, voir les nouveautés'),
+      find.bySemanticsLabel('Version 0.5.1, voir les nouveautés'),
       findsOneWidget,
     );
     expect(
@@ -233,12 +233,24 @@ void main() {
     await tester.tap(find.byKey(const Key('settings.version')));
     await tester.pumpAndSettle();
 
+    expect(find.bySemanticsLabel('0.5.1 · 18 oct. 2026'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel(
+        'Ajouter une rue depuis la carte est immédiat, et la route touchée '
+        "s'allume tout de suite.",
+      ),
+      findsOneWidget,
+    );
     expect(find.bySemanticsLabel('0.5.0 · 18 oct. 2026'), findsOneWidget);
     expect(
       find.bySemanticsLabel(
         'Chaque rue dit qui la couvre\u00a0; on la prend ou la libère.',
       ),
       findsOneWidget,
+    );
+    await tester.scrollUntilVisible(
+      find.bySemanticsLabel('0.4.0 · 17 oct. 2026'),
+      100,
     );
     expect(find.bySemanticsLabel('0.4.0 · 17 oct. 2026'), findsOneWidget);
     expect(
