@@ -19,6 +19,7 @@ import 'package:tournee_calendriers/application/use_cases/move_streets_into_tour
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/corbeille.dart';
+import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
@@ -316,7 +317,7 @@ void main() {
       expect((found as StreetOfTheTournee).street, same(lilas));
     });
 
-    test('should add a street from the map with the bound shapes, ids and '
+    test('should add a street from the map with the bound ids and '
         'member', () async {
       final street = valueOf(
         await container.read(addStreetFromMapProvider)(
@@ -334,23 +335,50 @@ void main() {
 
       expect(street.id, StreetId('street-1'));
       expect(street.assignees, {lea});
-      expect(shapes.asked, [('Rue Pierre Morin', '69264')]);
       expect(streets[StreetId('street-1')], same(street));
     });
 
     test('should look up the road of a street with the bound shapes', () async {
+      final morinId = BanStreetId('69264_1460');
       valueOf(
         await container.read(lookUpStreetShapeProvider)(
-          StreetMatch(
-            id: BanStreetId('69264_1460'),
-            name: streetName('Rue Pierre Morin'),
-            commune: villefranche,
-            position: townHallDoor,
+          StreetToAdd(
+            StreetMatch(
+              id: morinId,
+              name: streetName('Rue Pierre Morin'),
+              commune: villefranche,
+              position: townHallDoor,
+            ),
+            StreetNumbers(
+              id: morinId,
+              name: streetName('Rue Pierre Morin'),
+              commune: villefranche,
+              numbers: const [],
+              invalidNumbers: 0,
+              duplicateNumbers: 0,
+            ),
           ),
         ),
       );
 
-      expect(shapes.asked, [('Rue Pierre Morin', '69264')]);
+      expect(shapes.askedNames, ['Rue Pierre Morin']);
+    });
+
+    test('should fill the shape of a street with the bound shapes and '
+        'repository', () async {
+      final morin = valueOf(
+        Street.create(
+          id: StreetId('morin'),
+          name: 'Rue Pierre Morin',
+          commune: villefranche,
+          houses: [House(number: n('1'), position: townHallDoor)],
+        ),
+      );
+      await streets.add(morin);
+
+      await container.read(fillStreetShapeProvider)(morin.id);
+
+      expect(shapes.askedNames, ['Rue Pierre Morin']);
     });
 
     test('should add a street typed in by hand with the bound ids and '

@@ -152,6 +152,10 @@ void main() {
     );
 
     expect(const StreetCardLoading(), const StreetCardLoading());
+    // Built at run time, not as a constant, so its constructor runs.
+    // ignore: prefer_const_constructors
+    expect(StreetCardLoading(), const StreetCardLoading());
+    expect(toAdd, isNot(const StreetCardLoading()));
     expect(
       const StreetCardLoading().hashCode,
       const StreetCardLoading().hashCode,

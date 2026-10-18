@@ -71,7 +71,7 @@ Code uses English names, the UI uses French.
 | Architecture | **Strict DDD, hexagonal**: domain (entities, value objects, aggregates) → application (use cases + ports) → adapters (Firestore, HTTP, map, UI). Riverpod for state and dependency injection |
 | Language | **French only.** Strings in `res/values/strings.xml`; no other locale |
 | Map | **MapLibre** (`maplibre_gl`, official Flutter plugin, offline regions on Android and iOS) with **OpenFreeMap** vector tiles (OpenStreetMap data, free, no key) |
-| Street picking | Tap a road → reverse geocoding (IGN Géoplateforme) gives the BAN street → BAN gives its numbers with positions → Overpass (OSM) gives its shape, stored once |
+| Street picking | Tap a road → reverse geocoding (IGN Géoplateforme) gives the BAN street → BAN gives its numbers with positions → the OpenFreeMap vector tiles (OSM) give its shape, stored once (#92) |
 | Manual edits | Missing streets and numbers can always be added by hand, offline too |
 | Sharing | Live sync through **Firebase Firestore**; its offline cache *is* the local store (no Room) |
 | Offline | Explicit "download the tournée" step: all street documents into an unlimited Firestore cache + map tiles of the tournée area into a MapLibre offline region |
@@ -456,6 +456,14 @@ an admin, shows only « Rejoindre une tournée », in red), and the bottom of th
   covers it, « Ouvrir » and « Me l'attribuer » / « La faire aussi » / « Ne plus la faire »,
   offline; a tap elsewhere on the map brings the list back. The map opens on the tournée's streets, else its communes, and stays where
   the member puts it when the team adds a street. Not yet: the download banner (M4).
+- **Lines filled in the background** (#92, `presentation/home/missing_shapes.dart`): each
+  time Accueil reads the streets, those without a line on the map but with a house on it
+  (`Street.needsShape`: imported from a list, or added before their road came) get their
+  road from the map's tiles, one street at a time, each **once per session** whatever the
+  answer; a failure (offline, service down) stops the run and the next waits 2 minutes,
+  when the street that failed is asked again. Nothing is shown meanwhile: the line appears
+  when it is stored. Streets typed in by hand (no position) keep no line. Nothing on the
+  marking path waits for it.
 
 **Mes tournées (tap the title).** The title "Tournée 49 · 2026 ▾" is a button that opens a
 bottom sheet:
@@ -543,7 +551,7 @@ The street card adapts to the street's state:
 | Someone else's | progress, who covers it | *La faire aussi* · *Ouvrir* |
 
 - Tapping a road calls the reverse geocoder at that point (type `street`) to get the BAN street;
-  then BAN gives the numbers and their positions, and Overpass gives the road's shape. All three
+  then BAN gives the numbers and their positions, and the map's tiles give the road's shape. All three
   are needed only once per street, when it is added: **this screen needs the network**.
   Offline, the map still shows and existing streets can still be taken, but adding says
   "Connexion nécessaire pour ajouter une rue" and offers manual entry.
@@ -564,9 +572,12 @@ The street card adapts to the street's state:
   search pill « Rechercher une rue » (48 dp; the keyboard's search key asks, ✕ empties it) and
   « ✎ Saisir une rue à la main » (48 dp outline, always there, offline). **A tap on a road**
   marks the point (dark dot in a faint halo) and shows the card « Recherche de la rue… »,
-  then the street; for a street to add, its road is asked of Overpass at once
+  then the street; for a street to add, its road is asked of the map's tiles at once
   (`LookUpStreetShape`) and highlighted when it comes (only the point otherwise), and that
-  road is the one stored by « Ajouter… », so Overpass is asked once. **A tap on a tournée
+  road is the one stored by « Ajouter… », so it is asked once. **« Ajouter… » never waits
+  for the road** (#92): without it yet, the street is added at once, keeps the road
+  highlighted when it comes and is given it then (`FillStreetShape`); if the road could
+  not be found, Accueil fills it later (5.3). **A tap on a tournée
   street's line or dot** shows its card at once, offline, with its own road. The card (white
   sheet, handle, name in 28 dp titles over the commune, facts in grey chips, red then outline
   button): to add « 19 numéros · Pas encore dans la tournée », « Ajouter et me l'attribuer »,
@@ -1877,8 +1888,12 @@ Geometry and map layers fixed in T3.1 (`lib/domain/geometry/`, `lib/domain/map/`
 
 - **`StreetShape`**: the lines of a street (one per OSM way), each of two points or more (a
   shorter one is dropped); `StreetShape.none` for a street typed in by hand or unknown to OSM.
-  `Street.create(shape:)` takes it (none by default), `Street.manual` has none, and no command
-  changes it. Equal by value, line by line. Stored from T3.3 (§6.2, §6.3).
+  `Street.create(shape:)` takes it (none by default), `Street.manual` has none. Equal by value,
+  line by line. Stored from T3.3 (§6.2, §6.3). Since #92 one command sets it, once:
+  `Street.fillShape(shape)` → `StreetShapeFilled` (refused `ShapeFillFailure.alreadyShaped`
+  when the street has a shape, `noLine` for a shape without line; not undoable), and
+  `Street.needsShape` says a street waits for one (no shape, out of the Corbeille, a house
+  with a position).
 - **Simplification** (`simplifyLine`, Douglas–Peucker): a point is kept only when *strictly*
   farther than the tolerance from the simplified line; distances are measured on a plane tangent
   at the segment's start (`metresFromSegment`, to the closest point of the segment, ends
@@ -1906,7 +1921,8 @@ Geometry and map layers fixed in T3.1 (`lib/domain/geometry/`, `lib/domain/map/`
   points of #78.
 
 Address and shape adapters fixed in T3.2 (`lib/application/ports/address_directory.dart`,
-`street_shapes.dart`, `lib/infrastructure/ban/`, `lib/infrastructure/overpass/`):
+`street_shapes.dart`, `lib/infrastructure/ban/`; shapes from the map's tiles since #92,
+`lib/infrastructure/map_tiles/`):
 
 - **`AddressDirectory.streetAt(GeoPoint)`** → `StreetMatch` (BAN id, `StreetName`, `Commune`,
   the geocoder's one `GeoPoint` for the street). The Géoplateforme reverse geocoder (`type=street`,
@@ -1919,19 +1935,24 @@ Address and shape adapters fixed in T3.2 (`lib/application/ports/address_directo
   without a request (the service refuses it with HTTP 400). Same failures as the BAN lookup
   (`noNetwork`, `notFound` on 404, `serviceError`); an unreadable feature is left out. One
   adapter, `BanAddressDirectory`, serves the four calls (same timeout, 15 s).
-- **Port `StreetShapes.shapeOf(name:, commune:)`** → `StreetShape` as OpenStreetMap gives it,
-  **not simplified** (the caller calls `simplified()` before storing), `StreetShape.none` when no
-  road matches; `StreetShapesFailure.noNetwork | serviceError` (any status but 200 — Overpass
-  is often busy: 429, 502, 504 —, a body that is not JSON, or a `remark`, which Overpass adds
-  when it stopped on an error and may have given a partial answer).
-- **The Overpass query** (POST, form field `data`): the ways tagged `highway` inside the
-  commune's boundary (`area["ref:INSEE"=…]["boundary"="administrative"]["admin_level"="8"]`)
-  whose `name` matches the whole BAN name **ignoring case and accents** (each vowel and `c` an
-  alternation of its accented forms), either apostrophe, and a hyphen for a space; `out geom`,
-  server timeout 15 s, client 20 s. Measured on Villefranche-sur-Saône: 284 of 312 BAN streets
-  find a way (215 with an exact name), since the BAN often drops accents. A way with an
-  unreadable point is left out whole.
-
+- **Port `StreetShapes.shapeOf(name:, area:)`** (#92) → `StreetShape` as OpenStreetMap
+  draws it on the map, **not simplified** (the caller calls `simplified()` before storing),
+  `StreetShape.none` when no road matches; `StreetShapesFailure.noNetwork` (no answer within
+  10 s) | `serviceError` (any status but 200 or 204, an unreadable TileJSON or tile). The
+  **area** is `shapeSearchArea(positions)`: the street's house positions (and, for a street
+  to add, the BAN's point of the street) plus 150 m, so a road of the same name in the next
+  commune is left out. The **name** matches by `StreetName.matches`: the same `searchKey`
+  (case, accents, `œ`, apostrophes and hyphens read as spaces), whole name only.
+- **The adapter `OpenFreeMapStreetShapes`** reads the TileJSON
+  `https://tiles.openfreemap.org/planet` once for the tile address (its first `tiles`
+  entry, with the weekly version of the map in it; forgotten after a tile is refused), then
+  the **zoom-14** tiles covering the area (at most 16, else no shape), one after the other,
+  and keeps the named lines of the last 64 tiles in memory. Each tile is a Mapbox Vector Tile
+  (protobuf, read by a small hand-written decoder: `mappers/protobuf_reader.dart`,
+  `vector_tile.dart`; a gzipped body is uncompressed); the **`transportation_name`** layer
+  gives the named roads (`name`). The lines of the name are cut to their tile (each tile
+  repeats a strip of its neighbours), cut to the area (`clipLine`), and joined where their
+  ends meet within 1 m (`joinLines`), across tiles too. A 204 is an empty tile.
 Street picking fixed in T3.3 (`lib/domain/street/street.dart`, `lib/application/use_cases/`):
 
 - **`Street.assignees`** (`Set<MemberId>`, read-only): the members who cover the street (their
@@ -1947,13 +1968,18 @@ Street picking fixed in T3.3 (`lib/domain/street/street.dart`, `lib/application/
   numbers are not asked), otherwise `StreetToAdd(match, numbers)` with the BAN's numbers and
   positions (`numberCount`). Failures are the `AddressDirectoryFailure`s: `notFound` (no BAN
   match), `noNetwork` (offline), `serviceError`. Changes nothing.
-- **`AddStreetFromMap(numbers, assignToMe:)`** stores a `StreetToAdd`'s street: the shape is
-  asked of Overpass and stored `simplified()`; **any Overpass failure** (busy, timeout, no
-  network) **or no road found adds the street without shape** (house dots only). A street of
-  the Corbeille with that BAN id comes back with its marks instead (no Overpass), and is taken
-  when asked and not yet covered. `AddStreetFailure.alreadyInTournee` (checked before Overpass
-  and again after it: a teammate or a second tap may have added it) and `serviceError` (the
-  BAN gave a number twice). `assignToMe` puts the member on the phone in `assignees` (the
+- **`AddStreetFromMap(numbers, assignToMe:, shape:)`** stores a `StreetToAdd`'s street with
+  the road the card found (`LookUpStreetShape`, simplified), or without shape while it has
+  none: since #92 it **never asks the map nor waits for it**. A street of the Corbeille with
+  that BAN id comes back with its marks instead, and is taken when asked and not yet
+  covered. `AddStreetFailure.alreadyInTournee` and `serviceError` (the BAN gave a number
+  twice).
+- **`LookUpStreetShape(streetToAdd)`** (#92): the road around the street's numbers and the
+  BAN's point of it, simplified. **`FillStreetShape(streetId, road:)`** (#92): a street that
+  needs a shape gets the road given, or else the one the map draws around its houses,
+  simplified, through `Street.fillShape` (read again after the map answered: a teammate's
+  phone may have filled it); `ShapeFillOutcome.filled | noRoad | notNeeded`, or the
+  `StreetShapesFailure`. `assignToMe` puts the member on the phone in `assignees` (the
   card's two buttons).
 - **`AddManualStreet(name, commune, numbers, assignToMe:)`** (« Rue à la main »): `Street.manual`,
   offline, assigned to the member when asked (a street without shape cannot be tapped on the
@@ -2054,7 +2080,7 @@ final class Street {                       // aggregate root
   /// can write only that field (houses.12.status) instead of the whole document.
   Result<(Street, HouseMarked), HouseChangeFailure> markHouse(
       HouseNumber n, VisitStatus s, {required MemberId by, required DateTime at});
-  // setComeBack, delete, restore;
+  // setComeBack, delete, restore; fillShape (#92);
   // buildings (T1.3): describeBuilding, addDoor, removeDoor, renameDoor, removeBuilding,
   //                   markDwelling, setDwellingComeBack;
   // tries (#80): markNobodyHomeAgain, markDwellingNobodyHomeAgain;
@@ -2078,7 +2104,7 @@ final class Building { DoorLabelStyle style; List<Staircase> staircases;   // A,
 sealed class StreetChange { /* HouseMarked, ComeBackSet, BuildingLaidOut,
                                BuildingRemoved, DwellingMarked, DwellingComeBackSet,
                                HouseNobodyHomeAgain, DwellingNobodyHomeAgain (#80),
-                               StreetDeleted, StreetRestored,
+                               StreetDeleted, StreetRestored, StreetShapeFilled (#92),
                                NumbersAdded, NumberRemoved, NumberRestored,
                                NumberRenamed, StreetRenamed,
                                HouseReverted, DwellingReverted (undo, T1.6) */ }
@@ -2121,8 +2147,9 @@ tournees/{tourneeId}
       startedAt, previousYear: null | 2026
     streets/{streetId}
       name, communeName, communeCode, banId,
-      shape: ["<encoded polyline>", …],           ← one per OSM way, simplified, ≈ 1 KB a street;
-                                                    [] for none; written once, never changed (T3.3)
+      shape: ["<encoded polyline>", …],           ← one per OSM road, simplified, ≈ 1 KB a street;
+                                                    [] for none; written once, with the street
+                                                    or later while still [] (#92), never replaced
       assignees: [uid, …],                        ← who covers it, sorted when the street is
                                                     written; [] for nobody (T3.3)
       deletedAt, deletedBy                        ← set = in the Corbeille (5.11); null otherwise
@@ -2179,6 +2206,7 @@ writes:
 | number removed / restored | `deletedAt`, `deletedBy` (set / null) |
 | number renamed | `houses.<old>` deleted, `houses.<new>` whole |
 | street renamed, deleted, restored | `name`; `deletedAt`, `deletedBy` (top level) |
+| shape found later (`StreetShapeFilled`, #92) | `shape` (top level), the whole list, only while the stored one is absent or `[]` |
 | street taken, released (T3.3) | `assignees`: `arrayUnion([uid])` / `arrayRemove([uid])`, never the whole array, so two members taking it at once both stay |
 | undo of a house (`HouseReverted`) | as a layout change, or `houses.<old>` deleted and `houses.<n>` whole when it renumbers back; `by` / `at` = who undoes, now |
 | undo of a door (`DwellingReverted`) | `dwellings.<key>` whole, `by` / `at` = who undoes, now |
@@ -2281,7 +2309,8 @@ no network, including a cold start, and loses nothing.
 - The banner and the Paramètres section show the download state; "Mettre à jour" re-runs both
   parts (streets and tiles).
 - What needs the network: creating / joining a tournée, the download itself, and **adding a
-  street from the map** (reverse geocoding, BAN, Overpass). Adding a street by hand, adding
+  street from the map** (reverse geocoding, BAN, the map's tiles for its line; the line of a
+  street added without it is filled later, when online, #92). Adding a street by hand, adding
   numbers, taking streets and every status change work offline.
 - Undo is a normal write that restores the previous value, not a rollback.
 
@@ -2466,7 +2495,10 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
   reader skips them.
 - **Shape and assignees** (T3.3): optional on a new street (an app of before the map writes
   neither); `shape` a list of at most 1 000 lines (counted, not checked line by line), never
-  changed afterwards; `assignees` on a new street `[]` or `[caller]`. An update may change
+  changed afterwards, except **filled once** (#92, `isShapeFill`): an update of `shape` alone,
+  1 to 1 000 lines (the first a text), while the stored shape is absent or `[]` (an older
+  app never writes it; two phones filling at once cannot replace each other's);
+  `assignees` on a new street `[]` or `[caller]`. An update may change
   `assignees` only by adding or removing **the caller** (set comparison, no duplicate): nobody
   puts a teammate on a street or takes them off it.
 - Indexes (`firebase/firestore.indexes.json`): `houses` of `streets` is exempt from
@@ -2503,7 +2535,7 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
 | Commune by name | `https://geo.api.gouv.fr/communes?nom={q}&fields=nom,code,codesPostaux,centre&boost=population&limit=5` | Import screen (5.0), the communes of a tournée (5.2, 5.8): `nom`, `code` (INSEE), `codesPostaux`, `centre` (GeoJSON point); `[]` when nothing matches |
 | Streets of a commune | `https://plateforme.adresse.data.gouv.fr/lookup/{inseeCode}` | `voies[]`: `idVoie`, `nomVoie`, `nbNumeros`, `type`; 404 for an unknown commune |
 | Numbers of a street | `https://plateforme.adresse.data.gouv.fr/lookup/{idVoie}` | `numeros[]`: `numero`, `suffixe`, `position.coordinates` [lon, lat]; a number may appear twice; 404 for an unknown street |
-| Shape of a street | Overpass `https://overpass-api.de/api/interpreter` (POST `data=`), query `way(area INSEE)["highway"]["name"~"<accent-tolerant name>",i]; out geom;` (§6.1, T3.2) | Needs a `User-Agent`. One call per added street. Fallback when empty: no shape, house dots only. Often busy (502 / 504 for an hour on 2026-10-17) |
+| Shape of a street | OpenFreeMap TileJSON `https://tiles.openfreemap.org/planet` (its `tiles` template, versioned weekly: `…/planet/20261011_080001_pt/{z}/{x}/{y}.pbf`), then the z14 vector tiles around the street's houses, layer `transportation_name`, property `name` (§6.1, #92) | Same data as the map. A tile ≈ 50–250 kB, ≈ 0.1 s; max zoom 14. Lines clipped per tile with a buffer: cut and joined by the app. Fallback when empty: no shape, house dots only. Replaced Overpass (#92: 41 s then 502 on 2026-10-18) |
 
 All of them are wrapped behind domain interfaces (`AddressDirectory`, `CommuneSearch`, `StreetShapes`), so the rest
 of the app never sees HTTP or JSON, and tests use fakes. Parsing is tested against JSON fixtures
@@ -2525,7 +2557,7 @@ lib/
 │   ├── use_cases/   ports for external services (AddressDirectory, StreetShapes,
 │   └── ports/       OfflineMapStore, IdentityProvider, Clock, IdGenerator). Depends on domain only.
 ├── infrastructure/  Adapters implementing the ports: firestore/, ban/ (BAN + geopf, http),
-│                    overpass/, maplibre_offline/, firebase_auth/, preferences/, mappers.
+│                    map_tiles/, maplibre_offline/, firebase_auth/, preferences/, mappers.
 │                    The only place Firebase, http, MapLibre, shared_preferences appear.
 ├── presentation/    Riverpod Notifiers + immutable view states. Call use cases only.
 │                    No Flutter widget, no infrastructure import.
@@ -2546,7 +2578,7 @@ lib/
   `RequestToJoin`, `AcceptMember`, `DownloadTournee`, `StartCampaign`, … A use case loads the
   aggregate through its port, calls the root, saves the `StreetChange` through the port.
 - **Adapters translate**: Firestore maps ⇄ aggregates, `StreetChange` → field-path updates,
-  geopf / BAN / Overpass JSON → value objects. Translation code is pure functions, tested alone.
+  geopf / BAN JSON, vector tiles → value objects. Translation code is pure functions, tested alone.
 - The map is split the same way: the domain computes *what* to draw; `ui/map/` only turns that
   into MapLibre GeoJSON sources and layers, and taps into coordinates.
 
@@ -2560,7 +2592,7 @@ lib/
 | Models | Dart 3 `final class` / `sealed class` / records; value equality hand-written in the domain (no `freezed`, no build_runner) |
 | Backend | FlutterFire (official): `firebase_core`, `cloud_firestore`, `firebase_auth` (anonymous), `firebase_app_check` (Play Integrity on Android, App Attest on iOS). Spark (free) plan, decided at the M2 checkpoint (Q20); Blaze-ready |
 | Map | `maplibre_gl` (official MapLibre plugin) + OpenFreeMap tiles; offline regions |
-| HTTP | `http` (geopf, BAN, Overpass), `MockClient` in tests |
+| HTTP | `http` (geopf, BAN, OpenFreeMap tiles), `MockClient` in tests |
 | QR | `qr_flutter` (draw), `mobile_scanner` (scan; camera permission asked on tap) |
 | Location | `geolocator`, only for "locate me" |
 | Share | `share_plus` |
@@ -2603,7 +2635,7 @@ but they run once per task and in CI.
 | Domain | aggregates, value objects, domain services — plain `test` | Dart VM | every TDD cycle | ms per test |
 | Application | use cases with **hand-written fakes** of the ports | Dart VM | every TDD cycle | ms per test |
 | Presentation | Riverpod notifiers via `ProviderContainer`, ports overridden by fakes | Dart VM | every TDD cycle | ms per test |
-| Adapters | Firestore adapter against `fake_cloud_firestore` (in memory, no emulator); geopf / BAN / Overpass parsing with `MockClient` + JSON fixtures captured from the real services | Dart VM | when touched | < 10 s |
+| Adapters | Firestore adapter against `fake_cloud_firestore` (in memory, no emulator); geopf / BAN parsing with `MockClient` + JSON fixtures captured from the real services, vector tiles built byte by byte by the tests | Dart VM | when touched | < 10 s |
 | Widgets | widget tests for the critical interactions only: welcome gating, tap-cycle + undo on street tiles, hold → house sheet, building grid, edit mode remove + undo, street card states, join pending screen | `flutter test` (headless) | end of each UI task, CI | a few per UI task; the whole suite stays under 60 s |
 | Architecture | import rules between layers | Dart VM | every run | < 1 s |
 | Coverage | **100 % line coverage** on `domain/`, `application/`, `presentation/` and the adapters' mapping code, checked by a script on `coverage/lcov.info` | — | end of task, CI | piggybacks |

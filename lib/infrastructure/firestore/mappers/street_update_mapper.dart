@@ -140,6 +140,13 @@ List<Map<FieldPath, Object?>> streetUpdates(
         _path(['name']): name.text,
       },
     ],
+    // The whole list, once: the security rules accept it only while the
+    // stored shape is empty.
+    StreetShapeFilled(:final shape) => [
+      {
+        _path(['shape']): shape.encode(),
+      },
+    ],
     // Before the general undo of a house: a `switch` takes the first case
     // that matches, and this one needs the key moved.
     HouseReverted(renumbers: true, :final replaced, :final house) => [

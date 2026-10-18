@@ -105,6 +105,15 @@ enum AssignmentFailure {
   notAssigned,
 }
 
+/// Why a street could not be given its line on the map ([Street.fillShape]).
+enum ShapeFillFailure {
+  /// The street has a shape already: a shape is set once, never replaced.
+  alreadyShaped,
+
+  /// The shape given has no line: there is nothing to set.
+  noLine,
+}
+
 /// Why a change could not be undone (« Annuler » of the snackbar).
 enum UndoFailure {
   /// The change was made on another street.
@@ -119,7 +128,8 @@ enum UndoFailure {
   numberTaken,
 
   /// The screens offer no undo for this change: added numbers are removed
-  /// with ✕, a street brought back from the Corbeille is deleted again.
+  /// with ✕, a street brought back from the Corbeille is deleted again, a
+  /// line found for the map stays.
   notUndoable,
 }
 
@@ -248,7 +258,9 @@ final class Street {
   final BanStreetId? banId;
 
   /// Where the street runs on the map; [StreetShape.none] for a street typed
-  /// in by hand or one OpenStreetMap does not know. No command changes it.
+  /// in by hand, one OpenStreetMap does not know, or one whose shape has
+  /// not been found yet. Only [fillShape] changes it, and only while it is
+  /// none.
   final StreetShape shape;
 
   /// The members who cover the street: it is in their « Mes rues » (PLAN
@@ -271,6 +283,15 @@ final class Street {
 
   /// Whether the street is in the Corbeille.
   bool get isDeleted => deletion != null;
+
+  /// Whether the street still waits for its line on the map, and could get
+  /// one (PLAN §5.3): it has no shape, it is out of the Corbeille, and a
+  /// house has a position, which tells where to look for its road. A street
+  /// typed in by hand has no position: it keeps no line.
+  bool get needsShape =>
+      shape.isEmpty &&
+      !isDeleted &&
+      houses.any((house) => house.position != null);
 
   /// This street with every stamp made by [member] at the time it had: the
   /// last change of each house and door, the removal of each number in the
@@ -859,6 +880,35 @@ final class Street {
     ));
   }
 
+  /// Gives the street the line [shape] on the map, found after the street
+  /// was added (the road was slow to come, or the street was imported from
+  /// a list, PLAN §5.3).
+  ///
+  /// Set once: refused with [ShapeFillFailure.alreadyShaped] when the
+  /// street has a shape (a teammate's phone found it first), and with
+  /// [ShapeFillFailure.noLine] when [shape] has no line. Nothing else
+  /// changes.
+  Result<(Street, StreetShapeFilled), ShapeFillFailure> fillShape(
+    StreetShape shape,
+  ) {
+    if (!this.shape.isEmpty) return const Err(ShapeFillFailure.alreadyShaped);
+    if (shape.isEmpty) return const Err(ShapeFillFailure.noLine);
+    return Ok((
+      Street._(
+        id: id,
+        name: name,
+        commune: commune,
+        banId: banId,
+        shape: shape,
+        assignees: assignees,
+        houses: houses,
+        removedHouses: removedHouses,
+        deletion: deletion,
+      ),
+      StreetShapeFilled(streetId: id, shape: shape),
+    ));
+  }
+
   /// Sends the street to the Corbeille, as [by] at [at]: it is hidden but
   /// keeps its houses and their marks (PLAN §5.11). Deleting a street
   /// already in the Corbeille records the latest deletion.
@@ -982,7 +1032,8 @@ final class Street {
       ).mapFailure((_) => UndoFailure.gone),
       NumbersAdded() ||
       StreetRestored() ||
-      NumbersPurged() => const Err(UndoFailure.notUndoable),
+      NumbersPurged() ||
+      StreetShapeFilled() => const Err(UndoFailure.notUndoable),
     };
   }
 

@@ -24,7 +24,7 @@ import 'package:tournee_calendriers/infrastructure/local_storage/local_my_tourne
 import 'package:tournee_calendriers/infrastructure/local_storage/local_phone_settings.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_street_repository.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_street_view_preferences.dart';
-import 'package:tournee_calendriers/infrastructure/overpass/overpass_street_shapes.dart';
+import 'package:tournee_calendriers/infrastructure/map_tiles/openfreemap_street_shapes.dart';
 import 'package:tournee_calendriers/infrastructure/system/random_id_generator.dart';
 import 'package:tournee_calendriers/infrastructure/system/system_clock.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
@@ -157,7 +157,7 @@ Future<List<Override>> bindAdapters({
       (ref) => communeSearch ?? GeoCommuneSearch(ref.watch(httpClientProvider)),
     ),
     streetShapesProvider.overrideWith(
-      (ref) => OverpassStreetShapes(ref.watch(httpClientProvider)),
+      (ref) => OpenFreeMapStreetShapes(ref.watch(httpClientProvider)),
     ),
     clockProvider.overrideWithValue(clock),
     idGeneratorProvider.overrideWithValue(ids),

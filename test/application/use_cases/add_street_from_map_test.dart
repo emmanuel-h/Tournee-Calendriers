@@ -1,11 +1,9 @@
 // « Ajouter et me l'attribuer » / « Ajouter sans m'attribuer » on the street
-// card (PLAN §5.4): the BAN street with its numbers and positions, its
-// shape from OpenStreetMap when Overpass answers, stored in the tournée.
+// card (PLAN §5.4): the BAN street with its numbers and positions, and the
+// road the card found when it did, stored in the tournée at once.
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
-import 'package:tournee_calendriers/application/ports/street_shapes.dart';
 import 'package:tournee_calendriers/application/use_cases/add_street_from_map.dart';
-import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
@@ -15,7 +13,6 @@ import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
 import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_street_repository.dart';
-import '../../support/fakes/fake_street_shapes.dart';
 import '../../support/geo_fixtures.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
@@ -36,29 +33,18 @@ final _morinNumbers = StreetNumbers(
   duplicateNumbers: 0,
 );
 
-/// A road as OpenStreetMap draws it: the middle point lies on the straight
-/// line from the first to the last, so simplifying drops it.
-final _start = at(45.98800, 4.72500);
-final _middle = at(45.98850, 4.72500);
-final _end = at(45.98900, 4.72500);
-final _osmShape = StreetShape([
-  [_start, _middle, _end],
+/// The road the card found, simplified.
+final _road = StreetShape([
+  [at(45.98800, 4.72500), at(45.98900, 4.72500)],
 ]);
 
 void main() {
   late FakeStreetRepository streets;
-  late FakeStreetShapes shapes;
   late AddStreetFromMap add;
 
   setUp(() {
     streets = repositoryWithLilas();
-    shapes = FakeStreetShapes(Ok(_osmShape));
-    add = AddStreetFromMap(
-      shapes,
-      streets,
-      FakeIdGenerator('street'),
-      leaOnThePhone(),
-    );
+    add = AddStreetFromMap(streets, FakeIdGenerator('street'), leaOnThePhone());
   });
 
   group('a new street', () {
@@ -78,18 +64,6 @@ void main() {
       expect(street.deletion, isNull);
     });
 
-    test('should store the shape OpenStreetMap gives, simplified', () async {
-      final street = valueOf(await add(_morinNumbers, assignToMe: false));
-
-      expect(
-        street.shape,
-        StreetShape([
-          [_start, _end],
-        ]),
-      );
-      expect(shapes.asked, [('Rue Pierre Morin', '69264')]);
-    });
-
     test('should give the street to the member with « Ajouter et me '
         'l\'attribuer »', () async {
       final street = valueOf(await add(_morinNumbers, assignToMe: true));
@@ -104,61 +78,23 @@ void main() {
       expect(street.assignees, isEmpty);
     });
 
-    test('should store the street without shape when OpenStreetMap does not '
-        'know the road', () async {
-      shapes.answer = const Ok(StreetShape.none);
+    test('should store the road the card found', () async {
+      final street = valueOf(
+        await add(_morinNumbers, assignToMe: false, shape: _road),
+      );
 
+      expect(street.shape, _road);
+      expect(streets.added.single.shape, _road);
+    });
+
+    // The road may still be on its way: adding never waits for it, the
+    // street gets its line later (`FillStreetShape`).
+    test('should store the street without shape when the card has no '
+        'road', () async {
       final street = valueOf(await add(_morinNumbers, assignToMe: false));
 
       expect(street.shape, StreetShape.none);
       expect(streets.added, hasLength(1));
-    });
-
-    // Overpass is often busy (502, 504): the street must not wait for it.
-    test('should store the street without shape when Overpass fails', () async {
-      shapes.answer = const Err(StreetShapesFailure.serviceError);
-
-      final street = valueOf(await add(_morinNumbers, assignToMe: true));
-
-      expect(street.shape, StreetShape.none);
-      expect(street.houses, hasLength(3));
-      expect(streets.added, hasLength(1));
-    });
-
-    test('should store the street without shape when Overpass cannot be '
-        'reached', () async {
-      shapes.answer = const Err(StreetShapesFailure.noNetwork);
-
-      final street = valueOf(await add(_morinNumbers, assignToMe: false));
-
-      expect(street.shape, StreetShape.none);
-      expect(streets.added, hasLength(1));
-    });
-
-    // The card asked Overpass already, to highlight the road
-    // (`LookUpStreetShape`): asking again would take another 20 seconds.
-    test('should store the shape the card found, without asking '
-        'Overpass', () async {
-      final found = StreetShape([
-        [_start, _end],
-      ]);
-
-      final street = valueOf(
-        await add(_morinNumbers, assignToMe: false, shape: found),
-      );
-
-      expect(street.shape, found);
-      expect(shapes.asked, isEmpty);
-    });
-
-    test('should store no shape when the card found the road unknown to '
-        'OpenStreetMap, without asking Overpass', () async {
-      final street = valueOf(
-        await add(_morinNumbers, assignToMe: false, shape: StreetShape.none),
-      );
-
-      expect(street.shape, StreetShape.none);
-      expect(shapes.asked, isEmpty);
     });
 
     test('should refuse numbers the BAN gave twice', () async {
@@ -197,25 +133,6 @@ void main() {
       expect(failure, AddStreetFailure.alreadyInTournee);
       expect(streets.added, isEmpty);
       expect(streets.saved, isEmpty);
-      expect(shapes.asked, isEmpty);
-    });
-
-    test('should refuse it when a teammate added it while the shape was '
-        'asked', () async {
-      final teammates = valueOf(
-        Street.create(
-          id: StreetId('their-morin'),
-          name: 'Rue Pierre Morin',
-          commune: villefranche,
-          banId: _morinId,
-        ),
-      );
-      shapes.whileAsked = () => streets.add(teammates);
-
-      final failure = failureOf(await add(_morinNumbers, assignToMe: true));
-
-      expect(failure, AddStreetFailure.alreadyInTournee);
-      expect(streets.added, [same(teammates)]);
     });
 
     group('in the Corbeille', () {
@@ -232,7 +149,7 @@ void main() {
         streets.saved.clear();
       });
 
-      test('should bring it back with its marks, without Overpass', () async {
+      test('should bring it back with its marks', () async {
         final street = valueOf(await add(lilasNumbers, assignToMe: false));
 
         expect(street.isDeleted, isFalse);
@@ -241,7 +158,6 @@ void main() {
         expect(streets[lilasId]!.isDeleted, isFalse);
         expect(streets.added, isEmpty);
         expect(streets.saved.single.$2, StreetRestored(streetId: lilasId));
-        expect(shapes.asked, isEmpty);
       });
 
       test('should give it to the member with « Ajouter et me '

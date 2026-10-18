@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/map/map_layers.dart';
@@ -8,6 +10,7 @@ import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_commune.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/home/home_state.dart';
+import 'package:tournee_calendriers/presentation/home/missing_shapes.dart';
 import 'package:tournee_calendriers/presentation/my_tournees/my_tournees_notifier.dart';
 import 'package:tournee_calendriers/presentation/street_card/follows_team.dart';
 import 'package:tournee_calendriers/presentation/street_card/street_card.dart';
@@ -22,6 +25,9 @@ final homeProvider = NotifierProvider.autoDispose<HomeNotifier, HomeState>(
 /// Follows the open tournée's streets (`ObserveMyStreets`), communes and
 /// team, from the phone's copy, offline too, and the street tapped on the
 /// map, which the member may take or release from its card.
+///
+/// Each time the streets change, it hands them to [MissingShapes], which
+/// finds in the background the line on the map of those that have none.
 final class HomeNotifier extends Notifier<HomeState>
     with FollowsTeam<HomeState> {
   /// The last streets read, null until the first arrive.
@@ -76,6 +82,9 @@ final class HomeNotifier extends Notifier<HomeState>
   void _showStreets(MyStreets streets) {
     _streets = streets;
     _show();
+    // `unawaited`: the shapes come in the background, and the map follows
+    // them through the streets; Accueil never waits for the network.
+    unawaited(ref.read(missingShapesProvider).fillAmong(streets.all));
   }
 
   /// A street of the tournée was tapped on the map.

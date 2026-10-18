@@ -1,4 +1,5 @@
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
+import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_commune.dart';
 
@@ -52,3 +53,14 @@ GeoBounds? homeArea(
   Iterable<TourneeCommune> communes,
   Iterable<Street> streets,
 ) => tourneeArea(streets) ?? communesArea(communes);
+
+/// How far beyond a street's houses its road is looked for on the map, in
+/// metres: the road runs a little past the last numbers, while a road of
+/// the same name in the next commune is much farther.
+const shapeSearchMarginMetres = 150.0;
+
+/// Where to look for the road of a street whose houses stand at
+/// [positions] (PLAN §9): around them, plus [shapeSearchMarginMetres] on
+/// each side; null without any position (a street typed in by hand).
+GeoBounds? shapeSearchArea(Iterable<GeoPoint> positions) =>
+    GeoBounds.around(positions)?.expandedBy(shapeSearchMarginMetres);

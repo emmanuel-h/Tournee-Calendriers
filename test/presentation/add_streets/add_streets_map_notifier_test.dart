@@ -268,7 +268,7 @@ void main() {
 
       expect(stateOf(container).selectedRoad, _morinRoad);
       expect(stateOf(container).selectedPoint, _onMorin);
-      expect(shapes.asked, [('Rue Pierre Morin', '69264')]);
+      expect(shapes.askedNames, ['Rue Pierre Morin']);
     });
 
     test('should mark only the point while OpenStreetMap does not '
@@ -535,6 +535,8 @@ void main() {
       await pumpEventQueue();
       final notifier = notifierOf(container);
       await notifier.tapMap(_onMorin);
+      // The road comes.
+      await pumpEventQueue();
 
       await notifier.add(assignToMe: true);
       await pumpEventQueue();
@@ -543,8 +545,10 @@ void main() {
       expect(added.banId, _morinId);
       expect(added.assignees, {_me});
       expect(added.shape, _morinRoad);
-      // Asked once, for the card; the street was stored with it.
+      // Asked once, for the card; the street was stored with it, and needs
+      // no other write.
       expect(shapes.asked, hasLength(1));
+      expect(streets.saved, isEmpty);
       final card = stateOf(container).card! as StreetCardInTournee;
       expect(card.id, added.id);
       expect(card.coverage, StreetCoverage.mine);
@@ -567,10 +571,59 @@ void main() {
       );
     });
 
-    test('should show the street being added while its road is '
-        'awaited', () async {
+    test('should add the street at once while its road is awaited, and '
+        'give it the road once it comes', () async {
       final answer = Completer<void>();
       shapes.whileAsked = () => answer.future;
+      final container = phone();
+      await pumpEventQueue();
+      final notifier = notifierOf(container);
+      await notifier.tapMap(_onMorin);
+
+      await notifier.add(assignToMe: true);
+
+      final added = streets.added.single;
+      expect(added.shape, StreetShape.none);
+      expect((stateOf(container).card! as StreetCardInTournee).id, added.id);
+      expect(stateOf(container).selectedRoad, StreetShape.none);
+
+      answer.complete();
+      await pumpEventQueue();
+
+      expect(streets[added.id]!.shape, _morinRoad);
+      expect(stateOf(container).selectedRoad, _morinRoad);
+      // The card's answer, not a second question.
+      expect(shapes.asked, hasLength(1));
+    });
+
+    test('should give the street the road that came while it was being '
+        'added', () async {
+      final answer = Completer<void>();
+      shapes.whileAsked = () => answer.future;
+      streets.holdAdds = Completer();
+      final container = phone();
+      await pumpEventQueue();
+      final notifier = notifierOf(container);
+      await notifier.tapMap(_onMorin);
+      final adding = notifier.add(assignToMe: true);
+      answer.complete();
+      await pumpEventQueue();
+      // The road shows already, the street is not stored yet.
+      expect(stateOf(container).selectedRoad, _morinRoad);
+      expect(streets.added, isEmpty);
+
+      streets.holdAdds!.complete();
+      await adding;
+      await pumpEventQueue();
+
+      final added = streets.added.single;
+      expect(added.shape, StreetShape.none);
+      expect(streets[added.id]!.shape, _morinRoad);
+    });
+
+    test('should show the street being added, and add it once on a second '
+        'tap', () async {
+      streets.holdAdds = Completer();
       final container = phone();
       await pumpEventQueue();
       final notifier = notifierOf(container);
@@ -588,18 +641,14 @@ void main() {
           adding: true,
         ),
       );
-      expect(streets.added, isEmpty);
-
-      // A second tap on the button adds nothing more.
       await notifier.add(assignToMe: true);
-      answer.complete();
+      streets.holdAdds!.complete();
       await adding;
 
       expect(streets.added, hasLength(1));
-      expect(shapes.asked, hasLength(1));
     });
 
-    test('should ask OpenStreetMap again when it failed for the '
+    test('should add the street without road when the map failed for the '
         'card', () async {
       shapes.answer = const Err(StreetShapesFailure.noNetwork);
       final container = phone();
@@ -607,12 +656,32 @@ void main() {
       final notifier = notifierOf(container);
       await notifier.tapMap(_onMorin);
       await pumpEventQueue();
-      shapes.answer = Ok(_morinRoad);
 
       await notifier.add(assignToMe: true);
+      await pumpEventQueue();
 
-      expect(shapes.asked, hasLength(2));
-      expect(streets.added.single.shape, _morinRoad);
+      expect(streets.added.single.shape, StreetShape.none);
+      expect(streets.saved, isEmpty);
+      // Not asked again: the street gets its road later, from Accueil.
+      expect(shapes.asked, hasLength(1));
+    });
+
+    test('should store nothing more when the map has no road for the '
+        'street added', () async {
+      final answer = Completer<void>();
+      shapes
+        ..answer = const Ok(StreetShape.none)
+        ..whileAsked = () => answer.future;
+      final container = phone();
+      await pumpEventQueue();
+      final notifier = notifierOf(container);
+      await notifier.tapMap(_onMorin);
+      await notifier.add(assignToMe: true);
+
+      answer.complete();
+      await pumpEventQueue();
+
+      expect(streets.saved, isEmpty);
     });
 
     test('should show the tournée\'s street when a teammate added it '
@@ -690,8 +759,7 @@ void main() {
 
     test('should keep another card asked while the street was '
         'added', () async {
-      final answer = Completer<void>();
-      shapes.whileAsked = () => answer.future;
+      streets.holdAdds = Completer();
       final container = phone();
       await pumpEventQueue();
       final notifier = notifierOf(container);
@@ -700,7 +768,7 @@ void main() {
       await pumpEventQueue();
 
       notifier.tapStreet(StreetId('emile'));
-      answer.complete();
+      streets.holdAdds!.complete();
       await adding;
 
       expect(streets.added, hasLength(1));
@@ -711,8 +779,7 @@ void main() {
     });
 
     test('should still add the street when the screen closes', () async {
-      final answer = Completer<void>();
-      shapes.whileAsked = () => answer.future;
+      streets.holdAdds = Completer();
       final container = phone();
       await pumpEventQueue();
       final notifier = notifierOf(container);
@@ -721,7 +788,7 @@ void main() {
       await pumpEventQueue();
 
       container.dispose();
-      answer.complete();
+      streets.holdAdds!.complete();
       await adding;
 
       expect(streets.added, hasLength(1));

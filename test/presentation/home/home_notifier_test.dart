@@ -6,6 +6,7 @@ import 'package:tournee_calendriers/domain/map/map_layers.dart';
 import 'package:tournee_calendriers/domain/map/tournee_area.dart';
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
+import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/progress_level.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
@@ -36,6 +37,7 @@ import '../../domain/tournee/tournee_fixtures.dart'
 import '../../support/fakes/fake_my_tournees_store.dart';
 import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_street_repository.dart';
+import '../../support/fakes/fake_street_shapes.dart';
 import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/geo_fixtures.dart';
 import '../../support/results.dart';
@@ -123,6 +125,11 @@ final _morin = valueOf(
   ),
 );
 
+/// The road of Rue Pierre Morin, as the map draws it.
+final _morinRoad = StreetShape([
+  [at(46.0095, 4.7300), at(46.0105, 4.7300)],
+]);
+
 final _nationaleRow = StreetRow(
   id: StreetId('nationale'),
   name: 'Rue Nationale',
@@ -151,6 +158,7 @@ final _hugoRow = StreetRow(
 void main() {
   late FakeStreetRepository streets;
   late FakeTourneeRepository tournees;
+  late FakeStreetShapes shapes;
 
   /// Léa's phone with [open] open (the 49 by default), or none.
   ProviderContainer phone({TourneeSummary? open}) {
@@ -159,6 +167,8 @@ void main() {
       overrides: [
         streetRepositoryProvider.overrideWithValue(streets),
         tourneeRepositoryProvider.overrideWithValue(tournees),
+        streetShapesProvider.overrideWithValue(shapes),
+        clockProvider.overrideWithValue(FakeClock(createdAt)),
         identityProvider.overrideWithValue(FakeIdentity(_lea)),
         myTourneesStoreProvider.overrideWithValue(
           FakeMyTourneesStore(
@@ -176,6 +186,7 @@ void main() {
 
   setUp(() {
     streets = FakeStreetRepository([_nationale, _emile, _paix, _hugo]);
+    shapes = FakeStreetShapes(Ok(_morinRoad));
     tournees = FakeTourneeRepository([
       team(
         communes: [villefrancheCommune, gleizeCommune],
@@ -368,6 +379,30 @@ void main() {
     });
   });
 
+  group('lines on the map', () {
+    test('should give a street without a line its road, in the '
+        'background', () async {
+      await streets.add(_morin);
+      final container = phone();
+      await pumpEventQueue();
+
+      expect(shapes.askedNames, ['Rue Pierre Morin']);
+      expect(streets[_morin.id]!.shape, _morinRoad);
+      expect(
+        container.read(homeProvider).layers.lines.map((line) => line.shape),
+        containsAll([_nationaleShape, _morinRoad]),
+      );
+    });
+
+    test('should ask nothing when every street has its line or no '
+        'house on the map', () async {
+      phone();
+      await pumpEventQueue();
+
+      expect(shapes.asked, isEmpty);
+    });
+  });
+
   group('street tapped on the map', () {
     test('should show the card of the street tapped', () async {
       final container = phone();
@@ -500,6 +535,8 @@ void main() {
       overrides: [
         streetRepositoryProvider.overrideWithValue(streets),
         tourneeRepositoryProvider.overrideWithValue(tournees),
+        streetShapesProvider.overrideWithValue(shapes),
+        clockProvider.overrideWithValue(FakeClock(createdAt)),
         identityProvider.overrideWithValue(FakeIdentity(_lea)),
         myTourneesStoreProvider.overrideWithValue(FakeMyTourneesStore()),
       ],

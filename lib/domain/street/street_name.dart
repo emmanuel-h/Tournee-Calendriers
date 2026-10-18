@@ -1,3 +1,4 @@
+import 'package:tournee_calendriers/domain/shared/french_text.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/shared/text_length.dart';
 
@@ -42,6 +43,14 @@ final class StreetName {
 
   /// The cleaned name, never empty.
   final String text;
+
+  /// Whether [other], a name as another source writes it (a road of
+  /// OpenStreetMap), names this street: the same words, ignoring case,
+  /// accents, the kind of apostrophe and hyphens against spaces (see
+  /// `searchKey`). The BAN often leaves the accents out: « Rue du Musee »
+  /// is « Rue du Musée » on the map. The whole name must match: « Rue
+  /// Nationale » is not « Rue Nationale Prolongée ».
+  bool matches(String other) => searchKey(other) == searchKey(text);
 
   @override
   bool operator ==(Object other) => other is StreetName && other.text == text;

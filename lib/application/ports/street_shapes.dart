@@ -1,28 +1,29 @@
-import 'package:tournee_calendriers/domain/shared/insee_code.dart';
+import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 
-/// Where a street runs, as OpenStreetMap draws it: the line of the street
-/// on the map, asked once when the street is added from the map (PLAN §5.4,
-/// §9).
+/// Where a street runs, as OpenStreetMap draws it on the map: the line of
+/// the street, asked for a street to add on « Ajouter des rues », and for a
+/// street of the tournée that has none yet (PLAN §5.3, §5.4, §9).
 ///
-/// An outbound port: an adapter in `infrastructure/overpass/` implements it
-/// over HTTP, tests use a fake. Every call needs the network; a failure
+/// An outbound port: an adapter in `infrastructure/map_tiles/` implements
+/// it over HTTP, tests use a fake. A call may need the network; a failure
 /// comes back as an [Err] holding a [StreetShapesFailure], never as an
 /// exception.
 abstract interface class StreetShapes {
-  /// The roads named [name] in the commune [commune], one line a road
-  /// (OpenStreetMap often cuts a street in several), each with every point
-  /// it has: [StreetShape.simplified] makes it small enough to store.
+  /// The roads named [name] inside [area] (around the street's houses, see
+  /// `shapeSearchArea`), cut where they leave it, each with every point it
+  /// has: [StreetShape.simplified] makes it small enough to store.
   ///
-  /// The name is matched ignoring case, accents, the kind of apostrophe and
-  /// hyphens against spaces, because the BAN often writes it without its
-  /// accents (« Rue du Musee » for « Rue du Musée »). [StreetShape.none]
-  /// when no road matches: the street then shows as its house dots only.
+  /// The area keeps out a road of the same name in the next commune. The
+  /// name is matched as [StreetName.matches] says (case, accents,
+  /// apostrophes, hyphens), because the BAN often writes it without its
+  /// accents. [StreetShape.none] when no road matches: the street then
+  /// shows as its house dots only.
   Future<Result<StreetShape, StreetShapesFailure>> shapeOf({
     required StreetName name,
-    required InseeCode commune,
+    required GeoBounds area,
   });
 }
 
@@ -32,7 +33,7 @@ enum StreetShapesFailure {
   /// Trying again with a better signal may work.
   noNetwork,
 
-  /// The service answered with an error (it is often busy) or with
-  /// something unreadable. Trying again later may work.
+  /// The service answered with an error or with something unreadable.
+  /// Trying again later may work.
   serviceError,
 }

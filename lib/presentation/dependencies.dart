@@ -34,6 +34,7 @@ import 'package:tournee_calendriers/application/use_cases/choose_start_point.dar
 import 'package:tournee_calendriers/application/use_cases/create_tournee.dart';
 import 'package:tournee_calendriers/application/use_cases/describe_building.dart';
 import 'package:tournee_calendriers/application/use_cases/edit_street_numbers.dart';
+import 'package:tournee_calendriers/application/use_cases/fill_street_shape.dart';
 import 'package:tournee_calendriers/application/use_cases/find_imported_streets.dart';
 import 'package:tournee_calendriers/application/use_cases/hide_done.dart';
 import 'package:tournee_calendriers/application/use_cases/import_reference_area.dart';
@@ -199,7 +200,6 @@ final lookUpStreetProvider = Provider(
 );
 final addStreetFromMapProvider = Provider(
   (ref) => AddStreetFromMap(
-    ref.watch(streetShapesProvider),
     ref.watch(streetRepositoryProvider),
     ref.watch(idGeneratorProvider),
     ref.watch(identityProvider),
@@ -207,6 +207,12 @@ final addStreetFromMapProvider = Provider(
 );
 final lookUpStreetShapeProvider = Provider(
   (ref) => LookUpStreetShape(ref.watch(streetShapesProvider)),
+);
+final fillStreetShapeProvider = Provider(
+  (ref) => FillStreetShape(
+    ref.watch(streetShapesProvider),
+    ref.watch(streetRepositoryProvider),
+  ),
 );
 final addManualStreetProvider = Provider(
   (ref) => AddManualStreet(

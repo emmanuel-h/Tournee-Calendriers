@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
-import 'package:tournee_calendriers/application/ports/street_shapes.dart';
 import 'package:tournee_calendriers/application/use_cases/add_street_from_map.dart';
 import 'package:tournee_calendriers/application/use_cases/look_up_street.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
@@ -36,7 +35,11 @@ final addStreetsMapProvider =
 ///
 /// - **A tap on a road** looks the street up (`LookUpStreet`, network):
 ///   the card of the tournée's street, or of the street to add, with its
-///   road asked of OpenStreetMap meanwhile (`LookUpStreetShape`).
+///   road asked of the map meanwhile (`LookUpStreetShape`) and highlighted
+///   as soon as it is known.
+/// - **« Ajouter »** never waits for the road: the street is added with
+///   the road when it is known, and given it once it comes otherwise
+///   (`FillStreetShape`).
 /// - **A tap on a street of the tournée** shows its card at once, offline
 ///   too.
 /// - **The search** asks the BAN in the tournée's communes; a street
@@ -60,7 +63,8 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState>
   _Target? _target;
   GeoPoint? _point;
 
-  /// The road of a street to add, once OpenStreetMap told it.
+  /// The road of the street to add (or just added from the card), once
+  /// the map told it.
   StreetShape _road = StreetShape.none;
 
   var _lookUps = 0;
@@ -216,26 +220,21 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState>
 
   /// « Ajouter et me l'attribuer » ([assignToMe]) or « Ajouter sans
   /// m'attribuer » on the card of a street to add: the street joins the
-  /// tournée, and its card becomes the one of a street of the tournée.
+  /// tournée at once, with its road when the map told it already, and its
+  /// card becomes the one of a street of the tournée.
   Future<void> add({required bool assignToMe}) async {
     final target = _target;
     if (target is! _ToAdd || target.adding) return;
-    // Read now: the screen may close while the road is awaited, and the
+    // Read now: the screen may close while the street is stored, and the
     // street must still be added.
     final addStreet = ref.read(addStreetFromMapProvider);
     final ticket = _lookUps;
     _target = target.copy(adding: true);
     _show();
-    // The road the card asked for, when OpenStreetMap answered; otherwise
-    // `AddStreetFromMap` asks again.
-    final shape = switch (await target.shape) {
-      Ok(:final value) => value,
-      Err() => null,
-    };
     final result = await addStreet(
       target.found.numbers,
       assignToMe: assignToMe,
-      shape: shape,
+      shape: _road,
     );
     // Another card was asked for meanwhile: it stays.
     if (!ref.mounted || ticket != _lookUps) return;
@@ -243,6 +242,7 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState>
       case Ok(value: final street):
         _target = _InTournee(street);
         _show();
+        _fillAddedStreet();
       // A teammate added it meanwhile: its card as the tournée has it.
       case Err(failure: AddStreetFailure.alreadyInTournee):
         await _lookUp(FoundStreet(target.found.match), _point);
@@ -282,24 +282,32 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState>
       case Ok(value: StreetOfTheTournee(:final street)):
         _target = _InTournee(street);
       case Ok(value: final StreetToAdd found):
-        final shape = ref.read(lookUpStreetShapeProvider)(found.match);
-        _target = _ToAdd(found, shape);
-        unawaited(_showRoad(shape, ticket));
+        _target = _ToAdd(found);
+        unawaited(_showRoad(found, ticket));
     }
     _show();
   }
 
-  /// Highlights the road once OpenStreetMap tells it, if the card is still
-  /// the one of [ticket]. Its failure only leaves the point marked.
-  Future<void> _showRoad(
-    Future<Result<StreetShape, StreetShapesFailure>> shape,
-    int ticket,
-  ) async {
-    final road = await shape;
+  /// Highlights the road of [found] once the map tells it, if the card is
+  /// still the one of [ticket]; when the street was added meanwhile, gives
+  /// it that road. A failure only leaves the point marked.
+  Future<void> _showRoad(StreetToAdd found, int ticket) async {
+    final road = await ref.read(lookUpStreetShapeProvider)(found);
     if (!ref.mounted || ticket != _lookUps) return;
     if (road case Ok(:final value)) {
       _road = value;
       _show();
+      _fillAddedStreet();
+    }
+  }
+
+  /// Gives the street just added from the card the road the map told,
+  /// when it was added before the road came. Offline, the write waits on
+  /// the phone like any other.
+  void _fillAddedStreet() {
+    if (_target case _InTournee(:final street)
+        when street.shape.isEmpty && !_road.isEmpty) {
+      unawaited(ref.read(fillStreetShapeProvider)(street.id, road: _road));
     }
   }
 
@@ -328,7 +336,9 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState>
       layers: MapLayers.of(_streets),
       area: _focus ?? addStreetsArea(_communes, _streets),
       selectedRoad: switch (target) {
-        _InTournee(:final street) => street.shape,
+        // A street just added keeps the road the card found until its own
+        // comes back from storage.
+        _InTournee(:final street) when !street.shape.isEmpty => street.shape,
         _ => _road,
       },
       selectedPoint: _point,
@@ -371,23 +381,17 @@ final class _Failed extends _Target {
   final LookUpProblem problem;
 }
 
-/// A street to add, with its road on its way from OpenStreetMap.
+/// A street to add.
 final class _ToAdd extends _Target {
-  const _ToAdd(
-    this.found,
-    this.shape, {
-    this.adding = false,
-    this.addFailed = false,
-  });
+  const _ToAdd(this.found, {this.adding = false, this.addFailed = false});
 
   final StreetToAdd found;
-  final Future<Result<StreetShape, StreetShapesFailure>> shape;
   final bool adding;
   final bool addFailed;
 
   /// The same street, being added, or refused.
   _ToAdd copy({bool adding = false, bool addFailed = false}) =>
-      _ToAdd(found, shape, adding: adding, addFailed: addFailed);
+      _ToAdd(found, adding: adding, addFailed: addFailed);
 }
 
 /// A street of the tournée, as last read.

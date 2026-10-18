@@ -2,6 +2,7 @@ import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
 
 import '../../support/results.dart';
+import '../../support/street_fixtures.dart';
 
 void main() {
   group('create', () {
@@ -111,5 +112,37 @@ void main() {
       valueOf(StreetName.create('Rue des Lilas')).toString(),
       'StreetName(Rue des Lilas)',
     );
+  });
+
+  group('matches', () {
+    final musee = streetName('Rue du Musée');
+
+    test('should match the same name', () {
+      expect(musee.matches('Rue du Musée'), isTrue);
+    });
+
+    test('should match whatever the case and the accents', () {
+      expect(musee.matches('RUE DU MUSEE'), isTrue);
+      expect(streetName('Rue du Musee').matches('Rue du Musée'), isTrue);
+    });
+
+    test('should match either apostrophe', () {
+      expect(streetName("Rue de l'Église").matches('Rue de l’Église'), isTrue);
+    });
+
+    test('should match a hyphen for a space', () {
+      expect(streetName('Rue Saint Roch').matches('Rue Saint-Roch'), isTrue);
+    });
+
+    test('should not match a longer name that starts the same', () {
+      expect(
+        streetName('Rue Nationale').matches('Rue Nationale Prolongée'),
+        isFalse,
+      );
+    });
+
+    test('should not match another name', () {
+      expect(musee.matches('Rue du Marché'), isFalse);
+    });
   });
 }

@@ -39,7 +39,7 @@ Code audit clean-up (#88) and « Modifié par Léa » on the house and door shee
 (2026-10-17). #90 open: go_router 18.1 done; Firebase (Firestore 7…) waits for
 `fake_cloud_firestore` to support it. `tool/admin_e2e.sh` fails ~1 run in 4 from stale reads of
 the Firestore emulator (firebase-tools 13.35.1); the fix is its upgrade (#69, needs Node ≥ 20).
-M3 delivered (2026-10-18), awaiting the user's phone test: geometry and map layers (#26), geopf/Overpass adapters (#27), street-picking use cases with shapes and assignees (#28), MapLibre map widget in `ui/map/` (#29), a tournée's communes and « Ajouter des rues » Carte | Liste (#78), Accueil (#30), the street card, search and manual street (#31), tries with nobody home (#80), the sheet on a tap to ↻ with a day + hour (#81). Follow-ups #91, #92 open. **`firestore.rules` changed since the last deploy** (shape, assignees, communes, tries, come-back time): deploy them with the next release, not before (older builds' writes would be refused).
+M3 delivered (2026-10-18), released as 0.5.0, in phone test: geometry and map layers (#26), geopf adapters (#27), street-picking use cases with shapes and assignees (#28), MapLibre map widget in `ui/map/` (#29), a tournée's communes and « Ajouter des rues » Carte | Liste (#78), Accueil (#30), the street card, search and manual street (#31), tries with nobody home (#80), the sheet on a tap to ↻ with a day + hour (#81). Follow-ups from the phone test: street shapes from the OpenFreeMap vector tiles instead of Overpass, filled once for streets without one (#92); take a street from « Autres rues » (#93); #91 open. Rules deployed 2026-10-18 (0.5.0); **`firestore.rules` changed since** (shape fill, #92): deploy them with the next release.
 Release signing and Play publishing pulled forward from M5 (#37): 0.4.0 (code 4) is on the
 internal track; publish with the `release-store` skill. `lib/bootstrap/firebase_options.dart` and `android/app/google-services.json`
 are gitignored: run `flutterfire configure --out=lib/bootstrap/firebase_options.dart` locally;
@@ -74,7 +74,7 @@ Emulator: `~/Android/Sdk/emulator/emulator -avd Medium_Phone_API_36.1 -no-window
 lib/
 ├── domain/          aggregates, entities, value objects, domain services, repository ports
 ├── application/     use cases (one class, one `call`) + outbound ports
-├── infrastructure/  adapters: Firestore, geopf/BAN/Overpass (http), MapLibre offline, auth, prefs
+├── infrastructure/  adapters: Firestore, geopf/BAN/OpenFreeMap tiles (http), MapLibre offline, auth, prefs
 ├── presentation/    Riverpod Notifiers + immutable view states (use cases only)
 ├── ui/              Flutter widgets: screens, theme/, components/, map/
 └── bootstrap/       composition root: Firebase init, providers binding ports → adapters

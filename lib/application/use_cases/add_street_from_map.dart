@@ -1,7 +1,6 @@
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/id_generator.dart';
 import 'package:tournee_calendriers/application/ports/identity_provider.dart';
-import 'package:tournee_calendriers/application/ports/street_shapes.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
@@ -26,24 +25,17 @@ enum AddStreetFailure {
 /// numbers and positions `LookUpStreet` read from the BAN, and its shape
 /// on the map.
 ///
-/// - **The shape** is asked of OpenStreetMap (Overpass) and stored
-///   simplified (`StreetShape.simplified`). Overpass is often busy and
-///   answers 502 or 504 for an hour at times: whatever goes wrong there,
-///   or when it knows no such road, the street is added without shape. It
-///   then shows as its house dots, and in the lists.
+/// - **The shape** is the road the card found already, when it did
+///   (`LookUpStreetShape`): adding never waits for the map. Without it,
+///   the street is added without shape, shows as its house dots, and gets
+///   its line later (`FillStreetShape`, PLAN §5.3).
 /// - **A street of the Corbeille** comes back with its marks, as importing
-///   it again would (PLAN §6.1); Overpass is not asked.
+///   it again would (PLAN §6.1).
 /// - **[assignToMe]** gives the street to the member on the phone: it joins
 ///   their « Mes rues ».
 final class AddStreetFromMap {
-  const AddStreetFromMap(
-    this._shapes,
-    this._streets,
-    this._ids,
-    this._identity,
-  );
+  const AddStreetFromMap(this._streets, this._ids, this._identity);
 
-  final StreetShapes _shapes;
   final StreetRepository _streets;
   final IdGenerator _ids;
   final IdentityProvider _identity;
@@ -51,31 +43,16 @@ final class AddStreetFromMap {
   /// Adds the street of [numbers] to the tournée and returns it as stored.
   ///
   /// [shape] is the road the card found already (`LookUpStreetShape`,
-  /// simplified): stored as it is, without asking Overpass again. Null
-  /// when the card has none (Overpass failed then, or was not asked).
+  /// simplified), stored as it is; none while the card has not found it.
   Future<Result<Street, AddStreetFailure>> call(
     StreetNumbers numbers, {
     required bool assignToMe,
-    StreetShape? shape,
+    StreetShape shape = StreetShape.none,
   }) async {
     final known = await _streets.findByBanId(numbers.id);
     if (known != null) {
       if (!known.isDeleted) return const Err(AddStreetFailure.alreadyInTournee);
       return Ok(await _bringBack(known, assignToMe: assignToMe));
-    }
-
-    // `??`: the shape given, else Overpass's answer.
-    shape ??= switch (await _shapes.shapeOf(
-      name: numbers.name,
-      commune: numbers.commune.inseeCode,
-    )) {
-      Ok(:final value) => value.simplified(),
-      Err() => StreetShape.none,
-    };
-    // Overpass may take its 20 seconds: a teammate, or a second tap, may
-    // have added the street meanwhile.
-    if (await _streets.findByBanId(numbers.id) != null) {
-      return const Err(AddStreetFailure.alreadyInTournee);
     }
 
     switch (Street.create(

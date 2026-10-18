@@ -11,6 +11,7 @@ import 'package:tournee_calendriers/domain/street/nobody_home_tries.dart';
 import 'package:tournee_calendriers/domain/street/removed_house.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
+import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
 /// What one command of a `Street` changed, returned next to the new street.
@@ -493,6 +494,31 @@ final class StreetReleased extends StreetChange {
 
   @override
   String toString() => 'StreetReleased(${streetId.value}, ${member.value})';
+}
+
+/// The street, which had no line on the map, got [shape]: its road was
+/// found after the street was added (PLAN §5.3). A shape is set once.
+///
+/// Storage writes the street's `shape` field alone; the security rules
+/// accept it only while the stored shape is empty, so two phones finding
+/// it at once cannot replace each other's.
+final class StreetShapeFilled extends StreetChange {
+  const StreetShapeFilled({required super.streetId, required this.shape});
+
+  final StreetShape shape;
+
+  @override
+  bool operator ==(Object other) =>
+      other is StreetShapeFilled &&
+      other.streetId == streetId &&
+      other.shape == shape;
+
+  @override
+  int get hashCode => Object.hash(streetId, shape);
+
+  @override
+  String toString() =>
+      'StreetShapeFilled(${streetId.value}, ${shape.lines.length} lines)';
 }
 
 /// Numbers were added to the street from the « Ajouter des numéros » sheet

@@ -53,4 +53,27 @@ void main() {
       );
     });
   });
+
+  group('metresBetween', () {
+    test('should measure straight north between two points', () {
+      expect(
+        metresBetween(at(45.99, 4.716), at(45.9901, 4.716)),
+        closeTo(0.0001 * metresPerDegree, 1e-6),
+      );
+    });
+
+    test('should measure along the latitude, shorter than a degree of '
+        'latitude', () {
+      final cosine = math.cos(45.99 * math.pi / 180);
+
+      expect(
+        metresBetween(at(45.99, 4.716), at(45.99, 4.717)),
+        closeTo(0.001 * cosine * metresPerDegree, 1e-6),
+      );
+    });
+
+    test('should be zero between a point and itself', () {
+      expect(metresBetween(at(45.99, 4.716), at(45.99, 4.716)), 0);
+    });
+  });
 }

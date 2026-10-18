@@ -104,7 +104,8 @@ later screen could be checked with real streets (decided with you on 2026-10-04)
 | [#80](https://github.com/emmanuel-h/Tournee-Calendriers/issues/80) | Count the visits to a house: « still nobody » on a return |  |
 | [#81](https://github.com/emmanuel-h/Tournee-Calendriers/issues/81) | The third tap opens the details to set when to come back |  |
 | [#91](https://github.com/emmanuel-h/Tournee-Calendriers/issues/91) | Release the streets of a member removed from the tournée |  |
-| [#92](https://github.com/emmanuel-h/Tournee-Calendriers/issues/92) | Fetch a street's shape again when Overpass failed |  |
+| [#92](https://github.com/emmanuel-h/Tournee-Calendriers/issues/92) | Take street shapes from the map tiles, and fill the shapes of streets without one |  |
+| [#93](https://github.com/emmanuel-h/Tournee-Calendriers/issues/93) | Take a street from « Autres rues de la tournée » on Accueil |  |
 
 ## M4 Offline
 

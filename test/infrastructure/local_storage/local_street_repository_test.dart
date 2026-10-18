@@ -11,11 +11,13 @@ import 'package:tournee_calendriers/application/use_cases/set_house_details.dart
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_street_repository.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/mappers/street_json_mapper.dart';
 
 import '../../support/fakes/fake_ports.dart';
+import '../../support/geo_fixtures.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 import 'stored_street_fixtures.dart';
@@ -80,6 +82,21 @@ void main() {
 
       expect(found!.houses.last.status, VisitStatus.done);
       expect(found.houses.last.lastChange, leaAtTwo);
+    });
+
+    test('should keep the shape found for a street after a restart', () async {
+      final streets = restart();
+      final lilas = _street('lilas', 'Rue des Lilas');
+      await streets.add(lilas);
+      final shape = StreetShape([
+        [at(45.98915, 4.71862), at(45.99210, 4.71705)],
+      ]);
+      final (filled, change) = valueOf(lilas.fillShape(shape));
+      await streets.save(filled, change);
+
+      final found = await restart().find(StreetId('lilas'));
+
+      expect(found!.shape, shape);
     });
 
     test('should keep the last of quick saves in a row', () async {

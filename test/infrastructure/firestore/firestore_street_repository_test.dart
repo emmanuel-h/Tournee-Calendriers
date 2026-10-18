@@ -9,6 +9,7 @@ import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_street_repository.dart';
@@ -16,6 +17,7 @@ import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_docu
 
 import '../../domain/tournee/tournee_fixtures.dart' show campaign2026;
 import '../../support/fakes/fake_ports.dart';
+import '../../support/geo_fixtures.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 import '../local_storage/stored_street_fixtures.dart';
@@ -163,6 +165,25 @@ void main() {
 
       final stored = (await db.doc('$streetsPath/lilas').get()).data()!;
       expect(stored['assignees'], ['paul']);
+    });
+
+    test('should store the shape found for a street without one', () async {
+      await phone().add(lilas);
+      await pumpEventQueue();
+      final streets = phone();
+      final shape = StreetShape([
+        [at(45.98915, 4.71862), at(45.99210, 4.71705)],
+      ]);
+
+      final (filled, change) = valueOf(
+        (await streets.find(lilas.id))!.fillShape(shape),
+      );
+      await streets.save(filled, change);
+      await pumpEventQueue();
+
+      final stored = (await db.doc('$streetsPath/lilas').get()).data()!;
+      expect(stored['shape'], shape.encode());
+      expect((await phone('paul').find(lilas.id))!.shape, shape);
     });
 
     test('should write only the fields the change names', () async {

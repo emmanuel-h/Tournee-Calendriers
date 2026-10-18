@@ -507,11 +507,24 @@ service cloud.firestore {
       return ['shape', 'assignees'];
     }
 
-    // A shape: one encoded polyline per piece of road, written once with
-    // the street, never changed. Counted, not checked line by line (no
-    // loops); a street has a few dozen pieces at most.
+    // A shape: one encoded polyline per piece of road, written once, with
+    // the street or later (#92), never replaced. Counted, not checked line
+    // by line (no loops); a street has a few dozen pieces at most.
     function isShape(shape) {
       return shape is list && shape.size() <= 1000;
+    }
+
+    // The shape of a street that had none, found after it was added
+    // (#92): the `shape` field alone, while the stored one is absent (a
+    // street of before the map) or empty, with at least one line. So a
+    // shape is set once: two phones finding it at once cannot replace
+    // each other's.
+    function isShapeFill(before, after) {
+      return after.diff(before).affectedKeys().hasOnly(['shape'])
+        && before.get('shape', []) == []
+        && isShape(after.shape)
+        && after.shape.size() >= 1
+        && after.shape[0] is string;
     }
 
     // A new street (import from the BAN, PLAN §6.2): out of the Corbeille.
@@ -531,8 +544,8 @@ service cloud.firestore {
     }
 
     // A change of a street (the table of PLAN §6.2): its name, its
-    // deletion (Corbeille), who covers it, or its houses. The commune, the
-    // BAN id and the shape never change.
+    // deletion (Corbeille), who covers it, or its houses. The commune and
+    // the BAN id never change; the shape only by [isShapeFill].
     function isStreetChange(tournee, before, after) {
       return after.diff(before).affectedKeys().hasOnly(['name', 'deletedAt', 'deletedBy', 'houses', 'assignees'])
         && (after.name == before.name || isName(after.name, 150))
@@ -664,7 +677,8 @@ service cloud.firestore {
             && isNewStreet(request.resource.data);
           allow update: if isMemberOrAdmin(tournee)
             && year == string(get(tourneePath(tournee)).data.currentCampaign)
-            && isStreetChange(tournee, resource.data, request.resource.data);
+            && (isStreetChange(tournee, resource.data, request.resource.data)
+              || isShapeFill(resource.data, request.resource.data));
           // A street goes to the Corbeille by an update. Hard deletion goes
           // with the tournée (an admin), or is the 30-day purge, which any
           // active member's or admin's app makes (no server, PLAN §5.11).

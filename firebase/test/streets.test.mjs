@@ -273,12 +273,79 @@ describe('who covers a street', () => {
     await assertFails(take(zoe));
   });
 
-  it('should refuse any change of the shape', async () => {
-    await assertFails(updateFields(nationale(), [[['shape'], []]]));
-    await coveredBy(undefined);
-    const { shape, ...beforeTheMap } = streetDoc();
-    await seed(env, `${streetsPath}/nationale`, beforeTheMap);
-    await assertFails(updateFields(nationale(), [[['shape'], ['eguwGkrx[mQxH']]]));
+});
+
+// The shape of a street that had none, found later (#92): set once, by
+// `StreetShapeFilled`, which writes the `shape` field alone.
+describe('filling the shape', () => {
+  const road = ['eguwGkrx[mQxH', 'qguwG_sx[gEoB'];
+
+  /** Rue Nationale stored with [shape], or without the field (undefined). */
+  const shaped = (shape) => {
+    const data = streetDoc({ shape });
+    if (shape === undefined) delete data.shape;
+    return seed(env, `${streetsPath}/nationale`, data);
+  };
+
+  const fill = (shape, uid = lea) => updateFields(nationale(uid), [[['shape'], shape]]);
+
+  it('should let a member fill an empty shape', async () => {
+    await shaped([]);
+
+    await assertSucceeds(fill(road));
+  });
+
+  it('should let a member fill the shape of a street written before the map', async () => {
+    await shaped(undefined);
+
+    await assertSucceeds(fill(road));
+  });
+
+  it('should accept a shape of 1 000 lines and refuse 1 001', async () => {
+    await shaped([]);
+    const lines = (count) => Array.from({ length: count }, () => 'eguwGkrx[mQxH');
+
+    await assertFails(fill(lines(1001)));
+    await assertSucceeds(fill(lines(1000)));
+  });
+
+  it('should refuse to replace a shape', async () => {
+    await assertFails(fill(road));
+  });
+
+  it('should refuse to empty a shape', async () => {
+    await assertFails(fill([]));
+  });
+
+  it('should refuse to fill a shape with no line', async () => {
+    await shaped(undefined);
+
+    await assertFails(fill([]));
+  });
+
+  it('should refuse a shape that is not a list of texts', async () => {
+    await shaped([]);
+
+    await assertFails(fill('eguwGkrx[mQxH'));
+    await assertFails(fill([12]));
+  });
+
+  it('should refuse anything else in the same write', async () => {
+    await shaped([]);
+
+    await assertFails(
+      updateFields(nationale(), [
+        [['shape'], road],
+        [['name'], 'Rue de la Paix'],
+      ]),
+    );
+  });
+
+  it('should refuse a pending member and an outsider', async () => {
+    await shaped([]);
+
+    await assertFails(fill(road, paul));
+    await assertFails(fill(road, zoe));
   });
 });
 

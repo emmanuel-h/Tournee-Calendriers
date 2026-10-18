@@ -34,3 +34,7 @@ double metresFromSegment(GeoPoint point, GeoPoint start, GeoPoint end) {
   final dy = py - fraction * ey;
   return math.sqrt(dx * dx + dy * dy);
 }
+
+/// How far apart [a] and [b] are, in metres, on the same tangent plane as
+/// [metresFromSegment] (a segment of no length is its one point).
+double metresBetween(GeoPoint a, GeoPoint b) => metresFromSegment(b, a, a);

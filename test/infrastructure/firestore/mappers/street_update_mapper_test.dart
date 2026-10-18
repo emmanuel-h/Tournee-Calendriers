@@ -10,11 +10,13 @@ import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
+import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_document_mapper.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_update_mapper.dart';
 
 import '../../../support/building_fixtures.dart';
+import '../../../support/geo_fixtures.dart' as geo;
 import '../../../support/results.dart';
 import '../../../support/street_fixtures.dart';
 import '../../local_storage/stored_street_fixtures.dart';
@@ -542,6 +544,20 @@ void main() {
       expect(update, {
         FieldPath(const ['name']): 'Rue des Roses',
       });
+    });
+
+    test('should write the shape found for the street, line by line', () {
+      final shape = StreetShape([
+        [geo.at(45.98915, 4.71862), geo.at(45.99210, 4.71705)],
+        [geo.at(45.98800, 4.72500), geo.at(45.98900, 4.72500)],
+      ]);
+
+      final update = updateOf(lilas, (s) => s.fillShape(shape));
+
+      expect(update, {
+        FieldPath(const ['shape']): shape.encode(),
+      });
+      expect(shape.encode(), hasLength(2));
     });
 
     test('should write who deleted the street and when', () {

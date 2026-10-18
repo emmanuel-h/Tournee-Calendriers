@@ -175,4 +175,23 @@ void main() {
       );
     });
   });
+
+  group('shapeSearchArea', () {
+    test('should add a margin of 150 m', () {
+      expect(shapeSearchMarginMetres, 150);
+    });
+
+    test('should hold every house position, with the margin', () {
+      final positions = [at(45.98920, 4.71860), at(45.99200, 4.71710)];
+
+      expect(
+        shapeSearchArea(positions),
+        GeoBounds.around(positions)!.expandedBy(150),
+      );
+    });
+
+    test('should be null without any position', () {
+      expect(shapeSearchArea([]), isNull);
+    });
+  });
 }
