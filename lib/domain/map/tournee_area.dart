@@ -64,3 +64,17 @@ const shapeSearchMarginMetres = 150.0;
 /// each side; null without any position (a street typed in by hand).
 GeoBounds? shapeSearchArea(Iterable<GeoPoint> positions) =>
     GeoBounds.around(positions)?.expandedBy(shapeSearchMarginMetres);
+
+/// The margin around a street shown on Accueil's map, in metres: enough
+/// to see the crossroads at both ends, close enough to read the houses.
+const streetMarginMetres = 60.0;
+
+/// Where Accueil's map goes to show [street] (PLAN §5.3, #93): its line on
+/// the map, else its houses' positions while it has no line, plus
+/// [streetMarginMetres] on each side; null when it has neither (typed in
+/// by hand).
+GeoBounds? streetArea(Street street) => GeoBounds.around(
+  street.shape.isEmpty
+      ? [for (final house in street.houses) ?house.position]
+      : street.shape.points,
+)?.expandedBy(streetMarginMetres);

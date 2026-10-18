@@ -7,6 +7,7 @@ import 'package:tournee_calendriers/domain/map/tournee_area.dart';
 import 'package:tournee_calendriers/domain/street/my_streets.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_commune.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/home/home_state.dart';
@@ -24,7 +25,8 @@ final homeProvider = NotifierProvider.autoDispose<HomeNotifier, HomeState>(
 
 /// Follows the open tournée's streets (`ObserveMyStreets`), communes and
 /// team, from the phone's copy, offline too, and the street tapped on the
-/// map, which the member may take or release from its card.
+/// map or among « Autres rues de la tournée », which the member may take
+/// or release from its card.
 ///
 /// Each time the streets change, it hands them to [MissingShapes], which
 /// finds in the background the line on the map of those that have none.
@@ -93,7 +95,20 @@ final class HomeNotifier extends Notifier<HomeState>
     _show();
   }
 
-  /// The map was tapped away from the tournée's streets.
+  /// A street was tapped among « Autres rues de la tournée » (#93): its
+  /// card shows, as on a tap on its line, and the map goes to the street
+  /// (its line, else its houses), where it then stays. A street with no
+  /// place on the map leaves the map where it is.
+  void focus(StreetId street) {
+    _selected = street;
+    if (_find(street) case final found?) {
+      _area = streetArea(found) ?? _area;
+    }
+    _show();
+  }
+
+  /// The map was tapped away from the tournée's streets, or the card
+  /// closed with the back gesture.
   void unselect() {
     _selected = null;
     _show();
@@ -126,6 +141,7 @@ final class HomeNotifier extends Notifier<HomeState>
     final visiting = ref.read(currentTourneeProvider)?.isVisiting ?? false;
     if (_streets != null) _area ??= homeArea(_communes, streets.all);
     final progress = visiting ? streets.teamProgress : streets.myProgress;
+    final selected = _find(_selected);
     return HomeState(
       loading: _streets == null,
       visiting: visiting,
@@ -136,19 +152,24 @@ final class HomeNotifier extends Notifier<HomeState>
       others: visiting ? const [] : _rows(streets.others),
       layers: MapLayers.of(streets.all),
       area: _area,
-      card: switch (streets.all
-          .where((street) => street.id == _selected)
-          .firstOrNull) {
+      // None tapped, or the street went to the Corbeille: no card, no line
+      // lit up.
+      card: switch (selected) {
         final street? => StreetCardInTournee.of(
           street,
           me: ref.read(readCurrentMemberProvider)(),
           team: team,
         ),
-        // None tapped, or the street went to the Corbeille.
         null => null,
       },
+      selectedRoad: selected?.shape ?? StreetShape.none,
     );
   }
+
+  /// The street [id] among those last read, null when it is not there
+  /// (gone to the Corbeille, or none read yet).
+  Street? _find(StreetId? id) =>
+      _streets?.all.where((street) => street.id == id).firstOrNull;
 
   static List<StreetRow> _rows(Iterable<Street> streets) => [
     for (final street in streets)

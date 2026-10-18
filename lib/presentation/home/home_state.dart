@@ -1,5 +1,6 @@
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/map/map_layers.dart';
+import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/presentation/street_card/street_card.dart';
 import 'package:tournee_calendriers/presentation/street_list/street_list_state.dart';
 
@@ -18,6 +19,7 @@ final class HomeState {
     required this.layers,
     required this.area,
     required this.card,
+    required this.selectedRoad,
   }) : mine = List.unmodifiable(mine),
        others = List.unmodifiable(others);
 
@@ -47,16 +49,21 @@ final class HomeState {
   /// The streets and house dots the map draws.
   final MapLayers layers;
 
-  /// Where the map opens: the tournée's streets, else its communes; null
-  /// (all of France) when neither has a place on the map. Decided once,
+  /// Where the map shows: first the tournée's streets, else its communes;
+  /// null (all of France) when neither has a place on the map. Decided
   /// when the streets are first read, so a street added meanwhile by the
-  /// team never moves the map under the member's finger.
+  /// team never moves the map under the member's finger; it moves only to
+  /// a street tapped among « Autres rues de la tournée » (#93).
   final GeoBounds? area;
 
-  /// The card of the street tapped on the map (PLAN §5.4): its progress,
-  /// who covers it, « Ouvrir » and « Me l'attribuer » or « Ne plus la
-  /// faire »; null when none is.
+  /// The card of the street tapped on the map or among « Autres rues de
+  /// la tournée » (PLAN §5.4): its progress, who covers it, « Ouvrir » and
+  /// « Me l'attribuer » or « Ne plus la faire »; null when none is.
   final StreetCardInTournee? card;
+
+  /// The line of the street whose card shows, lit up over the others;
+  /// none without a card, or for a street with no line.
+  final StreetShape selectedRoad;
 
   /// The tournée has no street yet.
   bool get hasNoStreet => !loading && mine.isEmpty && others.isEmpty;

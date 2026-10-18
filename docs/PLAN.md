@@ -423,8 +423,9 @@ an admin, shows only « Rejoindre une tournée », in red), and the bottom of th
   (`●` fait, `✗` personne, `↻` repasser, `○` à faire). Houses entered by hand have no position
   and appear only in the lists.
 - Tapping one of the tournée's streets on the map opens its street card (see 5.4) with *Ouvrir*.
-- The panel's rows open the Street screen. Dragging the panel up shows the full list; down
-  leaves only the handle and the totals.
+- The rows of « Mes rues » open the Street screen; a row under « Autres rues de la tournée »
+  opens that street's card over the map, as a tap on its line does (#93). Dragging the panel
+  up shows the full list; down leaves only the handle and the totals.
 - A "locate me" button centres the map on the phone's position (location permission asked
   the first time it is tapped, never at launch).
 - Delivered in T3.4 (`ui/map/TourneeMap`, used by 5.3 and 5.4): OpenFreeMap « liberty »;
@@ -454,8 +455,15 @@ an admin, shows only « Rejoindre une tournée », in red), and the bottom of th
   **A street tapped on the map** replaces the panel by its street card (5.4, since #31; it
   replaced HomeZoom's « Ouvrir Rue des Lilas · 31/42 »): name, commune, « 31/42 faits » and who
   covers it, « Ouvrir » and « Me l'attribuer » / « La faire aussi » / « Ne plus la faire »,
-  offline; a tap elsewhere on the map brings the list back. The map opens on the tournée's streets, else its communes, and stays where
-  the member puts it when the team adds a street. Not yet: the download banner (M4).
+  offline; a tap elsewhere on the map, or the back gesture, brings the list back. The street
+  whose card shows has its line lit up (the dark casing and white core of 5.4).
+  **A row under « Autres rues de la tournée »** (#93) shows the same card, so a street can be
+  taken without finding its line (or when it has none), and moves the map to the street: its
+  line, else its houses' positions, plus 60 m; the map stays there once the card is closed. A
+  street with no place on the map (typed in by hand) leaves the map where it is. The rows of
+  « Mes rues » (every row for a visiting admin) still open the Street screen. The map opens
+  on the tournée's streets, else its communes, and stays where the member puts it when the
+  team adds a street. Not yet: the download banner (M4).
 - **Lines filled in the background** (#92, `presentation/home/missing_shapes.dart`): each
   time Accueil reads the streets, those without a line on the map but with a house on it
   (`Street.needsShape`: imported from a list, or added before their road came) get their

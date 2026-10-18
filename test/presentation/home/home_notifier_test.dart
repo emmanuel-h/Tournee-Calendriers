@@ -424,6 +424,25 @@ void main() {
       );
     });
 
+    test('should light up the line of the street tapped, and leave the '
+        'map where it is', () async {
+      final container = phone();
+      await pumpEventQueue();
+
+      container.read(homeProvider.notifier).select(StreetId('nationale'));
+
+      final state = container.read(homeProvider);
+      expect(state.selectedRoad, _nationaleShape);
+      expect(state.area, tourneeArea([_nationale]));
+    });
+
+    test('should light up no line before a street is tapped', () async {
+      final container = phone();
+      await pumpEventQueue();
+
+      expect(container.read(homeProvider).selectedRoad, StreetShape.none);
+    });
+
     test('should show a street of the member\'s as theirs, naming who '
         'covers it too', () async {
       final container = phone();
@@ -527,6 +546,109 @@ void main() {
       await notifier.release();
 
       expect(streets.saved, isEmpty);
+    });
+  });
+
+  group('street tapped among « Autres rues de la tournée »', () {
+    test('should show its card, as a tap on its line does', () async {
+      final container = phone();
+      await pumpEventQueue();
+
+      container.read(homeProvider.notifier).focus(StreetId('paix'));
+
+      expect(
+        container.read(homeProvider).card,
+        StreetCardInTournee(
+          id: StreetId('paix'),
+          name: 'Rue de la Paix',
+          commune: 'Villefranche-sur-Saône',
+          done: 2,
+          total: 2,
+          coverage: StreetCoverage.free,
+          coveredBy: const [],
+        ),
+      );
+    });
+
+    test('should move the map to its line and light it up', () async {
+      final (free, change) = valueOf(_nationale.release(_lea));
+      await streets.save(free, change);
+      final container = phone();
+      await pumpEventQueue();
+
+      container.read(homeProvider.notifier).focus(StreetId('nationale'));
+
+      final state = container.read(homeProvider);
+      expect(state.area, streetArea(free));
+      expect(state.area, isNot(tourneeArea([free])));
+      expect(state.selectedRoad, _nationaleShape);
+    });
+
+    test('should move the map to its houses when it has no line', () async {
+      // The map knows no road of its name: it keeps no line.
+      shapes = FakeStreetShapes();
+      await streets.add(_morin);
+      final container = phone();
+      await pumpEventQueue();
+
+      container.read(homeProvider.notifier).focus(StreetId('morin'));
+
+      final state = container.read(homeProvider);
+      expect(state.area, streetArea(_morin));
+      expect(state.area, isNotNull);
+      expect(state.selectedRoad, StreetShape.none);
+      expect(state.card!.name, 'Rue Pierre Morin');
+    });
+
+    test('should leave the map where it is when the street has no place '
+        'on it', () async {
+      final container = phone();
+      await pumpEventQueue();
+
+      container.read(homeProvider.notifier).focus(StreetId('hugo'));
+
+      final state = container.read(homeProvider);
+      expect(state.area, tourneeArea([_nationale]));
+      expect(state.card!.name, 'Rue Victor Hugo');
+    });
+
+    test('should keep the map on the street once its card is '
+        'closed', () async {
+      final container = phone();
+      await pumpEventQueue();
+      final notifier = container.read(homeProvider.notifier);
+      notifier.focus(StreetId('nationale'));
+
+      notifier.unselect();
+
+      final state = container.read(homeProvider);
+      expect(state.card, isNull);
+      expect(state.selectedRoad, StreetShape.none);
+      expect(state.area, streetArea(_nationale));
+    });
+
+    test('should give it to the member with « Me l\'attribuer »', () async {
+      final container = phone();
+      await pumpEventQueue();
+      final notifier = container.read(homeProvider.notifier);
+      notifier.focus(StreetId('paix'));
+
+      await notifier.take();
+      await pumpEventQueue();
+
+      expect(streets[StreetId('paix')]!.assignees, {_lea});
+      expect(container.read(homeProvider).card!.coverage, StreetCoverage.mine);
+    });
+
+    test('should change nothing when the street is gone', () async {
+      final container = phone();
+      await pumpEventQueue();
+
+      container.read(homeProvider.notifier).focus(StreetId('gone'));
+
+      final state = container.read(homeProvider);
+      expect(state.card, isNull);
+      expect(state.area, tourneeArea([_nationale]));
     });
   });
 

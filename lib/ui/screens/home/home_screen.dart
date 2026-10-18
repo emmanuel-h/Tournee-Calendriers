@@ -63,10 +63,12 @@ PanelSize snapPanel(
 /// progress and, from street zoom, its houses; the legend chip; the
 /// « Mes rues » panel at the bottom. Its top bar is the start screen's.
 ///
-/// A tap on one of the tournée's streets on the map shows its street card
-/// (§5.4) in place of the panel: « Ouvrir », and « Me l'attribuer » or
-/// « Ne plus la faire »; a tap elsewhere brings the panel back. Works
-/// offline: the streets come from the phone's copy, the map from the
+/// A tap on one of the tournée's streets on the map, or on a row under
+/// « Autres rues de la tournée » (#93), shows its street card (§5.4) in
+/// place of the panel, its line lit up: « Ouvrir », and « Me l'attribuer »
+/// or « Ne plus la faire »; from a row, the map also goes to the street. A
+/// tap elsewhere on the map, or the back gesture, brings the panel back.
+/// Works offline: the streets come from the phone's copy, the map from the
 /// tiles it keeps.
 ///
 /// A `ConsumerStatefulWidget`: the panel's height and the legend's kind
@@ -100,117 +102,129 @@ final class _HomeScreenState extends ConsumerState<HomeScreen> {
     // `ref.read` for the intents: they are sent, never watched.
     final home = ref.read(homeProvider.notifier);
     final showMap = ref.watch(tourneeMapViewProvider);
-    return Scaffold(
-      appBar: StartAppBar(
-        tournee: ref.watch(currentTourneeProvider),
-        showGallery: widget.showGallery,
-      ),
-      body: SafeArea(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            // Only while an admin visits the open tournée.
-            const AdminVisitBanner(),
-            // The phone's streets offered to the open tournée (nothing
-            // when there is none to offer).
-            const MoveStreetsCard(),
-            Expanded(
-              child: LayoutBuilder(
-                builder: (context, constraints) {
-                  final room = constraints.maxHeight;
-                  final heights = {
-                    PanelSize.folded: AppSizes.homePanelFolded,
-                    PanelSize.rest: max(
-                      AppSizes.homePanelFolded,
-                      room * AppSizes.homePanelRestShare,
-                    ),
-                    PanelSize.full: max(AppSizes.homePanelFolded, room),
-                  };
-                  final card = state.card;
-                  // The room the panel (or the street card) takes over the
-                  // map once at rest: « Me localiser », the attribution and
-                  // the area the map fits stay clear of it.
-                  final covered = card == null ? heights[_size]! : _cardHeight;
-                  return Stack(
-                    children: [
-                      Positioned.fill(
-                        child: showMap(
-                          TourneeMap(
-                            key: const Key('home.map'),
-                            layers: state.layers,
-                            area: state.area,
-                            onStreetTapped: home.select,
-                            onMapTapped: (_) => home.unselect(),
-                            onZoomChanged: _zoomed,
-                            padding: EdgeInsets.only(bottom: covered),
+    // The back gesture closes the street card first, then leaves the app.
+    return PopScope(
+      canPop: state.card == null,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) home.unselect();
+      },
+      child: Scaffold(
+        appBar: StartAppBar(
+          tournee: ref.watch(currentTourneeProvider),
+          showGallery: widget.showGallery,
+        ),
+        body: SafeArea(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              // Only while an admin visits the open tournée.
+              const AdminVisitBanner(),
+              // The phone's streets offered to the open tournée (nothing
+              // when there is none to offer).
+              const MoveStreetsCard(),
+              Expanded(
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final room = constraints.maxHeight;
+                    final heights = {
+                      PanelSize.folded: AppSizes.homePanelFolded,
+                      PanelSize.rest: max(
+                        AppSizes.homePanelFolded,
+                        room * AppSizes.homePanelRestShare,
+                      ),
+                      PanelSize.full: max(AppSizes.homePanelFolded, room),
+                    };
+                    final card = state.card;
+                    // The room the panel (or the street card) takes over the
+                    // map once at rest: « Me localiser », the attribution and
+                    // the area the map fits stay clear of it.
+                    final covered = card == null
+                        ? heights[_size]!
+                        : _cardHeight;
+                    return Stack(
+                      children: [
+                        Positioned.fill(
+                          child: showMap(
+                            TourneeMap(
+                              key: const Key('home.map'),
+                              layers: state.layers,
+                              area: state.area,
+                              selectedRoad: state.selectedRoad,
+                              onStreetTapped: home.select,
+                              onMapTapped: (_) => home.unselect(),
+                              onZoomChanged: _zoomed,
+                              padding: EdgeInsets.only(bottom: covered),
+                            ),
                           ),
                         ),
-                      ),
-                      Positioned(
-                        top: AppSizes.mapControlsMargin,
-                        left: AppSizes.mapControlsMargin,
-                        // Clear of « Me localiser », top right.
-                        right:
-                            AppSizes.mapControlsMargin * 2 + AppSizes.mapButton,
-                        child: Align(
-                          alignment: Alignment.topLeft,
-                          child: MapLegend(houses: _houses),
+                        Positioned(
+                          top: AppSizes.mapControlsMargin,
+                          left: AppSizes.mapControlsMargin,
+                          // Clear of « Me localiser », top right.
+                          right:
+                              AppSizes.mapControlsMargin * 2 +
+                              AppSizes.mapButton,
+                          child: Align(
+                            alignment: Alignment.topLeft,
+                            child: MapLegend(houses: _houses),
+                          ),
                         ),
-                      ),
-                      Positioned(
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        child: card == null
-                            ? HomePanel(
-                                key: const Key('home.panel'),
-                                state: state,
-                                height: _dragHeight ?? heights[_size]!,
-                                expanded: _size == PanelSize.full,
-                                onDrag: (dy) => setState(() {
-                                  _dragHeight =
-                                      ((_dragHeight ?? heights[_size]!) - dy)
-                                          .clamp(
-                                            heights[PanelSize.folded]!,
-                                            heights[PanelSize.full]!,
-                                          );
-                                }),
-                                onDragEnd: (velocity) => setState(() {
-                                  _size = snapPanel(
-                                    _dragHeight ?? heights[_size]!,
-                                    velocity,
-                                    folded: heights[PanelSize.folded]!,
-                                    rest: heights[PanelSize.rest]!,
-                                    full: heights[PanelSize.full]!,
-                                  );
-                                  _dragHeight = null;
-                                }),
-                                onToggle: () => setState(() {
-                                  _size = _size == PanelSize.full
-                                      ? PanelSize.rest
-                                      : PanelSize.full;
-                                }),
-                              )
-                            : SizeReporter(
-                                onHeight: (height) {
-                                  if (mounted) {
-                                    setState(() => _cardHeight = height);
-                                  }
-                                },
-                                child: StreetCardSheet(
-                                  key: const Key('home.selected'),
-                                  card: card,
-                                  onTake: () => unawaited(home.take()),
-                                  onRelease: () => unawaited(home.release()),
+                        Positioned(
+                          left: 0,
+                          right: 0,
+                          bottom: 0,
+                          child: card == null
+                              ? HomePanel(
+                                  key: const Key('home.panel'),
+                                  state: state,
+                                  height: _dragHeight ?? heights[_size]!,
+                                  expanded: _size == PanelSize.full,
+                                  onDrag: (dy) => setState(() {
+                                    _dragHeight =
+                                        ((_dragHeight ?? heights[_size]!) - dy)
+                                            .clamp(
+                                              heights[PanelSize.folded]!,
+                                              heights[PanelSize.full]!,
+                                            );
+                                  }),
+                                  onDragEnd: (velocity) => setState(() {
+                                    _size = snapPanel(
+                                      _dragHeight ?? heights[_size]!,
+                                      velocity,
+                                      folded: heights[PanelSize.folded]!,
+                                      rest: heights[PanelSize.rest]!,
+                                      full: heights[PanelSize.full]!,
+                                    );
+                                    _dragHeight = null;
+                                  }),
+                                  onToggle: () => setState(() {
+                                    _size = _size == PanelSize.full
+                                        ? PanelSize.rest
+                                        : PanelSize.full;
+                                  }),
+                                  onOtherStreetTapped: home.focus,
+                                )
+                              : SizeReporter(
+                                  onHeight: (height) {
+                                    if (mounted) {
+                                      setState(() => _cardHeight = height);
+                                    }
+                                  },
+                                  child: StreetCardSheet(
+                                    key: const Key('home.selected'),
+                                    card: card,
+                                    onTake: () => unawaited(home.take()),
+                                    onRelease: () => unawaited(home.release()),
+                                  ),
                                 ),
-                              ),
-                      ),
-                    ],
-                  );
-                },
+                        ),
+                      ],
+                    );
+                  },
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

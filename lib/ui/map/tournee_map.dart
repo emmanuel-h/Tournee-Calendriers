@@ -100,13 +100,24 @@ final class _TourneeMapState extends State<TourneeMap> {
   /// follows the position itself, with the access already granted.
   var _showPhone = false;
 
+  /// The camera is on its way to a new [TourneeMap.area]. Should the room
+  /// taken over the map change meanwhile (a street card shown with the
+  /// move, measured only once drawn, #93), the area is fitted again, clear
+  /// of it. Later, a change of that room (the panel dragged) leaves the
+  /// camera where the user put it.
+  var _fitting = false;
+
   @override
   void didUpdateWidget(TourneeMap oldWidget) {
     super.didUpdateWidget(oldWidget);
     // `unawaited`: the map updates on its own time; nothing here waits for
     // it, and a build must never wait.
     unawaited(_sync());
-    if (widget.area != oldWidget.area) unawaited(_fit(animate: true));
+    if (widget.area != oldWidget.area ||
+        (_fitting && widget.padding != oldWidget.padding)) {
+      _fitting = true;
+      unawaited(_fit(animate: true));
+    }
   }
 
   @override
@@ -266,6 +277,7 @@ final class _TourneeMapState extends State<TourneeMap> {
   }
 
   void _onCameraIdle() {
+    _fitting = false;
     if (_controller?.cameraPosition case final camera?) {
       widget.onZoomChanged?.call(camera.zoom);
     }

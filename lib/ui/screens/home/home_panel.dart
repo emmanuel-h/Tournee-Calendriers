@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/presentation/home/home_state.dart';
 import 'package:tournee_calendriers/presentation/street_list/street_list_state.dart';
 import 'package:tournee_calendriers/ui/components/app_buttons.dart';
@@ -16,7 +17,9 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 /// mockup): a handle and the totals (« Mes rues · 43/62 », « Équipe :
 /// 41 % »), then the member's streets, the other streets of the tournée
 /// under « Autres rues de la tournée », the pending-sync line and
-/// « Ajouter des rues ».
+/// « Ajouter des rues ». A row of « Mes rues » opens its street; a row of
+/// the others asks Accueil to show its street card ([onOtherStreetTapped],
+/// #93), from which the member may take it.
 ///
 /// It is as tall as it is told ([height]): Accueil decides, as the handle
 /// is dragged ([onDrag], [onDragEnd]) or tapped ([onToggle]). Folded down
@@ -31,6 +34,7 @@ final class HomePanel extends StatelessWidget {
     required this.onDrag,
     required this.onDragEnd,
     required this.onToggle,
+    required this.onOtherStreetTapped,
   });
 
   final HomeState state;
@@ -47,6 +51,9 @@ final class HomePanel extends StatelessWidget {
   final ValueChanged<double> onDragEnd;
 
   final VoidCallback onToggle;
+
+  /// A row under « Autres rues de la tournée » was tapped.
+  final ValueChanged<StreetId> onOtherStreetTapped;
 
   /// Under this room, the list and the button do not fit: only the handle
   /// and the totals show.
@@ -87,7 +94,12 @@ final class HomePanel extends StatelessWidget {
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Expanded(child: _StreetList(state: state)),
+                        Expanded(
+                          child: _StreetList(
+                            state: state,
+                            onOtherStreetTapped: onOtherStreetTapped,
+                          ),
+                        ),
                         // « ☁ Modifications de 3 rues en attente d'envoi »,
                         // only while some wait to be sent.
                         const PendingSyncLine(),
@@ -217,9 +229,10 @@ final class _Totals extends StatelessWidget {
 /// « Mes rues », then « Autres rues de la tournée »; or why there is
 /// nothing to list.
 final class _StreetList extends StatelessWidget {
-  const _StreetList({required this.state});
+  const _StreetList({required this.state, required this.onOtherStreetTapped});
 
   final HomeState state;
+  final ValueChanged<StreetId> onOtherStreetTapped;
 
   @override
   Widget build(BuildContext context) {
@@ -233,10 +246,10 @@ final class _StreetList extends StatelessWidget {
         style: AppTextStyles.body.copyWith(color: colors.muted),
       ),
     );
-    Widget row(StreetRow street) => StreetRowTile(
+    Widget row(StreetRow street, VoidCallback onTap) => StreetRowTile(
       key: ValueKey('home.street.${street.id.value}'),
       row: street,
-      onTap: () => _open(context, street),
+      onTap: onTap,
     );
     return ListView(
       padding: const EdgeInsets.symmetric(horizontal: AppSizes.gutter),
@@ -244,7 +257,8 @@ final class _StreetList extends StatelessWidget {
         if (state.hasNoStreet)
           note(l10n.homeNoStreet, const Key('home.noStreet'))
         else if (!state.loading) ...[
-          ...state.mine.map(row),
+          for (final street in state.mine)
+            row(street, () => _open(context, street)),
           if (state.mine.isEmpty)
             note(l10n.homeNoStreetOfMine, const Key('home.noStreetOfMine')),
           if (state.others.isNotEmpty) ...[
@@ -253,7 +267,8 @@ final class _StreetList extends StatelessWidget {
               key: const Key('home.others'),
               padding: const EdgeInsets.only(top: 16, bottom: 4),
             ),
-            ...state.others.map(row),
+            for (final street in state.others)
+              row(street, () => onOtherStreetTapped(street.id)),
           ],
         ],
       ],

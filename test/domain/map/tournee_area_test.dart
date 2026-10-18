@@ -194,4 +194,50 @@ void main() {
       expect(shapeSearchArea([]), isNull);
     });
   });
+
+  group('streetArea', () {
+    test('should add a margin of 60 m', () {
+      expect(streetMarginMetres, 60);
+    });
+
+    test('should hold the shape, with the margin, and not the houses '
+        'when the street has a line', () {
+      final street = _street(
+        'a',
+        shape: StreetShape([
+          [at(45.98200, 4.71000), at(45.98500, 4.72000)],
+          [at(45.98100, 4.71500), at(45.98300, 4.71600)],
+        ]),
+        houses: [House(number: n('1'), position: at(45.99210, 4.73500))],
+      );
+
+      expect(
+        streetArea(street),
+        GeoBounds.around([at(45.98100, 4.71000), at(45.98500, 4.72000)])!
+            .expandedBy(60),
+      );
+    });
+
+    test('should hold the house positions, with the margin, when the '
+        'street has no line', () {
+      final street = _street(
+        'b',
+        houses: [
+          House(number: n('2'), position: at(45.98800, 4.73000)),
+          House(number: n('4')),
+          House(number: n('6'), position: at(45.98700, 4.72900)),
+        ],
+      );
+
+      expect(
+        streetArea(street),
+        GeoBounds.around([at(45.98700, 4.72900), at(45.98800, 4.73000)])!
+            .expandedBy(60),
+      );
+    });
+
+    test('should be null when the street has no place on the map', () {
+      expect(streetArea(_street('c', houses: [House(number: n('1'))])), isNull);
+    });
+  });
 }

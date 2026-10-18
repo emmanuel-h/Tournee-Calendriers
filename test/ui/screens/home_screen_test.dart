@@ -165,15 +165,62 @@ void main() {
       expect(find.widgetWithText(AppBar, 'Rue des Lilas'), findsOneWidget);
     });
 
-    testWidgets('should open a street nobody covers when tapped among the '
-        'others', (tester) async {
+    testWidgets('should show the card of a street tapped among the others '
+        'in place of the panel, and take it with « Me l\'attribuer »', (
+      tester,
+    ) async {
       await pumpHome(tester);
       await tester.scrollUntilVisible(row('pasteur'), 100);
 
       await tester.tap(row('pasteur'));
       await tester.pumpAndSettle();
 
-      expect(find.widgetWithText(AppBar, 'Rue Pasteur'), findsOneWidget);
+      expect(find.byType(StreetScreen), findsNothing);
+      expect(panel(), findsNothing);
+      expect(find.byKey(const Key('home.selected')), findsOneWidget);
+      expect(find.text('Rue Pasteur'), findsOneWidget);
+      expect(find.text('Libre'), findsOneWidget);
+
+      await tester.tap(find.text("Me l'attribuer"));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Vous la faites'), findsOneWidget);
+    });
+
+    testWidgets('should move the map to a street tapped among the others, '
+        'its line lit up', (tester) async {
+      final lilas = _street(
+        'lilas',
+        'Rue des Lilas',
+        total: 42,
+        shape: _lilasShape,
+      );
+      await pumpHome(tester, streets: [lilas]);
+
+      await tester.tap(row('lilas'));
+      await tester.pumpAndSettle();
+
+      final map = shownMap(tester);
+      expect(map.area, streetArea(lilas));
+      expect(map.selectedRoad, _lilasShape);
+    });
+
+    testWidgets('should close the card of a street with the back gesture, '
+        'and stay on Accueil', (tester) async {
+      await pumpHome(tester);
+      await tester.scrollUntilVisible(row('carnot'), 100);
+      await tester.tap(row('carnot'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('home.selected')), findsOneWidget);
+
+      // Android's back button or gesture.
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('home.selected')), findsNothing);
+      expect(panel(), findsOneWidget);
+      expect(find.byType(HomeScreen), findsOneWidget);
+      expect(shownMap(tester).selectedRoad, StreetShape.none);
     });
 
     testWidgets('should keep every street of the tournée reachable when the '
