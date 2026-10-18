@@ -1192,6 +1192,22 @@ class AppLocalizationsFr extends AppLocalizations {
   String get release010First => 'Première version de test.';
 
   @override
+  String get release050Map =>
+      'Accueil montre la carte de la tournée : ses rues, ses maisons, une légende et le panneau « Mes rues ».';
+
+  @override
+  String get release050AddStreets =>
+      'Une tournée a ses communes ; « Ajouter des rues » s\'ouvre dessus, en carte ou en liste : touchez une route, cherchez-la ou saisissez-la.';
+
+  @override
+  String get release050Assignees =>
+      'Chaque rue dit qui la couvre ; on la prend ou la libère.';
+
+  @override
+  String get release050Tries =>
+      '« Repassé, toujours personne » compte les passages sans réponse, et on choisit le jour et l\'heure où repasser.';
+
+  @override
   String get release040LastChangeBy =>
       'Les fiches des maisons et des portes disent qui les a modifiées en dernier : « Modifié par Léa · 14:02 ».';
 

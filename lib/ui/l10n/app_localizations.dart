@@ -1695,6 +1695,30 @@ abstract class AppLocalizations {
   /// **'Première version de test.'**
   String get release010First;
 
+  /// « Nouveautés », version 0.5.0: the tournée's map on Accueil.
+  ///
+  /// In fr, this message translates to:
+  /// **'Accueil montre la carte de la tournée : ses rues, ses maisons, une légende et le panneau « Mes rues ».'**
+  String get release050Map;
+
+  /// « Nouveautés », version 0.5.0: communes and adding streets.
+  ///
+  /// In fr, this message translates to:
+  /// **'Une tournée a ses communes ; « Ajouter des rues » s\'ouvre dessus, en carte ou en liste : touchez une route, cherchez-la ou saisissez-la.'**
+  String get release050AddStreets;
+
+  /// « Nouveautés », version 0.5.0: who covers a street.
+  ///
+  /// In fr, this message translates to:
+  /// **'Chaque rue dit qui la couvre ; on la prend ou la libère.'**
+  String get release050Assignees;
+
+  /// « Nouveautés », version 0.5.0: tries with nobody home and when to come back.
+  ///
+  /// In fr, this message translates to:
+  /// **'« Repassé, toujours personne » compte les passages sans réponse, et on choisit le jour et l\'heure où repasser.'**
+  String get release050Tries;
+
   /// « Nouveautés », version 0.4.0: who made the last change.
   ///
   /// In fr, this message translates to:
