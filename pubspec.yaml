@@ -61,7 +61,7 @@ dependencies:
 dev_dependencies:
   # An in-memory Firestore for the adapters' tests (PLAN §11): no emulator,
   # no network.
-  fake_cloud_firestore: 4.3.0
+  fake_cloud_firestore: 4.4.0
   flutter_lints: 6.0.0
   flutter_test:
     sdk: flutter
