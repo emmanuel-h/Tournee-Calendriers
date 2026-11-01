@@ -70,6 +70,13 @@ abstract final class AppSizes {
   static const dragHandleWidth = 40.0;
   static const dragHandleHeight = 4.0;
 
+  /// The street card's ✕ (Pick mockup): a 48 dp button this far from the
+  /// card's top and right edges, level with the grabber; the street's name
+  /// keeps this much room on its right so it never runs under it.
+  static const sheetCloseTop = 6.0;
+  static const sheetCloseRight = 8.0;
+  static const sheetCloseClearance = 40.0;
+
   /// Text fields (« Commune », « Filtrer les rues… »).
   static const fieldHeight = 52.0;
   static const fieldRadius = 12.0;

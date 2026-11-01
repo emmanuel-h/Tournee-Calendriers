@@ -130,15 +130,18 @@ final class _MapLegendState extends State<MapLegend> {
   );
 }
 
-/// Paints a horizontal line across its box: solid and round-capped, or
-/// dashed and thinner, as the map draws a street and a « libre » one.
+/// Paints a horizontal line across its box, as wide either way: solid and
+/// round-capped, or dashed, as the map draws a street and a « libre » one.
+/// The map's white casing under « libre » is left out: on the legend's
+/// white ground it would not show.
 final class _LinePainter extends CustomPainter {
   const _LinePainter(this.color, {required this.dashed});
 
   final Color color;
   final bool dashed;
 
-  static const _dash = 5.0;
+  static const _width = 6.0;
+  static const _dash = 6.0;
   static const _gap = 4.0;
 
   @override
@@ -146,7 +149,7 @@ final class _LinePainter extends CustomPainter {
     final y = size.height / 2;
     final paint = Paint()
       ..color = color
-      ..strokeWidth = dashed ? 4 : 6
+      ..strokeWidth = _width
       ..strokeCap = dashed ? StrokeCap.butt : StrokeCap.round;
     if (!dashed) {
       canvas.drawLine(Offset(2, y), Offset(size.width - 2, y), paint);

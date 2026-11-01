@@ -223,6 +223,40 @@ void main() {
       expect(shownMap(tester).selectedRoad, StreetShape.none);
     });
 
+    testWidgets('should close the card of a street with its ✕, '
+        'and bring the list back', (tester) async {
+      final lilas = _street(
+        'lilas',
+        'Rue des Lilas',
+        total: 42,
+        shape: _lilasShape,
+      );
+      await pumpHome(tester, streets: [lilas]);
+      await tester.tap(row('lilas'));
+      await tester.pumpAndSettle();
+      expect(shownMap(tester).selectedRoad, _lilasShape);
+      final close = find.byKey(const Key('streetCard.close'));
+      expect(tester.getSize(close), const Size(48, 48));
+      final semantics = tester.ensureSemantics();
+      expect(tester.getSemantics(close).tooltip, 'Fermer');
+      semantics.dispose();
+      // Level with the grabber, and the name keeps clear of it.
+      final cardTop = tester.getTopLeft(find.byKey(const Key('streetCard'))).dy;
+      expect(tester.getTopLeft(close).dy, cardTop + 6);
+      expect(
+        tester.getTopRight(find.byKey(const Key('streetCard.name'))).dx,
+        lessThanOrEqualTo(tester.getTopLeft(close).dx),
+      );
+
+      await tester.tap(close);
+      await tester.pumpAndSettle();
+
+      expect(find.byTooltip('Fermer'), findsNothing);
+      expect(find.byKey(const Key('home.selected')), findsNothing);
+      expect(panel(), findsOneWidget);
+      expect(shownMap(tester).selectedRoad, StreetShape.none);
+    });
+
     testWidgets('should keep every street of the tournée reachable when the '
         'member covers none', (tester) async {
       await pumpHome(

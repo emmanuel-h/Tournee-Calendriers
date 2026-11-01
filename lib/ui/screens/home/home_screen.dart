@@ -215,6 +215,7 @@ final class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     card: card,
                                     onTake: () => unawaited(home.take()),
                                     onRelease: () => unawaited(home.release()),
+                                    onClose: home.unselect,
                                   ),
                                 ),
                         ),

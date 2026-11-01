@@ -2102,6 +2102,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get addStreetsManual => 'Saisir une rue à la main';
 
   @override
+  String get streetCardClose => 'Fermer';
+
+  @override
   String get streetCardLoading => 'Recherche de la rue…';
 
   @override

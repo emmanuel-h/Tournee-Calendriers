@@ -2883,7 +2883,7 @@ abstract class AppLocalizations {
   /// **'à faire'**
   String get mapLegendStreetToDo;
 
-  /// Legend of the map: a street nobody took (grey dashed line).
+  /// Legend of the map: a street nobody took (dark grey dashed line).
   ///
   /// In fr, this message translates to:
   /// **'libre'**
@@ -2924,6 +2924,12 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Saisir une rue à la main'**
   String get addStreetsManual;
+
+  /// Screen-reader name and tooltip of the ✕ at the top right of the street card, which closes it like a tap elsewhere on the map or the back gesture (PLAN §5.3, §5.4).
+  ///
+  /// In fr, this message translates to:
+  /// **'Fermer'**
+  String get streetCardClose;
 
   /// Street card while the street tapped is looked up.
   ///

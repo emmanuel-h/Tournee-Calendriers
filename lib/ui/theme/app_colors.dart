@@ -47,6 +47,7 @@ final class AppColors extends ThemeExtension<AppColors> {
     required this.mapStreetPartial,
     required this.mapStreetToDo,
     required this.mapStreetFree,
+    required this.mapStreetFreeCasing,
     required this.mapSelectedCasing,
     required this.mapSelectedCore,
   });
@@ -90,7 +91,8 @@ final class AppColors extends ThemeExtension<AppColors> {
     mapStreetDone: Color(0xFF1E6B47),
     mapStreetPartial: Color(0xFFE0A21B),
     mapStreetToDo: Color(0xFF2F5DA8),
-    mapStreetFree: Color(0xFF6B7078),
+    mapStreetFree: Color(0xFF3E434A),
+    mapStreetFreeCasing: Color(0xFFFFFFFF),
     mapSelectedCasing: Color(0xFF1B1F24),
     mapSelectedCore: Color(0xFFFFFFFF),
   );
@@ -136,7 +138,10 @@ final class AppColors extends ThemeExtension<AppColors> {
     mapStreetDone: Color(0xFF2E9463),
     mapStreetPartial: Color(0xFFE0A21B),
     mapStreetToDo: Color(0xFF5B8BD9),
-    mapStreetFree: Color(0xFF8A9099),
+    // Light dashes on a dark casing: the light mode's contrast, turned
+    // over for a dark map.
+    mapStreetFree: Color(0xFFC4C9D0),
+    mapStreetFreeCasing: Color(0xFF15181C),
     mapSelectedCasing: Color(0xFFFFFFFF),
     mapSelectedCore: Color(0xFF1B1F24),
   );
@@ -216,12 +221,16 @@ final class AppColors extends ThemeExtension<AppColors> {
   final Color mapStreetPartial;
   final Color mapStreetToDo;
   final Color mapStreetFree;
+
+  /// The line under the « libre » dashes, wider than them, so they stand
+  /// out from the base map's roads (mockups README).
+  final Color mapStreetFreeCasing;
   final Color mapSelectedCasing;
   final Color mapSelectedCore;
 
   // `copyWith` and `lerp` are required by ThemeExtension. The app never
   // animates between palettes, so `lerp` switches at the half-way point
-  // instead of blending 36 colours.
+  // instead of blending every colour.
   @override
   AppColors copyWith() => this;
 

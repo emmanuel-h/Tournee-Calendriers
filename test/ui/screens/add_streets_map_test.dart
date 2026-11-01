@@ -282,6 +282,23 @@ void main() {
       expect(button('manual'), findsOneWidget);
     });
 
+    testWidgets('should close the card with its ✕ and stay on the '
+        'screen', (tester) async {
+      await pumpMap(tester);
+      await tapRoad(tester, _onBordelan);
+      expect(shownMap(tester).selectedRoad, _road);
+      expect(shownMap(tester).selectedPoint, _onBordelan);
+
+      // « Fermer » is the screen's ✕ too: the card's is found by its key.
+      await tester.tap(button('close'));
+      await tester.pumpAndSettle();
+
+      expect(card(), findsNothing);
+      expect(find.byType(AddStreetsScreen), findsOneWidget);
+      expect(shownMap(tester).selectedRoad, StreetShape.none);
+      expect(shownMap(tester).selectedPoint, isNull);
+    });
+
     testWidgets('should close the card on the back gesture, then the '
         'screen', (tester) async {
       await pumpMap(tester);
@@ -305,7 +322,13 @@ void main() {
       await pumpMap(tester);
       await tapStreet(tester, 'carnot');
 
-      await tester.tap(find.byTooltip('Fermer'));
+      // The top bar's ✕, not the card's (also « Fermer »).
+      await tester.tap(
+        find.descendant(
+          of: find.byType(AppBar),
+          matching: find.byTooltip('Fermer'),
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(find.byType(AddStreetsScreen), findsNothing);

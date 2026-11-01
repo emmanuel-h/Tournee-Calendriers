@@ -236,6 +236,7 @@ final class _MapTabState extends ConsumerState<_MapTab> {
                               unawaited(map.add(assignToMe: assignToMe)),
                           onTake: () => unawaited(map.take()),
                           onRelease: () => unawaited(map.release()),
+                          onClose: map.closeCard,
                         ),
                       ),
                     ),

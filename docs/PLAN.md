@@ -429,7 +429,9 @@ an admin, shows only « Rejoindre une tournée », in red), and the bottom of th
 - A "locate me" button centres the map on the phone's position (location permission asked
   the first time it is tapped, never at launch).
 - Delivered in T3.4 (`ui/map/TourneeMap`, used by 5.3 and 5.4): OpenFreeMap « liberty »;
-  street lines under the map's labels (« libre » dashed), widening with the zoom; from zoom 16
+  street lines under the map's labels, widening with the zoom (« libre »: dark grey dashes as
+  wide as the other lines, on a wider opaque white casing so they stand out from the base
+  map's grey roads; the casing alone still shows on a GPU that draws no dashes); from zoom 16
   a 30 dp dot per house with the tile glyphs (`✓` fait, `✗`, `↻`, `○`, `◐` building in part,
   dashed ring) and its number under it; the road picked on 5.4 as a dark casing with a white
   core. A tap on a street or on one of its dots names the street; elsewhere it gives the
@@ -440,7 +442,8 @@ an admin, shows only « Rejoindre une tournée », in red), and the bottom of th
   start screen while a tournée is open (`/`; with none, « Mes rues » of 5.0 as in M1). Under
   the top bar of 5.0 and its cards (« Administrateur · pas membre », the phone's streets to
   move), the map fills the screen. **Legend** top left, clear of « Me localiser »: line
-  samples « faite · en partie · à faire · libre », or, once the map is at zoom ≥ 16, house
+  samples « faite · en partie · à faire · libre » (« libre » dashed, as wide as the others,
+  without the map's white casing), or, once the map is at zoom ≥ 16, house
   dots « fait · personne · repasser · à faire »; a tap folds it into a « Légende » chip, a tap
   on the chip unfolds it (said « Masquer / Afficher la légende »). **Panel**: handle and
   totals « Mes rues · 31/50 » (doors done of the member's streets; « Rues · 9/38 » over every
@@ -455,7 +458,8 @@ an admin, shows only « Rejoindre une tournée », in red), and the bottom of th
   **A street tapped on the map** replaces the panel by its street card (5.4, since #31; it
   replaced HomeZoom's « Ouvrir Rue des Lilas · 31/42 »): name, commune, « 31/42 faits » and who
   covers it, « Ouvrir » and « Me l'attribuer » / « La faire aussi » / « Ne plus la faire »,
-  offline; a tap elsewhere on the map, or the back gesture, brings the list back. The street
+  offline; its ✕ (48 dp, top right, level with the handle, « Fermer »), a tap elsewhere on the
+  map, or the back gesture, brings the list back. The street
   whose card shows has its line lit up (the dark casing and white core of 5.4).
   **A row under « Autres rues de la tournée »** (#93) shows the same card, so a street can be
   taken without finding its line (or when it has none), and moves the map to the street: its
@@ -539,7 +543,7 @@ bottom sheet:
 │ ░░░░░░║░░░░👆░░░░░░░░░░░░░░  │
 │ ░░░░░░║░░░░░░░░░░░░░░░░░░░░  │
 ├──────────────────────────────┤
-│ Rue Pierre Morin             │  ← street card (bottom sheet)
+│ Rue Pierre Morin          ✕  │  ← street card (bottom sheet), ✕ closes it
 │ Villefranche-sur-Saône       │
 │ 19 numéros · pas encore dans │
 │ la tournée                   │
@@ -596,8 +600,9 @@ The street card adapts to the street's state:
   named, the team not read yet), with the actions of the table; take and release need no network and have no
   « Annuler » (the other button undoes it). Failures: « Connexion nécessaire pour ajouter une
   rue » (offline), « Aucune rue connue ici » (no BAN match), « Le service des adresses ne
-  répond pas », each with a hint and « Saisir une rue à la main ». The back gesture closes the
-  card first; ✕ closes the screen. **The search** lists « name / commune » rows over the map
+  répond pas », each with a hint and « Saisir une rue à la main ». The card's own ✕ (48 dp,
+  top right, level with the handle, « Fermer »; the name keeps clear of it) closes it, and so
+  does the back gesture, first; the top bar's ✕ closes the screen. **The search** lists « name / commune » rows over the map
   (« Aucune rue trouvée. », « Connexion nécessaire pour chercher une rue. »); it searches the
   tournée's communes, or the communes of its streets for a tournée without commune; picking a
   row moves the map 200 m around the street and shows its card. A newer tap or search always

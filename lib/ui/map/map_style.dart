@@ -31,7 +31,7 @@ abstract final class MapIds {
   static const selectedPointSource = 'tc-selected-point';
 
   static const streetLines = 'tc-street-lines';
-  static const freeStreetBase = 'tc-free-street-base';
+  static const freeStreetCasing = 'tc-free-street-casing';
   static const freeStreetLines = 'tc-free-street-lines';
   static const selectedCasing = 'tc-selected-casing';
   static const selectedCore = 'tc-selected-core';
@@ -50,7 +50,7 @@ String houseDotImage(HouseDotStatus status) => 'tc-house-${status.name}';
 /// street's id as its own (see `map_geojson.dart`).
 StreetId? tappedStreet(String layerId, String featureId) => switch (layerId) {
   MapIds.streetLines ||
-  MapIds.freeStreetBase ||
+  MapIds.freeStreetCasing ||
   MapIds.freeStreetLines ||
   MapIds.houseDots => StreetId(featureId),
   _ => null,
@@ -82,7 +82,7 @@ final class MapLayerSpec {
 }
 
 /// Every layer the map adds, bottom to top: the streets (solid, then the
-/// « libre » ones, dashed over a faint solid line), the road picked on
+/// « libre » ones, dark grey dashes on a white casing), the road picked on
 /// « Ajouter des rues » (dark casing, white core, mockups README) and the
 /// point tapped (a dark dot in a faint halo, Pick mockup), then the house
 /// dots from street zoom (PLAN §5.3). Colours are the map tokens of
@@ -95,7 +95,7 @@ List<MapLayerSpec> tourneeMapLayers(AppColors colors) {
       source: MapIds.streetsSource,
       properties: LineLayerProperties(
         lineColor: _levelColor(colors),
-        lineWidth: _byZoom(const {12: 3, 16: 7, 19: 12}),
+        lineWidth: _streetWidth,
         lineCap: 'round',
         lineJoin: 'round',
       ),
@@ -103,16 +103,17 @@ List<MapLayerSpec> tourneeMapLayers(AppColors colors) {
       belowLabels: true,
       interactive: true,
     ),
-    // A faint solid line under the dashes: some GPUs (the emulator's at
-    // least) draw no dashed line at all, and a « libre » street must never
-    // vanish from the map. Where the dashes draw, it only tints their gaps.
+    // A white casing under the dashes, wider than them, so a « libre »
+    // street stands out from the base map's grey roads (mockups README).
+    // It is also the fallback line: some GPUs (the emulator's at least)
+    // draw no dashed line at all, and a « libre » street must never vanish
+    // from the map. Opaque, so it shows on its own when the dashes do not.
     MapLayerSpec(
-      id: MapIds.freeStreetBase,
+      id: MapIds.freeStreetCasing,
       source: MapIds.streetsSource,
       properties: LineLayerProperties(
-        lineColor: _levelColor(colors),
-        lineWidth: _byZoom(const {12: 2.5, 16: 5, 19: 9}),
-        lineOpacity: 0.35,
+        lineColor: colors.mapStreetFreeCasing.toHexStringRGB(),
+        lineWidth: _byZoom(const {12: 6, 16: 11, 19: 16}),
         lineCap: 'round',
         lineJoin: 'round',
       ),
@@ -124,11 +125,14 @@ List<MapLayerSpec> tourneeMapLayers(AppColors colors) {
       id: MapIds.freeStreetLines,
       source: MapIds.streetsSource,
       properties: LineLayerProperties(
-        lineColor: _levelColor(colors),
-        lineWidth: _byZoom(const {12: 2.5, 16: 5, 19: 9}),
-        // Dash and gap in line widths: 10 px dash, 8 px gap at width 5,
-        // as the mockups draw « libre ».
-        lineDasharray: const [2, 1.6],
+        // Only « libre » streets reach this layer (the filter): their
+        // colour needs no `match` on the level.
+        lineColor: streetLineColor(ProgressLevel.free, colors).toHexStringRGB(),
+        lineWidth: _streetWidth,
+        // Dash and gap in line widths, so the pattern keeps its proportions
+        // at every zoom: 11.2 px dash, 8.4 px gap at width 7, as the
+        // mockups draw « libre ».
+        lineDasharray: const [1.6, 1.2],
         lineJoin: 'round',
       ),
       filter: isFree,
@@ -221,6 +225,9 @@ List<MapLayerSpec> tourneeMapLayers(AppColors colors) {
 }
 
 const _level = ['get', levelProperty];
+
+/// The width of a street line, taken or « libre », by zoom.
+final _streetWidth = _byZoom(const {12: 3, 16: 7, 19: 12});
 
 /// A line's colour from its level: the map tokens of the mockups README.
 List<Object> _levelColor(AppColors colors) => [

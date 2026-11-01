@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/presentation/street_card/street_card.dart';
 import 'package:tournee_calendriers/ui/components/app_buttons.dart';
+import 'package:tournee_calendriers/ui/components/close_icon_button.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
@@ -21,7 +22,8 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 /// | someone else's | La faire aussi | Ouvrir |
 ///
 /// « Ouvrir » and « Saisir une rue à la main » open their screens; the
-/// other buttons are the screen's ([onAdd], [onTake], [onRelease]).
+/// other buttons are the screen's ([onAdd], [onTake], [onRelease]), as is
+/// the ✕ at the top right ([onClose]).
 final class StreetCardSheet extends StatelessWidget {
   const StreetCardSheet({
     super.key,
@@ -29,6 +31,7 @@ final class StreetCardSheet extends StatelessWidget {
     this.onAdd,
     required this.onTake,
     required this.onRelease,
+    required this.onClose,
   });
 
   final StreetCard card;
@@ -43,6 +46,10 @@ final class StreetCardSheet extends StatelessWidget {
   /// « Ne plus la faire ».
   final VoidCallback onRelease;
 
+  /// The ✕: closes the card, as a tap elsewhere on the map or the back
+  /// gesture does.
+  final VoidCallback onClose;
+
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
@@ -54,33 +61,51 @@ final class StreetCardSheet extends StatelessWidget {
       borderRadius: const BorderRadius.vertical(
         top: Radius.circular(AppSizes.sheetRadius),
       ),
-      child: Padding(
-        padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          spacing: AppSizes.cardGap,
-          children: [
-            Center(
-              child: Container(
-                width: AppSizes.dragHandleWidth,
-                height: AppSizes.dragHandleHeight,
-                decoration: BoxDecoration(
-                  color: colors.line,
-                  borderRadius: BorderRadius.circular(
-                    AppSizes.dragHandleHeight / 2,
+      // A `Stack` lays the ✕ over the top right corner of the card,
+      // without pushing the grabber or the name down.
+      child: Stack(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 10, 20, 20),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              spacing: AppSizes.cardGap,
+              children: [
+                Center(
+                  child: Container(
+                    width: AppSizes.dragHandleWidth,
+                    height: AppSizes.dragHandleHeight,
+                    decoration: BoxDecoration(
+                      color: colors.line,
+                      borderRadius: BorderRadius.circular(
+                        AppSizes.dragHandleHeight / 2,
+                      ),
+                    ),
                   ),
                 ),
-              ),
+                ...switch (card) {
+                  StreetCardLoading() => [const _Loading()],
+                  StreetCardFailed(:final problem) => _failed(context, problem),
+                  final StreetCardToAdd street => _toAdd(context, street),
+                  final StreetCardInTournee street => _inTournee(
+                    context,
+                    street,
+                  ),
+                },
+              ],
             ),
-            ...switch (card) {
-              StreetCardLoading() => [const _Loading()],
-              StreetCardFailed(:final problem) => _failed(context, problem),
-              final StreetCardToAdd street => _toAdd(context, street),
-              final StreetCardInTournee street => _inTournee(context, street),
-            },
-          ],
-        ),
+          ),
+          Positioned(
+            top: AppSizes.sheetCloseTop,
+            right: AppSizes.sheetCloseRight,
+            child: CloseIconButton(
+              key: const Key('streetCard.close'),
+              tooltip: AppLocalizations.of(context).streetCardClose,
+              onPressed: onClose,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -103,17 +128,20 @@ final class StreetCardSheet extends StatelessWidget {
       ),
     };
     return [
-      Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        spacing: 4,
-        children: [
-          Text(
-            title,
-            key: const Key('streetCard.problem'),
-            style: AppTextStyles.streetName.copyWith(color: colors.ink),
-          ),
-          Text(hint, style: AppTextStyles.body.copyWith(color: colors.muted)),
-        ],
+      Padding(
+        padding: const EdgeInsets.only(right: AppSizes.sheetCloseClearance),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          spacing: 4,
+          children: [
+            Text(
+              title,
+              key: const Key('streetCard.problem'),
+              style: AppTextStyles.streetName.copyWith(color: colors.ink),
+            ),
+            Text(hint, style: AppTextStyles.body.copyWith(color: colors.muted)),
+          ],
+        ),
       ),
       SecondaryButton(
         key: const Key('streetCard.manual'),
@@ -231,20 +259,24 @@ final class _Title extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: 2,
-      children: [
-        Text(
-          name,
-          key: const Key('streetCard.name'),
-          style: AppTextStyles.title.copyWith(color: colors.ink),
-        ),
-        Text(
-          commune,
-          style: AppTextStyles.streetCounts.copyWith(color: colors.muted),
-        ),
-      ],
+    // Clear of the card's ✕, at the top right.
+    return Padding(
+      padding: const EdgeInsets.only(right: AppSizes.sheetCloseClearance),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: 2,
+        children: [
+          Text(
+            name,
+            key: const Key('streetCard.name'),
+            style: AppTextStyles.title.copyWith(color: colors.ink),
+          ),
+          Text(
+            commune,
+            style: AppTextStyles.streetCounts.copyWith(color: colors.muted),
+          ),
+        ],
+      ),
     );
   }
 }
