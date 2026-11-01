@@ -1695,6 +1695,24 @@ abstract class AppLocalizations {
   /// **'Première version de test.'**
   String get release010First;
 
+  /// « Nouveautés », version 0.6.0: « libre » lines stand out.
+  ///
+  /// In fr, this message translates to:
+  /// **'Les rues libres se voient mieux sur la carte : tirets gris foncé sur un liseré blanc.'**
+  String get release060FreeLines;
+
+  /// « Nouveautés », version 0.6.0: a ✕ on the street card.
+  ///
+  /// In fr, this message translates to:
+  /// **'La fiche d\'une rue sur la carte se ferme avec ✕.'**
+  String get release060CloseCard;
+
+  /// « Nouveautés », version 0.6.0: streets of ex-members are free.
+  ///
+  /// In fr, this message translates to:
+  /// **'Les rues d\'un membre qui a quitté l\'équipe redeviennent libres.'**
+  String get release060LeftTeam;
+
   /// « Nouveautés », version 0.5.1: street lines from the map tiles.
   ///
   /// In fr, this message translates to:

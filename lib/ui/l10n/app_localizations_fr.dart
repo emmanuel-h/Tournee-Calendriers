@@ -1192,6 +1192,18 @@ class AppLocalizationsFr extends AppLocalizations {
   String get release010First => 'Première version de test.';
 
   @override
+  String get release060FreeLines =>
+      'Les rues libres se voient mieux sur la carte : tirets gris foncé sur un liseré blanc.';
+
+  @override
+  String get release060CloseCard =>
+      'La fiche d\'une rue sur la carte se ferme avec ✕.';
+
+  @override
+  String get release060LeftTeam =>
+      'Les rues d\'un membre qui a quitté l\'équipe redeviennent libres.';
+
+  @override
   String get release051Lines =>
       'Les rues de la tournée apparaissent enfin sur la carte : leur tracé vient du fond de carte, et les rues déjà ajoutées reçoivent le leur.';
 
