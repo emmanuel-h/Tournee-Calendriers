@@ -39,6 +39,49 @@ void main() {
     });
   });
 
+  group('of', () {
+    test('should be the bounds of the four sides', () {
+      final bounds = GeoBounds.of(
+        south: 45.98,
+        west: 4.70,
+        north: 45.99,
+        east: 4.72,
+      )!;
+
+      expect(bounds.south, 45.98);
+      expect(bounds.west, 4.70);
+      expect(bounds.north, 45.99);
+      expect(bounds.east, 4.72);
+    });
+
+    test('should accept the edges of the map and a single point', () {
+      expect(
+        GeoBounds.of(south: -90, west: -180, north: 90, east: 180),
+        isNotNull,
+      );
+      expect(GeoBounds.of(south: 45, west: 4, north: 45, east: 4), isNotNull);
+    });
+
+    final refused = <(String, List<double>)>[
+      ('a south below -90', [-90.001, 4.70, 45.99, 4.72]),
+      ('a north above 90', [45.98, 4.70, 90.001, 4.72]),
+      ('a west below -180', [45.98, -180.001, 45.99, 4.72]),
+      ('an east above 180', [45.98, 4.70, 45.99, 180.001]),
+      ('a south above the north', [45.991, 4.70, 45.99, 4.72]),
+      ('a west east of the east', [45.98, 4.721, 45.99, 4.72]),
+      ('a latitude not a number', [double.nan, 4.70, 45.99, 4.72]),
+      ('a longitude not a number', [45.98, 4.70, 45.99, double.nan]),
+    ];
+    for (final (what, [south, west, north, east]) in refused) {
+      test('should refuse $what', () {
+        expect(
+          GeoBounds.of(south: south, west: west, north: north, east: east),
+          isNull,
+        );
+      });
+    }
+  });
+
   group('expandedBy', () {
     // East and west, the margin is counted on the widened box: 1° from the
     // equator a degree of longitude is already a little shorter.
@@ -114,6 +157,69 @@ void main() {
       );
     });
   }
+
+  group('contains', () {
+    final box = GeoBounds.around([at(45.98, 4.70), at(45.99, 4.72)])!;
+
+    test('should contain bounds inside it', () {
+      expect(
+        box.contains(GeoBounds.around([at(45.985, 4.71), at(45.986, 4.715)])!),
+        isTrue,
+      );
+    });
+
+    test('should contain itself, its sides included', () {
+      expect(box.contains(box), isTrue);
+    });
+
+    final overflows = <(String, List<double>)>[
+      ('south', [45.9799, 4.70, 45.99, 4.72]),
+      ('west', [45.98, 4.6999, 45.99, 4.72]),
+      ('north', [45.98, 4.70, 45.9901, 4.72]),
+      ('east', [45.98, 4.70, 45.99, 4.7201]),
+    ];
+    for (final (side, [south, west, north, east]) in overflows) {
+      test('should not contain bounds reaching past its $side side', () {
+        expect(
+          box.contains(GeoBounds.around([at(south, west), at(north, east)])!),
+          isFalse,
+        );
+      });
+    }
+  });
+
+  group('isCloseTo', () {
+    final box = GeoBounds.around([at(45.98, 4.70), at(45.99, 4.72)])!;
+
+    test('should be close to bounds whose sides are all within the '
+        'tolerance', () {
+      final near = GeoBounds.around([
+        at(45.98 + 4e-8, 4.70 - 4e-8),
+        at(45.99 - 4e-8, 4.72 + 4e-8),
+      ])!;
+
+      expect(box.isCloseTo(near, 1e-7), isTrue);
+    });
+
+    final shifted = <(String, List<double>)>[
+      ('south', [45.98 + 2e-7, 4.70, 45.99, 4.72]),
+      ('west', [45.98, 4.70 + 2e-7, 45.99, 4.72]),
+      ('north', [45.98, 4.70, 45.99 + 2e-7, 4.72]),
+      ('east', [45.98, 4.70, 45.99, 4.72 + 2e-7]),
+    ];
+    for (final (side, [south, west, north, east]) in shifted) {
+      test('should not be close when its $side side is beyond the '
+          'tolerance', () {
+        expect(
+          box.isCloseTo(
+            GeoBounds.around([at(south, west), at(north, east)])!,
+            1e-7,
+          ),
+          isFalse,
+        );
+      });
+    }
+  });
 
   test('should print its four sides', () {
     expect(

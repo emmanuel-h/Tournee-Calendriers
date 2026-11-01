@@ -110,4 +110,8 @@ Street screen (« Rue »):
   (« Gauche », « Droite » on every floor). The other doors keep their marks.
 - Works offline, cold start included: marks are kept on the phone (Firestore's cache for a
   tournée) and sent to the team when the network is back.
-- Not yet: the offline map download (M4).
+- The open tournée downloads itself for offline use, unseen, whenever the app is online: every
+  street and the map of its area (+ 300 m, zooms 12–17), again when a street reaches beyond
+  it; the maps are refreshed silently (the map's tiles change every week), a failure is tried
+  again 2 minutes later, and a tournée the phone forgets loses its download. What the screens
+  show of it comes with #33.

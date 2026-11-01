@@ -93,9 +93,9 @@ first launch
  Bienvenue ── name ──┬── Créer une tournée ──▶ QR + code ──┐
                      └── Rejoindre (QR or code) ───────────┤
                                                            ▼
-                                           Download for offline (banner until done)
-                                                           ▼
                                Accueil = map of the tournée + "Mes rues" panel
+                               (the app downloads the tournée for offline use by
+                                itself, unseen, whenever it is online — §7)
               ┌──────────────────┬──────────────┼──────────────────┬─────────────┐
               ▼                  ▼              ▼                  ▼             ▼
         Rue (2 sides)     Ajouter des rues   Rue à la main     Équipe        Paramètres
@@ -115,10 +115,10 @@ request.
 
 Before the round (once):
 
-1. Join the tournée with the QR code at the station.
-2. Banner "Télécharger pour le hors-ligne" → one tap → streets + map tiles saved (Wi-Fi advised).
-3. "Ajouter des rues" → tap each of my roads on the map → "Ajouter et me l'attribuer".
-4. A cul-de-sac missing from the map → "Rue absente ? Saisir à la main".
+1. Join the tournée with the QR code at the station. Nothing else to do for offline: while
+   online, the app saves the streets and the map tiles by itself, unseen (§7).
+2. "Ajouter des rues" → tap each of my roads on the map → "Ajouter et me l'attribuer".
+3. A cul-de-sac missing from the map → "Rue absente ? Saisir à la main".
 
 In the street (often offline):
 
@@ -399,10 +399,6 @@ an admin, shows only « Rejoindre une tournée », in red), and the bottom of th
 ```
 ┌──────────────────────────────┐
 │ Tournée 49 · 2026 ▾  [👥•][⚙]│  ← title opens « Mes tournées »; dot: a join request is waiting
-│ ┌──────────────────────────┐ │
-│ │ ⬇ Télécharger pour le    │ │  ← banner until the tournée is downloaded
-│ │   hors-ligne  [Télécharger]│
-│ └──────────────────────────┘ │
 │ ░░████████░░░░║░░░░░░░░░░░░  │  ← map: my streets + the team's
 │ ░░░░░░░░║░░░░▒▒▒▒▒▒▒▒░░░░░░  │
 │ ░░░░░░░░║░░░░░░░░░░░│░░░░░░  │
@@ -417,6 +413,9 @@ an admin, shows only « Rejoindre une tournée », in red), and the bottom of th
 └──────────────────────────────┘
 ```
 
+- **No download banner** (decided 2026-11-01, #32): the tournée downloads itself for offline
+  use, unseen, whenever the app is online (§7); Accueil shows nothing of it — no button, no
+  banner, no progress, no word about map versions.
 - **City zoom:** each street of the tournée drawn over the map, coloured by progress:
   fait (all done), en partie, à faire, libre (in the tournée but nobody took it).
 - **Street zoom (≥ 16):** one dot per house at its BAN position, coloured and glyphed by status
@@ -498,9 +497,9 @@ bottom sheet:
 ```
 
 - Tapping another tournée switches at once: map, panel and listeners follow it; the app reopens
-  on it next time. A tournée that has never been downloaded on this phone shows the download
-  banner; offline, only tournées already downloaded can be opened (the others are greyed with
-  "Pas téléchargée").
+  on it next time, and downloads it by itself if it is not yet (§7). Offline, a tournée never
+  downloaded on this phone cannot work: how « Mes tournées » shows it (greyed, a word) is to
+  agree in #33.
 - *Créer* and *Rejoindre* open 5.2; the current tournée stays untouched until the new one is
   ready (or accepted).
 - Paramètres → *Mes tournées* opens the same sheet.
@@ -508,7 +507,7 @@ bottom sheet:
   move them); the open one shows ● and ✓, another ○ (a tap opens it and closes the sheet),
   a request a dashed ○ in grey, « CS … · votre demande est en attente », and cannot be tapped.
   No tournée: « Aucune tournée pour l'instant. ». Still to come: the progress « · 41 % » (with
-  the streets on Firestore), « Pas téléchargée » (M4).
+  the streets on Firestore), how a tournée not downloaded shows offline (#33).
 - Delivered in T2.6c: another tournée (not the open one) where join requests wait shows
   « CS … · 1 demande en attente » (« 2 demandes… ») and a red dot at the end of its row, said
   by screen readers (« Tournée 12 · 2026, CS Villefranche, 1 demande en attente, ouvrir »);
@@ -1104,11 +1103,6 @@ admin » for « Nouveau code », « Retirer », « Supprimer » and the campaign
 │ VOUS                         │
 │ Prénom        Manu         › │
 │ Mes tournées  49 · 2026    › │  ← same sheet as the title
-│ HORS-LIGNE                   │
-│ Tournée 49 · 34 Mo           │
-│ ✓ Téléchargée le 02/11 08:12 │
-│ Les modifications sont envoyées dès que le réseau revient. │
-│ [Mettre à jour] [Supprimer]  │
 │ APPLICATION                  │
 │ Thème         Système      › │
 │ Confidentialité            › │
@@ -1152,7 +1146,9 @@ admin » for « Nouveau code », « Retirer », « Supprimer » and the campaign
   « Administrateur » under it when admin, and a copy button.
 - Credits under the list: « Carte © contributeurs OpenStreetMap, OpenFreeMap.
   Adresses{N}: Base Adresse Nationale. »
-- HORS-LIGNE comes with the download (T4.2).
+- **HORS-LIGNE**: no « Mettre à jour » or « Supprimer » (decided 2026-11-01, #32): the app
+  downloads, updates and deletes the offline copy by itself (§7). Whether Paramètres shows any
+  line about it (the date and size are kept per tournée, §6.3) is to agree in #33.
 
 ### 5.10 Nouvelle campagne (v1.1)
 
@@ -2307,24 +2303,35 @@ can never drift.
 - `moved_streets.json` (port `MovedStreetsLog`, T2.8): the tournées the phone's streets went
   into, `{ version: 1, movedInto: [tourneeId…] }`, read once at start-up; an unreadable file
   means none (moving again skips what is already there).
-- Offline download date and size per tournée (M4).
-- MapLibre offline region per tournée (tiles), behind the `OfflineMapStore` port.
+- `tournee_downloads.json` (port `TourneeDownloads`, #32): the tournées downloaded on this
+  phone, `{ version: 1, downloads: [{ tournee, at, mapBytes, area: [south, west, north, east]
+  | null }] }` (sorted by tournée; `at` ISO 8601 UTC; `area` the bounds of the map kept, null
+  when no street had a place on the map). Written only once a download is complete, so it
+  says whether a tournée works offline (read at start-up, an offline cold start included);
+  same writing as the others; an unreadable file means none (the open tournée is then
+  downloaded again).
+- MapLibre offline regions (tiles), behind the `OfflineMapStore` port
+  (`infrastructure/maplibre_offline/`): one per downloaded tournée (two for a moment while
+  one is replaced), in the map library's database (`files/mbgl-offline.db`). Each region's
+  metadata is `{ tournee: id }`, so the regions of a tournée are found among the phone's.
 
 ---
 
 ## 7. Sync and offline behaviour
 
-**Goal:** once "Télécharger pour le hors-ligne" has run, the app can be used for a whole day with
-no network, including a cold start, and loses nothing.
+**Goal:** once the app has been online with the tournée open, it can be used for a whole day with
+no network, including a cold start, and loses nothing. The download is **automatic and
+invisible** (decided 2026-11-01, #32): no button, no banner, no progress, nothing about map
+versions.
 
 | What | How it works offline |
 |---|---|
 | Sign-in | The anonymous Firebase session is persisted on the phone; no network needed at start-up. After an offline first start, the sign-in is tried again when Créer / Rejoindre need it (§6.1) |
-| Tournée data | Firestore persistent cache with **unlimited size** (no eviction). The download step runs one read of every street of the tournée, so all of them are in the cache |
+| Tournée data | Firestore persistent cache with **unlimited size** (no eviction). The download reads every street of the tournée once from the server, so all of them are in the cache |
 | Live updates | Snapshot listeners serve the cache at once, then the server when reachable |
 | Writes | Applied locally at once, queued by Firestore, survive restarts, sent when back online |
-| Map | MapLibre offline region covering the tournée's bounding box + 300 m margin, zooms 12–17 (≈ 10 MB, measured in the T0.4 spike: OpenFreeMap tiles stop at z14, fonts are most of it). Street lines and house dots are drawn from the cached street documents, not from the network |
-| New streets in the tournée added by teammates | Arrive with the next sync; their map tiles are already covered if they are inside the downloaded area, otherwise the banner asks to update the download |
+| Map | MapLibre offline region covering the tournée's bounding box + 300 m margin, zooms 12–17, OpenFreeMap « liberty » style (its own URL). ≈ 7 MB measured in the T0.4 spike for a 1.5 km box (6.6 MB, 96 % fonts: a fixed cost; tiles stop at z14), ≈ 8–9 MB expected for a 3 km tournée. Street lines and house dots are drawn from the cached street documents, not from the network |
+| New streets in the tournée added by teammates | Arrive with the next sync; when one reaches beyond the downloaded area, the app downloads the tournée again by itself |
 
 - The pending-writes indicator (« ☁ Modifications de 3 rues en attente d'envoi », « … d'une
   rue … » for one) comes from the snapshot metadata `hasPendingWrites` (port `PendingSync`,
@@ -2332,10 +2339,36 @@ no network, including a cold start, and loses nothing.
   and words it so (not « 3 modifications »). The Firestore street adapter of the open tournée
   is the `PendingSync` too (one listener for both); with no tournée open the phone's streets
   are never sent, so nothing is pending. Shown only while the count is above 0.
-- The banner and the Paramètres section show the download state; "Mettre à jour" re-runs both
-  parts (streets and tiles).
-- What needs the network: creating / joining a tournée, the download itself, and **adding a
-  street from the map** (reverse geocoding, BAN, the map's tiles for its line; the line of a
+- **Automatic download** (`DownloadTournee`, run by `OfflineAutoDownload`, #32): the open
+  tournée (not a pending request) is downloaded when it is opened (start-up, created, joined,
+  switched to) and not downloaded yet, and again when its streets reach beyond the area kept
+  (`coversStreets`). Both parts in turn: every street read from the server, then the map region
+  of `tourneeArea` (zooms 12–17); the date, map size and area are kept (§6.3) only once both are
+  complete. A new region is always made beside the old one (1 m wider when the old one has the
+  same bounds, `offlineRegionBounds`: the map library would otherwise delete the old region
+  before downloading), and the tournée's older regions are deleted only after it completes.
+  A map download that tells nothing for a minute fails (offline, MapLibre never reports a
+  failure, it waits). One run at a time; switching tournée stops the run of the one left (its
+  half region is deleted, nothing is recorded).
+- **Silent map refresh** (`RefreshOfflineMaps`, #32): OpenFreeMap publishes new tiles every
+  week, and once the app has been online after a change the stored map description points at
+  the new version, so the tiles of an old region can no longer be reached offline
+  (docs/spikes/map.md §5). So the map of every downloaded tournée is downloaded again, silently,
+  whenever the app is online: at start-up, when it comes back to the foreground, at most every
+  12 hours after a refresh that worked — and at once for the other tournées right after a
+  download (the description is shared by all regions). Same safe pattern: new region first, old
+  one deleted after `Success`; a failure keeps the old region. `resetOfflineDatabase` is never
+  used. Serving our own copy of the style (Firebase Hosting, stable `/planet/latest/` template)
+  was considered and not taken: OpenFreeMap's own style URL is kept.
+- **Retry:** any failure (offline, service down) waits 2 minutes, then tries again by itself,
+  as the street shapes do (#92); no connectivity plugin.
+- **Forgetting a tournée** (left, removed, deleted, a request refused): its download record and
+  map regions are deleted (`PruneTourneeDownloads`, run at start-up and after each change of
+  « Mes tournées »), whatever flow forgot it.
+- What the member sees of all this (« Mes tournées » offline, any line in Paramètres) is to
+  agree in #33.
+- What needs the network: creating / joining a tournée, the download itself (run by the app),
+  and **adding a street from the map** (reverse geocoding, BAN, the map's tiles for its line; the line of a
   street added without it is filled later, when online, #92). Adding a street by hand, adding
   numbers, taking streets and every status change work offline.
 - Undo is a normal write that restores the previous value, not a rollback.
@@ -2674,8 +2707,10 @@ developer agent follows explicit test-writing rules: each branch gets a test who
 fail if the condition were inverted or a boundary moved by one; every field of a returned value
 object is asserted, not just equality of the whole; no test without an assertion on behaviour.
 
-The MapLibre widget and the offline tile download are SDK glue, kept thin, excluded from the
-coverage gate by path, and covered by the device checklist.
+The MapLibre widget and the offline tile download are SDK glue, kept thin, outside the
+gated paths, and covered by the device checklist: `infrastructure/maplibre_offline/` holds
+only the adapter and its mapper (`mappers/`, gated); the decisions (which bounds, when to
+delete, stalls, retries) are in the use cases and `presentation/offline/`, tested with fakes.
 
 Conventions: `test` / `flutter_test`, `mocktail` only for collaborators that are verified,
 hand-written fakes for ports, test names `'should <behaviour> when <condition>'`, one behaviour
@@ -2703,7 +2738,7 @@ to TestFlight once the Apple account exists.
 | M1 | Core domain + Street screen + Fiche maison + Immeuble on a **real reference area** (BAN streets and numbers, marks stored on the phone) | you walk real streets with the app before any backend exists |
 | M2 | **Starts with an infrastructure checkpoint with you** (Spark vs Blaze, server-side join with rate limiting, or another backend). Then identity + Firestore: bienvenue, créer / rejoindre (code + QR), approval of newcomers, équipe, corbeille, App Check, live sync, rules + emulator tests | two phones see each other's marks; a guessed code gets nowhere |
 | M3 | Map: Accueil map + panel, progress colours, house dots, ajouter des rues (tap → card → add), search, manual street + numbers | real streets, picked on the map |
-| M4 | Offline: download step (cache + tiles), pending-writes indicator, Paramètres hors-ligne, airplane-mode checklist | a full day without network |
+| M4 | Offline: automatic, invisible download (cache + tiles, silent map refresh), pending-writes indicator, what « Mes tournées » / Paramètres show of it (#33), airplane-mode checklist | a full day without network |
 | M5 | Polish and release: dark mode, accessibility (TalkBack, 200 % font), icon, privacy policy, Play listing | store-ready |
 | M6 (v1.1) | Nouvelle campagne: copy / reset, *Reprendre mes rues*, last year's result in the sheets, read-only archive | tournée 49 starts 2027 from 2026 |
 
@@ -2727,7 +2762,7 @@ exists. No invented data at any stage.
 | Q8 | Street selection | On a map: tap a road → street card → add. Manual entry for what the map or BAN lacks. |
 | Q9 | Where the map lives | Accueil = map + "Mes rues" panel; "Ajouter des rues" is a map mode (replaces the Sector list). |
 | Q10 | Progress on the map | Streets coloured by progress; houses as status dots when zoomed in. |
-| Q11 | Offline | Explicit download of the tournée (data + map tiles); then fully offline, sync when possible. |
+| Q11 | Offline | Download of the tournée (data + map tiles), then fully offline, sync when possible. **Changed 2026-11-01 (#32): automatic and invisible** — the app downloads the open tournée whenever it is online, refreshes the maps silently (weekly tile versions), retries every 2 minutes after a failure; no button, banner or progress (§7). |
 | Q12 | Language | French only. |
 | Q13 | Adding streets | The map mode is called *Ajouter des rues*. |
 | Q14 | Correcting streets | Edit mode on the street screen (✏): remove / add / rename numbers, rename, make a building, stop covering, delete. Manual street always reachable from *Ajouter des rues*. |

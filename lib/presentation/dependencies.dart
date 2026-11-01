@@ -22,17 +22,21 @@ import 'package:tournee_calendriers/application/ports/identity_provider.dart';
 import 'package:tournee_calendriers/application/ports/member_account.dart';
 import 'package:tournee_calendriers/application/ports/moved_streets_log.dart';
 import 'package:tournee_calendriers/application/ports/my_tournees_store.dart';
+import 'package:tournee_calendriers/application/ports/offline_map_store.dart';
 import 'package:tournee_calendriers/application/ports/pending_sync.dart';
 import 'package:tournee_calendriers/application/ports/phone_settings.dart';
 import 'package:tournee_calendriers/application/ports/street_shapes.dart';
 import 'package:tournee_calendriers/application/ports/street_view_preferences.dart';
+import 'package:tournee_calendriers/application/ports/streets_download.dart';
 import 'package:tournee_calendriers/application/ports/tournee_directory.dart';
+import 'package:tournee_calendriers/application/ports/tournee_downloads.dart';
 import 'package:tournee_calendriers/application/use_cases/add_manual_street.dart';
 import 'package:tournee_calendriers/application/use_cases/add_street_from_map.dart';
 import 'package:tournee_calendriers/application/use_cases/admins.dart';
 import 'package:tournee_calendriers/application/use_cases/choose_start_point.dart';
 import 'package:tournee_calendriers/application/use_cases/create_tournee.dart';
 import 'package:tournee_calendriers/application/use_cases/describe_building.dart';
+import 'package:tournee_calendriers/application/use_cases/download_tournee.dart';
 import 'package:tournee_calendriers/application/use_cases/edit_street_numbers.dart';
 import 'package:tournee_calendriers/application/use_cases/fill_street_shape.dart';
 import 'package:tournee_calendriers/application/use_cases/find_imported_streets.dart';
@@ -52,12 +56,14 @@ import 'package:tournee_calendriers/application/use_cases/observe_street.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_streets.dart';
 import 'package:tournee_calendriers/application/use_cases/phone_settings.dart';
 import 'package:tournee_calendriers/application/use_cases/purge_corbeille.dart';
+import 'package:tournee_calendriers/application/use_cases/refresh_offline_maps.dart';
 import 'package:tournee_calendriers/application/use_cases/search_communes.dart';
 import 'package:tournee_calendriers/application/use_cases/search_street.dart';
 import 'package:tournee_calendriers/application/use_cases/set_house_details.dart';
 import 'package:tournee_calendriers/application/use_cases/sign_in.dart';
 import 'package:tournee_calendriers/application/use_cases/street_assignment.dart';
 import 'package:tournee_calendriers/application/use_cases/team.dart';
+import 'package:tournee_calendriers/application/use_cases/tournee_downloads.dart';
 import 'package:tournee_calendriers/application/use_cases/undo_last_change.dart';
 import 'package:tournee_calendriers/domain/street/street_repository.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_repository.dart';
@@ -124,6 +130,22 @@ final movedStreetsLogProvider = Provider<MovedStreetsLog>(
 );
 final adminStatusProvider = Provider<AdminStatus>(
   (ref) => _unbound('AdminStatus'),
+);
+
+/// The streets of a tournée as the server has them, for its download
+/// (PLAN §7).
+final streetsDownloadProvider = Provider<StreetsDownload>(
+  (ref) => _unbound('StreetsDownload'),
+);
+
+/// The map regions kept on the phone for offline use.
+final offlineMapStoreProvider = Provider<OfflineMapStore>(
+  (ref) => _unbound('OfflineMapStore'),
+);
+
+/// The tournées downloaded on this phone, when, and how much.
+final tourneeDownloadsProvider = Provider<TourneeDownloads>(
+  (ref) => _unbound('TourneeDownloads'),
 );
 
 /// The source join codes are drawn from: `Random.secure()` in the app
@@ -474,5 +496,42 @@ final cancelJoinRequestProvider = Provider(
     ref.watch(tourneeDirectoryProvider),
     ref.watch(memberAccountProvider),
     ref.watch(myTourneesStoreProvider),
+  ),
+);
+
+// Offline download (PLAN §7), run by the app unseen.
+
+final downloadTourneeProvider = Provider(
+  (ref) => DownloadTournee(
+    ref.watch(streetsDownloadProvider),
+    ref.watch(offlineMapStoreProvider),
+    ref.watch(tourneeDownloadsProvider),
+    ref.watch(clockProvider),
+  ),
+);
+final refreshOfflineMapsProvider = Provider(
+  (ref) => RefreshOfflineMaps(
+    ref.watch(offlineMapStoreProvider),
+    ref.watch(tourneeDownloadsProvider),
+  ),
+);
+final readTourneeDownloadsProvider = Provider(
+  (ref) => ReadTourneeDownloads(ref.watch(tourneeDownloadsProvider)),
+);
+final observeTourneeDownloadsProvider = Provider(
+  (ref) => ObserveTourneeDownloads(ref.watch(tourneeDownloadsProvider)),
+);
+final deleteTourneeDownloadProvider = Provider(
+  (ref) => DeleteTourneeDownload(
+    ref.watch(offlineMapStoreProvider),
+    ref.watch(tourneeDownloadsProvider),
+  ),
+);
+final pruneTourneeDownloadsProvider = Provider(
+  (ref) => PruneTourneeDownloads(
+    ref.watch(myTourneesStoreProvider),
+    ref.watch(deleteTourneeDownloadProvider),
+    ref.watch(offlineMapStoreProvider),
+    ref.watch(tourneeDownloadsProvider),
   ),
 );

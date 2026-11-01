@@ -87,6 +87,31 @@ void main() {
     expect(tourneeArea([]), isNull);
   });
 
+  group('streetsBounds', () {
+    test('should hold every shape point and house position, with no '
+        'margin', () {
+      final street = _street(
+        'a',
+        shape: StreetShape([
+          [at(45.98200, 4.71000), at(45.98500, 4.72000)],
+        ]),
+        houses: [
+          House(number: n('1'), position: at(45.99210, 4.70100)),
+          House(number: n('3')),
+        ],
+      );
+
+      expect(
+        streetsBounds([street]),
+        GeoBounds.around([at(45.98200, 4.70100), at(45.99210, 4.72000)]),
+      );
+    });
+
+    test('should be null when no street has a place on the map', () {
+      expect(streetsBounds([_street('a')]), isNull);
+    });
+  });
+
   group('communesArea', () {
     final villefrancheCentre = at(45.9837, 4.726);
     final gleizeCentre = at(45.9915, 4.6883);

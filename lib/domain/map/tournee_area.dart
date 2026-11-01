@@ -15,14 +15,20 @@ const tourneeMarginMetres = 300.0;
 ///
 /// Streets in the Corbeille count: one may be restored offline, and its
 /// map must be there.
-GeoBounds? tourneeArea(Iterable<Street> streets) => GeoBounds.around([
+GeoBounds? tourneeArea(Iterable<Street> streets) =>
+    streetsBounds(streets)?.expandedBy(tourneeMarginMetres);
+
+/// The smallest bounds holding every point of the [streets]' shapes and
+/// every house position, with no margin; null when none of them has a
+/// place on the map.
+GeoBounds? streetsBounds(Iterable<Street> streets) => GeoBounds.around([
   for (final street in streets) ...[
     ...street.shape.points,
     // `?` before an element adds it only when it is not null: a house
     // typed in by hand has no position.
     for (final house in street.houses) ?house.position,
   ],
-])?.expandedBy(tourneeMarginMetres);
+]);
 
 /// The margin around a commune's centre, in metres: a commune of a few
 /// thousand people spreads over 1 to 3 km around its town hall, so the

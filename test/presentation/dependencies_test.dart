@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/misc.dart';
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
+import 'package:tournee_calendriers/application/ports/offline_map_store.dart';
 import 'package:tournee_calendriers/application/ports/phone_settings.dart';
 import 'package:tournee_calendriers/application/ports/tournee_directory.dart';
 import 'package:tournee_calendriers/application/use_cases/choose_start_point.dart';
@@ -16,6 +17,7 @@ import 'package:tournee_calendriers/application/use_cases/import_reference_area.
 import 'package:tournee_calendriers/application/use_cases/look_up_street.dart';
 import 'package:tournee_calendriers/application/use_cases/mark.dart';
 import 'package:tournee_calendriers/application/use_cases/move_streets_into_tournee.dart';
+import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/corbeille.dart';
@@ -53,14 +55,18 @@ import '../support/fakes/fake_commune_search.dart';
 import '../support/fakes/fake_member_account.dart';
 import '../support/fakes/fake_moved_streets_log.dart';
 import '../support/fakes/fake_my_tournees_store.dart';
+import '../support/fakes/fake_offline_map_store.dart';
 import '../support/fakes/fake_pending_sync.dart';
 import '../support/fakes/fake_phone_settings.dart';
 import '../support/fakes/fake_ports.dart';
 import '../support/fakes/fake_street_repository.dart';
 import '../support/fakes/fake_street_shapes.dart';
 import '../support/fakes/fake_street_view_preferences.dart';
+import '../support/fakes/fake_streets_download.dart';
 import '../support/fakes/fake_tournee_directory.dart';
+import '../support/fakes/fake_tournee_downloads.dart';
 import '../support/fakes/fake_tournee_repository.dart';
+import '../support/geo_fixtures.dart';
 import '../support/results.dart';
 import '../support/scripted_random.dart';
 import '../support/street_fixtures.dart';
@@ -184,6 +190,9 @@ void main() {
       'PendingSync': pendingSyncProvider,
       'Random': randomProvider,
       'AdminStatus': adminStatusProvider,
+      'StreetsDownload': streetsDownloadProvider,
+      'OfflineMapStore': offlineMapStoreProvider,
+      'TourneeDownloads': tourneeDownloadsProvider,
     };
     ports.forEach((name, port) {
       test('should name $name when nobody bound it', () {
@@ -859,5 +868,44 @@ void main() {
         expect(myTournees.myTournees.find(tournee7.id), isNull);
       },
     );
+  });
+
+  group('offline download', () {
+    late FakeOfflineMapStore maps;
+    late FakeTourneeDownloads downloads;
+    late ProviderContainer offline;
+
+    setUp(() {
+      maps = FakeOfflineMapStore([
+        OfflineMapRegion(
+          id: 40,
+          tournee: tournee49.id,
+          bounds: GeoBounds.around([at(45.98, 4.70), at(45.99, 4.72)])!,
+        ),
+      ]);
+      downloads = FakeTourneeDownloads();
+      offline = ProviderContainer(
+        overrides: [
+          ...overridesAs(lea),
+          offlineMapStoreProvider.overrideWithValue(maps),
+          tourneeDownloadsProvider.overrideWithValue(downloads),
+          streetsDownloadProvider.overrideWithValue(FakeStreetsDownload()),
+        ],
+      );
+      addTearDown(offline.dispose);
+    });
+
+    test('should observe the downloads of the bound store', () async {
+      expect(
+        await offline.read(observeTourneeDownloadsProvider)().first,
+        isEmpty,
+      );
+    });
+
+    test('should delete a download through the bound store and map', () async {
+      await offline.read(deleteTourneeDownloadProvider)(tournee49.id);
+
+      expect(maps.log, ['delete 40']);
+    });
   });
 }

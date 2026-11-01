@@ -15,6 +15,7 @@ import 'package:tournee_calendriers/infrastructure/firebase_auth/anonymous_auth.
 import 'package:tournee_calendriers/infrastructure/firebase_auth/firebase_identity.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_admin_status.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_street_repository.dart';
+import 'package:tournee_calendriers/infrastructure/firestore/firestore_streets_download.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_tournee_directory.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_tournee_repository.dart';
 import 'package:tournee_calendriers/infrastructure/geo_api/geo_commune_search.dart';
@@ -24,11 +25,14 @@ import 'package:tournee_calendriers/infrastructure/local_storage/local_my_tourne
 import 'package:tournee_calendriers/infrastructure/local_storage/local_phone_settings.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_street_repository.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_street_view_preferences.dart';
+import 'package:tournee_calendriers/infrastructure/local_storage/local_tournee_downloads.dart';
 import 'package:tournee_calendriers/infrastructure/map_tiles/openfreemap_street_shapes.dart';
+import 'package:tournee_calendriers/infrastructure/maplibre_offline/maplibre_offline_map_store.dart';
 import 'package:tournee_calendriers/infrastructure/system/random_id_generator.dart';
 import 'package:tournee_calendriers/infrastructure/system/system_clock.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/my_tournees/my_tournees_notifier.dart';
+import 'package:tournee_calendriers/ui/map/map_style.dart';
 
 /// The one HTTP client of the app, shared by the services that need the
 /// network (the BAN and geo.api.gouv.fr). Riverpod calls `onDispose` when the
@@ -47,7 +51,8 @@ final httpClientProvider = Provider<http.Client>((ref) {
 ///   street screens' « Masquer faits » in `street_view.json`, « Mes
 ///   tournées » and the open one in `my_tournees.json`, the name and the
 ///   theme in `settings.json`, the tournées that received the streets of
-///   M1 in `moved_streets.json`.
+///   M1 in `moved_streets.json`, the tournées downloaded for offline use
+///   in `tournee_downloads.json`.
 /// - [auth]: Firebase anonymous sign-in. Its uid is the member; until the
 ///   first sign-in succeeds, the phone's own id stands in for the marks,
 ///   and creating or joining a tournée signs in again (`MemberAccount`).
@@ -93,6 +98,9 @@ Future<List<Override>> bindAdapters({
   final settings = await LocalPhoneSettings.load(fileOf('settings.json'));
   final movedStreets = await LocalMovedStreetsLog.load(
     fileOf('moved_streets.json'),
+  );
+  final tourneeDownloads = await LocalTourneeDownloads.load(
+    fileOf('tournee_downloads.json'),
   );
   // One phone storage of the streets: it answers from memory and queues
   // its writes, so two instances of it must never run side by side.
@@ -174,6 +182,14 @@ Future<List<Override>> bindAdapters({
       (ref) => FirestoreTourneeRepository(db, random: random),
     ),
     randomProvider.overrideWithValue(random),
+    // The offline download (PLAN §7): the streets read from the server,
+    // the map regions of the map library over the very style the map
+    // shows, and what was downloaded, kept on the phone.
+    streetsDownloadProvider.overrideWith((ref) => FirestoreStreetsDownload(db)),
+    offlineMapStoreProvider.overrideWithValue(
+      const MapLibreOfflineMapStore(styleUrl: openFreeMapStyle),
+    ),
+    tourneeDownloadsProvider.overrideWithValue(tourneeDownloads),
     // Whether the phone, or a member, is an admin (PLAN §5.12): the
     // phone's own `admins/{uid}` once it has an account.
     adminStatusProvider.overrideWith(

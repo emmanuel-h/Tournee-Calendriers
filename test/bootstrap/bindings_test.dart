@@ -19,6 +19,7 @@ import 'package:tournee_calendriers/infrastructure/ban/ban_address_directory.dar
 import 'package:tournee_calendriers/infrastructure/firebase_auth/firebase_identity.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_admin_status.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_street_repository.dart';
+import 'package:tournee_calendriers/infrastructure/firestore/firestore_streets_download.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_tournee_directory.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_tournee_repository.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_document_mapper.dart';
@@ -28,7 +29,9 @@ import 'package:tournee_calendriers/infrastructure/local_storage/local_my_tourne
 import 'package:tournee_calendriers/infrastructure/local_storage/local_phone_settings.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_street_repository.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_street_view_preferences.dart';
+import 'package:tournee_calendriers/infrastructure/local_storage/local_tournee_downloads.dart';
 import 'package:tournee_calendriers/infrastructure/map_tiles/openfreemap_street_shapes.dart';
+import 'package:tournee_calendriers/infrastructure/maplibre_offline/maplibre_offline_map_store.dart';
 import 'package:tournee_calendriers/infrastructure/system/random_id_generator.dart';
 import 'package:tournee_calendriers/infrastructure/system/system_clock.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
@@ -114,6 +117,22 @@ void main() {
       isA<FirestoreTourneeRepository>(),
     );
     expect(container.read(adminStatusProvider), isA<FirestoreAdminStatus>());
+    expect(
+      container.read(streetsDownloadProvider),
+      isA<FirestoreStreetsDownload>(),
+    );
+    expect(
+      container.read(offlineMapStoreProvider),
+      isA<MapLibreOfflineMapStore>().having(
+        (store) => store.styleUrl,
+        'styleUrl',
+        'https://tiles.openfreemap.org/styles/liberty',
+      ),
+    );
+    expect(
+      container.read(tourneeDownloadsProvider),
+      isA<LocalTourneeDownloads>(),
+    );
     // One database for every Firestore adapter.
     expect(firestoreAsked, 1);
     expect(container.read(randomProvider), isA<Random>());
