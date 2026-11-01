@@ -183,25 +183,39 @@
       "title": "5.8 Équipe (membre)"
     },
     "AddList.dc.html": {
-      "x": 3290,
+      "x": 2350,
       "y": 1264,
       "w": 390,
       "h": 844,
       "title": "5.4 Ajouter des rues — Liste (#78)"
     },
     "HouseNobody.dc.html": {
-      "x": 3760,
+      "x": 3290,
       "y": 2528,
       "w": 390,
       "h": 844,
       "title": "5.7 Fiche maison — personne, 2e passage (#80)"
     },
     "HouseComeBack.dc.html": {
-      "x": 4230,
+      "x": 3760,
       "y": 2528,
       "w": 390,
       "h": 844,
       "title": "5.7 Fiche maison — quand repasser (#81)"
+    },
+    "Start.dc.html": {
+      "x": 0,
+      "y": 6320,
+      "w": 390,
+      "h": 844,
+      "title": "5.0 Mes rues (sans tournée ouverte)"
+    },
+    "Import.dc.html": {
+      "x": 470,
+      "y": 6320,
+      "w": 390,
+      "h": 844,
+      "title": "5.0 Importer des rues"
     }
   },
   "createdOnFiles": {
@@ -226,12 +240,12 @@
       "y": 964,
       "text": "Carte et ajout de rues",
       "kind": "title1",
-      "maxW": 2270,
+      "maxW": 2740,
       "w": 240
     },
     "rowStreet": {
       "kind": "title1",
-      "maxW": 2740,
+      "maxW": 4150,
       "text": "Dans la rue et corrections",
       "w": 240,
       "x": 0,
@@ -251,6 +265,14 @@
       "text": "Administrateurs",
       "kind": "title1",
       "maxW": 1330,
+      "w": 240
+    },
+    "rowPhone": {
+      "x": 0,
+      "y": 6020,
+      "text": "Sans tournée ouverte",
+      "kind": "title1",
+      "maxW": 860,
       "w": 240
     }
   },
@@ -281,7 +303,9 @@
     "Trash.dc.html",
     "AllTournees.dc.html",
     "HomeAdmin.dc.html",
-    "TeamMember.dc.html"
+    "TeamMember.dc.html",
+    "Start.dc.html",
+    "Import.dc.html"
   ],
   "pages": [],
   "title": "Tournée Calendriers screens"
