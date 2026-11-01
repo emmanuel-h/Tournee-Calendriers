@@ -59,6 +59,7 @@ import '../support/fakes/fake_offline_map_store.dart';
 import '../support/fakes/fake_pending_sync.dart';
 import '../support/fakes/fake_phone_settings.dart';
 import '../support/fakes/fake_ports.dart';
+import '../support/fakes/fake_server_connection.dart';
 import '../support/fakes/fake_street_repository.dart';
 import '../support/fakes/fake_street_shapes.dart';
 import '../support/fakes/fake_street_view_preferences.dart';
@@ -95,6 +96,9 @@ void main() {
     phoneStreetRepositoryProvider.overrideWithValue(phoneStreets),
     movedStreetsLogProvider.overrideWithValue(movedStreets),
     pendingSyncProvider.overrideWithValue(pending),
+    serverConnectionProvider.overrideWithValue(
+      FakeServerConnection(offline: true),
+    ),
     addressDirectoryProvider.overrideWithValue(directory),
     streetShapesProvider.overrideWithValue(shapes),
     communeSearchProvider.overrideWithValue(communes),
@@ -193,6 +197,7 @@ void main() {
       'StreetsDownload': streetsDownloadProvider,
       'OfflineMapStore': offlineMapStoreProvider,
       'TourneeDownloads': tourneeDownloadsProvider,
+      'ServerConnection': serverConnectionProvider,
     };
     ports.forEach((name, port) {
       test('should name $name when nobody bound it', () {
@@ -588,6 +593,12 @@ void main() {
       final streets = await container.read(observePendingSyncProvider)().first;
 
       expect(streets, 2);
+    });
+
+    test('should observe whether the bound connection is offline', () async {
+      final offline = await container.read(observeOfflineProvider)().first;
+
+      expect(offline, isTrue);
     });
 
     test('should observe the team in the bound repository', () async {

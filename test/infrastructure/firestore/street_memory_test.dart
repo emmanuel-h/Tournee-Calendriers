@@ -187,4 +187,42 @@ void main() {
       },
     );
   });
+
+  group('watchOffline', () {
+    test(
+      'should tell whether the listener answers from the phone\'s copy, each '
+      'time it changes',
+      () async {
+        memory.receive({lilas.id: lilas}, const {}, fromCache: true);
+        final seen = <bool>[];
+        final subscription = memory.watchOffline().listen(seen.add);
+        await pumpEventQueue();
+
+        // Metadata only: still from the phone's copy, not given again.
+        memory.receive(const {}, const {}, fromCache: true);
+        memory.receive(const {}, const {}, fromCache: false);
+        memory.receive({roses.id: roses}, const {}, fromCache: false);
+        memory.receive(const {}, const {}, fromCache: true);
+        await pumpEventQueue();
+        await subscription.cancel();
+
+        expect(seen, [true, false, true]);
+      },
+    );
+
+    test('should say online when the listener does not tell', () async {
+      memory.receive({lilas.id: lilas}, const {});
+
+      expect(await memory.watchOffline().first, isFalse);
+    });
+
+    test('should give nothing before the first answer', () async {
+      final seen = <bool>[];
+      final subscription = memory.watchOffline().listen(seen.add);
+      await pumpEventQueue();
+      await subscription.cancel();
+
+      expect(seen, isEmpty);
+    });
+  });
 }

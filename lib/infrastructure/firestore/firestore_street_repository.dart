@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:tournee_calendriers/application/ports/clock.dart';
 import 'package:tournee_calendriers/application/ports/identity_provider.dart';
 import 'package:tournee_calendriers/application/ports/pending_sync.dart';
+import 'package:tournee_calendriers/application/ports/server_connection.dart';
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
@@ -19,7 +20,8 @@ import 'package:tournee_calendriers/infrastructure/firestore/street_memory.dart'
 
 /// The [StreetRepository] of M2: the streets of one campaign of one
 /// tournée, `tournees/{id}/campaigns/{year}/streets` (PLAN §6.2), shared by
-/// the whole team. Also the [PendingSync] of those streets.
+/// the whole team. Also the [PendingSync] of those streets, and the
+/// [ServerConnection] of the phone while the tournée is open.
 ///
 /// - **One listener** on the whole collection (≈ 60 streets), started at the
 ///   first call: Firestore serves it from the phone's cache at once (an
@@ -34,7 +36,8 @@ import 'package:tournee_calendriers/infrastructure/firestore/street_memory.dart'
 ///   overwrite each other ([streetUpdates]).
 /// - **Undo** is stamped with who undoes, read from [IdentityProvider] and
 ///   [Clock] at the time of the write (PLAN §8.2).
-final class FirestoreStreetRepository implements StreetRepository, PendingSync {
+final class FirestoreStreetRepository
+    implements StreetRepository, PendingSync, ServerConnection {
   FirestoreStreetRepository(
     FirebaseFirestore db, {
     required TourneeId tournee,
@@ -92,6 +95,12 @@ final class FirestoreStreetRepository implements StreetRepository, PendingSync {
 
   @override
   Stream<int> watchUnsentStreets() => _ready.watchUnsent();
+
+  /// Offline while the listener's snapshots come from the phone's copy:
+  /// Firestore marks them `isFromCache` once it stops reaching the server,
+  /// and sends a snapshot of metadata only when it reaches it again.
+  @override
+  Stream<bool> watchOffline() => _ready.watchOffline();
 
   @override
   Future<void> add(Street street) async {
@@ -152,7 +161,8 @@ final class FirestoreStreetRepository implements StreetRepository, PendingSync {
     final memory = StreetMemory();
     // `includeMetadataChanges`: a snapshot also comes when only
     // `hasPendingWrites` changes (the server received a write), which is
-    // what the pending count needs.
+    // what the pending count needs, or `isFromCache` (the network went or
+    // came back), which is what « offline » needs.
     _listener = _streets
         .snapshots(includeMetadataChanges: true)
         .listen(
@@ -169,6 +179,7 @@ final class FirestoreStreetRepository implements StreetRepository, PendingSync {
               for (final doc in snapshot.docs)
                 if (doc.metadata.hasPendingWrites) StreetId(doc.id),
             },
+            fromCache: snapshot.metadata.isFromCache,
           ),
           onError: memory.fail,
         );

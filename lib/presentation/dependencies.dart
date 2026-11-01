@@ -25,6 +25,7 @@ import 'package:tournee_calendriers/application/ports/my_tournees_store.dart';
 import 'package:tournee_calendriers/application/ports/offline_map_store.dart';
 import 'package:tournee_calendriers/application/ports/pending_sync.dart';
 import 'package:tournee_calendriers/application/ports/phone_settings.dart';
+import 'package:tournee_calendriers/application/ports/server_connection.dart';
 import 'package:tournee_calendriers/application/ports/street_shapes.dart';
 import 'package:tournee_calendriers/application/ports/street_view_preferences.dart';
 import 'package:tournee_calendriers/application/ports/streets_download.dart';
@@ -51,6 +52,7 @@ import 'package:tournee_calendriers/application/use_cases/move_streets_into_tour
 import 'package:tournee_calendriers/application/use_cases/my_tournees.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_corbeille.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_my_streets.dart';
+import 'package:tournee_calendriers/application/use_cases/observe_offline.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_pending_sync.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_street.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_streets.dart';
@@ -90,6 +92,13 @@ final phoneStreetRepositoryProvider = Provider<StreetRepository>(
 /// tournée open there is nothing to send.
 final pendingSyncProvider = Provider<PendingSync>(
   (ref) => _unbound('PendingSync'),
+);
+
+/// Whether the phone reaches the server. The composition root binds it to
+/// the same adapter as [streetRepositoryProvider] too: the open tournée's
+/// listener tells it; with no tournée open, nothing does.
+final serverConnectionProvider = Provider<ServerConnection>(
+  (ref) => _unbound('ServerConnection'),
 );
 final addressDirectoryProvider = Provider<AddressDirectory>(
   (ref) => _unbound('AddressDirectory'),
@@ -345,6 +354,9 @@ final purgeCorbeilleProvider = Provider(
 );
 final observePendingSyncProvider = Provider(
   (ref) => ObservePendingSync(ref.watch(pendingSyncProvider)),
+);
+final observeOfflineProvider = Provider(
+  (ref) => ObserveOffline(ref.watch(serverConnectionProvider)),
 );
 final observeTeamProvider = Provider(
   (ref) => ObserveTeam(ref.watch(tourneeRepositoryProvider)),

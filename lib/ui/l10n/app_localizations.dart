@@ -1605,6 +1605,12 @@ abstract class AppLocalizations {
   /// **'Vous'**
   String get settingsYou;
 
+  /// Muted line of Paramètres under « Mes tournées »: the tournée downloads itself for offline use, unseen (PLAN §5.9, §7).
+  ///
+  /// In fr, this message translates to:
+  /// **'L\'application fonctionne sans réseau ; les modifications sont envoyées dès qu\'il revient.'**
+  String get settingsOfflineLine;
+
   /// Section header of Paramètres: the app's settings.
   ///
   /// In fr, this message translates to:
@@ -2546,6 +2552,18 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'{title}, {centre}, administrateur, tournée ouverte'**
   String myTourneesVisitedOpenSemantics(String title, String centre);
+
+  /// Second line of a tournée greyed in « Mes tournées » while offline: it was never downloaded on this phone, so it cannot open (Switcher mockup, PLAN §5.3).
+  ///
+  /// In fr, this message translates to:
+  /// **'{centre} · Disponible avec réseau'**
+  String myTourneesUnavailable(String centre);
+
+  /// Screen-reader label of a tournée greyed in « Mes tournées » while offline (announced as disabled too).
+  ///
+  /// In fr, this message translates to:
+  /// **'{title}, {centre}, disponible avec réseau'**
+  String myTourneesUnavailableSemantics(String title, String centre);
 
   /// Under the title of « Toutes les tournées » (AllTournees mockup).
   ///

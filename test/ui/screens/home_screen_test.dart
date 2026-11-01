@@ -130,6 +130,17 @@ void main() {
       );
     });
 
+    testWidgets('should say nothing of the offline download (PLAN §5.3, #33)', (
+      tester,
+    ) async {
+      await pumpHome(tester);
+
+      // The tournée downloads itself, unseen: no banner, no button.
+      expect(find.textContaining('élécharg'), findsNothing);
+      expect(find.textContaining('hors ligne'), findsNothing);
+      expect(find.textContaining('réseau'), findsNothing);
+    });
+
     testWidgets('should list « Mes rues », then the other streets of the '
         'tournée under their header', (tester) async {
       await pumpHome(tester);

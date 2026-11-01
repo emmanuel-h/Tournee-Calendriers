@@ -952,6 +952,8 @@
   },
   "settingsYou": "Vous",
   "@settingsYou": { "description": "Section header of Paramètres: the member's own settings (PLAN §5.9)." },
+  "settingsOfflineLine": "L'application fonctionne sans réseau ; les modifications sont envoyées dès qu'il revient.",
+  "@settingsOfflineLine": { "description": "Muted line of Paramètres under « Mes tournées »: the tournée downloads itself for offline use, unseen (PLAN §5.9, §7)." },
   "settingsApplication": "Application",
   "@settingsApplication": { "description": "Section header of Paramètres: the app's settings." },
   "settingsName": "Prénom",
@@ -1523,6 +1525,21 @@
     "description": "Screen-reader label of the open tournée in « Mes tournées » when the admin only visits it.",
     "placeholders": {
       "title": { "type": "String", "example": "Tournée 12 · 2026" },
+      "centre": { "type": "String", "example": "CS Villefranche" }
+    }
+  },
+  "myTourneesUnavailable": "{centre} · Disponible avec réseau",
+  "@myTourneesUnavailable": {
+    "description": "Second line of a tournée greyed in « Mes tournées » while offline: it was never downloaded on this phone, so it cannot open (Switcher mockup, PLAN §5.3).",
+    "placeholders": {
+      "centre": { "type": "String", "example": "CS Villefranche" }
+    }
+  },
+  "myTourneesUnavailableSemantics": "{title}, {centre}, disponible avec réseau",
+  "@myTourneesUnavailableSemantics": {
+    "description": "Screen-reader label of a tournée greyed in « Mes tournées » while offline (announced as disabled too).",
+    "placeholders": {
+      "title": { "type": "String", "example": "Tournée 23 · 2026" },
       "centre": { "type": "String", "example": "CS Villefranche" }
     }
   },

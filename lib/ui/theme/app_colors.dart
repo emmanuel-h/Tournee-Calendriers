@@ -40,6 +40,8 @@ final class AppColors extends ThemeExtension<AppColors> {
     required this.onBuildingPartial,
     required this.buildingPartialBorder,
     required this.editTileBorder,
+    required this.unavailable,
+    required this.unavailableMark,
     required this.snackBar,
     required this.onSnackBar,
     required this.snackBarAction,
@@ -85,6 +87,8 @@ final class AppColors extends ThemeExtension<AppColors> {
     onBuildingPartial: Color(0xFF1B1F24),
     buildingPartialBorder: Color(0xFFCFC9BD),
     editTileBorder: Color(0xFF8A8F96),
+    unavailable: Color(0xFF8A8F96),
+    unavailableMark: Color(0xFFB5B9BE),
     snackBar: Color(0xFF1B1F24),
     onSnackBar: Color(0xFFFFFFFF),
     snackBarAction: Color(0xFFF2B33D),
@@ -132,6 +136,9 @@ final class AppColors extends ThemeExtension<AppColors> {
     onBuildingPartial: Color(0xFFECEAE5),
     buildingPartialBorder: Color(0xFF6B6558),
     editTileBorder: Color(0xFF8A8F96),
+    // Dimmer than the dark [muted], as the light ones are than theirs.
+    unavailable: Color(0xFF6E747C),
+    unavailableMark: Color(0xFF4A5058),
     snackBar: Color(0xFFECEAE5),
     onSnackBar: Color(0xFF1B1F24),
     snackBarAction: Color(0xFF9A3412),
@@ -210,6 +217,12 @@ final class AppColors extends ThemeExtension<AppColors> {
   /// The dashed outline of a number in edit mode (Edit mockup): grey, so
   /// the tiles read as « being edited », not as a status.
   final Color editTileBorder;
+
+  /// The text of a tournée « Mes tournées » cannot open offline (Switcher
+  /// mockup): greyed further than [muted], with its ring in
+  /// [unavailableMark]. Never alone: « Disponible avec réseau » says it.
+  final Color unavailable;
+  final Color unavailableMark;
 
   /// The undo snackbar: dark bar, yellow action.
   final Color snackBar;

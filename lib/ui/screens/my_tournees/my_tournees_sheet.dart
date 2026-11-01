@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/presentation/admin/admin_notifier.dart';
 import 'package:tournee_calendriers/presentation/my_tournees/my_tournees_notifier.dart';
 import 'package:tournee_calendriers/presentation/my_tournees/my_tournees_state.dart';
+import 'package:tournee_calendriers/presentation/my_tournees/offline_access.dart';
 import 'package:tournee_calendriers/presentation/settings/settings_notifier.dart';
 import 'package:tournee_calendriers/ui/components/app_buttons.dart';
 import 'package:tournee_calendriers/ui/components/dashed_outline.dart';
@@ -54,7 +55,9 @@ Future<bool> ensureMemberName(BuildContext context) async {
 
 /// The member's tournées: the open one (● and ✓), the others (a tap opens
 /// one at once, and the app reopens it next time), and their requests not
-/// accepted yet, which cannot be opened; then « Créer une tournée » (an
+/// accepted yet, which cannot be opened. Offline, a tournée never
+/// downloaded on this phone is greyed and cannot be opened either
+/// (« Disponible avec réseau »). Then « Créer une tournée » (an
 /// admin only, PLAN §5.12) and « Rejoindre une tournée », and for an admin
 /// « Toutes les tournées ›».
 final class MyTourneesSheet extends ConsumerWidget {
@@ -65,6 +68,9 @@ final class MyTourneesSheet extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final colors = AppColors.of(context);
     final rows = ref.watch(myTourneesProvider).rows;
+    // Watched only here: whether the phone is offline is followed while
+    // the sheet is shown, and the rows grey or come back with the network.
+    final access = ref.watch(offlineAccessProvider);
     final isAdmin = ref.watch(adminProvider);
     return SheetScaffold(
       title: l10n.myTourneesTitle,
@@ -83,8 +89,10 @@ final class MyTourneesSheet extends ConsumerWidget {
           _TourneeRowTile(
             key: ValueKey('myTournees.${row.id.value}'),
             row: row,
+            unavailable: access.isUnavailable(row),
             onTap: switch (row.status) {
               TourneeRowStatus.open => () => Navigator.of(context).pop(),
+              TourneeRowStatus.closed when access.isUnavailable(row) => null,
               TourneeRowStatus.closed => () {
                 unawaited(ref.read(myTourneesProvider.notifier).open(row.id));
                 Navigator.of(context).pop();
@@ -137,13 +145,23 @@ final class MyTourneesSheet extends ConsumerWidget {
 /// when it is the open one. Never told by colour alone: the open one has
 /// ✓ and a filled mark, a request a dashed mark and its own words, and the
 /// red dot of a request waiting in another tournée comes with « · 1
-/// demande en attente ».
+/// demande en attente ». A tournée greyed offline says « Disponible avec
+/// réseau », and screen readers hear it disabled.
 final class _TourneeRowTile extends StatelessWidget {
-  const _TourneeRowTile({super.key, required this.row, required this.onTap});
+  const _TourneeRowTile({
+    super.key,
+    required this.row,
+    required this.unavailable,
+    required this.onTap,
+  });
 
   final TourneeRow row;
 
-  /// Null for a request: the row cannot be tapped.
+  /// Offline and not downloaded on this phone: greyed, cannot open.
+  final bool unavailable;
+
+  /// Null for a request, or a tournée [unavailable]: the row cannot be
+  /// tapped.
   final VoidCallback? onTap;
 
   @override
@@ -152,6 +170,12 @@ final class _TourneeRowTile extends StatelessWidget {
     final colors = AppColors.of(context);
     final title = l10n.tourneeTitle('${row.number}', '${row.campaign}');
     final (subtitle, label) = switch (row.status) {
+      // Before the requests waiting and the shield: none of it matters
+      // while the tournée cannot open.
+      TourneeRowStatus.closed when unavailable => (
+        l10n.myTourneesUnavailable(row.centre),
+        l10n.myTourneesUnavailableSemantics(title, row.centre),
+      ),
       TourneeRowStatus.open when row.visited => (
         l10n.myTourneesVisited(row.centre),
         l10n.myTourneesVisitedOpenSemantics(title, row.centre),
@@ -177,11 +201,16 @@ final class _TourneeRowTile extends StatelessWidget {
         l10n.myTourneesPendingSemantics(title, row.centre),
       ),
     };
-    final ink = row.status == TourneeRowStatus.pending
+    final ink = unavailable
+        ? colors.unavailable
+        : row.status == TourneeRowStatus.pending
         ? colors.muted
         : colors.ink;
     return Semantics(
-      button: onTap != null,
+      // A greyed tournée is still a button, a disabled one: TalkBack says
+      // « désactivé », so the member knows a tap will not open it.
+      button: onTap != null || unavailable,
+      enabled: unavailable ? false : null,
       selected: row.status == TourneeRowStatus.open,
       label: label,
       excludeSemantics: true,
@@ -207,10 +236,12 @@ final class _TourneeRowTile extends StatelessWidget {
                   size: AppSizes.tourneeMark,
                   color: row.status == TourneeRowStatus.open
                       ? colors.done
+                      : unavailable
+                      ? colors.unavailableMark
                       : colors.muted,
                 )
               else
-                _TourneeMark(status: row.status),
+                _TourneeMark(status: row.status, unavailable: unavailable),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -222,7 +253,9 @@ final class _TourneeRowTile extends StatelessWidget {
                     ),
                     Text(
                       subtitle,
-                      style: AppTextStyles.small.copyWith(color: colors.muted),
+                      style: AppTextStyles.small.copyWith(
+                        color: unavailable ? colors.unavailable : colors.muted,
+                      ),
                     ),
                   ],
                 ),
@@ -238,6 +271,7 @@ final class _TourneeRowTile extends StatelessWidget {
                 )
               // The open tournée's requests show on 👥, not here.
               else if (row.status == TourneeRowStatus.closed &&
+                  !unavailable &&
                   row.waitingRequests > 0)
                 Container(
                   key: Key('myTournees.${row.id.value}.dot'),
@@ -257,11 +291,13 @@ final class _TourneeRowTile extends StatelessWidget {
   }
 }
 
-/// ● for the open tournée, ○ for another, a dashed ○ for a request.
+/// ● for the open tournée, ○ for another (paler when it cannot open
+/// offline), a dashed ○ for a request.
 final class _TourneeMark extends StatelessWidget {
-  const _TourneeMark({required this.status});
+  const _TourneeMark({required this.status, required this.unavailable});
 
   final TourneeRowStatus status;
+  final bool unavailable;
 
   @override
   Widget build(BuildContext context) {
@@ -287,7 +323,10 @@ final class _TourneeMark extends StatelessWidget {
         height: side,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          border: Border.all(color: colors.muted, width: 2),
+          border: Border.all(
+            color: unavailable ? colors.unavailableMark : colors.muted,
+            width: 2,
+          ),
         ),
       ),
       TourneeRowStatus.pending => CustomPaint(

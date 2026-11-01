@@ -14,6 +14,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
+import 'package:tournee_calendriers/application/ports/tournee_downloads.dart';
 import 'package:tournee_calendriers/bootstrap/bootstrap.dart';
 import 'package:tournee_calendriers/bootstrap/firebase.dart';
 import 'package:tournee_calendriers/domain/shared/commune.dart';
@@ -22,6 +23,7 @@ import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 import 'package:tournee_calendriers/main.dart' as app;
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/ui/app.dart';
@@ -732,8 +734,34 @@ void main() {
       expect(find.text('Mes rues · 0/5'), findsOneWidget);
       expect(find.text('Chemin des Vignes'), findsOneWidget);
 
+      // « Mes tournées » offline (#33): the 12 was never downloaded on
+      // this phone, so it is greyed and a tap leaves the sheet open. Once
+      // it counts as downloaded, it opens as before. Firestore's network
+      // is off for the whole suite, so « offline » is certain here.
       await tester.tap(find.byKey(const Key('home.tournee')));
       await tester.pumpAndSettle();
+      expect(
+        find.text('CS Villefranche · Disponible avec réseau'),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const ValueKey('myTournees.t12')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('myTournees.t12')), findsOneWidget);
+      final phone = ProviderScope.containerOf(
+        tester.element(find.byType(TourneeApp)),
+      );
+      await phone
+          .read(tourneeDownloadsProvider)
+          .save(
+            TourneeDownload(
+              tournee: TourneeId('t12'),
+              downloadedAt: DateTime.utc(2026, 11, 2, 8, 12),
+              mapBytes: 0,
+              area: null,
+            ),
+          );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Disponible avec réseau'), findsNothing);
       await tester.tap(find.byKey(const ValueKey('myTournees.t12')));
       await tester.pumpAndSettle();
       expect(find.text('Tournée 12 · 2026'), findsOneWidget);

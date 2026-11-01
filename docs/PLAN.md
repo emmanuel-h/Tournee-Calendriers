@@ -466,7 +466,7 @@ an admin, shows only « Rejoindre une tournée », in red), and the bottom of th
   street with no place on the map (typed in by hand) leaves the map where it is. The rows of
   « Mes rues » (every row for a visiting admin) still open the Street screen. The map opens
   on the tournée's streets, else its communes, and stays where the member puts it when the
-  team adds a street. Not yet: the download banner (M4).
+  team adds a street. No download banner (decided in #32, checked in #33).
 - **Lines filled in the background** (#92, `presentation/home/missing_shapes.dart`): each
   time Accueil reads the streets, those without a line on the map but with a house on it
   (`Street.needsShape`: imported from a list, or added before their road came) get their
@@ -490,6 +490,8 @@ bottom sheet:
 │   CS Gleizé · 8 %            │
 │ ◌ Tournée 7 · 2026           │
 │   CS Anse · demande en attente│ ← my own request, not accepted yet
+│ ○ Tournée 23 · 2026          │  ← greyed: offline, not downloaded here
+│   CS Limas · Disponible avec réseau
 │ ──────────────────────────── │
 │ [ + Créer une tournée ]      │
 │ [   Rejoindre une tournée ]  │
@@ -498,8 +500,7 @@ bottom sheet:
 
 - Tapping another tournée switches at once: map, panel and listeners follow it; the app reopens
   on it next time, and downloads it by itself if it is not yet (§7). Offline, a tournée never
-  downloaded on this phone cannot work: how « Mes tournées » shows it (greyed, a word) is to
-  agree in #33.
+  downloaded on this phone cannot work, so the sheet greys it (below, #33).
 - *Créer* and *Rejoindre* open 5.2; the current tournée stays untouched until the new one is
   ready (or accepted).
 - Paramètres → *Mes tournées* opens the same sheet.
@@ -507,7 +508,19 @@ bottom sheet:
   move them); the open one shows ● and ✓, another ○ (a tap opens it and closes the sheet),
   a request a dashed ○ in grey, « CS … · votre demande est en attente », and cannot be tapped.
   No tournée: « Aucune tournée pour l'instant. ». Still to come: the progress « · 41 % » (with
-  the streets on Firestore), how a tournée not downloaded shows offline (#33).
+  the streets on Firestore).
+- Delivered in T4.2 (#33, Switcher mockup): **only while the phone is offline**, another
+  tournée of the member that is not downloaded on this phone (no record in
+  `TourneeDownloads`, §6.3) is greyed (title, line and ring paler than the muted text),
+  cannot be tapped, and its second line reads « CS Limas · Disponible avec réseau » instead
+  of the centre alone (no « demande en attente » nor dot, no « administrateur », while it
+  cannot open); screen readers hear « Tournée 23 · 2026, CS Limas, disponible avec réseau »,
+  announced as a disabled button. Online, every row is as before. The open tournée is never
+  greyed, and a pending request keeps its own look. « Offline » is whether the open
+  tournée's street listener answers from the phone's copy (Firestore's `isFromCache`, port
+  `ServerConnection`, the same listener as the pending-sync line, §7): no connectivity
+  plugin. Until it first answers the rows show as online; with no tournée open nothing tells
+  it, so the rows show as online too.
 - Delivered in T2.6c: another tournée (not the open one) where join requests wait shows
   « CS … · 1 demande en attente » (« 2 demandes… ») and a red dot at the end of its row, said
   by screen readers (« Tournée 12 · 2026, CS Villefranche, 1 demande en attente, ouvrir »);
@@ -1103,6 +1116,8 @@ admin » for « Nouveau code », « Retirer », « Supprimer » and the campaign
 │ VOUS                         │
 │ Prénom        Manu         › │
 │ Mes tournées  49 · 2026    › │  ← same sheet as the title
+│ L'application fonctionne sans│  ← muted line, no button
+│ réseau ; les modifications … │
 │ APPLICATION                  │
 │ Thème         Système      › │
 │ Confidentialité            › │
@@ -1146,9 +1161,11 @@ admin » for « Nouveau code », « Retirer », « Supprimer » and the campaign
   « Administrateur » under it when admin, and a copy button.
 - Credits under the list: « Carte © contributeurs OpenStreetMap, OpenFreeMap.
   Adresses{N}: Base Adresse Nationale. »
-- **HORS-LIGNE**: no « Mettre à jour » or « Supprimer » (decided 2026-11-01, #32): the app
-  downloads, updates and deletes the offline copy by itself (§7). Whether Paramètres shows any
-  line about it (the date and size are kept per tournée, §6.3) is to agree in #33.
+- **No HORS-LIGNE section**, no « Mettre à jour » or « Supprimer » (decided 2026-11-01, #32):
+  the app downloads, updates and deletes the offline copy by itself (§7). Delivered in T4.2
+  (#33, Settings mockup): one muted line right under « Mes tournées », before APPLICATION:
+  « L'application fonctionne sans réseau ; les modifications sont envoyées dès qu'il
+  revient. » Neither the date nor the size kept per tournée (§6.3) is shown.
 
 ### 5.10 Nouvelle campagne (v1.1)
 
@@ -2365,8 +2382,11 @@ versions.
 - **Forgetting a tournée** (left, removed, deleted, a request refused): its download record and
   map regions are deleted (`PruneTourneeDownloads`, run at start-up and after each change of
   « Mes tournées »), whatever flow forgot it.
-- What the member sees of all this (« Mes tournées » offline, any line in Paramètres) is to
-  agree in #33.
+- What the member sees of all this (T4.2, #33): nothing on Accueil; one line in Paramètres
+  (§5.9); offline, « Mes tournées » greys a tournée not downloaded on this phone (« Disponible
+  avec réseau », §5.3). « Offline » there comes from the snapshot metadata `isFromCache` of
+  the open tournée's street listener (port `ServerConnection`), as the pending-writes count
+  comes from `hasPendingWrites`.
 - What needs the network: creating / joining a tournée, the download itself (run by the app),
   and **adding a street from the map** (reverse geocoding, BAN, the map's tiles for its line; the line of a
   street added without it is filled later, when online, #92). Adding a street by hand, adding

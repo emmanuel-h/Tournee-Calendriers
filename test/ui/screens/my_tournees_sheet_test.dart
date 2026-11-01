@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tournee_calendriers/application/ports/tournee_downloads.dart';
 import 'package:tournee_calendriers/domain/tournee/member.dart';
 import 'package:tournee_calendriers/domain/tournee/member_name.dart';
 import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
+import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/screens/all_tournees/all_tournees_screen.dart';
 import 'package:tournee_calendriers/ui/screens/my_tournees/my_tournees_sheet.dart';
@@ -11,6 +13,7 @@ import 'package:tournee_calendriers/ui/screens/onboarding/create_tournee_screen.
 import 'package:tournee_calendriers/ui/screens/onboarding/join_tournee_screen.dart';
 import 'package:tournee_calendriers/ui/screens/settings/name_sheet.dart';
 import 'package:tournee_calendriers/ui/screens/settings/settings_screen.dart';
+import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 
 import '../../domain/tournee/my_tournees_fixtures.dart';
 import '../../domain/tournee/tournee_fixtures.dart' show nameOf, samId, team;
@@ -18,7 +21,9 @@ import '../../support/fakes/fake_admin_status.dart';
 import '../../support/fakes/fake_member_account.dart';
 import '../../support/fakes/fake_my_tournees_store.dart';
 import '../../support/fakes/fake_phone_settings.dart';
+import '../../support/fakes/fake_server_connection.dart';
 import '../../support/fakes/fake_tournee_directory.dart';
+import '../../support/fakes/fake_tournee_downloads.dart';
 import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/results.dart';
 import '../support/app_overrides.dart';
@@ -43,6 +48,8 @@ void main() {
     MemberName? name,
     FakeTourneeRepository? tournees,
     bool admin = false,
+    bool offline = false,
+    Iterable<TourneeId> downloaded = const [],
   }) async {
     store = FakeMyTourneesStore(mine);
     settings = FakePhoneSettings(memberName: name);
@@ -55,6 +62,16 @@ void main() {
           admins: FakeAdminStatus(phoneIsAdmin: admin),
           account: FakeMemberAccount(signedInMember: samId),
           tourneeDirectory: FakeTourneeDirectory(),
+          connection: FakeServerConnection(offline: offline),
+          downloads: FakeTourneeDownloads([
+            for (final tournee in downloaded)
+              TourneeDownload(
+                tournee: tournee,
+                downloadedAt: DateTime.utc(2026, 11, 2, 8, 12),
+                mapBytes: 34000000,
+                area: null,
+              ),
+          ]),
         ),
         child: const TourneeApp(showGallery: false),
       ),
@@ -187,6 +204,128 @@ void main() {
 
     expect(find.byType(MyTourneesSheet), findsOneWidget);
     expect(store.saves, isEmpty);
+  });
+
+  group('offline (PLAN §5.3, #33)', () {
+    const unavailable12 =
+        'Tournée 12 · 2026, CS Villefranche, disponible avec réseau';
+
+    testWidgets('should leave a tournée not downloaded as it is when online', (
+      tester,
+    ) async {
+      await pumpApp(tester, _manusPhone());
+      await openSheet(tester);
+
+      expect(
+        find.bySemanticsLabel('Tournée 12 · 2026, CS Villefranche, ouvrir'),
+        findsOneWidget,
+      );
+      expect(find.textContaining('Disponible avec réseau'), findsNothing);
+
+      await tester.tap(find.byKey(const ValueKey('myTournees.t12')));
+      await tester.pumpAndSettle();
+
+      expect(store.saves.single.current, tournee12);
+    });
+
+    testWidgets('should still open a downloaded tournée when offline', (
+      tester,
+    ) async {
+      await pumpApp(
+        tester,
+        _manusPhone(),
+        offline: true,
+        downloaded: [tournee12.id],
+      );
+      await openSheet(tester);
+
+      expect(find.textContaining('Disponible avec réseau'), findsNothing);
+
+      await tester.tap(find.byKey(const ValueKey('myTournees.t12')));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(MyTourneesSheet), findsNothing);
+      expect(store.saves.single.current, tournee12);
+    });
+
+    testWidgets(
+      'should grey a tournée not downloaded and not open it when offline',
+      (tester) async {
+        final semantics = tester.ensureSemantics();
+        await pumpApp(tester, _manusPhone(), offline: true);
+        await openSheet(tester);
+
+        expect(
+          find.text('CS Villefranche · Disponible avec réseau'),
+          findsOneWidget,
+        );
+        expect(
+          tester.getSemantics(find.bySemanticsLabel(unavailable12)),
+          isSemantics(
+            label: unavailable12,
+            isButton: true,
+            hasEnabledState: true,
+            isEnabled: false,
+          ),
+        );
+        final title = tester.widget<Text>(find.text('Tournée 12 · 2026'));
+        expect(title.style?.color, AppColors.light.unavailable);
+
+        await tester.tap(find.byKey(const ValueKey('myTournees.t12')));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(MyTourneesSheet), findsOneWidget);
+        expect(store.saves, isEmpty);
+        semantics.dispose();
+      },
+    );
+
+    testWidgets(
+      'should grey a tournée where a request waits without its dot when '
+      'offline',
+      (tester) async {
+        await pumpApp(
+          tester,
+          valueOf(_manusPhone().open(tournee12.id)),
+          tournees: FakeTourneeRepository([team()]),
+          offline: true,
+        );
+        await openSheet(tester);
+
+        expect(
+          find.bySemanticsLabel(
+            'Tournée 49 · 2026, CS Villefranche, disponible avec réseau',
+          ),
+          findsOneWidget,
+        );
+        expect(find.byKey(const Key('myTournees.t49.dot')), findsNothing);
+      },
+    );
+
+    testWidgets(
+      'should never grey the open tournée nor a pending request when offline',
+      (tester) async {
+        await pumpApp(tester, _manusPhone(), offline: true);
+        await openSheet(tester);
+
+        expect(
+          find.bySemanticsLabel(
+            'Tournée 49 · 2026, CS Villefranche, tournée ouverte',
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.bySemanticsLabel(
+            'Tournée 7 · 2026, CS Villefranche, votre demande est en attente',
+          ),
+          findsOneWidget,
+        );
+        expect(
+          find.textContaining('Disponible avec réseau'),
+          findsOneWidget, // the 12 only
+        );
+      },
+    );
   });
 
   testWidgets(
@@ -340,6 +479,34 @@ void main() {
 
       expect(store.myTournees.currentId, tournee12.id);
     });
+
+    testWidgets(
+      'should grey a visited tournée and its shield when offline and not '
+      'downloaded',
+      (tester) async {
+        await pumpApp(
+          tester,
+          valueOf(
+            MyTournees.none
+                .remember(tournee49)
+                .remember(summaryOf('t12', 12, status: MemberStatus.visiting))
+                .open(tournee49.id),
+          ),
+          admin: true,
+          offline: true,
+        );
+        await openSheet(tester);
+
+        expect(
+          find.text('CS Villefranche · Disponible avec réseau'),
+          findsOneWidget,
+        );
+        final shield = tester.widget<Icon>(
+          find.byKey(const Key('myTournees.t12.shield')),
+        );
+        expect(shield.color, AppColors.light.unavailableMark);
+      },
+    );
 
     testWidgets('should say an open visited tournée is open', (tester) async {
       await pumpApp(

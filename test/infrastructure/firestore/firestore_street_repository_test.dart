@@ -518,5 +518,16 @@ void main() {
         expect(await streets.watchUnsentStreets().first, 0);
       },
     );
+
+    test(
+      'should say online once the listener answers from the server',
+      () async {
+        final streets = phone();
+        await streets.add(lilas);
+        await pumpEventQueue();
+
+        expect(await streets.watchOffline().first, isFalse);
+      },
+    );
   });
 }

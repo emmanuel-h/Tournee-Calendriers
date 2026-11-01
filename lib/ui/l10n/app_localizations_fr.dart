@@ -1133,6 +1133,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get settingsYou => 'Vous';
 
   @override
+  String get settingsOfflineLine =>
+      'L\'application fonctionne sans réseau ; les modifications sont envoyées dès qu\'il revient.';
+
+  @override
   String get settingsApplication => 'Application';
 
   @override
@@ -1803,6 +1807,16 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String myTourneesVisitedOpenSemantics(String title, String centre) {
     return '$title, $centre, administrateur, tournée ouverte';
+  }
+
+  @override
+  String myTourneesUnavailable(String centre) {
+    return '$centre · Disponible avec réseau';
+  }
+
+  @override
+  String myTourneesUnavailableSemantics(String title, String centre) {
+    return '$title, $centre, disponible avec réseau';
   }
 
   @override

@@ -24,8 +24,9 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 /// l'appareil », PLAN §5.12) and the data credits. Works offline; the
 /// screen signs the phone in when it opens, so the uid shows once online.
 ///
-/// The « Hors-ligne » section of the mockup comes with the download of a
-/// tournée (M4).
+/// No « Hors-ligne » section: the tournée downloads itself for offline use,
+/// unseen (PLAN §7), so one line under « Mes tournées » says only that the
+/// app works without network.
 final class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});
 
@@ -68,6 +69,17 @@ final class SettingsScreen extends ConsumerWidget {
                   onTap: () => showMyTourneesSheet(context),
                 ),
               ],
+            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 10, 20, 0),
+              child: Text(
+                l10n.settingsOfflineLine,
+                key: const Key('settings.offlineLine'),
+                style: AppTextStyles.small.copyWith(
+                  color: colors.muted,
+                  height: 1.4,
+                ),
+              ),
             ),
             SectionHeader(l10n.settingsApplication),
             _RowGroup(

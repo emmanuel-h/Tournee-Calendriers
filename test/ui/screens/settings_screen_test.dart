@@ -87,6 +87,34 @@ void main() {
     );
   });
 
+  testWidgets(
+    'should say the app works offline under « Mes tournées », with nothing '
+    'to download',
+    (tester) async {
+      await pumpSettings(tester);
+
+      final line = find.byKey(const Key('settings.offlineLine'));
+      expect(
+        tester.widget<Text>(line).data,
+        "L'application fonctionne sans réseau\u00a0; les modifications sont "
+        "envoyées dès qu'il revient.",
+      );
+      final myTournees = tester.getRect(
+        find.byKey(const Key('settings.myTournees')),
+      );
+      final application = tester.getRect(find.text('APPLICATION'));
+      expect(
+        tester.getTopLeft(line).dy,
+        greaterThanOrEqualTo(myTournees.bottom),
+      );
+      expect(tester.getBottomLeft(line).dy, lessThan(application.top));
+      // The download runs by itself (PLAN §7): no section, no button.
+      expect(find.text('HORS-LIGNE'), findsNothing);
+      expect(find.text('Mettre à jour'), findsNothing);
+      expect(find.text('Supprimer'), findsNothing);
+    },
+  );
+
   testWidgets('should keep the new name when saved', (tester) async {
     await pumpSettings(tester);
     await tester.tap(find.byKey(const Key('settings.name')));

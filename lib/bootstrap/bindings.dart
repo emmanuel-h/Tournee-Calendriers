@@ -10,6 +10,7 @@ import 'package:http/http.dart' as http;
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
 import 'package:tournee_calendriers/application/ports/pending_sync.dart';
+import 'package:tournee_calendriers/application/ports/server_connection.dart';
 import 'package:tournee_calendriers/infrastructure/ban/ban_address_directory.dart';
 import 'package:tournee_calendriers/infrastructure/firebase_auth/anonymous_auth.dart';
 import 'package:tournee_calendriers/infrastructure/firebase_auth/firebase_identity.dart';
@@ -68,7 +69,8 @@ final httpClientProvider = Provider<http.Client>((ref) {
 /// The streets follow the open tournée: those of its current campaign in
 /// Firestore while one is open, the phone's own (M1) while none is. So does
 /// the pending sync: the Firestore streets' own count of unsent streets,
-/// always 0 for the phone's streets.
+/// always 0 for the phone's streets; and so does whether the phone is
+/// offline, from the same listener.
 ///
 /// Async because the member id, the street view preferences, « Mes
 /// tournées » and the settings are read from the phone before the first
@@ -155,6 +157,12 @@ Future<List<Override>> bindAdapters({
     pendingSyncProvider.overrideWith(
       (ref) => ref.watch(tourneeStreets) ?? const _NothingToSend(),
     ),
+    // The same adapter again: whether its listener answers from the
+    // phone's copy says whether the phone is offline (PLAN §5.3). With no
+    // tournée open no listener runs, so nothing says offline.
+    serverConnectionProvider.overrideWith(
+      (ref) => ref.watch(tourneeStreets) ?? const _NothingToTell(),
+    ),
     movedStreetsLogProvider.overrideWithValue(movedStreets),
     addressDirectoryProvider.overrideWith(
       (ref) =>
@@ -205,4 +213,13 @@ final class _NothingToSend implements PendingSync {
 
   @override
   Stream<int> watchUnsentStreets() => Stream.value(0);
+}
+
+/// Whether the phone is offline while no tournée is open: no listener runs
+/// to tell, so it says online, which leaves « Mes tournées » as it is.
+final class _NothingToTell implements ServerConnection {
+  const _NothingToTell();
+
+  @override
+  Stream<bool> watchOffline() => Stream.value(false);
 }

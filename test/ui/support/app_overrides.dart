@@ -19,10 +19,12 @@ import '../../support/fakes/fake_my_tournees_store.dart';
 import '../../support/fakes/fake_pending_sync.dart';
 import '../../support/fakes/fake_phone_settings.dart';
 import '../../support/fakes/fake_ports.dart';
+import '../../support/fakes/fake_server_connection.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/fakes/fake_street_shapes.dart';
 import '../../support/fakes/fake_street_view_preferences.dart';
 import '../../support/fakes/fake_tournee_directory.dart';
+import '../../support/fakes/fake_tournee_downloads.dart';
 import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/scripted_random.dart';
 import '../../support/street_fixtures.dart';
@@ -35,7 +37,8 @@ import 'fake_map_view.dart';
 /// [tourneeDirectory], [tournees] (none by default), [phoneStreets] (the
 /// streets kept on the phone since M1, none by default: no card offers
 /// them to a tournée), [movedStreets] and [pending] (nothing waiting to be
-/// sent by default); [member] (Léa by
+/// sent by default), [connection] (online by default) and [downloads] (no
+/// tournée downloaded by default); [member] (Léa by
 /// default) uses the phone and marks the houses at [now] (two o'clock by
 /// default); [account] is the phone's account (none by default, and no
 /// network to get one); [admins] says whether the phone, and which
@@ -60,6 +63,8 @@ List<Override> fakePhone({
   FakeStreetRepository? phoneStreets,
   FakeMovedStreetsLog? movedStreets,
   FakePendingSync? pending,
+  FakeServerConnection? connection,
+  FakeTourneeDownloads? downloads,
   MemberId? member,
   DateTime? now,
   FakeMemberAccount? account,
@@ -78,6 +83,12 @@ List<Override> fakePhone({
     movedStreets ?? FakeMovedStreetsLog(),
   ),
   pendingSyncProvider.overrideWithValue(pending ?? FakePendingSync()),
+  serverConnectionProvider.overrideWithValue(
+    connection ?? FakeServerConnection(),
+  ),
+  tourneeDownloadsProvider.overrideWithValue(
+    downloads ?? FakeTourneeDownloads(),
+  ),
   addressDirectoryProvider.overrideWithValue(
     directory ?? FakeAddressDirectory(),
   ),

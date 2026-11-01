@@ -113,5 +113,6 @@ Street screen (« Rue »):
 - The open tournée downloads itself for offline use, unseen, whenever the app is online: every
   street and the map of its area (+ 300 m, zooms 12–17), again when a street reaches beyond
   it; the maps are refreshed silently (the map's tiles change every week), a failure is tried
-  again 2 minutes later, and a tournée the phone forgets loses its download. What the screens
-  show of it comes with #33.
+  again 2 minutes later, and a tournée the phone forgets loses its download. Nothing on
+  screen says so, except one line in Paramètres; offline, « Mes tournées » greys a tournée
+  not downloaded on this phone (« Disponible avec réseau ») and does not open it.

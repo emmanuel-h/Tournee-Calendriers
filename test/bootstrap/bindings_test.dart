@@ -453,6 +453,33 @@ void main() {
       expect(await pending.watchUnsentStreets().first, 0);
     });
 
+    test('should tell offline from the storage of the open tournée', () async {
+      final container = await leasPhone();
+      final streets49 = container.read(streetRepositoryProvider);
+
+      // The same adapter, so its one Firestore listener also says it.
+      expect(container.read(serverConnectionProvider), same(streets49));
+
+      await openTournee(container, tournee12.id);
+
+      expect(
+        container.read(serverConnectionProvider),
+        same(container.read(streetRepositoryProvider)),
+      );
+    });
+
+    test('should say online while no tournée is open', () async {
+      final container = await leasPhone(noTournee: true);
+
+      final offline = await container
+          .read(serverConnectionProvider)
+          .watchOffline()
+          .first;
+
+      expect(offline, isFalse);
+      expect(firestoreAsked, 0);
+    });
+
     test('should show a teammate the marks of another phone', () async {
       final paulsFolder = await Directory.systemTemp.createTemp('paul');
       addTearDown(() => paulsFolder.delete(recursive: true));
