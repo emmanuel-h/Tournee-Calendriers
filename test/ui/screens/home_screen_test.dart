@@ -17,7 +17,7 @@ import 'package:tournee_calendriers/ui/screens/street/street_screen.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 
 import '../../domain/tournee/my_tournees_fixtures.dart';
-import '../../domain/tournee/tournee_fixtures.dart' show team;
+import '../../domain/tournee/tournee_fixtures.dart' show manuId, team;
 import '../../support/fakes/fake_my_tournees_store.dart';
 import '../../support/fakes/fake_pending_sync.dart';
 import '../../support/fakes/fake_street_repository.dart';
@@ -399,7 +399,14 @@ void main() {
         'place of the panel, and take it with « La faire aussi »', (
       tester,
     ) async {
-      await pumpHome(tester);
+      await pumpHome(
+        tester,
+        streets: [
+          ..._streets().where((street) => street.id != StreetId('carnot')),
+          // Manu is in the team: he covers Rue Carnot.
+          _street('carnot', 'Rue Carnot', total: 38, assignees: {manuId}),
+        ],
+      );
 
       shownMap(tester).onStreetTapped!(StreetId('carnot'));
       await tester.pumpAndSettle();
@@ -408,10 +415,29 @@ void main() {
       expect(find.byKey(const Key('home.selected')), findsOneWidget);
       expect(find.text('Rue Carnot'), findsOneWidget);
       expect(find.text('0/38 faits'), findsOneWidget);
-      // Paul is not in the team the phone knows: he is not named.
-      expect(find.text('Faite par un autre membre'), findsOneWidget);
+      expect(find.text('Faite par Manu'), findsOneWidget);
 
       await tester.tap(find.text('La faire aussi'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Vous la faites avec Manu'), findsOneWidget);
+      expect(find.text('Ne plus la faire'), findsOneWidget);
+    });
+
+    testWidgets('should show « Libre » the card of a street whose only '
+        'assignee left the team, and take it with « Me l\'attribuer » '
+        '(#91)', (tester) async {
+      // Paul covers Rue Carnot but is no longer in the team.
+      await pumpHome(tester);
+
+      shownMap(tester).onStreetTapped!(StreetId('carnot'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Rue Carnot'), findsOneWidget);
+      expect(find.text('Libre'), findsOneWidget);
+      expect(find.text('La faire aussi'), findsNothing);
+
+      await tester.tap(find.byKey(const Key('streetCard.take')));
       await tester.pumpAndSettle();
 
       expect(find.text('Vous la faites'), findsOneWidget);

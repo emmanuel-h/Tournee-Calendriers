@@ -7,11 +7,13 @@ import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
+import 'package:tournee_calendriers/domain/tournee/team_roster.dart';
 
 import '../../support/building_fixtures.dart';
 import '../../support/geo_fixtures.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
+import '../tournee/tournee_fixtures.dart' as tournee;
 
 final _nationale = StreetId('rue-nationale');
 final _paix = StreetId('rue-de-la-paix');
@@ -75,6 +77,26 @@ void main() {
       final (taken, _) = valueOf(_paixStreet.take(paul));
 
       final layers = MapLayers.of([taken]);
+
+      expect(layers.lines.single.level, ProgressLevel.toDo);
+    });
+
+    test('should be « libre » when its only assignee left the team', () {
+      final (taken, _) = valueOf(_paixStreet.take(tournee.paulId));
+
+      final layers = MapLayers.of([
+        taken,
+      ], roster: TeamRoster.of(tournee.team(), me: tournee.leaId));
+
+      expect(layers.lines.single.level, ProgressLevel.free);
+    });
+
+    test('should be « à faire » while an assignee is in the team', () {
+      final (taken, _) = valueOf(_paixStreet.take(tournee.manuId));
+
+      final layers = MapLayers.of([
+        taken,
+      ], roster: TeamRoster.of(tournee.team(), me: tournee.leaId));
 
       expect(layers.lines.single.level, ProgressLevel.toDo);
     });

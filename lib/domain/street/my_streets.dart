@@ -4,7 +4,10 @@ import 'package:tournee_calendriers/domain/street/street.dart';
 
 /// The streets of a tournée as one member sees them on Accueil (PLAN §5.3):
 /// « Mes rues », the streets they cover (`Street.assignees`), and the
-/// others, free or covered by someone else.
+/// others, free or covered by someone else. Only [member] decides the
+/// split, so it needs no team: a street held only by someone who left the
+/// team is among the others, and « libre » where that matters (see
+/// `TeamRoster`).
 ///
 /// Streets in the Corbeille are left out of everything, the team's
 /// progress included.

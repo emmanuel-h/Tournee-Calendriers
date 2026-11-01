@@ -59,7 +59,7 @@ Code uses English names, the UI uses French.
 | Statut | `VisitStatus` | `TO_DO` (à faire), `DONE` (fait), `NOBODY_HOME` (personne), `COME_BACK` (repasser): exactly one per house or door |
 | Repasser | `VisitStatus.comeBack` + `ComeBack` | A status: the resident asked to come back later, optionally on a day and at about an hour (« samedi vers 18 h », the `ComeBack` value, #81). A building, which has no status, may carry its own « repasser » |
 | Mes rues | assignees | Streets the current member has taken |
-| Libre | — | A street in the tournée that nobody has taken |
+| Libre | — | A street in the tournée that nobody in the team has taken (a member who left or was removed no longer counts, #91) |
 
 ---
 
@@ -554,7 +554,7 @@ The street card adapts to the street's state:
 | State | Card content | Actions |
 |---|---|---|
 | Not in the tournée | name, commune, number count | *Ajouter et me l'attribuer* · *Ajouter sans m'attribuer* |
-| In the tournée, libre | progress | *Me l'attribuer* · *Ouvrir* |
+| In the tournée, libre (nobody, or only people no longer in the team) | progress | *Me l'attribuer* · *Ouvrir* |
 | Mine (maybe shared) | progress, other members | *Ouvrir* · *Ne plus la faire* |
 | Someone else's | progress, who covers it | *La faire aussi* · *Ouvrir* |
 
@@ -593,7 +593,7 @@ The street card adapts to the street's state:
   Saisir à la main »; once added it becomes the street's card. A tournée street « 31/42
   faits » and « Libre » / « Vous la faites (avec Manu) » / « Faite par Manu et Julie »
   (teammates named in the team's order; « Faite par un autre membre » when none can be
-  named), with the actions of the table; take and release need no network and have no
+  named, the team not read yet), with the actions of the table; take and release need no network and have no
   « Annuler » (the other button undoes it). Failures: « Connexion nécessaire pour ajouter une
   rue » (offline), « Aucune rue connue ici » (no BAN match), « Le service des adresses ne
   répond pas », each with a hint and « Saisir une rue à la main ». The back gesture closes the
@@ -1970,6 +1970,18 @@ Street picking fixed in T3.3 (`lib/domain/street/street.dart`, `lib/application/
   assignees stay, nothing else changes. Undo releases a take and takes a release back (`gone`
   when it was undone by hand meanwhile). `restampedBy(member)` makes a covered street
   covered by `member` alone (the phone's own id of M1 is no member of the tournée).
+- **Ex-members are ignored** (#91, `lib/domain/tournee/team_roster.dart`): someone removed
+  (« Retirer ») or gone (« Quitter la tournée ») stays in `assignees` in Firestore (the rules
+  let a member add or remove only themself, 8.2), but no longer covers the street.
+  `TeamRoster.of(team, me:)` keeps the assignees in `team.members` (pending requests
+  included) and `me`, who always counts (a visiting admin is no member); `assigneesOf(street)`
+  and `isTaken(street)`. While the team is not read yet (`team == null`, an offline cold start
+  before it was ever cached) it is `TeamRoster.unknown`, which trusts every assignee, so
+  streets never flash to « libre ». The map's lines (`MapLayers.of(streets, roster:)`) and
+  the street card (`StreetCardInTournee.of`) read the assignees through it: a street held
+  only by ex-members is « libre » and anyone may « Me l'attribuer » it (`arrayUnion`, the
+  stale uid stays). Known limit: a street taken only by an admin visiting the tournée (no
+  member of it) shows « libre » to the team: the roster knows only the team, not the admins.
 - **`LookUpStreet(StreetLookup)`** — `StreetAtPoint(GeoPoint)` (a tap: the geocoder) or
   `FoundStreet(StreetMatch)` (a search result) — gives the street card's subject:
   `StreetOfTheTournee(match, street)` when the tournée has its BAN id out of the Corbeille (its
@@ -2020,7 +2032,8 @@ Communes of a tournée fixed in #78 (`lib/domain/tournee/`, `lib/application/use
 Accueil fixed in T3.5 (#30, `lib/domain/street/my_streets.dart`, `lib/presentation/home/`):
 
 - **`MyStreets.of(streets, member)`**: `mine` (the streets whose `assignees` hold the member:
-  « Mes rues »), `others` (free or someone else's) and `all`, each in the order given,
+  « Mes rues »), `others` (free or someone else's; a street held only by ex-members is among
+  them, « libre » on its card and line, #91) and `all`, each in the order given,
   Corbeille left out; `myProgress` and `teamProgress` add up their doors. `MyStreets.none`
   before the streets are read. `ObserveMyStreets()` gives them in French order for the member
   on the phone (`IdentityProvider`), now and on each change, offline.

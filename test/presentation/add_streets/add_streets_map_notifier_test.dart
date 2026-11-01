@@ -9,6 +9,7 @@ import 'package:tournee_calendriers/domain/map/tournee_area.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
+import 'package:tournee_calendriers/domain/street/progress_level.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
@@ -164,6 +165,25 @@ void main() {
       expect(state.selectedRoad, StreetShape.none);
       expect(state.selectedPoint, isNull);
       expect(state.search, const NoStreetSearch());
+    });
+
+    test('should draw « libre » a street whose only assignee left the '
+        'team (#91)', () async {
+      final (taken, change) = valueOf(_nationale.take(paulId));
+      await streets.save(taken, change);
+      final container = phone();
+      await pumpEventQueue();
+
+      expect(stateOf(container).layers.lines.single.level, ProgressLevel.free);
+    });
+
+    test('should draw « à faire » a street a teammate took', () async {
+      final (taken, change) = valueOf(_nationale.take(manuId));
+      await streets.save(taken, change);
+      final container = phone();
+      await pumpEventQueue();
+
+      expect(stateOf(container).layers.lines.single.level, ProgressLevel.toDo);
     });
 
     test('should open on the streets for a tournée without commune', () async {
@@ -696,7 +716,8 @@ void main() {
           name: 'Rue Pierre Morin',
           commune: villefranche,
           banId: _morinId,
-          assignees: {paul},
+          // Manu, in the team: a street of someone who left it is free.
+          assignees: {manuId},
         ),
       );
       await streets.add(teammates);

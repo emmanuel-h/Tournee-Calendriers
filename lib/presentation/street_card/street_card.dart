@@ -3,6 +3,7 @@ import 'package:tournee_calendriers/domain/shared/same_items.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/tournee/member.dart';
+import 'package:tournee_calendriers/domain/tournee/team_roster.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee.dart';
 
 // The street card of « Ajouter des rues » and Accueil (PLAN §5.4, Pick
@@ -122,12 +123,16 @@ final class StreetCardInTournee extends StreetCard {
   /// The card of [street], seen by the member [me]. The [team] names the
   /// others who cover it; null while it cannot be read (offline, never
   /// seen), when nobody is named.
+  ///
+  /// Only the assignees still in the [team] cover the street (#91): one
+  /// whose every assignee left it is free, and anyone may take it. While
+  /// the [team] is null, every assignee counts (see [TeamRoster]).
   factory StreetCardInTournee.of(
     Street street, {
     required MemberId me,
     required Tournee? team,
   }) {
-    final assignees = street.assignees;
+    final assignees = TeamRoster.of(team, me: me).assigneesOf(street);
     final progress = street.progress;
     return StreetCardInTournee(
       id: street.id,
@@ -141,7 +146,7 @@ final class StreetCardInTournee extends StreetCard {
           ? StreetCoverage.mine
           : StreetCoverage.others,
       // In the team's order (oldest first), so the names never shuffle.
-      // Someone no longer in the team is not named.
+      // Someone no longer in the team is not among the [assignees].
       coveredBy: [
         for (final Member member in team?.members ?? const [])
           if (member.id != me && assignees.contains(member.id))
@@ -164,8 +169,8 @@ final class StreetCardInTournee extends StreetCard {
   /// The first names of the teammates who cover the street, the member on
   /// the phone left out: « avec Paul » when [coverage] is
   /// [StreetCoverage.mine], « Faite par Paul » when it is
-  /// [StreetCoverage.others]. Read-only; may be empty even then (a member
-  /// no longer in the team, the team not read yet).
+  /// [StreetCoverage.others]. Read-only; may be empty even then (the team
+  /// not read yet).
   final List<String> coveredBy;
 
   @override

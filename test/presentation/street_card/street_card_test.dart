@@ -78,15 +78,50 @@ void main() {
       expect(card.coveredBy, ['Manu']);
     });
 
-    test('should not name someone no longer in the team', () {
+    test('should be free when its only assignee is no longer in the '
+        'team', () {
       final card = StreetCardInTournee.of(
         _lilas({paulId}),
         me: leaId,
         team: team(),
       );
 
-      expect(card.coverage, StreetCoverage.others);
+      expect(card.coverage, StreetCoverage.free);
       expect(card.coveredBy, isEmpty);
+    });
+
+    test('should be someone else\'s and name only who is still in the team '
+        'when one assignee left', () {
+      final card = StreetCardInTournee.of(
+        _lilas({paulId, manuId}),
+        me: leaId,
+        team: team(),
+      );
+
+      expect(card.coverage, StreetCoverage.others);
+      expect(card.coveredBy, ['Manu']);
+    });
+
+    test('should be mine when a visiting admin covers it, though no member '
+        'of the team', () {
+      final card = StreetCardInTournee.of(
+        _lilas({samId}),
+        me: samId,
+        team: team(),
+      );
+
+      expect(card.coverage, StreetCoverage.mine);
+      expect(card.coveredBy, isEmpty);
+    });
+
+    test('should trust every assignee while the team cannot be read', () {
+      final card = StreetCardInTournee.of(
+        _lilas({paulId}),
+        me: leaId,
+        team: null,
+      );
+
+      expect(card.coverage, StreetCoverage.others);
     });
 
     test('should name nobody while the team cannot be read', () {

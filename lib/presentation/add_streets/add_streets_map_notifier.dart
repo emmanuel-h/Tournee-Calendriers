@@ -333,7 +333,7 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState>
   AddStreetsMapState render() {
     final target = _target;
     return AddStreetsMapState(
-      layers: MapLayers.of(_streets),
+      layers: MapLayers.of(_streets, roster: roster),
       area: _focus ?? addStreetsArea(_communes, _streets),
       selectedRoad: switch (target) {
         // A street just added keeps the road the card found until its own

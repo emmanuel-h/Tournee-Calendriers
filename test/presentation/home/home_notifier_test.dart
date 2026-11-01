@@ -130,6 +130,22 @@ final _morinRoad = StreetShape([
   [at(46.0095, 4.7300), at(46.0105, 4.7300)],
 ]);
 
+final _gareShape = StreetShape([
+  [at(45.98500, 4.72000), at(45.98600, 4.72100)],
+]);
+
+/// Rue de la Gare: Paul's alone, on the map, 0 of 1.
+final _gare = valueOf(
+  Street.create(
+    id: StreetId('gare'),
+    name: 'Rue de la Gare',
+    commune: villefranche,
+    shape: _gareShape,
+    assignees: {_paul},
+    houses: [House(number: n('12'))],
+  ),
+);
+
 final _nationaleRow = StreetRow(
   id: StreetId('nationale'),
   name: 'Rue Nationale',
@@ -649,6 +665,88 @@ void main() {
       final state = container.read(homeProvider);
       expect(state.card, isNull);
       expect(state.area, tourneeArea([_nationale]));
+    });
+  });
+
+  group('a member no longer in the team (#91)', () {
+    /// Paul was removed: the team is Manu, Léa (`uid-lea`) and Julie, and
+    /// the member on the phone is `lea`, who is in it only as themself.
+    setUp(() {
+      streets = FakeStreetRepository([_nationale, _gare]);
+      tournees = FakeTourneeRepository([team()]);
+    });
+
+    test('should draw their street « libre » on the map', () async {
+      final container = phone();
+      await pumpEventQueue();
+
+      expect(container.read(homeProvider).layers.lines, [
+        StreetLine(
+          street: StreetId('gare'),
+          shape: _gareShape,
+          level: ProgressLevel.free,
+        ),
+        StreetLine(
+          street: StreetId('nationale'),
+          shape: _nationaleShape,
+          level: ProgressLevel.partial,
+        ),
+      ]);
+    });
+
+    test('should list their street among « Autres rues de la '
+        'tournée »', () async {
+      final container = phone();
+      await pumpEventQueue();
+
+      final state = container.read(homeProvider);
+      expect(state.mine.map((row) => row.id), [StreetId('nationale')]);
+      expect(state.others.map((row) => row.id), [StreetId('gare')]);
+    });
+
+    test('should show the card of their street free, naming '
+        'nobody', () async {
+      final container = phone();
+      await pumpEventQueue();
+
+      container.read(homeProvider.notifier).select(StreetId('gare'));
+
+      final card = container.read(homeProvider).card!;
+      expect(card.coverage, StreetCoverage.free);
+      expect(card.coveredBy, isEmpty);
+    });
+
+    test('should give their street to the member with « Me '
+        'l\'attribuer »', () async {
+      final container = phone();
+      await pumpEventQueue();
+      final notifier = container.read(homeProvider.notifier);
+      notifier.select(StreetId('gare'));
+
+      await notifier.take();
+      await pumpEventQueue();
+
+      // Storage keeps Paul: only he may take himself off (PLAN §8.2).
+      expect(streets[StreetId('gare')]!.assignees, {_paul, _lea});
+      final state = container.read(homeProvider);
+      expect(state.card!.coverage, StreetCoverage.mine);
+      expect(state.card!.coveredBy, isEmpty);
+      expect(state.layers.lines.first.level, ProgressLevel.toDo);
+    });
+
+    test('should still draw their street taken while the team cannot be '
+        'read', () async {
+      tournees.watchError = StateError('not read');
+      final container = phone();
+      await pumpEventQueue();
+
+      final state = container.read(homeProvider);
+      expect(state.layers.lines.first.level, ProgressLevel.toDo);
+      container.read(homeProvider.notifier).select(StreetId('gare'));
+      expect(
+        container.read(homeProvider).card!.coverage,
+        StreetCoverage.others,
+      );
     });
   });
 

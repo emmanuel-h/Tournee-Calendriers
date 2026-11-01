@@ -150,7 +150,7 @@ final class HomeNotifier extends Notifier<HomeState>
       teamPercent: streets.teamProgress.donePercent,
       mine: _rows(visiting ? streets.all : streets.mine),
       others: visiting ? const [] : _rows(streets.others),
-      layers: MapLayers.of(streets.all),
+      layers: MapLayers.of(streets.all, roster: roster),
       area: _area,
       // None tapped, or the street went to the Corbeille: no card, no line
       // lit up.

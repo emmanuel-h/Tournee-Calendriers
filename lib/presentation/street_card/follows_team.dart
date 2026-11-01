@@ -1,11 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tournee_calendriers/domain/tournee/team_roster.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/my_tournees/my_tournees_notifier.dart';
 
 /// Follows the open tournée's team (`ObserveTeam`, from the phone's copy,
 /// offline too), so a street card names who covers the street (« Faite
-/// par Manu »).
+/// par Manu »), and the map draws « libre » a street whose every assignee
+/// left the team (#91).
 ///
 /// A `mixin` adds these members to the notifiers that need them; `on
 /// Notifier<S>` lets it use their `ref` and `state`.
@@ -15,6 +17,11 @@ mixin FollowsTeam<S> on Notifier<S> {
   /// The open tournée as last read; null while none is open, or while it
   /// cannot be read (offline and never seen, the member removed).
   Tournee? get team => _team;
+
+  /// Who still covers a street, as last read: every assignee while the
+  /// [team] is not known (see [TeamRoster]).
+  TeamRoster get roster =>
+      TeamRoster.of(_team, me: ref.read(readCurrentMemberProvider)());
 
   /// The state from what the notifier knows, again each time the team
   /// changes.
