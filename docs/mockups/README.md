@@ -30,7 +30,7 @@ the colours, type, spacing and status treatments below are the design tokens.
 | Map: street faite | `#1E6B47` line | |
 | Map: street en partie | `#E0A21B` line | |
 | Map: street à faire | `#2F5DA8` line | |
-| Map: street libre | `#6B7078` dashed line | |
+| Map: street libre | `#3E434A` dashed line, as wide as the others, on a white casing | stands out from the base map's grey roads |
 | Map: selected road | `#1B1F24` casing, white core | |
 | Fonts | Atkinson Hyperlegible (text), Barlow Condensed (numbers, titles) | |
 
