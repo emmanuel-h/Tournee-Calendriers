@@ -1196,6 +1196,18 @@ class AppLocalizationsFr extends AppLocalizations {
   String get release010First => 'Première version de test.';
 
   @override
+  String get release090Streets =>
+      'Équipe : chaque membre montre le nombre de rues qu\'il couvre ; touchez ce nombre pour voir leurs noms.';
+
+  @override
+  String get release090Buttons =>
+      'Équipe : « Quitter la tournée » et « Supprimer la tournée » restent en bas de l\'écran.';
+
+  @override
+  String get release090CaughtUp =>
+      'Une longue rue ajoutée juste avant de fermer l\'application est complétée au démarrage suivant, même sans réseau.';
+
+  @override
   String get release080Icon =>
       'Nouvelle icône, et un écran de démarrage aux couleurs de l\'application.';
 

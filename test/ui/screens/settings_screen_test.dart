@@ -76,7 +76,7 @@ void main() {
     expect(find.bySemanticsLabel('Confidentialité'), findsOneWidget);
     // The version of pubspec.yaml, which `flutter test` gives too.
     expect(
-      find.bySemanticsLabel('Version 0.8.0, voir les nouveautés'),
+      find.bySemanticsLabel('Version 0.9.0, voir les nouveautés'),
       findsOneWidget,
     );
     expect(
@@ -262,17 +262,18 @@ void main() {
     await tester.tap(find.byKey(const Key('settings.version')));
     await tester.pumpAndSettle();
 
+    expect(find.bySemanticsLabel('0.9.0 · 2 nov. 2026'), findsOneWidget);
     expect(find.bySemanticsLabel('0.8.0 · 2 nov. 2026'), findsOneWidget);
-    expect(
-      find.bySemanticsLabel("La fiche d'une rue sur la carte se ferme avec ✕."),
-      findsOneWidget,
-    );
-    expect(find.bySemanticsLabel('0.7.0 · 2 nov. 2026'), findsOneWidget);
-    expect(
+    await tester.scrollUntilVisible(
       find.bySemanticsLabel(
         "Paramètres rappelle que l'application fonctionne sans réseau.",
       ),
-      findsOneWidget,
+      100,
+    );
+    expect(find.bySemanticsLabel('0.7.0 · 2 nov. 2026'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.bySemanticsLabel("La fiche d'une rue sur la carte se ferme avec ✕."),
+      100,
     );
     await tester.scrollUntilVisible(
       find.bySemanticsLabel('0.5.1 · 18 oct. 2026'),

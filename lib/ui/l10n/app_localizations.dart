@@ -1701,6 +1701,24 @@ abstract class AppLocalizations {
   /// **'Première version de test.'**
   String get release010First;
 
+  /// Line of « Nouveautés » for 0.9.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'Équipe : chaque membre montre le nombre de rues qu\'il couvre ; touchez ce nombre pour voir leurs noms.'**
+  String get release090Streets;
+
+  /// Line of « Nouveautés » for 0.9.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'Équipe : « Quitter la tournée » et « Supprimer la tournée » restent en bas de l\'écran.'**
+  String get release090Buttons;
+
+  /// Line of « Nouveautés » for 0.9.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'Une longue rue ajoutée juste avant de fermer l\'application est complétée au démarrage suivant, même sans réseau.'**
+  String get release090CaughtUp;
+
   /// Line of « Nouveautés » for 0.8.0.
   ///
   /// In fr, this message translates to:
