@@ -12,6 +12,10 @@ in <aapt:attr>.
 
     tool/render_play_icon.py [--svg out.svg] [out.png]   # default store/listing/ic_launcher_play_store.png
 
+It also renders the 1024 x 500 feature graphic, store/listing/feature-graphic.svg ->
+feature-graphic.png, with the app's own fonts (assets/fonts) made visible to rsvg-convert
+through a throwaway fontconfig file.
+
 Needs rsvg-convert (librsvg2-bin) and Pillow.
 """
 import argparse
@@ -27,6 +31,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DRAWABLE = os.path.join(ROOT, "android", "app", "src", "main", "res", "drawable")
 LAYERS = ["ic_launcher_background.xml", "ic_launcher_foreground.xml"]
 DEFAULT_OUT = os.path.join(ROOT, "store", "listing", "ic_launcher_play_store.png")
+FEATURE = os.path.join(ROOT, "store", "listing", "feature-graphic")
+FONTS = os.path.join(ROOT, "assets", "fonts")
 SIZE = 512
 A = "{http://schemas.android.com/apk/res/android}"
 
@@ -138,6 +144,25 @@ def main():
         os.makedirs(os.path.dirname(os.path.abspath(args.out)), exist_ok=True)
         image.save(args.out, optimize=True)
     print(f"{args.out}: {SIZE} x {SIZE}, {os.path.getsize(args.out) // 1024} KB")
+    render_feature_graphic()
+
+
+def render_feature_graphic():
+    with tempfile.TemporaryDirectory() as tmp:
+        conf = os.path.join(tmp, "fonts.conf")
+        with open(conf, "w") as f:
+            f.write('<?xml version="1.0"?><!DOCTYPE fontconfig SYSTEM "fonts.dtd"><fontconfig>'
+                    '<include ignore_missing="yes">/etc/fonts/fonts.conf</include>'
+                    f"<dir>{FONTS}</dir><cachedir>{tmp}/cache</cachedir></fontconfig>")
+        png = os.path.join(tmp, "feature.png")
+        subprocess.run(["rsvg-convert", FEATURE + ".svg", "-o", png], check=True,
+                       env={**os.environ, "FONTCONFIG_FILE": conf})
+        # Play wants a 24-bit PNG or a JPEG, 1024 x 500, without transparency.
+        image = Image.open(png).convert("RGB")
+        if image.size != (1024, 500):
+            sys.exit(f"render_play_icon: the feature graphic is {image.size}, not 1024 x 500")
+        image.save(FEATURE + ".png", optimize=True)
+    print(f"{FEATURE}.png: 1024 x 500, {os.path.getsize(FEATURE + '.png') // 1024} KB")
 
 
 if __name__ == "__main__":
