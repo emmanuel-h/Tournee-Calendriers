@@ -46,12 +46,13 @@ M4 done, milestone closed (2026-11-02), validated on the phone with 0.7.0: the o
 downloads itself for offline use, unseen (#32: streets into the cache + MapLibre region, silent
 re-download for OpenFreeMap's weekly tiles); one line in Paramètres and tournées greyed
 « Disponible avec réseau » offline (#33); airplane-mode day (#34).
-M5 in progress: launcher icon (#101, split from #36) approved and built (2026-11-02): adaptive
-vector drawables with a monochrome layer, launch screen on the ground colour (light/dark), label
-« Tournée Calendriers », Play icon from `tool/render_play_icon.py` in `store/listing/`; awaits the
-phone test. #70: houses of a new street and numbers added are checked one by one in the rules,
-2 per write (the 1 000-expression limit); **deploy those rules only after a release with the
-chunked writes is installed** (0.7.0 sends a whole street in one write and would be refused).
+M5 code done (2026-11-02), awaiting the user's phone test: launcher icon, themed icon and launch
+screen (#101); rules tooling on firebase-tools 15 (#69); each house of a bulk street write checked
+in the rules, 2 per write, sent in order (#70, `OrderedWrites`; **deploy those rules only after a
+release with the chunked writes is installed**, 0.7.0 would be refused); Firebase 7 (#90); dark
+palette reviewed and 200 % text checked (#35); the user's Confidentialité text (#79) and the
+policy in `PRIVACY.md` linked from it; MIT `LICENSE`; Play listing texts, icon, feature graphic
+and screenshots in `store/` (#36). Follow-ups: #102–#105.
 Release signing and Play publishing pulled forward from M5 (#37): 0.7.0 (code 8, 2026-11-02: #32,
 #33) is on the internal track; publish with the `release-store` skill. `lib/bootstrap/firebase_options.dart` and `android/app/google-services.json`
 are gitignored: run `flutterfire configure --out=lib/bootstrap/firebase_options.dart` locally;
