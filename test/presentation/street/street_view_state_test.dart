@@ -278,44 +278,6 @@ void main() {
     });
   });
 
-  group('MarkedHouse', () {
-    test('should be equal when the number and the status are equal', () {
-      final marked = MarkedHouse(number: n('7'), status: VisitStatus.done);
-
-      expect(marked, MarkedHouse(number: n('7'), status: VisitStatus.done));
-      expect(
-        marked.hashCode,
-        MarkedHouse(number: n('7'), status: VisitStatus.done).hashCode,
-      );
-      expect(
-        marked,
-        isNot(MarkedHouse(number: n('9'), status: VisitStatus.done)),
-      );
-      expect(
-        marked,
-        isNot(MarkedHouse(number: n('7'), status: VisitStatus.nobodyHome)),
-      );
-    });
-
-    test('should differ when the tries differ', () {
-      expect(
-        MarkedHouse(number: n('7'), status: VisitStatus.done, tries: 2),
-        isNot(MarkedHouse(number: n('7'), status: VisitStatus.done)),
-      );
-    });
-
-    test('should name the number, the status and the tries when printed', () {
-      expect(
-        MarkedHouse(
-          number: n('7'),
-          status: VisitStatus.nobodyHome,
-          tries: 3,
-        ).toString(),
-        'MarkedHouse(7, VisitStatus.nobodyHome, tries: 3)',
-      );
-    });
-  });
-
   group('StreetColumns.of', () {
     test('should show both sides when each has numbers', () {
       expect(StreetColumns.of(odd: 1, even: 1), StreetColumns.both);

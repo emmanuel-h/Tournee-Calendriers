@@ -36,8 +36,8 @@ final class NobodyHomeTries {
   /// The tries a house or door with [status] keeps of [tries]:
   /// - to do: none, the house is to try again from the start;
   /// - nobody home: at least one, this « personne » being a try. Coming
-  ///   back to « personne » from another status (by a tap or the status
-  ///   control) adds nothing more: only « Repassé, toujours personne »
+  ///   back to « personne » from another status (in the status picker)
+  ///   adds nothing more: only « De nouveau personne »
   ///   ([next]) counts a new try;
   /// - done or « repasser »: [tries] as they are.
   ///

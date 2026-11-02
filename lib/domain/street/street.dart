@@ -47,7 +47,7 @@ enum HouseChangeFailure {
   /// one, and its status follows from them.
   houseIsBuilding,
 
-  /// « Repassé, toujours personne » on a house that is neither
+  /// « De nouveau personne » on a house that is neither
   /// « personne » nor « repasser »: nobody was to come back to it.
   notToVisitAgain,
 }
@@ -91,7 +91,7 @@ enum DwellingChangeFailure {
   /// « repasser »: its « repasser » is its status, set with `markDwelling`.
   notComeBack,
 
-  /// « Repassé, toujours personne » on a door that is neither « personne »
+  /// « De nouveau personne » on a door that is neither « personne »
   /// nor « repasser ».
   notToVisitAgain,
 }
@@ -427,7 +427,7 @@ final class Street {
     ));
   }
 
-  /// « Repassé, toujours personne » on the house at [number], as [by] at
+  /// « De nouveau personne » on the house at [number], as [by] at
   /// [at] (its sheet, #80): it is « personne » with one more try
   /// ([NobodyHomeTries.next]); a « repasser » loses its time, as any other
   /// status but « repasser » does.
@@ -579,7 +579,7 @@ final class Street {
   }
 
   /// Gives the door at [key] of the building at [number] the [status], as
-  /// [by] at [at] (a tap on the door). The time of a « repasser » goes with
+  /// [by] at [at] (its status picker). The time of a « repasser » goes with
   /// that status, as a house's.
   ///
   /// The house itself is untouched (its last change included): the door
@@ -660,7 +660,7 @@ final class Street {
     }
   }
 
-  /// « Repassé, toujours personne » on the door at [key] of the building at
+  /// « De nouveau personne » on the door at [key] of the building at
   /// [number], as [by] at [at] (its sheet): as [markNobodyHomeAgain] on a
   /// house, only that door stamped. Refused with
   /// [DwellingChangeFailure.notToVisitAgain] unless the door is

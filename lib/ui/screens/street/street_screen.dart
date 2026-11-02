@@ -7,16 +7,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
-import 'package:tournee_calendriers/domain/street/visit_status.dart';
+import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_state.dart';
 import 'package:tournee_calendriers/presentation/street/street_notifier.dart';
 import 'package:tournee_calendriers/presentation/street/street_view_state.dart';
 import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/screens/building/building_grid_sheet.dart';
-import 'package:tournee_calendriers/ui/screens/building/building_setup_sheet.dart';
-import 'package:tournee_calendriers/ui/screens/building/door_sheets.dart';
-import 'package:tournee_calendriers/ui/screens/street/house_sheet.dart';
+import 'package:tournee_calendriers/ui/screens/street/status_picker_sheet.dart';
 import 'package:tournee_calendriers/ui/screens/street/status_words.dart';
 import 'package:tournee_calendriers/ui/screens/street/street_header.dart';
 import 'package:tournee_calendriers/ui/screens/street/street_tiles.dart';
@@ -25,12 +23,10 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
 /// Rue, the screen used 95 % of the time (PLAN §5.6,
 /// `docs/mockups/Main.dc.html`): odd numbers on the left, even on the
-/// right; a tap cycles a house `○ → ✓ → ✗ → ↻ → ○` with « Annuler » for 4 s,
-/// except the tap to ↻, which opens the Fiche maison to say when (#81).
-/// Works offline: everything it reads and writes is on the phone.
-///
-/// A hold on a house opens its Fiche maison (PLAN §5.7); a tap on a
-/// building opens its Immeuble grid, a hold its own « repasser ».
+/// right; a tap on a house opens its status picker, and what it stores
+/// shows in the snackbar with « Annuler » for 4 s. A tap on a building
+/// opens its Immeuble grid (PLAN §5.7). Works offline: everything it reads
+/// and writes is on the phone.
 final class StreetScreen extends StatelessWidget {
   const StreetScreen({super.key, required this.streetId, this.title});
 
@@ -60,12 +56,15 @@ final class _MarkingScreen extends ConsumerStatefulWidget {
 }
 
 /// A `State` (not a plain `ConsumerWidget`) because the screen remembers
-/// whether its snackbar shows ([UndoSnackBarHost]): the tap hint takes its
-/// place meanwhile.
+/// whether its snackbar shows ([UndoSnackBarHost]), the tap hint taking its
+/// place meanwhile, and which house's picker shows, outlined.
 final class _MarkingScreenState extends ConsumerState<_MarkingScreen>
     with UndoSnackBarHost {
   StreetNotifier get _notifier =>
       ref.read(streetProvider(widget.streetId).notifier);
+
+  /// The house whose status picker shows.
+  HouseNumber? _picking;
 
   @override
   Widget build(BuildContext context) {
@@ -111,10 +110,9 @@ final class _MarkingScreenState extends ConsumerState<_MarkingScreen>
                   child: StreetTiles(
                     state: state,
                     showHint: !snackBarShown,
-                    onTap: _cycle,
-                    onHold: _openSheet,
+                    selected: _picking,
+                    onTap: (number) => unawaited(_pick(number)),
                     onOpenBuilding: _openBuilding,
-                    onHoldBuilding: _openBuildingDetails,
                   ),
                 ),
               ],
@@ -125,107 +123,55 @@ final class _MarkingScreenState extends ConsumerState<_MarkingScreen>
     );
   }
 
-  /// A tap on a house tile: a light haptic tick at once, then the new
-  /// status, said aloud for screen readers and shown in the snackbar. A
-  /// tap to « Repasser » opens the sheet instead of the snackbar, to say
-  /// when (#81).
-  Future<void> _cycle(HouseNumber number) async {
+  /// A tap on a house tile: a light haptic tick at once, the tile
+  /// outlined, and its status picker. The snackbar of the last change goes
+  /// first: its « Annuler » would put the house back under the picker.
+  ///
+  /// Once the picker is closed, what it stored is said aloud for screen
+  /// readers and shown in the snackbar, with « Annuler »; nothing when it
+  /// stored nothing.
+  Future<void> _pick(HouseNumber number) async {
     unawaited(HapticFeedback.lightImpact());
-    final marked = await _notifier.cycle(number);
-    if (marked?.status == VisitStatus.comeBack) {
-      await _openSheetOfTap(marked!);
-    } else {
-      _tell(marked);
-    }
-  }
-
-  /// The tap made [marked] « Repasser »: it is said aloud, and its sheet
-  /// opens by itself with « Annuler » and « OK » rather than the snackbar.
-  /// « Annuler » there undoes the tap as the snackbar's would (the changes
-  /// made in the sheet go with it); « OK », or the sheet closed any other
-  /// way, keeps it.
-  Future<void> _openSheetOfTap(MarkedHouse marked) async {
-    if (!mounted) return;
-    _announce(marked);
     hideUndo();
     final notifier = _notifier;
-    final number = marked.number;
-    final exit = await showHouseSheet(context, (
-      street: widget.streetId,
-      number: number,
-    ), openedByTap: true);
+    StoredStatus? stored;
+    setState(() => _picking = number);
+    await showHouseStatusPicker(
+      context,
+      (street: widget.streetId, number: number),
+      onStored: (status) {
+        // Kept at once: the picker may still change its day and hour.
+        notifier.keepForUndo(status.change);
+        stored = status;
+      },
+    );
     if (!mounted) return;
-    switch (exit) {
-      case HouseSheetExit.cancelTap:
-        await notifier.undo();
-      case HouseSheetExit.nobodyHomeAgain:
-        await _nobodyHomeAgain(number);
-      // « Transformer en immeuble… » is not on a sheet a tap opened.
-      case HouseSheetExit.toBuilding || null:
-        return;
-    }
+    setState(() => _picking = null);
+    if (stored case final stored?) _tell(number, stored);
   }
 
-  /// « Repassé, toujours personne », chosen in the Fiche maison of
-  /// [number]: « personne » with one more try, said and shown as a tap is
-  /// (« 7 → Personne (3e passage) »), with « Annuler ».
-  Future<void> _nobodyHomeAgain(HouseNumber number) async =>
-      _tell(await _notifier.nobodyHomeAgain(number));
-
-  /// Says [marked] aloud for screen readers and shows it in the snackbar,
-  /// with « Annuler »; nothing when nothing changed.
-  void _tell(MarkedHouse? marked) {
-    if (marked == null || !mounted) return;
+  /// Says what was stored on [number] aloud for screen readers
+  /// (« Numéro 7, personne, 3e passage ») and shows it in the snackbar
+  /// (« N° 7 : personne (3e passage) »), with « Annuler ».
+  void _tell(HouseNumber number, StoredStatus stored) {
     final l10n = AppLocalizations.of(context);
     final notifier = _notifier;
-    final label = marked.number.label;
-    _announce(marked);
-    showUndo(
-      message: markedMessage(l10n, label, marked.status, marked.tries),
-      undoLabel: l10n.undo,
-      onUndo: () => unawaited(notifier.undo()),
-    );
-  }
-
-  /// Says [marked] aloud for screen readers: « Numéro 7, personne ».
-  void _announce(MarkedHouse marked) {
-    final l10n = AppLocalizations.of(context);
+    final label = number.label;
     unawaited(
       SemanticsService.sendAnnouncement(
         View.of(context),
         l10n.houseTileSemantics(
-          marked.number.label,
-          spokenMarked(l10n, marked.status, marked.tries),
+          label,
+          spokenMarked(l10n, stored.status, stored.tries),
         ),
         Directionality.of(context),
       ),
     );
-  }
-
-  /// A hold on a house tile opens its sheet. The snackbar of the last tap
-  /// goes: its « Annuler » would put the whole house back as it was before
-  /// that tap, wiping what the sheet changes.
-  ///
-  /// Left by « Transformer en immeuble… », the sheet gives way to
-  /// « Décrire l'immeuble », then, once validated, to the new building's
-  /// grid: one sheet at a time. Left by « Repassé, toujours personne », the
-  /// house is marked here, so its snackbar shows over the street.
-  Future<void> _openSheet(HouseNumber number) async {
-    hideUndo();
-    final house = (street: widget.streetId, number: number);
-    final exit = await showHouseSheet(context, house);
-    if (!mounted) return;
-    switch (exit) {
-      case HouseSheetExit.toBuilding:
-        final laidOut = await showBuildingSetup(context, house);
-        if (!laidOut || !mounted) return;
-        await _showGrid(number);
-      case HouseSheetExit.nobodyHomeAgain:
-        await _nobodyHomeAgain(number);
-      // « Annuler » is only on a sheet a tap opened.
-      case HouseSheetExit.cancelTap || null:
-        return;
-    }
+    showUndo(
+      message: houseStoredMessage(l10n, label, stored.status, stored.tries),
+      undoLabel: l10n.undo,
+      onUndo: () => unawaited(notifier.undo()),
+    );
   }
 
   /// A tap on a building tile opens its grid.
@@ -252,17 +198,6 @@ final class _MarkingScreenState extends ConsumerState<_MarkingScreen>
         onUndo: () => unawaited(notifier.undo()),
       );
     }
-  }
-
-  /// A hold on a building tile opens its own « repasser ».
-  void _openBuildingDetails(HouseNumber number) {
-    hideUndo();
-    unawaited(
-      showBuildingDetailsSheet(context, (
-        street: widget.streetId,
-        number: number,
-      )),
-    );
   }
 }
 

@@ -107,6 +107,9 @@ void main() {
     await pumpStart(tester, [villefrancheCommune, gleizeCommune]);
     expect(find.text('Ajouter des rues'), findsOneWidget);
 
+    // A row after the streets: scrolled to, as the member would.
+    await tester.ensureVisible(find.byKey(const Key('start.import')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('start.import')));
     await tester.pumpAndSettle();
 
@@ -137,6 +140,9 @@ void main() {
   testWidgets('should show no chip for a single commune, and add the streets '
       'ticked to the tournée', (tester) async {
     await pumpStart(tester, [villefrancheCommune]);
+    // A row after the streets: scrolled to, as the member would.
+    await tester.ensureVisible(find.byKey(const Key('start.import')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('start.import')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('addStreets.tab.list')));
@@ -159,6 +165,9 @@ void main() {
     tester,
   ) async {
     await pumpStart(tester, []);
+    // A row after the streets: scrolled to, as the member would.
+    await tester.ensureVisible(find.byKey(const Key('start.import')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('start.import')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('addStreets.tab.list')));
@@ -169,6 +178,9 @@ void main() {
 
   testWidgets('should close with ✕', (tester) async {
     await pumpStart(tester, [villefrancheCommune]);
+    // A row after the streets: scrolled to, as the member would.
+    await tester.ensureVisible(find.byKey(const Key('start.import')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('start.import')));
     await tester.pumpAndSettle();
 

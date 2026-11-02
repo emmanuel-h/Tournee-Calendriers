@@ -11,10 +11,9 @@ import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_repository.dart';
 
-/// A door of the Immeuble grid (PLAN §5.7): a tap gives it a status, a long
-/// press opens its sheet (status, time of its « repasser », « Repassé,
-/// toujours personne »). Only that door
-/// is stamped and stored. Needs no network.
+/// A door of the Immeuble grid (PLAN §5.7), from its status picker (PLAN
+/// §5.6): its status, the time of its « repasser », or « De nouveau
+/// personne ». Only that door is stamped and stored. Needs no network.
 final class MarkDwelling {
   const MarkDwelling(this._streets, this._clock, this._identity);
 

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
@@ -170,24 +172,67 @@ void main() {
       phoneWith(_street());
       await door('8', b01);
 
-      await doorNotifier('8', b01).setStatus(VisitStatus.done);
+      final stored = await doorNotifier('8', b01).setStatus(VisitStatus.done);
 
+      final marked = DwellingMarked(
+        streetId: _id,
+        number: n('8'),
+        staircase: escB,
+        level: 0,
+        before: Dwelling(label: d('01')),
+        stamp: leaAtTwo,
+        status: VisitStatus.done,
+      );
+      expect(streets.saved.single.$2, marked);
       expect(
-        streets.saved.single.$2,
-        DwellingMarked(
-          streetId: _id,
-          number: n('8'),
-          staircase: escB,
-          level: 0,
-          before: Dwelling(label: d('01')),
-          stamp: leaAtTwo,
-          status: VisitStatus.done,
-        ),
+        stored,
+        StoredStatus(status: VisitStatus.done, tries: null, change: marked),
       );
       expect(
         (await door('8', b01) as HouseSheetShown).status,
         VisitStatus.done,
       );
+    });
+
+    test('should count one more try when « Personne » is chosen on a door '
+        'to come back to after nobody was home', () async {
+      phoneWith(_street());
+      await door('8', a11);
+
+      final stored = await doorNotifier(
+        '8',
+        a11,
+      ).setStatus(VisitStatus.nobodyHome);
+
+      final again = DwellingNobodyHomeAgain(
+        streetId: _id,
+        number: n('8'),
+        staircase: escA,
+        level: 1,
+        before: _door11,
+        stamp: leaAtTwo,
+        tries: tries(3),
+      );
+      expect(streets.saved.single.$2, again);
+      expect(
+        stored,
+        StoredStatus(status: VisitStatus.nobodyHome, tries: 3, change: again),
+      );
+    });
+
+    test('should say nothing was stored when the street refuses it', () async {
+      phoneWith(_street());
+      await door('8', b01);
+
+      // The building is removed before the status's turn comes.
+      final stored = doorNotifier('8', b01).setStatus(VisitStatus.done);
+      final (removed, change) = valueOf(
+        _street().removeNumber(n('8'), by: paul, at: threePm),
+      );
+      unawaited(streets.save(removed, change));
+
+      expect(await stored, isNull);
+      expect(streets.saved.map((saved) => saved.$2), [change]);
     });
 
     test('should store the day of the door « repasser »', () async {

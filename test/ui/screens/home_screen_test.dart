@@ -15,6 +15,7 @@ import 'package:tournee_calendriers/ui/screens/add_streets/add_streets_screen.da
 import 'package:tournee_calendriers/ui/screens/home/home_panel.dart';
 import 'package:tournee_calendriers/ui/screens/home/home_screen.dart';
 import 'package:tournee_calendriers/ui/screens/street/street_screen.dart';
+import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 
 import '../../domain/sector/my_sectors_fixtures.dart';
@@ -307,19 +308,68 @@ void main() {
       expect(find.byKey(const Key('home.others')), findsNothing);
     });
 
-    testWidgets('should open « Ajouter des rues » from its button', (
-      tester,
-    ) async {
+    testWidgets('should show « Ajouter des rues » as a muted row after the '
+        'last street, not as a button', (tester) async {
       await pumpHome(tester);
-
-      await tester.tap(find.byKey(const Key('start.import')));
+      await tester.drag(
+        find.byKey(const Key('home.panel.handle')),
+        const Offset(0, -300),
+      );
       await tester.pumpAndSettle();
 
-      expect(find.byType(AddStreetsScreen), findsOneWidget);
+      final add = find.byKey(const Key('start.import'));
+      final label = find.descendant(
+        of: add,
+        matching: find.text('Ajouter des rues'),
+      );
+      expect(tester.widget<Text>(label).style!.color, AppColors.light.muted);
+      expect(
+        find.descendant(of: add, matching: find.byIcon(Icons.add)),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: panel(), matching: find.byType(FilledButton)),
+        findsNothing,
+      );
+      expect(tester.getSize(add).height, greaterThanOrEqualTo(56));
+      final rows = find.descendant(
+        of: panel(),
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget.key is ValueKey<String> &&
+              (widget.key! as ValueKey<String>).value.startsWith(
+                'home.street.',
+              ),
+        ),
+      );
+      final lastRow = tester.getRect(rows.last).bottom;
+      expect(tester.getTopLeft(add).dy, greaterThanOrEqualTo(lastRow));
     });
 
+    testWidgets(
+      'should open « Ajouter des rues » from its row after the streets',
+      (tester) async {
+        await pumpHome(tester);
+
+        // A row after the streets: scrolled to, as the member would.
+        await tester.scrollUntilVisible(
+          find.byKey(const Key('start.import')),
+          200,
+          scrollable: find.descendant(
+            of: find.byKey(const Key('home.panel.list')),
+            matching: find.byType(Scrollable),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('start.import')));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(AddStreetsScreen), findsOneWidget);
+      },
+    );
+
     testWidgets('should say how many streets wait to be sent while some do, '
-        'above « Ajouter des rues »', (tester) async {
+        'under the list', (tester) async {
       await pumpHome(tester);
       final line = find.byKey(const Key('start.pendingSync'));
       expect(line, findsNothing);
@@ -340,10 +390,12 @@ void main() {
         find.bySemanticsLabel("Modifications de 2 rues en attente d'envoi"),
         findsOneWidget,
       );
+      // At the bottom of the panel, under the list and its « Ajouter des
+      // rues » row (Home mockup).
       expect(
-        tester.getBottomLeft(line).dy,
-        lessThanOrEqualTo(
-          tester.getTopLeft(find.byKey(const Key('start.import'))).dy,
+        tester.getTopLeft(line).dy,
+        greaterThanOrEqualTo(
+          tester.getBottomLeft(find.byKey(const Key('home.panel.list'))).dy,
         ),
       );
 

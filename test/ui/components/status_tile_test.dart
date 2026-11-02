@@ -1,3 +1,5 @@
+import 'dart:ui' show Tristate;
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -24,7 +26,7 @@ void main() {
       isBuilding: false,
       glyph: StatusGlyphs.toDo,
       count: null,
-      label: 'Numéro 1, à faire',
+      label: 'Numéro 1, à faire, changer le statut',
       background: colors.toDo,
     ),
     (
@@ -34,7 +36,7 @@ void main() {
       isBuilding: false,
       glyph: StatusGlyphs.done,
       count: null,
-      label: 'Numéro 3, fait',
+      label: 'Numéro 3, fait, changer le statut',
       background: colors.done,
     ),
     (
@@ -44,7 +46,7 @@ void main() {
       isBuilding: false,
       glyph: StatusGlyphs.nobodyHome,
       count: null,
-      label: 'Numéro 3bis, personne',
+      label: 'Numéro 3bis, personne, changer le statut',
       background: colors.nobodyHome,
     ),
     (
@@ -54,7 +56,7 @@ void main() {
       isBuilding: false,
       glyph: StatusGlyphs.comeBack,
       count: null,
-      label: 'Numéro 5, repasser',
+      label: 'Numéro 5, repasser, changer le statut',
       background: colors.comeBack,
     ),
     (
@@ -199,27 +201,86 @@ void main() {
     );
   }
 
-  testWidgets(
-    'should report tap and hold separately when the tile is touched',
-    (tester) async {
-      final calls = <String>[];
-      await tester.pumpWidget(
-        testApp(
-          StatusTile(
-            number: '7',
-            status: const ToDoTile(),
-            onTap: () => calls.add('tap'),
-            onLongPress: () => calls.add('hold'),
-          ),
+  // No hold of its own any more (PLAN §5.6): a finger held out of habit
+  // still opens the picker when it lifts.
+  testWidgets('should report a hold as a tap', (tester) async {
+    final calls = <String>[];
+    await tester.pumpWidget(
+      testApp(
+        StatusTile(
+          number: '7',
+          status: const ToDoTile(),
+          onTap: () => calls.add('tap'),
         ),
+      ),
+    );
+
+    await tester.tap(find.byType(StatusTile));
+    await tester.longPress(find.byType(StatusTile));
+
+    expect(calls, ['tap', 'tap']);
+  });
+
+  group('selected', () {
+    Future<void> pumpTile(WidgetTester tester, {required bool selected}) =>
+        tester.pumpWidget(
+          testApp(
+            Center(
+              child: SizedBox(
+                width: 170,
+                child: StatusTile(
+                  key: const Key('tile'),
+                  number: '7',
+                  status: const DoneTile(),
+                  selected: selected,
+                  onTap: () {},
+                ),
+              ),
+            ),
+          ),
+        );
+
+    testWidgets('should draw a thick ink outline inside the tile, and say '
+        'it is selected, when its picker shows', (tester) async {
+      final semantics = tester.ensureSemantics();
+      await pumpTile(tester, selected: true);
+
+      final outline = tester.widget<DecoratedBox>(
+        find.byKey(const Key('tile.selected')),
       );
+      final border = (outline.decoration as BoxDecoration).border! as Border;
+      expect(border.top.color, colors.ink);
+      expect(border.top.width, AppSizes.selectedTileOutline);
+      expect(outline.position, DecorationPosition.foreground);
+      // Inside: the tile keeps its size.
+      expect(tester.getSize(find.byKey(const Key('tile'))).height, 60);
+      expect(
+        tester
+            .getSemantics(find.byKey(const Key('tile')))
+            .flagsCollection
+            .isSelected,
+        Tristate.isTrue,
+      );
+      semantics.dispose();
+    });
 
-      await tester.tap(find.byType(StatusTile));
-      await tester.longPress(find.byType(StatusTile));
+    testWidgets('should draw no outline when its picker does not show', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      await pumpTile(tester, selected: false);
 
-      expect(calls, ['tap', 'hold']);
-    },
-  );
+      expect(find.byKey(const Key('tile.selected')), findsNothing);
+      expect(
+        tester
+            .getSemantics(find.byKey(const Key('tile')))
+            .flagsCollection
+            .isSelected,
+        Tristate.none,
+      );
+      semantics.dispose();
+    });
+  });
 
   group('on a narrow phone', () {
     // The test font draws every character as a wide square: load the app's
@@ -329,12 +390,20 @@ void main() {
 
   group('tries', () {
     for (final (name, status, label) in [
-      ('nobody home', const NobodyHomeTile(), 'Numéro 7, personne, 3e passage'),
-      ('done', const DoneTile(), 'Numéro 7, fait, 3 passages sans personne'),
+      (
+        'nobody home',
+        const NobodyHomeTile(),
+        'Numéro 7, personne, 3e passage, changer le statut',
+      ),
+      (
+        'done',
+        const DoneTile(),
+        'Numéro 7, fait, 3 passages sans personne, changer le statut',
+      ),
       (
         'come back',
         const ComeBackTile(),
-        'Numéro 7, repasser, 3 passages sans personne',
+        'Numéro 7, repasser, 3 passages sans personne, changer le statut',
       ),
     ]) {
       testWidgets('should show « ×3 » after the glyph and say the tries when '

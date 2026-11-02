@@ -190,35 +190,29 @@ abstract class AppLocalizations {
   /// **'Numéro {number}, immeuble, {status}, ouvrir'**
   String buildingStatusTileSemantics(String number, String status);
 
-  /// Name of the status « to do », in the undo snackbar.
+  /// Name of the status « to do », on its button and in the title of the status picker.
   ///
   /// In fr, this message translates to:
   /// **'À faire'**
   String get statusToDo;
 
-  /// Name of the status « done », in the undo snackbar.
+  /// Name of the status « done », on its button and in the title of the status picker.
   ///
   /// In fr, this message translates to:
   /// **'Fait'**
   String get statusDone;
 
-  /// Name of the status « nobody home », in the undo snackbar.
+  /// Name of the status « nobody home », on its button and in the title of the status picker.
   ///
   /// In fr, this message translates to:
   /// **'Personne'**
   String get statusNobodyHome;
 
-  /// Name of the status « come back later », in the undo snackbar and the status control of the house sheet.
+  /// Name of the status « come back later », on its button and in the title of the status picker.
   ///
   /// In fr, this message translates to:
   /// **'Repasser'**
   String get statusComeBack;
-
-  /// Undo snackbar after « Repassé, toujours personne » or a tap to « Personne » on a house or door tried with nobody home two times or more (#80), e.g. « 7 → Personne (3e passage) ».
-  ///
-  /// In fr, this message translates to:
-  /// **'{number} → {status} ({count}e passage)'**
-  String houseMarkedTries(String number, String status, int count);
 
   /// Next to the status glyph of a tile or a door tried two times or more with nobody home (#80), e.g. « ×3 ».
   ///
@@ -238,17 +232,83 @@ abstract class AppLocalizations {
   /// **'{count, plural, one{{count} passage sans personne} other{{count} passages sans personne}}'**
   String nobodyHomeTries(int count);
 
-  /// Button of a house or door sheet while it is « personne » or « repasser » (#80): one more try with nobody home, the status « Personne ».
+  /// « ✗ Personne » of the status picker on a house or door « personne » or « repasser » already tried with nobody home (#80, HouseNobody mockup): one more try, the status « Personne ».
   ///
   /// In fr, this message translates to:
-  /// **'Repassé, toujours personne'**
+  /// **'De nouveau personne'**
   String get nobodyHomeAgain;
 
-  /// Undo snackbar after a tap on a house tile (PLAN §5.6). The « → » is drawn as a vector arrow; screen readers hear the text as written.
+  /// Snackbar once the status picker of a house closed on a status it stored (PLAN §5.6), with « Annuler »: « N° 7 : personne ».
   ///
   /// In fr, this message translates to:
-  /// **'{number} → {status}'**
-  String houseMarked(String number, String status);
+  /// **'N° {number} : {status}'**
+  String houseStatusStored(String number, String status);
+
+  /// Snackbar once the status picker made a house « personne » tried two times or more (#80): « N° 3bis : personne (3e passage) ».
+  ///
+  /// In fr, this message translates to:
+  /// **'N° {number} : {status} ({count}e passage)'**
+  String houseStatusStoredTries(String number, String status, int count);
+
+  /// Snackbar once the status picker of a door of the building grid stored a status: « Porte 51 : fait ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Porte {label} : {status}'**
+  String doorStatusStored(String label, String status);
+
+  /// Snackbar once the status picker made a door « personne » tried two times or more: « Porte 51 : personne (3e passage) ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Porte {label} : {status} ({count}e passage)'**
+  String doorStatusStoredTries(String label, String status, int count);
+
+  /// Hint at the bottom of the street screen while no snackbar shows (PLAN §5.6): a tap on a house opens its status picker.
+  ///
+  /// In fr, this message translates to:
+  /// **'Appuyez sur une maison pour changer son statut'**
+  String get streetHint;
+
+  /// Hint under the doors of the building grid (PLAN §5.7): a tap on a door opens its status picker.
+  ///
+  /// In fr, this message translates to:
+  /// **'Appuyez sur une porte pour changer son statut'**
+  String get gridHint;
+
+  /// Screen-reader label of a house tile of the street screen, which opens the status picker: « Numéro 7, à faire, changer le statut ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Numéro {number}, {status}, changer le statut'**
+  String houseTilePickSemantics(String number, String status);
+
+  /// Title of the status picker of a house (House mockup), its status in grey beside it.
+  ///
+  /// In fr, this message translates to:
+  /// **'N° {number}'**
+  String statusPickerHouse(String number);
+
+  /// Title of the status picker of a door of the building grid (Building mockup): « Porte 51 · Fait ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Porte {label} · {status}'**
+  String statusPickerDoor(String label, String status);
+
+  /// Title of the step of the status picker that asks when to come back, after « Repasser » (HouseComeBack mockup): « N° 5 · quand repasser ? », « Porte 51 · quand repasser ? ».
+  ///
+  /// In fr, this message translates to:
+  /// **'{subject} · quand repasser ?'**
+  String statusPickerComeBack(String subject);
+
+  /// Button that closes the « quand repasser ? » step of the status picker; each day and hour is already stored.
+  ///
+  /// In fr, this message translates to:
+  /// **'Valider'**
+  String get statusPickerValidate;
+
+  /// Screen-reader name and tooltip of the ✕ of the status picker: closes it, nothing more stored.
+  ///
+  /// In fr, this message translates to:
+  /// **'Fermer'**
+  String get statusPickerClose;
 
   /// Tooltip of the ✏ button of the street screen, which opens the edit mode.
   ///
@@ -285,31 +345,13 @@ abstract class AppLocalizations {
     int comeBack,
   );
 
-  /// Start of the hint at the bottom of the street screen, before the glyphs ○ → ✓ → ✗ → ↻ → ○, all drawn as vector shapes.
-  ///
-  /// In fr, this message translates to:
-  /// **'Appui :'**
-  String get tapHintTap;
-
-  /// End of the hint at the bottom of the street screen.
-  ///
-  /// In fr, this message translates to:
-  /// **'Appui long : détails'**
-  String get tapHintHold;
-
-  /// Screen-reader label of the hint at the bottom of the street screen.
-  ///
-  /// In fr, this message translates to:
-  /// **'Appui : à faire, fait, personne, repasser, à faire. Appui long : détails'**
-  String get tapHintSemantics;
-
   /// Street screen opened for a street that is not on the phone or is in the Corbeille.
   ///
   /// In fr, this message translates to:
   /// **'Cette rue n\'est plus sur ce téléphone.'**
   String get streetGone;
 
-  /// Screen-reader name of the status control of the house sheet (« À faire | Fait | Personne | Repasser », PLAN §5.7).
+  /// Screen-reader name of the group of status buttons of the status picker of a house or door (PLAN §5.6).
   ///
   /// In fr, this message translates to:
   /// **'Statut'**
@@ -447,18 +489,6 @@ abstract class AppLocalizations {
   /// **'C\'était le {day} vers {hour} h'**
   String comeBackPastDayAt(DateTime day, int hour);
 
-  /// Button of the sheet a tap to « Repasser » opened by itself: puts back the status before that tap and closes (#81).
-  ///
-  /// In fr, this message translates to:
-  /// **'Annuler'**
-  String get comeBackSheetCancel;
-
-  /// Button of the sheet a tap to « Repasser » opened by itself: closes it, the house stays « Repasser » (#81).
-  ///
-  /// In fr, this message translates to:
-  /// **'OK'**
-  String get comeBackSheetOk;
-
   /// Last change of a house, made today, by nobody the phone can name.
   ///
   /// In fr, this message translates to:
@@ -495,7 +525,7 @@ abstract class AppLocalizations {
   /// **'Ce numéro n\'est plus dans cette rue.'**
   String get houseGone;
 
-  /// Button of the house sheet that opens « Décrire l'immeuble » (PLAN §5.7).
+  /// Button of the number sheet of edit mode that opens « Décrire l'immeuble » (PLAN §5.5).
   ///
   /// In fr, this message translates to:
   /// **'Transformer en immeuble…'**
@@ -1059,18 +1089,6 @@ abstract class AppLocalizations {
   /// **'Fermer'**
   String get gridClose;
 
-  /// End of the hint of the building grid, after « Appui : ○ → ✓ → ✗ → ↻ → ○ ·».
-  ///
-  /// In fr, this message translates to:
-  /// **'Appui long : détails'**
-  String get gridHintHold;
-
-  /// Screen-reader label of the hint of the building grid.
-  ///
-  /// In fr, this message translates to:
-  /// **'Appui : à faire, fait, personne, repasser, à faire. Appui long : détails'**
-  String get gridHintSemantics;
-
   /// Choice of the « Gérer l'immeuble » menu of the building grid that lays the building out again.
   ///
   /// In fr, this message translates to:
@@ -1197,7 +1215,7 @@ abstract class AppLocalizations {
   /// **'C\'est la dernière porte de l\'immeuble. Pour en refaire une maison, revenez à l\'immeuble : « Gérer l\'immeuble », puis « Changer en maison ».'**
   String get lastDoorRefused;
 
-  /// Title of the rename sheet of a door.
+  /// Title of the rename sheet of a door, and what « … · quand repasser ? » is about in its status picker.
   ///
   /// In fr, this message translates to:
   /// **'Porte {label}'**
@@ -1706,6 +1724,12 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'La tournée s\'appelle maintenant « secteur ».'**
   String get release0100Sector;
+
+  /// Line of « Nouveautés » for 0.10.0: the status picker replaces the tap cycle and the hold (#107).
+  ///
+  /// In fr, this message translates to:
+  /// **'Rue : touchez une maison ou une porte, puis choisissez son statut. Plus de cycle ni d\'appui long.'**
+  String get release0100Picker;
 
   /// Line of « Nouveautés » for 0.10.0: the privacy text covers the tournées and calendars (#112).
   ///

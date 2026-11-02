@@ -1,7 +1,6 @@
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
-import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/presentation/street/street_view_state.dart';
 
 // The view state of the Immeuble grid (PLAN §5.7, mockup Building): what the
@@ -86,15 +85,3 @@ final class BuildingGridShown extends BuildingGridState {
   /// The staircase control shows only when there is a choice to make.
   bool get showsStaircases => staircases.length > 1;
 }
-
-/// What a tap on a door (or « Repassé, toujours personne ») changed, for
-/// the snackbar « 51 → Fait » and the announcement « Escalier A, 5e, porte
-/// 51, fait ». [namesStaircase] is false when the building has a single
-/// staircase: it is not named then, as the grid shows no staircase
-/// control. [tries] is what the door now shows (null below two).
-typedef MarkedDoor = ({
-  DwellingKey key,
-  VisitStatus status,
-  bool namesStaircase,
-  int? tries,
-});

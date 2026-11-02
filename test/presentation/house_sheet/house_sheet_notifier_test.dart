@@ -9,6 +9,7 @@ import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
+import 'package:tournee_calendriers/domain/street/nobody_home_tries.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
@@ -30,8 +31,9 @@ import '../../support/street_fixtures.dart';
 
 final _id = StreetId('lilas');
 
-/// 3 changed by Paul yesterday evening; 5 to come back Saturday 7 at 19 h; 7
-/// never changed; 8 a building.
+/// 3 changed by Paul yesterday evening, nobody home once; 5 to come back
+/// Saturday 7 at 19 h; 7 never changed; 8 a building; 13 to come back after
+/// nobody was home twice.
 final _yesterday = DateTime(2026, 11, 1, 18, 30);
 final _houses = [
   House(
@@ -46,6 +48,7 @@ final _houses = [
   ),
   House(number: n('7')),
   House(number: n('8'), building: building(topFloor: 0, doors: 2)),
+  House(number: n('13'), status: VisitStatus.comeBack, tries: tries(2)),
 ];
 
 Street _street() => valueOf(
@@ -293,44 +296,50 @@ void main() {
   });
 
   group('setStatus', () {
-    test(
-      'should store the status, stamped, when another one is chosen',
-      () async {
-        phoneWith(_street());
-        open('7');
-        await settled('7');
+    test('should store the status, stamped, and say what it stored when '
+        'another one is chosen', () async {
+      phoneWith(_street());
+      open('7');
+      await settled('7');
 
-        await notifier('7').setStatus(VisitStatus.nobodyHome);
+      final stored = await notifier('7').setStatus(VisitStatus.nobodyHome);
 
-        expect(
-          streets.saved.single.$2,
-          HouseMarked(
-            streetId: _id,
-            before: houseBefore('7'),
-            stamp: leaAtTwo,
-            status: VisitStatus.nobodyHome,
-          ),
-        );
-        expect((await shown('7')).status, VisitStatus.nobodyHome);
-      },
-    );
+      final marked = HouseMarked(
+        streetId: _id,
+        before: houseBefore('7'),
+        stamp: leaAtTwo,
+        status: VisitStatus.nobodyHome,
+      );
+      expect(streets.saved.single.$2, marked);
+      // One try: the tile shows no count below two.
+      expect(
+        stored,
+        StoredStatus(
+          status: VisitStatus.nobodyHome,
+          tries: null,
+          change: marked,
+        ),
+      );
+      expect((await shown('7')).status, VisitStatus.nobodyHome);
+      expect(houseNow('7').tries, tries(1));
+    });
 
     test('should come back without time when « Repasser » is chosen', () async {
       phoneWith(_street());
       open('7');
       await settled('7');
 
-      await notifier('7').setStatus(VisitStatus.comeBack);
+      final stored = await notifier('7').setStatus(VisitStatus.comeBack);
 
-      expect(
-        streets.saved.single.$2,
-        HouseMarked(
-          streetId: _id,
-          before: houseBefore('7'),
-          stamp: leaAtTwo,
-          status: VisitStatus.comeBack,
-        ),
+      final marked = HouseMarked(
+        streetId: _id,
+        before: houseBefore('7'),
+        stamp: leaAtTwo,
+        status: VisitStatus.comeBack,
       );
+      expect(streets.saved.single.$2, marked);
+      expect(stored?.change, marked);
+      expect(stored?.status, VisitStatus.comeBack);
       final state = await shown('7');
       expect(state.status, VisitStatus.comeBack);
       expect(state.comeBack, isTrue);
@@ -352,27 +361,123 @@ void main() {
       expect(houseNow('5').comeBack, isNull);
     });
 
-    test(
-      'should store nothing when the house already has that status',
-      () async {
-        phoneWith(_street());
-        open('3');
-        await settled('3');
+    test('should keep the tries when done is chosen, and say them', () async {
+      phoneWith(_street());
+      open('13');
+      await settled('13');
 
-        await notifier('3').setStatus(VisitStatus.nobodyHome);
+      final stored = await notifier('13').setStatus(VisitStatus.done);
 
-        expect(streets.saved, isEmpty);
-      },
-    );
+      expect(stored?.status, VisitStatus.done);
+      expect(stored?.tries, 2);
+      expect(houseNow('13').tries, tries(2));
+    });
+
+    test('should start the tries again when « À faire » is chosen', () async {
+      phoneWith(_street());
+      open('13');
+      await settled('13');
+
+      final stored = await notifier('13').setStatus(VisitStatus.toDo);
+
+      expect(stored?.status, VisitStatus.toDo);
+      expect(stored?.tries, isNull);
+      expect(houseNow('13').tries, NobodyHomeTries.none);
+    });
+
+    test('should count one more try when « Personne » is chosen on a house '
+        'nobody was home at', () async {
+      phoneWith(_street());
+      open('3');
+      await settled('3');
+
+      final stored = await notifier('3').setStatus(VisitStatus.nobodyHome);
+
+      final again = HouseNobodyHomeAgain(
+        streetId: _id,
+        before: houseBefore('3'),
+        stamp: leaAtTwo,
+        tries: tries(2),
+      );
+      expect(streets.saved.single.$2, again);
+      expect(
+        stored,
+        StoredStatus(status: VisitStatus.nobodyHome, tries: 2, change: again),
+      );
+      expect((await shown('3')).tries, 2);
+    });
+
+    test('should count one more try when « Personne » is chosen on a house '
+        'to come back to after nobody was home', () async {
+      phoneWith(_street());
+      open('13');
+      await settled('13');
+
+      final stored = await notifier('13').setStatus(VisitStatus.nobodyHome);
+
+      expect(streets.saved.single.$2, isA<HouseNobodyHomeAgain>());
+      expect(stored?.tries, 3);
+      expect(houseNow('13').status, VisitStatus.nobodyHome);
+      expect(houseNow('13').tries, tries(3));
+    });
+
+    test('should count the first try only when « Personne » is chosen on a '
+        'house to come back to that was never found empty', () async {
+      phoneWith(_street());
+      open('5');
+      await settled('5');
+
+      final stored = await notifier('5').setStatus(VisitStatus.nobodyHome);
+
+      expect(streets.saved.single.$2, isA<HouseMarked>());
+      expect(stored?.tries, isNull);
+      expect(houseNow('5').tries, tries(1));
+      expect(houseNow('5').comeBack, isNull);
+    });
+
+    for (final (number, status) in [
+      ('7', VisitStatus.toDo),
+      ('5', VisitStatus.comeBack),
+    ]) {
+      test(
+        'should store nothing when house $number already is $status',
+        () async {
+          phoneWith(_street());
+          open(number);
+          await settled(number);
+
+          final stored = await notifier(number).setStatus(status);
+
+          expect(stored, isNull);
+          expect(streets.saved, isEmpty);
+        },
+      );
+    }
 
     test('should store nothing when the house is gone', () async {
       phoneWith(_street());
       open('9');
       await settled('9');
 
-      await notifier('9').setStatus(VisitStatus.done);
-
+      expect(await notifier('9').setStatus(VisitStatus.done), isNull);
       expect(streets.saved, isEmpty);
+    });
+
+    test('should say nothing was stored when the street refuses it', () async {
+      phoneWith(_street());
+      open('7');
+      await settled('7');
+
+      // The status is asked first; 7 is removed before its turn comes, so
+      // the sheet still shows it but the street no longer has it.
+      final stored = notifier('7').setStatus(VisitStatus.done);
+      final (removed, change) = valueOf(
+        _street().removeNumber(n('7'), by: paul, at: threePm),
+      );
+      unawaited(streets.save(removed, change));
+
+      expect(await stored, isNull);
+      expect(streets.saved.map((saved) => saved.$2), [change]);
     });
   });
 

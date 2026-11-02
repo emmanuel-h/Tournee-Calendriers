@@ -75,27 +75,28 @@ Street screen (« Rue »):
 
 - Odd numbers on the left, even on the right, scrolling together (one column when the street
   has one side only); counts « done/total · ✗ · ↻ » and a progress bar.
-- A tap cycles a house ○ → ✓ → ✗ → ↻ → ○ (à faire, fait, personne, repasser) with a light vibration and a screen-reader announcement;
-  « Annuler » for 4 s undoes the last tap. The tap to ↻ opens the house's (or door's) sheet by
-  itself to say when to come back, with « Annuler » (undoes the tap) and « OK ».
+- A tap on a house (light vibration, the tile outlined) opens its status picker: « N° 7 »,
+  its status in grey, « ✓ Fait », « ✗ Personne », « ↻ Repasser », « ○ À faire » two by two,
+  then the tries and who changed it last. One tap stores a status and closes, with « N° 7 :
+  personne » and « Annuler » for 4 s and a screen-reader announcement; the status it already
+  has stores nothing. No hold any more.
 - « Masquer faits » hides the done houses, remembered per street on the phone.
-- Hold a house for its sheet (« Fiche maison »): status « À faire | Fait | Personne | Repasser »,
-  « Quand repasser ? » (greyed unless « Repasser »: a day among the next week's chips, an hour
-  8 h–21 h or « Pas d'heure », and « Le samedi 24 oct. vers 18 h ») and when it was
-  last changed. No free note: too likely to hold personal data, so the app keeps none (notes
-  stored by an earlier version are erased). Each control is stored at once; the tile follows.
-- Tries with nobody home: the sheet counts them (« 2 passages sans personne ») and, while the
-  house is « Personne » or « Repasser », « Repassé, toujours personne » adds one (« 7 →
-  Personne (3e passage) » with « Annuler »); tiles and doors show « ×3 » from two tries,
+- « ↻ Repasser » then asks « N° 5 · quand repasser ? »: a day among the next week's chips, an
+  hour 8 h–21 h or « Pas d'heure », « Le samedi 24 oct. vers 18 h », each stored at once, and
+  « Valider ». No free note: too likely to hold personal data, so the app keeps none (notes
+  stored by an earlier version are erased).
+- Tries with nobody home: the picker counts them (« 2 passages sans personne ») and, on a house
+  « Personne » or « Repasser » already tried, « ✗ Personne » reads « De nouveau personne » and
+  adds one (« N° 7 : personne (3e passage) »); tiles and doors show « ×3 » from two tries,
   kept once done; back to « À faire » starts again at 0.
-- « Transformer en immeuble… » in the sheet describes a building (« Décrire l'immeuble »):
+- « Transformer en immeuble… » in edit mode (✏, tap a number) describes a building (« Décrire l'immeuble »):
   staircases, floors (RdC–5e, or « Inconnus »), doors per floor — the same for every staircase,
   or each its own (« Même chose pour chaque escalier » unticked) —, door labels « 51, 52… |
   5A, 5B… | Libres », with a live preview.
 - Tap a building for its grid (« Immeuble »): floors from the top down, four doors a row,
   a staircase control when there are several, « ◐ done/total » for the whole building. A tap
-  cycles a door (vibration, announcement, « Annuler » for 4 s); a hold opens the door's
-  sheet. « Gérer l'immeuble » holds every change to the building: « Modifier les étages » lays
+  on a door opens the same status picker (« Porte 51 · Fait »), with its snackbar « Porte 51 :
+  fait » and « Annuler ». « Gérer l'immeuble » holds every change to the building: « Modifier les étages » lays
   it out again, keeping the marks of the doors that stay (and asks before losing marked ones),
   « Modifier les portes », and « Changer en maison » (asks first when doors have marks;
   « Annuler » brings them back). « Repasser » sets the building's own.

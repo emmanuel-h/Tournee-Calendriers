@@ -465,10 +465,12 @@ an admin, shows only « Rejoindre un secteur », in red), and the bottom of the 
 ```
 
 - **« Ajouter des rues » is a row, not a button** (decided 2026-11-02, #63; mockups Home,
-  HomeAdmin, RunStart, RunHome; to build): a muted « + Ajouter des rues » row after the last
-  street of the list (after « Autres rues du secteur »), instead of the red button pinned at
-  the bottom of the panel: it is used a few times a year, and « Commencer une tournée » is now
-  the panel's main action.
+  HomeAdmin, RunStart, RunHome; delivered in #107): a muted « + Ajouter des rues » row after
+  the last street of the list (after « Autres rues du secteur »), instead of the red button
+  pinned at the bottom of the panel: it is used a few times a year, and « Commencer une
+  tournée » is now the panel's main action. It scrolls with the list (a long list hides it
+  until scrolled or dragged up); the pending-sync line stays at the bottom of the panel, under
+  the list.
 - **No download banner** (decided 2026-11-01, #32): the secteur downloads itself for offline
   use, unseen, whenever the app is online (§7); Accueil shows nothing of it — no button, no
   banner, no progress, no word about map versions.
@@ -505,8 +507,8 @@ an admin, shows only « Rejoindre un secteur », in red), and the bottom of the 
   street for a visiting admin) and « Équipe : 43 % »; then the member's streets, « Vous n'avez
   pas encore de rue. » when they cover none, and **« AUTRES RUES DU SECTEUR (n) »** with the
   others (free or someone else's), so no street of the secteur is out of reach before anyone
-  takes one; « Aucune rue dans le secteur pour l'instant. » with none. Then the pending-sync
-  line and « Ajouter des rues ». It rests on half the room; dragging the handle up shows the
+  takes one; « Aucune rue dans le secteur pour l'instant. » with none. Then the « + Ajouter des rues »
+  row and, at the bottom, the pending-sync line (#107). It rests on half the room; dragging the handle up shows the
   whole list, down only the totals (a quick flick goes one step, a slow release to the nearest
   height); a tap on the handle shows the whole list, or from there brings it back to rest.
   The map keeps « Me localiser », the attribution and its fit clear of the panel at rest.
@@ -789,8 +791,10 @@ map with « « Chemin des Vignes » ajoutée à vos rues. ».
 ### 5.6 Rue — two sides of the street (used 95 % of the time)
 
 **Status picker** (decided 2026-11-02 with #63, mockups Main, House, HouseNobody,
-HouseComeBack, RunStreet, Building; to build — it replaces the tap cycle, the hold and the
-sheet that ↻ opened by itself, described further down as delivered in M1–M3):
+HouseComeBack, RunStreet, Building; delivered in #107 with four statuses, « Refusé » is #113,
+the calendars #114, the don step #109 — it replaces the tap cycle, the hold and the sheet
+that ↻ opened by itself, described further down as delivered in M1–M3, and no longer true
+where they disagree with this block):
 
 ```
   before (tap cycles)                after (tap shows the statuses)
@@ -868,6 +872,19 @@ sheet that ↻ opened by itself, described further down as delivered in M1–M3)
 - The hint under the tiles reads « Appuyez sur une maison pour changer son statut » (« … une
   porte … » in the grid). TalkBack: « Numéro 7, à faire, changer le statut »; after a choice
   « Numéro 7, personne, 3e passage » as before.
+- Delivered in #107 (`ui/screens/street/status_picker_sheet.dart`, the steps in
+  `presentation/house_sheet/picker_step.dart`): until « Refusé » comes (#113) the four
+  statuses sit « ✓ Fait | ✗ Personne », « ↻ Repasser | ○ À faire » (a status alone on the
+  last row takes the whole width); a row grows whole when « De nouveau personne » takes two
+  lines. The tile (or door) has a 3 dp ink outline inside its edge while its picker shows, and
+  screen readers hear it « sélectionné ». The tries block shows once a try is counted; the
+  last-change line only once the house was changed. The ↻ step is titled « N° 5 · quand
+  repasser ? » (« Porte 51 · … » on a door), without the « Quand repasser ? » label; ✕, a
+  swipe or a tap on the street close it like « Valider », the ↻ kept, and the snackbar « N° 5 :
+  repasser » follows, whose « Annuler » puts the house back as before the ↻ (time and tries
+  included). ↻ on a house already ↻ stores nothing and shows no snackbar. A finger held on a
+  tile opens the picker when it lifts, like a tap. Door snackbars read « Porte 51 : fait ».
+  The building's own « Repasser » sheet, under the grid, is unchanged.
 
 ```
 ┌──────────────────────────────┐
@@ -946,7 +963,7 @@ Tries with nobody home, fixed in #80 (`NobodyHomeTries`, §6.1):
 
 ### 5.7 Fiche maison (hold a tile) and Immeuble (by floor)
 
-*From the status picker (§5.6, decided 2026-11-02, to build): there is no hold and no Fiche
+*From the status picker (§5.6, decided 2026-11-02, delivered in #107): there is no hold and no Fiche
 maison any more. Its parts move: the status control (five statuses) and the tries to the
 picker, « Quand repasser ? » to the picker's ↻ step (« OK » becomes « Valider »), « Modifié
 par » to the picker, « Transformer en immeuble… » to edit mode only. The door sheet becomes the picker on a door. The rules below

@@ -11,7 +11,9 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 import 'package:tournee_calendriers/ui/theme/status_look.dart';
 
 /// A house or building tile of the street screen: the number on the left,
-/// the status glyph on the right, tinted per status (PLAN §5.6).
+/// the status glyph on the right, tinted per status (PLAN §5.6). A tap on a
+/// house opens its status picker; while it shows, the tile is [selected]:
+/// a thick ink outline says which house the picker is about.
 ///
 /// A building also shows a building icon before its number and a « › » at
 /// the right edge, whatever its status: a tap opens it instead of changing
@@ -21,9 +23,9 @@ import 'package:tournee_calendriers/ui/theme/status_look.dart';
 /// glyph, whatever its status (#80).
 ///
 /// Status is never shown by colour alone: the glyph is always drawn, and
-/// screen readers hear one French sentence (« Numéro 3bis, fait »,
-/// « Numéro 7, personne, 3e passage ») instead of the number and count
-/// texts.
+/// screen readers hear one French sentence (« Numéro 3bis, fait, changer
+/// le statut », « Numéro 7, personne, 3e passage, changer le statut »)
+/// instead of the number and count texts.
 final class StatusTile extends StatelessWidget {
   const StatusTile({
     super.key,
@@ -31,8 +33,8 @@ final class StatusTile extends StatelessWidget {
     required this.status,
     this.isBuilding = false,
     this.tries,
+    this.selected = false,
     this.onTap,
-    this.onLongPress,
   }) : assert(
          isBuilding || status is! BuildingPartialTile,
          'Only a building can be partly done.',
@@ -48,11 +50,11 @@ final class StatusTile extends StatelessWidget {
   /// « ×3 »: the tries with nobody home, from two; null shows none.
   final int? tries;
 
-  /// Tap cycles the status, or opens a building (PLAN §5).
-  final VoidCallback? onTap;
+  /// Outlined in ink: the status picker of this house shows.
+  final bool selected;
 
-  /// Hold opens the details (PLAN §5).
-  final VoidCallback? onLongPress;
+  /// Tap opens the status picker, or a building's grid (PLAN §5.6).
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -73,7 +75,6 @@ final class StatusTile extends StatelessWidget {
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: onTap,
-        onLongPress: onLongPress,
         // The tile has a fixed height (below), so the row fills it and
         // stays centred in it.
         child: Padding(
@@ -108,15 +109,33 @@ final class StatusTile extends StatelessWidget {
         child: tile,
       );
     }
+    if (selected) {
+      // Drawn over the tile, inside its edge: the outline takes no room,
+      // so the rows of the street do not move when the picker opens.
+      tile = DecoratedBox(
+        key: const Key('tile.selected'),
+        position: DecorationPosition.foreground,
+        decoration: BoxDecoration(
+          border: Border.all(
+            color: AppColors.of(context).ink,
+            width: AppSizes.selectedTileOutline,
+          ),
+          borderRadius: BorderRadius.circular(AppSizes.tileRadius),
+        ),
+        child: tile,
+      );
+    }
 
     // `excludeSemantics` hides the two texts from screen readers, which hear
     // the label instead; `button` makes TalkBack announce it as tappable.
     return Semantics(
       label: _semanticsLabel(AppLocalizations.of(context)),
       button: true,
+      // Only said while the picker shows: no « non sélectionné » on
+      // every other tile.
+      selected: selected ? true : null,
       excludeSemantics: true,
       onTap: onTap,
-      onLongPress: onLongPress,
       child: SizedBox(height: AppSizes.tileHeight, child: tile),
     );
   }
@@ -134,15 +153,15 @@ final class StatusTile extends StatelessWidget {
       l10n.buildingTileSemantics(number, done, total),
   };
 
-  /// « Numéro 3bis, fait », « Numéro 7, personne, 3e passage », or
-  /// « Numéro 8, immeuble, fait, ouvrir ».
+  /// « Numéro 3bis, fait, changer le statut », « Numéro 7, personne, 3e
+  /// passage, changer le statut », or « Numéro 8, immeuble, fait, ouvrir ».
   String _withStatus(
     AppLocalizations l10n,
     String spokenStatus, {
     bool nobodyHome = false,
   }) => isBuilding
       ? l10n.buildingStatusTileSemantics(number, spokenStatus)
-      : l10n.houseTileSemantics(
+      : l10n.houseTilePickSemantics(
           number,
           spokenWithTries(
             l10n,

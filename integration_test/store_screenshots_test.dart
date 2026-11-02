@@ -109,10 +109,8 @@ void main() {
     await tester.tap(find.byKey(ValueKey('home.street.${rueDeThizy.value}')));
     await capture(tester, 'phone-2');
 
-    // 3. The sheet of the house to come back to, held.
-    await tester.longPress(
-      find.byKey(const ValueKey('street.tile.$comeBackHouse')),
-    );
+    // 3. The status picker of the house to come back to, tapped.
+    await tester.tap(find.byKey(const ValueKey('street.tile.$comeBackHouse')));
     await capture(tester, 'phone-3');
     // A tap above the sheet closes it.
     await tester.tapAt(const Offset(200, 120));

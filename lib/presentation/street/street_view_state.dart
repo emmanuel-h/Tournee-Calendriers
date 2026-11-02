@@ -113,7 +113,7 @@ final class HouseTile {
   final HouseNumber number;
   final TileMark mark;
 
-  /// A tap opens the building's grid instead of cycling a status.
+  /// A tap opens the building's grid instead of its status picker.
   final bool isBuilding;
 
   /// « ×3 » next to the glyph; null when not shown ([shownTries]).
@@ -211,32 +211,4 @@ final class StreetShown extends StreetViewState {
 
   /// How much of the progress bar is filled, 0 to 1.
   double get fraction => total == 0 ? 0 : done / total;
-}
-
-/// What a tap (or « Repassé, toujours personne ») changed, for the
-/// snackbar « 7 → Personne (3e passage) » and the screen-reader
-/// announcement.
-final class MarkedHouse {
-  const MarkedHouse({required this.number, required this.status, this.tries});
-
-  final HouseNumber number;
-
-  /// The status the house now has.
-  final VisitStatus status;
-
-  /// The tries the house now shows ([shownTries]); null below two.
-  final int? tries;
-
-  @override
-  bool operator ==(Object other) =>
-      other is MarkedHouse &&
-      other.number == number &&
-      other.status == status &&
-      other.tries == tries;
-
-  @override
-  int get hashCode => Object.hash(number, status, tries);
-
-  @override
-  String toString() => 'MarkedHouse(${number.label}, $status, tries: $tries)';
 }

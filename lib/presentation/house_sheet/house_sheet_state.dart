@@ -1,12 +1,13 @@
 import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
+import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/come_back_time.dart';
 
-// The view state of the Fiche maison (PLAN §5.7, mockup House): what the
-// sheet of one house shows, as plain data tested without widgets. The sheet
-// of a door of a building, and the building's own « Repasser », show the
-// same controls and share this state.
+// The view state of the status picker (PLAN §5.6, mockups House,
+// HouseNobody, HouseComeBack): what the picker of one house or one door
+// shows, as plain data tested without widgets. The building's own
+// « Repasser » sheet (under its grid) shares it.
 
 /// Who made the last change, as the sheet names them (PLAN §5.7).
 ///
@@ -116,7 +117,7 @@ sealed class SheetSubject {
   const SheetSubject();
 }
 
-/// A single house: its status, and « Transformer en immeuble… ».
+/// A single house: its status picker.
 final class HouseSubject extends SheetSubject {
   const HouseSubject();
 }
@@ -126,8 +127,8 @@ final class BuildingSubject extends SheetSubject {
   const BuildingSubject();
 }
 
-/// One door of a building (held in the grid). Its floor and label are in
-/// the key the sheet was opened with.
+/// One door of a building (tapped in the grid). Its floor and label are in
+/// the key the picker was opened with.
 final class DoorSubject extends SheetSubject {
   const DoorSubject({required this.staircase});
 
@@ -146,7 +147,8 @@ final class DoorSubject extends SheetSubject {
   String toString() => 'DoorSubject($staircase)';
 }
 
-/// Everything the Fiche maison shows. `sealed`: the sheet handles each case.
+/// Everything the status picker shows. `sealed`: the sheet handles each
+/// case.
 sealed class HouseSheetState {
   const HouseSheetState();
 }
@@ -184,8 +186,7 @@ final class HouseSheetShown extends HouseSheetState {
 
   /// « Repasser » is the status of the house or door, or is ticked for a
   /// building itself. « Quand repasser ? » takes a day and an hour only
-  /// then: on a house or door it is always shown, greyed otherwise, so
-  /// choosing a status never moves the sheet.
+  /// then; greyed otherwise (a teammate changed the status meanwhile).
   final bool comeBack;
 
   /// « Quand repasser ? »: the days offered, the day and hour chosen.
@@ -199,9 +200,46 @@ final class HouseSheetShown extends HouseSheetState {
   /// How many times nobody was home (#80): « 2 passages sans personne ».
   final int tries;
 
-  /// « Repassé, toujours personne » shows, with the count of tries, while
-  /// the house or door is « personne » or « repasser »: the ones the team
-  /// comes back to. Never on a building itself, which has no status.
+  /// « ✗ Personne » reads « ✗ De nouveau personne » and counts one more try
+  /// (PLAN §5.6) on a house or door the team comes back to: « personne » or
+  /// « repasser », already tried with nobody home. Never on a building
+  /// itself, which has no status.
   bool get offersNobodyHomeAgain =>
-      status == VisitStatus.nobodyHome || status == VisitStatus.comeBack;
+      tries > 0 &&
+      (status == VisitStatus.nobodyHome || status == VisitStatus.comeBack);
+
+  /// « ✗ 2 passages sans personne » shows under the statuses once a try is
+  /// counted. « À faire » has none: it starts the count again (§6.1).
+  bool get showsTries => tries > 0;
+}
+
+/// What one choice of the status picker stored (PLAN §5.6): the house or
+/// door now has [status] and shows [tries] (null below two, see
+/// `shownTries`), for the snackbar « N° 7 : personne (3e passage) » and
+/// what screen readers hear. [change] is what its « Annuler » undoes: the
+/// screen behind keeps it (`UndoesLastChange.keepForUndo`), as the picker
+/// is gone by then.
+final class StoredStatus {
+  const StoredStatus({
+    required this.status,
+    required this.tries,
+    required this.change,
+  });
+
+  final VisitStatus status;
+  final int? tries;
+  final StreetChange change;
+
+  @override
+  bool operator ==(Object other) =>
+      other is StoredStatus &&
+      other.status == status &&
+      other.tries == tries &&
+      other.change == change;
+
+  @override
+  int get hashCode => Object.hash(status, tries, change);
+
+  @override
+  String toString() => 'StoredStatus($status, $tries, $change)';
 }

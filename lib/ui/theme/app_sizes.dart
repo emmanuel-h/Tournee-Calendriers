@@ -51,6 +51,10 @@ abstract final class AppSizes {
   static const glyphGap = 4.0;
 
   static const tileRadius = 12.0;
+
+  /// The ink outline of the tile whose status picker shows (PLAN §5.6).
+  static const selectedTileOutline = 3.0;
+
   static const tilePadding = 14.0;
 
   /// A building tile's side padding. Smaller than [tilePadding] because its
@@ -109,9 +113,14 @@ abstract final class AppSizes {
   /// block of a building's own sheet.
   static const segmentHeight = 52.0;
 
-  /// The status control of the Fiche maison (« À faire | Fait | Personne |
-  /// Repasser »), glyph above word.
-  static const statusSegmentHeight = 64.0;
+  /// The status buttons of the status picker (PLAN §5.6): 72 dp at least,
+  /// two a row, the current one ringed in ink a gap away.
+  static const statusChoiceHeight = 72.0;
+  static const statusChoiceRadius = 16.0;
+  static const statusChoiceGlyph = 24.0;
+  static const statusChoiceGap = 10.0;
+  static const statusChoiceRing = 2.0;
+  static const statusChoiceRingGap = 3.0;
   static const segmentRadius = 14.0;
   static const segmentGlyph = 18.0;
   static const comeBackPadding = 14.0;

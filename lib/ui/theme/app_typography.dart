@@ -142,6 +142,14 @@ abstract final class AppTextStyles {
     height: 1.1,
   );
 
+  /// The words of the status buttons of the status picker (« Fait »,
+  /// « De nouveau personne »).
+  static const statusChoice = TextStyle(
+    fontFamily: AppFonts.text,
+    fontWeight: FontWeight.w700,
+    fontSize: 18,
+  );
+
   /// The street name next to it (« Rue des Lilas »).
   static const sheetStreetName = TextStyle(
     fontFamily: AppFonts.display,

@@ -88,7 +88,6 @@ final class ComponentGalleryScreen extends StatelessWidget {
                       status: status,
                       isBuilding: isBuilding,
                       onTap: () {},
-                      onLongPress: () {},
                     ),
                   ),
               ],

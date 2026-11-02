@@ -76,11 +76,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get statusComeBack => 'Repasser';
 
   @override
-  String houseMarkedTries(String number, String status, int count) {
-    return '$number → $status (${count}e passage)';
-  }
-
-  @override
   String tileTries(int count) {
     return '×$count';
   }
@@ -102,12 +97,59 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get nobodyHomeAgain => 'Repassé, toujours personne';
+  String get nobodyHomeAgain => 'De nouveau personne';
 
   @override
-  String houseMarked(String number, String status) {
-    return '$number → $status';
+  String houseStatusStored(String number, String status) {
+    return 'N° $number : $status';
   }
+
+  @override
+  String houseStatusStoredTries(String number, String status, int count) {
+    return 'N° $number : $status (${count}e passage)';
+  }
+
+  @override
+  String doorStatusStored(String label, String status) {
+    return 'Porte $label : $status';
+  }
+
+  @override
+  String doorStatusStoredTries(String label, String status, int count) {
+    return 'Porte $label : $status (${count}e passage)';
+  }
+
+  @override
+  String get streetHint => 'Appuyez sur une maison pour changer son statut';
+
+  @override
+  String get gridHint => 'Appuyez sur une porte pour changer son statut';
+
+  @override
+  String houseTilePickSemantics(String number, String status) {
+    return 'Numéro $number, $status, changer le statut';
+  }
+
+  @override
+  String statusPickerHouse(String number) {
+    return 'N° $number';
+  }
+
+  @override
+  String statusPickerDoor(String label, String status) {
+    return 'Porte $label · $status';
+  }
+
+  @override
+  String statusPickerComeBack(String subject) {
+    return '$subject · quand repasser ?';
+  }
+
+  @override
+  String get statusPickerValidate => 'Valider';
+
+  @override
+  String get statusPickerClose => 'Fermer';
 
   @override
   String get editStreetAction => 'Modifier la rue';
@@ -130,16 +172,6 @@ class AppLocalizationsFr extends AppLocalizations {
   ) {
     return '$done sur $total faits, $nobodyHome personne, $comeBack à repasser';
   }
-
-  @override
-  String get tapHintTap => 'Appui :';
-
-  @override
-  String get tapHintHold => 'Appui long : détails';
-
-  @override
-  String get tapHintSemantics =>
-      'Appui : à faire, fait, personne, repasser, à faire. Appui long : détails';
 
   @override
   String get streetGone => 'Cette rue n\'est plus sur ce téléphone.';
@@ -262,12 +294,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
     return 'C\'était le $dayString vers $hour h';
   }
-
-  @override
-  String get comeBackSheetCancel => 'Annuler';
-
-  @override
-  String get comeBackSheetOk => 'OK';
 
   @override
   String houseChangedToday(DateTime time) {
@@ -705,13 +731,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get gridClose => 'Fermer';
-
-  @override
-  String get gridHintHold => 'Appui long : détails';
-
-  @override
-  String get gridHintSemantics =>
-      'Appui : à faire, fait, personne, repasser, à faire. Appui long : détails';
 
   @override
   String get editFloors => 'Modifier les étages';
@@ -1198,6 +1217,10 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get release0100Sector =>
       'La tournée s\'appelle maintenant « secteur ».';
+
+  @override
+  String get release0100Picker =>
+      'Rue : touchez une maison ou une porte, puis choisissez son statut. Plus de cycle ni d\'appui long.';
 
   @override
   String get release0100Privacy =>

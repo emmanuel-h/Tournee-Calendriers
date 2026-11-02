@@ -1,16 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tournee_calendriers/application/use_cases/mark.dart';
-import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/building/building.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
-import 'package:tournee_calendriers/domain/street/nobody_home_tries.dart';
-import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
-import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/presentation/building/building_grid_state.dart';
 import 'package:tournee_calendriers/presentation/building/chooses_staircase.dart';
-import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/street/follows_street.dart';
 import 'package:tournee_calendriers/presentation/street/street_view_state.dart';
 import 'package:tournee_calendriers/presentation/street/undoes_last_change.dart';
@@ -21,16 +15,16 @@ typedef BuildingGridKey = ({StreetId street, HouseNumber number});
 /// The state of the Immeuble grid of one building (PLAN §5.7).
 ///
 /// `family`: one notifier per building; `autoDispose`: it stops following
-/// the street, and forgets its last tap, once the grid is closed.
+/// the street, and forgets its last change, once the grid is closed.
 final buildingGridProvider = NotifierProvider.autoDispose
     .family<BuildingGridNotifier, BuildingGridState, BuildingGridKey>(
       BuildingGridNotifier.new,
     );
 
 /// Follows a building on the phone (`ObserveStreet`, offline), shows one
-/// staircase at a time, cycles a door's status on a tap (`MarkDwelling`)
-/// and undoes the last tap (`UndoLastChange`), as the street screen does
-/// for houses.
+/// staircase at a time and undoes the last status a door's picker stored
+/// (`keepForUndo`, `UndoLastChange`), as the street screen does for
+/// houses. The door's picker (`doorSheetProvider`) stores the status.
 final class BuildingGridNotifier extends Notifier<BuildingGridState>
     with
         FollowsStreet<BuildingGridState>,
@@ -44,66 +38,6 @@ final class BuildingGridNotifier extends Notifier<BuildingGridState>
   BuildingGridState build() {
     followStreet(key.street);
     return render();
-  }
-
-  /// A tap on the door at [door]: gives it its next status (`○ → ✓ → ✗ →
-  /// ○`) and returns what changed, for the snackbar and the announcement.
-  /// Null when nothing changed: the street is not read yet, or the door is
-  /// not in the building (any more).
-  Future<MarkedDoor?> cycle(DwellingKey door) async {
-    final building = _building;
-    final dwelling = building?.dwellingAt(door);
-    if (building == null || dwelling == null) return null;
-    final result = await ref.read(markDwellingProvider)(
-      key.street,
-      key.number,
-      door,
-      StatusMark(dwelling.status.next),
-    );
-    switch (result) {
-      case Ok(value: final change):
-        keepForUndo(change);
-        final status = dwelling.status.next;
-        return (
-          key: door,
-          status: status,
-          namesStaircase: building.staircases.length > 1,
-          tries: shownTries(NobodyHomeTries.keptBy(status, dwelling.tries)),
-        );
-      // The door was there a moment ago; a refusal can only come from a
-      // teammate's change in between (M2): the grid shows the building as
-      // it is.
-      case Err():
-        return null;
-    }
-  }
-
-  /// « Repassé, toujours personne », chosen in the sheet of [door] (which
-  /// then closed): the door is « personne » with one more try. Returns
-  /// what changed, for the snackbar and its « Annuler »; null when the
-  /// street refused.
-  Future<MarkedDoor?> nobodyHomeAgain(DwellingKey door) async {
-    final building = _building;
-    if (building == null) return null;
-    final result = await ref.read(markDwellingProvider)(
-      key.street,
-      key.number,
-      door,
-      const NobodyHomeAgainMark(),
-    );
-    switch (result) {
-      case Ok(value: final DwellingNobodyHomeAgain change):
-        keepForUndo(change);
-        return (
-          key: door,
-          status: VisitStatus.nobodyHome,
-          namesStaircase: building.staircases.length > 1,
-          tries: shownTries(change.tries),
-        );
-      // No other change comes of this mark; listed for a complete `switch`.
-      case Ok() || Err():
-        return null;
-    }
   }
 
   /// The building the grid shows, or null when there is none.

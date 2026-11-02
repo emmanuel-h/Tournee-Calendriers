@@ -32,7 +32,11 @@ final shippedReleases = [
   Release(
     version: '0.10.0',
     date: DateTime(2026, 11, 2),
-    notes: (l10n) => [l10n.release0100Sector, l10n.release0100Privacy],
+    notes: (l10n) => [
+      l10n.release0100Sector,
+      l10n.release0100Picker,
+      l10n.release0100Privacy,
+    ],
   ),
   Release(
     version: '0.9.0',

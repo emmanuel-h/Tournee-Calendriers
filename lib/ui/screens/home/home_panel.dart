@@ -3,7 +3,6 @@ import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/presentation/home/home_state.dart';
 import 'package:tournee_calendriers/presentation/street_list/street_list_state.dart';
-import 'package:tournee_calendriers/ui/components/app_buttons.dart';
 import 'package:tournee_calendriers/ui/components/section_header.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
@@ -15,16 +14,15 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
 /// The « Mes rues » panel at the bottom of Accueil (PLAN §5.3, Home
 /// mockup): a handle and the totals (« Mes rues · 43/62 », « Équipe :
-/// 41 % »), then the member's streets, the other streets of the tournée
-/// under « Autres rues du secteur », the pending-sync line and
-/// « Ajouter des rues ». A row of « Mes rues » opens its street; a row of
+/// 41 % »), then the member's streets, the other streets of the secteur
+/// under « Autres rues du secteur » and a muted « + Ajouter des rues » row
+/// after them (used a few times a year, #63), then the pending-sync line. A row of « Mes rues » opens its street; a row of
 /// the others asks Accueil to show its street card ([onOtherStreetTapped],
 /// #93), from which the member may take it.
 ///
 /// It is as tall as it is told ([height]): Accueil decides, as the handle
 /// is dragged ([onDrag], [onDragEnd]) or tapped ([onToggle]). Folded down
-/// to its totals, the list and the button leave until there is room for
-/// them again.
+/// to its totals, the list leaves until there is room for it again.
 final class HomePanel extends StatelessWidget {
   const HomePanel({
     super.key,
@@ -55,8 +53,8 @@ final class HomePanel extends StatelessWidget {
   /// A row under « Autres rues du secteur » was tapped.
   final ValueChanged<StreetId> onOtherStreetTapped;
 
-  /// Under this room, the list and the button do not fit: only the handle
-  /// and the totals show.
+  /// Under this room, the list does not fit: only the handle and the
+  /// totals show.
   static const _bodyMinHeight = 120.0;
 
   @override
@@ -103,20 +101,7 @@ final class HomePanel extends StatelessWidget {
                         // « ☁ Modifications de 3 rues en attente d'envoi »,
                         // only while some wait to be sent.
                         const PendingSyncLine(),
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(
-                            AppSizes.gutter,
-                            12,
-                            AppSizes.gutter,
-                            AppSizes.gutter,
-                          ),
-                          child: PrimaryButton(
-                            key: const Key('start.import'),
-                            icon: Icons.add,
-                            label: l10n.addStreetsTitle,
-                            onPressed: () => context.push(AppRoutes.addStreets),
-                          ),
-                        ),
+                        const SizedBox(height: AppSizes.gutter),
                       ],
                     ),
             ),
@@ -273,6 +258,7 @@ final class _StreetList extends StatelessWidget {
       onTap: onTap,
     );
     return ListView(
+      key: const Key('home.panel.list'),
       padding: const EdgeInsets.symmetric(horizontal: AppSizes.gutter),
       children: [
         if (state.hasNoStreet)
@@ -292,7 +278,47 @@ final class _StreetList extends StatelessWidget {
               row(street, () => onOtherStreetTapped(street.id)),
           ],
         ],
+        const _AddStreetsRow(),
       ],
+    );
+  }
+}
+
+/// « + Ajouter des rues », a muted row after the streets (Home mockup): it
+/// opens « Ajouter des rues ».
+final class _AddStreetsRow extends StatelessWidget {
+  const _AddStreetsRow();
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    // `button`: screen readers say it can be pressed, as the red button it
+    // replaced.
+    return Semantics(
+      button: true,
+      child: InkWell(
+        key: const Key('start.import'),
+        onTap: () => context.push(AppRoutes.addStreets),
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(
+            minHeight: AppSizes.choiceRowHeight,
+          ),
+          child: Row(
+            spacing: 12,
+            children: [
+              Icon(Icons.add, size: AppSizes.smallIcon, color: colors.muted),
+              Expanded(
+                child: Text(
+                  AppLocalizations.of(context).addStreetsTitle,
+                  style: AppTextStyles.compactButton.copyWith(
+                    color: colors.muted,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

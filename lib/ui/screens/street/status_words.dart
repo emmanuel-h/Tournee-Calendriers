@@ -19,6 +19,14 @@ TileStatus tileStatusOf(TileMark mark) => switch (mark) {
   ),
 };
 
+/// The look of [status] on a status button of the picker, as on a tile.
+TileStatus tileStatusFor(VisitStatus status) => switch (status) {
+  VisitStatus.toDo => const ToDoTile(),
+  VisitStatus.done => const DoneTile(),
+  VisitStatus.nobodyHome => const NobodyHomeTile(),
+  VisitStatus.comeBack => const ComeBackTile(),
+};
+
 /// The spoken status of a door tile (« repasser »).
 String spokenMark(AppLocalizations l10n, TileMark mark) => switch (mark) {
   ToDoMark() => l10n.tileStatusToDo,
@@ -29,7 +37,7 @@ String spokenMark(AppLocalizations l10n, TileMark mark) => switch (mark) {
   PartialBuildingMark() => l10n.tileStatusToDo,
 };
 
-/// The spoken name of [status] (« fait »), after a tap.
+/// The spoken name of [status] (« fait »), once it is chosen.
 String spokenStatus(AppLocalizations l10n, VisitStatus status) =>
     switch (status) {
       VisitStatus.toDo => l10n.tileStatusToDo,
@@ -38,7 +46,8 @@ String spokenStatus(AppLocalizations l10n, VisitStatus status) =>
       VisitStatus.comeBack => l10n.tileStatusComeBack,
     };
 
-/// The written name of [status] (« Fait »), in the snackbar.
+/// The written name of [status] (« Fait »), on the buttons and in the
+/// title of the status picker.
 String statusName(AppLocalizations l10n, VisitStatus status) =>
     switch (status) {
       VisitStatus.toDo => l10n.statusToDo,
@@ -47,21 +56,37 @@ String statusName(AppLocalizations l10n, VisitStatus status) =>
       VisitStatus.comeBack => l10n.statusComeBack,
     };
 
-/// What a mark of [label] to [status] says in the snackbar: « 7 → Fait »,
-/// or « 7 → Personne (3e passage) » once nobody was home two times or more
-/// ([tries], the count the tile shows).
-String markedMessage(
+/// What the snackbar says once the picker of the house [label] stored
+/// [status]: « N° 7 : fait », or « N° 3bis : personne (3e passage) » once
+/// nobody was home two times or more ([tries], the count the tile shows).
+String houseStoredMessage(
   AppLocalizations l10n,
   String label,
   VisitStatus status,
   int? tries,
 ) => switch ((status, tries)) {
-  (VisitStatus.nobodyHome, final int count) => l10n.houseMarkedTries(
+  (VisitStatus.nobodyHome, final int count) => l10n.houseStatusStoredTries(
     label,
-    statusName(l10n, status),
+    spokenStatus(l10n, status),
     count,
   ),
-  _ => l10n.houseMarked(label, statusName(l10n, status)),
+  _ => l10n.houseStatusStored(label, spokenStatus(l10n, status)),
+};
+
+/// The same for the door [label] of a building: « Porte 51 : fait »,
+/// « Porte 51 : personne (3e passage) ».
+String doorStoredMessage(
+  AppLocalizations l10n,
+  String label,
+  VisitStatus status,
+  int? tries,
+) => switch ((status, tries)) {
+  (VisitStatus.nobodyHome, final int count) => l10n.doorStatusStoredTries(
+    label,
+    spokenStatus(l10n, status),
+    count,
+  ),
+  _ => l10n.doorStatusStored(label, spokenStatus(l10n, status)),
 };
 
 /// The spoken name of [status] after a mark, with the [tries] the tile

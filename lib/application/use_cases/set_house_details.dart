@@ -10,9 +10,8 @@ import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_repository.dart';
 
-/// One control of the Fiche maison (hold a tile, PLAN §5.7): the status,
-/// the time of the « repasser », or « Repassé, toujours personne » of a
-/// house. On a building it sets the
+/// One choice of a house's status picker (PLAN §5.6): the status, the time
+/// of the « repasser », or « De nouveau personne ». On a building it sets the
 /// building's own « repasser » (« Repasser » under the grid); its status is
 /// refused, its doors carry the statuses. Needs no network.
 final class SetHouseDetails {

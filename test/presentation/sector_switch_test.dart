@@ -7,9 +7,11 @@ import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/presentation/corbeille/corbeille_notifier.dart';
 import 'package:tournee_calendriers/presentation/corbeille/corbeille_state.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
+import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_notifier.dart';
 import 'package:tournee_calendriers/presentation/street/street_notifier.dart';
 import 'package:tournee_calendriers/presentation/street/street_view_state.dart';
 import 'package:tournee_calendriers/presentation/street_list/street_list_notifier.dart';
@@ -118,7 +120,15 @@ void main() {
       final container = leasPhone();
       container.listen(streetProvider(lilasId), (_, _) {});
       await pumpEventQueue();
-      await container.read(streetProvider(lilasId).notifier).cycle(n('7'));
+      final house = (street: lilasId, number: n('7'));
+      container.listen(houseSheetProvider(house), (_, _) {});
+      await pumpEventQueue();
+      final stored = await container
+          .read(houseSheetProvider(house).notifier)
+          .setStatus(VisitStatus.done);
+      container
+          .read(streetProvider(lilasId).notifier)
+          .keepForUndo(stored!.change);
       expect(streets49.saved, hasLength(1));
 
       await openThe12();

@@ -58,22 +58,13 @@
   },
 
   "statusToDo": "À faire",
-  "@statusToDo": { "description": "Name of the status « to do », in the undo snackbar." },
+  "@statusToDo": { "description": "Name of the status « to do », on its button and in the title of the status picker." },
   "statusDone": "Fait",
-  "@statusDone": { "description": "Name of the status « done », in the undo snackbar." },
+  "@statusDone": { "description": "Name of the status « done », on its button and in the title of the status picker." },
   "statusNobodyHome": "Personne",
-  "@statusNobodyHome": { "description": "Name of the status « nobody home », in the undo snackbar." },
+  "@statusNobodyHome": { "description": "Name of the status « nobody home », on its button and in the title of the status picker." },
   "statusComeBack": "Repasser",
-  "@statusComeBack": { "description": "Name of the status « come back later », in the undo snackbar and the status control of the house sheet." },
-  "houseMarkedTries": "{number} → {status} ({count}e passage)",
-  "@houseMarkedTries": {
-    "description": "Undo snackbar after « Repassé, toujours personne » or a tap to « Personne » on a house or door tried with nobody home two times or more (#80), e.g. « 7 → Personne (3e passage) ».",
-    "placeholders": {
-      "number": { "type": "String", "example": "7" },
-      "status": { "type": "String", "example": "Personne" },
-      "count": { "type": "int", "example": "3" }
-    }
-  },
+  "@statusComeBack": { "description": "Name of the status « come back later », on its button and in the title of the status picker." },
   "tileTries": "×{count}",
   "@tileTries": {
     "description": "Next to the status glyph of a tile or a door tried two times or more with nobody home (#80), e.g. « ×3 ».",
@@ -89,16 +80,128 @@
     "description": "How many times nobody was home, in a house or door sheet (#80), and at the end of the screen-reader label of a tile done or « repasser » tried two times or more: « Numéro 7, fait, 2 passages sans personne ».",
     "placeholders": { "count": { "type": "int", "example": "2" } }
   },
-  "nobodyHomeAgain": "Repassé, toujours personne",
-  "@nobodyHomeAgain": { "description": "Button of a house or door sheet while it is « personne » or « repasser » (#80): one more try with nobody home, the status « Personne »." },
-  "houseMarked": "{number} → {status}",
-  "@houseMarked": {
-    "description": "Undo snackbar after a tap on a house tile (PLAN §5.6). The « → » is drawn as a vector arrow; screen readers hear the text as written.",
+  "nobodyHomeAgain": "De nouveau personne",
+  "@nobodyHomeAgain": { "description": "« ✗ Personne » of the status picker on a house or door « personne » or « repasser » already tried with nobody home (#80, HouseNobody mockup): one more try, the status « Personne »." },
+  "houseStatusStored": "N° {number} : {status}",
+  "@houseStatusStored": {
+    "description": "Snackbar once the status picker of a house closed on a status it stored (PLAN §5.6), with « Annuler »: « N° 7 : personne ».",
     "placeholders": {
-      "number": { "type": "String", "example": "7" },
-      "status": { "type": "String", "example": "Personne" }
+      "number": {
+        "type": "String",
+        "example": "7"
+      },
+      "status": {
+        "type": "String",
+        "example": "personne"
+      }
     }
   },
+  "houseStatusStoredTries": "N° {number} : {status} ({count}e passage)",
+  "@houseStatusStoredTries": {
+    "description": "Snackbar once the status picker made a house « personne » tried two times or more (#80): « N° 3bis : personne (3e passage) ».",
+    "placeholders": {
+      "number": {
+        "type": "String",
+        "example": "3bis"
+      },
+      "status": {
+        "type": "String",
+        "example": "personne"
+      },
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "doorStatusStored": "Porte {label} : {status}",
+  "@doorStatusStored": {
+    "description": "Snackbar once the status picker of a door of the building grid stored a status: « Porte 51 : fait ».",
+    "placeholders": {
+      "label": {
+        "type": "String",
+        "example": "51"
+      },
+      "status": {
+        "type": "String",
+        "example": "fait"
+      }
+    }
+  },
+  "doorStatusStoredTries": "Porte {label} : {status} ({count}e passage)",
+  "@doorStatusStoredTries": {
+    "description": "Snackbar once the status picker made a door « personne » tried two times or more: « Porte 51 : personne (3e passage) ».",
+    "placeholders": {
+      "label": {
+        "type": "String",
+        "example": "51"
+      },
+      "status": {
+        "type": "String",
+        "example": "personne"
+      },
+      "count": {
+        "type": "int",
+        "example": "3"
+      }
+    }
+  },
+  "streetHint": "Appuyez sur une maison pour changer son statut",
+  "@streetHint": { "description": "Hint at the bottom of the street screen while no snackbar shows (PLAN §5.6): a tap on a house opens its status picker." },
+  "gridHint": "Appuyez sur une porte pour changer son statut",
+  "@gridHint": { "description": "Hint under the doors of the building grid (PLAN §5.7): a tap on a door opens its status picker." },
+  "houseTilePickSemantics": "Numéro {number}, {status}, changer le statut",
+  "@houseTilePickSemantics": {
+    "description": "Screen-reader label of a house tile of the street screen, which opens the status picker: « Numéro 7, à faire, changer le statut ».",
+    "placeholders": {
+      "number": {
+        "type": "String",
+        "example": "7"
+      },
+      "status": {
+        "type": "String",
+        "example": "à faire"
+      }
+    }
+  },
+  "statusPickerHouse": "N° {number}",
+  "@statusPickerHouse": {
+    "description": "Title of the status picker of a house (House mockup), its status in grey beside it.",
+    "placeholders": {
+      "number": {
+        "type": "String",
+        "example": "7"
+      }
+    }
+  },
+  "statusPickerDoor": "Porte {label} · {status}",
+  "@statusPickerDoor": {
+    "description": "Title of the status picker of a door of the building grid (Building mockup): « Porte 51 · Fait ».",
+    "placeholders": {
+      "label": {
+        "type": "String",
+        "example": "51"
+      },
+      "status": {
+        "type": "String",
+        "example": "Fait"
+      }
+    }
+  },
+  "statusPickerComeBack": "{subject} · quand repasser ?",
+  "@statusPickerComeBack": {
+    "description": "Title of the step of the status picker that asks when to come back, after « Repasser » (HouseComeBack mockup): « N° 5 · quand repasser ? », « Porte 51 · quand repasser ? ».",
+    "placeholders": {
+      "subject": {
+        "type": "String",
+        "example": "N° 5"
+      }
+    }
+  },
+  "statusPickerValidate": "Valider",
+  "@statusPickerValidate": { "description": "Button that closes the « quand repasser ? » step of the status picker; each day and hour is already stored." },
+  "statusPickerClose": "Fermer",
+  "@statusPickerClose": { "description": "Screen-reader name and tooltip of the ✕ of the status picker: closes it, nothing more stored." },
   "editStreetAction": "Modifier la rue",
   "@editStreetAction": { "description": "Tooltip of the ✏ button of the street screen, which opens the edit mode." },
   "hideDone": "Masquer faits",
@@ -117,17 +220,11 @@
       "comeBack": { "type": "int", "example": "1" }
     }
   },
-  "tapHintTap": "Appui :",
-  "@tapHintTap": { "description": "Start of the hint at the bottom of the street screen, before the glyphs ○ → ✓ → ✗ → ↻ → ○, all drawn as vector shapes." },
-  "tapHintHold": "Appui long : détails",
-  "@tapHintHold": { "description": "End of the hint at the bottom of the street screen." },
-  "tapHintSemantics": "Appui : à faire, fait, personne, repasser, à faire. Appui long : détails",
-  "@tapHintSemantics": { "description": "Screen-reader label of the hint at the bottom of the street screen." },
   "streetGone": "Cette rue n'est plus sur ce téléphone.",
   "@streetGone": { "description": "Street screen opened for a street that is not on the phone or is in the Corbeille." },
 
   "houseStatusGroup": "Statut",
-  "@houseStatusGroup": { "description": "Screen-reader name of the status control of the house sheet (« À faire | Fait | Personne | Repasser », PLAN §5.7)." },
+  "@houseStatusGroup": { "description": "Screen-reader name of the group of status buttons of the status picker of a house or door (PLAN §5.6)." },
   "comeBack": "Repasser",
   "@comeBack": { "description": "Box of the building's own « Repasser » sheet: the residents asked the team to come back later." },
   "comeBackWhenLabel": "Quand repasser ?",
@@ -216,10 +313,6 @@
       "hour": { "type": "int", "example": "18" }
     }
   },
-  "comeBackSheetCancel": "Annuler",
-  "@comeBackSheetCancel": { "description": "Button of the sheet a tap to « Repasser » opened by itself: puts back the status before that tap and closes (#81)." },
-  "comeBackSheetOk": "OK",
-  "@comeBackSheetOk": { "description": "Button of the sheet a tap to « Repasser » opened by itself: closes it, the house stays « Repasser » (#81)." },
   "houseChangedToday": "Modifié à {time}",
   "@houseChangedToday": {
     "description": "Last change of a house, made today, by nobody the phone can name.",
@@ -257,7 +350,7 @@
   "houseGone": "Ce numéro n'est plus dans cette rue.",
   "@houseGone": { "description": "House sheet of a number that was removed meanwhile, or whose street went to the Corbeille." },
   "transformToBuilding": "Transformer en immeuble…",
-  "@transformToBuilding": { "description": "Button of the house sheet that opens « Décrire l'immeuble » (PLAN §5.7)." },
+  "@transformToBuilding": { "description": "Button of the number sheet of edit mode that opens « Décrire l'immeuble » (PLAN §5.5)." },
   "cancel": "Annuler",
   "@cancel": { "description": "Button that closes a confirmation without doing anything." },
 
@@ -611,10 +704,6 @@
   },
   "gridClose": "Fermer",
   "@gridClose": { "description": "Screen-reader name and tooltip of the ✕ left of the building grid's number, which closes the grid like a swipe down (PLAN §5.7)." },
-  "gridHintHold": "Appui long : détails",
-  "@gridHintHold": { "description": "End of the hint of the building grid, after « Appui : ○ → ✓ → ✗ → ↻ → ○ ·»." },
-  "gridHintSemantics": "Appui : à faire, fait, personne, repasser, à faire. Appui long : détails",
-  "@gridHintSemantics": { "description": "Screen-reader label of the hint of the building grid." },
   "editFloors": "Modifier les étages",
   "@editFloors": { "description": "Choice of the « Gérer l'immeuble » menu of the building grid that lays the building out again." },
   "manageBuilding": "Gérer l'immeuble",
@@ -683,7 +772,7 @@
   "@lastDoorRefused": { "description": "✕ on the only door left in a building: a building keeps at least one door." },
   "doorTitle": "Porte {label}",
   "@doorTitle": {
-    "description": "Title of the rename sheet of a door.",
+    "description": "Title of the rename sheet of a door, and what « … · quand repasser ? » is about in its status picker.",
     "placeholders": { "label": { "type": "String", "example": "11" } }
   },
   "doorNameLabel": "Nom de la porte",
@@ -1008,6 +1097,8 @@
   "@release010First": { "description": "« Nouveautés », version 0.1.0: what it brings, one short line for the members." },
   "release0100Sector": "La tournée s'appelle maintenant « secteur ».",
   "@release0100Sector": { "description": "Line of « Nouveautés » for 0.10.0: the team's area is now « secteur » on every screen (#115); « tournée » now names one outing (PLAN §2)." },
+  "release0100Picker": "Rue : touchez une maison ou une porte, puis choisissez son statut. Plus de cycle ni d'appui long.",
+  "@release0100Picker": { "description": "Line of « Nouveautés » for 0.10.0: the status picker replaces the tap cycle and the hold (#107)." },
   "release0100Privacy": "Confidentialité : le texte dit aussi ce qui est gardé des tournées, des dons et des calendriers.",
   "@release0100Privacy": { "description": "Line of « Nouveautés » for 0.10.0: the privacy text covers the tournées and calendars (#112)." },
   "release090Streets": "Équipe : chaque membre montre le nombre de rues qu'il couvre ; touchez ce nombre pour voir leurs noms.",

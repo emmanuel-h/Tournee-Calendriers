@@ -1,5 +1,6 @@
 /// Whether a house (or a dwelling) has been visited during the campaign
-/// (PLAN §2): « à faire », « fait », « personne » or « repasser ».
+/// (PLAN §2): « à faire », « fait », « personne » or « repasser », chosen in
+/// the status picker (PLAN §5.6).
 ///
 /// A door has exactly one of them: it is never « personne » and
 /// « repasser » at once. The app records only whether the door was visited,
@@ -17,14 +18,5 @@ enum VisitStatus {
   /// « Repasser »: the residents asked the team to come back later. Only a
   /// door with this status carries a `ComeBack` (when to come back, if
   /// set: « samedi vers 18 h »).
-  comeBack;
-
-  /// The status a tap on the tile moves to:
-  /// `toDo → done → nobodyHome → comeBack → toDo` (PLAN §5.6).
-  VisitStatus get next => switch (this) {
-    toDo => done,
-    done => nobodyHome,
-    nobodyHome => comeBack,
-    comeBack => toDo,
-  };
+  comeBack,
 }
