@@ -71,6 +71,7 @@ python3 tool/publish_play.py --help                      # Play publishing (driv
 tool/render_play_icon.py                                 # 512 px Play icon from the launcher drawables
 flutter test integration_test/app_test.dart -d emulator-5554 --dart-define-from-file=$HOME/.config/tournee-calendriers/app_check_debug.json
 tool/admin_e2e.sh                                        # admin flows, local Auth + Firestore emulators
+tool/store_screenshots.sh                                # Play screenshots → store/screenshots/fr-FR/ (not a suite)
 flutter run --dart-define-from-file=$HOME/.config/tournee-calendriers/app_check_debug.json
 ```
 
@@ -132,7 +133,8 @@ on the real app (launch, mark a house, offline cold start…), ≤ 10 tests, < 3
 a task adds a user-visible flow; keep it green before every push. Two files, run separately (each
 is its own app process): `app_test.dart` on the real project, Firestore offline; `admin_test.dart`
 (admin flows, #87) against the **local Firebase emulators** (Auth + Firestore with the real rules,
-`tool/admin_e2e.sh` starts and stops them). Never `flutter test integration_test` on the whole
+`tool/admin_e2e.sh` starts and stops them). `store_screenshots_test.dart` is not part of the suite: it only makes the Play Store
+screenshots, through `tool/store_screenshots.sh`. Never `flutter test integration_test` on the whole
 folder: `admin_test.dart` fails without the emulators. Debug builds may reach `10.0.2.2` over
 plain HTTP for this (`android/app/src/debug/`); release builds may not.
 

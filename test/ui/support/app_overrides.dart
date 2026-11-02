@@ -45,7 +45,9 @@ import 'fake_map_view.dart';
 /// members, are admins of the app (none by default). The commune search and the duplicate check of
 /// « Nouvelle tournée » answer without waiting for a pause in the typing;
 /// a new join code is `234567`. Maps are [FakeMapView]s: a native map
-/// cannot run in a widget test.
+/// cannot run in a widget test. With [nativeMap], they are the real
+/// MapLibre maps, for the store screenshots run on a device
+/// (`integration_test/store_screenshots_test.dart`).
 ///
 /// The app opens on the start screen, as on a phone that already holds
 /// streets or tournées; with [chooseLaunch], it decides from the fakes as
@@ -70,11 +72,12 @@ List<Override> fakePhone({
   FakeMemberAccount? account,
   FakeAdminStatus? admins,
   bool chooseLaunch = false,
+  bool nativeMap = false,
 }) => [
   if (!chooseLaunch)
     launchPlaceProvider.overrideWithValue(const AsyncData(LaunchOnStreets())),
   duplicateCheckDelayProvider.overrideWithValue(Duration.zero),
-  tourneeMapViewProvider.overrideWithValue(FakeMapView.new),
+  if (!nativeMap) tourneeMapViewProvider.overrideWithValue(FakeMapView.new),
   streetRepositoryProvider.overrideWithValue(streets ?? FakeStreetRepository()),
   phoneStreetRepositoryProvider.overrideWithValue(
     phoneStreets ?? FakeStreetRepository(),
