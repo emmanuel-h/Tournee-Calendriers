@@ -128,6 +128,9 @@ void main() {
     await tester.tap(find.byTooltip('Retour'));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('home.team')));
+    await tester.pumpAndSettle();
+    // Léa's own streets unfolded under her row (#105).
+    await tester.tap(find.byKey(const Key('team.member.streets')).at(1));
     await capture(tester, 'phone-5');
   });
 }
