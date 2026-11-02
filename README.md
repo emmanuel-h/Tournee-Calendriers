@@ -116,3 +116,9 @@ Street screen (« Rue »):
   again 2 minutes later, and a tournée the phone forgets loses its download. Nothing on
   screen says so, except one line in Paramètres; offline, « Mes tournées » greys a tournée
   not downloaded on this phone (« Disponible avec réseau ») and does not open it.
+
+## Licence
+
+MIT — see [LICENSE](LICENSE). The bundled fonts (Atkinson Hyperlegible, Barlow Condensed) keep
+their own SIL Open Font License, next to them in `assets/fonts/`. The privacy policy is
+[PRIVACY.md](PRIVACY.md).
