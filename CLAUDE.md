@@ -46,10 +46,10 @@ M4 done, milestone closed (2026-11-02), validated on the phone with 0.7.0: the o
 downloads itself for offline use, unseen (#32: streets into the cache + MapLibre region, silent
 re-download for OpenFreeMap's weekly tiles); one line in Paramètres and tournées greyed
 « Disponible avec réseau » offline (#33); airplane-mode day (#34).
-M5 code done (2026-11-02), awaiting the user's phone test: launcher icon, themed icon and launch
+M5 code done (2026-11-02), released as 0.8.0 (code 9, internal track, with the store listing), phone test passed: launcher icon, themed icon and launch
 screen (#101); rules tooling on firebase-tools 15 (#69); each house of a bulk street write checked
-in the rules, 2 per write, sent in order (#70, `OrderedWrites`; **deploy those rules only after a
-release with the chunked writes is installed**, 0.7.0 would be refused); Firebase 7 (#90); dark
+in the rules, 2 per write, sent in order (#70, `OrderedWrites`; those rules deployed 2026-11-02
+once 0.8.0 was installed: 0.7.0 and older can no longer add a street of more than 2 houses); Firebase 7 (#90); dark
 palette reviewed and 200 % text checked (#35); the user's Confidentialité text (#79) and the
 policy in `PRIVACY.md` linked from it; MIT `LICENSE`; Play listing texts, icon, feature graphic
 and screenshots in `store/` (#36). Follow-ups: #102–#105.
