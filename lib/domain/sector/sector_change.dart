@@ -72,7 +72,7 @@ final class MemberRemoved extends MemberChange {
   String toString() => 'MemberRemoved(${sectorId.value}, $member)';
 }
 
-/// [member] left the tournée (« Quitter la tournée »), or cancelled their
+/// [member] left the tournée (« Quitter le secteur »), or cancelled their
 /// own pending request (« Annuler la demande »).
 final class MemberLeft extends MemberChange {
   const MemberLeft({required super.sectorId, required super.member});
@@ -171,7 +171,7 @@ final class CommuneRemoved extends CommuneChange {
   String toString() => 'CommuneRemoved(${sectorId.value}, $commune)';
 }
 
-/// An admin deleted [sector] (« Supprimer la tournée »): every member,
+/// An admin deleted [sector] (« Supprimer le secteur »): every member,
 /// campaign and street goes, with the join code and the number + centre
 /// reservation (PLAN §8.3: deleting the tournée deletes its data).
 ///

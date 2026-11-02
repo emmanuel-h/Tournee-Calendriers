@@ -13,7 +13,7 @@ import 'package:tournee_calendriers/infrastructure/local_storage/mappers/my_sect
 final class LocalMySectors implements MySectorsStore {
   LocalMySectors._(this._file, this.mySectors);
 
-  /// Reads « Mes tournées » kept in [file]. A missing or unreadable file
+  /// Reads « Mes secteurs » kept in [file]. A missing or unreadable file
   /// means none: the app then starts as on a first launch, and the next
   /// change writes the file again. The file is left as it is until then.
   static Future<LocalMySectors> load(File file) async {

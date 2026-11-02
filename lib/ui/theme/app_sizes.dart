@@ -178,10 +178,10 @@ abstract final class AppSizes {
   /// A row of Paramètres (« Prénom    Manu › »).
   static const settingRowHeight = 56.0;
 
-  /// A tournée of « Mes tournées »: its name over its centre.
+  /// A tournée of « Mes secteurs »: its name over its centre.
   static const sectorRowHeight = 68.0;
 
-  /// The round mark before a tournée of « Mes tournées » (● open, ○ another,
+  /// The round mark before a tournée of « Mes secteurs » (● open, ○ another,
   /// dashed while the request waits), and the dot inside it.
   static const sectorMark = 22.0;
   static const sectorMarkDot = 10.0;
@@ -201,7 +201,7 @@ abstract final class AppSizes {
   static const requestCardRadius = 16.0;
 
   /// The card of the start screen offering the phone's streets to the
-  /// open tournée (« Les ajouter à la tournée »): drawn like a request's
+  /// open tournée (« Les ajouter au secteur »): drawn like a request's
   /// card.
   static const moveStreetsCardRadius = requestCardRadius;
 

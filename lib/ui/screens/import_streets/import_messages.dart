@@ -37,7 +37,7 @@ String communeLabel(AppLocalizations l10n, CommuneOption commune) {
 
 /// The message after a complete import: « 3 rues importées », « 1 rue
 /// restaurée » when only streets from the Corbeille came back, or both;
-/// « … ajoutées à la tournée » [inSector].
+/// « … ajoutées au secteur » [inSector].
 String importDoneMessage(
   AppLocalizations l10n,
   ImportSummary summary, {

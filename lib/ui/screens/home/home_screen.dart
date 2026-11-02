@@ -64,7 +64,7 @@ PanelSize snapPanel(
 /// « Mes rues » panel at the bottom. Its top bar is the start screen's.
 ///
 /// A tap on one of the tournée's streets on the map, or on a row under
-/// « Autres rues de la tournée » (#93), shows its street card (§5.4) in
+/// « Autres rues du secteur » (#93), shows its street card (§5.4) in
 /// place of the panel, its line lit up: « Ouvrir », and « Me l'attribuer »
 /// or « Ne plus la faire »; from a row, the map also goes to the street. A
 /// tap elsewhere on the map, or the back gesture, brings the panel back.

@@ -4,7 +4,7 @@ import 'dart:io';
 import 'package:tournee_calendriers/infrastructure/local_storage/atomic_file.dart';
 
 /// One small JSON file of the phone storage (the street view preferences,
-/// « Mes tournées », the settings, PLAN §6.3): read once at start-up, then
+/// « Mes secteurs », the settings, PLAN §6.3): read once at start-up, then
 /// written again whole after each change.
 ///
 /// Writes are queued: each starts when the one before it has ended, so a

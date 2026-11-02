@@ -13,7 +13,7 @@ import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
-/// « Toutes les tournées » (PLAN §5.12, AllSectors mockup), for admins:
+/// « Tous les secteurs » (PLAN §5.12, AllSectors mockup), for admins:
 /// every tournée of the app under its centre de secours, with its members,
 /// its waiting requests (a red dot) and « vous en êtes membre ». A tap opens
 /// it on the normal screens. Needs the network: offline it says so and

@@ -1,4 +1,4 @@
-// « Toutes les tournées » and the admin who opens a tournée they are not in
+// « Tous les secteurs » and the admin who opens a tournée they are not in
 // (PLAN §5.12, AllSectors and HomeAdmin mockups).
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -52,7 +52,7 @@ void main() {
   late FakeSectorRepository sectors;
 
   /// Sam's phone (an admin), on the start screen with nothing open, then
-  /// « Toutes les tournées » pushed over it.
+  /// « Tous les secteurs » pushed over it.
   Future<void> pumpAll(
     WidgetTester tester, {
     List<SectorOverview> all = const [],
@@ -103,8 +103,8 @@ void main() {
       ],
     );
 
-    expect(find.text('Toutes les tournées'), findsOneWidget);
-    expect(find.text('Administrateur · 3 tournées'), findsOneWidget);
+    expect(find.text('Tous les secteurs'), findsOneWidget);
+    expect(find.text('Administrateur · 3 secteurs'), findsOneWidget);
     expect(find.text('CS VILLEFRANCHE'), findsOneWidget);
     expect(find.text('CS VILLEFRANCHE EST'), findsOneWidget);
     expect(find.text('CS VILLEFRANCHE NORD'), findsOneWidget);
@@ -115,7 +115,7 @@ void main() {
     expect(find.byKey(const Key('allSectors.t49.dot')), findsNothing);
     expect(
       find.bySemanticsLabel(
-        'Tournée 12 · 2026, 3 membres · 1 demande en attente, ouvrir',
+        'Secteur 12 · 2026, 3 membres · 1 demande en attente, ouvrir',
       ),
       findsOneWidget,
     );
@@ -125,7 +125,7 @@ void main() {
     await pumpAll(tester);
 
     expect(find.byKey(const Key('allSectors.empty')), findsOneWidget);
-    expect(find.text('Administrateur · aucune tournée'), findsOneWidget);
+    expect(find.text('Administrateur · aucun secteur'), findsOneWidget);
   });
 
   testWidgets('should say the list needs the network, then try again', (
@@ -164,11 +164,11 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(HomeScreen), findsOneWidget);
-    expect(find.text('Tournée 49 · 2026'), findsOneWidget);
+    expect(find.text('Secteur 49 · 2026'), findsOneWidget);
     expect(find.text('Administrateur · pas membre'), findsOneWidget);
     expect(find.text('Rues · 0/0'), findsOneWidget);
     expect(
-      find.text("Vous n'êtes pas dans l'équipe de cette tournée."),
+      find.text("Vous n'êtes pas dans l'équipe de ce secteur."),
       findsOneWidget,
     );
     expect(store.mySectors.current!.isVisiting, isTrue);

@@ -19,13 +19,13 @@ import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
 /// Paramètres (⚙, PLAN §5.9, Settings mockup): the member's first name and
-/// « Mes tournées », then the theme, the privacy page, the version (a tap
+/// « Mes secteurs », then the theme, the privacy page, the version (a tap
 /// opens « Nouveautés »), the licences, the phone's uid (« Identifiant de
 /// l'appareil », PLAN §5.12) and the data credits. Works offline; the
 /// screen signs the phone in when it opens, so the uid shows once online.
 ///
 /// No « Hors-ligne » section: the tournée downloads itself for offline use,
-/// unseen (PLAN §7), so one line under « Mes tournées » says only that the
+/// unseen (PLAN §7), so one line under « Mes secteurs » says only that the
 /// app works without network.
 final class SettingsScreen extends ConsumerWidget {
   const SettingsScreen({super.key});

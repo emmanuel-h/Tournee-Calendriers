@@ -1,4 +1,4 @@
-// The tournées of Manu's phone (« Mes tournées », PLAN §5.3): the 49, which
+// The tournées of Manu's phone (« Mes secteurs », PLAN §5.3): the 49, which
 // he created, the 12 he was accepted in, and the 7 where his request is
 // still pending. All of the CS Villefranche (location privacy, CLAUDE.md).
 // `sector12Visited` is the 12 as an admin who is not in it keeps it

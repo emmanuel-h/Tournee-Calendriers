@@ -230,7 +230,7 @@ final class AppColors extends ThemeExtension<AppColors> {
   /// the tiles read as « being edited », not as a status.
   final Color editTileBorder;
 
-  /// The text of a tournée « Mes tournées » cannot open offline (Switcher
+  /// The text of a tournée « Mes secteurs » cannot open offline (Switcher
   /// mockup): greyed further than [muted], with its ring in
   /// [unavailableMark]. Never alone: « Disponible avec réseau » says it.
   final Color unavailable;

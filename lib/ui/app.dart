@@ -73,8 +73,8 @@ final class _TourneeAppState extends ConsumerState<TourneeApp> {
     initialLocation: location,
   );
 
-  /// « Vous avez été retiré de la tournée 49. », « La tournée 49 a été
-  /// supprimée. » or « Vous n'êtes plus administrateur… » (a tournée only
+  /// « Vous avez été retiré du secteur 49. », « Le secteur 49 a été
+  /// supprimé. » or « Vous n'êtes plus administrateur… » (a tournée only
   /// visited, PLAN §5.12), as « Demande refusée » is told: a message over the next
   /// screen. Nothing is shown before the app has its first screen.
   void _tell(SectorLossNotice notice) {

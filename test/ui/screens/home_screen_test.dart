@@ -118,7 +118,7 @@ void main() {
       await pumpHome(tester);
 
       expect(find.byType(HomeScreen), findsOneWidget);
-      expect(find.text('Tournée 49 · 2026'), findsOneWidget);
+      expect(find.text('Secteur 49 · 2026'), findsOneWidget);
       expect(find.text('Mes rues · 31/50'), findsOneWidget);
       expect(
         find.bySemanticsLabel(RegExp('^Mes rues, 31 sur 50 faits')),
@@ -150,7 +150,7 @@ void main() {
       double top(Finder finder) => tester.getTopLeft(finder).dy;
       expect(top(row('pins')), lessThan(top(row('lilas'))));
       expect(
-        find.text('Autres rues de la tournée (2)'.toUpperCase()),
+        find.text('Autres rues du secteur (2)'.toUpperCase()),
         findsOneWidget,
       );
       expect(
@@ -290,7 +290,7 @@ void main() {
       await pumpHome(tester, streets: []);
 
       expect(
-        find.text('Aucune rue dans la tournée pour l\'instant.'),
+        find.text('Aucune rue dans le secteur pour l\'instant.'),
         findsOneWidget,
       );
       expect(find.byKey(const Key('home.others')), findsNothing);

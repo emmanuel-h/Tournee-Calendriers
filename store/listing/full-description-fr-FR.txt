@@ -1,6 +1,6 @@
 Vous faites la tournée des calendriers ? Cette appli remplace la liste papier.
 
-Ajoutez les rues de votre tournée : tous les numéros sont importés automatiquement. Pour chaque maison ou porte d'appartement, marquez si c'est fait, s'il n'y avait personne, s'il faut repasser…
+Ajoutez les rues de votre secteur : tous les numéros sont importés automatiquement. Pour chaque maison ou porte d'appartement, marquez si c'est fait, s'il n'y avait personne, s'il faut repasser…
 
 En équipe, chacun voit ce que les autres ont fait. Plus de maison oubliée, plus de maison faite deux fois.
 

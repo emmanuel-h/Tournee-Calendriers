@@ -43,7 +43,7 @@ import 'fake_map_view.dart';
 /// default); [account] is the phone's account (none by default, and no
 /// network to get one); [admins] says whether the phone, and which
 /// members, are admins of the app (none by default). The commune search and the duplicate check of
-/// « Nouvelle tournée » answer without waiting for a pause in the typing;
+/// « Nouveau secteur » answer without waiting for a pause in the typing;
 /// a new join code is `234567`. Maps are [FakeMapView]s: a native map
 /// cannot run in a widget test. With [nativeMap], they are the real
 /// MapLibre maps, for the store screenshots run on a device

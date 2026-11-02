@@ -630,7 +630,7 @@ void main() {
   group('JoinAsAdmin', () {
     final joinedAt = DateTime.utc(2026, 11, 2, 10);
 
-    // Sam, an admin, visits the 49 from « Toutes les tournées ».
+    // Sam, an admin, visits the 49 from « Tous les secteurs ».
     setUp(() {
       store.mySectors = valueOf(
         MySectors.none

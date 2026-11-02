@@ -25,7 +25,7 @@ final class ReadPhoneSettings {
 /// says why it cannot be a name.
 ///
 /// The name is kept on the phone (PLAN §6.3), then given to the member in
-/// each tournée of « Mes tournées » they are active in, so Équipe shows the
+/// each tournée of « Mes secteurs » they are active in, so Équipe shows the
 /// new name to the team. Works offline: the tournées are read from the
 /// phone's copy and storage sends the renames when the network is back.
 /// A tournée the phone cannot read (removed, never opened offline) or that

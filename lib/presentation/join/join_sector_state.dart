@@ -82,7 +82,7 @@ final class JoinOffline extends JoinRun {
   const JoinOffline();
 }
 
-/// The tournée is already in « Mes tournées »: nothing was sent.
+/// The tournée is already in « Mes secteurs »: nothing was sent.
 final class JoinAlreadyJoined extends JoinRun {
   const JoinAlreadyJoined();
 }
@@ -103,7 +103,7 @@ final class JoinSent extends JoinRun {
   String toString() => 'JoinSent(${sector.value})';
 }
 
-/// What « Rejoindre une tournée » shows (PLAN §5.2, Join mockup).
+/// What « Rejoindre un secteur » shows (PLAN §5.2, Join mockup).
 /// Immutable: the notifier replaces it with [copyWith].
 final class JoinSectorState {
   const JoinSectorState({

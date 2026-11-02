@@ -19,7 +19,7 @@ import 'package:tournee_calendriers/domain/sector/sector_summary.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 
-// « Nouvelle tournée » (PLAN §5.2): the centres de secours to pick from,
+// « Nouveau secteur » (PLAN §5.2): the centres de secours to pick from,
 // the check that number + centre is free, and the creation itself. All of
 // it needs the network: only the server knows the other tournées.
 
@@ -67,7 +67,7 @@ enum CreateSectorFailure {
 /// « Créer »: signs in when the phone has no account yet, then stores a new
 /// tournée whose only member is the creator, covering the communes
 /// picked, with a join code drawn from the secure source, and opens it on
-/// the phone (« Mes tournées », PLAN
+/// the phone (« Mes secteurs », PLAN
 /// §5.3). Returns the tournée as stored: the server may have replaced a
 /// code another tournée held.
 final class CreateSector {

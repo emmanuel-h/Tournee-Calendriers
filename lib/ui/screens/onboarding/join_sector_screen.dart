@@ -16,7 +16,7 @@ import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
-/// « Rejoindre une tournée » (PLAN §5.2, Join mockup): « Scanner le QR
+/// « Rejoindre un secteur » (PLAN §5.2, Join mockup): « Scanner le QR
 /// code » or the code typed in two boxes of three characters, the tournée
 /// it shows to confirm, then « Demander à rejoindre », which leaves for
 /// « Demande envoyée ».

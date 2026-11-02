@@ -51,7 +51,7 @@ void main() {
           const ImportSummary(imported: 3, failed: 0),
           inSector: true,
         ),
-        '3 rues ajoutées à la tournée',
+        '3 rues ajoutées au secteur',
       );
     });
 

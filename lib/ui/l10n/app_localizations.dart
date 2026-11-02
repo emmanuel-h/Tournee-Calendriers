@@ -100,16 +100,16 @@ abstract class AppLocalizations {
   /// **'Tournée des calendriers'**
   String get appTitle;
 
-  /// Title of the create-a-tournée screen (PLAN §5.2).
+  /// Title of the create-a-sector screen (PLAN §5.2).
   ///
   /// In fr, this message translates to:
-  /// **'Nouvelle tournée'**
+  /// **'Nouveau secteur'**
   String get screenCreate;
 
   /// Title of the join screen (PLAN §5.2).
   ///
   /// In fr, this message translates to:
-  /// **'Rejoindre une tournée'**
+  /// **'Rejoindre un secteur'**
   String get screenJoin;
 
   /// Title of the waiting-for-approval screen (PLAN §5.2).
@@ -130,7 +130,7 @@ abstract class AppLocalizations {
   /// **'Modifier la rue'**
   String get screenEditStreet;
 
-  /// Title of the team screen (PLAN §5.8) before its tournée is read.
+  /// Title of the team screen (PLAN §5.8) before its sector is read.
   ///
   /// In fr, this message translates to:
   /// **'Équipe'**
@@ -801,7 +801,7 @@ abstract class AppLocalizations {
   /// **'Supprimer la rue'**
   String get deleteStreetAction;
 
-  /// Bottom button of the edit mode, shown when the member covers the street: takes them off it; the street stays in the tournée for the others.
+  /// Bottom button of the edit mode, shown when the member covers the street: takes them off it; the street stays in the sector for the others.
   ///
   /// In fr, this message translates to:
   /// **'Ne plus la faire'**
@@ -1539,61 +1539,61 @@ abstract class AppLocalizations {
   /// **'OK'**
   String get saveFailedOk;
 
-  /// Title of the open tournée on the start screen (PLAN §5.3) and of a row of « Mes tournées ».
+  /// Title of the open sector on the start screen (PLAN §5.3) and of a row of « Mes secteurs ».
   ///
   /// In fr, this message translates to:
-  /// **'Tournée {number} · {year}'**
+  /// **'Secteur {number} · {year}'**
   String sectorTitle(String number, String year);
 
-  /// Screen-reader label of the title button that opens « Mes tournées » (Home mockup).
+  /// Screen-reader label of the title button that opens « Mes secteurs » (Home mockup).
   ///
   /// In fr, this message translates to:
-  /// **'{title}, {centre}. Changer de tournée'**
+  /// **'{title}, {centre}. Changer de secteur'**
   String sectorTitleSemantics(String title, String centre);
 
-  /// Title of the sheet listing the member's tournées (PLAN §5.3), and of its row in Paramètres.
+  /// Title of the sheet listing the member's sectors (PLAN §5.3), and of its row in Paramètres.
   ///
   /// In fr, this message translates to:
-  /// **'Mes tournées'**
+  /// **'Mes secteurs'**
   String get mySectorsTitle;
 
-  /// « Mes tournées » when the phone knows no tournée yet.
+  /// « Mes secteurs » when the phone knows no sector yet.
   ///
   /// In fr, this message translates to:
-  /// **'Aucune tournée pour l\'instant.'**
+  /// **'Aucun secteur pour l\'instant.'**
   String get mySectorsEmpty;
 
-  /// Second line of a tournée the member asked to join, not accepted yet (Switcher mockup).
+  /// Second line of a sector the member asked to join, not accepted yet (Switcher mockup).
   ///
   /// In fr, this message translates to:
   /// **'{centre} · votre demande est en attente'**
   String mySectorsPending(String centre);
 
-  /// Screen-reader label of the open tournée in « Mes tournées ».
+  /// Screen-reader label of the open sector in « Mes secteurs ».
   ///
   /// In fr, this message translates to:
-  /// **'{title}, {centre}, tournée ouverte'**
+  /// **'{title}, {centre}, secteur ouvert'**
   String mySectorsOpenSemantics(String title, String centre);
 
-  /// Screen-reader label of another tournée in « Mes tournées »: a tap opens it.
+  /// Screen-reader label of another sector in « Mes secteurs »: a tap opens it.
   ///
   /// In fr, this message translates to:
   /// **'{title}, {centre}, ouvrir'**
   String mySectorsClosedSemantics(String title, String centre);
 
-  /// Second line of a tournée not open where join requests wait for an answer, beside a red dot (Switcher mockup).
+  /// Second line of a sector not open where join requests wait for an answer, beside a red dot (Switcher mockup).
   ///
   /// In fr, this message translates to:
   /// **'{centre} · {count, plural, =1{1 demande en attente} other{{count} demandes en attente}}'**
   String mySectorsWaiting(String centre, int count);
 
-  /// Screen-reader label of a tournée not open where join requests wait: the dot, said.
+  /// Screen-reader label of a sector not open where join requests wait: the dot, said.
   ///
   /// In fr, this message translates to:
   /// **'{title}, {centre}, {count, plural, =1{1 demande en attente} other{{count} demandes en attente}}, ouvrir'**
   String mySectorsWaitingSemantics(String title, String centre, int count);
 
-  /// Screen-reader label of a tournée the member asked to join, not accepted yet.
+  /// Screen-reader label of a sector the member asked to join, not accepted yet.
   ///
   /// In fr, this message translates to:
   /// **'{title}, {centre}, votre demande est en attente'**
@@ -1605,7 +1605,7 @@ abstract class AppLocalizations {
   /// **'Vous'**
   String get settingsYou;
 
-  /// Muted line of Paramètres under « Mes tournées »: the tournée downloads itself for offline use, unseen (PLAN §5.9, §7).
+  /// Muted line of Paramètres under « Mes secteurs »: the sector downloads itself for offline use, unseen (PLAN §5.9, §7).
   ///
   /// In fr, this message translates to:
   /// **'L\'application fonctionne sans réseau ; les modifications sont envoyées dès qu\'il revient.'**
@@ -1623,7 +1623,7 @@ abstract class AppLocalizations {
   /// **'Prénom'**
   String get settingsName;
 
-  /// Value of the « Mes tournées » row of Paramètres: the open tournée.
+  /// Value of the « Mes secteurs » row of Paramètres: the open sector.
   ///
   /// In fr, this message translates to:
   /// **'{number} · {year}'**
@@ -1701,6 +1701,18 @@ abstract class AppLocalizations {
   /// **'Première version de test.'**
   String get release010First;
 
+  /// Line of « Nouveautés » for 0.10.0: the team's area is now « secteur » on every screen (#115); « tournée » now names one outing (PLAN §2).
+  ///
+  /// In fr, this message translates to:
+  /// **'La tournée s\'appelle maintenant « secteur ».'**
+  String get release0100Sector;
+
+  /// Line of « Nouveautés » for 0.10.0: the privacy text covers the tournées and calendars (#112).
+  ///
+  /// In fr, this message translates to:
+  /// **'Confidentialité : le texte dit aussi ce qui est gardé des tournées, des dons et des calendriers.'**
+  String get release0100Privacy;
+
   /// Line of « Nouveautés » for 0.9.0.
   ///
   /// In fr, this message translates to:
@@ -1710,7 +1722,7 @@ abstract class AppLocalizations {
   /// Line of « Nouveautés » for 0.9.0.
   ///
   /// In fr, this message translates to:
-  /// **'Équipe : « Quitter la tournée » et « Supprimer la tournée » restent en bas de l\'écran.'**
+  /// **'Équipe : « Quitter le secteur » et « Supprimer le secteur » restent en bas de l\'écran.'**
   String get release090Buttons;
 
   /// Line of « Nouveautés » for 0.9.0.
@@ -1737,16 +1749,16 @@ abstract class AppLocalizations {
   /// **'Confidentialité : un nouveau texte, et un lien vers la politique complète en ligne.'**
   String get release080Privacy;
 
-  /// « Nouveautés », version 0.7.0: the tournée is kept for offline use by itself.
+  /// « Nouveautés », version 0.7.0: the sector is kept for offline use by itself.
   ///
   /// In fr, this message translates to:
-  /// **'La tournée ouverte reste disponible sans réseau : la carte et les rues sont gardées sur le téléphone, toutes seules.'**
+  /// **'Le secteur ouvert reste disponible sans réseau : la carte et les rues sont gardées sur le téléphone, toutes seules.'**
   String get release070Offline;
 
-  /// « Nouveautés », version 0.7.0: tournées that cannot open offline are greyed.
+  /// « Nouveautés », version 0.7.0: sectors that cannot open offline are greyed.
   ///
   /// In fr, this message translates to:
-  /// **'Sans réseau, une tournée jamais ouverte sur ce téléphone apparaît en gris dans « Mes tournées ».'**
+  /// **'Sans réseau, un secteur jamais ouvert sur ce téléphone apparaît en gris dans « Mes secteurs ».'**
   String get release070Greyed;
 
   /// « Nouveautés », version 0.7.0: the line in Paramètres.
@@ -1776,7 +1788,7 @@ abstract class AppLocalizations {
   /// « Nouveautés », version 0.5.1: street lines from the map tiles.
   ///
   /// In fr, this message translates to:
-  /// **'Les rues de la tournée apparaissent enfin sur la carte : leur tracé vient du fond de carte, et les rues déjà ajoutées reçoivent le leur.'**
+  /// **'Les rues du secteur apparaissent enfin sur la carte : leur tracé vient du fond de carte, et les rues déjà ajoutées reçoivent le leur.'**
   String get release051Lines;
 
   /// « Nouveautés », version 0.5.1: adding a street no longer waits.
@@ -1788,19 +1800,19 @@ abstract class AppLocalizations {
   /// « Nouveautés », version 0.5.1: take a street from the list.
   ///
   /// In fr, this message translates to:
-  /// **'Une rue des « Autres rues de la tournée » s\'ouvre sur la carte pour se l\'attribuer.'**
+  /// **'Une rue des « Autres rues du secteur » s\'ouvre sur la carte pour se l\'attribuer.'**
   String get release051TakeFromList;
 
-  /// « Nouveautés », version 0.5.0: the tournée's map on Accueil.
+  /// « Nouveautés », version 0.5.0: the sector's map on Accueil.
   ///
   /// In fr, this message translates to:
-  /// **'Accueil montre la carte de la tournée : ses rues, ses maisons, une légende et le panneau « Mes rues ».'**
+  /// **'Accueil montre la carte du secteur : ses rues, ses maisons, une légende et le panneau « Mes rues ».'**
   String get release050Map;
 
   /// « Nouveautés », version 0.5.0: communes and adding streets.
   ///
   /// In fr, this message translates to:
-  /// **'Une tournée a ses communes ; « Ajouter des rues » s\'ouvre dessus, en carte ou en liste : touchez une route, cherchez-la ou saisissez-la.'**
+  /// **'Un secteur a ses communes ; « Ajouter des rues » s\'ouvre dessus, en carte ou en liste : touchez une route, cherchez-la ou saisissez-la.'**
   String get release050AddStreets;
 
   /// « Nouveautés », version 0.5.0: who covers a street.
@@ -1833,22 +1845,22 @@ abstract class AppLocalizations {
   /// **'L\'identifiant de l\'appareil s\'affiche en entier dans Paramètres et sur l\'écran de bienvenue.'**
   String get release030DeviceId;
 
-  /// « Nouveautés », version 0.2.0: only admins create a tournée.
+  /// « Nouveautés », version 0.2.0: only admins create a sector.
   ///
   /// In fr, this message translates to:
-  /// **'Seuls les administrateurs créent une tournée ; les autres la rejoignent avec un code.'**
+  /// **'Seuls les administrateurs créent un secteur ; les autres le rejoignent avec un code.'**
   String get release020Admins;
 
-  /// « Nouveautés », version 0.2.0: admins see and manage every tournée.
+  /// « Nouveautés », version 0.2.0: admins see and manage every sector.
   ///
   /// In fr, this message translates to:
-  /// **'Les administrateurs voient toutes les tournées, les gèrent et peuvent les rejoindre directement.'**
+  /// **'Les administrateurs voient tous les secteurs, les gèrent et peuvent les rejoindre directement.'**
   String get release020AllSectors;
 
   /// « Nouveautés », version 0.2.0: Équipe actions for admins, anyone may leave.
   ///
   /// In fr, this message translates to:
-  /// **'Équipe : « Nouveau code », « Retirer » et « Supprimer » sont réservés aux administrateurs ; chacun peut quitter la tournée.'**
+  /// **'Équipe : « Nouveau code », « Retirer » et « Supprimer » sont réservés aux administrateurs ; chacun peut quitter le secteur.'**
   String get release020Team;
 
   /// « Nouveautés », version 0.2.0: the device identifier in Paramètres.
@@ -1914,7 +1926,7 @@ abstract class AppLocalizations {
   /// Privacy page: what is stored (PLAN §8.3): its section of PRIVACY.md, word for word.
   ///
   /// In fr, this message translates to:
-  /// **'Pour chaque rue de la tournée : les numéros, leur place sur la carte, ce qui s\'est passé à chaque porte (fait, personne, à repasser), le jour et l\'heure où repasser, et le prénom de qui l\'a noté. Rien d\'autre : pas de nom d\'habitant, pas de note, pas de don.'**
+  /// **'Pour chaque rue du secteur : les numéros, leur place sur la carte, ce qui s\'est passé à chaque porte (fait, refusé, personne, à repasser), le jour et l\'heure où repasser, combien de calendriers la maison a pris, et le prénom de qui l\'a noté. Pour chaque tournée validée : son début et sa fin, le nombre de maisons visitées, le nombre et le total des dons par moyen de paiement, et les calendriers offerts, sans le prénom de qui l\'a faite. Un don n\'est jamais lié à une maison : la liste des dons reste sur le téléphone jusqu\'à la validation de la tournée, puis elle est effacée. Rien d\'autre : pas de nom d\'habitant, pas de note.'**
   String get privacyDataBody;
 
   /// Privacy page: section about the phone's position.
@@ -1938,7 +1950,7 @@ abstract class AppLocalizations {
   /// Privacy page: where the data is kept (PLAN §8.3): its section of PRIVACY.md, word for word.
   ///
   /// In fr, this message translates to:
-  /// **'Les tournées sont stockées chez Google Firebase, dans l\'Union européenne. Les cartes viennent d\'OpenFreeMap et les adresses de la Base Adresse Nationale : comme tout site web, ces services voient l\'adresse IP du téléphone quand ils lui envoient des données.'**
+  /// **'Les secteurs sont stockés chez Google Firebase, dans l\'Union européenne. Les cartes viennent d\'OpenFreeMap et les adresses de la Base Adresse Nationale : comme tout site web, ces services voient l\'adresse IP du téléphone quand ils lui envoient des données.'**
   String get privacyHostingBody;
 
   /// Privacy page: section about deleting the data.
@@ -1950,7 +1962,7 @@ abstract class AppLocalizations {
   /// Privacy page: how data is deleted (PLAN §8.3): its section of PRIVACY.md, word for word.
   ///
   /// In fr, this message translates to:
-  /// **'Supprimer la tournée efface tout ce qu\'elle contient. Quand une campagne commence, celle d\'il y a deux ans est effacée. Désinstaller l\'appli efface ce qui est sur le téléphone ; ce qui est partagé avec l\'équipe reste jusqu\'à la suppression de la tournée.'**
+  /// **'Supprimer le secteur efface tout ce qu\'il contient. Quand une campagne commence, celle d\'il y a deux ans est effacée. Désinstaller l\'appli efface ce qui est sur le téléphone, y compris les dons d\'une tournée pas encore validée ; ce qui est partagé avec l\'équipe reste jusqu\'à la suppression du secteur.'**
   String get privacyDeletionBody;
 
   /// Last row of the privacy page, under a divider: opens PRIVACY.md of the repository in the browser (PLAN §5.9, #36).
@@ -1986,7 +1998,7 @@ abstract class AppLocalizations {
   /// Title of Équipe (Team mockup).
   ///
   /// In fr, this message translates to:
-  /// **'Tournée {number}'**
+  /// **'Secteur {number}'**
   String teamTitle(String number);
 
   /// Line under the title of Équipe.
@@ -2004,7 +2016,7 @@ abstract class AppLocalizations {
   /// Screen-reader name of the QR code of Équipe.
   ///
   /// In fr, this message translates to:
-  /// **'QR code de la tournée, code {code}'**
+  /// **'QR code du secteur, code {code}'**
   String teamQrSemantics(String code);
 
   /// Button of Équipe that opens the phone's share sheet with the join code.
@@ -2016,10 +2028,10 @@ abstract class AppLocalizations {
   /// Text shared by « Partager » in Équipe.
   ///
   /// In fr, this message translates to:
-  /// **'Tournée {number} · {centre}\nRejoignez-la dans l\'app Tournée Calendriers avec le code {code}.'**
+  /// **'Secteur {number} · {centre}\nRejoignez-le dans l\'app Tournée Calendriers avec le code {code}.'**
   String teamShareText(String number, String centre, String code);
 
-  /// Screen-reader name and tooltip of the copy button right of the join code (Équipe, « Nouvelle tournée »).
+  /// Screen-reader name and tooltip of the copy button right of the join code (Équipe, « Nouveau secteur »).
   ///
   /// In fr, this message translates to:
   /// **'Copier le code'**
@@ -2097,7 +2109,7 @@ abstract class AppLocalizations {
   /// **'Options pour {name}'**
   String teamMemberOptions(String name);
 
-  /// Right of a member row in Équipe: the streets of the tournée the member covers (#105). Followed by ▸ (▾ while unfolded) when there is at least one.
+  /// Right of a member row in Équipe: the streets of the sector the member covers (#105). Followed by ▸ (▾ while unfolded) when there is at least one.
   ///
   /// In fr, this message translates to:
   /// **'{count, plural, =0{0 rue} =1{1 rue} other{{count} rues}}'**
@@ -2136,7 +2148,7 @@ abstract class AppLocalizations {
   /// Body of the confirmation before removing a member (PLAN §5.8).
   ///
   /// In fr, this message translates to:
-  /// **'{name} n\'aura plus accès à la tournée. Ses marques restent dans les rues.'**
+  /// **'{name} n\'aura plus accès au secteur. Ses marques restent dans les rues.'**
   String teamRemoveBody(String name);
 
   /// Row of Équipe that opens the Corbeille (PLAN §5.11).
@@ -2148,13 +2160,13 @@ abstract class AppLocalizations {
   /// Button of Équipe for every member, admins and the creator included (PLAN §5.12).
   ///
   /// In fr, this message translates to:
-  /// **'Quitter la tournée'**
+  /// **'Quitter le secteur'**
   String get teamLeave;
 
   /// Title of the confirmation before leaving.
   ///
   /// In fr, this message translates to:
-  /// **'Quitter la tournée {number} ?'**
+  /// **'Quitter le secteur {number} ?'**
   String teamLeaveTitle(String number);
 
   /// Body of the confirmation before leaving.
@@ -2172,37 +2184,37 @@ abstract class AppLocalizations {
   /// Admin-only button of Équipe (PLAN §5.12).
   ///
   /// In fr, this message translates to:
-  /// **'Supprimer la tournée'**
+  /// **'Supprimer le secteur'**
   String get teamDelete;
 
-  /// Title of the confirmation before deleting the tournée.
+  /// Title of the confirmation before deleting the sector.
   ///
   /// In fr, this message translates to:
-  /// **'Supprimer la tournée {number} ?'**
+  /// **'Supprimer le secteur {number} ?'**
   String teamDeleteTitle(String number);
 
-  /// Body of the confirmation before deleting the tournée (PLAN §8.3).
+  /// Body of the confirmation before deleting the sector (PLAN §8.3).
   ///
   /// In fr, this message translates to:
   /// **'Les rues, les statuts et les membres seront supprimés pour toute l\'équipe. C\'est définitif.'**
   String get teamDeleteBody;
 
-  /// Confirm button of the confirmation before deleting the tournée.
+  /// Confirm button of the confirmation before deleting the sector.
   ///
   /// In fr, this message translates to:
   /// **'Supprimer'**
   String get teamDeleteConfirm;
 
-  /// Équipe when no tournée is open.
+  /// Équipe when no sector is open.
   ///
   /// In fr, this message translates to:
-  /// **'Aucune tournée ouverte.'**
+  /// **'Aucun secteur ouvert.'**
   String get teamNoSector;
 
-  /// Équipe when the tournée cannot be read (removed, deleted, never read offline).
+  /// Équipe when the sector cannot be read (removed, deleted, never read offline).
   ///
   /// In fr, this message translates to:
-  /// **'L\'équipe ne peut pas être affichée : la tournée n\'est pas sur ce téléphone, ou vous n\'en faites plus partie.'**
+  /// **'L\'équipe ne peut pas être affichée : le secteur n\'est pas sur ce téléphone, ou vous n\'en faites plus partie.'**
   String get teamUnavailable;
 
   /// Snackbar of Équipe when a command was refused because a teammate acted first.
@@ -2211,7 +2223,7 @@ abstract class AppLocalizations {
   /// **'L\'équipe a changé entre-temps.'**
   String get teamChanged;
 
-  /// Snackbar of Équipe when a new code, joining as an admin or deleting the tournée needs the network.
+  /// Snackbar of Équipe when a new code, joining as an admin or deleting the sector needs the network.
   ///
   /// In fr, this message translates to:
   /// **'Pas de réseau. Réessayez une fois connecté.'**
@@ -2301,16 +2313,16 @@ abstract class AppLocalizations {
   /// **'Restaurer {item}'**
   String corbeilleRestoreSemantics(String item);
 
-  /// Card of the start screen, with a tournée open, while the phone still holds streets from before the tournée (PLAN §5.0).
+  /// Card of the start screen, with a sector open, while the phone still holds streets from before the sector (PLAN §5.0).
   ///
   /// In fr, this message translates to:
   /// **'{count, plural, =1{1 rue est enregistrée sur ce téléphone.} other{{count} rues sont enregistrées sur ce téléphone.}}'**
   String moveStreetsCount(int count);
 
-  /// Primary button of the card: moves the phone's streets into the open tournée.
+  /// Primary button of the card: moves the phone's streets into the open sector.
   ///
   /// In fr, this message translates to:
-  /// **'{count, plural, =1{L\'ajouter à la tournée} other{Les ajouter à la tournée}}'**
+  /// **'{count, plural, =1{L\'ajouter au secteur} other{Les ajouter au secteur}}'**
   String moveStreetsAction(int count);
 
   /// Text button of the card: hides it until the next launch.
@@ -2319,28 +2331,28 @@ abstract class AppLocalizations {
   /// **'Plus tard'**
   String get moveStreetsLater;
 
-  /// In the card while the phone's streets go into the tournée.
+  /// In the card while the phone's streets go into the sector.
   ///
   /// In fr, this message translates to:
   /// **'Ajout en cours… {done}/{total}'**
   String moveStreetsProgress(int done, int total);
 
-  /// Message once every street of the phone went into the tournée.
+  /// Message once every street of the phone went into the sector.
   ///
   /// In fr, this message translates to:
-  /// **'{count, plural, =1{1 rue ajoutée à la tournée} other{{count} rues ajoutées à la tournée}}'**
+  /// **'{count, plural, =1{1 rue ajoutée au secteur} other{{count} rues ajoutées au secteur}}'**
   String moveStreetsDone(int count);
 
-  /// Message once the phone's streets went into the tournée, some of them skipped because the tournée already had them.
+  /// Message once the phone's streets went into the sector, some of them skipped because the sector already had them.
   ///
   /// In fr, this message translates to:
-  /// **'{moved, plural, =0{Aucune rue ajoutée} =1{1 rue ajoutée} other{{moved} rues ajoutées}}, {already, plural, =1{1 déjà dans la tournée} other{{already} déjà dans la tournée}}'**
+  /// **'{moved, plural, =0{Aucune rue ajoutée} =1{1 rue ajoutée} other{{moved} rues ajoutées}}, {already, plural, =1{1 déjà dans le secteur} other{{already} déjà dans le secteur}}'**
   String moveStreetsDoneSome(int moved, int already);
 
   /// Line under the app's name on « Bienvenue » (PLAN §5.1, Welcome mockup).
   ///
   /// In fr, this message translates to:
-  /// **'Notez chaque porte de votre tournée et suivez l\'avancement de l\'équipe en direct.'**
+  /// **'Notez chaque porte de votre secteur et suivez l\'avancement de l\'équipe en direct.'**
   String get welcomeIntro;
 
   /// Hint under « Votre prénom » on « Bienvenue ».
@@ -2349,37 +2361,37 @@ abstract class AppLocalizations {
   /// **'Visible par votre équipe.'**
   String get welcomeNameHelp;
 
-  /// Button of « Bienvenue » and « Mes tournées » that opens « Nouvelle tournée ».
+  /// Button of « Bienvenue » and « Mes secteurs » that opens « Nouveau secteur ».
   ///
   /// In fr, this message translates to:
-  /// **'Créer une tournée'**
+  /// **'Créer un secteur'**
   String get createSectorAction;
 
-  /// Button of « Bienvenue » and « Mes tournées » that opens « Rejoindre une tournée ».
+  /// Button of « Bienvenue » and « Mes secteurs » that opens « Rejoindre un secteur ».
   ///
   /// In fr, this message translates to:
-  /// **'Rejoindre une tournée'**
+  /// **'Rejoindre un secteur'**
   String get joinSectorAction;
 
-  /// Screen-reader label of the app's name as the title of the start screen with no tournée open: a button that opens « Mes tournées ».
+  /// Screen-reader label of the app's name as the title of the start screen with no sector open: a button that opens « Mes secteurs ».
   ///
   /// In fr, this message translates to:
-  /// **'{title}. Mes tournées'**
+  /// **'{title}. Mes secteurs'**
   String appTitleSemantics(String title);
 
-  /// Line of « Nouvelle tournée » and « Rejoindre » while the phone gets its account.
+  /// Line of « Nouveau secteur » and « Rejoindre » while the phone gets its account.
   ///
   /// In fr, this message translates to:
   /// **'Connexion au serveur…'**
   String get accountSigningIn;
 
-  /// Line of « Nouvelle tournée » and « Rejoindre » when the phone could not get its account, with « Réessayer ».
+  /// Line of « Nouveau secteur » and « Rejoindre » when the phone could not get its account, with « Réessayer ».
   ///
   /// In fr, this message translates to:
-  /// **'Hors ligne : créer ou rejoindre une tournée demande le réseau.'**
+  /// **'Hors ligne : créer ou rejoindre un secteur demande le réseau.'**
   String get accountOffline;
 
-  /// Label of the centre de secours field of « Nouvelle tournée ».
+  /// Label of the centre de secours field of « Nouveau secteur ».
   ///
   /// In fr, this message translates to:
   /// **'Centre de secours'**
@@ -2403,19 +2415,19 @@ abstract class AppLocalizations {
   /// **'Nom limité à {max} caractères.'**
   String createCentreTooLong(int max);
 
-  /// Label of the number field of « Nouvelle tournée ».
+  /// Label of the number field of « Nouveau secteur ».
   ///
   /// In fr, this message translates to:
-  /// **'N° de tournée'**
+  /// **'N° de secteur'**
   String get createNumberLabel;
 
-  /// Under the number field when what is typed is not a tournée number.
+  /// Under the number field when what is typed is not a sector number.
   ///
   /// In fr, this message translates to:
   /// **'Un numéro de 1 à {max}.'**
   String createNumberInvalid(int max);
 
-  /// Label of the year field of « Nouvelle tournée ».
+  /// Label of the year field of « Nouveau secteur ».
   ///
   /// In fr, this message translates to:
   /// **'Année'**
@@ -2427,25 +2439,25 @@ abstract class AppLocalizations {
   /// **'Une année de {first} à {last}.'**
   String createYearInvalid(int first, int last);
 
-  /// Main button of « Nouvelle tournée ».
+  /// Main button of « Nouveau secteur ».
   ///
   /// In fr, this message translates to:
   /// **'Créer'**
   String get createAction;
 
-  /// Warning of « Nouvelle tournée » when the number is taken in that centre (CreateTaken mockup).
+  /// Warning of « Nouveau secteur » when the number is taken in that centre (CreateTaken mockup).
   ///
   /// In fr, this message translates to:
-  /// **'La tournée {number} du {centre} existe déjà.'**
+  /// **'Le secteur {number} du {centre} existe déjà.'**
   String createTakenTitle(String number, String centre);
 
-  /// Under the warning of a tournée that exists already.
+  /// Under the warning of a sector that exists already.
   ///
   /// In fr, this message translates to:
   /// **'Demandez le code ou le QR code à la personne qui l\'a créée.'**
   String get createTakenBody;
 
-  /// Button under the warning: opens « Rejoindre une tournée ».
+  /// Button under the warning: opens « Rejoindre un secteur ».
   ///
   /// In fr, this message translates to:
   /// **'Rejoindre avec un code'**
@@ -2457,13 +2469,13 @@ abstract class AppLocalizations {
   /// **'Pas de réseau. Réessayez une fois connecté.'**
   String get onboardingOffline;
 
-  /// Above the QR code of a tournée just created.
+  /// Above the QR code of a sector just created.
   ///
   /// In fr, this message translates to:
-  /// **'Tournée {number} · {centre} est prête. Montrez ce code à l\'équipe.'**
+  /// **'Secteur {number} · {centre} est prêt. Montrez ce code à l\'équipe.'**
   String createReady(String number, String centre);
 
-  /// Bottom button of « Nouvelle tournée » once created: opens the start screen on the new tournée.
+  /// Bottom button of « Nouveau secteur » once created: opens the start screen on the new sector.
   ///
   /// In fr, this message translates to:
   /// **'Continuer'**
@@ -2493,52 +2505,52 @@ abstract class AppLocalizations {
   /// **'Un code n\'a que des lettres et des chiffres, sans 0, O, 1, I ni L.'**
   String get joinInvalidCharacter;
 
-  /// Under the code boxes when the QR code scanned is not a tournée's.
+  /// Under the code boxes when the QR code scanned is not a sector's.
   ///
   /// In fr, this message translates to:
-  /// **'Ce QR code n\'est pas celui d\'une tournée.'**
+  /// **'Ce QR code n\'est pas celui d\'un secteur.'**
   String get joinScanRefused;
 
-  /// When no tournée has the code typed or scanned.
+  /// When no sector has the code typed or scanned.
   ///
   /// In fr, this message translates to:
-  /// **'Aucune tournée n\'a ce code. Vérifiez-le auprès de la personne qui vous l\'a donné.'**
+  /// **'Aucun secteur n\'a ce code. Vérifiez-le auprès de la personne qui vous l\'a donné.'**
   String get joinUnknownCode;
 
-  /// When the tournée of the code cannot be read for lack of network, with « Réessayer ».
+  /// When the sector of the code cannot be read for lack of network, with « Réessayer ».
   ///
   /// In fr, this message translates to:
-  /// **'Pas de réseau : la tournée ne peut pas être affichée.'**
+  /// **'Pas de réseau : le secteur ne peut pas être affiché.'**
   String get joinLookupOffline;
 
-  /// The tournée a join code shows, and the subtitle of « Demande envoyée ».
+  /// The sector a join code shows, and the subtitle of « Demande envoyée ».
   ///
   /// In fr, this message translates to:
-  /// **'Tournée {number} · {centre}'**
+  /// **'Secteur {number} · {centre}'**
   String joinPreviewTitle(String number, String centre);
 
-  /// Under the tournée a join code shows.
+  /// Under the sector a join code shows.
   ///
   /// In fr, this message translates to:
   /// **'Campagne {year}'**
   String joinPreviewCampaign(String year);
 
-  /// Main button of « Rejoindre une tournée »: sends the request.
+  /// Main button of « Rejoindre un secteur »: sends the request.
   ///
   /// In fr, this message translates to:
   /// **'Demander à rejoindre'**
   String get joinRequest;
 
-  /// When the tournée of the code is already one of the member's.
+  /// When the sector of the code is already one of the member's.
   ///
   /// In fr, this message translates to:
-  /// **'Cette tournée est déjà dans « Mes tournées ».'**
+  /// **'Ce secteur est déjà dans « Mes secteurs ».'**
   String get joinAlreadyJoined;
 
   /// Over the camera of « Scanner le QR code ».
   ///
   /// In fr, this message translates to:
-  /// **'Visez le QR code de la tournée.'**
+  /// **'Visez le QR code du secteur.'**
   String get scannerHint;
 
   /// On the camera screen when the camera is refused or missing.
@@ -2550,13 +2562,13 @@ abstract class AppLocalizations {
   /// Text of « Demande envoyée » (PLAN §5.2, JoinPending mockup).
   ///
   /// In fr, this message translates to:
-  /// **'Un membre de la tournée doit vous accepter. Demandez-le à la personne qui vous a donné le code.'**
+  /// **'Un membre du secteur doit vous accepter. Demandez-le à la personne qui vous a donné le code.'**
   String get joinPendingBody;
 
   /// Note of « Demande envoyée ».
   ///
   /// In fr, this message translates to:
-  /// **'Cet écran s\'ouvrira tout seul sur la tournée dès que vous serez accepté.'**
+  /// **'Cet écran s\'ouvrira tout seul sur le secteur dès que vous serez accepté.'**
   String get joinPendingOpensItself;
 
   /// Screen-reader label of the clock of « Demande envoyée ».
@@ -2577,22 +2589,22 @@ abstract class AppLocalizations {
   /// **'Demande refusée'**
   String get joinRefused;
 
-  /// Message over the next screen once the server said an admin removed the member from a tournée, which the phone then forgot (PLAN §5.3).
+  /// Message over the next screen once the server said an admin removed the member from a sector, which the phone then forgot (PLAN §5.3).
   ///
   /// In fr, this message translates to:
-  /// **'Vous avez été retiré de la tournée {number}.'**
+  /// **'Vous avez été retiré du secteur {number}.'**
   String sectorRemoved(String number);
 
-  /// Message over the next screen once the server said a tournée of the member was deleted, which the phone then forgot (PLAN §5.3).
+  /// Message over the next screen once the server said a sector of the member was deleted, which the phone then forgot (PLAN §5.3).
   ///
   /// In fr, this message translates to:
-  /// **'La tournée {number} a été supprimée.'**
+  /// **'Le secteur {number} a été supprimé.'**
   String sectorDeleted(String number);
 
-  /// Message over the next screen once the server said the phone is no longer an admin, so a tournée it only visited was forgotten (PLAN §5.12).
+  /// Message over the next screen once the server said the phone is no longer an admin, so a sector it only visited was forgotten (PLAN §5.12).
   ///
   /// In fr, this message translates to:
-  /// **'Vous n\'êtes plus administrateur : la tournée {number} est retirée de Mes tournées.'**
+  /// **'Vous n\'êtes plus administrateur : le secteur {number} est retiré de Mes secteurs.'**
   String sectorAdminRevoked(String number);
 
   /// Last row of Paramètres › Application: the phone's uid (PLAN §5.12).
@@ -2625,106 +2637,106 @@ abstract class AppLocalizations {
   /// **'Pas encore de compte : connectez-vous au réseau.'**
   String get deviceIdNoAccount;
 
-  /// Admin-only link of « Mes tournées » to every tournée of the app, and that screen's title (PLAN §5.12).
+  /// Admin-only link of « Mes secteurs » to every sector of the app, and that screen's title (PLAN §5.12).
   ///
   /// In fr, this message translates to:
-  /// **'Toutes les tournées'**
+  /// **'Tous les secteurs'**
   String get mySectorsAll;
 
-  /// Second line of a tournée an admin opened without being in its team (Switcher mockup).
+  /// Second line of a sector an admin opened without being in its team (Switcher mockup).
   ///
   /// In fr, this message translates to:
   /// **'{centre} · administrateur'**
   String mySectorsVisited(String centre);
 
-  /// Screen-reader label of a visited tournée not open in « Mes tournées ».
+  /// Screen-reader label of a visited sector not open in « Mes secteurs ».
   ///
   /// In fr, this message translates to:
   /// **'{title}, {centre}, administrateur, ouvrir'**
   String mySectorsVisitedSemantics(String title, String centre);
 
-  /// Screen-reader label of the open tournée in « Mes tournées » when the admin only visits it.
+  /// Screen-reader label of the open sector in « Mes secteurs » when the admin only visits it.
   ///
   /// In fr, this message translates to:
-  /// **'{title}, {centre}, administrateur, tournée ouverte'**
+  /// **'{title}, {centre}, administrateur, secteur ouvert'**
   String mySectorsVisitedOpenSemantics(String title, String centre);
 
-  /// Second line of a tournée greyed in « Mes tournées » while offline: it was never downloaded on this phone, so it cannot open (Switcher mockup, PLAN §5.3).
+  /// Second line of a sector greyed in « Mes secteurs » while offline: it was never downloaded on this phone, so it cannot open (Switcher mockup, PLAN §5.3).
   ///
   /// In fr, this message translates to:
   /// **'{centre} · Disponible avec réseau'**
   String mySectorsUnavailable(String centre);
 
-  /// Screen-reader label of a tournée greyed in « Mes tournées » while offline (announced as disabled too).
+  /// Screen-reader label of a sector greyed in « Mes secteurs » while offline (announced as disabled too).
   ///
   /// In fr, this message translates to:
   /// **'{title}, {centre}, disponible avec réseau'**
   String mySectorsUnavailableSemantics(String title, String centre);
 
-  /// Under the title of « Toutes les tournées » (AllSectors mockup).
+  /// Under the title of « Tous les secteurs » (AllSectors mockup).
   ///
   /// In fr, this message translates to:
-  /// **'Administrateur · {count, plural, =0{aucune tournée} =1{1 tournée} other{{count} tournées}}'**
+  /// **'Administrateur · {count, plural, =0{aucun secteur} =1{1 secteur} other{{count} secteurs}}'**
   String allSectorsSubtitle(int count);
 
-  /// Second line of a tournée of « Toutes les tournées »: its active members (« Aucun membre » in red).
+  /// Second line of a sector of « Tous les secteurs »: its active members (« Aucun membre » in red).
   ///
   /// In fr, this message translates to:
   /// **'{count, plural, =0{Aucun membre} =1{1 membre} other{{count} membres}}'**
   String allSectorsMembers(int count);
 
-  /// Second line of a tournée the admin is an active member of.
+  /// Second line of a sector the admin is an active member of.
   ///
   /// In fr, this message translates to:
   /// **'{members} · vous en êtes membre'**
   String allSectorsMine(String members);
 
-  /// Second line of a tournée where join requests wait, beside a red dot.
+  /// Second line of a sector where join requests wait, beside a red dot.
   ///
   /// In fr, this message translates to:
   /// **'{details} · {count, plural, =1{1 demande en attente} other{{count} demandes en attente}}'**
   String allSectorsWaiting(String details, int count);
 
-  /// Screen-reader label of a tournée of « Toutes les tournées »: the dot is said in the details.
+  /// Screen-reader label of a sector of « Tous les secteurs »: the dot is said in the details.
   ///
   /// In fr, this message translates to:
   /// **'{title}, {details}, ouvrir'**
   String allSectorsRowSemantics(String title, String details);
 
-  /// « Toutes les tournées » when the server cannot be reached; « Réessayer » under it.
+  /// « Tous les secteurs » when the server cannot be reached; « Réessayer » under it.
   ///
   /// In fr, this message translates to:
   /// **'Pas de réseau : la liste ne peut pas être affichée.'**
   String get allSectorsOffline;
 
-  /// Under « Créer », in « Toutes les tournées », or in a snackbar of Équipe and of the admin banner, when the server refused an admin's command because the phone's admins/{uid} was removed (PLAN §5.12).
+  /// Under « Créer », in « Toutes les sectors », or in a snackbar of Équipe and of the admin banner, when the server refused an admin's command because the phone's admins/{uid} was removed (PLAN §5.12).
   ///
   /// In fr, this message translates to:
   /// **'Vous n\'êtes plus administrateur.'**
   String get notAdminAnyMore;
 
-  /// Under the list of « Toutes les tournées » (AllSectors mockup).
+  /// Under the list of « Tous les secteurs » (AllSectors mockup).
   ///
   /// In fr, this message translates to:
-  /// **'Ouvrez une tournée pour la gérer : code, équipe, rues. Vous n\'y entrez comme membre que si vous la rejoignez.'**
+  /// **'Ouvrez un secteur pour le gérer : code, équipe, rues. Vous n\'y entrez comme membre que si vous le rejoignez.'**
   String get allSectorsHint;
 
-  /// « Toutes les tournées » when the app has none.
+  /// « Tous les secteurs » when the app has none.
   ///
   /// In fr, this message translates to:
-  /// **'Aucune tournée pour l\'instant.'**
+  /// **'Aucun secteur pour l\'instant.'**
   String get allSectorsEmpty;
 
-  /// Banner on Accueil when an admin opened a tournée they are not in (HomeAdmin mockup).
+  /// Banner on Accueil when an admin opened a sector they are not in (HomeAdmin mockup).
   ///
   /// In fr, this message translates to:
   /// **'Administrateur · pas membre'**
   String get adminBannerTitle;
 
-  /// Second line of the banner of an admin who is not in the tournée.
+  /// Second line of the banner of an admin who is not in the sector.
   ///
   /// In fr, this message translates to:
-  /// **'Vous n\'êtes pas dans l\'équipe de cette tournée.'**
+  /// **'Vous n\'êtes pas dans l\'équipe de ce secteur.'**
   String get adminBannerBody;
 
   /// Button of the banner: the admin joins the team at once (PLAN §5.12).
@@ -2733,10 +2745,10 @@ abstract class AppLocalizations {
   /// **'Rejoindre'**
   String get adminBannerJoin;
 
-  /// Button of Équipe for an admin who only visits the tournée: forgets it on the phone, writes nothing (PLAN §5.12).
+  /// Button of Équipe for an admin who only visits the sector: forgets it on the phone, writes nothing (PLAN §5.12).
   ///
   /// In fr, this message translates to:
-  /// **'Retirer de Mes tournées'**
+  /// **'Retirer de Mes secteurs'**
   String get teamForgetVisit;
 
   /// « supprimée par un administrateur »: an admin of the app who is not in the team (PLAN §5.12).
@@ -2748,7 +2760,7 @@ abstract class AppLocalizations {
   /// What screen readers say for the map (Accueil, Ajouter des rues).
   ///
   /// In fr, this message translates to:
-  /// **'Carte de la tournée'**
+  /// **'Carte du secteur'**
   String get mapLabel;
 
   /// Round button over the map that centres it on the phone's position (PLAN §5.3); said by screen readers and shown as its tooltip.
@@ -2817,13 +2829,13 @@ abstract class AppLocalizations {
   /// **'Touché en {latitude}, {longitude}'**
   String galleryMapTapped(String latitude, String longitude);
 
-  /// Label of the communes of « Nouvelle tournée » (#78), and header of the communes in Équipe.
+  /// Label of the communes of « Nouveau secteur » (#78), and header of the communes in Équipe.
   ///
   /// In fr, this message translates to:
   /// **'Communes'**
   String get communesLabel;
 
-  /// Placeholder of the field that searches a commune to add to a tournée (« Nouvelle tournée », Équipe).
+  /// Placeholder of the field that searches a commune to add to a sector (« Nouveau secteur », Équipe).
   ///
   /// In fr, this message translates to:
   /// **'Ajouter une commune…'**
@@ -2835,7 +2847,7 @@ abstract class AppLocalizations {
   /// **'Retirer {name}'**
   String communeRemove(String name);
 
-  /// Header of the tournée's communes in Équipe.
+  /// Header of the sector's communes in Équipe.
   ///
   /// In fr, this message translates to:
   /// **'Communes ({count})'**
@@ -2847,19 +2859,19 @@ abstract class AppLocalizations {
   /// **'Ajouter une commune'**
   String get teamAddCommune;
 
-  /// Snackbar of Équipe: the commune picked is already one of the tournée's.
+  /// Snackbar of Équipe: the commune picked is already one of the sector's.
   ///
   /// In fr, this message translates to:
-  /// **'Cette commune est déjà dans la tournée.'**
+  /// **'Cette commune est déjà dans le secteur.'**
   String get teamCommuneAlreadyIn;
 
-  /// Snackbar of Équipe: the tournée covers as many communes as it may.
+  /// Snackbar of Équipe: the sector covers as many communes as it may.
   ///
   /// In fr, this message translates to:
-  /// **'Une tournée a au plus {max} communes.'**
+  /// **'Un secteur a au plus {max} communes.'**
   String teamTooManyCommunes(int max);
 
-  /// Button of the start screen while a tournée is open, and title of the screen it opens (PLAN §5.4).
+  /// Button of the start screen while a sector is open, and title of the screen it opens (PLAN §5.4).
   ///
   /// In fr, this message translates to:
   /// **'Ajouter des rues'**
@@ -2883,13 +2895,13 @@ abstract class AppLocalizations {
   /// **'Liste'**
   String get addStreetsListTab;
 
-  /// Right of a street of the « Liste » tab that the tournée already has.
+  /// Right of a street of the « Liste » tab that the sector already has.
   ///
   /// In fr, this message translates to:
-  /// **'déjà dans la tournée'**
+  /// **'déjà dans le secteur'**
   String get alreadyInSector;
 
-  /// Button of the « Liste » tab: adds the ticked streets to the tournée.
+  /// Button of the « Liste » tab: adds the ticked streets to the sector.
   ///
   /// In fr, this message translates to:
   /// **'{count, plural, =0{Ajouter} =1{Ajouter 1 rue} other{Ajouter {count} rues}}'**
@@ -2901,13 +2913,13 @@ abstract class AppLocalizations {
   /// **'Ajout en cours… {done}/{total}'**
   String addProgress(int done, int total);
 
-  /// Snackbar once every street ticked in the « Liste » tab is in the tournée.
+  /// Snackbar once every street ticked in the « Liste » tab is in the sector.
   ///
   /// In fr, this message translates to:
-  /// **'{count, plural, =0{Aucune nouvelle rue} =1{1 rue ajoutée à la tournée} other{{count} rues ajoutées à la tournée}}'**
+  /// **'{count, plural, =0{Aucune nouvelle rue} =1{1 rue ajoutée au secteur} other{{count} rues ajoutées au secteur}}'**
   String addDone(int count);
 
-  /// Snackbar once the streets ticked are in the tournée, some back from the Corbeille.
+  /// Snackbar once the streets ticked are in the sector, some back from the Corbeille.
   ///
   /// In fr, this message translates to:
   /// **'{added, plural, =1{1 rue ajoutée} other{{added} rues ajoutées}}, {restored, plural, =1{1 restaurée} other{{restored} restaurées}}'**
@@ -2931,7 +2943,7 @@ abstract class AppLocalizations {
   /// **'Mes rues, {done} sur {total} faits'**
   String homeMyStreetsSemantics(int done, int total);
 
-  /// Header of Accueil's panel for an admin who visits the tournée (PLAN §5.12): the doors done of every street.
+  /// Header of Accueil's panel for an admin who visits the sector (PLAN §5.12): the doors done of every street.
   ///
   /// In fr, this message translates to:
   /// **'Rues · {done}/{total}'**
@@ -2943,16 +2955,16 @@ abstract class AppLocalizations {
   /// **'Rues, {done} sur {total} faits'**
   String homeStreetsVisitorSemantics(int done, int total);
 
-  /// Right of the panel's header: the share of the whole tournée's doors done, rounded down.
+  /// Right of the panel's header: the share of the whole sector's doors done, rounded down.
   ///
   /// In fr, this message translates to:
   /// **'Équipe : {percent} %'**
   String homeTeamProgress(int percent);
 
-  /// Section of Accueil's panel under « Mes rues »: the streets of the tournée the member does not cover, free or someone else's.
+  /// Section of Accueil's panel under « Mes rues »: the streets of the sector the member does not cover, free or someone else's.
   ///
   /// In fr, this message translates to:
-  /// **'Autres rues de la tournée ({count})'**
+  /// **'Autres rues du secteur ({count})'**
   String homeOtherStreets(int count);
 
   /// Accueil's panel, under « Mes rues · 0/0 », when the member covers no street.
@@ -2961,10 +2973,10 @@ abstract class AppLocalizations {
   /// **'Vous n\'avez pas encore de rue.'**
   String get homeNoStreetOfMine;
 
-  /// Accueil's panel when the tournée has no street at all.
+  /// Accueil's panel when the sector has no street at all.
   ///
   /// In fr, this message translates to:
-  /// **'Aucune rue dans la tournée pour l\'instant.'**
+  /// **'Aucune rue dans le secteur pour l\'instant.'**
   String get homeNoStreet;
 
   /// Screen-reader name of the handle of Accueil's panel: shows the whole list of streets.
@@ -3033,7 +3045,7 @@ abstract class AppLocalizations {
   /// **'Effacer la recherche'**
   String get addStreetsSearchClear;
 
-  /// Under the search box when the BAN finds no street of that name in the tournée's communes.
+  /// Under the search box when the BAN finds no street of that name in the sector's communes.
   ///
   /// In fr, this message translates to:
   /// **'Aucune rue trouvée.'**
@@ -3075,10 +3087,10 @@ abstract class AppLocalizations {
   /// **'{count, plural, =0{Aucun numéro} =1{1 numéro} other{{count} numéros}}'**
   String streetCardNumbers(int count);
 
-  /// Chip of the card of a street the tournée does not have.
+  /// Chip of the card of a street the sector does not have.
   ///
   /// In fr, this message translates to:
-  /// **'Pas encore dans la tournée'**
+  /// **'Pas encore dans le secteur'**
   String get streetCardNotInSector;
 
   /// Red button of the card of a street to add: adds it, in the member's streets.
@@ -3111,7 +3123,7 @@ abstract class AppLocalizations {
   /// **'Rue absente de la carte ? Saisir à la main'**
   String get streetCardManualLink;
 
-  /// Chip of the card of a street of the tournée: its doors done.
+  /// Chip of the card of a street of the sector: its doors done.
   ///
   /// In fr, this message translates to:
   /// **'{done}/{total} faits'**
@@ -3171,7 +3183,7 @@ abstract class AppLocalizations {
   /// **'Ne plus la faire'**
   String get streetCardRelease;
 
-  /// Button of the card of a street of the tournée: opens the street.
+  /// Button of the card of a street of the sector: opens the street.
   ///
   /// In fr, this message translates to:
   /// **'Ouvrir'**
@@ -3186,7 +3198,7 @@ abstract class AppLocalizations {
   /// Under « Connexion nécessaire pour ajouter une rue ».
   ///
   /// In fr, this message translates to:
-  /// **'Les rues déjà dans la tournée se prennent et s\'ouvrent sans réseau.'**
+  /// **'Les rues déjà dans le secteur se prennent et s\'ouvrent sans réseau.'**
   String get streetCardNoNetworkHint;
 
   /// Title of the card when the BAN knows no street at the point tapped.
@@ -3237,10 +3249,10 @@ abstract class AppLocalizations {
   /// **'Commune'**
   String get manualCommune;
 
-  /// Over the commune search of « Rue à la main » for a tournée without commune nor street.
+  /// Over the commune search of « Rue à la main » for a sector without commune nor street.
   ///
   /// In fr, this message translates to:
-  /// **'La tournée n\'a pas encore de commune : cherchez celle de la rue.'**
+  /// **'Le secteur n\'a pas encore de commune : cherchez celle de la rue.'**
   String get manualNoCommune;
 
   /// Label of the first number of the range of « Rue à la main ».

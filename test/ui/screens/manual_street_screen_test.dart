@@ -174,7 +174,7 @@ void main() {
     await pumpManual(tester);
     expect(
       find.text(
-        'La tournée n\'a pas encore de commune : cherchez celle de la '
+        'Le secteur n\'a pas encore de commune : cherchez celle de la '
         'rue.',
       ),
       findsOneWidget,

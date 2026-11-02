@@ -20,7 +20,7 @@ import '../../domain/sector/sector_fixtures.dart';
 import '../../support/results.dart';
 import '../../support/scripted_random.dart';
 
-/// Tournée 49 of the CS Villefranche, just created by Manu.
+/// Secteur 49 of the CS Villefranche, just created by Manu.
 final created = Sector.createdBy(
   id: sectorId,
   number: number49,

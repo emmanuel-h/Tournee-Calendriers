@@ -163,7 +163,7 @@ void main() {
       expect(find.text('Petit Chemin de Bordelan'), findsOneWidget);
       expect(find.text('Villefranche-sur-Saône'), findsOneWidget);
       expect(find.text('1 numéro'), findsOneWidget);
-      expect(find.text('Pas encore dans la tournée'), findsOneWidget);
+      expect(find.text('Pas encore dans le secteur'), findsOneWidget);
       expect(find.text("Ajouter sans m'attribuer"), findsOneWidget);
       expect(
         find.text('Rue absente de la carte ? Saisir à la main'),
@@ -357,7 +357,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Pas encore dans la tournée'), findsOneWidget);
+      expect(find.text('Pas encore dans le secteur'), findsOneWidget);
       expect(
         shownMap(tester).area,
         GeoBounds.around([_onBordelan])!.expandedBy(200),

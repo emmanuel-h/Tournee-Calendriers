@@ -9,7 +9,7 @@ import 'package:tournee_calendriers/domain/sector/sector_loss.dart';
 import 'package:tournee_calendriers/domain/sector/sector_summary.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 
-// « Mes tournées » (PLAN §5.3, §6.3): the member's tournées on this phone,
+// « Mes secteurs » (PLAN §5.3, §6.3): the member's tournées on this phone,
 // which one is open, what became of their requests to join, and whether
 // they are still in each tournée. Everything but following a request or a
 // membership works offline; offline, neither ever forgets a tournée.
@@ -33,7 +33,7 @@ final class ObserveMySectors {
   Stream<MySectors> call() => _store.changes;
 }
 
-/// Opens the tournée [SectorId] (a tap in « Mes tournées »): the app
+/// Opens the tournée [SectorId] (a tap in « Mes secteurs »): the app
 /// shows it now and at the next launch. Returns it, or why it cannot be
 /// opened.
 final class OpenSector {
@@ -151,7 +151,7 @@ final class LostSector {
     required this.wasOpen,
   });
 
-  /// The tournée as the phone kept it: « la tournée 49 ».
+  /// The tournée as the phone kept it: « le secteur 49 ».
   final SectorSummary sector;
   final SectorLoss loss;
   final bool wasOpen;
@@ -173,7 +173,7 @@ final class LostSector {
 }
 
 /// Forgets the tournée [SectorId] the member lost ([SectorLoss]): it
-/// leaves « Mes tournées » and, when it was open, none is open any more.
+/// leaves « Mes secteurs » and, when it was open, none is open any more.
 /// Returns what was forgotten, for the app to say it.
 ///
 /// Returns null and changes nothing when the phone no longer knows the

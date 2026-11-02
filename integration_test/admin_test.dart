@@ -93,9 +93,9 @@ Map<String, Object?> _text(String value) => {'stringValue': value};
 Map<String, Object?> _int(int value) => {'integerValue': '$value'};
 Map<String, Object?> _time(String value) => {'timestampValue': value};
 
-/// Tournée 12 of the CS Villefranche, created by Léa, who is its only
+/// Secteur 12 of the CS Villefranche, created by Léa, who is its only
 /// member: one the admin on the phone is not in. Its centre is then known
-/// to « Nouvelle tournée ». Shaped as the Firestore
+/// to « Nouveau secteur ». Shaped as the Firestore
 /// mappers write it (PLAN §6.2).
 Future<void> _seedSector12() async {
   const id = 'e2eSector12';
@@ -208,7 +208,7 @@ void main() {
       final uid = FirebaseAuth.instance.currentUser!.uid;
 
       // The console makes the phone an admin's: « Bienvenue » offers
-      // « Créer une tournée ».
+      // « Créer un secteur ».
       await _put('admins/$uid', {});
       await _seedSector12();
       await tester.enterText(find.byKey(const Key('welcome.name')), 'Sam');
@@ -216,7 +216,7 @@ void main() {
       await tester.pumpAndSettle();
       await _tap(tester, const Key('welcome.create'));
 
-      // « Nouvelle tournée »: the CS Villefranche (known to the server
+      // « Nouveau secteur »: the CS Villefranche (known to the server
       // since the 12), number 49, the year as given, « Créer ».
       await tester.enterText(find.byKey(const Key('create.centre')), 'villef');
       await _tap(tester, const ValueKey('create.centre.villefranche'));
@@ -228,7 +228,7 @@ void main() {
       await _tap(tester, const Key('create.create'));
       await _waitFor(tester, find.byKey(const Key('create.code')));
       await _tap(tester, const Key('create.continue'));
-      expect(find.text('Tournée 49 · 2026'), findsOneWidget);
+      expect(find.text('Secteur 49 · 2026'), findsOneWidget);
 
       // Équipe: the creator is in the team, as an admin.
       await _tap(tester, const Key('home.team'));
@@ -242,12 +242,12 @@ void main() {
       await tester.tap(find.byTooltip('Retour'));
       await tester.pumpAndSettle();
 
-      // « Toutes les tournées » → the 12, which Sam is not in: the banner
+      // « Tous les secteurs » → the 12, which Sam is not in: the banner
       // « Administrateur · pas membre », then « Rejoindre ».
       await _tap(tester, const Key('home.sector'));
       await _tap(tester, const Key('mySectors.all'));
       await _tap(tester, const ValueKey('allSectors.e2eSector12'));
-      expect(find.text('Tournée 12 · 2026'), findsOneWidget);
+      expect(find.text('Secteur 12 · 2026'), findsOneWidget);
       await _waitFor(tester, find.byKey(const Key('home.adminBanner')));
       await _tap(tester, const Key('home.adminJoin'));
       expect(find.byKey(const Key('home.adminBanner')), findsNothing);
@@ -268,7 +268,7 @@ void main() {
       await _waitFor(tester, find.byKey(const Key('create.notAdmin')));
       expect(find.text("Vous n'êtes plus administrateur."), findsOneWidget);
 
-      // Back on Accueil, « Mes tournées » no longer offers « Créer ».
+      // Back on Accueil, « Mes secteurs » no longer offers « Créer ».
       await tester.tap(find.byTooltip('Retour'));
       await tester.pumpAndSettle();
       await _tap(tester, const Key('home.sector'));

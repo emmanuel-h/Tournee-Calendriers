@@ -3,7 +3,7 @@ import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/sector/sector_summary.dart';
 import 'package:tournee_calendriers/domain/shared/same_items.dart';
 
-/// Where a tournée of « Mes tournées » stands for the member.
+/// Where a tournée of « Mes secteurs » stands for the member.
 enum SectorRowStatus {
   /// The tournée the app shows (● and ✓ in the sheet).
   open,
@@ -16,7 +16,7 @@ enum SectorRowStatus {
   pending,
 }
 
-/// One row of « Mes tournées » (« Tournée 49 · 2026 », « CS
+/// One row of « Mes secteurs » (« Tournée 49 · 2026 », « CS
 /// Villefranche »).
 final class SectorRow {
   const SectorRow({
@@ -72,7 +72,7 @@ final class SectorRow {
   );
 }
 
-/// What « Mes tournées » and the title of the start screen show (PLAN
+/// What « Mes secteurs » and the title of the start screen show (PLAN
 /// §5.3). Immutable: the notifier replaces it as a whole.
 final class MySectorsState {
   MySectorsState({required List<SectorRow> rows, required this.current})

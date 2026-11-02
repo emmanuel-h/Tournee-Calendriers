@@ -1,4 +1,4 @@
-// Translation between « Mes tournées » (PLAN §6.3) and the JSON the phone
+// Translation between « Mes secteurs » (PLAN §6.3) and the JSON the phone
 // keeps for them. Pure functions: no file here, so they are tested alone.
 //
 // The schema, version 1:
@@ -56,7 +56,7 @@ Map<String, Object?> mySectorsToJson(MySectors mine) => {
   ],
 };
 
-/// « Mes tournées » read from [json] as `jsonDecode` gives it. Throws a
+/// « Mes secteurs » read from [json] as `jsonDecode` gives it. Throws a
 /// [FormatException] when it is not a version 1 file, or when a value
 /// breaks the domain's rules (the open tournée must be an active one of the
 /// list).
@@ -80,7 +80,7 @@ MySectors mySectorsFromJson(Object? json) {
       ),
     };
   }
-  throw FormatException('Not « Mes tournées »: $json');
+  throw FormatException('Not « Mes secteurs »: $json');
 }
 
 SectorSummary _sectorFromJson(Object? json) {

@@ -76,7 +76,7 @@ final class CommuneOption {
   /// Which commune: the import asks the BAN for it.
   InseeCode get inseeCode => commune.inseeCode;
 
-  /// The commune as a tournée keeps it (« Nouvelle tournée », Équipe).
+  /// The commune as a tournée keeps it (« Nouveau secteur », Équipe).
   SectorCommune get sectorCommune =>
       SectorCommune(commune: commune, centre: centre);
 

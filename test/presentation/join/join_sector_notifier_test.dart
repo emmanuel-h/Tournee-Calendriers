@@ -46,7 +46,7 @@ void main() {
   late FakeMySectorsStore store;
   late ProviderContainer container;
 
-  /// Opens « Rejoindre une tournée » on Julie's phone; [name] is the name
+  /// Opens « Rejoindre un secteur » on Julie's phone; [name] is the name
   /// kept.
   Future<void> open({MemberName? name}) async {
     container = ProviderContainer(

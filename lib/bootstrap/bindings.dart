@@ -230,7 +230,7 @@ final class _NothingToSend implements PendingSync {
 }
 
 /// Whether the phone is offline while no tournée is open: no listener runs
-/// to tell, so it says online, which leaves « Mes tournées » as it is.
+/// to tell, so it says online, which leaves « Mes secteurs » as it is.
 final class _NothingToTell implements ServerConnection {
   const _NothingToTell();
 

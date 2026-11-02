@@ -42,7 +42,7 @@ final class HomeState {
   /// street of the tournée for a visiting admin.
   final List<StreetRow> mine;
 
-  /// The other streets of the tournée (« Autres rues de la tournée »), in
+  /// The other streets of the tournée (« Autres rues du secteur »), in
   /// French order; none for a visiting admin.
   final List<StreetRow> others;
 
@@ -53,7 +53,7 @@ final class HomeState {
   /// null (all of France) when neither has a place on the map. Decided
   /// when the streets are first read, so a street added meanwhile by the
   /// team never moves the map under the member's finger; it moves only to
-  /// a street tapped among « Autres rues de la tournée » (#93).
+  /// a street tapped among « Autres rues du secteur » (#93).
   final GeoBounds? area;
 
   /// The card of the street tapped on the map or among « Autres rues de

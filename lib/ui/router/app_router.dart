@@ -112,7 +112,7 @@ GoRouter buildAppRouter({
       path: AppRoutes.team,
       builder: (context, state) => const TeamScreen(),
     ),
-    // Pushed by « Toutes les tournées › » of « Mes tournées » (admins).
+    // Pushed by « Tous les secteurs › » of « Mes secteurs » (admins).
     GoRoute(
       path: AppRoutes.allSectors,
       builder: (context, state) => const AllSectorsScreen(),

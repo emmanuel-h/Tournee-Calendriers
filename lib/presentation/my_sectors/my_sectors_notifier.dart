@@ -9,7 +9,7 @@ import 'package:tournee_calendriers/domain/sector/sector_summary.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_state.dart';
 
-/// « Mes tournées » for the whole app. Not `autoDispose`: the open
+/// « Mes secteurs » for the whole app. Not `autoDispose`: the open
 /// tournée is needed by every screen, and the member's requests are
 /// followed as long as the app runs, not only while the sheet is shown.
 final mySectorsProvider = NotifierProvider<MySectorsNotifier, MySectorsState>(

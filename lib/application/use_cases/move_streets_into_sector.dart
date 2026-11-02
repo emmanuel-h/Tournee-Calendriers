@@ -41,7 +41,7 @@ final class CountStreetsToMove {
   }
 }
 
-/// What « Les ajouter à la tournée » did: « 10 rues ajoutées, 2 déjà dans
+/// What « Les ajouter au secteur » did: « 10 rues ajoutées, 2 déjà dans
 /// la tournée ».
 final class StreetsMoved {
   const StreetsMoved({required this.moved, required this.alreadyThere});

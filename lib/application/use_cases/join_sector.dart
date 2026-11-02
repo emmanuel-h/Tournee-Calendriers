@@ -10,7 +10,7 @@ import 'package:tournee_calendriers/domain/sector/sector_summary.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 
-// « Rejoindre une tournée » and « Demande envoyée » (PLAN §5.2): the
+// « Rejoindre un secteur » and « Demande envoyée » (PLAN §5.2): the
 // tournée a code shows, the request to join it, and its cancellation.
 
 /// The tournée whose join code is [JoinCode], from the server (« Tournée
@@ -36,7 +36,7 @@ enum RequestToJoinFailure {
 
 /// « Demander à rejoindre »: signs in when the phone has no account yet,
 /// sends the request as [MemberName], and keeps the tournée on the phone as
-/// a pending request (« Mes tournées », PLAN §5.3), which the app follows
+/// a pending request (« Mes secteurs », PLAN §5.3), which the app follows
 /// until it is answered. Returns that pending tournée.
 ///
 /// The request itself is queued like any write: once signed in, it is kept

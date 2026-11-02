@@ -654,7 +654,7 @@ void main() {
 
       await bootstrap(storage: storage, communeSearch: communes);
       await tester.pumpAndSettle();
-      expect(find.text('Tournée 49 · 2026'), findsOneWidget);
+      expect(find.text('Secteur 49 · 2026'), findsOneWidget);
       expect(find.text('CS Villefranche'), findsOneWidget);
 
       // Accueil (#30), offline: the map of the tournée under the legend,
@@ -666,7 +666,7 @@ void main() {
       expect(find.byKey(const Key('map.legend')), findsOneWidget);
       expect(find.text('Mes rues · 0/0'), findsOneWidget);
       expect(
-        find.text("Aucune rue dans la tournée pour l'instant."),
+        find.text("Aucune rue dans le secteur pour l'instant."),
         findsOneWidget,
       );
       final panel = find.byKey(const Key('home.panel'));
@@ -774,7 +774,7 @@ void main() {
       await tester.tap(find.byKey(const Key('home.panel.handle')));
       await tester.pumpAndSettle();
 
-      // « Mes tournées » offline (#33): the 12 was never downloaded on
+      // « Mes secteurs » offline (#33): the 12 was never downloaded on
       // this phone, so it is greyed and a tap leaves the sheet open. Once
       // it counts as downloaded, it opens as before. Firestore's network
       // is off for the whole suite, so « offline » is certain here.
@@ -804,7 +804,7 @@ void main() {
       expect(find.textContaining('Disponible avec réseau'), findsNothing);
       await tester.tap(find.byKey(const ValueKey('mySectors.t12')));
       await tester.pumpAndSettle();
-      expect(find.text('Tournée 12 · 2026'), findsOneWidget);
+      expect(find.text('Secteur 12 · 2026'), findsOneWidget);
 
       // A restart opens the tournée chosen last.
       runApp(const SizedBox.shrink());
@@ -812,7 +812,7 @@ void main() {
       await bootstrap(storage: storage);
       await tester.pumpAndSettle();
 
-      expect(find.text('Tournée 12 · 2026'), findsOneWidget);
+      expect(find.text('Secteur 12 · 2026'), findsOneWidget);
     },
   );
 
@@ -834,7 +834,7 @@ void main() {
       await bootstrap(storage: storage);
       await tester.pumpAndSettle();
       expect(find.text('Visible par votre équipe.'), findsOneWidget);
-      // « Créer une tournée » shows only on an admin's phone (PLAN §5.12),
+      // « Créer un secteur » shows only on an admin's phone (PLAN §5.12),
       // which depends on the real project: only « Rejoindre » is checked.
       expect(enabled('welcome.join'), isFalse);
 
@@ -850,7 +850,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(button('welcome.join'));
       await tester.pumpAndSettle();
-      expect(find.text('Rejoindre une tournée'), findsOneWidget);
+      expect(find.text('Rejoindre un secteur'), findsOneWidget);
       expect(find.byKey(const Key('join.first')), findsOneWidget);
       // The settings file is written just after the tap: let it land.
       await Future<void>.delayed(const Duration(seconds: 1));

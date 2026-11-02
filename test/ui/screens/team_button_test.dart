@@ -77,6 +77,6 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(TeamScreen), findsOneWidget);
-    expect(find.text('Tournée 49'), findsOneWidget);
+    expect(find.text('Secteur 49'), findsOneWidget);
   });
 }

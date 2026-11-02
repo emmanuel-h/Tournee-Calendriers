@@ -82,7 +82,7 @@ final streetRepositoryProvider = Provider<StreetRepository>(
 );
 
 /// The streets kept on the phone since M1, whichever tournée is open: what
-/// « Les ajouter à la tournée » moves (PLAN §5.0).
+/// « Les ajouter au secteur » moves (PLAN §5.0).
 final phoneStreetRepositoryProvider = Provider<StreetRepository>(
   (ref) => _unbound('phone StreetRepository'),
 );

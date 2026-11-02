@@ -320,7 +320,7 @@ void main() {
           mySectorsStoreProvider.overrideWithValue(mySectors),
           clockProvider.overrideWithValue(clock),
           streetRepositoryProvider.overrideWithValue(streets49),
-          // « Mes tournées » follows the team of each tournée not open.
+          // « Mes secteurs » follows the team of each tournée not open.
           sectorRepositoryProvider.overrideWithValue(FakeSectorRepository()),
         ],
       );

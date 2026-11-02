@@ -60,7 +60,7 @@ final class MoveStreetsNotifier extends Notifier<MoveStreetsState> {
     return const NoStreetsToMove();
   }
 
-  /// « Les ajouter à la tournée »: moves the phone's streets into the open
+  /// « Les ajouter au secteur »: moves the phone's streets into the open
   /// tournée, showing how far it went, and returns what it did for the
   /// message; null when the card was not offering them.
   ///

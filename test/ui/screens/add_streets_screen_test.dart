@@ -124,7 +124,7 @@ void main() {
     expect(find.byKey(const Key('import.commune')), findsNothing);
     expect(find.byKey(const ValueKey('import.commune.69264')), findsOneWidget);
     expect(find.byKey(const ValueKey('import.commune.69092')), findsOneWidget);
-    expect(find.text('déjà dans la tournée'), findsOneWidget);
+    expect(find.text('déjà dans le secteur'), findsOneWidget);
     expect(find.text('Ajouter'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('import.commune.69092')));
@@ -151,7 +151,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(AddStreetsScreen), findsNothing);
-    expect(find.text('1 rue ajoutée à la tournée'), findsOneWidget);
+    expect(find.text('1 rue ajoutée au secteur'), findsOneWidget);
     expect(await streets.findByBanId(_bordelan), isNotNull);
   });
 

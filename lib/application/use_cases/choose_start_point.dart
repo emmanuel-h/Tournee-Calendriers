@@ -49,7 +49,7 @@ final class StartOnRequest extends StartPoint {
 /// 3. a request to join waits → its waiting screen, the latest one
 ///    (« Until accepted, the app shows this screen at every launch »);
 /// 4. the phone knows tournées, none open → the start screen, whose title
-///    opens « Mes tournées »;
+///    opens « Mes secteurs »;
 /// 5. otherwise → « Bienvenue ».
 ///
 /// Also where to go once a request is refused or cancelled.

@@ -20,13 +20,13 @@ final duplicateCheckDelayProvider = Provider<Duration>(
   (ref) => const Duration(milliseconds: 300),
 );
 
-/// « Nouvelle tournée ». `autoDispose`: each visit starts afresh.
+/// « Nouveau secteur ». `autoDispose`: each visit starts afresh.
 final newSectorProvider =
     NotifierProvider.autoDispose<NewSectorNotifier, NewSectorState>(
       NewSectorNotifier.new,
     );
 
-/// « Nouvelle tournée » (PLAN §5.2): the centre de secours picked from the
+/// « Nouveau secteur » (PLAN §5.2): the centre de secours picked from the
 /// known ones or added, the communes it covers, the number checked as it
 /// is typed, the year, then « Créer », which shows the code and the QR
 /// code once done.
@@ -116,7 +116,7 @@ final class NewSectorNotifier extends Notifier<NewSectorState> {
     ],
   );
 
-  /// « N° de tournée » changed to [text].
+  /// « N° de secteur » changed to [text].
   void typeNumber(String text) {
     final number = SectorNumber.parse(text);
     state = state.copyWith(

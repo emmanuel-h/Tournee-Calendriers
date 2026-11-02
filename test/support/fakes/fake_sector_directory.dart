@@ -1,4 +1,4 @@
-// A SectorDirectory in memory, for « Mes tournées », « Nouvelle tournée »
+// A SectorDirectory in memory, for « Mes secteurs », « Nouveau secteur »
 // and « Rejoindre ». A test plays the server: it adds to the stream of a
 // request ([answer]), says which codes show a tournée ([previews]), which
 // numbers are taken ([taken]) and which centres are known ([centres]), or
@@ -163,7 +163,7 @@ final class FakeSectorDirectory implements SectorDirectory {
     return Ok(taken.contains((centre.key, number)));
   }
 
-  /// Every tournée of the app, as « Toutes les tournées » lists them.
+  /// Every tournée of the app, as « Tous les secteurs » lists them.
   List<SectorOverview> overviews = const [];
 
   /// Every admin [allSectors] was asked for, in order.

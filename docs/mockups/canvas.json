@@ -14,21 +14,21 @@
       "y": 0,
       "w": 390,
       "h": 844,
-      "title": "5.2 Créer une tournée"
+      "title": "5.2 Créer un secteur"
     },
     "Join.dc.html": {
       "x": 940,
       "y": 0,
       "w": 390,
       "h": 844,
-      "title": "5.2 Rejoindre une tournée"
+      "title": "5.2 Rejoindre un secteur"
     },
     "Home.dc.html": {
       "x": 0,
       "y": 1264,
       "w": 390,
       "h": 844,
-      "title": "5.3 Accueil — carte de la tournée",
+      "title": "5.3 Accueil — carte du secteur",
       "is_interactive": true
     },
     "HomeZoom.dc.html": {
@@ -118,7 +118,7 @@
       "y": 0,
       "w": 390,
       "h": 844,
-      "title": "5.2 Créer — tournée déjà existante"
+      "title": "5.2 Créer — secteur déjà existant"
     },
     "Campaign.dc.html": {
       "x": 940,
@@ -146,7 +146,7 @@
       "y": 1264,
       "w": 390,
       "h": 844,
-      "title": "5.3 Mes tournées (administrateur)"
+      "title": "5.3 Mes secteurs (administrateur)"
     },
     "Doors.dc.html": {
       "x": 2820,
@@ -167,7 +167,7 @@
       "y": 5056,
       "w": 390,
       "h": 844,
-      "title": "5.12 Toutes les tournées (administrateur)"
+      "title": "5.12 Tous les secteurs (administrateur)"
     },
     "HomeAdmin.dc.html": {
       "x": 470,
@@ -211,7 +211,7 @@
       "y": 6320,
       "w": 390,
       "h": 844,
-      "title": "5.0 Mes rues (sans tournée ouverte)"
+      "title": "5.0 Mes rues (sans secteur ouvert)"
     },
     "Import.dc.html": {
       "x": 470,
@@ -334,7 +334,7 @@
     "rowPhone": {
       "x": 0,
       "y": 6020,
-      "text": "Sans tournée ouverte",
+      "text": "Sans secteur ouvert",
       "kind": "title1",
       "maxW": 860,
       "w": 240

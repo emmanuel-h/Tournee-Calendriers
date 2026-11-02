@@ -78,7 +78,7 @@ void main() {
       find.text('2 rues sont enregistrées sur ce téléphone.'),
       findsOneWidget,
     );
-    expect(find.text('Les ajouter à la tournée'), findsOneWidget);
+    expect(find.text('Les ajouter au secteur'), findsOneWidget);
     expect(find.text('Plus tard'), findsOneWidget);
     // Above Accueil's map and its panel.
     expect(
@@ -100,11 +100,11 @@ void main() {
     await tester.tap(find.byKey(const Key('start.moveStreets')));
     await tester.pump();
     expect(find.text('Ajout en cours… 0/2'), findsOneWidget);
-    expect(find.text('Les ajouter à la tournée'), findsNothing);
+    expect(find.text('Les ajouter au secteur'), findsNothing);
     sectorStreets.holdAdds!.complete();
     await tester.pumpAndSettle();
 
-    expect(find.text('2 rues ajoutées à la tournée'), findsOneWidget);
+    expect(find.text('2 rues ajoutées au secteur'), findsOneWidget);
     expect(card, findsNothing);
     // The whole list of Accueil's panel.
     await tester.tap(find.byKey(const Key('home.panel.handle')));
@@ -125,7 +125,7 @@ void main() {
     await tester.tap(find.byKey(const Key('start.moveStreets')));
     await tester.pumpAndSettle();
 
-    expect(find.text('1 rue ajoutée, 1 déjà dans la tournée'), findsOneWidget);
+    expect(find.text('1 rue ajoutée, 1 déjà dans le secteur'), findsOneWidget);
     expect(sectorStreets.added.single.id, StreetId('s2'));
   });
 
@@ -147,15 +147,15 @@ void main() {
 
     expect(
       movedStreetsMessage(l10n, const MovedSummary(moved: 1, alreadyThere: 0)),
-      '1 rue ajoutée à la tournée',
+      '1 rue ajoutée au secteur',
     );
     expect(
       movedStreetsMessage(l10n, const MovedSummary(moved: 0, alreadyThere: 3)),
-      'Aucune rue ajoutée, 3 déjà dans la tournée',
+      'Aucune rue ajoutée, 3 déjà dans le secteur',
     );
     expect(
       movedStreetsMessage(l10n, const MovedSummary(moved: 10, alreadyThere: 2)),
-      '10 rues ajoutées, 2 déjà dans la tournée',
+      '10 rues ajoutées, 2 déjà dans le secteur',
     );
   });
 

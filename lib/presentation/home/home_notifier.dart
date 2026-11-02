@@ -25,7 +25,7 @@ final homeProvider = NotifierProvider.autoDispose<HomeNotifier, HomeState>(
 
 /// Follows the open tournée's streets (`ObserveMyStreets`), communes and
 /// team, from the phone's copy, offline too, and the street tapped on the
-/// map or among « Autres rues de la tournée », which the member may take
+/// map or among « Autres rues du secteur », which the member may take
 /// or release from its card.
 ///
 /// Each time the streets change, it hands them to [MissingShapes], which
@@ -93,7 +93,7 @@ final class HomeNotifier extends Notifier<HomeState>
     _show();
   }
 
-  /// A street was tapped among « Autres rues de la tournée » (#93): its
+  /// A street was tapped among « Autres rues du secteur » (#93): its
   /// card shows, as on a tap on its line, and the map goes to the street
   /// (its line, else its houses), where it then stays. A street with no
   /// place on the map leaves the map where it is.

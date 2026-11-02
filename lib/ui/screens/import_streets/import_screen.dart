@@ -37,7 +37,7 @@ final class ImportScreen extends StatelessWidget {
 ///
 /// With a tournée open that has communes, there is no commune field: a
 /// chip per commune when there are several, the streets of the one chosen,
-/// « déjà dans la tournée » and « Ajouter N rues ». Otherwise the commune
+/// « déjà dans le secteur » and « Ajouter N rues ». Otherwise the commune
 /// is searched as in M1. Once every street ticked is stored, the screen
 /// closes with a message.
 ///
@@ -503,7 +503,7 @@ final class _ChoiceRow extends StatelessWidget {
 
   final StreetChoice street;
 
-  /// « déjà dans la tournée » rather than « déjà importée ».
+  /// « déjà dans le secteur » rather than « déjà importée ».
   final bool inSector;
   final bool enabled;
   final ValueChanged<BanStreetId> onToggle;

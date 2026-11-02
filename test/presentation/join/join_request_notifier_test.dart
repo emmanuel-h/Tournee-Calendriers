@@ -49,7 +49,7 @@ void main() {
         memberAccountProvider.overrideWithValue(account),
         sectorDirectoryProvider.overrideWithValue(directory),
         mySectorsStoreProvider.overrideWithValue(store),
-        // « Mes tournées » follows the teams of the tournées not open.
+        // « Mes secteurs » follows the teams of the tournées not open.
         sectorRepositoryProvider.overrideWithValue(FakeSectorRepository()),
         phoneStreetRepositoryProvider.overrideWithValue(phoneStreets),
       ],

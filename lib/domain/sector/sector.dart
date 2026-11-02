@@ -124,7 +124,7 @@ final class Sector {
   /// [communes], in the order picked.
   ///
   /// Whether number + centre is free is for storage to tell, as only it
-  /// knows the other tournées. « Nouvelle tournée » lets « Créer » be
+  /// knows the other tournées. « Nouveau secteur » lets « Créer » be
   /// pressed only with one to [maxCommunes] different communes, so other
   /// [communes] are a bug: they throw an [ArgumentError].
   factory Sector.createdBy({
@@ -318,7 +318,7 @@ final class Sector {
     return Ok((_without(member), MemberRemoved(sectorId: id, member: removed)));
   }
 
-  /// Takes [by] out of the tournée (« Quitter la tournée »), or cancels
+  /// Takes [by] out of the tournée (« Quitter le secteur »), or cancels
   /// their request when still pending (« Annuler la demande »). Any member
   /// may, the creator and the last one included: an empty tournée stays,
   /// for the admins to manage (PLAN §5.12).
@@ -385,7 +385,7 @@ final class Sector {
   /// server can tell, `SectorRepository.add` and `save`).
   Sector withJoinCode(JoinCode code) => _copy(joinCode: code);
 
-  /// Deletes the tournée, as [by] (« Supprimer la tournée »). Only an
+  /// Deletes the tournée, as [by] (« Supprimer le secteur »). Only an
   /// admin may, member or not. Nothing is left to return but the deletion
   /// itself.
   Result<SectorDeleted, SectorCommandFailure> delete({required Actor by}) {

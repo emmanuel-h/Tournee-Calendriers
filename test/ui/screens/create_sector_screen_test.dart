@@ -36,7 +36,7 @@ void main() {
   late FakeSectorRepository sectors;
   late FakeMySectorsStore store;
 
-  /// Opens « Nouvelle tournée » over the start screen on Léa's phone,
+  /// Opens « Nouveau secteur » over the start screen on Léa's phone,
   /// signed in, her name kept.
   Future<void> open(WidgetTester tester) async {
     sectors = FakeSectorRepository();
@@ -178,7 +178,7 @@ void main() {
       await fillIn(tester);
 
       expect(
-        find.text('La tournée 49 du CS Villefranche existe déjà.'),
+        find.text('Le secteur 49 du CS Villefranche existe déjà.'),
         findsOneWidget,
       );
       expect(
@@ -251,13 +251,13 @@ void main() {
 
       expect(
         find.text(
-          "Tournée 49 · CS Villefranche est prête. Montrez ce code à l'équipe.",
+          "Secteur 49 · CS Villefranche est prêt. Montrez ce code à l'équipe.",
         ),
         findsOneWidget,
       );
       expect(find.text('234-567'), findsOneWidget);
       expect(
-        find.bySemanticsLabel('QR code de la tournée, code 234-567'),
+        find.bySemanticsLabel('QR code du secteur, code 234-567'),
         findsOneWidget,
       );
       expect(sectors.added.single.number, number49);
@@ -267,7 +267,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(HomeScreen), findsOneWidget);
-      expect(find.text('Tournée 49 · 2026'), findsOneWidget);
+      expect(find.text('Secteur 49 · 2026'), findsOneWidget);
     },
   );
 
@@ -304,7 +304,7 @@ void main() {
   group('at 200 % text', () {
     setUpAll(loadAppFonts);
 
-    testWidgets('should show « Nouvelle tournée » with no overflow when the '
+    testWidgets('should show « Nouveau secteur » with no overflow when the '
         'text is twice as large', (tester) async {
       useLargeText(tester);
 

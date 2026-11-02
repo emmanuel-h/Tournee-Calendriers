@@ -65,7 +65,7 @@ void main() {
   late FakeMySectorsStore store;
   late ProviderContainer container;
 
-  /// Opens « Nouvelle tournée » on Manu's phone; [name] is the name kept.
+  /// Opens « Nouveau secteur » on Manu's phone; [name] is the name kept.
   Future<void> open({MemberName? name}) async {
     container = ProviderContainer(
       overrides: [

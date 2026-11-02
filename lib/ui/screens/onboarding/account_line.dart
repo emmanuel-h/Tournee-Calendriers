@@ -10,7 +10,7 @@ import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
-/// Where the phone's account stands, on « Nouvelle tournée » and
+/// Where the phone's account stands, on « Nouveau secteur » and
 /// « Rejoindre » (PLAN §6.1, T2.1c): « Connexion au serveur… » while it
 /// signs in, « Hors ligne » with « Réessayer » when it could not; nothing
 /// once signed in, which is the usual case.

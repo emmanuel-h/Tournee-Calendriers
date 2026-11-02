@@ -155,12 +155,12 @@ final class TeamNotifier extends Notifier<TeamState> {
   Future<TeamActionFailure?> removeCommune(InseeCode code) =>
       _run((sector) => ref.read(removeCommuneProvider)(sector, code));
 
-  /// « Quitter la tournée »: the phone forgets it, so no tournée is open
+  /// « Quitter le secteur »: the phone forgets it, so no tournée is open
   /// any more.
   Future<TeamActionFailure?> leave() =>
       _run(ref.read(leaveSectorProvider).call);
 
-  /// « Supprimer la tournée » (admins only); needs the network. The phone
+  /// « Supprimer le secteur » (admins only); needs the network. The phone
   /// forgets it, so no tournée is open any more.
   Future<TeamActionFailure?> deleteSector() =>
       _run(ref.read(deleteSectorProvider).call);
@@ -170,7 +170,7 @@ final class TeamNotifier extends Notifier<TeamState> {
   Future<TeamActionFailure?> joinAsAdmin() =>
       _run(ref.read(joinAsAdminProvider).call);
 
-  /// « Retirer de Mes tournées »: the admin who only visits the open
+  /// « Retirer de Mes secteurs »: the admin who only visits the open
   /// tournée forgets it on the phone, so no tournée is open any more.
   Future<void> forgetVisit() async {
     final sector = ref.read(currentSectorProvider);

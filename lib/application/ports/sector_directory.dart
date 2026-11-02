@@ -52,7 +52,7 @@ final class JoinPreview {
       '${centre.name}, ${campaign.value})';
 }
 
-/// One tournée of the app as « Toutes les tournées » lists it for an admin
+/// One tournée of the app as « Tous les secteurs » lists it for an admin
 /// (PLAN §5.12): « Tournée 12 · 2026 » under its centre, « 3 membres · 1
 /// demande en attente », « · vous en êtes membre ».
 final class SectorOverview {
@@ -217,7 +217,7 @@ abstract interface class SectorDirectory {
   /// [DirectoryFailure.noNetwork] offline.
   Future<Result<List<RescueCentre>, DirectoryFailure>> rescueCentres();
 
-  /// Every tournée of the app, for an admin (« Toutes les tournées », PLAN
+  /// Every tournée of the app, for an admin (« Tous les secteurs », PLAN
   /// §5.12), in no particular order; [caller] is the admin asking, to tell
   /// the tournées they are an active member of. Asked of the server, never
   /// answered from the phone's copy, which may miss tournées: fails with

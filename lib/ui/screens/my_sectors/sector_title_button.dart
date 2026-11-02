@@ -7,7 +7,7 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
 /// The open tournée as the title of the screen (« Tournée 49 · 2026 ▾ »
 /// over « CS Villefranche », PLAN §5.3, Home mockup): a button that opens
-/// « Mes tournées ».
+/// « Mes secteurs ».
 final class SectorTitleButton extends StatelessWidget {
   const SectorTitleButton({
     super.key,

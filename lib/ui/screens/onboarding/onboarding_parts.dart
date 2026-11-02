@@ -36,7 +36,7 @@ final class FieldProblem extends StatelessWidget {
   );
 }
 
-/// A message about the whole screen (« Aucune tournée n'a ce code. »),
+/// A message about the whole screen (« Aucun secteur n'a ce code. »),
 /// read out as soon as it shows, with an action beside it when one helps
 /// (« Réessayer »).
 final class ScreenMessage extends StatelessWidget {

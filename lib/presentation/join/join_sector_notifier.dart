@@ -10,13 +10,13 @@ import 'package:tournee_calendriers/presentation/account/account_state.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/join/join_sector_state.dart';
 
-/// « Rejoindre une tournée ». `autoDispose`: each visit starts afresh.
+/// « Rejoindre un secteur ». `autoDispose`: each visit starts afresh.
 final joinSectorProvider =
     NotifierProvider.autoDispose<JoinSectorNotifier, JoinSectorState>(
       JoinSectorNotifier.new,
     );
 
-/// « Rejoindre une tournée » (PLAN §5.2): the code typed in two boxes of
+/// « Rejoindre un secteur » (PLAN §5.2): the code typed in two boxes of
 /// three characters or scanned, the tournée it shows, then « Demander à
 /// rejoindre », which sends the request and leaves the screen to « Demande
 /// envoyée ».

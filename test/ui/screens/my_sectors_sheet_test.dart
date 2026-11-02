@@ -91,12 +91,12 @@ void main() {
     (tester) async {
       await pumpApp(tester, _manusPhone());
 
-      expect(find.text('Tournée 49 · 2026'), findsOneWidget);
+      expect(find.text('Secteur 49 · 2026'), findsOneWidget);
       expect(find.text('CS Villefranche'), findsOneWidget);
       expect(find.text('Tournée des calendriers'), findsNothing);
       expect(
         find.bySemanticsLabel(
-          'Tournée 49 · 2026, CS Villefranche. Changer de tournée',
+          'Secteur 49 · 2026, CS Villefranche. Changer de secteur',
         ),
         findsOneWidget,
       );
@@ -112,20 +112,20 @@ void main() {
       await openSheet(tester);
 
       expect(find.byType(MySectorsSheet), findsOneWidget);
-      expect(find.text('Mes tournées'), findsOneWidget);
+      expect(find.text('Mes secteurs'), findsOneWidget);
       expect(
         find.bySemanticsLabel(
-          'Tournée 49 · 2026, CS Villefranche, tournée ouverte',
+          'Secteur 49 · 2026, CS Villefranche, secteur ouvert',
         ),
         findsOneWidget,
       );
       expect(
-        find.bySemanticsLabel('Tournée 12 · 2026, CS Villefranche, ouvrir'),
+        find.bySemanticsLabel('Secteur 12 · 2026, CS Villefranche, ouvrir'),
         findsOneWidget,
       );
       expect(
         find.bySemanticsLabel(
-          'Tournée 7 · 2026, CS Villefranche, votre demande est en attente',
+          'Secteur 7 · 2026, CS Villefranche, votre demande est en attente',
         ),
         findsOneWidget,
       );
@@ -155,7 +155,7 @@ void main() {
       );
       expect(
         find.bySemanticsLabel(
-          'Tournée 49 · 2026, CS Villefranche, 1 demande en attente, ouvrir',
+          'Secteur 49 · 2026, CS Villefranche, 1 demande en attente, ouvrir',
         ),
         findsOneWidget,
       );
@@ -174,8 +174,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(MySectorsSheet), findsNothing);
-      expect(find.text('Tournée 12 · 2026'), findsOneWidget);
-      expect(find.text('Tournée 49 · 2026'), findsNothing);
+      expect(find.text('Secteur 12 · 2026'), findsOneWidget);
+      expect(find.text('Secteur 49 · 2026'), findsNothing);
       expect(store.saves.single.current, sector12);
     },
   );
@@ -190,7 +190,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(MySectorsSheet), findsNothing);
-    expect(find.text('Tournée 49 · 2026'), findsOneWidget);
+    expect(find.text('Secteur 49 · 2026'), findsOneWidget);
     expect(store.saves, isEmpty);
   });
 
@@ -209,7 +209,7 @@ void main() {
 
   group('offline (PLAN §5.3, #33)', () {
     const unavailable12 =
-        'Tournée 12 · 2026, CS Villefranche, disponible avec réseau';
+        'Secteur 12 · 2026, CS Villefranche, disponible avec réseau';
 
     testWidgets('should leave a tournée not downloaded as it is when online', (
       tester,
@@ -218,7 +218,7 @@ void main() {
       await openSheet(tester);
 
       expect(
-        find.bySemanticsLabel('Tournée 12 · 2026, CS Villefranche, ouvrir'),
+        find.bySemanticsLabel('Secteur 12 · 2026, CS Villefranche, ouvrir'),
         findsOneWidget,
       );
       expect(find.textContaining('Disponible avec réseau'), findsNothing);
@@ -269,7 +269,7 @@ void main() {
             isEnabled: false,
           ),
         );
-        final title = tester.widget<Text>(find.text('Tournée 12 · 2026'));
+        final title = tester.widget<Text>(find.text('Secteur 12 · 2026'));
         expect(title.style?.color, AppColors.light.unavailable);
 
         await tester.tap(find.byKey(const ValueKey('mySectors.t12')));
@@ -295,7 +295,7 @@ void main() {
 
         expect(
           find.bySemanticsLabel(
-            'Tournée 49 · 2026, CS Villefranche, disponible avec réseau',
+            'Secteur 49 · 2026, CS Villefranche, disponible avec réseau',
           ),
           findsOneWidget,
         );
@@ -311,13 +311,13 @@ void main() {
 
         expect(
           find.bySemanticsLabel(
-            'Tournée 49 · 2026, CS Villefranche, tournée ouverte',
+            'Secteur 49 · 2026, CS Villefranche, secteur ouvert',
           ),
           findsOneWidget,
         );
         expect(
           find.bySemanticsLabel(
-            'Tournée 7 · 2026, CS Villefranche, votre demande est en attente',
+            'Secteur 7 · 2026, CS Villefranche, votre demande est en attente',
           ),
           findsOneWidget,
         );
@@ -361,7 +361,7 @@ void main() {
     await tester.tap(find.byKey(const Key('settings.mySectors')));
     await tester.pumpAndSettle();
 
-    expect(find.text("Aucune tournée pour l'instant."), findsOneWidget);
+    expect(find.text("Aucun secteur pour l'instant."), findsOneWidget);
   });
 
   testWidgets(
@@ -374,14 +374,14 @@ void main() {
 
       expect(find.byType(MySectorsSheet), findsOneWidget);
       expect(
-        find.bySemanticsLabel('Tournée des calendriers. Mes tournées'),
+        find.bySemanticsLabel('Tournée des calendriers. Mes secteurs'),
         findsOneWidget,
       );
     },
   );
 
   testWidgets(
-    'should open « Nouvelle tournée » from the sheet, the open tournée kept',
+    'should open « Nouveau secteur » from the sheet, the open tournée kept',
     (tester) async {
       await pumpApp(tester, _manusPhone(), name: nameOf('Manu'), admin: true);
       await openSheet(tester);
@@ -396,7 +396,7 @@ void main() {
   );
 
   testWidgets('should ask the name first when the phone has none, then open '
-      '« Rejoindre une tournée »', (tester) async {
+      '« Rejoindre un secteur »', (tester) async {
     await pumpApp(tester, _manusPhone());
     await openSheet(tester);
 
@@ -425,11 +425,11 @@ void main() {
 
     expect(find.byType(NameSheet), findsNothing);
     expect(find.byType(CreateSectorScreen), findsNothing);
-    expect(find.text('Tournée 49 · 2026'), findsOneWidget);
+    expect(find.text('Secteur 49 · 2026'), findsOneWidget);
   });
 
   group('admins (PLAN §5.12)', () {
-    testWidgets('should offer neither « Créer » nor « Toutes les tournées » '
+    testWidgets('should offer neither « Créer » nor « Tous les secteurs » '
         'to a phone that is not an admin\'s', (tester) async {
       await pumpApp(tester, _manusPhone());
       await openSheet(tester);
@@ -439,7 +439,7 @@ void main() {
       expect(find.byKey(const Key('mySectors.join')), findsOneWidget);
     });
 
-    testWidgets('should open « Toutes les tournées » for an admin', (
+    testWidgets('should open « Tous les secteurs » for an admin', (
       tester,
     ) async {
       await pumpApp(tester, _manusPhone(), name: nameOf('Sam'), admin: true);
@@ -470,7 +470,7 @@ void main() {
       expect(find.byKey(const Key('mySectors.t12.shield')), findsOneWidget);
       expect(
         find.bySemanticsLabel(
-          'Tournée 12 · 2026, CS Villefranche, administrateur, ouvrir',
+          'Secteur 12 · 2026, CS Villefranche, administrateur, ouvrir',
         ),
         findsOneWidget,
       );
@@ -523,8 +523,8 @@ void main() {
 
       expect(
         find.bySemanticsLabel(
-          'Tournée 12 · 2026, CS Villefranche, administrateur, tournée '
-          'ouverte',
+          'Secteur 12 · 2026, CS Villefranche, administrateur, secteur '
+          'ouvert',
         ),
         findsOneWidget,
       );

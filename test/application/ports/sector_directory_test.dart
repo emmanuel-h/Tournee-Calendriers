@@ -72,7 +72,7 @@ void main() {
       callerIsActive: callerIsActive,
     );
 
-    test('should keep what « Toutes les tournées » shows of a tournée', () {
+    test('should keep what « Tous les secteurs » shows of a tournée', () {
       final made = overview();
 
       expect(made.id, SectorId('t12'));

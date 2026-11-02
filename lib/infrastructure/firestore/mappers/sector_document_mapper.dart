@@ -281,7 +281,7 @@ SectorLoss lossFromReservation(
   _ => SectorLoss.deleted,
 };
 
-/// What « Toutes les tournées » shows of [sector] to the admin [caller]
+/// What « Tous les secteurs » shows of [sector] to the admin [caller]
 /// (PLAN §5.12): its members and requests counted, and whether [caller] is
 /// in its team.
 SectorOverview overviewOf(Sector sector, MemberId caller) => SectorOverview(

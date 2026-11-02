@@ -34,7 +34,7 @@ M2 done, milestone closed (2026-10-17): onboarding (#21), Firebase (Spark) wired
 anonymous sign-in (#17, #67); Tournée aggregate (#18); Firestore adapters (#19); security rules in
 `firebase/` (#20); Équipe and Corbeille (#22); Mes tournées and Paramètres (#23); streets of the
 open tournée on Firestore, phone storage when none is open (#24); pending-sync line (#25). Validated
-by the user (2026-10-16); App Check enforced on Firestore and Auth (#68). Admins (#75): global `admins/{uid}` added by hand in the console, « Toutes les tournées », admin visit; validated by the user and closed (2026-10-17), rules deployed. Revoked admins and the emulator-based admin flow (#87) closed (2026-10-17).
+by the user (2026-10-16); App Check enforced on Firestore and Auth (#68). Admins (#75): global `admins/{uid}` added by hand in the console, « Tous les secteurs », admin visit; validated by the user and closed (2026-10-17), rules deployed. Revoked admins and the emulator-based admin flow (#87) closed (2026-10-17).
 Code audit clean-up (#88) and « Modifié par Léa » on the house and door sheets (#89) closed
 (2026-10-17). #90 open: go_router 18.1 and Firebase (firebase_core 5.1, cloud_firestore 7.1, firebase_auth 7.0,
 firebase_app_check 0.5.1, fake_cloud_firestore 4.5) done; the fake still cannot read a one-segment

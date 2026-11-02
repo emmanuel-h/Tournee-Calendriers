@@ -17,7 +17,7 @@ import '../../support/fakes/fake_street_repository.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 
-// « Les ajouter à la tournée » (PLAN §5.0): the streets of the phone
+// « Les ajouter au secteur » (PLAN §5.0): the streets of the phone
 // storage (M1) go into the open tournée, once per tournée.
 void main() {
   final t49 = team_fixtures.sectorId;

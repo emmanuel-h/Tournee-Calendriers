@@ -6,9 +6,9 @@
     "description": "The app's name: title bar, task switcher, placeholder home."
   },
 
-  "screenCreate": "Nouvelle tournée",
-  "@screenCreate": { "description": "Title of the create-a-tournée screen (PLAN §5.2)." },
-  "screenJoin": "Rejoindre une tournée",
+  "screenCreate": "Nouveau secteur",
+  "@screenCreate": { "description": "Title of the create-a-sector screen (PLAN §5.2)." },
+  "screenJoin": "Rejoindre un secteur",
   "@screenJoin": { "description": "Title of the join screen (PLAN §5.2)." },
   "screenJoinPending": "Demande envoyée",
   "@screenJoinPending": { "description": "Title of the waiting-for-approval screen (PLAN §5.2)." },
@@ -17,7 +17,7 @@
   "screenEditStreet": "Modifier la rue",
   "@screenEditStreet": { "description": "Title of the street edit mode (PLAN §5.5)." },
   "screenTeam": "Équipe",
-  "@screenTeam": { "description": "Title of the team screen (PLAN §5.8) before its tournée is read." },
+  "@screenTeam": { "description": "Title of the team screen (PLAN §5.8) before its sector is read." },
   "screenSettings": "Paramètres",
   "@screenSettings": { "description": "Title of the settings screen (PLAN §5.9)." },
   "screenTrash": "Corbeille",
@@ -433,7 +433,7 @@
   "deleteStreetAction": "Supprimer la rue",
   "@deleteStreetAction": { "description": "Bottom button of the edit mode: sends the street to the Corbeille after a confirmation." },
   "stopCoveringStreetAction": "Ne plus la faire",
-  "@stopCoveringStreetAction": { "description": "Bottom button of the edit mode, shown when the member covers the street: takes them off it; the street stays in the tournée for the others." },
+  "@stopCoveringStreetAction": { "description": "Bottom button of the edit mode, shown when the member covers the street: takes them off it; the street stays in the sector for the others." },
   "numberRemoved": "N° {number} supprimé",
   "@numberRemoved": {
     "description": "Undo snackbar after ✕ on a number.",
@@ -882,52 +882,52 @@
   "saveFailedOk": "OK",
   "@saveFailedOk": { "description": "Button that closes that dialog." },
 
-  "sectorTitle": "Tournée {number} · {year}",
+  "sectorTitle": "Secteur {number} · {year}",
   "@sectorTitle": {
-    "description": "Title of the open tournée on the start screen (PLAN §5.3) and of a row of « Mes tournées ».",
+    "description": "Title of the open sector on the start screen (PLAN §5.3) and of a row of « Mes secteurs ».",
     "placeholders": {
       "number": { "type": "String", "example": "49" },
       "year": { "type": "String", "example": "2026" }
     }
   },
-  "sectorTitleSemantics": "{title}, {centre}. Changer de tournée",
+  "sectorTitleSemantics": "{title}, {centre}. Changer de secteur",
   "@sectorTitleSemantics": {
-    "description": "Screen-reader label of the title button that opens « Mes tournées » (Home mockup).",
+    "description": "Screen-reader label of the title button that opens « Mes secteurs » (Home mockup).",
     "placeholders": {
-      "title": { "type": "String", "example": "Tournée 49 · 2026" },
+      "title": { "type": "String", "example": "Secteur 49 · 2026" },
       "centre": { "type": "String", "example": "CS Villefranche" }
     }
   },
-  "mySectorsTitle": "Mes tournées",
-  "@mySectorsTitle": { "description": "Title of the sheet listing the member's tournées (PLAN §5.3), and of its row in Paramètres." },
-  "mySectorsEmpty": "Aucune tournée pour l'instant.",
-  "@mySectorsEmpty": { "description": "« Mes tournées » when the phone knows no tournée yet." },
+  "mySectorsTitle": "Mes secteurs",
+  "@mySectorsTitle": { "description": "Title of the sheet listing the member's sectors (PLAN §5.3), and of its row in Paramètres." },
+  "mySectorsEmpty": "Aucun secteur pour l'instant.",
+  "@mySectorsEmpty": { "description": "« Mes secteurs » when the phone knows no sector yet." },
   "mySectorsPending": "{centre} · votre demande est en attente",
   "@mySectorsPending": {
-    "description": "Second line of a tournée the member asked to join, not accepted yet (Switcher mockup).",
+    "description": "Second line of a sector the member asked to join, not accepted yet (Switcher mockup).",
     "placeholders": {
       "centre": { "type": "String", "example": "CS Villefranche" }
     }
   },
-  "mySectorsOpenSemantics": "{title}, {centre}, tournée ouverte",
+  "mySectorsOpenSemantics": "{title}, {centre}, secteur ouvert",
   "@mySectorsOpenSemantics": {
-    "description": "Screen-reader label of the open tournée in « Mes tournées ».",
+    "description": "Screen-reader label of the open sector in « Mes secteurs ».",
     "placeholders": {
-      "title": { "type": "String", "example": "Tournée 49 · 2026" },
+      "title": { "type": "String", "example": "Secteur 49 · 2026" },
       "centre": { "type": "String", "example": "CS Villefranche" }
     }
   },
   "mySectorsClosedSemantics": "{title}, {centre}, ouvrir",
   "@mySectorsClosedSemantics": {
-    "description": "Screen-reader label of another tournée in « Mes tournées »: a tap opens it.",
+    "description": "Screen-reader label of another sector in « Mes secteurs »: a tap opens it.",
     "placeholders": {
-      "title": { "type": "String", "example": "Tournée 12 · 2026" },
+      "title": { "type": "String", "example": "Secteur 12 · 2026" },
       "centre": { "type": "String", "example": "CS Villefranche" }
     }
   },
   "mySectorsWaiting": "{centre} · {count, plural, =1{1 demande en attente} other{{count} demandes en attente}}",
   "@mySectorsWaiting": {
-    "description": "Second line of a tournée not open where join requests wait for an answer, beside a red dot (Switcher mockup).",
+    "description": "Second line of a sector not open where join requests wait for an answer, beside a red dot (Switcher mockup).",
     "placeholders": {
       "centre": { "type": "String", "example": "CS Villefranche" },
       "count": { "type": "int", "example": "1" }
@@ -935,32 +935,32 @@
   },
   "mySectorsWaitingSemantics": "{title}, {centre}, {count, plural, =1{1 demande en attente} other{{count} demandes en attente}}, ouvrir",
   "@mySectorsWaitingSemantics": {
-    "description": "Screen-reader label of a tournée not open where join requests wait: the dot, said.",
+    "description": "Screen-reader label of a sector not open where join requests wait: the dot, said.",
     "placeholders": {
-      "title": { "type": "String", "example": "Tournée 12 · 2026" },
+      "title": { "type": "String", "example": "Secteur 12 · 2026" },
       "centre": { "type": "String", "example": "CS Villefranche" },
       "count": { "type": "int", "example": "1" }
     }
   },
   "mySectorsPendingSemantics": "{title}, {centre}, votre demande est en attente",
   "@mySectorsPendingSemantics": {
-    "description": "Screen-reader label of a tournée the member asked to join, not accepted yet.",
+    "description": "Screen-reader label of a sector the member asked to join, not accepted yet.",
     "placeholders": {
-      "title": { "type": "String", "example": "Tournée 7 · 2026" },
+      "title": { "type": "String", "example": "Secteur 7 · 2026" },
       "centre": { "type": "String", "example": "CS Villefranche" }
     }
   },
   "settingsYou": "Vous",
   "@settingsYou": { "description": "Section header of Paramètres: the member's own settings (PLAN §5.9)." },
   "settingsOfflineLine": "L'application fonctionne sans réseau ; les modifications sont envoyées dès qu'il revient.",
-  "@settingsOfflineLine": { "description": "Muted line of Paramètres under « Mes tournées »: the tournée downloads itself for offline use, unseen (PLAN §5.9, §7)." },
+  "@settingsOfflineLine": { "description": "Muted line of Paramètres under « Mes secteurs »: the sector downloads itself for offline use, unseen (PLAN §5.9, §7)." },
   "settingsApplication": "Application",
   "@settingsApplication": { "description": "Section header of Paramètres: the app's settings." },
   "settingsName": "Prénom",
   "@settingsName": { "description": "Row of Paramètres that changes the member's first name." },
   "settingsMySectorsValue": "{number} · {year}",
   "@settingsMySectorsValue": {
-    "description": "Value of the « Mes tournées » row of Paramètres: the open tournée.",
+    "description": "Value of the « Mes secteurs » row of Paramètres: the open sector.",
     "placeholders": {
       "number": { "type": "String", "example": "49" },
       "year": { "type": "String", "example": "2026" }
@@ -1006,9 +1006,13 @@
   },
   "release010First": "Première version de test.",
   "@release010First": { "description": "« Nouveautés », version 0.1.0: what it brings, one short line for the members." },
+  "release0100Sector": "La tournée s'appelle maintenant « secteur ».",
+  "@release0100Sector": { "description": "Line of « Nouveautés » for 0.10.0: the team's area is now « secteur » on every screen (#115); « tournée » now names one outing (PLAN §2)." },
+  "release0100Privacy": "Confidentialité : le texte dit aussi ce qui est gardé des tournées, des dons et des calendriers.",
+  "@release0100Privacy": { "description": "Line of « Nouveautés » for 0.10.0: the privacy text covers the tournées and calendars (#112)." },
   "release090Streets": "Équipe : chaque membre montre le nombre de rues qu'il couvre ; touchez ce nombre pour voir leurs noms.",
   "@release090Streets": { "description": "Line of « Nouveautés » for 0.9.0." },
-  "release090Buttons": "Équipe : « Quitter la tournée » et « Supprimer la tournée » restent en bas de l'écran.",
+  "release090Buttons": "Équipe : « Quitter le secteur » et « Supprimer le secteur » restent en bas de l'écran.",
   "@release090Buttons": { "description": "Line of « Nouveautés » for 0.9.0." },
   "release090CaughtUp": "Une longue rue ajoutée juste avant de fermer l'application est complétée au démarrage suivant, même sans réseau.",
   "@release090CaughtUp": { "description": "Line of « Nouveautés » for 0.9.0." },
@@ -1018,10 +1022,10 @@
   "@release080Dark": { "description": "Line of « Nouveautés » for 0.8.0." },
   "release080Privacy": "Confidentialité : un nouveau texte, et un lien vers la politique complète en ligne.",
   "@release080Privacy": { "description": "Line of « Nouveautés » for 0.8.0." },
-  "release070Offline": "La tournée ouverte reste disponible sans réseau : la carte et les rues sont gardées sur le téléphone, toutes seules.",
-  "@release070Offline": { "description": "« Nouveautés », version 0.7.0: the tournée is kept for offline use by itself." },
-  "release070Greyed": "Sans réseau, une tournée jamais ouverte sur ce téléphone apparaît en gris dans « Mes tournées ».",
-  "@release070Greyed": { "description": "« Nouveautés », version 0.7.0: tournées that cannot open offline are greyed." },
+  "release070Offline": "Le secteur ouvert reste disponible sans réseau : la carte et les rues sont gardées sur le téléphone, toutes seules.",
+  "@release070Offline": { "description": "« Nouveautés », version 0.7.0: the sector is kept for offline use by itself." },
+  "release070Greyed": "Sans réseau, un secteur jamais ouvert sur ce téléphone apparaît en gris dans « Mes secteurs ».",
+  "@release070Greyed": { "description": "« Nouveautés », version 0.7.0: sectors that cannot open offline are greyed." },
   "release070Settings": "Paramètres rappelle que l'application fonctionne sans réseau.",
   "@release070Settings": { "description": "« Nouveautés », version 0.7.0: the line in Paramètres." },
   "release060FreeLines": "Les rues libres se voient mieux sur la carte : tirets gris foncé sur un liseré blanc.",
@@ -1030,15 +1034,15 @@
   "@release060CloseCard": { "description": "« Nouveautés », version 0.6.0: a ✕ on the street card." },
   "release060LeftTeam": "Les rues d'un membre qui a quitté l'équipe redeviennent libres.",
   "@release060LeftTeam": { "description": "« Nouveautés », version 0.6.0: streets of ex-members are free." },
-  "release051Lines": "Les rues de la tournée apparaissent enfin sur la carte : leur tracé vient du fond de carte, et les rues déjà ajoutées reçoivent le leur.",
+  "release051Lines": "Les rues du secteur apparaissent enfin sur la carte : leur tracé vient du fond de carte, et les rues déjà ajoutées reçoivent le leur.",
   "@release051Lines": { "description": "« Nouveautés », version 0.5.1: street lines from the map tiles." },
   "release051AddAtOnce": "Ajouter une rue depuis la carte est immédiat, et la route touchée s'allume tout de suite.",
   "@release051AddAtOnce": { "description": "« Nouveautés », version 0.5.1: adding a street no longer waits." },
-  "release051TakeFromList": "Une rue des « Autres rues de la tournée » s'ouvre sur la carte pour se l'attribuer.",
+  "release051TakeFromList": "Une rue des « Autres rues du secteur » s'ouvre sur la carte pour se l'attribuer.",
   "@release051TakeFromList": { "description": "« Nouveautés », version 0.5.1: take a street from the list." },
-  "release050Map": "Accueil montre la carte de la tournée : ses rues, ses maisons, une légende et le panneau « Mes rues ».",
-  "@release050Map": { "description": "« Nouveautés », version 0.5.0: the tournée's map on Accueil." },
-  "release050AddStreets": "Une tournée a ses communes ; « Ajouter des rues » s'ouvre dessus, en carte ou en liste : touchez une route, cherchez-la ou saisissez-la.",
+  "release050Map": "Accueil montre la carte du secteur : ses rues, ses maisons, une légende et le panneau « Mes rues ».",
+  "@release050Map": { "description": "« Nouveautés », version 0.5.0: the sector's map on Accueil." },
+  "release050AddStreets": "Un secteur a ses communes ; « Ajouter des rues » s'ouvre dessus, en carte ou en liste : touchez une route, cherchez-la ou saisissez-la.",
   "@release050AddStreets": { "description": "« Nouveautés », version 0.5.0: communes and adding streets." },
   "release050Assignees": "Chaque rue dit qui la couvre ; on la prend ou la libère.",
   "@release050Assignees": { "description": "« Nouveautés », version 0.5.0: who covers a street." },
@@ -1050,11 +1054,11 @@
   "@release040AdminRevoked": { "description": "« Nouveautés », version 0.4.0: a revoked admin is told." },
   "release030DeviceId": "L'identifiant de l'appareil s'affiche en entier dans Paramètres et sur l'écran de bienvenue.",
   "@release030DeviceId": { "description": "« Nouveautés », version 0.3.0: the whole device identifier." },
-  "release020Admins": "Seuls les administrateurs créent une tournée ; les autres la rejoignent avec un code.",
-  "@release020Admins": { "description": "« Nouveautés », version 0.2.0: only admins create a tournée." },
-  "release020AllSectors": "Les administrateurs voient toutes les tournées, les gèrent et peuvent les rejoindre directement.",
-  "@release020AllSectors": { "description": "« Nouveautés », version 0.2.0: admins see and manage every tournée." },
-  "release020Team": "Équipe : « Nouveau code », « Retirer » et « Supprimer » sont réservés aux administrateurs ; chacun peut quitter la tournée.",
+  "release020Admins": "Seuls les administrateurs créent un secteur ; les autres le rejoignent avec un code.",
+  "@release020Admins": { "description": "« Nouveautés », version 0.2.0: only admins create a sector." },
+  "release020AllSectors": "Les administrateurs voient tous les secteurs, les gèrent et peuvent les rejoindre directement.",
+  "@release020AllSectors": { "description": "« Nouveautés », version 0.2.0: admins see and manage every sector." },
+  "release020Team": "Équipe : « Nouveau code », « Retirer » et « Supprimer » sont réservés aux administrateurs ; chacun peut quitter le secteur.",
   "@release020Team": { "description": "« Nouveautés », version 0.2.0: Équipe actions for admins, anyone may leave." },
   "release020DeviceId": "Paramètres affiche l'identifiant de l'appareil, à donner pour devenir administrateur.",
   "@release020DeviceId": { "description": "« Nouveautés », version 0.2.0: the device identifier in Paramètres." },
@@ -1087,7 +1091,7 @@
   "@privacyAccountBody": { "description": "Privacy page: the account (PLAN §8.3): its section of PRIVACY.md, word for word." },
   "privacyDataTitle": "Données enregistrées",
   "@privacyDataTitle": { "description": "Privacy page: section about the data stored." },
-  "privacyDataBody": "Pour chaque rue de la tournée : les numéros, leur place sur la carte, ce qui s'est passé à chaque porte (fait, personne, à repasser), le jour et l'heure où repasser, et le prénom de qui l'a noté. Rien d'autre : pas de nom d'habitant, pas de note, pas de don.",
+  "privacyDataBody": "Pour chaque rue du secteur : les numéros, leur place sur la carte, ce qui s'est passé à chaque porte (fait, refusé, personne, à repasser), le jour et l'heure où repasser, combien de calendriers la maison a pris, et le prénom de qui l'a noté. Pour chaque tournée validée : son début et sa fin, le nombre de maisons visitées, le nombre et le total des dons par moyen de paiement, et les calendriers offerts, sans le prénom de qui l'a faite. Un don n'est jamais lié à une maison : la liste des dons reste sur le téléphone jusqu'à la validation de la tournée, puis elle est effacée. Rien d'autre : pas de nom d'habitant, pas de note.",
   "@privacyDataBody": { "description": "Privacy page: what is stored (PLAN §8.3): its section of PRIVACY.md, word for word." },
   "privacyLocationTitle": "Position",
   "@privacyLocationTitle": { "description": "Privacy page: section about the phone's position." },
@@ -1095,11 +1099,11 @@
   "@privacyLocationBody": { "description": "Privacy page: the phone's position (PLAN §8.3): its section of PRIVACY.md, word for word." },
   "privacyHostingTitle": "Hébergement",
   "@privacyHostingTitle": { "description": "Privacy page: section about where the data is kept." },
-  "privacyHostingBody": "Les tournées sont stockées chez Google Firebase, dans l'Union européenne. Les cartes viennent d'OpenFreeMap et les adresses de la Base Adresse Nationale : comme tout site web, ces services voient l'adresse IP du téléphone quand ils lui envoient des données.",
+  "privacyHostingBody": "Les secteurs sont stockés chez Google Firebase, dans l'Union européenne. Les cartes viennent d'OpenFreeMap et les adresses de la Base Adresse Nationale : comme tout site web, ces services voient l'adresse IP du téléphone quand ils lui envoient des données.",
   "@privacyHostingBody": { "description": "Privacy page: where the data is kept (PLAN §8.3): its section of PRIVACY.md, word for word." },
   "privacyDeletionTitle": "Suppression",
   "@privacyDeletionTitle": { "description": "Privacy page: section about deleting the data." },
-  "privacyDeletionBody": "Supprimer la tournée efface tout ce qu'elle contient. Quand une campagne commence, celle d'il y a deux ans est effacée. Désinstaller l'appli efface ce qui est sur le téléphone ; ce qui est partagé avec l'équipe reste jusqu'à la suppression de la tournée.",
+  "privacyDeletionBody": "Supprimer le secteur efface tout ce qu'il contient. Quand une campagne commence, celle d'il y a deux ans est effacée. Désinstaller l'appli efface ce qui est sur le téléphone, y compris les dons d'une tournée pas encore validée ; ce qui est partagé avec l'équipe reste jusqu'à la suppression du secteur.",
   "@privacyDeletionBody": { "description": "Privacy page: how data is deleted (PLAN §8.3): its section of PRIVACY.md, word for word." },
   "privacyOnline": "Politique complète en ligne",
   "@privacyOnline": { "description": "Last row of the privacy page, under a divider: opens PRIVACY.md of the repository in the browser (PLAN §5.9, #36)." },
@@ -1121,7 +1125,7 @@
       "count": { "type": "int", "example": "1" }
     }
   },
-  "teamTitle": "Tournée {number}",
+  "teamTitle": "Secteur {number}",
   "@teamTitle": {
     "description": "Title of Équipe (Team mockup).",
     "placeholders": {
@@ -1138,7 +1142,7 @@
   },
   "teamCodeLabel": "Code",
   "@teamCodeLabel": { "description": "Label above the join code in Équipe." },
-  "teamQrSemantics": "QR code de la tournée, code {code}",
+  "teamQrSemantics": "QR code du secteur, code {code}",
   "@teamQrSemantics": {
     "description": "Screen-reader name of the QR code of Équipe.",
     "placeholders": {
@@ -1147,7 +1151,7 @@
   },
   "teamShare": "Partager",
   "@teamShare": { "description": "Button of Équipe that opens the phone's share sheet with the join code." },
-  "teamShareText": "Tournée {number} · {centre}\nRejoignez-la dans l'app Tournée Calendriers avec le code {code}.",
+  "teamShareText": "Secteur {number} · {centre}\nRejoignez-le dans l'app Tournée Calendriers avec le code {code}.",
   "@teamShareText": {
     "description": "Text shared by « Partager » in Équipe.",
     "placeholders": {
@@ -1157,7 +1161,7 @@
     }
   },
   "teamCopyCode": "Copier le code",
-  "@teamCopyCode": { "description": "Screen-reader name and tooltip of the copy button right of the join code (Équipe, « Nouvelle tournée »)." },
+  "@teamCopyCode": { "description": "Screen-reader name and tooltip of the copy button right of the join code (Équipe, « Nouveau secteur »)." },
   "teamCodeCopied": "Code copié",
   "@teamCodeCopied": { "description": "Short message once the join code is on the clipboard." },
   "teamNewCode": "Nouveau code",
@@ -1224,7 +1228,7 @@
   },
   "teamMemberStreets": "{count, plural, =0{0 rue} =1{1 rue} other{{count} rues}}",
   "@teamMemberStreets": {
-    "description": "Right of a member row in Équipe: the streets of the tournée the member covers (#105). Followed by ▸ (▾ while unfolded) when there is at least one.",
+    "description": "Right of a member row in Équipe: the streets of the sector the member covers (#105). Followed by ▸ (▾ while unfolded) when there is at least one.",
     "placeholders": {
       "count": { "type": "int", "example": "3" }
     }
@@ -1261,7 +1265,7 @@
       "name": { "type": "String", "example": "Léa" }
     }
   },
-  "teamRemoveBody": "{name} n'aura plus accès à la tournée. Ses marques restent dans les rues.",
+  "teamRemoveBody": "{name} n'aura plus accès au secteur. Ses marques restent dans les rues.",
   "@teamRemoveBody": {
     "description": "Body of the confirmation before removing a member (PLAN §5.8).",
     "placeholders": {
@@ -1275,9 +1279,9 @@
       "count": { "type": "int", "example": "2" }
     }
   },
-  "teamLeave": "Quitter la tournée",
+  "teamLeave": "Quitter le secteur",
   "@teamLeave": { "description": "Button of Équipe for every member, admins and the creator included (PLAN §5.12)." },
-  "teamLeaveTitle": "Quitter la tournée {number} ?",
+  "teamLeaveTitle": "Quitter le secteur {number} ?",
   "@teamLeaveTitle": {
     "description": "Title of the confirmation before leaving.",
     "placeholders": {
@@ -1288,27 +1292,27 @@
   "@teamLeaveBody": { "description": "Body of the confirmation before leaving." },
   "teamLeaveConfirm": "Quitter",
   "@teamLeaveConfirm": { "description": "Confirm button of the confirmation before leaving." },
-  "teamDelete": "Supprimer la tournée",
+  "teamDelete": "Supprimer le secteur",
   "@teamDelete": { "description": "Admin-only button of Équipe (PLAN §5.12)." },
-  "teamDeleteTitle": "Supprimer la tournée {number} ?",
+  "teamDeleteTitle": "Supprimer le secteur {number} ?",
   "@teamDeleteTitle": {
-    "description": "Title of the confirmation before deleting the tournée.",
+    "description": "Title of the confirmation before deleting the sector.",
     "placeholders": {
       "number": { "type": "String", "example": "49" }
     }
   },
   "teamDeleteBody": "Les rues, les statuts et les membres seront supprimés pour toute l'équipe. C'est définitif.",
-  "@teamDeleteBody": { "description": "Body of the confirmation before deleting the tournée (PLAN §8.3)." },
+  "@teamDeleteBody": { "description": "Body of the confirmation before deleting the sector (PLAN §8.3)." },
   "teamDeleteConfirm": "Supprimer",
-  "@teamDeleteConfirm": { "description": "Confirm button of the confirmation before deleting the tournée." },
-  "teamNoSector": "Aucune tournée ouverte.",
-  "@teamNoSector": { "description": "Équipe when no tournée is open." },
-  "teamUnavailable": "L'équipe ne peut pas être affichée : la tournée n'est pas sur ce téléphone, ou vous n'en faites plus partie.",
-  "@teamUnavailable": { "description": "Équipe when the tournée cannot be read (removed, deleted, never read offline)." },
+  "@teamDeleteConfirm": { "description": "Confirm button of the confirmation before deleting the sector." },
+  "teamNoSector": "Aucun secteur ouvert.",
+  "@teamNoSector": { "description": "Équipe when no sector is open." },
+  "teamUnavailable": "L'équipe ne peut pas être affichée : le secteur n'est pas sur ce téléphone, ou vous n'en faites plus partie.",
+  "@teamUnavailable": { "description": "Équipe when the sector cannot be read (removed, deleted, never read offline)." },
   "teamChanged": "L'équipe a changé entre-temps.",
   "@teamChanged": { "description": "Snackbar of Équipe when a command was refused because a teammate acted first." },
   "teamOffline": "Pas de réseau. Réessayez une fois connecté.",
-  "@teamOffline": { "description": "Snackbar of Équipe when a new code, joining as an admin or deleting the tournée needs the network." },
+  "@teamOffline": { "description": "Snackbar of Équipe when a new code, joining as an admin or deleting the sector needs the network." },
   "recentJustNow": "à l'instant",
   "@recentJustNow": { "description": "Less than a minute ago." },
   "recentMinutes": "il y a {count} min",
@@ -1380,57 +1384,57 @@
   },
   "moveStreetsCount": "{count, plural, =1{1 rue est enregistrée sur ce téléphone.} other{{count} rues sont enregistrées sur ce téléphone.}}",
   "@moveStreetsCount": {
-    "description": "Card of the start screen, with a tournée open, while the phone still holds streets from before the tournée (PLAN §5.0).",
+    "description": "Card of the start screen, with a sector open, while the phone still holds streets from before the sector (PLAN §5.0).",
     "placeholders": { "count": { "type": "int", "example": "12" } }
   },
-  "moveStreetsAction": "{count, plural, =1{L'ajouter à la tournée} other{Les ajouter à la tournée}}",
+  "moveStreetsAction": "{count, plural, =1{L'ajouter au secteur} other{Les ajouter au secteur}}",
   "@moveStreetsAction": {
-    "description": "Primary button of the card: moves the phone's streets into the open tournée.",
+    "description": "Primary button of the card: moves the phone's streets into the open sector.",
     "placeholders": { "count": { "type": "int", "example": "12" } }
   },
   "moveStreetsLater": "Plus tard",
   "@moveStreetsLater": { "description": "Text button of the card: hides it until the next launch." },
   "moveStreetsProgress": "Ajout en cours… {done}/{total}",
   "@moveStreetsProgress": {
-    "description": "In the card while the phone's streets go into the tournée.",
+    "description": "In the card while the phone's streets go into the sector.",
     "placeholders": {
       "done": { "type": "int", "example": "3" },
       "total": { "type": "int", "example": "12" }
     }
   },
-  "moveStreetsDone": "{count, plural, =1{1 rue ajoutée à la tournée} other{{count} rues ajoutées à la tournée}}",
+  "moveStreetsDone": "{count, plural, =1{1 rue ajoutée au secteur} other{{count} rues ajoutées au secteur}}",
   "@moveStreetsDone": {
-    "description": "Message once every street of the phone went into the tournée.",
+    "description": "Message once every street of the phone went into the sector.",
     "placeholders": { "count": { "type": "int", "example": "12" } }
   },
-  "moveStreetsDoneSome": "{moved, plural, =0{Aucune rue ajoutée} =1{1 rue ajoutée} other{{moved} rues ajoutées}}, {already, plural, =1{1 déjà dans la tournée} other{{already} déjà dans la tournée}}",
+  "moveStreetsDoneSome": "{moved, plural, =0{Aucune rue ajoutée} =1{1 rue ajoutée} other{{moved} rues ajoutées}}, {already, plural, =1{1 déjà dans le secteur} other{{already} déjà dans le secteur}}",
   "@moveStreetsDoneSome": {
-    "description": "Message once the phone's streets went into the tournée, some of them skipped because the tournée already had them.",
+    "description": "Message once the phone's streets went into the sector, some of them skipped because the sector already had them.",
     "placeholders": {
       "moved": { "type": "int", "example": "10" },
       "already": { "type": "int", "example": "2" }
     }
   },
 
-  "welcomeIntro": "Notez chaque porte de votre tournée et suivez l'avancement de l'équipe en direct.",
+  "welcomeIntro": "Notez chaque porte de votre secteur et suivez l'avancement de l'équipe en direct.",
   "@welcomeIntro": { "description": "Line under the app's name on « Bienvenue » (PLAN §5.1, Welcome mockup)." },
   "welcomeNameHelp": "Visible par votre équipe.",
   "@welcomeNameHelp": { "description": "Hint under « Votre prénom » on « Bienvenue »." },
-  "createSectorAction": "Créer une tournée",
-  "@createSectorAction": { "description": "Button of « Bienvenue » and « Mes tournées » that opens « Nouvelle tournée »." },
-  "joinSectorAction": "Rejoindre une tournée",
-  "@joinSectorAction": { "description": "Button of « Bienvenue » and « Mes tournées » that opens « Rejoindre une tournée »." },
-  "appTitleSemantics": "{title}. Mes tournées",
+  "createSectorAction": "Créer un secteur",
+  "@createSectorAction": { "description": "Button of « Bienvenue » and « Mes secteurs » that opens « Nouveau secteur »." },
+  "joinSectorAction": "Rejoindre un secteur",
+  "@joinSectorAction": { "description": "Button of « Bienvenue » and « Mes secteurs » that opens « Rejoindre un secteur »." },
+  "appTitleSemantics": "{title}. Mes secteurs",
   "@appTitleSemantics": {
-    "description": "Screen-reader label of the app's name as the title of the start screen with no tournée open: a button that opens « Mes tournées ».",
+    "description": "Screen-reader label of the app's name as the title of the start screen with no sector open: a button that opens « Mes secteurs ».",
     "placeholders": { "title": { "type": "String", "example": "Tournée des calendriers" } }
   },
   "accountSigningIn": "Connexion au serveur…",
-  "@accountSigningIn": { "description": "Line of « Nouvelle tournée » and « Rejoindre » while the phone gets its account." },
-  "accountOffline": "Hors ligne : créer ou rejoindre une tournée demande le réseau.",
-  "@accountOffline": { "description": "Line of « Nouvelle tournée » and « Rejoindre » when the phone could not get its account, with « Réessayer »." },
+  "@accountSigningIn": { "description": "Line of « Nouveau secteur » and « Rejoindre » while the phone gets its account." },
+  "accountOffline": "Hors ligne : créer ou rejoindre un secteur demande le réseau.",
+  "@accountOffline": { "description": "Line of « Nouveau secteur » and « Rejoindre » when the phone could not get its account, with « Réessayer »." },
   "createCentreLabel": "Centre de secours",
-  "@createCentreLabel": { "description": "Label of the centre de secours field of « Nouvelle tournée »." },
+  "@createCentreLabel": { "description": "Label of the centre de secours field of « Nouveau secteur »." },
   "createCentreListSemantics": "Centres de secours connus",
   "@createCentreListSemantics": { "description": "Screen-reader name of the list of known centres under the field." },
   "createCentreAdd": "Ajouter « {name} »",
@@ -1443,15 +1447,15 @@
     "description": "Under the centre de secours field when the name is too long.",
     "placeholders": { "max": { "type": "int", "example": "80" } }
   },
-  "createNumberLabel": "N° de tournée",
-  "@createNumberLabel": { "description": "Label of the number field of « Nouvelle tournée »." },
+  "createNumberLabel": "N° de secteur",
+  "@createNumberLabel": { "description": "Label of the number field of « Nouveau secteur »." },
   "createNumberInvalid": "Un numéro de 1 à {max}.",
   "@createNumberInvalid": {
-    "description": "Under the number field when what is typed is not a tournée number.",
+    "description": "Under the number field when what is typed is not a sector number.",
     "placeholders": { "max": { "type": "int", "example": "9999" } }
   },
   "createYearLabel": "Année",
-  "@createYearLabel": { "description": "Label of the year field of « Nouvelle tournée »." },
+  "@createYearLabel": { "description": "Label of the year field of « Nouveau secteur »." },
   "createYearInvalid": "Une année de {first} à {last}.",
   "@createYearInvalid": {
     "description": "Under the year field when what is typed is not a campaign year.",
@@ -1461,31 +1465,31 @@
     }
   },
   "createAction": "Créer",
-  "@createAction": { "description": "Main button of « Nouvelle tournée »." },
-  "createTakenTitle": "La tournée {number} du {centre} existe déjà.",
+  "@createAction": { "description": "Main button of « Nouveau secteur »." },
+  "createTakenTitle": "Le secteur {number} du {centre} existe déjà.",
   "@createTakenTitle": {
-    "description": "Warning of « Nouvelle tournée » when the number is taken in that centre (CreateTaken mockup).",
+    "description": "Warning of « Nouveau secteur » when the number is taken in that centre (CreateTaken mockup).",
     "placeholders": {
       "number": { "type": "String", "example": "49" },
       "centre": { "type": "String", "example": "CS Villefranche" }
     }
   },
   "createTakenBody": "Demandez le code ou le QR code à la personne qui l'a créée.",
-  "@createTakenBody": { "description": "Under the warning of a tournée that exists already." },
+  "@createTakenBody": { "description": "Under the warning of a sector that exists already." },
   "createJoinWithCode": "Rejoindre avec un code",
-  "@createJoinWithCode": { "description": "Button under the warning: opens « Rejoindre une tournée »." },
+  "@createJoinWithCode": { "description": "Button under the warning: opens « Rejoindre un secteur »." },
   "onboardingOffline": "Pas de réseau. Réessayez une fois connecté.",
   "@onboardingOffline": { "description": "Under « Créer » or « Demander à rejoindre » when the server could not be reached." },
-  "createReady": "Tournée {number} · {centre} est prête. Montrez ce code à l'équipe.",
+  "createReady": "Secteur {number} · {centre} est prêt. Montrez ce code à l'équipe.",
   "@createReady": {
-    "description": "Above the QR code of a tournée just created.",
+    "description": "Above the QR code of a sector just created.",
     "placeholders": {
       "number": { "type": "String", "example": "49" },
       "centre": { "type": "String", "example": "CS Villefranche" }
     }
   },
   "createContinue": "Continuer",
-  "@createContinue": { "description": "Bottom button of « Nouvelle tournée » once created: opens the start screen on the new tournée." },
+  "@createContinue": { "description": "Bottom button of « Nouveau secteur » once created: opens the start screen on the new sector." },
   "joinScan": "Scanner le QR code",
   "@joinScan": { "description": "Button of « Rejoindre » that opens the camera, and the title of the camera screen." },
   "joinOrType": "ou saisir le code",
@@ -1494,15 +1498,15 @@
   "@joinCodeSecondSemantics": { "description": "Screen-reader name of the second box of the code." },
   "joinInvalidCharacter": "Un code n'a que des lettres et des chiffres, sans 0, O, 1, I ni L.",
   "@joinInvalidCharacter": { "description": "Under the code boxes when a character no code has is typed." },
-  "joinScanRefused": "Ce QR code n'est pas celui d'une tournée.",
-  "@joinScanRefused": { "description": "Under the code boxes when the QR code scanned is not a tournée's." },
-  "joinUnknownCode": "Aucune tournée n'a ce code. Vérifiez-le auprès de la personne qui vous l'a donné.",
-  "@joinUnknownCode": { "description": "When no tournée has the code typed or scanned." },
-  "joinLookupOffline": "Pas de réseau : la tournée ne peut pas être affichée.",
-  "@joinLookupOffline": { "description": "When the tournée of the code cannot be read for lack of network, with « Réessayer »." },
-  "joinPreviewTitle": "Tournée {number} · {centre}",
+  "joinScanRefused": "Ce QR code n'est pas celui d'un secteur.",
+  "@joinScanRefused": { "description": "Under the code boxes when the QR code scanned is not a sector's." },
+  "joinUnknownCode": "Aucun secteur n'a ce code. Vérifiez-le auprès de la personne qui vous l'a donné.",
+  "@joinUnknownCode": { "description": "When no sector has the code typed or scanned." },
+  "joinLookupOffline": "Pas de réseau : le secteur ne peut pas être affiché.",
+  "@joinLookupOffline": { "description": "When the sector of the code cannot be read for lack of network, with « Réessayer »." },
+  "joinPreviewTitle": "Secteur {number} · {centre}",
   "@joinPreviewTitle": {
-    "description": "The tournée a join code shows, and the subtitle of « Demande envoyée ».",
+    "description": "The sector a join code shows, and the subtitle of « Demande envoyée ».",
     "placeholders": {
       "number": { "type": "String", "example": "49" },
       "centre": { "type": "String", "example": "CS Villefranche" }
@@ -1510,20 +1514,20 @@
   },
   "joinPreviewCampaign": "Campagne {year}",
   "@joinPreviewCampaign": {
-    "description": "Under the tournée a join code shows.",
+    "description": "Under the sector a join code shows.",
     "placeholders": { "year": { "type": "String", "example": "2026" } }
   },
   "joinRequest": "Demander à rejoindre",
-  "@joinRequest": { "description": "Main button of « Rejoindre une tournée »: sends the request." },
-  "joinAlreadyJoined": "Cette tournée est déjà dans « Mes tournées ».",
-  "@joinAlreadyJoined": { "description": "When the tournée of the code is already one of the member's." },
-  "scannerHint": "Visez le QR code de la tournée.",
+  "@joinRequest": { "description": "Main button of « Rejoindre un secteur »: sends the request." },
+  "joinAlreadyJoined": "Ce secteur est déjà dans « Mes secteurs ».",
+  "@joinAlreadyJoined": { "description": "When the sector of the code is already one of the member's." },
+  "scannerHint": "Visez le QR code du secteur.",
   "@scannerHint": { "description": "Over the camera of « Scanner le QR code »." },
   "scannerUnavailable": "L'appareil photo n'est pas disponible. Saisissez le code à la main.",
   "@scannerUnavailable": { "description": "On the camera screen when the camera is refused or missing." },
-  "joinPendingBody": "Un membre de la tournée doit vous accepter. Demandez-le à la personne qui vous a donné le code.",
+  "joinPendingBody": "Un membre du secteur doit vous accepter. Demandez-le à la personne qui vous a donné le code.",
   "@joinPendingBody": { "description": "Text of « Demande envoyée » (PLAN §5.2, JoinPending mockup)." },
-  "joinPendingOpensItself": "Cet écran s'ouvrira tout seul sur la tournée dès que vous serez accepté.",
+  "joinPendingOpensItself": "Cet écran s'ouvrira tout seul sur le secteur dès que vous serez accepté.",
   "@joinPendingOpensItself": { "description": "Note of « Demande envoyée »." },
   "joinPendingSemantics": "Demande en attente",
   "@joinPendingSemantics": { "description": "Screen-reader label of the clock of « Demande envoyée »." },
@@ -1531,23 +1535,23 @@
   "@joinPendingCancel": { "description": "Button of « Demande envoyée »: withdraws the request." },
   "joinRefused": "Demande refusée",
   "@joinRefused": { "description": "Message once the member's request was refused." },
-  "sectorRemoved": "Vous avez été retiré de la tournée {number}.",
+  "sectorRemoved": "Vous avez été retiré du secteur {number}.",
   "@sectorRemoved": {
-    "description": "Message over the next screen once the server said an admin removed the member from a tournée, which the phone then forgot (PLAN §5.3).",
+    "description": "Message over the next screen once the server said an admin removed the member from a sector, which the phone then forgot (PLAN §5.3).",
     "placeholders": {
       "number": { "type": "String", "example": "49" }
     }
   },
-  "sectorDeleted": "La tournée {number} a été supprimée.",
+  "sectorDeleted": "Le secteur {number} a été supprimé.",
   "@sectorDeleted": {
-    "description": "Message over the next screen once the server said a tournée of the member was deleted, which the phone then forgot (PLAN §5.3).",
+    "description": "Message over the next screen once the server said a sector of the member was deleted, which the phone then forgot (PLAN §5.3).",
     "placeholders": {
       "number": { "type": "String", "example": "49" }
     }
   },
-  "sectorAdminRevoked": "Vous n'êtes plus administrateur : la tournée {number} est retirée de Mes tournées.",
+  "sectorAdminRevoked": "Vous n'êtes plus administrateur : le secteur {number} est retiré de Mes secteurs.",
   "@sectorAdminRevoked": {
-    "description": "Message over the next screen once the server said the phone is no longer an admin, so a tournée it only visited was forgotten (PLAN §5.12).",
+    "description": "Message over the next screen once the server said the phone is no longer an admin, so a sector it only visited was forgotten (PLAN §5.12).",
     "placeholders": {
       "number": { "type": "String", "example": "12" }
     }
@@ -1562,70 +1566,70 @@
   "@deviceIdCopied": { "description": "Snackbar once the phone's uid is on the clipboard." },
   "deviceIdNoAccount": "Pas encore de compte : connectez-vous au réseau.",
   "@deviceIdNoAccount": { "description": "Paramètres row of the phone's uid when the phone has no account and is offline." },
-  "mySectorsAll": "Toutes les tournées",
-  "@mySectorsAll": { "description": "Admin-only link of « Mes tournées » to every tournée of the app, and that screen's title (PLAN §5.12)." },
+  "mySectorsAll": "Tous les secteurs",
+  "@mySectorsAll": { "description": "Admin-only link of « Mes secteurs » to every sector of the app, and that screen's title (PLAN §5.12)." },
   "mySectorsVisited": "{centre} · administrateur",
   "@mySectorsVisited": {
-    "description": "Second line of a tournée an admin opened without being in its team (Switcher mockup).",
+    "description": "Second line of a sector an admin opened without being in its team (Switcher mockup).",
     "placeholders": {
       "centre": { "type": "String", "example": "CS Villefranche" }
     }
   },
   "mySectorsVisitedSemantics": "{title}, {centre}, administrateur, ouvrir",
   "@mySectorsVisitedSemantics": {
-    "description": "Screen-reader label of a visited tournée not open in « Mes tournées ».",
+    "description": "Screen-reader label of a visited sector not open in « Mes secteurs ».",
     "placeholders": {
-      "title": { "type": "String", "example": "Tournée 12 · 2026" },
+      "title": { "type": "String", "example": "Secteur 12 · 2026" },
       "centre": { "type": "String", "example": "CS Villefranche" }
     }
   },
-  "mySectorsVisitedOpenSemantics": "{title}, {centre}, administrateur, tournée ouverte",
+  "mySectorsVisitedOpenSemantics": "{title}, {centre}, administrateur, secteur ouvert",
   "@mySectorsVisitedOpenSemantics": {
-    "description": "Screen-reader label of the open tournée in « Mes tournées » when the admin only visits it.",
+    "description": "Screen-reader label of the open sector in « Mes secteurs » when the admin only visits it.",
     "placeholders": {
-      "title": { "type": "String", "example": "Tournée 12 · 2026" },
+      "title": { "type": "String", "example": "Secteur 12 · 2026" },
       "centre": { "type": "String", "example": "CS Villefranche" }
     }
   },
   "mySectorsUnavailable": "{centre} · Disponible avec réseau",
   "@mySectorsUnavailable": {
-    "description": "Second line of a tournée greyed in « Mes tournées » while offline: it was never downloaded on this phone, so it cannot open (Switcher mockup, PLAN §5.3).",
+    "description": "Second line of a sector greyed in « Mes secteurs » while offline: it was never downloaded on this phone, so it cannot open (Switcher mockup, PLAN §5.3).",
     "placeholders": {
       "centre": { "type": "String", "example": "CS Villefranche" }
     }
   },
   "mySectorsUnavailableSemantics": "{title}, {centre}, disponible avec réseau",
   "@mySectorsUnavailableSemantics": {
-    "description": "Screen-reader label of a tournée greyed in « Mes tournées » while offline (announced as disabled too).",
+    "description": "Screen-reader label of a sector greyed in « Mes secteurs » while offline (announced as disabled too).",
     "placeholders": {
-      "title": { "type": "String", "example": "Tournée 23 · 2026" },
+      "title": { "type": "String", "example": "Secteur 23 · 2026" },
       "centre": { "type": "String", "example": "CS Villefranche" }
     }
   },
-  "allSectorsSubtitle": "Administrateur · {count, plural, =0{aucune tournée} =1{1 tournée} other{{count} tournées}}",
+  "allSectorsSubtitle": "Administrateur · {count, plural, =0{aucun secteur} =1{1 secteur} other{{count} secteurs}}",
   "@allSectorsSubtitle": {
-    "description": "Under the title of « Toutes les tournées » (AllSectors mockup).",
+    "description": "Under the title of « Tous les secteurs » (AllSectors mockup).",
     "placeholders": {
       "count": { "type": "int", "example": "4" }
     }
   },
   "allSectorsMembers": "{count, plural, =0{Aucun membre} =1{1 membre} other{{count} membres}}",
   "@allSectorsMembers": {
-    "description": "Second line of a tournée of « Toutes les tournées »: its active members (« Aucun membre » in red).",
+    "description": "Second line of a sector of « Tous les secteurs »: its active members (« Aucun membre » in red).",
     "placeholders": {
       "count": { "type": "int", "example": "3" }
     }
   },
   "allSectorsMine": "{members} · vous en êtes membre",
   "@allSectorsMine": {
-    "description": "Second line of a tournée the admin is an active member of.",
+    "description": "Second line of a sector the admin is an active member of.",
     "placeholders": {
       "members": { "type": "String", "example": "5 membres" }
     }
   },
   "allSectorsWaiting": "{details} · {count, plural, =1{1 demande en attente} other{{count} demandes en attente}}",
   "@allSectorsWaiting": {
-    "description": "Second line of a tournée where join requests wait, beside a red dot.",
+    "description": "Second line of a sector where join requests wait, beside a red dot.",
     "placeholders": {
       "details": { "type": "String", "example": "3 membres" },
       "count": { "type": "int", "example": "1" }
@@ -1633,31 +1637,31 @@
   },
   "allSectorsRowSemantics": "{title}, {details}, ouvrir",
   "@allSectorsRowSemantics": {
-    "description": "Screen-reader label of a tournée of « Toutes les tournées »: the dot is said in the details.",
+    "description": "Screen-reader label of a sector of « Tous les secteurs »: the dot is said in the details.",
     "placeholders": {
-      "title": { "type": "String", "example": "Tournée 12 · 2026" },
+      "title": { "type": "String", "example": "Secteur 12 · 2026" },
       "details": { "type": "String", "example": "3 membres · 1 demande en attente" }
     }
   },
   "allSectorsOffline": "Pas de réseau : la liste ne peut pas être affichée.",
-  "@allSectorsOffline": { "description": "« Toutes les tournées » when the server cannot be reached; « Réessayer » under it." },
+  "@allSectorsOffline": { "description": "« Tous les secteurs » when the server cannot be reached; « Réessayer » under it." },
   "notAdminAnyMore": "Vous n'êtes plus administrateur.",
-  "@notAdminAnyMore": { "description": "Under « Créer », in « Toutes les tournées », or in a snackbar of Équipe and of the admin banner, when the server refused an admin's command because the phone's admins/{uid} was removed (PLAN §5.12)." },
-  "allSectorsHint": "Ouvrez une tournée pour la gérer : code, équipe, rues. Vous n'y entrez comme membre que si vous la rejoignez.",
-  "@allSectorsHint": { "description": "Under the list of « Toutes les tournées » (AllSectors mockup)." },
-  "allSectorsEmpty": "Aucune tournée pour l'instant.",
-  "@allSectorsEmpty": { "description": "« Toutes les tournées » when the app has none." },
+  "@notAdminAnyMore": { "description": "Under « Créer », in « Toutes les sectors », or in a snackbar of Équipe and of the admin banner, when the server refused an admin's command because the phone's admins/{uid} was removed (PLAN §5.12)." },
+  "allSectorsHint": "Ouvrez un secteur pour le gérer : code, équipe, rues. Vous n'y entrez comme membre que si vous le rejoignez.",
+  "@allSectorsHint": { "description": "Under the list of « Tous les secteurs » (AllSectors mockup)." },
+  "allSectorsEmpty": "Aucun secteur pour l'instant.",
+  "@allSectorsEmpty": { "description": "« Tous les secteurs » when the app has none." },
   "adminBannerTitle": "Administrateur · pas membre",
-  "@adminBannerTitle": { "description": "Banner on Accueil when an admin opened a tournée they are not in (HomeAdmin mockup)." },
-  "adminBannerBody": "Vous n'êtes pas dans l'équipe de cette tournée.",
-  "@adminBannerBody": { "description": "Second line of the banner of an admin who is not in the tournée." },
+  "@adminBannerTitle": { "description": "Banner on Accueil when an admin opened a sector they are not in (HomeAdmin mockup)." },
+  "adminBannerBody": "Vous n'êtes pas dans l'équipe de ce secteur.",
+  "@adminBannerBody": { "description": "Second line of the banner of an admin who is not in the sector." },
   "adminBannerJoin": "Rejoindre",
   "@adminBannerJoin": { "description": "Button of the banner: the admin joins the team at once (PLAN §5.12)." },
-  "teamForgetVisit": "Retirer de Mes tournées",
-  "@teamForgetVisit": { "description": "Button of Équipe for an admin who only visits the tournée: forgets it on the phone, writes nothing (PLAN §5.12)." },
+  "teamForgetVisit": "Retirer de Mes secteurs",
+  "@teamForgetVisit": { "description": "Button of Équipe for an admin who only visits the sector: forgets it on the phone, writes nothing (PLAN §5.12)." },
   "corbeilleAdmin": "un administrateur",
   "@corbeilleAdmin": { "description": "« supprimée par un administrateur »: an admin of the app who is not in the team (PLAN §5.12)." },
-  "mapLabel": "Carte de la tournée",
+  "mapLabel": "Carte du secteur",
   "@mapLabel": { "description": "What screen readers say for the map (Accueil, Ajouter des rues)." },
   "mapLocateMe": "Me localiser",
   "@mapLocateMe": { "description": "Round button over the map that centres it on the phone's position (PLAN §5.3); said by screen readers and shown as its tooltip." },
@@ -1682,9 +1686,9 @@
   "galleryMapTapped": "Touché en {latitude}, {longitude}",
   "@galleryMapTapped": { "description": "Debug map screen: the map was tapped outside the sample streets.", "placeholders": { "latitude": { "type": "String" }, "longitude": { "type": "String" } } },
   "communesLabel": "Communes",
-  "@communesLabel": { "description": "Label of the communes of « Nouvelle tournée » (#78), and header of the communes in Équipe." },
+  "@communesLabel": { "description": "Label of the communes of « Nouveau secteur » (#78), and header of the communes in Équipe." },
   "communeAddHint": "Ajouter une commune…",
-  "@communeAddHint": { "description": "Placeholder of the field that searches a commune to add to a tournée (« Nouvelle tournée », Équipe)." },
+  "@communeAddHint": { "description": "Placeholder of the field that searches a commune to add to a sector (« Nouveau secteur », Équipe)." },
   "communeRemove": "Retirer {name}",
   "@communeRemove": {
     "description": "Screen-reader label and tooltip of the ✕ of a commune chip or row.",
@@ -1692,31 +1696,31 @@
   },
   "teamCommunesHeader": "Communes ({count})",
   "@teamCommunesHeader": {
-    "description": "Header of the tournée's communes in Équipe.",
+    "description": "Header of the sector's communes in Équipe.",
     "placeholders": { "count": { "type": "int", "example": "2" } }
   },
   "teamAddCommune": "Ajouter une commune",
   "@teamAddCommune": { "description": "Button under the communes of Équipe, and title of the sheet it opens." },
-  "teamCommuneAlreadyIn": "Cette commune est déjà dans la tournée.",
-  "@teamCommuneAlreadyIn": { "description": "Snackbar of Équipe: the commune picked is already one of the tournée's." },
-  "teamTooManyCommunes": "Une tournée a au plus {max} communes.",
+  "teamCommuneAlreadyIn": "Cette commune est déjà dans le secteur.",
+  "@teamCommuneAlreadyIn": { "description": "Snackbar of Équipe: the commune picked is already one of the sector's." },
+  "teamTooManyCommunes": "Un secteur a au plus {max} communes.",
   "@teamTooManyCommunes": {
-    "description": "Snackbar of Équipe: the tournée covers as many communes as it may.",
+    "description": "Snackbar of Équipe: the sector covers as many communes as it may.",
     "placeholders": { "max": { "type": "int", "example": "50" } }
   },
   "addStreetsTitle": "Ajouter des rues",
-  "@addStreetsTitle": { "description": "Button of the start screen while a tournée is open, and title of the screen it opens (PLAN §5.4)." },
+  "@addStreetsTitle": { "description": "Button of the start screen while a sector is open, and title of the screen it opens (PLAN §5.4)." },
   "addStreetsModes": "Ajouter depuis",
   "@addStreetsModes": { "description": "Screen-reader name of the « Carte | Liste » tabs of « Ajouter des rues »." },
   "addStreetsMapTab": "Carte",
   "@addStreetsMapTab": { "description": "Tab of « Ajouter des rues »: the map." },
   "addStreetsListTab": "Liste",
   "@addStreetsListTab": { "description": "Tab of « Ajouter des rues »: the checklist of a commune's streets." },
-  "alreadyInSector": "déjà dans la tournée",
-  "@alreadyInSector": { "description": "Right of a street of the « Liste » tab that the tournée already has." },
+  "alreadyInSector": "déjà dans le secteur",
+  "@alreadyInSector": { "description": "Right of a street of the « Liste » tab that the sector already has." },
   "addButton": "{count, plural, =0{Ajouter} =1{Ajouter 1 rue} other{Ajouter {count} rues}}",
   "@addButton": {
-    "description": "Button of the « Liste » tab: adds the ticked streets to the tournée.",
+    "description": "Button of the « Liste » tab: adds the ticked streets to the sector.",
     "placeholders": { "count": { "type": "int", "example": "3" } }
   },
   "addProgress": "Ajout en cours… {done}/{total}",
@@ -1724,14 +1728,14 @@
     "description": "In place of the button of the « Liste » tab while streets are added.",
     "placeholders": { "done": { "type": "int", "example": "2" }, "total": { "type": "int", "example": "5" } }
   },
-  "addDone": "{count, plural, =0{Aucune nouvelle rue} =1{1 rue ajoutée à la tournée} other{{count} rues ajoutées à la tournée}}",
+  "addDone": "{count, plural, =0{Aucune nouvelle rue} =1{1 rue ajoutée au secteur} other{{count} rues ajoutées au secteur}}",
   "@addDone": {
-    "description": "Snackbar once every street ticked in the « Liste » tab is in the tournée.",
+    "description": "Snackbar once every street ticked in the « Liste » tab is in the sector.",
     "placeholders": { "count": { "type": "int", "example": "3" } }
   },
   "addDoneAndRestored": "{added, plural, =1{1 rue ajoutée} other{{added} rues ajoutées}}, {restored, plural, =1{1 restaurée} other{{restored} restaurées}}",
   "@addDoneAndRestored": {
-    "description": "Snackbar once the streets ticked are in the tournée, some back from the Corbeille.",
+    "description": "Snackbar once the streets ticked are in the sector, some back from the Corbeille.",
     "placeholders": { "added": { "type": "int", "example": "2" }, "restored": { "type": "int", "example": "1" } }
   },
   "addPartial": "{added, plural, =0{Aucune rue ajoutée} =1{1 rue ajoutée} other{{added} rues ajoutées}}, {failed, plural, =1{1 en échec} other{{failed} en échec}}. {reason} Les rues encore cochées restent à ajouter.",
@@ -1748,17 +1752,17 @@
   "homeMyStreetsSemantics": "Mes rues, {done} sur {total} faits",
   "@homeMyStreetsSemantics": {"description": "What screen readers say for « Mes rues · 43/62 ».", "placeholders": {"done": {"type": "int", "example": "43"}, "total": {"type": "int", "example": "62"}}},
   "homeStreetsVisitor": "Rues · {done}/{total}",
-  "@homeStreetsVisitor": {"description": "Header of Accueil's panel for an admin who visits the tournée (PLAN §5.12): the doors done of every street.", "placeholders": {"done": {"type": "int", "example": "9"}, "total": {"type": "int", "example": "38"}}},
+  "@homeStreetsVisitor": {"description": "Header of Accueil's panel for an admin who visits the sector (PLAN §5.12): the doors done of every street.", "placeholders": {"done": {"type": "int", "example": "9"}, "total": {"type": "int", "example": "38"}}},
   "homeStreetsVisitorSemantics": "Rues, {done} sur {total} faits",
   "@homeStreetsVisitorSemantics": {"description": "What screen readers say for « Rues · 9/38 ».", "placeholders": {"done": {"type": "int", "example": "9"}, "total": {"type": "int", "example": "38"}}},
   "homeTeamProgress": "Équipe : {percent} %",
-  "@homeTeamProgress": {"description": "Right of the panel's header: the share of the whole tournée's doors done, rounded down.", "placeholders": {"percent": {"type": "int", "example": "41"}}},
-  "homeOtherStreets": "Autres rues de la tournée ({count})",
-  "@homeOtherStreets": {"description": "Section of Accueil's panel under « Mes rues »: the streets of the tournée the member does not cover, free or someone else's.", "placeholders": {"count": {"type": "int", "example": "12"}}},
+  "@homeTeamProgress": {"description": "Right of the panel's header: the share of the whole sector's doors done, rounded down.", "placeholders": {"percent": {"type": "int", "example": "41"}}},
+  "homeOtherStreets": "Autres rues du secteur ({count})",
+  "@homeOtherStreets": {"description": "Section of Accueil's panel under « Mes rues »: the streets of the sector the member does not cover, free or someone else's.", "placeholders": {"count": {"type": "int", "example": "12"}}},
   "homeNoStreetOfMine": "Vous n'avez pas encore de rue.",
   "@homeNoStreetOfMine": {"description": "Accueil's panel, under « Mes rues · 0/0 », when the member covers no street."},
-  "homeNoStreet": "Aucune rue dans la tournée pour l'instant.",
-  "@homeNoStreet": {"description": "Accueil's panel when the tournée has no street at all."},
+  "homeNoStreet": "Aucune rue dans le secteur pour l'instant.",
+  "@homeNoStreet": {"description": "Accueil's panel when the sector has no street at all."},
   "homePanelExpand": "Afficher toute la liste",
   "@homePanelExpand": {"description": "Screen-reader name of the handle of Accueil's panel: shows the whole list of streets."},
   "homePanelReduce": "Réduire la liste",
@@ -1782,7 +1786,7 @@
   "addStreetsSearchClear": "Effacer la recherche",
   "@addStreetsSearchClear": {"description": "Tooltip of the ✕ of the search box: empties it and closes the results."},
   "addStreetsSearchNone": "Aucune rue trouvée.",
-  "@addStreetsSearchNone": {"description": "Under the search box when the BAN finds no street of that name in the tournée's communes."},
+  "@addStreetsSearchNone": {"description": "Under the search box when the BAN finds no street of that name in the sector's communes."},
   "addStreetsSearchNoNetwork": "Connexion nécessaire pour chercher une rue.",
   "@addStreetsSearchNoNetwork": {"description": "Under the search box when the phone is offline."},
   "addStreetsSearchError": "Le service des adresses ne répond pas. Réessayez dans un moment.",
@@ -1795,8 +1799,8 @@
   "@streetCardLoading": {"description": "Street card while the street tapped is looked up."},
   "streetCardNumbers": "{count, plural, =0{Aucun numéro} =1{1 numéro} other{{count} numéros}}",
   "@streetCardNumbers": {"description": "Chip of the card of a street to add: how many numbers it brings.", "placeholders": {"count": {"type": "int", "example": "19"}}},
-  "streetCardNotInSector": "Pas encore dans la tournée",
-  "@streetCardNotInSector": {"description": "Chip of the card of a street the tournée does not have."},
+  "streetCardNotInSector": "Pas encore dans le secteur",
+  "@streetCardNotInSector": {"description": "Chip of the card of a street the sector does not have."},
   "streetCardAddMine": "Ajouter et me l'attribuer",
   "@streetCardAddMine": {"description": "Red button of the card of a street to add: adds it, in the member's streets."},
   "streetCardAddFree": "Ajouter sans m'attribuer",
@@ -1808,7 +1812,7 @@
   "streetCardManualLink": "Rue absente de la carte ? Saisir à la main",
   "@streetCardManualLink": {"description": "Link under the buttons of the card of a street to add."},
   "streetCardProgress": "{done}/{total} faits",
-  "@streetCardProgress": {"description": "Chip of the card of a street of the tournée: its doors done.", "placeholders": {"done": {"type": "int", "example": "31"}, "total": {"type": "int", "example": "42"}}},
+  "@streetCardProgress": {"description": "Chip of the card of a street of the sector: its doors done.", "placeholders": {"done": {"type": "int", "example": "31"}, "total": {"type": "int", "example": "42"}}},
   "streetCardProgressSemantics": "{done} sur {total} faits",
   "@streetCardProgressSemantics": {"description": "What screen readers say for « 31/42 faits ».", "placeholders": {"done": {"type": "int", "example": "31"}, "total": {"type": "int", "example": "42"}}},
   "streetCardFree": "Libre",
@@ -1828,10 +1832,10 @@
   "streetCardRelease": "Ne plus la faire",
   "@streetCardRelease": {"description": "Second button of the card of a street of the member's."},
   "streetCardOpen": "Ouvrir",
-  "@streetCardOpen": {"description": "Button of the card of a street of the tournée: opens the street."},
+  "@streetCardOpen": {"description": "Button of the card of a street of the sector: opens the street."},
   "streetCardNoNetwork": "Connexion nécessaire pour ajouter une rue",
   "@streetCardNoNetwork": {"description": "Title of the card when the phone is offline (PLAN §5.4)."},
-  "streetCardNoNetworkHint": "Les rues déjà dans la tournée se prennent et s'ouvrent sans réseau.",
+  "streetCardNoNetworkHint": "Les rues déjà dans le secteur se prennent et s'ouvrent sans réseau.",
   "@streetCardNoNetworkHint": {"description": "Under « Connexion nécessaire pour ajouter une rue »."},
   "streetCardNoStreetHere": "Aucune rue connue ici",
   "@streetCardNoStreetHere": {"description": "Title of the card when the BAN knows no street at the point tapped."},
@@ -1849,8 +1853,8 @@
   "@manualName": {"description": "Label of the name field of « Rue à la main »."},
   "manualCommune": "Commune",
   "@manualCommune": {"description": "Label of the commune of « Rue à la main »."},
-  "manualNoCommune": "La tournée n'a pas encore de commune : cherchez celle de la rue.",
-  "@manualNoCommune": {"description": "Over the commune search of « Rue à la main » for a tournée without commune nor street."},
+  "manualNoCommune": "Le secteur n'a pas encore de commune : cherchez celle de la rue.",
+  "@manualNoCommune": {"description": "Over the commune search of « Rue à la main » for a sector without commune nor street."},
   "manualFrom": "Du n°",
   "@manualFrom": {"description": "Label of the first number of the range of « Rue à la main »."},
   "manualTo": "Au n°",

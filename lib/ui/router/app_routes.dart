@@ -24,7 +24,7 @@ abstract final class AppRoutes {
   /// « Bienvenue », where a phone the app knows nothing of opens (§5.1).
   static const welcome = '/bienvenue';
 
-  /// « Nouvelle tournée » and « Rejoindre une tournée » (§5.2).
+  /// « Nouveau secteur » and « Rejoindre un secteur » (§5.2).
   static const create = '/creer';
   static const join = '/rejoindre';
   static const joinPending = '/rejoindre/attente';
@@ -53,9 +53,9 @@ abstract final class AppRoutes {
   ).toString();
   static const team = '/equipe';
 
-  /// « Toutes les tournées », for admins, pushed from « Mes tournées »
+  /// « Tous les secteurs », for admins, pushed from « Mes secteurs »
   /// (§5.12).
-  static const allSectors = '/toutes-les-tournees';
+  static const allSectors = '/tous-les-secteurs';
   static const settings = '/parametres';
 
   /// « Confidentialité », pushed from Paramètres.

@@ -21,7 +21,7 @@ import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
-/// « Nouvelle tournée » (PLAN §5.2, Create and CreateTaken mockups): the
+/// « Nouveau secteur » (PLAN §5.2, Create and CreateTaken mockups): the
 /// centre de secours picked from the known ones (or added), the number,
 /// checked as it is typed, and the year; « Créer », then the code and its
 /// QR code to show the team on the same screen, and « Continuer » to the
@@ -391,7 +391,7 @@ final class _CentreRow extends StatelessWidget {
   }
 }
 
-/// « N° de tournée » or « Année »: a label, a field of digits, and what is
+/// « N° de secteur » or « Année »: a label, a field of digits, and what is
 /// wrong with it under it.
 final class _NumberField extends StatelessWidget {
   const _NumberField({
@@ -455,7 +455,7 @@ final class _NumberField extends StatelessWidget {
   }
 }
 
-/// « ⚠ La tournée 49 du CS Villefranche existe déjà. Demandez le code… »
+/// « ⚠ Le secteur 49 du CS Villefranche existe déjà. Demandez le code… »
 final class _TakenAlert extends StatelessWidget {
   const _TakenAlert({required this.title, required this.body});
 

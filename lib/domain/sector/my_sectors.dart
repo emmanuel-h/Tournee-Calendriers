@@ -3,7 +3,7 @@ import 'package:tournee_calendriers/domain/sector/sector_summary.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/shared/same_items.dart';
 
-/// Why a tournée of « Mes tournées » cannot be opened.
+/// Why a tournée of « Mes secteurs » cannot be opened.
 enum OpenSectorFailure {
   /// The phone does not know this tournée (left, refused, never joined).
   unknownSector,
@@ -13,7 +13,7 @@ enum OpenSectorFailure {
   requestPending,
 }
 
-/// The tournées of the member on this phone (« Mes tournées », PLAN §5.3,
+/// The tournées of the member on this phone (« Mes secteurs », PLAN §5.3,
 /// Q4) and the one the app shows, which it opens again at the next launch
 /// (PLAN §4, §6.3). Kept on the phone only, never shared with the team.
 ///

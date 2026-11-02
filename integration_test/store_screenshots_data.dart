@@ -49,7 +49,7 @@ final _number = valueOf(SectorNumber.create(12));
 final _centre = valueOf(RescueCentre.create('CS Villefranche'));
 final _campaign = valueOf(CampaignYear.create(2026));
 
-/// The tournée 12 as « Mes tournées » keeps it on Léa's phone.
+/// The tournée 12 as « Mes secteurs » keeps it on Léa's phone.
 final storeSectorSummary = SectorSummary(
   id: _sectorId,
   number: _number,

@@ -119,7 +119,7 @@ final class SectorCreated extends CreateRun {
   String toString() => 'SectorCreated($number, $centre, $code)';
 }
 
-/// What « Nouvelle tournée » shows (PLAN §5.2, Create and CreateTaken
+/// What « Nouveau secteur » shows (PLAN §5.2, Create and CreateTaken
 /// mockups). Immutable: the notifier replaces it with [copyWith].
 final class NewSectorState {
   NewSectorState({

@@ -7,7 +7,7 @@ import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/presentation/all_sectors/all_sectors_state.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 
-/// « Toutes les tournées ». `autoDispose`: each visit asks the server
+/// « Tous les secteurs ». `autoDispose`: each visit asks the server
 /// again, so the list is never older than the screen.
 final allSectorsProvider =
     NotifierProvider.autoDispose<AllSectorsNotifier, AllSectorsState>(

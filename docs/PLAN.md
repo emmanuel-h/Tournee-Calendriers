@@ -11,7 +11,7 @@ the real French copy.
 ## 1. Goal
 
 Each year, firefighters sell calendars door to door. Each firefighter covers a set of
-streets, and a team (one *tournée*) shares the whole sector. The app lets each person:
+streets, and a team shares the whole area (its *secteur*). The app lets each person:
 
 - pick the streets they cover **by tapping them on a map**, and add missing streets or numbers by hand,
 - mark every house as **done / to do / nobody home**, quickly, with one hand, in the street,
@@ -20,13 +20,13 @@ streets, and a team (one *tournée*) shares the whole sector. The app lets each 
 - count the money of each outing (« tournée »): dons per payment method, totals only, never tied
   to a house (#63, §5.13); a house remembers only how many calendars it took.
 
-Once a tournée has been downloaded, the app works **fully offline** (map included) and syncs
+Once a secteur has been downloaded, the app works **fully offline** (map included) and syncs
 with the server whenever the network is available.
 
 ### In scope for v1
 
-- Name + team code (or QR) onboarding, create / join a tournée
-- Map of the tournée: streets coloured by progress, houses as coloured dots when zoomed in
+- Name + team code (or QR) onboarding, create / join a secteur
+- Map of the secteur: streets coloured by progress, houses as coloured dots when zoomed in
 - Street selection on the map (tap a road), backed by the national address base (BAN)
 - Manual entry of missing streets and numbers
 - House status (« repasser » with an optional day and hour, #81), apartment units
@@ -44,7 +44,7 @@ with the server whenever the network is available.
 - Free-text notes on houses and doors: removed for privacy (§8.3, Q23); since #81 the
   « repasser » hint is a day and an hour, so no free text is kept about a house
 - English or other languages
-- Starting next year's campaign from this year's (v1.1). **The v1 data model is built for it** (§6): a tournée holds
+- Starting next year's campaign from this year's (v1.1). **The v1 data model is built for it** (§6): a secteur holds
   one campaign per year, so nothing needs migrating when the button ships
 - Route planning / navigation, statistics beyond progress, exports, web dashboard
 
@@ -56,10 +56,10 @@ Code uses English names, the UI uses French.
 
 | UI (FR) | Code | Meaning |
 |---|---|---|
-| Secteur | `Sector` (code renamed from `Tournee` in #116; Firestore `sectors/`) | A team's area, identified by its **number + centre de secours + code**. Lives across years. **Renamed 2026-11-02** from « Tournée » (#63): the rest of this document still says « tournée » for it until the rename task updates it |
-| Centre de secours (CS) | `RescueCentre` | The fire station the tournée belongs to, e.g. CS Villefranche |
-| Campagne | `Campaign` | One year of a tournée (2026, 2027…). Statuses belong to a campaign; streets and buildings carry over |
-| Membre | `Member` | A firefighter who joined the tournée |
+| Secteur | `Sector` (code renamed from `Tournee` in #116; Firestore `sectors/`) | A team's area, identified by its **number + centre de secours + code**. Lives across years. **Renamed 2026-11-02** from « Tournée » (#63), on every screen and in this whole document (#115); « tournée » now only names one outing (below) |
+| Centre de secours (CS) | `RescueCentre` | The fire station the secteur belongs to, e.g. CS Villefranche |
+| Campagne | `Campaign` | One year of a secteur (2026, 2027…). Statuses belong to a campaign; streets and buildings carry over |
+| Membre | `Member` | A firefighter who joined the secteur |
 | Rue | `Street` | A street in a commune, with its house numbers and its shape on the map |
 | Numéro / maison | `House` | One address on a street (`12`, `12bis`), with its position when known |
 | Logement | `Dwelling` | One unit inside a building (`Apt 3`, `B2`) |
@@ -71,7 +71,7 @@ Code uses English names, the UI uses French.
 | Moyen de paiement | `PaymentMethod` | `cash` (Espèces), `cheque` (Chèque), `card` (Carte bancaire) |
 | Collecte | `RoundSummary` (per campaign) | The validated tournées of a campaign and their totals, seen by the whole secteur, never split per member |
 | Calendriers | `House.calendars` | How many calendars a house (or door) marked ✓ took: 1, or more after « + Ajouter un don ». No amount |
-| Libre | — | A street in the tournée that nobody in the team has taken (a member who left or was removed no longer counts, #91) |
+| Libre | — | A street in the secteur that nobody in the team has taken (a member who left or was removed no longer counts, #91) |
 
 ---
 
@@ -86,10 +86,10 @@ Code uses English names, the UI uses French.
 | Street picking | Tap a road → reverse geocoding (IGN Géoplateforme) gives the BAN street → BAN gives its numbers with positions → the OpenFreeMap vector tiles (OSM) give its shape, stored once (#92) |
 | Manual edits | Missing streets and numbers can always be added by hand, offline too |
 | Sharing | Live sync through **Firebase Firestore**; its offline cache *is* the local store (no Room) |
-| Offline | Explicit "download the tournée" step: all street documents into an unlimited Firestore cache + map tiles of the tournée area into a MapLibre offline region |
+| Offline | Explicit "download the secteur" step: all street documents into an unlimited Firestore cache + map tiles of the secteur area into a MapLibre offline region |
 | Identity | Firebase **anonymous auth** + display name + 6-character join code or QR |
-| Tournée identity | Number + centre de secours + code. Number + CS is unique across the app; the code is the secret used to join |
-| Years | A tournée has one campaign per year. A new campaign copies streets, numbers and buildings; statuses and *repasser* start at ○ (v1.1) |
+| Secteur identity | Number + centre de secours + code. Number + CS is unique across the app; the code is the secret used to join |
+| Years | A secteur has one campaign per year. A new campaign copies streets, numbers and buildings; statuses and *repasser* start at ○ (v1.1) |
 | Apartments | Optional unit list per house; building status derived from units |
 | Comments in code | Explain the *why* and non-obvious Dart/Flutter concepts; never restate the code |
 | Tests | TDD, fast Dart tests in the dev loop; 100 % coverage gate on domain + application + presentation; no mutation-testing gate (no reliable Dart tool) |
@@ -102,11 +102,11 @@ Code uses English names, the UI uses French.
 first launch
    │
    ▼
- Bienvenue ── name ──┬── Créer une tournée ──▶ QR + code ──┐
+ Bienvenue ── name ──┬── Créer un secteur ──▶ QR + code ──┐
                      └── Rejoindre (QR or code) ───────────┤
                                                            ▼
-                               Accueil = map of the tournée + "Mes rues" panel
-                               (the app downloads the tournée for offline use by
+                               Accueil = map of the secteur + "Mes rues" panel
+                               (the app downloads the secteur for offline use by
                                 itself, unseen, whenever it is online — §7)
               ┌──────────────────┬──────────────┼──────────────────┬─────────────┐
               ▼                  ▼              ▼                  ▼             ▼
@@ -116,18 +116,18 @@ first launch
    Fiche maison / Immeuble
 ```
 
-Next launches open the last tournée directly, on the map.
+Next launches open the last secteur directly, on the map.
 
 Where the app opens (T2.5, decided from the phone alone, so an offline cold start opens
-where it should): a tournée open → it (the start screen); otherwise the phone holds streets
+where it should): a secteur open → it (the start screen); otherwise the phone holds streets
 of its own (Corbeille included, as in M1) → « Mes rues »; otherwise a request to join waits →
-« Demande envoyée » for the latest one; otherwise the phone knows tournées, none open → the
+« Demande envoyée » for the latest one; otherwise the phone knows secteurs, none open → the
 start screen; otherwise → « Bienvenue ». Nothing on the marking path ever waits for a
 request.
 
 Before the round (once):
 
-1. Join the tournée with the QR code at the station. Nothing else to do for offline: while
+1. Join the secteur with the QR code at the station. Nothing else to do for offline: while
    online, the app saves the streets and the map tiles by itself, unseen (§7).
 2. "Ajouter des rues" → tap each of my roads on the map → "Ajouter et me l'attribuer".
 3. A cul-de-sac missing from the map → "Rue absente ? Saisir à la main".
@@ -177,7 +177,7 @@ value taken behaves as with a button. **Typography:** French texts put a non-bre
   the labels and the 48 dp on each main screen with Flutter's accessibility guidelines.
 - **Font size up to 200 %:** nothing overflows at `TextScaler.linear(2.0)` on a 411 dp wide
   phone (street screen, house and door sheets, Accueil, Paramètres, Équipe, Bienvenue,
-  Rejoindre, Nouvelle tournée; widget tests with the real fonts). Long lines wrap or end in
+  Rejoindre, Nouveau secteur; widget tests with the real fonts). Long lines wrap or end in
   « … »; a row with a fixed height grows with the text instead: Accueil's folded panel
   (`homePanelFoldedHeight`), the street's counts row (at least 44 dp, 48 dp with
   « Masquer faits ») and the « Appui : … » hints. Buttons keep a fixed padding (24 dp for the
@@ -192,7 +192,7 @@ value taken behaves as with a button. **Typography:** French texts put a non-bre
   one's hues. Where no colour can both carry white text and read on the dark surface, the dark
   palette turns it over: its accent is a light red under dark text, and the done green is two
   tokens, `done` (dark, a tile under white text) and `doneInk` (light, a count, a mark or a
-  progress bar). The greyed text of a tournée that cannot open offline (`unavailable`, 5.3)
+  progress bar). The greyed text of a secteur that cannot open offline (`unavailable`, 5.3)
   stays below 4.5:1 on purpose, as for a disabled control, with « Disponible avec réseau »
   saying it. The light palette's outlines (to-do tiles, fields) are under 3:1 as approved:
   their words identify them, so WCAG does not require it; the dark ones reach 3:1.
@@ -204,7 +204,7 @@ value taken behaves as with a button. **Typography:** French texts put a non-bre
 ### 5.0 Mes rues and Importer des rues
 
 In M1 the app opened on a plain list so the street screen could be used on a real area. From
-T3.5 (#30) it is the start screen while no tournée is open; with one open, Accueil (5.3)
+T3.5 (#30) it is the start screen while no secteur is open; with one open, Accueil (5.3)
 shows instead. Mockups: `docs/mockups/Start.dc.html` and `docs/mockups/Import.dc.html`.
 
 ```
@@ -229,30 +229,30 @@ shows instead. Mockups: `docs/mockups/Start.dc.html` and `docs/mockups/Import.dc
   No street yet: « Aucune rue pour l'instant » and « Importez les rues d'une commune pour
   commencer. ». Works offline. Debug builds
   show an app-bar action to the component gallery.
-- **Top bar** (T2.7): Accueil's (5.3, Home mockup) already. With a tournée open, its title
-  « Tournée 49 · 2026 ▾ » over the CS opens « Mes tournées »; with none, the title stays
+- **Top bar** (T2.7): Accueil's (5.3, Home mockup) already. With a secteur open, its title
+  « Secteur 49 · 2026 ▾ » over the CS opens « Mes secteurs »; with none, the title stays
   « Tournée des calendriers ». [⚙] opens Paramètres (5.9) either way; [👥] comes with Équipe
-  (5.8). From T2.5 the app's name has a ▾ too and opens « Mes tournées » the same way, so a
+  (5.8). From T2.5 the app's name has a ▾ too and opens « Mes secteurs » the same way, so a
   phone with streets of its own reaches « Créer » / « Rejoindre » without Paramètres.
-- **Streets of the tournée** (T2.8): with a tournée open, « Mes rues », the street screen,
+- **Streets of the secteur** (T2.8): with a secteur open, « Mes rues », the street screen,
   the sheets, edit mode, « Importer des rues » and the Corbeille work on the streets of its
   current campaign in Firestore, shared live with the team; with none open, on the phone's
-  own streets as in M1. Opening another tournée switches them at once: nothing of the one
+  own streets as in M1. Opening another secteur switches them at once: nothing of the one
   left stays on screen, and « Annuler » no longer undoes a change made there. Streets the
-  member can no longer read (removed from the tournée) show as none, a street as gone.
-- **Moving the phone's streets into the tournée** (T2.8): while a tournée is open, the member
+  member can no longer read (removed from the secteur) show as none, a street as gone.
+- **Moving the phone's streets into the secteur** (T2.8): while a secteur is open, the member
   is one of its active members (as the phone last read it), the phone still holds streets
-  (Corbeille left out) and they never went into this tournée, a card sits above the list
+  (Corbeille left out) and they never went into this secteur, a card sits above the list
   (above « Aucune rue pour l'instant » too; on Accueil from T3.5, above the map):
 
 ```
 ┌──────────────────────────────┐
-│ Tournée 49 · 2026 ▾   [👥][⚙]│
+│ Secteur 49 · 2026 ▾   [👥][⚙]│
 │ CS Villefranche              │
 │ ┌──────────────────────────┐ │
 │ │ 12 rues sont enregistrées│ │
 │ │ sur ce téléphone.        │ │
-│ │ [Les ajouter à la tournée]│ │  ← primary button
+│ │ [Les ajouter au secteur]  │ │  ← primary button
 │ │        Plus tard         │ │  ← text button
 │ └──────────────────────────┘ │
 │ Mes rues · 3   Villefranche… │
@@ -260,16 +260,16 @@ shows instead. Mockups: `docs/mockups/Start.dc.html` and `docs/mockups/Import.dc
 └──────────────────────────────┘
 ```
 
-  « 1 rue est enregistrée… » / « L'ajouter à la tournée » for one. While moving: « Ajout en
-  cours… n/N » in place of the buttons. Done: « 12 rues ajoutées à la tournée », or « 10 rues
-  ajoutées, 2 déjà dans la tournée » (« Aucune rue ajoutée, … » when all were there), and the
-  card never comes back for that tournée (another tournée may still be offered them). « Plus
-  tard » hides it for that tournée until the next launch. Each street goes as it is (marks,
+  « 1 rue est enregistrée… » / « L'ajouter au secteur » for one. While moving: « Ajout en
+  cours… n/N » in place of the buttons. Done: « 12 rues ajoutées au secteur », or « 10 rues
+  ajoutées, 2 déjà dans le secteur » (« Aucune rue ajoutée, … » when all were there), and the
+  card never comes back for that secteur (another secteur may still be offered them). « Plus
+  tard » hides it for that secteur until the next launch. Each street goes as it is (marks,
   buildings, « repasser » times, removed numbers) with every stamp's `by` made the member's, times kept;
-  a street whose BAN street (or id) the tournée already has is skipped and counted. The
-  phone keeps its copies, only no longer shown while a tournée is open. No network needed to
+  a street whose BAN street (or id) the secteur already has is skipped and counted. The
+  phone keeps its copies, only no longer shown while a secteur is open. No network needed to
   start: Firestore queues the new streets.
-- **Pending sync** (T2.9): while a tournée is open and changes made on the phone have not
+- **Pending sync** (T2.9): while a secteur is open and changes made on the phone have not
   reached the server, a line sits above « Ajouter des rues » on Accueil (5.3, Home mockup;
   above « Importer des rues » on this list until T3.5): a cloud glyph and « Modifications de 3 rues en attente d'envoi » (« … d'une rue … »
   for one), read out as such. It goes away once all is sent (§7).
@@ -287,8 +287,8 @@ shows instead. Mockups: `docs/mockups/Start.dc.html` and `docs/mockups/Import.dc
   first) and keeps them ticked so « Importer » tries them again. No network, service error and
   unknown commune each have a French message, with « Réessayer » for the street list.
 - **Kept** (#78, decided 2026-10-17): « Mes rues » gives way to Accueil (5.3); « Importer des
-  rues » stays as it is for a phone with no tournée open, and becomes the « Liste » tab of
-  « Ajouter des rues » (5.4) while a tournée is open. The start button then reads « Ajouter des
+  rues » stays as it is for a phone with no secteur open, and becomes the « Liste » tab of
+  « Ajouter des rues » (5.4) while a secteur is open. The start button then reads « Ajouter des
   rues » and opens that screen.
 
 ### 5.1 Bienvenue (first launch only)
@@ -299,8 +299,8 @@ shows instead. Mockups: `docs/mockups/Start.dc.html` and `docs/mockups/Import.dc
 │                              │
 │   Votre prénom [ Manu      ] │
 │                              │
-│   [   Créer une tournée    ] │
-│   [   Rejoindre une tournée] │
+│   [   Créer un secteur    ]  │
+│   [   Rejoindre un secteur]  │
 └──────────────────────────────┘
 ```
 
@@ -309,12 +309,12 @@ Both buttons stay disabled until the name is filled in.
 Delivered in T2.5 (Welcome mockup): shown only where the app opens on a phone that holds
 nothing (§4). The app's logo and name, « Notez chaque porte… », « Votre prénom » (« Visible
 par votre équipe. » under it; « Prénom limité à 30 caractères. » when too long), then
-« Créer une tournée » and « Rejoindre une tournée », disabled until the name is a valid
+« Créer un secteur » and « Rejoindre un secteur », disabled until the name is a valid
 `MemberName`. Either keeps the name on the phone (`ChangeMemberName`, the one of Paramètres)
 and opens its screen above « Bienvenue »; the field starts from the name kept.
 
-From #75 (5.12): « Créer une tournée » shows only for an admin (so a fresh install, never yet
-an admin, shows only « Rejoindre une tournée », in red), and the bottom of the screen shows
+From #75 (5.12): « Créer un secteur » shows only for an admin (so a fresh install, never yet
+an admin, shows only « Rejoindre un secteur », in red), and the bottom of the screen shows
 « Identifiant de l'appareil : … » with a copy button.
 
 ### 5.2 Créer / Rejoindre
@@ -322,14 +322,14 @@ an admin, shows only « Rejoindre une tournée », in red), and the bottom of th
 ```
   Créer                               Rejoindre
 ┌──────────────────────────────┐    ┌──────────────────────────────┐
-│ ← Nouvelle tournée           │    │ ← Rejoindre une tournée      │
+│ ← Nouveau secteur            │    │ ← Rejoindre un secteur       │
 │ Centre de secours            │    │ [   📷 Scanner le QR code   ] │
 │ [ CS Villefranche       ▾ ]  │    │      ou saisir le code       │
-│ N° de tournée   [ 49       ] │    │ [ K7P ] - [ 2QX ]            │
+│ N° de secteur   [ 49       ] │    │ [ K7P ] - [ 2QX ]            │
 │ Année           [ 2026     ] │    │ ┌──────────────────────────┐ │
-│ [          Créer         ]   │    │ │ Tournée 49               │ │
+│ [          Créer         ]   │    │ │ Secteur 49               │ │
 │ ──────────────────────────── │    │ │ CS Villefranche          │ │
-│ Tournée 49 · CS Villefranche │    │ │ Campagne 2026            │ │
+│ Secteur 49 · CS Villefranche │    │ │ Campagne 2026            │ │
 │        ▄▄▄▄ ▄ ▄▄▄▄           │    │ └──────────────────────────┘ │
 │ Code K7P-2QX [⧉] [Partager]  │    │ [  Demander à rejoindre  ]   │
 └──────────────────────────────┘    └──────────────────────────────┘
@@ -338,8 +338,8 @@ an admin, shows only « Rejoindre une tournée », in red), and the bottom of th
 ┌──────────────────────────────┐
 │ Centre de secours            │
 │ [ CS Villefranche       ▾ ]  │
-│ N° de tournée   [ 49       ] │
-│ ⚠ La tournée 49 du CS        │
+│ N° de secteur   [ 49       ] │
+│ ⚠ Le secteur 49 du CS        │
 │   Villefranche existe déjà.  │
 │   Demandez le code ou le QR  │
 │   code à son créateur.       │
@@ -347,7 +347,7 @@ an admin, shows only « Rejoindre une tournée », in red), and the bottom of th
 └──────────────────────────────┘
 ```
 
-- **A tournée is identified by its number, its centre de secours and its code.** Number + CS is
+- **A secteur is identified by its number, its centre de secours and its code.** Number + CS is
   unique across the app: creation checks it as you type and refuses a duplicate. The code is the
   secret that lets you in; number and CS alone never do.
 - **Centre de secours:** a list of the CS already known to the app, filtered as you type, with
@@ -360,7 +360,7 @@ an admin, shows only « Rejoindre une tournée », in red), and the bottom of th
   (`ABCDEFGHJKMNPQRSTUVWXYZ23456789`, no 0/O, 1/I/L): 31⁶ ≈ 887 million combinations, shown as
   `K7P-2QX`, generated with a secure random source. Typing is case-insensitive, ignores the dash
   and refuses characters outside the alphabet.
-- **Rejoindre:** QR code (normal way) or the code alone; the app then shows *Tournée 49 · CS
+- **Rejoindre:** QR code (normal way) or the code alone; the app then shows *Secteur 49 · CS
   Villefranche · Campagne 2026* to confirm before joining. **Joining sends a request**: the
   newcomer waits on the screen below until an accepted member lets them in (§8). Scanning uses
   `mobile_scanner` (Android and iOS); the camera permission is asked only when *Scanner* is
@@ -370,8 +370,8 @@ an admin, shows only « Rejoindre une tournée », in red), and the bottom of th
   `JoinCode.parse`, like a typed code, so any other QR code is refused as an invalid code. Drawn
   dark on white whatever the theme, so it scans.
 - An admin can regenerate the code from Équipe (old code stops working; members stay).
-- **Only admins create a tournée** (and so add a centre de secours), from #75 (5.12).
-- **Communes** (#78, Create mockup): between « Centre de secours » and « N° de tournée »,
+- **Only admins create a secteur** (and so add a centre de secours), from #75 (5.12).
+- **Communes** (#78, Create mockup): between « Centre de secours » and « N° de secteur »,
   « Communes », a chip per commune picked (« Villefranche-sur-Saône (69400) » and ✕, a 48 dp
   target) then the field « + Ajouter une commune… », which searches geo.api.gouv.fr as « Importer
   des rues » does (two characters, 300 ms pause, late answers ignored); a suggestion tapped
@@ -380,48 +380,48 @@ an admin, shows only « Rejoindre une tournée », in red), and the bottom of th
   keeps the centre geo.api.gouv.fr gives (`centre`), so the map of 5.4 is centred offline.
 - Delivered in T2.5 (Create, CreateTaken, Join mockups). Both screens first need the phone's
   account (§6.1): a line « Connexion au serveur… » while it signs in, « Hors ligne : créer ou
-  rejoindre une tournée demande le réseau. » with « Réessayer » when it cannot; the server
+  rejoindre un secteur demande le réseau. » with « Réessayer » when it cannot; the server
   is asked nothing before.
-  - **Nouvelle tournée:** while « Centre de secours » has the focus and nothing is picked, a
+  - **Nouveau secteur:** while « Centre de secours » has the focus and nothing is picked, a
     list under it: the known centres whose station key contains the typed one (all of them
     before a station is named), then « + Ajouter « villef » » unless a known centre is that
     same station; a pick fills the field, a new key typed forgets it. « Nom limité à 80
-    caractères. » when too long. « N° de tournée » (« Un numéro de 1 à 9999. ») and
+    caractères. » when too long. « N° de secteur » (« Un numéro de 1 à 9999. ») and
     « Année » (the phone's year, « Une année de 2000 à 2099. »). 300 ms after the centre or
     the number last changed, the server says whether the pair exists (a late answer to older
     input is ignored; no answer offline: « Créer » still asks, and the server refuses a
-    duplicate): « ⚠ La tournée 49 du CS Villefranche existe déjà. Demandez le code ou le QR
+    duplicate): « ⚠ Le secteur 49 du CS Villefranche existe déjà. Demandez le code ou le QR
     code à la personne qui l'a créée. » in a red frame, the number framed red, « Créer »
     disabled, and « Rejoindre avec un code » (replaces this screen with « Rejoindre »).
-    « Créer » keeps the tournée among the member's and opens it at once; offline « Pas de
+    « Créer » keeps the secteur among the member's and opens it at once; offline « Pas de
     réseau. Réessayez une fois connecté. », a number taken meanwhile shows as taken. Then,
-    the form frozen, a card « Tournée 49 · CS Villefranche est prête. Montrez ce code à
+    the form frozen, a card « Secteur 49 · CS Villefranche est prêt. Montrez ce code à
     l'équipe. », the QR code (Équipe's, larger), « 234-567 » with its copy button (Équipe's)
-    and « Partager » (Équipe's text); « Continuer » (and back) open the start screen on the new tournée, where the
+    and « Partager » (Équipe's text); « Continuer » (and back) open the start screen on the new secteur, where the
     phone's streets are offered to it (5.0).
   - **Rejoindre:** « Scanner le QR code » opens the camera full screen (permission asked
     then; refused: « L'appareil photo n'est pas disponible. Saisissez le code à la main. »),
     which closes on the first QR code read; one that is not a code: « Ce QR code n'est pas
-    celui d'une tournée. ». Or « Code » in two boxes of three: upper-cased, dash and spaces
+    celui d'un secteur. ». Or « Code » in two boxes of three: upper-cased, dash and spaces
     dropped, a whole code typed or pasted in the first fills both, at most three characters
     each; the first box full and valid moves on to the second; a character outside the
     alphabet: « Un code n'a que des lettres et des chiffres, sans 0, O, 1, I ni L. ». A
-    complete code is looked up at once: the card « 49 | Tournée 49 · CS Villefranche » over
+    complete code is looked up at once: the card « 49 | Secteur 49 · CS Villefranche » over
     « Campagne 2026 » (**no member or street count**: `joinCodes` holds only the preview
-    fields, §6.2 — the mockup's « 6 membres · 60 rues » is not shown), « Aucune tournée n'a
-    ce code. Vérifiez-le… », or « Pas de réseau : la tournée ne peut pas être affichée. »
+    fields, §6.2 — the mockup's « 6 membres · 60 rues » is not shown), « Aucun secteur n'a
+    ce code. Vérifiez-le… », or « Pas de réseau : le secteur ne peut pas être affiché. »
     with « Réessayer ». « Demander à rejoindre » (the mockup's label) sends the request and
-    opens « Demande envoyée »; a tournée already in « Mes tournées » sends nothing: « Cette
-    tournée est déjà dans « Mes tournées ». ».
+    opens « Demande envoyée »; a secteur already in « Mes secteurs » sends nothing: « Cette
+    secteur est déjà dans « Mes secteurs ». ».
 
 ```
   after "Rejoindre": waiting for approval
 ┌──────────────────────────────┐
 │ Demande envoyée              │
-│ Tournée 49 · CS Villefranche │
+│ Secteur 49 · CS Villefranche │
 │                              │
 │   ⏳                          │
-│ Un membre de la tournée doit │
+│ Un membre du secteur doit    │
 │ vous accepter. Demandez-le à │
 │ la personne qui vous a donné │
 │ le code.                     │
@@ -434,22 +434,22 @@ an admin, shows only « Rejoindre une tournée », in red), and the bottom of th
   then opens Accueil and offers the download. If refused: "Demande refusée", back to Bienvenue.
 - Until accepted, the app shows this screen at every launch.
 - Delivered in T2.5 (JoinPending mockup): the clock in a yellow ring (« Demande en
-  attente » for screen readers), « Demande envoyée », « Tournée 49 · CS Villefranche », the
-  text and « Cet écran s'ouvrira tout seul sur la tournée dès que vous serez accepté. »,
-  « Annuler la demande » at the bottom. Accepted: the tournée is opened and the start
+  attente » for screen readers), « Demande envoyée », « Secteur 49 · CS Villefranche », the
+  text and « Cet écran s'ouvrira tout seul sur le secteur dès que vous serez accepté. »,
+  « Annuler la demande » at the bottom. Accepted: the secteur is opened and the start
   screen shows it. Refused: « Demande refusée » (a message over the next screen) and back to
   where the app would open now (§4: « Bienvenue », or the start screen when the phone has
-  streets or a tournée open). Cancelled: withdrawn (offline too) and the same way back,
+  streets or a secteur open). Cancelled: withdrawn (offline too) and the same way back,
   without the message. Offline nothing comes and the request stays, across restarts. It is
   where the app opens only when the phone has nothing else (§4); while it has a start screen
   a back arrow leads there, so marking never waits for a request.
-- Everywhere else the app shows **Tournée 49 · 2026** as the title and the CS as subtitle.
+- Everywhere else the app shows **Secteur 49 · 2026** as the title and the CS as subtitle.
 
 ### 5.3 Accueil — map + "Mes rues" panel
 
 ```
 ┌──────────────────────────────┐
-│ Tournée 49 · 2026 ▾  [👥•][⚙]│  ← title opens « Mes tournées »; dot: a join request is waiting
+│ Secteur 49 · 2026 ▾  [👥•][⚙]│  ← title opens « Mes secteurs »; dot: a join request is waiting
 │ ░░████████░░░░║░░░░░░░░░░░░  │  ← map: my streets + the team's
 │ ░░░░░░░░║░░░░▒▒▒▒▒▒▒▒░░░░░░  │
 │ ░░░░░░░░║░░░░░░░░░░░│░░░░░░  │
@@ -466,19 +466,19 @@ an admin, shows only « Rejoindre une tournée », in red), and the bottom of th
 
 - **« Ajouter des rues » is a row, not a button** (decided 2026-11-02, #63; mockups Home,
   HomeAdmin, RunStart, RunHome; to build): a muted « + Ajouter des rues » row after the last
-  street of the list (after « Autres rues de la tournée »), instead of the red button pinned at
+  street of the list (after « Autres rues du secteur »), instead of the red button pinned at
   the bottom of the panel: it is used a few times a year, and « Commencer une tournée » is now
   the panel's main action.
-- **No download banner** (decided 2026-11-01, #32): the tournée downloads itself for offline
+- **No download banner** (decided 2026-11-01, #32): the secteur downloads itself for offline
   use, unseen, whenever the app is online (§7); Accueil shows nothing of it — no button, no
   banner, no progress, no word about map versions.
-- **City zoom:** each street of the tournée drawn over the map, coloured by progress:
-  fait (all done), en partie, à faire, libre (in the tournée but nobody took it).
+- **City zoom:** each street of the secteur drawn over the map, coloured by progress:
+  fait (all done), en partie, à faire, libre (in the secteur but nobody took it).
 - **Street zoom (≥ 16):** one dot per house at its BAN position, coloured and glyphed by status
   (`●` fait, `✗` personne, `↻` repasser, `○` à faire). Houses entered by hand have no position
   and appear only in the lists.
-- Tapping one of the tournée's streets on the map opens its street card (see 5.4) with *Ouvrir*.
-- The rows of « Mes rues » open the Street screen; a row under « Autres rues de la tournée »
+- Tapping one of the secteur's streets on the map opens its street card (see 5.4) with *Ouvrir*.
+- The rows of « Mes rues » open the Street screen; a row under « Autres rues du secteur »
   opens that street's card over the map, as a tap on its line does (#93). Dragging the panel
   up shows the full list; down leaves only the handle and the totals.
 - A "locate me" button centres the map on the phone's position (location permission asked
@@ -494,7 +494,7 @@ an admin, shows only « Rejoindre une tournée », in red), and the bottom of th
   centres at zoom 17 and then shows the phone's dot; refused, off or no fix: a message
   (« Réglages » when refused for good). The ⓘ attribution stays visible.
 - Delivered in T3.5 (#30, Home and HomeZoom mockups; `ui/screens/home/`): Accueil is the
-  start screen while a tournée is open (`/`; with none, « Mes rues » of 5.0 as in M1). Under
+  start screen while a secteur is open (`/`; with none, « Mes rues » of 5.0 as in M1). Under
   the top bar of 5.0 and its cards (« Administrateur · pas membre », the phone's streets to
   move), the map fills the screen. **Legend** top left, clear of « Me localiser »: line
   samples « faite · en partie · à faire · libre » (« libre » dashed, as wide as the others,
@@ -503,9 +503,9 @@ an admin, shows only « Rejoindre une tournée », in red), and the bottom of th
   on the chip unfolds it (said « Masquer / Afficher la légende »). **Panel**: handle and
   totals « Mes rues · 31/50 » (doors done of the member's streets; « Rues · 9/38 » over every
   street for a visiting admin) and « Équipe : 43 % »; then the member's streets, « Vous n'avez
-  pas encore de rue. » when they cover none, and **« AUTRES RUES DE LA TOURNÉE (n) »** with the
-  others (free or someone else's), so no street of the tournée is out of reach before anyone
-  takes one; « Aucune rue dans la tournée pour l'instant. » with none. Then the pending-sync
+  pas encore de rue. » when they cover none, and **« AUTRES RUES DU SECTEUR (n) »** with the
+  others (free or someone else's), so no street of the secteur is out of reach before anyone
+  takes one; « Aucune rue dans le secteur pour l'instant. » with none. Then the pending-sync
   line and « Ajouter des rues ». It rests on half the room; dragging the handle up shows the
   whole list, down only the totals (a quick flick goes one step, a slow release to the nearest
   height); a tap on the handle shows the whole list, or from there brings it back to rest.
@@ -516,12 +516,12 @@ an admin, shows only « Rejoindre une tournée », in red), and the bottom of th
   offline; its ✕ (48 dp, top right, level with the handle, « Fermer »), a tap elsewhere on the
   map, or the back gesture, brings the list back. The street
   whose card shows has its line lit up (the dark casing and white core of 5.4).
-  **A row under « Autres rues de la tournée »** (#93) shows the same card, so a street can be
+  **A row under « Autres rues du secteur »** (#93) shows the same card, so a street can be
   taken without finding its line (or when it has none), and moves the map to the street: its
   line, else its houses' positions, plus 60 m; the map stays there once the card is closed. A
   street with no place on the map (typed in by hand) leaves the map where it is. The rows of
   « Mes rues » (every row for a visiting admin) still open the Street screen. The map opens
-  on the tournée's streets, else its communes, and stays where the member puts it when the
+  on the secteur's streets, else its communes, and stays where the member puts it when the
   team adds a street. No download banner (decided in #32, checked in #33).
 - **Lines filled in the background** (#92, `presentation/home/missing_shapes.dart`): each
   time Accueil reads the streets, those without a line on the map but with a house on it
@@ -532,72 +532,72 @@ an admin, shows only « Rejoindre une tournée », in red), and the bottom of th
   when it is stored. Streets typed in by hand (no position) keep no line. Nothing on the
   marking path waits for it.
 
-**Mes tournées (tap the title).** The title "Tournée 49 · 2026 ▾" is a button that opens a
+**Mes secteurs (tap the title).** The title "Secteur 49 · 2026 ▾" is a button that opens a
 bottom sheet:
 
 ```
 ┌──────────────────────────────┐
 │ (map, dimmed)                │
 ├──────────────────────────────┤
-│ Mes tournées                 │
-│ ● Tournée 49 · 2026        ✓ │  ← current
+│ Mes secteurs                 │
+│ ● Secteur 49 · 2026        ✓ │  ← current
 │   CS Villefranche · 41 %     │
-│ ○ Tournée 12 · 2026      •   │  ← dot: a join request waits there
+│ ○ Secteur 12 · 2026      •   │  ← dot: a join request waits there
 │   CS Gleizé · 8 %            │
-│ ◌ Tournée 7 · 2026           │
+│ ◌ Secteur 7 · 2026           │
 │   CS Anse · demande en attente│ ← my own request, not accepted yet
-│ ○ Tournée 23 · 2026          │  ← greyed: offline, not downloaded here
+│ ○ Secteur 23 · 2026          │  ← greyed: offline, not downloaded here
 │   CS Limas · Disponible avec réseau
 │ ──────────────────────────── │
-│ [ + Créer une tournée ]      │
-│ [   Rejoindre une tournée ]  │
+│ [ + Créer un secteur ]       │
+│ [   Rejoindre un secteur ]   │
 └──────────────────────────────┘
 ```
 
-- Tapping another tournée switches at once: map, panel and listeners follow it; the app reopens
-  on it next time, and downloads it by itself if it is not yet (§7). Offline, a tournée never
+- Tapping another secteur switches at once: map, panel and listeners follow it; the app reopens
+  on it next time, and downloads it by itself if it is not yet (§7). Offline, a secteur never
   downloaded on this phone cannot work, so the sheet greys it (below, #33).
-- *Créer* and *Rejoindre* open 5.2; the current tournée stays untouched until the new one is
+- *Créer* and *Rejoindre* open 5.2; the current secteur stays untouched until the new one is
   ready (or accepted).
-- Paramètres → *Mes tournées* opens the same sheet.
-- Delivered in T2.7: the rows keep the order the phone met the tournées (opening one does not
+- Paramètres → *Mes secteurs* opens the same sheet.
+- Delivered in T2.7: the rows keep the order the phone met the secteurs (opening one does not
   move them); the open one shows ● and ✓, another ○ (a tap opens it and closes the sheet),
   a request a dashed ○ in grey, « CS … · votre demande est en attente », and cannot be tapped.
-  No tournée: « Aucune tournée pour l'instant. ». Still to come: the progress « · 41 % » (with
+  No secteur: « Aucun secteur pour l'instant. ». Still to come: the progress « · 41 % » (with
   the streets on Firestore).
 - Delivered in T4.2 (#33, Switcher mockup): **only while the phone is offline**, another
-  tournée of the member that is not downloaded on this phone (no record in
+  secteur of the member that is not downloaded on this phone (no record in
   `SectorDownloads`, §6.3) is greyed (title, line and ring paler than the muted text),
   cannot be tapped, and its second line reads « CS Limas · Disponible avec réseau » instead
   of the centre alone (no « demande en attente » nor dot, no « administrateur », while it
-  cannot open); screen readers hear « Tournée 23 · 2026, CS Limas, disponible avec réseau »,
-  announced as a disabled button. Online, every row is as before. The open tournée is never
+  cannot open); screen readers hear « Secteur 23 · 2026, CS Limas, disponible avec réseau »,
+  announced as a disabled button. Online, every row is as before. The open secteur is never
   greyed, and a pending request keeps its own look. « Offline » is whether the open
-  tournée's street listener answers from the phone's copy (Firestore's `isFromCache`, port
+  secteur's street listener answers from the phone's copy (Firestore's `isFromCache`, port
   `ServerConnection`, the same listener as the pending-sync line, §7): no connectivity
-  plugin. Until it first answers the rows show as online; with no tournée open nothing tells
+  plugin. Until it first answers the rows show as online; with no secteur open nothing tells
   it, so the rows show as online too.
-- Delivered in T2.6c: another tournée (not the open one) where join requests wait shows
+- Delivered in T2.6c: another secteur (not the open one) where join requests wait shows
   « CS … · 1 demande en attente » (« 2 demandes… ») and a red dot at the end of its row, said
-  by screen readers (« Tournée 12 · 2026, CS Villefranche, 1 demande en attente, ouvrir »);
-  its team is followed from the phone's copy first, offline too. The open tournée's requests
+  by screen readers (« Secteur 12 · 2026, CS Villefranche, 1 demande en attente, ouvrir »);
+  its team is followed from the phone's copy first, offline too. The open secteur's requests
   stay on 👥 only.
-- **A tournée lost** (T2.6c): when the server says the member was removed (« Retirer ») or
-  the tournée deleted, the phone forgets it at once (its row leaves « Mes tournées »; when it
+- **A secteur lost** (T2.6c): when the server says the member was removed (« Retirer ») or
+  the secteur deleted, the phone forgets it at once (its row leaves « Mes secteurs »; when it
   was the open one, the app goes back to the start screen with none open, whatever screen
   was shown) and says so over the next screen, as « Demande refusée »: « Vous avez été retiré
-  de la tournée 49. » or « La tournée 49 a été supprimée. ». Only the server's answer counts:
-  offline, or for a tournée never read on this phone, nothing is forgotten; leaving and
+  du secteur 49. » or « Le secteur 49 a été supprimé. ». Only the server's answer counts:
+  offline, or for a secteur never read on this phone, nothing is forgotten; leaving and
   deleting from this phone are not told (the member did it).
-- Delivered in T2.5: « + Créer une tournée » (red) and « Rejoindre une tournée » under the
+- Delivered in T2.5: « + Créer un secteur » (red) and « Rejoindre un secteur » under the
   rows close the sheet and open 5.2 above the screen; a phone without a name asks « Votre
   prénom » (Paramètres' sheet) first and opens nothing if it is closed without one. With no
-  tournée open, the app's name in the title opens the sheet too.
-- From #75 (5.12): « + Créer une tournée » only for admins; admins also get « Toutes les
-  tournées › » under « Rejoindre », and a visited tournée shows « CS … · administrateur ».
-- Delivered in T2.6: 👥 sits left of ⚙ while a tournée is open (none otherwise) and opens
-  Équipe; a red dot on it while a request waits in the open tournée, said by screen readers
-  (« Équipe, 1 demande en attente »). The team is followed as long as a tournée is open.
+  secteur open, the app's name in the title opens the sheet too.
+- From #75 (5.12): « + Créer un secteur » only for admins; admins also get « Tous les
+  secteurs › » under « Rejoindre », and a visited secteur shows « CS … · administrateur ».
+- Delivered in T2.6: 👥 sits left of ⚙ while a secteur is open (none otherwise) and opens
+  Équipe; a red dot on it while a request waits in the open secteur, said by screen readers
+  (« Équipe, 1 demande en attente »). The team is followed as long as a secteur is open.
 
 ### 5.4 Ajouter des rues — map mode
 
@@ -614,7 +614,7 @@ bottom sheet:
 │ Rue Pierre Morin          ✕  │  ← street card (bottom sheet), ✕ closes it
 │ Villefranche-sur-Saône       │
 │ 19 numéros · pas encore dans │
-│ la tournée                   │
+│ le secteur                   │
 │ [ Ajouter et me l'attribuer ]│
 │ [ Ajouter sans m'attribuer  ]│
 │ Rue absente ? Saisir à la main│
@@ -625,8 +625,8 @@ The street card adapts to the street's state:
 
 | State | Card content | Actions |
 |---|---|---|
-| Not in the tournée | name, commune, number count | *Ajouter et me l'attribuer* · *Ajouter sans m'attribuer* |
-| In the tournée, libre (nobody, or only people no longer in the team) | progress | *Me l'attribuer* · *Ouvrir* |
+| Not in the secteur | name, commune, number count | *Ajouter et me l'attribuer* · *Ajouter sans m'attribuer* |
+| In the secteur, libre (nobody, or only people no longer in the team) | progress | *Me l'attribuer* · *Ouvrir* |
 | Mine (maybe shared) | progress, other members | *Ouvrir* · *Ne plus la faire* |
 | Someone else's | progress, who covers it | *La faire aussi* · *Ouvrir* |
 
@@ -635,17 +635,17 @@ The street card adapts to the street's state:
   are needed only once per street, when it is added: **this screen needs the network**.
   Offline, the map still shows and existing streets can still be taken, but adding says
   "Connexion nécessaire pour ajouter une rue" and offers manual entry.
-- The search box finds a street by name (BAN search, limited to the tournée's communes) and
+- The search box finds a street by name (BAN search, limited to the secteur's communes) and
   centres the map on it.
 - A road with no BAN match (private road, new estate): the card says so and offers manual entry.
 - **Carte | Liste** (#78, Pick and AddList mockups): under the title (✕ closes), two 48 dp
-  tabs, the chosen one in ink. **Carte** is the map above, opened on the tournée's communes
+  tabs, the chosen one in ink. **Carte** is the map above, opened on the secteur's communes
   (their centres, 2 km around each, `communesArea`), on its streets when no commune has a
   centre (`sectorArea`), on France when neither; works offline. **Liste** is the checklist of
-  « Importer des rues » (5.0) on the tournée's communes: no commune field, a chip per commune
-  when there are several (the first chosen at once), « déjà dans la tournée » on a street the
-  tournée has, « Ajouter N rues », « Ajout en cours… n/N », then back with « N rues ajoutées à
-  la tournée ». A tournée without commune (created before #78) searches the commune as in
+  « Importer des rues » (5.0) on the secteur's communes: no commune field, a chip per commune
+  when there are several (the first chosen at once), « déjà dans le secteur » on a street the
+  secteur has, « Ajouter N rues », « Ajout en cours… n/N », then back with « N rues ajoutées au
+  secteur ». A secteur without commune (created before #78) searches the commune as in
   5.0. Delivered in #78: the tabs, the map opened on the communes and the list.
 - **Delivered in #31** (`presentation/add_streets/`, `presentation/street_card/`,
   `ui/components/street_card_sheet.dart`): the screen opens on **Carte**. Under the tabs, the
@@ -657,12 +657,12 @@ The street card adapts to the street's state:
   road is the one stored by « Ajouter… », so it is asked once. **« Ajouter… » never waits
   for the road** (#92): without it yet, the street is added at once, keeps the road
   highlighted when it comes and is given it then (`FillStreetShape`); if the road could
-  not be found, Accueil fills it later (5.3). **A tap on a tournée
+  not be found, Accueil fills it later (5.3). **A tap on a secteur
   street's line or dot** shows its card at once, offline, with its own road. The card (white
   sheet, handle, name in 28 dp titles over the commune, facts in grey chips, red then outline
-  button): to add « 19 numéros · Pas encore dans la tournée », « Ajouter et me l'attribuer »,
+  button): to add « 19 numéros · Pas encore dans le secteur », « Ajouter et me l'attribuer »,
   « Ajouter sans m'attribuer » (« Ajout en cours… » meanwhile), « Rue absente de la carte ?
-  Saisir à la main »; once added it becomes the street's card. A tournée street « 31/42
+  Saisir à la main »; once added it becomes the street's card. A secteur street « 31/42
   faits » and « Libre » / « Vous la faites (avec Manu) » / « Faite par Manu et Julie »
   (teammates named in the team's order; « Faite par un autre membre » when none can be
   named, the team not read yet), with the actions of the table; take and release need no network and have no
@@ -672,7 +672,7 @@ The street card adapts to the street's state:
   top right, level with the handle, « Fermer »; the name keeps clear of it) closes it, and so
   does the back gesture, first; the top bar's ✕ closes the screen. **The search** lists « name / commune » rows over the map
   (« Aucune rue trouvée. », « Connexion nécessaire pour chercher une rue. »); it searches the
-  tournée's communes, or the communes of its streets for a tournée without commune; picking a
+  secteur's communes, or the communes of its streets for a secteur without commune; picking a
   row moves the map 200 m around the street and shows its card. A newer tap or search always
   wins over a late answer.
 
@@ -767,8 +767,8 @@ Edit mode details fixed in T1.10 (`lib/presentation/edit_street/`,
 
 « Rue à la main » delivered in #31 (Manual mockup, `/ajouter-des-rues/a-la-main`,
 `presentation/manual_street/`): « ← Rue à la main »; « Nom de la rue » (« Nom limité à 150
-caractères. »; a blank name only disables the button); « Commune », a list of the tournée's
-communes (else those of its streets), the first chosen; a tournée with neither searches its
+caractères. »; a blank name only disables the button); « Commune », a list of the secteur's
+communes (else those of its streets), the first chosen; a secteur with neither searches its
 commune as « Ajouter une commune… » does (network); « Du n° » / « Au n° » (digits), « Les deux |
 Impairs | Pairs », « Numéros en plus » (« Séparés par des virgules. »); « APERÇU · 59 NUMÉROS »
 with the numbers (the add-numbers sheet's short list) or the item that is wrong; « Fonctionne
@@ -1035,8 +1035,8 @@ Fiche maison details fixed in T1.8 (`lib/presentation/house_sheet/`,
   time stays valid. A building's own « Repasser » (ticked) shows the same block.
 - **Last change**: « Modifié par Léa · 14:02 » today, « Modifié par Léa · 3 oct. à 14:02 »
   before, in the phone's time zone; « par vous » for the member on the phone; nothing when the
-  house was never changed. The name is read from the open tournée's team (offline from the
-  phone's copy); when the phone cannot name anyone (no tournée open, a member no longer in the
+  house was never changed. The name is read from the open secteur's team (offline from the
+  phone's copy); when the phone cannot name anyone (no secteur open, a member no longer in the
   team) the line is « Modifié à 14:02 » / « Modifié le 3 oct. à 14:02 » (#89).
 - *Transformer en immeuble…* (with the building icon of the mockup) closes the sheet and opens
   « Décrire l'immeuble »; « Valider » there opens the new building's grid (one sheet at a time).
@@ -1194,7 +1194,7 @@ Immeuble details fixed in T1.9 (`lib/presentation/building/`, `lib/ui/screens/bu
 
 ```
 ┌──────────────────────────────┐
-│ ← Tournée 49                 │
+│ ← Secteur 49                 │
 │   CS Villefranche · 2026     │
 │  ▄▄▄▄ ▄ ▄▄▄▄ Code K7P-2QX [⧉]│  ← ⧉ copies the code
 │  █▄▄█ ▀ █▄▄█ [Partager]      │
@@ -1212,8 +1212,8 @@ Immeuble details fixed in T1.9 (`lib/presentation/building/`, `lib/ui/screens/bu
 │ Corbeille · 2 éléments     › │  ← 5.11
 ├──────────────────────────────┤  ← all above scrolls (#105)
 │ [ Démarrer une nouvelle campagne ] │  ← admins only, v1.1 (5.10)
-│ [  Quitter la tournée  ]     │  ← every member, pinned
-│ [  Supprimer la tournée ]    │  ← admins only, pinned
+│ [  Quitter le secteur  ]     │  ← every member, pinned
+│ [  Supprimer le secteur ]    │  ← admins only, pinned
 └──────────────────────────────┘
 ```
 
@@ -1226,47 +1226,47 @@ admin » for « Nouveau code », « Retirer », « Supprimer » and the campaign
   can accept or refuse, so nobody has to wait for the creator.
 - *Retirer* (creator only) cuts the member's access at once; what they marked stays, stamped
   with their name. Combine with *Nouveau code* if the code has leaked.
-- Delivered in T2.6 (Team mockup): title « Tournée 49 » over « CS Villefranche · campagne
+- Delivered in T2.6 (Team mockup): title « Secteur 49 » over « CS Villefranche · campagne
   2026 »; the code card (QR, « Code K7P-2QX » and its copy button ⧉ — puts the code as shown,
   `K7P-2QX`, on the clipboard and says « Code copié », TalkBack « Copier le code », 48 dp,
-  offline too —, « Partager » — the phone's share sheet with « Tournée 49 · CS Villefranche »
+  offline too —, « Partager » — the phone's share sheet with « Secteur 49 · CS Villefranche »
   and the code —, « Nouveau code » for the creator, at once,
   no confirmation); « EN ATTENTE (n) » only with requests: name, « a demandé à rejoindre · il
   y a 2 min », « Accepter » (green) and « Refuser », no confirmation; « MEMBRES (n) »: every
   active member, one row each, oldest first (the creator first), « (vous) » and « · créateur »;
   ⋮ → « Retirer » on the others for the creator, asking « Retirer Léa ? » first; « Corbeille · n
-  éléments › » (« · vide »). At the bottom one button: « Supprimer la tournée » for the creator
-  (asks « Supprimer la tournée 49 ? »), « Quitter la tournée » for the others (asks too, since
-  coming back needs the code and an approval); both then forget the tournée on the phone and go
+  éléments › » (« · vide »). At the bottom one button: « Supprimer le secteur » for the creator
+  (asks « Supprimer le secteur 49 ? »), « Quitter le secteur » for the others (asks too, since
+  coming back needs the code and an approval); both then forget the secteur on the phone and go
   back to the start screen with none open. Answering, removing and leaving work offline; a
   new code and deleting need the network (« Pas de réseau. Réessayez une fois connecté. »). A
   command a teammate made pointless meanwhile says « L'équipe a changé entre-temps. ». A
-  tournée that cannot be read (removed, deleted, or never read on this phone offline) shows
+  secteur that cannot be read (removed, deleted, or never read on this phone offline) shows
   « L'équipe ne peut pas être affichée : … ». Times: « à l'instant », « il y a 2 min », « il
   y a 3 h », « hier », then the day (« 3 oct. »). Still to come: « CAMPAGNE » / « Démarrer
   une nouvelle campagne » (v1.1).
 - **Streets per member** (#105, Team mockup): each member row shows, right-aligned and muted,
-  the number of streets of the tournée that member holds (« 0 rue », « 1 rue », « 5 rues »)
+  the number of streets of the secteur that member holds (« 0 rue », « 1 rue », « 5 rues »)
   followed by ▸. Tapping the count (48 dp; TalkBack « Léa, 3 rues, afficher les rues » /
   « masquer les rues ») unfolds the street names under the row, one per line, indented under
   the name, ▾ while open; tapping again folds them. Every row starts folded; several can be
   open at once. A member with no street shows « 0 rue » with nothing to unfold. Read from the
   phone's copy, so it works offline.
-- **Pinned bottom buttons** (#105): « Quitter la tournée » / « Supprimer la tournée » (and
+- **Pinned bottom buttons** (#105): « Quitter le secteur » / « Supprimer le secteur » (and
   later « Démarrer une nouvelle campagne ») sit in a footer fixed at the bottom, over a thin
   divider; everything between the title and that footer (code card, requests, members and their
   unfolded streets, Corbeille, communes) scrolls as one list.
-- **Communes** (#78): after the Corbeille, « COMMUNES (n) », a row per commune of the tournée
+- **Communes** (#78): after the Corbeille, « COMMUNES (n) », a row per commune of the secteur
   with ✕ (« Retirer Gleizé » for screen readers), never on the last one, then « + Ajouter une
-  commune », which opens a sheet with the field of « Nouvelle tournée » (5.2); a commune picked
-  is added and the sheet closes. A tournée created before the communes shows only the button.
+  commune », which opens a sheet with the field of « Nouveau secteur » (5.2); a commune picked
+  is added and the sheet closes. A secteur created before the communes shows only the button.
   Any active member or admin may change them, offline too (sent later); a pending member sees
-  them without ✕ or button. « Cette commune est déjà dans la tournée. », « Une tournée a au
+  them without ✕ or button. « Cette commune est déjà dans le secteur. », « Un secteur a au
   plus 50 communes. », or « L'équipe a changé entre-temps. » when a teammate removed one
   meanwhile. Removing a commune keeps the streets added from it.
-- From T2.6c a member removed, or a tournée deleted, is forgotten by the phone as soon as the
-  server says so, with a message (« Vous avez été retiré de la tournée 49. », 5.3), which
-  closes Équipe; « L'équipe ne peut pas être affichée » stays for a tournée never read
+- From T2.6c a member removed, or a secteur deleted, is forgotten by the phone as soon as the
+  server says so, with a message (« Vous avez été retiré du secteur 49. », 5.3), which
+  closes Équipe; « L'équipe ne peut pas être affichée » stays for a secteur never read
   offline.
 
 ### 5.9 Paramètres (⚙)
@@ -1276,7 +1276,7 @@ admin » for « Nouveau code », « Retirer », « Supprimer » and the campaign
 │ ← Paramètres                 │
 │ VOUS                         │
 │ Prénom        Manu         › │
-│ Mes tournées  49 · 2026    › │  ← same sheet as the title
+│ Mes secteurs  49 · 2026    › │  ← same sheet as the title
 │ L'application fonctionne sans│  ← muted line, no button
 │ réseau ; les modifications … │
 │ APPLICATION                  │
@@ -1292,7 +1292,7 @@ admin » for « Nouveau code », « Retirer », « Supprimer » and the campaign
 │ ← Nouveautés                 │
 │ 1.1.0  20 oct. 2026          │  (example of a later version)
 │ • Un bouton copie le code de │
-│   la tournée.                │
+│   le secteur.                │
 │ 1.0.0  16 oct. 2026          │
 │ • Première version.          │
 └──────────────────────────────┘
@@ -1301,12 +1301,12 @@ admin » for « Nouveau code », « Retirer », « Supprimer » and the campaign
 - **Prénom** opens a sheet « Votre prénom » + « Enregistrer » (the keyboard's « OK » too):
   `MemberName` rules; blank → « Écrivez votre prénom. », too long → « Prénom limité à 30
   caractères. », the sheet stays. Kept on the phone, then written to the member's own
-  document in every tournée of « Mes tournées » they are active in, so Équipe shows the new
+  document in every secteur of « Mes secteurs » they are active in, so Équipe shows the new
   name to the team (T2.7b). Works offline (sent when the network is back); a pending request
-  (which cannot rename itself, 8.2) and a tournée the phone cannot read offline are skipped,
+  (which cannot rename itself, 8.2) and a secteur the phone cannot read offline are skipped,
   then caught up (T2.7c): whenever the server shows the member active in one of their
-  tournées under another name than the phone's, the phone sends its own.
-- **Mes tournées** shows the open one (« 49 · 2026 ») and opens the sheet of 5.3.
+  secteurs under another name than the phone's, the phone sends its own.
+- **Mes secteurs** shows the open one (« 49 · 2026 ») and opens the sheet of 5.3.
 - **Thème** opens « Système | Clair | Sombre »: a tap redraws the app at once and closes the
   sheet. « Sombre » uses the dark palette reviewed in T5.1 (contrast rules in 5, intro).
 - **Confidentialité** opens a page saying 8.3 in French: compte, données enregistrées,
@@ -1329,17 +1329,17 @@ admin » for « Nouveau code », « Retirer », « Supprimer » and the campaign
   Adresses{N}: Base Adresse Nationale. »
 - **No HORS-LIGNE section**, no « Mettre à jour » or « Supprimer » (decided 2026-11-01, #32):
   the app downloads, updates and deletes the offline copy by itself (§7). Delivered in T4.2
-  (#33, Settings mockup): one muted line right under « Mes tournées », before APPLICATION:
+  (#33, Settings mockup): one muted line right under « Mes secteurs », before APPLICATION:
   « L'application fonctionne sans réseau ; les modifications sont envoyées dès qu'il
-  revient. » Neither the date nor the size kept per tournée (§6.3) is shown.
+  revient. » Neither the date nor the size kept per secteur (§6.3) is shown.
 
 ### 5.10 Nouvelle campagne (v1.1)
 
 ```
   creator (from Équipe)               every member, after the switch
 ┌──────────────────────────────┐    ┌──────────────────────────────┐
-│ ← Nouvelle campagne          │    │ Tournée 49 · 2027     [👥][⚙]│
-│ Tournée 49 · CS Villefranche │    │ ┌──────────────────────────┐ │
+│ ← Nouvelle campagne          │    │ Secteur 49 · 2027     [👥][⚙]│
+│ Secteur 49 · CS Villefranche │    │ ┌──────────────────────────┐ │
 │ Année  [ 2027 ]              │    │ │ La campagne 2027 a       │ │
 │ ──────────────────────────── │    │ │ commencé.                │ │
 │ Repris de 2026               │    │ │ [Reprendre mes rues 2026]│ │
@@ -1357,7 +1357,7 @@ admin » for « Nouveau code », « Retirer », « Supprimer » and the campaign
 - *Reprendre mes rues 2026* re-takes in one tap the streets the member covered last year.
 - The house sheet and door sheet show last year's result in small type: *En 2026 : ✗ personne*.
   It helps ("nobody home last year either, try the evening") and is read-only.
-- The previous campaign stays readable from Paramètres → Tournée → *Campagne 2026*. The one
+- The previous campaign stays readable from Paramètres → Secteur → *Campagne 2026*. The one
   before it is deleted when a new campaign starts (data minimisation).
 - Members need the network once to receive the new campaign; the download step then runs again.
 
@@ -1391,7 +1391,7 @@ admin » for « Nouveau code », « Retirer », « Supprimer » and the campaign
   with its marks; nothing when empty but « La corbeille est vide. ». Works offline, with
   whichever street storage is bound.
 - The 30-day purge (T2.6b) runs by itself, with nothing on screen, when the app starts and
-  each time a tournée is opened, on the streets bound (the tournée's, or the phone's own while
+  each time a secteur is opened, on the streets bound (the secteur's, or the phone's own while
   none is open): each street deleted more than 30 days ago goes for good, and each number
   removed more than 30 days ago (counted from its own removal, the street deleted or not).
   At 30 days exactly it is still kept. Offline, the phone's copy changes at once and the
@@ -1401,18 +1401,18 @@ admin » for « Nouveau code », « Retirer », « Supprimer » and the campaign
 ### 5.12 Administrateurs (#75)
 
 ```
-  Toutes les tournées (admin)        Accueil, admin not a member
+  Tous les secteurs (admin)        Accueil, admin not a member
 ┌──────────────────────────────┐    ┌──────────────────────────────┐
-│ ← Toutes les tournées        │    │ Tournée 12 · 2026    [👥][⚙]│
-│   Administrateur · 4 tournées│    │ CS Gleizé                    │
+│ ← Tous les secteurs          │    │ Secteur 12 · 2026    [👥][⚙]│
+│   Administrateur · 4 secteurs│    │ CS Gleizé                    │
 │ CS VILLEFRANCHE              │    │ ┌──────────────────────────┐ │
-│ Tournée 49 · 2026          › │    │ │🛡 Administrateur · pas    │ │
+│ Secteur 49 · 2026          › │    │ │🛡 Administrateur · pas    │ │
 │   5 membres · vous en êtes … │    │ │  membre       [Rejoindre]│ │
 │ CS GLEIZÉ                    │    │ └──────────────────────────┘ │
-│ Tournée 12 · 2026        • › │    │ (map)                        │
+│ Secteur 12 · 2026        • › │    │ (map)                        │
 │   3 membres · 1 demande …    │    ├──────────────────────────────┤
 │ CS ANSE                      │    │ Rues · 9/38                  │
-│ Tournée 7 · 2025           › │    │ Rue de la Gare        9/30   │
+│ Secteur 7 · 2025           › │    │ Rue de la Gare        9/30   │
 │   Aucun membre               │    │ [   + Ajouter des rues   ]   │
 └──────────────────────────────┘    └──────────────────────────────┘
 ```
@@ -1423,7 +1423,7 @@ TeamMember, and Welcome, Switcher, Team, Settings updated):
 - **Who is an admin.** An `admins/{uid}` document (no fields) added by hand in the Firebase
   console; the rules check it, the app follows it (`AdminStatus`, cached by Firestore, so it is
   known offline once read). Admins are **global**: an admin manages, joins and reads / adds /
-  removes streets in **every** tournée, member or not. Granting and revoking from the app: out
+  removes streets in **every** secteur, member or not. Granting and revoking from the app: out
   of scope. Anonymous auth loses the uid on reinstall or on a new phone: the admin reads the
   new one on the phone (below) and adds it in the console again. Until the app has read the
   document, the phone is not an admin (nothing admin-only shows).
@@ -1437,68 +1437,68 @@ TeamMember, and Welcome, Switcher, Team, Settings updated):
   Paramètres sign in when they open (`signInIfNeeded`): offline with no account yet, the line
   of Bienvenue is not shown and the row reads « Pas encore de compte : connectez-vous au
   réseau. ».
-- **Non-admins** never see « Créer une tournée » (Bienvenue, « Mes tournées »), with no hint
-  in its place; only « Rejoindre une tournée ». Adding a centre de secours happens only in
-  « Nouvelle tournée », so it is admin-only too.
-- **Équipe** (5.8): « Nouveau code », ⋮ → « Retirer » and « Supprimer la tournée » for admins
+- **Non-admins** never see « Créer un secteur » (Bienvenue, « Mes secteurs »), with no hint
+  in its place; only « Rejoindre un secteur ». Adding a centre de secours happens only in
+  « Nouveau secteur », so it is admin-only too.
+- **Équipe** (5.8): « Nouveau code », ⋮ → « Retirer » and « Supprimer le secteur » for admins
   only (member or not); the creator has no power of their own any more. Admins remove any
   other active member, admins included. Accepter / Refuser: any active member and any admin.
-  « Quitter la tournée »: every member, admins included, even the last one (no guard: an empty
-  tournée stays and admins manage it from « Toutes les tournées »). A member row shows « ·
+  « Quitter le secteur »: every member, admins included, even the last one (no guard: an empty
+  secteur stays and admins manage it from « Tous les secteurs »). A member row shows « ·
   admin » for an admin (any signed-in user may `get` `admins/{uid}`); « · créateur » is gone.
-  Existing tournées are kept as they are.
-- **« Toutes les tournées »** (admins only): « Toutes les tournées › » under Créer and
-  Rejoindre in the « Mes tournées » sheet. Every tournée of the app, grouped under its centre
-  (« CS GLEIZÉ », centres by name, tournées by number then campaign), each row « Tournée 12 ·
+  Existing secteurs are kept as they are.
+- **« Tous les secteurs »** (admins only): « Tous les secteurs › » under Créer and
+  Rejoindre in the « Mes secteurs » sheet. Every secteur of the app, grouped under its centre
+  (« CS GLEIZÉ », centres by name, secteurs by number then campaign), each row « Secteur 12 ·
   2026 » over « 3 membres » (« 1 membre », « Aucun membre » in red), « · vous en êtes membre »
   when the admin is an active member, « · 1 demande en attente » with a red dot (said by
-  TalkBack); « Administrateur · n tournées » under the title. It needs the network: « Pas de
-  réseau : la liste ne peut pas être affichée. » with « Réessayer ». A tap opens the tournée.
-- **Opening a tournée as an admin** who is not a member: it is remembered in « Mes tournées »
+  TalkBack); « Administrateur · n secteurs » under the title. It needs the network: « Pas de
+  réseau : la liste ne peut pas être affichée. » with « Réessayer ». A tap opens the secteur.
+- **Opening a secteur as an admin** who is not a member: it is remembered in « Mes secteurs »
   as **visited** (a third `MemberStatus`, `visiting`: row « CS Gleizé · administrateur », a
   shield instead of the ring) and opened on the normal screens: map, streets panel (« Rues ·
   9/38 » instead of « Mes rues »), streets, houses, marks, Corbeille and Équipe, all as a
   member, plus the admin's powers. A banner under the title on Accueil: shield, « Administrateur
-  · pas membre » over « Vous n'êtes pas dans l'équipe de cette tournée. » and « Rejoindre »
+  · pas membre » over « Vous n'êtes pas dans l'équipe de ce secteur. » and « Rejoindre »
   (come-back blue, `#D6E6F5` / `#1D4E7A`). A visitor is not listed in MEMBRES. Their marks are
   stamped with their uid; where a name is shown for a uid that is not a member: « un
   administrateur ».
   - **« Rejoindre »** makes the admin an active member at once (their own document, `active`,
     accepted by themself, no code, no approval); the banner goes and the row becomes a normal
     one. Offline: « Pas de réseau. Réessayez une fois connecté. ».
-  - At the bottom of Équipe a visitor has « Retirer de Mes tournées » (forgets it on the
-    phone, writes nothing) instead of « Quitter », and « Supprimer la tournée ».
-  - A visited tournée deleted, or the phone no longer an admin, is forgotten as in 5.3 « A
-    tournée lost », with « La tournée 12 a été supprimée. » or « Vous n'êtes plus
-    administrateur : la tournée 12 est retirée de Mes tournées. ».
+  - At the bottom of Équipe a visitor has « Retirer de Mes secteurs » (forgets it on the
+    phone, writes nothing) instead of « Quitter », and « Supprimer le secteur ».
+  - A visited secteur deleted, or the phone no longer an admin, is forgotten as in 5.3 « A
+    secteur lost », with « Le secteur 12 a été supprimé. » or « Vous n'êtes plus
+    administrateur : le secteur 12 est retiré de Mes secteurs. ».
 - **A revoked admin** (#87): the phone may still believe it is an admin's for a moment after
   `admins/{uid}` is removed (« Créer » or « Nouveau code » still on screen). The server refuses
   the admin's command and the screen says « Vous n'êtes plus administrateur. » where it says
-  « Pas de réseau » for the same command: under « Créer » in « Nouvelle tournée » (« Créer »
-  then stays off), in place of the list in « Toutes les tournées » (no « Réessayer »), in the
-  snackbar of Équipe (« Nouveau code », « Retirer », « Supprimer la tournée ») and of the banner
-  (« Rejoindre »). The same message when the phone already knows it (the tournée refuses the
+  « Pas de réseau » for the same command: under « Créer » in « Nouveau secteur » (« Créer »
+  then stays off), in place of the list in « Tous les secteurs » (no « Réessayer »), in the
+  snackbar of Équipe (« Nouveau code », « Retirer », « Supprimer le secteur ») and of the banner
+  (« Rejoindre »). The same message when the phone already knows it (the secteur refuses the
   command itself). « Retirer », « Accepter » and « Refuser » are sent in the background (they
   work offline): a refusal by the server only takes the change back on the screen, as for any
-  queued write (PLAN §7). The listeners of a visited tournée that may no longer be read never
+  queued write (PLAN §7). The listeners of a visited secteur that may no longer be read never
   show an error: Équipe reads « unavailable », the streets show none, and the revocation is told
   by the `admins/{uid}` listener as above.
 - Delivered in #75 (`lib/presentation/admin/`, `all_sectors/`, `account/device_id_state.dart`,
   `lib/ui/screens/all_sectors/`, `start/admin_visit_banner.dart`):
-  - « Toutes les tournées » is read once each time it opens (and on « Réessayer »), not
+  - « Tous les secteurs » is read once each time it opens (and on « Réessayer »), not
     followed live. Centres are ordered by their station key (the name without « CS » / « CIS »,
     French order), so « CS Villefranche » comes before « CIS Villefranche Est »; a centre is
-    named as its first tournée names it. A tap opens the tournée and goes back to Accueil.
-    « Toutes les tournées › » goes through « Votre prénom » first when the phone has no
+    named as its first secteur names it. A tap opens the secteur and goes back to Accueil.
+    « Tous les secteurs › » goes through « Votre prénom » first when the phone has no
     name, like « Créer » and « Rejoindre » (joining as an admin needs one); so does
-    « Rejoindre » of the banner. Under the list, the mockup's line « Ouvrez une tournée pour
-    la gérer… »; « Aucune tournée pour l'instant. » when there is none.
+    « Rejoindre » of the banner. Under the list, the mockup's line « Ouvrez un secteur pour
+    le gérer… »; « Aucun secteur pour l'instant. » when there is none.
   - The banner sits at the top of the start screen (the map comes in M3); its header reads
-    « Rues · 38 » instead of « Mes rues · 38 ». In « Mes tournées » a visited tournée has a
+    « Rues · 38 » instead of « Mes rues · 38 ». In « Mes secteurs » a visited secteur has a
     shield (green when open, grey otherwise) and ✓ when open.
-  - Équipe: an admin's bottom row holds « Quitter la tournée » (or « Retirer de Mes
-    tournées » for a visitor, no confirmation: nothing is written) and « Supprimer la
-    tournée » side by side; a non-admin has « Quitter » alone (« Retirer de Mes tournées »
+  - Équipe: an admin's bottom row holds « Quitter le secteur » (or « Retirer de Mes
+    secteurs » for a visitor, no confirmation: nothing is written) and « Supprimer le
+    secteur » side by side; a non-admin has « Quitter » alone (« Retirer de Mes secteurs »
     alone for a visitor no longer an admin). The dark avatar marks « (vous) » (both
     mockups), no longer the creator. An admin may « Retirer » any other member.
   - Corbeille: someone not in the team is « un administrateur » when `admins/{uid}` says so
@@ -1837,7 +1837,7 @@ Use cases and phone storage fixed in T1.6 (`lib/application/use_cases/`,
   (`infrastructure/firebase_auth/`). The sign-in starts in the background at launch and is
   never waited for; Firebase keeps the session on the phone, so later starts know the uid
   offline. Until the very first sign-in succeeds (first launch offline), changes are stamped
-  with the M1 phone id. Creating or joining a tournée cannot stand in like that (the rules let
+  with the M1 phone id. Creating or joining a secteur cannot stand in like that (the rules let
   in the uid only, §8.2): they go through the port `MemberAccount` (T2.1c, same adapter):
   `signedInMember` (from the phone, null before the first sign-in) and `signInIfNeeded()`
   (`Result<MemberId, SignInFailure.noNetwork>`), which waits for the sign-in already on its
@@ -1887,7 +1887,7 @@ Start screen rules fixed in T1.11 (`lib/domain/shared/french_text.dart`,
   that is not five digits is left out. Use cases `SearchCommunes` (nothing asked under two
   characters) and `FindImportedStreets` (BAN ids already on the phone, each `active` or `inCorbeille`).
 
-Tournée rules fixed in T2.2 (`lib/domain/sector/`):
+Secteur rules fixed in T2.2 (`lib/domain/sector/`):
 
 - **`JoinCode`**: 6 characters of `ABCDEFGHJKMNPQRSTUVWXYZ23456789`. `generate(Random)` draws
   each one from the injected source (`Random.secure()` in the app, a scripted source in
@@ -1916,7 +1916,7 @@ Tournée rules fixed in T2.2 (`lib/domain/sector/`):
   `creatorNotActive` (the creator missing or pending). Members are sorted by request time, then
   id; `pendingMembers`, `activeMembers`, `memberOf`, `isCreator`.
 - **Commands** return `(Sector, change)` or a `SectorCommandFailure`. The one acting must be
-  in the tournée (`notAMember`) and active (`requestPending`), except to leave:
+  in the secteur (`notAMember`) and active (`requestPending`), except to leave:
 
   | Command | Who | Refused when |
   |---|---|---|
@@ -1928,8 +1928,8 @@ Tournée rules fixed in T2.2 (`lib/domain/sector/`):
   | `delete(by)` | the creator | — |
   | `rename(name, by)` | any active member, for themself only (no member parameter) | — |
 
-  **The creator can neither leave nor be removed** (the tournée would have nobody to run it):
-  they delete the tournée instead.
+  **The creator can neither leave nor be removed** (the secteur would have nobody to run it):
+  they delete the secteur instead.
 
   **From #75 (5.12) the commands take who acts as an `Actor`** (the member id and whether they
   are an admin) instead of checking the creator: `accept` / `refuse` by an active member or an
@@ -1940,12 +1940,12 @@ Tournée rules fixed in T2.2 (`lib/domain/sector/`):
   themself (`notAdmin`, `alreadyMember`) → `AdminJoined`; `rename` unchanged. `notAMember` /
   `requestPending` stay for a non-admin. `Sector.create` no longer requires the creator
   among the active members (they may have left); `createdBy` stays as information only.
-  `MemberStatus` gains `visiting` for a `SectorSummary` (an admin who opened a tournée they
+  `MemberStatus` gains `visiting` for a `SectorSummary` (an admin who opened a secteur they
   are not in); `Member` itself stays pending / active. `SectorLoss` gains `adminRevoked`.
   Ports: **`AdminStatus`** (application) `watchIsAdmin()` (false until read; any signed-in
   uid) and `isAdmin(uid)` for the « · admin » labels; `MemberAccount` exposes the uid for
   « Identifiant de l'appareil »; `SectorDirectory.watchAllSectors()` gives the rows of
-  « Toutes les tournées » (id, number, centre, campaign, active-member count, pending count,
+  « Tous les secteurs » (id, number, centre, campaign, active-member count, pending count,
   whether the caller is active), `noNetwork` when the server cannot answer.
 
   Delivered in #75: **`Actor(member, isAdmin)`** (`lib/domain/sector/actor.dart`) is taken by
@@ -1955,14 +1955,14 @@ Tournée rules fixed in T2.2 (`lib/domain/sector/`):
   `requestPending`), then `notAdmin`; `joinAsAdmin` checks `notAdmin` before
   `alreadyMember`. An admin may `remove` themself (it is a leave; no failure was specified).
   `NewSectorFailure` keeps only `duplicateMember`; `Sector.creator` and `isCreator` are
-  gone. `AdminJoined` is a `MemberChange`; storage first asks the server for the tournée
+  gone. `AdminJoined` is a `MemberChange`; storage first asks the server for the secteur
   (offline: `SectorWriteFailure.noNetwork`), then sends the member document like the other
   member writes. **`AdminStatus`** (application port): `watchIsAdmin()` and `Future<bool>
   isAdmin(uid)` (false when it cannot tell); the use cases read the phone's flag with
   `watchIsAdmin().first` (false until known). `MemberAccount` needed no change: its
   `signedInMember` is the uid. The directory method is **`allSectors(caller)`**, one read
   of the server (a `Future`, not a stream: the screen reads it when it opens). For a
-  `visiting` summary, `watchMembership` follows the tournée document (gone on the server →
+  `visiting` summary, `watchMembership` follows the secteur document (gone on the server →
   `deleted`) and the phone's own `admins/{uid}` (gone on the server → `adminRevoked`) instead
   of the member document. Use cases (`lib/application/use_cases/admins.dart`, `team.dart`):
   `ObserveAdminStatus`, `IsMemberAdmin`, `ListAllSectors` (signs in first), `OpenAsAdmin`
@@ -1976,20 +1976,20 @@ Tournée rules fixed in T2.2 (`lib/domain/sector/`):
   `MemberRefused`, `MemberRemoved`, `MemberLeft` (the member as they were), `MemberRenamed`
   (the member with the new name; storage writes `displayName` only),
   `JoinCodeRegenerated(before, code)`. `delete` returns a `SectorDeleted` holding the whole
-  tournée (storage needs its code, centre and number to free them); it is not a
+  secteur (storage needs its code, centre and number to free them); it is not a
   `SectorChange`.
 - **Port `SectorRepository`** (domain): `find(id)`, `watch(id)` (null when there is no such
-  tournée or this member may no longer read it), `add(sector)` → `AddSectorFailure`
+  secteur or this member may no longer read it), `add(sector)` → `AddSectorFailure`
   (`alreadyExists`, `noNetwork`), `save(sector, change)`, `delete(SectorDeleted)` (from T2.6 both return
   `SectorWriteFailure.noNetwork` for what needs the server, see below). A pending
-  newcomer cannot read the tournée (§8.2), so the join (code lookup, request) goes through the
+  newcomer cannot read the secteur (§8.2), so the join (code lookup, request) goes through the
   `SectorDirectory` port (Q20), not this one.
 
-« Mes tournées » fixed in T2.7 (`lib/domain/sector/`, `lib/application/`):
+« Mes secteurs » fixed in T2.7 (`lib/domain/sector/`, `lib/application/`):
 
-- **`SectorSummary`** (value): what the phone keeps of one of the member's tournées — id,
+- **`SectorSummary`** (value): what the phone keeps of one of the member's secteurs — id,
   number, centre, campaign, `MemberStatus` (pending while the request waits; for a request,
-  what the join preview showed, since a pending newcomer cannot read the tournée).
+  what the join preview showed, since a pending newcomer cannot read the secteur).
   `accepted()` gives it active.
 - **`MySectors`** (value): the summaries in the order the phone met them, each id once, and
   `currentId`, the open one, always an active one of the list. `none`; `remember(summary)`
@@ -2004,29 +2004,29 @@ Tournée rules fixed in T2.2 (`lib/domain/sector/`):
   `SettleJoinRequest` (active → the summary accepted, not opened; null → forgotten; pending or
   not a request → nothing). `MySectorsNotifier` (kept alive) follows each pending request
   while the app runs (a failing listener leaves it pending); `currentSectorProvider` is the
-  open tournée the screens of a tournée follow. From T2.6c it also follows the team
-  (`ObserveTeam`) of each active tournée not open: `SectorRow.waitingRequests` (0 when it
+  open secteur the screens of a secteur follow. From T2.6c it also follows the team
+  (`ObserveTeam`) of each active secteur not open: `SectorRow.waitingRequests` (0 when it
   cannot be read).
-- **A tournée lost** (T2.6c): **`SectorLoss`** (domain enum) `removed` | `deleted`.
+- **A secteur lost** (T2.6c): **`SectorLoss`** (domain enum) `removed` | `deleted`.
   `SectorDirectory.watchMembership(summary, member)` emits once the server says the member is
   no longer in it, never from the phone's copy nor for a deletion made on this phone.
   `WatchMembership` (as `MemberAccount.signedInMember`, nothing before the first sign-in);
   `ForgetLostSector(id, loss)` → `LostSector(summary, loss, wasOpen)` after `forget`, or
   null (unknown any more, or still a request: nothing saved). `SectorLossNotifier` (kept
-  alive, listened to by `TourneeApp`) follows each active tournée of « Mes tournées » (a
-  failing listener keeps it; on a phone that never signed in, it starts again on the tournées
+  alive, listened to by `TourneeApp`) follows each active secteur of « Mes secteurs » (a
+  failing listener keeps it; on a phone that never signed in, it starts again on the secteurs
   kept then once `ObserveSignIn` tells a sign-in, T2.6e) and gives a
   `SectorLossNotice(sector, number, loss, wasOpen)`;
   the app shows the message on its `ScaffoldMessenger` and goes to the start screen when it
   was the open one.
-- **A name to catch up** (T2.7c): `SectorDirectory.watchOwnName(tournée, member)` emits the
+- **A name to catch up** (T2.7c): `SectorDirectory.watchOwnName(sector, member)` emits the
   name the server holds on the member's own document while it is active (never from the
   phone's copy, a pending request, or a snapshot with `hasPendingWrites`). `WatchOwnName` (as
   `MemberAccount.signedInMember`, nothing before the first sign-in; `distinct`, so a rename
-  the server refused is not sent in a loop) and `CatchUpMemberName(tournée, heard)`: when the
+  the server refused is not sent in a loop) and `CatchUpMemberName(sector, heard)`: when the
   phone's `MemberName` differs from the one heard, the same `Sector.rename` as « Prénom »;
-  equal cleaned names, no name on the phone, an unreadable tournée or a refused rename send
-  nothing. `SectorLossNotifier` listens to it for each tournée it follows, so a rename made
+  equal cleaned names, no name on the phone, an unreadable secteur or a refused rename send
+  nothing. `SectorLossNotifier` listens to it for each secteur it follows, so a rename made
   while the request waited reaches the team once accepted, with no rules change.
 - **Port `PhoneSettings`** (application): `memberName` (null until given), `theme`
   (`ThemeChoice` system / light / dark), setters. Use cases `ReadPhoneSettings`,
@@ -2046,15 +2046,15 @@ Onboarding fixed in T2.5 (`lib/application/use_cases/choose_start_point.dart`,
   → `CreateSectorFailure.noNetwork`), `Sector.createdBy` with an `IdGenerator` id, a
   `JoinCode.generate` from the bound `Random` and the `Clock`, `SectorRepository.add`
   (`alreadyExists` | `noNetwork`), then the summary remembered **and opened**; returns the
-  tournée as stored (its code possibly replaced).
-- **Rejoindre:** `PreviewJoin` (the directory), `RequestToJoin(preview, name)`: a tournée
-  already in « Mes tournées » → `alreadyJoined` (asking again would turn an active member
+  secteur as stored (its code possibly replaced).
+- **Rejoindre:** `PreviewJoin` (the directory), `RequestToJoin(preview, name)`: a secteur
+  already in « Mes secteurs » → `alreadyJoined` (asking again would turn an active member
   back into a request); else `signInIfNeeded` (→ `noNetwork`), the pending `Member` stamped
   with the `Clock` sent with `requestToJoin`, and the preview remembered as a pending
   summary. `CancelJoinRequest(sector)`: `cancelRequest` as the signed-in member (none: only
   forgotten), then `forget`.
-- **Following a request:** « Mes tournées » (`MySectorsNotifier`, T2.7) already follows and
-  settles each pending request; `JoinRequestNotifier` (family by tournée) watches it:
+- **Following a request:** « Mes secteurs » (`MySectorsNotifier`, T2.7) already follows and
+  settles each pending request; `JoinRequestNotifier` (family by secteur) watches it:
   `RequestWaiting(number, centre, canLeave)` | `RequestAccepted` (after `OpenSector`) |
   `RequestClosed(refused, next)` | `RequestUnknown`. A request gone while shown is refused
   unless « Annuler » was pressed; one gone before the screen opened is not called refused.
@@ -2069,16 +2069,16 @@ Onboarding fixed in T2.5 (`lib/application/use_cases/choose_start_point.dart`,
 Équipe and Corbeille fixed in T2.6 (`lib/application/use_cases/team.dart`,
 `observe_corbeille.dart`, `lib/domain/street/corbeille.dart`, `lib/presentation/`):
 
-- **Use cases** of Équipe, each acting as `IdentityProvider.currentMember` (the tournée's root
+- **Use cases** of Équipe, each acting as `IdentityProvider.currentMember` (the secteur's root
   checks they may): `ObserveTeam` (`SectorRepository.watch`), `ReadCurrentMember`,
   `AcceptMember` (stamped with the `Clock`), `RefuseMember`, `RemoveMember`, `LeaveSector`
-  and `DeleteSector` (both then `forget` the tournée in « Mes tournées »),
+  and `DeleteSector` (both then `forget` the secteur in « Mes secteurs »),
   `RegenerateJoinCode` (draws from the injected `Random`, `Random.secure()` in the app;
   returns the code as stored). Refusals are `TeamFailure` = a `TeamProblem` (`sectorGone`: cannot be
   read, `offline`, `noName`, `notAdmin`) | `TeamCommandRefused(SectorCommandFailure)`.
-- **`SectorRepository.save`** returns the tournée as stored and **`delete`** the deletion,
+- **`SectorRepository.save`** returns the secteur as stored and **`delete`** the deletion,
   or `SectorWriteFailure.noNetwork` for what needs the server: a new code (the transaction)
-  and deleting (which first reads the tournée from the server, so offline it fails before
+  and deleting (which first reads the secteur from the server, so offline it fails before
   deleting anything). Member changes never fail (queued).
 - **Corbeille** (domain service `corbeilleOf(streets)`): a `DeletedStreet` (id, name, shown
   numbers, `removal`) per street in the Corbeille and a `RemovedNumber` (street id and name,
@@ -2112,32 +2112,32 @@ Streets on Firestore fixed in T2.8 (`lib/bootstrap/bindings.dart`,
 `lib/application/use_cases/move_streets_into_sector.dart`, `lib/presentation/`):
 
 - **Binding.** `streetRepositoryProvider` follows `currentSectorProvider` (its id and
-  campaign only): a `FirestoreStreetRepository` of the open tournée's current campaign,
-  closed (`onDispose`) when another tournée or none is opened; the phone storage
+  campaign only): a `FirestoreStreetRepository` of the open secteur's current campaign,
+  closed (`onDispose`) when another secteur or none is opened; the phone storage
   (`phoneStreetRepositoryProvider`, one `LocalStreetRepository`) while none is open. Every use
   case watches it, so it is built again with the new storage. A Riverpod 3 notifier is
   **kept** when it builds again (only its `ref` is new): notifiers reset what they read in
   `build` (`FollowsStreet`, « Mes rues »), the kept undo change remembers the `ref` it was
   made under and is dropped once that `ref` is no longer `mounted`, and the Corbeille waits
-  while its stream reloads (`isLoading`) rather than showing the old tournée's items. A
-  stream that fails (the member may no longer read the tournée) shows no street, or the
+  while its stream reloads (`isLoading`) rather than showing the old secteur's items. A
+  stream that fails (the member may no longer read the secteur) shows no street, or the
   street as gone.
 - **Pending sync** (T2.9): `pendingSyncProvider` follows the same rule through one private
-  provider of `bindAdapters` (the open tournée's `FirestoreStreetRepository`, or null): the
+  provider of `bindAdapters` (the open secteur's `FirestoreStreetRepository`, or null): the
   very adapter bound as the street repository, so one listener serves both; while no
-  tournée is open, a stand-in that always says 0. `ObservePendingSync` hands the count to
+  secteur is open, a stand-in that always says 0. `ObservePendingSync` hands the count to
   `PendingSyncNotifier` (`AllSent` / `ChangesWaiting(streets)`; a failed stream shows
   nothing).
 - **`Street.restampedBy(member)`** (also on `House`, `Building`, `Dwelling`, `RemovedHouse`,
   `ChangeStamp`): every stamp — each house's and door's last change, each removed number's
   removal, the street's deletion — made by `member` at the time it had; nothing else
   changes.
-- **Port `MovedStreetsLog`** (application): `wereMovedInto(tournée)`, `rememberMovedInto`.
-  Use cases `CountStreetsToMove(tournée)` (0 when they went there, when the member is not an
-  active member of the tournée as `SectorRepository.find` gives it, or the phone holds none
-  out of its Corbeille) and `MoveStreetsIntoSector(tournée, onProgress)`: each phone street
-  out of the Corbeille, unless the tournée has its id or its BAN id (Corbeille included), is
-  `add`ed restamped by `IdentityProvider.currentMember`; then the tournée is remembered;
+- **Port `MovedStreetsLog`** (application): `wereMovedInto(sector)`, `rememberMovedInto`.
+  Use cases `CountStreetsToMove(sector)` (0 when they went there, when the member is not an
+  active member of the secteur as `SectorRepository.find` gives it, or the phone holds none
+  out of its Corbeille) and `MoveStreetsIntoSector(sector, onProgress)`: each phone street
+  out of the Corbeille, unless the secteur has its id or its BAN id (Corbeille included), is
+  `add`ed restamped by `IdentityProvider.currentMember`; then the secteur is remembered;
   returns `StreetsMoved(moved, alreadyThere)`. Started again after an interruption, it skips
   what already went. `MoveStreetsNotifier` (`NoStreetsToMove` | `StreetsToMove(count)` |
   `MovingStreets(done, total)`; « Plus tard » in `postponedMovesProvider`, in memory).
@@ -2194,7 +2194,7 @@ Address and shape adapters fixed in T3.2 (`lib/application/ports/address_directo
   street **whatever the distance**, possibly in the next commune; the card shows the name found.
   `notFound` only when it answers nothing (or nothing readable).
 - **`AddressDirectory.searchStreets(text, commune:)`** → the `StreetMatch`es of one commune, best
-  first, at most 10 (one call per commune of the tournée). The text is trimmed and cut before its
+  first, at most 10 (one call per commune of the secteur). The text is trimmed and cut before its
   first letter or digit; under 3 or over 200 characters (counted as code points) it finds nothing
   without a request (the service refuses it with HTTP 400). Same failures as the BAN lookup
   (`noNetwork`, `notFound` on 404, `serviceError`); an unreadable feature is left out. One
@@ -2225,9 +2225,9 @@ Street picking fixed in T3.3 (`lib/domain/street/street.dart`, `lib/application/
   `release(member)` → `StreetReleased` (refused `notAssigned`), `AssignmentFailure`; the other
   assignees stay, nothing else changes. Undo releases a take and takes a release back (`gone`
   when it was undone by hand meanwhile). `restampedBy(member)` makes a covered street
-  covered by `member` alone (the phone's own id of M1 is no member of the tournée).
+  covered by `member` alone (the phone's own id of M1 is no member of the secteur).
 - **Ex-members are ignored** (#91, `lib/domain/sector/team_roster.dart`): someone removed
-  (« Retirer ») or gone (« Quitter la tournée ») stays in `assignees` in Firestore (the rules
+  (« Retirer ») or gone (« Quitter le secteur ») stays in `assignees` in Firestore (the rules
   let a member add or remove only themself, 8.2), but no longer covers the street.
   `TeamRoster.of(team, me:)` keeps the assignees in `team.members` (pending requests
   included) and `me`, who always counts (a visiting admin is no member); `assigneesOf(street)`
@@ -2236,11 +2236,11 @@ Street picking fixed in T3.3 (`lib/domain/street/street.dart`, `lib/application/
   streets never flash to « libre ». The map's lines (`MapLayers.of(streets, roster:)`) and
   the street card (`StreetCardInSector.of`) read the assignees through it: a street held
   only by ex-members is « libre » and anyone may « Me l'attribuer » it (`arrayUnion`, the
-  stale uid stays). Known limit: a street taken only by an admin visiting the tournée (no
+  stale uid stays). Known limit: a street taken only by an admin visiting the secteur (no
   member of it) shows « libre » to the team: the roster knows only the team, not the admins.
 - **`LookUpStreet(StreetLookup)`** — `StreetAtPoint(GeoPoint)` (a tap: the geocoder) or
   `FoundStreet(StreetMatch)` (a search result) — gives the street card's subject:
-  `StreetOfTheSector(match, street)` when the tournée has its BAN id out of the Corbeille (its
+  `StreetOfTheSector(match, street)` when the secteur has its BAN id out of the Corbeille (its
   numbers are not asked), otherwise `StreetToAdd(match, numbers)` with the BAN's numbers and
   positions (`numberCount`). Failures are the `AddressDirectoryFailure`s: `notFound` (no BAN
   match), `noNetwork` (offline), `serviceError`. Changes nothing.
@@ -2263,25 +2263,25 @@ Street picking fixed in T3.3 (`lib/domain/street/street.dart`, `lib/application/
 - **`TakeStreet(streetId)`** / **`ReleaseStreet(streetId)`**: the member on the phone, through
   the root; offline; `CommandFailure<AssignmentFailure>`.
 - **`SearchStreet(text, communes:)`**: `AddressDirectory.searchStreets` for each commune in turn
-  (the tournée's communes, which #78 stores; #31 passes them in), results in commune order, a
+  (the secteur's communes, which #78 stores; #31 passes them in), results in commune order, a
   BAN id listed once; the first failure fails the search; no commune → nothing, no request.
 
-Communes of a tournée fixed in #78 (`lib/domain/sector/`, `lib/application/use_cases/team.dart`):
+Communes of a secteur fixed in #78 (`lib/domain/sector/`, `lib/application/use_cases/team.dart`):
 
 - **`SectorCommune`**: a `Commune` (INSEE code + name) and an optional `GeoPoint` centre, the
   one geo.api.gouv.fr gives at pick time (`CommuneMatch.centre`, from its `centre` field,
   `[longitude, latitude]`), equal by value. `Sector.communes` keeps them in the order added,
   read-only.
 - `Sector.createdBy(…, communes:)` takes one to `maxCommunes` (50) communes of different codes
-  (anything else throws an `ArgumentError`: « Nouvelle tournée » never sends it).
+  (anything else throws an `ArgumentError`: « Nouveau secteur » never sends it).
   `Sector.create` (storage) takes none to 50 (`duplicateCommune`, `tooManyCommunes`), so a
-  tournée created before #78 reads with none.
+  secteur created before #78 reads with none.
 - **Commands** (any active member or admin, like answering a request): `addCommune(commune,
   by:)` → `CommuneAdded` (refused `communeAlreadyIn` by INSEE code, `tooManyCommunes`);
   `removeCommune(code, by:)` → `CommuneRemoved` with the commune as stored (refused
   `unknownCommune`, `lastCommune`). Use cases `AddCommune`, `RemoveCommune` (offline, queued)
   and `ObserveSectorCommunes(id)` (the communes now and on each change of them, not of the
-  team; none while the tournée cannot be read). `CreateSector(…, communes:)`.
+  team; none while the secteur cannot be read). `CreateSector(…, communes:)`.
 - **Map area**: `communesArea(communes)` = the centres plus 2 km (`communeMarginMetres`), null
   without centre; `addStreetsArea(communes, streets)` = that, else `sectorArea(streets)`.
 
@@ -2302,16 +2302,16 @@ Accueil fixed in T3.5 (#30, `lib/domain/street/my_streets.dart`, `lib/presentati
 
 Firestore adapters fixed in T2.3 (`lib/infrastructure/firestore/`, `lib/application/ports/`):
 
-- **Port `SectorDirectory`** (application, Q20): what someone outside a tournée asks of the
-  server. `preview(JoinCode)` → `JoinPreview` (code, tournée id, number, centre, campaign: what
+- **Port `SectorDirectory`** (application, Q20): what someone outside a secteur asks of the
+  server. `preview(JoinCode)` → `JoinPreview` (code, secteur id, number, centre, campaign: what
   « Rejoindre » shows) or `JoinFailure` (`unknownCode`, `noNetwork`); `requestToJoin(preview,
-  member)` stores the newcomer's pending member document; `watchRequest(tournée, member)` →
+  member)` stores the newcomer's pending member document; `watchRequest(sector, member)` →
   pending, active, or null once refused or cancelled; `cancelRequest`; `watchMembership(summary,
   member)` (T2.6c: the member's own document, which the rules always let them read; once the
   server has it no more — not `isFromCache`, not `hasPendingWrites` — the reservation
-  `sectorKeys/{key}` read from the server tells `removed` while it still names the tournée,
+  `sectorKeys/{key}` read from the server tells `removed` while it still names the secteur,
   `deleted` otherwise; a `permission-denied` is passed on as an error, never taken as a
-  loss); `watchOwnName(tournée, member)` (T2.7c, the same document); `isTaken(centre,
+  loss); `watchOwnName(sector, member)` (T2.7c, the same document); `isTaken(centre,
   number)` and `rescueCentres()` (sorted by name) for « Créer », failing with
   `DirectoryFailure.noNetwork`. The code, the number and the centres are asked of the server,
   never answered from the phone's copy.
@@ -2324,13 +2324,13 @@ Firestore adapters fixed in T2.3 (`lib/infrastructure/firestore/`, `lib/applicat
   **without waiting for the server** (offline the write waits on the phone, across restarts).
   A write the server refuses is taken back out of the phone's copy by Firestore and logged. An
   unreadable street document is left out, not fatal.
-- **`FirestoreSectorRepository`**: creating a tournée and a new code run in a **transaction**
+- **`FirestoreSectorRepository`**: creating a secteur and a new code run in a **transaction**
   (needs the server, fails at once offline with `noNetwork`, sees a number or code taken at the
-  same second). A join code another tournée already holds is replaced by a new one drawn from
-  the injected `Random` (up to 10 draws, then a `StateError`): `add` returns the tournée as
+  same second). A join code another secteur already holds is replaced by a new one drawn from
+  the injected `Random` (up to 10 draws, then a `StateError`): `add` returns the secteur as
   stored. Accepting, refusing, removing and leaving are queued like street writes. Deleting
   reads the campaigns, streets and members from the server and deletes the campaigns and
-  streets in batches of 500, then the members (the creator's last) with the tournée, its code
+  streets in batches of 500, then the members (the creator's last) with the secteur, its code
   and its reservation in one batch, so a member's phone sees its membership and the
   reservation go together and says « supprimée », not « retiré » (T2.6c).
 - **Undo is stamped with who undoes, now** (`HouseReverted`, `DwellingReverted`): the adapter
@@ -2391,7 +2391,7 @@ Domain services (pure functions, the bulk of the unit tests): house-number parsi
 ordering, odd/even split, manual range expansion (`1..57`, odd, extras, `21-25`), building
 layout generation (staircases × floors × doors, `51` / `5A` styles), join-code generation and
 normalisation, rescue-centre name normalisation, campaign roll-over (copy / reset rules),
-**map layers as plain data** (street lines with a level, house dots with a status), tournée
+**map layers as plain data** (street lines with a level, house dots with a status), secteur
 bounding box for the offline download, shape simplification (Douglas–Peucker).
 
 Repository **ports** live in the domain (`SectorRepository`, `StreetRepository`); they take
@@ -2444,7 +2444,7 @@ sectors/{sectorId}
     communes: [ { code: "69264", name: "Villefranche-sur-Saône",
                   lat: 45.9837 | null, lon: 4.726 | null }, … ]
                                                   ← #78: in the order added; absent on a
-                                                    tournée created before (reads as none);
+                                                    secteur created before (reads as none);
                                                     an unreadable entry, or a second one of a
                                                     code, is skipped when read, at most 50 kept
   campaigns/{year}/rounds/{roundId}               ← #63: one per validated tournée, create-only,
@@ -2530,7 +2530,7 @@ door marked while a teammate lays the building out again) leave at most a door e
 layout does not list, or a house entry without `n` (a mark landing just after a renumbering);
 reading skips both.
 
-Creating a tournée writes `sectorKeys`, `joinCodes`, `sectors` and its first campaign in one
+Creating a secteur writes `sectorKeys`, `joinCodes`, `sectors` and its first campaign in one
 batch; the security rules refuse the batch if `sectorKeys/{key}` already exists, which is what
 makes number + CS unique even if two people create it at the same second.
 
@@ -2554,8 +2554,8 @@ can never drift.
 
 ### 6.3 Local-only state
 
-- **M1 phone storage** (the streets while no tournée is open; Firestore's cache holds a
-  tournée's, T2.8):
+- **M1 phone storage** (the streets while no secteur is open; Firestore's cache holds a
+  secteur's, T2.8):
   `infrastructure/local_storage/`, in the app support folder (private, kept across updates).
   One JSON file per street, `streets/<id>.json` (a commune of ≈ 300 streets / 6 000 numbers would
   make one file of a few MB rewritten at every tap; a street's file is a few kB to ≈ 100 kB).
@@ -2581,28 +2581,28 @@ can never drift.
 - `street_view.json` in the same folder (port `StreetViewPreferences`, T1.7): « Masquer faits »
   per street, `{ version: 1, hideDone: [streetId…] }`, read once at start-up; an unreadable file
   means nothing hidden.
-- `my_tournees.json` in the same folder (port `MySectorsStore`, T2.7): « Mes tournées » and
+- `my_tournees.json` in the same folder (port `MySectorsStore`, T2.7): « Mes secteurs » and
   the open one, `{ version: 1, open: id | null, tournees: [{ id, number, centre, campaign,
   status: "active" | "pending" | "visiting" }] }` (`visiting` from #75; an older app reads
-  such a file as unreadable, so as none), read once at start-up, so the last tournée reopens after
+  such a file as unreadable, so as none), read once at start-up, so the last secteur reopens after
   an offline cold start. `settings.json` (port `PhoneSettings`): `{ version: 1, name: "Manu" |
   null, theme: "system" | "light" | "dark" }`. Same writing as the streets (`.tmp` then
   rename, queued); an unreadable file means none / defaults and is left until the next save.
   Files of the storage folder rather than `shared_preferences`: no plugin, plain Dart tests.
-- `moved_streets.json` (port `MovedStreetsLog`, T2.8): the tournées the phone's streets went
+- `moved_streets.json` (port `MovedStreetsLog`, T2.8): the secteurs the phone's streets went
   into, `{ version: 1, movedInto: [sectorId…] }`, read once at start-up; an unreadable file
   means none (moving again skips what is already there).
-- `tournee_downloads.json` (port `SectorDownloads`, #32): the tournées downloaded on this
+- `tournee_downloads.json` (port `SectorDownloads`, #32): the secteurs downloaded on this
   phone, `{ version: 1, downloads: [{ tournee, at, mapBytes, area: [south, west, north, east]
-  | null }] }` (sorted by tournée; `at` ISO 8601 UTC; `area` the bounds of the map kept, null
+  | null }] }` (sorted by secteur; `at` ISO 8601 UTC; `area` the bounds of the map kept, null
   when no street had a place on the map). Written only once a download is complete, so it
-  says whether a tournée works offline (read at start-up, an offline cold start included);
-  same writing as the others; an unreadable file means none (the open tournée is then
+  says whether a secteur works offline (read at start-up, an offline cold start included);
+  same writing as the others; an unreadable file means none (the open secteur is then
   downloaded again).
-- `unfinished_streets/<tournée>/<year>/<streetId>.json` (port `UnfinishedStreets` of the
+- `unfinished_streets/<sector>/<year>/<streetId>.json` (port `UnfinishedStreets` of the
   Firestore adapter, #104): each new street of more houses than one write holds, whole, in
   the form of the phone's own streets, from just before its first write until all its
-  writes are in Firestore's hands (a second or two); read when the tournée's streets are
+  writes are in Firestore's hands (a second or two); read when the secteur's streets are
   first listened to, to finish a street cut off by a kill (§8.2 « Killed in the middle »).
   Ids percent-encoded; same writing as the streets; an unreadable file is skipped.
 - `open_round.json` (port `OpenRoundStore`, #63): the tournée on, `{ version: 1, round: { id,
@@ -2611,9 +2611,9 @@ can never drift.
   kill; the dons carry no house and no time. Emptied once `ValidateRound` has handed the
   summary to Firestore (its offline queue sends it later). An unreadable file means none.
 - MapLibre offline regions (tiles), behind the `OfflineMapStore` port
-  (`infrastructure/maplibre_offline/`): one per downloaded tournée (two for a moment while
+  (`infrastructure/maplibre_offline/`): one per downloaded secteur (two for a moment while
   one is replaced), in the map library's database (`files/mbgl-offline.db`). Each region's
-  metadata is `{ tournee: id }`, so the regions of a tournée are found among the phone's.
+  metadata is `{ tournee: id }`, so the regions of a secteur are found among the phone's.
 - The names on the phone that say « tournee » (`my_tournees.json`, `tournee_downloads.json`,
   their keys `tournees` and `tournee`, the regions' metadata key) date from before the code
   said `Sector` (#116) and stay as they are, so an updated phone keeps its secteurs, the open
@@ -2623,7 +2623,7 @@ can never drift.
 
 ## 7. Sync and offline behaviour
 
-**Goal:** once the app has been online with the tournée open, it can be used for a whole day with
+**Goal:** once the app has been online with the secteur open, it can be used for a whole day with
 no network, including a cold start, and loses nothing. The download is **automatic and
 invisible** (decided 2026-11-01, #32): no button, no banner, no progress, nothing about map
 versions.
@@ -2631,50 +2631,50 @@ versions.
 | What | How it works offline |
 |---|---|
 | Sign-in | The anonymous Firebase session is persisted on the phone; no network needed at start-up. After an offline first start, the sign-in is tried again when Créer / Rejoindre need it (§6.1) |
-| Tournée data | Firestore persistent cache with **unlimited size** (no eviction). The download reads every street of the tournée once from the server, so all of them are in the cache |
+| Secteur data | Firestore persistent cache with **unlimited size** (no eviction). The download reads every street of the secteur once from the server, so all of them are in the cache |
 | Live updates | Snapshot listeners serve the cache at once, then the server when reachable |
 | Writes | Applied locally at once, queued by Firestore, survive restarts, sent when back online |
-| Map | MapLibre offline region covering the tournée's bounding box + 300 m margin, zooms 12–17, OpenFreeMap « liberty » style (its own URL). ≈ 7 MB measured in the T0.4 spike for a 1.5 km box (6.6 MB, 96 % fonts: a fixed cost; tiles stop at z14), ≈ 8–9 MB expected for a 3 km tournée. Street lines and house dots are drawn from the cached street documents, not from the network |
-| New streets in the tournée added by teammates | Arrive with the next sync; when one reaches beyond the downloaded area, the app downloads the tournée again by itself |
+| Map | MapLibre offline region covering the secteur's bounding box + 300 m margin, zooms 12–17, OpenFreeMap « liberty » style (its own URL). ≈ 7 MB measured in the T0.4 spike for a 1.5 km box (6.6 MB, 96 % fonts: a fixed cost; tiles stop at z14), ≈ 8–9 MB expected for a 3 km secteur. Street lines and house dots are drawn from the cached street documents, not from the network |
+| New streets in the secteur added by teammates | Arrive with the next sync; when one reaches beyond the downloaded area, the app downloads the secteur again by itself |
 
 - The pending-writes indicator (« ☁ Modifications de 3 rues en attente d'envoi », « … d'une
   rue … » for one) comes from the snapshot metadata `hasPendingWrites` (port `PendingSync`,
   T2.3): it counts the **streets** with writes waiting, since Firestore tells it per document,
-  and words it so (not « 3 modifications »). The Firestore street adapter of the open tournée
-  is the `PendingSync` too (one listener for both); with no tournée open the phone's streets
+  and words it so (not « 3 modifications »). The Firestore street adapter of the open secteur
+  is the `PendingSync` too (one listener for both); with no secteur open the phone's streets
   are never sent, so nothing is pending. Shown only while the count is above 0.
 - **Automatic download** (`DownloadSector`, run by `OfflineAutoDownload`, #32): the open
-  tournée (not a pending request) is downloaded when it is opened (start-up, created, joined,
+  secteur (not a pending request) is downloaded when it is opened (start-up, created, joined,
   switched to) and not downloaded yet, and again when its streets reach beyond the area kept
   (`coversStreets`). Both parts in turn: every street read from the server, then the map region
   of `sectorArea` (zooms 12–17); the date, map size and area are kept (§6.3) only once both are
   complete. A new region is always made beside the old one (1 m wider when the old one has the
   same bounds, `offlineRegionBounds`: the map library would otherwise delete the old region
-  before downloading), and the tournée's older regions are deleted only after it completes.
+  before downloading), and the secteur's older regions are deleted only after it completes.
   A map download that tells nothing for a minute fails (offline, MapLibre never reports a
-  failure, it waits). One run at a time; switching tournée stops the run of the one left (its
+  failure, it waits). One run at a time; switching secteur stops the run of the one left (its
   half region is deleted, nothing is recorded).
 - **Silent map refresh** (`RefreshOfflineMaps`, #32): OpenFreeMap publishes new tiles every
   week, and once the app has been online after a change the stored map description points at
   the new version, so the tiles of an old region can no longer be reached offline
-  (docs/spikes/map.md §5). So the map of every downloaded tournée is downloaded again, silently,
+  (docs/spikes/map.md §5). So the map of every downloaded secteur is downloaded again, silently,
   whenever the app is online: at start-up, when it comes back to the foreground, at most every
-  12 hours after a refresh that worked — and at once for the other tournées right after a
+  12 hours after a refresh that worked — and at once for the other secteurs right after a
   download (the description is shared by all regions). Same safe pattern: new region first, old
   one deleted after `Success`; a failure keeps the old region. `resetOfflineDatabase` is never
   used. Serving our own copy of the style (Firebase Hosting, stable `/planet/latest/` template)
   was considered and not taken: OpenFreeMap's own style URL is kept.
 - **Retry:** any failure (offline, service down) waits 2 minutes, then tries again by itself,
   as the street shapes do (#92); no connectivity plugin.
-- **Forgetting a tournée** (left, removed, deleted, a request refused): its download record and
+- **Forgetting a secteur** (left, removed, deleted, a request refused): its download record and
   map regions are deleted (`PruneSectorDownloads`, run at start-up and after each change of
-  « Mes tournées »), whatever flow forgot it.
+  « Mes secteurs »), whatever flow forgot it.
 - What the member sees of all this (T4.2, #33): nothing on Accueil; one line in Paramètres
-  (§5.9); offline, « Mes tournées » greys a tournée not downloaded on this phone (« Disponible
+  (§5.9); offline, « Mes secteurs » greys a secteur not downloaded on this phone (« Disponible
   avec réseau », §5.3). « Offline » there comes from the snapshot metadata `isFromCache` of
-  the open tournée's street listener (port `ServerConnection`), as the pending-writes count
+  the open secteur's street listener (port `ServerConnection`), as the pending-writes count
   comes from `hasPendingWrites`.
-- What needs the network: creating / joining a tournée, the download itself (run by the app),
+- What needs the network: creating / joining a secteur, the download itself (run by the app),
   and **adding a street from the map** (reverse geocoding, BAN, the map's tiles for its line; the line of a
   street added without it is filled later, when online, #92). Adding a street by hand, adding
   numbers, taking streets and every status change work offline.
@@ -2686,8 +2686,8 @@ versions.
 
 ### 8.1 Threat: someone guesses or obtains a code
 
-The code space (31⁶ ≈ 887 million) protects one *given* tournée well, but not "any tournée":
-with 1 000 tournées in the app, one guess in ~887 000 lands somewhere. Without rate limiting,
+The code space (31⁶ ≈ 887 million) protects one *given* secteur well, but not "any secteur":
+with 1 000 secteurs in the app, one guess in ~887 000 lands somewhere. Without rate limiting,
 a script could get in somewhere within minutes. A leaked code (forwarded WhatsApp message,
 photo of the QR) is even more likely. So **knowing a code must not be enough**:
 
@@ -2703,13 +2703,13 @@ photo of the QR) is even more likely. So **knowing a code must not be enough**:
 ### 8.2 Security rules (`firebase/firestore.rules`, tested in the emulator, §11)
 
 - `sectors/{id}/**`: read and write only for members with `status == "active"`.
-- `members/{uid}` create: only by that uid, only `status: "pending"`, only with the tournée's
+- `members/{uid}` create: only by that uid, only `status: "pending"`, only with the secteur's
   current join code. Update `pending → active` or delete a pending request: any active member.
   Delete an active member: the creator, or the member themself (*Quitter*). Update
   `displayName` only: the member themself, active, a name as `MemberName` cleans it (≤ 30).
 - `joinCodes/{code}`: `get` for signed-in users, `list` denied; holds only the preview fields.
 - `sectorKeys/{key}`: `get` allowed (creation must know the pair is taken); create only if
-  absent; never updated; deleted only with the tournée.
+  absent; never updated; deleted only with the secteur.
 - `rescueCentres`: readable by signed-in users (station names only), create-only.
 - Street and house writes: field-path updates only on `status`, `comeBack`, `tries`, `by`, `at`,
   `assignees`, `deletedAt/By`, numbers and dwellings; `status` in the enum; `comeBack` a time
@@ -2722,7 +2722,7 @@ photo of the QR) is even more likely. So **knowing a code must not be enough**:
   `by` must equal the caller's uid; `at` must be a timestamp. It is the phone's time of the
   change, not the server's (T2.3): a mark queued offline reaches the server hours later and
   must keep the time it was made, so the rules cannot require `at == request.time`.
-- Only the creator: delete the tournée, regenerate the code, start a campaign. Previous
+- Only the creator: delete the secteur, regenerate the code, start a campaign. Previous
   campaigns are read-only.
 
 **Admins (#75, 5.12)** change the rules as follows; where they contradict the lines above and
@@ -2730,10 +2730,10 @@ below, these win:
 
 - `isAdmin()` = `exists(/databases/$(database)/documents/admins/$(request.auth.uid))`.
   `admins/{uid}`: `get` for signed-in users, never `list`, never written by a client.
-- **Creating** a tournée (its reservation, code, first campaign, creator member) and a
+- **Creating** a secteur (its reservation, code, first campaign, creator member) and a
   `rescueCentres` entry: admins only.
 - **Reading and listing** `sectors` and everything under them: active members **or admins**
-  (only admins may `list` `sectors` and query `members` of any tournée).
+  (only admins may `list` `sectors` and query `members` of any secteur).
 - **Streets** (every write allowed to a member, the 30-day purge included): active members or
   admins, `by` = the caller as before.
 - **Members:** accept / refuse a request: an active member or an admin. Delete an active
@@ -2741,7 +2741,7 @@ below, these win:
   creator too: their document no longer waits for the deleting batch). An admin creates their
   own document already `active`, `acceptedBy` = themself, without a code (« Rejoindre » of
   5.12).
-- **New code, deleting the tournée, starting a campaign:** admins only, member or not. The
+- **New code, deleting the secteur, starting a campaign:** admins only, member or not. The
   deleting batch deletes every remaining member document (there may be none).
 - Delivered in #75 (`firebase/firestore.rules`, `firebase/test/admins.test.mjs`): the
   deletion no longer requires the deleter's member document to go (the rules cannot list
@@ -2750,7 +2750,7 @@ below, these win:
   number (`exists(admins/{deletedBy})`), as an admin outside the team may have removed it.
   An admin's own active document (creation or « Rejoindre ») is one rule,
   `isAdminMembership`. The rules tests seed `admins/manu` (the creator) and `admins/sam`
-  (in no tournée); the older tests that gave the creator powers now name an admin.
+  (in no secteur); the older tests that gave the creator powers now name an admin.
 
 What the adapters write (T2.3), which the rules must allow:
 
@@ -2759,7 +2759,7 @@ What the adapters write (T2.3), which the rules must allow:
   `joinCodes/{code}`, `sectors/{id}`, `members/{creator}` **already `active`** (accepted by
   themself), `campaigns/{year}`, and `rescueCentres/{key}` only when absent.
 - **Join:** the request is `members/{uid}` with `status: "pending"` and the `joinCode` used
-  (the rule compares it with the tournée's). The newcomer **reads their own member document**
+  (the rule compares it with the secteur's). The newcomer **reads their own member document**
   while pending (« Demande envoyée » follows it) and deletes it to cancel.
 - **Accept:** updates `status`, `acceptedBy` (the caller), `acceptedAt` only. Refuse, remove,
   leave: delete the member document. **Rename** (« Prénom »): updates the caller's own
@@ -2777,12 +2777,12 @@ What the adapters write (T2.3), which the rules must allow:
 
 Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/test/`, `npm test`):
 
-- **Reading.** A tournée, its members, campaigns and streets: active members only. A pending
+- **Reading.** A secteur, its members, campaigns and streets: active members only. A pending
   newcomer reads their own member document and nothing else; someone outside reads nothing.
   `joinCodes` and `sectorKeys`: `get` when signed in, never `list`. `rescueCentres`: `get`
   and `list` when signed in. Anything not described is refused.
 - **Values.** Every document holds exactly its fields (no more, no fewer) with the domain's
-  limits: tournée number 1–9999, campaign 2000–2099, join code 6 characters of the alphabet,
+  limits: secteur number 1–9999, campaign 2000–2099, join code 6 characters of the alphabet,
   centre key words of `a–z 0–9` joined by `-`, names cleaned as the domain cleans them
   (one line, trimmed, single spaces): member ≤ 30, centre ≤ 80, street ≤ 150; commune code
   `69264` / `2A004`; house number 0–99999 with a suffix of ≤ 16 lowercase letters and digits,
@@ -2802,23 +2802,23 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
   `deletedAt` to a window of `request.time` would refuse removals synced late, and would still
   leave the undo of « Restaurer » open, which puts back a teammate's earlier removal with its
   old time.
-- **Creating a tournée** is accepted only whole: the tournée checks with `getAfter` that the
+- **Creating a secteur** is accepted only whole: the secteur checks with `getAfter` that the
   same transaction writes its reservation (create-only, so number + station stay unique), its
-  code (create-only, so no one replaces another tournée's preview; the preview must repeat
-  the tournée's number, station and campaign), its creator `active` and accepted by
+  code (create-only, so no one replaces another secteur's preview; the preview must repeat
+  the secteur's number, station and campaign), its creator `active` and accepted by
   themself, and its first campaign (the current year). Each of those documents in turn is
-  accepted only from the tournée's creator and must match the tournée as written.
-- **Members.** A request is the caller's own document, `pending`, with the tournée's current
+  accepted only from the secteur's creator and must match the secteur as written.
+- **Members.** A request is the caller's own document, `pending`, with the secteur's current
   code. Any active member accepts (status, `acceptedBy` = caller, `acceptedAt` only) or refuses
   a request; the newcomer cancels it. The creator removes an active member; a member leaves.
   An active member renames themself: their own document, `displayName` only, a cleaned name
   ≤ 30 (T2.7b); nobody renames someone else, not even the creator. A pending member cannot
   rename themself: a name changed while the request waits is sent by the phone once accepted
   (T2.7c), so the rules stay as they are.
-  The creator's own document goes only in the batch that deletes the tournée.
+  The creator's own document goes only in the batch that deletes the secteur.
 - **New code** (creator): only `joinCode` changes, the new code document is created and the old
   one deleted in the same transaction. **Deleting** (creator): the contents first (campaigns,
-  streets), then one batch where the tournée goes only with its code, its reservation and the
+  streets), then one batch where the secteur goes only with its code, its reservation and the
   creator's member document, the other members with them (from T2.6c). Previous campaigns are
   read-only (streets are written only in `currentCampaign`); the creator alone deletes
   campaigns outright, and streets outright, which only the deletion does, except the 30-day
@@ -2849,7 +2849,7 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
   `housesPerWrite` in `infrastructure/firestore/mappers/street_writes.dart`; a Dart test
   checks they agree). Why 2: the rules have no loops, so the check is written out once per
   house, and a request may evaluate at most 1 000 expressions, every name, value, operator
-  and call counted. Measured in the emulator: the membership, the tournée and the street
+  and call counted. Measured in the emulator: the membership, the secteur and the street
   cost ≈ 300, one house ≈ 200, the costliest (a building with a suffix, tries and a
   « repasser » time, marked and removed by the caller) ≈ 300; two of those leave ≈ 90 to
   spare, three do not fit. A rules test writes full writes of the costliest houses, so a
@@ -2878,14 +2878,14 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
     copy: from then on the SDK has them all and keeps them across a restart. A refused
     write also ends it (what follows would be refused too). If the disk refuses the record
     (full), the street is written all the same, without the safety net.
-  - **Caught up at the next start.** When the tournée's streets are first listened to, each
+  - **Caught up at the next start.** When the secteur's streets are first listened to, each
     street still kept is compared with the phone's copy of its document (its first
     snapshot, which Firestore serves from the phone at once, offline cold start included):
     the houses missing are sent again, 2 per update, in order (`catchUpWrites`); the houses
     there are left as they are (a teammate may have marked them since). No copy at all (not
     even the first write reached the SDK): the street is written again from the start.
     Nothing missing: it is only forgotten. Marks made on the street between the add and the
-    kill are lost, as any write not yet handed to the SDK. Known limit: closing the tournée
+    kill are lost, as any write not yet handed to the SDK. Known limit: closing the secteur
     and opening it again within the second a street takes would start its catch-up while
     its first writes still go (both would add the same houses); not guarded.
   - **Whole on this phone while it is written.** Firestore shows the new street growing
@@ -2910,16 +2910,16 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
     into many writes, leaving a building half laid out between them. A door changed on its
     own (a mark, an undo) is checked whole, as before.
 - **A removal put back by an undo of « Restaurer »** keeps the teammate's stamp (§6.2): the
-  rules accept a number's `deletedBy` that is the caller or an active member of the tournée
+  rules accept a number's `deletedBy` that is the caller or an active member of the secteur
   (so a member could also name a teammate as the remover of a number; the stricter choice,
   stamping that undo with who undoes as for houses and doors, would change T2.3's undo).
 - Fields no adapter writes yet (`prev` and a new campaign in v1.1) are refused: the task that
   writes them extends the rules and their tests.
-- **Communes** (#78): a new tournée must hold `communes`, a list of 1 to 50 entries; the first
+- **Communes** (#78): a new secteur must hold `communes`, a list of 1 to 50 entries; the first
   entry is checked whole (`code` an INSEE code, `name` trimmed, not blank, ≤ 100, `lat` / `lon`
   in range or both null, nothing else), the others only counted. Any active member or admin
   updates `communes` alone, by one entry: an addition (checked whole, ≤ 50 in all) or a
-  removal that leaves at least one. A tournée stored before has no list: it counts as empty, so
+  removal that leaves at least one. A secteur stored before has no list: it counts as empty, so
   its first commune can be added. Duplicates of a code cannot be ruled out (no loops): the
   reader skips them.
 - **Shape and assignees** (T3.3): optional on a new street (an app of before the map writes
@@ -2958,15 +2958,16 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
   a don per house, door or address**. The list of a tournée's dons stays on the phone, without
   house or time, until it is validated, then it is erased. A house or door marked ✓ keeps
   **how many calendars it took** (no amount, no method), seen by the team like its status,
-  reset with the statuses at the next campaign. `PRIVACY.md` and the Confidentialité page (#79, the user's text) need a line on
-  this before the feature ships.
+  reset with the statuses at the next campaign. `PRIVACY.md` and the Confidentialité page (#79)
+  say so in « Données enregistrées », « Hébergement » and « Suppression » (#112): the text was
+  drafted on 2026-11-02 and awaits the user's review on the phone.
 - **Location:** the phone's position is used only on screen ("locate me"), never stored or
   sent. Permission is asked when the button is first tapped.
 - Firestore region: `europe-west` (EU).
 - Attribution shown on the map and in Paramètres: © OpenStreetMap contributors (ODbL),
   OpenFreeMap, Base Adresse Nationale (Licence Ouverte).
 - Play Store: needs a privacy policy (Firebase + network + location). Data can be deleted by
-  deleting the tournée; the previous-but-one campaign is deleted at each roll-over. The
+  deleting the secteur; the previous-but-one campaign is deleted at each roll-over. The
   policy is `PRIVACY.md` at the root of the repository (with a contact address); the
   Confidentialité page (5.9) shows its five sections word for word and links to it.
 
@@ -2979,7 +2980,7 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
 | Map tiles + style | `https://tiles.openfreemap.org/styles/liberty` (or `positron`) | OSM vector tiles for MapLibre. Offline download through `maplibre_gl` offline regions; check OpenFreeMap's terms on bulk download in the spike task |
 | Street under a tap | `https://data.geopf.fr/geocodage/reverse?lon={lon}&lat={lat}&index=address&type=street&limit=1` | Returns BAN `id` = idVoie (`69264_1460`), `name`, `citycode`, `city`, one point of the street; always the nearest street, whatever the distance |
 | Street search by name | `https://data.geopf.fr/geocodage/search?q={q}&index=address&type=street&citycode={code}&limit=10` | For the search box; `q` 3–200 characters starting with a letter or digit, else HTTP 400 |
-| Commune by name | `https://geo.api.gouv.fr/communes?nom={q}&fields=nom,code,codesPostaux,centre&boost=population&limit=5` | Import screen (5.0), the communes of a tournée (5.2, 5.8): `nom`, `code` (INSEE), `codesPostaux`, `centre` (GeoJSON point); `[]` when nothing matches |
+| Commune by name | `https://geo.api.gouv.fr/communes?nom={q}&fields=nom,code,codesPostaux,centre&boost=population&limit=5` | Import screen (5.0), the communes of a secteur (5.2, 5.8): `nom`, `code` (INSEE), `codesPostaux`, `centre` (GeoJSON point); `[]` when nothing matches |
 | Streets of a commune | `https://plateforme.adresse.data.gouv.fr/lookup/{inseeCode}` | `voies[]`: `idVoie`, `nomVoie`, `nbNumeros`, `type`; 404 for an unknown commune |
 | Numbers of a street | `https://plateforme.adresse.data.gouv.fr/lookup/{idVoie}` | `numeros[]`: `numero`, `suffixe`, `position.coordinates` [lon, lat]; a number may appear twice; 404 for an unknown street |
 | Shape of a street | OpenFreeMap TileJSON `https://tiles.openfreemap.org/planet` (its `tiles` template, versioned weekly: `…/planet/20261011_080001_pt/{z}/{x}/{y}.pbf`), then the z14 vector tiles around the street's houses, layer `transportation_name`, property `name` (§6.1, #92) | Same data as the map. A tile ≈ 50–250 kB, ≈ 0.1 s; max zoom 14. Lines clipped per tile with a buffer: cut and joined by the app. Fallback when empty: no shape, house dots only. Replaced Overpass (#92: 41 s then 502 on 2026-10-18) |
@@ -3087,7 +3088,7 @@ but they run once per task and in CI.
 | Architecture | import rules between layers | Dart VM | every run | < 1 s |
 | Coverage | **100 % line coverage** on `domain/`, `application/`, `presentation/` and the adapters' mapping code, checked by a script on `coverage/lcov.info` | — | end of task, CI | piggybacks |
 | Rules | Firestore security rules in the Firebase emulator (`@firebase/rules-unit-testing`, `node --test`): `cd firebase && npm ci && npm test` starts the emulator itself (`firebase emulators:exec`, demo project, versions pinned: firebase-tools 15, rules-unit-testing 5, Node 20+, Java 11+) | Node + emulator | when `firebase/` or the Firestore adapters change, CI | < 1 min |
-| Instrumented | `integration_test/`: a handful of end-to-end flows in the real app, ≤ 10 tests over both files. `app_test.dart` (launch, mark a house + undo, building, edit a street, offline cold start…) on the real project, Firestore offline. `admin_test.dart` (create a tournée, « Toutes les tournées » → Rejoindre, revocation → « Vous n'êtes plus administrateur. ») against the local Auth + Firestore emulators with the real rules: the test adds and removes `admins/{uid}` itself (`tool/admin_e2e.sh`) | Android emulator (`Medium_Phone_API_36.1`), run by Claude | before every push to `main` | < 3 min |
+| Instrumented | `integration_test/`: a handful of end-to-end flows in the real app, ≤ 10 tests over both files. `app_test.dart` (launch, mark a house + undo, building, edit a street, offline cold start…) on the real project, Firestore offline. `admin_test.dart` (create a secteur, « Tous les secteurs » → Rejoindre, revocation → « Vous n'êtes plus administrateur. ») against the local Auth + Firestore emulators with the real rules: the test adds and removes `admins/{uid}` itself (`tool/admin_e2e.sh`) | Android emulator (`Medium_Phone_API_36.1`), run by Claude | before every push to `main` | < 3 min |
 | Device | Manual checklist on your phone: map render, tap-to-add, offline download, **airplane-mode day** (cold start, mark, restart, reconnect, sync), QR scan | your phone | after every task, and the full checklist before release | — |
 
 **No mutation-testing gate:** Dart has no maintained equivalent of Pitest. To compensate, the
@@ -3126,10 +3127,10 @@ to TestFlight once the Apple account exists.
 | M1 | Core domain + Street screen + Fiche maison + Immeuble on a **real reference area** (BAN streets and numbers, marks stored on the phone) | you walk real streets with the app before any backend exists |
 | M2 | **Starts with an infrastructure checkpoint with you** (Spark vs Blaze, server-side join with rate limiting, or another backend). Then identity + Firestore: bienvenue, créer / rejoindre (code + QR), approval of newcomers, équipe, corbeille, App Check, live sync, rules + emulator tests | two phones see each other's marks; a guessed code gets nowhere |
 | M3 | Map: Accueil map + panel, progress colours, house dots, ajouter des rues (tap → card → add), search, manual street + numbers | real streets, picked on the map |
-| M4 | Offline: automatic, invisible download (cache + tiles, silent map refresh), pending-writes indicator, what « Mes tournées » / Paramètres show of it (#33), airplane-mode checklist | a full day without network |
+| M4 | Offline: automatic, invisible download (cache + tiles, silent map refresh), pending-writes indicator, what « Mes secteurs » / Paramètres show of it (#33), airplane-mode checklist | a full day without network |
 | M5 | Polish and release: dark mode, accessibility (TalkBack, 200 % font), icon, privacy policy, Play listing | store-ready |
 | M8 | Status picker and tournées (#63): a tap shows the five statuses with « Refusé » (§5.6), calendars per house, tournées with dons per payment method, recap, Collecte (§5.13), rules; « Secteur » and the code glossary | a tournée counted to the cent, validated, seen by the secteur |
-| M6 (v1.1) | Nouvelle campagne: copy / reset, *Reprendre mes rues*, last year's result in the sheets, read-only archive | tournée 49 starts 2027 from 2026 |
+| M6 (v1.1) | Nouvelle campagne: copy / reset, *Reprendre mes rues*, last year's result in the sheets, read-only archive | secteur 49 starts 2027 from 2026 |
 
 M1 comes before Firebase on purpose: the street screen is where the app succeeds or fails,
 and a real reference area stored on the phone lets you try it in the street before any backend
@@ -3141,27 +3142,27 @@ exists. No invented data at any stage.
 
 | # | Question | Answer |
 |---|---|---|
-| Q1 | Join code | 6 random characters without look-alikes (`K7P-2QX`, ≈ 887 M combinations), shared as a QR code too. The tournée number is displayed but never used to join. |
-| Q2 | Who deletes what | Any member adds, edits and deletes streets. Only the creator deletes the tournée or removes members. **From #75: only admins** (5.12). |
+| Q1 | Join code | 6 random characters without look-alikes (`K7P-2QX`, ≈ 887 M combinations), shared as a QR code too. The secteur number is displayed but never used to join. |
+| Q2 | Who deletes what | Any member adds, edits and deletes streets. Only the creator deletes the secteur or removes members. **From #75: only admins** (5.12). |
 | Q3 | "Refused" status | **No.** The app never records residents' choices or amounts: only whether the door was visited. |
-| Q4 | Several tournées per person | Yes. The app opens the last one; the title on Accueil switches (Q21). |
+| Q4 | Several secteurs per person | Yes. The app opens the last one; the title on Accueil switches (Q21). |
 | Q5 | App id | `fr.mandarine.tourneecalendriers`, store name "Tournée Calendriers". |
 | Q6 | Public repo | Yes: `google-services.json` is gitignored and injected in CI from a secret. |
 | Q7 | minSdk | 26 (Android). iOS 15+ later. |
 | Q8 | Street selection | On a map: tap a road → street card → add. Manual entry for what the map or BAN lacks. |
 | Q9 | Where the map lives | Accueil = map + "Mes rues" panel; "Ajouter des rues" is a map mode (replaces the Sector list). |
 | Q10 | Progress on the map | Streets coloured by progress; houses as status dots when zoomed in. |
-| Q11 | Offline | Download of the tournée (data + map tiles), then fully offline, sync when possible. **Changed 2026-11-01 (#32): automatic and invisible** — the app downloads the open tournée whenever it is online, refreshes the maps silently (weekly tile versions), retries every 2 minutes after a failure; no button, banner or progress (§7). |
+| Q11 | Offline | Download of the secteur (data + map tiles), then fully offline, sync when possible. **Changed 2026-11-01 (#32): automatic and invisible** — the app downloads the open secteur whenever it is online, refreshes the maps silently (weekly tile versions), retries every 2 minutes after a failure; no button, banner or progress (§7). |
 | Q12 | Language | French only. |
 | Q13 | Adding streets | The map mode is called *Ajouter des rues*. |
 | Q14 | Correcting streets | Edit mode on the street screen (✏): remove / add / rename numbers, rename, make a building, stop covering, delete. Manual street always reachable from *Ajouter des rues*. |
 | Q15 | Buildings | Described by floor (and staircase when several); one row per floor, top to bottom. |
-| Q16 | Tournée identity | Number + centre de secours + code. Number + CS unique; CS picked from a shared list. Joining needs only the code (or QR), with a confirmation of number + CS. |
-| Q17 | Next year | One campaign per year inside the tournée. New campaign keeps streets, numbers, buildings; resets statuses, *repasser*, assignees; *Reprendre mes rues 2026*; last year's result shown in the sheets. v1.1, model ready in v1. |
+| Q16 | Secteur identity | Number + centre de secours + code. Number + CS unique; CS picked from a shared list. Joining needs only the code (or QR), with a confirmation of number + CS. |
+| Q17 | Next year | One campaign per year inside the secteur. New campaign keeps streets, numbers, buildings; resets statuses, *repasser*, assignees; *Reprendre mes rues 2026*; last year's result shown in the sheets. v1.1, model ready in v1. |
 | Q18 | Who starts a campaign, what is kept | The creator (an admin from #75, 5.12). Previous campaign read-only; the one before is deleted. |
 | Q19 | Guessed / leaked codes | A code only creates a pending request; any accepted member accepts or refuses. App Check in v1. Soft delete with a 30-day Corbeille. |
-| Q20 | Infrastructure | **Decided at the M2 checkpoint (2026-10-05): Spark (free), Blaze-ready.** Join on the phone (`joinCodes` get → pending member) behind a `SectorDirectory` port; App Check + approval are the guard; the Corbeille purge runs on members' phones (5.11). Move to Blaze (1 click, no data migration) and a rate-limited callable join + scheduled purge when real usage nears Spark's shared daily quota (50 k reads, 20 k writes for the whole app ≈ 10 busy tournées a day) or abuse shows up. Another backend was rejected: it loses Firestore's offline cache. |
-| Q21 | Switching / creating from Accueil | The title is a button: « Mes tournées » sheet with all my tournées (progress, pending requests), *Créer*, *Rejoindre*. |
+| Q20 | Infrastructure | **Decided at the M2 checkpoint (2026-10-05): Spark (free), Blaze-ready.** Join on the phone (`joinCodes` get → pending member) behind a `SectorDirectory` port; App Check + approval are the guard; the Corbeille purge runs on members' phones (5.11). Move to Blaze (1 click, no data migration) and a rate-limited callable join + scheduled purge when real usage nears Spark's shared daily quota (50 k reads, 20 k writes for the whole app ≈ 10 busy secteurs a day) or abuse shows up. Another backend was rejected: it loses Firestore's offline cache. |
+| Q21 | Switching / creating from Accueil | The title is a button: « Mes secteurs » sheet with all my secteurs (progress, pending requests), *Créer*, *Rejoindre*. |
 | Q22 | Technical stack | **Flutter + Riverpod**, strict DDD (hexagonal: domain, use cases, ports, adapters). Android first; iOS later from the same code, built in the cloud (no Mac). Mutation gate dropped (no Dart tool); 100 % coverage gate kept. |
 | Q23 | Notes | **Removed for privacy, 2026-10-05** (after the phone test of M1): a free note on a house, door or building is too likely to hold personal data (GDPR). No note field anywhere; notes already on a phone are erased when the app reads them (storage schema v3). The « repasser » hint stayed, limited to 20 characters (was 50); since #81 it is a day and an hour, no free text. |
 

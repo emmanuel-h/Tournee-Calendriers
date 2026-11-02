@@ -565,7 +565,7 @@ void main() {
     });
   });
 
-  group('street tapped among « Autres rues de la tournée »', () {
+  group('street tapped among « Autres rues du secteur »', () {
     test('should show its card, as a tap on its line does', () async {
       final container = phone();
       await pumpEventQueue();

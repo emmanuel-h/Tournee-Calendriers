@@ -80,7 +80,7 @@ void main() {
     expect(arb['privacyHostingBody'], sections['Hébergement']);
     expect(arb['privacyDeletionBody'], sections['Suppression']);
     // French typography: a non-breaking space before « : ».
-    expect(arb['privacyDataBody'], contains('tournée : les numéros'));
+    expect(arb['privacyDataBody'], contains('secteur : les numéros'));
   });
 
   testWidgets('should show the online policy row with its ↗ and label', (

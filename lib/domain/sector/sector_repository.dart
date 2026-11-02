@@ -21,7 +21,7 @@ enum AddSectorFailure {
 }
 
 /// Why a change to a stored tournée that needs the server was not made
-/// (« Nouveau code », « Supprimer la tournée », PLAN §5.8).
+/// (« Nouveau code », « Supprimer le secteur », PLAN §5.8).
 enum SectorWriteFailure {
   /// The phone could not reach the server. A new code must be checked
   /// against every other tournée's, and deleting reads what the tournée

@@ -9,7 +9,7 @@ L'appli ne demande ni adresse e-mail ni numéro de téléphone. Au premier lance
 
 ## Données enregistrées
 
-Pour chaque rue de la tournée : les numéros, leur place sur la carte, ce qui s'est passé à chaque porte (fait, personne, à repasser), le jour et l'heure où repasser, et le prénom de qui l'a noté. Rien d'autre : pas de nom d'habitant, pas de note, pas de don.
+Pour chaque rue du secteur : les numéros, leur place sur la carte, ce qui s'est passé à chaque porte (fait, refusé, personne, à repasser), le jour et l'heure où repasser, combien de calendriers la maison a pris, et le prénom de qui l'a noté. Pour chaque tournée validée : son début et sa fin, le nombre de maisons visitées, le nombre et le total des dons par moyen de paiement, et les calendriers offerts, sans le prénom de qui l'a faite. Un don n'est jamais lié à une maison : la liste des dons reste sur le téléphone jusqu'à la validation de la tournée, puis elle est effacée. Rien d'autre : pas de nom d'habitant, pas de note.
 
 ## Position
 
@@ -17,11 +17,11 @@ La position du téléphone sert seulement à vous placer sur la carte, quand vou
 
 ## Hébergement
 
-Les tournées sont stockées chez Google Firebase, dans l'Union européenne. Les cartes viennent d'OpenFreeMap et les adresses de la Base Adresse Nationale : comme tout site web, ces services voient l'adresse IP du téléphone quand ils lui envoient des données.
+Les secteurs sont stockés chez Google Firebase, dans l'Union européenne. Les cartes viennent d'OpenFreeMap et les adresses de la Base Adresse Nationale : comme tout site web, ces services voient l'adresse IP du téléphone quand ils lui envoient des données.
 
 ## Suppression
 
-Supprimer la tournée efface tout ce qu'elle contient. Quand une campagne commence, celle d'il y a deux ans est effacée. Désinstaller l'appli efface ce qui est sur le téléphone ; ce qui est partagé avec l'équipe reste jusqu'à la suppression de la tournée.
+Supprimer le secteur efface tout ce qu'il contient. Quand une campagne commence, celle d'il y a deux ans est effacée. Désinstaller l'appli efface ce qui est sur le téléphone, y compris les dons d'une tournée pas encore validée ; ce qui est partagé avec l'équipe reste jusqu'à la suppression du secteur.
 
 ## Contact
 

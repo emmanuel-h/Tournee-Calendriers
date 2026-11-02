@@ -71,7 +71,7 @@ void main() {
 
     expect(find.widgetWithText(AppBar, 'Paramètres'), findsOneWidget);
     expect(find.bySemanticsLabel('Prénom, Manu'), findsOneWidget);
-    expect(find.bySemanticsLabel('Mes tournées, 49 · 2026'), findsOneWidget);
+    expect(find.bySemanticsLabel('Mes secteurs, 49 · 2026'), findsOneWidget);
     expect(find.bySemanticsLabel('Thème, Système'), findsOneWidget);
     expect(find.bySemanticsLabel('Confidentialité'), findsOneWidget);
     // The version of pubspec.yaml, which `flutter test` gives too.
@@ -89,7 +89,7 @@ void main() {
   });
 
   testWidgets(
-    'should say the app works offline under « Mes tournées », with nothing '
+    'should say the app works offline under « Mes secteurs », with nothing '
     'to download',
     (tester) async {
       await pumpSettings(tester);
@@ -175,7 +175,7 @@ void main() {
     }
   });
 
-  testWidgets('should open « Mes tournées » from its row', (tester) async {
+  testWidgets('should open « Mes secteurs » from its row', (tester) async {
     await pumpSettings(tester);
 
     await tester.tap(find.byKey(const Key('settings.mySectors')));
@@ -220,7 +220,7 @@ void main() {
           version: '1.1.0',
           date: DateTime(2026, 11, 20),
           notes: (_) => [
-            'Un bouton copie le code de la tournée.',
+            'Un bouton copie le code du secteur.',
             "Le nombre de passages s'affiche pour chaque rue.",
           ],
         ),
@@ -242,7 +242,7 @@ void main() {
       '1.2.0 · 5 mars 2027',
       'Une rue se partage en deux.',
       '1.1.0 · 20 nov. 2026',
-      'Un bouton copie le code de la tournée.',
+      'Un bouton copie le code du secteur.',
       "Le nombre de passages s'affiche pour chaque rue.",
       '1.0.0 · 16 oct. 2026',
       'Première version.',
@@ -262,7 +262,29 @@ void main() {
     await tester.tap(find.byKey(const Key('settings.version')));
     await tester.pumpAndSettle();
 
+    expect(find.bySemanticsLabel('0.10.0 · 2 nov. 2026'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel('La tournée s\'appelle maintenant « secteur ».'),
+      findsOneWidget,
+    );
+    expect(
+      find.bySemanticsLabel(
+        'Confidentialité : le texte dit aussi ce qui est gardé des '
+        'tournées, des dons et des calendriers.',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      tester.getTopLeft(find.bySemanticsLabel('0.10.0 · 2 nov. 2026')).dy,
+      lessThan(
+        tester.getTopLeft(find.bySemanticsLabel('0.9.0 · 2 nov. 2026')).dy,
+      ),
+    );
     expect(find.bySemanticsLabel('0.9.0 · 2 nov. 2026'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.bySemanticsLabel('0.8.0 · 2 nov. 2026'),
+      100,
+    );
     expect(find.bySemanticsLabel('0.8.0 · 2 nov. 2026'), findsOneWidget);
     await tester.scrollUntilVisible(
       find.bySemanticsLabel(
@@ -314,7 +336,7 @@ void main() {
     expect(find.bySemanticsLabel('0.2.0 · 17 oct. 2026'), findsOneWidget);
     expect(
       find.bySemanticsLabel(
-        'Seuls les administrateurs créent une tournée\u00a0; les autres la '
+        'Seuls les administrateurs créent un secteur\u00a0; les autres le '
         'rejoignent avec un code.',
       ),
       findsOneWidget,

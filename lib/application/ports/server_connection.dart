@@ -1,4 +1,4 @@
-/// Whether this phone reaches the server now: what « Mes tournées » needs
+/// Whether this phone reaches the server now: what « Mes secteurs » needs
 /// to grey, offline, a tournée never downloaded here (« Disponible avec
 /// réseau », PLAN §5.3).
 ///

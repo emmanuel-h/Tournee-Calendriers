@@ -20,7 +20,7 @@ SectorDownload _downloaded(SectorId id) => SectorDownload(
   area: null,
 );
 
-/// The row of « Tournée 23 · 2026 », CS Limas, [status].
+/// The row of « Secteur 23 · 2026 », CS Limas, [status].
 SectorRow _row(SectorId id, SectorRowStatus status) => SectorRow(
   id: id,
   number: 23,
@@ -29,7 +29,7 @@ SectorRow _row(SectorId id, SectorRowStatus status) => SectorRow(
   status: status,
 );
 
-// « Disponible avec réseau » in « Mes tournées » (PLAN §5.3, #33).
+// « Disponible avec réseau » in « Mes secteurs » (PLAN §5.3, #33).
 void main() {
   group('OfflineAccess', () {
     final offline = OfflineAccess(offline: true, downloaded: {_t12});

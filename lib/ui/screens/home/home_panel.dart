@@ -16,7 +16,7 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 /// The « Mes rues » panel at the bottom of Accueil (PLAN §5.3, Home
 /// mockup): a handle and the totals (« Mes rues · 43/62 », « Équipe :
 /// 41 % »), then the member's streets, the other streets of the tournée
-/// under « Autres rues de la tournée », the pending-sync line and
+/// under « Autres rues du secteur », the pending-sync line and
 /// « Ajouter des rues ». A row of « Mes rues » opens its street; a row of
 /// the others asks Accueil to show its street card ([onOtherStreetTapped],
 /// #93), from which the member may take it.
@@ -52,7 +52,7 @@ final class HomePanel extends StatelessWidget {
 
   final VoidCallback onToggle;
 
-  /// A row under « Autres rues de la tournée » was tapped.
+  /// A row under « Autres rues du secteur » was tapped.
   final ValueChanged<StreetId> onOtherStreetTapped;
 
   /// Under this room, the list and the button do not fit: only the handle
@@ -247,7 +247,7 @@ final class _Totals extends StatelessWidget {
   }
 }
 
-/// « Mes rues », then « Autres rues de la tournée »; or why there is
+/// « Mes rues », then « Autres rues du secteur »; or why there is
 /// nothing to list.
 final class _StreetList extends StatelessWidget {
   const _StreetList({required this.state, required this.onOtherStreetTapped});

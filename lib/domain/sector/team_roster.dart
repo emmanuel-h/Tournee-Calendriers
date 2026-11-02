@@ -5,7 +5,7 @@ import 'package:tournee_calendriers/domain/street/street.dart';
 /// Who still counts among the members who cover a street (#91): the
 /// tournée's members, and the member on the phone.
 ///
-/// A member removed with « Retirer », or gone with « Quitter la tournée »,
+/// A member removed with « Retirer », or gone with « Quitter le secteur »,
 /// stays in the `assignees` of their streets: the security rules let a
 /// member add or remove only themself. Their streets are « libre » again
 /// for everyone else because every place that decides whether a street is

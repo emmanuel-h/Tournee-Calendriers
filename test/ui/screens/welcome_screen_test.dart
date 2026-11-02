@@ -96,7 +96,7 @@ void main() {
       );
 
       expect(find.byType(HomeScreen), findsOneWidget);
-      expect(find.text('Tournée 49 · 2026'), findsOneWidget);
+      expect(find.text('Secteur 49 · 2026'), findsOneWidget);
     });
 
     testWidgets(
@@ -110,7 +110,7 @@ void main() {
         );
 
         expect(find.byType(JoinPendingScreen), findsOneWidget);
-        expect(find.text('Tournée 49 · CS Villefranche'), findsOneWidget);
+        expect(find.text('Secteur 49 · CS Villefranche'), findsOneWidget);
         expect(find.byKey(const Key('pending.back')), findsNothing);
       },
     );
@@ -148,7 +148,7 @@ void main() {
       expect(isEnabled(tester, create), isFalse);
     });
 
-    testWidgets('should keep the name and open « Nouvelle tournée »', (
+    testWidgets('should keep the name and open « Nouveau secteur »', (
       tester,
     ) async {
       await launch(tester, admin: true);
@@ -162,7 +162,7 @@ void main() {
       expect(find.byType(CreateSectorScreen), findsOneWidget);
     });
 
-    testWidgets('should keep the name and open « Rejoindre une tournée »', (
+    testWidgets('should keep the name and open « Rejoindre un secteur »', (
       tester,
     ) async {
       await launch(tester);
@@ -185,7 +185,7 @@ void main() {
   });
 
   group('admins (PLAN §5.12)', () {
-    testWidgets('should offer only « Rejoindre une tournée », in red, to a '
+    testWidgets('should offer only « Rejoindre un secteur », in red, to a '
         'phone that is not an admin\'s', (tester) async {
       await launch(tester, name: nameOf('Léa'));
 
@@ -196,7 +196,7 @@ void main() {
       );
     });
 
-    testWidgets('should offer « Créer une tournée » to an admin, with '
+    testWidgets('should offer « Créer un secteur » to an admin, with '
         '« Rejoindre » under it', (tester) async {
       await launch(tester, name: nameOf('Manu'), admin: true);
 

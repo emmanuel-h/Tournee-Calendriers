@@ -299,7 +299,7 @@ final class Street {
   /// covered by [member] alone. Nothing else changes.
   ///
   /// It is the street as [member] brings it from the phone into a tournée
-  /// (« Les ajouter à la tournée », PLAN §5.0): the marks made in M1 are
+  /// (« Les ajouter au secteur », PLAN §5.0): the marks made in M1 are
   /// stamped with the phone's own id, which is no member of the tournée,
   /// and the tournée's security rules only accept the caller's uid (PLAN
   /// §8.2). The times stay, so « Modifié à 14:02 » still says when.

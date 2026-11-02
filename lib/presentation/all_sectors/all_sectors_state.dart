@@ -2,7 +2,7 @@ import 'package:tournee_calendriers/application/ports/sector_directory.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/shared/same_items.dart';
 
-/// What « Toutes les tournées » shows an admin (PLAN §5.12, AllSectors
+/// What « Tous les secteurs » shows an admin (PLAN §5.12, AllSectors
 /// mockup). `sealed`: the screen's `switch` handles each case.
 sealed class AllSectorsState {
   const AllSectorsState();
@@ -69,7 +69,7 @@ final class AllSectorsShown extends AllSectorsState {
 
   final List<CentreGroup> groups;
 
-  /// « Administrateur · 4 tournées ».
+  /// « Administrateur · 4 secteurs ».
   int get count => groups.fold(0, (sum, group) => sum + group.rows.length);
 
   @override

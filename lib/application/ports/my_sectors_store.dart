@@ -1,6 +1,6 @@
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
 
-/// Where the phone keeps « Mes tournées » and which one is open (PLAN
+/// Where the phone keeps « Mes secteurs » and which one is open (PLAN
 /// §6.3): on the phone only, so the app reopens the last tournée at launch
 /// without the network, cold start included (PLAN §7).
 ///

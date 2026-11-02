@@ -14,7 +14,7 @@ import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_sector_directory.dart';
 import '../../support/results.dart';
 
-/// The 12 of the CS Villefranche as « Toutes les tournées » lists it.
+/// The 12 of the CS Villefranche as « Tous les secteurs » lists it.
 SectorOverview overview12({bool callerIsActive = false}) => SectorOverview(
   id: SectorId('t12'),
   number: sector12.number,

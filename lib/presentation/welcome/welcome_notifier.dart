@@ -20,7 +20,7 @@ final class WelcomeNotifier extends Notifier<WelcomeState> {
   /// « Votre prénom » changed to [text].
   void type(String text) => state = _stateOf(text);
 
-  /// « Créer une tournée » or « Rejoindre une tournée »: keeps the name.
+  /// « Créer un secteur » or « Rejoindre un secteur »: keeps the name.
   /// True once kept; false when the name is not valid.
   Future<bool> confirm() async {
     if (!state.canGoOn) return false;

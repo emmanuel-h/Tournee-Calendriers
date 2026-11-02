@@ -5,7 +5,7 @@ import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_state.dart';
 
-/// Which tournées of « Mes tournées » can open now (PLAN §5.3, §7):
+/// Which tournées of « Mes secteurs » can open now (PLAN §5.3, §7):
 /// offline, a tournée never downloaded on this phone has nothing to show,
 /// so the sheet greys it (« Disponible avec réseau ») and it cannot be
 /// tapped. Immutable: the notifier replaces it as a whole.
@@ -47,7 +47,7 @@ final class OfflineAccess {
   String toString() => 'OfflineAccess(offline: $offline, $downloaded)';
 }
 
-/// What « Mes tournées » can open now. `autoDispose`: followed only while
+/// What « Mes secteurs » can open now. `autoDispose`: followed only while
 /// the sheet is shown.
 final offlineAccessProvider =
     NotifierProvider.autoDispose<OfflineAccessNotifier, OfflineAccess>(

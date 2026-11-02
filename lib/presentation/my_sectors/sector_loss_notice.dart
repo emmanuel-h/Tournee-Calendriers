@@ -2,8 +2,8 @@ import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/sector/sector_loss.dart';
 
 /// What the app tells once the phone forgot a tournée the member lost
-/// (PLAN §5.3): « Vous avez été retiré de la tournée 49. » or « La tournée
-/// 49 a été supprimée. », over the next screen.
+/// (PLAN §5.3): « Vous avez été retiré du secteur 49. » or « Le secteur
+/// 49 a été supprimé. », over the next screen.
 final class SectorLossNotice {
   const SectorLossNotice({
     required this.sector,
@@ -16,7 +16,7 @@ final class SectorLossNotice {
   /// same number (in two centres) are two notices.
   final SectorId sector;
 
-  /// « la tournée 49 ».
+  /// « le secteur 49 ».
   final int number;
   final SectorLoss loss;
 

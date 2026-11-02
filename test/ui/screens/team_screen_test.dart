@@ -115,11 +115,11 @@ void main() {
       'admin in the team sees them', (tester) async {
     await pumpTeam(tester, manuId);
 
-    expect(find.text('Tournée 49'), findsOneWidget);
+    expect(find.text('Secteur 49'), findsOneWidget);
     expect(find.text('CS Villefranche · campagne 2026'), findsOneWidget);
     expect(find.text('K7P-2QX'), findsOneWidget);
     expect(
-      find.bySemanticsLabel('QR code de la tournée, code K7P-2QX'),
+      find.bySemanticsLabel('QR code du secteur, code K7P-2QX'),
       findsOneWidget,
     );
     expect(find.text('EN ATTENTE (1)'), findsOneWidget);
@@ -140,7 +140,7 @@ void main() {
   });
 
   testWidgets('should give an admin who is not in the team the admin\'s '
-      'commands, and « Retirer de Mes tournées » instead of « Quitter »', (
+      'commands, and « Retirer de Mes secteurs » instead of « Quitter »', (
     tester,
   ) async {
     await pumpTeam(tester, samId);
@@ -287,7 +287,7 @@ void main() {
 
     await tapVisible(tester, find.byKey(const Key('team.delete')));
     await tester.pumpAndSettle();
-    expect(find.text('Supprimer la tournée 49 ?'), findsOneWidget);
+    expect(find.text('Supprimer le secteur 49 ?'), findsOneWidget);
     await tester.tap(find.byKey(const ValueKey('team.confirmDelete.ok')));
     await tester.pumpAndSettle();
 
@@ -308,7 +308,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(sectors.deleted, isEmpty);
-    expect(find.text('Tournée 49'), findsOneWidget);
+    expect(find.text('Secteur 49'), findsOneWidget);
   });
 
   testWidgets('should go back to the start screen once the member leaves', (
@@ -397,7 +397,7 @@ void main() {
 
     expect(
       find.text(
-        "L'équipe ne peut pas être affichée : la tournée n'est pas "
+        "L'équipe ne peut pas être affichée : le secteur n'est pas "
         "sur ce téléphone, ou vous n'en faites plus partie.",
       ),
       findsOneWidget,
@@ -561,7 +561,7 @@ void main() {
 
         await pumpTeam(tester, member);
 
-        expect(find.text('Tournée 49'), findsOneWidget);
+        expect(find.text('Secteur 49'), findsOneWidget);
         expect(tester.takeException(), isNull);
       });
     }

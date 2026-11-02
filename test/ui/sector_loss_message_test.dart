@@ -52,12 +52,9 @@ void main() {
       directory.lose(sector49.id, SectorLoss.removed);
       await tester.pumpAndSettle();
 
-      expect(
-        find.text('Vous avez été retiré de la tournée 49.'),
-        findsOneWidget,
-      );
+      expect(find.text('Vous avez été retiré du secteur 49.'), findsOneWidget);
       expect(find.byType(TeamScreen), findsNothing);
-      expect(find.text('Tournée 49 · 2026'), findsNothing);
+      expect(find.text('Secteur 49 · 2026'), findsNothing);
       expect(find.byKey(const Key('home.team')), findsNothing);
     },
   );
@@ -70,8 +67,8 @@ void main() {
       directory.lose(sector12.id, SectorLoss.deleted);
       await tester.pumpAndSettle();
 
-      expect(find.text('La tournée 12 a été supprimée.'), findsOneWidget);
-      expect(find.text('Tournée 49 · 2026'), findsOneWidget);
+      expect(find.text('Le secteur 12 a été supprimé.'), findsOneWidget);
+      expect(find.text('Secteur 49 · 2026'), findsOneWidget);
     },
   );
 
@@ -86,12 +83,12 @@ void main() {
 
       expect(
         find.text(
-          'Vous n\'êtes plus administrateur\u00a0: la tournée 12 est '
-          'retirée de Mes tournées.',
+          'Vous n\'êtes plus administrateur\u00a0: le secteur 12 est '
+          'retiré de Mes secteurs.',
         ),
         findsOneWidget,
       );
-      expect(find.text('Tournée 49 · 2026'), findsOneWidget);
+      expect(find.text('Secteur 49 · 2026'), findsOneWidget);
     },
   );
 }

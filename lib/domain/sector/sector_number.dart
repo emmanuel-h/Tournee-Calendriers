@@ -31,7 +31,7 @@ final class SectorNumber {
     return Ok(SectorNumber._(number));
   }
 
-  /// Reads the « N° de tournée » field: digits only, spaces around and
+  /// Reads the « N° de secteur » field: digits only, spaces around and
   /// leading zeros ignored (`049` is 49).
   static Result<SectorNumber, SectorNumberFailure> parse(String text) {
     final digits = text.trim();

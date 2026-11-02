@@ -78,7 +78,7 @@ void main() {
       await tester.enterText(find.byKey(const Key('join.second')), '2qx');
       await tester.pumpAndSettle();
 
-      expect(find.text('Tournée 49 · CS Villefranche'), findsOneWidget);
+      expect(find.text('Secteur 49 · CS Villefranche'), findsOneWidget);
       expect(find.text('Campagne 2026'), findsOneWidget);
       expect(isEnabled(tester, request), isTrue);
 
@@ -129,7 +129,7 @@ void main() {
 
       expect(find.widgetWithText(TextField, 'K7P'), findsOneWidget);
       expect(find.widgetWithText(TextField, '2QX'), findsOneWidget);
-      expect(find.text('Tournée 49 · CS Villefranche'), findsOneWidget);
+      expect(find.text('Secteur 49 · CS Villefranche'), findsOneWidget);
     },
   );
 
@@ -165,7 +165,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(HomeScreen), findsOneWidget);
-      expect(find.text('Tournée 49 · 2026'), findsOneWidget);
+      expect(find.text('Secteur 49 · 2026'), findsOneWidget);
     });
 
     testWidgets('should say refused and go back to « Bienvenue »', (
@@ -213,7 +213,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.byType(HomeScreen), findsOneWidget);
-        expect(find.text('Tournée 12 · 2026'), findsOneWidget);
+        expect(find.text('Secteur 12 · 2026'), findsOneWidget);
       },
     );
   });
@@ -235,7 +235,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.enterText(find.byKey(const Key('join.second')), '2qx');
       await tester.pumpAndSettle();
-      expect(find.text('Tournée 49 · CS Villefranche'), findsOneWidget);
+      expect(find.text('Secteur 49 · CS Villefranche'), findsOneWidget);
       expect(tester.takeException(), isNull);
 
       await tester.ensureVisible(find.byKey(const Key('join.request')));

@@ -40,7 +40,7 @@ enum TeamProblem implements TeamFailure {
   sectorGone,
 
   /// The command needs the server and the phone could not reach it
-  /// (« Nouveau code », « Supprimer la tournée »). Nothing was changed.
+  /// (« Nouveau code », « Supprimer le secteur »). Nothing was changed.
   offline,
 
   /// The phone has no first name to give the team: « Rejoindre » as an
@@ -270,8 +270,8 @@ final class RemoveCommune {
   }
 }
 
-/// « Quitter la tournée »: the member on the phone leaves the team, and the
-/// phone forgets the tournée (« Mes tournées »). Works offline; every
+/// « Quitter le secteur »: the member on the phone leaves the team, and the
+/// phone forgets the tournée (« Mes secteurs »). Works offline; every
 /// member may leave, admins and the creator included, even the last one.
 final class LeaveSector {
   const LeaveSector(this._sectors, this._identity, this._mySectors);
@@ -324,7 +324,7 @@ final class RegenerateJoinCode {
   }
 }
 
-/// « Supprimer la tournée » (admins only): the tournée and all it holds
+/// « Supprimer le secteur » (admins only): the tournée and all it holds
 /// are deleted for the whole team, and the phone forgets it. Needs the
 /// server.
 final class DeleteSector {
@@ -403,7 +403,7 @@ final class JoinAsAdmin {
   }
 }
 
-/// « Retirer de Mes tournées » (PLAN §5.12): an admin who only visited the
+/// « Retirer de Mes secteurs » (PLAN §5.12): an admin who only visited the
 /// tournée forgets it on the phone. Nothing is written: they were never in
 /// its team. Works offline.
 final class ForgetVisitedSector {

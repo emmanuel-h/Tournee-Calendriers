@@ -21,7 +21,7 @@ final joinRequestProvider = NotifierProvider.autoDispose
 /// it; refused or cancelled, the app goes back to « Bienvenue » or to its
 /// start screen.
 ///
-/// The request itself is followed by « Mes tournées » (`mySectorsProvider`,
+/// The request itself is followed by « Mes secteurs » (`mySectorsProvider`,
 /// kept alive), which settles it on the phone when the server answers; this
 /// screen only watches that. Offline, nothing comes: the request stays
 /// pending, at every launch too.
@@ -89,7 +89,7 @@ final class JoinRequestNotifier extends Notifier<JoinRequestState> {
         );
         // Another tournée opened, streets moved…: a way out may have come.
         unawaited(_findWayOut());
-      // Acted on after this turn: opening saves « Mes tournées » again,
+      // Acted on after this turn: opening saves « Mes secteurs » again,
       // which must not happen while the store is still telling its last
       // change.
       case SectorRow():

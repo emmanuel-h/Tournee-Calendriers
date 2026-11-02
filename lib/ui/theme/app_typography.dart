@@ -17,7 +17,7 @@ abstract final class AppFonts {
 /// from the palette, so the same style works on any background.
 abstract final class AppTextStyles {
   /// Titles of screens (« Rue des Lilas ») and bottom sheets
-  /// (« Mes tournées »).
+  /// (« Mes secteurs »).
   static const title = TextStyle(
     fontFamily: AppFonts.display,
     fontWeight: FontWeight.w700,
@@ -230,7 +230,7 @@ abstract final class AppTextStyles {
     height: 1.05,
   );
 
-  /// A tournée in « Mes tournées » (« Tournée 12 · 2026 »), and a street
+  /// A tournée in « Mes secteurs » (« Tournée 12 · 2026 »), and a street
   /// or number of the Corbeille (« 14ter Rue des Lilas »).
   static const sectorRowTitle = TextStyle(
     fontFamily: AppFonts.display,

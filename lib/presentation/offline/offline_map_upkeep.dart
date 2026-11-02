@@ -85,7 +85,7 @@ final class OfflineMapUpkeep {
     }
   }
 
-  /// Deletes the downloads of the tournées no longer in « Mes tournées ».
+  /// Deletes the downloads of the tournées no longer in « Mes secteurs ».
   /// A call made while one goes runs once more after it, so the last list
   /// is the one pruned.
   Future<void> prune() {

@@ -16,7 +16,7 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
 /// « Bienvenue » (PLAN §5.1, Welcome mockup): where a phone the app knows
 /// nothing of opens. The member's first name, then « Rejoindre une
-/// tournée » (and « Créer une tournée » above it for an admin, PLAN
+/// tournée » (and « Créer un secteur » above it for an admin, PLAN
 /// §5.12), disabled until the name is valid. The name is kept on the phone
 /// before either opens. At the bottom, « Identifiant de l'appareil » with
 /// its copy button, once the phone has its account: the screen signs in

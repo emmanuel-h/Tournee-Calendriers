@@ -47,7 +47,7 @@ final class SectorLossNotifier extends Notifier<SectorLossNotice?> {
 
   @override
   SectorLossNotice? build() {
-    // Every change of « Mes tournées »: a request accepted adds a tournée
+    // Every change of « Mes secteurs »: a request accepted adds a tournée
     // to follow, a tournée left or lost removes one.
     final changes = ref.watch(observeMySectorsProvider)().listen(_follow);
     // The account known at last (the sign-in started at launch, or a retry
@@ -86,7 +86,7 @@ final class SectorLossNotifier extends Notifier<SectorLossNotice?> {
   }
 
   /// Listens once to each tournée of [mine] the member is in (a request
-  /// is followed by « Mes tournées » until it is answered), and stops
+  /// is followed by « Mes secteurs » until it is answered), and stops
   /// listening to the others.
   void _follow(MySectors mine) {
     final kept = {

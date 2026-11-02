@@ -9,7 +9,7 @@ import 'my_sectors_fixtures.dart';
 import 'sector_fixtures.dart';
 
 void main() {
-  test('should keep what « Mes tournées » shows of a tournée', () {
+  test('should keep what « Mes secteurs » shows of a tournée', () {
     final summary = summaryOf('t49', 49, campaign: campaign2027);
 
     expect(summary.id, SectorId('t49'));

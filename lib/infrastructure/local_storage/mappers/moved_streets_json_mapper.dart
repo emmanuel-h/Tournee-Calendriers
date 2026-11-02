@@ -1,5 +1,5 @@
 // Translation between the tournées that received the phone's streets
-// (« Les ajouter à la tournée », PLAN §5.0, §6.3) and the JSON the phone
+// (« Les ajouter au secteur », PLAN §5.0, §6.3) and the JSON the phone
 // keeps for them. Pure functions: no file here, so they are tested alone.
 //
 // The schema, version 1:

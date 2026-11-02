@@ -150,7 +150,7 @@ final class TeamShown extends TeamState {
   final String qrData;
 
   /// Whether the phone is an admin's (PLAN §5.12): « Nouveau code »,
-  /// « Retirer » and « Supprimer la tournée » are theirs, member of the
+  /// « Retirer » and « Supprimer le secteur » are theirs, member of the
   /// tournée or not.
   final bool iAmAdmin;
 

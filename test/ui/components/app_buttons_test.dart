@@ -11,7 +11,7 @@ void main() {
   for (final (name, button) in [
     (
       'a primary button',
-      PrimaryButton(label: 'Rejoindre une tournée', onPressed: () {}),
+      PrimaryButton(label: 'Rejoindre un secteur', onPressed: () {}),
     ),
     (
       'a secondary button',

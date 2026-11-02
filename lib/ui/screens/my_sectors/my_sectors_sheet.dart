@@ -20,9 +20,9 @@ import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 import 'package:tournee_calendriers/ui/theme/status_look.dart';
 
-/// Opens « Mes tournées » (tap the title, or Paramètres → Mes tournées,
-/// PLAN §5.3, Switcher mockup), then « Nouvelle tournée », « Rejoindre une
-/// tournée » or « Toutes les tournées » when the sheet's buttons chose one.
+/// Opens « Mes secteurs » (tap the title, or Paramètres → Mes tournées,
+/// PLAN §5.3, Switcher mockup), then « Nouveau secteur », « Rejoindre une
+/// tournée » or « Tous les secteurs » when the sheet's buttons chose one.
 Future<void> showMySectorsSheet(BuildContext context) async {
   // The sheet closes with the screen to open, if any.
   final location = await showAppBottomSheet<String>(
@@ -57,9 +57,9 @@ Future<bool> ensureMemberName(BuildContext context) async {
 /// one at once, and the app reopens it next time), and their requests not
 /// accepted yet, which cannot be opened. Offline, a tournée never
 /// downloaded on this phone is greyed and cannot be opened either
-/// (« Disponible avec réseau »). Then « Créer une tournée » (an
-/// admin only, PLAN §5.12) and « Rejoindre une tournée », and for an admin
-/// « Toutes les tournées ›».
+/// (« Disponible avec réseau »). Then « Créer un secteur » (an
+/// admin only, PLAN §5.12) and « Rejoindre un secteur », and for an admin
+/// « Tous les secteurs ›».
 final class MySectorsSheet extends ConsumerWidget {
   const MySectorsSheet({super.key});
 
