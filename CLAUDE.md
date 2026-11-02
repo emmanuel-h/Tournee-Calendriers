@@ -57,7 +57,7 @@ Release signing and Play publishing pulled forward from M5 (#37): 0.7.0 (code 8,
 #33) is on the internal track; publish with the `release-store` skill. `lib/bootstrap/firebase_options.dart` and `android/app/google-services.json`
 are gitignored: run `flutterfire configure --out=lib/bootstrap/firebase_options.dart` locally;
 CI writes them from secrets.
-M5 follow-ups (2026-11-02), released as 0.9.0 (code 10, internal track), awaiting the phone test: built-in Kotlin (#103; Flutter still
+M5 follow-ups (2026-11-02), released as 0.9.0 (code 10, internal track); M5 closed by the user (2026-11-02): built-in Kotlin (#103; Flutter still
 warns about firebase_core/auth/app_check, a false positive of its text check, flutter/flutter#189770);
 a new street cut off mid-write is caught up at the next start (#104, `UnfinishedStreets`; debug log
 « Street … written » to time a 300-number street); streets per member in Équipe, bottom buttons
