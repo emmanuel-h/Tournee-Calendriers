@@ -1,0 +1,11 @@
+Vous faites la tournée des calendriers ? Cette appli remplace la liste papier.
+
+Ajoutez les rues de votre tournée : tous les numéros sont importés automatiquement. Pour chaque maison ou porte d'appartement, marquez si c'est fait, s'il n'y avait personne, s'il faut repasser…
+
+En équipe, chacun voit ce que les autres ont fait. Plus de maison oubliée, plus de maison faite deux fois.
+
+Pas de réseau ? L'appli marche quand même et se met à jour dès que le réseau revient.
+
+Pas de compte à créer, et rien n'est enregistré sur les habitants.
+
+Cartes : OpenStreetMap, OpenFreeMap. Adresses : Base Adresse Nationale.
