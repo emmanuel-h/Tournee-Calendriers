@@ -1,15 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tournee_calendriers/domain/map/tournee_area.dart';
+import 'package:tournee_calendriers/domain/map/sector_area.dart';
+import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
+import 'package:tournee_calendriers/domain/sector/sector_summary.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
-import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_summary.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/screens/add_streets/add_streets_screen.dart';
 import 'package:tournee_calendriers/ui/screens/home/home_panel.dart';
@@ -17,12 +17,12 @@ import 'package:tournee_calendriers/ui/screens/home/home_screen.dart';
 import 'package:tournee_calendriers/ui/screens/street/street_screen.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 
-import '../../domain/tournee/my_tournees_fixtures.dart';
-import '../../domain/tournee/tournee_fixtures.dart' show manuId, team;
-import '../../support/fakes/fake_my_tournees_store.dart';
+import '../../domain/sector/my_sectors_fixtures.dart';
+import '../../domain/sector/sector_fixtures.dart' show manuId, team;
+import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_pending_sync.dart';
+import '../../support/fakes/fake_sector_repository.dart';
 import '../../support/fakes/fake_street_repository.dart';
-import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/geo_fixtures.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
@@ -84,21 +84,21 @@ void main() {
   Future<void> pumpHome(
     WidgetTester tester, {
     List<Street>? streets,
-    TourneeSummary? open,
+    SectorSummary? open,
   }) async {
     tester.view
       ..physicalSize = const Size(1170, 2532)
       ..devicePixelRatio = 3;
     addTearDown(tester.view.reset);
     pending = FakePendingSync();
-    final opened = open ?? tournee49;
+    final opened = open ?? sector49;
     await tester.pumpWidget(
       ProviderScope(
         overrides: fakePhone(
           streets: FakeStreetRepository(streets ?? _streets()),
-          tournees: FakeTourneeRepository([team()]),
-          myTournees: FakeMyTourneesStore(
-            valueOf(MyTournees.none.remember(opened).open(opened.id)),
+          sectors: FakeSectorRepository([team()]),
+          mySectors: FakeMySectorsStore(
+            valueOf(MySectors.none.remember(opened).open(opened.id)),
           ),
           pending: pending,
         ),
@@ -299,7 +299,7 @@ void main() {
 
     testWidgets('should list every street under « Rues » for a visiting '
         'admin', (tester) async {
-      await pumpHome(tester, open: tournee12Visited);
+      await pumpHome(tester, open: sector12Visited);
 
       expect(find.text('Rues · 43/100'), findsOneWidget);
       expect(find.byKey(const Key('home.adminBanner')), findsOneWidget);
@@ -439,7 +439,7 @@ void main() {
       final map = shownMap(tester);
 
       expect(map.layers.lines.single.street, StreetId('lilas'));
-      expect(map.area, tourneeArea(streets));
+      expect(map.area, sectorArea(streets));
     });
 
     testWidgets('should show the card of a street tapped on the map in '

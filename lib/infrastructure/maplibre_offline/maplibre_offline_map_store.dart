@@ -7,7 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:maplibre_gl/maplibre_gl.dart' as maplibre;
 import 'package:tournee_calendriers/application/ports/offline_map_store.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
+import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/infrastructure/maplibre_offline/mappers/offline_region_mapper.dart';
 
 /// The [OfflineMapStore] of the map library: its offline database on the
@@ -38,7 +38,7 @@ final class MapLibreOfflineMapStore implements OfflineMapStore {
   ];
 
   @override
-  Stream<MapDownloadEvent> download(TourneeId tournee, GeoBounds bounds) {
+  Stream<MapDownloadEvent> download(SectorId sector, GeoBounds bounds) {
     late final StreamController<MapDownloadEvent> out;
     int? regionId;
     var lastBytes = 0;
@@ -81,7 +81,7 @@ final class MapLibreOfflineMapStore implements OfflineMapStore {
         try {
           final region = await maplibre.downloadOfflineRegion(
             regionDefinition(bounds, styleUrl),
-            metadata: regionMetadata(tournee),
+            metadata: regionMetadata(sector),
             onEvent: (status) {
               // `DownloadRegionStatus` is not sealed: `_` takes any kind a
               // later version of the library adds.

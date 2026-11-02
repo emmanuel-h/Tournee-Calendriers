@@ -5,6 +5,13 @@
 // Everything here is made up but the streets and their shapes, which come
 // from OpenStreetMap (© OpenStreetMap contributors, ODbL); no device id,
 // no real join code.
+import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
+import 'package:tournee_calendriers/domain/sector/member.dart';
+import 'package:tournee_calendriers/domain/sector/rescue_centre.dart';
+import 'package:tournee_calendriers/domain/sector/sector.dart';
+import 'package:tournee_calendriers/domain/sector/sector_id.dart';
+import 'package:tournee_calendriers/domain/sector/sector_number.dart';
+import 'package:tournee_calendriers/domain/sector/sector_summary.dart';
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/building/building.dart';
@@ -16,15 +23,8 @@ import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
-import 'package:tournee_calendriers/domain/tournee/campaign_year.dart';
-import 'package:tournee_calendriers/domain/tournee/member.dart';
-import 'package:tournee_calendriers/domain/tournee/rescue_centre.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_number.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_summary.dart';
 
-import '../test/domain/tournee/tournee_fixtures.dart'
+import '../test/domain/sector/sector_fixtures.dart'
     show codeOf, nameOf, villefrancheCommune;
 import '../test/support/building_fixtures.dart';
 import '../test/support/geo_fixtures.dart';
@@ -44,14 +44,14 @@ final camille = MemberId('uid-camille');
 final thomas = MemberId('uid-thomas');
 final julie = MemberId('uid-julie');
 
-final _tourneeId = TourneeId('t12');
-final _number = valueOf(TourneeNumber.create(12));
+final _sectorId = SectorId('t12');
+final _number = valueOf(SectorNumber.create(12));
 final _centre = valueOf(RescueCentre.create('CS Villefranche'));
 final _campaign = valueOf(CampaignYear.create(2026));
 
 /// The tournée 12 as « Mes tournées » keeps it on Léa's phone.
-final storeTourneeSummary = TourneeSummary(
-  id: _tourneeId,
+final storeSectorSummary = SectorSummary(
+  id: _sectorId,
   number: _number,
   centre: _centre,
   campaign: _campaign,
@@ -68,9 +68,9 @@ Member _member(MemberId id, String name, DateTime at) => Member(
 
 /// The tournée 12 of Hugo, Léa, Camille, Thomas and Julie, over
 /// Villefranche-sur-Saône. Its join code is made up.
-final storeTournee = valueOf(
-  Tournee.create(
-    id: _tourneeId,
+final storeSector = valueOf(
+  Sector.create(
+    id: _sectorId,
     number: _number,
     centre: _centre,
     joinCode: codeOf('W8F-3NT'),
@@ -100,7 +100,7 @@ const buildingHouse = '12';
 
 /// The streets of the tournée: Léa's three (one partly done, one to do,
 /// one done) and the others'. A few streets close together: the map
-/// fits them with a 300 m margin (`tourneeArea`), so a wider round would
+/// fits them with a 300 m margin (`sectorArea`), so a wider round would
 /// show them smaller.
 List<Street> storeStreets() => [
   _thizy(),

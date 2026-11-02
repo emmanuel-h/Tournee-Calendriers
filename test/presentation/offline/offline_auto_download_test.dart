@@ -4,29 +4,29 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/offline_map_store.dart';
+import 'package:tournee_calendriers/application/ports/sector_downloads.dart';
 import 'package:tournee_calendriers/application/ports/streets_download.dart';
-import 'package:tournee_calendriers/application/ports/tournee_downloads.dart';
-import 'package:tournee_calendriers/application/use_cases/download_tournee.dart';
+import 'package:tournee_calendriers/application/use_cases/download_sector.dart';
 import 'package:tournee_calendriers/application/use_cases/refresh_offline_maps.dart';
-import 'package:tournee_calendriers/application/use_cases/tournee_downloads.dart';
-import 'package:tournee_calendriers/domain/map/tournee_area.dart';
+import 'package:tournee_calendriers/application/use_cases/sector_downloads.dart';
+import 'package:tournee_calendriers/domain/map/sector_area.dart';
+import 'package:tournee_calendriers/domain/sector/member.dart';
+import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
-import 'package:tournee_calendriers/domain/tournee/member.dart';
-import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/offline/offline_auto_download.dart';
 import 'package:tournee_calendriers/presentation/offline/offline_map_upkeep.dart';
 
 import '../../application/use_cases/offline_fixtures.dart';
-import '../../domain/tournee/my_tournees_fixtures.dart';
-import '../../domain/tournee/tournee_fixtures.dart' show campaign2026;
-import '../../support/fakes/fake_my_tournees_store.dart';
+import '../../domain/sector/my_sectors_fixtures.dart';
+import '../../domain/sector/sector_fixtures.dart' show campaign2026;
+import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_offline_map_store.dart';
 import '../../support/fakes/fake_ports.dart';
+import '../../support/fakes/fake_sector_downloads.dart';
+import '../../support/fakes/fake_sector_repository.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/fakes/fake_streets_download.dart';
-import '../../support/fakes/fake_tournee_downloads.dart';
-import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/results.dart';
 import 'fake_schedule.dart';
 
@@ -36,8 +36,8 @@ final _farStreet = placedStreet('Gare', 45.9990);
 void main() {
   late FakeStreetsDownload streets;
   late FakeOfflineMapStore maps;
-  late FakeTourneeDownloads downloads;
-  late FakeMyTourneesStore myTournees;
+  late FakeSectorDownloads downloads;
+  late FakeMySectorsStore mySectors;
   late FakeClock clock;
   late FakeSchedule schedule;
   final eightThirty = DateTime.utc(2026, 11, 2, 8, 30);
@@ -45,21 +45,21 @@ void main() {
   setUp(() {
     streets = FakeStreetsDownload(Ok([nationale, paix]));
     maps = FakeOfflineMapStore();
-    downloads = FakeTourneeDownloads();
-    myTournees = FakeMyTourneesStore(MyTournees.none.remember(tournee49));
+    downloads = FakeSectorDownloads();
+    mySectors = FakeMySectorsStore(MySectors.none.remember(sector49));
     clock = FakeClock(eightThirty);
     schedule = FakeSchedule();
   });
 
   OfflineAutoDownload auto({bool open = true}) => OfflineAutoDownload(
     open: open ? (t49, campaign2026) : null,
-    download: DownloadTournee(streets, maps, downloads, clock),
-    downloads: ReadTourneeDownloads(downloads),
+    download: DownloadSector(streets, maps, downloads, clock),
+    downloads: ReadSectorDownloads(downloads),
     upkeep: OfflineMapUpkeep(
       RefreshOfflineMaps(maps, downloads),
-      PruneTourneeDownloads(
-        myTournees,
-        DeleteTourneeDownload(maps, downloads),
+      PruneSectorDownloads(
+        mySectors,
+        DeleteSectorDownload(maps, downloads),
         maps,
         downloads,
       ),
@@ -78,8 +78,8 @@ void main() {
 
     expect(streets.asked, [(t49, campaign2026)]);
     expect(downloads.downloads, {
-      t49: TourneeDownload(
-        tournee: t49,
+      t49: SectorDownload(
+        sector: t49,
         downloadedAt: eightThirty,
         mapBytes: 7000000,
         area: area49,
@@ -90,7 +90,7 @@ void main() {
 
   test('should refresh the other downloaded maps right after a '
       'download', () async {
-    downloads = FakeTourneeDownloads([downloadOf(t12, area12)]);
+    downloads = FakeSectorDownloads([downloadOf(t12, area12)]);
     maps = FakeOfflineMapStore([regionOf(50, t12, area12)]);
 
     await auto().check();
@@ -100,7 +100,7 @@ void main() {
 
   test('should only refresh the maps when the open tournée is downloaded '
       'and covers its streets', () async {
-    downloads = FakeTourneeDownloads([downloadOf(t49, area49)]);
+    downloads = FakeSectorDownloads([downloadOf(t49, area49)]);
     maps = FakeOfflineMapStore([regionOf(40, t49, area49)]);
     auto().streetsChanged([nationale, paix]);
     await _pumpUntil(() => maps.log.length == 2);
@@ -112,7 +112,7 @@ void main() {
 
   test('should download the tournée again when a street reaches beyond the '
       'map kept', () async {
-    downloads = FakeTourneeDownloads([downloadOf(t49, area49)]);
+    downloads = FakeSectorDownloads([downloadOf(t49, area49)]);
     maps = FakeOfflineMapStore([regionOf(40, t49, area49)]);
     streets.answer = Ok([nationale, paix, _farStreet]);
     final download = auto();
@@ -125,12 +125,12 @@ void main() {
     expect(streets.asked, [(t49, campaign2026)]);
     expect(
       downloads.downloads[t49]!.area,
-      tourneeArea([nationale, paix, _farStreet]),
+      sectorArea([nationale, paix, _farStreet]),
     );
   });
 
   test('should only refresh the maps when no tournée is open', () async {
-    downloads = FakeTourneeDownloads([downloadOf(t12, area12)]);
+    downloads = FakeSectorDownloads([downloadOf(t12, area12)]);
     maps = FakeOfflineMapStore([regionOf(50, t12, area12)]);
 
     await auto(open: false).check();
@@ -193,7 +193,7 @@ void main() {
   });
 
   test('should wait two minutes after a map refresh fails', () async {
-    downloads = FakeTourneeDownloads([downloadOf(t49, area49)]);
+    downloads = FakeSectorDownloads([downloadOf(t49, area49)]);
     maps = FakeOfflineMapStore([regionOf(40, t49, area49)]);
     maps.scripts.add(const [MapDownloadFailed()]);
 
@@ -204,17 +204,17 @@ void main() {
   });
 
   test('should wait two minutes when the map library fails', () async {
-    downloads = FakeTourneeDownloads([downloadOf(t49, area49)]);
+    downloads = FakeSectorDownloads([downloadOf(t49, area49)]);
     final failing = _FailingMapStore();
     final download = OfflineAutoDownload(
       open: (t49, campaign2026),
-      download: DownloadTournee(streets, failing, downloads, clock),
-      downloads: ReadTourneeDownloads(downloads),
+      download: DownloadSector(streets, failing, downloads, clock),
+      downloads: ReadSectorDownloads(downloads),
       upkeep: OfflineMapUpkeep(
         RefreshOfflineMaps(failing, downloads),
-        PruneTourneeDownloads(
-          myTournees,
-          DeleteTourneeDownload(failing, downloads),
+        PruneSectorDownloads(
+          mySectors,
+          DeleteSectorDownload(failing, downloads),
           failing,
           downloads,
         ),
@@ -233,13 +233,13 @@ void main() {
     final failing = _FailingMapStore();
     final download = OfflineAutoDownload(
       open: (t49, campaign2026),
-      download: DownloadTournee(streets, failing, downloads, clock),
-      downloads: ReadTourneeDownloads(downloads),
+      download: DownloadSector(streets, failing, downloads, clock),
+      downloads: ReadSectorDownloads(downloads),
       upkeep: OfflineMapUpkeep(
         RefreshOfflineMaps(failing, downloads),
-        PruneTourneeDownloads(
-          myTournees,
-          DeleteTourneeDownload(failing, downloads),
+        PruneSectorDownloads(
+          mySectors,
+          DeleteSectorDownload(failing, downloads),
           failing,
           downloads,
         ),
@@ -256,7 +256,7 @@ void main() {
   });
 
   test('should run once more when asked during a run', () async {
-    downloads = FakeTourneeDownloads([downloadOf(t49, area49)]);
+    downloads = FakeSectorDownloads([downloadOf(t49, area49)]);
     maps = FakeOfflineMapStore([regionOf(40, t49, area49)]);
     streets.answer = Ok([nationale, paix, _farStreet]);
     final download = auto();
@@ -309,21 +309,19 @@ void main() {
 
     setUp(() {
       streets49 = FakeStreetRepository([nationale, paix]);
-      myTournees = FakeMyTourneesStore(
-        valueOf(
-          MyTournees.none.remember(tournee49).remember(tournee12).open(t49),
-        ),
+      mySectors = FakeMySectorsStore(
+        valueOf(MySectors.none.remember(sector49).remember(sector12).open(t49)),
       );
       container = ProviderContainer(
         overrides: [
           streetsDownloadProvider.overrideWithValue(streets),
           offlineMapStoreProvider.overrideWithValue(maps),
-          tourneeDownloadsProvider.overrideWithValue(downloads),
-          myTourneesStoreProvider.overrideWithValue(myTournees),
+          sectorDownloadsProvider.overrideWithValue(downloads),
+          mySectorsStoreProvider.overrideWithValue(mySectors),
           clockProvider.overrideWithValue(clock),
           streetRepositoryProvider.overrideWithValue(streets49),
           // « Mes tournées » follows the team of each tournée not open.
-          tourneeRepositoryProvider.overrideWithValue(FakeTourneeRepository()),
+          sectorRepositoryProvider.overrideWithValue(FakeSectorRepository()),
         ],
       );
       addTearDown(container.dispose);
@@ -346,7 +344,7 @@ void main() {
       follow();
       await _pumpUntil(() => maps.log.isNotEmpty);
 
-      await myTournees.save(valueOf(myTournees.myTournees.open(t12)));
+      await mySectors.save(valueOf(mySectors.mySectors.open(t12)));
       container.read(offlineAutoDownloadProvider);
       await _pumpUntil(() => downloads.downloads.isNotEmpty);
 
@@ -367,12 +365,12 @@ void main() {
 
       expect(
         downloads.downloads[t49]!.area,
-        tourneeArea([nationale, paix, _farStreet]),
+        sectorArea([nationale, paix, _farStreet]),
       );
     });
 
     test('should not download a tournée whose request waits', () async {
-      myTournees.myTournees = MyTournees.none.remember(
+      mySectors.mySectors = MySectors.none.remember(
         summaryOf('t7', 7, status: MemberStatus.pending),
       );
       follow();

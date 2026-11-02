@@ -2,9 +2,9 @@ import 'dart:async';
 
 import 'package:tournee_calendriers/application/ports/offline_map_store.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
+import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 
-/// The download of a map region of [bounds] for [tournee] from [maps],
+/// The download of a map region of [bounds] for [sector] from [maps],
 /// with its progress, ending with exactly one [MapDownloadDone] or
 /// [MapDownloadFailed].
 ///
@@ -16,7 +16,7 @@ import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 /// store's at once.
 Stream<MapDownloadEvent> followMapDownload(
   OfflineMapStore maps,
-  TourneeId tournee,
+  SectorId sector,
   GeoBounds bounds, {
   required Duration stallLimit,
 }) {
@@ -43,7 +43,7 @@ Stream<MapDownloadEvent> followMapDownload(
     onListen: () {
       watchForStall();
       source = maps
-          .download(tournee, bounds)
+          .download(sector, bounds)
           .listen(
             (event) {
               if (event is MapDownloadProgress) {

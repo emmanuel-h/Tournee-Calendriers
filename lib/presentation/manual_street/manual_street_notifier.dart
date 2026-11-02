@@ -1,14 +1,14 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tournee_calendriers/domain/sector/sector_commune.dart';
 import 'package:tournee_calendriers/domain/shared/commune.dart';
 import 'package:tournee_calendriers/domain/shared/insee_code.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house_numbers_input.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_commune.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/manual_street/manual_street_state.dart';
-import 'package:tournee_calendriers/presentation/my_tournees/my_tournees_notifier.dart';
+import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
 
 export 'package:tournee_calendriers/presentation/manual_street/manual_street_state.dart';
 
@@ -23,7 +23,7 @@ final manualStreetProvider =
 /// `manualStreetNumbers` and [StreetName]) and adds the street through
 /// `AddManualStreet`, for the member who types it. Needs no network.
 final class ManualStreetNotifier extends Notifier<ManualStreetState> {
-  var _tourneeCommunes = const <TourneeCommune>[];
+  var _sectorCommunes = const <SectorCommune>[];
   var _streets = const <Street>[];
 
   /// The commune chosen in the list, or found by the search.
@@ -38,7 +38,7 @@ final class ManualStreetNotifier extends Notifier<ManualStreetState> {
 
   @override
   ManualStreetState build() {
-    _tourneeCommunes = const [];
+    _sectorCommunes = const [];
     _streets = const [];
     _chosen = null;
     _name = '';
@@ -56,12 +56,12 @@ final class ManualStreetNotifier extends Notifier<ManualStreetState> {
       onError: (Object _) {},
     );
     ref.onDispose(streets.cancel);
-    if (ref.watch(currentTourneeProvider) case final tournee?) {
+    if (ref.watch(currentSectorProvider) case final sector?) {
       final communes = ref
-          .watch(observeTourneeCommunesProvider)(tournee.id)
+          .watch(observeSectorCommunesProvider)(sector.id)
           .listen(
             (communes) {
-              _tourneeCommunes = communes;
+              _sectorCommunes = communes;
               _show();
             },
             // The tournée can no longer be read (the member was removed):
@@ -144,8 +144,8 @@ final class ManualStreetNotifier extends Notifier<ManualStreetState> {
   }
 
   /// The tournée's communes, else those of its streets, each once.
-  List<Commune> _communes() => _tourneeCommunes.isNotEmpty
-      ? [for (final commune in _tourneeCommunes) commune.commune]
+  List<Commune> _communes() => _sectorCommunes.isNotEmpty
+      ? [for (final commune in _sectorCommunes) commune.commune]
       : {
           for (final street in _streets)
             street.commune.inseeCode: street.commune,

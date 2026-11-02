@@ -3,6 +3,8 @@ import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
+import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
+import 'package:tournee_calendriers/domain/sector/sector_summary.dart';
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
@@ -11,20 +13,18 @@ import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
-import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_summary.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/come_back_time.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_notifier.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_state.dart';
 
-import '../../domain/tournee/my_tournees_fixtures.dart';
-import '../../domain/tournee/tournee_fixtures.dart' as crew;
+import '../../domain/sector/my_sectors_fixtures.dart';
+import '../../domain/sector/sector_fixtures.dart' as crew;
 import '../../support/building_fixtures.dart';
-import '../../support/fakes/fake_my_tournees_store.dart';
+import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_ports.dart';
+import '../../support/fakes/fake_sector_repository.dart';
 import '../../support/fakes/fake_street_repository.dart';
-import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 
@@ -64,11 +64,11 @@ void main() {
 
   /// A container whose phone holds [street] (none when null), with Léa
   /// changing houses at [twoPm]; no tournée is open unless [open] is, its
-  /// team kept in [tournees].
+  /// team kept in [sectors].
   void phoneWith(
     Street? street, {
-    TourneeSummary? open,
-    FakeTourneeRepository? tournees,
+    SectorSummary? open,
+    FakeSectorRepository? sectors,
   }) {
     streets = FakeStreetRepository([?street]);
     clock = FakeClock(twoPm);
@@ -77,16 +77,14 @@ void main() {
         streetRepositoryProvider.overrideWithValue(streets),
         clockProvider.overrideWithValue(clock),
         identityProvider.overrideWithValue(FakeIdentity(lea)),
-        myTourneesStoreProvider.overrideWithValue(
-          FakeMyTourneesStore(switch (open) {
-            final open? => valueOf(
-              MyTournees.none.remember(open).open(open.id),
-            ),
-            null => MyTournees.none,
+        mySectorsStoreProvider.overrideWithValue(
+          FakeMySectorsStore(switch (open) {
+            final open? => valueOf(MySectors.none.remember(open).open(open.id)),
+            null => MySectors.none,
           }),
         ),
-        tourneeRepositoryProvider.overrideWithValue(
-          tournees ?? FakeTourneeRepository(),
+        sectorRepositoryProvider.overrideWithValue(
+          sectors ?? FakeSectorRepository(),
         ),
       ],
     );
@@ -138,8 +136,8 @@ void main() {
     test('should name a member of the open tournée', () async {
       phoneWith(
         changedBy(crew.manuId),
-        open: tournee49,
-        tournees: FakeTourneeRepository([crew.team()]),
+        open: sector49,
+        sectors: FakeSectorRepository([crew.team()]),
       );
       open('3');
       await pumpEventQueue();
@@ -155,8 +153,8 @@ void main() {
     test('should name nobody who is no longer in the team', () async {
       phoneWith(
         changedBy(crew.paulId),
-        open: tournee49,
-        tournees: FakeTourneeRepository([crew.team()]),
+        open: sector49,
+        sectors: FakeSectorRepository([crew.team()]),
       );
       open('3');
       await pumpEventQueue();
@@ -165,9 +163,9 @@ void main() {
     });
 
     test('should name nobody when the team cannot be read', () async {
-      final tournees = FakeTourneeRepository([crew.team()])
+      final sectors = FakeSectorRepository([crew.team()])
         ..watchError = StateError('removed');
-      phoneWith(changedBy(crew.manuId), open: tournee49, tournees: tournees);
+      phoneWith(changedBy(crew.manuId), open: sector49, sectors: sectors);
       open('3');
       await pumpEventQueue();
 

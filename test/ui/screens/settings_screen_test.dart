@@ -5,20 +5,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/application/ports/phone_settings.dart';
+import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
-import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
-import 'package:tournee_calendriers/ui/screens/my_tournees/my_tournees_sheet.dart';
+import 'package:tournee_calendriers/ui/screens/my_sectors/my_sectors_sheet.dart';
 import 'package:tournee_calendriers/ui/screens/settings/changelog.dart';
 import 'package:tournee_calendriers/ui/screens/settings/changelog_screen.dart';
 import 'package:tournee_calendriers/ui/screens/settings/privacy_screen.dart';
 
-import '../../domain/tournee/my_tournees_fixtures.dart';
-import '../../domain/tournee/tournee_fixtures.dart';
+import '../../domain/sector/my_sectors_fixtures.dart';
+import '../../domain/sector/sector_fixtures.dart';
 import '../../support/fakes/fake_admin_status.dart';
 import '../../support/fakes/fake_member_account.dart';
-import '../../support/fakes/fake_my_tournees_store.dart';
+import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_phone_settings.dart';
 import '../../support/results.dart';
 import '../support/app_overrides.dart';
@@ -48,8 +48,8 @@ void main() {
             settings: settings,
             account: account,
             admins: FakeAdminStatus(phoneIsAdmin: admin),
-            myTournees: FakeMyTourneesStore(
-              valueOf(MyTournees.none.remember(tournee49).open(tournee49.id)),
+            mySectors: FakeMySectorsStore(
+              valueOf(MySectors.none.remember(sector49).open(sector49.id)),
             ),
           ),
           if (releases != null) changelogProvider.overrideWithValue(releases),
@@ -100,13 +100,13 @@ void main() {
         "L'application fonctionne sans réseau\u00a0; les modifications sont "
         "envoyées dès qu'il revient.",
       );
-      final myTournees = tester.getRect(
-        find.byKey(const Key('settings.myTournees')),
+      final mySectors = tester.getRect(
+        find.byKey(const Key('settings.mySectors')),
       );
       final application = tester.getRect(find.text('APPLICATION'));
       expect(
         tester.getTopLeft(line).dy,
-        greaterThanOrEqualTo(myTournees.bottom),
+        greaterThanOrEqualTo(mySectors.bottom),
       );
       expect(tester.getBottomLeft(line).dy, lessThan(application.top));
       // The download runs by itself (PLAN §7): no section, no button.
@@ -178,10 +178,10 @@ void main() {
   testWidgets('should open « Mes tournées » from its row', (tester) async {
     await pumpSettings(tester);
 
-    await tester.tap(find.byKey(const Key('settings.myTournees')));
+    await tester.tap(find.byKey(const Key('settings.mySectors')));
     await tester.pumpAndSettle();
 
-    expect(find.byType(MyTourneesSheet), findsOneWidget);
+    expect(find.byType(MySectorsSheet), findsOneWidget);
   });
 
   testWidgets('should open the privacy page', (tester) async {

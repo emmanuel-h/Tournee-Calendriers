@@ -36,7 +36,7 @@ import {
   streetDoc,
   streetsPath,
   threePm,
-  tourneePath,
+  sectorPath,
   updateFields,
   zoe,
 } from './support.mjs';
@@ -82,17 +82,17 @@ describe('the admin documents', () => {
 describe('what an admin outside the team reads', () => {
   it('should let them read the tournée, its members, campaign and streets', async () => {
     const phone = phoneOf(env, sam);
-    await assertSucceeds(getDoc(doc(phone, tourneePath)));
-    await assertSucceeds(getDocs(collection(phone, `${tourneePath}/members`)));
+    await assertSucceeds(getDoc(doc(phone, sectorPath)));
+    await assertSucceeds(getDocs(collection(phone, `${sectorPath}/members`)));
     await assertSucceeds(getDoc(memberOf(sam, paul)));
     await assertSucceeds(getDoc(doc(phone, campaignPath)));
     await assertSucceeds(getDocs(collection(phone, streetsPath)));
   });
 
   it('should let only an admin list the tournées', async () => {
-    await assertSucceeds(getDocs(collection(phoneOf(env, sam), 'tournees')));
-    await assertFails(getDocs(collection(phoneOf(env, lea), 'tournees')));
-    await assertFails(getDocs(collection(phoneOf(env, zoe), 'tournees')));
+    await assertSucceeds(getDocs(collection(phoneOf(env, sam), 'sectors')));
+    await assertFails(getDocs(collection(phoneOf(env, lea), 'sectors')));
+    await assertFails(getDocs(collection(phoneOf(env, zoe), 'sectors')));
   });
 
   it('should refuse someone who is no longer an admin', async () => {
@@ -100,8 +100,8 @@ describe('what an admin outside the team reads', () => {
       deleteDoc(doc(context.firestore(), `admins/${sam}`)),
     );
 
-    await assertFails(getDoc(doc(phoneOf(env, sam), tourneePath)));
-    await assertFails(getDocs(collection(phoneOf(env, sam), 'tournees')));
+    await assertFails(getDoc(doc(phoneOf(env, sam), sectorPath)));
+    await assertFails(getDocs(collection(phoneOf(env, sam), 'sectors')));
   });
 });
 
@@ -242,7 +242,7 @@ describe('what an admin outside the team does to the tournée', () => {
     const db = phoneOf(env, uid);
     return runTransaction(db, async (transaction) => {
       await transaction.get(doc(db, 'joinCodes', 'R2D2XY'));
-      transaction.update(doc(db, tourneePath), { joinCode: 'R2D2XY' });
+      transaction.update(doc(db, sectorPath), { joinCode: 'R2D2XY' });
       transaction.delete(doc(db, 'joinCodes', code));
       transaction.set(doc(db, 'joinCodes', 'R2D2XY'), previewDoc());
     });
@@ -257,8 +257,8 @@ describe('what an admin outside the team does to the tournée', () => {
     await contents.commit();
     const last = writeBatch(db);
     last.delete(doc(db, `joinCodes/${code}`));
-    last.delete(doc(db, 'tourneeKeys/villefranche_49'));
-    last.delete(doc(db, tourneePath));
+    last.delete(doc(db, 'sectorKeys/villefranche_49'));
+    last.delete(doc(db, sectorPath));
     for (const member of members) last.delete(doc(db, memberPath(member)));
     return last.commit();
   }

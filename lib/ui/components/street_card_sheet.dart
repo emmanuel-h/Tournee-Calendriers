@@ -88,10 +88,7 @@ final class StreetCardSheet extends StatelessWidget {
                   StreetCardLoading() => [const _Loading()],
                   StreetCardFailed(:final problem) => _failed(context, problem),
                   final StreetCardToAdd street => _toAdd(context, street),
-                  final StreetCardInTournee street => _inTournee(
-                    context,
-                    street,
-                  ),
+                  final StreetCardInSector street => _inSector(context, street),
                 },
               ],
             ),
@@ -162,7 +159,7 @@ final class StreetCardSheet extends StatelessWidget {
       _Title(name: street.name, commune: street.commune),
       _Chips([
         l10n.streetCardNumbers(street.numberCount),
-        l10n.streetCardNotInTournee,
+        l10n.streetCardNotInSector,
       ]),
       if (street.addFailed)
         Text(
@@ -195,7 +192,7 @@ final class StreetCardSheet extends StatelessWidget {
     ];
   }
 
-  List<Widget> _inTournee(BuildContext context, StreetCardInTournee street) {
+  List<Widget> _inSector(BuildContext context, StreetCardInSector street) {
     final l10n = AppLocalizations.of(context);
     void open() =>
         context.push(AppRoutes.streetOf(street.id), extra: street.name);

@@ -151,7 +151,7 @@ plain HTTP for this (`android/app/src/debug/`); release builds may not.
 ## Infrastructure (decided at the M2 checkpoint)
 
 Firebase **Spark** (free), Blaze-ready: no Cloud Functions; the join stays on the phone behind
-the `TourneeDirectory` port so a server-side join is only an adapter swap later (PLAN Q20).
+the `SectorDirectory` port so a server-side join is only an adapter swap later (PLAN Q20).
 
 ## Agents
 

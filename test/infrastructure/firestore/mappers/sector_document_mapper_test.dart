@@ -1,0 +1,652 @@
+// The documents of a tournée in Firestore (PLAN §6.2): the tournée and its
+// members, the join code's preview, the number + centre reservation and
+// the shared list of centres de secours.
+import 'package:cloud_firestore/cloud_firestore.dart' show Timestamp;
+import 'package:flutter_test/flutter_test.dart';
+import 'package:tournee_calendriers/application/ports/sector_directory.dart';
+import 'package:tournee_calendriers/domain/sector/member.dart';
+import 'package:tournee_calendriers/domain/sector/rescue_centre.dart';
+import 'package:tournee_calendriers/domain/sector/sector.dart';
+import 'package:tournee_calendriers/domain/sector/sector_commune.dart';
+import 'package:tournee_calendriers/domain/sector/sector_id.dart';
+import 'package:tournee_calendriers/domain/sector/sector_loss.dart';
+import 'package:tournee_calendriers/domain/sector/sector_number.dart';
+import 'package:tournee_calendriers/domain/shared/geo_point.dart';
+import 'package:tournee_calendriers/infrastructure/firestore/mappers/sector_document_mapper.dart';
+
+import '../../../domain/sector/sector_fixtures.dart';
+import '../../../support/results.dart';
+
+Timestamp at(DateTime time) => Timestamp.fromDate(time);
+
+/// The point at latitude 46, longitude 5.
+final at46_5 = valueOf(GeoPoint.create(latitude: 46, longitude: 5));
+
+/// [team]'s documents as Firestore gives them back.
+Map<String, dynamic> sectorData() => <String, dynamic>{
+  ...sectorToDocument(team()),
+};
+
+Map<String, Map<String, dynamic>> memberData() => {
+  for (final member in team().members)
+    member.id.value: <String, dynamic>{...memberToDocument(member)},
+};
+
+Sector read({
+  void Function(Map<String, dynamic> sector)? sector,
+  void Function(Map<String, Map<String, dynamic>> members)? members,
+}) {
+  final data = sectorData();
+  final memberDocs = memberData();
+  sector?.call(data);
+  members?.call(memberDocs);
+  return sectorFromDocuments(sectorId.value, data, memberDocs);
+}
+
+final preview = JoinPreview(
+  code: firstCode,
+  sectorId: sectorId,
+  number: number49,
+  centre: csVillefranche,
+  campaign: campaign2026,
+);
+
+void main() {
+  group('tournée', () {
+    test('should write the tournée fields under their stored names', () {
+      expect(sectorToDocument(team()), {
+        'number': 49,
+        'centreKey': 'villefranche',
+        'centreName': 'CS Villefranche',
+        'joinCode': 'K7P2QX',
+        'createdBy': 'uid-manu',
+        'createdAt': at(createdAt),
+        'currentCampaign': 2026,
+        'communes': <Object?>[],
+      });
+    });
+
+    test('should give back the same tournée when read again', () {
+      final back = read();
+      final original = team();
+
+      expect(back.id, original.id);
+      expect(back.number, original.number);
+      expect(back.centre, original.centre);
+      expect(back.joinCode, original.joinCode);
+      expect(back.createdBy, original.createdBy);
+      expect(back.createdAt, original.createdAt);
+      expect(back.createdAt.isUtc, isTrue);
+      expect(back.currentCampaign, original.currentCampaign);
+      expect(back.members, original.members);
+    });
+
+    test('should refuse a tournée without its number', () {
+      expect(
+        () => read(sector: (data) => data.remove('number')),
+        throwsFormatException,
+      );
+    });
+
+    test('should refuse a number the domain refuses', () {
+      expect(
+        () => read(sector: (data) => data['number'] = 0),
+        throwsFormatException,
+      );
+    });
+
+    test('should refuse a centre name the domain refuses', () {
+      expect(
+        () => read(sector: (data) => data['centreName'] = 'CS'),
+        throwsFormatException,
+      );
+    });
+
+    test('should refuse a join code the domain refuses', () {
+      expect(
+        () => read(sector: (data) => data['joinCode'] = 'K7P2Q0'),
+        throwsFormatException,
+      );
+    });
+
+    test('should refuse a campaign the domain refuses', () {
+      expect(
+        () => read(sector: (data) => data['currentCampaign'] = 1999),
+        throwsFormatException,
+      );
+    });
+
+    test('should refuse a blank creator', () {
+      expect(
+        () => read(sector: (data) => data['createdBy'] = ' '),
+        throwsFormatException,
+      );
+    });
+
+    test('should read a tournée whose creator left', () {
+      // From #75 everyone may leave, the creator too (PLAN §5.12).
+      final sector = read(members: (members) => members.remove('uid-manu'));
+
+      expect(sector.createdBy, manuId);
+      expect(sector.members, [lea, julie]);
+    });
+  });
+
+  group('communes', () {
+    final villefrancheEntry = {
+      'code': '69264',
+      'name': 'Villefranche-sur-Saône',
+      'lat': 45.9837,
+      'lon': 4.726,
+    };
+    final gleizeEntry = {
+      'code': '69092',
+      'name': 'Gleizé',
+      'lat': 45.9915,
+      'lon': 4.6883,
+    };
+
+    test('should write each commune with its code, name and centre, in '
+        'order', () {
+      final sector = team(communes: [villefrancheCommune, gleizeCommune]);
+
+      expect(sectorToDocument(sector)['communes'], [
+        villefrancheEntry,
+        gleizeEntry,
+      ]);
+    });
+
+    test('should write a commune without centre with null coordinates', () {
+      expect(
+        communeEntry(SectorCommune(commune: villefrancheCommune.commune)),
+        {
+          'code': '69264',
+          'name': 'Villefranche-sur-Saône',
+          'lat': null,
+          'lon': null,
+        },
+      );
+    });
+
+    test('should give back the same communes when read again', () {
+      final back = read(
+        sector: (data) => data['communes'] = [villefrancheEntry, gleizeEntry],
+      );
+
+      expect(back.communes, [villefrancheCommune, gleizeCommune]);
+    });
+
+    test('should read a tournée stored before the communes with none', () {
+      expect(read(sector: (data) => data.remove('communes')).communes, isEmpty);
+    });
+
+    test('should read a commune without centre', () {
+      expect(
+        communesFrom([
+          {...villefrancheEntry, 'lat': null, 'lon': null},
+        ]),
+        [SectorCommune(commune: villefrancheCommune.commune)],
+      );
+    });
+
+    test('should read a centre stored as whole numbers', () {
+      expect(
+        communesFrom([
+          {...villefrancheEntry, 'lat': 46, 'lon': 5},
+        ]).single.centre,
+        at46_5,
+      );
+    });
+
+    final unreadable = <String, Object?>{
+      'not a map': 'Villefranche',
+      'a code the domain refuses': {...villefrancheEntry, 'code': '6926'},
+      'a blank name': {...villefrancheEntry, 'name': ' '},
+      'no name': {'code': '69264', 'lat': 45.9837, 'lon': 4.726},
+      'a latitude only': {...villefrancheEntry, 'lon': null},
+      'a longitude only': {...villefrancheEntry, 'lat': null},
+      'a latitude out of range': {...villefrancheEntry, 'lat': 91},
+      'a centre that is not a number': {...villefrancheEntry, 'lat': '45'},
+    };
+    for (final MapEntry(key: what, value: entry) in unreadable.entries) {
+      test('should leave out an entry with $what, and keep the others', () {
+        expect(communesFrom([entry, gleizeEntry]), [gleizeCommune]);
+      });
+    }
+
+    test('should keep the first entry of a code stored twice', () {
+      expect(
+        communesFrom([
+          gleizeEntry,
+          {...gleizeEntry, 'lat': null, 'lon': null},
+        ]),
+        [gleizeCommune],
+      );
+    });
+
+    test('should keep no more communes than a tournée may cover', () {
+      final entries = [
+        for (var i = 1; i <= Sector.maxCommunes + 1; i++)
+          {
+            'code': '69${'$i'.padLeft(3, '0')}',
+            'name': 'Commune $i',
+            'lat': null,
+            'lon': null,
+          },
+      ];
+
+      final communes = communesFrom(entries);
+
+      expect(communes, hasLength(Sector.maxCommunes));
+      expect(communes.last.name, 'Commune ${Sector.maxCommunes}');
+    });
+
+    test('should read no commune from something that is not a list', () {
+      expect(communesFrom({'0': villefrancheEntry}), isEmpty);
+    });
+  });
+
+  group('member', () {
+    test('should write an active member with who accepted them and when', () {
+      expect(memberToDocument(lea), {
+        'displayName': 'Léa',
+        'status': 'active',
+        'requestedAt': at(leaAskedAt),
+        'acceptedBy': 'uid-manu',
+        'acceptedAt': at(leaAcceptedAt),
+      });
+    });
+
+    test('should write a pending member without acceptance', () {
+      expect(memberToDocument(julie), {
+        'displayName': 'Julie',
+        'status': 'pending',
+        'requestedAt': at(julieAskedAt),
+        'acceptedBy': null,
+        'acceptedAt': null,
+      });
+    });
+
+    test('should write a request with the code it was made with', () {
+      expect(joinRequestDocument(julie, firstCode), {
+        ...memberToDocument(julie),
+        'joinCode': 'K7P2QX',
+      });
+    });
+
+    test('should write only the acceptance of an accepted member', () {
+      expect(acceptanceFields(lea), {
+        'status': 'active',
+        'acceptedBy': 'uid-manu',
+        'acceptedAt': at(leaAcceptedAt),
+      });
+    });
+
+    test('should write only the name of a renamed member', () {
+      expect(displayNameFields(lea), {'displayName': 'Léa'});
+    });
+
+    test('should read a member back with the id of its document', () {
+      final back = memberFromDocument('uid-lea', {...memberToDocument(lea)});
+
+      expect(back, lea);
+      expect(back.status, MemberStatus.active);
+    });
+
+    test('should read a pending member back', () {
+      final back = memberFromDocument('uid-julie', {
+        ...joinRequestDocument(julie, firstCode),
+      });
+
+      expect(back, julie);
+      expect(back.status, MemberStatus.pending);
+    });
+
+    test('should refuse an active member without acceptance', () {
+      expect(
+        () => memberFromDocument('uid-julie', {
+          ...memberToDocument(julie),
+          'status': 'active',
+        }),
+        throwsFormatException,
+      );
+    });
+
+    test('should refuse a pending member with an acceptance', () {
+      expect(
+        () => memberFromDocument('uid-lea', {
+          ...memberToDocument(lea),
+          'status': 'pending',
+        }),
+        throwsFormatException,
+      );
+    });
+
+    test('should refuse a status it does not know', () {
+      expect(
+        () => memberFromDocument('uid-lea', {
+          ...memberToDocument(lea),
+          'status': 'ACTIVE',
+        }),
+        throwsFormatException,
+      );
+    });
+
+    test('should refuse a name the domain refuses', () {
+      expect(
+        () => memberFromDocument('uid-lea', {
+          ...memberToDocument(lea),
+          'displayName': '  ',
+        }),
+        throwsFormatException,
+      );
+    });
+
+    test('should refuse a member without its request time', () {
+      expect(
+        () => memberFromDocument(
+          'uid-lea',
+          {...memberToDocument(lea)}..remove('requestedAt'),
+        ),
+        throwsFormatException,
+      );
+    });
+
+    test('should refuse a blank member id', () {
+      expect(
+        () => memberFromDocument(' ', {...memberToDocument(lea)}),
+        throwsFormatException,
+      );
+    });
+  });
+
+  group('request snapshot', () {
+    final pendingData = <String, dynamic>{
+      ...joinRequestDocument(julie, firstCode),
+    };
+    final activeData = <String, dynamic>{...memberToDocument(lea)};
+
+    test('should tell a pending request from the server', () {
+      expect(requestStatusesIn('uid-julie', pendingData, fromCache: false), [
+        MemberStatus.pending,
+      ]);
+    });
+
+    test('should tell a pending request from the phone\'s copy', () {
+      expect(requestStatusesIn('uid-julie', pendingData, fromCache: true), [
+        MemberStatus.pending,
+      ]);
+    });
+
+    test('should tell an accepted request', () {
+      expect(requestStatusesIn('uid-lea', activeData, fromCache: false), [
+        MemberStatus.active,
+      ]);
+    });
+
+    test('should tell the request is gone when the server has none', () {
+      expect(requestStatusesIn('uid-julie', null, fromCache: false), [null]);
+    });
+
+    test(
+      'should tell nothing when only the phone\'s copy lacks the request',
+      () {
+        expect(requestStatusesIn('uid-julie', null, fromCache: true), isEmpty);
+      },
+    );
+  });
+
+  group('own name snapshot', () {
+    final activeData = <String, dynamic>{
+      ...memberToDocument(lea),
+      'displayName': '  Léa   Marie ',
+    };
+    final pendingData = <String, dynamic>{
+      ...joinRequestDocument(julie, firstCode),
+    };
+
+    test('should give the cleaned name of an active member the server '
+        'holds', () {
+      expect(
+        confirmedNamesIn(
+          'uid-lea',
+          activeData,
+          fromCache: false,
+          hasPendingWrites: false,
+        ),
+        [nameOf('Léa Marie')],
+      );
+    });
+
+    test('should give nothing from the phone\'s copy (offline)', () {
+      expect(
+        confirmedNamesIn(
+          'uid-lea',
+          activeData,
+          fromCache: true,
+          hasPendingWrites: false,
+        ),
+        isEmpty,
+      );
+    });
+
+    test('should give nothing while this phone\'s own write is not sent', () {
+      expect(
+        confirmedNamesIn(
+          'uid-lea',
+          activeData,
+          fromCache: false,
+          hasPendingWrites: true,
+        ),
+        isEmpty,
+      );
+    });
+
+    test('should give nothing while the request waits', () {
+      expect(
+        confirmedNamesIn(
+          'uid-julie',
+          pendingData,
+          fromCache: false,
+          hasPendingWrites: false,
+        ),
+        isEmpty,
+      );
+    });
+
+    test('should give nothing once the document is gone', () {
+      expect(
+        confirmedNamesIn(
+          'uid-lea',
+          null,
+          fromCache: false,
+          hasPendingWrites: false,
+        ),
+        isEmpty,
+      );
+    });
+  });
+
+  group('overviewOf', () {
+    test('should count the members and requests and see the caller in '
+        'it', () {
+      expect(
+        overviewOf(team(), leaId),
+        SectorOverview(
+          id: sectorId,
+          number: number49,
+          centre: csVillefranche,
+          campaign: campaign2026,
+          activeMembers: 2,
+          pendingRequests: 1,
+          callerIsActive: true,
+        ),
+      );
+    });
+
+    test('should not count the caller in it while their request '
+        'waits', () {
+      expect(overviewOf(team(), julieId).callerIsActive, isFalse);
+    });
+
+    test('should not count the caller in it when they are not', () {
+      expect(overviewOf(team(), samId).callerIsActive, isFalse);
+    });
+
+    test('should count nobody in a tournée everyone left', () {
+      final empty = overviewOf(team(members: []), samId);
+
+      expect(empty.activeMembers, 0);
+      expect(empty.pendingRequests, 0);
+    });
+  });
+
+  group('membership snapshot', () {
+    test('should tell the member is gone when the server has no document', () {
+      expect(
+        isGoneOnServer(
+          exists: false,
+          fromCache: false,
+          hasPendingWrites: false,
+        ),
+        isTrue,
+      );
+    });
+
+    test('should tell nothing while the member document is there', () {
+      expect(
+        isGoneOnServer(exists: true, fromCache: false, hasPendingWrites: false),
+        isFalse,
+      );
+    });
+
+    test('should tell nothing when only the phone\'s copy lacks it '
+        '(offline, never read)', () {
+      expect(
+        isGoneOnServer(exists: false, fromCache: true, hasPendingWrites: false),
+        isFalse,
+      );
+    });
+
+    test('should tell nothing when this phone deleted it itself '
+        '(leaving, deleting)', () {
+      expect(
+        isGoneOnServer(exists: false, fromCache: false, hasPendingWrites: true),
+        isFalse,
+      );
+    });
+
+    test('should say removed while the reservation still names the '
+        'tournée', () {
+      expect(
+        lossFromReservation(sectorId, {'sectorId': 't49'}),
+        SectorLoss.removed,
+      );
+    });
+
+    test('should say deleted once the reservation is gone', () {
+      expect(lossFromReservation(sectorId, null), SectorLoss.deleted);
+    });
+
+    test('should say deleted when the number now belongs to another '
+        'tournée', () {
+      expect(
+        lossFromReservation(sectorId, {'sectorId': 't50'}),
+        SectorLoss.deleted,
+      );
+    });
+  });
+
+  group('join code', () {
+    test('should write only what the join preview shows', () {
+      expect(joinCodeDocument(team()), {
+        'sectorId': 't49',
+        'number': 49,
+        'centreName': 'CS Villefranche',
+        'campaign': 2026,
+      });
+    });
+
+    test('should read the preview of a code back', () {
+      expect(
+        joinPreviewFromDocument(firstCode, {...joinCodeDocument(team())}),
+        preview,
+      );
+    });
+
+    test('should refuse a preview without its tournée', () {
+      expect(
+        () => joinPreviewFromDocument(
+          firstCode,
+          {...joinCodeDocument(team())}..remove('sectorId'),
+        ),
+        throwsFormatException,
+      );
+    });
+
+    test('should refuse a preview whose year the domain refuses', () {
+      expect(
+        () => joinPreviewFromDocument(firstCode, {
+          ...joinCodeDocument(team()),
+          'campaign': 2100,
+        }),
+        throwsFormatException,
+      );
+    });
+  });
+
+  group('reservation and centres', () {
+    test('should key the reservation by centre and number', () {
+      final centre = valueOf(RescueCentre.create('CIS Villefranche-sur-Saône'));
+      final number = valueOf(SectorNumber.create(7));
+
+      expect(sectorKeyId(centre, number), 'villefranche-sur-saone_7');
+    });
+
+    test('should write which tournée holds the reservation', () {
+      expect(sectorKeyDocument(team()), {'sectorId': 't49'});
+    });
+
+    test('should read the tournée of a reservation', () {
+      expect(sectorIdFromKeyDocument({'sectorId': 't49'}), SectorId('t49'));
+    });
+
+    test('should refuse a reservation without its tournée', () {
+      expect(
+        () => sectorIdFromKeyDocument({'sectorId': null}),
+        throwsFormatException,
+      );
+    });
+
+    test('should start the first campaign when the tournée is created', () {
+      expect(firstCampaignDocument(team()), {
+        'startedAt': at(createdAt),
+        'previousYear': null,
+      });
+    });
+
+    test('should write the name of a centre as typed', () {
+      final centre = valueOf(RescueCentre.create('CIS  Villefranche'));
+
+      expect(rescueCentreDocument(centre), {'name': 'CIS Villefranche'});
+    });
+
+    test('should read a centre back from its name', () {
+      expect(
+        rescueCentreFromDocument({'name': 'CS Villefranche'}),
+        csVillefranche,
+      );
+    });
+
+    test('should refuse a centre name the domain refuses', () {
+      expect(
+        () => rescueCentreFromDocument({'name': '!?'}),
+        throwsFormatException,
+      );
+    });
+
+    test('should refuse a centre without its name', () {
+      expect(() => rescueCentreFromDocument({}), throwsFormatException);
+    });
+  });
+}

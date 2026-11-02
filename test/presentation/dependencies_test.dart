@@ -8,7 +8,7 @@ import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
 import 'package:tournee_calendriers/application/ports/offline_map_store.dart';
 import 'package:tournee_calendriers/application/ports/phone_settings.dart';
-import 'package:tournee_calendriers/application/ports/tournee_directory.dart';
+import 'package:tournee_calendriers/application/ports/sector_directory.dart';
 import 'package:tournee_calendriers/application/use_cases/choose_start_point.dart';
 import 'package:tournee_calendriers/application/use_cases/describe_building.dart';
 import 'package:tournee_calendriers/application/use_cases/edit_street_numbers.dart';
@@ -16,8 +16,13 @@ import 'package:tournee_calendriers/application/use_cases/find_imported_streets.
 import 'package:tournee_calendriers/application/use_cases/import_reference_area.dart';
 import 'package:tournee_calendriers/application/use_cases/look_up_street.dart';
 import 'package:tournee_calendriers/application/use_cases/mark.dart';
-import 'package:tournee_calendriers/application/use_cases/move_streets_into_tournee.dart';
+import 'package:tournee_calendriers/application/use_cases/move_streets_into_sector.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
+import 'package:tournee_calendriers/domain/sector/member.dart';
+import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
+import 'package:tournee_calendriers/domain/sector/sector_change.dart';
+import 'package:tournee_calendriers/domain/sector/sector_id.dart';
+import 'package:tournee_calendriers/domain/sector/sector_loss.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/corbeille.dart';
@@ -25,16 +30,11 @@ import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
-import 'package:tournee_calendriers/domain/tournee/member.dart';
-import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_change.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_loss.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 
 import '../application/use_cases/street_fixtures.dart';
-import '../domain/tournee/my_tournees_fixtures.dart';
-import '../domain/tournee/tournee_fixtures.dart'
+import '../domain/sector/my_sectors_fixtures.dart';
+import '../domain/sector/sector_fixtures.dart'
     show
         campaign2026,
         gleizeCommune,
@@ -48,25 +48,25 @@ import '../domain/tournee/tournee_fixtures.dart'
         number49,
         samId,
         team,
-        tourneeId;
+        sectorId;
 import '../support/fakes/fake_address_directory.dart';
 import '../support/fakes/fake_admin_status.dart';
 import '../support/fakes/fake_commune_search.dart';
 import '../support/fakes/fake_member_account.dart';
 import '../support/fakes/fake_moved_streets_log.dart';
-import '../support/fakes/fake_my_tournees_store.dart';
+import '../support/fakes/fake_my_sectors_store.dart';
 import '../support/fakes/fake_offline_map_store.dart';
 import '../support/fakes/fake_pending_sync.dart';
 import '../support/fakes/fake_phone_settings.dart';
 import '../support/fakes/fake_ports.dart';
+import '../support/fakes/fake_sector_directory.dart';
+import '../support/fakes/fake_sector_downloads.dart';
+import '../support/fakes/fake_sector_repository.dart';
 import '../support/fakes/fake_server_connection.dart';
 import '../support/fakes/fake_street_repository.dart';
 import '../support/fakes/fake_street_shapes.dart';
 import '../support/fakes/fake_street_view_preferences.dart';
 import '../support/fakes/fake_streets_download.dart';
-import '../support/fakes/fake_tournee_directory.dart';
-import '../support/fakes/fake_tournee_downloads.dart';
-import '../support/fakes/fake_tournee_repository.dart';
 import '../support/geo_fixtures.dart';
 import '../support/results.dart';
 import '../support/scripted_random.dart';
@@ -81,10 +81,10 @@ void main() {
   late FakeCommuneSearch communes;
   late FakeStreetViewPreferences preferences;
   late FakeMemberAccount account;
-  late FakeMyTourneesStore myTournees;
+  late FakeMySectorsStore mySectors;
   late FakePhoneSettings settings;
-  late FakeTourneeDirectory tourneeDirectory;
-  late FakeTourneeRepository tournees;
+  late FakeSectorDirectory sectorDirectory;
+  late FakeSectorRepository sectors;
   late FakePendingSync pending;
   late FakeAdminStatus admins;
   late ProviderContainer container;
@@ -107,10 +107,10 @@ void main() {
     identityProvider.overrideWithValue(FakeIdentity(member)),
     streetViewPreferencesProvider.overrideWithValue(preferences),
     memberAccountProvider.overrideWithValue(account),
-    myTourneesStoreProvider.overrideWithValue(myTournees),
+    mySectorsStoreProvider.overrideWithValue(mySectors),
     phoneSettingsProvider.overrideWithValue(settings),
-    tourneeDirectoryProvider.overrideWithValue(tourneeDirectory),
-    tourneeRepositoryProvider.overrideWithValue(tournees),
+    sectorDirectoryProvider.overrideWithValue(sectorDirectory),
+    sectorRepositoryProvider.overrideWithValue(sectors),
     adminStatusProvider.overrideWithValue(admins),
     // The indexes of `2`…`7` in the alphabet: the code `234567`.
     randomProvider.overrideWithValue(ScriptedRandom([23, 24, 25, 26, 27, 28])),
@@ -158,12 +158,12 @@ void main() {
     );
     preferences = FakeStreetViewPreferences([lilasId]);
     account = FakeMemberAccount(nextMember: MemberId('uid-lea'));
-    myTournees = FakeMyTourneesStore(
-      MyTournees.none.remember(tournee49).remember(tournee7),
+    mySectors = FakeMySectorsStore(
+      MySectors.none.remember(sector49).remember(sector7),
     );
     settings = FakePhoneSettings(memberName: nameOf('Léa'));
-    tourneeDirectory = FakeTourneeDirectory();
-    tournees = FakeTourneeRepository([team()]);
+    sectorDirectory = FakeSectorDirectory();
+    sectors = FakeSectorRepository([team()]);
     pending = FakePendingSync(2);
     // The phone is an admin's, and Manu is one.
     admins = FakeAdminStatus(phoneIsAdmin: true, admins: [manuId]);
@@ -185,10 +185,10 @@ void main() {
       'IdentityProvider': identityProvider,
       'StreetViewPreferences': streetViewPreferencesProvider,
       'MemberAccount': memberAccountProvider,
-      'MyTourneesStore': myTourneesStoreProvider,
+      'MySectorsStore': mySectorsStoreProvider,
       'PhoneSettings': phoneSettingsProvider,
-      'TourneeDirectory': tourneeDirectoryProvider,
-      'TourneeRepository': tourneeRepositoryProvider,
+      'SectorDirectory': sectorDirectoryProvider,
+      'SectorRepository': sectorRepositoryProvider,
       'phone StreetRepository': phoneStreetRepositoryProvider,
       'MovedStreetsLog': movedStreetsLogProvider,
       'PendingSync': pendingSyncProvider,
@@ -196,7 +196,7 @@ void main() {
       'AdminStatus': adminStatusProvider,
       'StreetsDownload': streetsDownloadProvider,
       'OfflineMapStore': offlineMapStoreProvider,
-      'TourneeDownloads': tourneeDownloadsProvider,
+      'SectorDownloads': sectorDownloadsProvider,
       'ServerConnection': serverConnectionProvider,
     };
     ports.forEach((name, port) {
@@ -328,7 +328,7 @@ void main() {
         ),
       );
 
-      expect((found as StreetOfTheTournee).street, same(lilas));
+      expect((found as StreetOfTheSector).street, same(lilas));
     });
 
     test('should add a street from the map with the bound ids and '
@@ -489,68 +489,68 @@ void main() {
     });
 
     test('should read the tournées of the bound store', () {
-      expect(container.read(readMyTourneesProvider)().tournees, [
-        tournee49,
-        tournee7,
+      expect(container.read(readMySectorsProvider)().sectors, [
+        sector49,
+        sector7,
       ]);
     });
 
     test('should observe the tournées of the bound store', () async {
-      final next = container.read(observeMyTourneesProvider)().first;
-      await myTournees.save(MyTournees.none);
+      final next = container.read(observeMySectorsProvider)().first;
+      await mySectors.save(MySectors.none);
 
-      expect(await next, MyTournees.none);
+      expect(await next, MySectors.none);
     });
 
     test('should open a tournée of the bound store', () async {
-      valueOf(await container.read(openTourneeProvider)(tournee49.id));
+      valueOf(await container.read(openSectorProvider)(sector49.id));
 
-      expect(myTournees.myTournees.current, tournee49);
+      expect(mySectors.mySectors.current, sector49);
     });
 
     test('should watch a request in the bound directory as the bound '
         'account', () {
       account.signedInMember = MemberId('uid-kept');
 
-      container.read(watchJoinRequestProvider)(tournee7.id);
+      container.read(watchJoinRequestProvider)(sector7.id);
 
-      expect(tourneeDirectory.watched, [(tournee7.id, MemberId('uid-kept'))]);
+      expect(sectorDirectory.watched, [(sector7.id, MemberId('uid-kept'))]);
     });
 
     test('should settle a request in the bound store', () async {
       await container.read(settleJoinRequestProvider)(
-        tournee7.id,
+        sector7.id,
         MemberStatus.active,
       );
 
-      expect(myTournees.myTournees.find(tournee7.id)!.isPending, isFalse);
+      expect(mySectors.mySectors.find(sector7.id)!.isPending, isFalse);
     });
 
     test('should watch a membership in the bound directory as the bound '
         'account', () {
       account.signedInMember = MemberId('uid-kept');
 
-      container.read(watchMembershipProvider)(tournee49);
+      container.read(watchMembershipProvider)(sector49);
 
-      expect(tourneeDirectory.memberships, [(tournee49, MemberId('uid-kept'))]);
+      expect(sectorDirectory.memberships, [(sector49, MemberId('uid-kept'))]);
     });
 
     test('should watch the own name in the bound directory as the bound '
         'account', () {
       account.signedInMember = MemberId('uid-kept');
 
-      container.read(watchOwnNameProvider)(tournee49.id);
+      container.read(watchOwnNameProvider)(sector49.id);
 
-      expect(tourneeDirectory.ownNames, [(tournee49.id, MemberId('uid-kept'))]);
+      expect(sectorDirectory.ownNames, [(sector49.id, MemberId('uid-kept'))]);
     });
 
     test('should forget a lost tournée in the bound store', () async {
-      await container.read(forgetLostTourneeProvider)(
-        tournee49.id,
-        TourneeLoss.removed,
+      await container.read(forgetLostSectorProvider)(
+        sector49.id,
+        SectorLoss.removed,
       );
 
-      expect(myTournees.myTournees.find(tournee49.id), isNull);
+      expect(mySectors.mySectors.find(sector49.id), isNull);
     });
 
     test('should read the bound settings', () {
@@ -562,14 +562,14 @@ void main() {
       await asManu().read(changeMemberNameProvider)('Emmanuel');
 
       expect(settings.names, [nameOf('Emmanuel')]);
-      expect(tournees[tourneeId]!.memberOf(manuId)!.name, nameOf('Emmanuel'));
+      expect(sectors[sectorId]!.memberOf(manuId)!.name, nameOf('Emmanuel'));
     });
 
     test('should catch up the name of the bound settings in the bound '
         'tournées, as the bound member', () async {
-      await asManu().read(catchUpMemberNameProvider)(tourneeId, nameOf('Manu'));
+      await asManu().read(catchUpMemberNameProvider)(sectorId, nameOf('Manu'));
 
-      expect(tournees[tourneeId]!.memberOf(manuId)!.name, nameOf('Léa'));
+      expect(sectors[sectorId]!.memberOf(manuId)!.name, nameOf('Léa'));
     });
 
     test('should choose the theme in the bound settings', () async {
@@ -602,18 +602,16 @@ void main() {
     });
 
     test('should observe the team in the bound repository', () async {
-      final tournee = await container
-          .read(observeTeamProvider)(tourneeId)
-          .first;
+      final sector = await container.read(observeTeamProvider)(sectorId).first;
 
-      expect(tournee, same(tournees[tourneeId]));
+      expect(sector, same(sectors[sectorId]));
     });
 
     test('should observe the communes in the bound repository', () async {
-      tournees.put(team(communes: [villefrancheCommune]));
+      sectors.put(team(communes: [villefrancheCommune]));
 
       final communes = await container
-          .read(observeTourneeCommunesProvider)(tourneeId)
+          .read(observeSectorCommunesProvider)(sectorId)
           .first;
 
       expect(communes, [villefrancheCommune]);
@@ -621,19 +619,19 @@ void main() {
 
     test('should add a commune as the bound member', () async {
       final change = valueOf(
-        await asManu().read(addCommuneProvider)(tourneeId, gleizeCommune),
+        await asManu().read(addCommuneProvider)(sectorId, gleizeCommune),
       );
 
       expect(change.commune, gleizeCommune);
-      expect(tournees[tourneeId]!.communes, [gleizeCommune]);
+      expect(sectors[sectorId]!.communes, [gleizeCommune]);
     });
 
     test('should remove a commune as the bound member', () async {
-      tournees.put(team(communes: [villefrancheCommune, gleizeCommune]));
+      sectors.put(team(communes: [villefrancheCommune, gleizeCommune]));
 
       final change = valueOf(
         await asManu().read(removeCommuneProvider)(
-          tourneeId,
+          sectorId,
           villefrancheCommune.inseeCode,
         ),
       );
@@ -649,7 +647,7 @@ void main() {
       final manusPhone = asManu();
 
       final change = valueOf(
-        await manusPhone.read(acceptMemberProvider)(tourneeId, julieId),
+        await manusPhone.read(acceptMemberProvider)(sectorId, julieId),
       );
 
       expect(change.member.acceptance!.by, manuId);
@@ -658,7 +656,7 @@ void main() {
 
     test('should refuse a request as the bound member', () async {
       final change = valueOf(
-        await asManu().read(refuseMemberProvider)(tourneeId, julieId),
+        await asManu().read(refuseMemberProvider)(sectorId, julieId),
       );
 
       expect(change, isA<MemberRefused>());
@@ -666,25 +664,25 @@ void main() {
 
     test('should remove a member as the bound member', () async {
       final change = valueOf(
-        await asManu().read(removeMemberProvider)(tourneeId, leaId),
+        await asManu().read(removeMemberProvider)(sectorId, leaId),
       );
 
       expect(change, isA<MemberRemoved>());
     });
 
     test('should leave the tournée and forget it in the bound store', () async {
-      await myTournees.save(MyTournees.none.remember(tournee49));
+      await mySectors.save(MySectors.none.remember(sector49));
       final phone = ProviderContainer(overrides: overridesAs(leaId));
       addTearDown(phone.dispose);
 
-      valueOf(await phone.read(leaveTourneeProvider)(tourneeId));
+      valueOf(await phone.read(leaveSectorProvider)(sectorId));
 
-      expect(myTournees.myTournees.tournees, isEmpty);
+      expect(mySectors.mySectors.sectors, isEmpty);
     });
 
     test('should draw a new code from the bound random source', () async {
       final code = valueOf(
-        await asManu().read(regenerateJoinCodeProvider)(tourneeId),
+        await asManu().read(regenerateJoinCodeProvider)(sectorId),
       );
 
       expect(code, codeOf('234567'));
@@ -694,25 +692,25 @@ void main() {
         'store', () async {
       final samsPhone = ProviderContainer(overrides: overridesAs(samId));
       addTearDown(samsPhone.dispose);
-      await myTournees.save(
-        MyTournees.none.remember(
+      await mySectors.save(
+        MySectors.none.remember(
           summaryOf('t49', 49, status: MemberStatus.visiting),
         ),
       );
 
       final change = valueOf(
-        await samsPhone.read(joinAsAdminProvider)(tourneeId),
+        await samsPhone.read(joinAsAdminProvider)(sectorId),
       );
 
       expect(change.member.name, nameOf('Léa'));
       expect(change.member.requestedAt, twoPm);
-      expect(myTournees.myTournees.find(tourneeId), tournee49);
+      expect(mySectors.mySectors.find(sectorId), sector49);
     });
 
     test('should forget a visited tournée in the bound store', () async {
-      await container.read(forgetVisitedTourneeProvider)(tournee49.id);
+      await container.read(forgetVisitedSectorProvider)(sector49.id);
 
-      expect(myTournees.myTournees.find(tournee49.id), isNull);
+      expect(mySectors.mySectors.find(sector49.id), isNull);
     });
 
     test('should follow the bound admin status', () async {
@@ -726,16 +724,16 @@ void main() {
 
     test('should list every tournée from the bound directory as the bound '
         'account', () async {
-      valueOf(await container.read(listAllTourneesProvider)());
+      valueOf(await container.read(listAllSectorsProvider)());
 
-      expect(tourneeDirectory.allAsked, [MemberId('uid-lea')]);
+      expect(sectorDirectory.allAsked, [MemberId('uid-lea')]);
     });
 
     test('should open a tournée as an admin in the bound store', () async {
       await container.read(openAsAdminProvider)(
-        TourneeOverview(
-          id: tournee12.id,
-          number: tournee12.number,
+        SectorOverview(
+          id: sector12.id,
+          number: sector12.number,
           centre: csVillefranche,
           campaign: campaign2026,
           activeMembers: 1,
@@ -744,16 +742,16 @@ void main() {
         ),
       );
 
-      expect(myTournees.myTournees.current, tournee12);
+      expect(mySectors.mySectors.current, sector12);
     });
 
     test(
       'should delete the tournée and forget it in the bound store',
       () async {
-        valueOf(await asManu().read(deleteTourneeProvider)(tourneeId));
+        valueOf(await asManu().read(deleteSectorProvider)(sectorId));
 
-        expect(tournees.deleted, hasLength(1));
-        expect(myTournees.myTournees.find(tourneeId), isNull);
+        expect(sectors.deleted, hasLength(1));
+        expect(mySectors.mySectors.find(sectorId), isNull);
       },
     );
 
@@ -764,15 +762,15 @@ void main() {
         final leasPhone = ProviderContainer(overrides: overridesAs(leaId));
         addTearDown(leasPhone.dispose);
 
-        expect(await leasPhone.read(countStreetsToMoveProvider)(tourneeId), 1);
+        expect(await leasPhone.read(countStreetsToMoveProvider)(sectorId), 1);
       },
     );
 
     test(
       'should move the phone streets into the bound repository and log',
       () async {
-        final moved = await container.read(moveStreetsIntoTourneeProvider)(
-          tourneeId,
+        final moved = await container.read(moveStreetsIntoSectorProvider)(
+          sectorId,
         );
 
         expect(moved, const StreetsMoved(moved: 1, alreadyThere: 0));
@@ -780,7 +778,7 @@ void main() {
           streets[StreetId('morin')]?.name,
           streetName('Rue Pierre Morin'),
         );
-        expect(movedStreets.remembered, [tourneeId]);
+        expect(movedStreets.remembered, [sectorId]);
       },
     );
 
@@ -796,7 +794,7 @@ void main() {
     );
 
     test('should list the centres of the bound directory', () async {
-      tourneeDirectory.centres = [csVillefranche];
+      sectorDirectory.centres = [csVillefranche];
 
       expect(valueOf(await container.read(listRescueCentresProvider)()), [
         csVillefranche,
@@ -804,11 +802,11 @@ void main() {
     });
 
     test('should check a number in the bound directory', () async {
-      tourneeDirectory.taken.add((csVillefranche.key, number49));
+      sectorDirectory.taken.add((csVillefranche.key, number49));
 
       expect(
         valueOf(
-          await container.read(checkTourneeTakenProvider)(
+          await container.read(checkSectorTakenProvider)(
             csVillefranche,
             number49,
           ),
@@ -820,7 +818,7 @@ void main() {
     test('should create with the bound repository, account, store, clock, ids '
         'and random source', () async {
       final created = valueOf(
-        await container.read(createTourneeProvider)(
+        await container.read(createSectorProvider)(
           centre: csVillefranche,
           number: number49,
           campaign: campaign2026,
@@ -829,13 +827,13 @@ void main() {
         ),
       );
 
-      expect(tournees.added, [created]);
+      expect(sectors.added, [created]);
       expect(created.communes, [villefrancheCommune]);
       expect(created.id.value, 'street-1');
       expect(created.createdBy, MemberId('uid-lea'));
       expect(created.createdAt, twoPm);
       expect(created.joinCode, codeOf('234567'));
-      expect(myTournees.myTournees.currentId, created.id);
+      expect(mySectors.mySectors.currentId, created.id);
     });
 
     test('should preview a code in the bound directory', () async {
@@ -843,15 +841,15 @@ void main() {
         failureOf(await container.read(previewJoinProvider)(codeOf('234567'))),
         JoinFailure.unknownCode,
       );
-      expect(tourneeDirectory.previewed, [codeOf('234567')]);
+      expect(sectorDirectory.previewed, [codeOf('234567')]);
     });
 
     test('should request to join through the bound directory, account, store '
         'and clock', () async {
       final preview = JoinPreview(
         code: codeOf('234567'),
-        tourneeId: TourneeId('t12'),
-        number: tournee12.number,
+        sectorId: SectorId('t12'),
+        number: sector12.number,
         centre: csVillefranche,
         campaign: campaign2026,
       );
@@ -860,10 +858,10 @@ void main() {
         await container.read(requestToJoinProvider)(preview, nameOf('Léa')),
       );
 
-      final (_, request) = tourneeDirectory.sent.single;
+      final (_, request) = sectorDirectory.sent.single;
       expect(request.id, MemberId('uid-lea'));
       expect(request.requestedAt, twoPm);
-      expect(myTournees.myTournees.find(TourneeId('t12'))?.isPending, isTrue);
+      expect(mySectors.mySectors.find(SectorId('t12'))?.isPending, isTrue);
     });
 
     test(
@@ -871,35 +869,33 @@ void main() {
       () async {
         account.signedInMember = MemberId('uid-lea');
 
-        await container.read(cancelJoinRequestProvider)(tournee7.id);
+        await container.read(cancelJoinRequestProvider)(sector7.id);
 
-        expect(tourneeDirectory.cancelled, [
-          (tournee7.id, MemberId('uid-lea')),
-        ]);
-        expect(myTournees.myTournees.find(tournee7.id), isNull);
+        expect(sectorDirectory.cancelled, [(sector7.id, MemberId('uid-lea'))]);
+        expect(mySectors.mySectors.find(sector7.id), isNull);
       },
     );
   });
 
   group('offline download', () {
     late FakeOfflineMapStore maps;
-    late FakeTourneeDownloads downloads;
+    late FakeSectorDownloads downloads;
     late ProviderContainer offline;
 
     setUp(() {
       maps = FakeOfflineMapStore([
         OfflineMapRegion(
           id: 40,
-          tournee: tournee49.id,
+          sector: sector49.id,
           bounds: GeoBounds.around([at(45.98, 4.70), at(45.99, 4.72)])!,
         ),
       ]);
-      downloads = FakeTourneeDownloads();
+      downloads = FakeSectorDownloads();
       offline = ProviderContainer(
         overrides: [
           ...overridesAs(lea),
           offlineMapStoreProvider.overrideWithValue(maps),
-          tourneeDownloadsProvider.overrideWithValue(downloads),
+          sectorDownloadsProvider.overrideWithValue(downloads),
           streetsDownloadProvider.overrideWithValue(FakeStreetsDownload()),
         ],
       );
@@ -908,13 +904,13 @@ void main() {
 
     test('should observe the downloads of the bound store', () async {
       expect(
-        await offline.read(observeTourneeDownloadsProvider)().first,
+        await offline.read(observeSectorDownloadsProvider)().first,
         isEmpty,
       );
     });
 
     test('should delete a download through the bound store and map', () async {
-      await offline.read(deleteTourneeDownloadProvider)(tournee49.id);
+      await offline.read(deleteSectorDownloadProvider)(sector49.id);
 
       expect(maps.log, ['delete 40']);
     });

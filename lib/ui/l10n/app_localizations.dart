@@ -1543,61 +1543,61 @@ abstract class AppLocalizations {
   ///
   /// In fr, this message translates to:
   /// **'Tournée {number} · {year}'**
-  String tourneeTitle(String number, String year);
+  String sectorTitle(String number, String year);
 
   /// Screen-reader label of the title button that opens « Mes tournées » (Home mockup).
   ///
   /// In fr, this message translates to:
   /// **'{title}, {centre}. Changer de tournée'**
-  String tourneeTitleSemantics(String title, String centre);
+  String sectorTitleSemantics(String title, String centre);
 
   /// Title of the sheet listing the member's tournées (PLAN §5.3), and of its row in Paramètres.
   ///
   /// In fr, this message translates to:
   /// **'Mes tournées'**
-  String get myTourneesTitle;
+  String get mySectorsTitle;
 
   /// « Mes tournées » when the phone knows no tournée yet.
   ///
   /// In fr, this message translates to:
   /// **'Aucune tournée pour l\'instant.'**
-  String get myTourneesEmpty;
+  String get mySectorsEmpty;
 
   /// Second line of a tournée the member asked to join, not accepted yet (Switcher mockup).
   ///
   /// In fr, this message translates to:
   /// **'{centre} · votre demande est en attente'**
-  String myTourneesPending(String centre);
+  String mySectorsPending(String centre);
 
   /// Screen-reader label of the open tournée in « Mes tournées ».
   ///
   /// In fr, this message translates to:
   /// **'{title}, {centre}, tournée ouverte'**
-  String myTourneesOpenSemantics(String title, String centre);
+  String mySectorsOpenSemantics(String title, String centre);
 
   /// Screen-reader label of another tournée in « Mes tournées »: a tap opens it.
   ///
   /// In fr, this message translates to:
   /// **'{title}, {centre}, ouvrir'**
-  String myTourneesClosedSemantics(String title, String centre);
+  String mySectorsClosedSemantics(String title, String centre);
 
   /// Second line of a tournée not open where join requests wait for an answer, beside a red dot (Switcher mockup).
   ///
   /// In fr, this message translates to:
   /// **'{centre} · {count, plural, =1{1 demande en attente} other{{count} demandes en attente}}'**
-  String myTourneesWaiting(String centre, int count);
+  String mySectorsWaiting(String centre, int count);
 
   /// Screen-reader label of a tournée not open where join requests wait: the dot, said.
   ///
   /// In fr, this message translates to:
   /// **'{title}, {centre}, {count, plural, =1{1 demande en attente} other{{count} demandes en attente}}, ouvrir'**
-  String myTourneesWaitingSemantics(String title, String centre, int count);
+  String mySectorsWaitingSemantics(String title, String centre, int count);
 
   /// Screen-reader label of a tournée the member asked to join, not accepted yet.
   ///
   /// In fr, this message translates to:
   /// **'{title}, {centre}, votre demande est en attente'**
-  String myTourneesPendingSemantics(String title, String centre);
+  String mySectorsPendingSemantics(String title, String centre);
 
   /// Section header of Paramètres: the member's own settings (PLAN §5.9).
   ///
@@ -1627,7 +1627,7 @@ abstract class AppLocalizations {
   ///
   /// In fr, this message translates to:
   /// **'{number} · {year}'**
-  String settingsMyTourneesValue(String number, String year);
+  String settingsMySectorsValue(String number, String year);
 
   /// Row of Paramètres that picks the theme, and title of its sheet.
   ///
@@ -1843,7 +1843,7 @@ abstract class AppLocalizations {
   ///
   /// In fr, this message translates to:
   /// **'Les administrateurs voient toutes les tournées, les gèrent et peuvent les rejoindre directement.'**
-  String get release020AllTournees;
+  String get release020AllSectors;
 
   /// « Nouveautés », version 0.2.0: Équipe actions for admins, anyone may leave.
   ///
@@ -2197,7 +2197,7 @@ abstract class AppLocalizations {
   ///
   /// In fr, this message translates to:
   /// **'Aucune tournée ouverte.'**
-  String get teamNoTournee;
+  String get teamNoSector;
 
   /// Équipe when the tournée cannot be read (removed, deleted, never read offline).
   ///
@@ -2353,13 +2353,13 @@ abstract class AppLocalizations {
   ///
   /// In fr, this message translates to:
   /// **'Créer une tournée'**
-  String get createTourneeAction;
+  String get createSectorAction;
 
   /// Button of « Bienvenue » and « Mes tournées » that opens « Rejoindre une tournée ».
   ///
   /// In fr, this message translates to:
   /// **'Rejoindre une tournée'**
-  String get joinTourneeAction;
+  String get joinSectorAction;
 
   /// Screen-reader label of the app's name as the title of the start screen with no tournée open: a button that opens « Mes tournées ».
   ///
@@ -2581,19 +2581,19 @@ abstract class AppLocalizations {
   ///
   /// In fr, this message translates to:
   /// **'Vous avez été retiré de la tournée {number}.'**
-  String tourneeRemoved(String number);
+  String sectorRemoved(String number);
 
   /// Message over the next screen once the server said a tournée of the member was deleted, which the phone then forgot (PLAN §5.3).
   ///
   /// In fr, this message translates to:
   /// **'La tournée {number} a été supprimée.'**
-  String tourneeDeleted(String number);
+  String sectorDeleted(String number);
 
   /// Message over the next screen once the server said the phone is no longer an admin, so a tournée it only visited was forgotten (PLAN §5.12).
   ///
   /// In fr, this message translates to:
   /// **'Vous n\'êtes plus administrateur : la tournée {number} est retirée de Mes tournées.'**
-  String tourneeAdminRevoked(String number);
+  String sectorAdminRevoked(String number);
 
   /// Last row of Paramètres › Application: the phone's uid (PLAN §5.12).
   ///
@@ -2629,73 +2629,73 @@ abstract class AppLocalizations {
   ///
   /// In fr, this message translates to:
   /// **'Toutes les tournées'**
-  String get myTourneesAll;
+  String get mySectorsAll;
 
   /// Second line of a tournée an admin opened without being in its team (Switcher mockup).
   ///
   /// In fr, this message translates to:
   /// **'{centre} · administrateur'**
-  String myTourneesVisited(String centre);
+  String mySectorsVisited(String centre);
 
   /// Screen-reader label of a visited tournée not open in « Mes tournées ».
   ///
   /// In fr, this message translates to:
   /// **'{title}, {centre}, administrateur, ouvrir'**
-  String myTourneesVisitedSemantics(String title, String centre);
+  String mySectorsVisitedSemantics(String title, String centre);
 
   /// Screen-reader label of the open tournée in « Mes tournées » when the admin only visits it.
   ///
   /// In fr, this message translates to:
   /// **'{title}, {centre}, administrateur, tournée ouverte'**
-  String myTourneesVisitedOpenSemantics(String title, String centre);
+  String mySectorsVisitedOpenSemantics(String title, String centre);
 
   /// Second line of a tournée greyed in « Mes tournées » while offline: it was never downloaded on this phone, so it cannot open (Switcher mockup, PLAN §5.3).
   ///
   /// In fr, this message translates to:
   /// **'{centre} · Disponible avec réseau'**
-  String myTourneesUnavailable(String centre);
+  String mySectorsUnavailable(String centre);
 
   /// Screen-reader label of a tournée greyed in « Mes tournées » while offline (announced as disabled too).
   ///
   /// In fr, this message translates to:
   /// **'{title}, {centre}, disponible avec réseau'**
-  String myTourneesUnavailableSemantics(String title, String centre);
+  String mySectorsUnavailableSemantics(String title, String centre);
 
-  /// Under the title of « Toutes les tournées » (AllTournees mockup).
+  /// Under the title of « Toutes les tournées » (AllSectors mockup).
   ///
   /// In fr, this message translates to:
   /// **'Administrateur · {count, plural, =0{aucune tournée} =1{1 tournée} other{{count} tournées}}'**
-  String allTourneesSubtitle(int count);
+  String allSectorsSubtitle(int count);
 
   /// Second line of a tournée of « Toutes les tournées »: its active members (« Aucun membre » in red).
   ///
   /// In fr, this message translates to:
   /// **'{count, plural, =0{Aucun membre} =1{1 membre} other{{count} membres}}'**
-  String allTourneesMembers(int count);
+  String allSectorsMembers(int count);
 
   /// Second line of a tournée the admin is an active member of.
   ///
   /// In fr, this message translates to:
   /// **'{members} · vous en êtes membre'**
-  String allTourneesMine(String members);
+  String allSectorsMine(String members);
 
   /// Second line of a tournée where join requests wait, beside a red dot.
   ///
   /// In fr, this message translates to:
   /// **'{details} · {count, plural, =1{1 demande en attente} other{{count} demandes en attente}}'**
-  String allTourneesWaiting(String details, int count);
+  String allSectorsWaiting(String details, int count);
 
   /// Screen-reader label of a tournée of « Toutes les tournées »: the dot is said in the details.
   ///
   /// In fr, this message translates to:
   /// **'{title}, {details}, ouvrir'**
-  String allTourneesRowSemantics(String title, String details);
+  String allSectorsRowSemantics(String title, String details);
 
   /// « Toutes les tournées » when the server cannot be reached; « Réessayer » under it.
   ///
   /// In fr, this message translates to:
   /// **'Pas de réseau : la liste ne peut pas être affichée.'**
-  String get allTourneesOffline;
+  String get allSectorsOffline;
 
   /// Under « Créer », in « Toutes les tournées », or in a snackbar of Équipe and of the admin banner, when the server refused an admin's command because the phone's admins/{uid} was removed (PLAN §5.12).
   ///
@@ -2703,17 +2703,17 @@ abstract class AppLocalizations {
   /// **'Vous n\'êtes plus administrateur.'**
   String get notAdminAnyMore;
 
-  /// Under the list of « Toutes les tournées » (AllTournees mockup).
+  /// Under the list of « Toutes les tournées » (AllSectors mockup).
   ///
   /// In fr, this message translates to:
   /// **'Ouvrez une tournée pour la gérer : code, équipe, rues. Vous n\'y entrez comme membre que si vous la rejoignez.'**
-  String get allTourneesHint;
+  String get allSectorsHint;
 
   /// « Toutes les tournées » when the app has none.
   ///
   /// In fr, this message translates to:
   /// **'Aucune tournée pour l\'instant.'**
-  String get allTourneesEmpty;
+  String get allSectorsEmpty;
 
   /// Banner on Accueil when an admin opened a tournée they are not in (HomeAdmin mockup).
   ///
@@ -2887,7 +2887,7 @@ abstract class AppLocalizations {
   ///
   /// In fr, this message translates to:
   /// **'déjà dans la tournée'**
-  String get alreadyInTournee;
+  String get alreadyInSector;
 
   /// Button of the « Liste » tab: adds the ticked streets to the tournée.
   ///
@@ -3079,7 +3079,7 @@ abstract class AppLocalizations {
   ///
   /// In fr, this message translates to:
   /// **'Pas encore dans la tournée'**
-  String get streetCardNotInTournee;
+  String get streetCardNotInSector;
 
   /// Red button of the card of a street to add: adds it, in the member's streets.
   ///

@@ -34,7 +34,7 @@ void main() {
   }
 
   /// A street whose name fills more than a line.
-  final longName = StreetCardInTournee(
+  final longName = StreetCardInSector(
     id: StreetId('longue'),
     name: 'Avenue du Maréchal de Lattre de Tassigny prolongée',
     commune: 'Villefranche-sur-Saône',

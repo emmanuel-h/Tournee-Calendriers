@@ -5,35 +5,35 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/offline_map_store.dart';
 import 'package:tournee_calendriers/application/use_cases/refresh_offline_maps.dart';
-import 'package:tournee_calendriers/application/use_cases/tournee_downloads.dart';
-import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
+import 'package:tournee_calendriers/application/use_cases/sector_downloads.dart';
+import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/offline/offline_map_upkeep.dart';
 
 import '../../application/use_cases/offline_fixtures.dart';
-import '../../domain/tournee/my_tournees_fixtures.dart';
-import '../../support/fakes/fake_my_tournees_store.dart';
+import '../../domain/sector/my_sectors_fixtures.dart';
+import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_offline_map_store.dart';
 import '../../support/fakes/fake_ports.dart';
-import '../../support/fakes/fake_tournee_downloads.dart';
+import '../../support/fakes/fake_sector_downloads.dart';
 
 void main() {
   late FakeOfflineMapStore maps;
-  late FakeTourneeDownloads downloads;
-  late FakeMyTourneesStore myTournees;
+  late FakeSectorDownloads downloads;
+  late FakeMySectorsStore mySectors;
   late FakeClock clock;
   late OfflineMapUpkeep upkeep;
 
   setUp(() {
     maps = FakeOfflineMapStore([regionOf(40, t49, area49)]);
-    downloads = FakeTourneeDownloads([downloadOf(t49, area49)]);
-    myTournees = FakeMyTourneesStore(MyTournees.none.remember(tournee49));
+    downloads = FakeSectorDownloads([downloadOf(t49, area49)]);
+    mySectors = FakeMySectorsStore(MySectors.none.remember(sector49));
     clock = FakeClock(morning);
     upkeep = OfflineMapUpkeep(
       RefreshOfflineMaps(maps, downloads),
-      PruneTourneeDownloads(
-        myTournees,
-        DeleteTourneeDownload(maps, downloads),
+      PruneSectorDownloads(
+        mySectors,
+        DeleteSectorDownload(maps, downloads),
         maps,
         downloads,
       ),
@@ -94,15 +94,15 @@ void main() {
 
   group('refreshAllBut', () {
     test('should refresh the others even right after a refresh', () async {
-      downloads = FakeTourneeDownloads([
+      downloads = FakeSectorDownloads([
         downloadOf(t49, area49),
         downloadOf(t12, area12),
       ]);
       upkeep = OfflineMapUpkeep(
         RefreshOfflineMaps(maps, downloads),
-        PruneTourneeDownloads(
-          myTournees,
-          DeleteTourneeDownload(maps, downloads),
+        PruneSectorDownloads(
+          mySectors,
+          DeleteSectorDownload(maps, downloads),
           maps,
           downloads,
         ),
@@ -136,7 +136,7 @@ void main() {
 
   group('prune', () {
     test('should delete the downloads of forgotten tournées', () async {
-      myTournees.myTournees = MyTournees.none;
+      mySectors.mySectors = MySectors.none;
 
       await upkeep.prune();
 
@@ -146,7 +146,7 @@ void main() {
 
     test('should prune once more when asked while pruning', () async {
       final first = upkeep.prune();
-      myTournees.myTournees = MyTournees.none;
+      mySectors.mySectors = MySectors.none;
       final second = upkeep.prune();
 
       await Future.wait([first, second]);
@@ -163,8 +163,8 @@ void main() {
       container = ProviderContainer(
         overrides: [
           offlineMapStoreProvider.overrideWithValue(maps),
-          tourneeDownloadsProvider.overrideWithValue(downloads),
-          myTourneesStoreProvider.overrideWithValue(myTournees),
+          sectorDownloadsProvider.overrideWithValue(downloads),
+          mySectorsStoreProvider.overrideWithValue(mySectors),
           clockProvider.overrideWithValue(clock),
         ],
       );
@@ -172,7 +172,7 @@ void main() {
     });
 
     test('should prune when built', () async {
-      myTournees.myTournees = MyTournees.none;
+      mySectors.mySectors = MySectors.none;
 
       container.read(offlineMapUpkeepProvider);
       await pumpEventQueue();
@@ -185,7 +185,7 @@ void main() {
       await pumpEventQueue();
       expect(downloads.downloads.keys, [t49]);
 
-      await myTournees.save(MyTournees.none);
+      await mySectors.save(MySectors.none);
       await pumpEventQueue();
 
       expect(downloads.downloads, isEmpty);

@@ -6,7 +6,7 @@ import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/presentation/street_card/street_card.dart';
 
-import '../../domain/tournee/tournee_fixtures.dart';
+import '../../domain/sector/sector_fixtures.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart' show n, villefranche;
 
@@ -28,7 +28,7 @@ Street _lilas(Set<MemberId> assignees) => valueOf(
 void main() {
   group('a street of the tournée', () {
     test('should show its name, commune and progress', () {
-      final card = StreetCardInTournee.of(_lilas({}), me: leaId, team: team());
+      final card = StreetCardInSector.of(_lilas({}), me: leaId, team: team());
 
       expect(card.id, StreetId('lilas'));
       expect(card.name, 'Rue des Lilas');
@@ -38,14 +38,14 @@ void main() {
     });
 
     test('should be free when nobody covers it', () {
-      final card = StreetCardInTournee.of(_lilas({}), me: leaId, team: team());
+      final card = StreetCardInSector.of(_lilas({}), me: leaId, team: team());
 
       expect(card.coverage, StreetCoverage.free);
       expect(card.coveredBy, isEmpty);
     });
 
     test('should be mine when the member covers it alone', () {
-      final card = StreetCardInTournee.of(
+      final card = StreetCardInSector.of(
         _lilas({leaId}),
         me: leaId,
         team: team(),
@@ -57,7 +57,7 @@ void main() {
 
     test('should be mine and name the others who cover it too, in the '
         'team\'s order', () {
-      final card = StreetCardInTournee.of(
+      final card = StreetCardInSector.of(
         _lilas({julieId, leaId, manuId}),
         me: leaId,
         team: team(),
@@ -68,7 +68,7 @@ void main() {
     });
 
     test('should be someone else\'s and name who covers it', () {
-      final card = StreetCardInTournee.of(
+      final card = StreetCardInSector.of(
         _lilas({manuId}),
         me: leaId,
         team: team(),
@@ -80,7 +80,7 @@ void main() {
 
     test('should be free when its only assignee is no longer in the '
         'team', () {
-      final card = StreetCardInTournee.of(
+      final card = StreetCardInSector.of(
         _lilas({paulId}),
         me: leaId,
         team: team(),
@@ -92,7 +92,7 @@ void main() {
 
     test('should be someone else\'s and name only who is still in the team '
         'when one assignee left', () {
-      final card = StreetCardInTournee.of(
+      final card = StreetCardInSector.of(
         _lilas({paulId, manuId}),
         me: leaId,
         team: team(),
@@ -104,7 +104,7 @@ void main() {
 
     test('should be mine when a visiting admin covers it, though no member '
         'of the team', () {
-      final card = StreetCardInTournee.of(
+      final card = StreetCardInSector.of(
         _lilas({samId}),
         me: samId,
         team: team(),
@@ -115,7 +115,7 @@ void main() {
     });
 
     test('should trust every assignee while the team cannot be read', () {
-      final card = StreetCardInTournee.of(
+      final card = StreetCardInSector.of(
         _lilas({paulId}),
         me: leaId,
         team: null,
@@ -125,7 +125,7 @@ void main() {
     });
 
     test('should name nobody while the team cannot be read', () {
-      final card = StreetCardInTournee.of(
+      final card = StreetCardInSector.of(
         _lilas({manuId}),
         me: leaId,
         team: null,
@@ -136,14 +136,14 @@ void main() {
     });
 
     test('should equal a card with the same values only', () {
-      StreetCardInTournee card({
+      StreetCardInSector card({
         String name = 'Rue des Lilas',
         String commune = 'Villefranche-sur-Saône',
         int done = 1,
         int total = 3,
         StreetCoverage coverage = StreetCoverage.mine,
         List<String> coveredBy = const ['Manu'],
-      }) => StreetCardInTournee(
+      }) => StreetCardInSector(
         id: StreetId('lilas'),
         name: name,
         commune: commune,
@@ -164,7 +164,7 @@ void main() {
       expect(
         card(),
         isNot(
-          StreetCardInTournee(
+          StreetCardInSector(
             id: StreetId('pasteur'),
             name: 'Rue des Lilas',
             commune: 'Villefranche-sur-Saône',

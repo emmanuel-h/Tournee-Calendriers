@@ -1,7 +1,7 @@
+import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
+import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
-import 'package:tournee_calendriers/domain/tournee/campaign_year.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 
 /// Reads every street of a tournée from the server, so the phone keeps all
 /// of them for a day offline (PLAN §7): Firestore's cache, with no size
@@ -11,10 +11,10 @@ import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 /// it, tests use a fake. Needs the network; a failure comes back as an
 /// [Err], never as an exception.
 abstract interface class StreetsDownload {
-  /// Every street of [campaign] of [tournee], as the server has them now,
+  /// Every street of [campaign] of [sector], as the server has them now,
   /// those in the Corbeille included.
   Future<Result<List<Street>, StreetsDownloadFailure>> fromServer(
-    TourneeId tournee,
+    SectorId sector,
     CampaignYear campaign,
   );
 }

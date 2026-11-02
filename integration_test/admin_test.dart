@@ -97,10 +97,10 @@ Map<String, Object?> _time(String value) => {'timestampValue': value};
 /// member: one the admin on the phone is not in. Its centre is then known
 /// to « Nouvelle tournée ». Shaped as the Firestore
 /// mappers write it (PLAN §6.2).
-Future<void> _seedTournee12() async {
-  const id = 'e2eTournee12';
+Future<void> _seedSector12() async {
+  const id = 'e2eSector12';
   const at = '2026-10-01T08:00:00Z';
-  await _put('tournees/$id', {
+  await _put('sectors/$id', {
     'number': _int(12),
     'centreKey': _text('villefranche'),
     'centreName': _text('CS Villefranche'),
@@ -109,7 +109,7 @@ Future<void> _seedTournee12() async {
     'createdAt': _time(at),
     'currentCampaign': _int(2026),
   });
-  await _put('tournees/$id/members/uidLea', {
+  await _put('sectors/$id/members/uidLea', {
     'displayName': _text('Léa'),
     'status': _text('active'),
     'requestedAt': _time(at),
@@ -117,9 +117,9 @@ Future<void> _seedTournee12() async {
     'acceptedAt': _time(at),
   });
   await _put('rescueCentres/villefranche', {'name': _text('CS Villefranche')});
-  await _put('tourneeKeys/villefranche_12', {'tourneeId': _text(id)});
+  await _put('sectorKeys/villefranche_12', {'sectorId': _text(id)});
   await _put('joinCodes/K7P2QX', {
-    'tourneeId': _text(id),
+    'sectorId': _text(id),
     'number': _int(12),
     'centreName': _text('CS Villefranche'),
     'campaign': _int(2026),
@@ -210,7 +210,7 @@ void main() {
       // The console makes the phone an admin's: « Bienvenue » offers
       // « Créer une tournée ».
       await _put('admins/$uid', {});
-      await _seedTournee12();
+      await _seedSector12();
       await tester.enterText(find.byKey(const Key('welcome.name')), 'Sam');
       await tester.testTextInput.receiveAction(TextInputAction.done);
       await tester.pumpAndSettle();
@@ -244,9 +244,9 @@ void main() {
 
       // « Toutes les tournées » → the 12, which Sam is not in: the banner
       // « Administrateur · pas membre », then « Rejoindre ».
-      await _tap(tester, const Key('home.tournee'));
-      await _tap(tester, const Key('myTournees.all'));
-      await _tap(tester, const ValueKey('allTournees.e2eTournee12'));
+      await _tap(tester, const Key('home.sector'));
+      await _tap(tester, const Key('mySectors.all'));
+      await _tap(tester, const ValueKey('allSectors.e2eSector12'));
       expect(find.text('Tournée 12 · 2026'), findsOneWidget);
       await _waitFor(tester, find.byKey(const Key('home.adminBanner')));
       await _tap(tester, const Key('home.adminJoin'));
@@ -254,8 +254,8 @@ void main() {
 
       // A new tournée is started, then the console removes admins/{uid}
       // before « Créer »: the server refuses, the screen says why.
-      await _tap(tester, const Key('home.tournee'));
-      await _tap(tester, const Key('myTournees.create'));
+      await _tap(tester, const Key('home.sector'));
+      await _tap(tester, const Key('mySectors.create'));
       await tester.enterText(find.byKey(const Key('create.centre')), 'villef');
       await _tap(tester, const ValueKey('create.centre.villefranche'));
       await tester.enterText(find.byKey(const Key('communes.field')), 'Villef');
@@ -271,9 +271,9 @@ void main() {
       // Back on Accueil, « Mes tournées » no longer offers « Créer ».
       await tester.tap(find.byTooltip('Retour'));
       await tester.pumpAndSettle();
-      await _tap(tester, const Key('home.tournee'));
-      expect(find.byKey(const Key('myTournees.create')), findsNothing);
-      expect(find.byKey(const Key('myTournees.all')), findsNothing);
+      await _tap(tester, const Key('home.sector'));
+      expect(find.byKey(const Key('mySectors.create')), findsNothing);
+      expect(find.byKey(const Key('mySectors.all')), findsNothing);
     },
   );
 }

@@ -5,13 +5,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/presentation/account/device_id_state.dart';
-import 'package:tournee_calendriers/presentation/my_tournees/my_tournees_notifier.dart';
+import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
 import 'package:tournee_calendriers/presentation/settings/settings_notifier.dart';
 import 'package:tournee_calendriers/ui/components/copy_button.dart';
 import 'package:tournee_calendriers/ui/components/section_header.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
-import 'package:tournee_calendriers/ui/screens/my_tournees/my_tournees_sheet.dart';
+import 'package:tournee_calendriers/ui/screens/my_sectors/my_sectors_sheet.dart';
 import 'package:tournee_calendriers/ui/screens/settings/name_sheet.dart';
 import 'package:tournee_calendriers/ui/screens/settings/theme_sheet.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
@@ -35,7 +35,7 @@ final class SettingsScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final colors = AppColors.of(context);
     final settings = ref.watch(settingsProvider);
-    final tournee = ref.watch(currentTourneeProvider);
+    final sector = ref.watch(currentSectorProvider);
     // Watching it signs the phone in (`accountProvider`).
     final deviceId = ref.watch(deviceIdProvider);
     // Null only for a build without a version in `pubspec.yaml`.
@@ -58,15 +58,15 @@ final class SettingsScreen extends ConsumerWidget {
                   onTap: () => showNameSheet(context),
                 ),
                 _SettingRow(
-                  key: const Key('settings.myTournees'),
-                  label: l10n.myTourneesTitle,
-                  value: tournee == null
+                  key: const Key('settings.mySectors'),
+                  label: l10n.mySectorsTitle,
+                  value: sector == null
                       ? null
-                      : l10n.settingsMyTourneesValue(
-                          '${tournee.number.value}',
-                          '${tournee.campaign.value}',
+                      : l10n.settingsMySectorsValue(
+                          '${sector.number.value}',
+                          '${sector.campaign.value}',
                         ),
-                  onTap: () => showMyTourneesSheet(context),
+                  onTap: () => showMySectorsSheet(context),
                 ),
               ],
             ),

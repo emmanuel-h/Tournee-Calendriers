@@ -882,59 +882,59 @@
   "saveFailedOk": "OK",
   "@saveFailedOk": { "description": "Button that closes that dialog." },
 
-  "tourneeTitle": "Tournée {number} · {year}",
-  "@tourneeTitle": {
+  "sectorTitle": "Tournée {number} · {year}",
+  "@sectorTitle": {
     "description": "Title of the open tournée on the start screen (PLAN §5.3) and of a row of « Mes tournées ».",
     "placeholders": {
       "number": { "type": "String", "example": "49" },
       "year": { "type": "String", "example": "2026" }
     }
   },
-  "tourneeTitleSemantics": "{title}, {centre}. Changer de tournée",
-  "@tourneeTitleSemantics": {
+  "sectorTitleSemantics": "{title}, {centre}. Changer de tournée",
+  "@sectorTitleSemantics": {
     "description": "Screen-reader label of the title button that opens « Mes tournées » (Home mockup).",
     "placeholders": {
       "title": { "type": "String", "example": "Tournée 49 · 2026" },
       "centre": { "type": "String", "example": "CS Villefranche" }
     }
   },
-  "myTourneesTitle": "Mes tournées",
-  "@myTourneesTitle": { "description": "Title of the sheet listing the member's tournées (PLAN §5.3), and of its row in Paramètres." },
-  "myTourneesEmpty": "Aucune tournée pour l'instant.",
-  "@myTourneesEmpty": { "description": "« Mes tournées » when the phone knows no tournée yet." },
-  "myTourneesPending": "{centre} · votre demande est en attente",
-  "@myTourneesPending": {
+  "mySectorsTitle": "Mes tournées",
+  "@mySectorsTitle": { "description": "Title of the sheet listing the member's tournées (PLAN §5.3), and of its row in Paramètres." },
+  "mySectorsEmpty": "Aucune tournée pour l'instant.",
+  "@mySectorsEmpty": { "description": "« Mes tournées » when the phone knows no tournée yet." },
+  "mySectorsPending": "{centre} · votre demande est en attente",
+  "@mySectorsPending": {
     "description": "Second line of a tournée the member asked to join, not accepted yet (Switcher mockup).",
     "placeholders": {
       "centre": { "type": "String", "example": "CS Villefranche" }
     }
   },
-  "myTourneesOpenSemantics": "{title}, {centre}, tournée ouverte",
-  "@myTourneesOpenSemantics": {
+  "mySectorsOpenSemantics": "{title}, {centre}, tournée ouverte",
+  "@mySectorsOpenSemantics": {
     "description": "Screen-reader label of the open tournée in « Mes tournées ».",
     "placeholders": {
       "title": { "type": "String", "example": "Tournée 49 · 2026" },
       "centre": { "type": "String", "example": "CS Villefranche" }
     }
   },
-  "myTourneesClosedSemantics": "{title}, {centre}, ouvrir",
-  "@myTourneesClosedSemantics": {
+  "mySectorsClosedSemantics": "{title}, {centre}, ouvrir",
+  "@mySectorsClosedSemantics": {
     "description": "Screen-reader label of another tournée in « Mes tournées »: a tap opens it.",
     "placeholders": {
       "title": { "type": "String", "example": "Tournée 12 · 2026" },
       "centre": { "type": "String", "example": "CS Villefranche" }
     }
   },
-  "myTourneesWaiting": "{centre} · {count, plural, =1{1 demande en attente} other{{count} demandes en attente}}",
-  "@myTourneesWaiting": {
+  "mySectorsWaiting": "{centre} · {count, plural, =1{1 demande en attente} other{{count} demandes en attente}}",
+  "@mySectorsWaiting": {
     "description": "Second line of a tournée not open where join requests wait for an answer, beside a red dot (Switcher mockup).",
     "placeholders": {
       "centre": { "type": "String", "example": "CS Villefranche" },
       "count": { "type": "int", "example": "1" }
     }
   },
-  "myTourneesWaitingSemantics": "{title}, {centre}, {count, plural, =1{1 demande en attente} other{{count} demandes en attente}}, ouvrir",
-  "@myTourneesWaitingSemantics": {
+  "mySectorsWaitingSemantics": "{title}, {centre}, {count, plural, =1{1 demande en attente} other{{count} demandes en attente}}, ouvrir",
+  "@mySectorsWaitingSemantics": {
     "description": "Screen-reader label of a tournée not open where join requests wait: the dot, said.",
     "placeholders": {
       "title": { "type": "String", "example": "Tournée 12 · 2026" },
@@ -942,8 +942,8 @@
       "count": { "type": "int", "example": "1" }
     }
   },
-  "myTourneesPendingSemantics": "{title}, {centre}, votre demande est en attente",
-  "@myTourneesPendingSemantics": {
+  "mySectorsPendingSemantics": "{title}, {centre}, votre demande est en attente",
+  "@mySectorsPendingSemantics": {
     "description": "Screen-reader label of a tournée the member asked to join, not accepted yet.",
     "placeholders": {
       "title": { "type": "String", "example": "Tournée 7 · 2026" },
@@ -958,8 +958,8 @@
   "@settingsApplication": { "description": "Section header of Paramètres: the app's settings." },
   "settingsName": "Prénom",
   "@settingsName": { "description": "Row of Paramètres that changes the member's first name." },
-  "settingsMyTourneesValue": "{number} · {year}",
-  "@settingsMyTourneesValue": {
+  "settingsMySectorsValue": "{number} · {year}",
+  "@settingsMySectorsValue": {
     "description": "Value of the « Mes tournées » row of Paramètres: the open tournée.",
     "placeholders": {
       "number": { "type": "String", "example": "49" },
@@ -1052,8 +1052,8 @@
   "@release030DeviceId": { "description": "« Nouveautés », version 0.3.0: the whole device identifier." },
   "release020Admins": "Seuls les administrateurs créent une tournée ; les autres la rejoignent avec un code.",
   "@release020Admins": { "description": "« Nouveautés », version 0.2.0: only admins create a tournée." },
-  "release020AllTournees": "Les administrateurs voient toutes les tournées, les gèrent et peuvent les rejoindre directement.",
-  "@release020AllTournees": { "description": "« Nouveautés », version 0.2.0: admins see and manage every tournée." },
+  "release020AllSectors": "Les administrateurs voient toutes les tournées, les gèrent et peuvent les rejoindre directement.",
+  "@release020AllSectors": { "description": "« Nouveautés », version 0.2.0: admins see and manage every tournée." },
   "release020Team": "Équipe : « Nouveau code », « Retirer » et « Supprimer » sont réservés aux administrateurs ; chacun peut quitter la tournée.",
   "@release020Team": { "description": "« Nouveautés », version 0.2.0: Équipe actions for admins, anyone may leave." },
   "release020DeviceId": "Paramètres affiche l'identifiant de l'appareil, à donner pour devenir administrateur.",
@@ -1301,8 +1301,8 @@
   "@teamDeleteBody": { "description": "Body of the confirmation before deleting the tournée (PLAN §8.3)." },
   "teamDeleteConfirm": "Supprimer",
   "@teamDeleteConfirm": { "description": "Confirm button of the confirmation before deleting the tournée." },
-  "teamNoTournee": "Aucune tournée ouverte.",
-  "@teamNoTournee": { "description": "Équipe when no tournée is open." },
+  "teamNoSector": "Aucune tournée ouverte.",
+  "@teamNoSector": { "description": "Équipe when no tournée is open." },
   "teamUnavailable": "L'équipe ne peut pas être affichée : la tournée n'est pas sur ce téléphone, ou vous n'en faites plus partie.",
   "@teamUnavailable": { "description": "Équipe when the tournée cannot be read (removed, deleted, never read offline)." },
   "teamChanged": "L'équipe a changé entre-temps.",
@@ -1416,10 +1416,10 @@
   "@welcomeIntro": { "description": "Line under the app's name on « Bienvenue » (PLAN §5.1, Welcome mockup)." },
   "welcomeNameHelp": "Visible par votre équipe.",
   "@welcomeNameHelp": { "description": "Hint under « Votre prénom » on « Bienvenue »." },
-  "createTourneeAction": "Créer une tournée",
-  "@createTourneeAction": { "description": "Button of « Bienvenue » and « Mes tournées » that opens « Nouvelle tournée »." },
-  "joinTourneeAction": "Rejoindre une tournée",
-  "@joinTourneeAction": { "description": "Button of « Bienvenue » and « Mes tournées » that opens « Rejoindre une tournée »." },
+  "createSectorAction": "Créer une tournée",
+  "@createSectorAction": { "description": "Button of « Bienvenue » and « Mes tournées » that opens « Nouvelle tournée »." },
+  "joinSectorAction": "Rejoindre une tournée",
+  "@joinSectorAction": { "description": "Button of « Bienvenue » and « Mes tournées » that opens « Rejoindre une tournée »." },
   "appTitleSemantics": "{title}. Mes tournées",
   "@appTitleSemantics": {
     "description": "Screen-reader label of the app's name as the title of the start screen with no tournée open: a button that opens « Mes tournées ».",
@@ -1531,22 +1531,22 @@
   "@joinPendingCancel": { "description": "Button of « Demande envoyée »: withdraws the request." },
   "joinRefused": "Demande refusée",
   "@joinRefused": { "description": "Message once the member's request was refused." },
-  "tourneeRemoved": "Vous avez été retiré de la tournée {number}.",
-  "@tourneeRemoved": {
+  "sectorRemoved": "Vous avez été retiré de la tournée {number}.",
+  "@sectorRemoved": {
     "description": "Message over the next screen once the server said an admin removed the member from a tournée, which the phone then forgot (PLAN §5.3).",
     "placeholders": {
       "number": { "type": "String", "example": "49" }
     }
   },
-  "tourneeDeleted": "La tournée {number} a été supprimée.",
-  "@tourneeDeleted": {
+  "sectorDeleted": "La tournée {number} a été supprimée.",
+  "@sectorDeleted": {
     "description": "Message over the next screen once the server said a tournée of the member was deleted, which the phone then forgot (PLAN §5.3).",
     "placeholders": {
       "number": { "type": "String", "example": "49" }
     }
   },
-  "tourneeAdminRevoked": "Vous n'êtes plus administrateur : la tournée {number} est retirée de Mes tournées.",
-  "@tourneeAdminRevoked": {
+  "sectorAdminRevoked": "Vous n'êtes plus administrateur : la tournée {number} est retirée de Mes tournées.",
+  "@sectorAdminRevoked": {
     "description": "Message over the next screen once the server said the phone is no longer an admin, so a tournée it only visited was forgotten (PLAN §5.12).",
     "placeholders": {
       "number": { "type": "String", "example": "12" }
@@ -1562,91 +1562,91 @@
   "@deviceIdCopied": { "description": "Snackbar once the phone's uid is on the clipboard." },
   "deviceIdNoAccount": "Pas encore de compte : connectez-vous au réseau.",
   "@deviceIdNoAccount": { "description": "Paramètres row of the phone's uid when the phone has no account and is offline." },
-  "myTourneesAll": "Toutes les tournées",
-  "@myTourneesAll": { "description": "Admin-only link of « Mes tournées » to every tournée of the app, and that screen's title (PLAN §5.12)." },
-  "myTourneesVisited": "{centre} · administrateur",
-  "@myTourneesVisited": {
+  "mySectorsAll": "Toutes les tournées",
+  "@mySectorsAll": { "description": "Admin-only link of « Mes tournées » to every tournée of the app, and that screen's title (PLAN §5.12)." },
+  "mySectorsVisited": "{centre} · administrateur",
+  "@mySectorsVisited": {
     "description": "Second line of a tournée an admin opened without being in its team (Switcher mockup).",
     "placeholders": {
       "centre": { "type": "String", "example": "CS Villefranche" }
     }
   },
-  "myTourneesVisitedSemantics": "{title}, {centre}, administrateur, ouvrir",
-  "@myTourneesVisitedSemantics": {
+  "mySectorsVisitedSemantics": "{title}, {centre}, administrateur, ouvrir",
+  "@mySectorsVisitedSemantics": {
     "description": "Screen-reader label of a visited tournée not open in « Mes tournées ».",
     "placeholders": {
       "title": { "type": "String", "example": "Tournée 12 · 2026" },
       "centre": { "type": "String", "example": "CS Villefranche" }
     }
   },
-  "myTourneesVisitedOpenSemantics": "{title}, {centre}, administrateur, tournée ouverte",
-  "@myTourneesVisitedOpenSemantics": {
+  "mySectorsVisitedOpenSemantics": "{title}, {centre}, administrateur, tournée ouverte",
+  "@mySectorsVisitedOpenSemantics": {
     "description": "Screen-reader label of the open tournée in « Mes tournées » when the admin only visits it.",
     "placeholders": {
       "title": { "type": "String", "example": "Tournée 12 · 2026" },
       "centre": { "type": "String", "example": "CS Villefranche" }
     }
   },
-  "myTourneesUnavailable": "{centre} · Disponible avec réseau",
-  "@myTourneesUnavailable": {
+  "mySectorsUnavailable": "{centre} · Disponible avec réseau",
+  "@mySectorsUnavailable": {
     "description": "Second line of a tournée greyed in « Mes tournées » while offline: it was never downloaded on this phone, so it cannot open (Switcher mockup, PLAN §5.3).",
     "placeholders": {
       "centre": { "type": "String", "example": "CS Villefranche" }
     }
   },
-  "myTourneesUnavailableSemantics": "{title}, {centre}, disponible avec réseau",
-  "@myTourneesUnavailableSemantics": {
+  "mySectorsUnavailableSemantics": "{title}, {centre}, disponible avec réseau",
+  "@mySectorsUnavailableSemantics": {
     "description": "Screen-reader label of a tournée greyed in « Mes tournées » while offline (announced as disabled too).",
     "placeholders": {
       "title": { "type": "String", "example": "Tournée 23 · 2026" },
       "centre": { "type": "String", "example": "CS Villefranche" }
     }
   },
-  "allTourneesSubtitle": "Administrateur · {count, plural, =0{aucune tournée} =1{1 tournée} other{{count} tournées}}",
-  "@allTourneesSubtitle": {
-    "description": "Under the title of « Toutes les tournées » (AllTournees mockup).",
+  "allSectorsSubtitle": "Administrateur · {count, plural, =0{aucune tournée} =1{1 tournée} other{{count} tournées}}",
+  "@allSectorsSubtitle": {
+    "description": "Under the title of « Toutes les tournées » (AllSectors mockup).",
     "placeholders": {
       "count": { "type": "int", "example": "4" }
     }
   },
-  "allTourneesMembers": "{count, plural, =0{Aucun membre} =1{1 membre} other{{count} membres}}",
-  "@allTourneesMembers": {
+  "allSectorsMembers": "{count, plural, =0{Aucun membre} =1{1 membre} other{{count} membres}}",
+  "@allSectorsMembers": {
     "description": "Second line of a tournée of « Toutes les tournées »: its active members (« Aucun membre » in red).",
     "placeholders": {
       "count": { "type": "int", "example": "3" }
     }
   },
-  "allTourneesMine": "{members} · vous en êtes membre",
-  "@allTourneesMine": {
+  "allSectorsMine": "{members} · vous en êtes membre",
+  "@allSectorsMine": {
     "description": "Second line of a tournée the admin is an active member of.",
     "placeholders": {
       "members": { "type": "String", "example": "5 membres" }
     }
   },
-  "allTourneesWaiting": "{details} · {count, plural, =1{1 demande en attente} other{{count} demandes en attente}}",
-  "@allTourneesWaiting": {
+  "allSectorsWaiting": "{details} · {count, plural, =1{1 demande en attente} other{{count} demandes en attente}}",
+  "@allSectorsWaiting": {
     "description": "Second line of a tournée where join requests wait, beside a red dot.",
     "placeholders": {
       "details": { "type": "String", "example": "3 membres" },
       "count": { "type": "int", "example": "1" }
     }
   },
-  "allTourneesRowSemantics": "{title}, {details}, ouvrir",
-  "@allTourneesRowSemantics": {
+  "allSectorsRowSemantics": "{title}, {details}, ouvrir",
+  "@allSectorsRowSemantics": {
     "description": "Screen-reader label of a tournée of « Toutes les tournées »: the dot is said in the details.",
     "placeholders": {
       "title": { "type": "String", "example": "Tournée 12 · 2026" },
       "details": { "type": "String", "example": "3 membres · 1 demande en attente" }
     }
   },
-  "allTourneesOffline": "Pas de réseau : la liste ne peut pas être affichée.",
-  "@allTourneesOffline": { "description": "« Toutes les tournées » when the server cannot be reached; « Réessayer » under it." },
+  "allSectorsOffline": "Pas de réseau : la liste ne peut pas être affichée.",
+  "@allSectorsOffline": { "description": "« Toutes les tournées » when the server cannot be reached; « Réessayer » under it." },
   "notAdminAnyMore": "Vous n'êtes plus administrateur.",
   "@notAdminAnyMore": { "description": "Under « Créer », in « Toutes les tournées », or in a snackbar of Équipe and of the admin banner, when the server refused an admin's command because the phone's admins/{uid} was removed (PLAN §5.12)." },
-  "allTourneesHint": "Ouvrez une tournée pour la gérer : code, équipe, rues. Vous n'y entrez comme membre que si vous la rejoignez.",
-  "@allTourneesHint": { "description": "Under the list of « Toutes les tournées » (AllTournees mockup)." },
-  "allTourneesEmpty": "Aucune tournée pour l'instant.",
-  "@allTourneesEmpty": { "description": "« Toutes les tournées » when the app has none." },
+  "allSectorsHint": "Ouvrez une tournée pour la gérer : code, équipe, rues. Vous n'y entrez comme membre que si vous la rejoignez.",
+  "@allSectorsHint": { "description": "Under the list of « Toutes les tournées » (AllSectors mockup)." },
+  "allSectorsEmpty": "Aucune tournée pour l'instant.",
+  "@allSectorsEmpty": { "description": "« Toutes les tournées » when the app has none." },
   "adminBannerTitle": "Administrateur · pas membre",
   "@adminBannerTitle": { "description": "Banner on Accueil when an admin opened a tournée they are not in (HomeAdmin mockup)." },
   "adminBannerBody": "Vous n'êtes pas dans l'équipe de cette tournée.",
@@ -1712,8 +1712,8 @@
   "@addStreetsMapTab": { "description": "Tab of « Ajouter des rues »: the map." },
   "addStreetsListTab": "Liste",
   "@addStreetsListTab": { "description": "Tab of « Ajouter des rues »: the checklist of a commune's streets." },
-  "alreadyInTournee": "déjà dans la tournée",
-  "@alreadyInTournee": { "description": "Right of a street of the « Liste » tab that the tournée already has." },
+  "alreadyInSector": "déjà dans la tournée",
+  "@alreadyInSector": { "description": "Right of a street of the « Liste » tab that the tournée already has." },
   "addButton": "{count, plural, =0{Ajouter} =1{Ajouter 1 rue} other{Ajouter {count} rues}}",
   "@addButton": {
     "description": "Button of the « Liste » tab: adds the ticked streets to the tournée.",
@@ -1795,8 +1795,8 @@
   "@streetCardLoading": {"description": "Street card while the street tapped is looked up."},
   "streetCardNumbers": "{count, plural, =0{Aucun numéro} =1{1 numéro} other{{count} numéros}}",
   "@streetCardNumbers": {"description": "Chip of the card of a street to add: how many numbers it brings.", "placeholders": {"count": {"type": "int", "example": "19"}}},
-  "streetCardNotInTournee": "Pas encore dans la tournée",
-  "@streetCardNotInTournee": {"description": "Chip of the card of a street the tournée does not have."},
+  "streetCardNotInSector": "Pas encore dans la tournée",
+  "@streetCardNotInSector": {"description": "Chip of the card of a street the tournée does not have."},
   "streetCardAddMine": "Ajouter et me l'attribuer",
   "@streetCardAddMine": {"description": "Red button of the card of a street to add: adds it, in the member's streets."},
   "streetCardAddFree": "Ajouter sans m'attribuer",

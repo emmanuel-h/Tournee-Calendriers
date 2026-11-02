@@ -87,7 +87,7 @@ final class MapLayerSpec {
 /// point tapped (a dark dot in a faint halo, Pick mockup), then the house
 /// dots from street zoom (PLAN §5.3). Colours are the map tokens of
 /// [colors].
-List<MapLayerSpec> tourneeMapLayers(AppColors colors) {
+List<MapLayerSpec> sectorMapLayers(AppColors colors) {
   final isFree = ['==', _level, ProgressLevel.free.name];
   return [
     MapLayerSpec(

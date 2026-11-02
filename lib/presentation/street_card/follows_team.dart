@@ -1,8 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tournee_calendriers/domain/tournee/team_roster.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee.dart';
+import 'package:tournee_calendriers/domain/sector/sector.dart';
+import 'package:tournee_calendriers/domain/sector/team_roster.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
-import 'package:tournee_calendriers/presentation/my_tournees/my_tournees_notifier.dart';
+import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
 
 /// Follows the open tournée's team (`ObserveTeam`, from the phone's copy,
 /// offline too), so a street card names who covers the street (« Faite
@@ -12,11 +12,11 @@ import 'package:tournee_calendriers/presentation/my_tournees/my_tournees_notifie
 /// A `mixin` adds these members to the notifiers that need them; `on
 /// Notifier<S>` lets it use their `ref` and `state`.
 mixin FollowsTeam<S> on Notifier<S> {
-  Tournee? _team;
+  Sector? _team;
 
   /// The open tournée as last read; null while none is open, or while it
   /// cannot be read (offline and never seen, the member removed).
-  Tournee? get team => _team;
+  Sector? get team => _team;
 
   /// Who still covers a street, as last read: every assignee while the
   /// [team] is not known (see [TeamRoster]).
@@ -34,11 +34,11 @@ mixin FollowsTeam<S> on Notifier<S> {
     _team = null;
     // `select`: built again when another tournée opens, not when the one
     // open changes otherwise.
-    final tournee = ref.watch(
-      currentTourneeProvider.select((tournee) => tournee?.id),
+    final sector = ref.watch(
+      currentSectorProvider.select((sector) => sector?.id),
     );
-    if (tournee == null) return;
-    final subscription = ref.watch(observeTeamProvider)(tournee).listen(
+    if (sector == null) return;
+    final subscription = ref.watch(observeTeamProvider)(sector).listen(
       (team) {
         _team = team;
         state = render();

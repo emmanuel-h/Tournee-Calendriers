@@ -1,4 +1,4 @@
-import 'package:tournee_calendriers/domain/tournee/member_name.dart';
+import 'package:tournee_calendriers/domain/sector/member_name.dart';
 
 /// The look the member chose in Paramètres → Thème (PLAN §5.9).
 enum ThemeChoice {

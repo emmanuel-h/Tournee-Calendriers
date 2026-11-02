@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tournee_calendriers/application/use_cases/choose_start_point.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
+import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 
 /// Which screen the app opens on (PLAN §4): the screens' own copy of the
@@ -20,21 +20,21 @@ final class LaunchOnWelcome extends LaunchPlace {
   const LaunchOnWelcome();
 }
 
-/// « Demande envoyée » for the request to join [tournee].
+/// « Demande envoyée » for the request to join [sector].
 final class LaunchOnRequest extends LaunchPlace {
-  const LaunchOnRequest(this.tournee);
+  const LaunchOnRequest(this.sector);
 
-  final TourneeId tournee;
+  final SectorId sector;
 
   @override
   bool operator ==(Object other) =>
-      other is LaunchOnRequest && other.tournee == tournee;
+      other is LaunchOnRequest && other.sector == sector;
 
   @override
-  int get hashCode => tournee.hashCode;
+  int get hashCode => sector.hashCode;
 
   @override
-  String toString() => 'LaunchOnRequest(${tournee.value})';
+  String toString() => 'LaunchOnRequest(${sector.value})';
 }
 
 /// The screen showing [point].

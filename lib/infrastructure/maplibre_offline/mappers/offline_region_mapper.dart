@@ -13,10 +13,12 @@ import 'package:maplibre_gl/maplibre_gl.dart' hide Error;
 import 'package:tournee_calendriers/application/ports/offline_map_store.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/map/offline_area.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
+import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 
-/// The key of the tournée's id in a region's metadata.
-const tourneeMetadataKey = 'tournee';
+/// The key of the sector's id in a region's metadata. It keeps the name it
+/// had before the code said « sector » (#116): the regions already on a
+/// phone are found by it, so renaming it would orphan their offline map.
+const sectorMetadataKey = 'tournee';
 
 /// The region to download over [bounds] with the map [styleUrl] (the
 /// style the map shows: the region is kept under its address), from the
@@ -32,17 +34,17 @@ OfflineRegionDefinition regionDefinition(GeoBounds bounds, String styleUrl) =>
       maxZoom: offlineMapMaxZoom.toDouble(),
     );
 
-/// The metadata of a region made for [tournee].
-Map<String, dynamic> regionMetadata(TourneeId tournee) => {
-  tourneeMetadataKey: tournee.value,
+/// The metadata of a region made for [sector].
+Map<String, dynamic> regionMetadata(SectorId sector) => {
+  sectorMetadataKey: sector.value,
 };
 
 /// The region of the app [region] is; null when it was not made for a
 /// tournée (no or another metadata) or its bounds are not a place (the
 /// map library hands bounds over the antimeridian west of east).
 OfflineMapRegion? offlineMapRegionOf(OfflineRegion region) {
-  final tournee = region.metadata[tourneeMetadataKey];
-  if (tournee is! String || tournee.trim().isEmpty) return null;
+  final sector = region.metadata[sectorMetadataKey];
+  if (sector is! String || sector.trim().isEmpty) return null;
   final LatLngBounds(:southwest, :northeast) = region.definition.bounds;
   final bounds = GeoBounds.of(
     south: southwest.latitude,
@@ -53,7 +55,7 @@ OfflineMapRegion? offlineMapRegionOf(OfflineRegion region) {
   if (bounds == null) return null;
   return OfflineMapRegion(
     id: region.id,
-    tournee: TourneeId(tournee),
+    sector: SectorId(sector),
     bounds: bounds,
   );
 }

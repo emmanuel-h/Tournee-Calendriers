@@ -1,5 +1,5 @@
 // Translation between a Street and its Firestore document,
-// `tournees/{id}/campaigns/{year}/streets/{streetId}` (PLAN §6.2). Pure
+// `sectors/{id}/campaigns/{year}/streets/{streetId}` (PLAN §6.2). Pure
 // functions: no database here, so they are tested alone.
 //
 // The document:

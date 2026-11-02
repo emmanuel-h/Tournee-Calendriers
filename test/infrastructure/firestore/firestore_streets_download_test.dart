@@ -5,19 +5,19 @@ import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mock_exceptions/mock_exceptions.dart';
 import 'package:tournee_calendriers/application/ports/streets_download.dart';
+import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_streets_download.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_document_mapper.dart';
 
-import '../../domain/tournee/tournee_fixtures.dart' show campaign2026;
+import '../../domain/sector/sector_fixtures.dart' show campaign2026;
 import '../../support/geo_fixtures.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 
-const _streets = 'tournees/t49/campaigns/2026/streets';
+const _streets = 'sectors/t49/campaigns/2026/streets';
 
 Street _street(String id) => valueOf(
   Street.create(
@@ -54,11 +54,11 @@ void main() {
     await db.doc('$_streets/nationale').set(streetToDocument(nationale));
     await db.doc('$_streets/paix').set(streetToDocument(paix));
     await db
-        .doc('tournees/t49/campaigns/2025/streets/old')
+        .doc('sectors/t49/campaigns/2025/streets/old')
         .set(streetToDocument(_street('old')));
 
     final streets = valueOf(
-      await download.fromServer(TourneeId('t49'), campaign2026),
+      await download.fromServer(SectorId('t49'), campaign2026),
     );
 
     expect([
@@ -73,7 +73,7 @@ void main() {
     await db.doc('$_streets/broken').set({'name': 12});
 
     final streets = valueOf(
-      await download.fromServer(TourneeId('t49'), campaign2026),
+      await download.fromServer(SectorId('t49'), campaign2026),
     );
 
     expect([for (final street in streets) street.id], [paix.id]);
@@ -82,7 +82,7 @@ void main() {
   test('should tell when the server cannot be reached', () async {
     await serverFails('unavailable');
 
-    final result = await download.fromServer(TourneeId('t49'), campaign2026);
+    final result = await download.fromServer(SectorId('t49'), campaign2026);
 
     expect(failureOf(result), StreetsDownloadFailure.noNetwork);
   });
@@ -90,7 +90,7 @@ void main() {
   test('should tell when the server refuses', () async {
     await serverFails('permission-denied');
 
-    final result = await download.fromServer(TourneeId('t49'), campaign2026);
+    final result = await download.fromServer(SectorId('t49'), campaign2026);
 
     expect(failureOf(result), StreetsDownloadFailure.serviceError);
   });

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:tournee_calendriers/domain/tournee/member_name.dart';
+import 'package:tournee_calendriers/domain/sector/member_name.dart';
 import 'package:tournee_calendriers/presentation/account/device_id_state.dart';
 import 'package:tournee_calendriers/presentation/admin/admin_notifier.dart';
 import 'package:tournee_calendriers/presentation/welcome/welcome_notifier.dart';
@@ -141,21 +141,21 @@ final class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                       if (isAdmin) ...[
                         PrimaryButton(
                           key: const Key('welcome.create'),
-                          label: l10n.createTourneeAction,
+                          label: l10n.createSectorAction,
                           onPressed: goOn
                               ? () => _goOn(AppRoutes.create)
                               : null,
                         ),
                         SecondaryButton(
                           key: const Key('welcome.join'),
-                          label: l10n.joinTourneeAction,
+                          label: l10n.joinSectorAction,
                           onPressed: goOn ? () => _goOn(AppRoutes.join) : null,
                         ),
                       ] else
                         // The only way in for a member: the red button.
                         PrimaryButton(
                           key: const Key('welcome.join'),
-                          label: l10n.joinTourneeAction,
+                          label: l10n.joinSectorAction,
                           onPressed: goOn ? () => _goOn(AppRoutes.join) : null,
                         ),
                       // Room kept even without the line, so the buttons do

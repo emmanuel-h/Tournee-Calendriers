@@ -31,8 +31,8 @@ import {
   seedTeam,
   streetDoc,
   streetsPath,
-  tourneeDoc,
-  tourneePath,
+  sectorDoc,
+  sectorPath,
   threePm,
   twoPm,
   updateFields,
@@ -113,7 +113,7 @@ describe('creating a street', () => {
   });
 
   it('should refuse a street in a previous campaign', async () => {
-    await seed(env, tourneePath, tourneeDoc({ currentCampaign: 2027 }));
+    await seed(env, sectorPath, sectorDoc({ currentCampaign: 2027 }));
 
     await assertFails(newStreet(lea, newStreetDoc()));
   });
@@ -604,14 +604,14 @@ describe('marking a house', () => {
 
   it('should refuse a member removed from the tournée', async () => {
     await env.withSecurityRulesDisabled((context) =>
-      deleteDoc(doc(context.firestore(), `${tourneePath}/members/${lea}`)),
+      deleteDoc(doc(context.firestore(), `${sectorPath}/members/${lea}`)),
     );
 
     await assertFails(updateFields(nationale(lea), mark('4bis', 'DONE', null)));
   });
 
   it('should refuse a mark in a previous campaign', async () => {
-    await seed(env, tourneePath, tourneeDoc({ currentCampaign: 2027 }));
+    await seed(env, sectorPath, sectorDoc({ currentCampaign: 2027 }));
 
     await assertFails(updateFields(nationale(), mark('4bis', 'DONE', null)));
   });
@@ -1240,7 +1240,7 @@ describe('the 30-day purge of the Corbeille', () => {
   });
 
   it('should leave a previous campaign to the start of a new one', async () => {
-    const old = `${tourneePath}/campaigns/2025/streets/nationale`;
+    const old = `${sectorPath}/campaigns/2025/streets/nationale`;
     await seedDeleted(ago(40 * day), old);
     await assertFails(deleteDoc(doc(phoneOf(env, lea), old)));
   });

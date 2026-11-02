@@ -1,9 +1,9 @@
 import 'package:tournee_calendriers/application/ports/offline_map_store.dart';
-import 'package:tournee_calendriers/application/ports/tournee_downloads.dart';
-import 'package:tournee_calendriers/application/use_cases/download_tournee.dart';
+import 'package:tournee_calendriers/application/ports/sector_downloads.dart';
+import 'package:tournee_calendriers/application/use_cases/download_sector.dart';
 import 'package:tournee_calendriers/application/use_cases/offline_map_download.dart';
 import 'package:tournee_calendriers/domain/map/offline_area.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
+import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 
 /// How a [RefreshOfflineMaps] went.
 enum MapRefreshOutcome {
@@ -38,34 +38,34 @@ final class RefreshOfflineMaps {
   const RefreshOfflineMaps(
     this._maps,
     this._downloads, {
-    this.stallLimit = DownloadTournee.defaultStallLimit,
+    this.stallLimit = DownloadSector.defaultStallLimit,
   });
 
   final OfflineMapStore _maps;
-  final TourneeDownloads _downloads;
+  final SectorDownloads _downloads;
 
   /// How long a map download may tell nothing before it fails.
   final Duration stallLimit;
 
   /// Refreshes every downloaded tournée's map, but the map of [except]
   /// (downloaded a moment ago) when given.
-  Future<MapRefreshOutcome> call({TourneeId? except}) async {
+  Future<MapRefreshOutcome> call({SectorId? except}) async {
     for (final download in _downloads.downloads.values) {
       final area = download.area;
-      if (area == null || download.tournee == except) continue;
+      if (area == null || download.sector == except) continue;
       final regions = await _maps.regions();
       final bounds = offlineRegionBounds(area, [
         for (final region in regions) region.bounds,
       ]);
       final last = await followMapDownload(
         _maps,
-        download.tournee,
+        download.sector,
         bounds,
         stallLimit: stallLimit,
       ).last;
       if (last is! MapDownloadDone) return MapRefreshOutcome.failed;
       for (final region in regions) {
-        if (region.tournee == download.tournee) await _maps.delete(region);
+        if (region.sector == download.sector) await _maps.delete(region);
       }
     }
     return MapRefreshOutcome.refreshed;

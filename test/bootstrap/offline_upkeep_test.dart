@@ -6,29 +6,29 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tournee_calendriers/application/ports/streets_download.dart';
 import 'package:tournee_calendriers/bootstrap/offline_upkeep.dart';
+import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
-import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 
 import '../application/use_cases/offline_fixtures.dart';
-import '../domain/tournee/my_tournees_fixtures.dart';
-import '../support/fakes/fake_my_tournees_store.dart';
+import '../domain/sector/my_sectors_fixtures.dart';
+import '../support/fakes/fake_my_sectors_store.dart';
 import '../support/fakes/fake_offline_map_store.dart';
 import '../support/fakes/fake_ports.dart';
+import '../support/fakes/fake_sector_downloads.dart';
+import '../support/fakes/fake_sector_repository.dart';
 import '../support/fakes/fake_street_repository.dart';
 import '../support/fakes/fake_streets_download.dart';
-import '../support/fakes/fake_tournee_downloads.dart';
-import '../support/fakes/fake_tournee_repository.dart';
 import '../support/results.dart';
 
 void main() {
   late FakeStreetsDownload streets;
-  late FakeTourneeDownloads downloads;
+  late FakeSectorDownloads downloads;
   late FakeClock clock;
 
   setUp(() {
     streets = FakeStreetsDownload(const Err(StreetsDownloadFailure.noNetwork));
-    downloads = FakeTourneeDownloads();
+    downloads = FakeSectorDownloads();
     clock = FakeClock(morning);
   });
 
@@ -37,13 +37,13 @@ void main() {
       overrides: [
         streetsDownloadProvider.overrideWithValue(streets),
         offlineMapStoreProvider.overrideWithValue(FakeOfflineMapStore()),
-        tourneeDownloadsProvider.overrideWithValue(downloads),
-        myTourneesStoreProvider.overrideWithValue(
-          FakeMyTourneesStore(
-            valueOf(MyTournees.none.remember(tournee49).open(t49)),
+        sectorDownloadsProvider.overrideWithValue(downloads),
+        mySectorsStoreProvider.overrideWithValue(
+          FakeMySectorsStore(
+            valueOf(MySectors.none.remember(sector49).open(t49)),
           ),
         ),
-        tourneeRepositoryProvider.overrideWithValue(FakeTourneeRepository()),
+        sectorRepositoryProvider.overrideWithValue(FakeSectorRepository()),
         streetRepositoryProvider.overrideWithValue(
           FakeStreetRepository([nationale, paix]),
         ),

@@ -7,19 +7,19 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mock_exceptions/mock_exceptions.dart';
+import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_street_repository.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_document_mapper.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_writes.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/unfinished_streets.dart';
 
-import '../../domain/tournee/tournee_fixtures.dart' show campaign2026;
+import '../../domain/sector/sector_fixtures.dart' show campaign2026;
 import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_unfinished_streets.dart';
 import '../../support/geo_fixtures.dart';
@@ -27,7 +27,7 @@ import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 import '../local_storage/stored_street_fixtures.dart';
 
-const streetsPath = 'tournees/t49/campaigns/2026/streets';
+const streetsPath = 'sectors/t49/campaigns/2026/streets';
 
 Street _street(String id, {String? banId}) => valueOf(
   Street.create(
@@ -83,7 +83,7 @@ void main() {
   ]) {
     final repository = FirestoreStreetRepository(
       on ?? db,
-      tournee: TourneeId('t49'),
+      sector: SectorId('t49'),
       campaign: campaign2026,
       identity: FakeIdentity(MemberId(member)),
       clock: FakeClock(fourPm),

@@ -1,11 +1,11 @@
 import 'package:tournee_calendriers/application/ports/identity_provider.dart';
-import 'package:tournee_calendriers/application/ports/my_tournees_store.dart';
+import 'package:tournee_calendriers/application/ports/my_sectors_store.dart';
 import 'package:tournee_calendriers/application/ports/phone_settings.dart';
+import 'package:tournee_calendriers/domain/sector/member_name.dart';
+import 'package:tournee_calendriers/domain/sector/sector_id.dart';
+import 'package:tournee_calendriers/domain/sector/sector_repository.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
-import 'package:tournee_calendriers/domain/tournee/member_name.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_repository.dart';
 
 // Paramètres (PLAN §5.9): the member's first name and the app's theme, kept
 // on the phone (PLAN §6.3). Offline, always.
@@ -34,37 +34,37 @@ final class ReadPhoneSettings {
 final class ChangeMemberName {
   const ChangeMemberName(
     this._settings,
-    this._tournees,
+    this._sectors,
     this._identity,
-    this._myTournees,
+    this._mySectors,
   );
 
   final PhoneSettings _settings;
-  final TourneeRepository _tournees;
+  final SectorRepository _sectors;
   final IdentityProvider _identity;
-  final MyTourneesStore _myTournees;
+  final MySectorsStore _mySectors;
 
   Future<Result<MemberName, MemberNameFailure>> call(String text) async {
     final name = MemberName.create(text);
     if (name case Ok(:final value)) {
       await _settings.setMemberName(value);
-      await _renameInMyTournees(value);
+      await _renameInMySectors(value);
     }
     return name;
   }
 
-  Future<void> _renameInMyTournees(MemberName name) async {
+  Future<void> _renameInMySectors(MemberName name) async {
     final by = _identity.currentMember;
-    for (final summary in _myTournees.myTournees.tournees) {
+    for (final summary in _mySectors.mySectors.sectors) {
       // A pending request cannot read its tournée (PLAN §8.2): nothing to
       // ask for.
       if (summary.isPending) continue;
-      await _renameIn(_tournees, summary.id, name, by: by);
+      await _renameIn(_sectors, summary.id, name, by: by);
     }
   }
 }
 
-/// Catches up the member's name in [TourneeId], one of their tournées,
+/// Catches up the member's name in [SectorId], one of their tournées,
 /// when the server holds another one than the phone's (`WatchOwnName`):
 /// sends the phone's name with the same rename as « Prénom ».
 ///
@@ -78,33 +78,33 @@ final class ChangeMemberName {
 /// yet, a tournée it cannot read or that refuses the rename (the member
 /// left meanwhile) send nothing either.
 final class CatchUpMemberName {
-  const CatchUpMemberName(this._settings, this._tournees, this._identity);
+  const CatchUpMemberName(this._settings, this._sectors, this._identity);
 
   final PhoneSettings _settings;
-  final TourneeRepository _tournees;
+  final SectorRepository _sectors;
   final IdentityProvider _identity;
 
-  Future<void> call(TourneeId tournee, MemberName heard) async {
+  Future<void> call(SectorId sector, MemberName heard) async {
     final mine = _settings.memberName;
     if (mine == null || mine == heard) return;
-    await _renameIn(_tournees, tournee, mine, by: _identity.currentMember);
+    await _renameIn(_sectors, sector, mine, by: _identity.currentMember);
   }
 }
 
 /// Renames [by] to [name] in the tournée [id]; skips a tournée that cannot
 /// be read or refuses the rename.
 Future<void> _renameIn(
-  TourneeRepository tournees,
-  TourneeId id,
+  SectorRepository sectors,
+  SectorId id,
   MemberName name, {
   required MemberId by,
 }) async {
-  final tournee = await tournees.find(id);
-  if (tournee == null) return;
-  if (tournee.rename(name, by: by) case Ok(
+  final sector = await sectors.find(id);
+  if (sector == null) return;
+  if (sector.rename(name, by: by) case Ok(
     value: (final renamed, final change),
   )) {
-    await tournees.save(renamed, change);
+    await sectors.save(renamed, change);
   }
 }
 

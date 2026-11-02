@@ -3,20 +3,20 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
-import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
 import 'package:tournee_calendriers/presentation/move_streets/move_streets_state.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations_fr.dart';
 import 'package:tournee_calendriers/ui/screens/start/move_streets_card.dart';
 
-import '../../domain/tournee/my_tournees_fixtures.dart';
-import '../../domain/tournee/tournee_fixtures.dart' show leaId, team;
+import '../../domain/sector/my_sectors_fixtures.dart';
+import '../../domain/sector/sector_fixtures.dart' show leaId, team;
 import '../../support/fakes/fake_moved_streets_log.dart';
-import '../../support/fakes/fake_my_tournees_store.dart';
+import '../../support/fakes/fake_my_sectors_store.dart';
+import '../../support/fakes/fake_sector_repository.dart';
 import '../../support/fakes/fake_street_repository.dart';
-import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 import '../support/app_overrides.dart';
@@ -35,30 +35,30 @@ void main() {
     ),
   );
 
-  late FakeStreetRepository tourneeStreets;
+  late FakeStreetRepository sectorStreets;
   late FakeMovedStreetsLog log;
 
   /// Léa's phone with the 49 open, two streets kept on the phone, and the
-  /// 49 holding [inTournee].
+  /// 49 holding [inSector].
   Future<void> pumpApp(
     WidgetTester tester, {
-    List<Street> inTournee = const [],
+    List<Street> inSector = const [],
   }) async {
-    tourneeStreets = FakeStreetRepository(inTournee);
+    sectorStreets = FakeStreetRepository(inSector);
     log = FakeMovedStreetsLog();
     await tester.pumpWidget(
       ProviderScope(
         overrides: fakePhone(
-          streets: tourneeStreets,
+          streets: sectorStreets,
           phoneStreets: FakeStreetRepository([
             street('s1', 'Rue Nationale', '69264_0420'),
             street('s2', 'Rue Pierre Morin', '69264_1460'),
           ]),
           movedStreets: log,
-          myTournees: FakeMyTourneesStore(
-            valueOf(MyTournees.none.remember(tournee49).open(tournee49.id)),
+          mySectors: FakeMySectorsStore(
+            valueOf(MySectors.none.remember(sector49).open(sector49.id)),
           ),
-          tournees: FakeTourneeRepository([team()]),
+          sectors: FakeSectorRepository([team()]),
           member: leaId,
         ),
         child: const TourneeApp(showGallery: false),
@@ -95,13 +95,13 @@ void main() {
     tester,
   ) async {
     await pumpApp(tester);
-    tourneeStreets.holdAdds = Completer<void>();
+    sectorStreets.holdAdds = Completer<void>();
 
     await tester.tap(find.byKey(const Key('start.moveStreets')));
     await tester.pump();
     expect(find.text('Ajout en cours… 0/2'), findsOneWidget);
     expect(find.text('Les ajouter à la tournée'), findsNothing);
-    tourneeStreets.holdAdds!.complete();
+    sectorStreets.holdAdds!.complete();
     await tester.pumpAndSettle();
 
     expect(find.text('2 rues ajoutées à la tournée'), findsOneWidget);
@@ -111,7 +111,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.text('Rue Nationale'), findsOneWidget);
     expect(find.text('Rue Pierre Morin'), findsOneWidget);
-    expect(log.remembered, [tournee49.id]);
+    expect(log.remembered, [sector49.id]);
   });
 
   testWidgets('should count the streets the tournée already had', (
@@ -119,14 +119,14 @@ void main() {
   ) async {
     await pumpApp(
       tester,
-      inTournee: [street('t-1', 'Rue Nationale', '69264_0420')],
+      inSector: [street('t-1', 'Rue Nationale', '69264_0420')],
     );
 
     await tester.tap(find.byKey(const Key('start.moveStreets')));
     await tester.pumpAndSettle();
 
     expect(find.text('1 rue ajoutée, 1 déjà dans la tournée'), findsOneWidget);
-    expect(tourneeStreets.added.single.id, StreetId('s2'));
+    expect(sectorStreets.added.single.id, StreetId('s2'));
   });
 
   testWidgets('should hide the card on « Plus tard », moving nothing', (
@@ -138,7 +138,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(card, findsNothing);
-    expect(tourneeStreets.added, isEmpty);
+    expect(sectorStreets.added, isEmpty);
     expect(log.remembered, isEmpty);
   });
 

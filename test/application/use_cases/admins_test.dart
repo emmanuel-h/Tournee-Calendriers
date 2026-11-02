@@ -1,23 +1,23 @@
 import 'package:test/test.dart';
-import 'package:tournee_calendriers/application/ports/tournee_directory.dart';
+import 'package:tournee_calendriers/application/ports/sector_directory.dart';
 import 'package:tournee_calendriers/application/use_cases/admins.dart';
-import 'package:tournee_calendriers/domain/tournee/member.dart';
-import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_summary.dart';
+import 'package:tournee_calendriers/domain/sector/member.dart';
+import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
+import 'package:tournee_calendriers/domain/sector/sector_id.dart';
+import 'package:tournee_calendriers/domain/sector/sector_summary.dart';
 
-import '../../domain/tournee/my_tournees_fixtures.dart';
-import '../../domain/tournee/tournee_fixtures.dart';
+import '../../domain/sector/my_sectors_fixtures.dart';
+import '../../domain/sector/sector_fixtures.dart';
 import '../../support/fakes/fake_admin_status.dart';
 import '../../support/fakes/fake_member_account.dart';
-import '../../support/fakes/fake_my_tournees_store.dart';
-import '../../support/fakes/fake_tournee_directory.dart';
+import '../../support/fakes/fake_my_sectors_store.dart';
+import '../../support/fakes/fake_sector_directory.dart';
 import '../../support/results.dart';
 
 /// The 12 of the CS Villefranche as « Toutes les tournées » lists it.
-TourneeOverview overview12({bool callerIsActive = false}) => TourneeOverview(
-  id: TourneeId('t12'),
-  number: tournee12.number,
+SectorOverview overview12({bool callerIsActive = false}) => SectorOverview(
+  id: SectorId('t12'),
+  number: sector12.number,
   centre: csVillefranche,
   campaign: campaign2026,
   activeMembers: 3,
@@ -54,11 +54,11 @@ void main() {
     });
   });
 
-  group('ListAllTournees', () {
-    late FakeTourneeDirectory directory;
+  group('ListAllSectors', () {
+    late FakeSectorDirectory directory;
 
     setUp(() {
-      directory = FakeTourneeDirectory()..overviews = [overview12()];
+      directory = FakeSectorDirectory()..overviews = [overview12()];
     });
 
     test(
@@ -66,7 +66,7 @@ void main() {
       () async {
         final account = FakeMemberAccount(signedInMember: samId);
 
-        final all = valueOf(await ListAllTournees(directory, account)());
+        final all = valueOf(await ListAllSectors(directory, account)());
 
         expect(all, [overview12()]);
         expect(directory.allAsked, [samId]);
@@ -76,7 +76,7 @@ void main() {
     test('should sign in first when the phone has no account yet', () async {
       final account = FakeMemberAccount(nextMember: samId);
 
-      valueOf(await ListAllTournees(directory, account)());
+      valueOf(await ListAllSectors(directory, account)());
 
       expect(account.signInCalls, 1);
       expect(directory.allAsked, [samId]);
@@ -85,7 +85,7 @@ void main() {
     test('should tell when the phone cannot sign in', () async {
       final account = FakeMemberAccount();
 
-      final failure = failureOf(await ListAllTournees(directory, account)());
+      final failure = failureOf(await ListAllSectors(directory, account)());
 
       expect(failure, DirectoryFailure.noNetwork);
       expect(directory.allAsked, isEmpty);
@@ -95,7 +95,7 @@ void main() {
       directory.offline = true;
 
       final failure = failureOf(
-        await ListAllTournees(
+        await ListAllSectors(
           directory,
           FakeMemberAccount(signedInMember: samId),
         )(),
@@ -109,7 +109,7 @@ void main() {
       directory.notAdmin = true;
 
       final failure = failureOf(
-        await ListAllTournees(
+        await ListAllSectors(
           directory,
           FakeMemberAccount(signedInMember: samId),
         )(),
@@ -120,11 +120,11 @@ void main() {
   });
 
   group('OpenAsAdmin', () {
-    late FakeMyTourneesStore store;
+    late FakeMySectorsStore store;
 
     setUp(() {
-      store = FakeMyTourneesStore(
-        valueOf(MyTournees.none.remember(tournee49).open(tournee49.id)),
+      store = FakeMySectorsStore(
+        valueOf(MySectors.none.remember(sector49).open(sector49.id)),
       );
     });
 
@@ -134,8 +134,8 @@ void main() {
 
       final visited = summaryOf('t12', 12, status: MemberStatus.visiting);
       expect(opened, visited);
-      expect(store.myTournees.tournees, [tournee49, visited]);
-      expect(store.myTournees.currentId, TourneeId('t12'));
+      expect(store.mySectors.sectors, [sector49, visited]);
+      expect(store.mySectors.currentId, SectorId('t12'));
       expect(store.saves, hasLength(1));
     });
 
@@ -146,28 +146,28 @@ void main() {
           overview12(callerIsActive: true),
         );
 
-        expect(opened, tournee12);
-        expect(store.myTournees.current, tournee12);
+        expect(opened, sector12);
+        expect(store.mySectors.current, sector12);
       },
     );
 
     test('should replace what the phone kept of the tournée', () async {
-      store.myTournees = MyTournees.none.remember(
+      store.mySectors = MySectors.none.remember(
         summaryOf('t12', 12, status: MemberStatus.pending),
       );
 
       final opened = await OpenAsAdmin(store)(overview12());
 
-      expect(store.myTournees.tournees, [opened]);
+      expect(store.mySectors.sectors, [opened]);
       expect(opened.status, MemberStatus.visiting);
     });
 
     test(
       'should take the number, centre and campaign the server gives',
       () async {
-        final moved = TourneeOverview(
-          id: TourneeId('t12'),
-          number: tournee12.number,
+        final moved = SectorOverview(
+          id: SectorId('t12'),
+          number: sector12.number,
           centre: csVillefranche,
           campaign: campaign2027,
           activeMembers: 0,
@@ -179,9 +179,9 @@ void main() {
 
         expect(
           opened,
-          TourneeSummary(
-            id: TourneeId('t12'),
-            number: tournee12.number,
+          SectorSummary(
+            id: SectorId('t12'),
+            number: sector12.number,
             centre: csVillefranche,
             campaign: campaign2027,
             status: MemberStatus.visiting,

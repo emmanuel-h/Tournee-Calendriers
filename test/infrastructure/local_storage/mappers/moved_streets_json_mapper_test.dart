@@ -1,11 +1,11 @@
 import 'package:test/test.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
+import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/mappers/moved_streets_json_mapper.dart';
 
 void main() {
   group('movedStreetsToJson', () {
     test('should write the version and the tournées, sorted', () {
-      expect(movedStreetsToJson({TourneeId('t49'), TourneeId('t12')}), {
+      expect(movedStreetsToJson({SectorId('t49'), SectorId('t12')}), {
         'version': 1,
         'movedInto': ['t12', 't49'],
       });
@@ -18,9 +18,9 @@ void main() {
 
   group('movedStreetsFromJson', () {
     test('should read back what was written', () {
-      final tournees = {TourneeId('t49'), TourneeId('t12')};
+      final sectors = {SectorId('t49'), SectorId('t12')};
 
-      expect(movedStreetsFromJson(movedStreetsToJson(tournees)), tournees);
+      expect(movedStreetsFromJson(movedStreetsToJson(sectors)), sectors);
     });
 
     final unreadable = <String, Object?>{

@@ -71,8 +71,8 @@ final class ScreenMessage extends StatelessWidget {
 /// The tournée to confirm or waited for, as the join mockup draws it: its
 /// number in a red square, « Tournée 49 · CS Villefranche » over
 /// « Campagne 2026 ».
-final class TourneePreviewCard extends StatelessWidget {
-  const TourneePreviewCard({
+final class SectorPreviewCard extends StatelessWidget {
+  const SectorPreviewCard({
     super.key,
     required this.number,
     required this.title,

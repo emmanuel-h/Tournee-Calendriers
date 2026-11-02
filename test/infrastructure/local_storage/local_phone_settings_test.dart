@@ -5,7 +5,7 @@ import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/phone_settings.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_phone_settings.dart';
 
-import '../../domain/tournee/tournee_fixtures.dart';
+import '../../domain/sector/sector_fixtures.dart';
 
 void main() {
   late Directory folder;

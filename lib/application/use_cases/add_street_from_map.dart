@@ -13,7 +13,7 @@ import 'package:tournee_calendriers/domain/street/street_shape.dart';
 enum AddStreetFailure {
   /// The tournée has the street already, out of the Corbeille (a teammate
   /// added it meanwhile, or a second tap): the card shows it instead.
-  alreadyInTournee,
+  alreadyInSector,
 
   /// The numbers the BAN gave break a rule of the street (a number twice):
   /// a service answering nonsense.
@@ -51,7 +51,7 @@ final class AddStreetFromMap {
   }) async {
     final known = await _streets.findByBanId(numbers.id);
     if (known != null) {
-      if (!known.isDeleted) return const Err(AddStreetFailure.alreadyInTournee);
+      if (!known.isDeleted) return const Err(AddStreetFailure.alreadyInSector);
       return Ok(await _bringBack(known, assignToMe: assignToMe));
     }
 

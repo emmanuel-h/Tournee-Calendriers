@@ -1,12 +1,12 @@
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
+import 'package:tournee_calendriers/domain/sector/sector_commune.dart';
 import 'package:tournee_calendriers/domain/shared/commune.dart';
 import 'package:tournee_calendriers/domain/shared/french_text.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/shared/insee_code.dart';
 import 'package:tournee_calendriers/domain/shared/same_items.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_commune.dart';
 
 // The view state of « Importer des rues » (PLAN §5.0), made of small
 // `sealed` families: the screen `switch`es over each one, and a new case
@@ -57,7 +57,7 @@ final class CommuneOption {
 
   /// The option of one of the tournée's communes: their postcodes are not
   /// kept, the chips show the name alone.
-  factory CommuneOption.ofTournee(TourneeCommune commune) => CommuneOption(
+  factory CommuneOption.ofSector(SectorCommune commune) => CommuneOption(
     commune: commune.commune,
     postcodes: const [],
     centre: commune.centre,
@@ -77,8 +77,8 @@ final class CommuneOption {
   InseeCode get inseeCode => commune.inseeCode;
 
   /// The commune as a tournée keeps it (« Nouvelle tournée », Équipe).
-  TourneeCommune get tourneeCommune =>
-      TourneeCommune(commune: commune, centre: centre);
+  SectorCommune get sectorCommune =>
+      SectorCommune(commune: commune, centre: centre);
 
   @override
   bool operator ==(Object other) =>
@@ -281,8 +281,8 @@ final class ImportSummary {
 /// each intent of the notifier makes a new one.
 final class ImportState {
   const ImportState({
-    this.inTournee = false,
-    this.tourneeCommunes = const [],
+    this.inSector = false,
+    this.sectorCommunes = const [],
     this.query = '',
     this.searching = false,
     this.suggestions = const NoSuggestions(),
@@ -294,13 +294,13 @@ final class ImportState {
 
   /// A tournée is open: the streets go into it (« Ajouter N rues », « déjà
   /// dans la tournée »), not onto the phone alone.
-  final bool inTournee;
+  final bool inSector;
 
   /// The open tournée's communes, whose streets the list offers: a chip
   /// each when there are several, and no commune field. None with no
   /// tournée open, or for a tournée created before the communes: the
   /// commune is then searched as in M1. Read-only.
-  final List<CommuneOption> tourneeCommunes;
+  final List<CommuneOption> sectorCommunes;
 
   /// The text of the « Commune » field.
   final String query;
@@ -355,7 +355,7 @@ final class ImportState {
   bool get canImport => checkedCount > 0 && !importing;
 
   ImportState copyWith({
-    List<CommuneOption>? tourneeCommunes,
+    List<CommuneOption>? sectorCommunes,
     String? query,
     bool? searching,
     CommuneSuggestions? suggestions,
@@ -364,8 +364,8 @@ final class ImportState {
     String? filter,
     ImportRun? run,
   }) => ImportState(
-    inTournee: inTournee,
-    tourneeCommunes: tourneeCommunes ?? this.tourneeCommunes,
+    inSector: inSector,
+    sectorCommunes: sectorCommunes ?? this.sectorCommunes,
     query: query ?? this.query,
     searching: searching ?? this.searching,
     suggestions: suggestions ?? this.suggestions,

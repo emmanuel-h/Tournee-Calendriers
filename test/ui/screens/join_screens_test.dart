@@ -2,9 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
-import 'package:tournee_calendriers/application/ports/tournee_directory.dart';
-import 'package:tournee_calendriers/domain/tournee/member.dart';
-import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
+import 'package:tournee_calendriers/application/ports/sector_directory.dart';
+import 'package:tournee_calendriers/domain/sector/member.dart';
+import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/screens/home/home_screen.dart';
@@ -12,12 +12,12 @@ import 'package:tournee_calendriers/ui/screens/home/start_or_home.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/join_pending_screen.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/welcome_screen.dart';
 
-import '../../domain/tournee/my_tournees_fixtures.dart';
-import '../../domain/tournee/tournee_fixtures.dart';
+import '../../domain/sector/my_sectors_fixtures.dart';
+import '../../domain/sector/sector_fixtures.dart';
 import '../../support/fakes/fake_member_account.dart';
-import '../../support/fakes/fake_my_tournees_store.dart';
+import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_phone_settings.dart';
-import '../../support/fakes/fake_tournee_directory.dart';
+import '../../support/fakes/fake_sector_directory.dart';
 import '../../support/results.dart';
 import '../support/app_overrides.dart';
 import '../support/buttons.dart';
@@ -25,18 +25,18 @@ import '../support/large_text.dart';
 import '../support/navigation.dart';
 
 void main() {
-  late FakeTourneeDirectory directory;
-  late FakeMyTourneesStore store;
+  late FakeSectorDirectory directory;
+  late FakeMySectorsStore store;
 
   /// Starts the app on Julie's phone, signed in, her name kept, holding
   /// [mine]; it opens where a real launch would.
-  Future<void> launch(WidgetTester tester, MyTournees mine) async {
-    store = FakeMyTourneesStore(mine);
+  Future<void> launch(WidgetTester tester, MySectors mine) async {
+    store = FakeMySectorsStore(mine);
     await tester.pumpWidget(
       ProviderScope(
         overrides: fakePhone(
-          tourneeDirectory: directory,
-          myTournees: store,
+          sectorDirectory: directory,
+          mySectors: store,
           settings: FakePhoneSettings(memberName: nameOf('Julie')),
           account: FakeMemberAccount(signedInMember: julieId),
           chooseLaunch: true,
@@ -48,10 +48,10 @@ void main() {
   }
 
   setUp(() {
-    directory = FakeTourneeDirectory()
+    directory = FakeSectorDirectory()
       ..previews[firstCode] = JoinPreview(
         code: firstCode,
-        tourneeId: tourneeId,
+        sectorId: sectorId,
         number: number49,
         centre: csVillefranche,
         campaign: campaign2026,
@@ -64,7 +64,7 @@ void main() {
     'should show the tournée of the code typed, then wait for the answer '
     'once the request is sent',
     (tester) async {
-      await launch(tester, MyTournees.none.remember(tournee12));
+      await launch(tester, MySectors.none.remember(sector12));
       unawaitedPush(
         GoRouter.of(tester.element(find.byType(StartOrHome))),
         AppRoutes.join,
@@ -89,12 +89,12 @@ void main() {
       expect(find.text('Demande envoyée'), findsOneWidget);
       expect(find.bySemanticsLabel('Demande en attente'), findsOneWidget);
       expect(directory.sent.single.$2.id, julieId);
-      expect(store.myTournees.find(tourneeId), request49);
+      expect(store.mySectors.find(sectorId), request49);
     },
   );
 
   testWidgets('should say a character no code has is typed', (tester) async {
-    await launch(tester, MyTournees.none.remember(tournee12));
+    await launch(tester, MySectors.none.remember(sector12));
     unawaitedPush(
       GoRouter.of(tester.element(find.byType(StartOrHome))),
       AppRoutes.join,
@@ -115,7 +115,7 @@ void main() {
   testWidgets(
     'should fill both boxes when a whole code is typed in the first',
     (tester) async {
-      await launch(tester, MyTournees.none.remember(tournee12));
+      await launch(tester, MySectors.none.remember(sector12));
       unawaitedPush(
         GoRouter.of(tester.element(find.byType(StartOrHome))),
         AppRoutes.join,
@@ -137,7 +137,7 @@ void main() {
     'should keep three upper-case characters in the second box whatever '
     'more is typed',
     (tester) async {
-      await launch(tester, MyTournees.none.remember(tournee12));
+      await launch(tester, MySectors.none.remember(sector12));
       unawaitedPush(
         GoRouter.of(tester.element(find.byType(StartOrHome))),
         AppRoutes.join,
@@ -158,10 +158,10 @@ void main() {
     testWidgets('should open the start screen on the tournée once accepted', (
       tester,
     ) async {
-      await launch(tester, MyTournees.none.remember(request49));
+      await launch(tester, MySectors.none.remember(request49));
       expect(find.byType(JoinPendingScreen), findsOneWidget);
 
-      directory.answer(tourneeId, MemberStatus.active);
+      directory.answer(sectorId, MemberStatus.active);
       await tester.pumpAndSettle();
 
       expect(find.byType(HomeScreen), findsOneWidget);
@@ -171,9 +171,9 @@ void main() {
     testWidgets('should say refused and go back to « Bienvenue »', (
       tester,
     ) async {
-      await launch(tester, MyTournees.none.remember(request49));
+      await launch(tester, MySectors.none.remember(request49));
 
-      directory.answer(tourneeId, null);
+      directory.answer(sectorId, null);
       await tester.pumpAndSettle();
 
       expect(find.byType(WelcomeScreen), findsOneWidget);
@@ -183,12 +183,12 @@ void main() {
     testWidgets('should withdraw the request and go back to « Bienvenue »', (
       tester,
     ) async {
-      await launch(tester, MyTournees.none.remember(request49));
+      await launch(tester, MySectors.none.remember(request49));
 
       await tester.tap(find.byKey(const Key('pending.cancel')));
       await tester.pumpAndSettle();
 
-      expect(directory.cancelled, [(tourneeId, julieId)]);
+      expect(directory.cancelled, [(sectorId, julieId)]);
       expect(find.byType(WelcomeScreen), findsOneWidget);
       expect(find.text('Demande refusée'), findsNothing);
     });
@@ -199,14 +199,14 @@ void main() {
         await launch(
           tester,
           valueOf(
-            MyTournees.none
-                .remember(tournee12)
+            MySectors.none
+                .remember(sector12)
                 .remember(request49)
-                .open(tournee12.id),
+                .open(sector12.id),
           ),
         );
         GoRouter.of(tester.element(find.byType(StartOrHome)))
-            .go(AppRoutes.joinPendingOf(tourneeId));
+            .go(AppRoutes.joinPendingOf(sectorId));
         await tester.pumpAndSettle();
 
         await tester.tap(find.byKey(const Key('pending.back')));
@@ -224,7 +224,7 @@ void main() {
     testWidgets('should show « Rejoindre », then the wait, with no overflow '
         'when the text is twice as large', (tester) async {
       useLargeText(tester);
-      await launch(tester, MyTournees.none.remember(tournee12));
+      await launch(tester, MySectors.none.remember(sector12));
       unawaitedPush(
         GoRouter.of(tester.element(find.byType(StartOrHome))),
         AppRoutes.join,
@@ -251,7 +251,7 @@ void main() {
   testWidgets('should label every control and make it 48 dp at least', (
     tester,
   ) async {
-    await launch(tester, MyTournees.none.remember(tournee12));
+    await launch(tester, MySectors.none.remember(sector12));
     unawaitedPush(
       GoRouter.of(tester.element(find.byType(StartOrHome))),
       AppRoutes.join,

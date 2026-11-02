@@ -1,4 +1,4 @@
-import 'package:tournee_calendriers/domain/tournee/tournee.dart';
+import 'package:tournee_calendriers/domain/sector/sector.dart';
 import 'package:tournee_calendriers/presentation/team/team_state.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 
@@ -15,6 +15,6 @@ String teamActionMessage(AppLocalizations l10n, TeamActionFailure failure) =>
       TeamActionFailure.notAdmin => l10n.notAdminAnyMore,
       TeamActionFailure.communeAlreadyIn => l10n.teamCommuneAlreadyIn,
       TeamActionFailure.tooManyCommunes => l10n.teamTooManyCommunes(
-        Tournee.maxCommunes,
+        Sector.maxCommunes,
       ),
     };

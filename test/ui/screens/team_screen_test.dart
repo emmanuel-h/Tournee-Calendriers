@@ -3,25 +3,25 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
+import 'package:tournee_calendriers/domain/sector/member.dart';
+import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
+import 'package:tournee_calendriers/domain/sector/sector_change.dart';
+import 'package:tournee_calendriers/domain/sector/sector_commune.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
-import 'package:tournee_calendriers/domain/tournee/member.dart';
-import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_change.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_commune.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/screens/corbeille/corbeille_screen.dart';
 
-import '../../domain/tournee/my_tournees_fixtures.dart';
-import '../../domain/tournee/tournee_fixtures.dart';
+import '../../domain/sector/my_sectors_fixtures.dart';
+import '../../domain/sector/sector_fixtures.dart';
 import '../../support/fakes/fake_admin_status.dart';
 import '../../support/fakes/fake_commune_search.dart';
-import '../../support/fakes/fake_my_tournees_store.dart';
+import '../../support/fakes/fake_my_sectors_store.dart';
+import '../../support/fakes/fake_sector_repository.dart';
 import '../../support/fakes/fake_street_repository.dart';
-import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart' show villefranche;
 import '../support/app_overrides.dart';
@@ -51,8 +51,8 @@ List<Street> leasStreets() => [
 ];
 
 void main() {
-  late FakeTourneeRepository tournees;
-  late FakeMyTourneesStore store;
+  late FakeSectorRepository sectors;
+  late FakeMySectorsStore store;
 
   /// Équipe over the start screen, on the phone of [member] where the 49
   /// of Manu, Léa and Julie (pending) is open. Manu and Sam are admins of
@@ -60,7 +60,7 @@ void main() {
   Future<void> pumpTeam(
     WidgetTester tester,
     MemberId member, {
-    List<TourneeCommune> communes = const [],
+    List<SectorCommune> communes = const [],
     FakeCommuneSearch? search,
     List<Street> streets = const [],
   }) async {
@@ -69,18 +69,18 @@ void main() {
       ..physicalSize = const Size(393 * 3, 852 * 3)
       ..devicePixelRatio = 3;
     addTearDown(tester.view.reset);
-    tournees = FakeTourneeRepository([team(communes: communes)]);
+    sectors = FakeSectorRepository([team(communes: communes)]);
     final kept = member == samId
         ? summaryOf('t49', 49, status: MemberStatus.visiting)
-        : tournee49;
-    store = FakeMyTourneesStore(
-      valueOf(MyTournees.none.remember(kept).open(tournee49.id)),
+        : sector49;
+    store = FakeMySectorsStore(
+      valueOf(MySectors.none.remember(kept).open(sector49.id)),
     );
     await tester.pumpWidget(
       ProviderScope(
         overrides: fakePhone(
-          myTournees: store,
-          tournees: tournees,
+          mySectors: store,
+          sectors: sectors,
           streets: FakeStreetRepository(streets),
           member: member,
           now: twoMinutesLater,
@@ -163,8 +163,8 @@ void main() {
     await tapVisible(tester, find.byKey(const Key('team.forgetVisit')));
     await tester.pumpAndSettle();
 
-    expect(tournees.saved, isEmpty);
-    expect(store.myTournees.tournees, isEmpty);
+    expect(sectors.saved, isEmpty);
+    expect(store.mySectors.sectors, isEmpty);
     expect(find.text('Tournée des calendriers'), findsOneWidget);
   });
 
@@ -191,7 +191,7 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Accepter Julie'));
     await tester.pumpAndSettle();
 
-    final (_, change) = tournees.saved.single;
+    final (_, change) = sectors.saved.single;
     expect(change, isA<MemberAccepted>());
     final accepted = (change as MemberAccepted).member;
     expect(accepted.id, julieId);
@@ -211,7 +211,7 @@ void main() {
     await tester.tap(find.bySemanticsLabel('Refuser Julie'));
     await tester.pumpAndSettle();
 
-    expect(tournees.saved.single.$2, isA<MemberRefused>());
+    expect(sectors.saved.single.$2, isA<MemberRefused>());
     expect(find.text('Julie'), findsNothing);
   });
 
@@ -240,7 +240,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('team.confirmRemove.ok')));
     await tester.pumpAndSettle();
 
-    expect(tournees.saved.single.$2, isA<MemberRemoved>());
+    expect(sectors.saved.single.$2, isA<MemberRemoved>());
     expect(find.text('Léa'), findsNothing);
   });
 
@@ -257,7 +257,7 @@ void main() {
 
   testWidgets('should tell a new code needs the network', (tester) async {
     await pumpTeam(tester, manuId);
-    tournees.offline = true;
+    sectors.offline = true;
 
     await tester.tap(find.byKey(const Key('team.newCode')));
     await tester.pumpAndSettle();
@@ -272,7 +272,7 @@ void main() {
   testWidgets('should say the phone is no longer an admin\'s when the server '
       'refuses a new code', (tester) async {
     await pumpTeam(tester, manuId);
-    tournees.notAdmin = true;
+    sectors.notAdmin = true;
 
     await tester.tap(find.byKey(const Key('team.newCode')));
     await tester.pumpAndSettle();
@@ -291,8 +291,8 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('team.confirmDelete.ok')));
     await tester.pumpAndSettle();
 
-    expect(tournees.deleted, hasLength(1));
-    expect(store.myTournees.tournees, isEmpty);
+    expect(sectors.deleted, hasLength(1));
+    expect(store.mySectors.sectors, isEmpty);
     expect(find.text('Tournée des calendriers'), findsOneWidget);
     expect(find.byKey(const Key('home.team')), findsNothing);
   });
@@ -307,7 +307,7 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('team.confirmDelete.cancel')));
     await tester.pumpAndSettle();
 
-    expect(tournees.deleted, isEmpty);
+    expect(sectors.deleted, isEmpty);
     expect(find.text('Tournée 49'), findsOneWidget);
   });
 
@@ -321,8 +321,8 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('team.confirmLeave.ok')));
     await tester.pumpAndSettle();
 
-    expect(tournees.saved.single.$2, isA<MemberLeft>());
-    expect(store.myTournees.tournees, isEmpty);
+    expect(sectors.saved.single.$2, isA<MemberLeft>());
+    expect(store.mySectors.sectors, isEmpty);
     expect(find.text('Tournée des calendriers'), findsOneWidget);
   });
 
@@ -344,7 +344,7 @@ void main() {
     await tester.tap(find.byTooltip('Retirer Villefranche-sur-Saône'));
     await tester.pumpAndSettle();
 
-    expect(tournees.saved.single.$2, isA<CommuneRemoved>());
+    expect(sectors.saved.single.$2, isA<CommuneRemoved>());
     expect(find.text('COMMUNES (1)'), findsOneWidget);
     expect(find.byTooltip('Retirer Gleizé'), findsNothing);
   });
@@ -376,7 +376,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('communes.field')), findsNothing);
-    expect(tournees[tourneeId]!.communes, [gleizeCommune]);
+    expect(sectors[sectorId]!.communes, [gleizeCommune]);
     expect(find.byKey(const ValueKey('team.commune.69092')), findsOneWidget);
   });
 
@@ -392,7 +392,7 @@ void main() {
   testWidgets('should say so when the tournée cannot be read', (tester) async {
     await pumpTeam(tester, leaId);
 
-    tournees.lose(tourneeId);
+    sectors.lose(sectorId);
     await tester.pumpAndSettle();
 
     expect(

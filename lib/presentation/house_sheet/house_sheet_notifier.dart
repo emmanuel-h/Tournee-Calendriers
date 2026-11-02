@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tournee_calendriers/application/use_cases/mark.dart';
+import 'package:tournee_calendriers/domain/sector/sector.dart';
 import 'package:tournee_calendriers/domain/shared/calendar_day.dart';
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
@@ -10,11 +11,10 @@ import 'package:tournee_calendriers/domain/street/nobody_home_tries.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/come_back_time.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_state.dart';
-import 'package:tournee_calendriers/presentation/my_tournees/my_tournees_notifier.dart';
+import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
 import 'package:tournee_calendriers/presentation/street/follows_street.dart';
 
 /// Which house a sheet shows. A record: two records with the same fields
@@ -87,7 +87,7 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState>
 
   /// The open tournée as last read, for the name of who made the last
   /// change; null while none is open or it cannot be read.
-  Tournee? _team;
+  Sector? _team;
 
   StreetId get _streetId;
   HouseNumber get _number;
@@ -115,9 +115,9 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState>
     // Riverpod keeps the notifier when it builds again (another tournée
     // opened): the old team must not name anyone.
     _team = null;
-    final tournee = ref.watch(currentTourneeProvider);
-    if (tournee == null) return;
-    final subscription = ref.watch(observeTeamProvider)(tournee.id).listen(
+    final sector = ref.watch(currentSectorProvider);
+    if (sector == null) return;
+    final subscription = ref.watch(observeTeamProvider)(sector.id).listen(
       (team) {
         _team = team;
         state = render();

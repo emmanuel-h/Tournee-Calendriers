@@ -99,7 +99,7 @@ final shippedReleases = [
     date: DateTime(2026, 10, 17),
     notes: (l10n) => [
       l10n.release020Admins,
-      l10n.release020AllTournees,
+      l10n.release020AllSectors,
       l10n.release020Team,
       l10n.release020DeviceId,
     ],

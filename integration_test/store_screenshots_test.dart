@@ -17,14 +17,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:tournee_calendriers/application/ports/phone_settings.dart';
-import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
+import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 
-import '../test/domain/tournee/tournee_fixtures.dart' show nameOf;
-import '../test/support/fakes/fake_my_tournees_store.dart';
+import '../test/domain/sector/sector_fixtures.dart' show nameOf;
+import '../test/support/fakes/fake_my_sectors_store.dart';
 import '../test/support/fakes/fake_phone_settings.dart';
+import '../test/support/fakes/fake_sector_repository.dart';
 import '../test/support/fakes/fake_street_repository.dart';
-import '../test/support/fakes/fake_tournee_repository.dart';
 import '../test/support/results.dart';
 import '../test/ui/support/app_overrides.dart';
 import 'store_screenshots_data.dart';
@@ -74,12 +74,12 @@ void main() {
           member: leaOnPhone,
           now: storeNow,
           streets: FakeStreetRepository(storeStreets()),
-          tournees: FakeTourneeRepository([storeTournee]),
-          myTournees: FakeMyTourneesStore(
+          sectors: FakeSectorRepository([storeSector]),
+          mySectors: FakeMySectorsStore(
             valueOf(
-              MyTournees.none
-                  .remember(storeTourneeSummary)
-                  .open(storeTourneeSummary.id),
+              MySectors.none
+                  .remember(storeSectorSummary)
+                  .open(storeSectorSummary.id),
             ),
           ),
           settings: FakePhoneSettings(

@@ -1,10 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:tournee_calendriers/application/ports/streets_download.dart';
+import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
+import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
-import 'package:tournee_calendriers/domain/tournee/campaign_year.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_layout.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_document_mapper.dart';
 
@@ -21,13 +21,13 @@ final class FirestoreStreetsDownload implements StreetsDownload {
 
   @override
   Future<Result<List<Street>, StreetsDownloadFailure>> fromServer(
-    TourneeId tournee,
+    SectorId sector,
     CampaignYear campaign,
   ) async {
     try {
       final snapshot = await FirestoreLayout.streetsOf(
         _db,
-        tournee,
+        sector,
         campaign,
       ).get(const GetOptions(source: Source.server));
       return Ok([for (final doc in snapshot.docs) ?_read(doc)]);

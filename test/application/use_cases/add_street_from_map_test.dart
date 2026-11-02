@@ -130,7 +130,7 @@ void main() {
     test('should refuse it and change nothing', () async {
       final failure = failureOf(await add(lilasNumbers, assignToMe: true));
 
-      expect(failure, AddStreetFailure.alreadyInTournee);
+      expect(failure, AddStreetFailure.alreadyInSector);
       expect(streets.added, isEmpty);
       expect(streets.saved, isEmpty);
     });

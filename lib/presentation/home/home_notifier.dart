@@ -3,16 +3,16 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/map/map_layers.dart';
-import 'package:tournee_calendriers/domain/map/tournee_area.dart';
+import 'package:tournee_calendriers/domain/map/sector_area.dart';
+import 'package:tournee_calendriers/domain/sector/sector_commune.dart';
 import 'package:tournee_calendriers/domain/street/my_streets.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_commune.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/home/home_state.dart';
 import 'package:tournee_calendriers/presentation/home/missing_shapes.dart';
-import 'package:tournee_calendriers/presentation/my_tournees/my_tournees_notifier.dart';
+import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
 import 'package:tournee_calendriers/presentation/street_card/follows_team.dart';
 import 'package:tournee_calendriers/presentation/street_card/street_card.dart';
 import 'package:tournee_calendriers/presentation/street_list/street_list_state.dart';
@@ -34,7 +34,7 @@ final class HomeNotifier extends Notifier<HomeState>
     with FollowsTeam<HomeState> {
   /// The last streets read, null until the first arrive.
   MyStreets? _streets;
-  var _communes = const <TourneeCommune>[];
+  var _communes = const <SectorCommune>[];
 
   /// Where the map opens, kept once decided (see [HomeState.area]).
   GeoBounds? _area;
@@ -60,21 +60,19 @@ final class HomeNotifier extends Notifier<HomeState>
     // `select`: the notifier is built again when another tournée opens,
     // not when something else of the one open changes (its waiting
     // requests), which would move the map back to where it opened.
-    final tournee = ref.watch(
-      currentTourneeProvider.select((tournee) => tournee?.id),
+    final sector = ref.watch(
+      currentSectorProvider.select((sector) => sector?.id),
     );
-    if (tournee != null) {
-      final communes = ref
-          .watch(observeTourneeCommunesProvider)(tournee)
-          .listen(
-            (communes) {
-              _communes = communes;
-              _show();
-            },
-            // The tournée can no longer be read (the member was removed):
-            // the communes last read stay.
-            onError: (Object _) {},
-          );
+    if (sector != null) {
+      final communes = ref.watch(observeSectorCommunesProvider)(sector).listen(
+        (communes) {
+          _communes = communes;
+          _show();
+        },
+        // The tournée can no longer be read (the member was removed):
+        // the communes last read stay.
+        onError: (Object _) {},
+      );
       ref.onDispose(communes.cancel);
     }
     followTeam();
@@ -138,7 +136,7 @@ final class HomeNotifier extends Notifier<HomeState>
     final streets = _streets ?? MyStreets.none;
     // `ref.read`: whether the member visits is read with the rest, the
     // notifier needs no build of its own for it.
-    final visiting = ref.read(currentTourneeProvider)?.isVisiting ?? false;
+    final visiting = ref.read(currentSectorProvider)?.isVisiting ?? false;
     if (_streets != null) _area ??= homeArea(_communes, streets.all);
     final progress = visiting ? streets.teamProgress : streets.myProgress;
     final selected = _find(_selected);
@@ -155,7 +153,7 @@ final class HomeNotifier extends Notifier<HomeState>
       // None tapped, or the street went to the Corbeille: no card, no line
       // lit up.
       card: switch (selected) {
-        final street? => StreetCardInTournee.of(
+        final street? => StreetCardInSector.of(
           street,
           me: ref.read(readCurrentMemberProvider)(),
           team: team,

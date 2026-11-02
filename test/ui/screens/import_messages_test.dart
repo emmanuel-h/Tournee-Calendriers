@@ -14,7 +14,7 @@ void main() {
         importDoneMessage(
           l10n,
           const ImportSummary(imported: 3, failed: 0),
-          inTournee: false,
+          inSector: false,
         ),
         '3 rues importées',
       );
@@ -25,7 +25,7 @@ void main() {
         importDoneMessage(
           l10n,
           const ImportSummary(imported: 0, restored: 2, failed: 0),
-          inTournee: false,
+          inSector: false,
         ),
         '2 rues restaurées',
       );
@@ -36,7 +36,7 @@ void main() {
         importDoneMessage(
           l10n,
           const ImportSummary(imported: 2, restored: 1, failed: 0),
-          inTournee: false,
+          inSector: false,
         ),
         '2 rues importées, 1 restaurée',
       );
@@ -49,7 +49,7 @@ void main() {
         importDoneMessage(
           l10n,
           const ImportSummary(imported: 3, failed: 0),
-          inTournee: true,
+          inSector: true,
         ),
         '3 rues ajoutées à la tournée',
       );
@@ -60,7 +60,7 @@ void main() {
         importDoneMessage(
           l10n,
           const ImportSummary(imported: 0, restored: 1, failed: 0),
-          inTournee: true,
+          inSector: true,
         ),
         '1 rue restaurée',
       );
@@ -71,7 +71,7 @@ void main() {
         importDoneMessage(
           l10n,
           const ImportSummary(imported: 2, restored: 1, failed: 0),
-          inTournee: true,
+          inSector: true,
         ),
         '2 rues ajoutées, 1 restaurée',
       );
@@ -87,7 +87,7 @@ void main() {
             failed: 1,
             failure: ImportProblem.noNetwork,
           ),
-          inTournee: true,
+          inSector: true,
         ),
         '2 rues ajoutées, 1 en échec. ${l10n.addressNoNetwork} '
         'Les rues encore cochées restent à ajouter.',
@@ -104,7 +104,7 @@ void main() {
           failed: 1,
           failure: ImportProblem.serviceError,
         ),
-        inTournee: false,
+        inSector: false,
       ),
       '2 rues importées, 1 en échec. ${l10n.addressServiceError} '
       'Les rues encore cochées restent à importer.',

@@ -9,8 +9,8 @@
 // Themes under fixed names, so renaming the Dart enum never changes what
 // is on the phone. The name goes through `MemberName.create`.
 import 'package:tournee_calendriers/application/ports/phone_settings.dart';
+import 'package:tournee_calendriers/domain/sector/member_name.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
-import 'package:tournee_calendriers/domain/tournee/member_name.dart';
 
 /// The schema version this code writes and reads.
 const storedPhoneSettingsVersion = 1;

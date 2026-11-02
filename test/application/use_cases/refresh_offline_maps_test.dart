@@ -8,12 +8,12 @@ import 'package:tournee_calendriers/application/ports/offline_map_store.dart';
 import 'package:tournee_calendriers/application/use_cases/refresh_offline_maps.dart';
 
 import '../../support/fakes/fake_offline_map_store.dart';
-import '../../support/fakes/fake_tournee_downloads.dart';
+import '../../support/fakes/fake_sector_downloads.dart';
 import 'offline_fixtures.dart';
 
 void main() {
   late FakeOfflineMapStore maps;
-  late FakeTourneeDownloads downloads;
+  late FakeSectorDownloads downloads;
 
   RefreshOfflineMaps refresh({
     Duration stallLimit = const Duration(minutes: 1),
@@ -23,7 +23,7 @@ void main() {
 
   setUp(() {
     maps = FakeOfflineMapStore([old49]);
-    downloads = FakeTourneeDownloads([downloadOf(t49, area49)]);
+    downloads = FakeSectorDownloads([downloadOf(t49, area49)]);
   });
 
   test('should download a new region first, then delete the old one', () async {
@@ -80,7 +80,7 @@ void main() {
       'own old regions', () async {
     final old12 = regionOf(50, t12, area12);
     maps = FakeOfflineMapStore([old49, old12]);
-    downloads = FakeTourneeDownloads([
+    downloads = FakeSectorDownloads([
       downloadOf(t49, area49),
       downloadOf(t12, area12),
     ]);
@@ -97,7 +97,7 @@ void main() {
 
   test('should stop at the first failure', () async {
     maps = FakeOfflineMapStore([old49, regionOf(50, t12, area12)]);
-    downloads = FakeTourneeDownloads([
+    downloads = FakeSectorDownloads([
       downloadOf(t49, area49),
       downloadOf(t12, area12),
     ]);
@@ -111,7 +111,7 @@ void main() {
 
   test('should skip a tournée downloaded with no map', () async {
     maps = FakeOfflineMapStore();
-    downloads = FakeTourneeDownloads([downloadOf(t49, null)]);
+    downloads = FakeSectorDownloads([downloadOf(t49, null)]);
 
     final outcome = await refresh()();
 
@@ -130,7 +130,7 @@ void main() {
   test('should leave the regions of a tournée not downloaded', () async {
     final half = regionOf(60, t12, area12);
     maps = FakeOfflineMapStore([half]);
-    downloads = FakeTourneeDownloads();
+    downloads = FakeSectorDownloads();
 
     final outcome = await refresh()();
 
@@ -141,7 +141,7 @@ void main() {
   test('should leave the map of the tournée just downloaded', () async {
     final old12 = regionOf(50, t12, area12);
     maps = FakeOfflineMapStore([old49, old12]);
-    downloads = FakeTourneeDownloads([
+    downloads = FakeSectorDownloads([
       downloadOf(t49, area49),
       downloadOf(t12, area12),
     ]);

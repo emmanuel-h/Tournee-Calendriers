@@ -2,23 +2,23 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
+import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
 import 'package:tournee_calendriers/domain/street/house_numbers_input.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
-import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/manual_street/manual_street_notifier.dart';
 
-import '../../domain/tournee/my_tournees_fixtures.dart';
-import '../../domain/tournee/tournee_fixtures.dart';
-import '../../support/fakes/fake_my_tournees_store.dart';
+import '../../domain/sector/my_sectors_fixtures.dart';
+import '../../domain/sector/sector_fixtures.dart';
+import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_ports.dart';
+import '../../support/fakes/fake_sector_repository.dart';
 import '../../support/fakes/fake_street_repository.dart';
-import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/results.dart';
-import '../../support/street_fixtures.dart' hide lea;
 import '../../support/street_fixtures.dart' as street_fixtures show lea;
+import '../../support/street_fixtures.dart' hide lea;
 
 final _me = street_fixtures.lea;
 
@@ -31,20 +31,20 @@ final _bourg = valueOf(
 
 void main() {
   late FakeStreetRepository streets;
-  late FakeTourneeRepository tournees;
+  late FakeSectorRepository sectors;
 
   ProviderContainer phone({bool open = true}) {
     final container = ProviderContainer(
       overrides: [
         streetRepositoryProvider.overrideWithValue(streets),
-        tourneeRepositoryProvider.overrideWithValue(tournees),
+        sectorRepositoryProvider.overrideWithValue(sectors),
         identityProvider.overrideWithValue(FakeIdentity(_me)),
         idGeneratorProvider.overrideWithValue(FakeIdGenerator('street')),
-        myTourneesStoreProvider.overrideWithValue(
-          FakeMyTourneesStore(
+        mySectorsStoreProvider.overrideWithValue(
+          FakeMySectorsStore(
             open
-                ? valueOf(MyTournees.none.remember(tournee49).open(tourneeId))
-                : MyTournees.none,
+                ? valueOf(MySectors.none.remember(sector49).open(sectorId))
+                : MySectors.none,
           ),
         ),
       ],
@@ -69,7 +69,7 @@ void main() {
 
   setUp(() {
     streets = FakeStreetRepository([_bourg]);
-    tournees = FakeTourneeRepository([
+    sectors = FakeSectorRepository([
       team(communes: [villefrancheCommune, gleizeCommune]),
     ]);
   });
@@ -96,7 +96,7 @@ void main() {
 
     test('should offer the communes of the streets for a tournée without '
         'commune', () async {
-      tournees.put(team());
+      sectors.put(team());
       streets = FakeStreetRepository([
         _bourg,
         valueOf(
@@ -115,7 +115,7 @@ void main() {
 
     test('should know no commune without communes nor streets, until one '
         'is found', () async {
-      tournees.put(team());
+      sectors.put(team());
       streets = FakeStreetRepository();
       final container = phone();
       await pumpEventQueue();
@@ -134,13 +134,13 @@ void main() {
       await pumpEventQueue();
 
       expect(stateOf(container).communes, isEmpty);
-      expect(tournees.watched, isEmpty);
+      expect(sectors.watched, isEmpty);
     });
   });
 
   test('should offer the communes of the streets when the tournée can no '
       'longer be read', () async {
-    tournees.watchError = StateError('removed');
+    sectors.watchError = StateError('removed');
     final container = phone();
     await pumpEventQueue();
 
@@ -235,7 +235,7 @@ void main() {
     });
 
     test('should not allow adding without a commune', () async {
-      tournees.put(team());
+      sectors.put(team());
       streets = FakeStreetRepository();
       final container = phone();
       await pumpEventQueue();

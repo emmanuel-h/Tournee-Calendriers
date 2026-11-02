@@ -85,8 +85,8 @@ void main() {
     });
   });
 
-  group('tourneeMapLayers', () {
-    final layers = tourneeMapLayers(AppColors.light);
+  group('sectorMapLayers', () {
+    final layers = sectorMapLayers(AppColors.light);
     MapLayerSpec layer(String id) => layers.singleWhere((l) => l.id == id);
     Map<String, dynamic> json(String id) => layer(id).properties.toJson();
 
@@ -289,7 +289,7 @@ void main() {
         'dark', () {
       // The base map stays light in dark mode (T5.1): a dark casing with a
       // white core still stands out on it.
-      final dark = tourneeMapLayers(AppColors.dark);
+      final dark = sectorMapLayers(AppColors.dark);
       final casing = dark.singleWhere((l) => l.id == MapIds.selectedCasing);
       final core = dark.singleWhere((l) => l.id == MapIds.selectedCore);
 

@@ -78,8 +78,8 @@ void main() {
 
       final found = valueOf(await lookUp(directory)(StreetAtPoint(_tap)));
 
-      expect(found, isA<StreetOfTheTournee>());
-      found as StreetOfTheTournee;
+      expect(found, isA<StreetOfTheSector>());
+      found as StreetOfTheSector;
       expect(found.match, _lilasMatch);
       expect(found.street, same(lilas));
       expect(directory.streetsAsked, isEmpty);
@@ -151,7 +151,7 @@ void main() {
 
       final found = valueOf(await lookUp(directory)(FoundStreet(_lilasMatch)));
 
-      expect((found as StreetOfTheTournee).street.id, lilasId);
+      expect((found as StreetOfTheSector).street.id, lilasId);
       expect(directory.streetsAsked, isEmpty);
     });
 

@@ -1,8 +1,8 @@
 import 'dart:async';
 
-import 'package:tournee_calendriers/application/ports/my_tournees_store.dart';
+import 'package:tournee_calendriers/application/ports/my_sectors_store.dart';
+import 'package:tournee_calendriers/domain/sector/sector_summary.dart';
 import 'package:tournee_calendriers/domain/street/street_repository.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_summary.dart';
 
 /// Where the app opens (PLAN §4, §5.1, §5.2). `sealed`: whoever shows it
 /// must handle each case.
@@ -25,7 +25,7 @@ final class StartOnWelcome extends StartPoint {
 final class StartOnRequest extends StartPoint {
   const StartOnRequest(this.request);
 
-  final TourneeSummary request;
+  final SectorSummary request;
 
   @override
   bool operator ==(Object other) =>
@@ -54,20 +54,20 @@ final class StartOnRequest extends StartPoint {
 ///
 /// Also where to go once a request is refused or cancelled.
 final class ChooseStartPoint {
-  const ChooseStartPoint(this._myTournees, this._phoneStreets);
+  const ChooseStartPoint(this._mySectors, this._phoneStreets);
 
-  final MyTourneesStore _myTournees;
+  final MySectorsStore _mySectors;
 
   /// The streets kept on the phone since M1, whichever tournée is open.
   final StreetRepository _phoneStreets;
 
   Future<StartPoint> call() async {
-    final mine = _myTournees.myTournees;
+    final mine = _mySectors.mySectors;
     if (mine.currentId != null) return const StartOnStreets();
     if (await _holdsStreets()) return const StartOnStreets();
-    final requests = mine.tournees.where((tournee) => tournee.isPending);
+    final requests = mine.sectors.where((sector) => sector.isPending);
     if (requests.isNotEmpty) return StartOnRequest(requests.last);
-    if (mine.tournees.isNotEmpty) return const StartOnStreets();
+    if (mine.sectors.isNotEmpty) return const StartOnStreets();
     return const StartOnWelcome();
   }
 

@@ -179,12 +179,12 @@ abstract final class AppSizes {
   static const settingRowHeight = 56.0;
 
   /// A tournée of « Mes tournées »: its name over its centre.
-  static const tourneeRowHeight = 68.0;
+  static const sectorRowHeight = 68.0;
 
   /// The round mark before a tournée of « Mes tournées » (● open, ○ another,
   /// dashed while the request waits), and the dot inside it.
-  static const tourneeMark = 22.0;
-  static const tourneeMarkDot = 10.0;
+  static const sectorMark = 22.0;
+  static const sectorMarkDot = 10.0;
 
   /// The ▾ after the open tournée's name in the title.
   static const titleChevron = 22.0;

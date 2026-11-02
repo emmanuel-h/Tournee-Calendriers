@@ -12,7 +12,7 @@ const locateZoom = 17.0;
 
 /// The zoom the map opens at on a tournée, before it fits the tournée's
 /// area exactly.
-const _tourneeZoom = 14.0;
+const _sectorZoom = 14.0;
 
 /// The whole of mainland France: where the map opens when it has no
 /// tournée area to show yet.
@@ -41,6 +41,6 @@ CameraPosition initialCamera(GeoBounds? area) => switch (area) {
   null => _france,
   final area => CameraPosition(
     target: LatLng((area.south + area.north) / 2, (area.west + area.east) / 2),
-    zoom: _tourneeZoom,
+    zoom: _sectorZoom,
   ),
 };

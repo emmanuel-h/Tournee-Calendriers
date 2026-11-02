@@ -5,7 +5,7 @@ import 'dart:async';
 
 import 'package:tournee_calendriers/application/ports/offline_map_store.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
+import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 
 final class FakeOfflineMapStore implements OfflineMapStore {
   /// A phone that holds [regions] already (none by default).
@@ -22,7 +22,7 @@ final class FakeOfflineMapStore implements OfflineMapStore {
   /// The size of a download with no script left.
   var defaultBytes = 7000000;
 
-  /// What happened, in order: `create <id> <tournee>`, `delete <id>`,
+  /// What happened, in order: `create <id> <sector>`, `delete <id>`,
   /// `cancel <id>`.
   final log = <String>[];
 
@@ -44,7 +44,7 @@ final class FakeOfflineMapStore implements OfflineMapStore {
   }
 
   @override
-  Stream<MapDownloadEvent> download(TourneeId tournee, GeoBounds bounds) {
+  Stream<MapDownloadEvent> download(SectorId sector, GeoBounds bounds) {
     downloadedBounds.add(bounds);
     final script = scripts.isEmpty
         ? [MapDownloadDone(bytes: defaultBytes)]
@@ -58,12 +58,12 @@ final class FakeOfflineMapStore implements OfflineMapStore {
         // download, complete or not.
         final made = OfflineMapRegion(
           id: _nextId++,
-          tournee: tournee,
+          sector: sector,
           bounds: bounds,
         );
         region = made;
         _regions.add(made);
-        log.add('create ${made.id} ${tournee.value}');
+        log.add('create ${made.id} ${sector.value}');
         if (script == null) return;
         for (final event in script) {
           await Future<void>.delayed(Duration.zero);

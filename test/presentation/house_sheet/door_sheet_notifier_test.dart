@@ -13,7 +13,7 @@ import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_notifie
 import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_state.dart';
 
 import '../../support/building_fixtures.dart';
-import '../../support/fakes/fake_my_tournees_store.dart';
+import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/results.dart';
@@ -70,7 +70,7 @@ void main() {
         clockProvider.overrideWithValue(FakeClock(twoPm)),
         identityProvider.overrideWithValue(FakeIdentity(lea)),
         // No tournée open: the phone names nobody but its own member.
-        myTourneesStoreProvider.overrideWithValue(FakeMyTourneesStore()),
+        mySectorsStoreProvider.overrideWithValue(FakeMySectorsStore()),
       ],
     );
     addTearDown(container.dispose);

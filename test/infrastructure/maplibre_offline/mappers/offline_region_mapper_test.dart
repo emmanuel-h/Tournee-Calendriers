@@ -3,7 +3,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:maplibre_gl/maplibre_gl.dart' hide Error;
 import 'package:tournee_calendriers/application/ports/offline_map_store.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
+import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/infrastructure/maplibre_offline/mappers/offline_region_mapper.dart';
 
 import '../../../support/geo_fixtures.dart';
@@ -48,7 +48,7 @@ void main() {
   });
 
   test('should name the tournée in the metadata', () {
-    expect(regionMetadata(TourneeId('t49')), {'tournee': 't49'});
+    expect(regionMetadata(SectorId('t49')), {'tournee': 't49'});
   });
 
   // The map library rounds a longitude on its way (`4.70827` comes back
@@ -57,7 +57,7 @@ void main() {
     final region = offlineMapRegionOf(_region({'tournee': 't49'}))!;
 
     expect(region.id, 7);
-    expect(region.tournee, TourneeId('t49'));
+    expect(region.sector, SectorId('t49'));
     expect(region.bounds.isCloseTo(_bounds, 1e-12), isTrue);
   });
 
@@ -66,12 +66,12 @@ void main() {
       OfflineRegion(
         id: 3,
         definition: regionDefinition(_bounds, _style),
-        metadata: regionMetadata(TourneeId('t12')),
+        metadata: regionMetadata(SectorId('t12')),
       ),
     )!;
 
     expect(region.id, 3);
-    expect(region.tournee, TourneeId('t12'));
+    expect(region.sector, SectorId('t12'));
     expect(region.bounds.isCloseTo(_bounds, 1e-12), isTrue);
   });
 

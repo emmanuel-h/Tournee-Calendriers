@@ -56,7 +56,7 @@ Code uses English names, the UI uses French.
 
 | UI (FR) | Code | Meaning |
 |---|---|---|
-| Secteur | `Sector` (code still `Tournee` until the rename task) | A team's area, identified by its **number + centre de secours + code**. Lives across years. **Renamed 2026-11-02** from « Tournée » (#63): the rest of this document still says « tournée » for it until the rename task updates it |
+| Secteur | `Sector` (code renamed from `Tournee` in #116; Firestore `sectors/`) | A team's area, identified by its **number + centre de secours + code**. Lives across years. **Renamed 2026-11-02** from « Tournée » (#63): the rest of this document still says « tournée » for it until the rename task updates it |
 | Centre de secours (CS) | `RescueCentre` | The fire station the tournée belongs to, e.g. CS Villefranche |
 | Campagne | `Campaign` | One year of a tournée (2026, 2027…). Statuses belong to a campaign; streets and buildings carry over |
 | Membre | `Member` | A firefighter who joined the tournée |
@@ -376,7 +376,7 @@ an admin, shows only « Rejoindre une tournée », in red), and the bottom of th
   target) then the field « + Ajouter une commune… », which searches geo.api.gouv.fr as « Importer
   des rues » does (two characters, 300 ms pause, late answers ignored); a suggestion tapped
   becomes a chip and empties the field, one already picked is not added twice. « Créer » stays
-  off until at least one commune is picked; at most 50 (`Tournee.maxCommunes`). Each commune
+  off until at least one commune is picked; at most 50 (`Sector.maxCommunes`). Each commune
   keeps the centre geo.api.gouv.fr gives (`centre`), so the map of 5.4 is centred offline.
 - Delivered in T2.5 (Create, CreateTaken, Join mockups). Both screens first need the phone's
   account (§6.1): a line « Connexion au serveur… » while it signs in, « Hors ligne : créer ou
@@ -483,7 +483,7 @@ an admin, shows only « Rejoindre une tournée », in red), and the bottom of th
   up shows the full list; down leaves only the handle and the totals.
 - A "locate me" button centres the map on the phone's position (location permission asked
   the first time it is tapped, never at launch).
-- Delivered in T3.4 (`ui/map/TourneeMap`, used by 5.3 and 5.4): OpenFreeMap « liberty »;
+- Delivered in T3.4 (`ui/map/SectorMap`, used by 5.3 and 5.4): OpenFreeMap « liberty »;
   street lines under the map's labels, widening with the zoom (« libre »: dark grey dashes as
   wide as the other lines, on a wider opaque white casing so they stand out from the base
   map's grey roads; the casing alone still shows on a GPU that draws no dashes); from zoom 16
@@ -567,7 +567,7 @@ bottom sheet:
   the streets on Firestore).
 - Delivered in T4.2 (#33, Switcher mockup): **only while the phone is offline**, another
   tournée of the member that is not downloaded on this phone (no record in
-  `TourneeDownloads`, §6.3) is greyed (title, line and ring paler than the muted text),
+  `SectorDownloads`, §6.3) is greyed (title, line and ring paler than the muted text),
   cannot be tapped, and its second line reads « CS Limas · Disponible avec réseau » instead
   of the centre alone (no « demande en attente » nor dot, no « administrateur », while it
   cannot open); screen readers hear « Tournée 23 · 2026, CS Limas, disponible avec réseau »,
@@ -641,7 +641,7 @@ The street card adapts to the street's state:
 - **Carte | Liste** (#78, Pick and AddList mockups): under the title (✕ closes), two 48 dp
   tabs, the chosen one in ink. **Carte** is the map above, opened on the tournée's communes
   (their centres, 2 km around each, `communesArea`), on its streets when no commune has a
-  centre (`tourneeArea`), on France when neither; works offline. **Liste** is the checklist of
+  centre (`sectorArea`), on France when neither; works offline. **Liste** is the checklist of
   « Importer des rues » (5.0) on the tournée's communes: no commune field, a chip per commune
   when there are several (the first chosen at once), « déjà dans la tournée » on a street the
   tournée has, « Ajouter N rues », « Ajout en cours… n/N », then back with « N rues ajoutées à
@@ -1483,8 +1483,8 @@ TeamMember, and Welcome, Switcher, Team, Settings updated):
   queued write (PLAN §7). The listeners of a visited tournée that may no longer be read never
   show an error: Équipe reads « unavailable », the streets show none, and the revocation is told
   by the `admins/{uid}` listener as above.
-- Delivered in #75 (`lib/presentation/admin/`, `all_tournees/`, `account/device_id_state.dart`,
-  `lib/ui/screens/all_tournees/`, `start/admin_visit_banner.dart`):
+- Delivered in #75 (`lib/presentation/admin/`, `all_sectors/`, `account/device_id_state.dart`,
+  `lib/ui/screens/all_sectors/`, `start/admin_visit_banner.dart`):
   - « Toutes les tournées » is read once each time it opens (and on « Réessayer »), not
     followed live. Centres are ordered by their station key (the name without « CS » / « CIS »,
     French order), so « CS Villefranche » comes before « CIS Villefranche Est »; a centre is
@@ -1590,11 +1590,11 @@ inside an aggregate changes only through its root, which enforces the invariants
 
 | Aggregate (root) | Contains | Invariants it guards |
 |---|---|---|
-| `Tournee` | `Member`s, `JoinCode`, `RescueCentre`, current campaign year, `TourneeCommune`s (#78) | one creator; members are pending or active; only active members accept others; only the creator removes members, regenerates the code, starts a campaign; communes unique by INSEE code, 1–50 from creation, never the last one removed |
+| `Sector` | `Member`s, `JoinCode`, `RescueCentre`, current campaign year, `SectorCommune`s (#78) | one creator; members are pending or active; only active members accept others; only the creator removes members, regenerates the code, starts a campaign; communes unique by INSEE code, 1–50 from creation, never the last one removed |
 | `Street` (one per campaign) | `House` entities, each with an optional `Building` → `Staircase` → `Floor` → `Dwelling` | numbers unique in the street; a building's status is derived, never set; deleting is soft (Corbeille) |
 
 Value objects (immutable, validated at construction, equal by value): `JoinCode` (6 chars from
-the alphabet), `RescueCentreKey` (normalised name), `TourneeNumber`, `MemberName`,
+the alphabet), `RescueCentreKey` (normalised name), `SectorNumber`, `MemberName`,
 `HouseNumber` (12 + "bis", with the
 French ordering), `StreetName`, `InseeCode` (the five-character commune code, `2A`/`2B`
 in Corsica), `VisitStatus` (`toDo`, `done`, `nobodyHome`, `comeBack`), `ComeBack` (when to come back: an optional day and hour, #81), `CalendarDay` (a date without time or zone, #81),
@@ -1887,7 +1887,7 @@ Start screen rules fixed in T1.11 (`lib/domain/shared/french_text.dart`,
   that is not five digits is left out. Use cases `SearchCommunes` (nothing asked under two
   characters) and `FindImportedStreets` (BAN ids already on the phone, each `active` or `inCorbeille`).
 
-Tournée rules fixed in T2.2 (`lib/domain/tournee/`):
+Tournée rules fixed in T2.2 (`lib/domain/sector/`):
 
 - **`JoinCode`**: 6 characters of `ABCDEFGHJKMNPQRSTUVWXYZ23456789`. `generate(Random)` draws
   each one from the injected source (`Random.secure()` in the app, a scripted source in
@@ -1903,19 +1903,19 @@ Tournée rules fixed in T2.2 (`lib/domain/tournee/`):
   `villefranche`; `CS Villefranche-sur-Saône` → `villefranche-sur-saone`. Nothing left
   (`CS`, `!?`) → `blank`. Two names are the same station when their keys are equal
   (`isSameStationAs`); the key is the `rescueCentres` document id and the first half of the
-  `tourneeKeys` id (§6.2).
-- **`TourneeNumber`** 1–9999 and **`CampaignYear`** 2000–2099: `create(int)` or `parse(text)`
+  `sectorKeys` id (§6.2).
+- **`SectorNumber`** 1–9999 and **`CampaignYear`** 2000–2099: `create(int)` or `parse(text)`
   (digits only, spaces around and leading zeros ignored; `notANumber`, `outOfRange`).
   **`MemberName`**: trimmed, spaces joined, 1–30 code points (`blank`, `tooLong`).
-  **`TourneeId`** is opaque like the other ids.
+  **`SectorId`** is opaque like the other ids.
 - **`Member`** (entity): id (the uid), `MemberName`, `requestedAt` and `acceptance` (a
   `ChangeStamp`: `acceptedBy` / `acceptedAt`). Its status is derived: pending while
   `acceptance` is null, active otherwise; the creator accepted themself at creation.
-- **`Tournee`**: `Tournee.createdBy(…)` makes a new one whose only member is its creator,
-  active; `Tournee.create(…)` rebuilds a stored one and fails with `duplicateMember` or
+- **`Sector`**: `Sector.createdBy(…)` makes a new one whose only member is its creator,
+  active; `Sector.create(…)` rebuilds a stored one and fails with `duplicateMember` or
   `creatorNotActive` (the creator missing or pending). Members are sorted by request time, then
   id; `pendingMembers`, `activeMembers`, `memberOf`, `isCreator`.
-- **Commands** return `(Tournee, change)` or a `TourneeCommandFailure`. The one acting must be
+- **Commands** return `(Sector, change)` or a `SectorCommandFailure`. The one acting must be
   in the tournée (`notAMember`) and active (`requestPending`), except to leave:
 
   | Command | Who | Refused when |
@@ -1938,146 +1938,146 @@ Tournée rules fixed in T2.2 (`lib/domain/tournee/`):
   `regenerateCode` and `delete` by an admin (`notAdmin`), member or not; a new
   `joinAsAdmin(member, at)` adds an admin who is not in it as active at once, accepted by
   themself (`notAdmin`, `alreadyMember`) → `AdminJoined`; `rename` unchanged. `notAMember` /
-  `requestPending` stay for a non-admin. `Tournee.create` no longer requires the creator
+  `requestPending` stay for a non-admin. `Sector.create` no longer requires the creator
   among the active members (they may have left); `createdBy` stays as information only.
-  `MemberStatus` gains `visiting` for a `TourneeSummary` (an admin who opened a tournée they
-  are not in); `Member` itself stays pending / active. `TourneeLoss` gains `adminRevoked`.
+  `MemberStatus` gains `visiting` for a `SectorSummary` (an admin who opened a tournée they
+  are not in); `Member` itself stays pending / active. `SectorLoss` gains `adminRevoked`.
   Ports: **`AdminStatus`** (application) `watchIsAdmin()` (false until read; any signed-in
   uid) and `isAdmin(uid)` for the « · admin » labels; `MemberAccount` exposes the uid for
-  « Identifiant de l'appareil »; `TourneeDirectory.watchAllTournees()` gives the rows of
+  « Identifiant de l'appareil »; `SectorDirectory.watchAllSectors()` gives the rows of
   « Toutes les tournées » (id, number, centre, campaign, active-member count, pending count,
   whether the caller is active), `noNetwork` when the server cannot answer.
 
-  Delivered in #75: **`Actor(member, isAdmin)`** (`lib/domain/tournee/actor.dart`) is taken by
+  Delivered in #75: **`Actor(member, isAdmin)`** (`lib/domain/sector/actor.dart`) is taken by
   `accept`, `refuse`, `remove`, `regenerateCode`, `delete` and `joinAsAdmin(by, name, at)`;
   `leave(by)` and `rename(name, by)` keep a `MemberId` (being an admin changes nothing for
   them). A non-admin hears first what keeps them from acting at all (`notAMember`,
   `requestPending`), then `notAdmin`; `joinAsAdmin` checks `notAdmin` before
   `alreadyMember`. An admin may `remove` themself (it is a leave; no failure was specified).
-  `NewTourneeFailure` keeps only `duplicateMember`; `Tournee.creator` and `isCreator` are
+  `NewSectorFailure` keeps only `duplicateMember`; `Sector.creator` and `isCreator` are
   gone. `AdminJoined` is a `MemberChange`; storage first asks the server for the tournée
-  (offline: `TourneeWriteFailure.noNetwork`), then sends the member document like the other
+  (offline: `SectorWriteFailure.noNetwork`), then sends the member document like the other
   member writes. **`AdminStatus`** (application port): `watchIsAdmin()` and `Future<bool>
   isAdmin(uid)` (false when it cannot tell); the use cases read the phone's flag with
   `watchIsAdmin().first` (false until known). `MemberAccount` needed no change: its
-  `signedInMember` is the uid. The directory method is **`allTournees(caller)`**, one read
+  `signedInMember` is the uid. The directory method is **`allSectors(caller)`**, one read
   of the server (a `Future`, not a stream: the screen reads it when it opens). For a
   `visiting` summary, `watchMembership` follows the tournée document (gone on the server →
   `deleted`) and the phone's own `admins/{uid}` (gone on the server → `adminRevoked`) instead
   of the member document. Use cases (`lib/application/use_cases/admins.dart`, `team.dart`):
-  `ObserveAdminStatus`, `IsMemberAdmin`, `ListAllTournees` (signs in first), `OpenAsAdmin`
+  `ObserveAdminStatus`, `IsMemberAdmin`, `ListAllSectors` (signs in first), `OpenAsAdmin`
   (kept active when the admin is in it, `visiting` otherwise, then opened), `JoinAsAdmin`
-  (the phone's name; none → `TeamProblem.noName`; then the summary accepted), `ForgetVisitedTournee`.
+  (the phone's name; none → `TeamProblem.noName`; then the summary accepted), `ForgetVisitedSector`.
   Presentation: `adminProvider` (kept alive, false until known or on error), `deviceIdProvider`
-  (on `accountProvider`, so the screen showing it signs in), `allTourneesProvider`;
+  (on `accountProvider`, so the screen showing it signs in), `allSectorsProvider`;
   `TeamShown` has `iAmAdmin`, `iAmIn` and `MemberRow.isAdmin` (each other member asked
   once), `TeamActionFailure.noName`.
-- **Changes** (`TourneeChange`, sealed): `MemberAccepted` (the member as accepted),
+- **Changes** (`SectorChange`, sealed): `MemberAccepted` (the member as accepted),
   `MemberRefused`, `MemberRemoved`, `MemberLeft` (the member as they were), `MemberRenamed`
   (the member with the new name; storage writes `displayName` only),
-  `JoinCodeRegenerated(before, code)`. `delete` returns a `TourneeDeleted` holding the whole
+  `JoinCodeRegenerated(before, code)`. `delete` returns a `SectorDeleted` holding the whole
   tournée (storage needs its code, centre and number to free them); it is not a
-  `TourneeChange`.
-- **Port `TourneeRepository`** (domain): `find(id)`, `watch(id)` (null when there is no such
-  tournée or this member may no longer read it), `add(tournee)` → `AddTourneeFailure`
-  (`alreadyExists`, `noNetwork`), `save(tournee, change)`, `delete(TourneeDeleted)` (from T2.6 both return
-  `TourneeWriteFailure.noNetwork` for what needs the server, see below). A pending
+  `SectorChange`.
+- **Port `SectorRepository`** (domain): `find(id)`, `watch(id)` (null when there is no such
+  tournée or this member may no longer read it), `add(sector)` → `AddSectorFailure`
+  (`alreadyExists`, `noNetwork`), `save(sector, change)`, `delete(SectorDeleted)` (from T2.6 both return
+  `SectorWriteFailure.noNetwork` for what needs the server, see below). A pending
   newcomer cannot read the tournée (§8.2), so the join (code lookup, request) goes through the
-  `TourneeDirectory` port (Q20), not this one.
+  `SectorDirectory` port (Q20), not this one.
 
-« Mes tournées » fixed in T2.7 (`lib/domain/tournee/`, `lib/application/`):
+« Mes tournées » fixed in T2.7 (`lib/domain/sector/`, `lib/application/`):
 
-- **`TourneeSummary`** (value): what the phone keeps of one of the member's tournées — id,
+- **`SectorSummary`** (value): what the phone keeps of one of the member's tournées — id,
   number, centre, campaign, `MemberStatus` (pending while the request waits; for a request,
   what the join preview showed, since a pending newcomer cannot read the tournée).
   `accepted()` gives it active.
-- **`MyTournees`** (value): the summaries in the order the phone met them, each id once, and
+- **`MySectors`** (value): the summaries in the order the phone met them, each id once, and
   `currentId`, the open one, always an active one of the list. `none`; `remember(summary)`
   adds at the end or replaces in place, never opens (the open one stays while « Créer » /
   « Rejoindre » run), and closes the open one should it come back pending; `open(id)` →
-  `OpenTourneeFailure` (`unknownTournee`, `requestPending`); `forget(id)` drops it, leaving
+  `OpenSectorFailure` (`unknownSector`, `requestPending`); `forget(id)` drops it, leaving
   none open when it was the open one (which to open next is the member's choice).
-- **Port `MyTourneesStore`** (application): `myTournees` (sync, loaded at start-up),
-  `changes` (each list saved), `save`. Use cases `ReadMyTournees`, `ObserveMyTournees`,
-  `OpenTournee` (writes nothing when already open), `WatchJoinRequest` (`TourneeDirectory.
+- **Port `MySectorsStore`** (application): `mySectors` (sync, loaded at start-up),
+  `changes` (each list saved), `save`. Use cases `ReadMySectors`, `ObserveMySectors`,
+  `OpenSector` (writes nothing when already open), `WatchJoinRequest` (`SectorDirectory.
   watchRequest` as `MemberAccount.signedInMember`; nothing before the first sign-in) and
   `SettleJoinRequest` (active → the summary accepted, not opened; null → forgotten; pending or
-  not a request → nothing). `MyTourneesNotifier` (kept alive) follows each pending request
-  while the app runs (a failing listener leaves it pending); `currentTourneeProvider` is the
+  not a request → nothing). `MySectorsNotifier` (kept alive) follows each pending request
+  while the app runs (a failing listener leaves it pending); `currentSectorProvider` is the
   open tournée the screens of a tournée follow. From T2.6c it also follows the team
-  (`ObserveTeam`) of each active tournée not open: `TourneeRow.waitingRequests` (0 when it
+  (`ObserveTeam`) of each active tournée not open: `SectorRow.waitingRequests` (0 when it
   cannot be read).
-- **A tournée lost** (T2.6c): **`TourneeLoss`** (domain enum) `removed` | `deleted`.
-  `TourneeDirectory.watchMembership(summary, member)` emits once the server says the member is
+- **A tournée lost** (T2.6c): **`SectorLoss`** (domain enum) `removed` | `deleted`.
+  `SectorDirectory.watchMembership(summary, member)` emits once the server says the member is
   no longer in it, never from the phone's copy nor for a deletion made on this phone.
   `WatchMembership` (as `MemberAccount.signedInMember`, nothing before the first sign-in);
-  `ForgetLostTournee(id, loss)` → `LostTournee(summary, loss, wasOpen)` after `forget`, or
-  null (unknown any more, or still a request: nothing saved). `TourneeLossNotifier` (kept
+  `ForgetLostSector(id, loss)` → `LostSector(summary, loss, wasOpen)` after `forget`, or
+  null (unknown any more, or still a request: nothing saved). `SectorLossNotifier` (kept
   alive, listened to by `TourneeApp`) follows each active tournée of « Mes tournées » (a
   failing listener keeps it; on a phone that never signed in, it starts again on the tournées
   kept then once `ObserveSignIn` tells a sign-in, T2.6e) and gives a
-  `TourneeLossNotice(tournee, number, loss, wasOpen)`;
+  `SectorLossNotice(sector, number, loss, wasOpen)`;
   the app shows the message on its `ScaffoldMessenger` and goes to the start screen when it
   was the open one.
-- **A name to catch up** (T2.7c): `TourneeDirectory.watchOwnName(tournée, member)` emits the
+- **A name to catch up** (T2.7c): `SectorDirectory.watchOwnName(tournée, member)` emits the
   name the server holds on the member's own document while it is active (never from the
   phone's copy, a pending request, or a snapshot with `hasPendingWrites`). `WatchOwnName` (as
   `MemberAccount.signedInMember`, nothing before the first sign-in; `distinct`, so a rename
   the server refused is not sent in a loop) and `CatchUpMemberName(tournée, heard)`: when the
-  phone's `MemberName` differs from the one heard, the same `Tournee.rename` as « Prénom »;
+  phone's `MemberName` differs from the one heard, the same `Sector.rename` as « Prénom »;
   equal cleaned names, no name on the phone, an unreadable tournée or a refused rename send
-  nothing. `TourneeLossNotifier` listens to it for each tournée it follows, so a rename made
+  nothing. `SectorLossNotifier` listens to it for each tournée it follows, so a rename made
   while the request waited reaches the team once accepted, with no rules change.
 - **Port `PhoneSettings`** (application): `memberName` (null until given), `theme`
   (`ThemeChoice` system / light / dark), setters. Use cases `ReadPhoneSettings`,
   `ChangeMemberName` (`MemberName.create`, nothing kept when refused), `ChooseTheme`.
 
 Onboarding fixed in T2.5 (`lib/application/use_cases/choose_start_point.dart`,
-`create_tournee.dart`, `join_tournee.dart`, `lib/presentation/`):
+`create_sector.dart`, `join_sector.dart`, `lib/presentation/`):
 
-- **`ChooseStartPoint`** (`MyTourneesStore`, the phone's `StreetRepository`): `StartOnStreets`
+- **`ChooseStartPoint`** (`MySectorsStore`, the phone's `StreetRepository`): `StartOnStreets`
   | `StartOnWelcome` | `StartOnRequest(summary)`, in the order of §4. It takes the first value
   of `watchAll` / `watchDeleted` without waiting for the stream to be let go. Also where the
   app goes once a request is refused or cancelled. `launchPlaceProvider` (a `FutureProvider`
   read once) gives the router its first location; `TourneeApp` shows the bare ground until
   then.
-- **Créer:** `ListRescueCentres`, `CheckTourneeTaken` (the directory, `noNetwork`) and
-  `CreateTournee(centre, number, campaign, creatorName)`: `signInIfNeeded` (its `noNetwork`
-  → `CreateTourneeFailure.noNetwork`), `Tournee.createdBy` with an `IdGenerator` id, a
-  `JoinCode.generate` from the bound `Random` and the `Clock`, `TourneeRepository.add`
+- **Créer:** `ListRescueCentres`, `CheckSectorTaken` (the directory, `noNetwork`) and
+  `CreateSector(centre, number, campaign, creatorName)`: `signInIfNeeded` (its `noNetwork`
+  → `CreateSectorFailure.noNetwork`), `Sector.createdBy` with an `IdGenerator` id, a
+  `JoinCode.generate` from the bound `Random` and the `Clock`, `SectorRepository.add`
   (`alreadyExists` | `noNetwork`), then the summary remembered **and opened**; returns the
   tournée as stored (its code possibly replaced).
 - **Rejoindre:** `PreviewJoin` (the directory), `RequestToJoin(preview, name)`: a tournée
   already in « Mes tournées » → `alreadyJoined` (asking again would turn an active member
   back into a request); else `signInIfNeeded` (→ `noNetwork`), the pending `Member` stamped
   with the `Clock` sent with `requestToJoin`, and the preview remembered as a pending
-  summary. `CancelJoinRequest(tournee)`: `cancelRequest` as the signed-in member (none: only
+  summary. `CancelJoinRequest(sector)`: `cancelRequest` as the signed-in member (none: only
   forgotten), then `forget`.
-- **Following a request:** « Mes tournées » (`MyTourneesNotifier`, T2.7) already follows and
+- **Following a request:** « Mes tournées » (`MySectorsNotifier`, T2.7) already follows and
   settles each pending request; `JoinRequestNotifier` (family by tournée) watches it:
-  `RequestWaiting(number, centre, canLeave)` | `RequestAccepted` (after `OpenTournee`) |
+  `RequestWaiting(number, centre, canLeave)` | `RequestAccepted` (after `OpenSector`) |
   `RequestClosed(refused, next)` | `RequestUnknown`. A request gone while shown is refused
   unless « Annuler » was pressed; one gone before the screen opened is not called refused.
-  `FirestoreTourneeDirectory.watchRequest` tells nothing for a snapshot of the phone's copy
+  `FirestoreSectorDirectory.watchRequest` tells nothing for a snapshot of the phone's copy
   without the document (`metadata.isFromCache`, `requestStatusesIn`): only the server can say
   a request is gone, so an offline start never drops it.
-- **Presentation:** `WelcomeNotifier`, `NewTourneeNotifier` (duplicate check after
+- **Presentation:** `WelcomeNotifier`, `NewSectorNotifier` (duplicate check after
   `duplicateCheckDelayProvider`, 300 ms; answers about older input dropped) and
-  `JoinTourneeNotifier` (late previews dropped) each wait for `AccountSignedIn` before asking
+  `JoinSectorNotifier` (late previews dropped) each wait for `AccountSignedIn` before asking
   the server, so after an offline first start « Réessayer » is enough, no restart.
 
 Équipe and Corbeille fixed in T2.6 (`lib/application/use_cases/team.dart`,
 `observe_corbeille.dart`, `lib/domain/street/corbeille.dart`, `lib/presentation/`):
 
 - **Use cases** of Équipe, each acting as `IdentityProvider.currentMember` (the tournée's root
-  checks they may): `ObserveTeam` (`TourneeRepository.watch`), `ReadCurrentMember`,
-  `AcceptMember` (stamped with the `Clock`), `RefuseMember`, `RemoveMember`, `LeaveTournee`
-  and `DeleteTournee` (both then `forget` the tournée in « Mes tournées »),
+  checks they may): `ObserveTeam` (`SectorRepository.watch`), `ReadCurrentMember`,
+  `AcceptMember` (stamped with the `Clock`), `RefuseMember`, `RemoveMember`, `LeaveSector`
+  and `DeleteSector` (both then `forget` the tournée in « Mes tournées »),
   `RegenerateJoinCode` (draws from the injected `Random`, `Random.secure()` in the app;
-  returns the code as stored). Refusals are `TeamFailure` = a `TeamProblem` (`tourneeGone`: cannot be
-  read, `offline`, `noName`, `notAdmin`) | `TeamCommandRefused(TourneeCommandFailure)`.
-- **`TourneeRepository.save`** returns the tournée as stored and **`delete`** the deletion,
-  or `TourneeWriteFailure.noNetwork` for what needs the server: a new code (the transaction)
+  returns the code as stored). Refusals are `TeamFailure` = a `TeamProblem` (`sectorGone`: cannot be
+  read, `offline`, `noName`, `notAdmin`) | `TeamCommandRefused(SectorCommandFailure)`.
+- **`SectorRepository.save`** returns the tournée as stored and **`delete`** the deletion,
+  or `SectorWriteFailure.noNetwork` for what needs the server: a new code (the transaction)
   and deleting (which first reads the tournée from the server, so offline it fails before
   deleting anything). Member changes never fail (queued).
 - **Corbeille** (domain service `corbeilleOf(streets)`): a `DeletedStreet` (id, name, shown
@@ -2097,7 +2097,7 @@ Onboarding fixed in T2.5 (`lib/application/use_cases/choose_start_point.dart`,
   `(streets: n, numbers: n)`. `corbeillePurgeProvider` (presentation, `FutureProvider`, no
   retries) runs it and is built again when another street storage is bound; `TourneeApp`
   listens to it, which starts it.
-- **Presentation:** `teamProvider` (kept alive, follows `currentTourneeProvider`):
+- **Presentation:** `teamProvider` (kept alive, follows `currentSectorProvider`):
   `NoTeam` | `TeamLoading` | `TeamUnavailable` | `TeamShown` (number, centre, campaign, code,
   `qrData`, `iAmCreator`, `RequestRow`s, `MemberRow`s with `isMe`, `isCreator`, `canRemove`;
   `waitingRequests` for the dot); commands answer `TeamActionFailure` `teamChanged` |
@@ -2109,9 +2109,9 @@ Onboarding fixed in T2.5 (`lib/application/use_cases/choose_start_point.dart`,
   Firestore adapter.
 
 Streets on Firestore fixed in T2.8 (`lib/bootstrap/bindings.dart`,
-`lib/application/use_cases/move_streets_into_tournee.dart`, `lib/presentation/`):
+`lib/application/use_cases/move_streets_into_sector.dart`, `lib/presentation/`):
 
-- **Binding.** `streetRepositoryProvider` follows `currentTourneeProvider` (its id and
+- **Binding.** `streetRepositoryProvider` follows `currentSectorProvider` (its id and
   campaign only): a `FirestoreStreetRepository` of the open tournée's current campaign,
   closed (`onDispose`) when another tournée or none is opened; the phone storage
   (`phoneStreetRepositoryProvider`, one `LocalStreetRepository`) while none is open. Every use
@@ -2134,8 +2134,8 @@ Streets on Firestore fixed in T2.8 (`lib/bootstrap/bindings.dart`,
   changes.
 - **Port `MovedStreetsLog`** (application): `wereMovedInto(tournée)`, `rememberMovedInto`.
   Use cases `CountStreetsToMove(tournée)` (0 when they went there, when the member is not an
-  active member of the tournée as `TourneeRepository.find` gives it, or the phone holds none
-  out of its Corbeille) and `MoveStreetsIntoTournee(tournée, onProgress)`: each phone street
+  active member of the tournée as `SectorRepository.find` gives it, or the phone holds none
+  out of its Corbeille) and `MoveStreetsIntoSector(tournée, onProgress)`: each phone street
   out of the Corbeille, unless the tournée has its id or its BAN id (Corbeille included), is
   `add`ed restamped by `IdentityProvider.currentMember`; then the tournée is remembered;
   returns `StreetsMoved(moved, alreadyThere)`. Started again after an interruption, it skips
@@ -2177,7 +2177,7 @@ Geometry and map layers fixed in T3.1 (`lib/domain/geometry/`, `lib/domain/map/`
   building's shows `comeBack` when it has its own « repasser », otherwise `toDo` / `partial` /
   `done` from its doors. Dots show from zoom 16 (`MapLayers.houseDotsMinZoom`). A street is
   taken when it has an assignee (T3.3).
-- **`tourneeArea(streets)`**: the `GeoBounds` (south, west, north, east; never across the
+- **`sectorArea(streets)`**: the `GeoBounds` (south, west, north, east; never across the
   antimeridian) around every shape point and house position of the streets, Corbeille included
   (a street may be restored offline), plus 300 m; null when no street has a place on the map.
   `GeoBounds.around(points)` and `expandedBy(metres)` (longitude margin counted at the widened
@@ -2226,7 +2226,7 @@ Street picking fixed in T3.3 (`lib/domain/street/street.dart`, `lib/application/
   assignees stay, nothing else changes. Undo releases a take and takes a release back (`gone`
   when it was undone by hand meanwhile). `restampedBy(member)` makes a covered street
   covered by `member` alone (the phone's own id of M1 is no member of the tournée).
-- **Ex-members are ignored** (#91, `lib/domain/tournee/team_roster.dart`): someone removed
+- **Ex-members are ignored** (#91, `lib/domain/sector/team_roster.dart`): someone removed
   (« Retirer ») or gone (« Quitter la tournée ») stays in `assignees` in Firestore (the rules
   let a member add or remove only themself, 8.2), but no longer covers the street.
   `TeamRoster.of(team, me:)` keeps the assignees in `team.members` (pending requests
@@ -2234,13 +2234,13 @@ Street picking fixed in T3.3 (`lib/domain/street/street.dart`, `lib/application/
   and `isTaken(street)`. While the team is not read yet (`team == null`, an offline cold start
   before it was ever cached) it is `TeamRoster.unknown`, which trusts every assignee, so
   streets never flash to « libre ». The map's lines (`MapLayers.of(streets, roster:)`) and
-  the street card (`StreetCardInTournee.of`) read the assignees through it: a street held
+  the street card (`StreetCardInSector.of`) read the assignees through it: a street held
   only by ex-members is « libre » and anyone may « Me l'attribuer » it (`arrayUnion`, the
   stale uid stays). Known limit: a street taken only by an admin visiting the tournée (no
   member of it) shows « libre » to the team: the roster knows only the team, not the admins.
 - **`LookUpStreet(StreetLookup)`** — `StreetAtPoint(GeoPoint)` (a tap: the geocoder) or
   `FoundStreet(StreetMatch)` (a search result) — gives the street card's subject:
-  `StreetOfTheTournee(match, street)` when the tournée has its BAN id out of the Corbeille (its
+  `StreetOfTheSector(match, street)` when the tournée has its BAN id out of the Corbeille (its
   numbers are not asked), otherwise `StreetToAdd(match, numbers)` with the BAN's numbers and
   positions (`numberCount`). Failures are the `AddressDirectoryFailure`s: `notFound` (no BAN
   match), `noNetwork` (offline), `serviceError`. Changes nothing.
@@ -2248,7 +2248,7 @@ Street picking fixed in T3.3 (`lib/domain/street/street.dart`, `lib/application/
   the road the card found (`LookUpStreetShape`, simplified), or without shape while it has
   none: since #92 it **never asks the map nor waits for it**. A street of the Corbeille with
   that BAN id comes back with its marks instead, and is taken when asked and not yet
-  covered. `AddStreetFailure.alreadyInTournee` and `serviceError` (the BAN gave a number
+  covered. `AddStreetFailure.alreadyInSector` and `serviceError` (the BAN gave a number
   twice).
 - **`LookUpStreetShape(streetToAdd)`** (#92): the road around the street's numbers and the
   BAN's point of it, simplified. **`FillStreetShape(streetId, road:)`** (#92): a street that
@@ -2266,24 +2266,24 @@ Street picking fixed in T3.3 (`lib/domain/street/street.dart`, `lib/application/
   (the tournée's communes, which #78 stores; #31 passes them in), results in commune order, a
   BAN id listed once; the first failure fails the search; no commune → nothing, no request.
 
-Communes of a tournée fixed in #78 (`lib/domain/tournee/`, `lib/application/use_cases/team.dart`):
+Communes of a tournée fixed in #78 (`lib/domain/sector/`, `lib/application/use_cases/team.dart`):
 
-- **`TourneeCommune`**: a `Commune` (INSEE code + name) and an optional `GeoPoint` centre, the
+- **`SectorCommune`**: a `Commune` (INSEE code + name) and an optional `GeoPoint` centre, the
   one geo.api.gouv.fr gives at pick time (`CommuneMatch.centre`, from its `centre` field,
-  `[longitude, latitude]`), equal by value. `Tournee.communes` keeps them in the order added,
+  `[longitude, latitude]`), equal by value. `Sector.communes` keeps them in the order added,
   read-only.
-- `Tournee.createdBy(…, communes:)` takes one to `maxCommunes` (50) communes of different codes
+- `Sector.createdBy(…, communes:)` takes one to `maxCommunes` (50) communes of different codes
   (anything else throws an `ArgumentError`: « Nouvelle tournée » never sends it).
-  `Tournee.create` (storage) takes none to 50 (`duplicateCommune`, `tooManyCommunes`), so a
+  `Sector.create` (storage) takes none to 50 (`duplicateCommune`, `tooManyCommunes`), so a
   tournée created before #78 reads with none.
 - **Commands** (any active member or admin, like answering a request): `addCommune(commune,
   by:)` → `CommuneAdded` (refused `communeAlreadyIn` by INSEE code, `tooManyCommunes`);
   `removeCommune(code, by:)` → `CommuneRemoved` with the commune as stored (refused
   `unknownCommune`, `lastCommune`). Use cases `AddCommune`, `RemoveCommune` (offline, queued)
-  and `ObserveTourneeCommunes(id)` (the communes now and on each change of them, not of the
-  team; none while the tournée cannot be read). `CreateTournee(…, communes:)`.
+  and `ObserveSectorCommunes(id)` (the communes now and on each change of them, not of the
+  team; none while the tournée cannot be read). `CreateSector(…, communes:)`.
 - **Map area**: `communesArea(communes)` = the centres plus 2 km (`communeMarginMetres`), null
-  without centre; `addStreetsArea(communes, streets)` = that, else `tourneeArea(streets)`.
+  without centre; `addStreetsArea(communes, streets)` = that, else `sectorArea(streets)`.
 
 Accueil fixed in T3.5 (#30, `lib/domain/street/my_streets.dart`, `lib/presentation/home/`):
 
@@ -2295,21 +2295,21 @@ Accueil fixed in T3.5 (#30, `lib/domain/street/my_streets.dart`, `lib/presentati
   on the phone (`IdentityProvider`), now and on each change, offline.
 - **`Progress.donePercent`**: the doors done in whole percent, rounded down (199 of 200 is
   99: 100 % means finished), 0 without door; « Équipe : 41 % ».
-- **`homeArea(communes, streets)`**: `tourneeArea(streets)`, else `communesArea(communes)`.
+- **`homeArea(communes, streets)`**: `sectorArea(streets)`, else `communesArea(communes)`.
   Accueil decides it once, when the streets are first read, so a street added meanwhile
   never moves the map. `MapLayers.showsHouseDots(zoom)`: zoom ≥ 16, when the legend explains
   the dots.
 
 Firestore adapters fixed in T2.3 (`lib/infrastructure/firestore/`, `lib/application/ports/`):
 
-- **Port `TourneeDirectory`** (application, Q20): what someone outside a tournée asks of the
+- **Port `SectorDirectory`** (application, Q20): what someone outside a tournée asks of the
   server. `preview(JoinCode)` → `JoinPreview` (code, tournée id, number, centre, campaign: what
   « Rejoindre » shows) or `JoinFailure` (`unknownCode`, `noNetwork`); `requestToJoin(preview,
   member)` stores the newcomer's pending member document; `watchRequest(tournée, member)` →
   pending, active, or null once refused or cancelled; `cancelRequest`; `watchMembership(summary,
   member)` (T2.6c: the member's own document, which the rules always let them read; once the
   server has it no more — not `isFromCache`, not `hasPendingWrites` — the reservation
-  `tourneeKeys/{key}` read from the server tells `removed` while it still names the tournée,
+  `sectorKeys/{key}` read from the server tells `removed` while it still names the tournée,
   `deleted` otherwise; a `permission-denied` is passed on as an error, never taken as a
   loss); `watchOwnName(tournée, member)` (T2.7c, the same document); `isTaken(centre,
   number)` and `rescueCentres()` (sorted by name) for « Créer », failing with
@@ -2324,7 +2324,7 @@ Firestore adapters fixed in T2.3 (`lib/infrastructure/firestore/`, `lib/applicat
   **without waiting for the server** (offline the write waits on the phone, across restarts).
   A write the server refuses is taken back out of the phone's copy by Firestore and logged. An
   unreadable street document is left out, not fatal.
-- **`FirestoreTourneeRepository`**: creating a tournée and a new code run in a **transaction**
+- **`FirestoreSectorRepository`**: creating a tournée and a new code run in a **transaction**
   (needs the server, fails at once offline with `noNetwork`, sees a number or code taken at the
   same second). A join code another tournée already holds is replaced by a new one drawn from
   the injected `Random` (up to 10 draws, then a `StateError`): `add` returns the tournée as
@@ -2394,7 +2394,7 @@ normalisation, rescue-centre name normalisation, campaign roll-over (copy / rese
 **map layers as plain data** (street lines with a level, house dots with a status), tournée
 bounding box for the offline download, shape simplification (Douglas–Peucker).
 
-Repository **ports** live in the domain (`TourneeRepository`, `StreetRepository`); they take
+Repository **ports** live in the domain (`SectorRepository`, `StreetRepository`); they take
 and return aggregates and `StreetChange`s, never Firestore types.
 
 **Tournées (#63, to build)** — `lib/domain/round/`:
@@ -2425,16 +2425,20 @@ and return aggregates and `StreetChange`s, never Firestore types.
 
 ### 6.2 Firestore layout
 
+Until #116 the secteurs lived in `tournees/{id}`, their keys in `tourneeKeys/{key}` and the
+field naming them was `tourneeId`; `firebase/tool/migrate_to_sectors.mjs` copies such data to
+the names below (once, by hand; the rules know only the new names).
+
 ```
 admins/{uid}                                      ← no fields; added by hand in the console (#75)
 rescueCentres/{centreKey}                         ← "villefranche"; the CS picker lists these
     name: "CS Villefranche"
-tourneeKeys/{centreKey}_{number}                  ← "villefranche_49": guarantees number + CS is unique
-    tourneeId
+sectorKeys/{centreKey}_{number}                   ← "villefranche_49": guarantees number + CS is unique
+    sectorId
 joinCodes/{code}                                  ← "K7P2QX": readable only by exact code (get, not list)
-    tourneeId, number, centreName, campaign      ← what the join preview shows; nothing else
+    sectorId, number, centreName, campaign       ← what the join preview shows; nothing else
 
-tournees/{tourneeId}
+sectors/{sectorId}
     number: 49, centreKey, centreName, joinCode, createdBy, createdAt,
     currentCampaign: 2026,
     communes: [ { code: "69264", name: "Villefranche-sur-Saône",
@@ -2519,15 +2523,15 @@ writes:
 | undo of a door (`DwellingReverted`) | `dwellings.<key>` whole, `by` / `at` = who undoes, now |
 | 30-day purge of numbers (`NumbersPurged`, T2.6b) | each `houses.<n>` deleted, in an update of its own |
 | 30-day purge of a street (`StreetRepository.purge`, T2.6b) | the street document deleted |
-| commune added / removed (#78, on `tournees/{id}`) | `communes`: `arrayUnion([entry])` / `arrayRemove([entry])`, never the whole list, so two members adding at once both stay |
+| commune added / removed (#78, on `sectors/{id}`) | `communes`: `arrayUnion([entry])` / `arrayRemove([entry])`, never the whole list, so two members adding at once both stay |
 
 A building is never written as one map that would replace the doors: two writes crossing (a
 door marked while a teammate lays the building out again) leave at most a door entry the
 layout does not list, or a house entry without `n` (a mark landing just after a renumbering);
 reading skips both.
 
-Creating a tournée writes `tourneeKeys`, `joinCodes`, `tournees` and its first campaign in one
-batch; the security rules refuse the batch if `tourneeKeys/{key}` already exists, which is what
+Creating a tournée writes `sectorKeys`, `joinCodes`, `sectors` and its first campaign in one
+batch; the security rules refuse the batch if `sectorKeys/{key}` already exists, which is what
 makes number + CS unique even if two people create it at the same second.
 
 A new campaign (v1.1) is a batch that copies each street of the current campaign into
@@ -2577,7 +2581,7 @@ can never drift.
 - `street_view.json` in the same folder (port `StreetViewPreferences`, T1.7): « Masquer faits »
   per street, `{ version: 1, hideDone: [streetId…] }`, read once at start-up; an unreadable file
   means nothing hidden.
-- `my_tournees.json` in the same folder (port `MyTourneesStore`, T2.7): « Mes tournées » and
+- `my_tournees.json` in the same folder (port `MySectorsStore`, T2.7): « Mes tournées » and
   the open one, `{ version: 1, open: id | null, tournees: [{ id, number, centre, campaign,
   status: "active" | "pending" | "visiting" }] }` (`visiting` from #75; an older app reads
   such a file as unreadable, so as none), read once at start-up, so the last tournée reopens after
@@ -2586,9 +2590,9 @@ can never drift.
   rename, queued); an unreadable file means none / defaults and is left until the next save.
   Files of the storage folder rather than `shared_preferences`: no plugin, plain Dart tests.
 - `moved_streets.json` (port `MovedStreetsLog`, T2.8): the tournées the phone's streets went
-  into, `{ version: 1, movedInto: [tourneeId…] }`, read once at start-up; an unreadable file
+  into, `{ version: 1, movedInto: [sectorId…] }`, read once at start-up; an unreadable file
   means none (moving again skips what is already there).
-- `tournee_downloads.json` (port `TourneeDownloads`, #32): the tournées downloaded on this
+- `tournee_downloads.json` (port `SectorDownloads`, #32): the tournées downloaded on this
   phone, `{ version: 1, downloads: [{ tournee, at, mapBytes, area: [south, west, north, east]
   | null }] }` (sorted by tournée; `at` ISO 8601 UTC; `area` the bounds of the map kept, null
   when no street had a place on the map). Written only once a download is complete, so it
@@ -2610,6 +2614,10 @@ can never drift.
   (`infrastructure/maplibre_offline/`): one per downloaded tournée (two for a moment while
   one is replaced), in the map library's database (`files/mbgl-offline.db`). Each region's
   metadata is `{ tournee: id }`, so the regions of a tournée are found among the phone's.
+- The names on the phone that say « tournee » (`my_tournees.json`, `tournee_downloads.json`,
+  their keys `tournees` and `tournee`, the regions' metadata key) date from before the code
+  said `Sector` (#116) and stay as they are, so an updated phone keeps its secteurs, the open
+  one and its offline map.
 
 ---
 
@@ -2635,11 +2643,11 @@ versions.
   and words it so (not « 3 modifications »). The Firestore street adapter of the open tournée
   is the `PendingSync` too (one listener for both); with no tournée open the phone's streets
   are never sent, so nothing is pending. Shown only while the count is above 0.
-- **Automatic download** (`DownloadTournee`, run by `OfflineAutoDownload`, #32): the open
+- **Automatic download** (`DownloadSector`, run by `OfflineAutoDownload`, #32): the open
   tournée (not a pending request) is downloaded when it is opened (start-up, created, joined,
   switched to) and not downloaded yet, and again when its streets reach beyond the area kept
   (`coversStreets`). Both parts in turn: every street read from the server, then the map region
-  of `tourneeArea` (zooms 12–17); the date, map size and area are kept (§6.3) only once both are
+  of `sectorArea` (zooms 12–17); the date, map size and area are kept (§6.3) only once both are
   complete. A new region is always made beside the old one (1 m wider when the old one has the
   same bounds, `offlineRegionBounds`: the map library would otherwise delete the old region
   before downloading), and the tournée's older regions are deleted only after it completes.
@@ -2659,7 +2667,7 @@ versions.
 - **Retry:** any failure (offline, service down) waits 2 minutes, then tries again by itself,
   as the street shapes do (#92); no connectivity plugin.
 - **Forgetting a tournée** (left, removed, deleted, a request refused): its download record and
-  map regions are deleted (`PruneTourneeDownloads`, run at start-up and after each change of
+  map regions are deleted (`PruneSectorDownloads`, run at start-up and after each change of
   « Mes tournées »), whatever flow forgot it.
 - What the member sees of all this (T4.2, #33): nothing on Accueil; one line in Paramètres
   (§5.9); offline, « Mes tournées » greys a tournée not downloaded on this phone (« Disponible
@@ -2690,17 +2698,17 @@ photo of the QR) is even more likely. So **knowing a code must not be enough**:
 | **Strict security rules**: schema, allowed values and lengths for every field; members may only touch the fields of their job; nobody edits `createdBy`, codes, or other members except as below | A member corrupting documents or escalating | v1 |
 | **Corbeille + attribution**: deletes are soft for 30 days (5.11); every change records who and when | Mistakes, and a member who makes a mess | v1 |
 | **Remove member + new code** (creator) | A bad actor already inside | v1 |
-| Server-side join with rate limiting (Cloud Function, needs the Blaze plan) | Large-scale guessing even from the real app | **Later, if needed** (decided at the M2 checkpoint, Q20): v1 stays on Spark. The join goes through the `TourneeDirectory` port, so moving to a callable function is an adapter swap with no data migration. Per-uid limits are weak anyway (anonymous accounts are free to create); App Check is the real gate |
+| Server-side join with rate limiting (Cloud Function, needs the Blaze plan) | Large-scale guessing even from the real app | **Later, if needed** (decided at the M2 checkpoint, Q20): v1 stays on Spark. The join goes through the `SectorDirectory` port, so moving to a callable function is an adapter swap with no data migration. Per-uid limits are weak anyway (anonymous accounts are free to create); App Check is the real gate |
 
 ### 8.2 Security rules (`firebase/firestore.rules`, tested in the emulator, §11)
 
-- `tournees/{id}/**`: read and write only for members with `status == "active"`.
+- `sectors/{id}/**`: read and write only for members with `status == "active"`.
 - `members/{uid}` create: only by that uid, only `status: "pending"`, only with the tournée's
   current join code. Update `pending → active` or delete a pending request: any active member.
   Delete an active member: the creator, or the member themself (*Quitter*). Update
   `displayName` only: the member themself, active, a name as `MemberName` cleans it (≤ 30).
 - `joinCodes/{code}`: `get` for signed-in users, `list` denied; holds only the preview fields.
-- `tourneeKeys/{key}`: `get` allowed (creation must know the pair is taken); create only if
+- `sectorKeys/{key}`: `get` allowed (creation must know the pair is taken); create only if
   absent; never updated; deleted only with the tournée.
 - `rescueCentres`: readable by signed-in users (station names only), create-only.
 - Street and house writes: field-path updates only on `status`, `comeBack`, `tries`, `by`, `at`,
@@ -2724,8 +2732,8 @@ below, these win:
   `admins/{uid}`: `get` for signed-in users, never `list`, never written by a client.
 - **Creating** a tournée (its reservation, code, first campaign, creator member) and a
   `rescueCentres` entry: admins only.
-- **Reading and listing** `tournees` and everything under them: active members **or admins**
-  (only admins may `list` `tournees` and query `members` of any tournée).
+- **Reading and listing** `sectors` and everything under them: active members **or admins**
+  (only admins may `list` `sectors` and query `members` of any tournée).
 - **Streets** (every write allowed to a member, the 30-day purge included): active members or
   admins, `by` = the caller as before.
 - **Members:** accept / refuse a request: an active member or an admin. Delete an active
@@ -2746,9 +2754,9 @@ below, these win:
 
 What the adapters write (T2.3), which the rules must allow:
 
-- **Create** (one transaction): reads `tourneeKeys/{key}`, `joinCodes/{code}` (more than one
-  if a code is taken) and `rescueCentres/{key}`; writes `tourneeKeys/{key}`,
-  `joinCodes/{code}`, `tournees/{id}`, `members/{creator}` **already `active`** (accepted by
+- **Create** (one transaction): reads `sectorKeys/{key}`, `joinCodes/{code}` (more than one
+  if a code is taken) and `rescueCentres/{key}`; writes `sectorKeys/{key}`,
+  `joinCodes/{code}`, `sectors/{id}`, `members/{creator}` **already `active`** (accepted by
   themself), `campaigns/{year}`, and `rescueCentres/{key}` only when absent.
 - **Join:** the request is `members/{uid}` with `status: "pending"` and the `joinCode` used
   (the rule compares it with the tournée's). The newcomer **reads their own member document**
@@ -2756,11 +2764,11 @@ What the adapters write (T2.3), which the rules must allow:
 - **Accept:** updates `status`, `acceptedBy` (the caller), `acceptedAt` only. Refuse, remove,
   leave: delete the member document. **Rename** (« Prénom »): updates the caller's own
   `displayName` only.
-- **New code** (one transaction): reads `joinCodes/{new}`, updates `tournees/{id}.joinCode`,
+- **New code** (one transaction): reads `joinCodes/{new}`, updates `sectors/{id}.joinCode`,
   deletes `joinCodes/{old}`, creates `joinCodes/{new}`.
 - **Delete:** lists `campaigns`, their `streets` and `members` from the server, deletes the
   campaigns and streets in batches of ≤ 500, then one batch: `joinCodes/{code}`,
-  `tourneeKeys/{key}`, `tournees/{id}`, the other members' documents and the creator's own.
+  `sectorKeys/{key}`, `sectors/{id}`, the other members' documents and the creator's own.
 - **Streets:** the writes of the table in §6.2. Whole entries (a number added or renamed, a
   layout, an undo) carry door entries with the `by` / `at` they already had, possibly a
   teammate's: only the entries that change carry the caller's uid. The undo of « Restaurer »
@@ -2771,7 +2779,7 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
 
 - **Reading.** A tournée, its members, campaigns and streets: active members only. A pending
   newcomer reads their own member document and nothing else; someone outside reads nothing.
-  `joinCodes` and `tourneeKeys`: `get` when signed in, never `list`. `rescueCentres`: `get`
+  `joinCodes` and `sectorKeys`: `get` when signed in, never `list`. `rescueCentres`: `get`
   and `list` when signed in. Anything not described is refused.
 - **Values.** Every document holds exactly its fields (no more, no fewer) with the domain's
   limits: tournée number 1–9999, campaign 2000–2099, join code 6 characters of the alphabet,
@@ -2989,7 +2997,7 @@ captured from the real services.
 ```
 lib/
 ├── domain/          Pure Dart. Aggregates, entities, value objects, domain services,
-│   ├── tournee/     repository ports. Imports nothing but dart:core / dart:math / collection.
+│   ├── sector/     repository ports. Imports nothing but dart:core / dart:math / collection.
 │   ├── street/
 │   └── shared/
 ├── application/     Use cases (one class per use case, a single `call` method), outbound
@@ -3013,8 +3021,8 @@ lib/
   `infrastructure` and `bootstrap`; MapLibre only in `ui/map` and `infrastructure/maplibre_offline`. A fast architecture
   test (`test/architecture_test.dart`) reads every import in `lib/` and fails on a forbidden one.
 - **Use cases** are the only entry point to behaviour: `SetHouseDetails`, `AddStreetFromMap`,
-  `AddManualStreet`, `EditStreetNumbers`, `DescribeBuilding`, `CreateTournee`,
-  `RequestToJoin`, `AcceptMember`, `DownloadTournee`, `StartCampaign`, … A use case loads the
+  `AddManualStreet`, `EditStreetNumbers`, `DescribeBuilding`, `CreateSector`,
+  `RequestToJoin`, `AcceptMember`, `DownloadSector`, `StartCampaign`, … A use case loads the
   aggregate through its port, calls the root, saves the `StreetChange` through the port.
 - **Adapters translate**: Firestore maps ⇄ aggregates, `StreetChange` → field-path updates,
   geopf / BAN JSON, vector tiles → value objects. Translation code is pure functions, tested alone.
@@ -3152,7 +3160,7 @@ exists. No invented data at any stage.
 | Q17 | Next year | One campaign per year inside the tournée. New campaign keeps streets, numbers, buildings; resets statuses, *repasser*, assignees; *Reprendre mes rues 2026*; last year's result shown in the sheets. v1.1, model ready in v1. |
 | Q18 | Who starts a campaign, what is kept | The creator (an admin from #75, 5.12). Previous campaign read-only; the one before is deleted. |
 | Q19 | Guessed / leaked codes | A code only creates a pending request; any accepted member accepts or refuses. App Check in v1. Soft delete with a 30-day Corbeille. |
-| Q20 | Infrastructure | **Decided at the M2 checkpoint (2026-10-05): Spark (free), Blaze-ready.** Join on the phone (`joinCodes` get → pending member) behind a `TourneeDirectory` port; App Check + approval are the guard; the Corbeille purge runs on members' phones (5.11). Move to Blaze (1 click, no data migration) and a rate-limited callable join + scheduled purge when real usage nears Spark's shared daily quota (50 k reads, 20 k writes for the whole app ≈ 10 busy tournées a day) or abuse shows up. Another backend was rejected: it loses Firestore's offline cache. |
+| Q20 | Infrastructure | **Decided at the M2 checkpoint (2026-10-05): Spark (free), Blaze-ready.** Join on the phone (`joinCodes` get → pending member) behind a `SectorDirectory` port; App Check + approval are the guard; the Corbeille purge runs on members' phones (5.11). Move to Blaze (1 click, no data migration) and a rate-limited callable join + scheduled purge when real usage nears Spark's shared daily quota (50 k reads, 20 k writes for the whole app ≈ 10 busy tournées a day) or abuse shows up. Another backend was rejected: it loses Firestore's offline cache. |
 | Q21 | Switching / creating from Accueil | The title is a button: « Mes tournées » sheet with all my tournées (progress, pending requests), *Créer*, *Rejoindre*. |
 | Q22 | Technical stack | **Flutter + Riverpod**, strict DDD (hexagonal: domain, use cases, ports, adapters). Android first; iOS later from the same code, built in the cloud (no Mac). Mutation gate dropped (no Dart tool); 100 % coverage gate kept. |
 | Q23 | Notes | **Removed for privacy, 2026-10-05** (after the phone test of M1): a free note on a house, door or building is too likely to hold personal data (GDPR). No note field anywhere; notes already on a phone are erased when the app reads them (storage schema v3). The « repasser » hint stayed, limited to 20 characters (was 50); since #81 it is a day and an hour, no free text. |

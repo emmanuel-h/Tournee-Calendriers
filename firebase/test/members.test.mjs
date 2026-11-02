@@ -23,7 +23,7 @@ import {
   rulesEnvironment,
   seedTeam,
   threePm,
-  tourneePath,
+  sectorPath,
   zoe,
 } from './support.mjs';
 
@@ -80,7 +80,7 @@ describe('a request to join', () => {
 
   it('should refuse a request to a tournée that does not exist', async () => {
     await assertFails(
-      setDoc(doc(phoneOf(env, zoe), `tournees/t50/members/${zoe}`), requestDoc('Zoé')),
+      setDoc(doc(phoneOf(env, zoe), `sectors/t50/members/${zoe}`), requestDoc('Zoé')),
     );
   });
 
@@ -118,26 +118,26 @@ describe('what a pending member reads', () => {
 
   it('should refuse them the tournée, the members, the campaign', async () => {
     const phone = phoneOf(env, paul);
-    await assertFails(getDoc(doc(phone, tourneePath)));
+    await assertFails(getDoc(doc(phone, sectorPath)));
     await assertFails(getDoc(memberOf(paul, manu)));
-    await assertFails(getDocs(collection(phone, `${tourneePath}/members`)));
+    await assertFails(getDocs(collection(phone, `${sectorPath}/members`)));
     await assertFails(getDoc(doc(phone, campaignPath)));
   });
 
   it('should let an active member read the tournée and list the members', async () => {
     const phone = phoneOf(env, lea);
-    await assertSucceeds(getDoc(doc(phone, tourneePath)));
-    await assertSucceeds(getDocs(collection(phone, `${tourneePath}/members`)));
+    await assertSucceeds(getDoc(doc(phone, sectorPath)));
+    await assertSucceeds(getDocs(collection(phone, `${sectorPath}/members`)));
     await assertSucceeds(getDoc(doc(phone, campaignPath)));
   });
 
   it('should refuse someone outside the tournée', async () => {
-    await assertFails(getDoc(doc(phoneOf(env, zoe), tourneePath)));
+    await assertFails(getDoc(doc(phoneOf(env, zoe), sectorPath)));
     await assertFails(getDoc(memberOf(zoe, manu)));
   });
 
   it('should refuse listing the tournées', async () => {
-    await assertFails(getDocs(collection(phoneOf(env, lea), 'tournees')));
+    await assertFails(getDocs(collection(phoneOf(env, lea), 'sectors')));
   });
 });
 

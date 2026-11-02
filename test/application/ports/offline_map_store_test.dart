@@ -3,7 +3,7 @@
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/offline_map_store.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
+import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 
 import '../../support/geo_fixtures.dart';
 
@@ -11,11 +11,11 @@ final _bounds = GeoBounds.around([at(45.98, 4.70), at(45.99, 4.72)])!;
 
 OfflineMapRegion _region({
   int id = 7,
-  String tournee = 't49',
+  String sector = 't49',
   GeoBounds? bounds,
 }) => OfflineMapRegion(
   id: id,
-  tournee: TourneeId(tournee),
+  sector: SectorId(sector),
   bounds: bounds ?? _bounds,
 );
 
@@ -28,14 +28,14 @@ void main() {
 
     test('should differ when any field differs', () {
       expect(_region(), isNot(_region(id: 8)));
-      expect(_region(), isNot(_region(tournee: 't12')));
+      expect(_region(), isNot(_region(sector: 't12')));
       expect(_region(), isNot(_region(bounds: _bounds.expandedBy(1))));
     });
 
     test('should print its fields', () {
       expect(
         '${_region()}',
-        'OfflineMapRegion(7, TourneeId(t49), '
+        'OfflineMapRegion(7, SectorId(t49), '
             'GeoBounds(south: 45.98, west: 4.7, north: 45.99, east: 4.72))',
       );
     });

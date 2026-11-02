@@ -1,8 +1,8 @@
+import 'package:tournee_calendriers/domain/sector/sector.dart';
 import 'package:tournee_calendriers/domain/shared/insee_code.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/same_items.dart';
 import 'package:tournee_calendriers/domain/street/streets_by_member.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee.dart';
 import 'package:tournee_calendriers/presentation/shared/recent_time.dart';
 
 /// Why a command of Équipe was not done, as the screen tells it.
@@ -74,11 +74,11 @@ final class TeamShown extends TeamState {
        members = List.unmodifiable(members),
        communes = List.unmodifiable(communes);
 
-  /// [tournee] as [me] sees it at [now] (« il y a 2 min »): [iAmAdmin]
+  /// [sector] as [me] sees it at [now] (« il y a 2 min »): [iAmAdmin]
   /// when the phone is an admin's, [admins] the other members known to be
   /// admins, [streets] the streets each member covers.
   factory TeamShown.of(
-    Tournee tournee, {
+    Sector sector, {
     required MemberId me,
     required DateTime now,
     required bool iAmAdmin,
@@ -88,27 +88,27 @@ final class TeamShown extends TeamState {
     // An active member or an admin changes the communes (PLAN §5.8);
     // never the last one.
     final canChangeCommunes =
-        iAmAdmin || (tournee.memberOf(me)?.isActive ?? false);
-    final lastOne = tournee.communes.length == 1;
+        iAmAdmin || (sector.memberOf(me)?.isActive ?? false);
+    final lastOne = sector.communes.length == 1;
     return TeamShown(
       canChangeCommunes: canChangeCommunes,
       communes: [
-        for (final commune in tournee.communes)
+        for (final commune in sector.communes)
           CommuneRow(
             inseeCode: commune.inseeCode,
             name: commune.name,
             removable: canChangeCommunes && !lastOne,
           ),
       ],
-      number: tournee.number.value,
-      centre: tournee.centre.name,
-      campaign: tournee.currentCampaign.value,
-      code: tournee.joinCode.display,
-      qrData: tournee.joinCode.value,
+      number: sector.number.value,
+      centre: sector.centre.name,
+      campaign: sector.currentCampaign.value,
+      code: sector.joinCode.display,
+      qrData: sector.joinCode.value,
       iAmAdmin: iAmAdmin,
-      iAmIn: tournee.memberOf(me) != null,
+      iAmIn: sector.memberOf(me) != null,
       requests: [
-        for (final request in tournee.pendingMembers)
+        for (final request in sector.pendingMembers)
           RequestRow(
             id: request.id,
             name: request.name.text,
@@ -116,7 +116,7 @@ final class TeamShown extends TeamState {
           ),
       ],
       members: [
-        for (final member in tournee.activeMembers)
+        for (final member in sector.activeMembers)
           MemberRow(
             id: member.id,
             name: member.name.text,

@@ -3,7 +3,10 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/map/map_layers.dart';
-import 'package:tournee_calendriers/domain/map/tournee_area.dart';
+import 'package:tournee_calendriers/domain/map/sector_area.dart';
+import 'package:tournee_calendriers/domain/sector/member.dart';
+import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
+import 'package:tournee_calendriers/domain/sector/sector_summary.dart';
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
@@ -13,16 +16,13 @@ import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
-import 'package:tournee_calendriers/domain/tournee/member.dart';
-import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_summary.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/home/home_notifier.dart';
 import 'package:tournee_calendriers/presentation/street_card/street_card.dart';
 import 'package:tournee_calendriers/presentation/street_list/street_list_state.dart';
 
-import '../../domain/tournee/my_tournees_fixtures.dart';
-import '../../domain/tournee/tournee_fixtures.dart'
+import '../../domain/sector/my_sectors_fixtures.dart';
+import '../../domain/sector/sector_fixtures.dart'
     show
         createdAt,
         gleizeCommune,
@@ -32,13 +32,13 @@ import '../../domain/tournee/tournee_fixtures.dart'
         manuId,
         nameOf,
         team,
-        tourneeId,
+        sectorId,
         villefrancheCommune;
-import '../../support/fakes/fake_my_tournees_store.dart';
+import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_ports.dart';
+import '../../support/fakes/fake_sector_repository.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/fakes/fake_street_shapes.dart';
-import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/geo_fixtures.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart' hide lea;
@@ -173,22 +173,22 @@ final _hugoRow = StreetRow(
 
 void main() {
   late FakeStreetRepository streets;
-  late FakeTourneeRepository tournees;
+  late FakeSectorRepository sectors;
   late FakeStreetShapes shapes;
 
   /// Léa's phone with [open] open (the 49 by default), or none.
-  ProviderContainer phone({TourneeSummary? open}) {
-    final opened = open ?? tournee49;
+  ProviderContainer phone({SectorSummary? open}) {
+    final opened = open ?? sector49;
     final container = ProviderContainer(
       overrides: [
         streetRepositoryProvider.overrideWithValue(streets),
-        tourneeRepositoryProvider.overrideWithValue(tournees),
+        sectorRepositoryProvider.overrideWithValue(sectors),
         streetShapesProvider.overrideWithValue(shapes),
         clockProvider.overrideWithValue(FakeClock(createdAt)),
         identityProvider.overrideWithValue(FakeIdentity(_lea)),
-        myTourneesStoreProvider.overrideWithValue(
-          FakeMyTourneesStore(
-            valueOf(MyTournees.none.remember(opened).open(opened.id)),
+        mySectorsStoreProvider.overrideWithValue(
+          FakeMySectorsStore(
+            valueOf(MySectors.none.remember(opened).open(opened.id)),
           ),
         ),
       ],
@@ -203,7 +203,7 @@ void main() {
   setUp(() {
     streets = FakeStreetRepository([_nationale, _emile, _paix, _hugo]);
     shapes = FakeStreetShapes(Ok(_morinRoad));
-    tournees = FakeTourneeRepository([
+    sectors = FakeSectorRepository([
       team(
         communes: [villefrancheCommune, gleizeCommune],
         members: [manu, lea, julie, _paulMember],
@@ -251,7 +251,7 @@ void main() {
     test(
       'should list every street under « Rues » for a visiting admin',
       () async {
-        final container = phone(open: tournee12Visited);
+        final container = phone(open: sector12Visited);
         await pumpEventQueue();
 
         final state = container.read(homeProvider);
@@ -341,7 +341,7 @@ void main() {
         final container = phone();
         await pumpEventQueue();
 
-        expect(container.read(homeProvider).area, tourneeArea([_nationale]));
+        expect(container.read(homeProvider).area, sectorArea([_nationale]));
       },
     );
 
@@ -364,7 +364,7 @@ void main() {
       await pumpEventQueue();
 
       final state = container.read(homeProvider);
-      expect(state.area, tourneeArea([_nationale]));
+      expect(state.area, sectorArea([_nationale]));
       expect(state.layers.dots, hasLength(2));
     });
 
@@ -378,17 +378,17 @@ void main() {
       hold.complete();
       await pumpEventQueue();
 
-      expect(container.read(homeProvider).area, tourneeArea([_nationale]));
+      expect(container.read(homeProvider).area, sectorArea([_nationale]));
     });
 
     test('should open on the communes read after the streets', () async {
       streets = FakeStreetRepository([_emile]);
-      tournees.put(team());
+      sectors.put(team());
       final container = phone();
       await pumpEventQueue();
       expect(container.read(homeProvider).area, isNull);
 
-      tournees.put(team(communes: [gleizeCommune]));
+      sectors.put(team(communes: [gleizeCommune]));
       await pumpEventQueue();
 
       expect(container.read(homeProvider).area, communesArea([gleizeCommune]));
@@ -428,7 +428,7 @@ void main() {
 
       expect(
         container.read(homeProvider).card,
-        StreetCardInTournee(
+        StreetCardInSector(
           id: StreetId('hugo'),
           name: 'Rue Victor Hugo',
           commune: 'Villefranche-sur-Saône',
@@ -449,7 +449,7 @@ void main() {
 
       final state = container.read(homeProvider);
       expect(state.selectedRoad, _nationaleShape);
-      expect(state.area, tourneeArea([_nationale]));
+      expect(state.area, sectorArea([_nationale]));
     });
 
     test('should light up no line before a street is tapped', () async {
@@ -542,7 +542,7 @@ void main() {
 
     test('should name nobody on the card when the team cannot be '
         'read', () async {
-      tournees.watchError = StateError('removed');
+      sectors.watchError = StateError('removed');
       final container = phone();
       await pumpEventQueue();
 
@@ -574,7 +574,7 @@ void main() {
 
       expect(
         container.read(homeProvider).card,
-        StreetCardInTournee(
+        StreetCardInSector(
           id: StreetId('paix'),
           name: 'Rue de la Paix',
           commune: 'Villefranche-sur-Saône',
@@ -596,7 +596,7 @@ void main() {
 
       final state = container.read(homeProvider);
       expect(state.area, streetArea(free));
-      expect(state.area, isNot(tourneeArea([free])));
+      expect(state.area, isNot(sectorArea([free])));
       expect(state.selectedRoad, _nationaleShape);
     });
 
@@ -624,7 +624,7 @@ void main() {
       container.read(homeProvider.notifier).focus(StreetId('hugo'));
 
       final state = container.read(homeProvider);
-      expect(state.area, tourneeArea([_nationale]));
+      expect(state.area, sectorArea([_nationale]));
       expect(state.card!.name, 'Rue Victor Hugo');
     });
 
@@ -664,7 +664,7 @@ void main() {
 
       final state = container.read(homeProvider);
       expect(state.card, isNull);
-      expect(state.area, tourneeArea([_nationale]));
+      expect(state.area, sectorArea([_nationale]));
     });
   });
 
@@ -673,7 +673,7 @@ void main() {
     /// the member on the phone is `lea`, who is in it only as themself.
     setUp(() {
       streets = FakeStreetRepository([_nationale, _gare]);
-      tournees = FakeTourneeRepository([team()]);
+      sectors = FakeSectorRepository([team()]);
     });
 
     test('should draw their street « libre » on the map', () async {
@@ -736,7 +736,7 @@ void main() {
 
     test('should still draw their street taken while the team cannot be '
         'read', () async {
-      tournees.watchError = StateError('not read');
+      sectors.watchError = StateError('not read');
       final container = phone();
       await pumpEventQueue();
 
@@ -754,25 +754,25 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         streetRepositoryProvider.overrideWithValue(streets),
-        tourneeRepositoryProvider.overrideWithValue(tournees),
+        sectorRepositoryProvider.overrideWithValue(sectors),
         streetShapesProvider.overrideWithValue(shapes),
         clockProvider.overrideWithValue(FakeClock(createdAt)),
         identityProvider.overrideWithValue(FakeIdentity(_lea)),
-        myTourneesStoreProvider.overrideWithValue(FakeMyTourneesStore()),
+        mySectorsStoreProvider.overrideWithValue(FakeMySectorsStore()),
       ],
     );
     addTearDown(container.dispose);
     container.listen(homeProvider, (_, _) {});
     await pumpEventQueue();
 
-    expect(tournees.watched, isEmpty);
-    expect(container.read(homeProvider).area, tourneeArea([_nationale]));
+    expect(sectors.watched, isEmpty);
+    expect(container.read(homeProvider).area, sectorArea([_nationale]));
   });
 
   test('should follow the communes of the tournée open', () async {
     phone();
     await pumpEventQueue();
 
-    expect(tournees.watched, contains(tourneeId));
+    expect(sectors.watched, contains(sectorId));
   });
 }

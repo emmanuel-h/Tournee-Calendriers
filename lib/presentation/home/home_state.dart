@@ -59,7 +59,7 @@ final class HomeState {
   /// The card of the street tapped on the map or among « Autres rues de
   /// la tournée » (PLAN §5.4): its progress, who covers it, « Ouvrir » and
   /// « Me l'attribuer » or « Ne plus la faire »; null when none is.
-  final StreetCardInTournee? card;
+  final StreetCardInSector? card;
 
   /// The line of the street whose card shows, lit up over the others;
   /// none without a card, or for a street with no line.

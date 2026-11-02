@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_summary.dart';
+import 'package:tournee_calendriers/domain/sector/sector_summary.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
-import 'package:tournee_calendriers/ui/screens/my_tournees/my_tournees_sheet.dart';
-import 'package:tournee_calendriers/ui/screens/my_tournees/tournee_title_button.dart';
+import 'package:tournee_calendriers/ui/screens/my_sectors/my_sectors_sheet.dart';
+import 'package:tournee_calendriers/ui/screens/my_sectors/sector_title_button.dart';
 import 'package:tournee_calendriers/ui/screens/team/team_button.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 
@@ -20,35 +20,35 @@ import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 final class StartAppBar extends StatelessWidget implements PreferredSizeWidget {
   const StartAppBar({
     super.key,
-    required this.tournee,
+    required this.sector,
     required this.showGallery,
   });
 
   /// The tournée open, or null.
-  final TourneeSummary? tournee;
+  final SectorSummary? sector;
 
   /// Debug builds: an action opens the component gallery.
   final bool showGallery;
 
   @override
   Size get preferredSize => Size.fromHeight(
-    tournee == null ? kToolbarHeight : AppSizes.titleBarWithSubtitleHeight,
+    sector == null ? kToolbarHeight : AppSizes.titleBarWithSubtitleHeight,
   );
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final tournee = this.tournee;
+    final sector = this.sector;
     return AppBar(
       toolbarHeight: preferredSize.height,
-      title: tournee == null
+      title: sector == null
           ? AppTitleButton(
               key: const Key('home.appTitle'),
-              onPressed: () => showMyTourneesSheet(context),
+              onPressed: () => showMySectorsSheet(context),
             )
-          : TourneeTitleButton(
-              tournee: tournee,
-              onPressed: () => showMyTourneesSheet(context),
+          : SectorTitleButton(
+              sector: sector,
+              onPressed: () => showMySectorsSheet(context),
             ),
       titleSpacing: AppSizes.gutter,
       actions: [
@@ -60,7 +60,7 @@ final class StartAppBar extends StatelessWidget implements PreferredSizeWidget {
             // `push` stacks the gallery on top, so it offers a back arrow.
             onPressed: () => context.push(AppRoutes.gallery),
           ),
-        if (tournee != null) const TeamButton(key: Key('home.team')),
+        if (sector != null) const TeamButton(key: Key('home.team')),
         IconButton(
           key: const Key('home.settings'),
           tooltip: l10n.screenSettings,

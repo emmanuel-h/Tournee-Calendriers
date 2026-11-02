@@ -5,14 +5,14 @@ import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/use_cases/find_imported_streets.dart';
 import 'package:tournee_calendriers/application/use_cases/import_reference_area.dart';
 import 'package:tournee_calendriers/application/use_cases/search_communes.dart';
+import 'package:tournee_calendriers/domain/sector/sector_commune.dart';
 import 'package:tournee_calendriers/domain/shared/french_text.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/shared/text_length.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_commune.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/import_streets/import_state.dart';
-import 'package:tournee_calendriers/presentation/my_tournees/my_tournees_notifier.dart';
+import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
 
 /// How long the « Commune » field waits after the last key before
 /// searching, so typing « Villefranche » sends one request, not twelve.
@@ -49,22 +49,22 @@ final class ImportNotifier extends Notifier<ImportState> {
   @override
   ImportState build() {
     // `ref.watch`: opening another tournée builds the list again.
-    final tournee = ref.watch(currentTourneeProvider);
-    if (tournee == null) return const ImportState();
+    final sector = ref.watch(currentSectorProvider);
+    if (sector == null) return const ImportState();
     final listening = ref
-        .watch(observeTourneeCommunesProvider)(tournee.id)
+        .watch(observeSectorCommunesProvider)(sector.id)
         .listen(_showCommunes);
     ref.onDispose(listening.cancel);
-    return const ImportState(inTournee: true);
+    return const ImportState(inSector: true);
   }
 
   /// The tournée's communes are [communes]: chips for them, and the streets
   /// of the first while the one chosen is not among them.
-  void _showCommunes(List<TourneeCommune> communes) {
+  void _showCommunes(List<SectorCommune> communes) {
     final options = List<CommuneOption>.unmodifiable([
-      for (final commune in communes) CommuneOption.ofTournee(commune),
+      for (final commune in communes) CommuneOption.ofSector(commune),
     ]);
-    state = state.copyWith(tourneeCommunes: options);
+    state = state.copyWith(sectorCommunes: options);
     final chosen = state.commune?.inseeCode;
     if (options.isEmpty ||
         options.any((option) => option.inseeCode == chosen)) {

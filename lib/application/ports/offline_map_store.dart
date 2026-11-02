@@ -1,5 +1,5 @@
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
+import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 
 /// The map kept on the phone for offline use: one region of map tiles per
 /// downloaded tournée (PLAN §6.3, §7), so the map shows after an offline
@@ -15,7 +15,7 @@ abstract interface class OfflineMapStore {
   /// download cut by the app being killed leaves its region behind).
   Future<List<OfflineMapRegion>> regions();
 
-  /// Downloads a new region of [bounds] for [tournee], from the lowest to
+  /// Downloads a new region of [bounds] for [sector], from the lowest to
   /// the highest offline zoom (`offline_area.dart`).
   ///
   /// The stream gives [MapDownloadProgress] while it goes, then ends with
@@ -23,7 +23,7 @@ abstract interface class OfflineMapStore {
   /// subscription before that deletes the half-made region. The regions
   /// already on the phone are left as they are, unless one has the same
   /// bounds (see `offlineRegionBounds`).
-  Stream<MapDownloadEvent> download(TourneeId tournee, GeoBounds bounds);
+  Stream<MapDownloadEvent> download(SectorId sector, GeoBounds bounds);
 
   /// Deletes [region] and the tiles no other region uses. Nothing happens
   /// when it is gone already.
@@ -31,30 +31,30 @@ abstract interface class OfflineMapStore {
 }
 
 /// A region of the map kept on the phone: its [id] in the map library's
-/// database, the [tournee] it was downloaded for, and its [bounds].
+/// database, the [sector] it was downloaded for, and its [bounds].
 final class OfflineMapRegion {
   const OfflineMapRegion({
     required this.id,
-    required this.tournee,
+    required this.sector,
     required this.bounds,
   });
 
   final int id;
-  final TourneeId tournee;
+  final SectorId sector;
   final GeoBounds bounds;
 
   @override
   bool operator ==(Object other) =>
       other is OfflineMapRegion &&
       other.id == id &&
-      other.tournee == tournee &&
+      other.sector == sector &&
       other.bounds == bounds;
 
   @override
-  int get hashCode => Object.hash(id, tournee, bounds);
+  int get hashCode => Object.hash(id, sector, bounds);
 
   @override
-  String toString() => 'OfflineMapRegion($id, $tournee, $bounds)';
+  String toString() => 'OfflineMapRegion($id, $sector, $bounds)';
 }
 
 /// What a map download tells while it goes. `sealed`: a `switch` handles

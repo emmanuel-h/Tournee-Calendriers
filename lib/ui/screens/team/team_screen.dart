@@ -62,7 +62,7 @@ final class TeamScreen extends ConsumerWidget {
         child: switch (state) {
           TeamShown() => _Team(state: state),
           TeamLoading() => const SizedBox.shrink(),
-          NoTeam() => _Message(l10n.teamNoTournee),
+          NoTeam() => _Message(l10n.teamNoSector),
           TeamUnavailable() => _Message(l10n.teamUnavailable),
         },
       ),
@@ -306,7 +306,7 @@ final class _BottomActions extends ConsumerWidget {
                 destructive: true,
               );
               if (!confirmed) return;
-              if (await run(notifier.deleteTournee) && context.mounted) {
+              if (await run(notifier.deleteSector) && context.mounted) {
                 context.go(AppRoutes.home);
               }
             },

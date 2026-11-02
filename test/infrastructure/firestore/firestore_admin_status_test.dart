@@ -6,7 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mock_exceptions/mock_exceptions.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_admin_status.dart';
 
-import '../../domain/tournee/tournee_fixtures.dart';
+import '../../domain/sector/sector_fixtures.dart';
 import '../../support/fakes/fake_member_account.dart';
 
 void main() {

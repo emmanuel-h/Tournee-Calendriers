@@ -69,12 +69,12 @@ export const paul = 'paul';
 export const zoe = 'zoe';
 export const sam = 'sam';
 
-export const tourneeId = 't49';
+export const sectorId = 't49';
 export const code = 'K7P2QX';
-export const tourneePath = `tournees/${tourneeId}`;
-export const campaignPath = `${tourneePath}/campaigns/2026`;
+export const sectorPath = `sectors/${sectorId}`;
+export const campaignPath = `${sectorPath}/campaigns/2026`;
 export const streetsPath = `${campaignPath}/streets`;
-export const memberPath = (uid) => `${tourneePath}/members/${uid}`;
+export const memberPath = (uid) => `${sectorPath}/members/${uid}`;
 
 /** communeEntry of Villefranche-sur-Saône, with its centre. */
 export const villefrancheEntry = {
@@ -101,8 +101,8 @@ export const communeEntries = (count) =>
     lon: null,
   }));
 
-/** tourneeToDocument. */
-export const tourneeDoc = (overrides = {}) => ({
+/** sectorToDocument. */
+export const sectorDoc = (overrides = {}) => ({
   number: 49,
   centreKey: 'villefranche',
   centreName: 'CS Villefranche',
@@ -137,7 +137,7 @@ export const requestDoc = (name, overrides = {}) => ({
 
 /** joinCodeDocument. */
 export const previewDoc = (overrides = {}) => ({
-  tourneeId,
+  sectorId,
   number: 49,
   centreName: 'CS Villefranche',
   campaign: 2026,
@@ -268,7 +268,7 @@ export async function writeInChunks(ref, data) {
 export async function seedTeam(env) {
   await seed(env, `admins/${manu}`, {});
   await seed(env, `admins/${sam}`, {});
-  await seed(env, tourneePath, tourneeDoc());
+  await seed(env, sectorPath, sectorDoc());
   await seed(env, memberPath(manu), activeMemberDoc('Manu', manu));
   await seed(env, memberPath(lea), {
     ...activeMemberDoc('Léa', manu),
@@ -277,7 +277,7 @@ export async function seedTeam(env) {
   await seed(env, memberPath(paul), requestDoc('Paul'));
   await seed(env, campaignPath, campaignDoc());
   await seed(env, `joinCodes/${code}`, previewDoc());
-  await seed(env, 'tourneeKeys/villefranche_49', { tourneeId });
+  await seed(env, 'sectorKeys/villefranche_49', { sectorId });
   await seed(env, 'rescueCentres/villefranche', { name: 'CS Villefranche' });
   await seed(env, `${streetsPath}/nationale`, streetDoc());
 }

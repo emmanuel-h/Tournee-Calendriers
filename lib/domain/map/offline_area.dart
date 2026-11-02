@@ -1,10 +1,10 @@
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
-import 'package:tournee_calendriers/domain/map/tournee_area.dart';
+import 'package:tournee_calendriers/domain/map/sector_area.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 
 // The map kept on the phone so a tournée works a whole day offline (PLAN
 // §7): what to download, and when the download no longer covers the
-// streets. The area itself is `tourneeArea`: the streets plus 300 m.
+// streets. The area itself is `sectorArea`: the streets plus 300 m.
 
 /// The lowest zoom kept offline: a whole commune on the screen.
 const offlineMapMinZoom = 12;

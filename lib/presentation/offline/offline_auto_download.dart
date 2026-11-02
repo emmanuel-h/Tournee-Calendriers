@@ -2,15 +2,15 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tournee_calendriers/application/ports/clock.dart';
-import 'package:tournee_calendriers/application/use_cases/download_tournee.dart';
+import 'package:tournee_calendriers/application/use_cases/download_sector.dart';
 import 'package:tournee_calendriers/application/use_cases/refresh_offline_maps.dart';
-import 'package:tournee_calendriers/application/use_cases/tournee_downloads.dart';
+import 'package:tournee_calendriers/application/use_cases/sector_downloads.dart';
 import 'package:tournee_calendriers/domain/map/offline_area.dart';
+import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
+import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
-import 'package:tournee_calendriers/domain/tournee/campaign_year.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
-import 'package:tournee_calendriers/presentation/my_tournees/my_tournees_notifier.dart';
+import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
 import 'package:tournee_calendriers/presentation/offline/offline_map_upkeep.dart';
 
 /// The [OfflineAutoDownload] of the open tournée. Built again when another
@@ -22,16 +22,16 @@ final offlineAutoDownloadProvider = Provider<OfflineAutoDownload>((ref) {
   // `select`: only the tournée and its campaign matter; a pending request
   // cannot read its streets (PLAN §8.2), so it counts as none.
   final open = ref.watch(
-    currentTourneeProvider.select(
-      (tournee) => tournee == null || tournee.isPending
+    currentSectorProvider.select(
+      (sector) => sector == null || sector.isPending
           ? null
-          : (tournee.id, tournee.campaign),
+          : (sector.id, sector.campaign),
     ),
   );
   final auto = OfflineAutoDownload(
     open: open,
-    download: ref.watch(downloadTourneeProvider),
-    downloads: ref.watch(readTourneeDownloadsProvider),
+    download: ref.watch(downloadSectorProvider),
+    downloads: ref.watch(readSectorDownloadsProvider),
     upkeep: ref.watch(offlineMapUpkeepProvider),
     clock: ref.watch(clockProvider),
   );
@@ -58,7 +58,7 @@ typedef Schedule = Timer Function(Duration delay, void Function() callback);
 /// Each [check]:
 /// 1. when the open tournée is not downloaded on this phone, or its
 ///    streets now reach beyond the map kept (`coversStreets`) →
-///    `DownloadTournee`, then the maps of the other downloaded tournées
+///    `DownloadSector`, then the maps of the other downloaded tournées
 ///    are refreshed at once (`OfflineMapUpkeep.refreshAllBut`): the
 ///    download made the map's description name this week's tiles;
 /// 2. otherwise → the silent map refresh of every downloaded tournée when
@@ -85,9 +85,9 @@ final class OfflineAutoDownload {
   /// How long after a failure the next check waits.
   static const retryDelay = Duration(minutes: 2);
 
-  final (TourneeId, CampaignYear)? _open;
-  final DownloadTournee _download;
-  final ReadTourneeDownloads _downloads;
+  final (SectorId, CampaignYear)? _open;
+  final DownloadSector _download;
+  final ReadSectorDownloads _downloads;
   final OfflineMapUpkeep _upkeep;
   final Clock _clock;
   final Schedule _schedule;
@@ -153,14 +153,14 @@ final class OfflineAutoDownload {
 
   /// One check; false when it failed.
   Future<bool> _step() async {
-    if (_open case (final tournee, final campaign)) {
-      final kept = _downloads()[tournee];
+    if (_open case (final sector, final campaign)) {
+      final kept = _downloads()[sector];
       final streets = _streets;
       if (kept == null ||
           (streets != null && !coversStreets(kept.area, streets))) {
-        if (!await _runDownload(tournee, campaign)) return false;
+        if (!await _runDownload(sector, campaign)) return false;
         if (_disposed) return true;
-        return _refreshed(() => _upkeep.refreshAllBut(tournee));
+        return _refreshed(() => _upkeep.refreshAllBut(sector));
       }
     }
     return _refreshed(_upkeep.refreshIfDue);
@@ -176,9 +176,9 @@ final class OfflineAutoDownload {
     }
   }
 
-  Future<bool> _runDownload(TourneeId tournee, CampaignYear campaign) {
+  Future<bool> _runDownload(SectorId sector, CampaignYear campaign) {
     final done = _downloadDone = Completer<bool>();
-    _downloading = _download(tournee, campaign).listen(
+    _downloading = _download(sector, campaign).listen(
       (progress) {
         switch (progress) {
           case DownloadingStreets() || DownloadingMap():

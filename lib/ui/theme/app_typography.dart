@@ -223,7 +223,7 @@ abstract final class AppTextStyles {
   /// The open tournée as the title of the start screen (« Tournée 49 ·
   /// 2026 », Home mockup): larger than a screen title, as it names the
   /// whole app's content.
-  static const tourneeTitle = TextStyle(
+  static const sectorTitle = TextStyle(
     fontFamily: AppFonts.display,
     fontWeight: FontWeight.w700,
     fontSize: 30,
@@ -232,7 +232,7 @@ abstract final class AppTextStyles {
 
   /// A tournée in « Mes tournées » (« Tournée 12 · 2026 »), and a street
   /// or number of the Corbeille (« 14ter Rue des Lilas »).
-  static const tourneeRowTitle = TextStyle(
+  static const sectorRowTitle = TextStyle(
     fontFamily: AppFonts.display,
     fontWeight: FontWeight.w700,
     fontSize: 21,
@@ -284,7 +284,7 @@ abstract final class AppTextStyles {
   );
 
   /// The tournée under it (« Tournée 49 · CS Villefranche »).
-  static const pendingTournee = TextStyle(
+  static const pendingSector = TextStyle(
     fontFamily: AppFonts.display,
     fontWeight: FontWeight.w600,
     fontSize: 22,

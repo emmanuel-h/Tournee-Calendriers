@@ -5,12 +5,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tournee_calendriers/domain/map/map_layers.dart';
 import 'package:tournee_calendriers/presentation/home/home_notifier.dart';
-import 'package:tournee_calendriers/presentation/my_tournees/my_tournees_notifier.dart';
+import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
 import 'package:tournee_calendriers/ui/components/size_reporter.dart';
 import 'package:tournee_calendriers/ui/components/street_card_sheet.dart';
 import 'package:tournee_calendriers/ui/map/map_legend.dart';
 import 'package:tournee_calendriers/ui/map/map_view.dart';
-import 'package:tournee_calendriers/ui/map/tournee_map.dart';
+import 'package:tournee_calendriers/ui/map/sector_map.dart';
 import 'package:tournee_calendriers/ui/screens/home/home_panel.dart';
 import 'package:tournee_calendriers/ui/screens/start/admin_visit_banner.dart';
 import 'package:tournee_calendriers/ui/screens/start/move_streets_card.dart';
@@ -101,7 +101,7 @@ final class _HomeScreenState extends ConsumerState<HomeScreen> {
     final state = ref.watch(homeProvider);
     // `ref.read` for the intents: they are sent, never watched.
     final home = ref.read(homeProvider.notifier);
-    final showMap = ref.watch(tourneeMapViewProvider);
+    final showMap = ref.watch(sectorMapViewProvider);
     // The back gesture closes the street card first, then leaves the app.
     return PopScope(
       canPop: state.card == null,
@@ -110,7 +110,7 @@ final class _HomeScreenState extends ConsumerState<HomeScreen> {
       },
       child: Scaffold(
         appBar: StartAppBar(
-          tournee: ref.watch(currentTourneeProvider),
+          sector: ref.watch(currentSectorProvider),
           showGallery: widget.showGallery,
         ),
         body: SafeArea(
@@ -148,7 +148,7 @@ final class _HomeScreenState extends ConsumerState<HomeScreen> {
                       children: [
                         Positioned.fill(
                           child: showMap(
-                            TourneeMap(
+                            SectorMap(
                               key: const Key('home.map'),
                               layers: state.layers,
                               area: state.area,

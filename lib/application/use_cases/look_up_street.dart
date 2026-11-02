@@ -50,8 +50,8 @@ final class StreetToAdd extends LookedUpStreet {
 /// The tournée has the street already, out of the Corbeille: the card shows
 /// its progress and who covers it, and offers to take it
 /// (`TakeStreet`) or open it.
-final class StreetOfTheTournee extends LookedUpStreet {
-  const StreetOfTheTournee(super.match, this.street);
+final class StreetOfTheSector extends LookedUpStreet {
+  const StreetOfTheSector(super.match, this.street);
 
   final Street street;
 }
@@ -91,7 +91,7 @@ final class LookUpStreet {
     // A street of the Corbeille is offered to add again: adding it brings
     // it back with its marks (`AddStreetFromMap`).
     if (known != null && !known.isDeleted) {
-      return Ok(StreetOfTheTournee(match, known));
+      return Ok(StreetOfTheSector(match, known));
     }
     return (await _directory.numbersOf(match.id))
         .map((numbers) => StreetToAdd(match, numbers));

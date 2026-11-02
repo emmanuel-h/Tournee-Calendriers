@@ -73,7 +73,7 @@ final class _ImportListState extends ConsumerState<ImportList> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              importDoneMessage(l10n, summary, inTournee: state.inTournee),
+              importDoneMessage(l10n, summary, inSector: state.inSector),
             ),
           ),
         );
@@ -82,7 +82,7 @@ final class _ImportListState extends ConsumerState<ImportList> {
     });
     // The notifier writes the chosen commune's label in the field.
     if (_commune.text != state.query) _commune.text = state.query;
-    final communes = state.tourneeCommunes;
+    final communes = state.sectorCommunes;
 
     return PopScope(
       // No way back while streets are being written.
@@ -133,7 +133,7 @@ final class _CommuneChoice extends ConsumerWidget {
           spacing: 8,
           runSpacing: 8,
           children: [
-            for (final commune in state.tourneeCommunes)
+            for (final commune in state.sectorCommunes)
               if (commune.inseeCode == chosen)
                 _CommunePill(
                   key: ValueKey('import.commune.${commune.inseeCode.value}'),
@@ -434,7 +434,7 @@ final class _Checklist extends ConsumerWidget {
                   itemCount: visible.length,
                   itemBuilder: (context, index) => _ChoiceRow(
                     street: visible[index],
-                    inTournee: state.inTournee,
+                    inSector: state.inSector,
                     enabled: !state.importing,
                     onToggle: notifier.toggle,
                   ),
@@ -453,11 +453,11 @@ final class _Checklist extends ConsumerWidget {
             children: [
               ..._outcome(l10n, colors),
               if (state.run case ImportRunning(:final done, :final total))
-                _Progress(done: done, total: total, inTournee: state.inTournee)
+                _Progress(done: done, total: total, inSector: state.inSector)
               else
                 PrimaryButton(
                   key: const Key('import.button'),
-                  label: state.inTournee
+                  label: state.inSector
                       ? l10n.addButton(state.checkedCount)
                       : l10n.importButton(state.checkedCount),
                   onPressed: state.canImport
@@ -476,7 +476,7 @@ final class _Checklist extends ConsumerWidget {
     final message = switch (state.run) {
       ImportFailed(:final failure) => addressFailureMessage(l10n, failure),
       ImportFinished(:final summary) when !summary.complete =>
-        importPartialMessage(l10n, summary, inTournee: state.inTournee),
+        importPartialMessage(l10n, summary, inSector: state.inSector),
       ImportNotStarted() || ImportRunning() || ImportFinished() => null,
     };
     return [
@@ -496,7 +496,7 @@ final class _Checklist extends ConsumerWidget {
 final class _ChoiceRow extends StatelessWidget {
   const _ChoiceRow({
     required this.street,
-    required this.inTournee,
+    required this.inSector,
     required this.enabled,
     required this.onToggle,
   });
@@ -504,7 +504,7 @@ final class _ChoiceRow extends StatelessWidget {
   final StreetChoice street;
 
   /// « déjà dans la tournée » rather than « déjà importée ».
-  final bool inTournee;
+  final bool inSector;
   final bool enabled;
   final ValueChanged<BanStreetId> onToggle;
 
@@ -534,7 +534,7 @@ final class _ChoiceRow extends StatelessWidget {
         ),
         secondary: Text(
           street.alreadyImported
-              ? (inTournee ? l10n.alreadyInTournee : l10n.alreadyImported)
+              ? (inSector ? l10n.alreadyInSector : l10n.alreadyImported)
               : street.inCorbeille
               ? l10n.inCorbeille
               : l10n.streetNumberCount(street.numberCount),
@@ -600,14 +600,14 @@ final class _Progress extends StatelessWidget {
   const _Progress({
     required this.done,
     required this.total,
-    required this.inTournee,
+    required this.inSector,
   });
 
   final int done;
   final int total;
 
   /// « Ajout en cours… » rather than « Import en cours… ».
-  final bool inTournee;
+  final bool inSector;
 
   @override
   Widget build(BuildContext context) => SizedBox(
@@ -619,7 +619,7 @@ final class _Progress extends StatelessWidget {
       spacing: 8,
       children: [
         Text(
-          inTournee
+          inSector
               ? AppLocalizations.of(context).addProgress(done, total)
               : AppLocalizations.of(context).importProgress(done, total),
           textAlign: TextAlign.center,

@@ -6,13 +6,13 @@ import 'package:tournee_calendriers/application/ports/clock.dart';
 import 'package:tournee_calendriers/application/ports/identity_provider.dart';
 import 'package:tournee_calendriers/application/ports/pending_sync.dart';
 import 'package:tournee_calendriers/application/ports/server_connection.dart';
+import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
+import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_repository.dart';
-import 'package:tournee_calendriers/domain/tournee/campaign_year.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_layout.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_document_mapper.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_update_mapper.dart';
@@ -22,7 +22,7 @@ import 'package:tournee_calendriers/infrastructure/firestore/street_memory.dart'
 import 'package:tournee_calendriers/infrastructure/firestore/unfinished_streets.dart';
 
 /// The [StreetRepository] of M2: the streets of one campaign of one
-/// tournée, `tournees/{id}/campaigns/{year}/streets` (PLAN §6.2), shared by
+/// tournée, `sectors/{id}/campaigns/{year}/streets` (PLAN §6.2), shared by
 /// the whole team. Also the [PendingSync] of those streets, and the
 /// [ServerConnection] of the phone while the tournée is open.
 ///
@@ -51,14 +51,14 @@ final class FirestoreStreetRepository
     implements StreetRepository, PendingSync, ServerConnection {
   FirestoreStreetRepository(
     FirebaseFirestore db, {
-    required TourneeId tournee,
+    required SectorId sector,
     required CampaignYear campaign,
     // `this._identity` as a named parameter: callers write it without the
     // underscore, `identity:`.
     required this._identity,
     required this._clock,
     required this._unfinished,
-  }) : _streets = FirestoreLayout.streetsOf(db, tournee, campaign);
+  }) : _streets = FirestoreLayout.streetsOf(db, sector, campaign);
 
   final CollectionReference<Map<String, dynamic>> _streets;
   final IdentityProvider _identity;

@@ -6,7 +6,7 @@ import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/offline_map_store.dart';
 import 'package:tournee_calendriers/application/use_cases/offline_map_download.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
+import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 
 import 'offline_fixtures.dart';
 
@@ -74,7 +74,7 @@ final class _Scripted implements OfflineMapStore {
   Future<List<OfflineMapRegion>> regions() async => [];
 
   @override
-  Stream<MapDownloadEvent> download(TourneeId tournee, GeoBounds bounds) =>
+  Stream<MapDownloadEvent> download(SectorId sector, GeoBounds bounds) =>
       events;
 
   @override

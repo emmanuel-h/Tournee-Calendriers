@@ -1,10 +1,10 @@
+import 'package:tournee_calendriers/domain/sector/member.dart';
+import 'package:tournee_calendriers/domain/sector/sector.dart';
+import 'package:tournee_calendriers/domain/sector/team_roster.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/same_items.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
-import 'package:tournee_calendriers/domain/tournee/member.dart';
-import 'package:tournee_calendriers/domain/tournee/team_roster.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee.dart';
 
 // The street card of « Ajouter des rues » and Accueil (PLAN §5.4, Pick
 // mockup): what a street tapped on the map, or found by the search, is to
@@ -109,8 +109,8 @@ enum StreetCoverage {
 
 /// A street of the tournée: its progress, who covers it, and the actions
 /// of its [coverage].
-final class StreetCardInTournee extends StreetCard {
-  StreetCardInTournee({
+final class StreetCardInSector extends StreetCard {
+  StreetCardInSector({
     required this.id,
     required this.name,
     required this.commune,
@@ -127,14 +127,14 @@ final class StreetCardInTournee extends StreetCard {
   /// Only the assignees still in the [team] cover the street (#91): one
   /// whose every assignee left it is free, and anyone may take it. While
   /// the [team] is null, every assignee counts (see [TeamRoster]).
-  factory StreetCardInTournee.of(
+  factory StreetCardInSector.of(
     Street street, {
     required MemberId me,
-    required Tournee? team,
+    required Sector? team,
   }) {
     final assignees = TeamRoster.of(team, me: me).assigneesOf(street);
     final progress = street.progress;
-    return StreetCardInTournee(
+    return StreetCardInSector(
       id: street.id,
       name: street.name.text,
       commune: street.commune.name,
@@ -175,7 +175,7 @@ final class StreetCardInTournee extends StreetCard {
 
   @override
   bool operator ==(Object other) =>
-      other is StreetCardInTournee &&
+      other is StreetCardInSector &&
       other.id == id &&
       other.name == name &&
       other.commune == commune &&
@@ -197,6 +197,6 @@ final class StreetCardInTournee extends StreetCard {
 
   @override
   String toString() =>
-      'StreetCardInTournee(${id.value}, $name, $done/$total, $coverage, '
+      'StreetCardInSector(${id.value}, $name, $done/$total, $coverage, '
       '$coveredBy)';
 }

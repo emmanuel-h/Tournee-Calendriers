@@ -57,7 +57,7 @@ bootstrap/       composition root — binds ports to adapters with Riverpod prov
 
 - Dependencies point inward only. `test/architecture_test.dart` fails on a forbidden import;
   never weaken it.
-- **Aggregates** (`Tournee`, `Street`) are the consistency boundary. Change state only through
+- **Aggregates** (`Sector`, `Street`) are the consistency boundary. Change state only through
   the root's methods; the root enforces invariants and returns `(newAggregate, change)`.
   Never mutate a list inside an aggregate from outside.
 - **Value objects** (`HouseNumber`, `JoinCode`, `VisitStatus`, `Note`, …) are immutable,

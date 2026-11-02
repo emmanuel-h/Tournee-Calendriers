@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tournee_calendriers/application/ports/clock.dart';
 import 'package:tournee_calendriers/application/use_cases/refresh_offline_maps.dart';
-import 'package:tournee_calendriers/application/use_cases/tournee_downloads.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
+import 'package:tournee_calendriers/application/use_cases/sector_downloads.dart';
+import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 
 /// The one [OfflineMapUpkeep] of the app. A plain `Provider`, not
@@ -15,11 +15,11 @@ import 'package:tournee_calendriers/presentation/dependencies.dart';
 final offlineMapUpkeepProvider = Provider<OfflineMapUpkeep>((ref) {
   final upkeep = OfflineMapUpkeep(
     ref.watch(refreshOfflineMapsProvider),
-    ref.watch(pruneTourneeDownloadsProvider),
+    ref.watch(pruneSectorDownloadsProvider),
     ref.watch(clockProvider),
   );
   final changes = ref
-      .watch(observeMyTourneesProvider)()
+      .watch(observeMySectorsProvider)()
       .listen((_) => unawaited(upkeep.prune()));
   ref.onDispose(changes.cancel);
   unawaited(upkeep.prune());
@@ -33,7 +33,7 @@ final offlineMapUpkeepProvider = Provider<OfflineMapUpkeep>((ref) {
 ///   worked, one refresh at a time; [refreshAllBut] does it at once, after
 ///   a tournée was downloaded;
 /// - [prune] deletes the downloads of the tournées the phone forgot
-///   (`PruneTourneeDownloads`), whatever forgot them.
+///   (`PruneSectorDownloads`), whatever forgot them.
 final class OfflineMapUpkeep {
   OfflineMapUpkeep(this._refresh, this._prune, this._clock);
 
@@ -45,7 +45,7 @@ final class OfflineMapUpkeep {
   static const refreshInterval = Duration(hours: 12);
 
   final RefreshOfflineMaps _refresh;
-  final PruneTourneeDownloads _prune;
+  final PruneSectorDownloads _prune;
   final Clock _clock;
 
   DateTime? _refreshedAt;
@@ -65,17 +65,17 @@ final class OfflineMapUpkeep {
     return running;
   }
 
-  /// Refreshes the maps of the tournées other than [tournee], which was
+  /// Refreshes the maps of the tournées other than [sector], which was
   /// downloaded a moment ago, whenever the last refresh was: the download
   /// made the map's description name this week's tiles, for every region.
   /// Waits for a refresh going first.
-  Future<MapRefreshOutcome> refreshAllBut(TourneeId tournee) async {
+  Future<MapRefreshOutcome> refreshAllBut(SectorId sector) async {
     if (_refreshing case final running?) await running;
-    final refreshing = _refreshing = _runRefresh(except: tournee);
+    final refreshing = _refreshing = _runRefresh(except: sector);
     return refreshing;
   }
 
-  Future<MapRefreshOutcome> _runRefresh({TourneeId? except}) async {
+  Future<MapRefreshOutcome> _runRefresh({SectorId? except}) async {
     try {
       final outcome = await _refresh(except: except);
       if (outcome == MapRefreshOutcome.refreshed) _refreshedAt = _clock.now();

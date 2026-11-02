@@ -1072,38 +1072,38 @@ class AppLocalizationsFr extends AppLocalizations {
   String get saveFailedOk => 'OK';
 
   @override
-  String tourneeTitle(String number, String year) {
+  String sectorTitle(String number, String year) {
     return 'Tournée $number · $year';
   }
 
   @override
-  String tourneeTitleSemantics(String title, String centre) {
+  String sectorTitleSemantics(String title, String centre) {
     return '$title, $centre. Changer de tournée';
   }
 
   @override
-  String get myTourneesTitle => 'Mes tournées';
+  String get mySectorsTitle => 'Mes tournées';
 
   @override
-  String get myTourneesEmpty => 'Aucune tournée pour l\'instant.';
+  String get mySectorsEmpty => 'Aucune tournée pour l\'instant.';
 
   @override
-  String myTourneesPending(String centre) {
+  String mySectorsPending(String centre) {
     return '$centre · votre demande est en attente';
   }
 
   @override
-  String myTourneesOpenSemantics(String title, String centre) {
+  String mySectorsOpenSemantics(String title, String centre) {
     return '$title, $centre, tournée ouverte';
   }
 
   @override
-  String myTourneesClosedSemantics(String title, String centre) {
+  String mySectorsClosedSemantics(String title, String centre) {
     return '$title, $centre, ouvrir';
   }
 
   @override
-  String myTourneesWaiting(String centre, int count) {
+  String mySectorsWaiting(String centre, int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
@@ -1114,7 +1114,7 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String myTourneesWaitingSemantics(String title, String centre, int count) {
+  String mySectorsWaitingSemantics(String title, String centre, int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
@@ -1125,7 +1125,7 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String myTourneesPendingSemantics(String title, String centre) {
+  String mySectorsPendingSemantics(String title, String centre) {
     return '$title, $centre, votre demande est en attente';
   }
 
@@ -1143,7 +1143,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get settingsName => 'Prénom';
 
   @override
-  String settingsMyTourneesValue(String number, String year) {
+  String settingsMySectorsValue(String number, String year) {
     return '$number · $year';
   }
 
@@ -1288,7 +1288,7 @@ class AppLocalizationsFr extends AppLocalizations {
       'Seuls les administrateurs créent une tournée ; les autres la rejoignent avec un code.';
 
   @override
-  String get release020AllTournees =>
+  String get release020AllSectors =>
       'Les administrateurs voient toutes les tournées, les gèrent et peuvent les rejoindre directement.';
 
   @override
@@ -1547,7 +1547,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get teamDeleteConfirm => 'Supprimer';
 
   @override
-  String get teamNoTournee => 'Aucune tournée ouverte.';
+  String get teamNoSector => 'Aucune tournée ouverte.';
 
   @override
   String get teamUnavailable =>
@@ -1695,10 +1695,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get welcomeNameHelp => 'Visible par votre équipe.';
 
   @override
-  String get createTourneeAction => 'Créer une tournée';
+  String get createSectorAction => 'Créer une tournée';
 
   @override
-  String get joinTourneeAction => 'Rejoindre une tournée';
+  String get joinSectorAction => 'Rejoindre une tournée';
 
   @override
   String appTitleSemantics(String title) {
@@ -1836,17 +1836,17 @@ class AppLocalizationsFr extends AppLocalizations {
   String get joinRefused => 'Demande refusée';
 
   @override
-  String tourneeRemoved(String number) {
+  String sectorRemoved(String number) {
     return 'Vous avez été retiré de la tournée $number.';
   }
 
   @override
-  String tourneeDeleted(String number) {
+  String sectorDeleted(String number) {
     return 'La tournée $number a été supprimée.';
   }
 
   @override
-  String tourneeAdminRevoked(String number) {
+  String sectorAdminRevoked(String number) {
     return 'Vous n\'êtes plus administrateur : la tournée $number est retirée de Mes tournées.';
   }
 
@@ -1867,35 +1867,35 @@ class AppLocalizationsFr extends AppLocalizations {
       'Pas encore de compte : connectez-vous au réseau.';
 
   @override
-  String get myTourneesAll => 'Toutes les tournées';
+  String get mySectorsAll => 'Toutes les tournées';
 
   @override
-  String myTourneesVisited(String centre) {
+  String mySectorsVisited(String centre) {
     return '$centre · administrateur';
   }
 
   @override
-  String myTourneesVisitedSemantics(String title, String centre) {
+  String mySectorsVisitedSemantics(String title, String centre) {
     return '$title, $centre, administrateur, ouvrir';
   }
 
   @override
-  String myTourneesVisitedOpenSemantics(String title, String centre) {
+  String mySectorsVisitedOpenSemantics(String title, String centre) {
     return '$title, $centre, administrateur, tournée ouverte';
   }
 
   @override
-  String myTourneesUnavailable(String centre) {
+  String mySectorsUnavailable(String centre) {
     return '$centre · Disponible avec réseau';
   }
 
   @override
-  String myTourneesUnavailableSemantics(String title, String centre) {
+  String mySectorsUnavailableSemantics(String title, String centre) {
     return '$title, $centre, disponible avec réseau';
   }
 
   @override
-  String allTourneesSubtitle(int count) {
+  String allSectorsSubtitle(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
@@ -1907,7 +1907,7 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String allTourneesMembers(int count) {
+  String allSectorsMembers(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
@@ -1919,12 +1919,12 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String allTourneesMine(String members) {
+  String allSectorsMine(String members) {
     return '$members · vous en êtes membre';
   }
 
   @override
-  String allTourneesWaiting(String details, int count) {
+  String allSectorsWaiting(String details, int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
@@ -1935,23 +1935,23 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String allTourneesRowSemantics(String title, String details) {
+  String allSectorsRowSemantics(String title, String details) {
     return '$title, $details, ouvrir';
   }
 
   @override
-  String get allTourneesOffline =>
+  String get allSectorsOffline =>
       'Pas de réseau : la liste ne peut pas être affichée.';
 
   @override
   String get notAdminAnyMore => 'Vous n\'êtes plus administrateur.';
 
   @override
-  String get allTourneesHint =>
+  String get allSectorsHint =>
       'Ouvrez une tournée pour la gérer : code, équipe, rues. Vous n\'y entrez comme membre que si vous la rejoignez.';
 
   @override
-  String get allTourneesEmpty => 'Aucune tournée pour l\'instant.';
+  String get allSectorsEmpty => 'Aucune tournée pour l\'instant.';
 
   @override
   String get adminBannerTitle => 'Administrateur · pas membre';
@@ -2053,7 +2053,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get addStreetsListTab => 'Liste';
 
   @override
-  String get alreadyInTournee => 'déjà dans la tournée';
+  String get alreadyInSector => 'déjà dans la tournée';
 
   @override
   String addButton(int count) {
@@ -2221,7 +2221,7 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get streetCardNotInTournee => 'Pas encore dans la tournée';
+  String get streetCardNotInSector => 'Pas encore dans la tournée';
 
   @override
   String get streetCardAddMine => 'Ajouter et me l\'attribuer';

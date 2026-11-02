@@ -14,9 +14,10 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
-import 'package:tournee_calendriers/application/ports/tournee_downloads.dart';
+import 'package:tournee_calendriers/application/ports/sector_downloads.dart';
 import 'package:tournee_calendriers/bootstrap/bootstrap.dart';
 import 'package:tournee_calendriers/bootstrap/firebase.dart';
+import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/shared/commune.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
@@ -25,7 +26,6 @@ import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/mappers/street_json_mapper.dart';
 import 'package:tournee_calendriers/main.dart' as app;
 import 'package:tournee_calendriers/presentation/dependencies.dart';
@@ -621,7 +621,7 @@ void main() {
   testWidgets(
     'should reopen the last tournée at launch and switch from the title',
     (tester) async {
-      final storage = await _freshStorage('tournees_flow');
+      final storage = await _freshStorage('sectors_flow');
       // The 49's id is new at each run: the street typed in by hand below
       // waits in Firestore's offline cache, which outlives the run, and
       // must not show in the next one.
@@ -629,7 +629,7 @@ void main() {
       // What « Créer » and « Rejoindre » will leave on the phone: two
       // tournées of the CS Villefranche, the 49 open. Nothing of it needs
       // the network.
-      Map<String, Object?> tournee(String id, int number) => {
+      Map<String, Object?> sector(String id, int number) => {
         'id': id,
         'number': number,
         'centre': 'CS Villefranche',
@@ -640,7 +640,7 @@ void main() {
         jsonEncode({
           'version': 1,
           'open': t49,
-          'tournees': [tournee(t49, 49), tournee('t12', 12)],
+          'tournees': [sector(t49, 49), sector('t12', 12)],
         }),
       );
       // The commune of the street typed in by hand, found without network.
@@ -778,23 +778,23 @@ void main() {
       // this phone, so it is greyed and a tap leaves the sheet open. Once
       // it counts as downloaded, it opens as before. Firestore's network
       // is off for the whole suite, so « offline » is certain here.
-      await tester.tap(find.byKey(const Key('home.tournee')));
+      await tester.tap(find.byKey(const Key('home.sector')));
       await tester.pumpAndSettle();
       expect(
         find.text('CS Villefranche · Disponible avec réseau'),
         findsOneWidget,
       );
-      await tester.tap(find.byKey(const ValueKey('myTournees.t12')));
+      await tester.tap(find.byKey(const ValueKey('mySectors.t12')));
       await tester.pumpAndSettle();
-      expect(find.byKey(const ValueKey('myTournees.t12')), findsOneWidget);
+      expect(find.byKey(const ValueKey('mySectors.t12')), findsOneWidget);
       final phone = ProviderScope.containerOf(
         tester.element(find.byType(TourneeApp)),
       );
       await phone
-          .read(tourneeDownloadsProvider)
+          .read(sectorDownloadsProvider)
           .save(
-            TourneeDownload(
-              tournee: TourneeId('t12'),
+            SectorDownload(
+              sector: SectorId('t12'),
               downloadedAt: DateTime.utc(2026, 11, 2, 8, 12),
               mapBytes: 0,
               area: null,
@@ -802,7 +802,7 @@ void main() {
           );
       await tester.pumpAndSettle();
       expect(find.textContaining('Disponible avec réseau'), findsNothing);
-      await tester.tap(find.byKey(const ValueKey('myTournees.t12')));
+      await tester.tap(find.byKey(const ValueKey('mySectors.t12')));
       await tester.pumpAndSettle();
       expect(find.text('Tournée 12 · 2026'), findsOneWidget);
 

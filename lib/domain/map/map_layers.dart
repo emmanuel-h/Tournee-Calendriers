@@ -1,3 +1,4 @@
+import 'package:tournee_calendriers/domain/sector/team_roster.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/street/building/building_status.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
@@ -7,7 +8,6 @@ import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
-import 'package:tournee_calendriers/domain/tournee/team_roster.dart';
 
 /// What the map draws over its background for a tournée (PLAN §5.3), as
 /// plain data: a line per street coloured by its [ProgressLevel], a dot per
