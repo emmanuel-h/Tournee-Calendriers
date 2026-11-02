@@ -40,10 +40,10 @@ Code audit clean-up (#88) and « Modifié par Léa » on the house and door shee
 `fake_cloud_firestore` to support it. `tool/admin_e2e.sh` fails ~1 run in 4 from stale reads of
 the Firestore emulator (firebase-tools 13.35.1); the fix is its upgrade (#69, needs Node ≥ 20).
 M3 done, milestone closed (2026-11-01), validated on the phone with 0.6.0: geometry and map layers (#26), geopf adapters (#27), street-picking use cases with shapes and assignees (#28), MapLibre map widget in `ui/map/` (#29), a tournée's communes and « Ajouter des rues » Carte | Liste (#78), Accueil (#30), the street card, search and manual street (#31), tries with nobody home (#80), the sheet on a tap to ↻ with a day + hour (#81). Follow-ups from the phone test: street shapes from the OpenFreeMap vector tiles instead of Overpass, filled once for streets without one (#92); take a street from « Autres rues » (#93); released as 0.5.1. A street held only by ex-members of the team is « libre » (#91, display only, no rules change). Rules (with the #92 shape fill) deployed 2026-10-18 and identical to `firestore.rules` (checked 2026-11-01).
-M4 in progress: the open tournée downloads itself for offline use, unseen (#32: streets into the
-cache + MapLibre region, silent re-download for OpenFreeMap's weekly tiles, decided 2026-11-01);
-one line in Paramètres and tournées greyed « Disponible avec réseau » offline (#33). Both await
-the user's phone test, then the airplane-mode day (#34).
+M4 done, milestone closed (2026-11-02), validated on the phone with 0.7.0: the open tournée
+downloads itself for offline use, unseen (#32: streets into the cache + MapLibre region, silent
+re-download for OpenFreeMap's weekly tiles); one line in Paramètres and tournées greyed
+« Disponible avec réseau » offline (#33); airplane-mode day (#34).
 Release signing and Play publishing pulled forward from M5 (#37): 0.7.0 (code 8, 2026-11-02: #32,
 #33) is on the internal track; publish with the `release-store` skill. `lib/bootstrap/firebase_options.dart` and `android/app/google-services.json`
 are gitignored: run `flutterfire configure --out=lib/bootstrap/firebase_options.dart` locally;
