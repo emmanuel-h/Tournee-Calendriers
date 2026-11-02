@@ -1092,14 +1092,17 @@ Immeuble details fixed in T1.9 (`lib/presentation/building/`, `lib/ui/screens/bu
 │ Julie · il y a 2 min         │
 │ [ Accepter ]  [ Refuser ]    │  ← any accepted member, any admin
 │ MEMBRES (5)                  │
-│ Manu (vous) · admin   5 rues │
-│ Léa                 3 rues [⋮]│  ← admins only: retirer
-│ Paul · admin        0 rues [⋮]│
+│ Manu (vous) · admin  5 rues ▸│  ← tap the count: unfold
+│ Léa               3 rues ▾ [⋮]│  ← admins only: retirer
+│     Rue de Thizy             │  ← her streets, unfolded
+│     Rue Nationale            │
+│     Place des Marais         │
+│ Paul · admin      0 rue    [⋮]│
 │ Corbeille · 2 éléments     › │  ← 5.11
-│ CAMPAGNE 2026                │
+├──────────────────────────────┤  ← all above scrolls (#105)
 │ [ Démarrer une nouvelle campagne ] │  ← admins only, v1.1 (5.10)
-│ [  Quitter la tournée  ]     │  ← every member
-│ [  Supprimer la tournée ]    │  ← admins only
+│ [  Quitter la tournée  ]     │  ← every member, pinned
+│ [  Supprimer la tournée ]    │  ← admins only, pinned
 └──────────────────────────────┘
 ```
 
@@ -1129,8 +1132,19 @@ admin » for « Nouveau code », « Retirer », « Supprimer » and the campaign
   command a teammate made pointless meanwhile says « L'équipe a changé entre-temps. ». A
   tournée that cannot be read (removed, deleted, or never read on this phone offline) shows
   « L'équipe ne peut pas être affichée : … ». Times: « à l'instant », « il y a 2 min », « il
-  y a 3 h », « hier », then the day (« 3 oct. »). Still to come: the street counts « 5 rues »
-  (with the assignees, M3) and « CAMPAGNE » / « Démarrer une nouvelle campagne » (v1.1).
+  y a 3 h », « hier », then the day (« 3 oct. »). Still to come: « CAMPAGNE » / « Démarrer
+  une nouvelle campagne » (v1.1).
+- **Streets per member** (#105, Team mockup): each member row shows, right-aligned and muted,
+  the number of streets of the tournée that member holds (« 0 rue », « 1 rue », « 5 rues »)
+  followed by ▸. Tapping the count (48 dp; TalkBack « Léa, 3 rues, afficher les rues » /
+  « masquer les rues ») unfolds the street names under the row, one per line, indented under
+  the name, ▾ while open; tapping again folds them. Every row starts folded; several can be
+  open at once. A member with no street shows « 0 rue » with nothing to unfold. Read from the
+  phone's copy, so it works offline.
+- **Pinned bottom buttons** (#105): « Quitter la tournée » / « Supprimer la tournée » (and
+  later « Démarrer une nouvelle campagne ») sit in a footer fixed at the bottom, over a thin
+  divider; everything between the title and that footer (code card, requests, members and their
+  unfolded streets, Corbeille, communes) scrolls as one list.
 - **Communes** (#78): after the Corbeille, « COMMUNES (n) », a row per commune of the tournée
   with ✕ (« Retirer Gleizé » for screen readers), never on the last one, then « + Ajouter une
   commune », which opens a sheet with the field of « Nouvelle tournée » (5.2); a commune picked

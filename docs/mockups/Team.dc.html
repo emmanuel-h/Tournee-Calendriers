@@ -16,6 +16,10 @@ a{color:#B3261E}a:hover{color:#8C1D18}
 .ib svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .mem{display:flex;align-items:center;gap:12px;min-height:56px;padding:0 4px 0 16px;border-bottom:1px solid #E2DED5;background:#FFFFFF}
 .av{width:36px;height:36px;border-radius:18px;background:#E2DED5;display:flex;align-items:center;justify-content:center;font:700 16px 'Barlow Condensed',sans-serif;flex-shrink:0}
+.cnt{border:0;background:transparent;font:inherit;font-size:14px;color:#4A5058;min-height:48px;display:flex;align-items:center;gap:6px;cursor:pointer;padding:0 4px}
+.chev{font-size:14px;color:#1B1F24}
+.streets{list-style:none;margin:0;padding:4px 16px 8px 64px;background:#FFFFFF;border-bottom:1px solid #E2DED5}
+.streets li{font-size:15px;line-height:32px;color:#1B1F24}
 .hd{padding:16px 20px 8px 20px;font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#4A5058}
 </style>
 </helmet>
@@ -24,6 +28,7 @@ a{color:#B3261E}a:hover{color:#8C1D18}
     <a class="ib" href="Home.dc.html" aria-label="Retour"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a>
     <div style="display: flex; flex-direction: column"><h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 28px; line-height: 1.05">Tournée 49</h1><span style="font-size: 14px; color: #4A5058">CS Villefranche · campagne 2026</span></div>
   </div>
+  <div class="scroll" style="flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 16px">
   <div style="display: flex; align-items: center; gap: 16px; margin: 0 16px; background: #FFFFFF; border: 1px solid #E2DED5; border-radius: 20px; padding: 14px">
     <div style="width: 100px; height: 100px; display: grid; grid-template-columns: repeat(21, minmax(0, 1fr)); flex-shrink: 0" role="img" aria-label="QR code de la tournée, code K7P-2QX">
       <sc-for list="{{cells}}" as="c" hint-placeholder-count="441"><div style="{{c.style}}"></div></sc-for>
@@ -47,13 +52,14 @@ a{color:#B3261E}a:hover{color:#8C1D18}
   </div>
   <div class="hd">Membres (5)</div>
   <div style="border-top: 1px solid #E2DED5">
-    <div class="mem"><span class="av" style="background: #1B1F24; color: #FFFFFF">M</span><span style="flex: 1; font-weight: 700">Manu (vous) · admin</span><span style="font-size: 14px; color: #4A5058; padding-right: 12px">5 rues</span></div>
-    <div class="mem"><span class="av">L</span><span style="flex: 1; font-weight: 700">Léa</span><span style="font-size: 14px; color: #4A5058">3 rues</span><button class="ib" aria-label="Options pour Léa"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="19" r="1.2"/></svg></button></div>
+    <div class="mem"><span class="av" style="background: #1B1F24; color: #FFFFFF">M</span><span style="flex: 1; font-weight: 700">Manu (vous) · admin</span><button class="cnt" aria-expanded="false" aria-label="Manu, 5 rues, afficher les rues" style="padding-right: 12px">5 rues <span class="chev">▸</span></button></div>
+    <div class="mem"><span class="av">L</span><span style="flex: 1; font-weight: 700">Léa</span><button class="cnt" aria-expanded="true" aria-label="Léa, 12 rues, masquer les rues">12 rues <span class="chev">▾</span></button><button class="ib" aria-label="Options pour Léa"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="19" r="1.2"/></svg></button></div>
+    <ul class="streets" aria-label="Rues de Léa"><li>Rue de Thizy</li><li>Rue Nationale</li><li>Place des Marais</li><li>Rue Victor Hugo</li><li>Rue de la Paix</li><li>Avenue de l'Europe</li><li>Rue Roland</li><li>Boulevard Gambetta</li><li>Rue d'Anse</li><li>Rue Paul Bert</li><li>Rue Grenette</li><li>Rue Corlin</li></ul>
     <div class="mem"><span class="av">+3</span><span style="flex: 1; font-weight: 700">Paul · admin, Sarah, Thomas</span><span style="font-size: 18px; color: #4A5058; padding-right: 12px">›</span></div>
     <a class="mem" href="Trash.dc.html" style="text-decoration: none; color: #1B1F24"><span class="av" style="background: #F3F1EC"><svg viewBox="0 0 24 24" style="width: 18px; height: 18px; fill: none; stroke: #1B1F24; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></span><span style="flex: 1; font-weight: 700">Corbeille · 2 éléments</span><span style="font-size: 18px; color: #4A5058; padding-right: 12px">›</span></a>
   </div>
-  <div style="flex: 1"></div>
-  <div style="display: flex; flex-direction: column; gap: 10px; padding: 0 16px 20px 16px">
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 10px; padding: 12px 16px 20px 16px; border-top: 1px solid #E2DED5; background: #F3F1EC; flex-shrink: 0">
     <a href="Campaign.dc.html" style="height: 48px; border-radius: 24px; background: #1B1F24; color: #FFFFFF; font-weight: 700; font-size: 15px; display: flex; align-items: center; justify-content: center; text-decoration: none">Démarrer une nouvelle campagne</a>
     <div style="display: flex; gap: 10px">
       <button style="flex: 1; height: 48px; border-radius: 24px; border: 1.5px solid #CFC9BD; background: #FFFFFF; font: 700 14px 'Atkinson Hyperlegible', sans-serif; color: #1B1F24">Quitter la tournée</button>
