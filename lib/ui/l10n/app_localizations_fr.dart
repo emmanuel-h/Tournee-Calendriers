@@ -1303,35 +1303,47 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get privacyAccountBody =>
-      'Un compte anonyme est créé au premier lancement : ni adresse e-mail, ni numéro de téléphone. L\'équipe voit seulement le prénom que vous donnez.';
+      'L\'appli ne demande ni adresse e-mail ni numéro de téléphone. Au premier lancement, elle crée un compte anonyme. Vos coéquipiers voient seulement le prénom que vous avez tapé.';
 
   @override
   String get privacyDataTitle => 'Données enregistrées';
 
   @override
   String get privacyDataBody =>
-      'Les adresses et leur position (données publiques), l\'état de chaque porte, l\'indication « repasser » (20 caractères au plus) et les prénoms des membres. Aucun nom d\'habitant, aucun don, aucune réponse des habitants.';
+      'Pour chaque rue de la tournée : les numéros, leur place sur la carte, ce qui s\'est passé à chaque porte (fait, personne, à repasser), le jour et l\'heure où repasser, et le prénom de qui l\'a noté. Rien d\'autre : pas de nom d\'habitant, pas de note, pas de don.';
 
   @override
   String get privacyLocationTitle => 'Position';
 
   @override
   String get privacyLocationBody =>
-      'Votre position sert seulement à vous situer sur la carte. Elle n\'est ni enregistrée ni envoyée. L\'autorisation est demandée la première fois que vous touchez le bouton qui vous situe.';
+      'La position du téléphone sert seulement à vous placer sur la carte, quand vous touchez le bouton. Rien n\'est sauvegardé en dehors de votre téléphone.';
 
   @override
   String get privacyHostingTitle => 'Hébergement';
 
   @override
   String get privacyHostingBody =>
-      'Les données des tournées sont hébergées dans l\'Union européenne (Google Firebase).';
+      'Les tournées sont stockées chez Google Firebase, dans l\'Union européenne. Les cartes viennent d\'OpenFreeMap et les adresses de la Base Adresse Nationale : comme tout site web, ces services voient l\'adresse IP du téléphone quand ils lui envoient des données.';
 
   @override
   String get privacyDeletionTitle => 'Suppression';
 
   @override
   String get privacyDeletionBody =>
-      'Supprimer la tournée efface toutes ses données. À chaque nouvelle campagne, la campagne d\'avant la précédente est effacée.';
+      'Supprimer la tournée efface tout ce qu\'elle contient. Quand une campagne commence, celle d\'il y a deux ans est effacée. Désinstaller l\'appli efface ce qui est sur le téléphone ; ce qui est partagé avec l\'équipe reste jusqu\'à la suppression de la tournée.';
+
+  @override
+  String get privacyOnline => 'Politique complète en ligne';
+
+  @override
+  String get privacyOnlineSemantics =>
+      'Politique complète en ligne, s\'ouvre dans le navigateur';
+
+  @override
+  String privacyOnlineFailed(String url) {
+    return 'Impossible d\'ouvrir le navigateur. La politique est à l\'adresse $url';
+  }
 
   @override
   String get homeTeam => 'Équipe';

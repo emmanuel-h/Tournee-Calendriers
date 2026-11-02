@@ -597,33 +597,50 @@ final class _DoorButton extends StatelessWidget {
   }
 }
 
-/// « Gérer l'immeuble ▾ » and « Repasser », side by side.
+/// « Gérer l'immeuble ▾ » and « Repasser »: side by side, half the width
+/// each, when both labels hold on one line there; else one above the
+/// other, full width, so a large phone font never breaks a word (#35).
 final class _Actions extends StatelessWidget {
   const _Actions({required this.onManage, required this.onDetails});
 
   final VoidCallback onManage;
   final VoidCallback onDetails;
 
+  static const _gap = 10.0;
+  static const _padding = 16.0;
+  static const _iconGap = 8.0;
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    // Half the width each: with a large phone font, « l'immeuble » only
-    // fits on its line if the padding narrows as the text grows (16 dp at
-    // 100 %, 4 dp at 200 %), as Material's own buttons do; the theme's
-    // fixed padding would break the word.
-    final style = ButtonStyle(
-      minimumSize: const WidgetStatePropertyAll(
+    const style = ButtonStyle(
+      minimumSize: WidgetStatePropertyAll(
         Size.fromHeight(AppSizes.gridButtonHeight),
       ),
       padding: WidgetStatePropertyAll(
-        ButtonStyleButton.scaledPadding(
-          const EdgeInsets.symmetric(horizontal: 16),
-          const EdgeInsets.symmetric(horizontal: 8),
-          const EdgeInsets.symmetric(horizontal: 4),
-          MediaQuery.textScalerOf(context).scale(1),
-        ),
+        EdgeInsets.symmetric(horizontal: _padding),
       ),
-      textStyle: const WidgetStatePropertyAll(AppTextStyles.segment),
+      textStyle: WidgetStatePropertyAll(AppTextStyles.segment),
+    );
+    final manage = OutlinedButton(
+      key: const Key('grid.manage'),
+      style: style,
+      onPressed: onManage,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        spacing: _iconGap,
+        children: [
+          Flexible(child: Text(l10n.manageBuilding)),
+          // The ▾ after the label says a menu opens; decoration only.
+          const Icon(Icons.arrow_drop_down, size: AppSizes.gridButtonIcon),
+        ],
+      ),
+    );
+    final details = OutlinedButton(
+      key: const Key('grid.details'),
+      style: style,
+      onPressed: onDetails,
+      child: Text(l10n.buildingDetails),
     );
     // `SafeArea`: above the gesture bar of the phone.
     return SafeArea(
@@ -635,31 +652,50 @@ final class _Actions extends StatelessWidget {
           AppSizes.gutter,
           AppSizes.floatingBottom,
         ),
-        child: Row(
-          spacing: 10,
-          children: [
-            Expanded(
-              // The ▾ after the label says a menu opens; decoration only.
-              child: OutlinedButton.icon(
-                key: const Key('grid.manage'),
-                style: style,
-                onPressed: onManage,
-                iconAlignment: IconAlignment.end,
-                icon: const Icon(Icons.arrow_drop_down),
-                label: Text(l10n.manageBuilding),
-              ),
-            ),
-            Expanded(
-              child: OutlinedButton(
-                key: const Key('grid.details'),
-                style: style,
-                onPressed: onDetails,
-                child: Text(l10n.buildingDetails),
-              ),
-            ),
-          ],
+        // `LayoutBuilder` gives the width the buttons share; the labels are
+        // measured in the phone's own text size before choosing the layout.
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final room = (constraints.maxWidth - _gap) / 2 - 2 * _padding;
+            final sideBySide =
+                _lineWidth(context, l10n.manageBuilding) +
+                        _iconGap +
+                        AppSizes.gridButtonIcon <=
+                    room &&
+                _lineWidth(context, l10n.buildingDetails) <= room;
+            return sideBySide
+                ? Row(
+                    key: const Key('grid.actions.row'),
+                    spacing: _gap,
+                    children: [
+                      Expanded(child: manage),
+                      Expanded(child: details),
+                    ],
+                  )
+                : Column(
+                    key: const Key('grid.actions.column'),
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    spacing: _gap,
+                    children: [manage, details],
+                  );
+          },
         ),
       ),
     );
+  }
+
+  /// How wide [label] is on one line, in the buttons' style and the
+  /// phone's text size. A `TextPainter` lays text out without drawing it.
+  double _lineWidth(BuildContext context, String label) {
+    final painter = TextPainter(
+      text: TextSpan(text: label, style: AppTextStyles.segment),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+      maxLines: 1,
+    )..layout();
+    final width = painter.width;
+    painter.dispose();
+    return width;
   }
 }

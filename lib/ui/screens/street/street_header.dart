@@ -9,7 +9,8 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 import 'package:tournee_calendriers/ui/theme/status_look.dart';
 
 /// Everything above the tiles: « 31/42 · ✗ 3 · ↻ 1 » with « Masquer
-/// faits », the progress bar, and the « Côté impair | Côté pair » labels.
+/// faits » (on the next line when the phone's font leaves no room beside
+/// the counts), the progress bar, and the « Côté impair | Côté pair » labels.
 final class StreetHeader extends StatelessWidget {
   const StreetHeader({
     super.key,
@@ -33,18 +34,29 @@ final class StreetHeader extends StatelessWidget {
           ),
           // At least the mockup's height; taller when « Masquer faits »
           // needs its 48 dp tap target or the phone's font is enlarged.
+          // `Align` centres the line in that height.
           child: ConstrainedBox(
             constraints: const BoxConstraints(
               minHeight: AppSizes.streetCountsHeight,
             ),
-            child: Row(
-              children: [
-                Expanded(child: _Counts(state: state)),
-                _HideDoneToggle(
-                  hideDone: state.hideDone,
-                  onPressed: onToggleHideDone,
-                ),
-              ],
+            child: Align(
+              alignment: Alignment.centerLeft,
+              // An `OverflowBar` measures its children at their own width:
+              // side by side when they fit (counts left, pill right), else
+              // one above the other, so a large phone font never cuts the
+              // counts (#35).
+              child: OverflowBar(
+                key: const Key('street.countsRow'),
+                alignment: MainAxisAlignment.spaceBetween,
+                spacing: AppSizes.columnGap,
+                children: [
+                  _Counts(state: state),
+                  _HideDoneToggle(
+                    hideDone: state.hideDone,
+                    onPressed: onToggleHideDone,
+                  ),
+                ],
+              ),
             ),
           ),
         ),

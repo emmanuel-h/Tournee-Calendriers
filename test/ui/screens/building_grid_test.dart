@@ -10,6 +10,7 @@ import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
+import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 
 import '../../support/building_fixtures.dart';
 import '../../support/fakes/fake_street_repository.dart';
@@ -621,6 +622,61 @@ void main() {
     expect(find.byKey(const Key('door.number')), findsNothing);
     expect(door.status, VisitStatus.comeBack);
     expect(door.comeBack, comeBack('2026-11-02'));
+  });
+
+  group('buttons with the app fonts (#35)', () {
+    setUpAll(loadAppFonts);
+
+    final manage = find.byKey(const Key('grid.manage'));
+    final details = find.byKey(const Key('grid.details'));
+
+    testWidgets('should put « Gérer l\'immeuble » and « Repasser » side by '
+        'side when the text is at its normal size', (tester) async {
+      usePhoneScreen(tester);
+      await openStreet(tester);
+
+      await tester.tap(_tile('8'));
+      await tester.pumpAndSettle();
+
+      final manageBox = tester.getRect(manage);
+      final detailsBox = tester.getRect(details);
+      expect(find.byKey(const Key('grid.actions.row')), findsOneWidget);
+      expect(detailsBox.top, manageBox.top);
+      expect(detailsBox.left, greaterThan(manageBox.right));
+      expect(detailsBox.width, moreOrLessEquals(manageBox.width));
+    });
+
+    testWidgets('should stack the two buttons full width when the text is '
+        'twice as large', (tester) async {
+      await openStreet(tester);
+      useLargeText(tester);
+      await tester.pumpAndSettle();
+
+      await tester.tap(_tile('8'));
+      await tester.pumpAndSettle();
+
+      final manageBox = tester.getRect(manage);
+      final detailsBox = tester.getRect(details);
+      final screenWidth =
+          tester.view.physicalSize.width / tester.view.devicePixelRatio;
+      expect(find.byKey(const Key('grid.actions.column')), findsOneWidget);
+      expect(detailsBox.top, greaterThan(manageBox.bottom));
+      expect(manageBox.left, AppSizes.gutter);
+      expect(
+        manageBox.width,
+        moreOrLessEquals(screenWidth - 2 * AppSizes.gutter),
+      );
+      expect(detailsBox.width, manageBox.width);
+      // « Gérer l'immeuble » on one line: as tall as « Repasser », which
+      // full width cannot wrap.
+      Finder label(Finder button) =>
+          find.descendant(of: button, matching: find.byType(Text));
+      expect(
+        tester.getSize(label(manage)).height,
+        tester.getSize(label(details)).height,
+      );
+      expect(tester.takeException(), isNull);
+    });
   });
 
   group('at 200 % text', () {

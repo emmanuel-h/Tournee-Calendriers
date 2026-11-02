@@ -140,6 +140,9 @@ abstract final class AppSizes {
   /// smaller.
   static const gridButtonHeight = 48.0;
 
+  /// The ▾ of « Gérer l'immeuble ▾ » (Material's own button icon size).
+  static const gridButtonIcon = 18.0;
+
   /// A row of the « Décrire l'immeuble » sheet: its (−) and (+) buttons
   /// and the value between them.
   static const stepperRowHeight = 60.0;

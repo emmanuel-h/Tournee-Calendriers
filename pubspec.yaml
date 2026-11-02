@@ -57,6 +57,9 @@ dependencies:
   # The phone's share sheet for « Partager » the join code (PLAN §10.2);
   # only in ui/.
   share_plus: 13.3.1
+  # Opens « Politique complète en ligne » of Confidentialité in the browser
+  # (PLAN §5.9, #36); only in ui/.
+  url_launcher: 6.3.3
 
 dev_dependencies:
   # An in-memory Firestore for the adapters' tests (PLAN §11): no emulator,
@@ -72,8 +75,12 @@ dev_dependencies:
   # (`whenCalling(…).on(document).thenThrow(…)`): how the adapters' tests
   # play a phone without network.
   mock_exceptions: 0.8.2
+  # With url_launcher_platform_interface: a fake browser for the widget tests
+  # of Confidentialité's link (`UrlLauncherPlatform.instance = …`).
+  plugin_platform_interface: 2.1.8
   # Plain Dart test runner, used by the architecture test and pure-Dart suites.
   test: 1.31.1
+  url_launcher_platform_interface: 2.3.2
 
 flutter:
   uses-material-design: true

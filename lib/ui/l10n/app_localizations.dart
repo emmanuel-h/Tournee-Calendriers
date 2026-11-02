@@ -1863,10 +1863,10 @@ abstract class AppLocalizations {
   /// **'Compte'**
   String get privacyAccountTitle;
 
-  /// Privacy page: the account (PLAN §8.3).
+  /// Privacy page: the account (PLAN §8.3): its section of PRIVACY.md, word for word.
   ///
   /// In fr, this message translates to:
-  /// **'Un compte anonyme est créé au premier lancement : ni adresse e-mail, ni numéro de téléphone. L\'équipe voit seulement le prénom que vous donnez.'**
+  /// **'L\'appli ne demande ni adresse e-mail ni numéro de téléphone. Au premier lancement, elle crée un compte anonyme. Vos coéquipiers voient seulement le prénom que vous avez tapé.'**
   String get privacyAccountBody;
 
   /// Privacy page: section about the data stored.
@@ -1875,10 +1875,10 @@ abstract class AppLocalizations {
   /// **'Données enregistrées'**
   String get privacyDataTitle;
 
-  /// Privacy page: what is stored (PLAN §8.3).
+  /// Privacy page: what is stored (PLAN §8.3): its section of PRIVACY.md, word for word.
   ///
   /// In fr, this message translates to:
-  /// **'Les adresses et leur position (données publiques), l\'état de chaque porte, l\'indication « repasser » (20 caractères au plus) et les prénoms des membres. Aucun nom d\'habitant, aucun don, aucune réponse des habitants.'**
+  /// **'Pour chaque rue de la tournée : les numéros, leur place sur la carte, ce qui s\'est passé à chaque porte (fait, personne, à repasser), le jour et l\'heure où repasser, et le prénom de qui l\'a noté. Rien d\'autre : pas de nom d\'habitant, pas de note, pas de don.'**
   String get privacyDataBody;
 
   /// Privacy page: section about the phone's position.
@@ -1887,10 +1887,10 @@ abstract class AppLocalizations {
   /// **'Position'**
   String get privacyLocationTitle;
 
-  /// Privacy page: the phone's position (PLAN §8.3).
+  /// Privacy page: the phone's position (PLAN §8.3): its section of PRIVACY.md, word for word.
   ///
   /// In fr, this message translates to:
-  /// **'Votre position sert seulement à vous situer sur la carte. Elle n\'est ni enregistrée ni envoyée. L\'autorisation est demandée la première fois que vous touchez le bouton qui vous situe.'**
+  /// **'La position du téléphone sert seulement à vous placer sur la carte, quand vous touchez le bouton. Rien n\'est sauvegardé en dehors de votre téléphone.'**
   String get privacyLocationBody;
 
   /// Privacy page: section about where the data is kept.
@@ -1899,10 +1899,10 @@ abstract class AppLocalizations {
   /// **'Hébergement'**
   String get privacyHostingTitle;
 
-  /// Privacy page: where the data is kept (PLAN §8.3, Firestore in europe-west).
+  /// Privacy page: where the data is kept (PLAN §8.3): its section of PRIVACY.md, word for word.
   ///
   /// In fr, this message translates to:
-  /// **'Les données des tournées sont hébergées dans l\'Union européenne (Google Firebase).'**
+  /// **'Les tournées sont stockées chez Google Firebase, dans l\'Union européenne. Les cartes viennent d\'OpenFreeMap et les adresses de la Base Adresse Nationale : comme tout site web, ces services voient l\'adresse IP du téléphone quand ils lui envoient des données.'**
   String get privacyHostingBody;
 
   /// Privacy page: section about deleting the data.
@@ -1911,11 +1911,29 @@ abstract class AppLocalizations {
   /// **'Suppression'**
   String get privacyDeletionTitle;
 
-  /// Privacy page: how data is deleted (PLAN §8.3).
+  /// Privacy page: how data is deleted (PLAN §8.3): its section of PRIVACY.md, word for word.
   ///
   /// In fr, this message translates to:
-  /// **'Supprimer la tournée efface toutes ses données. À chaque nouvelle campagne, la campagne d\'avant la précédente est effacée.'**
+  /// **'Supprimer la tournée efface tout ce qu\'elle contient. Quand une campagne commence, celle d\'il y a deux ans est effacée. Désinstaller l\'appli efface ce qui est sur le téléphone ; ce qui est partagé avec l\'équipe reste jusqu\'à la suppression de la tournée.'**
   String get privacyDeletionBody;
+
+  /// Last row of the privacy page, under a divider: opens PRIVACY.md of the repository in the browser (PLAN §5.9, #36).
+  ///
+  /// In fr, this message translates to:
+  /// **'Politique complète en ligne'**
+  String get privacyOnline;
+
+  /// What screen readers say for the row that opens the online privacy policy.
+  ///
+  /// In fr, this message translates to:
+  /// **'Politique complète en ligne, s\'ouvre dans le navigateur'**
+  String get privacyOnlineSemantics;
+
+  /// Snackbar when the browser could not be opened for the online privacy policy.
+  ///
+  /// In fr, this message translates to:
+  /// **'Impossible d\'ouvrir le navigateur. La politique est à l\'adresse {url}'**
+  String privacyOnlineFailed(String url);
 
   /// Tooltip and screen-reader name of the 👥 button of the start screen (PLAN §5.3).
   ///

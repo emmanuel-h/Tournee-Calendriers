@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -13,6 +14,7 @@ import 'package:tournee_calendriers/ui/components/arrow_text.dart';
 import 'package:tournee_calendriers/ui/components/building_icon.dart';
 import 'package:tournee_calendriers/ui/components/open_chevron.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
+import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 
 import '../../support/building_fixtures.dart';
 import '../../support/fakes/fake_street_repository.dart';
@@ -341,6 +343,52 @@ void main() {
 
     expect(find.widgetWithText(AppBar, 'Modifier la rue'), findsOneWidget);
     expect(router.state.uri.toString(), AppRoutes.editStreetOf(_id));
+  });
+
+  group('counts row with the app fonts (#35)', () {
+    setUpAll(loadAppFonts);
+
+    final counts = find.byKey(const Key('street.counts'));
+    final hideDone = find.byKey(const Key('street.hideDone'));
+
+    /// Whether the counts had to be cut with « … ».
+    bool countsCut(WidgetTester tester) => tester
+        .renderObject<RenderParagraph>(
+          find.descendant(of: counts, matching: find.byType(RichText)),
+        )
+        .didExceedMaxLines;
+
+    testWidgets('should put the counts and « Masquer faits » on one row when '
+        'the text is at its normal size', (tester) async {
+      usePhoneScreen(tester);
+
+      await openStreet(tester);
+
+      final countsBox = tester.getRect(counts);
+      final pillBox = tester.getRect(hideDone);
+      expect(pillBox.center.dy, moreOrLessEquals(countsBox.center.dy));
+      expect(pillBox.left, greaterThanOrEqualTo(countsBox.right));
+      // As before #35: the pill at the right edge, the counts at the left.
+      final screenWidth =
+          tester.view.physicalSize.width / tester.view.devicePixelRatio;
+      expect(pillBox.right, moreOrLessEquals(screenWidth - AppSizes.gutter));
+      expect(countsBox.left, AppSizes.streetCountsIndent);
+      expect(countsCut(tester), isFalse);
+    });
+
+    testWidgets('should put « Masquer faits » under the whole counts when the '
+        'text is twice as large', (tester) async {
+      useLargeText(tester);
+
+      await openStreet(tester);
+
+      final countsBox = tester.getRect(counts);
+      final pillBox = tester.getRect(hideDone);
+      expect(pillBox.top, greaterThanOrEqualTo(countsBox.bottom));
+      expect(pillBox.left, countsBox.left);
+      expect(countsCut(tester), isFalse);
+      expect(tester.takeException(), isNull);
+    });
   });
 
   group('at 200 % text', () {

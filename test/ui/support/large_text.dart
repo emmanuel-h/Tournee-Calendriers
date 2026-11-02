@@ -38,12 +38,19 @@ Future<void> loadAppFonts() async {
 /// (`TextScaler.linear(2.0)`). A row that cannot hold its text then
 /// throws « A RenderFlex overflowed », which fails the test.
 void useLargeText(WidgetTester tester) {
-  tester.view.physicalSize = const Size(1080, 2400);
-  tester.view.devicePixelRatio = 2.625;
+  usePhoneScreen(tester);
   tester.platformDispatcher.textScaleFactorTestValue = 2;
   // The test binding is shared by every test of the file: put it back.
-  addTearDown(tester.view.reset);
   addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
+}
+
+/// Shows the next screens on the same 411 × 914 dp phone as
+/// [useLargeText], with text at its normal size: the 100 % side of a
+/// layout that changes with the font size.
+void usePhoneScreen(WidgetTester tester) {
+  tester.view.physicalSize = const Size(1080, 2400);
+  tester.view.devicePixelRatio = 2.625;
+  addTearDown(tester.view.reset);
 }
 
 /// Checks what TalkBack and a finger need of the screen shown: every

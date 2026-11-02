@@ -11,18 +11,29 @@ void main() {
     final arb = jsonDecode(
       File('lib/ui/l10n/app_fr.arb').readAsStringSync(),
     ) as Map<String, dynamic>;
-    // « note », « notes », « Note » as a word; not « annoter » or « notice ».
-    final note = RegExp(r'\bnotes?\b', caseSensitive: false);
+    // « note », « notes », « Note » as a word; not « annoter », « notice »
+    // or « noté » (written down). `\p{L}` is any letter, accents included,
+    // which `\b` does not know.
+    final note = RegExp(
+      r'(?<!\p{L})notes?(?!\p{L})',
+      caseSensitive: false,
+      unicode: true,
+    );
+    // The privacy page says there is none (« pas de note », PRIVACY.md,
+    // #79): that names no note to write.
+    String said(String value) => value.replaceAll('pas de note', '');
 
     final offenders = [
       for (final MapEntry(:key, :value) in arb.entries)
         if (!key.startsWith('@') &&
-            (key.toLowerCase().contains('note') || note.hasMatch('$value')))
+            (key.toLowerCase().contains('note') ||
+                note.hasMatch(said('$value'))))
           key,
     ];
 
     expect(offenders, isEmpty);
     // Not vacuous: the file was read and holds the messages.
     expect(arb, contains('buildingDetails'));
+    expect(arb['privacyDataBody'], contains('pas de note'));
   });
 }

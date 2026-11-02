@@ -162,9 +162,12 @@ value taken behaves as with a button. **Typography:** French texts put a non-bre
   « … »; a row with a fixed height grows with the text instead: Accueil's folded panel
   (`homePanelFoldedHeight`), the street's counts row (at least 44 dp, 48 dp with
   « Masquer faits ») and the « Appui : … » hints. Buttons keep a fixed padding (24 dp for the
-  main ones, 16 dp otherwise) so a label wrapped on two lines stays inside its outline; only
-  « Gérer l'immeuble » / « Repasser », side by side under a building's grid, let it narrow
-  as Material does, so « l'immeuble » is not cut.
+  main ones, 16 dp otherwise) so a label wrapped on two lines stays inside its outline. Two
+  rows change their layout when the text no longer fits, judged on the measured widths, not
+  on a scale threshold (#35): the street's counts go on their own line above « Masquer
+  faits », nothing hidden; « Gérer l'immeuble » and « Repasser », under a building's grid,
+  stack full width, one above the other, when either label would no longer hold on one line
+  in half the width. At normal size both stay as the mockups show.
 - **Contrast (WCAG):** text ≥ 4.5:1, borders, glyphs and bars ≥ 3:1, in both palettes; a test
   (`test/ui/theme/app_colors_test.dart`) holds every pair. The dark palette keeps the light
   one's hues. Where no colour can both carry white text and read on the dark surface, the dark
@@ -805,7 +808,9 @@ Details fixed in T1.7 (`lib/presentation/street/`, `lib/ui/screens/street/`):
   doors « repasser » count as not done, so a building whose doors are all ↻ shows ○ (T1.16). No
   dot: the note it marked is gone (T1.20).
 - Header « 31/42 · ✗ 3 · ↻ 1 » counts every door, whatever is hidden; ↻ counts the doors
-  « repasser » plus the buildings with their own « repasser » (`Progress.toComeBack`). « Masquer faits » hides the
+  « repasser » plus the buildings with their own « repasser » (`Progress.toComeBack`); when
+  the phone's font leaves no room for them beside « Masquer faits », they take their own line
+  above it, whole (#35). « Masquer faits » hides the
   tiles shown ✓ (houses done, buildings all done) and is remembered per street on the phone.
   The single column is decided on all the street's numbers, not on the visible ones.
 - A tap gives a light haptic tick at once, then TalkBack hears « Numéro 7, personne » and the
@@ -956,7 +961,9 @@ Immeuble details fixed in T1.9 (`lib/presentation/building/`, `lib/ui/screens/bu
 - Floors top first, labelled RdC, 1er, 2e… (« Logements » for unknown floors); four doors a row,
   wrapping under the label; a floor without doors is hidden. A door shows its label and glyph
   in the status colours (↻ for « repasser »).
-- **Under the grid** (T1.18): « Gérer l'immeuble ▾ » next to « Repasser » (48 dp each; T1.20).
+- **Under the grid** (T1.18): « Gérer l'immeuble ▾ » next to « Repasser » (48 dp each; T1.20);
+  one above the other, full width, when a large phone font no longer lets each label hold
+  on one line in half the width (#35).
   « Gérer l'immeuble » opens a menu sheet titled « Gérer l'immeuble » — a sheet like every
   other choice of the app, rows of 56 dp — with « Modifier les étages » (« Décrire
   l'immeuble » over the grid), « Modifier les portes » (its screen over the grid, back to it
@@ -1178,9 +1185,12 @@ admin » for « Nouveau code », « Retirer », « Supprimer » and the campaign
 - **Thème** opens « Système | Clair | Sombre »: a tap redraws the app at once and closes the
   sheet. « Sombre » uses the dark palette reviewed in T5.1 (contrast rules in 5, intro).
 - **Confidentialité** opens a page saying 8.3 in French: compte, données enregistrées,
-  position, hébergement, suppression. Under a divider, a last row « Politique complète en
+  position, hébergement, suppression. Its five texts are those sections of `PRIVACY.md`, word
+  for word (#79; a test compares them). Under a divider, a last row « Politique complète en
   ligne ↗ » opens the public policy, `PRIVACY.md` at the root of the repository (same text,
-  #36), in the browser (decided 2026-11-02).
+  #36), in the browser (decided 2026-11-02). When no browser opens, a snackbar gives the
+  address: « Impossible d'ouvrir le navigateur. La politique est à l'adresse … ». The text
+  works offline; only the link needs the network.
 - **Version** (from `pubspec.yaml`, `appBuildName`) has a › : a tap opens **« Nouveautés »**
   (Changelog mockup): each version, newest first, with the day it came out (« 16 oct.
   2026 ») and what it brings in short French lines for the members (not commit messages).
@@ -2674,7 +2684,9 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
 - Attribution shown on the map and in Paramètres: © OpenStreetMap contributors (ODbL),
   OpenFreeMap, Base Adresse Nationale (Licence Ouverte).
 - Play Store: needs a privacy policy (Firebase + network + location). Data can be deleted by
-  deleting the tournée; the previous-but-one campaign is deleted at each roll-over.
+  deleting the tournée; the previous-but-one campaign is deleted at each roll-over. The
+  policy is `PRIVACY.md` at the root of the repository (with a contact address); the
+  Confidentialité page (5.9) shows its five sections word for word and links to it.
 
 ---
 
