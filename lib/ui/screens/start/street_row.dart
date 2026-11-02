@@ -20,7 +20,7 @@ final class StreetRowTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final colors = AppColors.of(context);
-    final countColor = row.isComplete ? colors.done : colors.ink;
+    final countColor = row.isComplete ? colors.doneInk : colors.ink;
     // One label for the whole row, so a screen reader reads « Rue
     // Nationale, 31 sur 403 faits » once instead of three fragments.
     return Semantics(

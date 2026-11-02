@@ -21,6 +21,7 @@ import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart' hide lea;
 import '../support/app_overrides.dart';
+import '../support/large_text.dart';
 
 void main() {
   late FakeStreetRepository streets;
@@ -191,5 +192,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(streets.added.single.commune, villefranche);
+  });
+
+  testWidgets('should label every control and make it 48 dp at least', (
+    tester,
+  ) async {
+    await pumpManual(tester, communes: [villefrancheCommune, gleizeCommune]);
+
+    await expectAccessibleControls(tester);
   });
 }

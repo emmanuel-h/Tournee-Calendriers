@@ -31,6 +31,7 @@ import '../../support/results.dart';
 import '../../support/street_fixtures.dart' hide lea;
 import '../support/app_overrides.dart';
 import '../support/fake_map_view.dart';
+import '../support/large_text.dart';
 
 final _bordelanId = BanStreetId('69264_0246');
 
@@ -404,5 +405,13 @@ void main() {
 
     expect(find.byType(ManualStreetScreen), findsOneWidget);
     expect(find.text('Rue à la main'), findsOneWidget);
+  });
+
+  testWidgets('should label every control and make it 48 dp at least', (
+    tester,
+  ) async {
+    await pumpMap(tester);
+
+    await expectAccessibleControls(tester);
   });
 }

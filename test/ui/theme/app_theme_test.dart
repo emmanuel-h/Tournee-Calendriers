@@ -61,4 +61,31 @@ void main() {
     expect(AppColors.light.lerp(AppColors.dark, 0.5), same(AppColors.dark));
     expect(AppColors.light.copyWith(), same(AppColors.light));
   });
+
+  test('should round the buttons by half a main button\'s height, so a '
+      'wrapped label keeps square-ish corners', () {
+    final theme = buildAppTheme(AppColors.light);
+    const pill = RoundedRectangleBorder(
+      borderRadius: BorderRadius.all(Radius.circular(28)),
+    );
+
+    expect(theme.filledButtonTheme.style!.shape!.resolve({}), pill);
+    expect(theme.outlinedButtonTheme.style!.shape!.resolve({}), pill);
+  });
+
+  test('should keep 16 dp each side of a button\'s label whatever the font '
+      'size', () {
+    final theme = buildAppTheme(AppColors.light);
+    const padding = EdgeInsets.symmetric(horizontal: 16);
+
+    expect(theme.filledButtonTheme.style!.padding!.resolve({}), padding);
+    expect(theme.outlinedButtonTheme.style!.padding!.resolve({}), padding);
+  });
+
+  test('should draw the progress bars in the done ink', () {
+    final theme = buildAppTheme(AppColors.dark);
+
+    expect(theme.progressIndicatorTheme.color, AppColors.dark.doneInk);
+    expect(theme.progressIndicatorTheme.color, isNot(AppColors.dark.done));
+  });
 }

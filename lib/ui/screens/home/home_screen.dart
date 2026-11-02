@@ -126,13 +126,16 @@ final class _HomeScreenState extends ConsumerState<HomeScreen> {
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     final room = constraints.maxHeight;
+                    final folded = homePanelFoldedHeight(
+                      MediaQuery.textScalerOf(context),
+                    );
                     final heights = {
-                      PanelSize.folded: AppSizes.homePanelFolded,
+                      PanelSize.folded: folded,
                       PanelSize.rest: max(
-                        AppSizes.homePanelFolded,
+                        folded,
                         room * AppSizes.homePanelRestShare,
                       ),
-                      PanelSize.full: max(AppSizes.homePanelFolded, room),
+                      PanelSize.full: max(folded, room),
                     };
                     final card = state.card;
                     // The room the panel (or the street card) takes over the

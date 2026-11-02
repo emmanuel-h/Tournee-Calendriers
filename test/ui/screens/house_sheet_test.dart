@@ -18,6 +18,7 @@ import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 import '../support/app_overrides.dart';
 import '../support/finders.dart';
+import '../support/large_text.dart';
 
 final _id = StreetId('lilas');
 
@@ -468,5 +469,38 @@ void main() {
       expect(stored('1').status, VisitStatus.done);
       expect(findArrowText('1 → Fait'), findsOneWidget);
     });
+  });
+
+  group('at 200 % text', () {
+    setUpAll(loadAppFonts);
+
+    for (final (number, what) in [
+      ('9', 'nobody home twice'),
+      ('5', 'to come back'),
+      ('1', 'to do'),
+    ]) {
+      testWidgets('should show the sheet of a house $what with no overflow '
+          'when the text is twice as large', (tester) async {
+        await openStreet(tester);
+        useLargeText(tester);
+        await tester.pumpAndSettle();
+
+        await tester.longPress(_tile(number));
+        await tester.pumpAndSettle();
+
+        expect(find.byKey(const Key('house.number')), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+    }
+  });
+
+  testWidgets('should label every control and make it 48 dp at least', (
+    tester,
+  ) async {
+    await openStreet(tester);
+    await tester.longPress(_tile('9'));
+    await tester.pumpAndSettle();
+
+    await expectAccessibleControls(tester);
   });
 }

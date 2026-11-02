@@ -22,6 +22,7 @@ import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 import '../support/app_overrides.dart';
 import '../support/fake_map_view.dart';
+import '../support/large_text.dart';
 
 final _morin = BanStreetId('69264_1460');
 final _bordelan = BanStreetId('69264_0246');
@@ -175,5 +176,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(AddStreetsScreen), findsNothing);
+  });
+
+  testWidgets('should label every control and make it 48 dp at least', (
+    tester,
+  ) async {
+    await pumpStart(tester, [villefrancheCommune, gleizeCommune]);
+
+    await expectAccessibleControls(tester);
   });
 }

@@ -25,6 +25,7 @@ import '../../support/results.dart';
 import '../support/app_overrides.dart';
 import '../support/buttons.dart';
 import '../support/clipboard.dart';
+import '../support/large_text.dart';
 
 /// The phone's uid, as Firebase makes them.
 final phoneUid = MemberId('x7FqA1b2C3d4E5f6G7h8I9j0k9kP2');
@@ -238,5 +239,38 @@ void main() {
       expect(find.byKey(const Key('welcome.deviceId')), findsNothing);
       expect(find.byKey(const Key('welcome.copyDeviceId')), findsNothing);
     });
+  });
+
+  group('at 200 % text', () {
+    setUpAll(loadAppFonts);
+
+    testWidgets('should show « Bienvenue » with no overflow when the text is '
+        'twice as large', (tester) async {
+      useLargeText(tester);
+
+      await launch(tester, admin: true);
+
+      expect(find.byType(WelcomeScreen), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      // The buttons are under the fold: scrolling there lays them out too.
+      await tester.scrollUntilVisible(
+        join,
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(create, findsOneWidget);
+      await tester.pumpAndSettle();
+      expect(join, findsOneWidget);
+      expect(find.byKey(const Key('welcome.deviceId')), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  testWidgets('should label every control and make it 48 dp at least', (
+    tester,
+  ) async {
+    await launch(tester, admin: true);
+
+    await expectAccessibleControls(tester);
   });
 }

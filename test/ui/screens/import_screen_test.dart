@@ -18,6 +18,7 @@ import '../../support/fakes/fake_street_repository.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 import '../support/app_overrides.dart';
+import '../support/large_text.dart';
 
 final _morin = BanStreetId('69264_1460');
 final _bonnet = BanStreetId('69264_0682');
@@ -279,4 +280,12 @@ void main() {
       expect(find.text('Importer 1 rue'), findsOneWidget);
     },
   );
+
+  testWidgets('should label every control and make it 48 dp at least', (
+    tester,
+  ) async {
+    await openVillefranche(tester);
+
+    await expectAccessibleControls(tester);
+  });
 }

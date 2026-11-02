@@ -21,6 +21,7 @@ import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 import '../support/app_overrides.dart';
 import '../support/fake_map_view.dart';
+import '../support/large_text.dart';
 
 // The card « 2 rues sont enregistrées sur ce téléphone. » of the start
 // screen (PLAN §5.0).
@@ -156,5 +157,13 @@ void main() {
       movedStreetsMessage(l10n, const MovedSummary(moved: 10, alreadyThere: 2)),
       '10 rues ajoutées, 2 déjà dans la tournée',
     );
+  });
+
+  testWidgets('should label every control and make it 48 dp at least', (
+    tester,
+  ) async {
+    await pumpApp(tester);
+
+    await expectAccessibleControls(tester);
   });
 }

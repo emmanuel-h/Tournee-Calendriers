@@ -23,6 +23,7 @@ import '../../support/fakes/fake_phone_settings.dart';
 import '../../support/results.dart';
 import '../support/app_overrides.dart';
 import '../support/clipboard.dart';
+import '../support/large_text.dart';
 import '../support/navigation.dart';
 
 void main() {
@@ -393,5 +394,27 @@ void main() {
       account.gate.complete();
       await tester.pumpAndSettle();
     });
+  });
+
+  group('at 200 % text', () {
+    setUpAll(loadAppFonts);
+
+    testWidgets('should show Paramètres with no overflow when the text is '
+        'twice as large', (tester) async {
+      useLargeText(tester);
+
+      await pumpSettings(tester);
+
+      expect(find.text('Paramètres'), findsWidgets);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  testWidgets('should label every control and make it 48 dp at least', (
+    tester,
+  ) async {
+    await pumpSettings(tester);
+
+    await expectAccessibleControls(tester);
   });
 }

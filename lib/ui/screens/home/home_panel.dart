@@ -127,6 +127,27 @@ final class HomePanel extends StatelessWidget {
   }
 }
 
+/// The height of the folded panel (its handle and totals) when text is
+/// drawn through [textScaler]: [AppSizes.homePanelFolded] at 100 %, taller
+/// by as much as the « Mes rues · 43/62 » line grows with the phone's font
+/// size, so it still holds the totals at 200 %.
+double homePanelFoldedHeight(TextScaler textScaler) {
+  double lineHeight(TextScaler scaler) {
+    final painter = TextPainter(
+      text: const TextSpan(text: 'M', style: AppTextStyles.listHeader),
+      textScaler: scaler,
+      textDirection: TextDirection.ltr,
+    )..layout();
+    final height = painter.height;
+    painter.dispose();
+    return height;
+  }
+
+  return AppSizes.homePanelFolded +
+      lineHeight(textScaler) -
+      lineHeight(TextScaler.noScaling);
+}
+
 /// Opens the street screen of [street]. The name travels along, so the
 /// screen has its title before the street is read.
 void _open(BuildContext context, StreetRow street) =>
@@ -178,7 +199,7 @@ final class _Totals extends StatelessWidget {
             l10n.homeMyStreetsSemantics(state.done, state.total),
           );
     return SizedBox(
-      height: AppSizes.homePanelFolded,
+      height: homePanelFoldedHeight(MediaQuery.textScalerOf(context)),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [

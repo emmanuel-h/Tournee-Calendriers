@@ -21,6 +21,7 @@ import '../../support/fakes/fake_tournee_directory.dart';
 import '../../support/results.dart';
 import '../support/app_overrides.dart';
 import '../support/buttons.dart';
+import '../support/large_text.dart';
 import '../support/navigation.dart';
 
 void main() {
@@ -215,5 +216,48 @@ void main() {
         expect(find.text('Tournée 12 · 2026'), findsOneWidget);
       },
     );
+  });
+
+  group('at 200 % text', () {
+    setUpAll(loadAppFonts);
+
+    testWidgets('should show « Rejoindre », then the wait, with no overflow '
+        'when the text is twice as large', (tester) async {
+      useLargeText(tester);
+      await launch(tester, MyTournees.none.remember(tournee12));
+      unawaitedPush(
+        GoRouter.of(tester.element(find.byType(StartOrHome))),
+        AppRoutes.join,
+      );
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byKey(const Key('join.first')), 'k7p');
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('join.second')), '2qx');
+      await tester.pumpAndSettle();
+      expect(find.text('Tournée 49 · CS Villefranche'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      await tester.ensureVisible(find.byKey(const Key('join.request')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('join.request')));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(JoinPendingScreen), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  testWidgets('should label every control and make it 48 dp at least', (
+    tester,
+  ) async {
+    await launch(tester, MyTournees.none.remember(tournee12));
+    unawaitedPush(
+      GoRouter.of(tester.element(find.byType(StartOrHome))),
+      AppRoutes.join,
+    );
+    await tester.pumpAndSettle();
+
+    await expectAccessibleControls(tester);
   });
 }

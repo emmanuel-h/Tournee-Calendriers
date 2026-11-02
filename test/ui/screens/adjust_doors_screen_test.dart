@@ -19,6 +19,7 @@ import '../../support/street_fixtures.dart';
 import '../support/app_overrides.dart';
 import '../support/finders.dart';
 import '../support/keyboard.dart';
+import '../support/large_text.dart';
 import '../support/navigation.dart';
 
 final _id = StreetId('lilas');
@@ -269,5 +270,13 @@ void main() {
 
     expect(find.byKey(const Key('doors.ok')), findsNothing);
     expect(find.byKey(const ValueKey('grid.door.A1-1')), findsOneWidget);
+  });
+
+  testWidgets('should label every control, a door\'s ✕ too', (tester) async {
+    await openAdjustDoors(tester);
+
+    // A door's ✕ is 36 dp wide on purpose (PLAN §5.7), so a tap aimed at
+    // the label renames rather than removes: the 48 dp rule is left out.
+    await expectAccessibleControls(tester, tapTargets: false);
   });
 }

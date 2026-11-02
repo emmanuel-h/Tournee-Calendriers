@@ -235,7 +235,7 @@ final class _TourneeRowTile extends StatelessWidget {
                   key: Key('myTournees.${row.id.value}.shield'),
                   size: AppSizes.tourneeMark,
                   color: row.status == TourneeRowStatus.open
-                      ? colors.done
+                      ? colors.doneInk
                       : unavailable
                       ? colors.unavailableMark
                       : colors.muted,
@@ -266,7 +266,7 @@ final class _TourneeRowTile extends StatelessWidget {
                   child: StatusGlyph(
                     StatusGlyphs.done,
                     size: AppSizes.segmentGlyph,
-                    color: colors.done,
+                    color: colors.doneInk,
                   ),
                 )
               // The open tournée's requests show on 👥, not here.
@@ -310,12 +310,15 @@ final class _TourneeMark extends StatelessWidget {
         alignment: Alignment.center,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          border: Border.all(color: colors.done, width: 2),
+          border: Border.all(color: colors.doneInk, width: 2),
         ),
         child: Container(
           width: AppSizes.tourneeMarkDot,
           height: AppSizes.tourneeMarkDot,
-          decoration: BoxDecoration(shape: BoxShape.circle, color: colors.done),
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: colors.doneInk,
+          ),
         ),
       ),
       TourneeRowStatus.closed => Container(

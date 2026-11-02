@@ -25,6 +25,7 @@ import '../../support/fakes/fake_tournee_directory.dart';
 import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/results.dart';
 import '../support/app_overrides.dart';
+import '../support/large_text.dart';
 import '../support/navigation.dart';
 
 /// Tournée [number] of [centre] (a station of Villefranche).
@@ -251,5 +252,19 @@ void main() {
 
     expect(tournees.saved, isEmpty);
     expect(find.byKey(const Key('home.adminBanner')), findsOneWidget);
+  });
+
+  testWidgets('should label every control and make it 48 dp at least', (
+    tester,
+  ) async {
+    await pumpAll(
+      tester,
+      all: [
+        overview('t49', 49, members: 5, mine: true),
+        overview('t12', 12, centre: 'CS Villefranche Nord', requests: 1),
+      ],
+    );
+
+    await expectAccessibleControls(tester);
   });
 }

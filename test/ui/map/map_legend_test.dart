@@ -53,4 +53,46 @@ void main() {
     );
     expect(sample(tester, 'à faire'), paintsExactlyCountTimes(#drawLine, 1));
   });
+
+  testWidgets('should draw « libre » on the map\'s white casing when the '
+      'legend is dark', (tester) async {
+    await tester.pumpWidget(
+      testApp(const MapLegend(houses: false), colors: AppColors.dark),
+    );
+
+    // The casing across the whole 22 × 8 sample, then the same dark grey
+    // dashes as on the map.
+    expect(
+      sample(tester, 'libre'),
+      paints
+        ..line(
+          p1: const Offset(0, 4),
+          p2: const Offset(22, 4),
+          color: AppColors.dark.mapStreetFreeCasing,
+          strokeWidth: 8,
+        )
+        ..line(
+          p1: const Offset(2, 4),
+          p2: const Offset(8, 4),
+          color: AppColors.dark.mapStreetFree,
+          strokeWidth: 6,
+        )
+        ..line(
+          p1: const Offset(12, 4),
+          p2: const Offset(18, 4),
+          color: AppColors.dark.mapStreetFree,
+          strokeWidth: 6,
+        ),
+    );
+    expect(sample(tester, 'libre'), paintsExactlyCountTimes(#drawLine, 3));
+  });
+
+  testWidgets('should draw a taken street with no casing when the legend is '
+      'dark', (tester) async {
+    await tester.pumpWidget(
+      testApp(const MapLegend(houses: false), colors: AppColors.dark),
+    );
+
+    expect(sample(tester, 'à faire'), paintsExactlyCountTimes(#drawLine, 1));
+  });
 }

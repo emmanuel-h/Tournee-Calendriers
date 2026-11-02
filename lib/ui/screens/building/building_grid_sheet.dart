@@ -122,8 +122,11 @@ final class _BuildingGridSheetState extends ConsumerState<BuildingGridSheet>
                         ),
                       ),
                       // Gives way to the snackbar, which floats here.
-                      SizedBox(
-                        height: AppSizes.minTapTarget,
+                      // At least 48 dp; taller with a large phone font.
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          minHeight: AppSizes.minTapTarget,
+                        ),
                         child: snackBarShown
                             ? null
                             : Center(
@@ -604,11 +607,23 @@ final class _Actions extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    const style = ButtonStyle(
-      minimumSize: WidgetStatePropertyAll(
+    // Half the width each: with a large phone font, « l'immeuble » only
+    // fits on its line if the padding narrows as the text grows (16 dp at
+    // 100 %, 4 dp at 200 %), as Material's own buttons do; the theme's
+    // fixed padding would break the word.
+    final style = ButtonStyle(
+      minimumSize: const WidgetStatePropertyAll(
         Size.fromHeight(AppSizes.gridButtonHeight),
       ),
-      textStyle: WidgetStatePropertyAll(AppTextStyles.segment),
+      padding: WidgetStatePropertyAll(
+        ButtonStyleButton.scaledPadding(
+          const EdgeInsets.symmetric(horizontal: 16),
+          const EdgeInsets.symmetric(horizontal: 8),
+          const EdgeInsets.symmetric(horizontal: 4),
+          MediaQuery.textScalerOf(context).scale(1),
+        ),
+      ),
+      textStyle: const WidgetStatePropertyAll(AppTextStyles.segment),
     );
     // `SafeArea`: above the gesture bar of the phone.
     return SafeArea(

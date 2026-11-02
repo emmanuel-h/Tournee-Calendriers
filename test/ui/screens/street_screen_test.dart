@@ -21,6 +21,7 @@ import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 import '../support/app_overrides.dart';
 import '../support/finders.dart';
+import '../support/large_text.dart';
 import '../support/navigation.dart';
 
 final _id = StreetId('lilas');
@@ -340,5 +341,45 @@ void main() {
 
     expect(find.widgetWithText(AppBar, 'Modifier la rue'), findsOneWidget);
     expect(router.state.uri.toString(), AppRoutes.editStreetOf(_id));
+  });
+
+  group('at 200 % text', () {
+    setUpAll(loadAppFonts);
+
+    testWidgets('should show the street with no overflow when the text is '
+        'twice as large', (tester) async {
+      useLargeText(tester);
+
+      await openStreet(tester);
+
+      // The header, the hint and the first tiles, all on screen and whole
+      // (an overflow would have thrown).
+      expect(find.text('Rue des Lilas'), findsWidgets);
+      expect(find.byKey(const Key('street.hint')), findsOneWidget);
+      expect(_tile('1'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('should say the status of a tile when the text is twice as '
+        'large', (tester) async {
+      final semantics = tester.ensureSemantics();
+      useLargeText(tester);
+      await openStreet(tester);
+
+      await tester.tap(_tile('1'));
+      await tester.pumpAndSettle();
+
+      expect(labelOf(tester, _tile('1')), 'Numéro 1, fait');
+      expect(tester.takeException(), isNull);
+      semantics.dispose();
+    });
+  });
+
+  testWidgets('should label every control and make it 48 dp at least', (
+    tester,
+  ) async {
+    await openStreet(tester);
+
+    await expectAccessibleControls(tester);
   });
 }

@@ -27,6 +27,7 @@ import '../../support/fakes/fake_tournee_downloads.dart';
 import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/results.dart';
 import '../support/app_overrides.dart';
+import '../support/large_text.dart';
 
 /// The 49 (open), the 12 and the pending 7, all of the CS Villefranche.
 MyTournees _manusPhone() => valueOf(
@@ -528,5 +529,14 @@ void main() {
         findsOneWidget,
       );
     });
+  });
+
+  testWidgets('should label every control and make it 48 dp at least', (
+    tester,
+  ) async {
+    await pumpApp(tester, _manusPhone());
+    await openSheet(tester);
+
+    await expectAccessibleControls(tester);
   });
 }

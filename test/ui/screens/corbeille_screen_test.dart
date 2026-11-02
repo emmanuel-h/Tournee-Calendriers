@@ -20,6 +20,7 @@ import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart' show n, villefranche;
 import '../support/app_overrides.dart';
+import '../support/large_text.dart';
 import '../support/navigation.dart';
 
 /// Wednesday 4 November 2026, 10:00 on the phone's clock.
@@ -178,5 +179,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.bySemanticsLabel('Corbeille · 2 éléments'), findsOneWidget);
+  });
+
+  testWidgets('should label every control and make it 48 dp at least', (
+    tester,
+  ) async {
+    await pumpCorbeille(tester, [gambettaDeleted(), lilasWithoutSeven()]);
+
+    await expectAccessibleControls(tester);
   });
 }

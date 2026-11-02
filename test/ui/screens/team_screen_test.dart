@@ -23,6 +23,7 @@ import '../../support/results.dart';
 import '../support/app_overrides.dart';
 import '../support/buttons.dart';
 import '../support/clipboard.dart';
+import '../support/large_text.dart';
 import '../support/navigation.dart';
 
 /// Two minutes after Julie asked to join the 49.
@@ -373,5 +374,29 @@ void main() {
       ),
       findsOneWidget,
     );
+  });
+
+  group('at 200 % text', () {
+    setUpAll(loadAppFonts);
+
+    for (final (member, who) in [(manuId, 'an admin'), (leaId, 'a member')]) {
+      testWidgets('should show Équipe to $who with no overflow when the text '
+          'is twice as large', (tester) async {
+        useLargeText(tester);
+
+        await pumpTeam(tester, member);
+
+        expect(find.text('Tournée 49'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      });
+    }
+  });
+
+  testWidgets('should label every control and make it 48 dp at least', (
+    tester,
+  ) async {
+    await pumpTeam(tester, manuId);
+
+    await expectAccessibleControls(tester);
   });
 }

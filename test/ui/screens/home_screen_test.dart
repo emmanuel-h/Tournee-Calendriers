@@ -12,6 +12,7 @@ import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_summary.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/screens/add_streets/add_streets_screen.dart';
+import 'package:tournee_calendriers/ui/screens/home/home_panel.dart';
 import 'package:tournee_calendriers/ui/screens/home/home_screen.dart';
 import 'package:tournee_calendriers/ui/screens/street/street_screen.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
@@ -27,6 +28,7 @@ import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 import '../support/app_overrides.dart';
 import '../support/fake_map_view.dart';
+import '../support/large_text.dart';
 
 /// A street of Villefranche-sur-Saône with [total] houses, the first
 /// [done] done, covered by [assignees].
@@ -614,5 +616,53 @@ void main() {
       expect(snap(300, 701), PanelSize.folded);
       expect(snap(550, 700), PanelSize.full);
     });
+  });
+
+  group('at 200 % text', () {
+    setUpAll(loadAppFonts);
+
+    testWidgets('should show Accueil with no overflow when the text is twice '
+        'as large', (tester) async {
+      useLargeText(tester);
+
+      await pumpHome(tester);
+
+      expect(panel(), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('should fold the panel taller, still holding the totals, '
+        'when the text is twice as large', (tester) async {
+      useLargeText(tester);
+      await pumpHome(tester);
+
+      await tester.drag(
+        find.byKey(const Key('home.panel.handle')),
+        const Offset(0, 300),
+      );
+      await tester.pumpAndSettle();
+
+      final folded = homePanelFoldedHeight(const TextScaler.linear(2));
+      expect(folded, greaterThan(AppSizes.homePanelFolded + 20));
+      expect(tester.getSize(panel()).height, folded);
+      expect(find.text('Mes rues · 31/50'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  test('should fold the panel to its mockup height when the text is not '
+      'scaled', () {
+    expect(
+      homePanelFoldedHeight(TextScaler.noScaling),
+      AppSizes.homePanelFolded,
+    );
+  });
+
+  testWidgets('should label every control and make it 48 dp at least', (
+    tester,
+  ) async {
+    await pumpHome(tester);
+
+    await expectAccessibleControls(tester);
   });
 }

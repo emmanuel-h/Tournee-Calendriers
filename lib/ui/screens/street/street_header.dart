@@ -31,8 +31,12 @@ final class StreetHeader extends StatelessWidget {
             left: AppSizes.streetCountsIndent,
             right: AppSizes.gutter,
           ),
-          child: SizedBox(
-            height: AppSizes.streetCountsHeight,
+          // At least the mockup's height; taller when « Masquer faits »
+          // needs its 48 dp tap target or the phone's font is enlarged.
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              minHeight: AppSizes.streetCountsHeight,
+            ),
             child: Row(
               children: [
                 Expanded(child: _Counts(state: state)),

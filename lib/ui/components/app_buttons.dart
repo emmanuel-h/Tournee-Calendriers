@@ -176,6 +176,12 @@ ButtonStyle _sizeStyle(bool compact) {
   return ButtonStyle(
     // `fromHeight` asks for the full available width at a fixed height.
     minimumSize: WidgetStatePropertyAll(Size.fromHeight(height)),
+    // Material narrows a button's padding as the phone's font grows (to
+    // 4 dp at 200 %), which puts a wrapped label on the rounded outline.
+    // A fixed padding keeps it inside.
+    padding: const WidgetStatePropertyAll(
+      EdgeInsets.symmetric(horizontal: AppSizes.buttonPadding),
+    ),
     textStyle: WidgetStatePropertyAll(
       compact ? AppTextStyles.compactButton : AppTextStyles.button,
     ),

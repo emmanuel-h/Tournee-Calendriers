@@ -150,6 +150,35 @@ value taken behaves as with a button. **Typography:** French texts put a non-bre
 (U+00A0) inside « » and before : ; ? !, so a line never wraps between a sign and its word
 (checked on `app_fr.arb` by a test).
 
+**Accessibility and dark mode (T5.1, #35):**
+- **TalkBack:** every control has a French label (`app_fr.arb`); a tile is read as one sentence,
+  number then status (« Numéro 7, personne »); glyphs, chevrons and arrows drawn next to words
+  are decoration, left out of what TalkBack reads. Tap targets are 48 dp at least; the only
+  exception is a door's ✕ in « Modifier les portes » (36 dp wide, 5.7). Widget tests check
+  the labels and the 48 dp on each main screen with Flutter's accessibility guidelines.
+- **Font size up to 200 %:** nothing overflows at `TextScaler.linear(2.0)` on a 411 dp wide
+  phone (street screen, house and door sheets, Accueil, Paramètres, Équipe, Bienvenue,
+  Rejoindre, Nouvelle tournée; widget tests with the real fonts). Long lines wrap or end in
+  « … »; a row with a fixed height grows with the text instead: Accueil's folded panel
+  (`homePanelFoldedHeight`), the street's counts row (at least 44 dp, 48 dp with
+  « Masquer faits ») and the « Appui : … » hints. Buttons keep a fixed padding (24 dp for the
+  main ones, 16 dp otherwise) so a label wrapped on two lines stays inside its outline; only
+  « Gérer l'immeuble » / « Repasser », side by side under a building's grid, let it narrow
+  as Material does, so « l'immeuble » is not cut.
+- **Contrast (WCAG):** text ≥ 4.5:1, borders, glyphs and bars ≥ 3:1, in both palettes; a test
+  (`test/ui/theme/app_colors_test.dart`) holds every pair. The dark palette keeps the light
+  one's hues. Where no colour can both carry white text and read on the dark surface, the dark
+  palette turns it over: its accent is a light red under dark text, and the done green is two
+  tokens, `done` (dark, a tile under white text) and `doneInk` (light, a count, a mark or a
+  progress bar). The greyed text of a tournée that cannot open offline (`unavailable`, 5.3)
+  stays below 4.5:1 on purpose, as for a disabled control, with « Disponible avec réseau »
+  saying it. The light palette's outlines (to-do tiles, fields) are under 3:1 as approved:
+  their words identify them, so WCAG does not require it; the dark ones reach 3:1.
+- **The map stays light in dark mode:** OpenFreeMap's « liberty » style has no dark variant
+  here, so the street lines, the « libre » dashes and the picked road keep the light palette's
+  colours in both themes; the house dots take the theme's tile colours (each with its glyph).
+  Over a dark legend, « libre » gets the map's white casing back.
+
 ### 5.0 Mes rues and Importer des rues
 
 In M1 the app opened on a plain list so the street screen could be used on a real area. From
@@ -1147,7 +1176,7 @@ admin » for « Nouveau code », « Retirer », « Supprimer » and the campaign
   tournées under another name than the phone's, the phone sends its own.
 - **Mes tournées** shows the open one (« 49 · 2026 ») and opens the sheet of 5.3.
 - **Thème** opens « Système | Clair | Sombre »: a tap redraws the app at once and closes the
-  sheet. « Sombre » uses the first dark palette, reviewed in T5.1.
+  sheet. « Sombre » uses the dark palette reviewed in T5.1 (contrast rules in 5, intro).
 - **Confidentialité** opens a page saying 8.3 in French: compte, données enregistrées,
   position, hébergement, suppression. Under a divider, a last row « Politique complète en
   ligne ↗ » opens the public policy, `PRIVACY.md` at the root of the repository (same text,

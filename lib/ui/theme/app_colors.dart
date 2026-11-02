@@ -29,6 +29,7 @@ final class AppColors extends ThemeExtension<AppColors> {
     required this.done,
     required this.onDone,
     required this.doneBorder,
+    required this.doneInk,
     required this.nobodyHome,
     required this.onNobodyHome,
     required this.nobodyHomeBorder,
@@ -76,6 +77,7 @@ final class AppColors extends ThemeExtension<AppColors> {
     done: Color(0xFF1E6B47),
     onDone: Color(0xFFFFFFFF),
     doneBorder: Color(0xFF1E6B47),
+    doneInk: Color(0xFF1E6B47),
     nobodyHome: Color(0xFFF2B33D),
     onNobodyHome: Color(0xFF1B1F24),
     nobodyHomeBorder: Color(0xFFD99A22),
@@ -101,30 +103,34 @@ final class AppColors extends ThemeExtension<AppColors> {
     mapSelectedCore: Color(0xFFFFFFFF),
   );
 
-  /// A first proposal for dark mode, not used yet: T5.1 reviews it on a phone
-  /// and wires it. Status tints stay recognisable (same hues), with
-  /// backgrounds darkened where white text or a dark ground would lose
-  /// contrast.
+  /// The dark palette, reviewed in T5.1: the light palette's hues on a dark
+  /// ground. Every text pair reaches the WCAG 4.5:1 ratio and every border,
+  /// glyph or bar 3:1 (`test/ui/theme/app_colors_test.dart` checks them).
+  /// Two tokens turn over against the light ones because no colour can
+  /// carry white text and also read on a dark surface: [accent] is a light
+  /// red under dark text, and [doneInk] a light green beside the tiles'
+  /// dark [done].
   static const dark = AppColors(
     brightness: Brightness.dark,
     ground: Color(0xFF15181C),
     surface: Color(0xFF1F2328),
     ink: Color(0xFFECEAE5),
     muted: Color(0xFFA9AFB7),
-    line: Color(0xFF4A5058),
+    line: Color(0xFF6B737E),
     divider: Color(0xFF2E3238),
-    accent: Color(0xFFD9473E),
-    onAccent: Color(0xFFFFFFFF),
+    accent: Color(0xFFE5766F),
+    onAccent: Color(0xFF1B1F24),
     disabled: Color(0xFF2E3238),
     onDisabled: Color(0xFFA9AFB7),
     alert: Color(0xFF3A1F1D),
     scrim: Color(0xB3000000),
     toDo: Color(0xFF1F2328),
     onToDo: Color(0xFFECEAE5),
-    toDoBorder: Color(0xFF4A5058),
+    toDoBorder: Color(0xFF6B737E),
     done: Color(0xFF237A51),
     onDone: Color(0xFFFFFFFF),
     doneBorder: Color(0xFF2E9463),
+    doneInk: Color(0xFF33A872),
     nobodyHome: Color(0xFFF2B33D),
     onNobodyHome: Color(0xFF1B1F24),
     nobodyHomeBorder: Color(0xFFD99A22),
@@ -142,15 +148,15 @@ final class AppColors extends ThemeExtension<AppColors> {
     snackBar: Color(0xFFECEAE5),
     onSnackBar: Color(0xFF1B1F24),
     snackBarAction: Color(0xFF9A3412),
-    mapStreetDone: Color(0xFF2E9463),
+    // The base map (OpenFreeMap « liberty ») stays light in dark mode, so
+    // the lines drawn on it keep the light palette's colours.
+    mapStreetDone: Color(0xFF1E6B47),
     mapStreetPartial: Color(0xFFE0A21B),
-    mapStreetToDo: Color(0xFF5B8BD9),
-    // Light dashes on a dark casing: the light mode's contrast, turned
-    // over for a dark map.
-    mapStreetFree: Color(0xFFC4C9D0),
-    mapStreetFreeCasing: Color(0xFF15181C),
-    mapSelectedCasing: Color(0xFFFFFFFF),
-    mapSelectedCore: Color(0xFF1B1F24),
+    mapStreetToDo: Color(0xFF2F5DA8),
+    mapStreetFree: Color(0xFF3E434A),
+    mapStreetFreeCasing: Color(0xFFFFFFFF),
+    mapSelectedCasing: Color(0xFF1B1F24),
+    mapSelectedCore: Color(0xFFFFFFFF),
   );
 
   /// The palette of the nearest `Theme`. Every `ThemeData` of the app is
@@ -200,6 +206,12 @@ final class AppColors extends ThemeExtension<AppColors> {
   final Color done;
   final Color onDone;
   final Color doneBorder;
+
+  /// The done green as text or a mark on [surface] or [ground]: a finished
+  /// street's count, the open tournée's ring and ✓, progress bars. The
+  /// same as [done] in light; lighter in dark, where white text needs the
+  /// tiles' [done] to stay dark.
+  final Color doneInk;
   final Color nobodyHome;
   final Color onNobodyHome;
   final Color nobodyHomeBorder;

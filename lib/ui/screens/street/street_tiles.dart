@@ -123,9 +123,11 @@ final class _TapHint extends StatelessWidget {
     final colors = AppColors.of(context);
     return Container(
       key: const Key('street.hint'),
-      height: AppSizes.hintHeight,
+      // At least the mockup's height; taller with a large phone font, so
+      // the drawn glyphs, which grow with the text, are not cut.
+      constraints: const BoxConstraints(minHeight: AppSizes.hintHeight),
       alignment: Alignment.center,
-      padding: const EdgeInsets.symmetric(horizontal: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       decoration: BoxDecoration(
         color: colors.surface,
         border: Border.all(color: colors.divider),

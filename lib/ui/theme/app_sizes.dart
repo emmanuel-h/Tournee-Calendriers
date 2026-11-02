@@ -27,6 +27,12 @@ abstract final class AppSizes {
   /// Main buttons: « Créer », « Rejoindre », « Ajouter des rues ».
   static const buttonHeight = 56.0;
 
+  /// Space left and right of a main button's label, whatever the font size.
+  static const buttonPadding = 24.0;
+
+  /// The same for any other filled or outlined button (the theme's).
+  static const themeButtonPadding = 16.0;
+
   /// Buttons inside sheets and side-by-side pairs.
   static const compactButtonHeight = 52.0;
 

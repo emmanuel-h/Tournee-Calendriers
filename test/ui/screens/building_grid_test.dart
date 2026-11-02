@@ -17,6 +17,7 @@ import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 import '../support/app_overrides.dart';
 import '../support/finders.dart';
+import '../support/large_text.dart';
 
 final _id = StreetId('lilas');
 
@@ -620,5 +621,37 @@ void main() {
     expect(find.byKey(const Key('door.number')), findsNothing);
     expect(door.status, VisitStatus.comeBack);
     expect(door.comeBack, comeBack('2026-11-02'));
+  });
+
+  group('at 200 % text', () {
+    setUpAll(loadAppFonts);
+
+    testWidgets('should show the grid and a door sheet with no overflow when '
+        'the text is twice as large', (tester) async {
+      await openStreet(tester);
+      useLargeText(tester);
+      await tester.pumpAndSettle();
+
+      await tester.tap(_tile('8'));
+      await tester.pumpAndSettle();
+      expect(_count, findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      await tester.longPress(_door('A0-01'));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('door.number')), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  testWidgets('should label every control and make it 48 dp at least', (
+    tester,
+  ) async {
+    await openStreet(tester);
+    await tester.tap(_tile('8'));
+    await tester.pumpAndSettle();
+
+    await expectAccessibleControls(tester);
   });
 }

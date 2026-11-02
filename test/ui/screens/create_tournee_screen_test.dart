@@ -25,6 +25,7 @@ import '../../support/results.dart';
 import '../support/app_overrides.dart';
 import '../support/buttons.dart';
 import '../support/clipboard.dart';
+import '../support/large_text.dart';
 import '../support/navigation.dart';
 
 void main() {
@@ -298,5 +299,27 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Un numéro de 1 à 9999.'), findsOneWidget);
+  });
+
+  group('at 200 % text', () {
+    setUpAll(loadAppFonts);
+
+    testWidgets('should show « Nouvelle tournée » with no overflow when the '
+        'text is twice as large', (tester) async {
+      useLargeText(tester);
+
+      await open(tester);
+
+      expect(find.byType(CreateTourneeScreen), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  testWidgets('should label every control and make it 48 dp at least', (
+    tester,
+  ) async {
+    await open(tester);
+
+    await expectAccessibleControls(tester);
   });
 }

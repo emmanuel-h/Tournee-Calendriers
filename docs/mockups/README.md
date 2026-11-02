@@ -12,27 +12,29 @@ member; `Welcome.dc.html` shows a phone that is not an admin. `AddList.dc.html` 
 Status: **awaiting approval**. Once approved, these are the visual reference for the `ui/` code:
 the colours, type, spacing and status treatments below are the design tokens.
 
-| Token | Value | Use |
-|---|---|---|
-| Ground | `#F3F1EC` | screen background |
-| Surface | `#FFFFFF` | cards, sheets, to-do tiles |
-| Ink | `#1B1F24` | text |
-| Muted | `#4A5058` | secondary text |
-| Line | `#CFC9BD` / `#E2DED5` | borders / dividers |
-| Accent | `#B3261E` | primary buttons |
-| Alert | `#FBE9E7` bg, accent border, ⚠ | a warning (« La tournée 49 … existe déjà ») |
-| Done | `#1E6B47` bg, white text, `✓` | |
-| Nobody home | `#F2B33D` bg, ink text, `✗` | |
-| Nobody home, tries block | `#FDF3DC` bg, button outlined `#D99A22`; greyed (`#F3F1EC`) unless ✗ / ↻ | house and door sheets (#80); tiles add « ×N » from 2 tries |
-| Come back | `#D6E6F5` bg, `#1D4E7A` text, `↻` | |
-| Building partial | `#EFE9DD` bg, dashed border, `◐ n/m` | |
-| Building (any status) | 20px building icon before the number, 10×20 `›` at the right edge, text colour | tap opens the grid |
-| Map: street faite | `#1E6B47` line | |
-| Map: street en partie | `#E0A21B` line | |
-| Map: street à faire | `#2F5DA8` line | |
-| Map: street libre | `#3E434A` dashed line, as wide as the others, on a white casing | stands out from the base map's grey roads |
-| Map: selected road | `#1B1F24` casing, white core | |
-| Fonts | Atkinson Hyperlegible (text), Barlow Condensed (numbers, titles) | |
+| Token | Light | Dark (T5.1) | Use |
+|---|---|---|---|
+| Ground | `#F3F1EC` | `#15181C` | screen background |
+| Surface | `#FFFFFF` | `#1F2328` | cards, sheets, to-do tiles |
+| Ink | `#1B1F24` | `#ECEAE5` | text |
+| Muted | `#4A5058` | `#A9AFB7` | secondary text |
+| Line | `#CFC9BD` / `#E2DED5` | `#6B737E` / `#2E3238` | borders / dividers |
+| Accent | `#B3261E`, white text | `#E5766F`, `#1B1F24` text | primary buttons, red text |
+| Alert | `#FBE9E7` bg, accent border, ⚠ | `#3A1F1D` bg | a warning (« La tournée 49 … existe déjà ») |
+| Done | `#1E6B47` bg, white text, `✓` | `#237A51` bg, white text, border `#2E9463` | |
+| Done ink | `#1E6B47` | `#33A872` | the done green as text, mark or progress bar on Surface / Ground |
+| Nobody home | `#F2B33D` bg, ink text, `✗` | same, `#1B1F24` text | |
+| Nobody home, tries block | `#FDF3DC` bg, button outlined `#D99A22`; greyed (`#F3F1EC`) unless ✗ / ↻ | `#3A2F17` bg; greyed `#15181C` | house and door sheets (#80); tiles add « ×N » from 2 tries |
+| Come back | `#D6E6F5` bg, `#1D4E7A` text, `↻` | `#1D3B57` bg, `#D6E6F5` text, border `#3A6A96` | |
+| Building partial | `#EFE9DD` bg, dashed border, `◐ n/m` | `#2B2822` bg, `#ECEAE5` text, border `#6B6558` | |
+| Building (any status) | 20px building icon before the number, 10×20 `›` at the right edge, text colour | same | tap opens the grid |
+| Snackbar | `#1B1F24` bar, white text, `#F2B33D` action | `#ECEAE5` bar, `#1B1F24` text, `#9A3412` action | undo |
+| Map: street faite | `#1E6B47` line | same | the base map stays light in dark mode |
+| Map: street en partie | `#E0A21B` line | same | |
+| Map: street à faire | `#2F5DA8` line | same | |
+| Map: street libre | `#3E434A` dashed line, as wide as the others, on a white casing | same | stands out from the base map's grey roads |
+| Map: selected road | `#1B1F24` casing, white core | same | |
+| Fonts | Atkinson Hyperlegible (text), Barlow Condensed (numbers, titles) | same | |
 
 No screen shows a free note: it was removed for privacy (PLAN §8.3, Q23, T1.20). The house,
 door and building sheets have no note field and no privacy hint, tiles and doors no note dot,

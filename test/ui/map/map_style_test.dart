@@ -285,15 +285,18 @@ void main() {
       });
     });
 
-    test('should take the picked road colours from the palette', () {
+    test('should keep the light picked road colours when the palette is '
+        'dark', () {
+      // The base map stays light in dark mode (T5.1): a dark casing with a
+      // white core still stands out on it.
       final dark = tourneeMapLayers(AppColors.dark);
       final casing = dark.singleWhere((l) => l.id == MapIds.selectedCasing);
       final core = dark.singleWhere((l) => l.id == MapIds.selectedCore);
 
       final point = dark.singleWhere((l) => l.id == MapIds.selectedPointDot);
-      expect(point.properties.toJson()['circle-color'], '#ffffff');
-      expect(casing.properties.toJson()['line-color'], '#ffffff');
-      expect(core.properties.toJson()['line-color'], '#1b1f24');
+      expect(point.properties.toJson()['circle-color'], '#1b1f24');
+      expect(casing.properties.toJson()['line-color'], '#1b1f24');
+      expect(core.properties.toJson()['line-color'], '#ffffff');
     });
 
     test(
