@@ -166,6 +166,49 @@ void main() {
       });
     });
   });
+
+  group('holdsHouses', () {
+    test('should be false when there is no document', () {
+      expect(holdsHouses(null, ['1']), isFalse);
+    });
+
+    test('should be false for a document without houses', () {
+      expect(holdsHouses({'name': 'Rue de la Paix'}, ['1']), isFalse);
+    });
+
+    test('should be false when one of the houses is missing', () {
+      final document = <String, Object?>{
+        'houses': <String, Object?>{'1': <String, Object?>{}},
+      };
+
+      expect(holdsHouses(document, ['1', '2']), isFalse);
+    });
+
+    test('should be true when every house is there', () {
+      final document = <String, Object?>{
+        'houses': <String, Object?>{
+          '1': <String, Object?>{},
+          '2bis': <String, Object?>{},
+          '3': <String, Object?>{},
+        },
+      };
+
+      expect(holdsHouses(document, ['1', '2bis']), isTrue);
+    });
+
+    test('should be true for no house in an existing document', () {
+      expect(holdsHouses({'houses': <String, Object?>{}}, []), isTrue);
+    });
+  });
+
+  test('should read the labels an update of added houses adds', () {
+    final updates = addedHouseUpdates({
+      '7': <String, Object?>{},
+      '7bis': <String, Object?>{},
+    });
+
+    expect(addedLabels(updates.single), ['7', '7bis']);
+  });
 }
 
 /// A street typed in by hand with no number yet.

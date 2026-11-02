@@ -17,6 +17,7 @@ import 'package:tournee_calendriers/infrastructure/firestore/firestore_layout.da
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_document_mapper.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_update_mapper.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_writes.dart';
+import 'package:tournee_calendriers/infrastructure/firestore/ordered_writes.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/street_memory.dart';
 
 /// The [StreetRepository] of M2: the streets of one campaign of one
@@ -32,6 +33,10 @@ import 'package:tournee_calendriers/infrastructure/firestore/street_memory.dart'
 ///   the write to Firestore without waiting: Firestore applies it to the
 ///   phone's copy at once and sends it when the network allows, after a
 ///   restart if need be. See [sendInBackground].
+/// - **In order per street** ([OrderedWrites]): the Firestore plugin may
+///   hand two calls made back to back to the SDK the other way round, so a
+///   write that needs the one before is sent only once the phone's copy
+///   shows it, and the writes of a street wait for those asked before.
 /// - **Field paths.** [save] writes only the fields the change names
 ///   (`houses.12.status`), so two people marking different houses never
 ///   overwrite each other ([streetUpdates]).
@@ -54,6 +59,18 @@ final class FirestoreStreetRepository
   final Clock _clock;
 
   StreetMemory? _memory;
+
+  /// `late`: built at its first use, when `_streets` is set. The phone's
+  /// copy of a street is its document's snapshots, metadata changes
+  /// included so that this phone's own writes are told at once, offline
+  /// too.
+  late final _writes = OrderedWrites(
+    copyOf: (id) => _streets
+        .doc(id)
+        .snapshots(includeMetadataChanges: true)
+        .map((snapshot) => snapshot.data()),
+    report: sendInBackground,
+  );
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _listener;
 
   /// The memory, listening from the first call on.
@@ -105,19 +122,30 @@ final class FirestoreStreetRepository
 
   /// Writes the document with its first houses, then the others a few per
   /// update ([newStreetWrites]): the security rules check each house a
-  /// write adds, and only so many fit in one write (#70). Firestore sends
-  /// them in this order, offline too, so a teammate may only see the
-  /// street partly filled for a moment; this phone has it whole in memory
-  /// at once.
+  /// write adds, and only so many fit in one write (#70). Each update goes
+  /// once the phone's copy holds the houses of the write before: sent
+  /// before its document, it would be lost. This phone has the street
+  /// whole in memory at once, and the writes follow in the background (a
+  /// few milliseconds each); a teammate may see the street partly filled
+  /// for a moment.
   @override
   Future<void> add(Street street) async {
     _ready.put(street);
-    final doc = _streets.doc(street.id.value);
+    final id = street.id.value;
+    final doc = _streets.doc(id);
     final writes = newStreetWrites(street);
-    sendInBackground('add ${street.id.value}', doc.set(writes.document));
-    for (final update in writes.updates) {
-      sendInBackground('add ${street.id.value}, houses', doc.update(update));
-    }
+    final first = (writes.document['houses']! as Map<String, Object?>).keys;
+    _writes.send(id, 'add $id', [
+      OrderedWrite(
+        () => doc.set(writes.document),
+        isShownIn: (copy) => holdsHouses(copy, first),
+      ),
+      for (final update in writes.updates)
+        OrderedWrite(
+          () => doc.update(update),
+          isShownIn: (copy) => holdsHouses(copy, addedLabels(update)),
+        ),
+    ]);
   }
 
   @override
@@ -132,22 +160,24 @@ final class FirestoreStreetRepository
       arrayRemove: (item) => FieldValue.arrayRemove([item]),
     );
     final doc = _streets.doc(street.id.value);
-    // Sent one after the other: Firestore keeps the order of the writes of
-    // one phone, offline too.
-    for (final update in updates) {
-      sendInBackground(
-        '$change',
-        doc.update({
-          // A top-level field (`name`, `deletedAt`) is written as its name:
-          // the same for Firestore, and the only form the in-memory
-          // Firestore of the tests reads for one segment. Those names are
-          // ours, without dots; the house and door paths keep their
-          // segments.
-          for (final MapEntry(:key, :value) in update.entries)
-            (key.components.length == 1 ? key.components.single : key): value,
-        }),
-      );
-    }
+    // Behind the writes of the street still going (a street just added),
+    // then all at once: when a change needs several updates (numbers
+    // added, restored, purged), they touch different houses of a document
+    // that exists, so their order does not matter.
+    _writes.send(street.id.value, '$change', [
+      for (final update in updates)
+        OrderedWrite(
+          () => doc.update({
+            // A top-level field (`name`, `deletedAt`) is written as its
+            // name: the same for Firestore, and the only form the
+            // in-memory Firestore of the tests reads for one segment.
+            // Those names are ours, without dots; the house and door paths
+            // keep their segments.
+            for (final MapEntry(:key, :value) in update.entries)
+              (key.components.length == 1 ? key.components.single : key): value,
+          }),
+        ),
+    ]);
   }
 
   /// Deletes the street's document, memory first. The security rules
@@ -157,7 +187,9 @@ final class FirestoreStreetRepository
   @override
   Future<void> purge(StreetId id) async {
     _ready.remove(id);
-    sendInBackground('purge ${id.value}', _streets.doc(id.value).delete());
+    _writes.send(id.value, 'purge ${id.value}', [
+      OrderedWrite(() => _streets.doc(id.value).delete()),
+    ]);
   }
 
   /// Stops listening: the composition root calls it when the tournée or

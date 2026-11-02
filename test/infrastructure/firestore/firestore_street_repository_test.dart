@@ -42,6 +42,30 @@ final lilas = _street('lilas', banId: '69264_0420');
 
 final fourPm = DateTime.utc(2026, 11, 2, 16);
 
+/// Rue de la Paix with the houses 1 to [count], each unmarked.
+Street _paixOf(int count) => valueOf(
+  Street.create(
+    id: StreetId('paix'),
+    name: 'Rue de la Paix',
+    commune: villefranche,
+    houses: [for (var i = 1; i <= count; i++) House(number: n('$i'))],
+  ),
+);
+
+/// Lets the writes in the background run until [isDone], for at most a
+/// few hundred turns of the event queue: a street of many houses is
+/// written one update after the other, each after the phone's copy shows
+/// the one before.
+Future<void> _settle(Future<bool> Function() isDone) async {
+  for (var turn = 0; turn < 500 && !await isDone(); turn++) {
+    await pumpEventQueue();
+  }
+}
+
+/// The entry of the house [label] of [street], as its document holds it.
+Object? houseEntryOf(Street street, String label) =>
+    (streetToDocument(street)['houses']! as Map<String, Object?>)[label];
+
 void main() {
   late FakeFirebaseFirestore db;
   final repositories = <FirestoreStreetRepository>[];
@@ -114,6 +138,55 @@ void main() {
       // The order of the writes is newStreetWrites' (its tests): the
       // in-memory Firestore gives a listener only the last version.
       expect(stored.data(), streetToDocument(paix));
+    });
+
+    test('should store a street of a hundred numbers whole, for the other '
+        'phones', () async {
+      final paix = _paixOf(101);
+
+      await phone().add(paix);
+      await _settle(() async {
+        final stored = (await db.doc('$streetsPath/paix').get()).data();
+        return (stored?['houses'] as Map<String, dynamic>?)?.length == 101;
+      });
+
+      final stored = await db.doc('$streetsPath/paix').get();
+      expect(stored.data(), streetToDocument(paix));
+      expectSameStreet((await phone('paul').find(paix.id))!, paix);
+    });
+
+    test('should have the whole street on this phone as soon as it is '
+        'added', () async {
+      final paix = _paixOf(101);
+      final streets = phone();
+
+      await streets.add(paix);
+
+      expectSameStreet((await streets.find(paix.id))!, paix);
+    });
+
+    test('should keep a mark made on a house not yet sent', () async {
+      final paix = _paixOf(101);
+      final streets = phone();
+      await streets.add(paix);
+      final (marked, change) = valueOf(
+        paix.markHouse(
+          n('101'),
+          VisitStatus.done,
+          by: MemberId('lea'),
+          at: twoPm,
+        ),
+      );
+
+      // At once: the last houses are not written yet.
+      await streets.save(marked, change);
+      await _settle(() async {
+        final stored = (await db.doc('$streetsPath/paix').get()).data();
+        final houses = stored?['houses'] as Map<String, dynamic>?;
+        return (houses?['101'] as Map<String, dynamic>?)?['status'] == 'DONE';
+      });
+
+      expect(await storedHouse('paix', '101'), houseEntryOf(marked, '101'));
     });
   });
 

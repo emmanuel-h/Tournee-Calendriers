@@ -8,10 +8,13 @@
 // in one write. A new street is therefore its document with its first
 // houses, then updates of the next ones, in order.
 //
-// Firestore sends the writes of one phone in the order they were made,
-// offline too (its queue survives a restart), so the updates never reach
-// the server before the document they fill. Until the last one arrives, a
-// teammate may see the street with part of its houses: accepted (decided
+// The order is not kept for free: the Firestore plugin may hand two calls
+// made back to back to the SDK the other way round, and an update before
+// its document is lost. So each write goes only once the phone's copy
+// holds the houses of the one before ([holdsHouses], ordered_writes.dart).
+// Once in the SDK, the writes keep their order to the server, offline too
+// (its queue survives a restart). Until the last one arrives, a teammate
+// may see the street with part of its houses: accepted (decided
 // 2026-11-02, #70).
 import 'package:cloud_firestore/cloud_firestore.dart' show FieldPath;
 import 'package:tournee_calendriers/domain/street/street.dart';
@@ -55,3 +58,17 @@ List<Map<FieldPath, Object?>> addedHouseUpdates(Map<String, Object?> entries) {
       },
   ];
 }
+
+/// Whether the stored [document] (null when there is none) holds a house
+/// under each of [labels]: the phone's copy shows the write that added
+/// them, and the next may go.
+bool holdsHouses(Map<String, Object?>? document, Iterable<String> labels) {
+  if (document?['houses'] case final Map<Object?, Object?> houses) {
+    return labels.every(houses.containsKey);
+  }
+  return false;
+}
+
+/// The labels of the houses an update of [addedHouseUpdates] adds.
+Iterable<String> addedLabels(Map<FieldPath, Object?> update) =>
+    update.keys.map((path) => path.components[1]);

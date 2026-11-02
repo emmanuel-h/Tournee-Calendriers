@@ -2244,7 +2244,7 @@ writes:
 | mark, « Repassé, toujours personne », « repasser » of a door | `dwellings.<key>.status`, `.comeBack`, `.tries`, `.by`, `.at` (day or hour: no `status`, no `tries`) |
 | layout (describe, add / remove / rename a door) | `status`, `comeBack`, `tries` (deleted), `by`, `at`, `labelStyle`, `layout`, then each door `dwellings.<key>` whole; each door dropped is deleted |
 | back to a single house | `status`, `comeBack`, `tries` (deleted), `by`, `at`; `labelStyle`, `layout`, `dwellings` deleted |
-| street added (import, typed in, moved from the phone) | the document `set` with its first 2 houses, then each next `houses.<n>` whole, 2 per update, in order (#70: the rules check each house a write adds, and only 2 fit in one request) |
+| street added (import, typed in, moved from the phone) | the document `set` with its first 2 houses, then each next `houses.<n>` whole, 2 per update, each sent once the phone's copy shows the one before (#70: the rules check each house a write adds, and only 2 fit in one request; §8.2 « Houses written in bulk ») |
 | numbers added | each new `houses.<n>` whole, 2 per update (#70); each one restored: `deletedAt`, `deletedBy` = null, in an update of its own (the rules check one by one only a write changing one house, T2.4) |
 | number removed / restored | `deletedAt`, `deletedBy` (set / null) |
 | number renamed | `houses.<old>` deleted, `houses.<new>` whole |
@@ -2561,9 +2561,8 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
   Anything else (two houses changed at once, a house deleted outright before its 30 days in the Corbeille, a mark landing on a
   number or a door that is no longer there) is refused.
 - **Houses written in bulk** (#70, decided 2026-11-02): a new street is written with its first
-  houses, then updates adding the next ones, in order (Firestore's queue keeps the order of a
-  phone's writes, offline and across restarts); « numéros en plus » of several numbers is
-  sent the same way. A write may add at most **2 houses** (`housesPerWrite()` in the rules,
+  houses, then updates adding the next ones; « numéros en plus » of several numbers is sent
+  the same way. A write may add at most **2 houses** (`housesPerWrite()` in the rules,
   `housesPerWrite` in `infrastructure/firestore/mappers/street_writes.dart`; a Dart test
   checks they agree). Why 2: the rules have no loops, so the check is written out once per
   house, and a request may evaluate at most 1 000 expressions, every name, value, operator
@@ -2573,6 +2572,25 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
   spare, three do not fit. A rules test writes full writes of the costliest houses, so a
   rules change that makes them too dear fails there. A street of 300 numbers is ≈ 150
   writes; teammates may see it partly filled until the last one arrives (accepted).
+  - **Sent in order, one after the other.** The Firestore plugin for Flutter does *not* keep
+    the order of calls made back to back: on Android it runs each `set` / `update` on a
+    thread of its own, so an update can reach the SDK before the `set` of its document, and
+    is then lost (never applied offline, refused « not found » online). So each update of a
+    new street is sent only once the phone's copy of the document (its snapshots, metadata
+    changes included) holds the houses of the write before; the write's `Future` is not
+    awaited (it completes on the server's answer, never offline). Local writes show at once,
+    offline too: a few milliseconds each. The writes of one street also wait for those asked
+    before on it (`OrderedWrites`, `infrastructure/firestore/ordered_writes.dart`), so a mark
+    made while a street is still being written goes after the house it marks. The several
+    updates of one change (numbers added, restored, purged) go all at once: they touch
+    different houses of a document that exists, so their order does not matter. Once in the
+    SDK, writes keep their order to the server, offline and across restarts.
+  - **Killed in the middle.** `add` returns at once (the phone has the street in memory)
+    and the chain runs in the background; if the app is killed before its end (a street of
+    300 numbers takes a second or two), the updates not yet handed to the SDK are never
+    sent. The street then shows, on this phone after the restart and on the team's, with
+    only its first numbers; nothing catches up on its own. The user can add the missing ones
+    with « Numéros en plus », or delete the street and add it again.
   - **Checked per house**, as a single house is: exactly its fields (no `note`), number
     0–99999 and suffix, under its own label, position in range or both null, status among
     the four, a `comeBack` time only on « repasser » (no free hint), tries 1–99 or none,
