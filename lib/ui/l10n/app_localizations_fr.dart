@@ -1196,6 +1196,18 @@ class AppLocalizationsFr extends AppLocalizations {
   String get release010First => 'Première version de test.';
 
   @override
+  String get release080Icon =>
+      'Nouvelle icône, et un écran de démarrage aux couleurs de l\'application.';
+
+  @override
+  String get release080Dark =>
+      'Le thème sombre est revu, et les écrans restent lisibles avec une grande taille de texte.';
+
+  @override
+  String get release080Privacy =>
+      'Confidentialité : un nouveau texte, et un lien vers la politique complète en ligne.';
+
+  @override
   String get release070Offline =>
       'La tournée ouverte reste disponible sans réseau : la carte et les rues sont gardées sur le téléphone, toutes seules.';
 

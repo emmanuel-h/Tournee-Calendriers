@@ -1701,6 +1701,24 @@ abstract class AppLocalizations {
   /// **'Première version de test.'**
   String get release010First;
 
+  /// Line of « Nouveautés » for 0.8.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nouvelle icône, et un écran de démarrage aux couleurs de l\'application.'**
+  String get release080Icon;
+
+  /// Line of « Nouveautés » for 0.8.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le thème sombre est revu, et les écrans restent lisibles avec une grande taille de texte.'**
+  String get release080Dark;
+
+  /// Line of « Nouveautés » for 0.8.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'Confidentialité : un nouveau texte, et un lien vers la politique complète en ligne.'**
+  String get release080Privacy;
+
   /// « Nouveautés », version 0.7.0: the tournée is kept for offline use by itself.
   ///
   /// In fr, this message translates to:
