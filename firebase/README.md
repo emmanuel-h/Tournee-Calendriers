@@ -13,5 +13,13 @@ npm ci        # once, and after a change of package-lock.json
 npm test      # starts the emulator (demo project, no real data), runs test/*.test.mjs, stops it
 ```
 
-The versions are pinned to run on Node 18 or later and Java 11 or later (the emulator is a
-Java program, downloaded on the first run into `~/.cache/firebase/emulators`).
+The versions are pinned (firebase-tools 15, `@firebase/rules-unit-testing` 5, `firebase` 12) and
+need Node 20 or later (22 locally and in CI) and Java 11 or later (the emulator is a Java
+program, downloaded on the first run into `~/.cache/firebase/emulators`).
+`@firebase/rules-unit-testing` 6 is not used: it needs Node 24.12 or later.
+
+`overrides` in `package.json` lifts `@grpc/grpc-js` inside `@firebase/firestore` from 1.9 to the
+1.14 line that firebase-tools already uses: 1.9 has known high-severity advisories. The moderate
+advisories `npm audit` still lists are all inside firebase-tools' own dependencies (glob,
+minimatch, uuid…); they only run on this machine and in CI, and go away with a later
+firebase-tools.

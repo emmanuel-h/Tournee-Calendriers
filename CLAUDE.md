@@ -37,8 +37,9 @@ open tournée on Firestore, phone storage when none is open (#24); pending-sync 
 by the user (2026-10-16); App Check enforced on Firestore and Auth (#68). Admins (#75): global `admins/{uid}` added by hand in the console, « Toutes les tournées », admin visit; validated by the user and closed (2026-10-17), rules deployed. Revoked admins and the emulator-based admin flow (#87) closed (2026-10-17).
 Code audit clean-up (#88) and « Modifié par Léa » on the house and door sheets (#89) closed
 (2026-10-17). #90 open: go_router 18.1 done; Firebase (Firestore 7…) waits for
-`fake_cloud_firestore` to support it. `tool/admin_e2e.sh` fails ~1 run in 4 from stale reads of
-the Firestore emulator (firebase-tools 13.35.1); the fix is its upgrade (#69, needs Node ≥ 20).
+`fake_cloud_firestore` to support it. #69: rules tooling in `firebase/` upgraded to firebase-tools
+15.34, rules-unit-testing 5, firebase 12 (Node ≥ 20; 22 locally and in CI); the Firestore
+emulator's stale reads are gone (`tool/admin_e2e.sh` 6/6 in a row, 2026-11-02).
 M3 done, milestone closed (2026-11-01), validated on the phone with 0.6.0: geometry and map layers (#26), geopf adapters (#27), street-picking use cases with shapes and assignees (#28), MapLibre map widget in `ui/map/` (#29), a tournée's communes and « Ajouter des rues » Carte | Liste (#78), Accueil (#30), the street card, search and manual street (#31), tries with nobody home (#80), the sheet on a tap to ↻ with a day + hour (#81). Follow-ups from the phone test: street shapes from the OpenFreeMap vector tiles instead of Overpass, filled once for streets without one (#92); take a street from « Autres rues » (#93); released as 0.5.1. A street held only by ex-members of the team is « libre » (#91, display only, no rules change). Rules (with the #92 shape fill) deployed 2026-10-18 and identical to `firestore.rules` (checked 2026-11-01).
 M4 done, milestone closed (2026-11-02), validated on the phone with 0.7.0: the open tournée
 downloads itself for offline use, unseen (#32: streets into the cache + MapLibre region, silent
