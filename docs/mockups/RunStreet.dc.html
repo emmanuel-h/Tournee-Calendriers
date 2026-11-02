@@ -1,0 +1,295 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Rue en sortie, don reçu</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B3261E}a:hover{color:#8C1D18}
+.ib{width:48px;height:48px;border:0;background:transparent;color:#1B1F24;border-radius:24px;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;text-decoration:none;flex-shrink:0}
+.ib svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.tile{height:60px;box-sizing:border-box;border-radius:12px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;cursor:pointer;font-family:'Atkinson Hyperlegible',sans-serif;width:100%;text-decoration:none}
+.num{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:28px;line-height:1}
+.gl{font-size:22px;font-weight:700;line-height:1;white-space:nowrap}
+/* Building tile (T1.21): building icon before the number, « › » at the right edge. */
+.bld{justify-content:flex-start;gap:4px;padding:0 12px 0 10px}
+.bld .grow{flex:1;min-width:24px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bi{width:20px;height:20px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round}
+.chev{width:10px;height:20px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.st{min-height:72px;border-radius:16px;font:700 18px 'Atkinson Hyperlegible',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-sizing:border-box;padding:0 8px;text-align:left}
+.st .g{font-size:24px}
+.chip{height:52px;border-radius:26px;border:1.5px solid #CFC9BD;background:#FFFFFF;color:#1B1F24;font:700 18px 'Atkinson Hyperlegible',sans-serif;cursor:pointer;white-space:nowrap;padding:0 12px}
+.seg{flex:1;height:48px;border:0;font:700 15px 'Atkinson Hyperlegible',sans-serif;cursor:pointer}
+.sep{width:1.5px;background:#CFC9BD}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:#FFFFFF;border-radius:24px 24px 0 0;box-shadow:0 -4px 20px rgba(27,31,36,0.18);padding:10px 16px 24px 16px;display:flex;flex-direction:column;gap:14px;box-sizing:border-box}
+.day{height:44px;padding:0 14px;border-radius:22px;font:700 15px 'Atkinson Hyperlegible',sans-serif;white-space:nowrap;cursor:pointer}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F3F1EC; color: #1B1F24; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden; position: relative">
+  <div style="display: flex; align-items: center; gap: 4px; padding: 8px 8px 0 8px">
+    <a class="ib" href="RunHome.dc.html" aria-label="Retour"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a>
+    <h1 style="flex: 1; margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 28px; line-height: 1.1">Rue des Lilas</h1>
+    <a class="ib" href="Edit.dc.html" aria-label="Modifier la rue"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></a>
+  </div>
+  <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 16px 0 64px; height: 44px">
+    <span style="font-size: 15px; color: #4A5058">{{doneCount}}/{{total}} · ✗ {{nobodyCount}} · ↻ {{comeBackCount}}</span>
+    <button style="height: 40px; padding: 0 14px; border-radius: 20px; font: 700 14px 'Atkinson Hyperlegible', sans-serif; border: 1.5px solid #CFC9BD; background: #FFFFFF; color: #1B1F24">☐ Masquer faits</button>
+  </div>
+  <div style="height: 6px; margin: 0 16px; background: #E2DED5; border-radius: 3px; overflow: hidden"><div style="{{progressStyle}}"></div></div>
+  <!-- #63: the run's card while a run is on; a tap opens « Dons de la sortie ». -->
+  <sc-if value="{{run}}" hint-placeholder-val="{{true}}">
+    <a href="RunDons.dc.html" style="margin: 12px 16px 0 16px; border: 1.5px solid #1B1F24; border-radius: 14px; background: #FFFFFF; min-height: 52px; padding: 0 12px 0 14px; display: flex; align-items: center; gap: 8px; text-decoration: none; color: #1B1F24">
+      <span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 5px; background: #B3261E"></span>
+      <span style="flex: 1; font-weight: 700; font-size: 15px">En sortie · {{runCount}} · {{runSum}}</span>
+      <span style="font-size: 14px; color: #4A5058">Voir les dons ›</span>
+    </a>
+  </sc-if>
+  <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 14px 16px 6px 16px; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #5A6068">
+    <div>Côté impair</div><div>Côté pair</div>
+  </div>
+  <div style="flex: 1; overflow-y: auto; padding: 0 16px 120px 16px">
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start">
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <sc-for list="{{odd}}" as="item" hint-placeholder-count="8">
+          <button class="tile" onClick="{{item.tap}}" style="{{item.style}}" aria-label="{{item.aria}}"><span class="num">{{item.n}}</span><span class="gl">{{item.glyph}}</span></button>
+        </sc-for>
+      </div>
+      <div style="display: flex; flex-direction: column; gap: 10px">
+        <sc-for list="{{even}}" as="item" hint-placeholder-count="8">
+          <sc-if value="{{item.building}}" hint-placeholder-val="{{false}}">
+            <a class="tile bld" href="Building.dc.html" style="{{item.style}}" aria-label="{{item.aria}}"><svg class="bi" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="1"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2"/></svg><span class="num grow">{{item.n}}</span><span class="gl" style="font-size: 17px">{{item.glyph}}</span><svg class="chev" viewBox="0 0 12 24" aria-hidden="true"><path d="M3 6l6 6-6 6"/></svg></a>
+          </sc-if>
+          <sc-if value="{{item.house}}" hint-placeholder-val="{{true}}">
+            <button class="tile" onClick="{{item.tap}}" style="{{item.style}}" aria-label="{{item.aria}}"><span class="num">{{item.n}}</span><span class="gl">{{item.glyph}}</span></button>
+          </sc-if>
+        </sc-for>
+      </div>
+    </div>
+  </div>
+
+  <sc-if value="{{noSheet}}" hint-placeholder-val="{{false}}">
+    <sc-if value="{{hasLast}}" hint-placeholder-val="{{false}}">
+      <div style="position: absolute; left: 16px; right: 16px; bottom: 20px; min-height: 56px; background: #1B1F24; color: #FFFFFF; border-radius: 14px; display: flex; align-items: center; justify-content: space-between; padding: 0 8px 0 18px; box-sizing: border-box; font-size: 16px">
+        <span>{{lastText}}</span>
+        <button onClick="{{undo}}" style="height: 48px; padding: 0 14px; border: 0; background: transparent; color: #F2B33D; font: 700 16px 'Atkinson Hyperlegible', sans-serif; cursor: pointer">Annuler</button>
+      </div>
+    </sc-if>
+    <sc-if value="{{noLast}}" hint-placeholder-val="{{true}}">
+      <div style="position: absolute; left: 16px; right: 16px; bottom: 20px; height: 44px; border-radius: 22px; background: #FFFFFF; border: 1px solid #E2DED5; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #4A5058">Touchez une maison pour choisir son statut</div>
+    </sc-if>
+  </sc-if>
+
+  <sc-if value="{{hasSheet}}" hint-placeholder-val="{{true}}">
+    <button onClick="{{close}}" aria-label="Fermer" style="position: absolute; inset: 0; border: 0; background: rgba(27, 31, 36, 0.35); cursor: pointer"></button>
+
+    <!-- Step 1: the four statuses; one tap stores it and closes, unless ✓ (a run is on) or ↻
+         has details to ask. On a house already ✗ or ↻, « Personne » counts one more try (#80). -->
+    <sc-if value="{{stepPick}}" hint-placeholder-val="{{true}}">
+      <div class="sheet" role="dialog" aria-label="{{title}}">
+        <div style="display: flex; align-items: center; justify-content: space-between">
+          <span style="display: flex; align-items: baseline; gap: 8px"><span style="font: 700 32px 'Barlow Condensed', sans-serif">{{title}}</span><span style="font-size: 15px; color: #4A5058">{{current}}</span></span>
+          <button class="ib" onClick="{{close}}" aria-label="Fermer"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+        </div>
+        <div role="radiogroup" aria-label="Statut" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+          <button class="st" role="radio" aria-checked="{{isDone}}" onClick="{{setDone}}" style="{{sDone}}"><span class="g">✓</span>Fait</button>
+          <button class="st" role="radio" aria-checked="{{isNobody}}" onClick="{{setNobody}}" style="{{sNobody}}"><span class="g">✗</span>{{nobodyLabel}}</button>
+          <button class="st" role="radio" aria-checked="{{isBack}}" onClick="{{setBack}}" style="{{sBack}}"><span class="g">↻</span>Repasser</button>
+          <button class="st" role="radio" aria-checked="{{isTodo}}" onClick="{{setTodo}}" style="{{sTodo}}"><span class="g">○</span>À faire</button>
+        </div>
+        <sc-if value="{{hasTries}}" hint-placeholder-val="{{false}}">
+          <span style="font-size: 15px; font-weight: 700; background: #FDF3DC; border-radius: 12px; padding: 10px 14px">✗ {{triesText}}</span>
+        </sc-if>
+        <span style="font-size: 14px; color: #5A6068; text-align: center">{{changed}}</span>
+      </div>
+    </sc-if>
+
+    <!-- Step 2a: ✓ during a run. The method chosen here stays for « Autre montant ». -->
+    <sc-if value="{{stepDon}}" hint-placeholder-val="{{false}}">
+      <div class="sheet" role="dialog" aria-label="Don reçu">
+        <div style="display: flex; align-items: center; justify-content: space-between">
+          <span style="font: 700 28px 'Barlow Condensed', sans-serif">{{title}} fait · don reçu&#160;?</span>
+          <button class="ib" onClick="{{noDon}}" aria-label="Fermer sans don"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+        </div>
+        <div role="radiogroup" aria-label="Moyen de paiement" style="display: flex; border: 1.5px solid #CFC9BD; border-radius: 14px; overflow: hidden">
+          <button class="seg" role="radio" aria-checked="{{m0}}" onClick="{{pick0}}" style="{{s0}}">Espèces</button><span class="sep"></span>
+          <button class="seg" role="radio" aria-checked="{{m1}}" onClick="{{pick1}}" style="{{s1}}">Chèque</button><span class="sep"></span>
+          <button class="seg" role="radio" aria-checked="{{m2}}" onClick="{{pick2}}" style="{{s2}}">Carte</button>
+        </div>
+        <div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px">
+          <button class="chip" onClick="{{give5}}">5&#160;€</button>
+          <button class="chip" onClick="{{give10}}">10&#160;€</button>
+          <button class="chip" onClick="{{give20}}">20&#160;€</button>
+        </div>
+        <div style="display: flex; gap: 10px">
+          <button class="chip" onClick="{{toOther}}" style="flex: 1">Autre montant</button>
+          <button class="chip" onClick="{{noDon}}" style="flex: 1; color: #4A5058">Pas de don</button>
+        </div>
+      </div>
+    </sc-if>
+
+    <!-- Step 2b: « Autre montant », on the method already chosen. -->
+    <sc-if value="{{stepOther}}" hint-placeholder-val="{{false}}">
+      <div class="sheet" role="dialog" aria-label="Autre montant">
+        <div style="display: flex; align-items: center; gap: 4px">
+          <button class="ib" onClick="{{toDon}}" aria-label="Retour"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></button>
+          <span style="font: 700 28px 'Barlow Condensed', sans-serif">Autre montant</span>
+        </div>
+        <div role="radiogroup" aria-label="Moyen de paiement" style="display: flex; border: 1.5px solid #CFC9BD; border-radius: 14px; overflow: hidden">
+          <button class="seg" role="radio" aria-checked="{{m0}}" onClick="{{pick0}}" style="{{s0}}">Espèces</button><span class="sep"></span>
+          <button class="seg" role="radio" aria-checked="{{m1}}" onClick="{{pick1}}" style="{{s1}}">Chèque</button><span class="sep"></span>
+          <button class="seg" role="radio" aria-checked="{{m2}}" onClick="{{pick2}}" style="{{s2}}">Carte</button>
+        </div>
+        <label for="amt" style="font-weight: 700; font-size: 15px">Montant</label>
+        <div style="display: flex; align-items: center; height: 64px; border: 2px solid #1B1F24; border-radius: 14px; padding: 0 16px; gap: 8px; margin-top: -8px">
+          <input id="amt" inputmode="decimal" value="12" style="flex: 1; min-width: 0; border: 0; outline: none; font: 700 34px 'Barlow Condensed', sans-serif; color: #1B1F24; background: transparent">
+          <span style="font: 700 28px 'Barlow Condensed', sans-serif; color: #4A5058">€</span>
+        </div>
+        <span style="font-size: 14px; color: #4A5058; margin-top: -6px">Par exemple 7,50</span>
+        <button onClick="{{give12}}" style="height: 56px; border-radius: 28px; border: 0; background: #B3261E; color: #FFFFFF; font: 700 17px 'Atkinson Hyperlegible', sans-serif; cursor: pointer">Ajouter le don</button>
+      </div>
+    </sc-if>
+
+    <!-- Step 2c: ↻, when to come back (#81). Each choice is stored at once; « OK » closes. -->
+    <sc-if value="{{stepBack}}" hint-placeholder-val="{{false}}">
+      <div class="sheet" role="dialog" aria-label="Quand repasser ?">
+        <div style="display: flex; align-items: center; justify-content: space-between">
+          <span style="font: 700 28px 'Barlow Condensed', sans-serif">{{title}} · quand repasser&#160;?</span>
+          <button class="ib" onClick="{{close}}" aria-label="Fermer"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+        </div>
+        <div role="radiogroup" aria-label="Jour" style="display: flex; gap: 8px; overflow-x: auto">
+          <sc-for list="{{days}}" as="d" hint-placeholder-count="5">
+            <button class="day" role="radio" aria-checked="{{d.on}}" onClick="{{d.pick}}" style="{{d.style}}">{{d.label}}</button>
+          </sc-for>
+        </div>
+        <div style="display: flex; align-items: center; gap: 12px"><label for="hour" style="font-weight: 700; font-size: 15px">Heure</label>
+          <select id="hour" style="flex: 1; height: 52px; border: 1.5px solid #A9C8E6; border-radius: 12px; padding: 0 12px; font: 400 17px 'Atkinson Hyperlegible', sans-serif; background: #FFFFFF; color: #1B1F24"><option>Pas d'heure</option><option selected>Vers 18 h</option><option>Vers 19 h</option></select></div>
+        <span style="font-size: 15px; color: #1D4E7A; font-weight: 700">{{backSummary}}</span>
+        <button onClick="{{close}}" style="height: 56px; border-radius: 28px; border: 0; background: #B3261E; color: #FFFFFF; font: 700 17px 'Atkinson Hyperlegible', sans-serif; cursor: pointer">OK</button>
+      </div>
+    </sc-if>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.run = true;
+    this.state = {
+      count: 19, sum: 280, method: 0, sel: '7', step: 'don', day: 2, last: null,
+      houses: [
+        { n: '1', side: 'odd', s: 'todo', t: 0 }, { n: '3', side: 'odd', s: 'done', t: 0 },
+        { n: '3bis', side: 'odd', s: 'nobody', t: 2, by: 'Léa · 14:02' }, { n: '5', side: 'odd', s: 'back', t: 1 },
+        { n: '7', side: 'odd', s: 'done', t: 0 }, { n: '9', side: 'odd', s: 'done', t: 0 },
+        { n: '11', side: 'odd', s: 'todo', t: 0 }, { n: '13', side: 'odd', s: 'todo', t: 0 },
+        { n: '15', side: 'odd', s: 'todo', t: 0 },
+        { n: '2', side: 'even', s: 'done', t: 0 }, { n: '4', side: 'even', s: 'done', t: 0 },
+        { n: '6', side: 'even', s: 'todo', t: 0 }, { n: '8', side: 'even', building: true, done: 7, total: 12 },
+        { n: '10', side: 'even', s: 'todo', t: 0 }, { n: '12', side: 'even', s: 'nobody', t: 1 },
+        { n: '14', side: 'even', s: 'todo', t: 0 }, { n: '16', side: 'even', s: 'todo', t: 0 }
+      ]
+    };
+    this.methods = ['espèces', 'chèque', 'carte'];
+    this.words = { todo: 'à faire', done: 'fait', nobody: 'personne', back: 'repasser' };
+  }
+  house(n) { return this.state.houses.find((h) => h.n === n); }
+  // One tap stores the status; ✓ (a run is on) and ↻ then ask for their details.
+  set(s) {
+    const n = this.state.sel;
+    const before = this.house(n);
+    let t = before.t;
+    if (s === 'nobody') t = before.s === 'nobody' || before.s === 'back' ? t + 1 : Math.max(1, t);
+    if (s === 'todo') t = 0;
+    const houses = this.state.houses.map((h) => (h.n === n ? Object.assign({}, h, { s: s, t: t, by: 'vous · à l’instant' }) : h));
+    const extra = s === 'nobody' && t >= 2 ? ' (' + t + 'e passage)' : '';
+    const last = { before: before, don: null, text: 'N° ' + n + ' : ' + this.words[s] + extra };
+    const step = s === 'done' && this.run ? 'don' : s === 'back' ? 'back' : null;
+    this.setState({ houses: houses, last: last, step: step, method: 0, sel: step ? n : null });
+  }
+  give(amount) {
+    const last = this.state.last || { before: this.house(this.state.sel) };
+    const text = 'N° ' + this.state.sel + ' fait · ' + amount + ' € en ' + this.methods[this.state.method];
+    this.setState({ count: this.state.count + 1, sum: this.state.sum + amount, step: null, sel: null,
+      last: Object.assign({}, last, { don: amount, text: text }) });
+  }
+  undo() {
+    const last = this.state.last;
+    if (!last) return;
+    const houses = this.state.houses.map((h) => (h.n === last.before.n ? last.before : h));
+    const back = last.don ? { count: this.state.count - 1, sum: this.state.sum - last.don } : {};
+    this.setState(Object.assign({ houses: houses, last: null }, back));
+  }
+  styleFor(h) {
+    if (h.building) return 'border: 1.5px dashed #CFC9BD; background: #EFE9DD; color: #1B1F24;';
+    const ring = h.n === this.state.sel ? 'box-shadow: 0 0 0 3px #F3F1EC, 0 0 0 6px #1B1F24; ' : '';
+    const base = ring + 'border-style: solid; border-width: 1.5px; ';
+    if (h.s === 'done') return base + 'background: #1E6B47; color: #FFFFFF; border-color: #1E6B47;';
+    if (h.s === 'nobody') return base + 'background: #F2B33D; color: #1B1F24; border-color: #D99A22;';
+    if (h.s === 'back') return base + 'background: #D6E6F5; color: #1D4E7A; border-color: #A9C8E6;';
+    return base + 'background: #FFFFFF; color: #1B1F24; border-color: #CFC9BD;';
+  }
+  stStyle(s, cur) {
+    const fill = { done: 'background: #1E6B47; color: #FFFFFF; border: 2px solid #1E6B47', nobody: 'background: #F2B33D; color: #1B1F24; border: 2px solid #D99A22', back: 'background: #D6E6F5; color: #1D4E7A; border: 2px solid #A9C8E6', todo: 'background: #FFFFFF; color: #1B1F24; border: 2px solid #CFC9BD' };
+    return fill[s] + (s === cur ? '; box-shadow: 0 0 0 3px #FFFFFF, 0 0 0 5px #1B1F24' : '');
+  }
+  renderVals() {
+    const H = this.state.houses;
+    const glyphs = { todo: '○', done: '✓', nobody: '✗', back: '↻' };
+    const mk = (h) => h.building
+      ? { n: h.n, building: true, house: false, glyph: '◐ ' + h.done + '/' + h.total, style: this.styleFor(h), aria: 'Numéro ' + h.n + ', immeuble, ' + h.done + ' sur ' + h.total + ' faits, ouvrir' }
+      : { n: h.n, building: false, house: true, glyph: glyphs[h.s] + (h.t >= 2 ? ' ×' + h.t : ''), style: this.styleFor(h),
+          aria: 'Numéro ' + h.n + ', ' + this.words[h.s] + ', choisir le statut', tap: () => this.setState({ sel: h.n, step: 'pick', last: null }) };
+    const houses = H.filter((h) => !h.building);
+    const doneCount = houses.filter((h) => h.s === 'done').length;
+    const sel = this.state.sel ? this.house(this.state.sel) : null;
+    const cur = sel ? sel.s : null;
+    const step = this.state.step;
+    const on = 'background: #1B1F24; color: #FFFFFF';
+    const off = 'background: #FFFFFF; color: #1B1F24';
+    const m = this.state.method;
+    const dayLabels = ["Aujourd'hui", 'Demain', 'Sam. 24', 'Dim. 25', 'Lun. 26'];
+    const summaries = ["Aujourd'hui vers 18 h", 'Demain vers 18 h', 'Le samedi 24 oct. vers 18 h', 'Le dimanche 25 oct. vers 18 h', 'Le lundi 26 oct. vers 18 h'];
+    const again = sel && (cur === 'nobody' || cur === 'back') && sel.t >= 1;
+    const last = this.state.last;
+    return {
+      run: this.run,
+      odd: H.filter((h) => h.side === 'odd').map(mk),
+      even: H.filter((h) => h.side === 'even').map(mk),
+      doneCount: doneCount, total: houses.length,
+      nobodyCount: houses.filter((h) => h.s === 'nobody').length,
+      comeBackCount: houses.filter((h) => h.s === 'back').length,
+      progressStyle: 'height: 6px; background: #1E6B47; width: ' + Math.round((doneCount / houses.length) * 100) + '%',
+      runCount: this.state.count + ' dons', runSum: this.state.sum + ' €',
+      hasSheet: !!sel && !!step, noSheet: !(sel && step),
+      stepPick: step === 'pick', stepDon: step === 'don', stepOther: step === 'other', stepBack: step === 'back',
+      title: sel ? 'N° ' + sel.n : '',
+      current: sel ? 'actuellement ' + this.words[cur] : '',
+      nobodyLabel: again ? 'Encore personne' : 'Personne',
+      hasTries: !!sel && sel.t >= 1 && cur !== 'todo',
+      triesText: sel ? (sel.t > 1 ? sel.t + ' passages sans personne' : '1 passage sans personne') : '',
+      changed: sel && sel.by ? 'Modifié par ' + sel.by : '',
+      isDone: cur === 'done', isNobody: cur === 'nobody', isBack: cur === 'back', isTodo: cur === 'todo',
+      sDone: this.stStyle('done', cur), sNobody: this.stStyle('nobody', cur), sBack: this.stStyle('back', cur), sTodo: this.stStyle('todo', cur),
+      setDone: () => this.set('done'), setNobody: () => this.set('nobody'), setBack: () => this.set('back'), setTodo: () => this.set('todo'),
+      m0: m === 0, m1: m === 1, m2: m === 2, s0: m === 0 ? on : off, s1: m === 1 ? on : off, s2: m === 2 ? on : off,
+      pick0: () => this.setState({ method: 0 }), pick1: () => this.setState({ method: 1 }), pick2: () => this.setState({ method: 2 }),
+      give5: () => this.give(5), give10: () => this.give(10), give20: () => this.give(20), give12: () => this.give(12),
+      toOther: () => this.setState({ step: 'other' }), toDon: () => this.setState({ step: 'don' }),
+      noDon: () => this.setState({ step: null, sel: null }),
+      close: () => this.setState({ step: null, sel: null }),
+      days: dayLabels.map((l, i) => ({ label: l, on: i === this.state.day, pick: () => this.setState({ day: i }),
+        style: i === this.state.day ? 'border: 1.5px solid #1D4E7A; background: #1D4E7A; color: #FFFFFF' : 'border: 1.5px solid #A9C8E6; background: #FFFFFF; color: #1D4E7A' })),
+      backSummary: summaries[this.state.day],
+      hasLast: !!last, noLast: !last, lastText: last ? last.text : '', undo: () => this.undo()
+    };
+  }
+}
+</script>
+</body>
+</html>

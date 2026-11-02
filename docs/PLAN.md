@@ -16,7 +16,9 @@ streets, and a team (one *tournée*) shares the whole sector. The app lets each 
 - pick the streets they cover **by tapping them on a map**, and add missing streets or numbers by hand,
 - mark every house as **done / to do / nobody home**, quickly, with one hand, in the street,
 - add details to a house: apartments handled one by one, "come back later" with a day and an hour,
-- see on a map what is done, partly done and still to do, live, across the whole team.
+- see on a map what is done, partly done and still to do, live, across the whole team,
+- count the money of each outing (« sortie »): dons per payment method, totals only, never tied
+  to a house (#63, §5.13).
 
 Once a tournée has been downloaded, the app works **fully offline** (map included) and syncs
 with the server whenever the network is available.
@@ -29,11 +31,14 @@ with the server whenever the network is available.
 - Manual entry of missing streets and numbers
 - House status (« repasser » with an optional day and hour, #81), apartment units
 - Live team sync, full offline mode after download
+- Sorties (#63, §5.13): dons per payment method during an outing, a recap to recount the money,
+  the team's totals per member and per campaign. Only totals leave the phone
 - French only, light + dark
 
 ### Out of scope for v1 (possible later)
 
-- Donations, amounts, residents' answers: never recorded
+- Residents' answers: never recorded. A don is **never tied to a house, a door or an
+  address**: only a run's totals per payment method are kept (§5.13, §8.3)
 - Free-text notes on houses and doors: removed for privacy (§8.3, Q23); since #81 the
   « repasser » hint is a day and an hour, so no free text is kept about a house
 - English or other languages
@@ -59,6 +64,10 @@ Code uses English names, the UI uses French.
 | Statut | `VisitStatus` | `TO_DO` (à faire), `DONE` (fait), `NOBODY_HOME` (personne), `COME_BACK` (repasser): exactly one per house or door |
 | Repasser | `VisitStatus.comeBack` + `ComeBack` | A status: the resident asked to come back later, optionally on a day and at about an hour (« samedi vers 18 h », the `ComeBack` value, #81). A building, which has no status, may carry its own « repasser » |
 | Mes rues | assignees | Streets the current member has taken |
+| Sortie | `Run` | One outing of one member on the open tournée, from « Commencer une sortie » to « Valider la sortie » (#63). Holds the dons until it is validated, then only its totals remain |
+| Don | `Donation` | Money received during a run: a payment method and an amount. Never tied to a house or a time |
+| Moyen de paiement | `PaymentMethod` | `cash` (Espèces), `cheque` (Chèque), `card` (Carte bancaire) |
+| Collecte | `RunSummary` (per campaign) | The validated runs of a campaign and their totals, seen by the whole team |
 | Libre | — | A street in the tournée that nobody in the team has taken (a member who left or was removed no longer counts, #91) |
 
 ---
@@ -122,14 +131,17 @@ Before the round (once):
 
 In the street (often offline):
 
-1. Open the app → the map shows my streets coloured; the panel lists them.
+1. Open the app → the map shows my streets coloured; the panel lists them. Leaving for an
+   outing: « Commencer une sortie » (§5.13).
 2. Tap *Rue des Lilas* → Street screen: odd side on the left, even side on the right.
-3. Each door: **tap the tile** → ✓ fait. Again → ✗ personne. Again → ↻ repasser, which opens
-   the house's sheet to say when (#81). Again → ○ à faire. Undo snackbar.
-4. Building at n°8: tap → unit grid → tap each unit the same way.
-5. "Repassez ce soir" → tap the tile up to ↻: its sheet opens by itself → « Aujourd'hui »,
-   « 19 h » in « Quand repasser ? » → « OK » (or **hold** the tile → sheet → *↻ Repasser*).
+3. Each door: **tap the tile** → its four statuses → one tap: ✓ Fait (during a run, then the
+   don: « 10 € », or « Pas de don »), ✗ Personne, ↻ Repasser (then the day and hour), ○ À
+   faire. Undo snackbar. (Decided 2026-11-02, #63; replaces the tap cycle, §5.6.)
+4. Building at n°8: tap → unit grid → tap each door the same way.
+5. "Repassez ce soir" → tap the tile → ↻ Repasser → « Aujourd'hui », « 19 h » → « OK ».
 6. Back in range: queued changes sync; the team map updates.
+7. Back at the station: « Terminer » → « Bilan de la sortie » → recount the money →
+   « Valider la sortie »: the team sees its totals.
 
 ---
 
@@ -141,8 +153,11 @@ shown by colour alone: every status has a glyph too.
 
 Glyphs: `○` à faire · `✓` fait · `✗` personne · `↻` repasser · `◐ 7/12` immeuble en partie.
 
-**One gesture everywhere:** tap cycles `○ → ✓ → ✗ → ↻ → ○`; hold opens the details. Same rule for
-house tiles and apartment tiles. A building tile opens its unit grid on tap.
+**One gesture everywhere** (decided 2026-11-02, #63, §5.6 « Status picker »): **a tap on a
+house or a door shows its four statuses; one tap on a status stores it**, and only ✓ during a
+run (the don) and ↻ (the day and hour) ask for more. No hold. A building tile opens its unit
+grid on tap. *(Before: the tap cycled `○ → ✓ → ✗ → ↻ → ○` and a hold opened the details; the
+code still does so until the picker is built.)*
 
 **Text fields:** a value refused on the keyboard's « OK » (a street name, a number, numbers to
 add, a door name) keeps the focus and the keyboard on its field, with the message under it; a
@@ -764,6 +779,68 @@ map with « « Chemin des Vignes » ajoutée à vos rues. ».
 
 ### 5.6 Rue — two sides of the street (used 95 % of the time)
 
+**Status picker** (decided 2026-11-02 with #63, mockups Main, House, HouseNobody,
+HouseComeBack, RunStreet, Building; to build — it replaces the tap cycle, the hold and the
+sheet that ↻ opened by itself, described further down as delivered in M1–M3):
+
+```
+  before (tap cycles)                after (tap shows the statuses)
+  ──────────────────────────────    ──────────────────────────────
+  │ ← Rue des Lilas        [✏] │    │ ← Rue des Lilas        [✏] │
+  │   31/42 · ✗3 · ↻1          │    │   31/42 · ✗3 · ↻1          │
+  │ [ 1   ○ ] │ [ 2   ✓ ]      │    │ [ 1   ○ ] │ [ 2   ✓ ]      │
+  │ [ 5   ↻ ] │ [ 6   ○ ]      │    │ [ 5   ↻ ] │ [ 6   ○ ]      │
+  │ [ 7   ○ ] │ [▦ 8 ◐7/12 ›]  │    │ [▶7   ○ ]◀│ [▦ 8 ◐7/12 ›]  │  ← tapped: outlined
+  ├────────────────────────────┤    ├────────────────────────────┤
+  │ 7 → Personne   [Annuler]   │    │ N° 7  actuellement à faire ✕│
+  └────────────────────────────┘    │ [ ✓ Fait   ][ ✗ Personne ] │
+                                    │ [ ↻ Repasser][ ○ À faire  ] │
+                                    │ Modifié par Léa · 14:02    │
+                                    └────────────────────────────┘
+  then, only when needed:
+  ✓ during a run (§5.13)             ↻ Repasser                         ✗ on a house ✗ or ↻
+  ┌────────────────────────────┐    ┌────────────────────────────┐    ┌────────────────────────────┐
+  │ N° 7 fait · don reçu ?   ✕ │    │ N° 5 · quand repasser ?  ✕ │    │ [ ✓ Fait ][✗ Encore personne]│
+  │ (Espèces)(Chèque)(Carte)   │    │ (Aujourd'hui)(Demain)(Sam.)→│    │ ✗ 2 passages sans personne │
+  │ [5 €]  [10 €]  [20 €]      │    │ Heure [ Vers 18 h      ▾ ] │    └────────────────────────────┘
+  │ [Autre montant][Pas de don]│    │ Le samedi 24 oct. vers 18 h│
+  └────────────────────────────┘    │ [           OK           ] │
+                                    └────────────────────────────┘
+```
+
+- **Tap a house tile**: a light haptic tick, the tile gets a thick ink outline, and a sheet
+  shows « N° 7 » and « actuellement à faire », four 72 dp buttons two by two in the status
+  colours with their glyph (« ✓ Fait », « ✗ Personne », « ↻ Repasser », « ○ À faire »), the
+  current one ringed (a radio group « Statut »), then « Modifié par Léa · 14:02 » (§5.7, #89).
+  ✕, a swipe down, a tap on the street or back closes it with nothing stored.
+- **One tap on a status stores it** (stamped, offline) and closes the sheet, except:
+  - **✓ while a run is on** (§5.13): the sheet becomes « N° 7 fait · don reçu ? » —
+    « Espèces | Chèque | Carte » (Espèces each time), « 5 € », « 10 € », « 20 € », « Autre
+    montant » (the amount field, on the method chosen, « Ajouter le don ») and « Pas de don ».
+    The ✓ is already stored; the don goes to the run's totals only (never to the house). ✕
+    means « Pas de don ».
+  - **↻**: the sheet becomes « N° 5 · quand repasser ? » — the day chips, « Heure », the
+    summary line of §5.7 (#81), « OK »; each choice is stored at once, as in the old sheet.
+  - The status the house already has: nothing is stored (no stamp); ↻ still opens its day, ✓
+    during a run still offers a don.
+- **Tries with nobody home** (#80): on a house ✗ or ↻ with a try or more, « ✗ Personne » reads
+  « ✗ Encore personne » and adds one try (it replaces « Repassé, toujours personne »); the
+  sheet shows « ✗ 2 passages sans personne » on the pale yellow of §5.7 whenever the status is
+  not ○ and a try is counted. ○ resets the count (as ↻ → ○ did); ✗ from ○ or ✓ makes it at
+  least 1; ✓ and ↻ keep it. Tiles keep « ×N » from 2 tries.
+- **After the sheet closes**, the snackbar of 4 s says what was stored: « N° 7 : personne
+  [Annuler] », « N° 3bis : personne (3e passage) », « N° 7 fait · 10 € en espèces »;
+  « Annuler » puts the house back as it was (status, time, tries) **and takes the don back
+  out of the run**. Closing with nothing stored shows nothing.
+- **No hold any more.** « Transformer en immeuble… » lives in edit mode only (✏, a tap on the
+  number, §5.5, already there). A building's own « Repasser » stays under its grid.
+- **Doors** (Immeuble grid, §5.7): a tap on a door shows the same statuses titled « Porte 51 »,
+  « Esc. A · 5e · 8 Rue des Lilas · actuellement fait » (staircase only when several), with
+  the same follow-ups and snackbar.
+- The hint under the tiles reads « Touchez une maison pour choisir son statut » (« … une porte
+  … » in the grid). TalkBack: « Numéro 7, à faire, choisir le statut »; after a choice « Numéro
+  7, personne, 3e passage » as before.
+
 ```
 ┌──────────────────────────────┐
 │ ← Rue des Lilas          [✏] │  ← edit mode (5.5)
@@ -840,6 +917,12 @@ Tries with nobody home, fixed in #80 (`NobodyHomeTries`, §6.1):
 - A new campaign (v1.1, §5.10) starts every house to do, hence at 0 tries.
 
 ### 5.7 Fiche maison (hold a tile) and Immeuble (by floor)
+
+*From the status picker (§5.6, decided 2026-11-02, to build): there is no hold and no Fiche
+maison any more. Its parts move: the status control and the tries to the picker, « Quand
+repasser ? » to the picker's ↻ step, « Modifié par » to the picker, « Transformer en
+immeuble… » to edit mode only. The door sheet becomes the picker on a door. The rules below
+(stamping, day and hour, tries, last change) stay true; only where they show changes.*
 
 ```
   single house (hold)                 building (tap)
@@ -1396,6 +1479,71 @@ TeamMember, and Welcome, Switcher, Team, Settings updated):
     room of its line while it signs in, so the buttons do not move.
   - Not done: the instrumented suite has no admin flow (it would need a real `admins/{uid}`
     document for the emulator's uid); widget tests cover the flows.
+
+### 5.13 Sorties et collecte (#63)
+
+Agreed 2026-11-02 (ASCII, then mockups RunStart, RunHome, RunStreet, RunDons, RunDon,
+RunRecap, RunTeam, Cash). Wording reviewed with the user; « Sortie » and « Valider » are the
+current choice (« Collecte » for the whole year's money).
+
+```
+  Accueil, no run                   Accueil, run on                   Dons de la sortie
+┌────────────────────────────┐    ┌────────────────────────────┐    ┌────────────────────────────┐
+│ Mes rues · 31/50 Équipe 43%│    │ Mes rues · 31/50 Équipe 43%│    │ ← Dons de la sortie        │
+│ [ ▶ Commencer une sortie ] │    │ ● En sortie depuis 1 h 20  │    │   19 dons · 280 €          │
+│ Rue des Lilas ▓▓▓░ 31/42 › │    │   19 dons · 280 €  Voir les dons ›│ 10 € · Espèces           › │
+│ [  Ajouter des rues  ]     │    │ [Ajouter un don][■ Terminer]│    │ 20 € · Chèque            › │
+└────────────────────────────┘    │ Rue des Lilas ▓▓▓░ 31/42 › │    │ …                          │
+                                  └────────────────────────────┘    │ [    Ajouter un don    ]   │
+                                                                    └────────────────────────────┘
+  Bilan de la sortie                Équipe                            Collecte 2026
+┌────────────────────────────┐    ┌────────────────────────────┐    ┌────────────────────────────┐
+│ ← Bilan de la sortie       │    │ Manu (vous) · admin  5 rues▸│   │ ← Collecte 2026            │
+│ Samedi 24 octobre, de 14 h │    │   420 € en 3 sorties       │    │ TOTAL DES 4 SORTIES        │
+│ 05 à 18 h 20               │    │ Léa              12 rues ▸ │    │ Espèces  32 dons   440 €   │
+│ [ 23 maisons ][ 19 dons ]  │    │   180 € en 1 sortie        │    │ Chèques   7 dons   140 €   │
+│ ARGENT RÉCOLTÉ             │    │ COLLECTE 2026              │    │ Carte b.  2 dons    20 €   │
+│ Espèces   15 dons   210 €  │    │ € 600 € récoltés         › │    │ Total    41 dons   600 €   │
+│ Chèques    3 dons    60 €  │    │   41 dons en 4 sorties     │    │ SORTIES                    │
+│ Carte b.   1 don     10 €  │    └────────────────────────────┘    │ Samedi 24 oct. · Manu 280 €▾│
+│ Total     19 dons   280 €  │                                      │   Espèces 15 dons 210 € …  │
+│ [  Valider la sortie  ]    │                                      └────────────────────────────┘
+│ [ Continuer la sortie ]    │
+└────────────────────────────┘
+```
+
+- **Start**: « Commencer une sortie » (outlined, a red ▶) under the totals of Accueil's panel,
+  for an active member of the open tournée (not a visiting admin). One run at a time on a
+  phone; it belongs to the tournée it started in, and its card shows only there. Offline too.
+- **While it runs**: on Accueil the card « ● En sortie depuis 1 h 20 », « 19 dons · 280 € »,
+  « Voir les dons › », « Ajouter un don » and « Terminer »; on the street screen a one-line
+  card « ● En sortie · 19 dons · 280 € · Voir les dons › » under the progress bar. The status
+  picker asks for the don after ✓ (§5.6). A run survives the app being killed (§6.3).
+- **Dons de la sortie**: newest first, « 10 € · Espèces › »; a tap opens « Modifier le don »
+  (« Espèces | Chèque | Carte », « Montant », « Enregistrer », « Annuler », « Supprimer ce don »);
+  « Ajouter un don » opens « Nouveau don », empty, on Espèces (money given away from a door).
+  This is how a mistake is fixed after the snackbar has gone.
+- **Amounts**: in euros, cents allowed (« 7,50 », the comma or a dot), 0,01 € to 1 000 € a don;
+  shown « 7,50 € », whole euros without cents (« 10 € »). Quick amounts 5 / 10 / 20 €.
+- **Terminer** opens « Bilan de la sortie »: « Samedi 24 octobre, de 14 h 05 à 18 h 20 », the
+  houses this member made ✓ during the run (doors count one each; a ✓ undone does not count)
+  and the number of dons, « ARGENT RÉCOLTÉ » with count and amount per method and the total,
+  « Recomptez l'argent. Une erreur ? Corrigez-la dans les dons de la sortie. Une fois la
+  sortie validée, l'équipe verra ces montants. », « Valider la sortie » (red) and « Continuer la
+  sortie » (the run goes on). « Valider » asks « Valider la sortie ? — Vous ne pourrez plus la
+  modifier. Les 280 € récoltés seront visibles par toute l'équipe. [Annuler] [Valider] », then
+  sends the run's summary (queued offline), forgets its dons and goes back to Accueil without
+  a run. **A validated run is never changed or deleted** (only with its tournée, or its
+  campaign, §5.10).
+- **Équipe** (every member sees it): under each member's name « 420 € en 3 sorties » (« Pas
+  encore de sortie »), and after the members and the Corbeille, « COLLECTE 2026 » with
+  « 600 € récoltés · 41 dons en 4 sorties › », which opens **Collecte 2026**: the totals per
+  method and in all, then each validated run, newest first (« Samedi 24 oct. · 14:05 → 18:20 »,
+  « Manu · 23 maisons, 19 dons », its total, a tap unfolds its three methods), and « Une sortie
+  validée ne peut plus être modifiée. Les dons ne sont jamais associés à une adresse. ». Read
+  from the phone's copy, so it works offline.
+- Wording of the money: « 1 don », « 2 dons », « 0 don »; « Espèces », « Chèques », « Carte
+  bancaire » in the totals.
 
 ---
 
@@ -2215,6 +2363,24 @@ bounding box for the offline download, shape simplification (Douglas–Peucker).
 Repository **ports** live in the domain (`TourneeRepository`, `StreetRepository`); they take
 and return aggregates and `StreetChange`s, never Firestore types.
 
+**Runs (#63, to build)** — `lib/domain/run/`:
+
+- **`PaymentMethod`**: `cash`, `cheque`, `card`.
+- **`Amount`**: whole euro cents, 1 to 100 000 (0,01 € to 1 000 €); `parse(text)` takes « 7,50 »,
+  « 7.5 », « 7 » (refusals: empty, not a number, 0, more than two decimals, too large).
+- **`Donation`** (value): a method and an `Amount`. **No house, no time** on purpose (§8.3).
+- **`MethodTotal`** (value): a count and a sum of cents.
+- **`Run`** (aggregate, the open run on the phone): id, tournée, campaign, member, `startedAt`,
+  `housesDone` and the list of `Donation`s in the order added; `add`, `replace(index)`,
+  `remove(index)`, `markedDone()` / `unmarkedDone()` (the ✓ of a house or door stored during
+  the run, and its undo), `totals()` per method, `validate(at)` → `RunSummary`.
+- **`RunSummary`** (value): member, start, end, houses done and the three `MethodTotal`s;
+  nothing else leaves the phone. `Collecte.of(summaries)` sums them per member and per method.
+- Use cases: `StartRun`, `AddDonation`, `ChangeDonation`, `RemoveDonation`, `ValidateRun`
+  (`OpenRunStore` port for the phone, `RunLedger` port for the team), `WatchCollecte`. The
+  status use cases tell the open run about a ✓ (and its undo) through `MarkHouse` /
+  `MarkDwelling`, so the count is right whatever screen marked it.
+
 ### 6.2 Firestore layout
 
 ```
@@ -2235,6 +2401,9 @@ tournees/{tourneeId}
                                                     tournée created before (reads as none);
                                                     an unreadable entry, or a second one of a
                                                     code, is skipped when read, at most 50 kept
+  campaigns/{year}/runs/{runId}                   ← #63: one per validated run, create-only
+    member: uid, startedAt, endedAt, housesDone,
+    cash: { count, cents }, cheque: { count, cents }, card: { count, cents }
   members/{uid}
     displayName: "Manu", status: "pending" | "active", requestedAt, acceptedBy, acceptedAt,
     joinCode                                      ← only on a newcomer's request: the code used
@@ -2390,6 +2559,11 @@ can never drift.
   writes are in Firestore's hands (a second or two); read when the tournée's streets are
   first listened to, to finish a street cut off by a kill (§8.2 « Killed in the middle »).
   Ids percent-encoded; same writing as the streets; an unreadable file is skipped.
+- `open_run.json` (port `OpenRunStore`, #63): the run on, `{ version: 1, run: { id, tournee,
+  campaign, startedAt, housesDone, donations: [{ method, cents }] } | null }`, written at each
+  change (same writing as the others), so a run survives a kill; the dons carry no house and
+  no time. Emptied once `ValidateRun` has handed the summary to Firestore (its offline queue
+  sends it later). An unreadable file means no run.
 - MapLibre offline regions (tiles), behind the `OfflineMapStore` port
   (`infrastructure/maplibre_offline/`): one per downloaded tournée (two for a moment while
   one is replaced), in the map library's database (`files/mbgl-offline.db`). Each region's
@@ -2706,6 +2880,10 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
   `assignees` on a new street `[]` or `[caller]`. An update may change
   `assignees` only by adding or removing **the caller** (set comparison, no duplicate): nobody
   puts a teammate on a street or takes them off it.
+- **Runs** (#63, to build): `campaigns/{year}/runs/{runId}` readable by active members and
+  admins; **create only**, by an active member, `member == request.auth.uid`, exactly the
+  fields of §6.2, `startedAt < endedAt`, `housesDone` 0–9 999, each `count` 0–9 999 and `cents`
+  0–100 000 000; **no update, no delete** (they go with the tournée or the campaign).
 - Indexes (`firebase/firestore.indexes.json`): `houses` of `streets` is exempt from
   single-field indexing (its thousands of sub-fields would count against the index limits and
   slow every write); no query of the adapters needs a composite index.
@@ -2719,7 +2897,12 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
   back (a day and an hour, #81), first names of the members. No free text about a house: the
   « repasser » hint of ≤ 20 characters became a day and an hour (#81), and the free note on houses, doors and buildings was removed (T1.20, Q23) as
   too likely to hold personal data (GDPR), and notes already stored on a phone are erased when
-  the app reads them. No donations, no residents' names, no residents' answers.
+  the app reads them. No residents' names, no residents' answers. **Money (#63)**: for each
+  validated run, its member, start and end, the houses made ✓ and the count and total per
+  payment method, seen by the team; **never a don per house, door or address**. The list of a
+  run's dons stays on the phone, without house or time, until the run is validated, then it
+  is erased. `PRIVACY.md` and the Confidentialité page (#79, the user's text) need a line on
+  this before the feature ships.
 - **Location:** the phone's position is used only on screen ("locate me"), never stored or
   sent. Permission is asked when the button is first tapped.
 - Firestore region: `europe-west` (EU).
@@ -2843,7 +3026,7 @@ but they run once per task and in CI.
 | Application | use cases with **hand-written fakes** of the ports | Dart VM | every TDD cycle | ms per test |
 | Presentation | Riverpod notifiers via `ProviderContainer`, ports overridden by fakes | Dart VM | every TDD cycle | ms per test |
 | Adapters | Firestore adapter against `fake_cloud_firestore` (in memory, no emulator); geopf / BAN parsing with `MockClient` + JSON fixtures captured from the real services, vector tiles built byte by byte by the tests | Dart VM | when touched | < 10 s |
-| Widgets | widget tests for the critical interactions only: welcome gating, tap-cycle + undo on street tiles, hold → house sheet, building grid, edit mode remove + undo, street card states, join pending screen | `flutter test` (headless) | end of each UI task, CI | a few per UI task; the whole suite stays under 60 s |
+| Widgets | widget tests for the critical interactions only: welcome gating, tap-cycle + undo on street tiles, hold → house sheet (to become: tap → status picker → ✓ / don / ↻ steps + undo, #63), building grid, edit mode remove + undo, street card states, join pending screen | `flutter test` (headless) | end of each UI task, CI | a few per UI task; the whole suite stays under 60 s |
 | Architecture | import rules between layers | Dart VM | every run | < 1 s |
 | Coverage | **100 % line coverage** on `domain/`, `application/`, `presentation/` and the adapters' mapping code, checked by a script on `coverage/lcov.info` | — | end of task, CI | piggybacks |
 | Rules | Firestore security rules in the Firebase emulator (`@firebase/rules-unit-testing`, `node --test`): `cd firebase && npm ci && npm test` starts the emulator itself (`firebase emulators:exec`, demo project, versions pinned: firebase-tools 15, rules-unit-testing 5, Node 20+, Java 11+) | Node + emulator | when `firebase/` or the Firestore adapters change, CI | < 1 min |
@@ -2888,6 +3071,7 @@ to TestFlight once the Apple account exists.
 | M3 | Map: Accueil map + panel, progress colours, house dots, ajouter des rues (tap → card → add), search, manual street + numbers | real streets, picked on the map |
 | M4 | Offline: automatic, invisible download (cache + tiles, silent map refresh), pending-writes indicator, what « Mes tournées » / Paramètres show of it (#33), airplane-mode checklist | a full day without network |
 | M5 | Polish and release: dark mode, accessibility (TalkBack, 200 % font), icon, privacy policy, Play listing | store-ready |
+| M8 | Status picker and sorties (#63): a tap shows the four statuses (§5.6), runs with dons per payment method, recap, Équipe and Collecte (§5.13), rules | a run counted to the cent, validated, seen by the team |
 | M6 (v1.1) | Nouvelle campagne: copy / reset, *Reprendre mes rues*, last year's result in the sheets, read-only archive | tournée 49 starts 2027 from 2026 |
 
 M1 comes before Firebase on purpose: the street screen is where the app succeeds or fails,

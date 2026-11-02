@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Modifier le don</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B3261E}a:hover{color:#8C1D18}
+.seg{flex:1;height:52px;border:0;font:700 16px 'Atkinson Hyperlegible',sans-serif;cursor:pointer}
+.sep{width:1.5px;background:#CFC9BD}
+.row{display:flex;align-items:center;min-height:56px;padding:0 20px;border-bottom:1px solid #E2DED5;background:#FFFFFF}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F3F1EC; color: #1B1F24; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; position: relative; overflow: hidden">
+  <div style="padding-top: 72px; border-top: 1px solid #E2DED5">
+    <div class="row"><b style="width: 72px">10 €</b>Espèces</div>
+    <div class="row"><b style="width: 72px">20 €</b>Chèque</div>
+    <div class="row"><b style="width: 72px">5 €</b>Espèces</div>
+  </div>
+  <div style="position: absolute; inset: 0; background: rgba(27, 31, 36, 0.5)"></div>
+  <!-- #63: from a row of « Dons de la sortie » (here the 20 € cheque). Opens on that don's method
+       and amount; « Ajouter un don » opens the same sheet, empty, on Espèces. -->
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; background: #FFFFFF; border-radius: 24px 24px 0 0; padding: 12px 20px 28px 20px; display: flex; flex-direction: column; gap: 16px">
+    <div style="width: 40px; height: 4px; border-radius: 2px; background: #CFC9BD; align-self: center"></div>
+    <h2 style="margin: 0; font: 700 32px 'Barlow Condensed', sans-serif">Modifier le don</h2>
+    <div role="radiogroup" aria-label="Moyen de paiement" style="display: flex; border: 1.5px solid #CFC9BD; border-radius: 14px; overflow: hidden">
+      <button class="seg" role="radio" aria-checked="{{m0}}" onClick="{{pick0}}" style="{{s0}}">Espèces</button><span class="sep"></span>
+      <button class="seg" role="radio" aria-checked="{{m1}}" onClick="{{pick1}}" style="{{s1}}">Chèque</button><span class="sep"></span>
+      <button class="seg" role="radio" aria-checked="{{m2}}" onClick="{{pick2}}" style="{{s2}}">Carte</button>
+    </div>
+    <label for="amount" style="font-size: 15px; font-weight: 700">Montant</label>
+    <div style="display: flex; align-items: center; height: 64px; border: 2px solid #1B1F24; border-radius: 14px; padding: 0 16px; gap: 8px; margin-top: -10px">
+      <input id="amount" inputmode="decimal" value="20" style="flex: 1; min-width: 0; border: 0; outline: none; font: 700 34px 'Barlow Condensed', sans-serif; color: #1B1F24; background: transparent">
+      <span style="font: 700 28px 'Barlow Condensed', sans-serif; color: #4A5058">€</span>
+    </div>
+    <div style="display: flex; gap: 12px">
+      <a href="RunDons.dc.html" style="flex: 1; height: 52px; border-radius: 26px; border: 1.5px solid #CFC9BD; background: #FFFFFF; font-weight: 700; font-size: 16px; color: #1B1F24; display: flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box">Annuler</a>
+      <a href="RunDons.dc.html" style="flex: 1; height: 52px; border-radius: 26px; background: #B3261E; font-weight: 700; font-size: 16px; color: #FFFFFF; display: flex; align-items: center; justify-content: center; text-decoration: none">Enregistrer</a>
+    </div>
+    <a href="RunDons.dc.html" style="height: 48px; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 16px; color: #B3261E">Supprimer ce don</a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { m: 1 };
+  }
+  renderVals() {
+    const on = 'background: #1B1F24; color: #FFFFFF';
+    const off = 'background: #FFFFFF; color: #1B1F24';
+    const m = this.state.m;
+    return {
+      m0: m === 0, m1: m === 1, m2: m === 2,
+      s0: m === 0 ? on : off, s1: m === 1 ? on : off, s2: m === 2 ? on : off,
+      pick0: () => this.setState({ m: 0 }), pick1: () => this.setState({ m: 1 }), pick2: () => this.setState({ m: 2 })
+    };
+  }
+}
+</script>
+</body>
+</html>

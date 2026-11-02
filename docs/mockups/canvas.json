@@ -65,7 +65,7 @@
       "y": 2528,
       "w": 390,
       "h": 844,
-      "title": "5.6 Rue — touchez une case",
+      "title": "5.6 Rue — touchez une maison",
       "is_interactive": true
     },
     "House.dc.html": {
@@ -73,7 +73,8 @@
       "y": 2528,
       "w": 390,
       "h": 844,
-      "title": "5.7 Fiche maison (appui long)"
+      "title": "5.6 Statut d’une maison (toucher)",
+      "is_interactive": true
     },
     "Building.dc.html": {
       "x": 1880,
@@ -194,14 +195,16 @@
       "y": 2528,
       "w": 390,
       "h": 844,
-      "title": "5.7 Fiche maison — personne, 2e passage (#80)"
+      "title": "5.6 Statut — encore personne (#80)",
+      "is_interactive": true
     },
     "HouseComeBack.dc.html": {
       "x": 3760,
       "y": 2528,
       "w": 390,
       "h": 844,
-      "title": "5.7 Fiche maison — quand repasser (#81)"
+      "title": "5.6 Quand repasser ? (#81)",
+      "is_interactive": true
     },
     "Start.dc.html": {
       "x": 0,
@@ -216,6 +219,67 @@
       "w": 390,
       "h": 844,
       "title": "5.0 Importer des rues"
+    },
+    "RunStart.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Sortie — Accueil, démarrer (#63)",
+      "w": 390,
+      "x": 0,
+      "y": 7584
+    },
+    "RunHome.dc.html": {
+      "h": 844,
+      "title": "Sortie — Accueil, sortie en cours (#63)",
+      "w": 390,
+      "x": 470,
+      "y": 7584
+    },
+    "RunStreet.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Sortie — Rue, don reçu après ✓ (#63)",
+      "w": 390,
+      "x": 940,
+      "y": 7584
+    },
+    "RunDon.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Sortie — Modifier le don (#63)",
+      "w": 390,
+      "x": 1410,
+      "y": 7584
+    },
+    "RunDons.dc.html": {
+      "h": 844,
+      "title": "Sortie — Dons de la sortie (#63)",
+      "w": 390,
+      "x": 3290,
+      "y": 7584
+    },
+    "RunRecap.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Sortie — Bilan de la sortie (#63)",
+      "w": 390,
+      "x": 1880,
+      "y": 7584
+    },
+    "RunTeam.dc.html": {
+      "h": 844,
+      "title": "Sortie — Équipe avec la collecte (#63)",
+      "w": 390,
+      "x": 2350,
+      "y": 7584
+    },
+    "Cash.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Sortie — Collecte 2026 (#63)",
+      "w": 390,
+      "x": 2820,
+      "y": 7584
     }
   },
   "createdOnFiles": {
@@ -274,6 +338,14 @@
       "kind": "title1",
       "maxW": 860,
       "w": 240
+    },
+    "rowRun": {
+      "kind": "title1",
+      "maxW": 3680,
+      "text": "Sorties et caisse (#63)",
+      "w": 240,
+      "x": 0,
+      "y": 7284
     }
   },
   "order": [
@@ -305,7 +377,16 @@
     "HomeAdmin.dc.html",
     "TeamMember.dc.html",
     "Start.dc.html",
-    "Import.dc.html"
+    "Import.dc.html",
+    "Changelog.dc.html",
+    "RunStart.dc.html",
+    "RunHome.dc.html",
+    "RunStreet.dc.html",
+    "RunDon.dc.html",
+    "RunRecap.dc.html",
+    "RunTeam.dc.html",
+    "Cash.dc.html",
+    "RunDons.dc.html"
   ],
   "pages": [],
   "title": "Tournée Calendriers screens"

@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Bilan de la sortie</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B3261E}a:hover{color:#8C1D18}
+.ib{width:48px;height:48px;border:0;background:transparent;color:#1B1F24;border-radius:24px;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;text-decoration:none;flex-shrink:0}
+.ib svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.line{display:flex;align-items:center;min-height:60px;border-bottom:1px solid #E2DED5;padding-left:16px;gap:8px}
+.m{flex:1;font-weight:700;font-size:17px}
+.c{width:76px;text-align:right;font-size:15px;color:#4A5058}
+.a{width:84px;text-align:right;font:700 24px 'Barlow Condensed',sans-serif}
+.in{height:56px;box-sizing:border-box;width:100%;border:1.5px solid #CFC9BD;border-radius:12px;background:#FFFFFF;padding:0 14px;font:700 26px 'Barlow Condensed',sans-serif;color:#1B1F24}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F3F1EC; color: #1B1F24; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; display: flex; flex-direction: column; position: relative; overflow: hidden">
+  <div style="display: flex; align-items: center; gap: 4px; padding: 8px">
+    <a class="ib" href="RunHome.dc.html" aria-label="Retour"><svg viewBox="0 0 24 24" style="width: 24px; height: 24px"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a>
+    <div style="display: flex; flex-direction: column"><h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 28px; line-height: 1.05">Bilan de la sortie</h1><span style="font-size: 14px; color: #4A5058">Samedi 24 octobre, de 14&#160;h&#160;05 à 18&#160;h&#160;20</span></div>
+  </div>
+  <div style="display: flex; gap: 12px; margin: 8px 16px 0 16px">
+    <div style="flex: 1; background: #FFFFFF; border: 1px solid #E2DED5; border-radius: 16px; padding: 12px 14px; display: flex; flex-direction: column"><span style="font: 700 34px 'Barlow Condensed', sans-serif; color: #1E6B47">23</span><span style="font-size: 14px; color: #4A5058">maisons visitées</span></div>
+    <div style="flex: 1; background: #FFFFFF; border: 1px solid #E2DED5; border-radius: 16px; padding: 12px 14px; display: flex; flex-direction: column"><span style="font: 700 34px 'Barlow Condensed', sans-serif">{{totalCount}}</span><span style="font-size: 14px; color: #4A5058">dons</span></div>
+  </div>
+  <div style="padding: 20px 20px 8px 20px; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #4A5058">Argent récolté</div>
+  <div style="background: #FFFFFF; border-top: 1px solid #E2DED5">
+    <sc-for list="{{rows}}" as="r" hint-placeholder-count="3">
+      <div class="line">
+        <span class="m">{{r.name}}</span><span class="c">{{r.count}}</span><span class="a" style="padding-right: 16px">{{r.sum}}</span>
+      </div>
+    </sc-for>
+    <div class="line" style="background: #F3F1EC; border-bottom: 0">
+      <span class="m" style="font-size: 18px">Total</span><span class="c" style="color: #1B1F24; font-weight: 700">{{totalCount}} dons</span><span class="a" style="font-size: 28px; padding-right: 16px">{{totalSum}}</span>
+    </div>
+  </div>
+  <div style="flex: 1"></div>
+  <div style="display: flex; flex-direction: column; gap: 10px; padding: 0 16px 24px 16px">
+    <span style="font-size: 15px; color: #4A5058; text-align: center">Recomptez l'argent. Une erreur&#160;? Corrigez-la dans <a href="RunDons.dc.html">les dons de la sortie</a>. Une fois la sortie validée, l'équipe verra ces montants.</span>
+    <button onClick="{{askClose}}" style="height: 56px; border-radius: 28px; border: 0; background: #B3261E; color: #FFFFFF; font: 700 17px 'Atkinson Hyperlegible', sans-serif; cursor: pointer">Valider la sortie</button>
+    <a href="RunHome.dc.html" style="height: 52px; border-radius: 26px; border: 1.5px solid #CFC9BD; background: #FFFFFF; color: #1B1F24; font-weight: 700; font-size: 16px; display: flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box">Continuer la sortie</a>
+  </div>
+  <!-- ✎: correct one method's count and amount, before closing only. -->
+  <sc-if value="{{editing}}" hint-placeholder-val="{{false}}">
+    <div style="position: absolute; inset: 0; background: rgba(27, 31, 36, 0.5)"></div>
+    <div style="position: absolute; left: 0; right: 0; bottom: 0; background: #FFFFFF; border-radius: 24px 24px 0 0; padding: 12px 20px 28px 20px; display: flex; flex-direction: column; gap: 16px">
+      <div style="width: 40px; height: 4px; border-radius: 2px; background: #CFC9BD; align-self: center"></div>
+      <h2 style="margin: 0; font: 700 30px 'Barlow Condensed', sans-serif">{{editName}}</h2>
+      <div style="display: flex; gap: 12px">
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 6px"><label for="cnt" style="font-weight: 700; font-size: 15px">Dons</label><input id="cnt" class="in" inputmode="numeric" value="{{editCount}}"></div>
+        <div style="flex: 1; display: flex; flex-direction: column; gap: 6px"><label for="amt" style="font-weight: 700; font-size: 15px">Montant (€)</label><input id="amt" class="in" inputmode="decimal" value="{{editSum}}"></div>
+      </div>
+      <div style="display: flex; gap: 12px">
+        <button onClick="{{closeEdit}}" style="flex: 1; height: 52px; border-radius: 26px; border: 1.5px solid #CFC9BD; background: #FFFFFF; font: 700 16px 'Atkinson Hyperlegible', sans-serif; color: #1B1F24">Annuler</button>
+        <button onClick="{{closeEdit}}" style="flex: 1; height: 52px; border-radius: 26px; border: 0; background: #B3261E; font: 700 16px 'Atkinson Hyperlegible', sans-serif; color: #FFFFFF">Enregistrer</button>
+      </div>
+    </div>
+  </sc-if>
+  <sc-if value="{{confirming}}" hint-placeholder-val="{{false}}">
+    <div style="position: absolute; inset: 0; background: rgba(27, 31, 36, 0.5); display: flex; align-items: center; justify-content: center; padding: 24px">
+      <div role="alertdialog" aria-labelledby="ct" style="background: #FFFFFF; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 14px; width: 100%; box-sizing: border-box">
+        <h2 id="ct" style="margin: 0; font: 700 26px 'Barlow Condensed', sans-serif">Valider la sortie&#160;?</h2>
+        <span style="font-size: 16px; color: #4A5058">Vous ne pourrez plus la modifier. Les {{totalSum}} récoltés seront visibles par toute l'équipe.</span>
+        <div style="display: flex; justify-content: flex-end; gap: 8px">
+          <button onClick="{{cancelClose}}" style="height: 48px; padding: 0 18px; border: 0; background: transparent; font: 700 16px 'Atkinson Hyperlegible', sans-serif; color: #1B1F24">Annuler</button>
+          <a href="RunStart.dc.html" style="height: 48px; padding: 0 22px; border-radius: 24px; background: #B3261E; color: #FFFFFF; font-weight: 700; font-size: 16px; display: flex; align-items: center; text-decoration: none">Valider</a>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { edit: -1, confirm: false };
+    this.data = [
+      { name: 'Espèces', count: 15, sum: 210 },
+      { name: 'Chèques', count: 3, sum: 60 },
+      { name: 'Carte bancaire', count: 1, sum: 10 }
+    ];
+  }
+  renderVals() {
+    const e = (v) => v + ' €';
+    const dons = (n) => n + (n > 1 ? ' dons' : ' don');
+    const D = this.data;
+    const cur = this.state.edit >= 0 ? D[this.state.edit] : null;
+    return {
+      rows: D.map((d, i) => ({ name: d.name, count: dons(d.count), sum: e(d.sum), aria: 'Corriger ' + d.name.toLowerCase(), edit: () => this.setState({ edit: i }) })),
+      totalCount: D.reduce((s, d) => s + d.count, 0),
+      totalSum: e(D.reduce((s, d) => s + d.sum, 0)),
+      editing: !!cur,
+      editName: cur ? cur.name : '',
+      editCount: cur ? String(cur.count) : '',
+      editSum: cur ? String(cur.sum) : '',
+      closeEdit: () => this.setState({ edit: -1 }),
+      confirming: this.state.confirm,
+      askClose: () => this.setState({ confirm: true }),
+      cancelClose: () => this.setState({ confirm: false })
+    };
+  }
+}
+</script>
+</body>
+</html>
