@@ -53,7 +53,7 @@ a{color:#B3261E}a:hover{color:#8C1D18}
         </div>
       </sc-for>
     </div>
-    <span style="font-size: 14px; color: #4A5058; text-align: center">Touchez une porte pour choisir son statut</span>
+    <span style="font-size: 14px; color: #4A5058; text-align: center">Appuyez sur une porte pour changer son statut</span>
     <div style="display: flex; gap: 10px">
       <button onClick="{{toggleMenu}}" aria-haspopup="menu" aria-expanded="{{menuOpen}}" style="flex: 1; height: 48px; border-radius: 24px; border: 1.5px solid #CFC9BD; background: #FFFFFF; font: 700 15px 'Atkinson Hyperlegible', sans-serif; color: #1B1F24; cursor: pointer">Gérer l'immeuble ▾</button>
       <button style="flex: 1; height: 48px; border-radius: 24px; border: 1.5px solid #CFC9BD; background: #FFFFFF; font: 700 15px 'Atkinson Hyperlegible', sans-serif; color: #1B1F24">Repasser</button>
@@ -70,7 +70,7 @@ a{color:#B3261E}a:hover{color:#8C1D18}
       <a role="menuitem" href="Main.dc.html" style="min-height: 56px; display: flex; align-items: center; border-bottom: 1px solid #E2DED5; font-weight: 700; font-size: 17px; color: #1B1F24; text-decoration: none">Changer en maison</a>
     </div>
   </div>
-  <!-- A tap on a door: the street's four statuses, titled with the door; ↻ then asks when, ✓
+  <!-- A tap on a door: the street's five statuses, titled with the door; ↻ then asks when, ✓
        during a run asks for the don, as on the street (PLAN §5.6). -->
   <sc-if value="{{hasDoor}}" hint-placeholder-val="{{false}}">
     <button onClick="{{closeDoor}}" aria-label="Fermer" style="position: absolute; inset: 0; border: 0; background: rgba(27, 31, 36, 0.35); cursor: pointer"></button>
@@ -123,7 +123,7 @@ class Component extends DCLogic {
   }
   setDoor(s) {
     const { stair, fi, di } = this.state.door;
-    const next = { todo: s, done: s, nobody: s, comeBack: s };
+    const next = { todo: s, done: s, nobody: s, comeBack: s, refused: s };
     const b = Object.assign({}, this.state.buildings);
     b[stair] = b[stair].map((f, i) => i !== fi ? f : {
       n: f.n,
@@ -136,10 +136,12 @@ class Component extends DCLogic {
       todo: 'background: #FFFFFF; color: #1B1F24; border: 1.5px solid #CFC9BD',
       done: 'background: #1E6B47; color: #FFFFFF; border: 1.5px solid #1E6B47',
       nobody: 'background: #F2B33D; color: #1B1F24; border: 1.5px solid #D99A22',
-      comeBack: 'background: #D6E6F5; color: #1D4E7A; border: 1.5px solid #A9C8E6'
+      comeBack: 'background: #D6E6F5; color: #1D4E7A; border: 1.5px solid #A9C8E6',
+      refused: 'background: #5A6068; color: #FFFFFF; border: 1.5px solid #5A6068'
     };
-    const glyphs = { todo: '○', done: '✓', nobody: '✗', comeBack: '↻' };
-    const names = { todo: 'à faire', done: 'fait', nobody: 'personne', comeBack: 'repasser' };
+    const glyphs = { todo: '○', done: '✓', nobody: '✗', comeBack: '↻', refused: '⊘' };
+    const names = { todo: 'à faire', done: 'fait', nobody: 'personne', comeBack: 'repasser', refused: 'refusé' };
+    const titles = { todo: 'À faire', done: 'Fait', nobody: 'Personne', comeBack: 'Repasser', refused: 'Refusé' };
     const floorName = (n) => (n === 0 ? 'RdC' : n === 1 ? '1er' : n + 'e');
     const stair = this.state.stair;
     const all = [].concat(...Object.values(this.state.buildings).map((fs) => [].concat(...fs.map((f) => f.doors))));
@@ -167,15 +169,15 @@ class Component extends DCLogic {
     const fl = door ? this.state.buildings[door.stair][door.fi] : null;
     const d = door ? fl.doors[door.di] : null;
     const ring = '; box-shadow: 0 0 0 3px #FFFFFF, 0 0 0 5px #1B1F24';
-    const choices = [['done', '✓', 'Fait'], ['nobody', '✗', 'Personne'], ['comeBack', '↻', 'Repasser'], ['todo', '○', 'À faire']].map((c) => ({
+    const choices = [['done', '✓', 'Fait'], ['refused', '⊘', 'Refusé'], ['nobody', '✗', 'Personne'], ['comeBack', '↻', 'Repasser'], ['todo', '○', 'À faire']].map((c) => ({
       glyph: c[1], label: c[2], on: !!d && d.s === c[0],
-      style: styles[c[0]].replace('1.5px', '2px') + (d && d.s === c[0] ? ring : ''),
+      style: styles[c[0]].replace('1.5px', '2px') + (d && d.s === c[0] ? ring : '') + (c[0] === 'todo' ? '; grid-column: 1 / -1' : ''),
       pick: () => this.setDoor(c[0])
     }));
     return {
       hasDoor: !!door,
-      doorTitle: d ? 'Porte ' + d.label : '',
-      doorSub: d ? 'Esc. ' + door.stair + ' · ' + floorName(fl.n) + ' · 8 Rue des Lilas · actuellement ' + names[d.s] : '',
+      doorTitle: d ? 'Porte ' + d.label + ' · ' + titles[d.s] : '',
+      doorSub: d ? 'Esc. ' + door.stair + ' · ' + floorName(fl.n) + ' · 8 Rue des Lilas' : '',
       choices: choices,
       closeDoor: () => this.setState({ door: null }),
       menuOpen: this.state.menuOpen,

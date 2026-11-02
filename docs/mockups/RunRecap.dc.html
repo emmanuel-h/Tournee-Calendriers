@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<title>Bilan de la sortie</title>
+<title>Bilan de la tournée</title>
 <script src="./support.js"></script>
 </head>
 <body>
@@ -24,11 +24,12 @@ a{color:#B3261E}a:hover{color:#8C1D18}
 <div style="width: 390px; height: 844px; box-sizing: border-box; background: #F3F1EC; color: #1B1F24; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; display: flex; flex-direction: column; position: relative; overflow: hidden">
   <div style="display: flex; align-items: center; gap: 4px; padding: 8px">
     <a class="ib" href="RunHome.dc.html" aria-label="Retour"><svg viewBox="0 0 24 24" style="width: 24px; height: 24px"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a>
-    <div style="display: flex; flex-direction: column"><h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 28px; line-height: 1.05">Bilan de la sortie</h1><span style="font-size: 14px; color: #4A5058">Samedi 24 octobre, de 14&#160;h&#160;05 à 18&#160;h&#160;20</span></div>
+    <div style="display: flex; flex-direction: column"><h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 28px; line-height: 1.05">Bilan de la tournée</h1><span style="font-size: 14px; color: #4A5058">Samedi 24 octobre, de 14&#160;h&#160;05 à 18&#160;h&#160;20</span></div>
   </div>
   <div style="display: flex; gap: 12px; margin: 8px 16px 0 16px">
     <div style="flex: 1; background: #FFFFFF; border: 1px solid #E2DED5; border-radius: 16px; padding: 12px 14px; display: flex; flex-direction: column"><span style="font: 700 34px 'Barlow Condensed', sans-serif; color: #1E6B47">23</span><span style="font-size: 14px; color: #4A5058">maisons visitées</span></div>
     <div style="flex: 1; background: #FFFFFF; border: 1px solid #E2DED5; border-radius: 16px; padding: 12px 14px; display: flex; flex-direction: column"><span style="font: 700 34px 'Barlow Condensed', sans-serif">{{totalCount}}</span><span style="font-size: 14px; color: #4A5058">dons</span></div>
+    <div style="flex: 1; background: #FFFFFF; border: 1px solid #E2DED5; border-radius: 16px; padding: 12px 14px; display: flex; flex-direction: column"><span style="font: 700 34px 'Barlow Condensed', sans-serif">2</span><span style="font-size: 14px; color: #4A5058">calendriers offerts</span></div>
   </div>
   <div style="padding: 20px 20px 8px 20px; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #4A5058">Argent récolté</div>
   <div style="background: #FFFFFF; border-top: 1px solid #E2DED5">
@@ -40,12 +41,12 @@ a{color:#B3261E}a:hover{color:#8C1D18}
     <div class="line" style="background: #F3F1EC; border-bottom: 0">
       <span class="m" style="font-size: 18px">Total</span><span class="c" style="color: #1B1F24; font-weight: 700">{{totalCount}} dons</span><span class="a" style="font-size: 28px; padding-right: 16px">{{totalSum}}</span>
     </div>
+    <a href="RunDons.dc.html" class="line" style="text-decoration: none; color: #1B1F24; border-bottom: 0; border-top: 1px solid #E2DED5"><span class="m" style="font-weight: 400">Voir les dons</span><span style="font-size: 18px; color: #4A5058; padding-right: 16px">›</span></a>
   </div>
   <div style="flex: 1"></div>
   <div style="display: flex; flex-direction: column; gap: 10px; padding: 0 16px 24px 16px">
-    <span style="font-size: 15px; color: #4A5058; text-align: center">Recomptez l'argent. Une erreur&#160;? Corrigez-la dans <a href="RunDons.dc.html">les dons de la sortie</a>. Une fois la sortie validée, l'équipe verra ces montants.</span>
-    <button onClick="{{askClose}}" style="height: 56px; border-radius: 28px; border: 0; background: #B3261E; color: #FFFFFF; font: 700 17px 'Atkinson Hyperlegible', sans-serif; cursor: pointer">Valider la sortie</button>
-    <a href="RunHome.dc.html" style="height: 52px; border-radius: 26px; border: 1.5px solid #CFC9BD; background: #FFFFFF; color: #1B1F24; font-weight: 700; font-size: 16px; display: flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box">Continuer la sortie</a>
+    <button onClick="{{askClose}}" style="height: 56px; border-radius: 28px; border: 0; background: #B3261E; color: #FFFFFF; font: 700 17px 'Atkinson Hyperlegible', sans-serif; cursor: pointer">Valider la tournée</button>
+    <a href="RunHome.dc.html" style="height: 52px; border-radius: 26px; border: 1.5px solid #CFC9BD; background: #FFFFFF; color: #1B1F24; font-weight: 700; font-size: 16px; display: flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box">Continuer la tournée</a>
   </div>
   <!-- ✎: correct one method's count and amount, before closing only. -->
   <sc-if value="{{editing}}" hint-placeholder-val="{{false}}">
@@ -66,8 +67,8 @@ a{color:#B3261E}a:hover{color:#8C1D18}
   <sc-if value="{{confirming}}" hint-placeholder-val="{{false}}">
     <div style="position: absolute; inset: 0; background: rgba(27, 31, 36, 0.5); display: flex; align-items: center; justify-content: center; padding: 24px">
       <div role="alertdialog" aria-labelledby="ct" style="background: #FFFFFF; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 14px; width: 100%; box-sizing: border-box">
-        <h2 id="ct" style="margin: 0; font: 700 26px 'Barlow Condensed', sans-serif">Valider la sortie&#160;?</h2>
-        <span style="font-size: 16px; color: #4A5058">Vous ne pourrez plus la modifier. Les {{totalSum}} récoltés seront visibles par toute l'équipe.</span>
+        <h2 id="ct" style="margin: 0; font: 700 26px 'Barlow Condensed', sans-serif">Valider la tournée&#160;?</h2>
+        <span style="font-size: 16px; color: #4A5058">Vous ne pourrez plus la modifier.</span>
         <div style="display: flex; justify-content: flex-end; gap: 8px">
           <button onClick="{{cancelClose}}" style="height: 48px; padding: 0 18px; border: 0; background: transparent; font: 700 16px 'Atkinson Hyperlegible', sans-serif; color: #1B1F24">Annuler</button>
           <a href="RunStart.dc.html" style="height: 48px; padding: 0 22px; border-radius: 24px; background: #B3261E; color: #FFFFFF; font-weight: 700; font-size: 16px; display: flex; align-items: center; text-decoration: none">Valider</a>

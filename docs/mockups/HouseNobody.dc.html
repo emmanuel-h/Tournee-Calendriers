@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>
 <meta charset="utf-8">
-<title>Statut, personne au 2e passage</title>
+<title>Statut, de nouveau personne</title>
 <script src="./support.js"></script>
 </head>
 <body>
@@ -16,6 +16,8 @@ a{color:#B3261E}a:hover{color:#8C1D18}
 .ib svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .tile{height:60px;box-sizing:border-box;border-radius:12px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;cursor:pointer;font-family:'Atkinson Hyperlegible',sans-serif;width:100%;text-decoration:none}
 .num{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:28px;line-height:1}
+.tile{position:relative}
+.badge{position:absolute;top:-7px;right:-7px;min-width:24px;height:24px;border-radius:12px;background:#1B1F24;color:#FFFFFF;border:2px solid #F3F1EC;font:700 13px 'Atkinson Hyperlegible',sans-serif;display:flex;align-items:center;justify-content:center;box-sizing:border-box;padding:0 5px}
 .gl{font-size:22px;font-weight:700;line-height:1;white-space:nowrap}
 /* Building tile (T1.21): building icon before the number, « › » at the right edge. */
 .bld{justify-content:flex-start;gap:4px;padding:0 12px 0 10px}
@@ -38,15 +40,15 @@ a{color:#B3261E}a:hover{color:#8C1D18}
     <a class="ib" href="Edit.dc.html" aria-label="Modifier la rue"><svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg></a>
   </div>
   <div style="display: flex; align-items: center; justify-content: space-between; padding: 0 16px 0 64px; height: 44px">
-    <span style="font-size: 15px; color: #4A5058">{{doneCount}}/{{total}} · ✗ {{nobodyCount}} · ↻ {{comeBackCount}}</span>
+    <span style="font-size: 15px; color: #4A5058">{{doneCount}}/{{total}} · ⊘ {{refusedCount}} · ✗ {{nobodyCount}} · ↻ {{comeBackCount}}</span>
     <button style="height: 40px; padding: 0 14px; border-radius: 20px; font: 700 14px 'Atkinson Hyperlegible', sans-serif; border: 1.5px solid #CFC9BD; background: #FFFFFF; color: #1B1F24">☐ Masquer faits</button>
   </div>
   <div style="height: 6px; margin: 0 16px; background: #E2DED5; border-radius: 3px; overflow: hidden"><div style="{{progressStyle}}"></div></div>
-  <!-- #63: the run's card while a run is on; a tap opens « Dons de la sortie ». -->
+  <!-- #63: the card while a tournée is on; a tap opens « Dons de la tournée ». -->
   <sc-if value="{{run}}" hint-placeholder-val="{{false}}">
     <a href="RunDons.dc.html" style="margin: 12px 16px 0 16px; border: 1.5px solid #1B1F24; border-radius: 14px; background: #FFFFFF; min-height: 52px; padding: 0 12px 0 14px; display: flex; align-items: center; gap: 8px; text-decoration: none; color: #1B1F24">
       <span aria-hidden="true" style="width: 10px; height: 10px; border-radius: 5px; background: #B3261E"></span>
-      <span style="flex: 1; font-weight: 700; font-size: 15px">En sortie · {{runCount}} · {{runSum}}</span>
+      <span style="flex: 1; font-weight: 700; font-size: 15px">En tournée · {{runCount}} · {{runSum}}</span>
       <span style="font-size: 14px; color: #4A5058">Voir les dons ›</span>
     </a>
   </sc-if>
@@ -57,7 +59,7 @@ a{color:#B3261E}a:hover{color:#8C1D18}
     <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start">
       <div style="display: flex; flex-direction: column; gap: 10px">
         <sc-for list="{{odd}}" as="item" hint-placeholder-count="8">
-          <button class="tile" onClick="{{item.tap}}" style="{{item.style}}" aria-label="{{item.aria}}"><span class="num">{{item.n}}</span><span class="gl">{{item.glyph}}</span></button>
+          <button class="tile" onClick="{{item.tap}}" style="{{item.style}}" aria-label="{{item.aria}}"><span class="num">{{item.n}}</span><span class="gl">{{item.glyph}}</span><sc-if value="{{item.many}}" hint-placeholder-val="{{false}}"><span class="badge" aria-hidden="true">{{item.cal}}</span></sc-if></button>
         </sc-for>
       </div>
       <div style="display: flex; flex-direction: column; gap: 10px">
@@ -66,7 +68,7 @@ a{color:#B3261E}a:hover{color:#8C1D18}
             <a class="tile bld" href="Building.dc.html" style="{{item.style}}" aria-label="{{item.aria}}"><svg class="bi" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="1"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2"/></svg><span class="num grow">{{item.n}}</span><span class="gl" style="font-size: 17px">{{item.glyph}}</span><svg class="chev" viewBox="0 0 12 24" aria-hidden="true"><path d="M3 6l6 6-6 6"/></svg></a>
           </sc-if>
           <sc-if value="{{item.house}}" hint-placeholder-val="{{true}}">
-            <button class="tile" onClick="{{item.tap}}" style="{{item.style}}" aria-label="{{item.aria}}"><span class="num">{{item.n}}</span><span class="gl">{{item.glyph}}</span></button>
+            <button class="tile" onClick="{{item.tap}}" style="{{item.style}}" aria-label="{{item.aria}}"><span class="num">{{item.n}}</span><span class="gl">{{item.glyph}}</span><sc-if value="{{item.many}}" hint-placeholder-val="{{false}}"><span class="badge" aria-hidden="true">{{item.cal}}</span></sc-if></button>
           </sc-if>
         </sc-for>
       </div>
@@ -81,14 +83,14 @@ a{color:#B3261E}a:hover{color:#8C1D18}
       </div>
     </sc-if>
     <sc-if value="{{noLast}}" hint-placeholder-val="{{true}}">
-      <div style="position: absolute; left: 16px; right: 16px; bottom: 20px; height: 44px; border-radius: 22px; background: #FFFFFF; border: 1px solid #E2DED5; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #4A5058">Touchez une maison pour choisir son statut</div>
+      <div style="position: absolute; left: 16px; right: 16px; bottom: 20px; height: 44px; border-radius: 22px; background: #FFFFFF; border: 1px solid #E2DED5; display: flex; align-items: center; justify-content: center; font-size: 14px; color: #4A5058">Appuyez sur une maison pour changer son statut</div>
     </sc-if>
   </sc-if>
 
   <sc-if value="{{hasSheet}}" hint-placeholder-val="{{true}}">
     <button onClick="{{close}}" aria-label="Fermer" style="position: absolute; inset: 0; border: 0; background: rgba(27, 31, 36, 0.35); cursor: pointer"></button>
 
-    <!-- Step 1: the four statuses; one tap stores it and closes, unless ✓ (a run is on) or ↻
+    <!-- Step 1: the five statuses; one tap stores it and closes, unless ✓ (a run is on) or ↻
          has details to ask. On a house already ✗ or ↻, « Personne » counts one more try (#80). -->
     <sc-if value="{{stepPick}}" hint-placeholder-val="{{true}}">
       <div class="sheet" role="dialog" aria-label="{{title}}">
@@ -98,10 +100,23 @@ a{color:#B3261E}a:hover{color:#8C1D18}
         </div>
         <div role="radiogroup" aria-label="Statut" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
           <button class="st" role="radio" aria-checked="{{isDone}}" onClick="{{setDone}}" style="{{sDone}}"><span class="g">✓</span>Fait</button>
+          <button class="st" role="radio" aria-checked="{{isRefused}}" onClick="{{setRefused}}" style="{{sRefused}}"><span class="g">⊘</span>Refusé</button>
           <button class="st" role="radio" aria-checked="{{isNobody}}" onClick="{{setNobody}}" style="{{sNobody}}"><span class="g">✗</span>{{nobodyLabel}}</button>
           <button class="st" role="radio" aria-checked="{{isBack}}" onClick="{{setBack}}" style="{{sBack}}"><span class="g">↻</span>Repasser</button>
-          <button class="st" role="radio" aria-checked="{{isTodo}}" onClick="{{setTodo}}" style="{{sTodo}}"><span class="g">○</span>À faire</button>
+          <button class="st" role="radio" aria-checked="{{isTodo}}" onClick="{{setTodo}}" style="{{sTodo}}; grid-column: 1 / -1"><span class="g">○</span>À faire</button>
         </div>
+        <!-- How many calendars the house took (kept with the house, no amount): from a ✓ on. -->
+        <sc-if value="{{showCal}}" hint-placeholder-val="{{false}}">
+          <div style="display: flex; align-items: center; justify-content: space-between; min-height: 48px; background: #F3F1EC; border-radius: 12px; padding: 0 6px 0 14px">
+            <span style="font-size: 16px; font-weight: 700">{{calText}}</span>
+            <button class="ib" onClick="{{calMinus}}" aria-label="Un calendrier de moins" style="{{calMinusStyle}}"><svg viewBox="0 0 24 24"><path d="M5 12h14"/></svg></button>
+          </div>
+        </sc-if>
+        <!-- During a tournée, a house already ✓ can take another don at any time (a second
+             calendar): it goes to the tournée on now, never to the house. -->
+        <sc-if value="{{canAddDon}}" hint-placeholder-val="{{false}}">
+          <button onClick="{{addDon}}" style="min-height: 52px; border-radius: 26px; border: 1.5px solid #1B1F24; background: #FFFFFF; font: 700 17px 'Atkinson Hyperlegible', sans-serif; color: #1B1F24; cursor: pointer">+ Ajouter un don</button>
+        </sc-if>
         <sc-if value="{{hasTries}}" hint-placeholder-val="{{false}}">
           <span style="font-size: 15px; font-weight: 700; background: #FDF3DC; border-radius: 12px; padding: 10px 14px">✗ {{triesText}}</span>
         </sc-if>
@@ -109,12 +124,13 @@ a{color:#B3261E}a:hover{color:#8C1D18}
       </div>
     </sc-if>
 
-    <!-- Step 2a: ✓ during a run. The method chosen here stays for « Autre montant ». -->
+    <!-- Step 2a: ✓ during a tournée: a ✓ means a calendar was handed over, so it is paid or offered;
+         ✕ puts the house back as it was (from « + Ajouter un don », ✕ only closes). The method chosen here stays for « Autre montant ». -->
     <sc-if value="{{stepDon}}" hint-placeholder-val="{{false}}">
       <div class="sheet" role="dialog" aria-label="Don reçu">
         <div style="display: flex; align-items: center; justify-content: space-between">
-          <span style="font: 700 28px 'Barlow Condensed', sans-serif">{{title}} fait · don reçu&#160;?</span>
-          <button class="ib" onClick="{{noDon}}" aria-label="Fermer sans don"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+          <span style="font: 700 28px 'Barlow Condensed', sans-serif">Montant du don</span>
+          <button class="ib" onClick="{{noDon}}" aria-label="{{noDonAria}}"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
         </div>
         <div role="radiogroup" aria-label="Moyen de paiement" style="display: flex; border: 1.5px solid #CFC9BD; border-radius: 14px; overflow: hidden">
           <button class="seg" role="radio" aria-checked="{{m0}}" onClick="{{pick0}}" style="{{s0}}">Espèces</button><span class="sep"></span>
@@ -128,7 +144,7 @@ a{color:#B3261E}a:hover{color:#8C1D18}
         </div>
         <div style="display: flex; gap: 10px">
           <button class="chip" onClick="{{toOther}}" style="flex: 1">Autre montant</button>
-          <button class="chip" onClick="{{noDon}}" style="flex: 1; color: #4A5058">Pas de don</button>
+          <button class="chip" onClick="{{offered}}" style="flex: 1">Calendrier offert</button>
         </div>
       </div>
     </sc-if>
@@ -151,11 +167,11 @@ a{color:#B3261E}a:hover{color:#8C1D18}
           <span style="font: 700 28px 'Barlow Condensed', sans-serif; color: #4A5058">€</span>
         </div>
         <span style="font-size: 14px; color: #4A5058; margin-top: -6px">Par exemple 7,50</span>
-        <button onClick="{{give12}}" style="height: 56px; border-radius: 28px; border: 0; background: #B3261E; color: #FFFFFF; font: 700 17px 'Atkinson Hyperlegible', sans-serif; cursor: pointer">Ajouter le don</button>
+        <button onClick="{{give12}}" style="height: 56px; border-radius: 28px; border: 0; background: #B3261E; color: #FFFFFF; font: 700 17px 'Atkinson Hyperlegible', sans-serif; cursor: pointer">Valider</button>
       </div>
     </sc-if>
 
-    <!-- Step 2c: ↻, when to come back (#81). Each choice is stored at once; « OK » closes. -->
+    <!-- Step 2c: ↻, when to come back (#81). Each choice is stored at once; « Valider » closes. -->
     <sc-if value="{{stepBack}}" hint-placeholder-val="{{false}}">
       <div class="sheet" role="dialog" aria-label="Quand repasser ?">
         <div style="display: flex; align-items: center; justify-content: space-between">
@@ -170,7 +186,7 @@ a{color:#B3261E}a:hover{color:#8C1D18}
         <div style="display: flex; align-items: center; gap: 12px"><label for="hour" style="font-weight: 700; font-size: 15px">Heure</label>
           <select id="hour" style="flex: 1; height: 52px; border: 1.5px solid #A9C8E6; border-radius: 12px; padding: 0 12px; font: 400 17px 'Atkinson Hyperlegible', sans-serif; background: #FFFFFF; color: #1B1F24"><option>Pas d'heure</option><option selected>Vers 18 h</option><option>Vers 19 h</option></select></div>
         <span style="font-size: 15px; color: #1D4E7A; font-weight: 700">{{backSummary}}</span>
-        <button onClick="{{close}}" style="height: 56px; border-radius: 28px; border: 0; background: #B3261E; color: #FFFFFF; font: 700 17px 'Atkinson Hyperlegible', sans-serif; cursor: pointer">OK</button>
+        <button onClick="{{close}}" style="height: 56px; border-radius: 28px; border: 0; background: #B3261E; color: #FFFFFF; font: 700 17px 'Atkinson Hyperlegible', sans-serif; cursor: pointer">Valider</button>
       </div>
     </sc-if>
   </sc-if>
@@ -182,40 +198,62 @@ class Component extends DCLogic {
     super(props);
     this.run = false;
     this.state = {
-      count: 19, sum: 280, method: 0, sel: '3bis', step: 'pick', day: 2, last: null,
+      count: 19, sum: 280, method: 0, sel: '3bis', step: 'pick', day: 2, last: null, extra: false,
       houses: [
-        { n: '1', side: 'odd', s: 'todo', t: 0 }, { n: '3', side: 'odd', s: 'done', t: 0 },
+        { n: '1', side: 'odd', s: 'todo', t: 0 }, { n: '3', side: 'odd', s: 'done', t: 0, cal: 1 },
         { n: '3bis', side: 'odd', s: 'nobody', t: 2, by: 'Léa · 14:02' }, { n: '5', side: 'odd', s: 'back', t: 1 },
-        { n: '7', side: 'odd', s: 'todo', t: 0 }, { n: '9', side: 'odd', s: 'done', t: 0 },
-        { n: '11', side: 'odd', s: 'todo', t: 0 }, { n: '13', side: 'odd', s: 'todo', t: 0 },
+        { n: '7', side: 'odd', s: 'todo', t: 0 }, { n: '9', side: 'odd', s: 'done', t: 0, cal: 2 },
+        { n: '11', side: 'odd', s: 'refused', t: 0 }, { n: '13', side: 'odd', s: 'todo', t: 0 },
         { n: '15', side: 'odd', s: 'todo', t: 0 },
-        { n: '2', side: 'even', s: 'done', t: 0 }, { n: '4', side: 'even', s: 'done', t: 0 },
+        { n: '2', side: 'even', s: 'done', t: 0, cal: 1 }, { n: '4', side: 'even', s: 'done', t: 0, cal: 1 },
         { n: '6', side: 'even', s: 'todo', t: 0 }, { n: '8', side: 'even', building: true, done: 7, total: 12 },
         { n: '10', side: 'even', s: 'todo', t: 0 }, { n: '12', side: 'even', s: 'nobody', t: 1 },
         { n: '14', side: 'even', s: 'todo', t: 0 }, { n: '16', side: 'even', s: 'todo', t: 0 }
       ]
     };
     this.methods = ['espèces', 'chèque', 'carte'];
-    this.words = { todo: 'à faire', done: 'fait', nobody: 'personne', back: 'repasser' };
+    this.words = { todo: 'à faire', done: 'fait', nobody: 'personne', back: 'repasser', refused: 'refusé' };
+    this.names = { todo: 'À faire', done: 'Fait', nobody: 'Personne', back: 'Repasser', refused: 'Refusé' };
   }
   house(n) { return this.state.houses.find((h) => h.n === n); }
   // One tap stores the status; ✓ (a run is on) and ↻ then ask for their details.
   set(s) {
     const n = this.state.sel;
     const before = this.house(n);
+    if (before.s === s && s !== 'back') { this.setState({ step: null, sel: null }); return; }
     let t = before.t;
     if (s === 'nobody') t = before.s === 'nobody' || before.s === 'back' ? t + 1 : Math.max(1, t);
-    if (s === 'todo') t = 0;
-    const houses = this.state.houses.map((h) => (h.n === n ? Object.assign({}, h, { s: s, t: t, by: 'vous · à l’instant' }) : h));
+    if (s === 'todo' || s === 'refused') t = 0;
+    const houses = this.state.houses.map((h) => (h.n === n ? Object.assign({}, h, { s: s, t: t, cal: s === 'done' ? 1 : 0, by: 'vous · à l’instant' }) : h));
     const extra = s === 'nobody' && t >= 2 ? ' (' + t + 'e passage)' : '';
     const last = { before: before, don: null, text: 'N° ' + n + ' : ' + this.words[s] + extra };
+    if (s === 'done' && !this.run) last.text = 'N° ' + n + ' : fait';
     const step = s === 'done' && this.run ? 'don' : s === 'back' ? 'back' : null;
-    this.setState({ houses: houses, last: last, step: step, method: 0, sel: step ? n : null });
+    this.setState({ houses: houses, last: last, step: step, method: 0, sel: step ? n : null, extra: false });
+  }
+  oneMore(n) {
+    return this.state.houses.map((h) => (h.n === n ? Object.assign({}, h, { cal: (h.cal || 1) + 1 }) : h));
+  }
+  offered() {
+    const extra = this.state.extra;
+    if (extra) this.setState({ houses: this.oneMore(this.state.sel) });
+    const last = extra ? { before: this.house(this.state.sel), don: null } : (this.state.last || { before: this.house(this.state.sel) });
+    const text = extra ? 'N° ' + this.state.sel + ' · calendrier offert ajouté' : 'N° ' + this.state.sel + ' fait · calendrier offert';
+    this.setState({ step: null, sel: null, extra: false, last: Object.assign({}, last, { text: text }) });
+  }
+  // ✕ on the don step: no calendar after all, the house goes back as it was.
+  revert() {
+    if (this.state.extra) { this.setState({ step: null, sel: null, extra: false }); return; }
+    const last = this.state.last;
+    const houses = last ? this.state.houses.map((h) => (h.n === last.before.n ? last.before : h)) : this.state.houses;
+    this.setState({ houses: houses, last: null, step: null, sel: null });
   }
   give(amount) {
-    const last = this.state.last || { before: this.house(this.state.sel) };
-    const text = 'N° ' + this.state.sel + ' fait · ' + amount + ' € en ' + this.methods[this.state.method];
-    this.setState({ count: this.state.count + 1, sum: this.state.sum + amount, step: null, sel: null,
+    const extra = this.state.extra;
+    if (extra) this.setState({ houses: this.oneMore(this.state.sel) });
+    const last = extra ? { before: this.house(this.state.sel) } : (this.state.last || { before: this.house(this.state.sel) });
+    const text = 'N° ' + this.state.sel + (extra ? ' · ' : ' fait · ') + amount + ' € en ' + this.methods[this.state.method] + (extra ? ' ajouté' : '');
+    this.setState({ count: this.state.count + 1, sum: this.state.sum + amount, step: null, sel: null, extra: false,
       last: Object.assign({}, last, { don: amount, text: text }) });
   }
   undo() {
@@ -232,21 +270,23 @@ class Component extends DCLogic {
     if (h.s === 'done') return base + 'background: #1E6B47; color: #FFFFFF; border-color: #1E6B47;';
     if (h.s === 'nobody') return base + 'background: #F2B33D; color: #1B1F24; border-color: #D99A22;';
     if (h.s === 'back') return base + 'background: #D6E6F5; color: #1D4E7A; border-color: #A9C8E6;';
+    if (h.s === 'refused') return base + 'background: #5A6068; color: #FFFFFF; border-color: #5A6068;';
     return base + 'background: #FFFFFF; color: #1B1F24; border-color: #CFC9BD;';
   }
   stStyle(s, cur) {
-    const fill = { done: 'background: #1E6B47; color: #FFFFFF; border: 2px solid #1E6B47', nobody: 'background: #F2B33D; color: #1B1F24; border: 2px solid #D99A22', back: 'background: #D6E6F5; color: #1D4E7A; border: 2px solid #A9C8E6', todo: 'background: #FFFFFF; color: #1B1F24; border: 2px solid #CFC9BD' };
+    const fill = { done: 'background: #1E6B47; color: #FFFFFF; border: 2px solid #1E6B47', nobody: 'background: #F2B33D; color: #1B1F24; border: 2px solid #D99A22', back: 'background: #D6E6F5; color: #1D4E7A; border: 2px solid #A9C8E6', refused: 'background: #5A6068; color: #FFFFFF; border: 2px solid #5A6068', todo: 'background: #FFFFFF; color: #1B1F24; border: 2px solid #CFC9BD' };
     return fill[s] + (s === cur ? '; box-shadow: 0 0 0 3px #FFFFFF, 0 0 0 5px #1B1F24' : '');
   }
   renderVals() {
     const H = this.state.houses;
-    const glyphs = { todo: '○', done: '✓', nobody: '✗', back: '↻' };
+    const glyphs = { todo: '○', done: '✓', nobody: '✗', back: '↻', refused: '⊘' };
     const mk = (h) => h.building
       ? { n: h.n, building: true, house: false, glyph: '◐ ' + h.done + '/' + h.total, style: this.styleFor(h), aria: 'Numéro ' + h.n + ', immeuble, ' + h.done + ' sur ' + h.total + ' faits, ouvrir' }
       : { n: h.n, building: false, house: true, glyph: glyphs[h.s] + (h.t >= 2 ? ' ×' + h.t : ''), style: this.styleFor(h),
-          aria: 'Numéro ' + h.n + ', ' + this.words[h.s] + ', choisir le statut', tap: () => this.setState({ sel: h.n, step: 'pick', last: null }) };
+          many: h.s === 'done' && (h.cal || 1) >= 2, cal: h.cal || 1,
+          aria: 'Numéro ' + h.n + ', ' + this.words[h.s] + (h.s === 'done' && h.cal >= 2 ? ', ' + h.cal + ' calendriers' : '') + ', changer le statut', tap: () => this.setState({ sel: h.n, step: 'pick', last: null }) };
     const houses = H.filter((h) => !h.building);
-    const doneCount = houses.filter((h) => h.s === 'done').length;
+    const doneCount = houses.filter((h) => h.s === 'done' || h.s === 'refused').length;
     const sel = this.state.sel ? this.house(this.state.sel) : null;
     const cur = sel ? sel.s : null;
     const step = this.state.step;
@@ -259,29 +299,37 @@ class Component extends DCLogic {
     const last = this.state.last;
     return {
       run: this.run,
+      showCal: !!sel && cur === 'done',
+      calText: sel ? ((sel.cal || 1) > 1 ? (sel.cal + ' calendriers') : '1 calendrier') : '',
+      calMinus: () => { if (sel && (sel.cal || 1) > 1) this.setState({ houses: H.map((h) => (h.n === sel.n ? Object.assign({}, h, { cal: h.cal - 1 }) : h)) }); },
+      calMinusStyle: sel && (sel.cal || 1) > 1 ? '' : 'opacity: 0.35; cursor: default',
+      canAddDon: this.run && cur === 'done',
+      addDon: () => this.setState({ step: 'don', extra: true, method: 0 }),
+      noDonAria: this.state.extra ? 'Fermer' : 'Annuler : la maison reprend son statut',
       odd: H.filter((h) => h.side === 'odd').map(mk),
       even: H.filter((h) => h.side === 'even').map(mk),
       doneCount: doneCount, total: houses.length,
       nobodyCount: houses.filter((h) => h.s === 'nobody').length,
+      refusedCount: houses.filter((h) => h.s === 'refused').length,
       comeBackCount: houses.filter((h) => h.s === 'back').length,
       progressStyle: 'height: 6px; background: #1E6B47; width: ' + Math.round((doneCount / houses.length) * 100) + '%',
       runCount: this.state.count + ' dons', runSum: this.state.sum + ' €',
       hasSheet: !!sel && !!step, noSheet: !(sel && step),
       stepPick: step === 'pick', stepDon: step === 'don', stepOther: step === 'other', stepBack: step === 'back',
       title: sel ? 'N° ' + sel.n : '',
-      current: sel ? 'actuellement ' + this.words[cur] : '',
-      nobodyLabel: again ? 'Encore personne' : 'Personne',
-      hasTries: !!sel && sel.t >= 1 && cur !== 'todo',
+      current: sel ? this.names[cur] : '',
+      nobodyLabel: again ? 'De nouveau personne' : 'Personne',
+      hasTries: !!sel && sel.t >= 1 && cur !== 'todo' && cur !== 'refused',
       triesText: sel ? (sel.t > 1 ? sel.t + ' passages sans personne' : '1 passage sans personne') : '',
       changed: sel && sel.by ? 'Modifié par ' + sel.by : '',
-      isDone: cur === 'done', isNobody: cur === 'nobody', isBack: cur === 'back', isTodo: cur === 'todo',
-      sDone: this.stStyle('done', cur), sNobody: this.stStyle('nobody', cur), sBack: this.stStyle('back', cur), sTodo: this.stStyle('todo', cur),
-      setDone: () => this.set('done'), setNobody: () => this.set('nobody'), setBack: () => this.set('back'), setTodo: () => this.set('todo'),
+      isDone: cur === 'done', isRefused: cur === 'refused', isNobody: cur === 'nobody', isBack: cur === 'back', isTodo: cur === 'todo',
+      sDone: this.stStyle('done', cur), sRefused: this.stStyle('refused', cur), sNobody: this.stStyle('nobody', cur), sBack: this.stStyle('back', cur), sTodo: this.stStyle('todo', cur),
+      setDone: () => this.set('done'), setRefused: () => this.set('refused'), setNobody: () => this.set('nobody'), setBack: () => this.set('back'), setTodo: () => this.set('todo'),
       m0: m === 0, m1: m === 1, m2: m === 2, s0: m === 0 ? on : off, s1: m === 1 ? on : off, s2: m === 2 ? on : off,
       pick0: () => this.setState({ method: 0 }), pick1: () => this.setState({ method: 1 }), pick2: () => this.setState({ method: 2 }),
       give5: () => this.give(5), give10: () => this.give(10), give20: () => this.give(20), give12: () => this.give(12),
       toOther: () => this.setState({ step: 'other' }), toDon: () => this.setState({ step: 'don' }),
-      noDon: () => this.setState({ step: null, sel: null }),
+      noDon: () => this.revert(), offered: () => this.offered(),
       close: () => this.setState({ step: null, sel: null }),
       days: dayLabels.map((l, i) => ({ label: l, on: i === this.state.day, pick: () => this.setState({ day: i }),
         style: i === this.state.day ? 'border: 1.5px solid #1D4E7A; background: #1D4E7A; color: #FFFFFF' : 'border: 1.5px solid #A9C8E6; background: #FFFFFF; color: #1D4E7A' })),

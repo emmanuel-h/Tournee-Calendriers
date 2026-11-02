@@ -195,7 +195,7 @@
       "y": 2528,
       "w": 390,
       "h": 844,
-      "title": "5.6 Statut — encore personne (#80)",
+      "title": "5.6 Statut — de nouveau personne (#80)",
       "is_interactive": true
     },
     "HouseComeBack.dc.html": {
@@ -223,14 +223,14 @@
     "RunStart.dc.html": {
       "h": 844,
       "is_interactive": true,
-      "title": "Sortie — Accueil, démarrer (#63)",
+      "title": "Tournée — Accueil, commencer (#63)",
       "w": 390,
       "x": 0,
       "y": 7584
     },
     "RunHome.dc.html": {
       "h": 844,
-      "title": "Sortie — Accueil, sortie en cours (#63)",
+      "title": "Tournée — Accueil, tournée en cours (#63)",
       "w": 390,
       "x": 470,
       "y": 7584
@@ -238,7 +238,7 @@
     "RunStreet.dc.html": {
       "h": 844,
       "is_interactive": true,
-      "title": "Sortie — Rue, don reçu après ✓ (#63)",
+      "title": "Tournée — Rue, maison ✓ : ajouter un don (#63)",
       "w": 390,
       "x": 940,
       "y": 7584
@@ -246,14 +246,14 @@
     "RunDon.dc.html": {
       "h": 844,
       "is_interactive": true,
-      "title": "Sortie — Modifier le don (#63)",
+      "title": "Tournée — Modifier le don (#63)",
       "w": 390,
       "x": 1410,
       "y": 7584
     },
     "RunDons.dc.html": {
       "h": 844,
-      "title": "Sortie — Dons de la sortie (#63)",
+      "title": "Tournée — Dons de la tournée (#63)",
       "w": 390,
       "x": 3290,
       "y": 7584
@@ -261,14 +261,14 @@
     "RunRecap.dc.html": {
       "h": 844,
       "is_interactive": true,
-      "title": "Sortie — Bilan de la sortie (#63)",
+      "title": "Tournée — Bilan de la tournée (#63)",
       "w": 390,
       "x": 1880,
       "y": 7584
     },
     "RunTeam.dc.html": {
       "h": 844,
-      "title": "Sortie — Équipe avec la collecte (#63)",
+      "title": "Tournée — Équipe avec la collecte (#63)",
       "w": 390,
       "x": 2350,
       "y": 7584
@@ -276,7 +276,7 @@
     "Cash.dc.html": {
       "h": 844,
       "is_interactive": true,
-      "title": "Sortie — Collecte 2026 (#63)",
+      "title": "Tournée — Collecte 2026 (#63)",
       "w": 390,
       "x": 2820,
       "y": 7584
@@ -342,7 +342,7 @@
     "rowRun": {
       "kind": "title1",
       "maxW": 3680,
-      "text": "Sorties et caisse (#63)",
+      "text": "Tournées et collecte (#63)",
       "w": 240,
       "x": 0,
       "y": 7284

@@ -25,21 +25,22 @@ a{color:#B3261E}a:hover{color:#8C1D18}
 <div style="width: 390px; height: 844px; box-sizing: border-box; background: #F3F1EC; color: #1B1F24; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden">
   <div style="display: flex; align-items: center; gap: 4px; padding: 8px">
     <a class="ib" href="RunTeam.dc.html" aria-label="Retour"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a>
-    <div style="display: flex; flex-direction: column"><h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 28px; line-height: 1.05">Collecte 2026</h1><span style="font-size: 14px; color: #4A5058">Tournée 49 · sorties validées</span></div>
+    <div style="display: flex; flex-direction: column"><h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 28px; line-height: 1.05">Collecte 2026</h1><span style="font-size: 14px; color: #4A5058">Secteur 49 · tournées validées</span></div>
   </div>
   <div style="flex: 1; overflow-y: auto">
-    <div class="hd">Total des 4 sorties</div>
+    <div class="hd">Total des 4 tournées</div>
     <div style="background: #FFFFFF; border-top: 1px solid #E2DED5">
       <div class="line"><span class="m">Espèces</span><span class="c">32 dons</span><span class="a">440&#160;€</span></div>
       <div class="line"><span class="m">Chèques</span><span class="c">7 dons</span><span class="a">140&#160;€</span></div>
       <div class="line"><span class="m">Carte bancaire</span><span class="c">2 dons</span><span class="a">20&#160;€</span></div>
+      <div class="line"><span class="m" style="font-weight: 400">Calendriers offerts</span><span class="c">3</span><span class="a"></span></div>
       <div class="line" style="background: #F3F1EC; min-height: 56px"><span class="m" style="font-size: 18px">Total</span><span class="c" style="color: #1B1F24; font-weight: 700">41 dons</span><span class="a" style="font-size: 28px">600&#160;€</span></div>
     </div>
-    <div class="hd">Sorties</div>
+    <div class="hd">Tournées</div>
     <div style="border-top: 1px solid #E2DED5">
       <sc-for list="{{runs}}" as="r" hint-placeholder-count="4">
         <button class="run" onClick="{{r.toggle}}" aria-expanded="{{r.open}}" aria-label="{{r.aria}}">
-          <span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 700; font-size: 16px">{{r.day}}</span><span style="font-size: 14px; color: #4A5058">{{r.who}} · {{r.houses}} maisons, {{r.count}} dons</span></span>
+          <span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 700; font-size: 16px">{{r.day}}</span><span style="font-size: 14px; color: #4A5058">{{r.houses}} maisons, {{r.count}} dons</span></span>
           <span style="font: 700 24px 'Barlow Condensed', sans-serif">{{r.sum}}</span>
           <span style="font-size: 16px; color: #4A5058; width: 18px; text-align: center">{{r.chev}}</span>
         </button>
@@ -52,7 +53,7 @@ a{color:#B3261E}a:hover{color:#8C1D18}
         </sc-if>
       </sc-for>
     </div>
-    <div style="padding: 16px 20px 24px 20px; font-size: 14px; color: #4A5058">Une sortie validée ne peut plus être modifiée. Les dons ne sont jamais associés à une adresse.</div>
+    <div style="padding: 16px 20px 24px 20px; font-size: 14px; color: #4A5058">Une tournée validée ne peut plus être modifiée. Les dons ne sont jamais associés à une adresse.</div>
   </div>
 </div>
 </x-dc>
@@ -80,7 +81,7 @@ class Component extends DCLogic {
         return {
           day: r.day, who: r.who, houses: r.houses, count: count, sum: e(sum),
           open: open, chev: open ? '▾' : '▸',
-          aria: r.day + ', ' + r.who + ', ' + e(sum) + (open ? ', masquer le détail' : ', afficher le détail'),
+          aria: r.day + ', ' + e(sum) + (open ? ', masquer le détail' : ', afficher le détail'),
           toggle: () => this.setState({ open: open ? -1 : i }),
           lines: r.m.map((x, k) => ({ name: names[k], count: dons(x[0]), sum: e(x[1]) }))
         };
