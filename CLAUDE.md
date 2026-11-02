@@ -36,8 +36,9 @@ anonymous sign-in (#17, #67); Tournée aggregate (#18); Firestore adapters (#19)
 open tournée on Firestore, phone storage when none is open (#24); pending-sync line (#25). Validated
 by the user (2026-10-16); App Check enforced on Firestore and Auth (#68). Admins (#75): global `admins/{uid}` added by hand in the console, « Toutes les tournées », admin visit; validated by the user and closed (2026-10-17), rules deployed. Revoked admins and the emulator-based admin flow (#87) closed (2026-10-17).
 Code audit clean-up (#88) and « Modifié par Léa » on the house and door sheets (#89) closed
-(2026-10-17). #90 open: go_router 18.1 done; Firebase (Firestore 7…) waits for
-`fake_cloud_firestore` to support it. #69: rules tooling in `firebase/` upgraded to firebase-tools
+(2026-10-17). #90 open: go_router 18.1 and Firebase (firebase_core 5.1, cloud_firestore 7.1, firebase_auth 7.0,
+firebase_app_check 0.5.1, fake_cloud_firestore 4.5) done; the fake still cannot read a one-segment
+`FieldPath`, so `FirestoreStreetRepository.save` keeps writing top-level fields by name. #69: rules tooling in `firebase/` upgraded to firebase-tools
 15.34, rules-unit-testing 5, firebase 12 (Node ≥ 20; 22 locally and in CI); the Firestore
 emulator's stale reads are gone (`tool/admin_e2e.sh` 6/6 in a row, 2026-11-02).
 M3 done, milestone closed (2026-11-01), validated on the phone with 0.6.0: geometry and map layers (#26), geopf adapters (#27), street-picking use cases with shapes and assignees (#28), MapLibre map widget in `ui/map/` (#29), a tournée's communes and « Ajouter des rues » Carte | Liste (#78), Accueil (#30), the street card, search and manual street (#31), tries with nobody home (#80), the sheet on a tap to ↻ with a day + hour (#81). Follow-ups from the phone test: street shapes from the OpenFreeMap vector tiles instead of Overpass, filled once for streets without one (#92); take a street from « Autres rues » (#93); released as 0.5.1. A street held only by ex-members of the team is « libre » (#91, display only, no rules change). Rules (with the #92 shape fill) deployed 2026-10-18 and identical to `firestore.rules` (checked 2026-11-01).
