@@ -20,6 +20,8 @@ analyzer:
     - build/**
     - android/**
     - ios/**
+    # The rules tooling (#69): firebase-tools ships Dart templates.
+    - firebase/node_modules/**
 
 linter:
   rules:
