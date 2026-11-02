@@ -1196,6 +1196,18 @@ class AppLocalizationsFr extends AppLocalizations {
   String get release010First => 'Première version de test.';
 
   @override
+  String get release070Offline =>
+      'La tournée ouverte reste disponible sans réseau : la carte et les rues sont gardées sur le téléphone, toutes seules.';
+
+  @override
+  String get release070Greyed =>
+      'Sans réseau, une tournée jamais ouverte sur ce téléphone apparaît en gris dans « Mes tournées ».';
+
+  @override
+  String get release070Settings =>
+      'Paramètres rappelle que l\'application fonctionne sans réseau.';
+
+  @override
   String get release060FreeLines =>
       'Les rues libres se voient mieux sur la carte : tirets gris foncé sur un liseré blanc.';
 

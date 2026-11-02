@@ -1701,6 +1701,24 @@ abstract class AppLocalizations {
   /// **'Première version de test.'**
   String get release010First;
 
+  /// « Nouveautés », version 0.7.0: the tournée is kept for offline use by itself.
+  ///
+  /// In fr, this message translates to:
+  /// **'La tournée ouverte reste disponible sans réseau : la carte et les rues sont gardées sur le téléphone, toutes seules.'**
+  String get release070Offline;
+
+  /// « Nouveautés », version 0.7.0: tournées that cannot open offline are greyed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Sans réseau, une tournée jamais ouverte sur ce téléphone apparaît en gris dans « Mes tournées ».'**
+  String get release070Greyed;
+
+  /// « Nouveautés », version 0.7.0: the line in Paramètres.
+  ///
+  /// In fr, this message translates to:
+  /// **'Paramètres rappelle que l\'application fonctionne sans réseau.'**
+  String get release070Settings;
+
   /// « Nouveautés », version 0.6.0: « libre » lines stand out.
   ///
   /// In fr, this message translates to:
