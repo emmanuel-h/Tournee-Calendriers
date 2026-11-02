@@ -19,6 +19,7 @@ import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_upda
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_writes.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/ordered_writes.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/street_memory.dart';
+import 'package:tournee_calendriers/infrastructure/firestore/unfinished_streets.dart';
 
 /// The [StreetRepository] of M2: the streets of one campaign of one
 /// tournée, `tournees/{id}/campaigns/{year}/streets` (PLAN §6.2), shared by
@@ -40,6 +41,10 @@ import 'package:tournee_calendriers/infrastructure/firestore/street_memory.dart'
 /// - **Field paths.** [save] writes only the fields the change names
 ///   (`houses.12.status`), so two people marking different houses never
 ///   overwrite each other ([streetUpdates]).
+/// - **Caught up after a kill** ([UnfinishedStreets]): a new street of
+///   more houses than one write holds is kept on the phone until all its
+///   writes are in Firestore's hands; at the next start, the houses missing
+///   from the phone's copy are sent again (#104).
 /// - **Undo** is stamped with who undoes, read from [IdentityProvider] and
 ///   [Clock] at the time of the write (PLAN §8.2).
 final class FirestoreStreetRepository
@@ -52,11 +57,19 @@ final class FirestoreStreetRepository
     // underscore, `identity:`.
     required this._identity,
     required this._clock,
+    required this._unfinished,
   }) : _streets = FirestoreLayout.streetsOf(db, tournee, campaign);
 
   final CollectionReference<Map<String, dynamic>> _streets;
   final IdentityProvider _identity;
   final Clock _clock;
+  final UnfinishedStreets _unfinished;
+
+  /// The whole document of each new street whose writes are still going,
+  /// by id. Firestore shows such a street growing a few houses per write;
+  /// read with the houses it misses taken from here, it stays whole on this
+  /// phone ([withHousesOf]).
+  final _whole = <String, Map<String, Object?>>{};
 
   StreetMemory? _memory;
 
@@ -128,24 +141,107 @@ final class FirestoreStreetRepository
   /// whole in memory at once, and the writes follow in the background (a
   /// few milliseconds each); a teammate may see the street partly filled
   /// for a moment.
+  ///
+  /// When the street needs more than one write, it is first kept on the
+  /// phone ([UnfinishedStreets]), and its writes start once it is: killed
+  /// in the middle, the app finishes them at its next start (#104).
   @override
   Future<void> add(Street street) async {
     _ready.put(street);
+    final writes = newStreetWrites(street);
+    final chained = writes.updates.isNotEmpty;
+    _sendNew(
+      street,
+      writes,
+      what: 'add',
+      kept: chained,
+      after: chained ? _keep(street) : null,
+    );
+  }
+
+  /// Keeps [street] on the phone for a catch-up. Its failure (a full disk)
+  /// is only logged: the street is written all the same, only without the
+  /// safety net.
+  Future<void> _keep(Street street) => _unfinished
+      .keep(street)
+      .then<void>(
+        (_) {},
+        onError: (Object error) =>
+            debugPrint('Street ${street.id.value} not kept: $error'),
+      );
+
+  /// Sends the [writes] of the new [street] in order, after [after]; while
+  /// they go, this phone reads the street whole ([_whole]). Once they are
+  /// over, forgets the street [kept] on the phone.
+  ///
+  /// In a debug build, logs how long the writes took, to measure a long
+  /// street on a real phone: `flutter logs`, lines « Street … written ».
+  void _sendNew(
+    Street street,
+    ({Map<String, Object?>? document, List<Map<FieldPath, Object?>> updates})
+    writes, {
+    required String what,
+    required bool kept,
+    Future<void>? after,
+  }) {
     final id = street.id.value;
     final doc = _streets.doc(id);
-    final writes = newStreetWrites(street);
-    final first = (writes.document['houses']! as Map<String, Object?>).keys;
-    _writes.send(id, 'add $id', [
-      OrderedWrite(
-        () => doc.set(writes.document),
-        isShownIn: (copy) => holdsHouses(copy, first),
-      ),
+    _whole[id] = streetToDocument(street);
+    final ordered = [
+      if (writes.document case final document?)
+        OrderedWrite(
+          () => doc.set(document),
+          isShownIn: (copy) => holdsHouses(
+            copy,
+            (document['houses']! as Map<String, Object?>).keys,
+          ),
+        ),
       for (final update in writes.updates)
         OrderedWrite(
           () => doc.update(update),
           isShownIn: (copy) => holdsHouses(copy, addedLabels(update)),
         ),
-    ]);
+    ];
+    final took = Stopwatch()..start();
+    _writes.send(
+      id,
+      '$what $id',
+      ordered,
+      after: after,
+      whenOver: () {
+        _whole.remove(id);
+        if (kept) sendInBackground('forget $id', _unfinished.forget(street.id));
+        if (kDebugMode) {
+          final ms = took.elapsedMilliseconds;
+          debugPrint(
+            'Street $id written ($what): ${ordered.length} writes in $ms ms',
+          );
+        }
+      },
+    );
+  }
+
+  /// Finishes the new streets whose writes a kill of the app cut off
+  /// (#104): for each one kept, sends what the phone's copy of its document
+  /// is missing ([catchUpWrites]). The copy is the document's first
+  /// snapshot, which Firestore serves from the phone at once, offline too.
+  /// A failure (the storage unreadable, the tournée no longer readable) is
+  /// only logged: the user can still add the missing numbers by hand.
+  Future<void> _catchUp(StreetMemory memory) async {
+    for (final street in await _unfinished.load()) {
+      final id = street.id.value;
+      // Read whole from now on, before its copy is even read.
+      _whole[id] = streetToDocument(street);
+      final copy = (await _streets.doc(id).snapshots().first).data();
+      // Not even its document reached Firestore: the street is only here.
+      if (copy == null) memory.put(street);
+      _sendNew(
+        street,
+        catchUpWrites(street, copy),
+        what: 'catch up',
+        kept: true,
+      );
+    }
   }
 
   @override
@@ -224,14 +320,23 @@ final class FirestoreStreetRepository
           ),
           onError: memory.fail,
         );
+    unawaited(
+      _catchUp(memory).catchError(
+        (Object error) => debugPrint('Streets not caught up: $error'),
+      ),
+    );
     return memory;
   }
 
   /// The street in [doc], or null when it cannot be read: it is left out
   /// rather than stopping the whole tournée, and kept in Firestore.
   Street? _read(DocumentSnapshot<Map<String, dynamic>> doc) {
+    final stored = doc.data()!;
     try {
-      return streetFromDocument(doc.id, doc.data()!);
+      return streetFromDocument(doc.id, switch (_whole[doc.id]) {
+        final whole? => withHousesOf(stored, whole),
+        null => stored,
+      });
     } on FormatException catch (error) {
       debugPrint('Unreadable street ${doc.id}: $error');
       return null;

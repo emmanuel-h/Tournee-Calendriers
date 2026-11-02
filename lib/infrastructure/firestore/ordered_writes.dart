@@ -62,11 +62,31 @@ final class OrderedWrites {
 
   /// Sends [writes] to the document [id], in order, after the batches asked
   /// for before on it: at once when there is none.
-  void send(String id, String what, List<OrderedWrite> writes) {
-    final before = _running[id];
+  ///
+  /// The batch also waits for [after], when given (the phone keeping a
+  /// new street on its storage first, #104); it must not fail. Later
+  /// batches on [id] wait for this one, so for [after] too.
+  ///
+  /// [whenOver] is called once the batch is over: its last write sent (and
+  /// shown, when it asks it), or the batch stopped early. Every write it
+  /// sent is then in the Firestore SDK, which keeps them across a restart.
+  void send(
+    String id,
+    String what,
+    List<OrderedWrite> writes, {
+    Future<void>? after,
+    void Function()? whenOver,
+  }) {
+    final before = switch ((_running[id], after)) {
+      (null, null) => null,
+      (final running?, null) => running,
+      (null, final after?) => after,
+      (final running?, final after?) => running.then((_) => after),
+    };
     final run = before == null
         ? _run(id, what, writes)
         : before.then((_) => _run(id, what, writes));
+    if (whenOver != null) unawaited(run.then((_) => whenOver()));
     _running[id] = run;
     // Forgotten when over, unless a later batch already took its place.
     unawaited(

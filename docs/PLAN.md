@@ -2297,7 +2297,7 @@ writes:
 | mark, « Repassé, toujours personne », « repasser » of a door | `dwellings.<key>.status`, `.comeBack`, `.tries`, `.by`, `.at` (day or hour: no `status`, no `tries`) |
 | layout (describe, add / remove / rename a door) | `status`, `comeBack`, `tries` (deleted), `by`, `at`, `labelStyle`, `layout`, then each door `dwellings.<key>` whole; each door dropped is deleted |
 | back to a single house | `status`, `comeBack`, `tries` (deleted), `by`, `at`; `labelStyle`, `layout`, `dwellings` deleted |
-| street added (import, typed in, moved from the phone) | the document `set` with its first 2 houses, then each next `houses.<n>` whole, 2 per update, each sent once the phone's copy shows the one before (#70: the rules check each house a write adds, and only 2 fit in one request; §8.2 « Houses written in bulk ») |
+| street added (import, typed in, moved from the phone) | the document `set` with its first 2 houses, then each next `houses.<n>` whole, 2 per update, each sent once the phone's copy shows the one before (#70: the rules check each house a write adds, and only 2 fit in one request; §8.2 « Houses written in bulk »); a street of more than 2 houses is kept on the phone until they are all sent, and finished at the next start if the app was killed in the middle (#104) |
 | numbers added | each new `houses.<n>` whole, 2 per update (#70); each one restored: `deletedAt`, `deletedBy` = null, in an update of its own (the rules check one by one only a write changing one house, T2.4) |
 | number removed / restored | `deletedAt`, `deletedBy` (set / null) |
 | number renamed | `houses.<old>` deleted, `houses.<new>` whole |
@@ -2384,6 +2384,12 @@ can never drift.
   says whether a tournée works offline (read at start-up, an offline cold start included);
   same writing as the others; an unreadable file means none (the open tournée is then
   downloaded again).
+- `unfinished_streets/<tournée>/<year>/<streetId>.json` (port `UnfinishedStreets` of the
+  Firestore adapter, #104): each new street of more houses than one write holds, whole, in
+  the form of the phone's own streets, from just before its first write until all its
+  writes are in Firestore's hands (a second or two); read when the tournée's streets are
+  first listened to, to finish a street cut off by a kill (§8.2 « Killed in the middle »).
+  Ids percent-encoded; same writing as the streets; an unreadable file is skipped.
 - MapLibre offline regions (tiles), behind the `OfflineMapStore` port
   (`infrastructure/maplibre_offline/`): one per downloaded tournée (two for a moment while
   one is replaced), in the map library's database (`files/mbgl-offline.db`). Each region's
@@ -2638,12 +2644,34 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
     updates of one change (numbers added, restored, purged) go all at once: they touch
     different houses of a document that exists, so their order does not matter. Once in the
     SDK, writes keep their order to the server, offline and across restarts.
-  - **Killed in the middle.** `add` returns at once (the phone has the street in memory)
-    and the chain runs in the background; if the app is killed before its end (a street of
-    300 numbers takes a second or two), the updates not yet handed to the SDK are never
-    sent. The street then shows, on this phone after the restart and on the team's, with
-    only its first numbers; nothing catches up on its own. The user can add the missing ones
-    with « Numéros en plus », or delete the street and add it again.
+  - **Killed in the middle** (#104). `add` returns at once (the phone has the street in
+    memory) and the writes run in the background; a kill before their end (a street of 300
+    numbers takes a second or two) would leave the writes not yet handed to the SDK unsent.
+    So a street of more than 2 houses is first **kept on the phone**, whole
+    (`unfinished_streets/…`, port `UnfinishedStreets`, §6.3), and its first write goes only
+    once it is on the disk (a few milliseconds; a mark made meanwhile waits behind it, as
+    any write of the street). It is forgotten once its last write shows in the phone's
+    copy: from then on the SDK has them all and keeps them across a restart. A refused
+    write also ends it (what follows would be refused too). If the disk refuses the record
+    (full), the street is written all the same, without the safety net.
+  - **Caught up at the next start.** When the tournée's streets are first listened to, each
+    street still kept is compared with the phone's copy of its document (its first
+    snapshot, which Firestore serves from the phone at once, offline cold start included):
+    the houses missing are sent again, 2 per update, in order (`catchUpWrites`); the houses
+    there are left as they are (a teammate may have marked them since). No copy at all (not
+    even the first write reached the SDK): the street is written again from the start.
+    Nothing missing: it is only forgotten. Marks made on the street between the add and the
+    kill are lost, as any write not yet handed to the SDK. Known limit: closing the tournée
+    and opening it again within the second a street takes would start its catch-up while
+    its first writes still go (both would add the same houses); not guarded.
+  - **Whole on this phone while it is written.** Firestore shows the new street growing
+    2 houses per write; while its writes go (and during a catch-up), the adapter reads each
+    snapshot of it with the houses it is missing taken from the whole street
+    (`withHousesOf`), so the counters on this phone never climb 2, 4, 6… Teammates still see
+    it fill up (accepted, above).
+  - **Measured** in debug builds: each new street logs « Street <id> written (add | catch
+    up): N writes in M ms » once its writes are all handed to Firestore (`flutter logs` or
+    `adb logcat | grep "Street "`); M / N is the time per step.
   - **Checked per house**, as a single house is: exactly its fields (no `note`), number
     0–99999 and suffix, under its own label, position in range or both null, status among
     the four, a `comeBack` time only on « repasser » (no free hint), tries 1–99 or none,

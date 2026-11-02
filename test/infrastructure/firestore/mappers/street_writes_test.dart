@@ -136,6 +136,138 @@ void main() {
     });
   });
 
+  group('catchUpWrites', () {
+    test('should write the whole street again when the phone has no copy '
+        'of it', () {
+      final street = paixOf(2 * housesPerWrite + 1);
+
+      final writes = catchUpWrites(street, null);
+      final whole = newStreetWrites(street);
+
+      expect(writes.document, whole.document);
+      expect(writes.updates, whole.updates);
+    });
+
+    test('should add only the houses the copy is missing, in order, as '
+        'many per update as one write holds', () {
+      final street = paixOf(5);
+      // Killed after the document and its first update: 1 to 4 are there.
+      final copy = {
+        ...streetToDocument(street),
+        'houses': {for (var i = 1; i <= 4; i++) '$i': entryOf(street, '$i')},
+      };
+
+      final writes = catchUpWrites(street, copy);
+
+      expect(writes.document, isNull);
+      expect(writes.updates, [
+        {house('5'): entryOf(street, '5')},
+      ]);
+    });
+
+    test('should write nothing when the copy holds every house', () {
+      final writes = catchUpWrites(richStreet, streetToDocument(richStreet));
+
+      expect(writes.document, isNull);
+      expect(writes.updates, isEmpty);
+    });
+
+    test('should leave the houses of the copy as they are, marked by a '
+        'teammate since', () {
+      final street = paixOf(3);
+      final copy = {
+        ...streetToDocument(street),
+        'houses': {
+          '1': {
+            ...entryOf(street, '1')! as Map<String, Object?>,
+            'status': 'DONE',
+          },
+          '3': entryOf(street, '3'),
+        },
+      };
+
+      final writes = catchUpWrites(street, copy);
+
+      expect(writes.updates, [
+        {house('2'): entryOf(street, '2')},
+      ]);
+    });
+
+    test('should add every house to a copy without houses', () {
+      final street = paixOf(2);
+      final copy = <String, Object?>{...streetToDocument(street)}
+        ..remove('houses');
+
+      final writes = catchUpWrites(street, copy);
+
+      expect(writes.updates, [
+        {house('1'): entryOf(street, '1'), house('2'): entryOf(street, '2')},
+      ]);
+    });
+  });
+
+  group('withHousesOf', () {
+    test('should add the houses of the whole street the stored document is '
+        'missing', () {
+      final street = paixOf(3);
+      final stored = {
+        ...streetToDocument(street),
+        'houses': {'1': entryOf(street, '1')},
+      };
+
+      expect(
+        withHousesOf(stored, streetToDocument(street)),
+        streetToDocument(street),
+      );
+    });
+
+    test('should read back as the whole street', () {
+      final whole = streetToDocument(richStreet);
+      final stored = {
+        ...whole,
+        'houses': <String, Object?>{
+          '1': (whole['houses']! as Map<String, Object?>)['1'],
+        },
+      };
+
+      final filled = withHousesOf(stored, whole);
+
+      expectSameStreet(
+        streetFromDocument(richStreet.id.value, filled),
+        richStreet,
+      );
+    });
+
+    test('should keep what the stored document says of its own houses and '
+        'fields', () {
+      final street = paixOf(2);
+      final marked = {
+        ...entryOf(street, '1')! as Map<String, Object?>,
+        'status': 'DONE',
+      };
+      final stored = {
+        ...streetToDocument(street),
+        'name': 'Rue de la Paix prolongée',
+        'houses': {'1': marked},
+      };
+
+      final filled = withHousesOf(stored, streetToDocument(street));
+
+      expect(filled['name'], 'Rue de la Paix prolongée');
+      expect(filled['houses'], {'1': marked, '2': entryOf(street, '2')});
+    });
+
+    test('should add every house to a stored document without houses', () {
+      final stored = <String, Object?>{...streetToDocument(richStreet)}
+        ..remove('houses');
+
+      expect(
+        withHousesOf(stored, streetToDocument(richStreet)),
+        streetToDocument(richStreet),
+      );
+    });
+  });
+
   group('addedHouseUpdates', () {
     test('should write nothing for no house', () {
       expect(addedHouseUpdates(const {}), isEmpty);

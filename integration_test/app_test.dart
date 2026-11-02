@@ -20,10 +20,13 @@ import 'package:tournee_calendriers/bootstrap/firebase.dart';
 import 'package:tournee_calendriers/domain/shared/commune.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
+import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
+import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
+import 'package:tournee_calendriers/infrastructure/local_storage/mappers/street_json_mapper.dart';
 import 'package:tournee_calendriers/main.dart' as app;
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/ui/app.dart';
@@ -733,6 +736,43 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Mes rues · 0/5'), findsOneWidget);
       expect(find.text('Chemin des Vignes'), findsOneWidget);
+
+      // Killed in the middle of a new street's writes (#104): the street
+      // was kept on the phone before them, and none reached Firestore. At
+      // the next start, offline, it is written again whole, then
+      // forgotten from the phone storage.
+      final ecoles = _ok(
+        Street.create(
+          id: StreetId('ecoles-${storage.path.split('/').last}'),
+          name: 'Rue des Écoles',
+          commune: _villefranche,
+          houses: [
+            for (final number in [1, 2, 3])
+              House(number: _ok(HouseNumber.create(number))),
+          ],
+        ),
+      );
+      final unfinished = Directory(
+        '${storage.path}/unfinished_streets/${Uri.encodeComponent(t49)}/2026',
+      )..createSync(recursive: true);
+      File('${unfinished.path}/${Uri.encodeComponent(ecoles.id.value)}.json')
+          .writeAsStringSync(jsonEncode(streetToJson(ecoles)));
+      runApp(const SizedBox.shrink());
+      await tester.pumpAndSettle();
+      await bootstrap(storage: storage, communeSearch: communes);
+      await tester.pumpAndSettle();
+      // The forget is written just after the last write: let it land.
+      await Future<void>.delayed(const Duration(seconds: 1));
+      await tester.tap(find.byKey(const Key('home.panel.handle')));
+      await tester.pumpAndSettle();
+      expect(find.text('Mes rues · 0/5'), findsOneWidget);
+      expect(
+        find.byKey(ValueKey('home.street.${ecoles.id.value}')),
+        findsOneWidget,
+      );
+      expect(unfinished.listSync(), isEmpty);
+      await tester.tap(find.byKey(const Key('home.panel.handle')));
+      await tester.pumpAndSettle();
 
       // « Mes tournées » offline (#33): the 12 was never downloaded on
       // this phone, so it is greyed and a tap leaves the sheet open. Once

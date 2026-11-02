@@ -213,6 +213,102 @@ void main() {
     });
   });
 
+  group('over', () {
+    test('should tell the batch over once its last write is shown', () async {
+      var over = false;
+      docs.writes.send('paix', 'add', [
+        docs.write('a'),
+        docs.write('b'),
+      ], whenOver: () => over = true);
+
+      await docs.copy('paix', {'a': 1});
+      expect(over, isFalse);
+
+      await docs.copy('paix', {'a': 1, 'b': 1});
+      expect(over, isTrue);
+    });
+
+    test('should tell a batch that need not wait over at once', () async {
+      var over = false;
+      docs.writes.send('paix', 'save', [
+        docs.write('a', waits: false),
+      ], whenOver: () => over = true);
+
+      await pumpEventQueue();
+
+      expect(over, isTrue);
+    });
+
+    test('should tell the batch over when it stops early', () async {
+      var over = false;
+      docs.writes.send('paix', 'add', [
+        docs.write('a'),
+        docs.write('b'),
+      ], whenOver: () => over = true);
+
+      await docs.refuse('a');
+
+      expect(over, isTrue);
+    });
+
+    test('should tell a batch held back over only after its own '
+        'writes', () async {
+      docs.writes.send('paix', 'add', [docs.write('a')]);
+      var over = false;
+      docs.writes.send('paix', 'add', [
+        docs.write('b'),
+      ], whenOver: () => over = true);
+
+      await docs.copy('paix', {'a': 1});
+      expect(over, isFalse);
+
+      await docs.copy('paix', {'a': 1, 'b': 1});
+      expect(over, isTrue);
+    });
+  });
+
+  group('after', () {
+    test('should hold back a batch until what it comes after is '
+        'done', () async {
+      final kept = Completer<void>();
+      docs.writes.send('paix', 'add', [docs.write('a')], after: kept.future);
+      await pumpEventQueue();
+      expect(docs.sent, isEmpty);
+
+      kept.complete();
+      await pumpEventQueue();
+
+      expect(docs.sent, ['a']);
+    });
+
+    test('should hold back a later batch on the same document too', () async {
+      final kept = Completer<void>();
+      docs.writes.send('paix', 'add', [docs.write('a')], after: kept.future);
+      docs.writes.send('paix', 'save', [docs.write('b', waits: false)]);
+      await pumpEventQueue();
+      expect(docs.sent, isEmpty);
+
+      kept.complete();
+      await pumpEventQueue();
+      expect(docs.sent, ['a']);
+      await docs.copy('paix', {'a': 1});
+
+      expect(docs.sent, ['a', 'b']);
+    });
+
+    test('should wait for the batch before as well as for what it comes '
+        'after', () async {
+      docs.writes.send('paix', 'add', [docs.write('a')]);
+      docs.writes.send('paix', 'add', [docs.write('b')], after: Future.value());
+      await pumpEventQueue();
+      expect(docs.sent, ['a']);
+
+      await docs.copy('paix', {'a': 1});
+
+      expect(docs.sent, ['a', 'b']);
+    });
+  });
+
   group('several batches', () {
     test('should hold back a batch until the one before on the same '
         'document is shown whole', () async {

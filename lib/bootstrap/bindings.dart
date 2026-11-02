@@ -27,6 +27,7 @@ import 'package:tournee_calendriers/infrastructure/local_storage/local_phone_set
 import 'package:tournee_calendriers/infrastructure/local_storage/local_street_repository.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_street_view_preferences.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_tournee_downloads.dart';
+import 'package:tournee_calendriers/infrastructure/local_storage/local_unfinished_streets.dart';
 import 'package:tournee_calendriers/infrastructure/map_tiles/openfreemap_street_shapes.dart';
 import 'package:tournee_calendriers/infrastructure/maplibre_offline/maplibre_offline_map_store.dart';
 import 'package:tournee_calendriers/infrastructure/system/random_id_generator.dart';
@@ -53,7 +54,9 @@ final httpClientProvider = Provider<http.Client>((ref) {
 ///   tournées » and the open one in `my_tournees.json`, the name and the
 ///   theme in `settings.json`, the tournées that received the streets of
 ///   M1 in `moved_streets.json`, the tournées downloaded for offline use
-///   in `tournee_downloads.json`.
+///   in `tournee_downloads.json`, the new streets of a campaign not yet
+///   all handed to Firestore in `unfinished_streets/<tournée>/<year>/`
+///   (#104).
 /// - [auth]: Firebase anonymous sign-in. Its uid is the member; until the
 ///   first sign-in succeeds, the phone's own id stands in for the marks,
 ///   and creating or joining a tournée signs in again (`MemberAccount`).
@@ -142,6 +145,17 @@ Future<List<Override>> bindAdapters({
       campaign: campaign,
       identity: identity,
       clock: clock,
+      unfinished: LocalUnfinishedStreets(
+        Directory(
+          [
+            storage.path,
+            'unfinished_streets',
+            // Percent-encoded: whatever the id holds, it stays one folder.
+            Uri.encodeComponent(tournee.value),
+            '${campaign.value}',
+          ].join(Platform.pathSeparator),
+        ),
+      ),
     );
     ref.onDispose(() => unawaited(streets.close()));
     return streets;

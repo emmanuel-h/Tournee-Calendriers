@@ -44,6 +44,52 @@ newStreetWrites(Street street) {
   );
 }
 
+/// The writes that finish storing the new [street] after the app was killed
+/// in the middle of its writes (#104, PLAN §8.2 « Killed in the middle »),
+/// given the phone's [copy] of its document (null when there is none).
+///
+/// - No copy: not even the first write reached Firestore, so the street is
+///   written again from the start ([newStreetWrites]).
+/// - A copy: only the houses it is missing, [housesPerWrite] at most per
+///   update, in the order of [streetToDocument]. The houses it holds are
+///   left alone: a teammate may have marked them since.
+({Map<String, Object?>? document, List<Map<FieldPath, Object?>> updates})
+catchUpWrites(Street street, Map<String, Object?>? copy) {
+  if (copy == null) return newStreetWrites(street);
+  final stored = _housesOf(copy);
+  final houses = streetToDocument(street)['houses']! as Map<String, Object?>;
+  return (
+    document: null,
+    updates: addedHouseUpdates({
+      for (final MapEntry(:key, :value) in houses.entries)
+        if (!stored.containsKey(key)) key: value,
+    }),
+  );
+}
+
+/// The [stored] document with the houses of the [whole] one it does not
+/// hold yet; what it holds stays as it is.
+///
+/// While a new street is being written, Firestore shows it on this phone
+/// growing a few houses per write: read through this, it stays whole, so
+/// its counter does not climb 2, 4, 6… (#104).
+Map<String, Object?> withHousesOf(
+  Map<String, Object?> stored,
+  Map<String, Object?> whole,
+) => {
+  ...stored,
+  'houses': {..._housesOf(whole), ..._housesOf(stored)},
+};
+
+/// The `houses` map of [document]; empty when it has none. Typed with
+/// `String` keys, as Firestore gives it: the reader of a street document
+/// accepts no other map.
+Map<String, Object?> _housesOf(Map<String, Object?> document) =>
+    switch (document['houses']) {
+      final Map<Object?, Object?> houses => houses.cast<String, Object?>(),
+      _ => const {},
+    };
+
 /// The updates adding the house [entries] (label → entry) to a street,
 /// [housesPerWrite] at most each, in the order of [entries]. None when
 /// there is no entry.
