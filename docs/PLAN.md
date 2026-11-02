@@ -1149,7 +1149,9 @@ admin » for « Nouveau code », « Retirer », « Supprimer » and the campaign
 - **Thème** opens « Système | Clair | Sombre »: a tap redraws the app at once and closes the
   sheet. « Sombre » uses the first dark palette, reviewed in T5.1.
 - **Confidentialité** opens a page saying 8.3 in French: compte, données enregistrées,
-  position, hébergement, suppression.
+  position, hébergement, suppression. Under a divider, a last row « Politique complète en
+  ligne ↗ » opens the public policy page (GitHub Pages, same text, #36) in the browser
+  (decided 2026-11-02).
 - **Version** (from `pubspec.yaml`, `appBuildName`) has a › : a tap opens **« Nouveautés »**
   (Changelog mockup): each version, newest first, with the day it came out (« 16 oct.
   2026 ») and what it brings in short French lines for the members (not commit messages).
