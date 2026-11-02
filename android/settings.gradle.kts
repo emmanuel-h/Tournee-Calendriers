@@ -23,6 +23,8 @@ plugins {
     // START: FlutterFire Configuration
     id("com.google.gms.google-services") version("4.3.15") apply false
     // END: FlutterFire Configuration
+    // Never applied (built-in Kotlin, gradle.properties): it only pins the
+    // Kotlin compiler AGP uses, instead of the older one AGP ships with.
     id("org.jetbrains.kotlin.android") version "2.4.21" apply false
 }
 
