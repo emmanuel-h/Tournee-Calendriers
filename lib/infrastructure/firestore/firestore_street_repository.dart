@@ -16,6 +16,7 @@ import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_layout.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_document_mapper.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_update_mapper.dart';
+import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_writes.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/street_memory.dart';
 
 /// The [StreetRepository] of M2: the streets of one campaign of one
@@ -102,13 +103,21 @@ final class FirestoreStreetRepository
   @override
   Stream<bool> watchOffline() => _ready.watchOffline();
 
+  /// Writes the document with its first houses, then the others a few per
+  /// update ([newStreetWrites]): the security rules check each house a
+  /// write adds, and only so many fit in one write (#70). Firestore sends
+  /// them in this order, offline too, so a teammate may only see the
+  /// street partly filled for a moment; this phone has it whole in memory
+  /// at once.
   @override
   Future<void> add(Street street) async {
     _ready.put(street);
-    sendInBackground(
-      'add ${street.id.value}',
-      _streets.doc(street.id.value).set(streetToDocument(street)),
-    );
+    final doc = _streets.doc(street.id.value);
+    final writes = newStreetWrites(street);
+    sendInBackground('add ${street.id.value}', doc.set(writes.document));
+    for (final update in writes.updates) {
+      sendInBackground('add ${street.id.value}, houses', doc.update(update));
+    }
   }
 
   @override

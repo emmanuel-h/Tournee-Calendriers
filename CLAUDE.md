@@ -48,7 +48,9 @@ re-download for OpenFreeMap's weekly tiles); one line in Paramètres and tourné
 M5 in progress: launcher icon (#101, split from #36) approved and built (2026-11-02): adaptive
 vector drawables with a monochrome layer, launch screen on the ground colour (light/dark), label
 « Tournée Calendriers », Play icon from `tool/render_play_icon.py` in `store/listing/`; awaits the
-phone test.
+phone test. #70: houses of a new street and numbers added are checked one by one in the rules,
+2 per write (the 1 000-expression limit); **deploy those rules only after a release with the
+chunked writes is installed** (0.7.0 sends a whole street in one write and would be refused).
 Release signing and Play publishing pulled forward from M5 (#37): 0.7.0 (code 8, 2026-11-02: #32,
 #33) is on the internal track; publish with the `release-store` skill. `lib/bootstrap/firebase_options.dart` and `android/app/google-services.json`
 are gitignored: run `flutterfire configure --out=lib/bootstrap/firebase_options.dart` locally;

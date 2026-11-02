@@ -1906,10 +1906,11 @@ Streets on Firestore fixed in T2.8 (`lib/bootstrap/bindings.dart`,
   returns `StreetsMoved(moved, alreadyThere)`. Started again after an interruption, it skips
   what already went. `MoveStreetsNotifier` (`NoStreetsToMove` | `StreetsToMove(count)` |
   `MovingStreets(done, total)`; « Plus tard » in `postponedMovesProvider`, in memory).
-- **Size.** One `set` per street (≈ 60 document writes for a typical member, a few kB to
-  ≈ 100 kB each). The rules only count nothing on a new street (`isNewStreet`: the houses are
-  a map, not checked one by one), so no bulk limit refuses a big street; the 1 MB document
-  limit is far off (a street of 1 500 numbers and a 500-door building ≈ 300 kB, rules test).
+- **Size.** One `set` per street with its first houses, then the others 2 per update (#70,
+  8.2 « Houses written in bulk »): a street of 300 numbers is ≈ 150 writes. Each house is
+  checked by the rules, its stamps the caller's (hence the restamping); the doors of a
+  building are only counted. The 1 MB document limit is far off (a street of 1 500 numbers
+  and a 500-door building ≈ 300 kB).
 
 Geometry and map layers fixed in T3.1 (`lib/domain/geometry/`, `lib/domain/map/`,
 `lib/domain/street/street_shape.dart`, `progress_level.dart`):
@@ -2243,7 +2244,8 @@ writes:
 | mark, « Repassé, toujours personne », « repasser » of a door | `dwellings.<key>.status`, `.comeBack`, `.tries`, `.by`, `.at` (day or hour: no `status`, no `tries`) |
 | layout (describe, add / remove / rename a door) | `status`, `comeBack`, `tries` (deleted), `by`, `at`, `labelStyle`, `layout`, then each door `dwellings.<key>` whole; each door dropped is deleted |
 | back to a single house | `status`, `comeBack`, `tries` (deleted), `by`, `at`; `labelStyle`, `layout`, `dwellings` deleted |
-| numbers added | each new `houses.<n>` whole in one update; each one restored: `deletedAt`, `deletedBy` = null, in an update of its own (the rules check one by one only a write changing one house, T2.4) |
+| street added (import, typed in, moved from the phone) | the document `set` with its first 2 houses, then each next `houses.<n>` whole, 2 per update, in order (#70: the rules check each house a write adds, and only 2 fit in one request) |
+| numbers added | each new `houses.<n>` whole, 2 per update (#70); each one restored: `deletedAt`, `deletedBy` = null, in an update of its own (the rules check one by one only a write changing one house, T2.4) |
 | number removed / restored | `deletedAt`, `deletedBy` (set / null) |
 | number renamed | `houses.<old>` deleted, `houses.<new>` whole |
 | street renamed, deleted, restored | `name`; `deletedAt`, `deletedBy` (top level) |
@@ -2503,8 +2505,8 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
   `69264` / `2A004`; house number 0–99999 with a suffix of ≤ 16 lowercase letters and digits,
   stored under its label; position in range or both null; statuses and label styles among
   their fixed names; a `comeBack` time exactly on « repasser » (a building may keep its own);
-  a stamp a write sets is the caller's (`by` = uid, `at` a timestamp), a new house has
-  none; no `note` anywhere. Lengths are counted in code points
+  a stamp a write sets is the caller's (`by` = uid, `at` a timestamp), a house added
+  has none or the caller's (#70); no `note` anywhere. Lengths are counted in code points
   with a pattern (`matches('(?s).{0,20}')`): the rules' `size()` counts UTF-16 units
   (🚒 = 2), the patterns count 🚒 as 1, as `characterCount` does.
 - **Times** are only required to be timestamps, never compared with `request.time`: the
@@ -2551,16 +2553,39 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
   - change **one door** of a building: the door entry whole and valid, `by` = caller;
   - **move one house** (renumbering or its undo): the new entry whole and valid, under its
     label, stamped by the caller;
-  - **add houses** (« numéros en plus »): one new house is checked whole (unmarked, not a
-    building, under its label); several are only counted (≤ 500);
+  - **add houses** (« numéros en plus », and the houses of a new street after its first
+    write): at most 2 per write (#70), each checked whole, as below;
   - change the street's `name` or its deletion (`deletedBy` = caller), never its commune or BAN
     id;
   - **drop one house** of the Corbeille removed more than 30 days ago (the purge).
   Anything else (two houses changed at once, a house deleted outright before its 30 days in the Corbeille, a mark landing on a
-  number or a door that is no longer there) is refused. **What the rules cannot check one by
-  one** — the houses of a new street and of several numbers added at once, and the doors and
-  layout of a building written whole — are only counted (doors ≤ 500, layout rows ≤ 26 × 51);
-  making them checkable would need writes split into small fixed-size chunks.
+  number or a door that is no longer there) is refused.
+- **Houses written in bulk** (#70, decided 2026-11-02): a new street is written with its first
+  houses, then updates adding the next ones, in order (Firestore's queue keeps the order of a
+  phone's writes, offline and across restarts); « numéros en plus » of several numbers is
+  sent the same way. A write may add at most **2 houses** (`housesPerWrite()` in the rules,
+  `housesPerWrite` in `infrastructure/firestore/mappers/street_writes.dart`; a Dart test
+  checks they agree). Why 2: the rules have no loops, so the check is written out once per
+  house, and a request may evaluate at most 1 000 expressions, every name, value, operator
+  and call counted. Measured in the emulator: the membership, the tournée and the street
+  cost ≈ 300, one house ≈ 200, the costliest (a building with a suffix, tries and a
+  « repasser » time, marked and removed by the caller) ≈ 300; two of those leave ≈ 90 to
+  spare, three do not fit. A rules test writes full writes of the costliest houses, so a
+  rules change that makes them too dear fails there. A street of 300 numbers is ≈ 150
+  writes; teammates may see it partly filled until the last one arrives (accepted).
+  - **Checked per house**, as a single house is: exactly its fields (no `note`), number
+    0–99999 and suffix, under its own label, position in range or both null, status among
+    the four, a `comeBack` time only on « repasser » (no free hint), tries 1–99 or none,
+    label style among the three for a building; marked (`by` / `at`) and in the Corbeille
+    (`deletedBy` / `deletedAt`) only **by the caller** (a street moved from the phone is
+    restamped with the caller's uid, `Street.restampedBy`), or not at all, and then it is to
+    do, without tries, not a building. So a number added may now come marked by the caller,
+    which is harmless: the caller could mark it in the next write.
+  - **Only counted**: the doors and layout rows of a building (doors ≤ 500, layout rows
+    ≤ 26 × 51), in a new street, a number added or a layout written whole. A building can
+    hold 500 doors: they could not be checked in writes of 2 without splitting a layout
+    into many writes, leaving a building half laid out between them. A door changed on its
+    own (a mark, an undo) is checked whole, as before.
 - **A removal put back by an undo of « Restaurer »** keeps the teammate's stamp (§6.2): the
   rules accept a number's `deletedBy` that is the caller or an active member of the tournée
   (so a member could also name a teammate as the remover of a number; the stricter choice,

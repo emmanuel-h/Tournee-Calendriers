@@ -223,6 +223,43 @@ export const streetDoc = (overrides = {}) => ({
 });
 
 /**
+ * The most houses one write may add (`housesPerWrite` in the rules and in
+ * lib/infrastructure/firestore/mappers/street_writes.dart, #70).
+ */
+export const housesPerWrite = 2;
+
+/**
+ * The first write of Rue de la Paix just imported from the BAN: the street
+ * with its first houses (as many as one write may add), unmarked.
+ */
+export const newStreetDoc = (overrides = {}) =>
+  streetDoc({
+    name: 'Rue de la Paix',
+    banId: '69264_0610',
+    houses: { 4: houseEntry(4), '4bis': houseEntry(4, { sfx: 'bis' }) },
+    ...overrides,
+  });
+
+/**
+ * Writes the street [data] at [ref] as the adapter writes a new street:
+ * the document with its first houses, then the others in updates of
+ * housesPerWrite, in order. Rejects at the first write refused.
+ */
+export async function writeInChunks(ref, data) {
+  const entries = Object.entries(data.houses);
+  const first = Object.fromEntries(entries.slice(0, housesPerWrite));
+  await setDoc(ref, { ...data, houses: first });
+  for (let start = housesPerWrite; start < entries.length; start += housesPerWrite) {
+    await updateFields(
+      ref,
+      entries
+        .slice(start, start + housesPerWrite)
+        .map(([label, house]) => [['houses', label], house]),
+    );
+  }
+}
+
+/**
  * Stores the team of Tournée 49 as the adapters leave it after creating
  * it, accepting Léa and receiving Paul's request, with Rue Nationale in
  * the campaign 2026; and the two administrators, added by hand in the

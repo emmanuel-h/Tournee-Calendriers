@@ -14,6 +14,7 @@ import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_document_mapper.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_update_mapper.dart';
+import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_writes.dart';
 
 import '../../../support/building_fixtures.dart';
 import '../../../support/geo_fixtures.dart' as geo;
@@ -420,6 +421,29 @@ void main() {
         {
           house('6'): houseEntry(House(number: n('6'))),
           house('12'): houseEntry(House(number: n('12'))),
+        },
+      ]);
+    });
+
+    test('should write the new houses a few per update, in order, before '
+        'the restored ones', () {
+      // The security rules check each house a write adds, and only
+      // [housesPerWrite] fit in one write (#70).
+      final updates = updatesOf(
+        lilas,
+        (s) => s.addNumbers([n('16'), n('6'), n('12'), n('14ter')]),
+      );
+
+      expect(housesPerWrite, 2);
+      expect(updates, [
+        {
+          house('6'): houseEntry(House(number: n('6'))),
+          house('12'): houseEntry(House(number: n('12'))),
+        },
+        {house('16'): houseEntry(House(number: n('16')))},
+        {
+          house('14ter', ['deletedAt']): null,
+          house('14ter', ['deletedBy']): null,
         },
       ]);
     });

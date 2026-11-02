@@ -18,10 +18,11 @@ rules_version = '2';
 //   how a rule checks that the other documents of the batch go with it
 //   (a new tournée comes with its code, its reservation and its creator).
 // - The rules language has no loops. A write that changes one house, one
-//   door or one field is checked field by field; one that creates houses
-//   in bulk (a new street, « numéros en plus » of several numbers) is only
-//   counted, and the doors of a building written whole are only counted
-//   (PLAN §8.2).
+//   door or one field is checked field by field. Houses written in bulk (a
+//   new street, « numéros en plus ») come in writes of at most
+//   housesPerWrite() houses, each checked whole by a check written out once
+//   per place (areAddedHouses). The doors and layout rows of a building
+//   written whole are only counted (PLAN §8.2).
 // - Lengths are counted in code points, as the domain counts them
 //   (`characterCount`: 🚒 = 1), with a pattern: the `size()` of a string
 //   counts UTF-16 units (🚒 = 2), the patterns (RE2) count code points.
@@ -96,6 +97,14 @@ service cloud.firestore {
     // [optional], nothing else.
     function hasFields(data, fields, optional) {
       return data.keys().hasAll(fields) && data.keys().hasOnly(fields.concat(optional));
+    }
+
+    // An entry of a house or a door: exactly [fields], and maybe `tries`
+    // (hasTries). The same as hasFields(entry, fields, ['tries']), in
+    // fewer expressions: a write of new houses checks it for each one
+    // (housesPerWrite).
+    function hasEntryFields(entry, fields) {
+      return entry.keys().removeAll(['tries']).toSet() == fields.toSet();
     }
 
     // At most [max] characters, counted in code points. `(?s)`: a line
@@ -387,9 +396,11 @@ service cloud.firestore {
       return ['labelStyle', 'layout', 'dwellings'];
     }
 
-    // The four statuses, under the names the mapper stores.
+    // The four statuses, under the names the mapper stores. A pattern
+    // rather than `in [list]`: each item of a list is an expression
+    // evaluated, and a write of new houses checks several (housesPerWrite).
     function isStatus(status) {
-      return status in ['TO_DO', 'DONE', 'NOBODY_HOME', 'COME_BACK'];
+      return status is string && status.matches('TO_DO|DONE|NOBODY_HOME|COME_BACK');
     }
 
     // When to come back (ComeBack, #81, come_back_text.dart): "" for no
@@ -444,20 +455,20 @@ service cloud.firestore {
     function isHouse(house) {
       return house is map
         && (('layout' in house)
-          ? hasFields(house, houseFields().concat(buildingFields()), ['tries']) && isBuilding(house)
-          : hasFields(house, houseFields(), ['tries']) && hasMarks(house))
+          ? hasEntryFields(house, houseFields().concat(buildingFields())) && isBuilding(house)
+          : hasEntryFields(house, houseFields()) && hasMarks(house))
         && house.n is int && house.n >= 0 && house.n <= 99999
         && (house.sfx == null || (house.sfx is string && house.sfx.matches('[a-z][a-z0-9]{0,15}')))
         && isPosition(house.lat, house.lon);
     }
 
     // The key of a house is its number's label (HouseNumber.label):
-    // `12`, `12bis`, `3A`.
+    // `12`, `12bis`, `3A`. The Latin multiplicatives as a pattern, as in
+    // isStatus.
     function labelOf(house) {
       return house.sfx == null
         ? string(house.n)
-        : string(house.n) + (house.sfx in ['bis', 'ter', 'quater', 'quinquies',
-            'sexies', 'septies', 'octies', 'nonies', 'decies']
+        : string(house.n) + (house.sfx.matches('bis|ter|quater|quinquies|sexies|septies|octies|nonies|decies')
           ? house.sfx
           : house.sfx.upper());
     }
@@ -527,9 +538,12 @@ service cloud.firestore {
         && after.shape[0] is string;
     }
 
-    // A new street (import from the BAN, PLAN §6.2): out of the Corbeille.
-    // Its houses come in bulk: the rules cannot check them one by one.
-    // Nobody covers it, or only the caller (« Ajouter et me l'attribuer »).
+    // A new street (imported from the BAN, typed in, or moved from the
+    // phone, PLAN §6.2): out of the Corbeille. It comes with its first
+    // houses, at most housesPerWrite(), each checked whole; the adapter
+    // sends the others in updates of as many (isHousesChange), so a
+    // teammate may see it partly filled for a moment. Nobody covers it, or
+    // only the caller (« Ajouter et me l'attribuer »).
     function isNewStreet(data) {
       return data.keys().hasAll(streetFields())
         && data.keys().hasOnly(streetFields().concat(mapFields()))
@@ -540,7 +554,8 @@ service cloud.firestore {
         && data.communeCode is string && data.communeCode.matches('([0-9]{2}|2A|2B)[0-9]{3}')
         && (data.banId == null || (data.banId is string && data.banId.size() >= 1 && data.banId.size() <= 100))
         && data.deletedAt == null && data.deletedBy == null
-        && data.houses is map;
+        && data.houses is map
+        && areAddedHouses(data.houses, data.houses.keys());
     }
 
     // A change of a street (the table of PLAN §6.2): its name, its
@@ -567,10 +582,11 @@ service cloud.firestore {
     }
 
     // What a write may do to the `houses` map: change one house in place,
-    // move one house to a new number, add houses (« numéros en plus »), or
-    // drop one house of the Corbeille past its 30 days (the purge).
-    // Restoring or purging several numbers is sent one write per number by
-    // the adapter, so each is checked.
+    // move one house to a new number, add houses (« numéros en plus », or
+    // the houses of a new street after its first write), or drop one house
+    // of the Corbeille past its 30 days (the purge). Restoring or purging
+    // several numbers is sent one write per number by the adapter, so each
+    // is checked.
     function isHousesChange(tournee, before, after) {
       let changes = after.diff(before);
       let changed = changes.changedKeys().size();
@@ -579,9 +595,10 @@ service cloud.firestore {
       return (changed == 1 && added == 0 && removed == 0
           && isOneHouseEdited(tournee, before.values().removeAll(after.values()),
             after.values().removeAll(before.values())))
-        || (changed == 0 && added == 1 && removed <= 1
-          && isHouseAt(after.keys().removeAll(before.keys())[0], after, removed == 0))
-        || (changed == 0 && removed == 0 && added >= 2 && added <= 500)
+        || (changed == 0 && added == 1 && removed == 1
+          && isMovedHouse(after.keys().removeAll(before.keys())[0], after))
+        || (changed == 0 && removed == 0 && added >= 1
+          && areAddedHouses(after, after.keys().removeAll(before.keys())))
         || (changed == 0 && added == 0 && removed == 1
           && isPastRetention(before[before.keys().removeAll(after.keys())[0]]));
     }
@@ -617,20 +634,68 @@ service cloud.firestore {
         && isCallerStamp(doors[0].by, doors[0].at);
     }
 
-    // A house written whole under a key it did not have: a number added
-    // ([isNew]: unmarked, as `addNumbers` makes it) or a house moved to
-    // its new number (renumbering, or its undo: stamped by the caller).
-    // Either way it is shown, not in the Corbeille, under its own label.
-    function isHouseAt(key, houses, isNew) {
+    // A house moved to its new number (renumbering, or its undo): written
+    // whole under its own label, shown (not in the Corbeille), stamped by
+    // the caller.
+    function isMovedHouse(key, houses) {
       let house = houses[key];
       return isHouse(house)
         && key == labelOf(house)
         && house.deletedAt == null && house.deletedBy == null
-        && (isNew
-          ? !('layout' in house) && house.status == 'TO_DO'
-            && !('tries' in house)
-            && house.by == null && house.at == null
-          : isCallerStamp(house.by, house.at));
+        && isCallerStamp(house.by, house.at);
+    }
+
+    // The most houses one write may add: `housesPerWrite` of the adapter
+    // (lib/infrastructure/firestore/mappers/street_writes.dart), which
+    // sends a new street and « numéros en plus » in writes of that many.
+    //
+    // Why 2: a request may evaluate at most 1 000 expressions, and the
+    // rules count every name, value, operator and call. Checking one house
+    // whole costs about 200 of them (300 for the costliest: a building
+    // with a suffix, tries and a « repasser » time, marked and removed by
+    // the caller), on top of about 300 for the membership, the tournée and
+    // the street. Measured in the emulator (#70): two of the costliest
+    // houses in a new street leave about 90 to spare, three do not fit.
+    // The tests write full writes of the costliest houses, so a change
+    // that makes them too dear fails there.
+    function housesPerWrite() {
+      return 2;
+    }
+
+    // A house a write adds under [key] (a number added, a house of a new
+    // street): whole and valid, under its own label. Marked or in the
+    // Corbeille only by the caller: a street moved from the phone comes
+    // stamped with the caller's uid (`Street.restampedBy`). Without a
+    // stamp it is a house as the BAN or « numéros en plus » give it: to do,
+    // no tries, not a building. Its doors and layout rows are only counted
+    // (isBuilding).
+    //
+    // The stamps are written out rather than through isRemovalStamp and
+    // isCallerStamp, and the unmarked case comes first: it saves the
+    // expressions of their calls, for each house. The membership checked
+    // before this ensures the caller is signed in.
+    function isAddedHouse(key, house) {
+      return isHouse(house)
+        && key == labelOf(house)
+        && ((house.deletedBy == null && house.deletedAt == null)
+          || (house.deletedBy == request.auth.uid && house.deletedAt is timestamp))
+        && ((house.by == null && house.at == null
+            && house.status == 'TO_DO' && !('tries' in house) && !('layout' in house))
+          || (house.by == request.auth.uid && house.at is timestamp));
+    }
+
+    // The house of [keys] at [index], when [keys] has one.
+    function isAddedHouseAt(houses, keys, index) {
+      return keys.size() <= index || isAddedHouse(keys[index], houses[keys[index]]);
+    }
+
+    // The houses of [houses] under [keys]: at most housesPerWrite(), each
+    // checked whole. The rules have no loops, so there is one line per
+    // house, as many as housesPerWrite() says.
+    function areAddedHouses(houses, keys) {
+      return keys.size() <= housesPerWrite()
+        && isAddedHouseAt(houses, keys, 0)
+        && isAddedHouseAt(houses, keys, 1);
     }
 
     match /tournees/{tournee} {

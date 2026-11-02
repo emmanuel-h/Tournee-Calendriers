@@ -30,17 +30,19 @@ import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_document_mapper.dart';
+import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_writes.dart';
 
 /// The updates storing [change], which made [street], in the order they
 /// are sent: each field path with its new value, ready for
 /// `DocumentReference.update`.
 ///
-/// One update per change, except « numéros en plus » bringing numbers back
-/// from the Corbeille: the new houses go in one update and each number
-/// restored in one of its own; and the purge, one update per number. The security rules check field by field a
-/// write that changes one house already there, and only count the houses
-/// a write adds; they refuse a write that changes several houses already
-/// there, since they cannot check them one by one (PLAN §8.2).
+/// One update per change, except « numéros en plus »: the new houses go
+/// [housesPerWrite] per update, and each number restored from the
+/// Corbeille in an update of its own; and the purge, one update per number.
+/// The security rules check field by field a write that changes one house
+/// already there, and each house of a write that adds at most
+/// [housesPerWrite]; they refuse a write that changes several houses
+/// already there, since they cannot check them one by one (PLAN §8.2).
 ///
 /// [undoStamp] (who is undoing, now) stamps what an undo puts back.
 /// [removal] is the value that removes a field, `FieldValue.delete()`;
@@ -112,12 +114,12 @@ List<Map<FieldPath, Object?>> streetUpdates(
         _path([_assignees]): arrayRemove(member.value),
       },
     ],
+    // The new houses a few per update: the security rules check each
+    // house a write adds, and only so many fit in one write (#70).
     NumbersAdded(:final added, :final restored) => [
-      if (added.isNotEmpty)
-        {
-          for (final house in added)
-            _path([_houses, house.number.label]): houseEntry(house),
-        },
+      ...addedHouseUpdates({
+        for (final house in added) house.number.label: houseEntry(house),
+      }),
       for (final back in restored)
         _stampUpdate([_houses, back.number.label], null, 'deleted'),
     ],

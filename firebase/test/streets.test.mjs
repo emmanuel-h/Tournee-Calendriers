@@ -20,8 +20,10 @@ import {
   buildingEntry,
   doorEntry,
   houseEntry,
+  housesPerWrite,
   lea,
   manu,
+  newStreetDoc,
   paul,
   phoneOf,
   rulesEnvironment,
@@ -34,6 +36,7 @@ import {
   threePm,
   twoPm,
   updateFields,
+  writeInChunks,
   zoe,
 } from './support.mjs';
 
@@ -96,119 +99,250 @@ describe('creating a street', () => {
     setDoc(doc(phoneOf(env, uid), `${streetsPath}/new${(count += 1)}`), data);
 
   it('should accept a street imported from the BAN by an active member', async () => {
-    await assertSucceeds(newStreet(lea, streetDoc({ name: "Rue de la Paix" })));
+    await assertSucceeds(newStreet(lea, newStreetDoc()));
   });
 
   it('should accept a street entered by hand, without BAN id', async () => {
-    await assertSucceeds(newStreet(lea, streetDoc({ banId: null, houses: {} })));
+    await assertSucceeds(newStreet(lea, newStreetDoc({ banId: null, houses: {} })));
   });
 
   it('should refuse a pending member, an outsider and the signed out', async () => {
-    await assertFails(newStreet(paul, streetDoc()));
-    await assertFails(newStreet(zoe, streetDoc()));
-    await assertFails(newStreet(null, streetDoc()));
+    await assertFails(newStreet(paul, newStreetDoc()));
+    await assertFails(newStreet(zoe, newStreetDoc()));
+    await assertFails(newStreet(null, newStreetDoc()));
   });
 
   it('should refuse a street in a previous campaign', async () => {
     await seed(env, tourneePath, tourneeDoc({ currentCampaign: 2027 }));
 
-    await assertFails(newStreet(lea, streetDoc()));
+    await assertFails(newStreet(lea, newStreetDoc()));
   });
 
   it('should refuse a field the street document does not have', async () => {
-    await assertFails(newStreet(lea, { ...streetDoc(), note: 'Mme Martin' }));
-    const { banId, ...withoutBanId } = streetDoc();
+    await assertFails(newStreet(lea, { ...newStreetDoc(), note: 'Mme Martin' }));
+    const { banId, ...withoutBanId } = newStreetDoc();
     await assertFails(newStreet(lea, withoutBanId));
   });
 
   it('should refuse a street already in the Corbeille', async () => {
-    await assertFails(newStreet(lea, streetDoc({ deletedAt: twoPm, deletedBy: lea })));
+    await assertFails(newStreet(lea, newStreetDoc({ deletedAt: twoPm, deletedBy: lea })));
   });
 
   it('should accept a name of 150 characters and refuse 151', async () => {
-    await assertSucceeds(newStreet(lea, streetDoc({ name: fire.repeat(150) })));
-    await assertFails(newStreet(lea, streetDoc({ name: fire.repeat(151) })));
+    await assertSucceeds(newStreet(lea, newStreetDoc({ name: fire.repeat(150) })));
+    await assertFails(newStreet(lea, newStreetDoc({ name: fire.repeat(151) })));
   });
 
   it('should refuse a name that is blank, untrimmed or on two lines', async () => {
     for (const name of ['', ' ', ' Rue Nationale', 'Rue  Nationale', 'Rue\nNationale']) {
-      await assertFails(newStreet(lea, streetDoc({ name })));
+      await assertFails(newStreet(lea, newStreetDoc({ name })));
     }
   });
 
   it('should accept a BAN id of 1 to 100 characters, or none', async () => {
-    await assertSucceeds(newStreet(lea, streetDoc({ banId: 'x'.repeat(100) })));
-    await assertSucceeds(newStreet(lea, streetDoc({ banId: 'x' })));
-    await assertFails(newStreet(lea, streetDoc({ banId: 'x'.repeat(101) })));
-    await assertFails(newStreet(lea, streetDoc({ banId: '' })));
-    await assertFails(newStreet(lea, streetDoc({ banId: 69264 })));
+    await assertSucceeds(newStreet(lea, newStreetDoc({ banId: 'x'.repeat(100) })));
+    await assertSucceeds(newStreet(lea, newStreetDoc({ banId: 'x' })));
+    await assertFails(newStreet(lea, newStreetDoc({ banId: 'x'.repeat(101) })));
+    await assertFails(newStreet(lea, newStreetDoc({ banId: '' })));
+    await assertFails(newStreet(lea, newStreetDoc({ banId: 69264 })));
   });
 
   it('should refuse a commune code that is not an INSEE code', async () => {
-    await assertSucceeds(newStreet(lea, streetDoc({ communeCode: '2A004' })));
-    await assertFails(newStreet(lea, streetDoc({ communeCode: '6926' })));
-    await assertFails(newStreet(lea, streetDoc({ communeCode: '2a004' })));
+    await assertSucceeds(newStreet(lea, newStreetDoc({ communeCode: '2A004' })));
+    await assertFails(newStreet(lea, newStreetDoc({ communeCode: '6926' })));
+    await assertFails(newStreet(lea, newStreetDoc({ communeCode: '2a004' })));
   });
 
   it('should refuse a blank commune name', async () => {
-    await assertFails(newStreet(lea, streetDoc({ communeName: '' })));
+    await assertFails(newStreet(lea, newStreetDoc({ communeName: '' })));
   });
 
-  it('should accept a large street moved from the phone whole', async () => {
-    // « Les ajouter à la tournée » (PLAN §5.0) writes each street of the
-    // phone as one new document: 1 500 numbers, all marked by the caller,
-    // and a building of 500 doors. A new street's houses are not checked
-    // one by one, so no bulk limit applies (the 1 MB document limit does,
-    // far above this ≈ 300 kB).
+  it('should refuse a street whose houses are not a map', async () => {
+    await assertFails(newStreet(lea, newStreetDoc({ houses: [] })));
+  });
+
+  it('should accept a street written before the map, without shape or assignees', async () => {
+    const { shape, assignees, ...beforeTheMap } = newStreetDoc();
+
+    await assertSucceeds(newStreet(lea, beforeTheMap));
+  });
+
+  it('should accept a street given to the caller (« Ajouter et me l’attribuer »)', async () => {
+    await assertSucceeds(newStreet(lea, newStreetDoc({ assignees: [lea] })));
+  });
+
+  it('should refuse a new street given to someone else', async () => {
+    await assertFails(newStreet(lea, newStreetDoc({ assignees: [manu] })));
+    await assertFails(newStreet(lea, newStreetDoc({ assignees: [lea, manu] })));
+    await assertFails(newStreet(lea, newStreetDoc({ assignees: lea })));
+  });
+
+  it('should accept a street without a line and refuse a shape that is not a list', async () => {
+    await assertSucceeds(newStreet(lea, newStreetDoc({ shape: [] })));
+    await assertFails(newStreet(lea, newStreetDoc({ shape: 'eguwGkrx[mQxH' })));
+  });
+
+  it('should accept a shape of 1 000 lines and refuse 1 001', async () => {
+    const lines = (count) => Array.from({ length: count }, () => 'eguwGkrx[mQxH');
+
+    await assertSucceeds(newStreet(lea, newStreetDoc({ shape: lines(1000) })));
+    await assertFails(newStreet(lea, newStreetDoc({ shape: lines(1001) })));
+  });
+});
+
+describe('a new street written in chunks (#70)', () => {
+  // A new street comes with its first houses, the others follow in
+  // updates of as many (housesPerWrite), each house checked whole.
+  let count = 0;
+  const nextStreet = (uid = lea) => doc(phoneOf(env, uid), `${streetsPath}/chunked${(count += 1)}`);
+
+  /**
+   * The costliest house the rules check: a building with a suffix, tries
+   * and a « repasser » time of its own, marked and removed by Léa.
+   */
+  const costliest = (n) =>
+    buildingEntry({
+      n,
+      sfx: 'quinquies',
+      comeBack: '2026-10-24T18',
+      by: lea,
+      at: threePm,
+      tries: 3,
+      deletedAt: threePm,
+      deletedBy: lea,
+    });
+
+  it('should accept a street of 120 houses, two per write', async () => {
+    // Imported from the BAN (unmarked), moved from the phone (marked and
+    // removed by the caller), and a building of 500 doors, counted.
     const houses = {};
-    for (let n = 1; n <= 1500; n += 1) {
-      houses[n] = houseEntry(n, { status: 'DONE', by: lea, at: twoPm });
-    }
+    for (let n = 1; n <= 117; n += 1) houses[n] = houseEntry(n);
+    houses['1bis'] = houseEntry(1, { sfx: 'bis', status: 'DONE', by: lea, at: twoPm, tries: 1 });
+    houses['2A'] = houseEntry(2, { sfx: 'a', deletedAt: twoPm, deletedBy: lea });
     const dwellings = {};
     const doors = [];
     for (let door = 1; door <= 500; door += 1) {
       dwellings[`A-${door}`] = doorEntry({ status: 'NOBODY_HOME', by: lea, at: twoPm });
       doors.push(String(door));
     }
-    houses[2000] = buildingEntry({
-      n: 2000,
+    houses[200] = buildingEntry({
+      n: 200,
+      by: lea,
+      at: twoPm,
       layout: [{ esc: 'A', floor: null, doors }],
       dwellings,
     });
+    const ref = nextStreet();
 
-    await assertSucceeds(newStreet(lea, streetDoc({ houses })));
+    await assertSucceeds(writeInChunks(ref, newStreetDoc({ houses })));
+    const stored = await getDoc(ref);
+    assert.equal(Object.keys(stored.data().houses).length, 120);
   });
 
-  it('should refuse a street whose houses are not a map', async () => {
-    await assertFails(newStreet(lea, streetDoc({ houses: [] })));
+  it('should accept full writes of the costliest houses, the first and the next', async () => {
+    // Pins the cost of the checks: a change of the rules that makes them
+    // too dear for a full write fails here (the 1 000 expressions).
+    const houses = {};
+    for (let n = 1; n <= 2 * housesPerWrite; n += 1) houses[`${n}quinquies`] = costliest(n);
+
+    await assertSucceeds(writeInChunks(nextStreet(), newStreetDoc({ houses })));
   });
 
-  it('should accept a street written before the map, without shape or assignees', async () => {
-    const { shape, assignees, ...beforeTheMap } = streetDoc();
+  it('should accept the next houses of a street of 1 500, the cost not growing with it', async () => {
+    const houses = {};
+    for (let n = 1; n <= 1500; n += 1) houses[n] = houseEntry(n);
+    await seed(env, `${streetsPath}/longue`, streetDoc({ houses }));
 
-    await assertSucceeds(newStreet(lea, beforeTheMap));
+    await assertSucceeds(
+      updateFields(doc(phoneOf(env, lea), `${streetsPath}/longue`), [
+        [['houses', '2000quinquies'], costliest(2000)],
+        [['houses', '2001quinquies'], costliest(2001)],
+      ]),
+    );
   });
 
-  it('should accept a street given to the caller (« Ajouter et me l’attribuer »)', async () => {
-    await assertSucceeds(newStreet(lea, streetDoc({ assignees: [lea] })));
+  it('should refuse a new street with one house more than a write may add', async () => {
+    const houses = { 4: houseEntry(4), '4bis': houseEntry(4, { sfx: 'bis' }), 6: houseEntry(6) };
+
+    await assertFails(setDoc(nextStreet(), newStreetDoc({ houses })));
   });
 
-  it('should refuse a new street given to someone else', async () => {
-    await assertFails(newStreet(lea, streetDoc({ assignees: [manu] })));
-    await assertFails(newStreet(lea, streetDoc({ assignees: [lea, manu] })));
-    await assertFails(newStreet(lea, streetDoc({ assignees: lea })));
+  it('should refuse a `note` on the first or the last house of the first write', async () => {
+    const withNote = (n) => ({ ...houseEntry(n), note: 'Mme Martin' });
+
+    await assertFails(setDoc(nextStreet(), newStreetDoc({ houses: { 4: withNote(4), 6: houseEntry(6) } })));
+    await assertFails(setDoc(nextStreet(), newStreetDoc({ houses: { 4: houseEntry(4), 6: withNote(6) } })));
   });
 
-  it('should accept a street without a line and refuse a shape that is not a list', async () => {
-    await assertSucceeds(newStreet(lea, streetDoc({ shape: [] })));
-    await assertFails(newStreet(lea, streetDoc({ shape: 'eguwGkrx[mQxH' })));
+  it('should refuse a `note` on the first or the last house of a next write', async () => {
+    const ref = nextStreet();
+    await setDoc(ref, newStreetDoc());
+
+    await assertFails(
+      updateFields(ref, [
+        [['houses', '10'], { ...houseEntry(10), note: 'Mme Martin' }],
+        [['houses', '12'], houseEntry(12)],
+      ]),
+    );
+    await assertFails(
+      updateFields(ref, [
+        [['houses', '10'], houseEntry(10)],
+        [['houses', '12'], { ...houseEntry(12), note: 'Mme Martin' }],
+      ]),
+    );
   });
 
-  it('should accept a shape of 1 000 lines and refuse 1 001', async () => {
-    const lines = (count) => Array.from({ length: count }, () => 'eguwGkrx[mQxH');
+  it('should refuse a house marked or removed in someone else’s name, in any write', async () => {
+    const theirs = [
+      houseEntry(10, { status: 'DONE', by: manu, at: twoPm }),
+      houseEntry(10, { deletedAt: twoPm, deletedBy: manu }),
+      houseEntry(10, { status: 'DONE', by: lea, at: twoPm, deletedAt: twoPm, deletedBy: manu }),
+    ];
+    for (const house of theirs) {
+      await assertFails(setDoc(nextStreet(), newStreetDoc({ houses: { 4: houseEntry(4), 10: house } })));
+      const ref = nextStreet();
+      await setDoc(ref, newStreetDoc());
+      await assertFails(updateFields(ref, [[['houses', '12'], houseEntry(12)], [['houses', '10'], house]]));
+    }
+  });
 
-    await assertSucceeds(newStreet(lea, streetDoc({ shape: lines(1000) })));
-    await assertFails(newStreet(lea, streetDoc({ shape: lines(1001) })));
+  it('should refuse a house marked without a stamp, or with half of one', async () => {
+    const unstamped = [
+      houseEntry(10, { status: 'DONE' }),
+      houseEntry(10, { tries: 1 }),
+      houseEntry(10, { by: lea }),
+      houseEntry(10, { at: twoPm }),
+      houseEntry(10, { deletedAt: twoPm }),
+      buildingEntry({ n: 10, dwellings: { 'A0-Gauche': doorEntry() } }),
+    ];
+    for (const house of unstamped) {
+      await assertFails(setDoc(nextStreet(), newStreetDoc({ houses: { 4: houseEntry(4), 10: house } })));
+    }
+  });
+
+  it('should refuse a house under a key that is not its label, or with a value out of bounds', async () => {
+    const bad = {
+      11: houseEntry(10),
+      '10a': houseEntry(10, { sfx: 'a' }),
+      10: houseEntry(10, { status: 'FAIT', by: lea, at: twoPm }),
+    };
+    for (const [label, house] of Object.entries(bad)) {
+      await assertFails(setDoc(nextStreet(), newStreetDoc({ houses: { 4: houseEntry(4), [label]: house } })));
+    }
+    await assertFails(
+      setDoc(nextStreet(), newStreetDoc({ houses: { 4: houseEntry(4), 6: houseEntry(6, { lat: 91 }) } })),
+    );
+    await assertFails(
+      setDoc(
+        nextStreet(),
+        newStreetDoc({
+          houses: {
+            4: houseEntry(4),
+            6: houseEntry(6, { status: 'COME_BACK', comeBack: 'après 19h', by: lea, at: twoPm }),
+          },
+        }),
+      ),
+    );
   });
 });
 
@@ -796,10 +930,12 @@ describe('numbers', () => {
     );
   });
 
-  it('should refuse a number added already marked, or with a `note`', async () => {
+  it('should refuse a number added marked by someone else, or with a `note`', async () => {
+    // Marked by the caller is accepted since #70: the houses of a street
+    // moved from the phone come so, in writes that add them.
     await assertFails(
       updateFields(nationale(), [
-        [['houses', '10'], houseEntry(10, { status: 'DONE', by: lea, at: threePm })],
+        [['houses', '10'], houseEntry(10, { status: 'DONE', by: manu, at: threePm })],
       ]),
     );
     await assertFails(
@@ -807,10 +943,10 @@ describe('numbers', () => {
     );
   });
 
-  it('should refuse a number added in the Corbeille, or with half a stamp', async () => {
+  it('should refuse a number added in the Corbeille by someone else, or with half a stamp', async () => {
     await assertFails(
       updateFields(nationale(), [
-        [['houses', '10'], houseEntry(10, { deletedAt: threePm, deletedBy: lea })],
+        [['houses', '10'], houseEntry(10, { deletedAt: threePm, deletedBy: manu })],
       ]),
     );
     await assertFails(
@@ -836,12 +972,27 @@ describe('numbers', () => {
     );
   });
 
-  it('should accept 500 numbers added at once and refuse 501', async () => {
+  it('should accept as many numbers added at once as a write may add, and refuse one more', async () => {
     const added = (count) =>
       Array.from({ length: count }, (_, i) => [['houses', `${1000 + i}`], houseEntry(1000 + i)]);
 
-    await assertFails(updateFields(nationale(), added(501)));
-    await assertSucceeds(updateFields(nationale(), added(500)));
+    await assertFails(updateFields(nationale(), added(housesPerWrite + 1)));
+    await assertSucceeds(updateFields(nationale(), added(housesPerWrite)));
+  });
+
+  it('should check each number of several added at once', async () => {
+    await assertFails(
+      updateFields(nationale(), [
+        [['houses', '10'], houseEntry(10)],
+        [['houses', '12'], { ...houseEntry(12), note: 'x' }],
+      ]),
+    );
+    await assertFails(
+      updateFields(nationale(), [
+        [['houses', '10'], houseEntry(10, { status: 'DONE', by: manu, at: threePm })],
+        [['houses', '12'], houseEntry(12)],
+      ]),
+    );
   });
 
   it('should refuse numbers added and an existing house changed in one write', async () => {

@@ -14,6 +14,7 @@ import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_street_repository.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_document_mapper.dart';
+import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_writes.dart';
 
 import '../../domain/tournee/tournee_fixtures.dart' show campaign2026;
 import '../../support/fakes/fake_ports.dart';
@@ -91,6 +92,28 @@ void main() {
       final stored = await db.doc('$streetsPath/lilas').get();
 
       expect(stored.data(), streetToDocument(lilas));
+    });
+
+    test('should store a street of more houses than one write holds '
+        'whole', () async {
+      final paix = valueOf(
+        Street.create(
+          id: StreetId('paix'),
+          name: 'Rue de la Paix',
+          commune: villefranche,
+          houses: [
+            for (var i = 1; i <= 2 * housesPerWrite + 1; i++)
+              House(number: n('$i')),
+          ],
+        ),
+      );
+      await phone().add(paix);
+      await pumpEventQueue();
+
+      final stored = await db.doc('$streetsPath/paix').get();
+      // The order of the writes is newStreetWrites' (its tests): the
+      // in-memory Firestore gives a listener only the last version.
+      expect(stored.data(), streetToDocument(paix));
     });
   });
 

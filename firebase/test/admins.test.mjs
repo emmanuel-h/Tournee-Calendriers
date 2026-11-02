@@ -25,6 +25,7 @@ import {
   lea,
   manu,
   memberPath,
+  newStreetDoc,
   paul,
   phoneOf,
   previewDoc,
@@ -131,7 +132,7 @@ describe('what an admin outside the team writes in the streets', () => {
 
   it('should let them add a street and send one to the Corbeille', async () => {
     await assertSucceeds(
-      setDoc(doc(phoneOf(env, sam), `${streetsPath}/paix`), streetDoc({ name: 'Rue de la Paix' })),
+      setDoc(doc(phoneOf(env, sam), `${streetsPath}/paix`), newStreetDoc()),
     );
     await assertSucceeds(
       updateDoc(nationale(sam), { deletedAt: threePm, deletedBy: sam }),
@@ -175,7 +176,7 @@ describe('what an admin outside the team writes in the streets', () => {
       ]),
     );
     await assertFails(
-      setDoc(doc(phoneOf(env, zoe), `${streetsPath}/paix`), streetDoc({ name: 'Rue de la Paix' })),
+      setDoc(doc(phoneOf(env, zoe), `${streetsPath}/paix`), newStreetDoc()),
     );
   });
 });
