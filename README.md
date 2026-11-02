@@ -53,8 +53,9 @@ Start screen:
   Clair, Sombre), confidentialité, version (opens « Nouveautés », what each version brings), licences, data credits.
 - Équipe (👥): the join code (copy button: « Code copié ») and its QR code, « Partager »,
   « Nouveau code » (admins), the requests to join with « Accepter » / « Refuser » (any
-  member or admin), the members (« · admin ») with « Retirer » (admins), the Corbeille,
-  the tournée's communes (« + Ajouter une commune », ✕ but on the last one),
+  member or admin), the members (« · admin ») with the streets each one covers (« 3 rues »;
+  a tap unfolds their names) and « Retirer » (admins), the Corbeille, the tournée's
+  communes (« + Ajouter une commune », ✕ but on the last one), and pinned at the bottom
   « Quitter la tournée » (every member) and « Supprimer la tournée » (admins).
   Answering, removing and leaving work offline; a new code and deleting need the network.
   A member removed, or whose tournée was deleted, sees it leave « Mes tournées » with a

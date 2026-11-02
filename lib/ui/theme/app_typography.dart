@@ -249,6 +249,15 @@ abstract final class AppTextStyles {
     height: 1.1,
   );
 
+  /// A street unfolded under a member in Équipe (« Rue de Thizy »): one
+  /// per 32 dp line.
+  static const memberStreet = TextStyle(
+    fontFamily: AppFonts.text,
+    fontWeight: FontWeight.w400,
+    fontSize: 15,
+    height: 32 / 15,
+  );
+
   /// The initial in a member's round avatar (« M »).
   static const avatarInitial = TextStyle(
     fontFamily: AppFonts.display,

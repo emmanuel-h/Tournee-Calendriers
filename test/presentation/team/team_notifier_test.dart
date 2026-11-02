@@ -3,6 +3,8 @@ import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
 import 'package:tournee_calendriers/domain/shared/commune.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
+import 'package:tournee_calendriers/domain/street/street.dart';
+import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/tournee/member.dart';
 import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
 import 'package:tournee_calendriers/domain/tournee/tournee.dart';
@@ -21,9 +23,11 @@ import '../../support/fakes/fake_admin_status.dart';
 import '../../support/fakes/fake_my_tournees_store.dart';
 import '../../support/fakes/fake_phone_settings.dart';
 import '../../support/fakes/fake_ports.dart';
+import '../../support/fakes/fake_street_repository.dart';
 import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/results.dart';
 import '../../support/scripted_random.dart';
+import '../../support/street_fixtures.dart' show villefranche;
 
 /// Gleizé as the commune search suggests it.
 final _gleizeOption = CommuneOption.of(
@@ -31,6 +35,16 @@ final _gleizeOption = CommuneOption.of(
     commune: gleizeCommune.commune,
     postcodes: const ['69400'],
     centre: gleizeCommune.centre,
+  ),
+);
+
+/// A street of the 49 named [name], covered by [assignees].
+Street _street(String id, String name, Set<MemberId> assignees) => valueOf(
+  Street.create(
+    id: StreetId(id),
+    name: name,
+    commune: villefranche,
+    assignees: assignees,
   ),
 );
 
@@ -44,21 +58,25 @@ void main() {
   late FakeTourneeRepository tournees;
   late FakeMyTourneesStore store;
   late FakeAdminStatus admins;
+  late FakeStreetRepository streets;
 
-  /// The phone of [member], with the 49 open (or [mine]). Manu and Sam are
-  /// admins of the app; the phone is an admin's when [member] is one of
-  /// them, unless [admin] says otherwise.
+  /// The phone of [member], with the 49 open (or [mine]) and its streets
+  /// [streetsOf49] (none by default). Manu and Sam are admins of the app;
+  /// the phone is an admin's when [member] is one of them, unless [admin]
+  /// says otherwise.
   ProviderContainer phoneOf(
     MemberId member, {
     MyTournees? mine,
     bool? admin,
     FakePhoneSettings? settings,
+    List<Street> streetsOf49 = const [],
   }) {
     admins = FakeAdminStatus(
       phoneIsAdmin: admin ?? (member == manuId || member == samId),
       admins: [manuId, samId],
     );
     tournees = FakeTourneeRepository([team()]);
+    streets = FakeStreetRepository(streetsOf49);
     store = FakeMyTourneesStore(
       mine ??
           valueOf(
@@ -71,6 +89,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         tourneeRepositoryProvider.overrideWithValue(tournees),
+        streetRepositoryProvider.overrideWithValue(streets),
         myTourneesStoreProvider.overrideWithValue(store),
         identityProvider.overrideWithValue(FakeIdentity(member)),
         clockProvider.overrideWithValue(FakeClock(twoMinutesLater)),
@@ -255,6 +274,75 @@ void main() {
 
       // The fake knows only the 49.
       expect(container.read(teamProvider), isA<TeamUnavailable>());
+    });
+  });
+
+  group('streets per member', () {
+    // Léa covers three streets, one with Manu; Manu one; nobody covers
+    // Rue Roland.
+    List<Street> streetsOf49() => [
+      _street('thizy', 'Rue de Thizy', {leaId}),
+      _street('nationale', 'Rue Nationale', {leaId, manuId}),
+      _street('roland', 'Rue Roland', {}),
+      _street('marais', 'Place des Marais', {leaId}),
+    ];
+
+    test('should give each member the names of the streets they cover, in '
+        'French order', () async {
+      final team = await shown(phoneOf(leaId, streetsOf49: streetsOf49()));
+
+      expect(team.members, [
+        MemberRow(
+          id: manuId,
+          name: 'Manu',
+          isMe: false,
+          isAdmin: true,
+          canRemove: false,
+          streets: const ['Rue Nationale'],
+        ),
+        MemberRow(
+          id: leaId,
+          name: 'Léa',
+          isMe: true,
+          isAdmin: false,
+          canRemove: false,
+          streets: const ['Place des Marais', 'Rue de Thizy', 'Rue Nationale'],
+        ),
+      ]);
+    });
+
+    test('should follow the streets as members take them', () async {
+      final container = phoneOf(leaId, streetsOf49: streetsOf49());
+      await shown(container);
+
+      final roland = valueOf(
+        await streets.find(StreetId('roland')).then((s) => s!.take(manuId)),
+      );
+      await streets.save(roland.$1, roland.$2);
+      await pumpEventQueue();
+
+      final state = container.read(teamProvider) as TeamShown;
+      expect(state.members.first.streets, ['Rue Nationale', 'Rue Roland']);
+    });
+
+    test('should show the team, with no street, when the streets cannot be '
+        'read', () async {
+      final container = phoneOf(leaId, streetsOf49: streetsOf49());
+      streets.watchError = StateError('no access');
+
+      final team = await shown(container);
+
+      expect(team.members.map((member) => member.name), ['Manu', 'Léa']);
+      expect(team.members.every((member) => member.streets.isEmpty), isTrue);
+    });
+
+    test('should give lists that cannot be modified', () async {
+      final team = await shown(phoneOf(leaId, streetsOf49: streetsOf49()));
+
+      expect(
+        () => team.members.last.streets.add('Rue Roland'),
+        throwsUnsupportedError,
+      );
     });
   });
 
@@ -471,12 +559,15 @@ void main() {
         bool isMe = false,
         bool isAdmin = false,
         bool canRemove = true,
+        List<String> streets = const ['Rue de Thizy', 'Rue Nationale'],
       }) => MemberRow(
         id: id ?? leaId,
         name: name,
         isMe: isMe,
         isAdmin: isAdmin,
         canRemove: canRemove,
+        // A list of its own each time: equal by its items, not by identity.
+        streets: [...streets],
       );
 
       expect(row(), row());
@@ -486,6 +577,8 @@ void main() {
       expect(row(isMe: true), isNot(row()));
       expect(row(isAdmin: true), isNot(row()));
       expect(row(canRemove: false), isNot(row()));
+      expect(row(streets: ['Rue de Thizy']), isNot(row()));
+      expect(row(streets: ['Rue Nationale', 'Rue de Thizy']), isNot(row()));
     });
   });
 

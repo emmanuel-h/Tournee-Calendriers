@@ -2079,6 +2079,30 @@ abstract class AppLocalizations {
   /// **'Options pour {name}'**
   String teamMemberOptions(String name);
 
+  /// Right of a member row in Équipe: the streets of the tournée the member covers (#105). Followed by ▸ (▾ while unfolded) when there is at least one.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, =0{0 rue} =1{1 rue} other{{count} rues}}'**
+  String teamMemberStreets(int count);
+
+  /// Screen-reader name of a member's street count while folded; {streets} is teamMemberStreets.
+  ///
+  /// In fr, this message translates to:
+  /// **'{name}, {streets}, afficher les rues'**
+  String teamMemberStreetsShow(String name, String streets);
+
+  /// Screen-reader name of a member's street count while unfolded; {streets} is teamMemberStreets.
+  ///
+  /// In fr, this message translates to:
+  /// **'{name}, {streets}, masquer les rues'**
+  String teamMemberStreetsHide(String name, String streets);
+
+  /// Screen-reader name of the street names unfolded under a member in Équipe.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rues de {name}'**
+  String teamMemberStreetsList(String name);
+
   /// Item of a member's ⋮ menu, and the confirm button.
   ///
   /// In fr, this message translates to:

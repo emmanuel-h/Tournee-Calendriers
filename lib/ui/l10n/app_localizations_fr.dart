@@ -1453,6 +1453,33 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String teamMemberStreets(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count rues',
+      one: '1 rue',
+      zero: '0 rue',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String teamMemberStreetsShow(String name, String streets) {
+    return '$name, $streets, afficher les rues';
+  }
+
+  @override
+  String teamMemberStreetsHide(String name, String streets) {
+    return '$name, $streets, masquer les rues';
+  }
+
+  @override
+  String teamMemberStreetsList(String name) {
+    return 'Rues de $name';
+  }
+
+  @override
   String get teamRemove => 'Retirer';
 
   @override

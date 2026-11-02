@@ -56,6 +56,7 @@ import 'package:tournee_calendriers/application/use_cases/observe_offline.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_pending_sync.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_street.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_streets.dart';
+import 'package:tournee_calendriers/application/use_cases/observe_streets_by_member.dart';
 import 'package:tournee_calendriers/application/use_cases/phone_settings.dart';
 import 'package:tournee_calendriers/application/use_cases/purge_corbeille.dart';
 import 'package:tournee_calendriers/application/use_cases/refresh_offline_maps.dart';
@@ -182,6 +183,9 @@ final observeMyStreetsProvider = Provider(
     ref.watch(streetRepositoryProvider),
     ref.watch(identityProvider),
   ),
+);
+final observeStreetsByMemberProvider = Provider(
+  (ref) => ObserveStreetsByMember(ref.watch(streetRepositoryProvider)),
 );
 final setHouseDetailsProvider = Provider(
   (ref) => SetHouseDetails(
