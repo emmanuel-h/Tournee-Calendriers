@@ -44,6 +44,8 @@ M4 done, milestone closed (2026-11-02), validated on the phone with 0.7.0: the o
 downloads itself for offline use, unseen (#32: streets into the cache + MapLibre region, silent
 re-download for OpenFreeMap's weekly tiles); one line in Paramètres and tournées greyed
 « Disponible avec réseau » offline (#33); airplane-mode day (#34).
+M5 in progress: launcher icon (#101, split from #36) designed and approved (2026-11-02), source
+`docs/mockups/icon/launcher_icon.svg`; implementation steps are in #101.
 Release signing and Play publishing pulled forward from M5 (#37): 0.7.0 (code 8, 2026-11-02: #32,
 #33) is on the internal track; publish with the `release-store` skill. `lib/bootstrap/firebase_options.dart` and `android/app/google-services.json`
 are gitignored: run `flutterfire configure --out=lib/bootstrap/firebase_options.dart` locally;
