@@ -44,8 +44,10 @@ M4 done, milestone closed (2026-11-02), validated on the phone with 0.7.0: the o
 downloads itself for offline use, unseen (#32: streets into the cache + MapLibre region, silent
 re-download for OpenFreeMap's weekly tiles); one line in Paramètres and tournées greyed
 « Disponible avec réseau » offline (#33); airplane-mode day (#34).
-M5 in progress: launcher icon (#101, split from #36) designed and approved (2026-11-02), source
-`docs/mockups/icon/launcher_icon.svg`; implementation steps are in #101.
+M5 in progress: launcher icon (#101, split from #36) approved and built (2026-11-02): adaptive
+vector drawables with a monochrome layer, launch screen on the ground colour (light/dark), label
+« Tournée Calendriers », Play icon from `tool/render_play_icon.py` in `store/listing/`; awaits the
+phone test.
 Release signing and Play publishing pulled forward from M5 (#37): 0.7.0 (code 8, 2026-11-02: #32,
 #33) is on the internal track; publish with the `release-store` skill. `lib/bootstrap/firebase_options.dart` and `android/app/google-services.json`
 are gitignored: run `flutterfire configure --out=lib/bootstrap/firebase_options.dart` locally;
@@ -62,6 +64,7 @@ dart format --set-exit-if-changed lib test
 (cd firebase && npm test)                                # security rules in the emulator
 flutter build appbundle --release                        # release-only breakage
 python3 tool/publish_play.py --help                      # Play publishing (driven by /release-store)
+tool/render_play_icon.py                                 # 512 px Play icon from the launcher drawables
 flutter test integration_test/app_test.dart -d emulator-5554 --dart-define-from-file=$HOME/.config/tournee-calendriers/app_check_debug.json
 tool/admin_e2e.sh                                        # admin flows, local Auth + Firestore emulators
 flutter run --dart-define-from-file=$HOME/.config/tournee-calendriers/app_check_debug.json
