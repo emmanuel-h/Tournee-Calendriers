@@ -16,8 +16,8 @@
   "@screenStreet": { "description": "Placeholder title of the street screen; the real one shows the street's name (PLAN §5.6)." },
   "screenEditStreet": "Modifier la rue",
   "@screenEditStreet": { "description": "Title of the street edit mode (PLAN §5.5)." },
-  "screenTeam": "Équipe",
-  "@screenTeam": { "description": "Title of the team screen (PLAN §5.8) before its sector is read." },
+  "screenSector": "Secteur",
+  "@screenSector": { "description": "Title of the Secteur screen (PLAN §5.8, §5.14) before its sector is read." },
   "screenSettings": "Paramètres",
   "@screenSettings": { "description": "Title of the settings screen (PLAN §5.9)." },
   "screenTrash": "Corbeille",
@@ -1183,11 +1183,11 @@
       "url": { "type": "String", "example": "https://github.com/emmanuel-h/Tournee-Calendriers/blob/main/PRIVACY.md" }
     }
   },
-  "homeTeam": "Équipe",
-  "@homeTeam": { "description": "Tooltip and screen-reader name of the 👥 button of the start screen (PLAN §5.3)." },
-  "homeTeamWaiting": "{count, plural, =1{Équipe, 1 demande en attente} other{Équipe, {count} demandes en attente}}",
-  "@homeTeamWaiting": {
-    "description": "Screen-reader name of the 👥 button when join requests wait (the dot, PLAN §5.3).",
+  "homeSector": "Secteur",
+  "@homeSector": { "description": "Tooltip and screen-reader name of Accueil's Secteur button, a folded map (PLAN §5.14)." },
+  "homeSectorWaiting": "{count, plural, =1{Secteur, 1 demande en attente} other{Secteur, {count} demandes en attente}}",
+  "@homeSectorWaiting": {
+    "description": "Screen-reader name of the Secteur button when join requests wait (the dot, PLAN §5.14).",
     "placeholders": {
       "count": { "type": "int", "example": "1" }
     }
@@ -1311,11 +1311,22 @@
   },
   "teamCorbeille": "{count, plural, =0{Corbeille · vide} =1{Corbeille · 1 élément} other{Corbeille · {count} éléments}}",
   "@teamCorbeille": {
-    "description": "Row of Équipe that opens the Corbeille (PLAN §5.11).",
+    "description": "Row of « Rues » in Secteur that opens the Corbeille (PLAN §5.11, §5.14).",
     "placeholders": {
       "count": { "type": "int", "example": "2" }
     }
   },
+  "teamStreetsHeader": "Rues ({count})",
+  "@teamStreetsHeader": {
+    "description": "Section header of Secteur over « Ajouter des rues » and the Corbeille, with the secteur's street count (PLAN §5.14).",
+    "placeholders": {
+      "count": { "type": "int", "example": "38" }
+    }
+  },
+  "teamStreetsHeaderCounting": "Rues",
+  "@teamStreetsHeaderCounting": { "description": "The same header while the streets are being read from the phone." },
+  "teamAddStreetsHint": "Sur la carte ou depuis la liste des communes",
+  "@teamAddStreetsHint": { "description": "Second line of « Ajouter des rues » in Secteur (PLAN §5.14)." },
   "teamLeave": "Quitter le secteur",
   "@teamLeave": { "description": "Button of Équipe for every member, admins and the creator included (PLAN §5.12)." },
   "teamLeaveTitle": "Quitter le secteur {number} ?",
@@ -1713,7 +1724,7 @@
     "placeholders": { "max": { "type": "int", "example": "50" } }
   },
   "addStreetsTitle": "Ajouter des rues",
-  "@addStreetsTitle": { "description": "Button of the start screen while a sector is open, and title of the screen it opens (PLAN §5.4)." },
+  "@addStreetsTitle": { "description": "Row of « Rues » in Secteur, and title of the screen it opens (PLAN §5.4, §5.14)." },
   "addStreetsModes": "Ajouter depuis",
   "@addStreetsModes": { "description": "Screen-reader name of the « Carte | Liste » tabs of « Ajouter des rues »." },
   "addStreetsMapTab": "Carte",

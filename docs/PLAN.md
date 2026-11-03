@@ -402,8 +402,8 @@ an admin, shows only « Rejoindre un secteur », in red), and the bottom of the 
 
 > **Changed by 5.14 (2026-11-03):** built in #120: no « Mes rues » / « Autres rues », one list
 > of every street under « Rues · 31/50 » (each row opens its street), no « libre » (line,
-> legend), no « Équipe : n % », street card « Ouvrir » only. To build: no « + Ajouter des
-> rues » row (it moves to Secteur, #121), 🗺 Secteur instead of 👥 (#121), and the « En
+> legend), no « Équipe : n % », street card « Ouvrir » only. Built in #121: no « + Ajouter
+> des rues » row (it moved to Secteur), 🗺 Secteur instead of 👥. To build: the « En
 > tournée » band over the top bar during a tournée (#123). Read 5.14 first; the text below is
 > the earlier state.
 
@@ -564,8 +564,9 @@ bottom sheet:
 
 > **Changed by 5.14 (2026-11-03):** built in #120: « Ajouter et me l'attribuer » / « Ajouter
 > sans m'attribuer » and the state table's attribution actions are gone; until #124 the card of
-> a street to add has one red « Ajouter au secteur », a street of the secteur « Ouvrir ». To
-> build: opened from Secteur, not Accueil (#121); a tap ticks a road instead of opening the card
+> a street to add has one red « Ajouter au secteur », a street of the secteur « Ouvrir ». Built
+> in #121: opened from Secteur, not Accueil; ✕ and « N rues ajoutées » go back to Secteur. To
+> build: a tap ticks a road instead of opening the card
 > (several at once, « Ajouter N rues », #124), plus « Zone » (#125). The look-up, the search
 > and « Liste » stay as below.
 
@@ -1187,11 +1188,12 @@ Immeuble details fixed in T1.9 (`lib/presentation/building/`, `lib/ui/screens/bu
   → Gauche [Annuler] » (« Annuler » gives the door its name back, marks kept). The name it
   already has just closes the sheet, stores nothing and offers no « Annuler ».
 
-### 5.8 Équipe (👥)
+### 5.8 Équipe (👥), now Secteur (🗺)
 
 > **Changed by 5.14 (2026-11-03):** built in #120: no streets per member (#105's counts are
-> gone). To build (#121): now « Secteur », opened by 🗺 (`Icons.map_outlined`); a « RUES (n) »
-> section with « + Ajouter des rues » and the Corbeille under it. The rest stands.
+> gone). Built in #121: now « Secteur », opened by 🗺 (`Icons.map_outlined`); after
+> « MEMBRES », a « RUES (n) » section with « + Ajouter des rues » and the Corbeille under it
+> (not for a pending member), then « COMMUNES » and « COLLECTE ». The rest stands.
 
 ```
 ┌──────────────────────────────┐
@@ -1671,13 +1673,15 @@ removes are marked « (removed, 5.14) » there.
   opens its street card: name, commune, « 31/42 faits », « Ouvrir ». A row opens the Street
   screen directly, as « Mes rues » did (no card, the map does not move: #93's « Autres rues »
   card is gone with them). The pending-sync line stays at the bottom.
-- **The Secteur button** replaces 👥: Material `Icons.map_outlined` (a folded map), said
+- **The Secteur button** (built in #121) replaces 👥: Material `Icons.map_outlined` (a folded map), said
   « Secteur » (« Secteur, 1 demande en attente » with the red dot, which stays). It opens the
   screen 5.8 called Équipe, now **Secteur** (title « Secteur 49 » as before). Changes there:
   member rows have no street count; after « MEMBRES », **« RUES (38) »** with the row « + Ajouter
   des rues › » (« Sur la carte ou depuis la liste des communes » under it), which opens 5.4,
   and the Corbeille row moved under it; then « COMMUNES », « COLLECTE 2026 » and the pinned
   footer, unchanged. The rows show to active members and admins, not to a pending member.
+  « RUES (38) » counts the streets Accueil lists (outside the Corbeille), from the phone's
+  copy; it reads « RUES » until they are read.
 - **En tournée** (RunHome, RunStreet): while this phone's tournée runs in the open secteur,
   a band **replaces Accueil's top bar**: Surface background with a 6 dp Accent edge on its left,
   ink text and an Accent dot, a 1 dp divider under it (dark mode: the dark Surface and Accent);

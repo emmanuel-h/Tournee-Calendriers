@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/presentation/collecte/collecte_notifier.dart';
 import 'package:tournee_calendriers/presentation/collecte/collecte_view.dart';
 import 'package:tournee_calendriers/presentation/corbeille/corbeille_notifier.dart';
+import 'package:tournee_calendriers/presentation/team/sector_street_count.dart';
 import 'package:tournee_calendriers/presentation/team/team_notifier.dart';
 import 'package:tournee_calendriers/presentation/team/team_state.dart';
 import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
@@ -25,9 +26,11 @@ import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
-/// Équipe (👥, PLAN §5.8, Team mockup): the join code and its QR code to
-/// show or share, the requests to answer, the members, the Corbeille, and
-/// leaving or deleting the tournée.
+/// Secteur (PLAN §5.8, §5.14, Team and TeamMember mockups), opened by the
+/// Secteur button of Accueil: where the secteur is prepared. The join code
+/// and its QR code to show or share, the requests to answer, the members,
+/// « RUES (38) » with « + Ajouter des rues » and the Corbeille, the
+/// communes, « COLLECTE 2026 », and leaving or deleting the secteur.
 ///
 /// Every member sees the code and answers requests; « Nouveau code »,
 /// « Retirer » and « Supprimer le secteur » are the admins' (PLAN §5.12),
@@ -37,8 +40,10 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 /// deleting say they need the network.
 ///
 /// Every member covers every street of the secteur (PLAN §5.14): the rows
-/// name nobody's streets. « Quitter » and « Supprimer » stay pinned at the
-/// bottom while the rest scrolls.
+/// name nobody's streets. « RUES » is for those who prepare the secteur
+/// (an active member, an admin), not for a member still pending.
+/// « Quitter » and « Supprimer » stay pinned at the bottom while the rest
+/// scrolls.
 /// « Démarrer une nouvelle campagne » comes with v1.1.
 final class TeamScreen extends ConsumerWidget {
   const TeamScreen({super.key});
@@ -58,7 +63,7 @@ final class TeamScreen extends ConsumerWidget {
           ),
           NoTeam() ||
           TeamLoading() ||
-          TeamUnavailable() => Text(l10n.screenTeam),
+          TeamUnavailable() => Text(l10n.screenSector),
         },
       ),
       body: SafeArea(
@@ -118,9 +123,9 @@ final class _Message extends StatelessWidget {
   );
 }
 
-/// The code card, the requests, the members, the Corbeille and the
-/// communes, which scroll, over leaving or deleting, pinned at the bottom
-/// of the screen.
+/// The code card, the requests, the members, the streets, the communes and
+/// the collecte, which scroll, over leaving or deleting, pinned at the
+/// bottom of the screen.
 final class _Team extends ConsumerWidget {
   const _Team({required this.state});
 
@@ -131,7 +136,6 @@ final class _Team extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final colors = AppColors.of(context);
     final notifier = ref.read(teamProvider.notifier);
-    final corbeille = ref.watch(corbeilleProvider.select((s) => s.count));
 
     /// Runs [command]; tells why when it was not done.
     Future<bool> run(Future<TeamActionFailure?> Function() command) async {
@@ -156,6 +160,7 @@ final class _Team extends ConsumerWidget {
           // pieces); `SliverList.list` builds its children as they come
           // into sight.
           child: CustomScrollView(
+            key: const Key('team.list'),
             slivers: [
               SliverList.list(
                 children: [
@@ -209,15 +214,12 @@ final class _Team extends ConsumerWidget {
                               }
                             },
                           ),
-                        _CorbeilleTile(
-                          count: corbeille,
-                          onTap: () => context.push(AppRoutes.trash),
-                        ),
                       ],
                     ),
                   ),
-                  const _CollecteSection(),
+                  if (state.canPrepare) const _Streets(),
                   _Communes(state: state, run: run),
+                  const _CollecteSection(),
                   const SizedBox(height: 16),
                 ],
               ),
@@ -252,7 +254,7 @@ final class _BottomActions extends ConsumerWidget {
 
   final TeamShown state;
 
-  /// Runs a command of Équipe; true once done.
+  /// Runs a command of Secteur; true once done.
   final Future<bool> Function(Future<TeamActionFailure?> Function()) run;
 
   @override
@@ -581,34 +583,92 @@ final class _MemberTile extends StatelessWidget {
   }
 }
 
-/// « Corbeille · 2 éléments › », which opens the Corbeille (PLAN §5.11).
-final class _CorbeilleTile extends StatelessWidget {
-  const _CorbeilleTile({required this.count, required this.onTap});
+/// « RUES (38) » (PLAN §5.14, Team mockup): « + Ajouter des rues », which
+/// opens « Ajouter des rues » (§5.4; its ✕ comes back here), then the
+/// Corbeille (§5.11). The count is the streets Accueil lists, read from the
+/// phone, so it shows offline; « RUES » alone until they are read.
+final class _Streets extends ConsumerWidget {
+  const _Streets();
 
-  final int count;
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final colors = AppColors.of(context);
+    // `.value`: the count once read, null before.
+    final count = ref.watch(sectorStreetCountProvider).value;
+    final corbeille = ref.watch(corbeilleProvider.select((s) => s.count));
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SectionHeader(
+          count == null
+              ? l10n.teamStreetsHeaderCounting
+              : l10n.teamStreetsHeader(count),
+        ),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            border: Border(top: BorderSide(color: colors.divider)),
+          ),
+          child: Column(
+            children: [
+              _LinkTile(
+                key: const Key('team.addStreets'),
+                icon: Icons.add,
+                title: l10n.addStreetsTitle,
+                subtitle: l10n.teamAddStreetsHint,
+                // `push`: « Ajouter des rues » stacks on Secteur, so its ✕
+                // and the back gesture come back here.
+                onTap: () => context.push(AppRoutes.addStreets),
+              ),
+              _LinkTile(
+                key: const Key('team.corbeille'),
+                icon: Icons.delete_outline,
+                title: l10n.teamCorbeille(corbeille),
+                onTap: () => context.push(AppRoutes.trash),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+/// A row that opens another screen: an icon in a round ground-coloured
+/// badge, a bold title (and a muted line under it), then ›.
+final class _LinkTile extends StatelessWidget {
+  const _LinkTile({
+    super.key,
+    required this.icon,
+    required this.title,
+    required this.onTap,
+    this.subtitle,
+  });
+
+  final IconData icon;
+  final String title;
+  final String? subtitle;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
     final colors = AppColors.of(context);
-    final label = l10n.teamCorbeille(count);
+    final subtitle = this.subtitle;
     return Semantics(
-      // A node of its own: the member rows above it are not buttons.
+      // A node of its own: the rows around it are not buttons.
       container: true,
       button: true,
-      label: label,
+      label: subtitle == null ? title : '$title, $subtitle',
       excludeSemantics: true,
       child: Material(
         color: colors.surface,
         child: InkWell(
-          key: const Key('team.corbeille'),
           onTap: onTap,
           child: Container(
             constraints: const BoxConstraints(
               minHeight: AppSizes.memberRowHeight,
             ),
-            padding: const EdgeInsets.fromLTRB(16, 0, 12, 0),
+            padding: const EdgeInsets.fromLTRB(16, 8, 12, 8),
             decoration: BoxDecoration(
               border: Border(bottom: BorderSide(color: colors.divider)),
             ),
@@ -623,18 +683,31 @@ final class _CorbeilleTile extends StatelessWidget {
                     color: colors.ground,
                   ),
                   child: Icon(
-                    Icons.delete_outline,
+                    icon,
                     size: AppSizes.avatarIcon,
                     color: colors.ink,
                   ),
                 ),
                 Expanded(
-                  child: Text(
-                    label,
-                    style: AppTextStyles.bodyLarge.copyWith(
-                      color: colors.ink,
-                      fontWeight: FontWeight.w700,
-                    ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    spacing: 2,
+                    children: [
+                      Text(
+                        title,
+                        style: AppTextStyles.bodyLarge.copyWith(
+                          color: colors.ink,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      if (subtitle != null)
+                        Text(
+                          subtitle,
+                          style: AppTextStyles.small.copyWith(
+                            color: colors.muted,
+                          ),
+                        ),
+                    ],
                   ),
                 ),
                 Icon(
@@ -781,16 +854,16 @@ final class _Avatar extends StatelessWidget {
   );
 }
 
-/// « Communes (2) »: the tournée's communes, each with ✕ but the last
+/// « Communes (2) »: the secteur's communes, each with ✕ but the last
 /// one, then « + Ajouter une commune », which opens a sheet that searches
-/// geo.api.gouv.fr (#78). A tournée created before the communes shows
-/// only the button. Only an active member or an admin changes them.
+/// geo.api.gouv.fr (#78). A secteur created before the communes shows
+/// only the button. Only those who prepare the secteur change them.
 final class _Communes extends ConsumerWidget {
   const _Communes({required this.state, required this.run});
 
   final TeamShown state;
 
-  /// Runs a command of Équipe; true once done.
+  /// Runs a command of Secteur; true once done.
   final Future<bool> Function(Future<TeamActionFailure?> Function()) run;
 
   @override
@@ -798,7 +871,7 @@ final class _Communes extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final colors = AppColors.of(context);
     final notifier = ref.read(teamProvider.notifier);
-    if (state.communes.isEmpty && !state.canChangeCommunes) {
+    if (state.communes.isEmpty && !state.canPrepare) {
       return const SizedBox.shrink();
     }
     return Column(
@@ -854,7 +927,7 @@ final class _Communes extends ConsumerWidget {
             ],
           ),
         ),
-        if (state.canChangeCommunes)
+        if (state.canPrepare)
           Padding(
             padding: const EdgeInsets.fromLTRB(
               AppSizes.gutter,

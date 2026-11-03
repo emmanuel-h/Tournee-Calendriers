@@ -6,9 +6,9 @@ import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.
 /// « Collecte 2026 » of the open secteur (PLAN §5.13), for Équipe's row
 /// and the Collecte screen.
 ///
-/// `autoDispose`: it follows the ledger only while Équipe (or the Collecte
-/// screen over it) shows, unlike the team, whose dot on 👥 is needed on
-/// Accueil too.
+/// `autoDispose`: it follows the ledger only while Secteur (or the Collecte
+/// screen over it) shows, unlike the team, whose dot on the Secteur button
+/// is needed on Accueil too.
 final collecteProvider =
     NotifierProvider.autoDispose<CollecteNotifier, CollecteView>(
       CollecteNotifier.new,

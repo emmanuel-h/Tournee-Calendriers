@@ -266,7 +266,7 @@ void main() {
 
       final shownTeam = await shown(container);
 
-      expect(shownTeam.canChangeCommunes, isTrue);
+      expect(shownTeam.canPrepare, isTrue);
       expect(shownTeam.communes, [
         CommuneRow(
           inseeCode: villefrancheCommune.inseeCode,
@@ -295,7 +295,7 @@ void main() {
       final shownTeam = await shown(phoneOf(leaId));
 
       expect(shownTeam.communes, isEmpty);
-      expect(shownTeam.canChangeCommunes, isTrue);
+      expect(shownTeam.canPrepare, isTrue);
     });
 
     test('should let an admin outside the team change them', () async {
@@ -304,7 +304,7 @@ void main() {
 
       final shownTeam = await shown(container);
 
-      expect(shownTeam.canChangeCommunes, isTrue);
+      expect(shownTeam.canPrepare, isTrue);
       expect(shownTeam.communes.first.removable, isTrue);
     });
 
@@ -314,7 +314,7 @@ void main() {
 
       final shownTeam = await shown(container);
 
-      expect(shownTeam.canChangeCommunes, isFalse);
+      expect(shownTeam.canPrepare, isFalse);
       expect(shownTeam.communes.first.removable, isFalse);
     });
 

@@ -130,11 +130,11 @@ abstract class AppLocalizations {
   /// **'Modifier la rue'**
   String get screenEditStreet;
 
-  /// Title of the team screen (PLAN §5.8) before its sector is read.
+  /// Title of the Secteur screen (PLAN §5.8, §5.14) before its sector is read.
   ///
   /// In fr, this message translates to:
-  /// **'Équipe'**
-  String get screenTeam;
+  /// **'Secteur'**
+  String get screenSector;
 
   /// Title of the settings screen (PLAN §5.9).
   ///
@@ -2008,17 +2008,17 @@ abstract class AppLocalizations {
   /// **'Impossible d\'ouvrir le navigateur. La politique est à l\'adresse {url}'**
   String privacyOnlineFailed(String url);
 
-  /// Tooltip and screen-reader name of the 👥 button of the start screen (PLAN §5.3).
+  /// Tooltip and screen-reader name of Accueil's Secteur button, a folded map (PLAN §5.14).
   ///
   /// In fr, this message translates to:
-  /// **'Équipe'**
-  String get homeTeam;
+  /// **'Secteur'**
+  String get homeSector;
 
-  /// Screen-reader name of the 👥 button when join requests wait (the dot, PLAN §5.3).
+  /// Screen-reader name of the Secteur button when join requests wait (the dot, PLAN §5.14).
   ///
   /// In fr, this message translates to:
-  /// **'{count, plural, =1{Équipe, 1 demande en attente} other{Équipe, {count} demandes en attente}}'**
-  String homeTeamWaiting(int count);
+  /// **'{count, plural, =1{Secteur, 1 demande en attente} other{Secteur, {count} demandes en attente}}'**
+  String homeSectorWaiting(int count);
 
   /// Title of Équipe (Team mockup).
   ///
@@ -2152,11 +2152,29 @@ abstract class AppLocalizations {
   /// **'{name} n\'aura plus accès au secteur. Ses marques restent dans les rues.'**
   String teamRemoveBody(String name);
 
-  /// Row of Équipe that opens the Corbeille (PLAN §5.11).
+  /// Row of « Rues » in Secteur that opens the Corbeille (PLAN §5.11, §5.14).
   ///
   /// In fr, this message translates to:
   /// **'{count, plural, =0{Corbeille · vide} =1{Corbeille · 1 élément} other{Corbeille · {count} éléments}}'**
   String teamCorbeille(int count);
+
+  /// Section header of Secteur over « Ajouter des rues » and the Corbeille, with the secteur's street count (PLAN §5.14).
+  ///
+  /// In fr, this message translates to:
+  /// **'Rues ({count})'**
+  String teamStreetsHeader(int count);
+
+  /// The same header while the streets are being read from the phone.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rues'**
+  String get teamStreetsHeaderCounting;
+
+  /// Second line of « Ajouter des rues » in Secteur (PLAN §5.14).
+  ///
+  /// In fr, this message translates to:
+  /// **'Sur la carte ou depuis la liste des communes'**
+  String get teamAddStreetsHint;
 
   /// Button of Équipe for every member, admins and the creator included (PLAN §5.12).
   ///
@@ -2836,7 +2854,7 @@ abstract class AppLocalizations {
   /// **'Un secteur a au plus {max} communes.'**
   String teamTooManyCommunes(int max);
 
-  /// Button of the start screen while a sector is open, and title of the screen it opens (PLAN §5.4).
+  /// Row of « Rues » in Secteur, and title of the screen it opens (PLAN §5.4, §5.14).
   ///
   /// In fr, this message translates to:
   /// **'Ajouter des rues'**

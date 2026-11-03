@@ -72,7 +72,7 @@ void main() {
     expect(map.layers.dots, isEmpty);
     expect(map.area, isNull);
     expect(find.byKey(const Key('map.legend')), findsNothing);
-    expect(find.byKey(const Key('home.team')), findsNothing);
+    expect(find.byKey(const Key('home.sectorButton')), findsNothing);
     expect(find.byKey(const Key('home.settings')), findsOneWidget);
   });
 

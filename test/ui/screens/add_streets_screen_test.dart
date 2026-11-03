@@ -23,6 +23,7 @@ import '../../support/street_fixtures.dart';
 import '../support/app_overrides.dart';
 import '../support/fake_map_view.dart';
 import '../support/large_text.dart';
+import '../support/navigation.dart';
 
 final _morin = BanStreetId('69264_1460');
 final _bordelan = BanStreetId('69264_0246');
@@ -66,6 +67,8 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: fakePhone(
+          // Léa of the team: only a member prepares the secteur.
+          member: leaId,
           streets: streets,
           sectors: FakeSectorRepository([team(communes: communes)]),
           mySectors: FakeMySectorsStore(
@@ -106,18 +109,8 @@ void main() {
       'tournée\'s first commune, a chip per commune', (tester) async {
     await pumpStart(tester, [villefrancheCommune, gleizeCommune]);
 
-    // A row after the streets: scrolled to, as the member would.
-    await tester.scrollUntilVisible(
-      find.byKey(const Key('start.import')),
-      100,
-      scrollable: find.descendant(
-        of: find.byKey(const Key('home.panel.list')),
-        matching: find.byType(Scrollable),
-      ),
-    );
-    expect(find.text('Ajouter des rues'), findsOneWidget);
-    await tester.tap(find.byKey(const Key('start.import')));
-    await tester.pumpAndSettle();
+    // From Secteur, as the member would (PLAN §5.14).
+    await openAddStreets(tester);
 
     expect(find.byType(AddStreetsScreen), findsOneWidget);
     expect(find.bySemanticsLabel('Carte'), findsOneWidget);
@@ -146,17 +139,8 @@ void main() {
   testWidgets('should show no chip for a single commune, and add the streets '
       'ticked to the tournée', (tester) async {
     await pumpStart(tester, [villefrancheCommune]);
-    // A row after the streets: scrolled to, as the member would.
-    await tester.scrollUntilVisible(
-      find.byKey(const Key('start.import')),
-      100,
-      scrollable: find.descendant(
-        of: find.byKey(const Key('home.panel.list')),
-        matching: find.byType(Scrollable),
-      ),
-    );
-    await tester.tap(find.byKey(const Key('start.import')));
-    await tester.pumpAndSettle();
+    // From Secteur, as the member would (PLAN §5.14).
+    await openAddStreets(tester);
     await tester.tap(find.byKey(const Key('addStreets.tab.list')));
     await tester.pumpAndSettle();
 
@@ -177,17 +161,8 @@ void main() {
     tester,
   ) async {
     await pumpStart(tester, []);
-    // A row after the streets: scrolled to, as the member would.
-    await tester.scrollUntilVisible(
-      find.byKey(const Key('start.import')),
-      100,
-      scrollable: find.descendant(
-        of: find.byKey(const Key('home.panel.list')),
-        matching: find.byType(Scrollable),
-      ),
-    );
-    await tester.tap(find.byKey(const Key('start.import')));
-    await tester.pumpAndSettle();
+    // From Secteur, as the member would (PLAN §5.14).
+    await openAddStreets(tester);
     await tester.tap(find.byKey(const Key('addStreets.tab.list')));
     await tester.pumpAndSettle();
 
@@ -196,17 +171,8 @@ void main() {
 
   testWidgets('should close with ✕', (tester) async {
     await pumpStart(tester, [villefrancheCommune]);
-    // A row after the streets: scrolled to, as the member would.
-    await tester.scrollUntilVisible(
-      find.byKey(const Key('start.import')),
-      100,
-      scrollable: find.descendant(
-        of: find.byKey(const Key('home.panel.list')),
-        matching: find.byType(Scrollable),
-      ),
-    );
-    await tester.tap(find.byKey(const Key('start.import')));
-    await tester.pumpAndSettle();
+    // From Secteur, as the member would (PLAN §5.14).
+    await openAddStreets(tester);
 
     await tester.tap(find.byTooltip('Fermer'));
     await tester.pumpAndSettle();

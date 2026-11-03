@@ -208,7 +208,8 @@ abstract final class AppSizes {
   /// The ▾ after the open tournée's name in the title.
   static const titleChevron = 22.0;
 
-  /// The red dot on 👥 while a join request waits (Home mockup).
+  /// The red dot on the Secteur button while a join request waits (RunStart
+  /// mockup).
   static const waitingDot = 12.0;
 
   /// The card of Équipe holding the QR code and the join code, and the QR

@@ -12,9 +12,10 @@ import 'package:tournee_calendriers/domain/street/street_name.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/screens/add_streets/add_streets_screen.dart';
+import 'package:tournee_calendriers/ui/screens/team/team_screen.dart';
 
 import '../../domain/sector/my_sectors_fixtures.dart';
-import '../../domain/sector/sector_fixtures.dart' show sectorId, team;
+import '../../domain/sector/sector_fixtures.dart' show leaId, sectorId, team;
 import '../../support/fakes/fake_address_directory.dart';
 import '../../support/fakes/fake_commune_search.dart';
 import '../../support/fakes/fake_my_sectors_store.dart';
@@ -24,6 +25,7 @@ import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 import '../support/app_overrides.dart';
 import '../support/large_text.dart';
+import '../support/navigation.dart';
 
 final _morin = BanStreetId('69264_1460');
 final _bonnet = BanStreetId('69264_0682');
@@ -65,6 +67,8 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: fakePhone(
+          // Léa of the team: only a member prepares the secteur.
+          member: leaId,
           streets: streets,
           sectors: FakeSectorRepository([team()]),
           mySectors: FakeMySectorsStore(
@@ -83,17 +87,8 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    // A row after the streets: scrolled to, as the member would.
-    await tester.scrollUntilVisible(
-      find.byKey(const Key('start.import')),
-      100,
-      scrollable: find.descendant(
-        of: find.byKey(const Key('home.panel.list')),
-        matching: find.byType(Scrollable),
-      ),
-    );
-    await tester.tap(find.byKey(const Key('start.import')));
-    await tester.pumpAndSettle();
+    // From Secteur, as the member would (PLAN §5.14).
+    await openAddStreets(tester);
     await tester.tap(find.byKey(const Key('addStreets.tab.list')));
     await tester.pumpAndSettle();
 
@@ -252,6 +247,11 @@ void main() {
 
     expect(find.byType(AddStreetsScreen), findsNothing);
     expect(find.text('1 rue restaurée'), findsOneWidget);
+    // Back on Secteur, where « Ajouter des rues » was opened; Accueil
+    // under it.
+    expect(find.byType(TeamScreen), findsOneWidget);
+    await tester.tap(find.byTooltip('Retour'));
+    await tester.pumpAndSettle();
     expect(
       find.bySemanticsLabel('Rue Pierre Morin, 1 sur 2 faits'),
       findsOneWidget,
@@ -259,8 +259,8 @@ void main() {
   });
 
   testWidgets(
-    'should go back to Accueil with the new streets when every street is '
-    'added',
+    'should go back to Secteur when every street is added, the new streets '
+    'in Accueil',
     (tester) async {
       await openVillefranche(tester);
       await tester.tap(street(_morin));
@@ -272,6 +272,9 @@ void main() {
 
       expect(find.byType(AddStreetsScreen), findsNothing);
       expect(find.text('2 rues ajoutées au secteur'), findsOneWidget);
+      expect(find.byType(TeamScreen), findsOneWidget);
+      await tester.tap(find.byTooltip('Retour'));
+      await tester.pumpAndSettle();
       // In the one list of the secteur's streets.
       expect(find.byKey(const Key('home.header')), findsOneWidget);
       final morin = find.bySemanticsLabel('Rue Pierre Morin, 0 sur 3 faits');

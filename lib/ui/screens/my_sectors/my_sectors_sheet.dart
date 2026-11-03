@@ -270,7 +270,7 @@ final class _SectorRowTile extends StatelessWidget {
                     color: colors.doneInk,
                   ),
                 )
-              // The open tournée's requests show on 👥, not here.
+              // The open tournée's requests show on the Secteur button, not here.
               else if (row.status == SectorRowStatus.closed &&
                   !unavailable &&
                   row.waitingRequests > 0)

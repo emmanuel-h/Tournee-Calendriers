@@ -172,13 +172,17 @@ void main() {
     expect(row('gambetta'), findsNothing);
   });
 
-  testWidgets('should count the items in Équipe', (tester) async {
+  testWidgets('should count the items in Secteur', (tester) async {
     await pumpCorbeille(tester, [gambettaDeleted(), lilasWithoutSeven()]);
 
     await tester.tap(find.byTooltip('Retour'));
     await tester.pumpAndSettle();
 
-    expect(find.bySemanticsLabel('Corbeille · 2 éléments'), findsOneWidget);
+    // Under « RUES »: built, maybe below the fold.
+    expect(
+      find.bySemanticsLabel('Corbeille · 2 éléments', skipOffstage: false),
+      findsOneWidget,
+    );
   });
 
   testWidgets('should label every control and make it 48 dp at least', (

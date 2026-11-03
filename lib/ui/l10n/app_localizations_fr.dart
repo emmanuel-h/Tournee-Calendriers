@@ -28,7 +28,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get screenEditStreet => 'Modifier la rue';
 
   @override
-  String get screenTeam => 'Équipe';
+  String get screenSector => 'Secteur';
 
   @override
   String get screenSettings => 'Paramètres';
@@ -1370,15 +1370,15 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get homeTeam => 'Équipe';
+  String get homeSector => 'Secteur';
 
   @override
-  String homeTeamWaiting(int count) {
+  String homeSectorWaiting(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Équipe, $count demandes en attente',
-      one: 'Équipe, 1 demande en attente',
+      other: 'Secteur, $count demandes en attente',
+      one: 'Secteur, 1 demande en attente',
     );
     return '$_temp0';
   }
@@ -1488,6 +1488,18 @@ class AppLocalizationsFr extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String teamStreetsHeader(int count) {
+    return 'Rues ($count)';
+  }
+
+  @override
+  String get teamStreetsHeaderCounting => 'Rues';
+
+  @override
+  String get teamAddStreetsHint =>
+      'Sur la carte ou depuis la liste des communes';
 
   @override
   String get teamLeave => 'Quitter le secteur';

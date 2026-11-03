@@ -13,14 +13,15 @@ import 'package:tournee_calendriers/presentation/import_streets/import_state.dar
 import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
 import 'package:tournee_calendriers/presentation/team/team_state.dart';
 
-/// The team of the open tournée for the whole app. Not `autoDispose`: the
-/// start screen's 👥 shows a dot while a request waits, so the team is
-/// followed as long as a tournée is open, not only while Équipe is shown.
+/// The team of the open secteur for the whole app. Not `autoDispose`: the
+/// Secteur button of Accueil shows a dot while a request waits, so the
+/// team is followed as long as a secteur is open, not only while Secteur
+/// is shown.
 final teamProvider = NotifierProvider<TeamNotifier, TeamState>(
   TeamNotifier.new,
 );
 
-/// Shows the open tournée's team live and sends the commands of Équipe
+/// Shows the open tournée's team live and sends the commands of Secteur
 /// (PLAN §5.8, §5.12). Reading works offline from the phone's copy;
 /// answering a request, removing and leaving too (sent later); a new code,
 /// joining as an admin and deleting need the network.

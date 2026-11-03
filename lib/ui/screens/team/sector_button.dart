@@ -7,13 +7,15 @@ import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 
-/// 👥 in the start screen's top bar (PLAN §5.3, Home mockup): opens Équipe.
-/// A red dot on it while a join request waits, which screen readers hear
-/// in its name (« Équipe, 1 demande en attente »): never colour alone.
+/// The Secteur button in Accueil's top bar (PLAN §5.14, RunStart mockup), a
+/// folded map: opens Secteur, where the secteur is prepared (members,
+/// streets, communes). A red dot on it while a join request waits, which
+/// screen readers hear in its name (« Secteur, 1 demande en attente »):
+/// never colour alone.
 ///
-/// Shown only while a tournée is open; it follows that tournée's team live.
-final class TeamButton extends ConsumerWidget {
-  const TeamButton({super.key});
+/// Shown only while a secteur is open; it follows that secteur's team live.
+final class SectorButton extends ConsumerWidget {
+  const SectorButton({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -23,21 +25,23 @@ final class TeamButton extends ConsumerWidget {
     final waiting = ref.watch(
       teamProvider.select((state) => state.waitingRequests),
     );
-    final label = waiting == 0 ? l10n.homeTeam : l10n.homeTeamWaiting(waiting);
+    final label = waiting == 0
+        ? l10n.homeSector
+        : l10n.homeSectorWaiting(waiting);
     return Semantics(
       button: true,
       label: label,
       excludeSemantics: true,
       child: IconButton(
-        tooltip: l10n.homeTeam,
+        tooltip: l10n.homeSector,
         onPressed: () => context.push(AppRoutes.team),
         icon: Stack(
           clipBehavior: Clip.none,
           children: [
-            const Icon(Icons.group_outlined),
+            const Icon(Icons.map_outlined),
             if (waiting > 0)
               Positioned(
-                key: const Key('home.team.dot'),
+                key: const Key('home.sectorButton.dot'),
                 top: -2,
                 right: -2,
                 child: Container(

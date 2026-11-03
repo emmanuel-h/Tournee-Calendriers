@@ -132,10 +132,10 @@ void main() {
     await tester.tap(find.byKey(const Key('grid.close')));
     await tester.pumpAndSettle();
 
-    // 5. Équipe, from Accueil.
+    // 5. Secteur, from its button on Accueil (the folded map).
     await tester.tap(find.byTooltip('Retour'));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('home.team')));
+    await tester.tap(find.byKey(const Key('home.sectorButton')));
     await capture(tester, 'phone-5');
   });
 }

@@ -31,7 +31,7 @@ Start screen:
   street. A street tapped on the map shows its card: progress and « Ouvrir ». Works offline.
 - No secteur open: the map alone and « Aucun secteur ouvert », with « Rejoindre un
   secteur » (and « Créer un secteur » for an admin). Streets only live in a secteur.
-- « Ajouter des rues » (a secteur open): tabs « Carte | Liste ». « Liste » ticks the streets
+- « Ajouter des rues » (from Secteur; ✕ goes back there): tabs « Carte | Liste ». « Liste » ticks the streets
   of the secteur's communes (a chip per commune; a commune searched by name for a secteur
   without any) with their house numbers from the national address base (BAN), and adds
   them to the secteur, a street from the Corbeille coming back with its marks; « Carte »
@@ -43,11 +43,12 @@ Start screen:
 - Top bar: the open secteur (« Secteur 49 · 2026 » over its centre de secours), or the
   app's name when none is open, opens « Mes secteurs », to switch secteur (the app reopens
   the last one at launch, offline too) or create or join one, with a dot on another
-  secteur where a join request waits; 👥 opens Équipe (a dot while a join request waits); ⚙ opens Paramètres: first name (the team sees the new one), « Mes secteurs », theme (Système,
+  secteur where a join request waits; the Secteur button (a folded map) opens Secteur (a dot while a join request waits); ⚙ opens Paramètres: first name (the team sees the new one), « Mes secteurs », theme (Système,
   Clair, Sombre), confidentialité, version (opens « Nouveautés », what each version brings), licences, data credits.
-- Équipe (👥): the join code (copy button: « Code copié ») and its QR code, « Partager »,
+- Secteur (the folded map, once called Équipe): the join code (copy button: « Code copié ») and its QR code, « Partager »,
   « Nouveau code » (admins), the requests to join with « Accepter » / « Refuser » (any
-  member or admin), the members (« · admin ») and « Retirer » (admins), the Corbeille, the secteur's
+  member or admin), the members (« · admin ») and « Retirer » (admins), « RUES (n) » with
+  « + Ajouter des rues » and the Corbeille (not for a pending member), the secteur's
   communes (« + Ajouter une commune », ✕ but on the last one), and pinned at the bottom
   « Quitter le secteur » (every member) and « Supprimer le secteur » (admins).
   Answering, removing and leaving work offline; a new code and deleting need the network.
@@ -58,7 +59,7 @@ Start screen:
   « Mes secteurs », needs the network). A secteur an admin opens without being in it shows
   « Administrateur · pas membre » with « Rejoindre » (a member at once); « Retirer de Mes
   secteurs » forgets it. Paramètres shows « Identifiant de l'appareil » (« · administrateur »).
-- Corbeille (from Équipe): the deleted streets and numbers, who deleted them and when, and
+- Corbeille (from Secteur): the deleted streets and numbers, who deleted them and when, and
   « Restaurer », which brings them back with their marks. What stayed there more than 30 days
   is deleted for good by the first member's app that starts (no server).
 - « ☁ Modifications de 3 rues en attente d'envoi » at the bottom of Accueil's panel while marks

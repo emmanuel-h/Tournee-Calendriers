@@ -105,7 +105,8 @@ GoRouter buildAppRouter({
       builder: (context, state) =>
           JoinPendingScreen(sector: _sectorIdOf(state)!),
     ),
-    // Pushed by 👥 on the start screen; Équipe pushes the Corbeille.
+    // Pushed by the Secteur button of Accueil; Secteur pushes « Ajouter des
+    // rues », the Corbeille and « Collecte ».
     GoRoute(
       path: AppRoutes.team,
       builder: (context, state) => const TeamScreen(),
@@ -139,7 +140,7 @@ GoRouter buildAppRouter({
       path: AppRoutes.roundRecap,
       builder: (context, state) => const RoundRecapScreen(),
     ),
-    // Pushed by « COLLECTE 2026 » of Équipe.
+    // Pushed by « COLLECTE 2026 » of Secteur.
     GoRoute(
       path: AppRoutes.collecte,
       builder: (context, state) => const CollecteScreen(),

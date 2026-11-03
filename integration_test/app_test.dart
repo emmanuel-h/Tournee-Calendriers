@@ -161,17 +161,26 @@ FakeCommuneSearch _communes() => FakeCommuneSearch(
   },
 );
 
-/// From Accueil, « + Ajouter des rues », « Liste », Villefranche-sur-Saône,
+/// Opens « Ajouter des rues » over Accueil by the route its row in Secteur
+/// pushes (PLAN §5.14). Secteur shows the row once it has read the secteur
+/// from Firestore, and these phones never did (Firestore is offline for the
+/// whole suite): there Secteur says it cannot show the team. The row
+/// itself is tested in `test/ui/screens/team_screen_test.dart` and in the
+/// admin flow of `admin_test.dart`, which has the emulators.
+Future<void> _openAddStreets(WidgetTester tester) async {
+  GoRouter.of(tester.element(find.byType(HomeScreen)))
+      .push<void>(AppRoutes.addStreets)
+      .ignore();
+  // The map comes first, with MapLibre on the device: it may never settle.
+  await tester.pump(const Duration(seconds: 2));
+}
+
+/// From Accueil, « Ajouter des rues », « Liste », Villefranche-sur-Saône,
 /// then the street [banId] ticked and added (« Ajouter 1 rue »): back on
 /// Accueil. All offline: the BAN and the commune search are fakes, and
 /// Firestore queues the street.
 Future<void> _addFromList(WidgetTester tester, BanStreetId banId) async {
-  final add = find.byKey(const Key('start.import'));
-  await tester.ensureVisible(add);
-  await tester.pumpAndSettle();
-  await tester.tap(add);
-  // The map comes first, with MapLibre on the device: it may never settle.
-  await tester.pump(const Duration(seconds: 2));
+  await _openAddStreets(tester);
   await tester.tap(find.byKey(const Key('addStreets.tab.list')));
   await tester.pumpAndSettle();
   await tester.enterText(find.byKey(const Key('import.commune')), 'Villef');
@@ -230,7 +239,7 @@ void main() {
       expect(find.byKey(const Key('noSector.map')), findsOneWidget);
       expect(find.text('Aucun secteur ouvert'), findsOneWidget);
       expect(find.byKey(const Key('noSector.join')), findsOneWidget);
-      expect(find.byKey(const Key('home.team')), findsNothing);
+      expect(find.byKey(const Key('home.sectorButton')), findsNothing);
 
       await tester.tap(find.byKey(const Key('home.gallery')));
       await tester.pumpAndSettle();
@@ -596,11 +605,7 @@ void main() {
       );
 
       // Added again from « dans la Corbeille »: back with 33 done.
-      final add = find.byKey(const Key('start.import'));
-      await tester.ensureVisible(add);
-      await tester.pumpAndSettle();
-      await tester.tap(add);
-      await tester.pump(const Duration(seconds: 2));
+      await _openAddStreets(tester);
       await tester.tap(find.byKey(const Key('addStreets.tab.list')));
       await tester.pumpAndSettle();
       await tester.enterText(find.byKey(const Key('import.commune')), 'Villef');
@@ -719,12 +724,14 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.getSize(panel).height, atRest);
 
-      // 👥 opens Équipe, which follows the tournée in Firestore (the first
-      // use of the real database, with its offline settings), offline: the
-      // phone never read it, so Équipe says it cannot show it, or is still
-      // waiting; either way nothing breaks, and the phone keeps both
-      // tournées.
-      await tester.tap(find.byKey(const Key('home.team')));
+      // The Secteur button (a folded map, PLAN §5.14) opens Secteur, which
+      // follows the secteur in Firestore (the first use of the real
+      // database, with its offline settings), offline: the phone never read
+      // it, so Secteur says it cannot show it, or is still waiting; either
+      // way nothing breaks, and the phone keeps both secteurs. Accueil has
+      // no « Ajouter des rues » row any more.
+      expect(find.text('Ajouter des rues'), findsNothing);
+      await tester.tap(find.byKey(const Key('home.sectorButton')));
       await tester.pumpAndSettle();
       expect(find.byType(TeamScreen), findsOneWidget);
       await tester.tap(find.byTooltip('Retour'));
@@ -733,8 +740,7 @@ void main() {
       // « Ajouter des rues » (#78, #31): « Carte | Liste », offline. The
       // map comes first, on France with MapLibre on the device: the
       // tournée was never read, so it has no commune.
-      await tester.tap(find.byKey(const Key('start.import')));
-      await tester.pump(const Duration(seconds: 2));
+      await _openAddStreets(tester);
       expect(find.byType(AddStreetsScreen), findsOneWidget);
       expect(find.byKey(const Key('addStreets.map')), findsOneWidget);
 
@@ -894,7 +900,7 @@ void main() {
         ),
       );
 
-      // « Collecte 2026 » (#111) reads that copy, offline. Équipe, which
+      // « Collecte 2026 » (#111) reads that copy, offline. Secteur, which
       // leads there, cannot show the 49 (never read on this phone), so the
       // screen is opened by its route.
       GoRouter.of(tester.element(find.byType(HomeScreen)))

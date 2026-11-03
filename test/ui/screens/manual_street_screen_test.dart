@@ -22,6 +22,7 @@ import '../../support/results.dart';
 import '../../support/street_fixtures.dart' hide lea;
 import '../support/app_overrides.dart';
 import '../support/large_text.dart';
+import '../support/navigation.dart';
 
 void main() {
   late FakeStreetRepository streets;
@@ -59,8 +60,7 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('start.import')));
-    await tester.pumpAndSettle();
+    await openAddStreets(tester);
     await tester.tap(find.byKey(const Key('addStreets.manual')));
     await tester.pumpAndSettle();
   }

@@ -31,6 +31,7 @@ import '../../support/street_fixtures.dart' hide lea;
 import '../support/app_overrides.dart';
 import '../support/fake_map_view.dart';
 import '../support/large_text.dart';
+import '../support/navigation.dart';
 
 final _bordelanId = BanStreetId('69264_0246');
 
@@ -122,18 +123,8 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
-    // « + Ajouter des rues » ends the panel's list, under « Commencer une
-    // tournée » and the streets: on the small test screen, scrolled to.
-    await tester.scrollUntilVisible(
-      find.byKey(const Key('start.import')),
-      100,
-      scrollable: find.descendant(
-        of: find.byKey(const Key('home.panel.list')),
-        matching: find.byType(Scrollable),
-      ),
-    );
-    await tester.tap(find.byKey(const Key('start.import')));
-    await tester.pumpAndSettle();
+    // From Secteur, as the member would (PLAN §5.14).
+    await openAddStreets(tester);
   }
 
   Future<void> tapRoad(WidgetTester tester, GeoPoint point) async {

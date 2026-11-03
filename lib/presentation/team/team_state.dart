@@ -3,7 +3,7 @@ import 'package:tournee_calendriers/domain/shared/insee_code.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/presentation/shared/recent_time.dart';
 
-/// Why a command of Équipe was not done, as the screen tells it.
+/// Why a command of Secteur was not done, as the screen tells it.
 enum TeamActionFailure {
   /// The team changed in the meantime (a teammate answered the request
   /// first, the member was removed): the screen already shows it as it is.
@@ -29,16 +29,16 @@ enum TeamActionFailure {
   tooManyCommunes,
 }
 
-/// What Équipe (PLAN §5.8) and the 👥 of the start screen show of the open
-/// tournée. `sealed`: the screen's `switch` handles each case.
+/// What Secteur (PLAN §5.8, §5.14) and the Secteur button of Accueil show
+/// of the open secteur. `sealed`: the screen's `switch` handles each case.
 sealed class TeamState {
   const TeamState();
 
-  /// The requests waiting for an answer: the dot on 👥.
+  /// The requests waiting for an answer: the dot on the Secteur button.
   int get waitingRequests => 0;
 }
 
-/// No tournée is open: no 👥, nothing to show.
+/// No secteur is open: no Secteur button, nothing to show.
 final class NoTeam extends TeamState {
   const NoTeam();
 }
@@ -66,7 +66,7 @@ final class TeamShown extends TeamState {
     required this.iAmIn,
     required List<RequestRow> requests,
     required List<MemberRow> members,
-    this.canChangeCommunes = false,
+    this.canPrepare = false,
     List<CommuneRow> communes = const [],
   }) : requests = List.unmodifiable(requests),
        members = List.unmodifiable(members),
@@ -82,19 +82,18 @@ final class TeamShown extends TeamState {
     required bool iAmAdmin,
     required Set<MemberId> admins,
   }) {
-    // An active member or an admin changes the communes (PLAN §5.8);
-    // never the last one.
-    final canChangeCommunes =
-        iAmAdmin || (sector.memberOf(me)?.isActive ?? false);
+    // An active member or an admin prepares the secteur: its communes
+    // (PLAN §5.8, never the last one) and its streets (§5.14).
+    final canPrepare = iAmAdmin || (sector.memberOf(me)?.isActive ?? false);
     final lastOne = sector.communes.length == 1;
     return TeamShown(
-      canChangeCommunes: canChangeCommunes,
+      canPrepare: canPrepare,
       communes: [
         for (final commune in sector.communes)
           CommuneRow(
             inseeCode: commune.inseeCode,
             name: commune.name,
-            removable: canChangeCommunes && !lastOne,
+            removable: canPrepare && !lastOne,
           ),
       ],
       number: sector.number.value,
@@ -160,9 +159,11 @@ final class TeamShown extends TeamState {
   /// « Membres »: the accepted members, oldest first.
   final List<MemberRow> members;
 
-  /// The member on the phone may add and remove communes: « + Ajouter une
-  /// commune » shows.
-  final bool canChangeCommunes;
+  /// The member on the phone prepares the secteur (PLAN §5.14): an active
+  /// member or an admin, never a member still pending. « RUES » (« + Ajouter
+  /// des rues », the Corbeille) and « + Ajouter une commune » show, and the
+  /// communes have their ✕.
+  final bool canPrepare;
 
   /// « Communes »: the tournée's, in the order they were added; none for a
   /// tournée created before them.

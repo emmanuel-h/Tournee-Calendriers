@@ -41,19 +41,35 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('should have no 👥 when no tournée is open', (tester) async {
+  testWidgets('should have no Secteur button when no secteur is open', (
+    tester,
+  ) async {
     await pumpStart(tester, noSector: true);
 
-    expect(find.byKey(const Key('home.team')), findsNothing);
+    expect(find.byKey(const Key('home.sectorButton')), findsNothing);
   });
 
-  testWidgets('should show a dot on 👥, and say it, while a request '
-      'waits', (tester) async {
+  testWidgets('should show the folded map, said « Secteur », when no '
+      'request waits', (tester) async {
+    await pumpStart(tester, stored: team(members: [manu, lea]));
+
+    final button = find.byKey(const Key('home.sectorButton'));
+    expect(
+      find.descendant(of: button, matching: find.byIcon(Icons.map_outlined)),
+      findsOneWidget,
+    );
+    expect(find.byTooltip('Secteur'), findsOneWidget);
+    expect(find.bySemanticsLabel('Secteur'), findsOneWidget);
+    expect(find.byKey(const Key('home.sectorButton.dot')), findsNothing);
+  });
+
+  testWidgets('should show a dot on the Secteur button, and say it, while a '
+      'request waits', (tester) async {
     await pumpStart(tester);
 
-    expect(find.byKey(const Key('home.team.dot')), findsOneWidget);
+    expect(find.byKey(const Key('home.sectorButton.dot')), findsOneWidget);
     expect(
-      find.bySemanticsLabel('Équipe, 1 demande en attente'),
+      find.bySemanticsLabel('Secteur, 1 demande en attente'),
       findsOneWidget,
     );
   });
@@ -66,14 +82,16 @@ void main() {
     sectors.put(team(members: [manu, lea]));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('home.team.dot')), findsNothing);
-    expect(find.bySemanticsLabel('Équipe'), findsOneWidget);
+    expect(find.byKey(const Key('home.sectorButton.dot')), findsNothing);
+    expect(find.bySemanticsLabel('Secteur'), findsOneWidget);
   });
 
-  testWidgets('should open Équipe when 👥 is tapped', (tester) async {
+  testWidgets('should open Secteur when the Secteur button is tapped', (
+    tester,
+  ) async {
     await pumpStart(tester, stored: team(members: [manu, lea]));
 
-    await tester.tap(find.byKey(const Key('home.team')));
+    await tester.tap(find.byKey(const Key('home.sectorButton')));
     await tester.pumpAndSettle();
 
     expect(find.byType(TeamScreen), findsOneWidget);

@@ -230,9 +230,23 @@ void main() {
       await _tap(tester, const Key('create.continue'));
       expect(find.text('Secteur 49 · 2026'), findsOneWidget);
 
-      // Équipe: the creator is in the team, as an admin.
-      await _tap(tester, const Key('home.team'));
+      // Secteur (the folded map, PLAN §5.14): the creator is in the team,
+      // as an admin.
+      await _tap(tester, const Key('home.sectorButton'));
       await _waitFor(tester, find.text('Sam (vous) · admin'));
+      // « Ajouter des rues » is in Secteur now, and its ✕ comes back here.
+      final addStreets = find.byKey(const Key('team.addStreets'));
+      await _waitFor(tester, addStreets);
+      await tester.ensureVisible(addStreets);
+      await tester.pumpAndSettle();
+      await tester.tap(addStreets);
+      // The map comes first, with MapLibre on the device: it may never
+      // settle.
+      await tester.pump(const Duration(seconds: 2));
+      expect(find.byKey(const Key('addStreets.tab.map')), findsOneWidget);
+      await tester.tap(find.byTooltip('Fermer'));
+      await tester.pumpAndSettle();
+      expect(addStreets, findsOneWidget);
       // The commune went with the tournée, through the rules (#78).
       await tester.scrollUntilVisible(
         find.byKey(const ValueKey('team.commune.69264')),

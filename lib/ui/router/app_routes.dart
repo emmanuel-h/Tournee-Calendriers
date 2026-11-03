@@ -11,8 +11,8 @@ abstract final class AppRoutes {
   /// « Aucun secteur ouvert » (§5.0) otherwise.
   static const home = '/';
 
-  /// « Ajouter des rues », « Carte | Liste », while a tournée is open
-  /// (§5.4).
+  /// « Ajouter des rues », « Carte | Liste » (§5.4), pushed from Secteur
+  /// (§5.14).
   static const addStreets = '/ajouter-des-rues';
 
   /// « Rue à la main », pushed from « Ajouter des rues » (§5.5).
@@ -48,6 +48,8 @@ abstract final class AppRoutes {
     path: adjustDoors,
     queryParameters: {'id': id.value, 'numero': number.label},
   ).toString();
+
+  /// Secteur (§5.8, §5.14), pushed by the Secteur button of Accueil.
   static const team = '/equipe';
 
   /// « Tous les secteurs », for admins, pushed from « Mes secteurs »
@@ -68,7 +70,7 @@ abstract final class AppRoutes {
   /// « Bilan de la tournée » (§5.13), pushed by « ■ Terminer ».
   static const roundRecap = '/tournee/bilan';
 
-  /// « Collecte 2026 » (§5.13), pushed by Équipe's « COLLECTE 2026 » row.
+  /// « Collecte 2026 » (§5.13), pushed by Secteur's « COLLECTE 2026 » row.
   static const collecte = '/equipe/collecte';
 
   /// Debug builds only: every shared component on one screen.

@@ -13,7 +13,9 @@ import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
+import 'package:tournee_calendriers/ui/screens/add_streets/add_streets_screen.dart';
 import 'package:tournee_calendriers/ui/screens/corbeille/corbeille_screen.dart';
+import 'package:tournee_calendriers/ui/screens/team/team_screen.dart';
 
 import '../../domain/sector/my_sectors_fixtures.dart';
 import '../../domain/sector/sector_fixtures.dart';
@@ -49,7 +51,7 @@ void main() {
   late FakeSectorRepository sectors;
   late FakeMySectorsStore store;
 
-  /// Équipe over the start screen, on the phone of [member] where the 49
+  /// Secteur over the start screen, on the phone of [member] where the 49
   /// of Manu, Léa and Julie (pending) is open. Manu and Sam are admins of
   /// the app; Sam is not in the 49, which his phone keeps as visited.
   Future<void> pumpTeam(
@@ -289,7 +291,7 @@ void main() {
     expect(sectors.deleted, hasLength(1));
     expect(store.mySectors.sectors, isEmpty);
     expect(find.text('Tournée des calendriers'), findsOneWidget);
-    expect(find.byKey(const Key('home.team')), findsNothing);
+    expect(find.byKey(const Key('home.sectorButton')), findsNothing);
   });
 
   testWidgets('should keep the tournée when deleting is cancelled', (
@@ -334,8 +336,8 @@ void main() {
       200,
       scrollable: find.byType(Scrollable).first,
     );
-    // Whole, not only its first pixels: the collecte row above it (#111)
-    // leaves it at the very bottom of the list.
+    // Whole, not only its first pixels: it may stop at the very bottom of
+    // the list.
     await tester.ensureVisible(villefrancheRow);
     await tester.pumpAndSettle();
 
@@ -365,7 +367,8 @@ void main() {
         },
       ),
     );
-    expect(find.text('COMMUNES (0)'), findsOneWidget);
+    // Under « RUES »: built, maybe below the fold.
+    expect(find.text('COMMUNES (0)', skipOffstage: false), findsOneWidget);
 
     await tapVisible(tester, find.byKey(const Key('team.addCommune')));
     await tester.pumpAndSettle();
@@ -382,10 +385,110 @@ void main() {
   testWidgets('should open the Corbeille', (tester) async {
     await pumpTeam(tester, leaId);
 
-    await tester.tap(find.byKey(const Key('team.corbeille')));
+    await tapVisible(tester, find.byKey(const Key('team.corbeille')));
     await tester.pumpAndSettle();
 
     expect(find.byType(CorbeilleScreen), findsOneWidget);
+  });
+
+  group('« RUES » (PLAN §5.14)', () {
+    /// The top of [finder] on the screen, built but maybe out of sight.
+    double topOf(WidgetTester tester, Finder finder) =>
+        tester.getTopLeft(finder).dy;
+
+    testWidgets('should come after the members, « Ajouter des rues » then '
+        'the Corbeille, before the communes', (tester) async {
+      await pumpTeam(
+        tester,
+        leaId,
+        streets: _streetsOf49(),
+        communes: [villefrancheCommune],
+      );
+      final members = find.text('MEMBRES (2)', skipOffstage: false);
+      final streets = find.text('RUES (3)', skipOffstage: false);
+      final add = find.byKey(const Key('team.addStreets'), skipOffstage: false);
+      final corbeille = find.byKey(
+        const Key('team.corbeille'),
+        skipOffstage: false,
+      );
+      final communes = find.text('COMMUNES (1)', skipOffstage: false);
+
+      expect(streets, findsOneWidget);
+      expect(topOf(tester, members), lessThan(topOf(tester, streets)));
+      expect(topOf(tester, streets), lessThan(topOf(tester, add)));
+      expect(topOf(tester, add), lessThan(topOf(tester, corbeille)));
+      expect(topOf(tester, corbeille), lessThan(topOf(tester, communes)));
+      expect(
+        find.descendant(of: add, matching: find.text('Ajouter des rues')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: add,
+          matching: find.text('Sur la carte ou depuis la liste des communes'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: add, matching: find.byIcon(Icons.add)),
+        findsOneWidget,
+      );
+      expect(
+        find.bySemanticsLabel(
+          'Ajouter des rues, Sur la carte ou depuis la liste des communes',
+          skipOffstage: false,
+        ),
+        findsOneWidget,
+      );
+      expect(tester.getSize(add).height, greaterThanOrEqualTo(56));
+    });
+
+    testWidgets('should count no street in a secteur without any', (
+      tester,
+    ) async {
+      await pumpTeam(tester, leaId);
+
+      expect(find.text('RUES (0)', skipOffstage: false), findsOneWidget);
+    });
+
+    testWidgets('should open « Ajouter des rues », whose ✕ comes back to '
+        'Secteur', (tester) async {
+      await pumpTeam(tester, leaId);
+
+      await tapVisible(tester, find.byKey(const Key('team.addStreets')));
+      await tester.pumpAndSettle();
+      expect(find.byType(AddStreetsScreen), findsOneWidget);
+
+      await tester.tap(find.byTooltip('Fermer'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AddStreetsScreen), findsNothing);
+      expect(find.byType(TeamScreen), findsOneWidget);
+    });
+
+    testWidgets('should show to an admin outside the team', (tester) async {
+      await pumpTeam(tester, samId);
+
+      expect(
+        find.byKey(const Key('team.addStreets'), skipOffstage: false),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('should not show to a member still pending', (tester) async {
+      await pumpTeam(tester, julieId);
+
+      expect(find.text('Secteur 49'), findsOneWidget);
+      expect(find.textContaining('RUES', skipOffstage: false), findsNothing);
+      expect(
+        find.byKey(const Key('team.addStreets'), skipOffstage: false),
+        findsNothing,
+      );
+      expect(
+        find.byKey(const Key('team.corbeille'), skipOffstage: false),
+        findsNothing,
+      );
+    });
   });
 
   testWidgets('should say so when the tournée cannot be read', (tester) async {
@@ -471,7 +574,7 @@ void main() {
     setUpAll(loadAppFonts);
 
     for (final (member, who) in [(manuId, 'an admin'), (leaId, 'a member')]) {
-      testWidgets('should show Équipe to $who with no overflow when the text '
+      testWidgets('should show Secteur to $who with no overflow when the text '
           'is twice as large', (tester) async {
         useLargeText(tester);
 

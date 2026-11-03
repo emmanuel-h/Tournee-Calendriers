@@ -14,9 +14,9 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 /// The « Rues » panel at the bottom of Accueil (PLAN §5.14, RunStart
 /// mockup): a handle and the totals (« Rues · 31/50 », over every street
 /// of the secteur), then « Commencer une tournée » or the tournée's card
-/// (PLAN §5.13), every street of the secteur in one list and a muted « +
-/// Ajouter des rues » row after them (used a few times a year, #63), then
-/// the pending-sync line. A row opens its street.
+/// (PLAN §5.13), every street of the secteur in one list, then the
+/// pending-sync line. A row opens its street. « Ajouter des rues » is not
+/// here: it is preparation, in Secteur (§5.14).
 ///
 /// It is as tall as it is told ([height]): Accueil decides, as the handle
 /// is dragged ([onDrag], [onDragEnd]) or tapped ([onToggle]). Folded down
@@ -233,47 +233,7 @@ final class _StreetList extends StatelessWidget {
               row: street,
               onTap: () => _open(context, street),
             ),
-        const _AddStreetsRow(),
       ],
-    );
-  }
-}
-
-/// « + Ajouter des rues », a muted row after the streets (Home mockup): it
-/// opens « Ajouter des rues ».
-final class _AddStreetsRow extends StatelessWidget {
-  const _AddStreetsRow();
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    // `button`: screen readers say it can be pressed, as the red button it
-    // replaced.
-    return Semantics(
-      button: true,
-      child: InkWell(
-        key: const Key('start.import'),
-        onTap: () => context.push(AppRoutes.addStreets),
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(
-            minHeight: AppSizes.choiceRowHeight,
-          ),
-          child: Row(
-            spacing: 12,
-            children: [
-              Icon(Icons.add, size: AppSizes.smallIcon, color: colors.muted),
-              Expanded(
-                child: Text(
-                  AppLocalizations.of(context).addStreetsTitle,
-                  style: AppTextStyles.compactButton.copyWith(
-                    color: colors.muted,
-                  ),
-                ),
-              ),
-            ],
-          ),
-        ),
-      ),
     );
   }
 }

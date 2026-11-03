@@ -42,7 +42,8 @@ final class SectorRow {
 
   /// The join requests waiting in the tournée for an answer from its
   /// members (« · 1 demande en attente » and a dot, Switcher mockup).
-  /// Followed only for the tournées not open: the open one's show on 👥.
+  /// Followed only for the tournées not open: the open one's show on the
+  /// Secteur button.
   final int waitingRequests;
 
   /// An admin opened it without being in its team (PLAN §5.12): a shield

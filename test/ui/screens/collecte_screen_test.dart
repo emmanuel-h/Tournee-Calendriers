@@ -75,7 +75,7 @@ final _friday = _round(
 );
 
 void main() {
-  /// Équipe of the 49 over the start screen, on the phone of [member],
+  /// Secteur of the 49 over the start screen, on the phone of [member],
   /// the tournées [validated] in the ledger (or [ledger]).
   Future<void> pumpTeam(
     WidgetTester tester, {
@@ -157,10 +157,31 @@ void main() {
       text.data,
   ].join(' | ');
 
-  group('Équipe', () {
+  /// Scrolls Secteur to its end, where « COLLECTE 2026 » comes after
+  /// « RUES » and the communes (PLAN §5.14).
+  Future<void> scrollToCollecte(WidgetTester tester) async {
+    await tester.drag(
+      find.byKey(const Key('team.list')),
+      const Offset(0, -2000),
+    );
+    await tester.pumpAndSettle();
+  }
+
+  group('Secteur', () {
     testWidgets('should show the money of the validated tournées under '
         '« COLLECTE 2026 », never per member', (tester) async {
       await pumpTeam(tester, validated: [_saturday, _friday]);
+      // No member's row says anything of money.
+      for (final member in [manuId, leaId]) {
+        final row = find.byKey(ValueKey('team.member.${member.value}'));
+        expect(row, findsOneWidget);
+        expect(
+          find.descendant(of: row, matching: find.textContaining('€')),
+          findsNothing,
+        );
+      }
+
+      await scrollToCollecte(tester);
 
       expect(find.text('COLLECTE 2026'), findsOneWidget);
       expect(
@@ -178,22 +199,13 @@ void main() {
         ),
         findsOneWidget,
       );
-      // No member's row says anything of money.
-      for (final member in [manuId, leaId]) {
-        expect(
-          find.descendant(
-            of: find.byKey(ValueKey('team.member.${member.value}')),
-            matching: find.textContaining('€'),
-          ),
-          findsNothing,
-        );
-      }
     });
 
     testWidgets('should say « 0 don en 0 tournée » before the first one', (
       tester,
     ) async {
       await pumpTeam(tester);
+      await scrollToCollecte(tester);
 
       expect(
         tester.widget<Text>(find.byKey(const Key('team.collecte.raised'))).data,
@@ -209,6 +221,7 @@ void main() {
       tester,
     ) async {
       await pumpTeam(tester, member: samId, validated: [_friday]);
+      await scrollToCollecte(tester);
 
       expect(
         tester.widget<Text>(find.byKey(const Key('team.collecte.dons'))).data,
@@ -220,6 +233,7 @@ void main() {
       tester,
     ) async {
       await pumpTeam(tester, ledger: _BrokenLedger());
+      await scrollToCollecte(tester);
 
       expect(find.byKey(const Key('team.collecte')), findsNothing);
       expect(find.text('COLLECTE 2026'), findsNothing);
