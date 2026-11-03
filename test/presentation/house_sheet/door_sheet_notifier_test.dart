@@ -36,17 +36,24 @@ final _door11 = Dwelling(
 );
 
 /// 8: two staircases, RdC and 1er, two doors a floor, with its own
-/// « repasser »; 10: a single staircase; 9: a single house.
+/// « repasser », its door B1-02 done with three calendars; 10: a single
+/// staircase; 9: a single house.
 final _houses = [
   House(
     number: n('8'),
     comeBack: comeBack('2026-11-10'),
     lastChange: leaAtTwo,
-    building: building(
-      staircases: 2,
-      topFloor: 1,
-      doors: 2,
-    ).withDwelling(escA, 1, _door11),
+    building: building(staircases: 2, topFloor: 1, doors: 2)
+        .withDwelling(escA, 1, _door11)
+        .withDwelling(
+          escB,
+          1,
+          Dwelling(
+            label: d('12'),
+            status: VisitStatus.done,
+            calendars: calendars(3),
+          ),
+        ),
   ),
   House(number: n('9')),
   House(number: n('10'), building: building(topFloor: 0, doors: 1)),
@@ -85,6 +92,7 @@ void main() {
 
   final a11 = DwellingKey(escA, 1, d('11'));
   final b01 = DwellingKey(escB, 0, d('01'));
+  final b12 = DwellingKey(escB, 1, d('12'));
 
   Future<HouseSheetState> door(String number, DwellingKey key) async {
     final provider = doorSheetProvider(doorKey(number, key));
@@ -345,6 +353,40 @@ void main() {
 
       expect(streets[_id]!.houses.first.comeBack, isNull);
       expect(streets[_id]!.houses.first.building, _houses.first.building);
+    });
+  });
+
+  group('calendars', () {
+    test('should show the calendars of a door done', () async {
+      phoneWith(_street());
+
+      final state = await door('8', b12) as HouseSheetShown;
+
+      expect(state.calendars, 3);
+    });
+
+    test('should take one calendar from that door only with « − »', () async {
+      phoneWith(_street());
+      await door('8', b12);
+
+      await doorNotifier('8', b12).removeCalendar();
+
+      final building = streets[_id]!.houseAt(n('8'))!.building!;
+      expect(building.dwellingAt(b12)!.calendars, calendars(2));
+      expect(building.dwellingAt(b12)!.lastChange, leaAtTwo);
+      expect(streets[_id]!.houseAt(n('8'))!.lastChange, leaAtTwo);
+      expect(building.dwellingAt(a11), _door11);
+    });
+
+    test('should show no calendar on the building itself, and store none '
+        'for it', () async {
+      phoneWith(_street());
+      final state = await details('8') as HouseSheetShown;
+
+      await detailsNotifier('8').removeCalendar();
+
+      expect(state.calendars, 0);
+      expect(streets.saved, isEmpty);
     });
   });
 }

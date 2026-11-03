@@ -17,7 +17,9 @@ import '../../support/fakes/fake_open_round_store.dart';
 import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_round_ledger.dart';
 import '../../support/fakes/fake_sector_repository.dart';
+import '../../support/fakes/fake_street_repository.dart';
 import '../../support/results.dart';
+import '../../support/street_fixtures.dart' show lea;
 
 /// The 49's tournée with, in the order added, 10 € in cash, a free
 /// calendar and 20 € by cheque; 3 houses visited.
@@ -60,6 +62,10 @@ void main() {
         mySectorsStoreProvider.overrideWithValue(FakeMySectorsStore(mine)),
         // « Mes secteurs » follows the requests of the other secteurs.
         sectorRepositoryProvider.overrideWithValue(FakeSectorRepository()),
+        // A don of « Nouveau don » names no house; `AddDonation` is still
+        // built with the streets it gives a calendar to otherwise.
+        streetRepositoryProvider.overrideWithValue(FakeStreetRepository()),
+        identityProvider.overrideWithValue(FakeIdentity(lea)),
       ],
     );
     addTearDown(container.dispose);

@@ -13,6 +13,7 @@ import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_state.d
 import 'package:tournee_calendriers/presentation/round/given_donation.dart';
 import 'package:tournee_calendriers/presentation/street/street_view_state.dart';
 import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
+import 'package:tournee_calendriers/ui/components/calendars_badge.dart';
 import 'package:tournee_calendriers/ui/components/close_icon_button.dart';
 import 'package:tournee_calendriers/ui/components/confirm_dialog.dart';
 import 'package:tournee_calendriers/ui/components/money_words.dart';
@@ -452,6 +453,13 @@ final class _Floors extends StatelessWidget {
     final colors = AppColors.of(context);
     return ListView.separated(
       key: const Key('grid.floors'),
+      // A little room at the top and the end for the calendars badge of a
+      // door of the first row or the last column, drawn past its edge: the
+      // list cuts what goes past its own.
+      padding: const EdgeInsetsDirectional.only(
+        top: AppSizes.calendarBadgeOverhang,
+        end: AppSizes.calendarBadgeOverhang,
+      ),
       itemCount: state.floors.length,
       separatorBuilder: (_, _) => const SizedBox(height: 10),
       itemBuilder: (context, index) {
@@ -533,11 +541,15 @@ final class _DoorButton extends StatelessWidget {
       l10n,
       door.key,
       namesStaircase: namesStaircase,
-      status: spokenWithTries(
+      status: spokenWithCalendars(
         l10n,
-        spokenMark(l10n, door.mark),
-        nobodyHome: door.mark is NobodyHomeMark,
-        tries: door.tries,
+        spokenWithTries(
+          l10n,
+          spokenMark(l10n, door.mark),
+          nobodyHome: door.mark is NobodyHomeMark,
+          tries: door.tries,
+        ),
+        calendars: door.calendars,
       ),
     );
     final tries = door.tries;
@@ -552,49 +564,52 @@ final class _DoorButton extends StatelessWidget {
       onTap: onTap,
       child: SizedBox(
         height: AppSizes.doorHeight,
-        child: Material(
-          color: look.background,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppSizes.tileRadius),
-            // Inside the edge, as on a house tile: the doors do not move.
-            side: selected
-                ? BorderSide(
-                    color: colors.ink,
-                    width: AppSizes.selectedTileOutline,
-                  )
-                : BorderSide(color: look.border, width: AppSizes.borderWidth),
-          ),
-          clipBehavior: Clip.antiAlias,
-          child: InkWell(
-            onTap: onTap,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 4),
-              // A long free label (« Fond cour ») shrinks rather than being
-              // cut.
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                child: Row(
-                  spacing: 6,
-                  children: [
-                    Text(
-                      door.key.label.text,
-                      style: AppTextStyles.doorLabel.copyWith(
-                        color: look.foreground,
-                      ),
-                    ),
-                    StatusGlyph(
-                      look.glyph,
-                      size: AppSizes.doorGlyph,
-                      color: look.foreground,
-                    ),
-                    if (tries != null)
+        child: WithCalendarsBadge(
+          calendars: door.calendars,
+          child: Material(
+            color: look.background,
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(AppSizes.tileRadius),
+              // Inside the edge, as on a house tile: the doors do not move.
+              side: selected
+                  ? BorderSide(
+                      color: colors.ink,
+                      width: AppSizes.selectedTileOutline,
+                    )
+                  : BorderSide(color: look.border, width: AppSizes.borderWidth),
+            ),
+            clipBehavior: Clip.antiAlias,
+            child: InkWell(
+              onTap: onTap,
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                // A long free label (« Fond cour ») shrinks rather than being
+                // cut.
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: Row(
+                    spacing: 6,
+                    children: [
                       Text(
-                        l10n.tileTries(tries),
-                        style: AppTextStyles.tileCount.copyWith(
+                        door.key.label.text,
+                        style: AppTextStyles.doorLabel.copyWith(
                           color: look.foreground,
                         ),
                       ),
-                  ],
+                      StatusGlyph(
+                        look.glyph,
+                        size: AppSizes.doorGlyph,
+                        color: look.foreground,
+                      ),
+                      if (tries != null)
+                        Text(
+                          l10n.tileTries(tries),
+                          style: AppTextStyles.tileCount.copyWith(
+                            color: look.foreground,
+                          ),
+                        ),
+                    ],
+                  ),
                 ),
               ),
             ),

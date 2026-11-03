@@ -158,6 +158,7 @@ void main() {
     HouseSheetShown withStatus(
       VisitStatus? status, {
       int tries = 0,
+      int calendars = 0,
       bool roundOn = false,
     }) => HouseSheetShown(
       streetName: 'Rue des Lilas',
@@ -167,6 +168,7 @@ void main() {
       comeBackTime: ComeBackTime.of(null, today: day('2026-11-02')),
       lastChange: null,
       tries: tries,
+      calendars: calendars,
       roundOn: roundOn,
     );
 
@@ -215,6 +217,34 @@ void main() {
         expect(
           withStatus(VisitStatus.nobodyHome, tries: tries).showsTries,
           shows,
+        );
+      });
+    }
+
+    test('should have no calendars by default', () {
+      expect(withStatus(VisitStatus.toDo).calendars, 0);
+    });
+
+    for (final (status, shows) in [
+      (VisitStatus.done, true),
+      (VisitStatus.refused, false),
+      (VisitStatus.toDo, false),
+      (VisitStatus.nobodyHome, false),
+      (VisitStatus.comeBack, false),
+      (null, false),
+    ]) {
+      test('should ${shows ? '' : 'not '}show the calendars when the status '
+          'is $status', () {
+        expect(withStatus(status, calendars: 1).showsCalendars, shows);
+      });
+    }
+
+    for (final (calendars, removes) in [(1, false), (2, true), (3, true)]) {
+      test('should ${removes ? '' : 'not '}let « − » take a calendar away '
+          'at $calendars', () {
+        expect(
+          withStatus(VisitStatus.done, calendars: calendars).canRemoveCalendar,
+          removes,
         );
       });
     }
@@ -348,6 +378,35 @@ void main() {
 
     test('should name its place and don when printed', () {
       expect(given.toString(), 'GivenDonation(2, PaidDonation(cheque, 2000))');
+    });
+
+    final change = HouseCalendarsCounted(
+      streetId: StreetId('rue-des-lilas'),
+      before: House(number: n('9'), status: VisitStatus.done),
+      stamp: leaAtTwo,
+      calendars: calendars(2),
+    );
+
+    test('should differ when only one has a calendar', () {
+      expect(
+        GivenDonation(index: 2, donation: cheque(2000), calendar: change),
+        isNot(given),
+      );
+      expect(
+        GivenDonation(index: 2, donation: cheque(2000), calendar: change),
+        GivenDonation(index: 2, donation: cheque(2000), calendar: change),
+      );
+    });
+
+    test('should name its calendar too when printed', () {
+      expect(
+        GivenDonation(
+          index: 2,
+          donation: cheque(2000),
+          calendar: change,
+        ).toString(),
+        'GivenDonation(2, PaidDonation(cheque, 2000), $change)',
+      );
     });
   });
 }

@@ -12,9 +12,15 @@ import 'package:tournee_calendriers/presentation/street/street_view_state.dart';
 /// One button of the staircase control: « Esc. A · 7/12 ».
 typedef StaircaseTab = ({StaircaseName name, int done, int total});
 
-/// One door of the grid: its label (`key.label`), its look and the tries it
-/// shows (« ×3 », null below two: see `shownTries`).
-typedef DoorTile = ({DwellingKey key, TileMark mark, int? tries});
+/// One door of the grid: its label (`key.label`), its look, the tries it
+/// shows (« ×3 », null below two: see `shownTries`) and the calendars of
+/// its badge (null below two: see `shownCalendars`).
+typedef DoorTile = ({
+  DwellingKey key,
+  TileMark mark,
+  int? tries,
+  int? calendars,
+});
 
 /// One floor of the grid: its label (« RdC », « 1er »…, « Logements » when
 /// [level] is null) and its doors, left to right.

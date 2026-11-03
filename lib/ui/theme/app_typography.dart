@@ -373,4 +373,21 @@ abstract final class AppTextStyles {
     fontWeight: FontWeight.w700,
     fontSize: 28,
   );
+
+  /// « 2 calendriers » in the status picker of a house done (RunStreet
+  /// mockup, #114).
+  static const calendarCount = TextStyle(
+    fontFamily: AppFonts.text,
+    fontWeight: FontWeight.w700,
+    fontSize: 16,
+  );
+
+  /// The number in the round badge of a tile that took two calendars or
+  /// more (« 2 », #114).
+  static const calendarBadge = TextStyle(
+    fontFamily: AppFonts.text,
+    fontWeight: FontWeight.w700,
+    fontSize: 13,
+    height: 1,
+  );
 }

@@ -217,7 +217,14 @@ describe('a new street written in chunks (#70)', () => {
     // removed by the caller), and a building of 500 doors, counted.
     const houses = {};
     for (let n = 1; n <= 117; n += 1) houses[n] = houseEntry(n);
-    houses['1bis'] = houseEntry(1, { sfx: 'bis', status: 'DONE', by: lea, at: twoPm, tries: 1 });
+    houses['1bis'] = houseEntry(1, {
+      sfx: 'bis',
+      status: 'DONE',
+      by: lea,
+      at: twoPm,
+      tries: 1,
+      calendars: 2,
+    });
     houses['2A'] = houseEntry(2, { sfx: 'a', deletedAt: twoPm, deletedBy: lea });
     const dwellings = {};
     const doors = [];
@@ -731,6 +738,113 @@ describe('tries with nobody home', () => {
   it('should refuse a number added with tries', async () => {
     await assertFails(
       updateFields(nationale(), [[['houses', '20'], houseEntry(20, { tries: 1 })]]),
+    );
+  });
+});
+
+describe('calendars (#114)', () => {
+  /** A mark with the calendars it writes: a count, or the field removed. */
+  const markWithCalendars = (label, status, calendars) => [
+    ...mark(label, status, null),
+    [['houses', label, 'calendars'], calendars],
+  ];
+
+  /** One calendar more or less (HouseCalendarsCounted). */
+  const counted = (label, calendars, by = lea) => [
+    [['houses', label, 'calendars'], calendars],
+    [['houses', label, 'by'], by],
+    [['houses', label, 'at'], threePm],
+  ];
+
+  /** The same on door [key] of building 8 (DwellingCalendarsCounted). */
+  const doorCounted = (key, calendars) => [
+    [['houses', '8', 'dwellings', key, 'calendars'], calendars],
+    [['houses', '8', 'dwellings', key, 'by'], lea],
+    [['houses', '8', 'dwellings', key, 'at'], threePm],
+  ];
+
+  it('should accept one calendar written with a « Fait »', async () => {
+    await assertSucceeds(updateFields(nationale(), markWithCalendars('4bis', 'DONE', 1)));
+  });
+
+  it('should accept one calendar more and one less on a house done', async () => {
+    await assertSucceeds(updateFields(nationale(), counted('4', 2)));
+    await assertSucceeds(updateFields(nationale(), counted('4', 1)));
+  });
+
+  it('should accept a house done without calendars, as before #114', async () => {
+    await assertSucceeds(updateFields(nationale(), mark('4bis', 'DONE', null)));
+  });
+
+  it('should accept 99 calendars and refuse 0, 100 or a count that is not a whole number', async () => {
+    await assertSucceeds(updateFields(nationale(), counted('4', 99)));
+    for (const calendars of [0, 100, -1, 1.5, '2', null]) {
+      await assertFails(updateFields(nationale(), counted('4', calendars)));
+    }
+  });
+
+  it('should refuse calendars on a house that is not done', async () => {
+    for (const status of ['TO_DO', 'REFUSED', 'NOBODY_HOME']) {
+      await assertFails(updateFields(nationale(), markWithCalendars('4bis', status, 1)));
+    }
+    await assertFails(updateFields(nationale(), counted('4bis', 2)));
+  });
+
+  it('should accept the calendars removed when the house leaves « Fait », and refuse them kept', async () => {
+    await updateFields(nationale(), counted('4', 3));
+
+    await assertFails(updateFields(nationale(), mark('4', 'REFUSED', null)));
+    await assertSucceeds(
+      updateFields(nationale(), markWithCalendars('4', 'REFUSED', deleteField())),
+    );
+  });
+
+  it('should refuse calendars counted by someone else than the caller', async () => {
+    await assertFails(updateFields(nationale(), counted('4', 2, paul)));
+  });
+
+  it('should accept the calendars of a door done and refuse them on a door to do', async () => {
+    await assertSucceeds(updateFields(nationale(), doorCounted('A0-Gauche', 2)));
+    await assertFails(updateFields(nationale(), doorCounted('A0-Gauche', 100)));
+    await assertFails(updateFields(nationale(), doorCounted('A0-Porte 1.2', 1)));
+  });
+
+  it('should accept a door put back whole with its calendars by an undo', async () => {
+    await assertSucceeds(
+      updateFields(nationale(), [
+        [
+          ['houses', '8', 'dwellings', 'A0-Gauche'],
+          doorEntry({ status: 'DONE', by: lea, at: threePm, calendars: 2 }),
+        ],
+      ]),
+    );
+  });
+
+  it('should refuse calendars on a building itself', async () => {
+    await assertFails(
+      updateFields(nationale(), [
+        [['houses', '8', 'calendars'], 2],
+        [['houses', '8', 'by'], lea],
+        [['houses', '8', 'at'], threePm],
+      ]),
+    );
+  });
+
+  it('should accept a house renumbered with its calendars', async () => {
+    await assertSucceeds(
+      updateFields(nationale(), [
+        [['houses', '4'], deleteField()],
+        [
+          ['houses', '4ter'],
+          houseEntry(4, { sfx: 'ter', status: 'DONE', by: lea, at: threePm, calendars: 2 }),
+        ],
+      ]),
+    );
+  });
+
+  it('should refuse a number added with calendars', async () => {
+    await assertFails(
+      updateFields(nationale(), [[['houses', '20'], houseEntry(20, { calendars: 1 })]]),
     );
   });
 });

@@ -48,6 +48,9 @@ enum RoundVisit {
     ),
     ComeBackSet() ||
     DwellingComeBackSet() ||
+    // A calendar more or less: the house is ✓ before and after.
+    HouseCalendarsCounted() ||
+    DwellingCalendarsCounted() ||
     BuildingLaidOut() ||
     BuildingRemoved() ||
     NumberRenamed() ||

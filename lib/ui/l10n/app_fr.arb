@@ -204,6 +204,13 @@
   },
   "statusPickerValidate": "Valider",
   "@statusPickerValidate": { "description": "Button that closes the « quand repasser ? » step of the status picker; each day and hour is already stored." },
+  "houseCalendars": "{count, plural, one{{count} calendrier} other{{count} calendriers}}",
+  "@houseCalendars": {
+    "description": "How many calendars a house or door done took, in its status picker (#114, RunStreet mockup), and at the end of the screen-reader label of a tile or door with two or more: « Numéro 9, fait, 2 calendriers ».",
+    "placeholders": { "count": { "type": "int", "example": "2" } }
+  },
+  "removeCalendar": "Un calendrier de moins",
+  "@removeCalendar": { "description": "Screen-reader name and tooltip of the « − » beside « 2 calendriers » in the status picker (#114); disabled at one calendar. Never changes a don." },
   "statusPickerClose": "Fermer",
   "@statusPickerClose": { "description": "Screen-reader name and tooltip of the ✕ of the status picker: closes it, nothing more stored." },
   "editStreetAction": "Modifier la rue",
@@ -1108,6 +1115,8 @@
   "@release0100Refused": { "description": "Line of « Nouveautés » for 0.10.0: the fifth status « ⊘ Refusé », counted with the done houses (#113)." },
   "release0100Privacy": "Confidentialité : le texte dit aussi ce qui est gardé des tournées, des dons et des calendriers.",
   "@release0100Privacy": { "description": "Line of « Nouveautés » for 0.10.0: the privacy text covers the tournées and calendars (#112)." },
+  "release0100Calendars": "Une maison faite garde son nombre de calendriers : « + Ajouter un don » en ajoute un, « − » en retire un, et la tuile affiche le nombre à partir de 2.",
+  "@release0100Calendars": { "description": "Line of « Nouveautés » for 0.10.0: calendars per house, the « − » and the badge (#114)." },
   "release0100Rounds": "Tournées : « Commencer une tournée » sur l'accueil, le montant de chaque don après « Fait », la liste des dons et le bilan à valider en fin de tournée.",
   "@release0100Rounds": { "description": "Line of « Nouveautés » for 0.10.0: the tournées on screen (#109)." },
   "release090Streets": "Équipe : chaque membre montre le nombre de rues qu'il couvre ; touchez ce nombre pour voir leurs noms.",

@@ -100,11 +100,12 @@ service cloud.firestore {
     }
 
     // An entry of a house or a door: exactly [fields], and maybe `tries`
-    // (hasTries). The same as hasFields(entry, fields, ['tries']), in
-    // fewer expressions: a write of new houses checks it for each one
+    // (hasTries) and `calendars` (hasCalendars). The same as
+    // hasFields(entry, fields, ['tries', 'calendars']), in fewer
+    // expressions: a write of new houses checks it for each one
     // (housesPerWrite).
     function hasEntryFields(entry, fields) {
-      return entry.keys().removeAll(['tries']).toSet() == fields.toSet();
+      return entry.keys().removeAll(['tries', 'calendars']).toSet() == fields.toSet();
     }
 
     // At most [max] characters, counted in code points. `(?s)`: a line
@@ -386,7 +387,8 @@ service cloud.firestore {
     }
 
     // The fields every house entry has; `tries` is added from the first
-    // try with nobody home (hasTries).
+    // try with nobody home (hasTries), `calendars` while it is done
+    // (hasCalendars).
     function houseFields() {
       return ['n', 'sfx', 'lat', 'lon', 'status', 'comeBack', 'by', 'at',
         'deletedAt', 'deletedBy'];
@@ -418,11 +420,13 @@ service cloud.firestore {
         && text.matches('(2[0-9]{3}-(0[1-9]|1[0-2])-(0[1-9]|[12][0-9]|3[01])(T(0[89]|1[0-9]|2[01]))?)?');
     }
 
-    // A single house or a door has a time exactly when it is « repasser ».
+    // A single house or a door has a time exactly when it is « repasser »,
+    // and calendars only while it is done.
     function hasMarks(entry) {
       return isStatus(entry.status)
         && (entry.status == 'COME_BACK' ? isComeBackTime(entry.comeBack) : entry.comeBack == null)
-        && hasTries(entry);
+        && hasTries(entry)
+        && hasCalendars(entry);
     }
 
     // The tries with nobody home (#80, NobodyHomeTries): written only from
@@ -433,6 +437,18 @@ service cloud.firestore {
     function hasTries(entry) {
       return !('tries' in entry)
         || (entry.tries is int && entry.tries >= 1 && entry.tries <= 99);
+    }
+
+    // How many calendars a house or door done took (#114, Calendars): 1
+    // to 99, only while its status is `DONE`; absent reads as 1 on a ✓
+    // (the houses marked before #114) and as none otherwise. Tied to the
+    // status, unlike the tries: the app writes it, or removes it, with
+    // every status (an app before 0.10.0 is not supported, PLAN §8.2).
+    // No amount, no method: the dons stay in the tournée (PLAN §8.3).
+    function hasCalendars(entry) {
+      return !('calendars' in entry)
+        || (entry.status == 'DONE'
+          && entry.calendars is int && entry.calendars >= 1 && entry.calendars <= 99);
     }
 
     function isPosition(lat, lon) {
@@ -448,6 +464,7 @@ service cloud.firestore {
       return house.status == 'TO_DO'
         && (house.comeBack == null || isComeBackTime(house.comeBack))
         && hasTries(house)
+        && !('calendars' in house)
         && house.labelStyle in ['FLOOR_AND_NUMBER', 'FLOOR_AND_LETTER', 'FREE']
         && house.layout is list && house.layout.size() >= 1 && house.layout.size() <= 26 * 51
         && house.dwellings is map && house.dwellings.size() >= 1 && house.dwellings.size() <= 500;
@@ -480,7 +497,7 @@ service cloud.firestore {
     // caller's (isOneDoorEdited).
     function isDoor(door) {
       return door is map
-        && hasFields(door, ['status', 'comeBack', 'by', 'at'], ['tries'])
+        && hasFields(door, ['status', 'comeBack', 'by', 'at'], ['tries', 'calendars'])
         && hasMarks(door);
     }
 
@@ -619,7 +636,7 @@ service cloud.firestore {
       return (fields.hasOnly(['deletedAt', 'deletedBy']) && isNumberRemoval(sector, new))
         || (fields.hasOnly(['dwellings'])
           && isOneDoorEdited(old.dwellings, new.dwellings))
-        || (fields.hasOnly(['status', 'comeBack', 'tries', 'by', 'at'].concat(buildingFields()))
+        || (fields.hasOnly(['status', 'comeBack', 'tries', 'calendars', 'by', 'at'].concat(buildingFields()))
           && isHouse(new)
           && isCallerStamp(new.by, new.at));
     }

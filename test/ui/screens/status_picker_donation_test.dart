@@ -353,8 +353,8 @@ void main() {
       expect(_key('house.addDonation'), findsNothing);
     });
 
-    testWidgets('should give a don to the tournée, the house as it was, and '
-        'take it back with « Annuler »', (tester) async {
+    testWidgets('should give a don to the tournée and a calendar to the '
+        'house, and take both back with « Annuler »', (tester) async {
       await openStreet(tester);
       await tap(tester, _tile('3'));
       await tap(tester, _key('house.addDonation'));
@@ -364,7 +364,8 @@ void main() {
       await tap(tester, _key('house.give.500'));
 
       expect(dons(), [cheque(2000), cheque(500)]);
-      expect(stored('3'), _lilas.houses.first);
+      expect(stored('3').calendars, calendars(2));
+      expect(stored('3').status, VisitStatus.done);
       expect(findArrowText('N° 3 · 5$_nbsp€ en chèque ajouté'), findsOneWidget);
 
       await tap(tester, find.text('Annuler'));
@@ -455,7 +456,8 @@ void main() {
     expect(door!.status, VisitStatus.done);
   });
 
-  testWidgets('should give a don to a door done, and say it', (tester) async {
+  testWidgets('should give a don and a calendar to a door done, and say '
+      'it', (tester) async {
     await openStreet(tester);
     await tap(tester, _tile('8'));
     await tap(tester, _key('grid.door.A0-02'));
@@ -471,5 +473,8 @@ void main() {
       findArrowText('Porte 02 · calendrier offert ajouté'),
       findsOneWidget,
     );
+    final door = stored('8').building!
+        .dwellingAt(DwellingKey(escA, 0, d('02')));
+    expect(door!.calendars, calendars(2));
   });
 }

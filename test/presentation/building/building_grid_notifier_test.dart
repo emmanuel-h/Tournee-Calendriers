@@ -187,12 +187,32 @@ void main() {
       expect(state.selected, escA);
       expect(state.floors.map((floor) => floor.level), [1, 0]);
       expect(state.floors[0].doors, [
-        (key: _key('A', 1, '11'), mark: const DoneMark(), tries: null),
-        (key: _key('A', 1, '12'), mark: const NobodyHomeMark(), tries: 3),
+        (
+          key: _key('A', 1, '11'),
+          mark: const DoneMark(),
+          tries: null,
+          calendars: null,
+        ),
+        (
+          key: _key('A', 1, '12'),
+          mark: const NobodyHomeMark(),
+          tries: 3,
+          calendars: null,
+        ),
       ]);
       expect(state.floors[1].doors, [
-        (key: _key('A', 0, '01'), mark: const ComeBackMark(), tries: null),
-        (key: _key('A', 0, '02'), mark: const ToDoMark(), tries: null),
+        (
+          key: _key('A', 0, '01'),
+          mark: const ComeBackMark(),
+          tries: null,
+          calendars: null,
+        ),
+        (
+          key: _key('A', 0, '02'),
+          mark: const ToDoMark(),
+          tries: null,
+          calendars: null,
+        ),
       ]);
     });
 

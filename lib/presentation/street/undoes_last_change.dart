@@ -8,9 +8,9 @@ import 'package:tournee_calendriers/presentation/round/given_donation.dart';
 /// what that change replaced (`UndoLastChange`).
 ///
 /// During a tournée the change may come with a don (« N° 7 fait · 10 € en
-/// espèces »), or be a don alone (« + Ajouter un don »,
+/// espèces »), or be a don and its calendar (« + Ajouter un don »,
 /// [keepDonationForUndo]): [undo] takes that don back out of the tournée
-/// too (PLAN §5.6).
+/// too, and the calendar from the house (PLAN §5.6).
 ///
 /// Only the last change can be undone (PLAN §5.6), and only once. The
 /// notifier is `autoDispose`, so the change is forgotten with the screen.
@@ -32,10 +32,11 @@ mixin UndoesLastChange<S> on Notifier<S> {
     _keptIn = ref;
   }
 
-  /// Keeps [donation], given without changing the house (« + Ajouter un
-  /// don »), for « Annuler », in place of what was kept before.
+  /// Keeps [donation], given to a house already done (« + Ajouter un
+  /// don »), and the calendar it took with it, for « Annuler », in place of
+  /// what was kept before.
   void keepDonationForUndo(GivenDonation donation) {
-    _lastChange = null;
+    _lastChange = donation.calendar;
     _lastDonation = donation;
     _keptIn = ref;
   }

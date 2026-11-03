@@ -1,7 +1,7 @@
 // A street holding every kind of data the phone storage must keep: a
 // position and none, every status, « repasser » with and without hint (a
 // building's own too), tries with nobody home on a house and on a door,
-// last changes, buildings of every shape (two staircases, unknown
+// calendars on a house and on a door, last changes, buildings of every shape (two staircases, unknown
 // floors, free labels, an emptied floor), a removed number, a deletion, a
 // shape of two lines and two members covering it.
 import 'package:test/test.dart';
@@ -19,7 +19,7 @@ import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 
-/// Staircase A: 1er with doors 11 (done, Léa) and 12 (« repasser » with a
+/// Staircase A: 1er with doors 11 (done, Léa, 3 calendars) and 12 (« repasser » with a
 /// hint), RdC emptied. Staircase B: RdC door 01 (« repasser »
 /// without hint, after two tries with nobody home).
 final twoStaircases = valueOf(
@@ -51,6 +51,7 @@ final twoStaircases = valueOf(
                 label: d('11'),
                 status: VisitStatus.done,
                 lastChange: leaAtTwo,
+                calendars: calendars(3),
               ),
               Dwelling(
                 label: d('12'),
@@ -112,7 +113,12 @@ final everyKindOfHouse = [
     lastChange: leaAtTwo,
     position: northDoor,
   ),
-  House(number: n('3A'), status: VisitStatus.done, lastChange: paulAtThree),
+  House(
+    number: n('3A'),
+    status: VisitStatus.done,
+    lastChange: paulAtThree,
+    calendars: calendars(2),
+  ),
   House(number: n('5'), status: VisitStatus.nobodyHome, tries: tries(3)),
   House(
     number: n('8'),

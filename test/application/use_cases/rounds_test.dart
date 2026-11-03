@@ -14,7 +14,9 @@ import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_open_round_store.dart';
 import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_round_ledger.dart';
+import '../../support/fakes/fake_street_repository.dart';
 import '../../support/results.dart';
+import '../../support/street_fixtures.dart' show lea;
 
 /// « Mes secteurs » with the 49 and the 12, [open] the one shown.
 MySectors _with(SectorId? open) {
@@ -133,18 +135,29 @@ void main() {
     });
   });
 
+  // With a house or a door: add_donation_test.dart.
   group('AddDonation', () {
+    late FakeStreetRepository streets;
+    late AddDonation addDonation;
+
+    setUp(() {
+      streets = FakeStreetRepository();
+      addDonation = AddDonation(rounds, streets, clock, FakeIdentity(lea));
+    });
+
     test('should add the don to the tournée on', () async {
       rounds.openRound = newRound().add(cash(1000));
 
-      final round = valueOf(await AddDonation(rounds)(offered));
+      final added = valueOf(await addDonation(offered));
 
-      expect(round.donations, [cash(1000), offered]);
-      expect(rounds.saves, [round]);
+      expect(added.round.donations, [cash(1000), offered]);
+      expect(added.calendar, isNull);
+      expect(rounds.saves, [added.round]);
+      expect(streets.saved, isEmpty);
     });
 
     test('should refuse with no tournée on', () async {
-      expect(failureOf(await AddDonation(rounds)(offered)), const NoRoundOn());
+      expect(failureOf(await addDonation(offered)), const NoRoundOn());
       expect(rounds.saves, isEmpty);
     });
   });

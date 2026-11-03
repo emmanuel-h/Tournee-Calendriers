@@ -16,8 +16,9 @@
 // layout drops are removed one by one.
 //
 // A field the entry of a house or door leaves out is removed: `tries` is
-// stored only from the first try (see street_document_mapper.dart), so a
-// house to do again loses the field rather than holding 0.
+// stored only from the first try and `calendars` only while done (see
+// street_document_mapper.dart), so a house to do again loses both fields
+// rather than holding 0.
 //
 // An undo writes the house or door back as it was, with one exception: it
 // is stamped with who undoes and when, not with the old stamp, since the
@@ -83,6 +84,9 @@ List<Map<FieldPath, Object?>> streetUpdates(
     ComeBackSet(:final number) => [
       _houseFields(street, number, const ['comeBack', 'by', 'at'], removal),
     ],
+    HouseCalendarsCounted(:final number) => [
+      _houseFields(street, number, _calendarFields, removal),
+    ],
     BuildingLaidOut(:final before) || BuildingRemoved(:final before) => [
       _houseRewritten(before, _houseIn(street, before.number), removal),
     ],
@@ -99,6 +103,9 @@ List<Map<FieldPath, Object?>> streetUpdates(
     ) => [doorUpdate(number, key, _markFields)],
     DwellingComeBackSet(:final number, :final key) => [
       doorUpdate(number, key, const ['comeBack', 'by', 'at']),
+    ],
+    DwellingCalendarsCounted(:final number, :final key) => [
+      doorUpdate(number, key, _calendarFields),
     ],
     StreetDeleted(:final deletion) => [_stampUpdate([], deletion, 'deleted')],
     StreetRestored() => [_stampUpdate([], null, 'deleted')],
@@ -171,6 +178,7 @@ List<Map<FieldPath, Object?>> streetUpdates(
             comeBack: dwelling.comeBack,
             lastChange: undoStamp,
             tries: dwelling.tries,
+            calendars: dwelling.calendars,
           ),
         ),
       },
@@ -179,8 +187,12 @@ List<Map<FieldPath, Object?>> streetUpdates(
 }
 
 /// The fields a status changes on a house or a door: the status, its
-/// « repasser » time, its tries with nobody home, and who changed it when.
-const _markFields = ['status', 'comeBack', 'tries', 'by', 'at'];
+/// « repasser » time, its tries with nobody home, its calendars (none but
+/// on a ✓), and who changed it when.
+const _markFields = ['status', 'comeBack', 'tries', 'calendars', 'by', 'at'];
+
+/// The fields one calendar more or less changes on a house or a door done.
+const _calendarFields = ['calendars', 'by', 'at'];
 
 const _houses = 'houses';
 const _assignees = 'assignees';
@@ -212,7 +224,7 @@ Object? _valueOf(Map<String, Object?> entry, String field, Object removal) =>
     entry.containsKey(field) ? entry[field] : removal;
 
 /// [after] written over [before], both under the same number: its status,
-/// « repasser », tries and stamp, and its building door by door (the doors
+/// « repasser », tries, calendars and stamp, and its building door by door (the doors
 /// [before] had and [after] has not are removed). The number, the position
 /// and the removal do not change.
 Map<FieldPath, Object?> _houseRewritten(
@@ -277,4 +289,5 @@ House _stamped(House house, ChangeStamp stamp) => House(
   building: house.building,
   position: house.position,
   tries: house.tries,
+  calendars: house.calendars,
 );

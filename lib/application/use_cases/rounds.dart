@@ -1,8 +1,11 @@
 import 'package:tournee_calendriers/application/ports/clock.dart';
 import 'package:tournee_calendriers/application/ports/id_generator.dart';
+import 'package:tournee_calendriers/application/ports/identity_provider.dart';
 import 'package:tournee_calendriers/application/ports/my_sectors_store.dart';
 import 'package:tournee_calendriers/application/ports/open_round_store.dart';
 import 'package:tournee_calendriers/application/ports/round_ledger.dart';
+import 'package:tournee_calendriers/application/use_cases/calendars.dart';
+import 'package:tournee_calendriers/application/use_cases/street_command.dart';
 import 'package:tournee_calendriers/domain/round/donation.dart';
 import 'package:tournee_calendriers/domain/round/round.dart';
 import 'package:tournee_calendriers/domain/round/round_id.dart';
@@ -10,6 +13,8 @@ import 'package:tournee_calendriers/domain/round/round_summary.dart';
 import 'package:tournee_calendriers/domain/sector/member.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
+import 'package:tournee_calendriers/domain/street/street_change.dart';
+import 'package:tournee_calendriers/domain/street/street_repository.dart';
 
 // The tournées (PLAN §5.13): one outing of the member of this phone, its
 // dons kept on the phone until it is validated, then only its summary sent
@@ -104,19 +109,76 @@ final class WatchOpenRound {
   }
 }
 
-/// « Valider » of « Nouveau don »: [donation] is added to the tournée on.
-/// Returns the tournée with it.
+/// A don [AddDonation] added: the tournée with it (the don last), and the
+/// calendar the house or door took with it, for « Annuler ».
+final class AddedDonation {
+  const AddedDonation({required this.round, this.calendar});
+
+  final Round round;
+
+  /// The change giving the house or door one calendar more; null for a don
+  /// given without a house (« Dons de la tournée »), or when the house was
+  /// no longer done (a teammate changed it meanwhile: the money is still
+  /// the tournée's).
+  final StreetChange? calendar;
+
+  @override
+  bool operator ==(Object other) =>
+      other is AddedDonation &&
+      other.round == round &&
+      other.calendar == calendar;
+
+  @override
+  int get hashCode => Object.hash(round, calendar);
+
+  @override
+  String toString() => 'AddedDonation($round, $calendar)';
+}
+
+/// A don joins the tournée on: « Valider » of « Nouveau don » (no house),
+/// or « + Ajouter un don » on a house or door done ([calendarFor]), which
+/// then took one calendar more (PLAN §5.6, #114). The don itself never
+/// names the house (PLAN §8.3). Needs no network.
 final class AddDonation {
-  const AddDonation(this._rounds);
+  const AddDonation(this._rounds, this._streets, this._clock, this._identity);
 
   final OpenRoundStore _rounds;
+  final StreetRepository _streets;
+  final Clock _clock;
+  final IdentityProvider _identity;
 
-  Future<Result<Round, NoRoundOn>> call(Donation donation) async {
+  /// The don first, then the calendar: the money is the tournée's whatever
+  /// happened to the house. Nothing is stored without a tournée on.
+  Future<Result<AddedDonation, NoRoundOn>> call(
+    Donation donation, {
+    CalendarPlace? calendarFor,
+  }) async {
     final round = _rounds.openRound;
     if (round == null) return const Err(NoRoundOn());
     final changed = round.add(donation);
     await _rounds.save(changed);
-    return Ok(changed);
+    if (calendarFor == null) return Ok(AddedDonation(round: changed));
+    final by = _identity.currentMember;
+    final at = _clock.now();
+    final calendar = await runOnStreet(
+      _streets,
+      calendarFor.street,
+      (street) => street.addCalendar(
+        calendarFor.number,
+        door: calendarFor.door,
+        by: by,
+        at: at,
+      ),
+    );
+    return Ok(
+      AddedDonation(
+        round: changed,
+        calendar: switch (calendar) {
+          Ok(:final value) => value,
+          Err() => null,
+        },
+      ),
+    );
   }
 }
 

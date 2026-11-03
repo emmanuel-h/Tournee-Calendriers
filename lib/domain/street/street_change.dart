@@ -4,6 +4,7 @@ import 'package:tournee_calendriers/domain/shared/same_items.dart';
 import 'package:tournee_calendriers/domain/street/building/building.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
+import 'package:tournee_calendriers/domain/street/calendars.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
@@ -124,6 +125,38 @@ final class HouseNobodyHomeAgain extends HouseChange {
   String toString() =>
       'HouseNobodyHomeAgain(${streetId.value}, ${number.label}, '
       '×${tries.count}, $stamp)';
+}
+
+/// The house at [number], done, took one calendar more (« + Ajouter un
+/// don ») or one less (« − » in its status picker, #114): [calendars] in
+/// all.
+///
+/// Storage writes `calendars`, `by` and `at`, by field path. Its undo puts
+/// [before] back, as for any house change.
+final class HouseCalendarsCounted extends HouseChange {
+  const HouseCalendarsCounted({
+    required super.streetId,
+    required super.before,
+    required super.stamp,
+    required this.calendars,
+  });
+
+  /// The calendars the house has after the change.
+  final Calendars calendars;
+
+  @override
+  bool operator ==(Object other) =>
+      other is HouseCalendarsCounted &&
+      _sameHouseChange(other) &&
+      other.calendars == calendars;
+
+  @override
+  int get hashCode => Object.hash(streetId, before, stamp, calendars);
+
+  @override
+  String toString() =>
+      'HouseCalendarsCounted(${streetId.value}, ${number.label}, '
+      '${calendars.count}, $stamp)';
 }
 
 /// The « repasser » time of the house at [number] was set to [comeBack];
@@ -250,6 +283,7 @@ final class NumberRenamed extends HouseChange {
     building: before.building,
     position: before.position,
     tries: before.tries,
+    calendars: before.calendars,
   );
 
   @override
@@ -409,6 +443,38 @@ final class DwellingComeBackSet extends DwellingChange {
 
   @override
   String toString() => 'DwellingComeBackSet($_where, $comeBack, $stamp)';
+}
+
+/// The door at [key] of the building [number], done, took one calendar
+/// more or one less, as [HouseCalendarsCounted] for a house. Storage
+/// writes the door's `calendars`, `by` and `at`.
+final class DwellingCalendarsCounted extends DwellingChange {
+  const DwellingCalendarsCounted({
+    required super.streetId,
+    required super.number,
+    required super.staircase,
+    required super.level,
+    required super.before,
+    required super.stamp,
+    required this.calendars,
+  });
+
+  /// The calendars the door has after the change.
+  final Calendars calendars;
+
+  @override
+  bool operator ==(Object other) =>
+      other is DwellingCalendarsCounted &&
+      _sameDwellingChange(other) &&
+      other.calendars == calendars;
+
+  @override
+  int get hashCode =>
+      Object.hash(streetId, number, staircase, level, before, stamp, calendars);
+
+  @override
+  String toString() =>
+      'DwellingCalendarsCounted($_where, ${calendars.count}, $stamp)';
 }
 
 /// The street went to the Corbeille: hidden, but kept with its houses so

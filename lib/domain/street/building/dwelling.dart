@@ -2,6 +2,7 @@ import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling_label.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
+import 'package:tournee_calendriers/domain/street/calendars.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/nobody_home_tries.dart';
 import 'package:tournee_calendriers/domain/street/progress.dart';
@@ -11,10 +12,10 @@ import 'package:tournee_calendriers/domain/street/visit_status.dart';
 /// aggregate, identified on its floor by its [label].
 ///
 /// A dwelling carries the same marks as a single house (status, the time of
-/// its « repasser », its tries with nobody home, last change) and follows
-/// the same rules: it has a [comeBack] exactly when it is « repasser », and
-/// the [tries] its status allows. It is immutable; the street replaces it
-/// to change it.
+/// its « repasser », its tries with nobody home, its calendars, last
+/// change) and follows the same rules: it has a [comeBack] exactly when it
+/// is « repasser », and the [tries] and [calendars] its status allows. It
+/// is immutable; the street replaces it to change it.
 final class Dwelling {
   const Dwelling._(
     this.label,
@@ -22,24 +23,27 @@ final class Dwelling {
     this.comeBack,
     this.lastChange,
     this.tries,
+    this.calendars,
   );
 
   /// A dwelling labelled [label]; by default not visited yet, with no
-  /// change recorded. Its [comeBack] and [tries] follow its status
-  /// ([ComeBack.keptBy], [NobodyHomeTries.keptBy]; see `House` for why a
-  /// factory does it).
+  /// change recorded. Its [comeBack], [tries] and [calendars] follow its
+  /// status ([ComeBack.keptBy], [NobodyHomeTries.keptBy],
+  /// [Calendars.keptBy]; see `House` for why a factory does it).
   factory Dwelling({
     required DwellingLabel label,
     VisitStatus status = VisitStatus.toDo,
     ComeBack? comeBack,
     ChangeStamp? lastChange,
     NobodyHomeTries tries = NobodyHomeTries.none,
+    Calendars calendars = Calendars.none,
   }) => Dwelling._(
     label,
     status,
     ComeBack.keptBy(status, comeBack),
     lastChange,
     NobodyHomeTries.keptBy(status, tries),
+    Calendars.keptBy(status, calendars),
   );
 
   final DwellingLabel label;
@@ -53,6 +57,9 @@ final class Dwelling {
 
   /// How many times nobody was home (#80), as on a single house.
   final NobodyHomeTries tries;
+
+  /// How many calendars it took (#114), as on a single house.
+  final Calendars calendars;
 
   /// Whether someone marked the door: a status other than to do
   /// (« repasser » included). Its [lastChange] alone is not a mark.
@@ -69,6 +76,7 @@ final class Dwelling {
     comeBack,
     lastChange?.restampedBy(member),
     tries,
+    calendars,
   );
 
   @override
@@ -78,16 +86,21 @@ final class Dwelling {
       other.status == status &&
       other.comeBack == comeBack &&
       other.lastChange == lastChange &&
-      other.tries == tries;
+      other.tries == tries &&
+      other.calendars == calendars;
 
   @override
-  int get hashCode => Object.hash(label, status, comeBack, lastChange, tries);
+  int get hashCode =>
+      Object.hash(label, status, comeBack, lastChange, tries, calendars);
 
-  /// « ×2 » at the end only when the door has tries, so a failing test
-  /// stays short.
+  /// « ×2 » at the end only when the door has tries, « 2 calendars » only
+  /// from two, so a failing test stays short.
   @override
   String toString() {
-    final ends = tries.count > 0 ? ', ×${tries.count}' : '';
+    final ends = [
+      if (tries.count > 0) ', ×${tries.count}',
+      if (calendars.count > 1) ', ${calendars.count} calendars',
+    ].join();
     return 'Dwelling(${label.text}, $status, $comeBack, $lastChange$ends)';
   }
 }

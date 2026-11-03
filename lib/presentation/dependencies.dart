@@ -36,6 +36,7 @@ import 'package:tournee_calendriers/application/ports/streets_download.dart';
 import 'package:tournee_calendriers/application/use_cases/add_manual_street.dart';
 import 'package:tournee_calendriers/application/use_cases/add_street_from_map.dart';
 import 'package:tournee_calendriers/application/use_cases/admins.dart';
+import 'package:tournee_calendriers/application/use_cases/calendars.dart';
 import 'package:tournee_calendriers/application/use_cases/choose_start_point.dart';
 import 'package:tournee_calendriers/application/use_cases/create_sector.dart';
 import 'package:tournee_calendriers/application/use_cases/describe_building.dart';
@@ -595,7 +596,21 @@ final watchOpenRoundProvider = Provider(
   (ref) => WatchOpenRound(ref.watch(openRoundStoreProvider)),
 );
 final addDonationProvider = Provider(
-  (ref) => AddDonation(ref.watch(openRoundStoreProvider)),
+  (ref) => AddDonation(
+    ref.watch(openRoundStoreProvider),
+    ref.watch(streetRepositoryProvider),
+    ref.watch(clockProvider),
+    ref.watch(identityProvider),
+  ),
+);
+
+/// « − » of the calendars of a house or door done (#114).
+final removeCalendarProvider = Provider(
+  (ref) => RemoveCalendar(
+    ref.watch(streetRepositoryProvider),
+    ref.watch(clockProvider),
+    ref.watch(identityProvider),
+  ),
 );
 final changeDonationProvider = Provider(
   (ref) => ChangeDonation(ref.watch(openRoundStoreProvider)),

@@ -94,6 +94,10 @@ Street screen (« Rue »):
   change, remove or add one; « Bilan de la tournée » shows the houses visited, the dons and the
   money per method, then « Valider la tournée » (asked first; only the totals are kept, never a
   don per house).
+- Calendars per house: a house or door done shows « 1 calendrier » / « 2 calendriers » in its
+  picker with « − » (disabled at one, tournée or not); « + Ajouter un don » adds one, and its
+  « Annuler » takes the don and the calendar back; from two, the tile and the door carry a
+  round badge with the number. Only the count is kept, no amount.
 - « ↻ Repasser » then asks « N° 5 · quand repasser ? »: a day among the next week's chips, an
   hour 8 h–21 h or « Pas d'heure », « Le samedi 24 oct. vers 18 h », each stored at once, and
   « Valider ». No free note: too likely to hold personal data, so the app keeps none (notes

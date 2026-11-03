@@ -542,6 +542,7 @@ void main() {
       expect(await storedHouse('lilas', '1'), {
         ...houseEntry(House(number: n('1'))),
         'status': 'DONE',
+        'calendars': 1,
         'by': 'lea',
         'at': Timestamp.fromDate(twoPm),
       });

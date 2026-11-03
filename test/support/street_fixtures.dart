@@ -8,6 +8,7 @@ import 'package:tournee_calendriers/domain/shared/insee_code.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling_label.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
+import 'package:tournee_calendriers/domain/street/calendars.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/nobody_home_tries.dart';
@@ -31,6 +32,9 @@ ComeBack comeBack(String iso, {int? hour}) =>
 
 /// A count of tries with nobody home the test knows is valid: `tries(3)`.
 NobodyHomeTries tries(int count) => valueOf(NobodyHomeTries.create(count));
+
+/// A count of calendars the test knows is valid: `calendars(2)`.
+Calendars calendars(int count) => valueOf(Calendars.create(count));
 
 /// A street name the test knows is valid.
 StreetName streetName(String text) => valueOf(StreetName.create(text));

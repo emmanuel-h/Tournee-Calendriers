@@ -228,12 +228,13 @@ void main() {
         mark: const NobodyHomeMark(),
         isBuilding: false,
         tries: 3,
+        calendars: 2,
       );
 
       expect(
         tile.toString(),
         "HouseTile(3bis, Instance of 'NobodyHomeMark', building: false, "
-        'tries: 3)',
+        'tries: 3, calendars: 2)',
       );
     });
 

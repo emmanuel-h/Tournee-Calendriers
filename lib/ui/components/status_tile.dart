@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tournee_calendriers/ui/components/building_icon.dart';
+import 'package:tournee_calendriers/ui/components/calendars_badge.dart';
 import 'package:tournee_calendriers/ui/components/dashed_outline.dart';
 import 'package:tournee_calendriers/ui/components/open_chevron.dart';
 import 'package:tournee_calendriers/ui/components/status_glyph.dart';
@@ -20,11 +21,13 @@ import 'package:tournee_calendriers/ui/theme/status_look.dart';
 /// a status.
 ///
 /// A house tried twice or more with nobody home shows « ×3 » after its
-/// glyph, whatever its status (#80).
+/// glyph, whatever its status (#80); one done that took two calendars or
+/// more, a round badge « 2 » at its top right corner (#114).
 ///
 /// Status is never shown by colour alone: the glyph is always drawn, and
 /// screen readers hear one French sentence (« Numéro 3bis, fait, changer
-/// le statut », « Numéro 7, personne, 3e passage, changer le statut »)
+/// le statut », « Numéro 7, personne, 3e passage, changer le statut »,
+/// « Numéro 9, fait, 2 calendriers, changer le statut »)
 /// instead of the number and count texts.
 final class StatusTile extends StatelessWidget {
   const StatusTile({
@@ -33,6 +36,7 @@ final class StatusTile extends StatelessWidget {
     required this.status,
     this.isBuilding = false,
     this.tries,
+    this.calendars,
     this.selected = false,
     this.onTap,
   }) : assert(
@@ -49,6 +53,9 @@ final class StatusTile extends StatelessWidget {
 
   /// « ×3 »: the tries with nobody home, from two; null shows none.
   final int? tries;
+
+  /// The round badge « 2 »: the calendars, from two; null shows none.
+  final int? calendars;
 
   /// Outlined in ink: the status picker of this house shows.
   final bool selected;
@@ -136,7 +143,10 @@ final class StatusTile extends StatelessWidget {
       selected: selected ? true : null,
       excludeSemantics: true,
       onTap: onTap,
-      child: SizedBox(height: AppSizes.tileHeight, child: tile),
+      child: SizedBox(
+        height: AppSizes.tileHeight,
+        child: WithCalendarsBadge(calendars: calendars, child: tile),
+      ),
     );
   }
 
@@ -164,11 +174,15 @@ final class StatusTile extends StatelessWidget {
       ? l10n.buildingStatusTileSemantics(number, spokenStatus)
       : l10n.houseTilePickSemantics(
           number,
-          spokenWithTries(
+          spokenWithCalendars(
             l10n,
-            spokenStatus,
-            nobodyHome: nobodyHome,
-            tries: tries,
+            spokenWithTries(
+              l10n,
+              spokenStatus,
+              nobodyHome: nobodyHome,
+              tries: tries,
+            ),
+            calendars: calendars,
           ),
         );
 }

@@ -50,6 +50,10 @@ Map<String, Object?> firstFloorOfEight(Map<String, Object?> json) =>
 Map<String, Object?> doorTwelve(Map<String, Object?> json) =>
     _at(firstFloorOfEight(json)['dwellings'], 1);
 
+/// The stored door 11 of the first floor of staircase A of house 8, done.
+Map<String, Object?> doorEleven(Map<String, Object?> json) =>
+    _at(firstFloorOfEight(json)['dwellings'], 0);
+
 /// Every key of every map in [json], however deep.
 Set<String> _keysIn(Object? json) => switch (json) {
   final Map<String, Object?> map => {
@@ -193,6 +197,21 @@ void main() {
 
       expect(houseAt(json, 2).containsKey('tries'), isFalse);
       expect(doorTwelve(json).containsKey('tries'), isFalse);
+    });
+
+    test('should write the calendars of a house and a door done', () {
+      final json = storedRichStreet((_) {})! as Map<String, Object?>;
+
+      // House 3A, two calendars; door A1-11 of building 8, three.
+      expect(houseAt(json, 2)['calendars'], 2);
+      expect(doorEleven(json)['calendars'], 3);
+    });
+
+    test('should write no calendars for a house or a door not done', () {
+      final json = storedRichStreet((_) {})! as Map<String, Object?>;
+
+      expect(houseAt(json, 3).containsKey('calendars'), isFalse);
+      expect(doorTwelve(json).containsKey('calendars'), isFalse);
     });
 
     test('should write a removed house with its removal', () {
@@ -490,6 +509,38 @@ void main() {
       expect(door!.tries.count, 0);
     });
 
+    // Files written before the calendars (#114) have none: a ✓ reads as
+    // one calendar, anything else as none.
+    test('should read one calendar for a done house when the file has '
+        'none', () {
+      final json = storedRichStreet(
+        (json) => houseAt(json, 2).remove('calendars'),
+      );
+
+      expect(streetFromJson(json).houseAt(n('3A'))!.calendars.count, 1);
+    });
+
+    test('should read one calendar for a done door when the file has '
+        'none', () {
+      final json = storedRichStreet(
+        (json) => doorEleven(json).remove('calendars'),
+      );
+
+      final door = streetFromJson(json)
+          .houseAt(n('8'))!
+          .building!
+          .dwellingAt(DwellingKey(escA, 1, d('11')));
+      expect(door!.calendars.count, 1);
+    });
+
+    test('should read no calendar for a house that is not done', () {
+      final json = storedRichStreet(
+        (json) => houseAt(json, 3)['calendars'] = 4,
+      );
+
+      expect(streetFromJson(json).houseAt(n('5'))!.calendars.count, 0);
+    });
+
     test('should read a refused house and door', () {
       final json = storedRichStreet((json) {
         houseAt(json, 3)['status'] = 'refused';
@@ -590,6 +641,11 @@ void main() {
       'the tries pass the limit': (json) => houseAt(json, 3)['tries'] = 100,
       'the tries of a door are negative': (json) =>
           doorTwelve(json)['tries'] = -1,
+      'the calendars are text': (json) => houseAt(json, 2)['calendars'] = '2',
+      'the calendars pass the limit': (json) =>
+          houseAt(json, 2)['calendars'] = 100,
+      'the calendars of a door are negative': (json) =>
+          doorEleven(json)['calendars'] = -1,
     };
 
     cases.forEach((what, change) {

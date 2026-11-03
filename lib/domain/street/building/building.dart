@@ -337,6 +337,7 @@ final class Building {
       comeBack: before.comeBack,
       lastChange: before.lastChange,
       tries: before.tries,
+      calendars: before.calendars,
     );
     return Ok(
       _withFloor(

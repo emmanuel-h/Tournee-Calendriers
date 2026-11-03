@@ -865,7 +865,13 @@ where they disagree with this block):
   a second calendar, 5 seconds or 5 days later (its ✕ only closes); the don goes to the
   tournée on now and the house gets one more calendar. Leaving ✓ sets the count to 0. From 2,
   the tile carries a 24 dp round ink badge with the number at its top right (TalkBack:
-  « Numéro 9, fait, 2 calendriers »). Doors the same.
+  « Numéro 9, fait, 2 calendriers »). Doors the same. Delivered in #114: the row « 2 calendriers
+  [−] » sits on the ground colour under the statuses, before « + Ajouter un don »; « − » keeps
+  the sheet open and shows no snackbar; the badge's centre is 7 dp out of the tile's corner,
+  ringed in the ground colour, the street list and the door grid starting 7 dp lower (and the
+  grid 7 dp narrower) so no badge is cut; TalkBack puts the calendars after the tries
+  (« Numéro 9, fait, 2 passages sans personne, 2 calendriers, changer le statut »); the
+  « Annuler » of « + Ajouter un don » takes the don and the calendar back.
 - **After the sheet closes**, the snackbar of 4 s says what was stored: « N° 7 : personne »,
   « N° 3bis : personne (3e passage) », « N° 9 : refusé », « N° 7 fait · 10 € en espèces »,
   « N° 7 fait · calendrier offert », « N° 9 · 5 € en chèque ajouté », each with « Annuler »,
@@ -2469,6 +2475,15 @@ and return aggregates and `StreetChange`s, never Firestore types.
   resets the tries, never has a `ComeBack`.
 - **`House.calendars`** / **`Dwelling.calendars`** (`0..99`): 1 when a house becomes ✓, 0 on any
   other status; `+1` through « + Ajouter un don », `−1` (not below 1) through « − ». No amount.
+  Built in #114: the value object `Calendars` (`lib/domain/street/calendars.dart`, `keptBy(status,
+  calendars)` run by the `House` and `Dwelling` factories, `more` / `fewer`); a building itself
+  has none. `Street.addCalendar(number, {door})` and `Street.removeCalendar(number, {door})`
+  return a `HouseCalendarsCounted` or `DwellingCalendarsCounted` (stamped, undone like any house
+  or door change, `RoundVisit.none`), refused with a `CalendarChangeFailure` (`notDone`,
+  `lastCalendar` at 1, `tooMany` at 99, or the house / door not found). `AddDonation(donation,
+  {calendarFor})` adds the don first, then the calendar to the `CalendarPlace` (street, number,
+  door?), and returns an `AddedDonation` (the tournée and the calendar's change, null when the
+  house was no longer ✓: the money stays); `RemoveCalendar(place)` never touches a don.
 - Use cases: `StartRound` (an active member of the open secteur, not a visiting admin, no
   tournée already on), `WatchOpenRound(openSector)` (the tournée on, only when it belongs to the
   secteur shown), `AddDonation` (with or without a house: with one, `calendars + 1` too, #114),
@@ -2532,6 +2547,9 @@ sectors/{sectorId}
                  by: uid, at: timestamp,  ← last change, both null before any
                  tries: 2,                ← tries with nobody home (#80), 1–99; absent = 0
                                             (written from the first try, removed when 0)
+                 calendars: 2,            ← calendars a ✓ took (#114), 1–99, only while
+                                            DONE (removed on any other status); absent
+                                            = 1 on a ✓, 0 otherwise
                  deletedAt: null, deletedBy: null },   ← set = number in the Corbeille
         "8":   { n: 8, …, status: "TO_DO",        ← a building is always TO_DO itself
                  labelStyle: "FLOOR_AND_NUMBER",  ← FLOOR_AND_NUMBER | FLOOR_AND_LETTER | FREE
@@ -2540,7 +2558,7 @@ sectors/{sectorId}
                                           ← staircases A→Z, floors top first (floor null for
                                             the « Logements » row), doors left to right; it
                                             keeps the doors' order and the emptied floors
-                 dwellings: { "A5-51": { status, comeBack, by, at, tries? }, … } }
+                 dwellings: { "A5-51": { status, comeBack, by, at, tries?, calendars? }, … } }
                                           ← the marks of each door; key = letter + level +
                                             "-" + label ("A0-Gauche"; "A-Gauche" when the
                                             floors are unknown). A single house has none of
@@ -2565,10 +2583,11 @@ writes:
 
 | Change | Fields written (under `houses.<n>` unless said) |
 |---|---|
-| mark, « Repassé, toujours personne », « repasser » of a house | `status`, `comeBack`, `tries` (the count, or deleted when 0), `by`, `at` (« repasser » day or hour: `comeBack`, `by`, `at`) |
-| mark, « Repassé, toujours personne », « repasser » of a door | `dwellings.<key>.status`, `.comeBack`, `.tries`, `.by`, `.at` (day or hour: no `status`, no `tries`) |
-| layout (describe, add / remove / rename a door) | `status`, `comeBack`, `tries` (deleted), `by`, `at`, `labelStyle`, `layout`, then each door `dwellings.<key>` whole; each door dropped is deleted |
-| back to a single house | `status`, `comeBack`, `tries` (deleted), `by`, `at`; `labelStyle`, `layout`, `dwellings` deleted |
+| mark, « Repassé, toujours personne », « repasser » of a house | `status`, `comeBack`, `tries` (the count, or deleted when 0), `calendars` (1 or the count kept on a ✓, deleted otherwise, #114), `by`, `at` (« repasser » day or hour: `comeBack`, `by`, `at`) |
+| mark, « Repassé, toujours personne », « repasser » of a door | `dwellings.<key>.status`, `.comeBack`, `.tries`, `.calendars`, `.by`, `.at` (day or hour: no `status`, no `tries`) |
+| one calendar more (« + Ajouter un don ») or less (« − ») of a house or door done (`HouseCalendarsCounted`, `DwellingCalendarsCounted`, #114) | `calendars`, `by`, `at` (a door: `dwellings.<key>.calendars`, `.by`, `.at`) |
+| layout (describe, add / remove / rename a door) | `status`, `comeBack`, `tries` and `calendars` (deleted), `by`, `at`, `labelStyle`, `layout`, then each door `dwellings.<key>` whole; each door dropped is deleted |
+| back to a single house | `status`, `comeBack`, `tries` (deleted), `calendars` (1 when done, else deleted), `by`, `at`; `labelStyle`, `layout`, `dwellings` deleted |
 | street added (import, typed in, moved from the phone) | the document `set` with its first 2 houses, then each next `houses.<n>` whole, 2 per update, each sent once the phone's copy shows the one before (#70: the rules check each house a write adds, and only 2 fit in one request; §8.2 « Houses written in bulk »); a street of more than 2 houses is kept on the phone until they are all sent, and finished at the next start if the app was killed in the middle (#104) |
 | numbers added | each new `houses.<n>` whole, 2 per update (#70); each one restored: `deletedAt`, `deletedBy` = null, in an update of its own (the rules check one by one only a write changing one house, T2.4) |
 | number removed / restored | `deletedAt`, `deletedBy` (set / null) |
@@ -2619,7 +2638,8 @@ can never drift.
   Schema `version: 3` (T1.20: no `note`; T1.16: status `comeBack`, its time in `comeBack` only
   then — the same text as in Firestore since #81, "" / "2026-10-24" / "2026-10-24T18"; T3.3 added `shape`, the encoded lines, and `assignees`, member ids, without a new
   version: a file without them reads as no shape, nobody; #80 added `tries` on houses and doors
-  the same way, written from the first try, absent = 0), written and read by pure mappers (`mappers/street_json_mapper.dart`). Version 1 files
+  the same way, written from the first try, absent = 0; #114 added `calendars` the same way,
+  written only while done, absent = 1 on a ✓ and 0 otherwise), written and read by pure mappers (`mappers/street_json_mapper.dart`). Version 1 files
   (« repasser » as a flag) are still read: a house or door to do or nobody home with a
   `comeBack` becomes « repasser ». Every file written before #81 may hold a free hint in
   `comeBack` (« après 19h »): it reads as « repasser » with no time set (no new version: the
@@ -3002,6 +3022,9 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
   holds an optional `calendars` 1–99, only while its status is `done` (absent reads as 1 on a
   ✓, 0 otherwise), written in the same field-path updates as the status. Apps before 0.10.0
   cannot read `REFUSED`; they are not supported (they read the old `tournees/` paths anyway).
+  Built in #114 (`hasCalendars`): a building itself never holds one, a whole entry (a new
+  number, a renumbering, an undo) may carry it on a ✓, and « + Ajouter un don » / « − » write
+  `calendars`, `by`, `at` with the caller's stamp; leaving ✓ without removing it is refused.
 - Indexes (`firebase/firestore.indexes.json`): `houses` of `streets` is exempt from
   single-field indexing (its thousands of sub-fields would count against the index limits and
   slow every write); no query of the adapters needs a composite index.

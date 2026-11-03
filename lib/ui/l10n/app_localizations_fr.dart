@@ -155,6 +155,20 @@ class AppLocalizationsFr extends AppLocalizations {
   String get statusPickerValidate => 'Valider';
 
   @override
+  String houseCalendars(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count calendriers',
+      one: '$count calendrier',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get removeCalendar => 'Un calendrier de moins';
+
+  @override
   String get statusPickerClose => 'Fermer';
 
   @override
@@ -1242,6 +1256,10 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get release0100Privacy =>
       'Confidentialité : le texte dit aussi ce qui est gardé des tournées, des dons et des calendriers.';
+
+  @override
+  String get release0100Calendars =>
+      'Une maison faite garde son nombre de calendriers : « + Ajouter un don » en ajoute un, « − » en retire un, et la tuile affiche le nombre à partir de 2.';
 
   @override
   String get release0100Rounds =>

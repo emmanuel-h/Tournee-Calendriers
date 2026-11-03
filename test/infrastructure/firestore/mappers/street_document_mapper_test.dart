@@ -45,6 +45,11 @@ Map<String, dynamic> housesOf(Map<String, dynamic> data) =>
 Map<String, dynamic> eight(Map<String, dynamic> data) =>
     housesOf(data)['8'] as Map<String, dynamic>;
 
+/// Door A1-11 of building 8, done.
+Map<String, dynamic> doorEleven(Map<String, dynamic> data) =>
+    (eight(data)['dwellings'] as Map<String, dynamic>)['A1-11']
+        as Map<String, dynamic>;
+
 /// The floor at [index] of the layout of building 8.
 Map<String, dynamic> floorOfEight(Map<String, dynamic> data, int index) =>
     (eight(data)['layout'] as List<dynamic>)[index] as Map<String, dynamic>;
@@ -228,6 +233,7 @@ void main() {
           'comeBack': null,
           'by': 'lea',
           'at': twoPmStamp,
+          'calendars': 3,
         },
         'A1-12': {
           'status': 'COME_BACK',
@@ -300,6 +306,21 @@ void main() {
       final house = houseEntry(House(number: n('7'), status: VisitStatus.done));
 
       expect(house.containsKey('tries'), isFalse);
+    });
+
+    test('should write the calendars of a house done', () {
+      final houses =
+          streetToDocument(richStreet)['houses']! as Map<String, Object?>;
+
+      expect((houses['3A']! as Map<String, Object?>)['calendars'], 2);
+    });
+
+    test('should write no calendars for a house not done', () {
+      final house = houseEntry(
+        House(number: n('7'), status: VisitStatus.nobodyHome),
+      );
+
+      expect(house.containsKey('calendars'), isFalse);
     });
 
     test('should write no tries for a door without any', () {
@@ -473,6 +494,39 @@ void main() {
       expect(street.houseAt(n('3A'))!.tries.count, 0);
     });
 
+    // Houses and doors marked ✓ before the calendars (#114) have none.
+    test('should read one calendar for a house done without the field', () {
+      final street = read(
+        storedRich((data) {
+          (housesOf(data)['3A'] as Map<String, dynamic>).remove('calendars');
+        }),
+      );
+
+      expect(street.houseAt(n('3A'))!.calendars.count, 1);
+    });
+
+    test('should read one calendar for a door done without the field', () {
+      final street = read(
+        storedRich((data) => doorEleven(data)['calendars'] = null),
+      );
+
+      final door = street
+          .houseAt(n('8'))!
+          .building!
+          .dwellingAt(DwellingKey(escA, 1, d('11')));
+      expect(door!.calendars.count, 1);
+    });
+
+    test('should drop the calendars left on a house not done', () {
+      final street = read(
+        storedRich((data) {
+          (housesOf(data)['5'] as Map<String, dynamic>)['calendars'] = 2;
+        }),
+      );
+
+      expect(street.houseAt(n('5'))!.calendars.count, 0);
+    });
+
     test('should drop the tries an older app left on a house to do', () {
       final street = read(
         storedRich((data) {
@@ -526,10 +580,6 @@ void main() {
 
     Map<String, dynamic> one(Map<String, dynamic> data) =>
         housesOf(data)['1'] as Map<String, dynamic>;
-
-    Map<String, dynamic> doorEleven(Map<String, dynamic> data) =>
-        (eight(data)['dwellings'] as Map<String, dynamic>)['A1-11']
-            as Map<String, dynamic>;
 
     test('should refuse a shape that is not a list', () {
       expectUnreadable((data) => data['shape'] = 'abc');
@@ -676,6 +726,24 @@ void main() {
       expectUnreadable(
         (data) => (housesOf(data)['5'] as Map<String, dynamic>)['tries'] = 100,
       );
+    });
+
+    test('should refuse calendars that are not a whole number', () {
+      expectUnreadable(
+        (data) =>
+            (housesOf(data)['3A'] as Map<String, dynamic>)['calendars'] = '2',
+      );
+    });
+
+    test('should refuse calendars the domain refuses', () {
+      expectUnreadable(
+        (data) =>
+            (housesOf(data)['3A'] as Map<String, dynamic>)['calendars'] = 100,
+      );
+    });
+
+    test('should refuse door calendars the domain refuses', () {
+      expectUnreadable((data) => doorEleven(data)['calendars'] = -1);
     });
 
     test('should refuse door tries the domain refuses', () {

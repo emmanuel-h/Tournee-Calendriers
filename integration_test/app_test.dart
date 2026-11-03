@@ -811,6 +811,30 @@ void main() {
       await tester.pumpAndSettle();
       expect(findArrowText('N° 1 fait · 10\u00a0€ en espèces'), findsOneWidget);
       expect(find.text('En tournée · 1\u00a0don · 10\u00a0€'), findsOneWidget);
+      // A second calendar for the 1 (#114): « + Ajouter un don », offered;
+      // the tile shows its badge « 2 », and « − » takes it away again.
+      await tester.tap(find.byKey(const ValueKey('street.tile.1')));
+      await tester.pumpAndSettle();
+      expect(find.text('1 calendrier'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('house.addDonation')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('house.freeCalendar')));
+      await tester.pumpAndSettle();
+      expect(findArrowText('N° 1 · calendrier offert ajouté'), findsOneWidget);
+      final badge = find.descendant(
+        of: find.byKey(const ValueKey('street.tile.1')),
+        matching: find.byKey(const Key('tile.calendars')),
+      );
+      expect(find.descendant(of: badge, matching: find.text('2')), findsOne);
+      await tester.tap(find.byKey(const ValueKey('street.tile.1')));
+      await tester.pumpAndSettle();
+      expect(find.text('2 calendriers'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('house.removeCalendar')));
+      await tester.pumpAndSettle();
+      expect(find.text('1 calendrier'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('house.close')));
+      await tester.pumpAndSettle();
+      expect(badge, findsNothing);
       await tester.tap(find.byTooltip('Retour'));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('round.finish')));

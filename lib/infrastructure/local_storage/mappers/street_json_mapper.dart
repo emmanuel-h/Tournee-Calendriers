@@ -10,11 +10,12 @@
 //     removal: stamp }] }
 //   house    = { number: "3bis", status, comeBack: when | null,
 //                lastChange: stamp | null, tries: 1–99,   ← only from the first try
+//                calendars: 1–99,                         ← only while done
 //                position: { latitude, longitude } | null,
 //                building: building | null }
 //   building = { style, staircases: [{ name: "A", floors: [{ level | null,
 //                dwellings: [{ label, status, comeBack,
-//                              lastChange, tries }] }] }] }
+//                              lastChange, tries, calendars }] }] }] }
 //   stamp    = { by: memberId, at: "2026-11-02T14:02:00.000Z" }  (UTC)
 //   status   = "toDo" | "done" | "refused" | "nobodyHome" | "comeBack"
 //   when     = "" | "2026-10-24" | "2026-10-24T18"   ← see come_back_text.dart
@@ -49,7 +50,11 @@
 // shape that nobody covers, and nothing in it needs rewriting. `tries`
 // (the tries with nobody home, #80) came the same way: written only from
 // the first try, a missing one reads as none (and a « personne » without
-// it as its first try, see `NobodyHomeTries.keptBy`).
+// it as its first try, see `NobodyHomeTries.keptBy`). `calendars` (how
+// many calendars a ✓ took, #114) too: written only while done, a missing
+// one reads as none, which the domain makes one calendar on a ✓
+// (`Calendars.keptBy`), so a ✓ stored before reads as 1 and anything else
+// as 0.
 //
 // Statuses and label styles are written under fixed names chosen here, not
 // the Dart enum names, so renaming an enum value in the code cannot make
@@ -71,6 +76,7 @@ import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling_label.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
+import 'package:tournee_calendriers/domain/street/calendars.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
@@ -207,6 +213,7 @@ Map<String, Object?> _houseToJson(House house) => {
   'comeBack': _comeBackToJson(house.comeBack),
   'lastChange': _stampToJson(house.lastChange),
   ..._triesToJson(house.tries),
+  ..._calendarsToJson(house.calendars),
   'position': switch (house.position) {
     null => null,
     final GeoPoint point => {
@@ -244,6 +251,7 @@ House _houseFromJson(Object? json, int version) {
       position: position == null ? null : _positionFromJson(position),
       building: building == null ? null : _buildingFromJson(building, version),
       tries: _triesFromJson(house['tries']),
+      calendars: _calendarsFromJson(house['calendars']),
     );
   }
   throw const FormatException('Not a stored house');
@@ -353,6 +361,7 @@ Map<String, Object?> _dwellingToJson(Dwelling dwelling) => {
   'comeBack': _comeBackToJson(dwelling.comeBack),
   'lastChange': _stampToJson(dwelling.lastChange),
   ..._triesToJson(dwelling.tries),
+  ..._calendarsToJson(dwelling.calendars),
 };
 
 Dwelling _dwellingFromJson(Object? json, int version) {
@@ -370,6 +379,7 @@ Dwelling _dwellingFromJson(Object? json, int version) {
       comeBack: _comeBackOrNull(comeBack),
       lastChange: _stampOrNull(lastChange),
       tries: _triesFromJson(dwelling['tries']),
+      calendars: _calendarsFromJson(dwelling['calendars']),
     );
   }
   throw const FormatException('Not a stored door');
@@ -385,6 +395,18 @@ NobodyHomeTries _triesFromJson(Object? json) => switch (json) {
   null => NobodyHomeTries.none,
   final int count => _valid(NobodyHomeTries.create(count), 'tries'),
   _ => throw const FormatException('Not stored tries'),
+};
+
+/// The `calendars` of a house or door: only while it is done.
+Map<String, Object?> _calendarsToJson(Calendars calendars) => {
+  if (calendars.count > 0) 'calendars': calendars.count,
+};
+
+/// The calendars stored as [json]; none when there is no `calendars`.
+Calendars _calendarsFromJson(Object? json) => switch (json) {
+  null => Calendars.none,
+  final int count => _valid(Calendars.create(count), 'calendars'),
+  _ => throw const FormatException('Not stored calendars'),
 };
 
 Map<String, Object?>? _stampToJson(ChangeStamp? stamp) => switch (stamp) {

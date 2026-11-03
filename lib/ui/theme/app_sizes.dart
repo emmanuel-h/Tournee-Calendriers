@@ -132,6 +132,16 @@ abstract final class AppSizes {
   /// street stays visible, dimmed (Building mockup).
   static const fullSheetTopGap = 40.0;
 
+  /// The round badge of a tile or door that took two calendars or more
+  /// (#114): 24 dp, its 2 dp ring in the ground colour, its centre this far
+  /// out of the tile's top right corner. The gaps between tiles and doors
+  /// are wider than [calendarBadgeOverhang], so it never covers a
+  /// neighbour; the lists start that much lower, so the first row's badge
+  /// is not cut.
+  static const calendarBadge = 24.0;
+  static const calendarBadgeRing = 2.0;
+  static const calendarBadgeOverhang = 7.0;
+
   /// A door of the Immeuble grid, four on a row.
   static const doorHeight = 52.0;
   static const doorGap = 8.0;

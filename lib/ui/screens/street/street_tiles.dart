@@ -54,9 +54,11 @@ final class StreetTiles extends StatelessWidget {
       children: [
         ListView.builder(
           key: const Key('street.tiles'),
+          // A little room at the top for the calendars badge of a first
+          // tile, drawn past its edge.
           padding: const EdgeInsets.fromLTRB(
             AppSizes.gutter,
-            0,
+            AppSizes.calendarBadgeOverhang,
             AppSizes.gutter,
             AppSizes.streetListBottom,
           ),
@@ -98,6 +100,7 @@ final class StreetTiles extends StatelessWidget {
       status: tileStatusOf(tile.mark),
       isBuilding: tile.isBuilding,
       tries: tile.tries,
+      calendars: tile.calendars,
       selected: number == selected,
       // A building has no status of its own: its doors do, in its grid.
       onTap: tile.isBuilding

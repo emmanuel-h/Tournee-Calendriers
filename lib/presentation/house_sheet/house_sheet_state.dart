@@ -177,6 +177,7 @@ final class HouseSheetShown extends HouseSheetState {
     required this.lastChange,
     this.subject = const HouseSubject(),
     this.tries = 0,
+    this.calendars = 0,
     this.roundOn = false,
   });
 
@@ -202,6 +203,10 @@ final class HouseSheetShown extends HouseSheetState {
   /// How many times nobody was home (#80): « 2 passages sans personne ».
   final int tries;
 
+  /// How many calendars the house or door took (#114): one or more while
+  /// it is done, 0 otherwise.
+  final int calendars;
+
   /// A tournée is on in the secteur shown (PLAN §5.13): « Fait » asks for
   /// the don, and a house done offers « + Ajouter un don ».
   final bool roundOn;
@@ -221,6 +226,14 @@ final class HouseSheetShown extends HouseSheetState {
   /// « ✗ 2 passages sans personne » shows under the statuses once a try is
   /// counted. « À faire » has none: it starts the count again (§6.1).
   bool get showsTries => tries > 0;
+
+  /// « 1 calendrier » / « 2 calendriers » and its « − » show under the
+  /// statuses on a house or door done, tournée or not, so a mistake is
+  /// fixed afterwards too (PLAN §5.6).
+  bool get showsCalendars => status == VisitStatus.done;
+
+  /// « − » takes one calendar away; disabled at one: a ✓ took a calendar.
+  bool get canRemoveCalendar => calendars > 1;
 }
 
 /// What one choice of the status picker stored (PLAN §5.6): the house or

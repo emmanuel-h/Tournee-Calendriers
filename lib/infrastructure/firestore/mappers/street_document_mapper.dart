@@ -12,10 +12,12 @@
 //   house    = { n: 3, sfx: "bis" | null, lat | null, lon | null,
 //                status, comeBack: when | null, by: uid | null, at: time | null,
 //                tries: 1–99,                                    ← only from the first try
+//                calendars: 1–99,                                ← only while done (#114)
 //                deletedAt: time | null, deletedBy: uid | null,   ← number in the Corbeille
 //                and on a building only: labelStyle, layout, dwellings }
 //   layout   = [ { esc: "A", floor: 5 | null, doors: ["51", "52"] } ]
-//   dwellings = { "A5-51": { status, comeBack, by, at, tries } }   ← tries as a house's
+//   dwellings = { "A5-51": { status, comeBack, by, at, tries, calendars } }
+//                                                    ← tries and calendars as a house's
 //   status   = "TO_DO" | "DONE" | "REFUSED" | "NOBODY_HOME" | "COME_BACK"
 //   when     = "" | "2026-10-24" | "2026-10-24T18"   ← see come_back_text.dart
 //   labelStyle = "FLOOR_AND_NUMBER" | "FLOOR_AND_LETTER" | "FREE"
@@ -38,6 +40,12 @@
 // domain then gives a « personne » without a count its first try
 // (`NobodyHomeTries.keptBy`), and drops a count an older app left on a
 // house it put back to do.
+//
+// `calendars` (#114, how many calendars a ✓ took) is written only while the
+// house or door is done, and a missing field reads as none: the domain
+// then gives a ✓ without a count its one calendar (`Calendars.keptBy`), so
+// the houses marked ✓ before #114 read as 1, and a count left on a house
+// that is no longer ✓ reads as 0.
 //
 // `REFUSED` (#113) is read by no app before 0.10.0, which cannot open the
 // streets of a secteur anyway (they moved to `sectors/` with #116).
@@ -68,6 +76,7 @@ import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling_label.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
+import 'package:tournee_calendriers/domain/street/calendars.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
@@ -108,6 +117,7 @@ Map<String, Object?> houseEntry(House house, {ChangeStamp? removal}) => {
   'comeBack': _comeBackTextOrNull(house.comeBack),
   ...stampFields(house.lastChange, by: 'by', at: 'at'),
   ...triesField(house.tries),
+  ...calendarsField(house.calendars),
   ...stampFields(removal, by: 'deletedBy', at: 'deletedAt'),
   if (house.building case final building?) ...buildingFields(building),
 };
@@ -150,11 +160,18 @@ Map<String, Object?> dwellingEntry(Dwelling dwelling) => {
   'comeBack': _comeBackTextOrNull(dwelling.comeBack),
   ...stampFields(dwelling.lastChange, by: 'by', at: 'at'),
   ...triesField(dwelling.tries),
+  ...calendarsField(dwelling.calendars),
 };
 
 /// The `tries` field of a house or door: none before the first try.
 Map<String, Object?> triesField(NobodyHomeTries tries) => {
   if (tries.count > 0) 'tries': tries.count,
+};
+
+/// The `calendars` field of a house or door: only while it is done, from
+/// one calendar.
+Map<String, Object?> calendarsField(Calendars calendars) => {
+  if (calendars.count > 0) 'calendars': calendars.count,
 };
 
 /// The fields [by] and [at] of [stamp]; both null without one.
@@ -297,6 +314,7 @@ Set<MemberId> _assigneesFrom(Object? json) => switch (json) {
       building: entry.containsKey('layout') ? _buildingFrom(entry) : null,
       position: _positionOrNull(latitude, longitude),
       tries: _triesFrom(entry['tries']),
+      calendars: _calendarsFrom(entry['calendars']),
     );
     return (house, stampOrNull(deletedBy, deletedAt));
   }
@@ -393,6 +411,7 @@ Dwelling _dwellingFrom(
       comeBack: _comeBackOrNull(comeBack),
       lastChange: stampOrNull(by, at),
       tries: _triesFrom(entry['tries']),
+      calendars: _calendarsFrom(entry['calendars']),
     );
   }
   throw FormatException('Not a stored door', key.id);
@@ -403,6 +422,14 @@ NobodyHomeTries _triesFrom(Object? json) => switch (json) {
   null => NobodyHomeTries.none,
   final int count => valid(NobodyHomeTries.create(count), 'tries'),
   _ => throw const FormatException('Not stored tries'),
+};
+
+/// The calendars stored as [json]; none when the field is missing (or
+/// null), which the domain reads as one on a ✓.
+Calendars _calendarsFrom(Object? json) => switch (json) {
+  null => Calendars.none,
+  final int count => valid(Calendars.create(count), 'calendars'),
+  _ => throw const FormatException('Not stored calendars'),
 };
 
 String? _comeBackTextOrNull(ComeBack? comeBack) =>

@@ -1,6 +1,7 @@
 import 'package:tournee_calendriers/domain/street/building/building.dart';
 import 'package:tournee_calendriers/domain/street/building/building_status.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
+import 'package:tournee_calendriers/domain/street/calendars.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/nobody_home_tries.dart';
@@ -100,6 +101,11 @@ final class PartialBuildingMark extends TileMark {
 /// its « ×3 »); null below two, where « personne » alone says it all.
 int? shownTries(NobodyHomeTries tries) => tries.count >= 2 ? tries.count : null;
 
+/// The calendars a tile shows in its round badge (#114, PLAN §5.6): the
+/// count from two on; null at one or none, where ✓ alone says it all.
+int? shownCalendars(Calendars calendars) =>
+    calendars.count >= 2 ? calendars.count : null;
+
 /// One tile of the street screen.
 final class HouseTile {
   const HouseTile({
@@ -107,6 +113,7 @@ final class HouseTile {
     required this.mark,
     required this.isBuilding,
     this.tries,
+    this.calendars,
   });
 
   /// The tile of [house].
@@ -115,6 +122,7 @@ final class HouseTile {
     mark: TileMark.of(house),
     isBuilding: house.isBuilding,
     tries: shownTries(house.tries),
+    calendars: shownCalendars(house.calendars),
   );
 
   /// Which house; its `label` is what the tile shows (`3bis`).
@@ -127,21 +135,25 @@ final class HouseTile {
   /// « ×3 » next to the glyph; null when not shown ([shownTries]).
   final int? tries;
 
+  /// The « 2 » of the round badge; null when not shown ([shownCalendars]).
+  final int? calendars;
+
   @override
   bool operator ==(Object other) =>
       other is HouseTile &&
       other.number == number &&
       other.mark == mark &&
       other.isBuilding == isBuilding &&
-      other.tries == tries;
+      other.tries == tries &&
+      other.calendars == calendars;
 
   @override
-  int get hashCode => Object.hash(number, mark, isBuilding, tries);
+  int get hashCode => Object.hash(number, mark, isBuilding, tries, calendars);
 
   @override
   String toString() =>
       'HouseTile(${number.label}, $mark, building: $isBuilding, '
-      'tries: $tries)';
+      'tries: $tries, calendars: $calendars)';
 }
 
 /// Which columns the screen shows. Decided on every house of the street,

@@ -8,6 +8,7 @@ import 'package:tournee_calendriers/domain/street/building/building_status.dart'
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling_label.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
+import 'package:tournee_calendriers/domain/street/calendars.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 // A prefix: the street's own `isPastRetention` would hide the function.
 import 'package:tournee_calendriers/domain/street/corbeille_retention.dart'
@@ -96,6 +97,33 @@ enum DwellingChangeFailure {
   notToVisitAgain,
 }
 
+/// Why the calendars of a house or a door could not be counted
+/// ([Street.addCalendar], [Street.removeCalendar], #114).
+enum CalendarChangeFailure {
+  /// The street has no house with that number.
+  unknownHouse,
+
+  /// A building was named without a door: its doors take the calendars.
+  houseIsBuilding,
+
+  /// A door was named in a single house.
+  notABuilding,
+
+  /// The building has no door with that staircase, floor and label.
+  unknownDwelling,
+
+  /// The house or door is not done (a teammate changed it meanwhile): only
+  /// a ✓ takes calendars.
+  notDone,
+
+  /// « − » on the last calendar: a ✓ took at least one, take it back by
+  /// giving another status.
+  lastCalendar,
+
+  /// One more calendar than [Calendars.max].
+  tooMany,
+}
+
 /// Why a member could not take or release a [Street] (« Mes rues »).
 enum AssignmentFailure {
   /// The member already covers the street.
@@ -146,6 +174,8 @@ enum UndoFailure {
 ///   status is « repasser » (see [House], [Dwelling]);
 /// - a single house or a door has no tries with nobody home when it is to
 ///   do, and at least one when nobody is home (see [NobodyHomeTries]);
+/// - a single house or a door has calendars exactly when it is done, at
+///   least one (see [Calendars]);
 /// - a building is to do itself, its doors carry the statuses (see [House]);
 /// - the invariants of each [Building].
 ///
@@ -376,6 +406,7 @@ final class Street {
       lastChange: stamp,
       position: before.position,
       tries: before.tries,
+      calendars: before.calendars,
     );
     return Ok((
       _withHouseAt(index, after),
@@ -415,6 +446,7 @@ final class Street {
       building: before.building,
       position: before.position,
       tries: before.tries,
+      calendars: before.calendars,
     );
     return Ok((
       _withHouseAt(index, after),
@@ -606,6 +638,7 @@ final class Street {
           comeBack: before.comeBack,
           lastChange: stamp,
           tries: before.tries,
+          calendars: before.calendars,
         );
         return Ok((
           _withDwellingAt(index, key, after),
@@ -648,6 +681,7 @@ final class Street {
           comeBack: comeBack,
           lastChange: stamp,
           tries: before.tries,
+          calendars: before.calendars,
         );
         return Ok((
           _withDwellingAt(index, key, after),
@@ -704,6 +738,120 @@ final class Street {
           ),
         ));
     }
+  }
+
+  /// One more calendar for the house at [number], or the door at [door] of
+  /// that building, as [by] at [at] (« + Ajouter un don », #114).
+  ///
+  /// Refused with [CalendarChangeFailure.notDone] unless it is done, and
+  /// [CalendarChangeFailure.tooMany] past [Calendars.max].
+  Result<(Street, StreetChange), CalendarChangeFailure> addCalendar(
+    HouseNumber number, {
+    DwellingKey? door,
+    required MemberId by,
+    required DateTime at,
+  }) => _countCalendars(
+    number,
+    door,
+    (calendars) => switch (calendars.more) {
+      final more? => Ok(more),
+      null => const Err(CalendarChangeFailure.tooMany),
+    },
+    ChangeStamp(by: by, at: at),
+  );
+
+  /// One calendar less for the house at [number], or the door at [door] of
+  /// that building, as [by] at [at] (« − » in its status picker, #114).
+  ///
+  /// Refused with [CalendarChangeFailure.notDone] unless it is done, and
+  /// [CalendarChangeFailure.lastCalendar] at one: a ✓ took a calendar.
+  Result<(Street, StreetChange), CalendarChangeFailure> removeCalendar(
+    HouseNumber number, {
+    DwellingKey? door,
+    required MemberId by,
+    required DateTime at,
+  }) => _countCalendars(
+    number,
+    door,
+    (calendars) => switch (calendars.fewer) {
+      final fewer? => Ok(fewer),
+      null => const Err(CalendarChangeFailure.lastCalendar),
+    },
+    ChangeStamp(by: by, at: at),
+  );
+
+  /// The steps [addCalendar] and [removeCalendar] share: find the done
+  /// house (or door), give it the calendars [count] makes of its own, and
+  /// stamp it with [stamp].
+  Result<(Street, StreetChange), CalendarChangeFailure> _countCalendars(
+    HouseNumber number,
+    DwellingKey? door,
+    Result<Calendars, CalendarChangeFailure> Function(Calendars) count,
+    ChangeStamp stamp,
+  ) {
+    final index = _indexOf(number);
+    if (index < 0) return const Err(CalendarChangeFailure.unknownHouse);
+    final house = houses[index];
+    if (door == null) {
+      if (house.isBuilding) {
+        return const Err(CalendarChangeFailure.houseIsBuilding);
+      }
+      if (house.status != VisitStatus.done) {
+        return const Err(CalendarChangeFailure.notDone);
+      }
+      return count(house.calendars).map(
+        (calendars) => (
+          _withHouseAt(
+            index,
+            House(
+              number: number,
+              status: house.status,
+              lastChange: stamp,
+              position: house.position,
+              tries: house.tries,
+              calendars: calendars,
+            ),
+          ),
+          HouseCalendarsCounted(
+            streetId: id,
+            before: house,
+            stamp: stamp,
+            calendars: calendars,
+          ),
+        ),
+      );
+    }
+    final building = house.building;
+    if (building == null) return const Err(CalendarChangeFailure.notABuilding);
+    final before = building.dwellingAt(door);
+    if (before == null) return const Err(CalendarChangeFailure.unknownDwelling);
+    if (before.status != VisitStatus.done) {
+      return const Err(CalendarChangeFailure.notDone);
+    }
+    return count(before.calendars).map(
+      (calendars) => (
+        _withDwellingAt(
+          index,
+          door,
+          Dwelling(
+            label: before.label,
+            status: before.status,
+            lastChange: stamp,
+            tries: before.tries,
+            calendars: calendars,
+          ),
+        ),
+        DwellingCalendarsCounted(
+          streetId: id,
+          number: number,
+          staircase: door.staircase,
+          level: door.level,
+          before: before,
+          stamp: stamp,
+          calendars: calendars,
+        ),
+      ),
+    );
   }
 
   /// Adds [numbers] to the street (« Ajouter des numéros », PLAN §5.5;

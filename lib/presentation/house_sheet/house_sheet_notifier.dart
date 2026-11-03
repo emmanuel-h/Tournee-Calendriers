@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tournee_calendriers/application/use_cases/calendars.dart';
 import 'package:tournee_calendriers/application/use_cases/mark.dart';
+import 'package:tournee_calendriers/application/use_cases/rounds.dart';
 import 'package:tournee_calendriers/application/use_cases/set_house_details.dart';
 import 'package:tournee_calendriers/domain/round/donation.dart';
 import 'package:tournee_calendriers/domain/sector/sector.dart';
@@ -7,6 +9,7 @@ import 'package:tournee_calendriers/domain/shared/calendar_day.dart';
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
+import 'package:tournee_calendriers/domain/street/calendars.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/nobody_home_tries.dart';
@@ -65,6 +68,7 @@ typedef _Marks = ({
   ComeBack? comeBack,
   ChangeStamp? lastChange,
   NobodyHomeTries tries,
+  Calendars calendars,
 });
 
 /// Follows one house, building or door of a street on the phone
@@ -108,6 +112,10 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState>
   /// as the sheet closes runs when this notifier may be disposed. It gives
   /// the change stored, or null when the street refused it.
   Future<StreetChange?> Function(Mark mark) _storer();
+
+  /// Where the house or door counts its calendars (#114); null on a
+  /// building itself, which has none.
+  CalendarPlace? get _calendarPlace;
 
   @override
   HouseSheetState build() {
@@ -249,19 +257,60 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState>
     };
   }
 
-  /// A don given in « Montant du don » (PLAN §5.6): it joins the tournée on
-  /// (`AddDonation`), never the house. Returns where it went, for the
-  /// snackbar and its « Annuler »; null when no tournée is on any more
-  /// (validated meanwhile on another screen).
+  /// A don given in « Montant du don » after a « Fait » (PLAN §5.6): it
+  /// joins the tournée on (`AddDonation`), never the house, whose calendar
+  /// came with the « Fait ». Returns where it went, for the snackbar and
+  /// its « Annuler »; null when no tournée is on any more (validated
+  /// meanwhile on another screen).
   Future<GivenDonation?> giveDonation(Donation donation) async =>
-      switch (await ref.read(addDonationProvider)(donation)) {
-        // The tournée adds a don last.
-        Ok(value: final round) => GivenDonation(
-          index: round.donations.length - 1,
-          donation: donation,
-        ),
-        Err() => null,
-      };
+      _given(await ref.read(addDonationProvider)(donation), donation);
+
+  /// A don given through « + Ajouter un don » on a house or door done
+  /// (PLAN §5.6, #114): it joins the tournée on, and the house or door
+  /// takes one calendar more (`AddDonation`), after the changes asked
+  /// before. Returns where the don went and the calendar's change, for the
+  /// snackbar and its « Annuler »; null when no tournée is on any more.
+  Future<GivenDonation?> addDonation(Donation donation) {
+    // Read now: the sheet closes as the don is given.
+    final add = ref.read(addDonationProvider);
+    final place = _calendarPlace;
+    final step = _pending.then(
+      (_) async => _given(await add(donation, calendarFor: place), donation),
+    );
+    _pending = step.then<void>((_) {}, onError: (Object _) {});
+    return step;
+  }
+
+  /// What [added] says of [donation] for the screen: the tournée adds a
+  /// don last.
+  static GivenDonation? _given(
+    Result<AddedDonation, NoRoundOn> added,
+    Donation donation,
+  ) => switch (added) {
+    Ok(value: AddedDonation(:final round, :final calendar)) => GivenDonation(
+      index: round.donations.length - 1,
+      donation: donation,
+      calendar: calendar,
+    ),
+    Err() => null,
+  };
+
+  /// « − » of « 2 calendriers » (« Un calendrier de moins », PLAN §5.6):
+  /// the house or door took one calendar less (`RemoveCalendar`), after
+  /// the changes asked before. The sheet stays open and no snackbar
+  /// shows: the count it shows says so, and « − » undoes nothing of a
+  /// don. Nothing happens at one calendar (the button is disabled then).
+  Future<void> removeCalendar() {
+    final remove = ref.read(removeCalendarProvider);
+    final place = _calendarPlace;
+    final step = _pending.then((_) async {
+      final marks = _marks;
+      if (place == null || marks == null || marks.calendars.count <= 1) return;
+      await remove(place);
+    });
+    _pending = step.then<void>((_) {}, onError: (Object _) {});
+    return step;
+  }
 
   /// ✕ of « Montant du don » after a « Fait » (PLAN §5.6): no calendar was
   /// handed over after all, so the house or door goes back as it was
@@ -325,6 +374,7 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState>
         today: CalendarDay.of(now.toLocal()),
       ),
       tries: marks.tries.count,
+      calendars: marks.calendars.count,
       roundOn: _roundOn,
       lastChange: stamp == null
           ? null
@@ -354,6 +404,7 @@ final class HouseSheetNotifier extends MarksSheetNotifier {
       comeBack: house.comeBack,
       lastChange: house.lastChange,
       tries: house.tries,
+      calendars: house.calendars,
     ),
     _ => null,
   };
@@ -361,6 +412,10 @@ final class HouseSheetNotifier extends MarksSheetNotifier {
   @override
   Future<StreetChange?> Function(Mark mark) _storer() =>
       _storedBy(ref.read(setHouseDetailsProvider), key);
+
+  @override
+  CalendarPlace get _calendarPlace =>
+      (street: key.street, number: key.number, door: null);
 }
 
 /// The building's own « repasser » (« Repasser » under the grid), stored
@@ -385,6 +440,7 @@ final class BuildingDetailsNotifier extends MarksSheetNotifier {
       comeBack: house.comeBack,
       lastChange: house.lastChange,
       tries: NobodyHomeTries.none,
+      calendars: Calendars.none,
     ),
     _ => null,
   };
@@ -392,6 +448,9 @@ final class BuildingDetailsNotifier extends MarksSheetNotifier {
   @override
   Future<StreetChange?> Function(Mark mark) _storer() =>
       _storedBy(ref.read(setHouseDetailsProvider), key);
+
+  @override
+  CalendarPlace? get _calendarPlace => null;
 }
 
 /// Stores a mark of the house [key] through [setHouseDetails]: the change,
@@ -432,8 +491,13 @@ final class DoorSheetNotifier extends MarksSheetNotifier {
       comeBack: door.comeBack,
       lastChange: door.lastChange,
       tries: door.tries,
+      calendars: door.calendars,
     );
   }
+
+  @override
+  CalendarPlace get _calendarPlace =>
+      (street: key.street, number: key.number, door: key.door);
 
   @override
   Future<StreetChange?> Function(Mark mark) _storer() {

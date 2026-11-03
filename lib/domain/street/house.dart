@@ -2,6 +2,7 @@ import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/building/building.dart';
+import 'package:tournee_calendriers/domain/street/calendars.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/nobody_home_tries.dart';
@@ -28,6 +29,7 @@ final class House {
     this.building,
     this.position,
     this.tries,
+    this.calendars,
   );
 
   /// A house with [number]; by default a single house not visited yet, with
@@ -45,7 +47,10 @@ final class House {
   ///   time when none is given, and none at all with another status;
   /// - a single house keeps the [tries] its status allows (see
   ///   [NobodyHomeTries.keptBy]: none when to do, at least one when nobody
-  ///   is home); a building has none, its doors count theirs.
+  ///   is home); a building has none, its doors count theirs;
+  /// - a single house has [calendars] exactly when it is done, at least one
+  ///   (see [Calendars.keptBy]); a building has none, its doors count
+  ///   theirs.
   factory House({
     required HouseNumber number,
     VisitStatus status = VisitStatus.toDo,
@@ -54,6 +59,7 @@ final class House {
     Building? building,
     GeoPoint? position,
     NobodyHomeTries tries = NobodyHomeTries.none,
+    Calendars calendars = Calendars.none,
   }) {
     final isSingle = building == null;
     return House._(
@@ -64,6 +70,7 @@ final class House {
       building,
       position,
       isSingle ? NobodyHomeTries.keptBy(status, tries) : NobodyHomeTries.none,
+      isSingle ? Calendars.keptBy(status, calendars) : Calendars.none,
     );
   }
 
@@ -95,6 +102,10 @@ final class House {
   /// How many times nobody was home (#80): « ×3 » on the tile from two.
   /// Always none on a building.
   final NobodyHomeTries tries;
+
+  /// How many calendars it took (#114): one or more while it is done, none
+  /// otherwise. Always none on a building.
+  final Calendars calendars;
 
   /// Whether the house is a building.
   bool get isBuilding => building != null;
@@ -133,6 +144,7 @@ final class House {
     building?.restampedBy(member),
     position,
     tries,
+    calendars,
   );
 
   @override
@@ -144,7 +156,8 @@ final class House {
       other.lastChange == lastChange &&
       other.building == building &&
       other.position == position &&
-      other.tries == tries;
+      other.tries == tries &&
+      other.calendars == calendars;
 
   @override
   int get hashCode => Object.hash(
@@ -155,12 +168,13 @@ final class House {
     building,
     position,
     tries,
+    calendars,
   );
 
   /// A single house prints as before buildings existed, with « ×3 » when
-  /// it has tries; a building adds itself at the end. The position is left
-  /// out: it never changes after the import, and the line stays readable
-  /// in a failing test.
+  /// it has tries and « 2 calendars » from two; a building adds itself at
+  /// the end. The position is left out: it never changes after the import,
+  /// and the line stays readable in a failing test.
   @override
   String toString() {
     final fields = [
@@ -169,6 +183,7 @@ final class House {
       comeBack,
       lastChange,
       if (tries.count > 0) '×${tries.count}',
+      if (calendars.count > 1) '${calendars.count} calendars',
       ?building,
     ];
     return 'House(${fields.join(', ')})';

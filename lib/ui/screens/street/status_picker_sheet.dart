@@ -222,6 +222,15 @@ final class _StatusPickerSheetState extends ConsumerState<StatusPickerSheet> {
         nobodyHomeAgain: state.offersNobodyHomeAgain,
         onPicked: (status) => unawaited(_pick(status)),
       ),
+      // How many calendars a house done took, with its « − » (#114).
+      if (state.showsCalendars)
+        _Calendars(
+          name: widget.name,
+          calendars: state.calendars,
+          onRemove: state.canRemoveCalendar
+              ? () => unawaited(_notifier.removeCalendar())
+              : null,
+        ),
       // During a tournée, a house done takes another don (PLAN §5.6).
       if (state.offersDonation)
         SecondaryButton(
@@ -418,14 +427,17 @@ final class _StatusPickerSheetState extends ConsumerState<StatusPickerSheet> {
     }
   }
 
-  /// [donation] goes to the tournée; the sheet tells what was stored and
-  /// closes. A second tap meanwhile gives nothing more.
+  /// [donation] goes to the tournée, and after « + Ajouter un don » the
+  /// house takes one calendar more with it; the sheet tells what was
+  /// stored and closes. A second tap meanwhile gives nothing more.
   Future<void> _give(Donation donation) async {
     if (_donGiven) return;
     // Before the `await`: closed meanwhile, the sheet must not take the
     // « Fait » back from under its don.
     _donGiven = true;
-    final given = await _notifier.giveDonation(donation);
+    final given = _awaitingDon == null
+        ? await _notifier.addDonation(donation)
+        : await _notifier.giveDonation(donation);
     switch ((_awaitingDon, given)) {
       case (final awaiting?, final given?):
         widget.onStored(awaiting.withDonation(given));
@@ -695,6 +707,53 @@ final class _StatusButton extends StatelessWidget {
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// « 2 calendriers » and its « − » (« Un calendrier de moins »), on the
+/// paper of the screen (RunStreet mockup, #114); [onRemove] null greys the
+/// « − » (one calendar left).
+final class _Calendars extends StatelessWidget {
+  const _Calendars({
+    required this.name,
+    required this.calendars,
+    required this.onRemove,
+  });
+
+  final String name;
+  final int calendars;
+  final VoidCallback? onRemove;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = AppColors.of(context);
+    return Container(
+      constraints: const BoxConstraints(minHeight: AppSizes.minTapTarget),
+      padding: const EdgeInsetsDirectional.only(start: 14, end: 6),
+      decoration: BoxDecoration(
+        color: colors.ground,
+        borderRadius: BorderRadius.circular(AppSizes.fieldRadius),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              l10n.houseCalendars(calendars),
+              key: ValueKey('$name.calendars'),
+              style: AppTextStyles.calendarCount.copyWith(color: colors.ink),
+            ),
+          ),
+          IconButton(
+            key: ValueKey('$name.removeCalendar'),
+            tooltip: l10n.removeCalendar,
+            icon: const Icon(Icons.remove),
+            color: colors.ink,
+            onPressed: onRemove,
+          ),
+        ],
       ),
     );
   }

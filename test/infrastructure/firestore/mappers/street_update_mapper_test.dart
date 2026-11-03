@@ -111,6 +111,7 @@ void main() {
         house('4', ['status']): 'NOBODY_HOME',
         house('4', ['comeBack']): null,
         house('4', ['tries']): 1,
+        house('4', ['calendars']): removed,
         house('4', ['by']): 'paul',
         house('4', ['at']): at(threePm),
       });
@@ -139,6 +140,7 @@ void main() {
         house('4', ['status']): 'REFUSED',
         house('4', ['comeBack']): null,
         house('4', ['tries']): removed,
+        house('4', ['calendars']): removed,
         house('4', ['by']): 'paul',
         house('4', ['at']): at(threePm),
       });
@@ -158,9 +160,47 @@ void main() {
         house('4', ['status']): 'NOBODY_HOME',
         house('4', ['comeBack']): null,
         house('4', ['tries']): 2,
+        house('4', ['calendars']): removed,
         house('4', ['by']): 'paul',
         house('4', ['at']): at(threePm),
       });
+    });
+
+    test('should write one calendar when a house becomes done', () {
+      final nobody = valueOf(
+        lilas.markHouse(n('4'), VisitStatus.nobodyHome, by: lea, at: twoPm),
+      ).$1;
+
+      final update = updateOf(
+        nobody,
+        (s) => s.markHouse(n('4'), VisitStatus.done, by: paul, at: threePm),
+      );
+
+      expect(update[house('4', ['calendars'])], 1);
+    });
+
+    test('should write the calendars and the stamp of one calendar more', () {
+      final update = updateOf(
+        lilas,
+        (s) => s.addCalendar(n('4'), by: paul, at: threePm),
+      );
+
+      expect(update, {
+        house('4', ['calendars']): 2,
+        house('4', ['by']): 'paul',
+        house('4', ['at']): at(threePm),
+      });
+    });
+
+    test('should write the calendars of one calendar less', () {
+      final two = valueOf(lilas.addCalendar(n('4'), by: lea, at: twoPm)).$1;
+
+      final update = updateOf(
+        two,
+        (s) => s.removeCalendar(n('4'), by: paul, at: threePm),
+      );
+
+      expect(update[house('4', ['calendars'])], 1);
     });
 
     test('should write an empty time when a house becomes « repasser »', () {
@@ -226,8 +266,27 @@ void main() {
         door('8', 'A1-12', 'status'): 'DONE',
         door('8', 'A1-12', 'comeBack'): null,
         door('8', 'A1-12', 'tries'): removed,
+        door('8', 'A1-12', 'calendars'): 1,
         door('8', 'A1-12', 'by'): 'lea',
         door('8', 'A1-12', 'at'): at(twoPm),
+      });
+    });
+
+    test('should write the calendars and the stamp of one door', () {
+      final update = updateOf(
+        lilas,
+        (s) => s.addCalendar(
+          n('8'),
+          door: DwellingKey(escA, 1, d('11')),
+          by: paul,
+          at: threePm,
+        ),
+      );
+
+      expect(update, {
+        door('8', 'A1-11', 'calendars'): 4,
+        door('8', 'A1-11', 'by'): 'paul',
+        door('8', 'A1-11', 'at'): at(threePm),
       });
     });
 
@@ -256,6 +315,7 @@ void main() {
         door('8', 'A1-12', 'status'): 'NOBODY_HOME',
         door('8', 'A1-12', 'comeBack'): null,
         door('8', 'A1-12', 'tries'): 2,
+        door('8', 'A1-12', 'calendars'): removed,
         door('8', 'A1-12', 'by'): 'paul',
         door('8', 'A1-12', 'at'): at(threePm),
       });
@@ -330,6 +390,7 @@ void main() {
         house('4', ['status']): 'TO_DO',
         house('4', ['comeBack']): null,
         house('4', ['tries']): removed,
+        house('4', ['calendars']): removed,
         house('4', ['by']): 'paul',
         house('4', ['at']): at(threePm),
         house('4', ['labelStyle']): 'FLOOR_AND_NUMBER',
@@ -371,6 +432,7 @@ void main() {
         'comeBack': null,
         'by': 'lea',
         'at': at(twoPm),
+        'calendars': 3,
       });
       expect(update[house('8', ['dwellings', 'A0-01'])], {
         'status': 'TO_DO',
@@ -406,6 +468,7 @@ void main() {
         house('8', ['status']): 'COME_BACK',
         house('8', ['comeBack']): '2026-11-03T10',
         house('8', ['tries']): removed,
+        house('8', ['calendars']): removed,
         house('8', ['by']): 'paul',
         house('8', ['at']): at(threePm),
         house('8', ['labelStyle']): removed,
@@ -643,6 +706,7 @@ void main() {
         house('4', ['status']): 'DONE',
         house('4', ['comeBack']): null,
         house('4', ['tries']): removed,
+        house('4', ['calendars']): 1,
         house('4', ['by']): 'manu',
         house('4', ['at']): at(fourPm),
       });
@@ -700,6 +764,7 @@ void main() {
         house('4', ['status']): 'DONE',
         house('4', ['comeBack']): null,
         house('4', ['tries']): removed,
+        house('4', ['calendars']): 1,
         house('4', ['by']): 'manu',
         house('4', ['at']): at(fourPm),
         house('4', ['labelStyle']): removed,
@@ -792,8 +857,37 @@ void main() {
           'comeBack': null,
           'by': 'manu',
           'at': at(fourPm),
+          'calendars': 3,
         },
       });
+    });
+
+    test('should put the calendars back when one more is undone', () {
+      final update = undoOf(
+        lilas,
+        (s) => s.addCalendar(n('4'), by: paul, at: threePm),
+      );
+
+      expect(update[house('4', ['calendars'])], 1);
+      expect(update[house('4', ['by'])], 'manu');
+    });
+
+    test('should put the calendars of a door back when one more is '
+        'undone', () {
+      final update = undoOf(
+        lilas,
+        (s) => s.addCalendar(
+          n('8'),
+          door: DwellingKey(escA, 1, d('11')),
+          by: paul,
+          at: threePm,
+        ),
+      );
+
+      expect(
+        (update[house('8', ['dwellings', 'A1-11'])]! as Map)['calendars'],
+        3,
+      );
     });
 
     test('should write a removal again when a restore is undone', () {

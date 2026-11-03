@@ -37,6 +37,7 @@ final shippedReleases = [
       l10n.release0100Picker,
       l10n.release0100Refused,
       l10n.release0100Rounds,
+      l10n.release0100Calendars,
       l10n.release0100Privacy,
     ],
   ),

@@ -188,6 +188,34 @@ void main() {
     );
   });
 
+  test('should leave the count when a done house takes a calendar', () {
+    expect(
+      RoundVisit.of(
+        HouseCalendarsCounted(
+          streetId: _lilas,
+          before: _house(VisitStatus.done),
+          stamp: leaAtTwo,
+          calendars: calendars(2),
+        ),
+      ),
+      RoundVisit.none,
+    );
+    expect(
+      RoundVisit.of(
+        DwellingCalendarsCounted(
+          streetId: _lilas,
+          number: n('8'),
+          staircase: escA,
+          level: 5,
+          before: _door(VisitStatus.done),
+          stamp: leaAtTwo,
+          calendars: calendars(2),
+        ),
+      ),
+      RoundVisit.none,
+    );
+  });
+
   test('should turn a count around when the change is undone', () {
     expect(RoundVisit.visited.undone, RoundVisit.unvisited);
     expect(RoundVisit.unvisited.undone, RoundVisit.visited);

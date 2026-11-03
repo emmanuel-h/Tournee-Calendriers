@@ -37,7 +37,7 @@ final _id = StreetId('lilas');
 
 /// 3 changed by Paul yesterday evening, nobody home once; 5 to come back
 /// Saturday 7 at 19 h; 7 never changed; 8 a building; 13 to come back after
-/// nobody was home twice.
+/// nobody was home twice; 11 done, with two calendars.
 final _yesterday = DateTime(2026, 11, 1, 18, 30);
 final _houses = [
   House(
@@ -53,6 +53,7 @@ final _houses = [
   House(number: n('7')),
   House(number: n('8'), building: building(topFloor: 0, doors: 2)),
   House(number: n('13'), status: VisitStatus.comeBack, tries: tries(2)),
+  House(number: n('11'), status: VisitStatus.done, calendars: calendars(2)),
 ];
 
 Street _street() => valueOf(
@@ -856,6 +857,110 @@ void main() {
       expect(houseNow('3').lastChange, houseBefore('3').lastChange);
       expect(rounds.openRound!.housesVisited, 1);
       expect(rounds.openRound!.donations, [cash(500), offered]);
+    });
+  });
+
+  group('calendars', () {
+    /// The phone of [_street] with the 49 open and its tournée on, 2 dons
+    /// in it.
+    void duringRound() => phoneWith(
+      _street(),
+      open: sector49,
+      round: Round.restore(
+        id: roundId,
+        sector: sector49Id,
+        campaign: year2026,
+        startedAt: startedAt,
+        housesVisited: 1,
+        donations: [cash(500), offered],
+      ),
+    );
+
+    test('should show the calendars of a house done', () async {
+      phoneWith(_street());
+      open('11');
+
+      expect((await shown('11')).calendars, 2);
+    });
+
+    test('should show no calendar on a house not done', () async {
+      phoneWith(_street());
+      open('7');
+
+      expect((await shown('7')).calendars, 0);
+    });
+
+    test('should add the don and one calendar to the house, and say '
+        'both', () async {
+      duringRound();
+      open('11');
+      await shown('11');
+
+      final given = await notifier('11').addDonation(cheque(2000));
+
+      final change = HouseCalendarsCounted(
+        streetId: _id,
+        before: houseBefore('11'),
+        stamp: leaAtTwo,
+        calendars: calendars(3),
+      );
+      expect(
+        given,
+        GivenDonation(index: 2, donation: cheque(2000), calendar: change),
+      );
+      expect(rounds.openRound!.donations, [cash(500), offered, cheque(2000)]);
+      expect(houseNow('11').calendars, calendars(3));
+      expect((await shown('11')).calendars, 3);
+    });
+
+    test('should add no calendar when no tournée is on', () async {
+      phoneWith(_street(), open: sector49);
+      open('11');
+      await shown('11');
+
+      expect(await notifier('11').addDonation(cash(1000)), isNull);
+      expect(houseNow('11'), houseBefore('11'));
+    });
+
+    test('should take one calendar away with « − », the dons as they '
+        'were', () async {
+      duringRound();
+      open('11');
+      await shown('11');
+
+      await notifier('11').removeCalendar();
+
+      expect(houseNow('11').calendars, calendars(1));
+      expect(houseNow('11').lastChange, leaAtTwo);
+      expect(rounds.openRound!.donations, [cash(500), offered]);
+      expect((await shown('11')).calendars, 1);
+    });
+
+    test('should store nothing when « − » is tapped at one calendar', () async {
+      phoneWith(_street());
+      open('11');
+      await shown('11');
+      final sheet = notifier('11');
+      await sheet.removeCalendar();
+
+      await sheet.removeCalendar();
+
+      expect(houseNow('11').calendars, calendars(1));
+      expect(streets.saved, hasLength(1));
+    });
+
+    test('should store nothing when the house is gone', () async {
+      phoneWith(_street());
+      open('11');
+      await shown('11');
+      final (gone, change) = valueOf(
+        streets[_id]!.removeNumber(n('11'), by: lea, at: twoPm),
+      );
+      await streets.save(gone, change);
+
+      await notifier('11').removeCalendar();
+
+      expect(streets.saved, hasLength(1));
     });
   });
 }

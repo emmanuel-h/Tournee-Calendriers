@@ -76,6 +76,7 @@ final class BuildingGridNotifier extends Notifier<BuildingGridState>
                     key: DwellingKey(shown.name, floor.level, dwelling.label),
                     mark: TileMark.ofDwelling(dwelling),
                     tries: shownTries(dwelling.tries),
+                    calendars: shownCalendars(dwelling.calendars),
                   ),
               ],
             ),

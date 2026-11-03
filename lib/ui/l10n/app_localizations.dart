@@ -316,6 +316,18 @@ abstract class AppLocalizations {
   /// **'Valider'**
   String get statusPickerValidate;
 
+  /// How many calendars a house or door done took, in its status picker (#114, RunStreet mockup), and at the end of the screen-reader label of a tile or door with two or more: « Numéro 9, fait, 2 calendriers ».
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, one{{count} calendrier} other{{count} calendriers}}'**
+  String houseCalendars(int count);
+
+  /// Screen-reader name and tooltip of the « − » beside « 2 calendriers » in the status picker (#114); disabled at one calendar. Never changes a don.
+  ///
+  /// In fr, this message translates to:
+  /// **'Un calendrier de moins'**
+  String get removeCalendar;
+
   /// Screen-reader name and tooltip of the ✕ of the status picker: closes it, nothing more stored.
   ///
   /// In fr, this message translates to:
@@ -1755,6 +1767,12 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Confidentialité : le texte dit aussi ce qui est gardé des tournées, des dons et des calendriers.'**
   String get release0100Privacy;
+
+  /// Line of « Nouveautés » for 0.10.0: calendars per house, the « − » and the badge (#114).
+  ///
+  /// In fr, this message translates to:
+  /// **'Une maison faite garde son nombre de calendriers : « + Ajouter un don » en ajoute un, « − » en retire un, et la tuile affiche le nombre à partir de 2.'**
+  String get release0100Calendars;
 
   /// Line of « Nouveautés » for 0.10.0: the tournées on screen (#109).
   ///
