@@ -68,7 +68,7 @@ their old names) and the outing is `Round` (#116, #115); status picker instead o
 ⊘ (#113); tournées with their dons, kept in `open_round.json` until validated, then a create-only summary under
 `campaigns/{year}/rounds/` without its member (#108–#110); calendars per ✓ house (#114); « Collecte 2026 » in
 Équipe (#111); privacy text drafted by Claude for the user's review (#112). No data migration: the old
-`tournees`, `tourneeKeys`, `joinCodes` were deleted (single user) and the test secteurs are created again.
+`tournees`, `tourneeKeys`, `joinCodes` were deleted (single user) and the test secteurs are created again. Rules deployed 2026-11-03 (the user).
 
 ## Commands
 
