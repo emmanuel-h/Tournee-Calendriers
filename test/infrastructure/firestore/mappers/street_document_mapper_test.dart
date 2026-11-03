@@ -190,6 +190,7 @@ void main() {
     test('should write each status under its stored name', () {
       expect(statusName(VisitStatus.toDo), 'TO_DO');
       expect(statusName(VisitStatus.done), 'DONE');
+      expect(statusName(VisitStatus.refused), 'REFUSED');
       expect(statusName(VisitStatus.nobodyHome), 'NOBODY_HOME');
       expect(statusName(VisitStatus.comeBack), 'COME_BACK');
     });
@@ -480,6 +481,34 @@ void main() {
       );
 
       expect(street.houseAt(n('1'))!.tries.count, 0);
+    });
+
+    test('should read a refused house without the tries left on it', () {
+      final street = read(
+        storedRich((data) {
+          (housesOf(data)['5'] as Map<String, dynamic>)['status'] = 'REFUSED';
+        }),
+      );
+
+      final five = street.houseAt(n('5'))!;
+      expect(five.status, VisitStatus.refused);
+      expect(five.tries.count, 0);
+    });
+
+    test('should read a refused door', () {
+      final street = read(
+        storedRich((data) {
+          ((eight(data)['dwellings'] as Map<String, dynamic>)['A1-11']
+                  as Map<String, dynamic>)['status'] =
+              'REFUSED';
+        }),
+      );
+
+      final door = street
+          .houseAt(n('8'))!
+          .building!
+          .dwellingAt(DwellingKey(escA, 1, d('11')));
+      expect(door!.status, VisitStatus.refused);
     });
 
     test('should read a time in UTC', () {

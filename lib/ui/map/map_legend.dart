@@ -96,6 +96,7 @@ final class _MapLegendState extends State<MapLegend> {
       widget.houses
       ? [
           (_dot(HouseDotStatus.done, colors), l10n.tileStatusDone),
+          (_dot(HouseDotStatus.refused, colors), l10n.tileStatusRefused),
           (_dot(HouseDotStatus.nobodyHome, colors), l10n.tileStatusNobodyHome),
           (_dot(HouseDotStatus.comeBack, colors), l10n.tileStatusComeBack),
           (_dot(HouseDotStatus.toDo, colors), l10n.tileStatusToDo),

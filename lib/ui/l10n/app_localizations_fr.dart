@@ -43,6 +43,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get tileStatusDone => 'fait';
 
   @override
+  String get tileStatusRefused => 'refusé';
+
+  @override
   String get tileStatusNobodyHome => 'personne';
 
   @override
@@ -68,6 +71,9 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get statusDone => 'Fait';
+
+  @override
+  String get statusRefused => 'Refusé';
 
   @override
   String get statusNobodyHome => 'Personne';
@@ -167,10 +173,17 @@ class AppLocalizationsFr extends AppLocalizations {
   String streetCountsSemantics(
     int done,
     int total,
+    int refused,
     int nobodyHome,
     int comeBack,
   ) {
-    return '$done sur $total faits, $nobodyHome personne, $comeBack à repasser';
+    String _temp0 = intl.Intl.pluralLogic(
+      refused,
+      locale: localeName,
+      other: '$refused refusés',
+      one: '$refused refusé',
+    );
+    return '$done sur $total faits, $_temp0, $nobodyHome personne, $comeBack à repasser';
   }
 
   @override
@@ -1221,6 +1234,10 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get release0100Picker =>
       'Rue : touchez une maison ou une porte, puis choisissez son statut. Plus de cycle ni d\'appui long.';
+
+  @override
+  String get release0100Refused =>
+      'Nouveau statut « Refusé » pour une maison ou une porte qui ne veut pas de calendrier : elle compte comme faite.';
 
   @override
   String get release0100Privacy =>

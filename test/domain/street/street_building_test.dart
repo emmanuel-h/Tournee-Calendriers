@@ -684,6 +684,65 @@ void main() {
       expect(change.comeBack, isNull);
     });
 
+    test('should make a building whose doors are all refused a refused '
+        'house', () {
+      final street = _street([
+        House(
+          number: n('8'),
+          building: building(topFloor: 0, doors: 2)
+              .withDwelling(
+                escA,
+                0,
+                Dwelling(label: d('01'), status: VisitStatus.refused),
+              )
+              .withDwelling(
+                escA,
+                0,
+                Dwelling(label: d('02'), status: VisitStatus.refused),
+              ),
+        ),
+      ]);
+
+      final (changed, change) = valueOf(
+        street.removeBuilding(n('8'), by: lea, at: twoPm),
+      );
+
+      expect(
+        changed.houses.single,
+        House(
+          number: n('8'),
+          status: VisitStatus.refused,
+          lastChange: leaAtTwo,
+        ),
+      );
+      expect(change.status, VisitStatus.refused);
+    });
+
+    test('should make a building of doors done or refused a done house', () {
+      final street = _street([
+        House(
+          number: n('8'),
+          building: building(topFloor: 0, doors: 2)
+              .withDwelling(
+                escA,
+                0,
+                Dwelling(label: d('01'), status: VisitStatus.done),
+              )
+              .withDwelling(
+                escA,
+                0,
+                Dwelling(label: d('02'), status: VisitStatus.refused),
+              ),
+        ),
+      ]);
+
+      final (changed, _) = valueOf(
+        street.removeBuilding(n('8'), by: lea, at: twoPm),
+      );
+
+      expect(changed.houses.single.status, VisitStatus.done);
+    });
+
     test('should make a building where nobody was home a house to do', () {
       final street = _street([
         House(

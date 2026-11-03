@@ -19,6 +19,7 @@ final class ComponentGalleryScreen extends StatelessWidget {
   static const _tiles = [
     ('1', ToDoTile(), false),
     ('3', DoneTile(), false),
+    ('9', RefusedTile(), false),
     ('3bis', NobodyHomeTile(), false),
     ('5', ComeBackTile(), false),
     ('8', BuildingPartialTile(done: 7, total: 12), true),

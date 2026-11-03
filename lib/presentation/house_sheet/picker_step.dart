@@ -20,5 +20,8 @@ enum PickerStep {
 /// for nothing more.
 PickerStep? stepAfter(VisitStatus status) => switch (status) {
   VisitStatus.comeBack => PickerStep.comeBackTime,
-  VisitStatus.toDo || VisitStatus.done || VisitStatus.nobodyHome => null,
+  VisitStatus.toDo ||
+  VisitStatus.done ||
+  VisitStatus.refused ||
+  VisitStatus.nobodyHome => null,
 };

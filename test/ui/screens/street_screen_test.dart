@@ -126,7 +126,7 @@ void main() {
       expect(find.byKey(const Key('street.hint')), findsNothing);
       expect(
         labelOf(tester, find.byKey(const Key('street.counts'))),
-        '4 sur 9 faits, 1 personne, 1 à repasser',
+        '4 sur 9 faits, 0 refusé, 1 personne, 1 à repasser',
       );
 
       // The next house: the snackbar of the first goes as its picker opens.
@@ -139,7 +139,23 @@ void main() {
       expect(findArrowText('N° 7\u00a0: personne'), findsOneWidget);
       expect(
         labelOf(tester, find.byKey(const Key('street.counts'))),
-        '4 sur 9 faits, 2 personne, 1 à repasser',
+        '4 sur 9 faits, 0 refusé, 2 personne, 1 à repasser',
+      );
+
+      // A refusal counts with the done houses, and apart.
+      await tester.tap(_tile('1'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('house.status.refused')));
+      await tester.pumpAndSettle();
+
+      expect(
+        labelOf(tester, _tile('1')),
+        'Numéro 1, refusé, changer le statut',
+      );
+      expect(findArrowText('N° 1\u00a0: refusé'), findsOneWidget);
+      expect(
+        labelOf(tester, find.byKey(const Key('street.counts'))),
+        '4 sur 9 faits, 1 refusé, 2 personne, 1 à repasser',
       );
       semantics.dispose();
     },
@@ -236,7 +252,7 @@ void main() {
       // The counts still cover the whole street.
       expect(
         labelOf(tester, find.byKey(const Key('street.counts'))),
-        '3 sur 9 faits, 1 personne, 1 à repasser',
+        '3 sur 9 faits, 0 refusé, 1 personne, 1 à repasser',
       );
       expect(
         tester.getSemantics(toggle).flagsCollection.isToggled.toBoolOrNull(),

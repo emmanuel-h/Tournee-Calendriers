@@ -138,7 +138,7 @@ final class StreetCardInSector extends StreetCard {
       id: street.id,
       name: street.name.text,
       commune: street.commune.name,
-      done: progress.done,
+      done: progress.visited,
       total: progress.total,
       coverage: assignees.isEmpty
           ? StreetCoverage.free
@@ -160,7 +160,7 @@ final class StreetCardInSector extends StreetCard {
   final String name;
   final String commune;
 
-  /// Doors done, out of [total].
+  /// Doors visited (done or refused), out of [total].
   final int done;
   final int total;
 

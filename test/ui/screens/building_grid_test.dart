@@ -176,6 +176,29 @@ void main() {
     },
   );
 
+  testWidgets('should store « Refusé » on a door, counted with the done ones', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    await openStreet(tester);
+    await tester.tap(_tile('8'));
+    await tester.pumpAndSettle();
+
+    await markDoor(tester, 'A1-12', VisitStatus.refused);
+
+    expect(
+      labelOf(tester, _door('A1-12')),
+      'Escalier A, 1er, porte 12, refusé',
+    );
+    expect(labelOf(tester, _count), '3 sur 8 logements faits');
+    expect(findArrowText('Porte 12\u00a0: refusé'), findsOneWidget);
+    expect(
+      storedDoor(DwellingKey(escA, 1, d('12'))).status,
+      VisitStatus.refused,
+    );
+    semantics.dispose();
+  });
+
   testWidgets(
     'should show the floors of the other staircase when it is chosen, and '
     'name the staircase in the picker of its door',

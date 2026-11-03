@@ -71,7 +71,7 @@ final class StreetListNotifier extends Notifier<StreetListState> {
               StreetRow(
                 id: street.id,
                 name: street.name.text,
-                done: progress.done,
+                done: progress.visited,
                 total: progress.total,
               ),
       ],

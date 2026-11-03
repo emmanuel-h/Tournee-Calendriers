@@ -18,16 +18,17 @@ sealed class TileMark {
 
   /// The mark of [house]:
   /// - a single house shows its status;
-  /// - a building shows its derived status: done when every door is,
-  ///   `◐ done/total` when some are, and to do (or ↻ with its own
-  ///   « repasser ») when none is. Doors « repasser » are not done: a
-  ///   building whose doors all are shows ○, its grid shows them ↻.
+  /// - a building shows its derived status: done when every door is
+  ///   visited (done or refused), `◐ visited/total` when some are, and to
+  ///   do (or ↻ with its own « repasser ») when none is. Doors
+  ///   « repasser » are not visited: a building whose doors all are shows
+  ///   ○, its grid shows them ↻.
   static TileMark of(House house) => switch (house.building) {
     null => _ofStatus(house.status),
     final Building building => switch (building.status) {
       BuildingStatus.done => const DoneMark(),
       BuildingStatus.partial => PartialBuildingMark(
-        done: building.progress.done,
+        done: building.progress.visited,
         total: building.progress.total,
       ),
       BuildingStatus.toDo =>
@@ -42,6 +43,7 @@ sealed class TileMark {
   static TileMark _ofStatus(VisitStatus status) => switch (status) {
     VisitStatus.toDo => const ToDoMark(),
     VisitStatus.done => const DoneMark(),
+    VisitStatus.refused => const RefusedMark(),
     VisitStatus.nobodyHome => const NobodyHomeMark(),
     VisitStatus.comeBack => const ComeBackMark(),
   };
@@ -57,6 +59,11 @@ final class DoneMark extends TileMark {
   const DoneMark();
 }
 
+/// ⊘ The calendar was refused (#113).
+final class RefusedMark extends TileMark {
+  const RefusedMark();
+}
+
 /// ✗ Nobody answered.
 final class NobodyHomeMark extends TileMark {
   const NobodyHomeMark();
@@ -67,7 +74,8 @@ final class ComeBackMark extends TileMark {
   const ComeBackMark();
 }
 
-/// ◐ A building where [done] of its [total] doors are done.
+/// ◐ A building where [done] of its [total] doors are visited (done or
+/// refused).
 final class PartialBuildingMark extends TileMark {
   const PartialBuildingMark({required this.done, required this.total});
 
@@ -182,6 +190,7 @@ final class StreetShown extends StreetViewState {
     required this.name,
     required this.done,
     required this.total,
+    required this.refused,
     required this.nobodyHome,
     required this.comeBack,
     required this.hideDone,
@@ -193,15 +202,19 @@ final class StreetShown extends StreetViewState {
 
   final String name;
 
-  /// Header counts « 31/42 · ✗ 3 · ↻ 1 »: doors done, doors (a building
-  /// counts its doors), nobody home, places to come back to (doors
-  /// « repasser » and buildings with their own). Whatever is hidden.
+  /// Header counts « 31/42 · ⊘ 2 · ✗ 3 · ↻ 1 »: doors visited (done or
+  /// refused, PLAN §5.6), doors (a building counts its doors), refused,
+  /// nobody home, places to come back to (doors « repasser » and
+  /// buildings with their own). Whatever is hidden.
   final int done;
   final int total;
+  final int refused;
   final int nobodyHome;
   final int comeBack;
 
-  /// « Masquer faits » is on: [odd] and [even] leave out the done tiles.
+  /// « Masquer faits » is on: [odd] and [even] leave out the done tiles,
+  /// the refused ones with them (counted in « 31/42 », nothing left to do
+  /// there).
   final bool hideDone;
   final StreetColumns columns;
 

@@ -43,6 +43,13 @@ final class HouseDotLook {
           glyph: StatusGlyphs.done,
           glyphColor: colors.onDone,
         ),
+        HouseDotStatus.refused => HouseDotLook(
+          fill: colors.refused,
+          border: colors.refusedBorder,
+          dashed: false,
+          glyph: StatusGlyphs.refused,
+          glyphColor: colors.onRefused,
+        ),
         HouseDotStatus.nobodyHome => HouseDotLook(
           fill: colors.nobodyHome,
           border: colors.nobodyHomeBorder,

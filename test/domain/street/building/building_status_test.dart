@@ -11,6 +11,7 @@ const _done = VisitStatus.done;
 const _toDo = VisitStatus.toDo;
 const _nobody = VisitStatus.nobodyHome;
 const _comeBack = VisitStatus.comeBack;
+const _refused = VisitStatus.refused;
 
 void main() {
   final cases = <String, (List<VisitStatus>, BuildingStatus)>{
@@ -36,6 +37,19 @@ void main() {
       BuildingStatus.partial,
     ),
     'it has no door': (<VisitStatus>[], BuildingStatus.toDo),
+    'every door is done or refused': (
+      [_done, _refused, _refused],
+      BuildingStatus.done,
+    ),
+    'every door is refused': ([_refused, _refused], BuildingStatus.done),
+    'one door is refused, the others to do': (
+      [_toDo, _refused, _toDo],
+      BuildingStatus.partial,
+    ),
+    'all doors but one are refused': (
+      [_refused, _nobody],
+      BuildingStatus.partial,
+    ),
   };
   cases.forEach((when, expected) {
     test('should be ${expected.$2.name} when $when', () {

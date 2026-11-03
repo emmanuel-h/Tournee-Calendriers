@@ -128,6 +128,23 @@ void main() {
     expect(state.rows.last.done, 1);
   });
 
+  test('should count the refused houses of a street as visited', () async {
+    final (refusing, _) = valueOf(
+      _street(
+        'a',
+        'Rue A',
+        done: 1,
+        total: 3,
+      ).markHouse(n('3'), VisitStatus.refused, by: lea, at: twoPm),
+    );
+    containerWith([refusing]);
+
+    final state = await settled();
+
+    expect(state.rows.single.done, 2);
+    expect(state.rows.single.total, 3);
+  });
+
   test('should name each commune once, in French order', () async {
     final other = valueOf(Commune.create(inseeCode: '69265', name: 'Ébène'));
     containerWith([

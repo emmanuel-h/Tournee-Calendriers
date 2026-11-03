@@ -35,6 +35,7 @@ final shippedReleases = [
     notes: (l10n) => [
       l10n.release0100Sector,
       l10n.release0100Picker,
+      l10n.release0100Refused,
       l10n.release0100Privacy,
     ],
   ),

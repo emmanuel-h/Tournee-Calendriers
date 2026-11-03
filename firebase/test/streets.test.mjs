@@ -486,6 +486,7 @@ describe('filling the shape', () => {
 describe('marking a house', () => {
   it('should accept the status, the time and the stamp of the caller', async () => {
     await assertSucceeds(updateFields(nationale(), mark('4bis', 'DONE', null)));
+    await assertSucceeds(updateFields(nationale(), mark('4bis', 'REFUSED', null)));
     await assertSucceeds(updateFields(nationale(), mark('4bis', 'NOBODY_HOME', null)));
     await assertSucceeds(updateFields(nationale(), mark('4bis', 'COME_BACK', '')));
     await assertSucceeds(updateFields(nationale(), mark('4bis', 'TO_DO', null)));
@@ -514,13 +515,20 @@ describe('marking a house', () => {
     );
   });
 
-  it('should refuse a status that is not one of the four', async () => {
-    await assertFails(updateFields(nationale(), mark('4bis', 'REFUSED', null)));
+  it('should refuse a status that is not one of the five', async () => {
+    await assertFails(updateFields(nationale(), mark('4bis', 'GONE', null)));
     await assertFails(updateFields(nationale(), mark('4bis', 'done', null)));
+    await assertFails(updateFields(nationale(), mark('4bis', 'refused', null)));
+    await assertFails(updateFields(nationale(), mark('4bis', 'REFUSED_', null)));
   });
 
   it('should refuse a time on a house that is not « repasser »', async () => {
     await assertFails(updateFields(nationale(), mark('4bis', 'DONE', '2026-11-07')));
+  });
+
+  it('should refuse a come-back on a refused house, even without a time', async () => {
+    await assertFails(updateFields(nationale(), mark('4bis', 'REFUSED', '2026-11-07')));
+    await assertFails(updateFields(nationale(), mark('4bis', 'REFUSED', '')));
   });
 
   it('should refuse « repasser » without its time field', async () => {
@@ -647,6 +655,28 @@ describe('tries with nobody home', () => {
     );
   });
 
+  it('should accept the tries removed when the house is refused', async () => {
+    await updateFields(nationale(), markWithTries('4bis', 'NOBODY_HOME', 3));
+
+    await assertSucceeds(
+      updateFields(nationale(), markWithTries('4bis', 'REFUSED', deleteField())),
+    );
+  });
+
+  it('should accept the tries of a door removed when it is refused', async () => {
+    await updateFields(nationale(), [
+      ...doorMark('A0-Gauche', 'NOBODY_HOME', null),
+      [['houses', '8', 'dwellings', 'A0-Gauche', 'tries'], 2],
+    ]);
+
+    await assertSucceeds(
+      updateFields(nationale(), [
+        ...doorMark('A0-Gauche', 'REFUSED', null),
+        [['houses', '8', 'dwellings', 'A0-Gauche', 'tries'], deleteField()],
+      ]),
+    );
+  });
+
   it('should accept 99 tries and refuse 0, 100 or tries that are not a whole number', async () => {
     await assertSucceeds(updateFields(nationale(), markWithTries('4bis', 'DONE', 99)));
     for (const tries of [0, 100, -1, 1.5, '2', null]) {
@@ -733,8 +763,27 @@ describe('a building', () => {
     );
   });
 
-  it('should refuse a door status that is not one of the four', async () => {
+  it('should refuse a door status that is not one of the five', async () => {
     await assertFails(updateFields(nationale(), doorMark('A0-Gauche', 'GONE', null)));
+  });
+
+  it('should accept a refused door and refuse a come-back on it', async () => {
+    await assertSucceeds(updateFields(nationale(), doorMark('A0-Gauche', 'REFUSED', null)));
+    await assertFails(updateFields(nationale(), doorMark('A0-Gauche', 'REFUSED', '')));
+    await assertFails(
+      updateFields(nationale(), doorMark('A0-Gauche', 'REFUSED', '2026-11-07T18')),
+    );
+  });
+
+  it('should accept a refused door put back whole by an undo', async () => {
+    await assertSucceeds(
+      updateFields(nationale(), [
+        [
+          ['houses', '8', 'dwellings', 'A0-Gauche'],
+          doorEntry({ status: 'REFUSED', by: lea, at: threePm }),
+        ],
+      ]),
+    );
   });
 
   it('should refuse two doors marked in one write', async () => {

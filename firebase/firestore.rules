@@ -396,11 +396,14 @@ service cloud.firestore {
       return ['labelStyle', 'layout', 'dwellings'];
     }
 
-    // The four statuses, under the names the mapper stores. A pattern
-    // rather than `in [list]`: each item of a list is an expression
-    // evaluated, and a write of new houses checks several (housesPerWrite).
+    // The five statuses, under the names the mapper stores; `REFUSED`
+    // (« Refusé », #113) needs no rule of its own: like any status but
+    // `COME_BACK` it has no time (hasMarks), and the app removes its tries.
+    // A pattern rather than `in [list]`: each item of a list is an
+    // expression evaluated, and a write of new houses checks several
+    // (housesPerWrite).
     function isStatus(status) {
-      return status is string && status.matches('TO_DO|DONE|NOBODY_HOME|COME_BACK');
+      return status is string && status.matches('TO_DO|DONE|REFUSED|NOBODY_HOME|COME_BACK');
     }
 
     // When to come back (ComeBack, #81, come_back_text.dart): "" for no

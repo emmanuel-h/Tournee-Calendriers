@@ -10,6 +10,7 @@ void main() {
   for (final status in [
     VisitStatus.toDo,
     VisitStatus.done,
+    VisitStatus.refused,
     VisitStatus.nobodyHome,
   ]) {
     test('should close the picker after $status', () {

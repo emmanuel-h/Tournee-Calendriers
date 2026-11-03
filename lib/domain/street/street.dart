@@ -538,9 +538,10 @@ final class Street {
 
   /// Turns the building at [number] back into a single house, as [by] at
   /// [at] (« or back to a single house », PLAN §5.5). Its doors are
-  /// dropped (the screen asks first); the house is done when every door
-  /// was done; otherwise it is « repasser », with its time, when the
-  /// building had its own « repasser », and to do when not.
+  /// dropped (the screen asks first); the house is refused when every door
+  /// was refused, done when every door was visited (done or refused);
+  /// otherwise it is « repasser », with its time, when the building had its
+  /// own « repasser », and to do when not.
   Result<(Street, BuildingRemoved), BuildingChangeFailure> removeBuilding(
     HouseNumber number, {
     required MemberId by,
@@ -553,7 +554,10 @@ final class Street {
       // building) pair out of the `Ok` in one step.
       case Ok(value: (final index, final building)):
         final before = houses[index];
+        final progress = building.progress;
         final status = switch (building.status) {
+          BuildingStatus.done when progress.refused == progress.total =>
+            VisitStatus.refused,
           BuildingStatus.done => VisitStatus.done,
           BuildingStatus.partial || BuildingStatus.toDo =>
             before.comeBack == null ? VisitStatus.toDo : VisitStatus.comeBack,

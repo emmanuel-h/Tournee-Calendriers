@@ -1,10 +1,11 @@
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
 /// How far a street (or any group of doors) has got: how many doors are
-/// [done], [nobodyHome], [comeBack] (« repasser ») or still [toDo]. The
-/// street header shows it as « 31/42 · ✗ 3 · ↻ 1 » (PLAN §5.6).
+/// [done], [refused], [nobodyHome], [comeBack] (« repasser ») or still
+/// [toDo]. The street header shows it as « 31/42 · ⊘ 2 · ✗ 3 · ↻ 1 »
+/// (PLAN §5.6), where 31 is [visited]: done and refused together.
 ///
-/// Every door has exactly one status, so [total] is the sum of the four
+/// Every door has exactly one status, so [total] is the sum of the five
 /// door counts. A building's own « repasser » (« Repasser » under its grid)
 /// is not a door: it is counted apart, in [buildingComeBacks], and joins
 /// the doors in the header's ↻ ([toComeBack]).
@@ -15,6 +16,7 @@ import 'package:tournee_calendriers/domain/street/visit_status.dart';
 final class Progress {
   const Progress._({
     required this.done,
+    required this.refused,
     required this.nobodyHome,
     required this.comeBack,
     required this.toDo,
@@ -24,6 +26,7 @@ final class Progress {
   /// No door at all; the starting point of a sum.
   static const empty = Progress._(
     done: 0,
+    refused: 0,
     nobodyHome: 0,
     comeBack: 0,
     toDo: 0,
@@ -34,6 +37,7 @@ final class Progress {
   /// to in the street's ↻, but no door added to [total].
   static const buildingComeBack = Progress._(
     done: 0,
+    refused: 0,
     nobodyHome: 0,
     comeBack: 0,
     toDo: 0,
@@ -43,6 +47,7 @@ final class Progress {
   /// The progress of one door with [status].
   factory Progress.of(VisitStatus status) => Progress._(
     done: status == VisitStatus.done ? 1 : 0,
+    refused: status == VisitStatus.refused ? 1 : 0,
     nobodyHome: status == VisitStatus.nobodyHome ? 1 : 0,
     comeBack: status == VisitStatus.comeBack ? 1 : 0,
     toDo: status == VisitStatus.toDo ? 1 : 0,
@@ -50,6 +55,9 @@ final class Progress {
   );
 
   final int done;
+
+  /// The doors « refusé »: visited, no calendar wanted.
+  final int refused;
   final int nobodyHome;
 
   /// The doors « repasser ».
@@ -60,22 +68,28 @@ final class Progress {
   final int buildingComeBacks;
 
   /// Every door counted, whatever its status.
-  int get total => done + nobodyHome + comeBack + toDo;
+  int get total => done + refused + nobodyHome + comeBack + toDo;
+
+  /// The doors the team is through with: done or refused (PLAN §5.6). The
+  /// « 31 » of « 31/42 », and what makes a street « faite » on the map.
+  /// Doors where nobody was home, or to come back to, are still to visit.
+  int get visited => done + refused;
 
   /// The header's ↻: every place to come back to, doors « repasser » and
   /// buildings with their own « repasser ».
   int get toComeBack => comeBack + buildingComeBacks;
 
-  /// The share of the doors done, in whole percent (« Équipe : 41 % »,
-  /// PLAN §5.3); 0 without any door.
+  /// The share of the doors [visited], in whole percent (« Équipe :
+  /// 41 % », PLAN §5.3); 0 without any door.
   ///
-  /// Rounded down, so 100 % means every door is done: 199 of 200 is 99,
+  /// Rounded down, so 100 % means every door is visited: 199 of 200 is 99,
   /// not a 100 that would tell the team it has finished.
-  int get donePercent => total == 0 ? 0 : done * 100 ~/ total;
+  int get visitedPercent => total == 0 ? 0 : visited * 100 ~/ total;
 
   /// The progress of both groups together.
   Progress operator +(Progress other) => Progress._(
     done: done + other.done,
+    refused: refused + other.refused,
     nobodyHome: nobodyHome + other.nobodyHome,
     comeBack: comeBack + other.comeBack,
     toDo: toDo + other.toDo,
@@ -86,6 +100,7 @@ final class Progress {
   bool operator ==(Object other) =>
       other is Progress &&
       other.done == done &&
+      other.refused == refused &&
       other.nobodyHome == nobodyHome &&
       other.comeBack == comeBack &&
       other.toDo == toDo &&
@@ -93,10 +108,11 @@ final class Progress {
 
   @override
   int get hashCode =>
-      Object.hash(done, nobodyHome, comeBack, toDo, buildingComeBacks);
+      Object.hash(done, refused, nobodyHome, comeBack, toDo, buildingComeBacks);
 
   @override
   String toString() =>
-      'Progress(done: $done, nobodyHome: $nobodyHome, comeBack: $comeBack, '
+      'Progress(done: $done, refused: $refused, nobodyHome: $nobodyHome, '
+      'comeBack: $comeBack, '
       'toDo: $toDo, buildingComeBacks: $buildingComeBacks, total: $total)';
 }

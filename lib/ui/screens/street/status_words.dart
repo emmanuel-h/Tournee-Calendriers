@@ -11,6 +11,7 @@ import 'package:tournee_calendriers/ui/theme/status_look.dart';
 TileStatus tileStatusOf(TileMark mark) => switch (mark) {
   ToDoMark() => const ToDoTile(),
   DoneMark() => const DoneTile(),
+  RefusedMark() => const RefusedTile(),
   NobodyHomeMark() => const NobodyHomeTile(),
   ComeBackMark() => const ComeBackTile(),
   PartialBuildingMark(:final done, :final total) => BuildingPartialTile(
@@ -23,6 +24,7 @@ TileStatus tileStatusOf(TileMark mark) => switch (mark) {
 TileStatus tileStatusFor(VisitStatus status) => switch (status) {
   VisitStatus.toDo => const ToDoTile(),
   VisitStatus.done => const DoneTile(),
+  VisitStatus.refused => const RefusedTile(),
   VisitStatus.nobodyHome => const NobodyHomeTile(),
   VisitStatus.comeBack => const ComeBackTile(),
 };
@@ -31,9 +33,10 @@ TileStatus tileStatusFor(VisitStatus status) => switch (status) {
 String spokenMark(AppLocalizations l10n, TileMark mark) => switch (mark) {
   ToDoMark() => l10n.tileStatusToDo,
   DoneMark() => l10n.tileStatusDone,
+  RefusedMark() => l10n.tileStatusRefused,
   NobodyHomeMark() => l10n.tileStatusNobodyHome,
   ComeBackMark() => l10n.tileStatusComeBack,
-  // A door is never a building: its look is one of the four above.
+  // A door is never a building: its look is one of the five above.
   PartialBuildingMark() => l10n.tileStatusToDo,
 };
 
@@ -42,6 +45,7 @@ String spokenStatus(AppLocalizations l10n, VisitStatus status) =>
     switch (status) {
       VisitStatus.toDo => l10n.tileStatusToDo,
       VisitStatus.done => l10n.tileStatusDone,
+      VisitStatus.refused => l10n.tileStatusRefused,
       VisitStatus.nobodyHome => l10n.tileStatusNobodyHome,
       VisitStatus.comeBack => l10n.tileStatusComeBack,
     };
@@ -52,6 +56,7 @@ String statusName(AppLocalizations l10n, VisitStatus status) =>
     switch (status) {
       VisitStatus.toDo => l10n.statusToDo,
       VisitStatus.done => l10n.statusDone,
+      VisitStatus.refused => l10n.statusRefused,
       VisitStatus.nobodyHome => l10n.statusNobodyHome,
       VisitStatus.comeBack => l10n.statusComeBack,
     };

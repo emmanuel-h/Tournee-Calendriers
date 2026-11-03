@@ -1,7 +1,7 @@
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 
 /// One row of « Mes rues »: a street's name and how many of its doors are
-/// done (« 31/403 »).
+/// visited, done or refused (« 31/403 »).
 final class StreetRow {
   const StreetRow({
     required this.id,
@@ -14,11 +14,12 @@ final class StreetRow {
   final StreetId id;
   final String name;
 
-  /// Doors done (a building counts its dwellings), out of [total].
+  /// Doors visited: done or refused (a building counts its dwellings), out
+  /// of [total].
   final int done;
   final int total;
 
-  /// Every door done: the row shows « ✓ 8/8 » in green. A street without a
+  /// Every door visited: the row shows « ✓ 8/8 » in green. A street without a
   /// door is never complete.
   bool get isComplete => total > 0 && done == total;
 

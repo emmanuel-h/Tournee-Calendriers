@@ -43,6 +43,19 @@ final List<_Pair> _pairs = [
   ('ink on nobodyHomePale', (c) => c.ink, (c) => c.nobodyHomePale, _text),
   ('onToDo on toDo', (c) => c.onToDo, (c) => c.toDo, _text),
   ('onDone on done', (c) => c.onDone, (c) => c.done, _text),
+  ('onRefused on refused', (c) => c.onRefused, (c) => c.refused, _text),
+  (
+    'refusedBorder on ground',
+    (c) => c.refusedBorder,
+    (c) => c.ground,
+    _graphic,
+  ),
+  (
+    'refusedBorder on surface',
+    (c) => c.refusedBorder,
+    (c) => c.surface,
+    _graphic,
+  ),
   (
     'onNobodyHome on nobodyHome',
     (c) => c.onNobodyHome,
@@ -147,6 +160,15 @@ void main() {
 
   test('should outline tiles and fields at 3:1 when the palette is dark', () {
     _expectPairs(AppColors.dark, _darkOutlines);
+  });
+
+  test('should draw a refused tile in the mockups\' dark grey with white '
+      'text in both palettes', () {
+    for (final colors in [AppColors.light, AppColors.dark]) {
+      expect(colors.refused, const Color(0xFF5A6068));
+      expect(colors.onRefused, const Color(0xFFFFFFFF));
+    }
+    expect(AppColors.light.refusedBorder, const Color(0xFF5A6068));
   });
 
   test('should draw the map lines in the light colours in both palettes', () {

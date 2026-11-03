@@ -116,6 +116,20 @@ void main() {
 
       expect(_houseOf(marked).tries, NobodyHomeTries.none);
     });
+
+    test('should reset the tries and drop the come-back when the house is '
+        'refused', () {
+      final street = _seven(VisitStatus.comeBack, count: 2);
+      expect(_houseOf(street).comeBack, isNotNull);
+
+      final (marked, _) = valueOf(
+        street.markHouse(n('7'), VisitStatus.refused, by: lea, at: twoPm),
+      );
+
+      expect(_houseOf(marked).status, VisitStatus.refused);
+      expect(_houseOf(marked).tries, NobodyHomeTries.none);
+      expect(_houseOf(marked).comeBack, isNull);
+    });
   });
 
   group('setComeBack', () {
@@ -204,7 +218,11 @@ void main() {
       expect(change.tries, tries(1));
     });
 
-    for (final status in [VisitStatus.toDo, VisitStatus.done]) {
+    for (final status in [
+      VisitStatus.toDo,
+      VisitStatus.done,
+      VisitStatus.refused,
+    ]) {
       test('should refuse when the house is $status', () {
         expect(
           failureOf(
@@ -283,6 +301,26 @@ void main() {
       );
 
       expect(_doorOf(marked).tries, NobodyHomeTries.none);
+    });
+
+    test('should reset the tries and drop the come-back when the door is '
+        'refused', () {
+      final street = _eight(VisitStatus.comeBack, count: 3);
+      expect(_doorOf(street).comeBack, isNotNull);
+
+      final (marked, _) = valueOf(
+        street.markDwelling(
+          n('8'),
+          _door,
+          VisitStatus.refused,
+          by: lea,
+          at: twoPm,
+        ),
+      );
+
+      expect(_doorOf(marked).status, VisitStatus.refused);
+      expect(_doorOf(marked).tries, NobodyHomeTries.none);
+      expect(_doorOf(marked).comeBack, isNull);
     });
   });
 
@@ -363,7 +401,11 @@ void main() {
       expect(_doorOf(marked).tries, tries(3));
     });
 
-    for (final status in [VisitStatus.toDo, VisitStatus.done]) {
+    for (final status in [
+      VisitStatus.toDo,
+      VisitStatus.done,
+      VisitStatus.refused,
+    ]) {
       test('should refuse when the door is $status', () {
         expect(
           failureOf(

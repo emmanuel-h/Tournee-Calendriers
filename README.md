@@ -74,13 +74,17 @@ Start screen:
 Street screen (« Rue »):
 
 - Odd numbers on the left, even on the right, scrolling together (one column when the street
-  has one side only); counts « done/total · ✗ · ↻ » and a progress bar.
+  has one side only); counts « visited/total · ⊘ · ✗ · ↻ » and a progress bar.
 - A tap on a house (light vibration, the tile outlined) opens its status picker: « N° 7 »,
-  its status in grey, « ✓ Fait », « ✗ Personne », « ↻ Repasser », « ○ À faire » two by two,
+  its status in grey, « ✓ Fait », « ⊘ Refusé », « ✗ Personne », « ↻ Repasser » two by two
+  and « ○ À faire » across,
   then the tries and who changed it last. One tap stores a status and closes, with « N° 7 :
   personne » and « Annuler » for 4 s and a screen-reader announcement; the status it already
   has stores nothing. No hold any more.
-- « Masquer faits » hides the done houses, remembered per street on the phone.
+- « ⊘ Refusé » (no calendar wanted): a dark grey tile and a ⊘ dot on the map, counted as
+  visited with the done houses (a street can be « faite » with refusals), no tries, no
+  come-back.
+- « Masquer faits » hides the done and refused houses, remembered per street on the phone.
 - « ↻ Repasser » then asks « N° 5 · quand repasser ? »: a day among the next week's chips, an
   hour 8 h–21 h or « Pas d'heure », « Le samedi 24 oct. vers 18 h », each stored at once, and
   « Valider ». No free note: too likely to hold personal data, so the app keeps none (notes

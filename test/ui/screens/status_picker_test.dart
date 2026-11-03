@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
+import 'package:tournee_calendriers/domain/street/nobody_home_tries.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
@@ -132,7 +133,7 @@ void main() {
   ];
 
   testWidgets(
-    'should show the number, its status in grey and the four statuses two '
+    'should show the number, its status in grey and the five statuses two '
     'by two, the current one checked and the tile outlined, when a house is '
     'tapped',
     (tester) async {
@@ -172,24 +173,32 @@ void main() {
         );
       }
       expect(semanticsOf(tester, _status(VisitStatus.done)).label, 'Fait');
+      expect(semanticsOf(tester, _status(VisitStatus.refused)).label, 'Refusé');
       expect(
         semanticsOf(tester, _status(VisitStatus.nobodyHome)).label,
         'Personne',
       );
-      // ✓ and ✗ on the first row, ↻ and ○ on the second, each half the
-      // width.
+      // ✓ and ⊘ on the first row, ✗ and ↻ on the second, each half the
+      // width; ○ alone across the third.
       Rect at(VisitStatus status) => tester.getRect(_status(status));
-      expect(at(VisitStatus.done).top, at(VisitStatus.nobodyHome).top);
+      expect(at(VisitStatus.done).top, at(VisitStatus.refused).top);
+      expect(at(VisitStatus.done).left, lessThan(at(VisitStatus.refused).left));
+      expect(at(VisitStatus.nobodyHome).top, at(VisitStatus.comeBack).top);
       expect(
-        at(VisitStatus.done).left,
-        lessThan(at(VisitStatus.nobodyHome).left),
+        at(VisitStatus.nobodyHome).left,
+        lessThan(at(VisitStatus.comeBack).left),
       );
-      expect(at(VisitStatus.comeBack).top, at(VisitStatus.toDo).top);
       expect(
-        at(VisitStatus.comeBack).top,
+        at(VisitStatus.nobodyHome).top,
         greaterThan(at(VisitStatus.done).bottom),
       );
-      expect(at(VisitStatus.done).width, at(VisitStatus.toDo).width);
+      expect(
+        at(VisitStatus.toDo).top,
+        greaterThan(at(VisitStatus.nobodyHome).bottom),
+      );
+      expect(at(VisitStatus.done).width, at(VisitStatus.refused).width);
+      expect(at(VisitStatus.toDo).left, at(VisitStatus.done).left);
+      expect(at(VisitStatus.toDo).right, at(VisitStatus.refused).right);
       expect(at(VisitStatus.done).height, greaterThanOrEqualTo(72));
       // Never changed, never tried: no last change, no tries.
       expect(find.byKey(const Key('house.lastChange')), findsNothing);
@@ -303,6 +312,55 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(stored('9').tries, tries(2));
+      semantics.dispose();
+    },
+  );
+
+  testWidgets(
+    'should store « Refusé » with its tries reset on a house nobody was home '
+    'at, put it back with « Annuler », and ring it in its picker',
+    (tester) async {
+      final semantics = tester.ensureSemantics();
+      await pick(tester, '9');
+
+      await choose(tester, VisitStatus.refused);
+
+      expect(_picker, findsNothing);
+      expect(stored('9').status, VisitStatus.refused);
+      expect(stored('9').tries, NobodyHomeTries.none);
+      expect(findArrowText('N° 9 : refusé'), findsOneWidget);
+      expect(announcements(tester), ['Numéro 9, refusé']);
+      expect(
+        tester.getSemantics(_tile('9')).label,
+        'Numéro 9, refusé, changer le statut',
+      );
+      expect(
+        find.descendant(of: _tile('9'), matching: find.text('×2')),
+        findsNothing,
+      );
+
+      await tester.tap(find.text('Annuler'));
+      await tester.pumpAndSettle();
+      expect(stored('9'), _lilas.houses[3]);
+
+      // Refused again, its picker shows it ringed, without tries.
+      await tester.tap(_tile('9'));
+      await tester.pumpAndSettle();
+      await choose(tester, VisitStatus.refused);
+      await tester.tap(_tile('9'));
+      await tester.pumpAndSettle();
+      expect(
+        tester.widget<Text>(find.byKey(const Key('house.current'))).data,
+        'Refusé',
+      );
+      expect(
+        semanticsOf(
+          tester,
+          _status(VisitStatus.refused),
+        ).flagsCollection.isChecked,
+        CheckedState.isTrue,
+      );
+      expect(find.byKey(const Key('house.tries')), findsNothing);
       semantics.dispose();
     },
   );
@@ -484,7 +542,7 @@ void main() {
         // « De nouveau personne » takes two lines: its row grows whole.
         expect(
           tester.getSize(_status(VisitStatus.nobodyHome)).height,
-          tester.getSize(_status(VisitStatus.done)).height,
+          tester.getSize(_status(VisitStatus.comeBack)).height,
         );
         expect(tester.takeException(), isNull);
       });

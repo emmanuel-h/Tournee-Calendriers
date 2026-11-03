@@ -40,6 +40,16 @@ void main() {
       background: colors.done,
     ),
     (
+      name: 'refused',
+      number: '9',
+      status: const RefusedTile(),
+      isBuilding: false,
+      glyph: StatusGlyphs.refused,
+      count: null,
+      label: 'Numéro 9, refusé, changer le statut',
+      background: colors.refused,
+    ),
+    (
       name: 'nobody home',
       number: '3bis',
       status: const NobodyHomeTile(),

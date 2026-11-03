@@ -76,8 +76,9 @@ final class StreetNotifier extends Notifier<StreetViewState>
     final even = street.evenHouses;
     return StreetShown(
       name: street.name.text,
-      done: progress.done,
+      done: progress.visited,
       total: progress.total,
+      refused: progress.refused,
       nobodyHome: progress.nobodyHome,
       comeBack: progress.toComeBack,
       hideDone: _hideDone,
@@ -90,7 +91,17 @@ final class StreetNotifier extends Notifier<StreetViewState>
   List<HouseTile> _tiles(List<House> houses) => [
     for (final house in houses)
       if (HouseTile.of(house) case final tile
-          when !(_hideDone && tile.mark is DoneMark))
+          when !(_hideDone && _isFinished(tile.mark)))
         tile,
   ];
+
+  /// What « Masquer faits » hides: a tile done (a building: every door
+  /// visited) or refused, where nothing is left to do.
+  static bool _isFinished(TileMark mark) => switch (mark) {
+    DoneMark() || RefusedMark() => true,
+    ToDoMark() ||
+    NobodyHomeMark() ||
+    ComeBackMark() ||
+    PartialBuildingMark() => false,
+  };
 }

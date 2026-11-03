@@ -125,6 +125,25 @@ void main() {
       expect(update[house('4', ['tries'])], removed);
     });
 
+    test('should write « refused » and remove the tries of a refusal', () {
+      final nobody = valueOf(
+        lilas.markHouse(n('4'), VisitStatus.nobodyHome, by: lea, at: twoPm),
+      ).$1;
+
+      final update = updateOf(
+        nobody,
+        (s) => s.markHouse(n('4'), VisitStatus.refused, by: paul, at: threePm),
+      );
+
+      expect(update, {
+        house('4', ['status']): 'REFUSED',
+        house('4', ['comeBack']): null,
+        house('4', ['tries']): removed,
+        house('4', ['by']): 'paul',
+        house('4', ['at']): at(threePm),
+      });
+    });
+
     test('should write one more try when nobody is home again', () {
       final nobody = valueOf(
         lilas.markHouse(n('4'), VisitStatus.nobodyHome, by: lea, at: twoPm),

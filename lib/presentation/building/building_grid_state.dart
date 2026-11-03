@@ -63,8 +63,8 @@ final class BuildingGridShown extends BuildingGridState {
   final String streetName;
   final HouseNumber number;
 
-  /// « ◐ 15/24 »: the doors done and the doors of the whole building, every
-  /// staircase included.
+  /// « ◐ 15/24 »: the doors visited (done or refused) and the doors of the
+  /// whole building, every staircase included.
   final int done;
   final int total;
 

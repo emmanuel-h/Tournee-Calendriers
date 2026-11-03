@@ -53,13 +53,13 @@ final class BuildingGridNotifier extends Notifier<BuildingGridState>
     return BuildingGridShown(
       streetName: street!.name.text,
       number: key.number,
-      done: progress.done,
+      done: progress.visited,
       total: progress.total,
       staircases: [
         for (final staircase in building.staircases)
           (
             name: staircase.name,
-            done: staircase.progress.done,
+            done: staircase.progress.visited,
             total: staircase.progress.total,
           ),
       ],

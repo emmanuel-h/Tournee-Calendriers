@@ -846,6 +846,13 @@ where they disagree with this block):
   the street's « 31/42 » and the map's levels count ✓ and ⊘ together, so a street with
   refusals can be « faite »; the header adds « ⊘ 2 ». No tries (⊘ resets them, as ○) and no
   come-back. Contrast held by the theme test; told apart by its glyph and lightness.
+  Delivered in #113: the dark palette keeps the tile, with a `#8A8F96` border; a building
+  whose doors are all visited (✓ or ⊘) is ✓ on its tile and ● on the map, its `◐ n/m` and
+  the grid's « 7/12 » count ⊘ too, and turned back into a house it is ⊘ when every door was,
+  else ✓; « Masquer faits » hides ⊘ tiles with the ✓ ones; Accueil's « 43/62 » and « Équipe :
+  41 % » count ⊘ with ✓; the map legend adds « refusé »; TalkBack hears the header as « 31 sur
+  42 faits, 2 refusés, 3 personne, 1 à repasser », and the counts wrap to a second line
+  rather than being cut at large text sizes.
 - **Tries with nobody home** (#80): on a house ✗ or ↻ with a try or more, « ✗ Personne » reads
   « ✗ De nouveau personne » (two lines in a 174 dp button) and adds one try (it replaces
   « Repassé, toujours personne »); the sheet shows « ✗ 2 passages sans personne » on the pale
@@ -873,9 +880,9 @@ where they disagree with this block):
   porte … » in the grid). TalkBack: « Numéro 7, à faire, changer le statut »; after a choice
   « Numéro 7, personne, 3e passage » as before.
 - Delivered in #107 (`ui/screens/street/status_picker_sheet.dart`, the steps in
-  `presentation/house_sheet/picker_step.dart`): until « Refusé » comes (#113) the four
-  statuses sit « ✓ Fait | ✗ Personne », « ↻ Repasser | ○ À faire » (a status alone on the
-  last row takes the whole width); a row grows whole when « De nouveau personne » takes two
+  `presentation/house_sheet/picker_step.dart`), with « Refusé » since #113: the five
+  statuses sit « ✓ Fait | ⊘ Refusé », « ✗ Personne | ↻ Repasser », « ○ À faire » (a status
+  alone on the last row takes the whole width); a row grows whole when « De nouveau personne » takes two
   lines. The tile (or door) has a 3 dp ink outline inside its edge while its picker shows, and
   screen readers hear it « sélectionné ». The tries block shows once a try is counted; the
   last-change line only once the house was changed. The ↻ step is titled « N° 5 · quand
@@ -2952,10 +2959,11 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
   exactly the fields of §6.2, `startedAt < endedAt`, `housesVisited` and `free` 0–9 999, each
   `count` 0–9 999 and `cents` 0–100 000 000; **no update, no delete** (they go with the
   secteur or the campaign).
-- **Statuses and calendars** (#63, to build): `status` also takes `refused`; a house or door
+- **Statuses and calendars** (#63): `status` also takes `REFUSED` (#113, accepted by the
+  rules: like any status but `COME_BACK` it has no time; the app removes its tries); a house or door
   holds an optional `calendars` 1–99, only while its status is `done` (absent reads as 1 on a
-  ✓, 0 otherwise), written in the same field-path updates as the status. Older apps must read
-  `refused` without failing (to check in that task) before the rules accept it.
+  ✓, 0 otherwise), written in the same field-path updates as the status. Apps before 0.10.0
+  cannot read `REFUSED`; they are not supported (they read the old `tournees/` paths anyway).
 - Indexes (`firebase/firestore.indexes.json`): `houses` of `streets` is exempt from
   single-field indexing (its thousands of sub-fields would count against the index limits and
   slow every write); no query of the adapters needs a composite index.

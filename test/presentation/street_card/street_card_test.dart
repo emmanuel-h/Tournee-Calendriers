@@ -8,7 +8,7 @@ import 'package:tournee_calendriers/presentation/street_card/street_card.dart';
 
 import '../../domain/sector/sector_fixtures.dart';
 import '../../support/results.dart';
-import '../../support/street_fixtures.dart' show n, villefranche;
+import '../../support/street_fixtures.dart' show n, twoPm, villefranche;
 
 /// Rue des Lilas, 1 of 3 doors done, covered by [assignees].
 Street _lilas(Set<MemberId> assignees) => valueOf(
@@ -34,6 +34,17 @@ void main() {
       expect(card.name, 'Rue des Lilas');
       expect(card.commune, 'Villefranche-sur-Saône');
       expect(card.done, 1);
+      expect(card.total, 3);
+    });
+
+    test('should count a refused house as visited in its progress', () {
+      final (refusing, _) = valueOf(
+        _lilas({}).markHouse(n('2'), VisitStatus.refused, by: leaId, at: twoPm),
+      );
+
+      final card = StreetCardInSector.of(refusing, me: leaId, team: team());
+
+      expect(card.done, 2);
       expect(card.total, 3);
     });
 

@@ -160,6 +160,12 @@ abstract class AppLocalizations {
   /// **'fait'**
   String get tileStatusDone;
 
+  /// Screen-reader name of a house or door whose residents did not want a calendar (status « Refusé », #113); also the word of the snackbar « N° 9 : refusé » and of the map legend.
+  ///
+  /// In fr, this message translates to:
+  /// **'refusé'**
+  String get tileStatusRefused;
+
   /// Screen-reader name of a house where nobody answered.
   ///
   /// In fr, this message translates to:
@@ -201,6 +207,12 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Fait'**
   String get statusDone;
+
+  /// Name of the status « refused » (no calendar wanted, #113), on its button and in the title of the status picker.
+  ///
+  /// In fr, this message translates to:
+  /// **'Refusé'**
+  String get statusRefused;
 
   /// Name of the status « nobody home », on its button and in the title of the status picker.
   ///
@@ -334,13 +346,14 @@ abstract class AppLocalizations {
   /// **'Côté pair'**
   String get evenSide;
 
-  /// Screen-reader label of the counts of the street screen (« 31/42 · ✗ 3 · ↻ 1 »).
+  /// Screen-reader label of the counts of the street screen (« 31/42 · ⊘ 2 · ✗ 3 · ↻ 1 »); « faits » counts the done and refused houses together (#113). French puts 0 and 1 in the singular.
   ///
   /// In fr, this message translates to:
-  /// **'{done} sur {total} faits, {nobodyHome} personne, {comeBack} à repasser'**
+  /// **'{done} sur {total} faits, {refused, plural, one{{refused} refusé} other{{refused} refusés}}, {nobodyHome} personne, {comeBack} à repasser'**
   String streetCountsSemantics(
     int done,
     int total,
+    int refused,
     int nobodyHome,
     int comeBack,
   );
@@ -1730,6 +1743,12 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Rue : touchez une maison ou une porte, puis choisissez son statut. Plus de cycle ni d\'appui long.'**
   String get release0100Picker;
+
+  /// Line of « Nouveautés » for 0.10.0: the fifth status « ⊘ Refusé », counted with the done houses (#113).
+  ///
+  /// In fr, this message translates to:
+  /// **'Nouveau statut « Refusé » pour une maison ou une porte qui ne veut pas de calendrier : elle compte comme faite.'**
+  String get release0100Refused;
 
   /// Line of « Nouveautés » for 0.10.0: the privacy text covers the tournées and calendars (#112).
   ///

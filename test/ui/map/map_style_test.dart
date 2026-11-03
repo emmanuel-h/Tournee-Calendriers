@@ -78,6 +78,7 @@ void main() {
       expect(HouseDotStatus.values.map(houseDotImage), [
         'tc-house-toDo',
         'tc-house-done',
+        'tc-house-refused',
         'tc-house-nobodyHome',
         'tc-house-comeBack',
         'tc-house-partial',
@@ -310,6 +311,8 @@ void main() {
             'tc-house-toDo',
             'done',
             'tc-house-done',
+            'refused',
+            'tc-house-refused',
             'nobodyHome',
             'tc-house-nobodyHome',
             'comeBack',

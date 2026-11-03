@@ -152,6 +152,28 @@ void main() {
       expect(state.showsStaircases, isTrue);
     });
 
+    test('should count a refused door with the done ones', () async {
+      final (refusing, _) = valueOf(
+        _street().markDwelling(
+          n('8'),
+          _key('A', 0, '02'),
+          VisitStatus.refused,
+          by: lea,
+          at: twoPm,
+        ),
+      );
+      phoneWith(refusing);
+
+      final state = await shown('8');
+
+      expect(state.done, 3);
+      expect(state.total, 6);
+      expect(state.staircases, [
+        (name: escA, done: 2, total: 4),
+        (name: escB, done: 1, total: 2),
+      ]);
+    });
+
     test('should show the first staircase, floors top first, each door with '
         'its look', () async {
       phoneWith(_street());

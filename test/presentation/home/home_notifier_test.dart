@@ -248,6 +248,28 @@ void main() {
       expect(state.hasNoStreet, isFalse);
     });
 
+    test('should count the refused doors as visited, in « Mes rues » and '
+        'the team\'s share', () async {
+      final (refusing, change) = valueOf(
+        _nationale.markHouse(
+          n('3'),
+          VisitStatus.refused,
+          by: _lea,
+          at: createdAt,
+        ),
+      );
+      await streets.save(refusing, change);
+      final container = phone();
+      await pumpEventQueue();
+
+      final state = container.read(homeProvider);
+
+      expect(state.done, 2);
+      expect(state.total, 4);
+      // 4 of the tournée's 10 doors.
+      expect(state.teamPercent, 40);
+    });
+
     test(
       'should list every street under « Rues » for a visiting admin',
       () async {

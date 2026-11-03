@@ -385,6 +385,25 @@ void main() {
       expect(houseNow('13').tries, NobodyHomeTries.none);
     });
 
+    test('should drop the tries and the time when « Refusé » is chosen on a '
+        'house to come back to', () async {
+      phoneWith(_street());
+      open('13');
+      await settled('13');
+
+      final stored = await notifier('13').setStatus(VisitStatus.refused);
+
+      expect(stored?.status, VisitStatus.refused);
+      expect(stored?.tries, isNull);
+      expect(houseNow('13').status, VisitStatus.refused);
+      expect(houseNow('13').tries, NobodyHomeTries.none);
+      expect(houseNow('13').comeBack, isNull);
+      final state = await shown('13');
+      expect(state.showsTries, isFalse);
+      expect(state.offersNobodyHomeAgain, isFalse);
+      expect(state.comeBack, isFalse);
+    });
+
     test('should count one more try when « Personne » is chosen on a house '
         'nobody was home at', () async {
       phoneWith(_street());

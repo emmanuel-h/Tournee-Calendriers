@@ -604,7 +604,13 @@ void main() {
       shownMap(tester).onZoomChanged!(16);
       await tester.pumpAndSettle();
 
-      for (final word in ['fait', 'personne', 'repasser', 'à faire']) {
+      for (final word in [
+        'fait',
+        'refusé',
+        'personne',
+        'repasser',
+        'à faire',
+      ]) {
         expect(
           find.descendant(of: legend, matching: find.text(word)),
           findsOneWidget,

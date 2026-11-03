@@ -114,6 +114,7 @@ void main() {
       expect(state.name, 'Rue des Lilas');
       expect(state.done, 3);
       expect(state.total, 8);
+      expect(state.refused, 0);
       expect(state.nobodyHome, 1);
       // 5, and the building 8 itself.
       expect(state.comeBack, 2);
@@ -136,6 +137,63 @@ void main() {
       ]);
     },
   );
+
+  group('refused houses', () {
+    // 1 refused, 3 done, 5 to do, 7 refused; 2 a building with one door
+    // refused and the other done.
+    final refusing = _street(
+      houses: [
+        House(number: n('1'), status: VisitStatus.refused),
+        House(number: n('3'), status: VisitStatus.done),
+        House(number: n('5')),
+        House(number: n('7'), status: VisitStatus.refused),
+        House(
+          number: n('2'),
+          building: building(topFloor: 0, doors: 2)
+              .withDwelling(
+                escA,
+                0,
+                Dwelling(label: d('01'), status: VisitStatus.refused),
+              )
+              .withDwelling(
+                escA,
+                0,
+                Dwelling(label: d('02'), status: VisitStatus.done),
+              ),
+        ),
+      ],
+    );
+
+    test('should count them with the done ones, and apart in ⊘', () async {
+      phoneWith(refusing);
+
+      final state = await shown();
+
+      // 1, 3, 7 and both doors of 2: five of six doors.
+      expect(state.done, 5);
+      expect(state.total, 6);
+      expect(state.refused, 3);
+      expect(state.nobodyHome, 0);
+      expect(state.comeBack, 0);
+      expect(state.odd, [
+        _tile('1', const RefusedMark()),
+        _tile('3', const DoneMark()),
+        _tile('5', const ToDoMark()),
+        _tile('7', const RefusedMark()),
+      ]);
+      expect(state.even, [_tile('2', const DoneMark(), isBuilding: true)]);
+    });
+
+    test('should leave them out with the done ones when the street hides '
+        'them', () async {
+      phoneWith(refusing, hideDone: true);
+
+      final state = await shown();
+
+      expect(state.odd.map((tile) => tile.number.label), ['5']);
+      expect(state.even, isEmpty);
+    });
+  });
 
   test('should say the street is gone when it is not on the phone', () async {
     phoneWith(null);

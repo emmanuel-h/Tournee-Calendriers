@@ -153,6 +153,7 @@ void main() {
     final singles = <(VisitStatus, HouseDotStatus)>[
       (VisitStatus.toDo, HouseDotStatus.toDo),
       (VisitStatus.done, HouseDotStatus.done),
+      (VisitStatus.refused, HouseDotStatus.refused),
       (VisitStatus.nobodyHome, HouseDotStatus.nobodyHome),
       (VisitStatus.comeBack, HouseDotStatus.comeBack),
     ];
@@ -194,6 +195,20 @@ void main() {
         final done = marked(marked(street, door01), door02);
 
         expect(_dotOf(done).status, HouseDotStatus.done);
+      });
+
+      test('should show done when every door is done or refused', () {
+        final (refused, _) = valueOf(
+          marked(street, door01).markDwelling(
+            n('7'),
+            door02,
+            VisitStatus.refused,
+            by: lea,
+            at: twoPm,
+          ),
+        );
+
+        expect(_dotOf(refused).status, HouseDotStatus.done);
       });
 
       test('should show come back when the building has its own', () {

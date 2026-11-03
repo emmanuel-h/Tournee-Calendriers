@@ -11,11 +11,13 @@ enum ProgressLevel {
   /// « À faire »: someone took it; no door visited yet.
   toDo,
 
-  /// « En partie »: some doors visited, not all done (doors where nobody
-  /// was home, or to come back to, are visited but not done).
+  /// « En partie »: some doors marked, not all visited (doors where nobody
+  /// was home, or to come back to, are still to visit).
   partial,
 
-  /// « Fait »: every door done, nothing to come back to.
+  /// « Fait »: every door visited (done or refused, `Progress.visited`),
+  /// nothing to come back to. A refusal finishes a door as a calendar
+  /// does: nobody goes back to it.
   done;
 
   /// The level of a street with [progress], [taken] when at least one
@@ -27,7 +29,7 @@ enum ProgressLevel {
   static ProgressLevel of(Progress progress, {required bool taken}) {
     final finished =
         progress.total > 0 &&
-        progress.done == progress.total &&
+        progress.visited == progress.total &&
         progress.toComeBack == 0;
     if (finished) return done;
     if (!taken) return free;

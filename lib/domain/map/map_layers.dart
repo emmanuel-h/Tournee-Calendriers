@@ -109,8 +109,11 @@ enum HouseDotStatus {
   /// `○` à faire; a building with no door done.
   toDo,
 
-  /// `●` fait; a building with every door done.
+  /// `●` fait; a building with every door visited (done or refused).
   done,
+
+  /// `⊘` refusé.
+  refused,
 
   /// `✗` personne.
   nobodyHome,
@@ -130,6 +133,7 @@ enum HouseDotStatus {
       return switch (house.status) {
         VisitStatus.toDo => toDo,
         VisitStatus.done => done,
+        VisitStatus.refused => refused,
         VisitStatus.nobodyHome => nobodyHome,
         VisitStatus.comeBack => comeBack,
       };

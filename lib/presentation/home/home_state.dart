@@ -30,12 +30,12 @@ final class HomeState {
   /// the panel reads « Rues » and lists every street in [mine].
   final bool visiting;
 
-  /// The doors done of the streets in [mine], out of [total] (« Mes rues ·
-  /// 43/62 »).
+  /// The doors visited (done or refused) of the streets in [mine], out of
+  /// [total] (« Mes rues · 43/62 »).
   final int done;
   final int total;
 
-  /// The share of the whole tournée's doors done (« Équipe : 41 % »).
+  /// The share of the whole tournée's doors visited (« Équipe : 41 % »).
   final int teamPercent;
 
   /// « Mes rues »: the streets the member covers, in French order; every

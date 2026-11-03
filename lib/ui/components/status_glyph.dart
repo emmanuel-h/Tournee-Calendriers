@@ -3,7 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/widgets.dart';
 import 'package:tournee_calendriers/ui/theme/status_look.dart';
 
-/// A status glyph (○ ✓ ✗ ↻ ◐) drawn as a vector shape in a square box.
+/// A status glyph (○ ✓ ⊘ ✗ ↻ ◐) drawn as a vector shape in a square box.
 ///
 /// Drawing the shapes instead of typing characters gives every glyph the
 /// same size and stroke weight on every phone, whatever its fonts.
@@ -75,6 +75,7 @@ final class StatusGlyphShape {
           ..lineTo(u(19.5), u(5.5)),
         strokeWidth: strokeWidth,
       ),
+      StatusGlyphs.refused => _refused(p, u, strokeWidth),
       StatusGlyphs.nobodyHome => StatusGlyphShape._(
         stroke: Path()
           ..moveTo(u(5.75), u(5.75))
@@ -94,6 +95,26 @@ final class StatusGlyphShape {
           ..close(),
       ),
     };
+  }
+
+  /// ⊘: the circle of ○ crossed by a bar from its lower left to its upper
+  /// right, ending on the circle (45° off the axes).
+  static StatusGlyphShape _refused(
+    Offset Function(double, double) p,
+    double Function(double) u,
+    double strokeWidth,
+  ) {
+    const radius = 8.5;
+    // `math.sqrt1_2` is cos 45°: how far a point 45° round the circle is
+    // from the centre, along each axis.
+    const reach = radius * math.sqrt1_2;
+    return StatusGlyphShape._(
+      stroke: Path()
+        ..addOval(_circle(p(12, 12), u(radius)))
+        ..moveTo(u(12 - reach), u(12 + reach))
+        ..lineTo(u(12 + reach), u(12 - reach)),
+      strokeWidth: strokeWidth,
+    );
   }
 
   /// ↻: an open circle running clockwise from the upper right round to the

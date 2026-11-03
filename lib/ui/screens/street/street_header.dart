@@ -8,7 +8,7 @@ import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 import 'package:tournee_calendriers/ui/theme/status_look.dart';
 
-/// Everything above the tiles: « 31/42 · ✗ 3 · ↻ 1 » with « Masquer
+/// Everything above the tiles: « 31/42 · ⊘ 2 · ✗ 3 · ↻ 1 » with « Masquer
 /// faits » (on the next line when the phone's font leaves no room beside
 /// the counts), the progress bar, and the « Côté impair | Côté pair » labels.
 final class StreetHeader extends StatelessWidget {
@@ -99,7 +99,7 @@ final class StreetHeader extends StatelessWidget {
   }
 }
 
-/// « 31/42 · ✗ 3 · ↻ 1 », with the glyphs drawn (the fonts lack ↻), and one
+/// « 31/42 · ⊘ 2 · ✗ 3 · ↻ 1 », with the glyphs drawn (the fonts lack ↻), and one
 /// French sentence for screen readers.
 final class _Counts extends StatelessWidget {
   const _Counts({required this.state});
@@ -122,6 +122,7 @@ final class _Counts extends StatelessWidget {
       label: l10n.streetCountsSemantics(
         state.done,
         state.total,
+        state.refused,
         state.nobodyHome,
         state.comeBack,
       ),
@@ -133,13 +134,19 @@ final class _Counts extends StatelessWidget {
             TextSpan(
               text: '${l10n.streetProgress(state.done, state.total)} · ',
             ),
+            // A no-break space (U+00A0) after each glyph keeps it on the
+            // line of its count when the counts wrap.
+            glyph(StatusGlyphs.refused),
+            TextSpan(text: '\u00a0${state.refused} · '),
             glyph(StatusGlyphs.nobodyHome),
-            TextSpan(text: ' ${state.nobodyHome} · '),
+            TextSpan(text: '\u00a0${state.nobodyHome} · '),
             glyph(StatusGlyphs.comeBack),
-            TextSpan(text: ' ${state.comeBack}'),
+            TextSpan(text: '\u00a0${state.comeBack}'),
           ],
         ),
-        maxLines: 1,
+        // Two lines at most: with « ⊘ 2 » (#113) the counts no longer fit
+        // one line at 200 % text, and wrapping them beats cutting them.
+        maxLines: 2,
         overflow: TextOverflow.ellipsis,
         style: AppTextStyles.streetCounts.copyWith(color: muted),
       ),

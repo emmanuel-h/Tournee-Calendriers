@@ -143,9 +143,9 @@ final class HomeNotifier extends Notifier<HomeState>
     return HomeState(
       loading: _streets == null,
       visiting: visiting,
-      done: progress.done,
+      done: progress.visited,
       total: progress.total,
-      teamPercent: streets.teamProgress.donePercent,
+      teamPercent: streets.teamProgress.visitedPercent,
       mine: _rows(visiting ? streets.all : streets.mine),
       others: visiting ? const [] : _rows(streets.others),
       layers: MapLayers.of(streets.all, roster: roster),
@@ -176,7 +176,7 @@ final class HomeNotifier extends Notifier<HomeState>
         StreetRow(
           id: street.id,
           name: street.name.text,
-          done: progress.done,
+          done: progress.visited,
           total: progress.total,
         ),
   ];

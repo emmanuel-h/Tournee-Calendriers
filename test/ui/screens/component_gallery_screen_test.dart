@@ -64,7 +64,7 @@ void main() {
       );
 
       // One tile per status.
-      expect(find.byType(StatusTile), findsNWidgets(5));
+      expect(find.byType(StatusTile), findsNWidgets(6));
       expect(
         tester
             .widgetList<StatusGlyph>(find.byType(StatusGlyph))

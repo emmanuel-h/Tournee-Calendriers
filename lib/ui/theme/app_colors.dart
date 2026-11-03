@@ -30,6 +30,9 @@ final class AppColors extends ThemeExtension<AppColors> {
     required this.onDone,
     required this.doneBorder,
     required this.doneInk,
+    required this.refused,
+    required this.onRefused,
+    required this.refusedBorder,
     required this.nobodyHome,
     required this.onNobodyHome,
     required this.nobodyHomeBorder,
@@ -78,6 +81,9 @@ final class AppColors extends ThemeExtension<AppColors> {
     onDone: Color(0xFFFFFFFF),
     doneBorder: Color(0xFF1E6B47),
     doneInk: Color(0xFF1E6B47),
+    refused: Color(0xFF5A6068),
+    onRefused: Color(0xFFFFFFFF),
+    refusedBorder: Color(0xFF5A6068),
     nobodyHome: Color(0xFFF2B33D),
     onNobodyHome: Color(0xFF1B1F24),
     nobodyHomeBorder: Color(0xFFD99A22),
@@ -131,6 +137,11 @@ final class AppColors extends ThemeExtension<AppColors> {
     onDone: Color(0xFFFFFFFF),
     doneBorder: Color(0xFF2E9463),
     doneInk: Color(0xFF33A872),
+    // The light tile: white text holds on it, and a lighter border shows
+    // it on the dark ground, where the tile alone would be dim (#113).
+    refused: Color(0xFF5A6068),
+    onRefused: Color(0xFFFFFFFF),
+    refusedBorder: Color(0xFF8A8F96),
     nobodyHome: Color(0xFFF2B33D),
     onNobodyHome: Color(0xFF1B1F24),
     nobodyHomeBorder: Color(0xFFD99A22),
@@ -212,6 +223,12 @@ final class AppColors extends ThemeExtension<AppColors> {
   /// same as [done] in light; lighter in dark, where white text needs the
   /// tiles' [done] to stay dark.
   final Color doneInk;
+
+  /// « Refusé » (#113, PLAN §5.6): a dark grey tile with white text, told
+  /// from a done one by its ⊘ and its lightness, never its colour alone.
+  final Color refused;
+  final Color onRefused;
+  final Color refusedBorder;
   final Color nobodyHome;
   final Color onNobodyHome;
   final Color nobodyHomeBorder;

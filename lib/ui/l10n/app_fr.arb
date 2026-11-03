@@ -27,6 +27,8 @@
   "@tileStatusToDo": { "description": "Screen-reader name of a house still to visit." },
   "tileStatusDone": "fait",
   "@tileStatusDone": { "description": "Screen-reader name of a visited house." },
+  "tileStatusRefused": "refusé",
+  "@tileStatusRefused": { "description": "Screen-reader name of a house or door whose residents did not want a calendar (status « Refusé », #113); also the word of the snackbar « N° 9 : refusé » and of the map legend." },
   "tileStatusNobodyHome": "personne",
   "@tileStatusNobodyHome": { "description": "Screen-reader name of a house where nobody answered." },
   "tileStatusComeBack": "repasser",
@@ -61,6 +63,8 @@
   "@statusToDo": { "description": "Name of the status « to do », on its button and in the title of the status picker." },
   "statusDone": "Fait",
   "@statusDone": { "description": "Name of the status « done », on its button and in the title of the status picker." },
+  "statusRefused": "Refusé",
+  "@statusRefused": { "description": "Name of the status « refused » (no calendar wanted, #113), on its button and in the title of the status picker." },
   "statusNobodyHome": "Personne",
   "@statusNobodyHome": { "description": "Name of the status « nobody home », on its button and in the title of the status picker." },
   "statusComeBack": "Repasser",
@@ -210,12 +214,13 @@
   "@oddSide": { "description": "Header of the column of odd numbers." },
   "evenSide": "Côté pair",
   "@evenSide": { "description": "Header of the column of even numbers." },
-  "streetCountsSemantics": "{done} sur {total} faits, {nobodyHome} personne, {comeBack} à repasser",
+  "streetCountsSemantics": "{done} sur {total} faits, {refused, plural, one{{refused} refusé} other{{refused} refusés}}, {nobodyHome} personne, {comeBack} à repasser",
   "@streetCountsSemantics": {
-    "description": "Screen-reader label of the counts of the street screen (« 31/42 · ✗ 3 · ↻ 1 »).",
+    "description": "Screen-reader label of the counts of the street screen (« 31/42 · ⊘ 2 · ✗ 3 · ↻ 1 »); « faits » counts the done and refused houses together (#113). French puts 0 and 1 in the singular.",
     "placeholders": {
       "done": { "type": "int", "example": "31" },
       "total": { "type": "int", "example": "42" },
+      "refused": { "type": "int", "example": "2" },
       "nobodyHome": { "type": "int", "example": "3" },
       "comeBack": { "type": "int", "example": "1" }
     }
@@ -1099,6 +1104,8 @@
   "@release0100Sector": { "description": "Line of « Nouveautés » for 0.10.0: the team's area is now « secteur » on every screen (#115); « tournée » now names one outing (PLAN §2)." },
   "release0100Picker": "Rue : touchez une maison ou une porte, puis choisissez son statut. Plus de cycle ni d'appui long.",
   "@release0100Picker": { "description": "Line of « Nouveautés » for 0.10.0: the status picker replaces the tap cycle and the hold (#107)." },
+  "release0100Refused": "Nouveau statut « Refusé » pour une maison ou une porte qui ne veut pas de calendrier : elle compte comme faite.",
+  "@release0100Refused": { "description": "Line of « Nouveautés » for 0.10.0: the fifth status « ⊘ Refusé », counted with the done houses (#113)." },
   "release0100Privacy": "Confidentialité : le texte dit aussi ce qui est gardé des tournées, des dons et des calendriers.",
   "@release0100Privacy": { "description": "Line of « Nouveautés » for 0.10.0: the privacy text covers the tournées and calendars (#112)." },
   "release090Streets": "Équipe : chaque membre montre le nombre de rues qu'il couvre ; touchez ce nombre pour voir leurs noms.",

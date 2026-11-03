@@ -143,6 +143,7 @@ final class StatusTile extends StatelessWidget {
   String _semanticsLabel(AppLocalizations l10n) => switch (status) {
     ToDoTile() => _withStatus(l10n, l10n.tileStatusToDo),
     DoneTile() => _withStatus(l10n, l10n.tileStatusDone),
+    RefusedTile() => _withStatus(l10n, l10n.tileStatusRefused),
     NobodyHomeTile() => _withStatus(
       l10n,
       l10n.tileStatusNobodyHome,

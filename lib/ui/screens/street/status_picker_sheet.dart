@@ -301,13 +301,15 @@ final class _StatusGrid extends StatelessWidget {
   final bool nobodyHomeAgain;
   final ValueChanged<VisitStatus> onPicked;
 
-  /// Where [status] sits: done first, as it is the most tapped; « À faire »
-  /// last, as it undoes a visit.
+  /// Where [status] sits: done first, as it is the most tapped, refused
+  /// beside it (both end the visit); « À faire » last, alone on its row,
+  /// as it undoes a visit.
   static int _place(VisitStatus status) => switch (status) {
     VisitStatus.done => 0,
-    VisitStatus.nobodyHome => 1,
-    VisitStatus.comeBack => 2,
-    VisitStatus.toDo => 3,
+    VisitStatus.refused => 1,
+    VisitStatus.nobodyHome => 2,
+    VisitStatus.comeBack => 3,
+    VisitStatus.toDo => 4,
   };
 
   @override

@@ -56,6 +56,28 @@ void main() {
       );
     });
 
+    test('should show a refused house as refused', () {
+      expect(
+        TileMark.of(House(number: n('9'), status: VisitStatus.refused)),
+        const RefusedMark(),
+      );
+    });
+
+    test('should show a building with every door done or refused as '
+        'done', () {
+      expect(
+        TileMark.of(_building(VisitStatus.refused, VisitStatus.done)),
+        const DoneMark(),
+      );
+    });
+
+    test('should count a refused door as visited in a partial building', () {
+      expect(
+        TileMark.of(_building(VisitStatus.refused, VisitStatus.nobodyHome)),
+        const PartialBuildingMark(done: 1, total: 2),
+      );
+    });
+
     test('should show a building with some doors done as partial', () {
       expect(
         TileMark.of(_building(VisitStatus.done, VisitStatus.nobodyHome)),
@@ -116,6 +138,15 @@ void main() {
       expect(
         TileMark.ofDwelling(Dwelling(label: d('51'), status: VisitStatus.done)),
         const DoneMark(),
+      );
+    });
+
+    test('should show a refused door as refused', () {
+      expect(
+        TileMark.ofDwelling(
+          Dwelling(label: d('51'), status: VisitStatus.refused),
+        ),
+        const RefusedMark(),
       );
     });
 
@@ -261,6 +292,7 @@ void main() {
       name: 'Rue des Lilas',
       done: done,
       total: total,
+      refused: 0,
       nobodyHome: 0,
       comeBack: 0,
       hideDone: false,
