@@ -67,6 +67,9 @@ their old names) and the outing is `Round` (#116, #115); status picker instead o
 `campaigns/{year}/rounds/` without its member (#108–#110); calendars per ✓ house (#114); « Collecte 2026 » in
 Équipe (#111); privacy text drafted by Claude for the user's review (#112). No data migration: the old
 `tournees`, `tourneeKeys`, `joinCodes` were deleted (single user) and the test secteurs are created again. Rules deployed 2026-11-03 (the user).
+M9 planned (2026-11-03, #120–#125, PLAN §5.14): preparing the secteur and being on a tournée on separate
+screens; no attribution (the secteur covers all its streets); « Ajouter des rues » in Secteur (🗺) with several
+roads and a zone; houses marked only during a tournée; « En tournée » band on top (white, red edge).
 
 ## Commands
 
