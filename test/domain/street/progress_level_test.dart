@@ -11,6 +11,7 @@ const _toDo = VisitStatus.toDo;
 const _done = VisitStatus.done;
 const _nobody = VisitStatus.nobodyHome;
 const _comeBack = VisitStatus.comeBack;
+const _refused = VisitStatus.refused;
 
 void main() {
   // Each row: what it shows, the doors, whether someone took the street,
@@ -61,6 +62,37 @@ void main() {
       ProgressLevel.done,
     ),
     ('a single door done', _doors([_done]), true, ProgressLevel.done),
+    (
+      'every door done or refused',
+      _doors([_done, _refused, _done]),
+      true,
+      ProgressLevel.done,
+    ),
+    ('every door refused', _doors([_refused]), true, ProgressLevel.done),
+    (
+      'every door refused, nobody on it any more',
+      _doors([_refused, _refused]),
+      false,
+      ProgressLevel.done,
+    ),
+    (
+      'one door refused, the others to do',
+      _doors([_refused, _toDo]),
+      true,
+      ProgressLevel.partial,
+    ),
+    (
+      'refused, but one door nobody home',
+      _doors([_refused, _nobody]),
+      true,
+      ProgressLevel.partial,
+    ),
+    (
+      'refused, but a building to come back to',
+      _doors([_refused]) + Progress.buildingComeBack,
+      true,
+      ProgressLevel.partial,
+    ),
     (
       'every door done but a building to come back to',
       _doors([_done, _done]) + Progress.buildingComeBack,

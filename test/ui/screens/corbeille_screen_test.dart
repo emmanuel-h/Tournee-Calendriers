@@ -2,24 +2,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
-import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 
 import '../../application/use_cases/street_fixtures.dart';
-import '../../domain/tournee/my_tournees_fixtures.dart';
-import '../../domain/tournee/tournee_fixtures.dart';
+import '../../domain/sector/my_sectors_fixtures.dart';
+import '../../domain/sector/sector_fixtures.dart';
 import '../../support/fakes/fake_admin_status.dart';
-import '../../support/fakes/fake_my_tournees_store.dart';
+import '../../support/fakes/fake_my_sectors_store.dart';
+import '../../support/fakes/fake_sector_repository.dart';
 import '../../support/fakes/fake_street_repository.dart';
-import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart' show n, villefranche;
 import '../support/app_overrides.dart';
+import '../support/large_text.dart';
 import '../support/navigation.dart';
 
 /// Wednesday 4 November 2026, 10:00 on the phone's clock.
@@ -59,10 +60,10 @@ void main() {
       ProviderScope(
         overrides: fakePhone(
           streets: streets,
-          myTournees: FakeMyTourneesStore(
-            valueOf(MyTournees.none.remember(tournee49).open(tournee49.id)),
+          mySectors: FakeMySectorsStore(
+            valueOf(MySectors.none.remember(sector49).open(sector49.id)),
           ),
-          tournees: FakeTourneeRepository([team()]),
+          sectors: FakeSectorRepository([team()]),
           member: manuId,
           now: now,
           // Sam is an admin of the app, not in the team of the 49.
@@ -178,5 +179,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.bySemanticsLabel('Corbeille · 2 éléments'), findsOneWidget);
+  });
+
+  testWidgets('should label every control and make it 48 dp at least', (
+    tester,
+  ) async {
+    await pumpCorbeille(tester, [gambettaDeleted(), lilasWithoutSeven()]);
+
+    await expectAccessibleControls(tester);
   });
 }

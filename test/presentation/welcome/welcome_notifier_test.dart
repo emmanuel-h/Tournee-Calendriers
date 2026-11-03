@@ -1,16 +1,16 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
-import 'package:tournee_calendriers/domain/tournee/member_name.dart';
+import 'package:tournee_calendriers/domain/sector/member_name.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/settings/settings_notifier.dart';
 import 'package:tournee_calendriers/presentation/welcome/welcome_notifier.dart';
 import 'package:tournee_calendriers/presentation/welcome/welcome_state.dart';
 
-import '../../domain/tournee/tournee_fixtures.dart';
-import '../../support/fakes/fake_my_tournees_store.dart';
+import '../../domain/sector/sector_fixtures.dart';
+import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_phone_settings.dart';
 import '../../support/fakes/fake_ports.dart';
-import '../../support/fakes/fake_tournee_repository.dart';
+import '../../support/fakes/fake_sector_repository.dart';
 
 void main() {
   late FakePhoneSettings settings;
@@ -23,9 +23,9 @@ void main() {
     container = ProviderContainer(
       overrides: [
         phoneSettingsProvider.overrideWithValue(settings),
-        tourneeRepositoryProvider.overrideWithValue(FakeTourneeRepository()),
+        sectorRepositoryProvider.overrideWithValue(FakeSectorRepository()),
         identityProvider.overrideWithValue(FakeIdentity(manuId)),
-        myTourneesStoreProvider.overrideWithValue(FakeMyTourneesStore()),
+        mySectorsStoreProvider.overrideWithValue(FakeMySectorsStore()),
       ],
     );
     addTearDown(container.dispose);

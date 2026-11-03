@@ -2,26 +2,27 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
+import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
+import 'package:tournee_calendriers/domain/sector/sector_commune.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
-import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_commune.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/screens/add_streets/add_streets_screen.dart';
 import 'package:tournee_calendriers/ui/screens/import_streets/import_screen.dart';
 
-import '../../domain/tournee/my_tournees_fixtures.dart';
-import '../../domain/tournee/tournee_fixtures.dart';
+import '../../domain/sector/my_sectors_fixtures.dart';
+import '../../domain/sector/sector_fixtures.dart';
 import '../../support/fakes/fake_address_directory.dart';
-import '../../support/fakes/fake_my_tournees_store.dart';
+import '../../support/fakes/fake_my_sectors_store.dart';
+import '../../support/fakes/fake_sector_repository.dart';
 import '../../support/fakes/fake_street_repository.dart';
-import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 import '../support/app_overrides.dart';
 import '../support/fake_map_view.dart';
+import '../support/large_text.dart';
 
 final _morin = BanStreetId('69264_1460');
 final _bordelan = BanStreetId('69264_0246');
@@ -50,7 +51,7 @@ void main() {
   /// open; Rue Pierre Morin is already in it.
   Future<void> pumpStart(
     WidgetTester tester,
-    List<TourneeCommune> communes,
+    List<SectorCommune> communes,
   ) async {
     streets = FakeStreetRepository([
       valueOf(
@@ -66,9 +67,9 @@ void main() {
       ProviderScope(
         overrides: fakePhone(
           streets: streets,
-          tournees: FakeTourneeRepository([team(communes: communes)]),
-          myTournees: FakeMyTourneesStore(
-            valueOf(MyTournees.none.remember(tournee49).open(tourneeId)),
+          sectors: FakeSectorRepository([team(communes: communes)]),
+          mySectors: FakeMySectorsStore(
+            valueOf(MySectors.none.remember(sector49).open(sectorId)),
           ),
           directory: FakeAddressDirectory(
             communes: {
@@ -106,6 +107,9 @@ void main() {
     await pumpStart(tester, [villefrancheCommune, gleizeCommune]);
     expect(find.text('Ajouter des rues'), findsOneWidget);
 
+    // A row after the streets: scrolled to, as the member would.
+    await tester.ensureVisible(find.byKey(const Key('start.import')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('start.import')));
     await tester.pumpAndSettle();
 
@@ -123,7 +127,7 @@ void main() {
     expect(find.byKey(const Key('import.commune')), findsNothing);
     expect(find.byKey(const ValueKey('import.commune.69264')), findsOneWidget);
     expect(find.byKey(const ValueKey('import.commune.69092')), findsOneWidget);
-    expect(find.text('déjà dans la tournée'), findsOneWidget);
+    expect(find.text('déjà dans le secteur'), findsOneWidget);
     expect(find.text('Ajouter'), findsOneWidget);
 
     await tester.tap(find.byKey(const ValueKey('import.commune.69092')));
@@ -136,6 +140,9 @@ void main() {
   testWidgets('should show no chip for a single commune, and add the streets '
       'ticked to the tournée', (tester) async {
     await pumpStart(tester, [villefrancheCommune]);
+    // A row after the streets: scrolled to, as the member would.
+    await tester.ensureVisible(find.byKey(const Key('start.import')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('start.import')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('addStreets.tab.list')));
@@ -150,7 +157,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(AddStreetsScreen), findsNothing);
-    expect(find.text('1 rue ajoutée à la tournée'), findsOneWidget);
+    expect(find.text('1 rue ajoutée au secteur'), findsOneWidget);
     expect(await streets.findByBanId(_bordelan), isNotNull);
   });
 
@@ -158,6 +165,9 @@ void main() {
     tester,
   ) async {
     await pumpStart(tester, []);
+    // A row after the streets: scrolled to, as the member would.
+    await tester.ensureVisible(find.byKey(const Key('start.import')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('start.import')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('addStreets.tab.list')));
@@ -168,6 +178,9 @@ void main() {
 
   testWidgets('should close with ✕', (tester) async {
     await pumpStart(tester, [villefrancheCommune]);
+    // A row after the streets: scrolled to, as the member would.
+    await tester.ensureVisible(find.byKey(const Key('start.import')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('start.import')));
     await tester.pumpAndSettle();
 
@@ -175,5 +188,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(AddStreetsScreen), findsNothing);
+  });
+
+  testWidgets('should label every control and make it 48 dp at least', (
+    tester,
+  ) async {
+    await pumpStart(tester, [villefrancheCommune, gleizeCommune]);
+
+    await expectAccessibleControls(tester);
   });
 }

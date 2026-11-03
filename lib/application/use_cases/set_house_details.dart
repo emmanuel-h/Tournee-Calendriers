@@ -2,7 +2,9 @@ import 'package:tournee_calendriers/application/ports/clock.dart';
 import 'package:tournee_calendriers/application/ports/identity_provider.dart';
 import 'package:tournee_calendriers/application/use_cases/command_failure.dart';
 import 'package:tournee_calendriers/application/use_cases/mark.dart';
+import 'package:tournee_calendriers/application/use_cases/round_visits.dart';
 import 'package:tournee_calendriers/application/use_cases/street_command.dart';
+import 'package:tournee_calendriers/domain/round/round_visit.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
@@ -10,26 +12,32 @@ import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_repository.dart';
 
-/// One control of the Fiche maison (hold a tile, PLAN §5.7): the status,
-/// the time of the « repasser », or « Repassé, toujours personne » of a
-/// house. On a building it sets the
+/// One choice of a house's status picker (PLAN §5.6): the status, the time
+/// of the « repasser », or « De nouveau personne ». On a building it sets the
 /// building's own « repasser » (« Repasser » under the grid); its status is
-/// refused, its doors carry the statuses. Needs no network.
+/// refused, its doors carry the statuses. A house made ✓ or ⊘, or taken
+/// back, is told to the tournée on (PLAN §5.13). Needs no network.
 final class SetHouseDetails {
-  const SetHouseDetails(this._streets, this._clock, this._identity);
+  const SetHouseDetails(
+    this._streets,
+    this._clock,
+    this._identity,
+    this._rounds,
+  );
 
   final StreetRepository _streets;
   final Clock _clock;
   final IdentityProvider _identity;
+  final RoundVisits _rounds;
 
   Future<Result<HouseChange, CommandFailure<HouseChangeFailure>>> call(
     StreetId streetId,
     HouseNumber number,
     Mark mark,
-  ) {
+  ) async {
     final by = _identity.currentMember;
     final at = _clock.now();
-    return runOnStreet(
+    final result = await runOnStreet(
       _streets,
       streetId,
       (street) => switch (mark) {
@@ -52,5 +60,9 @@ final class SetHouseDetails {
         ),
       },
     );
+    if (result case Ok(value: final change)) {
+      await _rounds.note(RoundVisit.of(change));
+    }
+    return result;
   }
 }

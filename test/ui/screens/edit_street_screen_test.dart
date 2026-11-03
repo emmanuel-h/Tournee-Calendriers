@@ -14,6 +14,7 @@ import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 import '../support/app_overrides.dart';
 import '../support/keyboard.dart';
+import '../support/large_text.dart';
 import '../support/navigation.dart';
 
 final _id = StreetId('lilas');
@@ -299,5 +300,13 @@ void main() {
 
     expect(find.text('Ne plus la faire'), findsNothing);
     expect(find.text('Supprimer la rue'), findsOneWidget);
+  });
+
+  testWidgets('should label every control and make it 48 dp at least', (
+    tester,
+  ) async {
+    await openEditMode(tester);
+
+    await expectAccessibleControls(tester);
   });
 }

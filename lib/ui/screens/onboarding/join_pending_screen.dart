@@ -3,7 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
+import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/presentation/join/join_request_notifier.dart';
 import 'package:tournee_calendriers/presentation/join/join_request_state.dart';
 import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
@@ -16,7 +16,7 @@ import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
 /// « Demande envoyée » (PLAN §5.2, JoinPending mockup): the member waits
-/// for an active member of [tournee] to accept them. The screen follows
+/// for an active member of [sector] to accept them. The screen follows
 /// the request by itself: accepted, it opens the start screen on the
 /// tournée; refused, it says « Demande refusée » and goes back to
 /// « Bienvenue » (or to the start screen, when the phone has one).
@@ -25,15 +25,15 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 /// It is where the app opens while the request waits and the phone holds
 /// nothing else; a back arrow leads to the start screen when it does.
 final class JoinPendingScreen extends ConsumerWidget {
-  const JoinPendingScreen({super.key, required this.tournee});
+  const JoinPendingScreen({super.key, required this.sector});
 
-  final TourneeId tournee;
+  final SectorId sector;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final colors = AppColors.of(context);
-    final provider = joinRequestProvider(tournee);
+    final provider = joinRequestProvider(sector);
     ref.listen(provider, (_, next) {
       switch (next) {
         case RequestAccepted():
@@ -98,8 +98,8 @@ final class JoinPendingScreen extends ConsumerWidget {
                             '${waiting.number}',
                             waiting.centre,
                           ),
-                          key: const Key('pending.tournee'),
-                          style: AppTextStyles.pendingTournee.copyWith(
+                          key: const Key('pending.sector'),
+                          style: AppTextStyles.pendingSector.copyWith(
                             color: colors.muted,
                           ),
                         ),

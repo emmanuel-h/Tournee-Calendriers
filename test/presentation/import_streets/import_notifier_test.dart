@@ -2,25 +2,25 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
+import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
+import 'package:tournee_calendriers/domain/sector/sector_commune.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
-import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_commune.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/import_streets/import_notifier.dart';
 import 'package:tournee_calendriers/presentation/import_streets/import_state.dart';
 
-import '../../domain/tournee/my_tournees_fixtures.dart';
-import '../../domain/tournee/tournee_fixtures.dart'
-    show gleizeCommune, team, tourneeId, villefrancheCommune;
+import '../../domain/sector/my_sectors_fixtures.dart';
+import '../../domain/sector/sector_fixtures.dart'
+    show gleizeCommune, team, sectorId, villefrancheCommune;
 import '../../support/fakes/fake_address_directory.dart';
 import '../../support/fakes/fake_commune_search.dart';
-import '../../support/fakes/fake_my_tournees_store.dart';
+import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_ports.dart';
+import '../../support/fakes/fake_sector_repository.dart';
 import '../../support/fakes/fake_street_repository.dart';
-import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 
@@ -116,7 +116,7 @@ void main() {
         // Zero, so the debounce is a single turn of the event loop.
         communeSearchDelayProvider.overrideWithValue(Duration.zero),
         // No tournée open: the phone's own streets, as in M1.
-        myTourneesStoreProvider.overrideWithValue(FakeMyTourneesStore()),
+        mySectorsStoreProvider.overrideWithValue(FakeMySectorsStore()),
       ],
     );
     addTearDown(container.dispose);
@@ -691,7 +691,7 @@ void main() {
   });
 
   group('with a tournée open', () {
-    late FakeTourneeRepository tournees;
+    late FakeSectorRepository sectors;
     late ProviderContainer phone;
 
     ImportState tab() => phone.read(importProvider);
@@ -703,18 +703,18 @@ void main() {
     );
 
     /// The « Liste » tab of the 49, open, covering [covered].
-    Future<void> openTab(List<TourneeCommune> covered) async {
+    Future<void> openTab(List<SectorCommune> covered) async {
       listings['69092'] = Ok(gleizeStreets);
-      tournees = FakeTourneeRepository([team(communes: covered)]);
+      sectors = FakeSectorRepository([team(communes: covered)]);
       phone = ProviderContainer(
         overrides: [
           communeSearchProvider.overrideWithValue(communes),
           addressDirectoryProvider.overrideWithValue(directory),
           streetRepositoryProvider.overrideWithValue(streets),
-          tourneeRepositoryProvider.overrideWithValue(tournees),
-          myTourneesStoreProvider.overrideWithValue(
-            FakeMyTourneesStore(
-              valueOf(MyTournees.none.remember(tournee49).open(tourneeId)),
+          sectorRepositoryProvider.overrideWithValue(sectors),
+          mySectorsStoreProvider.overrideWithValue(
+            FakeMySectorsStore(
+              valueOf(MySectors.none.remember(sector49).open(sectorId)),
             ),
           ),
           communeSearchDelayProvider.overrideWithValue(Duration.zero),
@@ -729,12 +729,12 @@ void main() {
         'streets', () async {
       await openTab([villefrancheCommune, gleizeCommune]);
 
-      expect(tab().inTournee, isTrue);
-      expect(tab().tourneeCommunes, [
-        CommuneOption.ofTournee(villefrancheCommune),
-        CommuneOption.ofTournee(gleizeCommune),
+      expect(tab().inSector, isTrue);
+      expect(tab().sectorCommunes, [
+        CommuneOption.ofSector(villefrancheCommune),
+        CommuneOption.ofSector(gleizeCommune),
       ]);
-      expect(tab().commune, CommuneOption.ofTournee(villefrancheCommune));
+      expect(tab().commune, CommuneOption.ofSector(villefrancheCommune));
       expect(tab().streetCount, 4);
       expect(communes.searched, isEmpty);
     });
@@ -746,7 +746,7 @@ void main() {
       await phone
           .read(importProvider.notifier)
           .chooseCommune(
-            CommuneOption.ofTournee(gleizeCommune),
+            CommuneOption.ofSector(gleizeCommune),
             label: 'Gleizé',
           );
 
@@ -760,14 +760,14 @@ void main() {
       await phone
           .read(importProvider.notifier)
           .chooseCommune(
-            CommuneOption.ofTournee(gleizeCommune),
+            CommuneOption.ofSector(gleizeCommune),
             label: 'Gleizé',
           );
 
-      tournees.put(team(communes: [gleizeCommune]));
+      sectors.put(team(communes: [gleizeCommune]));
       await _settle();
 
-      expect(tab().tourneeCommunes, [CommuneOption.ofTournee(gleizeCommune)]);
+      expect(tab().sectorCommunes, [CommuneOption.ofSector(gleizeCommune)]);
       expect(tab().commune!.inseeCode, gleizeCommune.inseeCode);
     });
 
@@ -775,7 +775,7 @@ void main() {
         'removed', () async {
       await openTab([villefrancheCommune, gleizeCommune]);
 
-      tournees.put(team(communes: [gleizeCommune]));
+      sectors.put(team(communes: [gleizeCommune]));
       await _settle();
 
       expect(tab().commune!.inseeCode, gleizeCommune.inseeCode);
@@ -786,15 +786,15 @@ void main() {
         'communes', () async {
       await openTab([]);
 
-      expect(tab().inTournee, isTrue);
-      expect(tab().tourneeCommunes, isEmpty);
+      expect(tab().inSector, isTrue);
+      expect(tab().sectorCommunes, isEmpty);
       expect(tab().commune, isNull);
       expect(tab().streets, isA<NoCommuneChosen>());
     });
   });
 
   test('should not be in a tournée when none is open', () {
-    expect(state().inTournee, isFalse);
-    expect(state().tourneeCommunes, isEmpty);
+    expect(state().inSector, isFalse);
+    expect(state().sectorCommunes, isEmpty);
   });
 }

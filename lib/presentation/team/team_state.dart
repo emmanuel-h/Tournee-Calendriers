@@ -1,6 +1,8 @@
+import 'package:tournee_calendriers/domain/sector/sector.dart';
 import 'package:tournee_calendriers/domain/shared/insee_code.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee.dart';
+import 'package:tournee_calendriers/domain/shared/same_items.dart';
+import 'package:tournee_calendriers/domain/street/streets_by_member.dart';
 import 'package:tournee_calendriers/presentation/shared/recent_time.dart';
 
 /// Why a command of Équipe was not done, as the screen tells it.
@@ -72,40 +74,41 @@ final class TeamShown extends TeamState {
        members = List.unmodifiable(members),
        communes = List.unmodifiable(communes);
 
-  /// [tournee] as [me] sees it at [now] (« il y a 2 min »): [iAmAdmin]
+  /// [sector] as [me] sees it at [now] (« il y a 2 min »): [iAmAdmin]
   /// when the phone is an admin's, [admins] the other members known to be
-  /// admins.
+  /// admins, [streets] the streets each member covers.
   factory TeamShown.of(
-    Tournee tournee, {
+    Sector sector, {
     required MemberId me,
     required DateTime now,
     required bool iAmAdmin,
     required Set<MemberId> admins,
+    required StreetsByMember streets,
   }) {
     // An active member or an admin changes the communes (PLAN §5.8);
     // never the last one.
     final canChangeCommunes =
-        iAmAdmin || (tournee.memberOf(me)?.isActive ?? false);
-    final lastOne = tournee.communes.length == 1;
+        iAmAdmin || (sector.memberOf(me)?.isActive ?? false);
+    final lastOne = sector.communes.length == 1;
     return TeamShown(
       canChangeCommunes: canChangeCommunes,
       communes: [
-        for (final commune in tournee.communes)
+        for (final commune in sector.communes)
           CommuneRow(
             inseeCode: commune.inseeCode,
             name: commune.name,
             removable: canChangeCommunes && !lastOne,
           ),
       ],
-      number: tournee.number.value,
-      centre: tournee.centre.name,
-      campaign: tournee.currentCampaign.value,
-      code: tournee.joinCode.display,
-      qrData: tournee.joinCode.value,
+      number: sector.number.value,
+      centre: sector.centre.name,
+      campaign: sector.currentCampaign.value,
+      code: sector.joinCode.display,
+      qrData: sector.joinCode.value,
       iAmAdmin: iAmAdmin,
-      iAmIn: tournee.memberOf(me) != null,
+      iAmIn: sector.memberOf(me) != null,
       requests: [
-        for (final request in tournee.pendingMembers)
+        for (final request in sector.pendingMembers)
           RequestRow(
             id: request.id,
             name: request.name.text,
@@ -113,7 +116,7 @@ final class TeamShown extends TeamState {
           ),
       ],
       members: [
-        for (final member in tournee.activeMembers)
+        for (final member in sector.activeMembers)
           MemberRow(
             id: member.id,
             name: member.name.text,
@@ -123,6 +126,9 @@ final class TeamShown extends TeamState {
             // An admin removes any other member, admins included; leaving
             // is « Quitter » (PLAN §5.12).
             canRemove: iAmAdmin && member.id != me,
+            streets: [
+              for (final name in streets.streetsOf(member.id)) name.text,
+            ],
           ),
       ],
     );
@@ -144,7 +150,7 @@ final class TeamShown extends TeamState {
   final String qrData;
 
   /// Whether the phone is an admin's (PLAN §5.12): « Nouveau code »,
-  /// « Retirer » and « Supprimer la tournée » are theirs, member of the
+  /// « Retirer » and « Supprimer le secteur » are theirs, member of the
   /// tournée or not.
   final bool iAmAdmin;
 
@@ -231,15 +237,17 @@ final class RequestRow {
   int get hashCode => Object.hash(id, name, asked);
 }
 
-/// A member in « Membres »: « Manu (vous) · admin », « Léa [⋮] ».
+/// A member in « Membres »: « Manu (vous) · admin  5 rues ▸ »,
+/// « Léa  3 rues ▸ [⋮] ».
 final class MemberRow {
-  const MemberRow({
+  MemberRow({
     required this.id,
     required this.name,
     required this.isMe,
     required this.isAdmin,
     required this.canRemove,
-  });
+    List<String> streets = const [],
+  }) : streets = List.unmodifiable(streets);
 
   final MemberId id;
   final String name;
@@ -253,6 +261,10 @@ final class MemberRow {
   /// The member on the phone may « Retirer » this one (⋮).
   final bool canRemove;
 
+  /// The names of the streets this member covers, in French order: their
+  /// count (« 3 rues ») and, unfolded, the names under the row.
+  final List<String> streets;
+
   @override
   bool operator ==(Object other) =>
       other is MemberRow &&
@@ -260,8 +272,10 @@ final class MemberRow {
       other.name == name &&
       other.isMe == isMe &&
       other.isAdmin == isAdmin &&
-      other.canRemove == canRemove;
+      other.canRemove == canRemove &&
+      sameItems(other.streets, streets);
 
   @override
-  int get hashCode => Object.hash(id, name, isMe, isAdmin, canRemove);
+  int get hashCode =>
+      Object.hash(id, name, isMe, isAdmin, canRemove, Object.hashAll(streets));
 }

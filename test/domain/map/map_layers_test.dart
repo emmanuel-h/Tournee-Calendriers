@@ -1,5 +1,6 @@
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/map/map_layers.dart';
+import 'package:tournee_calendriers/domain/sector/team_roster.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/progress_level.dart';
@@ -12,6 +13,7 @@ import '../../support/building_fixtures.dart';
 import '../../support/geo_fixtures.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
+import '../sector/sector_fixtures.dart' as sector;
 
 final _nationale = StreetId('rue-nationale');
 final _paix = StreetId('rue-de-la-paix');
@@ -79,6 +81,26 @@ void main() {
       expect(layers.lines.single.level, ProgressLevel.toDo);
     });
 
+    test('should be « libre » when its only assignee left the team', () {
+      final (taken, _) = valueOf(_paixStreet.take(sector.paulId));
+
+      final layers = MapLayers.of([
+        taken,
+      ], roster: TeamRoster.of(sector.team(), me: sector.leaId));
+
+      expect(layers.lines.single.level, ProgressLevel.free);
+    });
+
+    test('should be « à faire » while an assignee is in the team', () {
+      final (taken, _) = valueOf(_paixStreet.take(sector.manuId));
+
+      final layers = MapLayers.of([
+        taken,
+      ], roster: TeamRoster.of(sector.team(), me: sector.leaId));
+
+      expect(layers.lines.single.level, ProgressLevel.toDo);
+    });
+
     test('should draw no line for a street without shape', () {
       final manual = Street.manual(
         id: StreetId('chemin-neuf'),
@@ -131,6 +153,7 @@ void main() {
     final singles = <(VisitStatus, HouseDotStatus)>[
       (VisitStatus.toDo, HouseDotStatus.toDo),
       (VisitStatus.done, HouseDotStatus.done),
+      (VisitStatus.refused, HouseDotStatus.refused),
       (VisitStatus.nobodyHome, HouseDotStatus.nobodyHome),
       (VisitStatus.comeBack, HouseDotStatus.comeBack),
     ];
@@ -172,6 +195,20 @@ void main() {
         final done = marked(marked(street, door01), door02);
 
         expect(_dotOf(done).status, HouseDotStatus.done);
+      });
+
+      test('should show done when every door is done or refused', () {
+        final (refused, _) = valueOf(
+          marked(street, door01).markDwelling(
+            n('7'),
+            door02,
+            VisitStatus.refused,
+            by: lea,
+            at: twoPm,
+          ),
+        );
+
+        expect(_dotOf(refused).status, HouseDotStatus.done);
       });
 
       test('should show come back when the building has its own', () {

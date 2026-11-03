@@ -5,30 +5,31 @@ import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/street_shapes.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
-import 'package:tournee_calendriers/domain/map/tournee_area.dart';
+import 'package:tournee_calendriers/domain/map/sector_area.dart';
+import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
+import 'package:tournee_calendriers/domain/street/progress_level.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
-import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
 import 'package:tournee_calendriers/presentation/add_streets/add_streets_map_notifier.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/street_card/street_card.dart';
 
-import '../../domain/tournee/my_tournees_fixtures.dart';
-import '../../domain/tournee/tournee_fixtures.dart';
+import '../../domain/sector/my_sectors_fixtures.dart';
+import '../../domain/sector/sector_fixtures.dart';
 import '../../support/fakes/fake_address_directory.dart';
-import '../../support/fakes/fake_my_tournees_store.dart';
+import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_ports.dart';
+import '../../support/fakes/fake_sector_repository.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/fakes/fake_street_shapes.dart';
-import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/geo_fixtures.dart';
 import '../../support/results.dart';
-import '../../support/street_fixtures.dart' hide lea;
 import '../../support/street_fixtures.dart' as streets_fixtures show lea;
+import '../../support/street_fixtures.dart' hide lea;
 
 final _me = streets_fixtures.lea;
 
@@ -102,7 +103,7 @@ final _emile = valueOf(
 
 void main() {
   late FakeStreetRepository streets;
-  late FakeTourneeRepository tournees;
+  late FakeSectorRepository sectors;
   late FakeAddressDirectory directory;
   late FakeStreetShapes shapes;
 
@@ -111,16 +112,16 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         streetRepositoryProvider.overrideWithValue(streets),
-        tourneeRepositoryProvider.overrideWithValue(tournees),
+        sectorRepositoryProvider.overrideWithValue(sectors),
         addressDirectoryProvider.overrideWithValue(directory),
         streetShapesProvider.overrideWithValue(shapes),
         identityProvider.overrideWithValue(FakeIdentity(_me)),
         idGeneratorProvider.overrideWithValue(FakeIdGenerator('street')),
-        myTourneesStoreProvider.overrideWithValue(
-          FakeMyTourneesStore(
+        mySectorsStoreProvider.overrideWithValue(
+          FakeMySectorsStore(
             open
-                ? valueOf(MyTournees.none.remember(tournee49).open(tourneeId))
-                : MyTournees.none,
+                ? valueOf(MySectors.none.remember(sector49).open(sectorId))
+                : MySectors.none,
           ),
         ),
       ],
@@ -140,7 +141,7 @@ void main() {
 
   setUp(() {
     streets = FakeStreetRepository([_nationale, _emile]);
-    tournees = FakeTourneeRepository([
+    sectors = FakeSectorRepository([
       team(communes: [villefrancheCommune, gleizeCommune]),
     ]);
     directory = FakeAddressDirectory(
@@ -166,19 +167,38 @@ void main() {
       expect(state.search, const NoStreetSearch());
     });
 
-    test('should open on the streets for a tournée without commune', () async {
-      tournees.put(team());
+    test('should draw « libre » a street whose only assignee left the '
+        'team (#91)', () async {
+      final (taken, change) = valueOf(_nationale.take(paulId));
+      await streets.save(taken, change);
       final container = phone();
       await pumpEventQueue();
 
-      expect(stateOf(container).area, tourneeArea([_nationale, _emile]));
+      expect(stateOf(container).layers.lines.single.level, ProgressLevel.free);
+    });
+
+    test('should draw « à faire » a street a teammate took', () async {
+      final (taken, change) = valueOf(_nationale.take(manuId));
+      await streets.save(taken, change);
+      final container = phone();
+      await pumpEventQueue();
+
+      expect(stateOf(container).layers.lines.single.level, ProgressLevel.toDo);
+    });
+
+    test('should open on the streets for a tournée without commune', () async {
+      sectors.put(team());
+      final container = phone();
+      await pumpEventQueue();
+
+      expect(stateOf(container).area, sectorArea([_nationale, _emile]));
     });
 
     test('should follow the communes as they change', () async {
       final container = phone();
       await pumpEventQueue();
 
-      tournees.put(team(communes: [gleizeCommune]));
+      sectors.put(team(communes: [gleizeCommune]));
       await pumpEventQueue();
 
       expect(stateOf(container).area, communesArea([gleizeCommune]));
@@ -188,13 +208,13 @@ void main() {
       final container = phone(open: false);
       await pumpEventQueue();
 
-      expect(stateOf(container).area, tourneeArea([_nationale, _emile]));
-      expect(tournees.watched, isEmpty);
+      expect(stateOf(container).area, sectorArea([_nationale, _emile]));
+      expect(sectors.watched, isEmpty);
     });
 
     test('should draw nothing and show France before anything is read', () {
       streets.watchError = StateError('not yet');
-      tournees.put(team());
+      sectors.put(team());
       final container = phone();
 
       final state = stateOf(container);
@@ -206,7 +226,7 @@ void main() {
 
     test('should draw no street once the streets cannot be read', () async {
       streets.watchError = StateError('removed');
-      tournees.put(team());
+      sectors.put(team());
       final container = phone();
       await pumpEventQueue();
 
@@ -219,15 +239,15 @@ void main() {
 
   test('should keep showing the map when the tournée can no longer be '
       'read', () async {
-    tournees.watchError = StateError('removed');
+    sectors.watchError = StateError('removed');
     final container = phone();
     await pumpEventQueue();
 
     notifierOf(container).tapStreet(StreetId('emile'));
 
-    final card = stateOf(container).card! as StreetCardInTournee;
+    final card = stateOf(container).card! as StreetCardInSector;
     expect(card.coverage, StreetCoverage.mine);
-    expect(stateOf(container).area, tourneeArea([_nationale, _emile]));
+    expect(stateOf(container).area, sectorArea([_nationale, _emile]));
   });
 
   group('a road tapped', () {
@@ -306,7 +326,7 @@ void main() {
       await notifierOf(container).tapMap(_onNationale);
 
       final state = stateOf(container);
-      final card = state.card! as StreetCardInTournee;
+      final card = state.card! as StreetCardInSector;
       expect(card.id, StreetId('nationale'));
       expect(card.coverage, StreetCoverage.free);
       expect(state.selectedRoad, _nationaleRoad);
@@ -370,7 +390,7 @@ void main() {
       directory.releaseStreet(_morinId);
       await late;
 
-      final card = stateOf(container).card! as StreetCardInTournee;
+      final card = stateOf(container).card! as StreetCardInSector;
       expect(card.id, StreetId('emile'));
       expect(shapes.asked, isEmpty);
     });
@@ -417,7 +437,7 @@ void main() {
       final state = stateOf(container);
       expect(
         state.card,
-        StreetCardInTournee(
+        StreetCardInSector(
           id: StreetId('nationale'),
           name: 'Rue Nationale',
           commune: 'Villefranche-sur-Saône',
@@ -451,7 +471,7 @@ void main() {
 
       expect(streets[StreetId('nationale')]!.assignees, {_me});
       expect(
-        (stateOf(container).card! as StreetCardInTournee).coverage,
+        (stateOf(container).card! as StreetCardInSector).coverage,
         StreetCoverage.mine,
       );
     });
@@ -466,7 +486,7 @@ void main() {
 
       expect(streets[StreetId('emile')]!.assignees, isEmpty);
       expect(
-        (stateOf(container).card! as StreetCardInTournee).coverage,
+        (stateOf(container).card! as StreetCardInSector).coverage,
         StreetCoverage.free,
       );
     });
@@ -507,7 +527,7 @@ void main() {
       await pumpEventQueue();
 
       expect(
-        (stateOf(container).card! as StreetCardInTournee).id,
+        (stateOf(container).card! as StreetCardInSector).id,
         StreetId('emile'),
       );
     });
@@ -549,7 +569,7 @@ void main() {
       // no other write.
       expect(shapes.asked, hasLength(1));
       expect(streets.saved, isEmpty);
-      final card = stateOf(container).card! as StreetCardInTournee;
+      final card = stateOf(container).card! as StreetCardInSector;
       expect(card.id, added.id);
       expect(card.coverage, StreetCoverage.mine);
       expect(stateOf(container).selectedRoad, _morinRoad);
@@ -566,7 +586,7 @@ void main() {
 
       expect(streets.added.single.assignees, isEmpty);
       expect(
-        (stateOf(container).card! as StreetCardInTournee).coverage,
+        (stateOf(container).card! as StreetCardInSector).coverage,
         StreetCoverage.free,
       );
     });
@@ -584,7 +604,7 @@ void main() {
 
       final added = streets.added.single;
       expect(added.shape, StreetShape.none);
-      expect((stateOf(container).card! as StreetCardInTournee).id, added.id);
+      expect((stateOf(container).card! as StreetCardInSector).id, added.id);
       expect(stateOf(container).selectedRoad, StreetShape.none);
 
       answer.complete();
@@ -696,14 +716,15 @@ void main() {
           name: 'Rue Pierre Morin',
           commune: villefranche,
           banId: _morinId,
-          assignees: {paul},
+          // Manu, in the team: a street of someone who left it is free.
+          assignees: {manuId},
         ),
       );
       await streets.add(teammates);
 
       await notifier.add(assignToMe: true);
 
-      final card = stateOf(container).card! as StreetCardInTournee;
+      final card = stateOf(container).card! as StreetCardInSector;
       expect(card.id, StreetId('by-paul'));
       expect(card.coverage, StreetCoverage.others);
       expect(streets.added, [teammates]);
@@ -773,7 +794,7 @@ void main() {
 
       expect(streets.added, hasLength(1));
       expect(
-        (stateOf(container).card! as StreetCardInTournee).id,
+        (stateOf(container).card! as StreetCardInSector).id,
         StreetId('emile'),
       );
     });
@@ -843,7 +864,7 @@ void main() {
 
     test('should search the communes of the streets for a tournée without '
         'commune', () async {
-      tournees.put(team());
+      sectors.put(team());
       final container = phone();
       await pumpEventQueue();
 
@@ -972,7 +993,7 @@ void main() {
           'morin': Ok([_morinMatch]),
         },
       );
-      tournees.put(team());
+      sectors.put(team());
       final container = phone();
       await pumpEventQueue();
       final notifier = notifierOf(container);

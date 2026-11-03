@@ -96,6 +96,7 @@ final class _MapLegendState extends State<MapLegend> {
       widget.houses
       ? [
           (_dot(HouseDotStatus.done, colors), l10n.tileStatusDone),
+          (_dot(HouseDotStatus.refused, colors), l10n.tileStatusRefused),
           (_dot(HouseDotStatus.nobodyHome, colors), l10n.tileStatusNobodyHome),
           (_dot(HouseDotStatus.comeBack, colors), l10n.tileStatusComeBack),
           (_dot(HouseDotStatus.toDo, colors), l10n.tileStatusToDo),
@@ -121,32 +122,57 @@ final class _MapLegendState extends State<MapLegend> {
       );
 
   /// A short piece of street line, dashed for « libre » as on the map.
-  static Widget _line(ProgressLevel level, AppColors colors) => CustomPaint(
-    size: const Size(AppSizes.legendLineSample, 8),
-    painter: _LinePainter(
-      streetLineColor(level, colors),
-      dashed: level == ProgressLevel.free,
-    ),
-  );
+  /// On the dark legend, the « libre » dashes keep their dark grey (the map
+  /// under them stays light) and get the map's white casing back, or they
+  /// would not show.
+  static Widget _line(ProgressLevel level, AppColors colors) {
+    final free = level == ProgressLevel.free;
+    return CustomPaint(
+      size: const Size(AppSizes.legendLineSample, 8),
+      painter: _LinePainter(
+        streetLineColor(level, colors),
+        dashed: free,
+        casing: free && colors.brightness == Brightness.dark
+            ? colors.mapStreetFreeCasing
+            : null,
+      ),
+    );
+  }
 }
 
-/// Paints a horizontal line across its box: solid and round-capped, or
-/// dashed and thinner, as the map draws a street and a « libre » one.
+/// Paints a horizontal line across its box, as wide either way: solid and
+/// round-capped, or dashed, as the map draws a street and a « libre » one.
+/// The map's white casing under « libre » is left out on the legend's
+/// white ground, where it would not show; a dark legend draws it.
 final class _LinePainter extends CustomPainter {
-  const _LinePainter(this.color, {required this.dashed});
+  const _LinePainter(this.color, {required this.dashed, this.casing});
 
   final Color color;
   final bool dashed;
 
-  static const _dash = 5.0;
+  /// A wider line drawn under the dashes, across the whole sample.
+  final Color? casing;
+
+  static const _width = 6.0;
+  static const _dash = 6.0;
   static const _gap = 4.0;
 
   @override
   void paint(Canvas canvas, Size size) {
     final y = size.height / 2;
+    final casing = this.casing;
+    if (casing != null) {
+      canvas.drawLine(
+        Offset(0, y),
+        Offset(size.width, y),
+        Paint()
+          ..color = casing
+          ..strokeWidth = size.height,
+      );
+    }
     final paint = Paint()
       ..color = color
-      ..strokeWidth = dashed ? 4 : 6
+      ..strokeWidth = _width
       ..strokeCap = dashed ? StrokeCap.butt : StrokeCap.round;
     if (!dashed) {
       canvas.drawLine(Offset(2, y), Offset(size.width - 2, y), paint);
@@ -160,5 +186,7 @@ final class _LinePainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_LinePainter oldDelegate) =>
-      oldDelegate.color != color || oldDelegate.dashed != dashed;
+      oldDelegate.color != color ||
+      oldDelegate.dashed != dashed ||
+      oldDelegate.casing != casing;
 }

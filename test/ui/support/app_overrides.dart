@@ -7,7 +7,7 @@ import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/import_streets/import_notifier.dart';
 import 'package:tournee_calendriers/presentation/launch/launch_place.dart';
-import 'package:tournee_calendriers/presentation/new_tournee/new_tournee_notifier.dart';
+import 'package:tournee_calendriers/presentation/new_sector/new_sector_notifier.dart';
 import 'package:tournee_calendriers/ui/map/map_view.dart';
 
 import '../../support/fakes/fake_address_directory.dart';
@@ -15,15 +15,19 @@ import '../../support/fakes/fake_admin_status.dart';
 import '../../support/fakes/fake_commune_search.dart';
 import '../../support/fakes/fake_member_account.dart';
 import '../../support/fakes/fake_moved_streets_log.dart';
-import '../../support/fakes/fake_my_tournees_store.dart';
+import '../../support/fakes/fake_my_sectors_store.dart';
+import '../../support/fakes/fake_open_round_store.dart';
 import '../../support/fakes/fake_pending_sync.dart';
 import '../../support/fakes/fake_phone_settings.dart';
 import '../../support/fakes/fake_ports.dart';
+import '../../support/fakes/fake_round_ledger.dart';
+import '../../support/fakes/fake_sector_directory.dart';
+import '../../support/fakes/fake_sector_downloads.dart';
+import '../../support/fakes/fake_sector_repository.dart';
+import '../../support/fakes/fake_server_connection.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/fakes/fake_street_shapes.dart';
 import '../../support/fakes/fake_street_view_preferences.dart';
-import '../../support/fakes/fake_tournee_directory.dart';
-import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/scripted_random.dart';
 import '../../support/street_fixtures.dart';
 import 'fake_map_view.dart';
@@ -31,18 +35,22 @@ import 'fake_map_view.dart';
 /// Every port the screens use, bound to [streets] (empty by default: the
 /// start screen shows its first-launch state), [directory], [shapes] (no
 /// road known by default), [communes],
-/// [preferences], [myTournees] (none by default), [settings] and
-/// [tourneeDirectory], [tournees] (none by default), [phoneStreets] (the
+/// [preferences], [mySectors] (none by default), [settings] and
+/// [sectorDirectory], [sectors] (none by default), [phoneStreets] (the
 /// streets kept on the phone since M1, none by default: no card offers
 /// them to a tournée), [movedStreets] and [pending] (nothing waiting to be
-/// sent by default); [member] (Léa by
+/// sent by default), [connection] (online by default), [downloads] (no
+/// tournée downloaded by default) and [rounds] (no tournée on by default);
+/// [member] (Léa by
 /// default) uses the phone and marks the houses at [now] (two o'clock by
 /// default); [account] is the phone's account (none by default, and no
 /// network to get one); [admins] says whether the phone, and which
 /// members, are admins of the app (none by default). The commune search and the duplicate check of
-/// « Nouvelle tournée » answer without waiting for a pause in the typing;
+/// « Nouveau secteur » answer without waiting for a pause in the typing;
 /// a new join code is `234567`. Maps are [FakeMapView]s: a native map
-/// cannot run in a widget test.
+/// cannot run in a widget test. With [nativeMap], they are the real
+/// MapLibre maps, for the store screenshots run on a device
+/// (`integration_test/store_screenshots_test.dart`).
 ///
 /// The app opens on the start screen, as on a phone that already holds
 /// streets or tournées; with [chooseLaunch], it decides from the fakes as
@@ -53,23 +61,27 @@ List<Override> fakePhone({
   FakeStreetShapes? shapes,
   FakeCommuneSearch? communes,
   FakeStreetViewPreferences? preferences,
-  FakeMyTourneesStore? myTournees,
+  FakeMySectorsStore? mySectors,
   FakePhoneSettings? settings,
-  FakeTourneeDirectory? tourneeDirectory,
-  FakeTourneeRepository? tournees,
+  FakeSectorDirectory? sectorDirectory,
+  FakeSectorRepository? sectors,
   FakeStreetRepository? phoneStreets,
   FakeMovedStreetsLog? movedStreets,
   FakePendingSync? pending,
+  FakeServerConnection? connection,
+  FakeSectorDownloads? downloads,
+  FakeOpenRoundStore? rounds,
   MemberId? member,
   DateTime? now,
   FakeMemberAccount? account,
   FakeAdminStatus? admins,
   bool chooseLaunch = false,
+  bool nativeMap = false,
 }) => [
   if (!chooseLaunch)
     launchPlaceProvider.overrideWithValue(const AsyncData(LaunchOnStreets())),
   duplicateCheckDelayProvider.overrideWithValue(Duration.zero),
-  tourneeMapViewProvider.overrideWithValue(FakeMapView.new),
+  if (!nativeMap) sectorMapViewProvider.overrideWithValue(FakeMapView.new),
   streetRepositoryProvider.overrideWithValue(streets ?? FakeStreetRepository()),
   phoneStreetRepositoryProvider.overrideWithValue(
     phoneStreets ?? FakeStreetRepository(),
@@ -78,6 +90,10 @@ List<Override> fakePhone({
     movedStreets ?? FakeMovedStreetsLog(),
   ),
   pendingSyncProvider.overrideWithValue(pending ?? FakePendingSync()),
+  serverConnectionProvider.overrideWithValue(
+    connection ?? FakeServerConnection(),
+  ),
+  sectorDownloadsProvider.overrideWithValue(downloads ?? FakeSectorDownloads()),
   addressDirectoryProvider.overrideWithValue(
     directory ?? FakeAddressDirectory(),
   ),
@@ -90,17 +106,15 @@ List<Override> fakePhone({
     preferences ?? FakeStreetViewPreferences(),
   ),
   communeSearchDelayProvider.overrideWithValue(Duration.zero),
-  myTourneesStoreProvider.overrideWithValue(
-    myTournees ?? FakeMyTourneesStore(),
-  ),
+  mySectorsStoreProvider.overrideWithValue(mySectors ?? FakeMySectorsStore()),
   phoneSettingsProvider.overrideWithValue(settings ?? FakePhoneSettings()),
-  tourneeDirectoryProvider.overrideWithValue(
-    tourneeDirectory ?? FakeTourneeDirectory(),
+  openRoundStoreProvider.overrideWithValue(rounds ?? FakeOpenRoundStore()),
+  roundLedgerProvider.overrideWithValue(FakeRoundLedger()),
+  sectorDirectoryProvider.overrideWithValue(
+    sectorDirectory ?? FakeSectorDirectory(),
   ),
   memberAccountProvider.overrideWithValue(account ?? FakeMemberAccount()),
-  tourneeRepositoryProvider.overrideWithValue(
-    tournees ?? FakeTourneeRepository(),
-  ),
+  sectorRepositoryProvider.overrideWithValue(sectors ?? FakeSectorRepository()),
   adminStatusProvider.overrideWithValue(admins ?? FakeAdminStatus()),
   // The indexes of `2`…`7` in the code alphabet: the code `234567`.
   randomProvider.overrideWithValue(ScriptedRandom([23, 24, 25, 26, 27, 28])),

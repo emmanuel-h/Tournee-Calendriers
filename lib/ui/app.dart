@@ -6,11 +6,11 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_loss.dart';
+import 'package:tournee_calendriers/domain/sector/sector_loss.dart';
 import 'package:tournee_calendriers/presentation/corbeille/corbeille_purge.dart';
 import 'package:tournee_calendriers/presentation/launch/launch_place.dart';
-import 'package:tournee_calendriers/presentation/my_tournees/tournee_loss_notice.dart';
-import 'package:tournee_calendriers/presentation/my_tournees/tournee_loss_notifier.dart';
+import 'package:tournee_calendriers/presentation/my_sectors/sector_loss_notice.dart';
+import 'package:tournee_calendriers/presentation/my_sectors/sector_loss_notifier.dart';
 import 'package:tournee_calendriers/presentation/settings/settings_notifier.dart';
 import 'package:tournee_calendriers/presentation/settings/settings_state.dart';
 import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
@@ -26,7 +26,7 @@ import 'package:tournee_calendriers/ui/theme/app_theme.dart';
 /// takes to tell.
 ///
 /// It also tells, over whatever screen is shown, that the member lost one
-/// of their tournées (`tourneeLossProvider`, PLAN §5.3): the open one
+/// of their tournées (`sectorLossProvider`, PLAN §5.3): the open one
 /// lost, it goes back to the start screen, with none open.
 ///
 /// It is a `StatefulWidget` only to create the router once and dispose of it
@@ -73,11 +73,11 @@ final class _TourneeAppState extends ConsumerState<TourneeApp> {
     initialLocation: location,
   );
 
-  /// « Vous avez été retiré de la tournée 49. », « La tournée 49 a été
-  /// supprimée. » or « Vous n'êtes plus administrateur… » (a tournée only
+  /// « Vous avez été retiré du secteur 49. », « Le secteur 49 a été
+  /// supprimé. » or « Vous n'êtes plus administrateur… » (a tournée only
   /// visited, PLAN §5.12), as « Demande refusée » is told: a message over the next
   /// screen. Nothing is shown before the app has its first screen.
-  void _tell(TourneeLossNotice notice) {
+  void _tell(SectorLossNotice notice) {
     final messenger = _messengerKey.currentState;
     final router = _router;
     if (messenger == null || router == null) return;
@@ -85,11 +85,9 @@ final class _TourneeAppState extends ConsumerState<TourneeApp> {
     showMessageSnackBar(
       messenger,
       message: switch (notice.loss) {
-        TourneeLoss.removed => l10n.tourneeRemoved('${notice.number}'),
-        TourneeLoss.deleted => l10n.tourneeDeleted('${notice.number}'),
-        TourneeLoss.adminRevoked => l10n.tourneeAdminRevoked(
-          '${notice.number}',
-        ),
+        SectorLoss.removed => l10n.sectorRemoved('${notice.number}'),
+        SectorLoss.deleted => l10n.sectorDeleted('${notice.number}'),
+        SectorLoss.adminRevoked => l10n.sectorAdminRevoked('${notice.number}'),
       },
     );
     // Its screens (Équipe, its streets) show a tournée the phone forgot.
@@ -105,7 +103,7 @@ final class _TourneeAppState extends ConsumerState<TourneeApp> {
     ref.listen(corbeillePurgeProvider, (_, _) {});
     // `ref.listen` runs the function at each new notice, without redrawing
     // the app; listening also starts following the member's tournées.
-    ref.listen(tourneeLossProvider, (_, notice) {
+    ref.listen(sectorLossProvider, (_, notice) {
       if (notice != null) _tell(notice);
     });
     // `select`: the app redraws when the theme changes, not when the name

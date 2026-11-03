@@ -144,6 +144,7 @@ void main() {
       expect(StatusGlyphShape.of(StatusGlyphs.toDo, size).fill, isNull);
       expect(StatusGlyphShape.of(StatusGlyphs.done, size).fill, isNull);
       expect(StatusGlyphShape.of(StatusGlyphs.nobodyHome, size).fill, isNull);
+      expect(StatusGlyphShape.of(StatusGlyphs.refused, size).fill, isNull);
       expect(StatusGlyphShape.of(StatusGlyphs.comeBack, size).fill, isNotNull);
 
       // ◐: the filled half is the left one.
@@ -156,12 +157,35 @@ void main() {
     });
 
     test('should give each glyph a distinct shape', () {
-      final outlines = {
+      // ○, ◐ and ⊘ share their outline circle: the fill of ◐ and the bar
+      // of ⊘ (a second line) tell them apart.
+      final shapes = {
         for (final glyph in StatusGlyphs.values)
-          StatusGlyphShape.of(glyph, size).stroke.getBounds(),
+          if (StatusGlyphShape.of(glyph, size) case final shape)
+            (
+              shape.stroke.getBounds(),
+              shape.stroke.computeMetrics().length,
+              shape.fill?.getBounds(),
+            ),
       };
-      // ○ and ◐ share their outline circle; the fill tells them apart.
-      expect(outlines.length, StatusGlyphs.values.length - 1);
+      expect(shapes.length, StatusGlyphs.values.length);
+    });
+
+    test('should cross ⊘ from its lower left to its upper right, on the '
+        'circle', () {
+      final shape = StatusGlyphShape.of(StatusGlyphs.refused, size);
+      final bar = shape.stroke.computeMetrics().last;
+      final start = bar.getTangentForOffset(0)!.position;
+      final end = bar.getTangentForOffset(bar.length)!.position;
+      const centre = Offset(size / 2, size / 2);
+      const radius = size * 8.5 / 24;
+
+      expect(start.dx, lessThan(size / 2));
+      expect(start.dy, greaterThan(size / 2));
+      expect(end.dx, greaterThan(size / 2));
+      expect(end.dy, lessThan(size / 2));
+      expect((start - centre).distance, closeTo(radius, 0.01));
+      expect((end - centre).distance, closeTo(radius, 0.01));
     });
   });
 

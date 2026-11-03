@@ -1,29 +1,33 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
+import 'package:tournee_calendriers/domain/sector/member.dart';
+import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
+import 'package:tournee_calendriers/domain/sector/sector.dart';
+import 'package:tournee_calendriers/domain/sector/sector_change.dart';
+import 'package:tournee_calendriers/domain/sector/sector_commune.dart';
 import 'package:tournee_calendriers/domain/shared/commune.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
-import 'package:tournee_calendriers/domain/tournee/member.dart';
-import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_change.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_commune.dart';
+import 'package:tournee_calendriers/domain/street/street.dart';
+import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/import_streets/import_state.dart';
-import 'package:tournee_calendriers/presentation/my_tournees/my_tournees_notifier.dart';
+import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
 import 'package:tournee_calendriers/presentation/shared/recent_time.dart';
 import 'package:tournee_calendriers/presentation/team/team_notifier.dart';
 import 'package:tournee_calendriers/presentation/team/team_state.dart';
 
-import '../../domain/tournee/my_tournees_fixtures.dart';
-import '../../domain/tournee/tournee_fixtures.dart';
+import '../../domain/sector/my_sectors_fixtures.dart';
+import '../../domain/sector/sector_fixtures.dart';
 import '../../support/fakes/fake_admin_status.dart';
-import '../../support/fakes/fake_my_tournees_store.dart';
+import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_phone_settings.dart';
 import '../../support/fakes/fake_ports.dart';
-import '../../support/fakes/fake_tournee_repository.dart';
+import '../../support/fakes/fake_sector_repository.dart';
+import '../../support/fakes/fake_street_repository.dart';
 import '../../support/results.dart';
 import '../../support/scripted_random.dart';
+import '../../support/street_fixtures.dart' show villefranche;
 
 /// Gleizé as the commune search suggests it.
 final _gleizeOption = CommuneOption.of(
@@ -34,6 +38,16 @@ final _gleizeOption = CommuneOption.of(
   ),
 );
 
+/// A street of the 49 named [name], covered by [assignees].
+Street _street(String id, String name, Set<MemberId> assignees) => valueOf(
+  Street.create(
+    id: StreetId(id),
+    name: name,
+    commune: villefranche,
+    assignees: assignees,
+  ),
+);
+
 /// Two minutes after Julie asked to join.
 final twoMinutesLater = DateTime.utc(2026, 11, 2, 8, 14);
 
@@ -41,37 +55,42 @@ final twoMinutesLater = DateTime.utc(2026, 11, 2, 8, 14);
 const draws234567 = [23, 24, 25, 26, 27, 28];
 
 void main() {
-  late FakeTourneeRepository tournees;
-  late FakeMyTourneesStore store;
+  late FakeSectorRepository sectors;
+  late FakeMySectorsStore store;
   late FakeAdminStatus admins;
+  late FakeStreetRepository streets;
 
-  /// The phone of [member], with the 49 open (or [mine]). Manu and Sam are
-  /// admins of the app; the phone is an admin's when [member] is one of
-  /// them, unless [admin] says otherwise.
+  /// The phone of [member], with the 49 open (or [mine]) and its streets
+  /// [streetsOf49] (none by default). Manu and Sam are admins of the app;
+  /// the phone is an admin's when [member] is one of them, unless [admin]
+  /// says otherwise.
   ProviderContainer phoneOf(
     MemberId member, {
-    MyTournees? mine,
+    MySectors? mine,
     bool? admin,
     FakePhoneSettings? settings,
+    List<Street> streetsOf49 = const [],
   }) {
     admins = FakeAdminStatus(
       phoneIsAdmin: admin ?? (member == manuId || member == samId),
       admins: [manuId, samId],
     );
-    tournees = FakeTourneeRepository([team()]);
-    store = FakeMyTourneesStore(
+    sectors = FakeSectorRepository([team()]);
+    streets = FakeStreetRepository(streetsOf49);
+    store = FakeMySectorsStore(
       mine ??
           valueOf(
-            MyTournees.none
-                .remember(tournee49)
-                .remember(tournee12)
-                .open(tournee49.id),
+            MySectors.none
+                .remember(sector49)
+                .remember(sector12)
+                .open(sector49.id),
           ),
     );
     final container = ProviderContainer(
       overrides: [
-        tourneeRepositoryProvider.overrideWithValue(tournees),
-        myTourneesStoreProvider.overrideWithValue(store),
+        sectorRepositoryProvider.overrideWithValue(sectors),
+        streetRepositoryProvider.overrideWithValue(streets),
+        mySectorsStoreProvider.overrideWithValue(store),
         identityProvider.overrideWithValue(FakeIdentity(member)),
         clockProvider.overrideWithValue(FakeClock(twoMinutesLater)),
         randomProvider.overrideWithValue(ScriptedRandom(draws234567)),
@@ -96,7 +115,7 @@ void main() {
     test('should have no team when no tournée is open', () {
       final container = phoneOf(
         manuId,
-        mine: MyTournees.none.remember(tournee49),
+        mine: MySectors.none.remember(sector49),
       );
 
       final state = container.read(teamProvider);
@@ -176,7 +195,7 @@ void main() {
       final container = phoneOf(leaId);
       await shown(container);
 
-      tournees.put(team(members: [manu, lea]));
+      sectors.put(team(members: [manu, lea]));
       await pumpEventQueue();
 
       expect(admins.asked, [manuId]);
@@ -218,7 +237,7 @@ void main() {
       final container = phoneOf(manuId);
       await shown(container);
 
-      tournees.put(team(members: [manu, lea]));
+      sectors.put(team(members: [manu, lea]));
       await pumpEventQueue();
 
       final state = container.read(teamProvider) as TeamShown;
@@ -230,7 +249,7 @@ void main() {
       final container = phoneOf(manuId);
       await shown(container);
 
-      tournees.lose(tourneeId);
+      sectors.lose(sectorId);
       await pumpEventQueue();
 
       expect(container.read(teamProvider), isA<TeamUnavailable>());
@@ -239,7 +258,7 @@ void main() {
 
     test('should be unavailable when the tournée cannot be followed', () async {
       final container = phoneOf(manuId);
-      tournees.watchError = StateError('no access');
+      sectors.watchError = StateError('no access');
       container.listen(teamProvider, (_, _) {});
       await pumpEventQueue();
 
@@ -250,7 +269,7 @@ void main() {
       final container = phoneOf(manuId);
       await shown(container);
 
-      await container.read(myTourneesProvider.notifier).open(tournee12.id);
+      await container.read(mySectorsProvider.notifier).open(sector12.id);
       await pumpEventQueue();
 
       // The fake knows only the 49.
@@ -258,11 +277,80 @@ void main() {
     });
   });
 
+  group('streets per member', () {
+    // Léa covers three streets, one with Manu; Manu one; nobody covers
+    // Rue Roland.
+    List<Street> streetsOf49() => [
+      _street('thizy', 'Rue de Thizy', {leaId}),
+      _street('nationale', 'Rue Nationale', {leaId, manuId}),
+      _street('roland', 'Rue Roland', {}),
+      _street('marais', 'Place des Marais', {leaId}),
+    ];
+
+    test('should give each member the names of the streets they cover, in '
+        'French order', () async {
+      final team = await shown(phoneOf(leaId, streetsOf49: streetsOf49()));
+
+      expect(team.members, [
+        MemberRow(
+          id: manuId,
+          name: 'Manu',
+          isMe: false,
+          isAdmin: true,
+          canRemove: false,
+          streets: const ['Rue Nationale'],
+        ),
+        MemberRow(
+          id: leaId,
+          name: 'Léa',
+          isMe: true,
+          isAdmin: false,
+          canRemove: false,
+          streets: const ['Place des Marais', 'Rue de Thizy', 'Rue Nationale'],
+        ),
+      ]);
+    });
+
+    test('should follow the streets as members take them', () async {
+      final container = phoneOf(leaId, streetsOf49: streetsOf49());
+      await shown(container);
+
+      final roland = valueOf(
+        await streets.find(StreetId('roland')).then((s) => s!.take(manuId)),
+      );
+      await streets.save(roland.$1, roland.$2);
+      await pumpEventQueue();
+
+      final state = container.read(teamProvider) as TeamShown;
+      expect(state.members.first.streets, ['Rue Nationale', 'Rue Roland']);
+    });
+
+    test('should show the team, with no street, when the streets cannot be '
+        'read', () async {
+      final container = phoneOf(leaId, streetsOf49: streetsOf49());
+      streets.watchError = StateError('no access');
+
+      final team = await shown(container);
+
+      expect(team.members.map((member) => member.name), ['Manu', 'Léa']);
+      expect(team.members.every((member) => member.streets.isEmpty), isTrue);
+    });
+
+    test('should give lists that cannot be modified', () async {
+      final team = await shown(phoneOf(leaId, streetsOf49: streetsOf49()));
+
+      expect(
+        () => team.members.last.streets.add('Rue Roland'),
+        throwsUnsupportedError,
+      );
+    });
+  });
+
   group('communes', () {
     test('should list the communes, each removable by a member when there '
         'are several', () async {
       final container = phoneOf(leaId);
-      tournees.put(team(communes: [villefrancheCommune, gleizeCommune]));
+      sectors.put(team(communes: [villefrancheCommune, gleizeCommune]));
 
       final shownTeam = await shown(container);
 
@@ -283,7 +371,7 @@ void main() {
 
     test('should not let the last commune be removed', () async {
       final container = phoneOf(leaId);
-      tournees.put(team(communes: [villefrancheCommune]));
+      sectors.put(team(communes: [villefrancheCommune]));
 
       final shownTeam = await shown(container);
 
@@ -300,7 +388,7 @@ void main() {
 
     test('should let an admin outside the team change them', () async {
       final container = phoneOf(samId);
-      tournees.put(team(communes: [villefrancheCommune, gleizeCommune]));
+      sectors.put(team(communes: [villefrancheCommune, gleizeCommune]));
 
       final shownTeam = await shown(container);
 
@@ -310,7 +398,7 @@ void main() {
 
     test('should not let a member still pending change them', () async {
       final container = phoneOf(julieId);
-      tournees.put(team(communes: [villefrancheCommune, gleizeCommune]));
+      sectors.put(team(communes: [villefrancheCommune, gleizeCommune]));
 
       final shownTeam = await shown(container);
 
@@ -320,7 +408,7 @@ void main() {
 
     test('should add the commune picked', () async {
       final container = phoneOf(leaId);
-      tournees.put(team(communes: [villefrancheCommune]));
+      sectors.put(team(communes: [villefrancheCommune]));
       await shown(container);
 
       final failure = await container
@@ -330,8 +418,8 @@ void main() {
 
       expect(failure, isNull);
       expect(
-        tournees.saved.single.$2,
-        CommuneAdded(tourneeId: tourneeId, commune: gleizeCommune),
+        sectors.saved.single.$2,
+        CommuneAdded(sectorId: sectorId, commune: gleizeCommune),
       );
       final state = container.read(teamProvider) as TeamShown;
       expect(state.communes.map((commune) => commune.name), [
@@ -342,7 +430,7 @@ void main() {
 
     test('should tell a commune is already in the tournée', () async {
       final container = phoneOf(leaId);
-      tournees.put(team(communes: [gleizeCommune]));
+      sectors.put(team(communes: [gleizeCommune]));
       await shown(container);
 
       expect(
@@ -353,11 +441,11 @@ void main() {
 
     test('should tell the tournée covers as many communes as it may', () async {
       final container = phoneOf(leaId);
-      tournees.put(
+      sectors.put(
         team(
           communes: [
-            for (var i = 1; i <= Tournee.maxCommunes; i++)
-              TourneeCommune(
+            for (var i = 1; i <= Sector.maxCommunes; i++)
+              SectorCommune(
                 commune: valueOf(
                   Commune.create(
                     inseeCode: '69${'$i'.padLeft(3, '0')}',
@@ -378,7 +466,7 @@ void main() {
 
     test('should remove the commune of the ✕', () async {
       final container = phoneOf(leaId);
-      tournees.put(team(communes: [villefrancheCommune, gleizeCommune]));
+      sectors.put(team(communes: [villefrancheCommune, gleizeCommune]));
       await shown(container);
 
       final failure = await container
@@ -387,15 +475,15 @@ void main() {
 
       expect(failure, isNull);
       expect(
-        tournees.saved.single.$2,
-        CommuneRemoved(tourneeId: tourneeId, commune: villefrancheCommune),
+        sectors.saved.single.$2,
+        CommuneRemoved(sectorId: sectorId, commune: villefrancheCommune),
       );
     });
 
     test('should tell the team changed when the last commune is '
         'removed meanwhile', () async {
       final container = phoneOf(leaId);
-      tournees.put(team(communes: [villefrancheCommune]));
+      sectors.put(team(communes: [villefrancheCommune]));
       await shown(container);
 
       expect(
@@ -471,12 +559,15 @@ void main() {
         bool isMe = false,
         bool isAdmin = false,
         bool canRemove = true,
+        List<String> streets = const ['Rue de Thizy', 'Rue Nationale'],
       }) => MemberRow(
         id: id ?? leaId,
         name: name,
         isMe: isMe,
         isAdmin: isAdmin,
         canRemove: canRemove,
+        // A list of its own each time: equal by its items, not by identity.
+        streets: [...streets],
       );
 
       expect(row(), row());
@@ -486,6 +577,8 @@ void main() {
       expect(row(isMe: true), isNot(row()));
       expect(row(isAdmin: true), isNot(row()));
       expect(row(canRemove: false), isNot(row()));
+      expect(row(streets: ['Rue de Thizy']), isNot(row()));
+      expect(row(streets: ['Rue Nationale', 'Rue de Thizy']), isNot(row()));
     });
   });
 
@@ -500,7 +593,7 @@ void main() {
       await pumpEventQueue();
 
       expect(failure, isNull);
-      final (_, change) = tournees.saved.single;
+      final (_, change) = sectors.saved.single;
       expect((change as MemberAccepted).member.acceptance!.by, leaId);
       final state = container.read(teamProvider) as TeamShown;
       expect(state.requests, isEmpty);
@@ -515,7 +608,7 @@ void main() {
         'answered', () async {
       final container = phoneOf(leaId);
       await shown(container);
-      tournees.put(team(members: [manu, lea]));
+      sectors.put(team(members: [manu, lea]));
 
       final failure = await container
           .read(teamProvider.notifier)
@@ -533,7 +626,7 @@ void main() {
           .refuse(julieId);
 
       expect(failure, isNull);
-      expect(tournees.saved.single.$2, isA<MemberRefused>());
+      expect(sectors.saved.single.$2, isA<MemberRefused>());
     });
 
     test('should remove a member', () async {
@@ -543,7 +636,7 @@ void main() {
       final failure = await container.read(teamProvider.notifier).remove(leaId);
 
       expect(failure, isNull);
-      expect(tournees.saved.single.$2, isA<MemberRemoved>());
+      expect(sectors.saved.single.$2, isA<MemberRemoved>());
     });
 
     test('should show the new code once drawn', () async {
@@ -564,7 +657,7 @@ void main() {
     test('should tell a new code needs the network', () async {
       final container = phoneOf(manuId);
       await shown(container);
-      tournees.offline = true;
+      sectors.offline = true;
 
       final failure = await container
           .read(teamProvider.notifier)
@@ -577,7 +670,7 @@ void main() {
         'refuses a new code', () async {
       final container = phoneOf(manuId);
       await shown(container);
-      tournees.notAdmin = true;
+      sectors.notAdmin = true;
 
       final failure = await container
           .read(teamProvider.notifier)
@@ -596,7 +689,7 @@ void main() {
       final failure = await container.read(teamProvider.notifier).remove(leaId);
 
       expect(failure, TeamActionFailure.notAdmin);
-      expect(tournees.saved, isEmpty);
+      expect(sectors.saved, isEmpty);
     });
 
     test('should leave the tournée, which the phone forgets', () async {
@@ -607,7 +700,7 @@ void main() {
       await pumpEventQueue();
 
       expect(failure, isNull);
-      expect(store.myTournees.find(tourneeId), isNull);
+      expect(store.mySectors.find(sectorId), isNull);
       expect(container.read(teamProvider), isA<NoTeam>());
     });
 
@@ -617,46 +710,46 @@ void main() {
 
       final failure = await container
           .read(teamProvider.notifier)
-          .deleteTournee();
+          .deleteSector();
       await pumpEventQueue();
 
       expect(failure, isNull);
-      expect(tournees.deleted, hasLength(1));
+      expect(sectors.deleted, hasLength(1));
       expect(container.read(teamProvider), isA<NoTeam>());
     });
 
     test('should tell deleting needs the network', () async {
       final container = phoneOf(manuId);
       await shown(container);
-      tournees.offline = true;
+      sectors.offline = true;
 
       final failure = await container
           .read(teamProvider.notifier)
-          .deleteTournee();
+          .deleteSector();
 
       expect(failure, TeamActionFailure.offline);
-      expect(store.myTournees.find(tourneeId), isNotNull);
+      expect(store.mySectors.find(sectorId), isNotNull);
     });
 
     test('should tell the phone is no longer an admin\'s when the server '
         'refuses deleting', () async {
       final container = phoneOf(manuId);
       await shown(container);
-      tournees.notAdmin = true;
+      sectors.notAdmin = true;
 
       final failure = await container
           .read(teamProvider.notifier)
-          .deleteTournee();
+          .deleteSector();
 
       expect(failure, TeamActionFailure.notAdmin);
-      expect(store.myTournees.find(tourneeId), isNotNull);
+      expect(store.mySectors.find(sectorId), isNotNull);
     });
 
     test('should tell the team changed when the tournée cannot be read any '
         'more', () async {
       final container = phoneOf(leaId);
       await shown(container);
-      tournees.lose(tourneeId);
+      sectors.lose(sectorId);
 
       final failure = await container.read(teamProvider.notifier).leave();
 
@@ -666,7 +759,7 @@ void main() {
     test('should tell the team changed when no tournée is open', () async {
       final container = phoneOf(
         manuId,
-        mine: MyTournees.none.remember(tournee49),
+        mine: MySectors.none.remember(sector49),
       );
 
       final notifier = container.read(teamProvider.notifier);
@@ -676,19 +769,19 @@ void main() {
       expect(await notifier.remove(leaId), TeamActionFailure.teamChanged);
       expect(await notifier.regenerateCode(), TeamActionFailure.teamChanged);
       expect(await notifier.leave(), TeamActionFailure.teamChanged);
-      expect(await notifier.deleteTournee(), TeamActionFailure.teamChanged);
+      expect(await notifier.deleteSector(), TeamActionFailure.teamChanged);
       expect(await notifier.joinAsAdmin(), TeamActionFailure.teamChanged);
       await notifier.forgetVisit();
-      expect(tournees.saved, isEmpty);
-      expect(tournees.deleted, isEmpty);
+      expect(sectors.saved, isEmpty);
+      expect(sectors.deleted, isEmpty);
       expect(store.saves, isEmpty);
     });
 
     group('as an admin visiting', () {
-      MyTournees visiting() => valueOf(
-        MyTournees.none
+      MySectors visiting() => valueOf(
+        MySectors.none
             .remember(summaryOf('t49', 49, status: MemberStatus.visiting))
-            .open(tourneeId),
+            .open(sectorId),
       );
 
       test('should join the team at once', () async {
@@ -701,8 +794,8 @@ void main() {
         await pumpEventQueue();
 
         expect(failure, isNull);
-        expect(tournees.saved.single.$2, isA<AdminJoined>());
-        expect(store.myTournees.current, tournee49);
+        expect(sectors.saved.single.$2, isA<AdminJoined>());
+        expect(store.mySectors.current, sector49);
         final state = container.read(teamProvider) as TeamShown;
         expect(state.iAmIn, isTrue);
       });
@@ -710,7 +803,7 @@ void main() {
       test('should tell joining needs the network', () async {
         final container = phoneOf(samId, mine: visiting());
         await shown(container);
-        tournees.offline = true;
+        sectors.offline = true;
 
         final failure = await container
             .read(teamProvider.notifier)
@@ -723,14 +816,14 @@ void main() {
           'refuses joining', () async {
         final container = phoneOf(samId, mine: visiting());
         await shown(container);
-        tournees.notAdmin = true;
+        sectors.notAdmin = true;
 
         final failure = await container
             .read(teamProvider.notifier)
             .joinAsAdmin();
 
         expect(failure, TeamActionFailure.notAdmin);
-        expect(store.myTournees.current!.isVisiting, isTrue);
+        expect(store.mySectors.current!.isVisiting, isTrue);
       });
 
       test('should tell joining needs a first name', () async {
@@ -755,8 +848,8 @@ void main() {
         await container.read(teamProvider.notifier).forgetVisit();
         await pumpEventQueue();
 
-        expect(store.myTournees.find(tourneeId), isNull);
-        expect(tournees.saved, isEmpty);
+        expect(store.mySectors.find(sectorId), isNull);
+        expect(sectors.saved, isEmpty);
         expect(container.read(teamProvider), isA<NoTeam>());
       });
     });

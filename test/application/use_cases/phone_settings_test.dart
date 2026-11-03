@@ -1,27 +1,27 @@
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/phone_settings.dart';
 import 'package:tournee_calendriers/application/use_cases/phone_settings.dart';
+import 'package:tournee_calendriers/domain/sector/member.dart';
+import 'package:tournee_calendriers/domain/sector/member_name.dart';
+import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
+import 'package:tournee_calendriers/domain/sector/sector.dart';
+import 'package:tournee_calendriers/domain/sector/sector_change.dart';
+import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
-import 'package:tournee_calendriers/domain/tournee/member.dart';
-import 'package:tournee_calendriers/domain/tournee/member_name.dart';
-import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_change.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 
-import '../../domain/tournee/my_tournees_fixtures.dart';
-import '../../domain/tournee/tournee_fixtures.dart';
-import '../../support/fakes/fake_my_tournees_store.dart';
+import '../../domain/sector/my_sectors_fixtures.dart';
+import '../../domain/sector/sector_fixtures.dart';
+import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_phone_settings.dart';
 import '../../support/fakes/fake_ports.dart';
-import '../../support/fakes/fake_tournee_repository.dart';
+import '../../support/fakes/fake_sector_repository.dart';
 import '../../support/results.dart';
 
 /// The 12, created by Léa, where Manu was accepted.
-Tournee tournee12Team() => valueOf(
-  Tournee.create(
-    id: TourneeId('t12'),
-    number: tournee12.number,
+Sector sector12Team() => valueOf(
+  Sector.create(
+    id: SectorId('t12'),
+    number: sector12.number,
     centre: csVillefranche,
     joinCode: codeOf('ABCDEF'),
     createdBy: leaId,
@@ -46,12 +46,12 @@ Tournee tournee12Team() => valueOf(
 
 /// Manu's phone: the 49 (open) and the 12, where he is active, and the 7,
 /// where his request waits.
-MyTournees manusTournees() => valueOf(
-  MyTournees.none
-      .remember(tournee49)
-      .remember(tournee12)
-      .remember(tournee7)
-      .open(tournee49.id),
+MySectors manusSectors() => valueOf(
+  MySectors.none
+      .remember(sector49)
+      .remember(sector12)
+      .remember(sector7)
+      .open(sector49.id),
 );
 
 void main() {
@@ -68,17 +68,17 @@ void main() {
 
   group('ChangeMemberName', () {
     late FakePhoneSettings settings;
-    late FakeTourneeRepository tournees;
-    late FakeMyTourneesStore store;
+    late FakeSectorRepository sectors;
+    late FakeMySectorsStore store;
 
     setUp(() {
       settings = FakePhoneSettings(memberName: nameOf('Manu'));
-      tournees = FakeTourneeRepository([team(), tournee12Team()]);
-      store = FakeMyTourneesStore(manusTournees());
+      sectors = FakeSectorRepository([team(), sector12Team()]);
+      store = FakeMySectorsStore(manusSectors());
     });
 
     ChangeMemberName changeName() =>
-        ChangeMemberName(settings, tournees, FakeIdentity(manuId), store);
+        ChangeMemberName(settings, sectors, FakeIdentity(manuId), store);
 
     test('should keep the name once cleaned', () async {
       final changed = await changeName()('  Jean   Paul ');
@@ -103,13 +103,13 @@ void main() {
         requestedAt: leaAskedAt,
         acceptance: ChangeStamp(by: leaId, at: leaAcceptedAt),
       );
-      expect(tournees.saved.map((saved) => saved.$2), [
-        MemberRenamed(tourneeId: tourneeId, member: in49),
-        MemberRenamed(tourneeId: TourneeId('t12'), member: in12),
+      expect(sectors.saved.map((saved) => saved.$2), [
+        MemberRenamed(sectorId: sectorId, member: in49),
+        MemberRenamed(sectorId: SectorId('t12'), member: in12),
       ]);
-      expect(tournees[tourneeId]!.memberOf(manuId), in49);
-      expect(tournees[TourneeId('t12')]!.memberOf(manuId), in12);
-      expect(tournees[tourneeId]!.memberOf(leaId), lea);
+      expect(sectors[sectorId]!.memberOf(manuId), in49);
+      expect(sectors[SectorId('t12')]!.memberOf(manuId), in12);
+      expect(sectors[sectorId]!.memberOf(leaId), lea);
     });
 
     test(
@@ -117,11 +117,11 @@ void main() {
       () async {
         // The 7 is stored with Manu active, as if accepted since: the phone
         // does not know it yet, so it is left alone.
-        tournees.put(
+        sectors.put(
           valueOf(
-            Tournee.create(
-              id: TourneeId('t7'),
-              number: tournee7.number,
+            Sector.create(
+              id: SectorId('t7'),
+              number: sector7.number,
               centre: csVillefranche,
               joinCode: codeOf('ABCDEF'),
               createdBy: manuId,
@@ -134,35 +134,35 @@ void main() {
 
         await changeName()('Emmanuel');
 
-        expect(tournees.saved.map((saved) => saved.$2.tourneeId), [
-          tourneeId,
-          TourneeId('t12'),
+        expect(sectors.saved.map((saved) => saved.$2.sectorId), [
+          sectorId,
+          SectorId('t12'),
         ]);
       },
     );
 
     test('should skip a tournée that cannot be read any more', () async {
-      tournees.lose(TourneeId('t12'));
+      sectors.lose(SectorId('t12'));
 
       final changed = await changeName()('Emmanuel');
 
       expect(valueOf(changed), nameOf('Emmanuel'));
-      expect(tournees.saved.map((saved) => saved.$2.tourneeId), [tourneeId]);
+      expect(sectors.saved.map((saved) => saved.$2.sectorId), [sectorId]);
     });
 
     test('should skip a tournée that refuses the rename', () async {
       // Manu was removed from the 12 by Léa while the phone still lists it.
-      tournees.put(
+      sectors.put(
         valueOf(
-          Tournee.create(
-            id: TourneeId('t12'),
-            number: tournee12.number,
+          Sector.create(
+            id: SectorId('t12'),
+            number: sector12.number,
             centre: csVillefranche,
             joinCode: codeOf('ABCDEF'),
             createdBy: leaId,
             createdAt: createdAt,
             currentCampaign: campaign2026,
-            members: [tournee12Team().memberOf(leaId)!],
+            members: [sector12Team().memberOf(leaId)!],
           ),
         ),
       );
@@ -170,16 +170,16 @@ void main() {
       final changed = await changeName()('Emmanuel');
 
       expect(valueOf(changed), nameOf('Emmanuel'));
-      expect(tournees.saved.map((saved) => saved.$2.tourneeId), [tourneeId]);
+      expect(sectors.saved.map((saved) => saved.$2.sectorId), [sectorId]);
     });
 
     test('should rename in no tournée when the phone knows none', () async {
-      store = FakeMyTourneesStore();
+      store = FakeMySectorsStore();
 
       await changeName()('Emmanuel');
 
       expect(settings.names, [nameOf('Emmanuel')]);
-      expect(tournees.saved, isEmpty);
+      expect(sectors.saved, isEmpty);
     });
 
     test('should refuse and keep nothing when the name is blank', () async {
@@ -188,7 +188,7 @@ void main() {
       expect(failureOf(changed), MemberNameFailure.blank);
       expect(settings.names, isEmpty);
       expect(settings.memberName, nameOf('Manu'));
-      expect(tournees.saved, isEmpty);
+      expect(sectors.saved, isEmpty);
     });
 
     test('should refuse and keep nothing when the name is too long', () async {
@@ -196,27 +196,27 @@ void main() {
 
       expect(failureOf(changed), MemberNameFailure.tooLong);
       expect(settings.names, isEmpty);
-      expect(tournees.saved, isEmpty);
+      expect(sectors.saved, isEmpty);
     });
   });
 
   group('CatchUpMemberName', () {
     late FakePhoneSettings settings;
-    late FakeTourneeRepository tournees;
+    late FakeSectorRepository sectors;
 
     setUp(() {
       settings = FakePhoneSettings(memberName: nameOf('Emmanuel'));
-      tournees = FakeTourneeRepository([tournee12Team()]);
+      sectors = FakeSectorRepository([sector12Team()]);
     });
 
     CatchUpMemberName catchUp() =>
-        CatchUpMemberName(settings, tournees, FakeIdentity(manuId));
+        CatchUpMemberName(settings, sectors, FakeIdentity(manuId));
 
     test('should send the phone\'s name to a tournée where the team sees '
         'another one', () async {
       // Renamed while the request to the 12 waited: the 12 still has
       // « Manu ».
-      await catchUp()(TourneeId('t12'), nameOf('Manu'));
+      await catchUp()(SectorId('t12'), nameOf('Manu'));
 
       final in12 = Member(
         id: manuId,
@@ -225,54 +225,54 @@ void main() {
         acceptance: ChangeStamp(by: leaId, at: leaAcceptedAt),
       );
       expect(
-        tournees.saved.single.$2,
-        MemberRenamed(tourneeId: TourneeId('t12'), member: in12),
+        sectors.saved.single.$2,
+        MemberRenamed(sectorId: SectorId('t12'), member: in12),
       );
-      expect(tournees[TourneeId('t12')]!.memberOf(manuId), in12);
+      expect(sectors[SectorId('t12')]!.memberOf(manuId), in12);
     });
 
     test('should send nothing when the team sees the phone\'s name', () async {
-      await catchUp()(TourneeId('t12'), nameOf('Emmanuel'));
+      await catchUp()(SectorId('t12'), nameOf('Emmanuel'));
 
-      expect(tournees.saved, isEmpty);
+      expect(sectors.saved, isEmpty);
     });
 
     test('should send nothing when the phone keeps no name', () async {
       settings = FakePhoneSettings();
 
-      await catchUp()(TourneeId('t12'), nameOf('Manu'));
+      await catchUp()(SectorId('t12'), nameOf('Manu'));
 
-      expect(tournees.saved, isEmpty);
+      expect(sectors.saved, isEmpty);
     });
 
     test('should skip a tournée that cannot be read', () async {
-      tournees.lose(TourneeId('t12'));
+      sectors.lose(SectorId('t12'));
 
-      await catchUp()(TourneeId('t12'), nameOf('Manu'));
+      await catchUp()(SectorId('t12'), nameOf('Manu'));
 
-      expect(tournees.saved, isEmpty);
+      expect(sectors.saved, isEmpty);
     });
 
     test('should skip a tournée that refuses the rename', () async {
       // Removed from the 12 meanwhile.
-      tournees.put(
+      sectors.put(
         valueOf(
-          Tournee.create(
-            id: TourneeId('t12'),
-            number: tournee12.number,
+          Sector.create(
+            id: SectorId('t12'),
+            number: sector12.number,
             centre: csVillefranche,
             joinCode: codeOf('ABCDEF'),
             createdBy: leaId,
             createdAt: createdAt,
             currentCampaign: campaign2026,
-            members: [tournee12Team().memberOf(leaId)!],
+            members: [sector12Team().memberOf(leaId)!],
           ),
         ),
       );
 
-      await catchUp()(TourneeId('t12'), nameOf('Manu'));
+      await catchUp()(SectorId('t12'), nameOf('Manu'));
 
-      expect(tournees.saved, isEmpty);
+      expect(sectors.saved, isEmpty);
     });
   });
 

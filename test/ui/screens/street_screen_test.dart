@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -9,10 +9,10 @@ import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/ui/app.dart';
-import 'package:tournee_calendriers/ui/components/arrow_text.dart';
 import 'package:tournee_calendriers/ui/components/building_icon.dart';
 import 'package:tournee_calendriers/ui/components/open_chevron.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
+import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 
 import '../../support/building_fixtures.dart';
 import '../../support/fakes/fake_street_repository.dart';
@@ -21,6 +21,7 @@ import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 import '../support/app_overrides.dart';
 import '../support/finders.dart';
+import '../support/large_text.dart';
 import '../support/navigation.dart';
 
 final _id = StreetId('lilas');
@@ -88,102 +89,74 @@ void main() {
   String labelOf(WidgetTester tester, Finder finder) =>
       tester.getSemantics(finder).label;
 
+  /// Taps the tile of [number], then [status] in its picker.
+  Future<void> mark(
+    WidgetTester tester,
+    String number,
+    VisitStatus status,
+  ) async {
+    await tester.tap(_tile(number));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(ValueKey('house.status.${status.name}')));
+    await tester.pumpAndSettle();
+  }
+
   testWidgets(
-    'should cycle the status with a tick and say it when a house is tapped',
+    'should say to tap a house, open its picker on a tap, and count what it '
+    'stores',
     (tester) async {
       final semantics = tester.ensureSemantics();
-      final platformCalls = <MethodCall>[];
-      tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(
-        SystemChannels.platform,
-        (call) async {
-          platformCalls.add(call);
-          return null;
-        },
-      );
       await openStreet(tester);
-      expect(labelOf(tester, _tile('1')), 'Numéro 1, à faire');
-      expect(find.byKey(const Key('street.hint')), findsOneWidget);
-      // The four « → » of the hint (○ → ✓ → ✗ → ↻ → ○) are drawn, like
-      // its status glyphs.
       expect(
         find.descendant(
           of: find.byKey(const Key('street.hint')),
-          matching: find.byType(ArrowGlyph),
-        ),
-        findsNWidgets(4),
-      );
-
-      await tester.tap(_tile('1'));
-      await tester.pumpAndSettle();
-
-      expect(labelOf(tester, _tile('1')), 'Numéro 1, fait');
-      expect(
-        platformCalls.where((call) => call.method == 'HapticFeedback.vibrate'),
-        [
-          isA<MethodCall>().having(
-            (call) => call.arguments,
-            'type',
-            'HapticFeedbackType.lightImpact',
-          ),
-        ],
-      );
-      expect(
-        tester.takeAnnouncements().map((announcement) => announcement.message),
-        ['Numéro 1, fait'],
-      );
-      expect(findArrowText('1 → Fait'), findsOneWidget);
-      // The arrow is drawn; screen readers still hear the message.
-      expect(
-        find.descendant(
-          of: find.byType(SnackBar),
-          matching: find.byType(ArrowGlyph),
+          matching: find.text('Appuyez sur une maison pour changer son statut'),
         ),
         findsOneWidget,
       );
-      expect(find.bySemanticsLabel('1 → Fait'), findsOneWidget);
+
+      await tester.tap(_tile('1'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('house.number')), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('house.status.done')));
+      await tester.pumpAndSettle();
+
+      expect(labelOf(tester, _tile('1')), 'Numéro 1, fait, changer le statut');
+      expect(findArrowText('N° 1\u00a0: fait'), findsOneWidget);
       expect(find.byKey(const Key('street.hint')), findsNothing);
       expect(
         labelOf(tester, find.byKey(const Key('street.counts'))),
-        '4 sur 9 faits, 1 personne, 1 à repasser',
+        '4 sur 9 faits, 0 refusé, 1 personne, 1 à repasser',
       );
 
-      await tester.tap(_tile('1'));
+      // The next house: the snackbar of the first goes as its picker opens.
+      await tester.tap(_tile('7'));
+      await tester.pumpAndSettle();
+      expect(findArrowText('N° 1\u00a0: fait'), findsNothing);
+      await tester.tap(find.byKey(const ValueKey('house.status.nobodyHome')));
       await tester.pumpAndSettle();
 
-      expect(labelOf(tester, _tile('1')), 'Numéro 1, personne');
-      expect(
-        tester.takeAnnouncements().map((announcement) => announcement.message),
-        ['Numéro 1, personne'],
-      );
-      // The new snackbar replaced the first one.
-      expect(findArrowText('1 → Personne'), findsOneWidget);
-      expect(findArrowText('1 → Fait'), findsNothing);
-
-      await tester.tap(_tile('1'));
-      await tester.pumpAndSettle();
-
-      // To « Repasser », the house sheet opens to say when (#81), in place
-      // of the snackbar; « OK » closes it.
-      expect(
-        tester.takeAnnouncements().map((announcement) => announcement.message),
-        ['Numéro 1, repasser'],
-      );
-      expect(find.byKey(const Key('house.number')), findsOneWidget);
-      expect(findArrowText('1 → Repasser'), findsNothing);
-      expect(findArrowText('1 → Personne'), findsNothing);
-      await tester.tap(find.byKey(const Key('house.ok')));
-      await tester.pumpAndSettle();
-      expect(labelOf(tester, _tile('1')), 'Numéro 1, repasser');
+      expect(findArrowText('N° 7\u00a0: personne'), findsOneWidget);
       expect(
         labelOf(tester, find.byKey(const Key('street.counts'))),
-        '3 sur 9 faits, 1 personne, 2 à repasser',
+        '4 sur 9 faits, 0 refusé, 2 personne, 1 à repasser',
       );
 
+      // A refusal counts with the done houses, and apart.
       await tester.tap(_tile('1'));
       await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('house.status.refused')));
+      await tester.pumpAndSettle();
 
-      expect(labelOf(tester, _tile('1')), 'Numéro 1, à faire');
-      expect(findArrowText('1 → À faire'), findsOneWidget);
+      expect(
+        labelOf(tester, _tile('1')),
+        'Numéro 1, refusé, changer le statut',
+      );
+      expect(findArrowText('N° 1\u00a0: refusé'), findsOneWidget);
+      expect(
+        labelOf(tester, find.byKey(const Key('street.counts'))),
+        '4 sur 9 faits, 1 refusé, 2 personne, 1 à repasser',
+      );
       semantics.dispose();
     },
   );
@@ -218,16 +191,21 @@ void main() {
     (tester) async {
       final semantics = tester.ensureSemantics();
       await openStreet(tester);
-      await tester.tap(_tile('5'));
-      await tester.pumpAndSettle();
-      expect(labelOf(tester, _tile('5')), 'Numéro 5, à faire');
+      await mark(tester, '5', VisitStatus.toDo);
+      expect(
+        labelOf(tester, _tile('5')),
+        'Numéro 5, à faire, changer le statut',
+      );
 
       await tester.tap(find.text('Annuler'));
       await tester.pumpAndSettle();
 
-      expect(labelOf(tester, _tile('5')), 'Numéro 5, repasser');
+      expect(
+        labelOf(tester, _tile('5')),
+        'Numéro 5, repasser, changer le statut',
+      );
       expect(streets[_id]!.houses, _lilas.houses);
-      expect(findArrowText('5 → À faire'), findsNothing);
+      expect(findArrowText('N° 5\u00a0: à faire'), findsNothing);
       expect(find.byKey(const Key('street.hint')), findsOneWidget);
       semantics.dispose();
     },
@@ -237,15 +215,18 @@ void main() {
     'should leave the snackbar after 4 s and keep the mark when not undone',
     (tester) async {
       await openStreet(tester);
-      await tester.tap(_tile('4'));
-      await tester.pumpAndSettle();
+      await mark(tester, '4', VisitStatus.done);
+      expect(findArrowText('N° 4\u00a0: fait'), findsOneWidget);
 
       await tester.pump(const Duration(seconds: 4));
       await tester.pumpAndSettle();
 
-      expect(findArrowText('4 → Fait'), findsNothing);
+      expect(findArrowText('N° 4\u00a0: fait'), findsNothing);
       expect(find.byKey(const Key('street.hint')), findsOneWidget);
-      expect(streets[_id]!.houses[1].status, VisitStatus.done);
+      expect(
+        streets[_id]!.houses.singleWhere((h) => h.number == n('4')).status,
+        VisitStatus.done,
+      );
     },
   );
 
@@ -271,7 +252,7 @@ void main() {
       // The counts still cover the whole street.
       expect(
         labelOf(tester, find.byKey(const Key('street.counts'))),
-        '3 sur 9 faits, 1 personne, 1 à repasser',
+        '3 sur 9 faits, 0 refusé, 1 personne, 1 à repasser',
       );
       expect(
         tester.getSemantics(toggle).flagsCollection.isToggled.toBoolOrNull(),
@@ -340,5 +321,90 @@ void main() {
 
     expect(find.widgetWithText(AppBar, 'Modifier la rue'), findsOneWidget);
     expect(router.state.uri.toString(), AppRoutes.editStreetOf(_id));
+  });
+
+  group('counts row with the app fonts (#35)', () {
+    setUpAll(loadAppFonts);
+
+    final counts = find.byKey(const Key('street.counts'));
+    final hideDone = find.byKey(const Key('street.hideDone'));
+
+    /// Whether the counts had to be cut with « … ».
+    bool countsCut(WidgetTester tester) => tester
+        .renderObject<RenderParagraph>(
+          find.descendant(of: counts, matching: find.byType(RichText)),
+        )
+        .didExceedMaxLines;
+
+    testWidgets('should put the counts and « Masquer faits » on one row when '
+        'the text is at its normal size', (tester) async {
+      usePhoneScreen(tester);
+
+      await openStreet(tester);
+
+      final countsBox = tester.getRect(counts);
+      final pillBox = tester.getRect(hideDone);
+      expect(pillBox.center.dy, moreOrLessEquals(countsBox.center.dy));
+      expect(pillBox.left, greaterThanOrEqualTo(countsBox.right));
+      // As before #35: the pill at the right edge, the counts at the left.
+      final screenWidth =
+          tester.view.physicalSize.width / tester.view.devicePixelRatio;
+      expect(pillBox.right, moreOrLessEquals(screenWidth - AppSizes.gutter));
+      expect(countsBox.left, AppSizes.streetCountsIndent);
+      expect(countsCut(tester), isFalse);
+    });
+
+    testWidgets('should put « Masquer faits » under the whole counts when the '
+        'text is twice as large', (tester) async {
+      useLargeText(tester);
+
+      await openStreet(tester);
+
+      final countsBox = tester.getRect(counts);
+      final pillBox = tester.getRect(hideDone);
+      expect(pillBox.top, greaterThanOrEqualTo(countsBox.bottom));
+      expect(pillBox.left, countsBox.left);
+      expect(countsCut(tester), isFalse);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('at 200 % text', () {
+    setUpAll(loadAppFonts);
+
+    testWidgets('should show the street with no overflow when the text is '
+        'twice as large', (tester) async {
+      useLargeText(tester);
+
+      await openStreet(tester);
+
+      // The header, the hint and the first tiles, all on screen and whole
+      // (an overflow would have thrown).
+      expect(find.text('Rue des Lilas'), findsWidgets);
+      expect(find.byKey(const Key('street.hint')), findsOneWidget);
+      expect(_tile('1'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('should say the status of a tile when the text is twice as '
+        'large', (tester) async {
+      final semantics = tester.ensureSemantics();
+      useLargeText(tester);
+      await openStreet(tester);
+
+      await mark(tester, '1', VisitStatus.done);
+
+      expect(labelOf(tester, _tile('1')), 'Numéro 1, fait, changer le statut');
+      expect(tester.takeException(), isNull);
+      semantics.dispose();
+    });
+  });
+
+  testWidgets('should label every control and make it 48 dp at least', (
+    tester,
+  ) async {
+    await openStreet(tester);
+
+    await expectAccessibleControls(tester);
   });
 }

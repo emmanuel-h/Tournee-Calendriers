@@ -1,10 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
+import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/move_streets/move_streets_state.dart';
-import 'package:tournee_calendriers/presentation/my_tournees/my_tournees_notifier.dart';
+import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
 
 /// The card of the start screen that offers the phone's streets to the
 /// open tournée. `autoDispose`: it stops with the screen.
@@ -16,31 +16,31 @@ final moveStreetsProvider =
 /// The tournées whose card « Plus tard » put off, for as long as the app
 /// runs: not `autoDispose`, and kept apart from [moveStreetsProvider],
 /// whose notifier is made anew each time another tournée is opened.
-final postponedMovesProvider = NotifierProvider<PostponedMoves, Set<TourneeId>>(
+final postponedMovesProvider = NotifierProvider<PostponedMoves, Set<SectorId>>(
   PostponedMoves.new,
 );
 
 /// Remembers « Plus tard » until the next launch, in memory only.
-final class PostponedMoves extends Notifier<Set<TourneeId>> {
+final class PostponedMoves extends Notifier<Set<SectorId>> {
   @override
-  Set<TourneeId> build() => const {};
+  Set<SectorId> build() => const {};
 
-  /// Puts off the card of [tournee].
-  void postpone(TourneeId tournee) => state = {...state, tournee};
+  /// Puts off the card of [sector].
+  void postpone(SectorId sector) => state = {...state, sector};
 }
 
 /// Offers the streets kept on the phone since M1 to the open tournée and
 /// moves them when asked (PLAN §5.0): `CountStreetsToMove`, then
-/// `MoveStreetsIntoTournee`. Works offline: the tournée's storage sends the
+/// `MoveStreetsIntoSector`. Works offline: the tournée's storage sends the
 /// streets when it can.
 final class MoveStreetsNotifier extends Notifier<MoveStreetsState> {
   @override
   MoveStreetsState build() {
     // `ref.watch`: another tournée opened (or « Plus tard ») runs `build`
     // again, on a new notifier, which counts again.
-    final tournee = ref.watch(currentTourneeProvider);
-    if (tournee == null ||
-        ref.watch(postponedMovesProvider).contains(tournee.id)) {
+    final sector = ref.watch(currentSectorProvider);
+    if (sector == null ||
+        ref.watch(postponedMovesProvider).contains(sector.id)) {
       return const NoStreetsToMove();
     }
     final count = ref.watch(countStreetsToMoveProvider);
@@ -49,7 +49,7 @@ final class MoveStreetsNotifier extends Notifier<MoveStreetsState> {
     // was opened meanwhile, and the count is not the new one's.
     final built = ref;
     unawaited(
-      count(tournee.id).then(
+      count(sector.id).then(
         (streets) {
           if (built.mounted && streets > 0) state = StreetsToMove(streets);
         },
@@ -60,22 +60,22 @@ final class MoveStreetsNotifier extends Notifier<MoveStreetsState> {
     return const NoStreetsToMove();
   }
 
-  /// « Les ajouter à la tournée »: moves the phone's streets into the open
+  /// « Les ajouter au secteur »: moves the phone's streets into the open
   /// tournée, showing how far it went, and returns what it did for the
   /// message; null when the card was not offering them.
   ///
   /// It finishes in the tournée it started in, even if another one is
   /// opened meanwhile: the use case was taken with that tournée's streets.
   Future<MovedSummary?> move() async {
-    final tournee = ref.read(currentTourneeProvider);
+    final sector = ref.read(currentSectorProvider);
     final offer = state;
-    if (tournee == null || offer is! StreetsToMove) return null;
+    if (sector == null || offer is! StreetsToMove) return null;
     state = MovingStreets(done: 0, total: offer.count);
     // Once another tournée is opened, this `ref` is no longer `mounted`
     // (see `build`): the card is then the new tournée's.
     final started = ref;
-    final moved = await ref.read(moveStreetsIntoTourneeProvider)(
-      tournee.id,
+    final moved = await ref.read(moveStreetsIntoSectorProvider)(
+      sector.id,
       onProgress: (done, total) {
         if (started.mounted) state = MovingStreets(done: done, total: total);
       },
@@ -87,8 +87,8 @@ final class MoveStreetsNotifier extends Notifier<MoveStreetsState> {
   /// « Plus tard »: hides the card of the open tournée until the next
   /// launch.
   void later() {
-    final tournee = ref.read(currentTourneeProvider);
-    if (tournee == null) return;
-    ref.read(postponedMovesProvider.notifier).postpone(tournee.id);
+    final sector = ref.read(currentSectorProvider);
+    if (sector == null) return;
+    ref.read(postponedMovesProvider.notifier).postpone(sector.id);
   }
 }

@@ -1,32 +1,35 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:tournee_calendriers/domain/map/tournee_area.dart';
+import 'package:tournee_calendriers/domain/map/sector_area.dart';
+import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
+import 'package:tournee_calendriers/domain/sector/sector_summary.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
-import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_summary.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/screens/add_streets/add_streets_screen.dart';
+import 'package:tournee_calendriers/ui/screens/home/home_panel.dart';
 import 'package:tournee_calendriers/ui/screens/home/home_screen.dart';
 import 'package:tournee_calendriers/ui/screens/street/street_screen.dart';
+import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 
-import '../../domain/tournee/my_tournees_fixtures.dart';
-import '../../domain/tournee/tournee_fixtures.dart' show team;
-import '../../support/fakes/fake_my_tournees_store.dart';
+import '../../domain/sector/my_sectors_fixtures.dart';
+import '../../domain/sector/sector_fixtures.dart' show manuId, team;
+import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_pending_sync.dart';
+import '../../support/fakes/fake_sector_repository.dart';
 import '../../support/fakes/fake_street_repository.dart';
-import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/geo_fixtures.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 import '../support/app_overrides.dart';
 import '../support/fake_map_view.dart';
+import '../support/large_text.dart';
 
 /// A street of Villefranche-sur-Saône with [total] houses, the first
 /// [done] done, covered by [assignees].
@@ -82,21 +85,21 @@ void main() {
   Future<void> pumpHome(
     WidgetTester tester, {
     List<Street>? streets,
-    TourneeSummary? open,
+    SectorSummary? open,
   }) async {
     tester.view
       ..physicalSize = const Size(1170, 2532)
       ..devicePixelRatio = 3;
     addTearDown(tester.view.reset);
     pending = FakePendingSync();
-    final opened = open ?? tournee49;
+    final opened = open ?? sector49;
     await tester.pumpWidget(
       ProviderScope(
         overrides: fakePhone(
           streets: FakeStreetRepository(streets ?? _streets()),
-          tournees: FakeTourneeRepository([team()]),
-          myTournees: FakeMyTourneesStore(
-            valueOf(MyTournees.none.remember(opened).open(opened.id)),
+          sectors: FakeSectorRepository([team()]),
+          mySectors: FakeMySectorsStore(
+            valueOf(MySectors.none.remember(opened).open(opened.id)),
           ),
           pending: pending,
         ),
@@ -116,7 +119,7 @@ void main() {
       await pumpHome(tester);
 
       expect(find.byType(HomeScreen), findsOneWidget);
-      expect(find.text('Tournée 49 · 2026'), findsOneWidget);
+      expect(find.text('Secteur 49 · 2026'), findsOneWidget);
       expect(find.text('Mes rues · 31/50'), findsOneWidget);
       expect(
         find.bySemanticsLabel(RegExp('^Mes rues, 31 sur 50 faits')),
@@ -130,6 +133,17 @@ void main() {
       );
     });
 
+    testWidgets('should say nothing of the offline download (PLAN §5.3, #33)', (
+      tester,
+    ) async {
+      await pumpHome(tester);
+
+      // The tournée downloads itself, unseen: no banner, no button.
+      expect(find.textContaining('élécharg'), findsNothing);
+      expect(find.textContaining('hors ligne'), findsNothing);
+      expect(find.textContaining('réseau'), findsNothing);
+    });
+
     testWidgets('should list « Mes rues », then the other streets of the '
         'tournée under their header', (tester) async {
       await pumpHome(tester);
@@ -137,7 +151,7 @@ void main() {
       double top(Finder finder) => tester.getTopLeft(finder).dy;
       expect(top(row('pins')), lessThan(top(row('lilas'))));
       expect(
-        find.text('Autres rues de la tournée (2)'.toUpperCase()),
+        find.text('Autres rues du secteur (2)'.toUpperCase()),
         findsOneWidget,
       );
       expect(
@@ -223,6 +237,40 @@ void main() {
       expect(shownMap(tester).selectedRoad, StreetShape.none);
     });
 
+    testWidgets('should close the card of a street with its ✕, '
+        'and bring the list back', (tester) async {
+      final lilas = _street(
+        'lilas',
+        'Rue des Lilas',
+        total: 42,
+        shape: _lilasShape,
+      );
+      await pumpHome(tester, streets: [lilas]);
+      await tester.tap(row('lilas'));
+      await tester.pumpAndSettle();
+      expect(shownMap(tester).selectedRoad, _lilasShape);
+      final close = find.byKey(const Key('streetCard.close'));
+      expect(tester.getSize(close), const Size(48, 48));
+      final semantics = tester.ensureSemantics();
+      expect(tester.getSemantics(close).tooltip, 'Fermer');
+      semantics.dispose();
+      // Level with the grabber, and the name keeps clear of it.
+      final cardTop = tester.getTopLeft(find.byKey(const Key('streetCard'))).dy;
+      expect(tester.getTopLeft(close).dy, cardTop + 6);
+      expect(
+        tester.getTopRight(find.byKey(const Key('streetCard.name'))).dx,
+        lessThanOrEqualTo(tester.getTopLeft(close).dx),
+      );
+
+      await tester.tap(close);
+      await tester.pumpAndSettle();
+
+      expect(find.byTooltip('Fermer'), findsNothing);
+      expect(find.byKey(const Key('home.selected')), findsNothing);
+      expect(panel(), findsOneWidget);
+      expect(shownMap(tester).selectedRoad, StreetShape.none);
+    });
+
     testWidgets('should keep every street of the tournée reachable when the '
         'member covers none', (tester) async {
       await pumpHome(
@@ -243,7 +291,7 @@ void main() {
       await pumpHome(tester, streets: []);
 
       expect(
-        find.text('Aucune rue dans la tournée pour l\'instant.'),
+        find.text('Aucune rue dans le secteur pour l\'instant.'),
         findsOneWidget,
       );
       expect(find.byKey(const Key('home.others')), findsNothing);
@@ -252,7 +300,7 @@ void main() {
 
     testWidgets('should list every street under « Rues » for a visiting '
         'admin', (tester) async {
-      await pumpHome(tester, open: tournee12Visited);
+      await pumpHome(tester, open: sector12Visited);
 
       expect(find.text('Rues · 43/100'), findsOneWidget);
       expect(find.byKey(const Key('home.adminBanner')), findsOneWidget);
@@ -260,19 +308,68 @@ void main() {
       expect(find.byKey(const Key('home.others')), findsNothing);
     });
 
-    testWidgets('should open « Ajouter des rues » from its button', (
-      tester,
-    ) async {
+    testWidgets('should show « Ajouter des rues » as a muted row after the '
+        'last street, not as a button', (tester) async {
       await pumpHome(tester);
-
-      await tester.tap(find.byKey(const Key('start.import')));
+      await tester.drag(
+        find.byKey(const Key('home.panel.handle')),
+        const Offset(0, -300),
+      );
       await tester.pumpAndSettle();
 
-      expect(find.byType(AddStreetsScreen), findsOneWidget);
+      final add = find.byKey(const Key('start.import'));
+      final label = find.descendant(
+        of: add,
+        matching: find.text('Ajouter des rues'),
+      );
+      expect(tester.widget<Text>(label).style!.color, AppColors.light.muted);
+      expect(
+        find.descendant(of: add, matching: find.byIcon(Icons.add)),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: panel(), matching: find.byType(FilledButton)),
+        findsNothing,
+      );
+      expect(tester.getSize(add).height, greaterThanOrEqualTo(56));
+      final rows = find.descendant(
+        of: panel(),
+        matching: find.byWidgetPredicate(
+          (widget) =>
+              widget.key is ValueKey<String> &&
+              (widget.key! as ValueKey<String>).value.startsWith(
+                'home.street.',
+              ),
+        ),
+      );
+      final lastRow = tester.getRect(rows.last).bottom;
+      expect(tester.getTopLeft(add).dy, greaterThanOrEqualTo(lastRow));
     });
 
+    testWidgets(
+      'should open « Ajouter des rues » from its row after the streets',
+      (tester) async {
+        await pumpHome(tester);
+
+        // A row after the streets: scrolled to, as the member would.
+        await tester.scrollUntilVisible(
+          find.byKey(const Key('start.import')),
+          200,
+          scrollable: find.descendant(
+            of: find.byKey(const Key('home.panel.list')),
+            matching: find.byType(Scrollable),
+          ),
+        );
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(const Key('start.import')));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(AddStreetsScreen), findsOneWidget);
+      },
+    );
+
     testWidgets('should say how many streets wait to be sent while some do, '
-        'above « Ajouter des rues »', (tester) async {
+        'under the list', (tester) async {
       await pumpHome(tester);
       final line = find.byKey(const Key('start.pendingSync'));
       expect(line, findsNothing);
@@ -293,10 +390,12 @@ void main() {
         find.bySemanticsLabel("Modifications de 2 rues en attente d'envoi"),
         findsOneWidget,
       );
+      // At the bottom of the panel, under the list and its « Ajouter des
+      // rues » row (Home mockup).
       expect(
-        tester.getBottomLeft(line).dy,
-        lessThanOrEqualTo(
-          tester.getTopLeft(find.byKey(const Key('start.import'))).dy,
+        tester.getTopLeft(line).dy,
+        greaterThanOrEqualTo(
+          tester.getBottomLeft(find.byKey(const Key('home.panel.list'))).dy,
         ),
       );
 
@@ -392,14 +491,21 @@ void main() {
       final map = shownMap(tester);
 
       expect(map.layers.lines.single.street, StreetId('lilas'));
-      expect(map.area, tourneeArea(streets));
+      expect(map.area, sectorArea(streets));
     });
 
     testWidgets('should show the card of a street tapped on the map in '
         'place of the panel, and take it with « La faire aussi »', (
       tester,
     ) async {
-      await pumpHome(tester);
+      await pumpHome(
+        tester,
+        streets: [
+          ..._streets().where((street) => street.id != StreetId('carnot')),
+          // Manu is in the team: he covers Rue Carnot.
+          _street('carnot', 'Rue Carnot', total: 38, assignees: {manuId}),
+        ],
+      );
 
       shownMap(tester).onStreetTapped!(StreetId('carnot'));
       await tester.pumpAndSettle();
@@ -408,10 +514,29 @@ void main() {
       expect(find.byKey(const Key('home.selected')), findsOneWidget);
       expect(find.text('Rue Carnot'), findsOneWidget);
       expect(find.text('0/38 faits'), findsOneWidget);
-      // Paul is not in the team the phone knows: he is not named.
-      expect(find.text('Faite par un autre membre'), findsOneWidget);
+      expect(find.text('Faite par Manu'), findsOneWidget);
 
       await tester.tap(find.text('La faire aussi'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Vous la faites avec Manu'), findsOneWidget);
+      expect(find.text('Ne plus la faire'), findsOneWidget);
+    });
+
+    testWidgets('should show « Libre » the card of a street whose only '
+        'assignee left the team, and take it with « Me l\'attribuer » '
+        '(#91)', (tester) async {
+      // Paul covers Rue Carnot but is no longer in the team.
+      await pumpHome(tester);
+
+      shownMap(tester).onStreetTapped!(StreetId('carnot'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Rue Carnot'), findsOneWidget);
+      expect(find.text('Libre'), findsOneWidget);
+      expect(find.text('La faire aussi'), findsNothing);
+
+      await tester.tap(find.byKey(const Key('streetCard.take')));
       await tester.pumpAndSettle();
 
       expect(find.text('Vous la faites'), findsOneWidget);
@@ -479,7 +604,13 @@ void main() {
       shownMap(tester).onZoomChanged!(16);
       await tester.pumpAndSettle();
 
-      for (final word in ['fait', 'personne', 'repasser', 'à faire']) {
+      for (final word in [
+        'fait',
+        'refusé',
+        'personne',
+        'repasser',
+        'à faire',
+      ]) {
         expect(
           find.descendant(of: legend, matching: find.text(word)),
           findsOneWidget,
@@ -543,5 +674,53 @@ void main() {
       expect(snap(300, 701), PanelSize.folded);
       expect(snap(550, 700), PanelSize.full);
     });
+  });
+
+  group('at 200 % text', () {
+    setUpAll(loadAppFonts);
+
+    testWidgets('should show Accueil with no overflow when the text is twice '
+        'as large', (tester) async {
+      useLargeText(tester);
+
+      await pumpHome(tester);
+
+      expect(panel(), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('should fold the panel taller, still holding the totals, '
+        'when the text is twice as large', (tester) async {
+      useLargeText(tester);
+      await pumpHome(tester);
+
+      await tester.drag(
+        find.byKey(const Key('home.panel.handle')),
+        const Offset(0, 300),
+      );
+      await tester.pumpAndSettle();
+
+      final folded = homePanelFoldedHeight(const TextScaler.linear(2));
+      expect(folded, greaterThan(AppSizes.homePanelFolded + 20));
+      expect(tester.getSize(panel()).height, folded);
+      expect(find.text('Mes rues · 31/50'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  test('should fold the panel to its mockup height when the text is not '
+      'scaled', () {
+    expect(
+      homePanelFoldedHeight(TextScaler.noScaling),
+      AppSizes.homePanelFolded,
+    );
+  });
+
+  testWidgets('should label every control and make it 48 dp at least', (
+    tester,
+  ) async {
+    await pumpHome(tester);
+
+    await expectAccessibleControls(tester);
   });
 }

@@ -17,7 +17,7 @@ abstract final class AppFonts {
 /// from the palette, so the same style works on any background.
 abstract final class AppTextStyles {
   /// Titles of screens (« Rue des Lilas ») and bottom sheets
-  /// (« Mes tournées »).
+  /// (« Mes secteurs »).
   static const title = TextStyle(
     fontFamily: AppFonts.display,
     fontWeight: FontWeight.w700,
@@ -142,6 +142,14 @@ abstract final class AppTextStyles {
     height: 1.1,
   );
 
+  /// The words of the status buttons of the status picker (« Fait »,
+  /// « De nouveau personne »).
+  static const statusChoice = TextStyle(
+    fontFamily: AppFonts.text,
+    fontWeight: FontWeight.w700,
+    fontSize: 18,
+  );
+
   /// The street name next to it (« Rue des Lilas »).
   static const sheetStreetName = TextStyle(
     fontFamily: AppFonts.display,
@@ -223,16 +231,16 @@ abstract final class AppTextStyles {
   /// The open tournée as the title of the start screen (« Tournée 49 ·
   /// 2026 », Home mockup): larger than a screen title, as it names the
   /// whole app's content.
-  static const tourneeTitle = TextStyle(
+  static const sectorTitle = TextStyle(
     fontFamily: AppFonts.display,
     fontWeight: FontWeight.w700,
     fontSize: 30,
     height: 1.05,
   );
 
-  /// A tournée in « Mes tournées » (« Tournée 12 · 2026 »), and a street
+  /// A tournée in « Mes secteurs » (« Tournée 12 · 2026 »), and a street
   /// or number of the Corbeille (« 14ter Rue des Lilas »).
-  static const tourneeRowTitle = TextStyle(
+  static const sectorRowTitle = TextStyle(
     fontFamily: AppFonts.display,
     fontWeight: FontWeight.w700,
     fontSize: 21,
@@ -247,6 +255,15 @@ abstract final class AppTextStyles {
     fontSize: 28,
     letterSpacing: 28 * 0.04,
     height: 1.1,
+  );
+
+  /// A street unfolded under a member in Équipe (« Rue de Thizy »): one
+  /// per 32 dp line.
+  static const memberStreet = TextStyle(
+    fontFamily: AppFonts.text,
+    fontWeight: FontWeight.w400,
+    fontSize: 15,
+    height: 32 / 15,
   );
 
   /// The initial in a member's round avatar (« M »).
@@ -275,7 +292,7 @@ abstract final class AppTextStyles {
   );
 
   /// The tournée under it (« Tournée 49 · CS Villefranche »).
-  static const pendingTournee = TextStyle(
+  static const pendingSector = TextStyle(
     fontFamily: AppFonts.display,
     fontWeight: FontWeight.w600,
     fontSize: 22,

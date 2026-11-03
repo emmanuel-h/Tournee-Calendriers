@@ -1,3 +1,4 @@
+import 'package:tournee_calendriers/domain/sector/team_roster.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/street/building/building_status.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
@@ -16,12 +17,17 @@ final class MapLayers {
   const MapLayers._(this.lines, this.dots);
 
   /// The layers of [streets]. A street is « libre » while nobody covers
-  /// it (no assignee: it is in nobody's « Mes rues »).
+  /// it: no assignee the [roster] counts, so none still in the team (#91).
+  /// The [roster] defaults to [TeamRoster.unknown], which trusts every
+  /// assignee.
   ///
   /// Streets in the Corbeille are left out. A street without shape (typed
   /// in by hand, unknown to OpenStreetMap) has no line, and a house without
   /// position (typed in by hand) no dot: they appear only in the lists.
-  factory MapLayers.of(Iterable<Street> streets) {
+  factory MapLayers.of(
+    Iterable<Street> streets, {
+    TeamRoster roster = TeamRoster.unknown,
+  }) {
     final shown = streets.where((street) => !street.isDeleted);
     return MapLayers._(
       List.unmodifiable([
@@ -32,7 +38,7 @@ final class MapLayers {
               shape: street.shape,
               level: ProgressLevel.of(
                 street.progress,
-                taken: street.assignees.isNotEmpty,
+                taken: roster.isTaken(street),
               ),
             ),
       ]),
@@ -103,8 +109,11 @@ enum HouseDotStatus {
   /// `○` à faire; a building with no door done.
   toDo,
 
-  /// `●` fait; a building with every door done.
+  /// `●` fait; a building with every door visited (done or refused).
   done,
+
+  /// `⊘` refusé.
+  refused,
 
   /// `✗` personne.
   nobodyHome,
@@ -124,6 +133,7 @@ enum HouseDotStatus {
       return switch (house.status) {
         VisitStatus.toDo => toDo,
         VisitStatus.done => done,
+        VisitStatus.refused => refused,
         VisitStatus.nobodyHome => nobodyHome,
         VisitStatus.comeBack => comeBack,
       };

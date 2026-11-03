@@ -7,6 +7,7 @@ import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
+import '../../support/fakes/fake_open_round_store.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
@@ -18,7 +19,12 @@ void main() {
 
   setUp(() {
     streets = repositoryWithLilas();
-    setHouseDetails = SetHouseDetails(streets, clockAtTwo(), leaOnThePhone());
+    setHouseDetails = SetHouseDetails(
+      streets,
+      clockAtTwo(),
+      leaOnThePhone(),
+      noRoundOn(),
+    );
   });
 
   test('should save the status chosen in the sheet', () async {
@@ -49,7 +55,12 @@ void main() {
 
   test('should stamp the change with the clock and the member', () async {
     final clock = clockAtTwo()..time = threePm;
-    setHouseDetails = SetHouseDetails(streets, clock, leaOnThePhone());
+    setHouseDetails = SetHouseDetails(
+      streets,
+      clock,
+      leaOnThePhone(),
+      noRoundOn(),
+    );
 
     final change = valueOf(
       await setHouseDetails(
@@ -191,5 +202,79 @@ void main() {
 
     expect(failure, const StreetNotFound<HouseChangeFailure>());
     expect(streets.saved, isEmpty);
+  });
+
+  group('the tournée on', () {
+    late FakeOpenRoundStore rounds;
+
+    setUp(() {
+      rounds = aRoundOn();
+      setHouseDetails = SetHouseDetails(
+        streets,
+        clockAtTwo(),
+        leaOnThePhone(),
+        visitsTo(rounds),
+      );
+    });
+
+    test('should count a house made ✓', () async {
+      await setHouseDetails(
+        lilasId,
+        n('7'),
+        const StatusMark(VisitStatus.done),
+      );
+
+      expect(rounds.openRound!.housesVisited, 1);
+    });
+
+    test('should count a house made ⊘', () async {
+      await setHouseDetails(
+        lilasId,
+        n('5'),
+        const StatusMark(VisitStatus.refused),
+      );
+
+      expect(rounds.openRound!.housesVisited, 1);
+    });
+
+    test('should take back a ✓ made « à faire »', () async {
+      await setHouseDetails(
+        lilasId,
+        n('7'),
+        const StatusMark(VisitStatus.done),
+      );
+      await setHouseDetails(
+        lilasId,
+        n('7'),
+        const StatusMark(VisitStatus.toDo),
+      );
+
+      expect(rounds.openRound!.housesVisited, 0);
+    });
+
+    test('should count nothing for a house still to visit', () async {
+      await setHouseDetails(
+        lilasId,
+        n('7'),
+        const StatusMark(VisitStatus.nobodyHome),
+      );
+
+      expect(rounds.saves, isEmpty);
+    });
+
+    test('should count nothing for a mark refused', () async {
+      await setHouseDetails(
+        lilasId,
+        n('8'),
+        const StatusMark(VisitStatus.done),
+      );
+      await setHouseDetails(
+        StreetId('inconnue'),
+        n('7'),
+        const StatusMark(VisitStatus.done),
+      );
+
+      expect(rounds.saves, isEmpty);
+    });
   });
 }

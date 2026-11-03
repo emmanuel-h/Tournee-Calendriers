@@ -15,6 +15,7 @@ a{color:#B3261E}a:hover{color:#8C1D18}
 .unit{height:52px;border-radius:12px;box-sizing:border-box;display:flex;align-items:center;justify-content:center;gap:6px;cursor:pointer;padding:0;font-family:'Atkinson Hyperlegible',sans-serif}
 .ib{width:48px;height:48px;border:0;background:transparent;color:#1B1F24;border-radius:24px;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;text-decoration:none;flex-shrink:0}
 .ib svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.st{min-height:72px;border-radius:16px;font:700 18px 'Atkinson Hyperlegible',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;box-sizing:border-box}
 .seg{flex:1;height:44px;border:0;font:700 15px 'Atkinson Hyperlegible',sans-serif;cursor:pointer}
 </style>
 </helmet>
@@ -52,7 +53,7 @@ a{color:#B3261E}a:hover{color:#8C1D18}
         </div>
       </sc-for>
     </div>
-    <span style="font-size: 14px; color: #4A5058; text-align: center">Appui : ○ → ✓ → ✗ → ↻ → ○ · Appui long : détails</span>
+    <span style="font-size: 14px; color: #4A5058; text-align: center">Appuyez sur une porte pour changer son statut</span>
     <div style="display: flex; gap: 10px">
       <button onClick="{{toggleMenu}}" aria-haspopup="menu" aria-expanded="{{menuOpen}}" style="flex: 1; height: 48px; border-radius: 24px; border: 1.5px solid #CFC9BD; background: #FFFFFF; font: 700 15px 'Atkinson Hyperlegible', sans-serif; color: #1B1F24; cursor: pointer">Gérer l'immeuble ▾</button>
       <button style="flex: 1; height: 48px; border-radius: 24px; border: 1.5px solid #CFC9BD; background: #FFFFFF; font: 700 15px 'Atkinson Hyperlegible', sans-serif; color: #1B1F24">Repasser</button>
@@ -69,6 +70,22 @@ a{color:#B3261E}a:hover{color:#8C1D18}
       <a role="menuitem" href="Main.dc.html" style="min-height: 56px; display: flex; align-items: center; border-bottom: 1px solid #E2DED5; font-weight: 700; font-size: 17px; color: #1B1F24; text-decoration: none">Changer en maison</a>
     </div>
   </div>
+  <!-- A tap on a door: the street's five statuses, titled with the door; ↻ then asks when, ✓
+       during a run asks for the don, as on the street (PLAN §5.6). -->
+  <sc-if value="{{hasDoor}}" hint-placeholder-val="{{false}}">
+    <button onClick="{{closeDoor}}" aria-label="Fermer" style="position: absolute; inset: 0; border: 0; background: rgba(27, 31, 36, 0.35); cursor: pointer"></button>
+    <div role="dialog" aria-label="{{doorTitle}}" style="position: absolute; left: 0; right: 0; bottom: 0; background: #FFFFFF; border-radius: 24px 24px 0 0; box-shadow: 0 -4px 20px rgba(27,31,36,0.18); padding: 10px 16px 24px 16px; display: flex; flex-direction: column; gap: 14px">
+      <div style="display: flex; align-items: center; justify-content: space-between">
+        <span style="display: flex; flex-direction: column"><span style="font: 700 30px 'Barlow Condensed', sans-serif">{{doorTitle}}</span><span style="font-size: 14px; color: #4A5058">{{doorSub}}</span></span>
+        <button class="ib" onClick="{{closeDoor}}" aria-label="Fermer"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+      </div>
+      <div role="radiogroup" aria-label="Statut" style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+        <sc-for list="{{choices}}" as="c" hint-placeholder-count="4">
+          <button class="st" role="radio" aria-checked="{{c.on}}" onClick="{{c.pick}}" style="{{c.style}}"><span style="font-size: 24px">{{c.glyph}}</span>{{c.label}}</button>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
@@ -82,6 +99,7 @@ class Component extends DCLogic {
     };
     this.state = {
       menuOpen: false,
+      door: null,
       stair: 'A',
       buildings: {
         A: [
@@ -101,23 +119,29 @@ class Component extends DCLogic {
     };
   }
   tap(stair, fi, di) {
-    const next = { todo: 'done', done: 'nobody', nobody: 'comeBack', comeBack: 'todo' };
+    this.setState({ door: { stair: stair, fi: fi, di: di } });
+  }
+  setDoor(s) {
+    const { stair, fi, di } = this.state.door;
+    const next = { todo: s, done: s, nobody: s, comeBack: s, refused: s };
     const b = Object.assign({}, this.state.buildings);
     b[stair] = b[stair].map((f, i) => i !== fi ? f : {
       n: f.n,
       doors: f.doors.map((d, j) => j !== di ? d : { label: d.label, s: next[d.s] })
     });
-    this.setState({ buildings: b });
+    this.setState({ buildings: b, door: null });
   }
   renderVals() {
     const styles = {
       todo: 'background: #FFFFFF; color: #1B1F24; border: 1.5px solid #CFC9BD',
       done: 'background: #1E6B47; color: #FFFFFF; border: 1.5px solid #1E6B47',
       nobody: 'background: #F2B33D; color: #1B1F24; border: 1.5px solid #D99A22',
-      comeBack: 'background: #D6E6F5; color: #1D4E7A; border: 1.5px solid #A9C8E6'
+      comeBack: 'background: #D6E6F5; color: #1D4E7A; border: 1.5px solid #A9C8E6',
+      refused: 'background: #5A6068; color: #FFFFFF; border: 1.5px solid #5A6068'
     };
-    const glyphs = { todo: '○', done: '✓', nobody: '✗', comeBack: '↻' };
-    const names = { todo: 'à faire', done: 'fait', nobody: 'personne', comeBack: 'repasser' };
+    const glyphs = { todo: '○', done: '✓', nobody: '✗', comeBack: '↻', refused: '⊘' };
+    const names = { todo: 'à faire', done: 'fait', nobody: 'personne', comeBack: 'repasser', refused: 'refusé' };
+    const titles = { todo: 'À faire', done: 'Fait', nobody: 'Personne', comeBack: 'Repasser', refused: 'Refusé' };
     const floorName = (n) => (n === 0 ? 'RdC' : n === 1 ? '1er' : n + 'e');
     const stair = this.state.stair;
     const all = [].concat(...Object.values(this.state.buildings).map((fs) => [].concat(...fs.map((f) => f.doors))));
@@ -141,7 +165,21 @@ class Component extends DCLogic {
         pick: () => this.setState({ stair: k })
       };
     });
+    const door = this.state.door;
+    const fl = door ? this.state.buildings[door.stair][door.fi] : null;
+    const d = door ? fl.doors[door.di] : null;
+    const ring = '; box-shadow: 0 0 0 3px #FFFFFF, 0 0 0 5px #1B1F24';
+    const choices = [['done', '✓', 'Fait'], ['refused', '⊘', 'Refusé'], ['nobody', '✗', 'Personne'], ['comeBack', '↻', 'Repasser'], ['todo', '○', 'À faire']].map((c) => ({
+      glyph: c[1], label: c[2], on: !!d && d.s === c[0],
+      style: styles[c[0]].replace('1.5px', '2px') + (d && d.s === c[0] ? ring : '') + (c[0] === 'todo' ? '; grid-column: 1 / -1' : ''),
+      pick: () => this.setDoor(c[0])
+    }));
     return {
+      hasDoor: !!door,
+      doorTitle: d ? 'Porte ' + d.label + ' · ' + titles[d.s] : '',
+      doorSub: d ? 'Esc. ' + door.stair + ' · ' + floorName(fl.n) + ' · 8 Rue des Lilas' : '',
+      choices: choices,
+      closeDoor: () => this.setState({ door: null }),
       menuOpen: this.state.menuOpen,
       menuStyle: this.state.menuOpen ? 'display: block' : 'display: none',
       toggleMenu: () => this.setState({ menuOpen: !this.state.menuOpen }),

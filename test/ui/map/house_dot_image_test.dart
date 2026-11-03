@@ -81,6 +81,16 @@ void main() {
       expect(look.glyphColor, _colors.onDone);
     });
 
+    test('should be a dark grey round with ⊘ when refused', () {
+      final look = HouseDotLook.of(HouseDotStatus.refused, _colors);
+
+      expect(look.fill, _colors.refused);
+      expect(look.border, _colors.refusedBorder);
+      expect(look.dashed, isFalse);
+      expect(look.glyph, StatusGlyphs.refused);
+      expect(look.glyphColor, _colors.onRefused);
+    });
+
     test('should be a yellow round with ✗ when nobody was home', () {
       final look = HouseDotLook.of(HouseDotStatus.nobodyHome, _colors);
 

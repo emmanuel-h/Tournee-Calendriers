@@ -3,16 +3,16 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/map/map_layers.dart';
-import 'package:tournee_calendriers/domain/map/tournee_area.dart';
+import 'package:tournee_calendriers/domain/map/sector_area.dart';
+import 'package:tournee_calendriers/domain/sector/sector_commune.dart';
 import 'package:tournee_calendriers/domain/street/my_streets.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_commune.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/home/home_state.dart';
 import 'package:tournee_calendriers/presentation/home/missing_shapes.dart';
-import 'package:tournee_calendriers/presentation/my_tournees/my_tournees_notifier.dart';
+import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
 import 'package:tournee_calendriers/presentation/street_card/follows_team.dart';
 import 'package:tournee_calendriers/presentation/street_card/street_card.dart';
 import 'package:tournee_calendriers/presentation/street_list/street_list_state.dart';
@@ -25,7 +25,7 @@ final homeProvider = NotifierProvider.autoDispose<HomeNotifier, HomeState>(
 
 /// Follows the open tournée's streets (`ObserveMyStreets`), communes and
 /// team, from the phone's copy, offline too, and the street tapped on the
-/// map or among « Autres rues de la tournée », which the member may take
+/// map or among « Autres rues du secteur », which the member may take
 /// or release from its card.
 ///
 /// Each time the streets change, it hands them to [MissingShapes], which
@@ -34,7 +34,7 @@ final class HomeNotifier extends Notifier<HomeState>
     with FollowsTeam<HomeState> {
   /// The last streets read, null until the first arrive.
   MyStreets? _streets;
-  var _communes = const <TourneeCommune>[];
+  var _communes = const <SectorCommune>[];
 
   /// Where the map opens, kept once decided (see [HomeState.area]).
   GeoBounds? _area;
@@ -60,21 +60,19 @@ final class HomeNotifier extends Notifier<HomeState>
     // `select`: the notifier is built again when another tournée opens,
     // not when something else of the one open changes (its waiting
     // requests), which would move the map back to where it opened.
-    final tournee = ref.watch(
-      currentTourneeProvider.select((tournee) => tournee?.id),
+    final sector = ref.watch(
+      currentSectorProvider.select((sector) => sector?.id),
     );
-    if (tournee != null) {
-      final communes = ref
-          .watch(observeTourneeCommunesProvider)(tournee)
-          .listen(
-            (communes) {
-              _communes = communes;
-              _show();
-            },
-            // The tournée can no longer be read (the member was removed):
-            // the communes last read stay.
-            onError: (Object _) {},
-          );
+    if (sector != null) {
+      final communes = ref.watch(observeSectorCommunesProvider)(sector).listen(
+        (communes) {
+          _communes = communes;
+          _show();
+        },
+        // The tournée can no longer be read (the member was removed):
+        // the communes last read stay.
+        onError: (Object _) {},
+      );
       ref.onDispose(communes.cancel);
     }
     followTeam();
@@ -95,7 +93,7 @@ final class HomeNotifier extends Notifier<HomeState>
     _show();
   }
 
-  /// A street was tapped among « Autres rues de la tournée » (#93): its
+  /// A street was tapped among « Autres rues du secteur » (#93): its
   /// card shows, as on a tap on its line, and the map goes to the street
   /// (its line, else its houses), where it then stays. A street with no
   /// place on the map leaves the map where it is.
@@ -138,24 +136,24 @@ final class HomeNotifier extends Notifier<HomeState>
     final streets = _streets ?? MyStreets.none;
     // `ref.read`: whether the member visits is read with the rest, the
     // notifier needs no build of its own for it.
-    final visiting = ref.read(currentTourneeProvider)?.isVisiting ?? false;
+    final visiting = ref.read(currentSectorProvider)?.isVisiting ?? false;
     if (_streets != null) _area ??= homeArea(_communes, streets.all);
     final progress = visiting ? streets.teamProgress : streets.myProgress;
     final selected = _find(_selected);
     return HomeState(
       loading: _streets == null,
       visiting: visiting,
-      done: progress.done,
+      done: progress.visited,
       total: progress.total,
-      teamPercent: streets.teamProgress.donePercent,
+      teamPercent: streets.teamProgress.visitedPercent,
       mine: _rows(visiting ? streets.all : streets.mine),
       others: visiting ? const [] : _rows(streets.others),
-      layers: MapLayers.of(streets.all),
+      layers: MapLayers.of(streets.all, roster: roster),
       area: _area,
       // None tapped, or the street went to the Corbeille: no card, no line
       // lit up.
       card: switch (selected) {
-        final street? => StreetCardInTournee.of(
+        final street? => StreetCardInSector.of(
           street,
           me: ref.read(readCurrentMemberProvider)(),
           team: team,
@@ -178,7 +176,7 @@ final class HomeNotifier extends Notifier<HomeState>
         StreetRow(
           id: street.id,
           name: street.name.text,
-          done: progress.done,
+          done: progress.visited,
           total: progress.total,
         ),
   ];

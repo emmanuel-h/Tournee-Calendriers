@@ -35,9 +35,10 @@ final class NobodyHomeTries {
 
   /// The tries a house or door with [status] keeps of [tries]:
   /// - to do: none, the house is to try again from the start;
+  /// - refused: none, nobody tries a refused house again (PLAN §5.6);
   /// - nobody home: at least one, this « personne » being a try. Coming
-  ///   back to « personne » from another status (by a tap or the status
-  ///   control) adds nothing more: only « Repassé, toujours personne »
+  ///   back to « personne » from another status (in the status picker)
+  ///   adds nothing more: only « De nouveau personne »
   ///   ([next]) counts a new try;
   /// - done or « repasser »: [tries] as they are.
   ///
@@ -46,7 +47,7 @@ final class NobodyHomeTries {
   /// breaks those rules.
   static NobodyHomeTries keptBy(VisitStatus status, NobodyHomeTries tries) =>
       switch (status) {
-        VisitStatus.toDo => none,
+        VisitStatus.toDo || VisitStatus.refused => none,
         VisitStatus.nobodyHome => tries.count == 0 ? none.next : tries,
         VisitStatus.done || VisitStatus.comeBack => tries,
       };

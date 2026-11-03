@@ -5,24 +5,25 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/application/ports/phone_settings.dart';
+import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
-import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
-import 'package:tournee_calendriers/ui/screens/my_tournees/my_tournees_sheet.dart';
+import 'package:tournee_calendriers/ui/screens/my_sectors/my_sectors_sheet.dart';
 import 'package:tournee_calendriers/ui/screens/settings/changelog.dart';
 import 'package:tournee_calendriers/ui/screens/settings/changelog_screen.dart';
 import 'package:tournee_calendriers/ui/screens/settings/privacy_screen.dart';
 
-import '../../domain/tournee/my_tournees_fixtures.dart';
-import '../../domain/tournee/tournee_fixtures.dart';
+import '../../domain/sector/my_sectors_fixtures.dart';
+import '../../domain/sector/sector_fixtures.dart';
 import '../../support/fakes/fake_admin_status.dart';
 import '../../support/fakes/fake_member_account.dart';
-import '../../support/fakes/fake_my_tournees_store.dart';
+import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_phone_settings.dart';
 import '../../support/results.dart';
 import '../support/app_overrides.dart';
 import '../support/clipboard.dart';
+import '../support/large_text.dart';
 import '../support/navigation.dart';
 
 void main() {
@@ -47,8 +48,8 @@ void main() {
             settings: settings,
             account: account,
             admins: FakeAdminStatus(phoneIsAdmin: admin),
-            myTournees: FakeMyTourneesStore(
-              valueOf(MyTournees.none.remember(tournee49).open(tournee49.id)),
+            mySectors: FakeMySectorsStore(
+              valueOf(MySectors.none.remember(sector49).open(sector49.id)),
             ),
           ),
           if (releases != null) changelogProvider.overrideWithValue(releases),
@@ -70,12 +71,12 @@ void main() {
 
     expect(find.widgetWithText(AppBar, 'Paramètres'), findsOneWidget);
     expect(find.bySemanticsLabel('Prénom, Manu'), findsOneWidget);
-    expect(find.bySemanticsLabel('Mes tournées, 49 · 2026'), findsOneWidget);
+    expect(find.bySemanticsLabel('Mes secteurs, 49 · 2026'), findsOneWidget);
     expect(find.bySemanticsLabel('Thème, Système'), findsOneWidget);
     expect(find.bySemanticsLabel('Confidentialité'), findsOneWidget);
     // The version of pubspec.yaml, which `flutter test` gives too.
     expect(
-      find.bySemanticsLabel('Version 0.5.1, voir les nouveautés'),
+      find.bySemanticsLabel('Version 0.9.0, voir les nouveautés'),
       findsOneWidget,
     );
     expect(
@@ -86,6 +87,34 @@ void main() {
       findsOneWidget,
     );
   });
+
+  testWidgets(
+    'should say the app works offline under « Mes secteurs », with nothing '
+    'to download',
+    (tester) async {
+      await pumpSettings(tester);
+
+      final line = find.byKey(const Key('settings.offlineLine'));
+      expect(
+        tester.widget<Text>(line).data,
+        "L'application fonctionne sans réseau\u00a0; les modifications sont "
+        "envoyées dès qu'il revient.",
+      );
+      final mySectors = tester.getRect(
+        find.byKey(const Key('settings.mySectors')),
+      );
+      final application = tester.getRect(find.text('APPLICATION'));
+      expect(
+        tester.getTopLeft(line).dy,
+        greaterThanOrEqualTo(mySectors.bottom),
+      );
+      expect(tester.getBottomLeft(line).dy, lessThan(application.top));
+      // The download runs by itself (PLAN §7): no section, no button.
+      expect(find.text('HORS-LIGNE'), findsNothing);
+      expect(find.text('Mettre à jour'), findsNothing);
+      expect(find.text('Supprimer'), findsNothing);
+    },
+  );
 
   testWidgets('should keep the new name when saved', (tester) async {
     await pumpSettings(tester);
@@ -146,13 +175,13 @@ void main() {
     }
   });
 
-  testWidgets('should open « Mes tournées » from its row', (tester) async {
+  testWidgets('should open « Mes secteurs » from its row', (tester) async {
     await pumpSettings(tester);
 
-    await tester.tap(find.byKey(const Key('settings.myTournees')));
+    await tester.tap(find.byKey(const Key('settings.mySectors')));
     await tester.pumpAndSettle();
 
-    expect(find.byType(MyTourneesSheet), findsOneWidget);
+    expect(find.byType(MySectorsSheet), findsOneWidget);
   });
 
   testWidgets('should open the privacy page', (tester) async {
@@ -191,7 +220,7 @@ void main() {
           version: '1.1.0',
           date: DateTime(2026, 11, 20),
           notes: (_) => [
-            'Un bouton copie le code de la tournée.',
+            'Un bouton copie le code du secteur.',
             "Le nombre de passages s'affiche pour chaque rue.",
           ],
         ),
@@ -213,7 +242,7 @@ void main() {
       '1.2.0 · 5 mars 2027',
       'Une rue se partage en deux.',
       '1.1.0 · 20 nov. 2026',
-      'Un bouton copie le code de la tournée.',
+      'Un bouton copie le code du secteur.',
       "Le nombre de passages s'affiche pour chaque rue.",
       '1.0.0 · 16 oct. 2026',
       'Première version.',
@@ -233,18 +262,49 @@ void main() {
     await tester.tap(find.byKey(const Key('settings.version')));
     await tester.pumpAndSettle();
 
-    expect(find.bySemanticsLabel('0.5.1 · 18 oct. 2026'), findsOneWidget);
+    expect(find.bySemanticsLabel('0.10.0 · 2 nov. 2026'), findsOneWidget);
+    expect(
+      find.bySemanticsLabel('La tournée s\'appelle maintenant « secteur ».'),
+      findsOneWidget,
+    );
+    expect(
+      find.bySemanticsLabel(
+        'Confidentialité : le texte dit aussi ce qui est gardé des '
+        'tournées, des dons et des calendriers.',
+      ),
+      findsOneWidget,
+    );
+    expect(
+      tester.getTopLeft(find.bySemanticsLabel('0.10.0 · 2 nov. 2026')).dy,
+      lessThan(
+        tester.getTopLeft(find.bySemanticsLabel('0.9.0 · 2 nov. 2026')).dy,
+      ),
+    );
+    expect(find.bySemanticsLabel('0.9.0 · 2 nov. 2026'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.bySemanticsLabel('0.8.0 · 2 nov. 2026'),
+      100,
+    );
+    expect(find.bySemanticsLabel('0.8.0 · 2 nov. 2026'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.bySemanticsLabel(
+        "Paramètres rappelle que l'application fonctionne sans réseau.",
+      ),
+      100,
+    );
+    expect(find.bySemanticsLabel('0.7.0 · 2 nov. 2026'), findsOneWidget);
+    await tester.scrollUntilVisible(
+      find.bySemanticsLabel("La fiche d'une rue sur la carte se ferme avec ✕."),
+      100,
+    );
+    await tester.scrollUntilVisible(
+      find.bySemanticsLabel('0.5.1 · 18 oct. 2026'),
+      100,
+    );
     expect(
       find.bySemanticsLabel(
         'Ajouter une rue depuis la carte est immédiat, et la route touchée '
         "s'allume tout de suite.",
-      ),
-      findsOneWidget,
-    );
-    expect(find.bySemanticsLabel('0.5.0 · 18 oct. 2026'), findsOneWidget);
-    expect(
-      find.bySemanticsLabel(
-        'Chaque rue dit qui la couvre\u00a0; on la prend ou la libère.',
       ),
       findsOneWidget,
     );
@@ -276,7 +336,7 @@ void main() {
     expect(find.bySemanticsLabel('0.2.0 · 17 oct. 2026'), findsOneWidget);
     expect(
       find.bySemanticsLabel(
-        'Seuls les administrateurs créent une tournée\u00a0; les autres la '
+        'Seuls les administrateurs créent un secteur\u00a0; les autres le '
         'rejoignent avec un code.',
       ),
       findsOneWidget,
@@ -367,5 +427,27 @@ void main() {
       account.gate.complete();
       await tester.pumpAndSettle();
     });
+  });
+
+  group('at 200 % text', () {
+    setUpAll(loadAppFonts);
+
+    testWidgets('should show Paramètres with no overflow when the text is '
+        'twice as large', (tester) async {
+      useLargeText(tester);
+
+      await pumpSettings(tester);
+
+      expect(find.text('Paramètres'), findsWidgets);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  testWidgets('should label every control and make it 48 dp at least', (
+    tester,
+  ) async {
+    await pumpSettings(tester);
+
+    await expectAccessibleControls(tester);
   });
 }

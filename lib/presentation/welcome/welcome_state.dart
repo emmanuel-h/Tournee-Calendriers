@@ -10,7 +10,7 @@ final class WelcomeState {
   /// The text of « Votre prénom », as typed.
   final String name;
 
-  /// « Créer une tournée » and « Rejoindre une tournée » are enabled: the
+  /// « Créer un secteur » and « Rejoindre un secteur » are enabled: the
   /// text is a valid first name.
   final bool canGoOn;
 

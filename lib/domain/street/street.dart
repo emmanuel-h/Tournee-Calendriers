@@ -47,7 +47,7 @@ enum HouseChangeFailure {
   /// one, and its status follows from them.
   houseIsBuilding,
 
-  /// « Repassé, toujours personne » on a house that is neither
+  /// « De nouveau personne » on a house that is neither
   /// « personne » nor « repasser »: nobody was to come back to it.
   notToVisitAgain,
 }
@@ -91,7 +91,7 @@ enum DwellingChangeFailure {
   /// « repasser »: its « repasser » is its status, set with `markDwelling`.
   notComeBack,
 
-  /// « Repassé, toujours personne » on a door that is neither « personne »
+  /// « De nouveau personne » on a door that is neither « personne »
   /// nor « repasser ».
   notToVisitAgain,
 }
@@ -299,7 +299,7 @@ final class Street {
   /// covered by [member] alone. Nothing else changes.
   ///
   /// It is the street as [member] brings it from the phone into a tournée
-  /// (« Les ajouter à la tournée », PLAN §5.0): the marks made in M1 are
+  /// (« Les ajouter au secteur », PLAN §5.0): the marks made in M1 are
   /// stamped with the phone's own id, which is no member of the tournée,
   /// and the tournée's security rules only accept the caller's uid (PLAN
   /// §8.2). The times stay, so « Modifié à 14:02 » still says when.
@@ -427,7 +427,7 @@ final class Street {
     ));
   }
 
-  /// « Repassé, toujours personne » on the house at [number], as [by] at
+  /// « De nouveau personne » on the house at [number], as [by] at
   /// [at] (its sheet, #80): it is « personne » with one more try
   /// ([NobodyHomeTries.next]); a « repasser » loses its time, as any other
   /// status but « repasser » does.
@@ -538,9 +538,10 @@ final class Street {
 
   /// Turns the building at [number] back into a single house, as [by] at
   /// [at] (« or back to a single house », PLAN §5.5). Its doors are
-  /// dropped (the screen asks first); the house is done when every door
-  /// was done; otherwise it is « repasser », with its time, when the
-  /// building had its own « repasser », and to do when not.
+  /// dropped (the screen asks first); the house is refused when every door
+  /// was refused, done when every door was visited (done or refused);
+  /// otherwise it is « repasser », with its time, when the building had its
+  /// own « repasser », and to do when not.
   Result<(Street, BuildingRemoved), BuildingChangeFailure> removeBuilding(
     HouseNumber number, {
     required MemberId by,
@@ -553,7 +554,10 @@ final class Street {
       // building) pair out of the `Ok` in one step.
       case Ok(value: (final index, final building)):
         final before = houses[index];
+        final progress = building.progress;
         final status = switch (building.status) {
+          BuildingStatus.done when progress.refused == progress.total =>
+            VisitStatus.refused,
           BuildingStatus.done => VisitStatus.done,
           BuildingStatus.partial || BuildingStatus.toDo =>
             before.comeBack == null ? VisitStatus.toDo : VisitStatus.comeBack,
@@ -579,7 +583,7 @@ final class Street {
   }
 
   /// Gives the door at [key] of the building at [number] the [status], as
-  /// [by] at [at] (a tap on the door). The time of a « repasser » goes with
+  /// [by] at [at] (its status picker). The time of a « repasser » goes with
   /// that status, as a house's.
   ///
   /// The house itself is untouched (its last change included): the door
@@ -660,7 +664,7 @@ final class Street {
     }
   }
 
-  /// « Repassé, toujours personne » on the door at [key] of the building at
+  /// « De nouveau personne » on the door at [key] of the building at
   /// [number], as [by] at [at] (its sheet): as [markNobodyHomeAgain] on a
   /// house, only that door stamped. Refused with
   /// [DwellingChangeFailure.notToVisitAgain] unless the door is

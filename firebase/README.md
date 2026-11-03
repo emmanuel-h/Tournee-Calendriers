@@ -4,6 +4,16 @@
   Firestore adapters write (`lib/infrastructure/firestore/`) and refuse everything else.
 - `firestore.indexes.json`: `houses` of the street documents is exempt from indexing.
 - `firebase.json`: points the CLI at both files and configures the emulator.
+- `tool/migrate_to_sectors.mjs`: the one-off copy of the data of 0.9.0 and older
+  (`tournees/`, `tourneeKeys/`, `tourneeId`) to the names of #116 (`sectors/`, `sectorKeys/`,
+  `sectorId`). Dry run by default, `--apply` copies, `--delete-old` copies then deletes the
+  old documents and fields; idempotent, never overwrites a copy. Its test,
+  `test/migrate_to_sectors.test.mjs`, runs with the rules tests in the emulator.
+  On the real project, with Application Default Credentials
+  (`gcloud auth application-default login` with an owner account, or
+  `GOOGLE_APPLICATION_CREDENTIALS` naming a service account key):
+  `node tool/migrate_to_sectors.mjs --project <project-id>` (then `--apply`, then later
+  `--delete-old`). With `FIRESTORE_EMULATOR_HOST` set it works on the emulator instead.
 - `test/`: the rules tests, run in the Firestore emulator. `support.mjs` holds documents
   shaped exactly as the Dart mappers write them: change both together.
 
@@ -13,5 +23,13 @@ npm ci        # once, and after a change of package-lock.json
 npm test      # starts the emulator (demo project, no real data), runs test/*.test.mjs, stops it
 ```
 
-The versions are pinned to run on Node 18 or later and Java 11 or later (the emulator is a
-Java program, downloaded on the first run into `~/.cache/firebase/emulators`).
+The versions are pinned (firebase-tools 15, `@firebase/rules-unit-testing` 5, `firebase` 12,
+`firebase-admin` 14) and need Node 22 or later (`firebase-admin` 14; 22 locally and in CI) and Java 11 or later (the emulator is a Java
+program, downloaded on the first run into `~/.cache/firebase/emulators`).
+`@firebase/rules-unit-testing` 6 is not used: it needs Node 24.12 or later.
+
+`overrides` in `package.json` lifts `@grpc/grpc-js` inside `@firebase/firestore` from 1.9 to the
+1.14 line that firebase-tools already uses: 1.9 has known high-severity advisories. The moderate
+advisories `npm audit` still lists are all inside firebase-tools' own dependencies (glob,
+minimatch, uuid…); they only run on this machine and in CI, and go away with a later
+firebase-tools.

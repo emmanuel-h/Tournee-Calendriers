@@ -56,6 +56,28 @@ void main() {
       );
     });
 
+    test('should show a refused house as refused', () {
+      expect(
+        TileMark.of(House(number: n('9'), status: VisitStatus.refused)),
+        const RefusedMark(),
+      );
+    });
+
+    test('should show a building with every door done or refused as '
+        'done', () {
+      expect(
+        TileMark.of(_building(VisitStatus.refused, VisitStatus.done)),
+        const DoneMark(),
+      );
+    });
+
+    test('should count a refused door as visited in a partial building', () {
+      expect(
+        TileMark.of(_building(VisitStatus.refused, VisitStatus.nobodyHome)),
+        const PartialBuildingMark(done: 1, total: 2),
+      );
+    });
+
     test('should show a building with some doors done as partial', () {
       expect(
         TileMark.of(_building(VisitStatus.done, VisitStatus.nobodyHome)),
@@ -116,6 +138,15 @@ void main() {
       expect(
         TileMark.ofDwelling(Dwelling(label: d('51'), status: VisitStatus.done)),
         const DoneMark(),
+      );
+    });
+
+    test('should show a refused door as refused', () {
+      expect(
+        TileMark.ofDwelling(
+          Dwelling(label: d('51'), status: VisitStatus.refused),
+        ),
+        const RefusedMark(),
       );
     });
 
@@ -261,6 +292,7 @@ void main() {
       name: 'Rue des Lilas',
       done: done,
       total: total,
+      refused: 0,
       nobodyHome: 0,
       comeBack: 0,
       hideDone: false,
@@ -275,44 +307,6 @@ void main() {
 
     test('should give no share when the street has no door', () {
       expect(shown().fraction, 0);
-    });
-  });
-
-  group('MarkedHouse', () {
-    test('should be equal when the number and the status are equal', () {
-      final marked = MarkedHouse(number: n('7'), status: VisitStatus.done);
-
-      expect(marked, MarkedHouse(number: n('7'), status: VisitStatus.done));
-      expect(
-        marked.hashCode,
-        MarkedHouse(number: n('7'), status: VisitStatus.done).hashCode,
-      );
-      expect(
-        marked,
-        isNot(MarkedHouse(number: n('9'), status: VisitStatus.done)),
-      );
-      expect(
-        marked,
-        isNot(MarkedHouse(number: n('7'), status: VisitStatus.nobodyHome)),
-      );
-    });
-
-    test('should differ when the tries differ', () {
-      expect(
-        MarkedHouse(number: n('7'), status: VisitStatus.done, tries: 2),
-        isNot(MarkedHouse(number: n('7'), status: VisitStatus.done)),
-      );
-    });
-
-    test('should name the number, the status and the tries when printed', () {
-      expect(
-        MarkedHouse(
-          number: n('7'),
-          status: VisitStatus.nobodyHome,
-          tries: 3,
-        ).toString(),
-        'MarkedHouse(7, VisitStatus.nobodyHome, tries: 3)',
-      );
     });
   });
 

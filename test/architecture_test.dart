@@ -313,7 +313,7 @@ import 'package:tournee_calendriers/ui/x.dart';
       const maplibre = "import 'package:maplibre_gl/maplibre_gl.dart';";
 
       final violations = findViolations([
-        const SourceFile('ui/map/tournee_map.dart', maplibre),
+        const SourceFile('ui/map/sector_map.dart', maplibre),
         const SourceFile(
           'infrastructure/maplibre_offline/store.dart',
           maplibre,

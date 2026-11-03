@@ -1,0 +1,49 @@
+// An in-memory OpenRoundStore: no file, answers at once, and records every
+// save so tests can assert it.
+import 'dart:async';
+
+import 'package:tournee_calendriers/application/ports/open_round_store.dart';
+import 'package:tournee_calendriers/application/use_cases/round_visits.dart';
+import 'package:tournee_calendriers/domain/round/round.dart';
+
+import 'fake_my_sectors_store.dart';
+
+final class FakeOpenRoundStore implements OpenRoundStore {
+  /// A phone where [openRound] is on (none by default).
+  FakeOpenRoundStore([this.openRound]);
+
+  @override
+  Round? openRound;
+
+  /// Every tournée given to [save], in order.
+  final saves = <Round>[];
+
+  /// How many times [clear] was called.
+  var clears = 0;
+
+  // `sync: true`: a listener hears a save before `save` returns, as the
+  // real adapter's listeners do on the same turn of the event loop.
+  final _changes = StreamController<Round?>.broadcast(sync: true);
+
+  @override
+  Stream<Round?> get changes => _changes.stream;
+
+  @override
+  Future<void> save(Round round) async {
+    saves.add(round);
+    openRound = round;
+    _changes.add(round);
+  }
+
+  @override
+  Future<void> clear() async {
+    clears++;
+    openRound = null;
+    _changes.add(null);
+  }
+}
+
+/// The tournée step of the status use cases on a phone with no tournée
+/// on, for the tests of marks that count nothing.
+RoundVisits noRoundOn() =>
+    RoundVisits(FakeOpenRoundStore(), FakeMySectorsStore());

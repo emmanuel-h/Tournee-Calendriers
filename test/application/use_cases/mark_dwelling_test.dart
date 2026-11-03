@@ -8,6 +8,7 @@ import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
+import '../../support/fakes/fake_open_round_store.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
@@ -19,7 +20,12 @@ void main() {
 
   setUp(() {
     streets = repositoryWithLilas();
-    markDwelling = MarkDwelling(streets, clockAtTwo(), leaOnThePhone());
+    markDwelling = MarkDwelling(
+      streets,
+      clockAtTwo(),
+      leaOnThePhone(),
+      noRoundOn(),
+    );
   });
 
   Dwelling? doorOf(String label) =>
@@ -146,5 +152,54 @@ void main() {
     );
 
     expect(failure, const StreetNotFound<DwellingChangeFailure>());
+  });
+
+  group('the tournée on', () {
+    late FakeOpenRoundStore rounds;
+
+    setUp(() {
+      rounds = aRoundOn();
+      markDwelling = MarkDwelling(
+        streets,
+        clockAtTwo(),
+        leaOnThePhone(),
+        visitsTo(rounds),
+      );
+    });
+
+    test('should count a door made ⊘', () async {
+      await markDwelling(
+        lilasId,
+        n('8'),
+        rdc('02'),
+        const StatusMark(VisitStatus.refused),
+      );
+
+      expect(rounds.openRound!.housesVisited, 1);
+    });
+
+    test('should take back a door no longer ✓', () async {
+      rounds.openRound = rounds.openRound!.visited();
+
+      await markDwelling(
+        lilasId,
+        n('8'),
+        rdc('01'),
+        const StatusMark(VisitStatus.comeBack),
+      );
+
+      expect(rounds.openRound!.housesVisited, 0);
+    });
+
+    test('should count nothing for a mark refused', () async {
+      await markDwelling(
+        lilasId,
+        n('8'),
+        rdc('99'),
+        const StatusMark(VisitStatus.done),
+      );
+
+      expect(rounds.saves, isEmpty);
+    });
   });
 }

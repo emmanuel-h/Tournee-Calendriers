@@ -9,10 +9,10 @@ import 'package:tournee_calendriers/presentation/edit_street/edit_street_state.d
 import 'package:tournee_calendriers/ui/components/app_buttons.dart';
 import 'package:tournee_calendriers/ui/components/building_icon.dart';
 import 'package:tournee_calendriers/ui/components/keep_focus.dart';
+import 'package:tournee_calendriers/ui/components/sheet_number_title.dart';
 import 'package:tournee_calendriers/ui/components/sheet_scaffold.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/screens/edit_street/number_messages.dart';
-import 'package:tournee_calendriers/ui/screens/street/marks_sheet.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
@@ -120,7 +120,7 @@ final class _NumberSheetState extends ConsumerState<NumberSheet> {
     return SheetScaffold(
       spacing: 14,
       children: [
-        MarksSheetTitle(
+        SheetNumberTitle(
           name: 'number',
           big: tile.number.label,
           beside: streetName,

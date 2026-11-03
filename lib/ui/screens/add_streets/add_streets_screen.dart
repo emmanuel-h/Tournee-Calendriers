@@ -12,7 +12,7 @@ import 'package:tournee_calendriers/ui/components/size_reporter.dart';
 import 'package:tournee_calendriers/ui/components/street_card_sheet.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/map/map_view.dart';
-import 'package:tournee_calendriers/ui/map/tournee_map.dart';
+import 'package:tournee_calendriers/ui/map/sector_map.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/screens/import_streets/import_screen.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
@@ -132,7 +132,7 @@ final class _MapTabState extends ConsumerState<_MapTab> {
     final state = ref.watch(addStreetsMapProvider);
     // `ref.read` for the intents: they are sent, never watched.
     final map = ref.read(addStreetsMapProvider.notifier);
-    final showMap = ref.watch(tourneeMapViewProvider);
+    final showMap = ref.watch(sectorMapViewProvider);
     final card = state.card;
     // The back gesture closes the card first, then the screen.
     return PopScope(
@@ -181,7 +181,7 @@ final class _MapTabState extends ConsumerState<_MapTab> {
                 children: [
                   Positioned.fill(
                     child: showMap(
-                      TourneeMap(
+                      SectorMap(
                         key: const Key('addStreets.map'),
                         layers: state.layers,
                         area: state.area,
@@ -236,6 +236,7 @@ final class _MapTabState extends ConsumerState<_MapTab> {
                               unawaited(map.add(assignToMe: assignToMe)),
                           onTake: () => unawaited(map.take()),
                           onRelease: () => unawaited(map.release()),
+                          onClose: map.closeCard,
                         ),
                       ),
                     ),

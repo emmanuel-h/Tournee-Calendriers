@@ -13,7 +13,7 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
 /// The card at the top of the start screen while a tournée is open and
 /// the phone still holds its streets from before (PLAN §5.0): « 12 rues
-/// sont enregistrées sur ce téléphone. », « Les ajouter à la tournée »
+/// sont enregistrées sur ce téléphone. », « Les ajouter au secteur »
 /// and « Plus tard »; « Ajout en cours… 3/12 » while they go. Nothing at
 /// all the rest of the time.
 final class MoveStreetsCard extends ConsumerWidget {
@@ -72,8 +72,8 @@ final class MoveStreetsCard extends ConsumerWidget {
   }
 }
 
-/// « 12 rues ajoutées à la tournée », or « 10 rues ajoutées, 2 déjà dans
-/// la tournée » when the tournée already had some.
+/// « 12 rues ajoutées au secteur », or « 10 rues ajoutées, 2 déjà dans
+/// le secteur » when the tournée already had some.
 String movedStreetsMessage(AppLocalizations l10n, MovedSummary summary) =>
     switch (summary) {
       MovedSummary(:final moved, alreadyThere: 0) => l10n.moveStreetsDone(

@@ -2,14 +2,14 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:test/test.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
+import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_moved_streets_log.dart';
 
 void main() {
   late Directory folder;
   late File file;
-  final t49 = TourneeId('t49');
-  final t12 = TourneeId('t12');
+  final t49 = SectorId('t49');
+  final t12 = SectorId('t12');
 
   setUp(() async {
     folder = await Directory.systemTemp.createTemp('moved_streets_test');

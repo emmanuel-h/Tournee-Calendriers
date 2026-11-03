@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Collecte 2026</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B3261E}a:hover{color:#8C1D18}
+.ib{width:48px;height:48px;border:0;background:transparent;color:#1B1F24;border-radius:24px;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;text-decoration:none;flex-shrink:0}
+.ib svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.hd{padding:18px 20px 8px 20px;font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#4A5058}
+.line{display:flex;align-items:center;min-height:48px;padding:0 20px;gap:8px;border-bottom:1px solid #E2DED5}
+.m{flex:1;font-weight:700;font-size:16px}
+.c{width:80px;text-align:right;font-size:15px;color:#4A5058}
+.a{width:76px;text-align:right;font:700 22px 'Barlow Condensed',sans-serif}
+.run{width:100%;display:flex;align-items:center;gap:10px;min-height:60px;padding:0 12px 0 20px;border:0;border-bottom:1px solid #E2DED5;background:#FFFFFF;color:#1B1F24;cursor:pointer;font-family:'Atkinson Hyperlegible',sans-serif;text-align:left;box-sizing:border-box}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F3F1EC; color: #1B1F24; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; display: flex; flex-direction: column; overflow: hidden">
+  <div style="display: flex; align-items: center; gap: 4px; padding: 8px">
+    <a class="ib" href="RunTeam.dc.html" aria-label="Retour"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a>
+    <div style="display: flex; flex-direction: column"><h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 28px; line-height: 1.05">Collecte 2026</h1><span style="font-size: 14px; color: #4A5058">Secteur 49 · tournées validées</span></div>
+  </div>
+  <div style="flex: 1; overflow-y: auto">
+    <div class="hd">Total des 4 tournées</div>
+    <div style="background: #FFFFFF; border-top: 1px solid #E2DED5">
+      <div class="line"><span class="m">Espèces</span><span class="c">32 dons</span><span class="a">440&#160;€</span></div>
+      <div class="line"><span class="m">Chèques</span><span class="c">7 dons</span><span class="a">140&#160;€</span></div>
+      <div class="line"><span class="m">Carte bancaire</span><span class="c">2 dons</span><span class="a">20&#160;€</span></div>
+      <div class="line"><span class="m" style="font-weight: 400">Calendriers offerts</span><span class="c">3</span><span class="a"></span></div>
+      <div class="line" style="background: #F3F1EC; min-height: 56px"><span class="m" style="font-size: 18px">Total</span><span class="c" style="color: #1B1F24; font-weight: 700">41 dons</span><span class="a" style="font-size: 28px">600&#160;€</span></div>
+    </div>
+    <div class="hd">Tournées</div>
+    <div style="border-top: 1px solid #E2DED5">
+      <sc-for list="{{runs}}" as="r" hint-placeholder-count="4">
+        <button class="run" onClick="{{r.toggle}}" aria-expanded="{{r.open}}" aria-label="{{r.aria}}">
+          <span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span style="font-weight: 700; font-size: 16px">{{r.day}}</span><span style="font-size: 14px; color: #4A5058">{{r.houses}} maisons, {{r.count}} dons</span></span>
+          <span style="font: 700 24px 'Barlow Condensed', sans-serif">{{r.sum}}</span>
+          <span style="font-size: 16px; color: #4A5058; width: 18px; text-align: center">{{r.chev}}</span>
+        </button>
+        <sc-if value="{{r.open}}" hint-placeholder-val="{{false}}">
+          <div style="background: #FAF9F6">
+            <sc-for list="{{r.lines}}" as="l" hint-placeholder-count="3">
+              <div class="line" style="padding-left: 36px; min-height: 44px"><span class="m" style="font-weight: 400; font-size: 15px">{{l.name}}</span><span class="c">{{l.count}}</span><span class="a" style="font-size: 19px">{{l.sum}}</span><span style="width: 18px"></span></div>
+            </sc-for>
+          </div>
+        </sc-if>
+      </sc-for>
+    </div>
+    <div style="padding: 16px 20px 24px 20px; font-size: 14px; color: #4A5058">Une tournée validée ne peut plus être modifiée. Les dons ne sont jamais associés à une adresse.</div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  constructor(props) {
+    super(props);
+    this.state = { open: 0 };
+    this.data = [
+      { day: 'Sam. 24 oct. · 14:05 → 18:20', who: 'Manu', houses: 23, m: [[15, 210], [3, 60], [1, 10]] },
+      { day: 'Ven. 23 oct. · 17:30 → 19:45', who: 'Léa', houses: 14, m: [[10, 120], [2, 50], [1, 10]] },
+      { day: 'Dim. 18 oct. · 10:00 → 12:10', who: 'Manu', houses: 9, m: [[5, 70], [1, 20], [0, 0]] },
+      { day: 'Sam. 17 oct. · 15:00 → 16:30', who: 'Manu', houses: 6, m: [[2, 40], [1, 10], [0, 0]] }
+    ];
+  }
+  renderVals() {
+    const e = (v) => v + ' €';
+    const dons = (n) => n + (n > 1 ? ' dons' : ' don');
+    const names = ['Espèces', 'Chèques', 'Carte bancaire'];
+    return {
+      runs: this.data.map((r, i) => {
+        const count = r.m.reduce((s, x) => s + x[0], 0);
+        const sum = r.m.reduce((s, x) => s + x[1], 0);
+        const open = this.state.open === i;
+        return {
+          day: r.day, who: r.who, houses: r.houses, count: count, sum: e(sum),
+          open: open, chev: open ? '▾' : '▸',
+          aria: r.day + ', ' + e(sum) + (open ? ', masquer le détail' : ', afficher le détail'),
+          toggle: () => this.setState({ open: open ? -1 : i }),
+          lines: r.m.map((x, k) => ({ name: names[k], count: dons(x[0]), sum: e(x[1]) }))
+        };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

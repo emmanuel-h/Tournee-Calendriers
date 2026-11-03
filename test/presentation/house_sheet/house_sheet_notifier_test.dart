@@ -3,35 +3,38 @@ import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
+import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
+import 'package:tournee_calendriers/domain/sector/sector_summary.dart';
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
+import 'package:tournee_calendriers/domain/street/nobody_home_tries.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
-import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_summary.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/come_back_time.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_notifier.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_state.dart';
 
-import '../../domain/tournee/my_tournees_fixtures.dart';
-import '../../domain/tournee/tournee_fixtures.dart' as crew;
+import '../../domain/sector/my_sectors_fixtures.dart';
+import '../../domain/sector/sector_fixtures.dart' as crew;
 import '../../support/building_fixtures.dart';
-import '../../support/fakes/fake_my_tournees_store.dart';
+import '../../support/fakes/fake_my_sectors_store.dart';
+import '../../support/fakes/fake_open_round_store.dart';
 import '../../support/fakes/fake_ports.dart';
+import '../../support/fakes/fake_sector_repository.dart';
 import '../../support/fakes/fake_street_repository.dart';
-import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 
 final _id = StreetId('lilas');
 
-/// 3 changed by Paul yesterday evening; 5 to come back Saturday 7 at 19 h; 7
-/// never changed; 8 a building.
+/// 3 changed by Paul yesterday evening, nobody home once; 5 to come back
+/// Saturday 7 at 19 h; 7 never changed; 8 a building; 13 to come back after
+/// nobody was home twice.
 final _yesterday = DateTime(2026, 11, 1, 18, 30);
 final _houses = [
   House(
@@ -46,6 +49,7 @@ final _houses = [
   ),
   House(number: n('7')),
   House(number: n('8'), building: building(topFloor: 0, doors: 2)),
+  House(number: n('13'), status: VisitStatus.comeBack, tries: tries(2)),
 ];
 
 Street _street() => valueOf(
@@ -64,11 +68,11 @@ void main() {
 
   /// A container whose phone holds [street] (none when null), with Léa
   /// changing houses at [twoPm]; no tournée is open unless [open] is, its
-  /// team kept in [tournees].
+  /// team kept in [sectors].
   void phoneWith(
     Street? street, {
-    TourneeSummary? open,
-    FakeTourneeRepository? tournees,
+    SectorSummary? open,
+    FakeSectorRepository? sectors,
   }) {
     streets = FakeStreetRepository([?street]);
     clock = FakeClock(twoPm);
@@ -77,16 +81,15 @@ void main() {
         streetRepositoryProvider.overrideWithValue(streets),
         clockProvider.overrideWithValue(clock),
         identityProvider.overrideWithValue(FakeIdentity(lea)),
-        myTourneesStoreProvider.overrideWithValue(
-          FakeMyTourneesStore(switch (open) {
-            final open? => valueOf(
-              MyTournees.none.remember(open).open(open.id),
-            ),
-            null => MyTournees.none,
+        openRoundStoreProvider.overrideWithValue(FakeOpenRoundStore()),
+        mySectorsStoreProvider.overrideWithValue(
+          FakeMySectorsStore(switch (open) {
+            final open? => valueOf(MySectors.none.remember(open).open(open.id)),
+            null => MySectors.none,
           }),
         ),
-        tourneeRepositoryProvider.overrideWithValue(
-          tournees ?? FakeTourneeRepository(),
+        sectorRepositoryProvider.overrideWithValue(
+          sectors ?? FakeSectorRepository(),
         ),
       ],
     );
@@ -138,8 +141,8 @@ void main() {
     test('should name a member of the open tournée', () async {
       phoneWith(
         changedBy(crew.manuId),
-        open: tournee49,
-        tournees: FakeTourneeRepository([crew.team()]),
+        open: sector49,
+        sectors: FakeSectorRepository([crew.team()]),
       );
       open('3');
       await pumpEventQueue();
@@ -155,8 +158,8 @@ void main() {
     test('should name nobody who is no longer in the team', () async {
       phoneWith(
         changedBy(crew.paulId),
-        open: tournee49,
-        tournees: FakeTourneeRepository([crew.team()]),
+        open: sector49,
+        sectors: FakeSectorRepository([crew.team()]),
       );
       open('3');
       await pumpEventQueue();
@@ -165,9 +168,9 @@ void main() {
     });
 
     test('should name nobody when the team cannot be read', () async {
-      final tournees = FakeTourneeRepository([crew.team()])
+      final sectors = FakeSectorRepository([crew.team()])
         ..watchError = StateError('removed');
-      phoneWith(changedBy(crew.manuId), open: tournee49, tournees: tournees);
+      phoneWith(changedBy(crew.manuId), open: sector49, sectors: sectors);
       open('3');
       await pumpEventQueue();
 
@@ -295,44 +298,50 @@ void main() {
   });
 
   group('setStatus', () {
-    test(
-      'should store the status, stamped, when another one is chosen',
-      () async {
-        phoneWith(_street());
-        open('7');
-        await settled('7');
+    test('should store the status, stamped, and say what it stored when '
+        'another one is chosen', () async {
+      phoneWith(_street());
+      open('7');
+      await settled('7');
 
-        await notifier('7').setStatus(VisitStatus.nobodyHome);
+      final stored = await notifier('7').setStatus(VisitStatus.nobodyHome);
 
-        expect(
-          streets.saved.single.$2,
-          HouseMarked(
-            streetId: _id,
-            before: houseBefore('7'),
-            stamp: leaAtTwo,
-            status: VisitStatus.nobodyHome,
-          ),
-        );
-        expect((await shown('7')).status, VisitStatus.nobodyHome);
-      },
-    );
+      final marked = HouseMarked(
+        streetId: _id,
+        before: houseBefore('7'),
+        stamp: leaAtTwo,
+        status: VisitStatus.nobodyHome,
+      );
+      expect(streets.saved.single.$2, marked);
+      // One try: the tile shows no count below two.
+      expect(
+        stored,
+        StoredStatus(
+          status: VisitStatus.nobodyHome,
+          tries: null,
+          change: marked,
+        ),
+      );
+      expect((await shown('7')).status, VisitStatus.nobodyHome);
+      expect(houseNow('7').tries, tries(1));
+    });
 
     test('should come back without time when « Repasser » is chosen', () async {
       phoneWith(_street());
       open('7');
       await settled('7');
 
-      await notifier('7').setStatus(VisitStatus.comeBack);
+      final stored = await notifier('7').setStatus(VisitStatus.comeBack);
 
-      expect(
-        streets.saved.single.$2,
-        HouseMarked(
-          streetId: _id,
-          before: houseBefore('7'),
-          stamp: leaAtTwo,
-          status: VisitStatus.comeBack,
-        ),
+      final marked = HouseMarked(
+        streetId: _id,
+        before: houseBefore('7'),
+        stamp: leaAtTwo,
+        status: VisitStatus.comeBack,
       );
+      expect(streets.saved.single.$2, marked);
+      expect(stored?.change, marked);
+      expect(stored?.status, VisitStatus.comeBack);
       final state = await shown('7');
       expect(state.status, VisitStatus.comeBack);
       expect(state.comeBack, isTrue);
@@ -354,27 +363,142 @@ void main() {
       expect(houseNow('5').comeBack, isNull);
     });
 
-    test(
-      'should store nothing when the house already has that status',
-      () async {
-        phoneWith(_street());
-        open('3');
-        await settled('3');
+    test('should keep the tries when done is chosen, and say them', () async {
+      phoneWith(_street());
+      open('13');
+      await settled('13');
 
-        await notifier('3').setStatus(VisitStatus.nobodyHome);
+      final stored = await notifier('13').setStatus(VisitStatus.done);
 
-        expect(streets.saved, isEmpty);
-      },
-    );
+      expect(stored?.status, VisitStatus.done);
+      expect(stored?.tries, 2);
+      expect(houseNow('13').tries, tries(2));
+    });
+
+    test('should start the tries again when « À faire » is chosen', () async {
+      phoneWith(_street());
+      open('13');
+      await settled('13');
+
+      final stored = await notifier('13').setStatus(VisitStatus.toDo);
+
+      expect(stored?.status, VisitStatus.toDo);
+      expect(stored?.tries, isNull);
+      expect(houseNow('13').tries, NobodyHomeTries.none);
+    });
+
+    test('should drop the tries and the time when « Refusé » is chosen on a '
+        'house to come back to', () async {
+      phoneWith(_street());
+      open('13');
+      await settled('13');
+
+      final stored = await notifier('13').setStatus(VisitStatus.refused);
+
+      expect(stored?.status, VisitStatus.refused);
+      expect(stored?.tries, isNull);
+      expect(houseNow('13').status, VisitStatus.refused);
+      expect(houseNow('13').tries, NobodyHomeTries.none);
+      expect(houseNow('13').comeBack, isNull);
+      final state = await shown('13');
+      expect(state.showsTries, isFalse);
+      expect(state.offersNobodyHomeAgain, isFalse);
+      expect(state.comeBack, isFalse);
+    });
+
+    test('should count one more try when « Personne » is chosen on a house '
+        'nobody was home at', () async {
+      phoneWith(_street());
+      open('3');
+      await settled('3');
+
+      final stored = await notifier('3').setStatus(VisitStatus.nobodyHome);
+
+      final again = HouseNobodyHomeAgain(
+        streetId: _id,
+        before: houseBefore('3'),
+        stamp: leaAtTwo,
+        tries: tries(2),
+      );
+      expect(streets.saved.single.$2, again);
+      expect(
+        stored,
+        StoredStatus(status: VisitStatus.nobodyHome, tries: 2, change: again),
+      );
+      expect((await shown('3')).tries, 2);
+    });
+
+    test('should count one more try when « Personne » is chosen on a house '
+        'to come back to after nobody was home', () async {
+      phoneWith(_street());
+      open('13');
+      await settled('13');
+
+      final stored = await notifier('13').setStatus(VisitStatus.nobodyHome);
+
+      expect(streets.saved.single.$2, isA<HouseNobodyHomeAgain>());
+      expect(stored?.tries, 3);
+      expect(houseNow('13').status, VisitStatus.nobodyHome);
+      expect(houseNow('13').tries, tries(3));
+    });
+
+    test('should count the first try only when « Personne » is chosen on a '
+        'house to come back to that was never found empty', () async {
+      phoneWith(_street());
+      open('5');
+      await settled('5');
+
+      final stored = await notifier('5').setStatus(VisitStatus.nobodyHome);
+
+      expect(streets.saved.single.$2, isA<HouseMarked>());
+      expect(stored?.tries, isNull);
+      expect(houseNow('5').tries, tries(1));
+      expect(houseNow('5').comeBack, isNull);
+    });
+
+    for (final (number, status) in [
+      ('7', VisitStatus.toDo),
+      ('5', VisitStatus.comeBack),
+    ]) {
+      test(
+        'should store nothing when house $number already is $status',
+        () async {
+          phoneWith(_street());
+          open(number);
+          await settled(number);
+
+          final stored = await notifier(number).setStatus(status);
+
+          expect(stored, isNull);
+          expect(streets.saved, isEmpty);
+        },
+      );
+    }
 
     test('should store nothing when the house is gone', () async {
       phoneWith(_street());
       open('9');
       await settled('9');
 
-      await notifier('9').setStatus(VisitStatus.done);
-
+      expect(await notifier('9').setStatus(VisitStatus.done), isNull);
       expect(streets.saved, isEmpty);
+    });
+
+    test('should say nothing was stored when the street refuses it', () async {
+      phoneWith(_street());
+      open('7');
+      await settled('7');
+
+      // The status is asked first; 7 is removed before its turn comes, so
+      // the sheet still shows it but the street no longer has it.
+      final stored = notifier('7').setStatus(VisitStatus.done);
+      final (removed, change) = valueOf(
+        _street().removeNumber(n('7'), by: paul, at: threePm),
+      );
+      unawaited(streets.save(removed, change));
+
+      expect(await stored, isNull);
+      expect(streets.saved.map((saved) => saved.$2), [change]);
     });
   });
 

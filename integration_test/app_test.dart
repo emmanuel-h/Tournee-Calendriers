@@ -14,14 +14,19 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
+import 'package:tournee_calendriers/application/ports/sector_downloads.dart';
 import 'package:tournee_calendriers/bootstrap/bootstrap.dart';
 import 'package:tournee_calendriers/bootstrap/firebase.dart';
+import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/shared/commune.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
+import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
+import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
+import 'package:tournee_calendriers/infrastructure/local_storage/mappers/street_json_mapper.dart';
 import 'package:tournee_calendriers/main.dart' as app;
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/ui/app.dart';
@@ -154,7 +159,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Composants'), findsOneWidget);
-      expect(find.bySemanticsLabel('Numéro 3bis, personne'), findsOneWidget);
+      expect(
+        find.bySemanticsLabel('Numéro 3bis, personne, changer le statut'),
+        findsOneWidget,
+      );
     },
   );
 
@@ -198,9 +206,9 @@ void main() {
     expect(find.widgetWithText(AppBar, 'Rue Pierre Morin'), findsOneWidget);
   });
   testWidgets(
-    'should keep the marks across a restart when a house is marked, undone, '
-    'marked again and another tapped to come back tomorrow at 18 h, then '
-    'found nobody home twice',
+    'should keep the marks across a restart when a house is marked in its '
+    'picker, undone, marked again and another to come back tomorrow at 18 h, '
+    'then found nobody home twice',
     (tester) async {
       final semantics = tester.ensureSemantics();
       final storage = await _knownPhone('mark_flow');
@@ -229,31 +237,45 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.text('Rue Pierre Morin'));
       await tester.pumpAndSettle();
-      final tile = find.byKey(const ValueKey('street.tile.33'));
-      expect(tester.getSemantics(tile).label, 'Numéro 33, à faire');
+      // A tap on a house opens its status picker (PLAN §5.6); one tap on a
+      // status stores it and closes, with « Annuler » in the snackbar.
+      Future<void> mark(Finder tile, String status) async {
+        await tester.tap(tile);
+        await tester.pumpAndSettle();
+        await tester.tap(find.byKey(ValueKey('house.status.$status')));
+        await tester.pumpAndSettle();
+      }
 
-      await tester.tap(tile);
-      await tester.pumpAndSettle();
-      expect(tester.getSemantics(tile).label, 'Numéro 33, fait');
-      expect(findArrowText('33 → Fait'), findsOneWidget);
+      final tile = find.byKey(const ValueKey('street.tile.33'));
+      expect(
+        tester.getSemantics(tile).label,
+        'Numéro 33, à faire, changer le statut',
+      );
+
+      await mark(tile, 'done');
+      expect(
+        tester.getSemantics(tile).label,
+        'Numéro 33, fait, changer le statut',
+      );
+      expect(findArrowText('N° 33\u00a0: fait'), findsOneWidget);
 
       await tester.tap(find.text('Annuler'));
       await tester.pumpAndSettle();
-      expect(tester.getSemantics(tile).label, 'Numéro 33, à faire');
+      expect(
+        tester.getSemantics(tile).label,
+        'Numéro 33, à faire, changer le statut',
+      );
 
-      await tester.tap(tile);
-      await tester.pumpAndSettle();
-      expect(tester.getSemantics(tile).label, 'Numéro 33, fait');
+      await mark(tile, 'done');
+      expect(
+        tester.getSemantics(tile).label,
+        'Numéro 33, fait, changer le statut',
+      );
 
-      // Tap 34 three times (✓, ✗, ↻): the third opens its sheet by itself
-      // (#81), where « Demain » and « 18 h » say when to come back; « OK »
-      // closes it and the tile shows ↻.
+      // 34 « Repasser »: the picker then asks when (#81), « Demain » and
+      // « 18 h »; « Valider » closes it and the tile shows ↻.
       final other = find.byKey(const ValueKey('street.tile.34'));
-      for (var tap = 0; tap < 3; tap++) {
-        await tester.tap(other);
-        await tester.pumpAndSettle();
-      }
-      expect(find.byKey(const Key('house.ok')), findsOneWidget);
+      await mark(other, 'comeBack');
       final now = DateTime.now();
       final tomorrow = DateTime(now.year, now.month, now.day + 1);
       String two(int value) => '$value'.padLeft(2, '0');
@@ -272,9 +294,12 @@ void main() {
       await tester.pumpAndSettle();
       final summary = find.byKey(const Key('house.comeBackSummary'));
       expect(tester.widget<Text>(summary).data, 'Demain vers 18 h');
-      await tester.tap(find.byKey(const Key('house.ok')));
+      await tester.tap(find.byKey(const Key('house.validate')));
       await tester.pumpAndSettle();
-      expect(tester.getSemantics(other).label, 'Numéro 34, repasser');
+      expect(
+        tester.getSemantics(other).label,
+        'Numéro 34, repasser, changer le statut',
+      );
       // The phone storage writes its file just after the tap: let it land.
       await Future<void>.delayed(const Duration(seconds: 1));
 
@@ -295,44 +320,41 @@ void main() {
       await tester.pumpAndSettle();
       expect(
         tester.getSemantics(find.byKey(const ValueKey('street.tile.33'))).label,
-        'Numéro 33, fait',
+        'Numéro 33, fait, changer le statut',
       );
       final comingBack = find.byKey(const ValueKey('street.tile.34'));
-      expect(tester.getSemantics(comingBack).label, 'Numéro 34, repasser');
-      await tester.longPress(comingBack);
-      await tester.pumpAndSettle();
+      expect(
+        tester.getSemantics(comingBack).label,
+        'Numéro 34, repasser, changer le statut',
+      );
+      // « Repasser » again opens its day, as it was left.
+      await mark(comingBack, 'comeBack');
       expect(
         tester
             .widget<Text>(find.byKey(const Key('house.comeBackSummary')))
             .data,
         'Demain vers 18 h',
       );
+      await tester.tap(find.byKey(const Key('house.close')));
+      await tester.pumpAndSettle();
 
-      // Came back, still nobody (#80): « personne », its second try (the ✗
-      // of the taps was the first). Then 32, found nobody home by taps (✓,
-      // ✗: its first try), held: once more, its second, which the tile now
-      // says.
-      await tester.tap(find.byKey(const Key('house.nobodyHomeAgain')));
-      await tester.pumpAndSettle();
-      expect(findArrowText('34 → Personne (2e passage)'), findsOneWidget);
-      expect(
-        tester.getSemantics(comingBack).label,
-        'Numéro 34, personne, 2e passage',
-      );
-      final twice = find.byKey(const ValueKey('street.tile.32'));
-      await tester.tap(twice);
-      await tester.pumpAndSettle();
-      await tester.tap(twice);
-      await tester.pumpAndSettle();
-      await tester.longPress(twice);
+      // Came back, nobody (#80): « Personne » is its first try; the next
+      // time it reads « De nouveau personne », its second try.
+      await mark(comingBack, 'nobodyHome');
+      expect(findArrowText('N° 34\u00a0: personne'), findsOneWidget);
+      await tester.tap(comingBack);
       await tester.pumpAndSettle();
       expect(find.text('1 passage sans personne'), findsOneWidget);
-      await tester.tap(find.byKey(const Key('house.nobodyHomeAgain')));
+      expect(find.text('De nouveau personne'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('house.status.nobodyHome')));
       await tester.pumpAndSettle();
-      expect(findArrowText('32 → Personne (2e passage)'), findsOneWidget);
       expect(
-        tester.getSemantics(twice).label,
-        'Numéro 32, personne, 2e passage',
+        findArrowText('N° 34\u00a0: personne (2e passage)'),
+        findsOneWidget,
+      );
+      expect(
+        tester.getSemantics(comingBack).label,
+        'Numéro 34, personne, 2e passage, changer le statut',
       );
       semantics.dispose();
     },
@@ -370,44 +392,44 @@ void main() {
       await tester.tap(find.text('Rue Pierre Morin'));
       await tester.pumpAndSettle();
 
-      // Hold 34, « Transformer en immeuble… », « Valider » the default
-      // (one staircase, RdC–2e, two doors a floor): its grid opens.
+      // ✏, tap 34, « Transformer en immeuble… », « Valider » the default
+      // (one staircase, RdC–2e, two doors a floor): back in edit mode.
       final tile = find.byKey(const ValueKey('street.tile.34'));
-      await tester.longPress(tile);
+      await tester.tap(find.byKey(const Key('street.edit')));
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('house.toBuilding')));
+      Future<void> tapNumber() async {
+        await tester.tap(
+          find.descendant(
+            of: find.byKey(const ValueKey('edit.tile.34')),
+            matching: find.byKey(const Key('edit.tile.number')),
+          ),
+        );
+        await tester.pumpAndSettle();
+      }
+
+      await tapNumber();
+      await tester.tap(find.byKey(const Key('number.toBuilding')));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('setup.validate')));
       await tester.pumpAndSettle();
-      final count = find.byKey(const Key('grid.count'));
-      expect(tester.getSemantics(count).label, '0 sur 6 logements faits');
 
-      await tester.tap(find.byKey(const ValueKey('grid.door.A0-01')));
-      await tester.pumpAndSettle();
-      expect(tester.getSemantics(count).label, '1 sur 6 logements faits');
-
-      await tester.tap(find.byKey(const Key('grid.close')));
-      await tester.pumpAndSettle();
-      expect(
-        tester.getSemantics(tile).label,
-        'Numéro 34, immeuble, 1 sur 6 faits, ouvrir',
-      );
-
-      // ✏, tap 34, « Ouvrir l'immeuble »: its grid. « Gérer l'immeuble »,
-      // « Modifier les étages »: a staircase more, the box unticked, B down
-      // to the RdC alone. The grid has « Esc. B · 0/2 »; A keeps its door
-      // 01, done.
-      await tester.tap(find.byKey(const Key('street.edit')));
-      await tester.pumpAndSettle();
-      await tester.tap(
-        find.descendant(
-          of: find.byKey(const ValueKey('edit.tile.34')),
-          matching: find.byKey(const Key('edit.tile.number')),
-        ),
-      );
-      await tester.pumpAndSettle();
+      // Tap 34 again, « Ouvrir l'immeuble »: its grid, where door 01 is
+      // marked done in its picker.
+      await tapNumber();
       await tester.tap(find.byKey(const Key('number.openBuilding')));
       await tester.pumpAndSettle();
+      final count = find.byKey(const Key('grid.count'));
+      expect(tester.getSemantics(count).label, '0 sur 6 logements faits');
+      await tester.tap(find.byKey(const ValueKey('grid.door.A0-01')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('door.status.done')));
+      await tester.pumpAndSettle();
+      expect(tester.getSemantics(count).label, '1 sur 6 logements faits');
+      expect(findArrowText('Porte 01\u00a0: fait'), findsOneWidget);
+
+      // « Gérer l'immeuble », « Modifier les étages »: a staircase more,
+      // the box unticked, B down to the RdC alone. The grid has « Esc. B ·
+      // 0/2 »; A keeps its door 01, done.
       Future<void> manage(String action) async {
         await tester.tap(find.byKey(const Key('grid.manage')));
         await tester.pumpAndSettle();
@@ -548,6 +570,8 @@ void main() {
       // 33 marked, then ✏ « Supprimer la rue »: « Mes rues » is empty.
       await tester.tap(find.byKey(const ValueKey('street.tile.33')));
       await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('house.status.done')));
+      await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('street.edit')));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('edit.deleteStreet')));
@@ -616,7 +640,7 @@ void main() {
   testWidgets(
     'should reopen the last tournée at launch and switch from the title',
     (tester) async {
-      final storage = await _freshStorage('tournees_flow');
+      final storage = await _freshStorage('sectors_flow');
       // The 49's id is new at each run: the street typed in by hand below
       // waits in Firestore's offline cache, which outlives the run, and
       // must not show in the next one.
@@ -624,7 +648,7 @@ void main() {
       // What « Créer » and « Rejoindre » will leave on the phone: two
       // tournées of the CS Villefranche, the 49 open. Nothing of it needs
       // the network.
-      Map<String, Object?> tournee(String id, int number) => {
+      Map<String, Object?> sector(String id, int number) => {
         'id': id,
         'number': number,
         'centre': 'CS Villefranche',
@@ -635,7 +659,7 @@ void main() {
         jsonEncode({
           'version': 1,
           'open': t49,
-          'tournees': [tournee(t49, 49), tournee('t12', 12)],
+          'tournees': [sector(t49, 49), sector('t12', 12)],
         }),
       );
       // The commune of the street typed in by hand, found without network.
@@ -649,7 +673,7 @@ void main() {
 
       await bootstrap(storage: storage, communeSearch: communes);
       await tester.pumpAndSettle();
-      expect(find.text('Tournée 49 · 2026'), findsOneWidget);
+      expect(find.text('Secteur 49 · 2026'), findsOneWidget);
       expect(find.text('CS Villefranche'), findsOneWidget);
 
       // Accueil (#30), offline: the map of the tournée under the legend,
@@ -661,7 +685,7 @@ void main() {
       expect(find.byKey(const Key('map.legend')), findsOneWidget);
       expect(find.text('Mes rues · 0/0'), findsOneWidget);
       expect(
-        find.text("Aucune rue dans la tournée pour l'instant."),
+        find.text("Aucune rue dans le secteur pour l'instant."),
         findsOneWidget,
       );
       final panel = find.byKey(const Key('home.panel'));
@@ -732,11 +756,74 @@ void main() {
       expect(find.text('Mes rues · 0/5'), findsOneWidget);
       expect(find.text('Chemin des Vignes'), findsOneWidget);
 
-      await tester.tap(find.byKey(const Key('home.tournee')));
+      // Killed in the middle of a new street's writes (#104): the street
+      // was kept on the phone before them, and none reached Firestore. At
+      // the next start, offline, it is written again whole, then
+      // forgotten from the phone storage.
+      final ecoles = _ok(
+        Street.create(
+          id: StreetId('ecoles-${storage.path.split('/').last}'),
+          name: 'Rue des Écoles',
+          commune: _villefranche,
+          houses: [
+            for (final number in [1, 2, 3])
+              House(number: _ok(HouseNumber.create(number))),
+          ],
+        ),
+      );
+      final unfinished = Directory(
+        '${storage.path}/unfinished_streets/${Uri.encodeComponent(t49)}/2026',
+      )..createSync(recursive: true);
+      File('${unfinished.path}/${Uri.encodeComponent(ecoles.id.value)}.json')
+          .writeAsStringSync(jsonEncode(streetToJson(ecoles)));
+      runApp(const SizedBox.shrink());
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('myTournees.t12')));
+      await bootstrap(storage: storage, communeSearch: communes);
       await tester.pumpAndSettle();
-      expect(find.text('Tournée 12 · 2026'), findsOneWidget);
+      // The forget is written just after the last write: let it land.
+      await Future<void>.delayed(const Duration(seconds: 1));
+      await tester.tap(find.byKey(const Key('home.panel.handle')));
+      await tester.pumpAndSettle();
+      expect(find.text('Mes rues · 0/5'), findsOneWidget);
+      expect(
+        find.byKey(ValueKey('home.street.${ecoles.id.value}')),
+        findsOneWidget,
+      );
+      expect(unfinished.listSync(), isEmpty);
+      await tester.tap(find.byKey(const Key('home.panel.handle')));
+      await tester.pumpAndSettle();
+
+      // « Mes secteurs » offline (#33): the 12 was never downloaded on
+      // this phone, so it is greyed and a tap leaves the sheet open. Once
+      // it counts as downloaded, it opens as before. Firestore's network
+      // is off for the whole suite, so « offline » is certain here.
+      await tester.tap(find.byKey(const Key('home.sector')));
+      await tester.pumpAndSettle();
+      expect(
+        find.text('CS Villefranche · Disponible avec réseau'),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const ValueKey('mySectors.t12')));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const ValueKey('mySectors.t12')), findsOneWidget);
+      final phone = ProviderScope.containerOf(
+        tester.element(find.byType(TourneeApp)),
+      );
+      await phone
+          .read(sectorDownloadsProvider)
+          .save(
+            SectorDownload(
+              sector: SectorId('t12'),
+              downloadedAt: DateTime.utc(2026, 11, 2, 8, 12),
+              mapBytes: 0,
+              area: null,
+            ),
+          );
+      await tester.pumpAndSettle();
+      expect(find.textContaining('Disponible avec réseau'), findsNothing);
+      await tester.tap(find.byKey(const ValueKey('mySectors.t12')));
+      await tester.pumpAndSettle();
+      expect(find.text('Secteur 12 · 2026'), findsOneWidget);
 
       // A restart opens the tournée chosen last.
       runApp(const SizedBox.shrink());
@@ -744,7 +831,7 @@ void main() {
       await bootstrap(storage: storage);
       await tester.pumpAndSettle();
 
-      expect(find.text('Tournée 12 · 2026'), findsOneWidget);
+      expect(find.text('Secteur 12 · 2026'), findsOneWidget);
     },
   );
 
@@ -766,7 +853,7 @@ void main() {
       await bootstrap(storage: storage);
       await tester.pumpAndSettle();
       expect(find.text('Visible par votre équipe.'), findsOneWidget);
-      // « Créer une tournée » shows only on an admin's phone (PLAN §5.12),
+      // « Créer un secteur » shows only on an admin's phone (PLAN §5.12),
       // which depends on the real project: only « Rejoindre » is checked.
       expect(enabled('welcome.join'), isFalse);
 
@@ -782,7 +869,7 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(button('welcome.join'));
       await tester.pumpAndSettle();
-      expect(find.text('Rejoindre une tournée'), findsOneWidget);
+      expect(find.text('Rejoindre un secteur'), findsOneWidget);
       expect(find.byKey(const Key('join.first')), findsOneWidget);
       // The settings file is written just after the tap: let it land.
       await Future<void>.delayed(const Duration(seconds: 1));

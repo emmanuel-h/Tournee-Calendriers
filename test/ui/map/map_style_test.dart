@@ -36,9 +36,9 @@ void main() {
       );
     });
 
-    test('should name the street when the line under « libre » is tapped', () {
+    test('should name the street when the casing of « libre » is tapped', () {
       expect(
-        tappedStreet(MapIds.freeStreetBase, 'rue-de-la-paix'),
+        tappedStreet(MapIds.freeStreetCasing, 'rue-de-la-paix'),
         StreetId('rue-de-la-paix'),
       );
     });
@@ -78,6 +78,7 @@ void main() {
       expect(HouseDotStatus.values.map(houseDotImage), [
         'tc-house-toDo',
         'tc-house-done',
+        'tc-house-refused',
         'tc-house-nobodyHome',
         'tc-house-comeBack',
         'tc-house-partial',
@@ -85,15 +86,15 @@ void main() {
     });
   });
 
-  group('tourneeMapLayers', () {
-    final layers = tourneeMapLayers(AppColors.light);
+  group('sectorMapLayers', () {
+    final layers = sectorMapLayers(AppColors.light);
     MapLayerSpec layer(String id) => layers.singleWhere((l) => l.id == id);
     Map<String, dynamic> json(String id) => layer(id).properties.toJson();
 
     test('should stack streets, then the picked road, then the dots', () {
       expect(layers.map((l) => l.id), [
         MapIds.streetLines,
-        MapIds.freeStreetBase,
+        MapIds.freeStreetCasing,
         MapIds.freeStreetLines,
         MapIds.selectedCasing,
         MapIds.selectedCore,
@@ -153,7 +154,7 @@ void main() {
           'free',
         ],
       ]);
-      for (final id in [MapIds.freeStreetBase, MapIds.freeStreetLines]) {
+      for (final id in [MapIds.freeStreetCasing, MapIds.freeStreetLines]) {
         expect(layer(id).filter, [
           '==',
           ['get', 'level'],
@@ -164,39 +165,36 @@ void main() {
     });
 
     test('should colour each street line by its level with the map tokens', () {
-      const byLevel = [
+      expect(json(MapIds.streetLines)['line-color'], [
         'match',
         ['get', 'level'],
         'free',
-        '#6b7078',
+        '#3e434a',
         'toDo',
         '#2f5da8',
         'partial',
         '#e0a21b',
         'done',
         '#1e6b47',
-        '#6b7078',
-      ];
-      expect(json(MapIds.streetLines)['line-color'], byLevel);
-      expect(json(MapIds.freeStreetBase)['line-color'], byLevel);
-      expect(json(MapIds.freeStreetLines)['line-color'], byLevel);
+        '#3e434a',
+      ]);
     });
 
-    test('should draw a faint solid line under the « libre » dashes', () {
-      expect(json(MapIds.freeStreetBase), {
-        'line-color': isA<List<Object>>(),
+    test('should draw an opaque white casing, wider, under the « libre » '
+        'dashes', () {
+      expect(json(MapIds.freeStreetCasing), {
+        'line-color': '#ffffff',
         'line-width': [
           'interpolate',
           ['linear'],
           ['zoom'],
           12,
-          2.5,
+          6,
           16,
-          5,
+          11,
           19,
-          9,
+          16,
         ],
-        'line-opacity': 0.35,
         'line-cap': 'round',
         'line-join': 'round',
       });
@@ -221,21 +219,22 @@ void main() {
       });
     });
 
-    test('should dash the « libre » lines, thinner', () {
+    test('should dash the « libre » lines in dark grey, as wide as the '
+        'others', () {
       expect(json(MapIds.freeStreetLines), {
-        'line-color': isA<List<Object>>(),
+        'line-color': '#3e434a',
         'line-width': [
           'interpolate',
           ['linear'],
           ['zoom'],
           12,
-          2.5,
+          3,
           16,
-          5,
+          7,
           19,
-          9,
+          12,
         ],
-        'line-dasharray': [2, 1.6],
+        'line-dasharray': [1.6, 1.2],
         'line-join': 'round',
       });
     });
@@ -287,15 +286,18 @@ void main() {
       });
     });
 
-    test('should take the picked road colours from the palette', () {
-      final dark = tourneeMapLayers(AppColors.dark);
+    test('should keep the light picked road colours when the palette is '
+        'dark', () {
+      // The base map stays light in dark mode (T5.1): a dark casing with a
+      // white core still stands out on it.
+      final dark = sectorMapLayers(AppColors.dark);
       final casing = dark.singleWhere((l) => l.id == MapIds.selectedCasing);
       final core = dark.singleWhere((l) => l.id == MapIds.selectedCore);
 
       final point = dark.singleWhere((l) => l.id == MapIds.selectedPointDot);
-      expect(point.properties.toJson()['circle-color'], '#ffffff');
-      expect(casing.properties.toJson()['line-color'], '#ffffff');
-      expect(core.properties.toJson()['line-color'], '#1b1f24');
+      expect(point.properties.toJson()['circle-color'], '#1b1f24');
+      expect(casing.properties.toJson()['line-color'], '#1b1f24');
+      expect(core.properties.toJson()['line-color'], '#ffffff');
     });
 
     test(
@@ -309,6 +311,8 @@ void main() {
             'tc-house-toDo',
             'done',
             'tc-house-done',
+            'refused',
+            'tc-house-refused',
             'nobodyHome',
             'tc-house-nobodyHome',
             'comeBack',

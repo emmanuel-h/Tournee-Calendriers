@@ -2,20 +2,20 @@
 // for each tournée opened (PLAN §5.11: the first member's app online purges).
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
+import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
-import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
 import 'package:tournee_calendriers/presentation/corbeille/corbeille_purge.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 
-import '../../domain/tournee/my_tournees_fixtures.dart';
-import '../../support/fakes/fake_my_tournees_store.dart';
+import '../../domain/sector/my_sectors_fixtures.dart';
+import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_ports.dart';
+import '../../support/fakes/fake_sector_repository.dart';
 import '../../support/fakes/fake_street_repository.dart';
-import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
-import '../../support/streets_of_the_open_tournee.dart';
+import '../../support/streets_of_the_open_sector.dart';
 
 final _now = DateTime.utc(2026, 11, 20, 8);
 
@@ -38,7 +38,7 @@ void main() {
   late FakeStreetRepository phone;
   late FakeStreetRepository streets49;
   late FakeStreetRepository streets12;
-  late FakeMyTourneesStore store;
+  late FakeMySectorsStore store;
 
   setUp(() {
     phone = FakeStreetRepository([_deleted('Thiers', 31)]);
@@ -47,12 +47,9 @@ void main() {
       _deleted('Pasteur', 30),
     ]);
     streets12 = FakeStreetRepository([_deleted('Lilas', 40)]);
-    store = FakeMyTourneesStore(
+    store = FakeMySectorsStore(
       valueOf(
-        MyTournees.none
-            .remember(tournee49)
-            .remember(tournee12)
-            .open(tournee49.id),
+        MySectors.none.remember(sector49).remember(sector12).open(sector49.id),
       ),
     );
   });
@@ -60,14 +57,14 @@ void main() {
   ProviderContainer leasPhone() {
     final container = ProviderContainer(
       overrides: [
-        streetsOfTheOpenTournee(
+        streetsOfTheOpenSector(
           phone: phone,
-          tournees: {tournee49.id: streets49, tournee12.id: streets12},
+          sectors: {sector49.id: streets49, sector12.id: streets12},
         ),
-        myTourneesStoreProvider.overrideWithValue(store),
+        mySectorsStoreProvider.overrideWithValue(store),
         clockProvider.overrideWithValue(FakeClock(_now)),
-        // « Mes tournées » follows the teams of the tournées not open.
-        tourneeRepositoryProvider.overrideWithValue(FakeTourneeRepository()),
+        // « Mes secteurs » follows the teams of the tournées not open.
+        sectorRepositoryProvider.overrideWithValue(FakeSectorRepository()),
       ],
     );
     addTearDown(container.dispose);
@@ -91,7 +88,7 @@ void main() {
     container.listen(corbeillePurgeProvider, (_, _) {});
     await container.read(corbeillePurgeProvider.future);
 
-    await store.save(valueOf(store.myTournees.open(tournee12.id)));
+    await store.save(valueOf(store.mySectors.open(sector12.id)));
     await container.read(corbeillePurgeProvider.future);
 
     expect(streets12.purged, [StreetId('Lilas')]);
@@ -101,7 +98,7 @@ void main() {
   test(
     "should purge the phone's own streets while no tournée is open",
     () async {
-      store = FakeMyTourneesStore();
+      store = FakeMySectorsStore();
       final container = leasPhone();
 
       await container.read(corbeillePurgeProvider.future);

@@ -1,6 +1,6 @@
+import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 
 /// The paths of every screen of PLAN §5, so no path string is typed twice.
 ///
@@ -24,15 +24,15 @@ abstract final class AppRoutes {
   /// « Bienvenue », where a phone the app knows nothing of opens (§5.1).
   static const welcome = '/bienvenue';
 
-  /// « Nouvelle tournée » and « Rejoindre une tournée » (§5.2).
+  /// « Nouveau secteur » and « Rejoindre un secteur » (§5.2).
   static const create = '/creer';
   static const join = '/rejoindre';
   static const joinPending = '/rejoindre/attente';
 
-  /// « Demande envoyée » for the request to join [tournee]:
+  /// « Demande envoyée » for the request to join [sector]:
   /// `/rejoindre/attente?id=…`.
-  static String joinPendingOf(TourneeId tournee) =>
-      Uri(path: joinPending, queryParameters: {'id': tournee.value}).toString();
+  static String joinPendingOf(SectorId sector) =>
+      Uri(path: joinPending, queryParameters: {'id': sector.value}).toString();
   static const street = '/rue';
 
   /// The street screen of the street [id]: `/rue?id=…`.
@@ -53,9 +53,9 @@ abstract final class AppRoutes {
   ).toString();
   static const team = '/equipe';
 
-  /// « Toutes les tournées », for admins, pushed from « Mes tournées »
+  /// « Tous les secteurs », for admins, pushed from « Mes secteurs »
   /// (§5.12).
-  static const allTournees = '/toutes-les-tournees';
+  static const allSectors = '/tous-les-secteurs';
   static const settings = '/parametres';
 
   /// « Confidentialité », pushed from Paramètres.

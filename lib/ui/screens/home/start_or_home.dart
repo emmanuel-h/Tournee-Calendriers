@@ -1,6 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tournee_calendriers/presentation/my_tournees/my_tournees_notifier.dart';
+import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
 import 'package:tournee_calendriers/ui/screens/home/home_screen.dart';
 import 'package:tournee_calendriers/ui/screens/start/start_screen.dart';
 
@@ -18,7 +18,7 @@ final class StartOrHome extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) =>
-      ref.watch(currentTourneeProvider.select((tournee) => tournee != null))
+      ref.watch(currentSectorProvider.select((sector) => sector != null))
       ? HomeScreen(showGallery: showGallery)
       : StartScreen(showGallery: showGallery);
 }

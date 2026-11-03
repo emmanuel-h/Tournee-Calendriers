@@ -7,9 +7,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
-import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/presentation/building/building_grid_notifier.dart';
 import 'package:tournee_calendriers/presentation/building/building_grid_state.dart';
+import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_state.dart';
 import 'package:tournee_calendriers/presentation/street/street_view_state.dart';
 import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
 import 'package:tournee_calendriers/ui/components/close_icon_button.dart';
@@ -17,13 +17,13 @@ import 'package:tournee_calendriers/ui/components/confirm_dialog.dart';
 import 'package:tournee_calendriers/ui/components/segmented_choice.dart';
 import 'package:tournee_calendriers/ui/components/sheet_scaffold.dart';
 import 'package:tournee_calendriers/ui/components/status_glyph.dart';
-import 'package:tournee_calendriers/ui/components/tap_hint.dart';
 import 'package:tournee_calendriers/ui/components/tries_words.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
+import 'package:tournee_calendriers/ui/screens/building/building_details_sheet.dart';
 import 'package:tournee_calendriers/ui/screens/building/building_menu_sheet.dart';
 import 'package:tournee_calendriers/ui/screens/building/building_setup_sheet.dart';
-import 'package:tournee_calendriers/ui/screens/building/door_sheets.dart';
+import 'package:tournee_calendriers/ui/screens/building/door_status_picker.dart';
 import 'package:tournee_calendriers/ui/screens/building/floor_names.dart';
 import 'package:tournee_calendriers/ui/screens/street/status_words.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
@@ -50,11 +50,11 @@ Future<BuildingGridExit?> showBuildingGrid(
 );
 
 /// The floors of one staircase from the top down, four doors a row; a tap
-/// cycles a door `○ → ✓ → ✗ → ↻ → ○` with « Annuler » for 4 s (the tap to
-/// ↻ opens the door's sheet instead, to say when, #81), a hold opens its
-/// sheet. The header counts the doors of the whole building; the
-/// staircase control shows when there are several. « Gérer l'immeuble »
-/// holds every change to the building itself. Works offline.
+/// on a door opens its status picker (PLAN §5.6), and what it stores shows
+/// in the snackbar with « Annuler » for 4 s. The header counts the doors of
+/// the whole building; the staircase control shows when there are several.
+/// « Gérer l'immeuble » holds every change to the building itself. Works
+/// offline.
 ///
 /// The sheet has its own `ScaffoldMessenger`, like the street screen: the
 /// snackbar of a door, and its « Annuler », goes away with the grid.
@@ -71,6 +71,9 @@ final class _BuildingGridSheetState extends ConsumerState<BuildingGridSheet>
     with UndoSnackBarHost {
   BuildingGridNotifier get _notifier =>
       ref.read(buildingGridProvider(widget.building).notifier);
+
+  /// The door whose status picker shows, outlined.
+  DwellingKey? _picking;
 
   @override
   Widget build(BuildContext context) {
@@ -117,20 +120,26 @@ final class _BuildingGridSheetState extends ConsumerState<BuildingGridSheet>
                       Expanded(
                         child: _Floors(
                           state: state,
-                          onTap: _cycle,
-                          onHold: (door) => unawaited(_openDoor(door)),
+                          selected: _picking,
+                          onTap: (door) => unawaited(_pick(door, state)),
                         ),
                       ),
                       // Gives way to the snackbar, which floats here.
-                      SizedBox(
-                        height: AppSizes.minTapTarget,
+                      // At least 48 dp; taller with a large phone font.
+                      ConstrainedBox(
+                        constraints: const BoxConstraints(
+                          minHeight: AppSizes.minTapTarget,
+                        ),
                         child: snackBarShown
                             ? null
                             : Center(
-                                child: TapHintText(
+                                child: Text(
+                                  l10n.gridHint,
                                   key: const Key('grid.hint'),
-                                  hold: l10n.gridHintHold,
-                                  semanticsLabel: l10n.gridHintSemantics,
+                                  textAlign: TextAlign.center,
+                                  style: AppTextStyles.small.copyWith(
+                                    color: colors.muted,
+                                  ),
                                 ),
                               ),
                       ),
@@ -153,95 +162,67 @@ final class _BuildingGridSheetState extends ConsumerState<BuildingGridSheet>
     );
   }
 
-  /// A tap on a door: a light haptic tick at once, then the new status,
-  /// said aloud for screen readers (« Escalier A, 5e, porte 51, fait ») and
-  /// shown in the snackbar (« 51 → Fait »).
-  Future<void> _cycle(DwellingKey door) async {
+  /// A tap on a door: a light haptic tick at once, the door outlined, and
+  /// its status picker. The snackbar of the last door goes first: its
+  /// « Annuler » would put a door back under the picker.
+  ///
+  /// Once the picker is closed, what it stored is said aloud for screen
+  /// readers (« Escalier A, 5e, porte 51, fait ») and shown in the snackbar
+  /// (« Porte 51 : fait »), with « Annuler ».
+  Future<void> _pick(DwellingKey door, BuildingGridShown state) async {
     unawaited(HapticFeedback.lightImpact());
-    final marked = await _notifier.cycle(door);
-    if (marked?.status == VisitStatus.comeBack) {
-      await _openDoorOfTap(marked!);
-    } else {
-      _tell(marked);
-    }
-  }
-
-  /// The tap made [marked] « Repasser »: it is said aloud, and the door's
-  /// sheet opens by itself with « Annuler » and « OK » rather than the
-  /// snackbar (#81). « Annuler » there undoes the tap.
-  Future<void> _openDoorOfTap(MarkedDoor marked) async {
-    if (!mounted) return;
-    _announce(marked);
     hideUndo();
     final notifier = _notifier;
-    final exit = await showDoorSheet(context, (
-      street: widget.building.street,
-      number: widget.building.number,
-      door: marked.key,
-    ), openedByTap: true);
+    StoredStatus? stored;
+    setState(() => _picking = door);
+    await showDoorStatusPicker(
+      context,
+      (
+        street: widget.building.street,
+        number: widget.building.number,
+        door: door,
+      ),
+      onStored: (status) {
+        notifier.keepForUndo(status.change);
+        stored = status;
+      },
+    );
     if (!mounted) return;
-    switch (exit) {
-      case DoorSheetExit.cancelTap:
-        await notifier.undo();
-      case DoorSheetExit.nobodyHomeAgain:
-        _tell(await notifier.nobodyHomeAgain(marked.key));
-      case null:
-        return;
+    setState(() => _picking = null);
+    if (stored case final stored?) {
+      _tell(door, stored, namesStaircase: state.showsStaircases);
     }
   }
 
-  /// Says [marked] aloud for screen readers: « Escalier A, 5e, porte 51,
-  /// fait ».
-  void _announce(MarkedDoor marked) {
+  void _tell(
+    DwellingKey door,
+    StoredStatus stored, {
+    required bool namesStaircase,
+  }) {
     final l10n = AppLocalizations.of(context);
+    final notifier = _notifier;
     unawaited(
       SemanticsService.sendAnnouncement(
         View.of(context),
         doorSpoken(
           l10n,
-          marked.key,
-          namesStaircase: marked.namesStaircase,
-          status: spokenMarked(l10n, marked.status, marked.tries),
+          door,
+          namesStaircase: namesStaircase,
+          status: spokenMarked(l10n, stored.status, stored.tries),
         ),
         Directionality.of(context),
       ),
     );
-  }
-
-  /// Says [marked] aloud for screen readers and shows it in the snackbar,
-  /// with « Annuler »; nothing when nothing changed.
-  void _tell(MarkedDoor? marked) {
-    if (marked == null || !mounted) return;
-    final l10n = AppLocalizations.of(context);
-    final notifier = _notifier;
-    _announce(marked);
     showUndo(
-      message: markedMessage(
+      message: doorStoredMessage(
         l10n,
-        marked.key.label.text,
-        marked.status,
-        marked.tries,
+        door.label.text,
+        stored.status,
+        stored.tries,
       ),
       undoLabel: l10n.undo,
       onUndo: () => unawaited(notifier.undo()),
     );
-  }
-
-  /// A hold on a door opens its sheet. The snackbar goes: its « Annuler »
-  /// would put the whole door back, wiping what the sheet changes. Left by
-  /// « Repassé, toujours personne », the door is marked here, with its
-  /// snackbar over the grid.
-  Future<void> _openDoor(DwellingKey door) async {
-    hideUndo();
-    final notifier = _notifier;
-    final exit = await showDoorSheet(context, (
-      street: widget.building.street,
-      number: widget.building.number,
-      door: door,
-    ));
-    // « Annuler » is only on a sheet a tap opened.
-    if (exit != DoorSheetExit.nobodyHomeAgain || !mounted) return;
-    _tell(await notifier.nobodyHomeAgain(door));
   }
 
   /// « Gérer l'immeuble »: the menu, then the choice. The snackbar goes
@@ -436,13 +417,15 @@ final class _StaircaseControl extends StatelessWidget {
 final class _Floors extends StatelessWidget {
   const _Floors({
     required this.state,
+    required this.selected,
     required this.onTap,
-    required this.onHold,
   });
 
   final BuildingGridShown state;
+
+  /// The door whose status picker shows; null when none does.
+  final DwellingKey? selected;
   final ValueChanged<DwellingKey> onTap;
-  final ValueChanged<DwellingKey> onHold;
 
   @override
   Widget build(BuildContext context) {
@@ -491,8 +474,8 @@ final class _Floors extends StatelessWidget {
                           child: _DoorButton(
                             door: door,
                             namesStaircase: state.showsStaircases,
+                            selected: door.key == selected,
                             onTap: () => onTap(door.key),
-                            onHold: () => onHold(door.key),
                           ),
                         ),
                     ],
@@ -507,24 +490,26 @@ final class _Floors extends StatelessWidget {
   }
 }
 
-/// One door: its label and glyph, tinted per status.
+/// One door: its label and glyph, tinted per status; outlined in ink while
+/// its status picker shows ([selected]).
 final class _DoorButton extends StatelessWidget {
   const _DoorButton({
     required this.door,
     required this.namesStaircase,
+    required this.selected,
     required this.onTap,
-    required this.onHold,
   });
 
   final DoorTile door;
   final bool namesStaircase;
+  final bool selected;
   final VoidCallback onTap;
-  final VoidCallback onHold;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
-    final look = StatusLook.of(tileStatusOf(door.mark), AppColors.of(context));
+    final colors = AppColors.of(context);
+    final look = StatusLook.of(tileStatusOf(door.mark), colors);
     final spoken = doorSpoken(
       l10n,
       door.key,
@@ -541,21 +526,28 @@ final class _DoorButton extends StatelessWidget {
       key: ValueKey('grid.door.${door.key.id}'),
       label: spoken,
       button: true,
+      // Only said while the picker shows: no « non sélectionné » on
+      // every other tile.
+      selected: selected ? true : null,
       excludeSemantics: true,
       onTap: onTap,
-      onLongPress: onHold,
       child: SizedBox(
         height: AppSizes.doorHeight,
         child: Material(
           color: look.background,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppSizes.tileRadius),
-            side: BorderSide(color: look.border, width: AppSizes.borderWidth),
+            // Inside the edge, as on a house tile: the doors do not move.
+            side: selected
+                ? BorderSide(
+                    color: colors.ink,
+                    width: AppSizes.selectedTileOutline,
+                  )
+                : BorderSide(color: look.border, width: AppSizes.borderWidth),
           ),
           clipBehavior: Clip.antiAlias,
           child: InkWell(
             onTap: onTap,
-            onLongPress: onHold,
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 4),
               // A long free label (« Fond cour ») shrinks rather than being
@@ -594,12 +586,18 @@ final class _DoorButton extends StatelessWidget {
   }
 }
 
-/// « Gérer l'immeuble ▾ » and « Repasser », side by side.
+/// « Gérer l'immeuble ▾ » and « Repasser »: side by side, half the width
+/// each, when both labels hold on one line there; else one above the
+/// other, full width, so a large phone font never breaks a word (#35).
 final class _Actions extends StatelessWidget {
   const _Actions({required this.onManage, required this.onDetails});
 
   final VoidCallback onManage;
   final VoidCallback onDetails;
+
+  static const _gap = 10.0;
+  static const _padding = 16.0;
+  static const _iconGap = 8.0;
 
   @override
   Widget build(BuildContext context) {
@@ -608,7 +606,30 @@ final class _Actions extends StatelessWidget {
       minimumSize: WidgetStatePropertyAll(
         Size.fromHeight(AppSizes.gridButtonHeight),
       ),
+      padding: WidgetStatePropertyAll(
+        EdgeInsets.symmetric(horizontal: _padding),
+      ),
       textStyle: WidgetStatePropertyAll(AppTextStyles.segment),
+    );
+    final manage = OutlinedButton(
+      key: const Key('grid.manage'),
+      style: style,
+      onPressed: onManage,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        spacing: _iconGap,
+        children: [
+          Flexible(child: Text(l10n.manageBuilding)),
+          // The ▾ after the label says a menu opens; decoration only.
+          const Icon(Icons.arrow_drop_down, size: AppSizes.gridButtonIcon),
+        ],
+      ),
+    );
+    final details = OutlinedButton(
+      key: const Key('grid.details'),
+      style: style,
+      onPressed: onDetails,
+      child: Text(l10n.buildingDetails),
     );
     // `SafeArea`: above the gesture bar of the phone.
     return SafeArea(
@@ -620,31 +641,50 @@ final class _Actions extends StatelessWidget {
           AppSizes.gutter,
           AppSizes.floatingBottom,
         ),
-        child: Row(
-          spacing: 10,
-          children: [
-            Expanded(
-              // The ▾ after the label says a menu opens; decoration only.
-              child: OutlinedButton.icon(
-                key: const Key('grid.manage'),
-                style: style,
-                onPressed: onManage,
-                iconAlignment: IconAlignment.end,
-                icon: const Icon(Icons.arrow_drop_down),
-                label: Text(l10n.manageBuilding),
-              ),
-            ),
-            Expanded(
-              child: OutlinedButton(
-                key: const Key('grid.details'),
-                style: style,
-                onPressed: onDetails,
-                child: Text(l10n.buildingDetails),
-              ),
-            ),
-          ],
+        // `LayoutBuilder` gives the width the buttons share; the labels are
+        // measured in the phone's own text size before choosing the layout.
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final room = (constraints.maxWidth - _gap) / 2 - 2 * _padding;
+            final sideBySide =
+                _lineWidth(context, l10n.manageBuilding) +
+                        _iconGap +
+                        AppSizes.gridButtonIcon <=
+                    room &&
+                _lineWidth(context, l10n.buildingDetails) <= room;
+            return sideBySide
+                ? Row(
+                    key: const Key('grid.actions.row'),
+                    spacing: _gap,
+                    children: [
+                      Expanded(child: manage),
+                      Expanded(child: details),
+                    ],
+                  )
+                : Column(
+                    key: const Key('grid.actions.column'),
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    spacing: _gap,
+                    children: [manage, details],
+                  );
+          },
         ),
       ),
     );
+  }
+
+  /// How wide [label] is on one line, in the buttons' style and the
+  /// phone's text size. A `TextPainter` lays text out without drawing it.
+  double _lineWidth(BuildContext context, String label) {
+    final painter = TextPainter(
+      text: TextSpan(text: label, style: AppTextStyles.segment),
+      textDirection: Directionality.of(context),
+      textScaler: MediaQuery.textScalerOf(context),
+      maxLines: 1,
+    )..layout();
+    final width = painter.width;
+    painter.dispose();
+    return width;
   }
 }

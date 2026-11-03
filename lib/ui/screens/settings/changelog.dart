@@ -30,6 +30,52 @@ final class Release {
 /// day it is published, and its lines to `app_fr.arb`.
 final shippedReleases = [
   Release(
+    version: '0.10.0',
+    date: DateTime(2026, 11, 2),
+    notes: (l10n) => [
+      l10n.release0100Sector,
+      l10n.release0100Picker,
+      l10n.release0100Refused,
+      l10n.release0100Privacy,
+    ],
+  ),
+  Release(
+    version: '0.9.0',
+    date: DateTime(2026, 11, 2),
+    notes: (l10n) => [
+      l10n.release090Streets,
+      l10n.release090Buttons,
+      l10n.release090CaughtUp,
+    ],
+  ),
+  Release(
+    version: '0.8.0',
+    date: DateTime(2026, 11, 2),
+    notes: (l10n) => [
+      l10n.release080Icon,
+      l10n.release080Dark,
+      l10n.release080Privacy,
+    ],
+  ),
+  Release(
+    version: '0.7.0',
+    date: DateTime(2026, 11, 2),
+    notes: (l10n) => [
+      l10n.release070Offline,
+      l10n.release070Greyed,
+      l10n.release070Settings,
+    ],
+  ),
+  Release(
+    version: '0.6.0',
+    date: DateTime(2026, 11, 1),
+    notes: (l10n) => [
+      l10n.release060FreeLines,
+      l10n.release060CloseCard,
+      l10n.release060LeftTeam,
+    ],
+  ),
+  Release(
     version: '0.5.1',
     date: DateTime(2026, 10, 18),
     notes: (l10n) => [
@@ -63,7 +109,7 @@ final shippedReleases = [
     date: DateTime(2026, 10, 17),
     notes: (l10n) => [
       l10n.release020Admins,
-      l10n.release020AllTournees,
+      l10n.release020AllSectors,
       l10n.release020Team,
       l10n.release020DeviceId,
     ],

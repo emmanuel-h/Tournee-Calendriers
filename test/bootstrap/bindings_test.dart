@@ -8,33 +8,39 @@ import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/phone_settings.dart';
 import 'package:tournee_calendriers/application/use_cases/mark.dart';
 import 'package:tournee_calendriers/bootstrap/bindings.dart';
+import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
+import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
-import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 import 'package:tournee_calendriers/infrastructure/ban/ban_address_directory.dart';
 import 'package:tournee_calendriers/infrastructure/firebase_auth/firebase_identity.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_admin_status.dart';
+import 'package:tournee_calendriers/infrastructure/firestore/firestore_sector_directory.dart';
+import 'package:tournee_calendriers/infrastructure/firestore/firestore_sector_repository.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_street_repository.dart';
-import 'package:tournee_calendriers/infrastructure/firestore/firestore_tournee_directory.dart';
-import 'package:tournee_calendriers/infrastructure/firestore/firestore_tournee_repository.dart';
+import 'package:tournee_calendriers/infrastructure/firestore/firestore_streets_download.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_document_mapper.dart';
 import 'package:tournee_calendriers/infrastructure/geo_api/geo_commune_search.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_moved_streets_log.dart';
-import 'package:tournee_calendriers/infrastructure/local_storage/local_my_tournees.dart';
+import 'package:tournee_calendriers/infrastructure/local_storage/local_my_sectors.dart';
+import 'package:tournee_calendriers/infrastructure/local_storage/local_open_round.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_phone_settings.dart';
+import 'package:tournee_calendriers/infrastructure/local_storage/local_round_ledger.dart';
+import 'package:tournee_calendriers/infrastructure/local_storage/local_sector_downloads.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_street_repository.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_street_view_preferences.dart';
 import 'package:tournee_calendriers/infrastructure/map_tiles/openfreemap_street_shapes.dart';
+import 'package:tournee_calendriers/infrastructure/maplibre_offline/maplibre_offline_map_store.dart';
 import 'package:tournee_calendriers/infrastructure/system/random_id_generator.dart';
 import 'package:tournee_calendriers/infrastructure/system/system_clock.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 
-import '../domain/tournee/my_tournees_fixtures.dart';
-import '../domain/tournee/tournee_fixtures.dart' show nameOf;
+import '../domain/round/round_fixtures.dart' show cash;
+import '../domain/sector/my_sectors_fixtures.dart';
+import '../domain/sector/sector_fixtures.dart' show nameOf;
 import '../support/fakes/fake_address_directory.dart';
 import '../support/fakes/fake_anonymous_auth.dart';
 import '../support/fakes/fake_commune_search.dart';
@@ -101,19 +107,44 @@ void main() {
       isA<LocalStreetViewPreferences>(),
     );
     expect(container.read(identityProvider), isA<FirebaseIdentity>());
-    expect(container.read(myTourneesStoreProvider), isA<LocalMyTournees>());
+    expect(container.read(mySectorsStoreProvider), isA<LocalMySectors>());
     expect(container.read(phoneSettingsProvider), isA<LocalPhoneSettings>());
+    expect(container.read(openRoundStoreProvider), isA<LocalOpenRound>());
+    expect(
+      container.read(roundLedgerProvider),
+      isA<LocalRoundLedger>().having(
+        (ledger) => ledger.directory.path,
+        'directory',
+        '${storage.path}/validated_rounds',
+      ),
+    );
     expect(firestoreAsked, 0);
     expect(
-      container.read(tourneeDirectoryProvider),
-      isA<FirestoreTourneeDirectory>(),
+      container.read(sectorDirectoryProvider),
+      isA<FirestoreSectorDirectory>(),
     );
     expect(firestoreAsked, 1);
     expect(
-      container.read(tourneeRepositoryProvider),
-      isA<FirestoreTourneeRepository>(),
+      container.read(sectorRepositoryProvider),
+      isA<FirestoreSectorRepository>(),
     );
     expect(container.read(adminStatusProvider), isA<FirestoreAdminStatus>());
+    expect(
+      container.read(streetsDownloadProvider),
+      isA<FirestoreStreetsDownload>(),
+    );
+    expect(
+      container.read(offlineMapStoreProvider),
+      isA<MapLibreOfflineMapStore>().having(
+        (store) => store.styleUrl,
+        'styleUrl',
+        'https://tiles.openfreemap.org/styles/liberty',
+      ),
+    );
+    expect(
+      container.read(sectorDownloadsProvider),
+      isA<LocalSectorDownloads>(),
+    );
     // One database for every Firestore adapter.
     expect(firestoreAsked, 1);
     expect(container.read(randomProvider), isA<Random>());
@@ -230,17 +261,30 @@ void main() {
 
   test('should reopen the last tournée across starts', () async {
     final opened = valueOf(
-      MyTournees.none
-          .remember(tournee49)
-          .remember(tournee12)
-          .open(tournee12.id),
+      MySectors.none.remember(sector49).remember(sector12).open(sector12.id),
     );
-    await (await containerWith()).read(myTourneesStoreProvider).save(opened);
+    await (await containerWith()).read(mySectorsStoreProvider).save(opened);
 
     final second = await containerWith();
 
-    expect(second.read(myTourneesStoreProvider).myTournees, opened);
+    expect(second.read(mySectorsStoreProvider).mySectors, opened);
     expect(File('${storage.path}/my_tournees.json').existsSync(), isTrue);
+  });
+
+  test('should keep the tournée on and its dons across starts', () async {
+    final first = await containerWith();
+    await first
+        .read(mySectorsStoreProvider)
+        .save(valueOf(MySectors.none.remember(sector49).open(sector49.id)));
+    valueOf(await first.read(startRoundProvider)());
+    valueOf(await first.read(addDonationProvider)(cash(1000)));
+
+    final second = await containerWith();
+    final round = second.read(openRoundStoreProvider).openRound!;
+
+    expect(round.sector, sector49.id);
+    expect(round.donations, [cash(1000)]);
+    expect(File('${storage.path}/open_round.json').existsSync(), isTrue);
   });
 
   test('should keep the name and the theme across starts', () async {
@@ -261,10 +305,10 @@ void main() {
     setUp(() => db = FakeFirebaseFirestore());
 
     /// The phone of [uid] (Léa by default, signed in before) knowing the
-    /// 49 and the 12, the 49 open; with [noTournee], knowing no tournée
+    /// 49 and the 12, the 49 open; with [noSector], knowing no tournée
     /// (one that knows tournées follows them in Firestore, open or not).
     Future<ProviderContainer> leasPhone({
-      bool noTournee = false,
+      bool noSector = false,
       Directory? folder,
       String uid = 'uid-lea',
     }) async {
@@ -273,16 +317,16 @@ void main() {
         db: db,
         folder: folder,
       );
-      final mine = MyTournees.none.remember(tournee49).remember(tournee12);
+      final mine = MySectors.none.remember(sector49).remember(sector12);
       await container
-          .read(myTourneesStoreProvider)
-          .save(noTournee ? MyTournees.none : valueOf(mine.open(tournee49.id)));
+          .read(mySectorsStoreProvider)
+          .save(noSector ? MySectors.none : valueOf(mine.open(sector49.id)));
       return container;
     }
 
-    Future<void> openTournee(ProviderContainer container, TourneeId id) async {
-      final store = container.read(myTourneesStoreProvider);
-      await store.save(valueOf(store.myTournees.open(id)));
+    Future<void> openSector(ProviderContainer container, SectorId id) async {
+      final store = container.read(mySectorsStoreProvider);
+      await store.save(valueOf(store.mySectors.open(id)));
     }
 
     final morin = valueOf(
@@ -299,7 +343,7 @@ void main() {
     );
 
     test('should be the phone storage while no tournée is open', () async {
-      final container = await leasPhone(noTournee: true);
+      final container = await leasPhone(noSector: true);
 
       final streets = container.read(streetRepositoryProvider);
 
@@ -325,7 +369,7 @@ void main() {
         isA<LocalStreetRepository>(),
       );
       final stored = await db
-          .doc('tournees/t49/campaigns/2026/streets/morin')
+          .doc('sectors/t49/campaigns/2026/streets/morin')
           .get();
       expect(stored.data()?['name'], 'Rue Pierre Morin');
       expect(
@@ -346,19 +390,19 @@ void main() {
         addTearDown(listening.cancel);
         await pumpEventQueue();
 
-        await openTournee(container, tournee12.id);
+        await openSector(container, sector12.id);
         final streets12 = container.read(streetRepositoryProvider);
         await streets12.add(morin);
         // A teammate adds a street to the 49, which is no longer followed.
         await db
-            .doc('tournees/t49/campaigns/2026/streets/morin')
+            .doc('sectors/t49/campaigns/2026/streets/morin')
             .set(streetToDocument(morin));
         await pumpEventQueue();
 
         expect(streets12, isNot(same(streets49)));
         expect(streets12, isA<FirestoreStreetRepository>());
         expect(
-          (await db.doc('tournees/t12/campaigns/2026/streets/morin').get())
+          (await db.doc('sectors/t12/campaigns/2026/streets/morin').get())
               .exists,
           isTrue,
         );
@@ -370,8 +414,8 @@ void main() {
       final container = await leasPhone();
       container.read(streetRepositoryProvider);
 
-      final store = container.read(myTourneesStoreProvider);
-      await store.save(store.myTournees.forget(tournee49.id));
+      final store = container.read(mySectorsStoreProvider);
+      await store.save(store.mySectors.forget(sector49.id));
 
       expect(
         container.read(streetRepositoryProvider),
@@ -385,15 +429,15 @@ void main() {
         final container = await leasPhone();
         final streets = container.read(streetRepositoryProvider);
 
-        final store = container.read(myTourneesStoreProvider);
-        await store.save(store.myTournees.remember(tournee49));
+        final store = container.read(mySectorsStoreProvider);
+        await store.save(store.mySectors.remember(sector49));
 
         expect(container.read(streetRepositoryProvider), same(streets));
       },
     );
 
     test('should have nothing to send while no tournée is open', () async {
-      final container = await leasPhone(noTournee: true);
+      final container = await leasPhone(noSector: true);
 
       final unsent = await container
           .read(pendingSyncProvider)
@@ -414,7 +458,7 @@ void main() {
         expect(container.read(pendingSyncProvider), same(streets49));
         expect(streets49, isA<FirestoreStreetRepository>());
 
-        await openTournee(container, tournee12.id);
+        await openSector(container, sector12.id);
 
         final streets12 = container.read(streetRepositoryProvider);
         expect(streets12, isNot(same(streets49)));
@@ -426,12 +470,39 @@ void main() {
       final container = await leasPhone();
       container.read(pendingSyncProvider);
 
-      final store = container.read(myTourneesStoreProvider);
-      await store.save(store.myTournees.forget(tournee49.id));
+      final store = container.read(mySectorsStoreProvider);
+      await store.save(store.mySectors.forget(sector49.id));
 
       final pending = container.read(pendingSyncProvider);
       expect(pending, isNot(isA<FirestoreStreetRepository>()));
       expect(await pending.watchUnsentStreets().first, 0);
+    });
+
+    test('should tell offline from the storage of the open tournée', () async {
+      final container = await leasPhone();
+      final streets49 = container.read(streetRepositoryProvider);
+
+      // The same adapter, so its one Firestore listener also says it.
+      expect(container.read(serverConnectionProvider), same(streets49));
+
+      await openSector(container, sector12.id);
+
+      expect(
+        container.read(serverConnectionProvider),
+        same(container.read(streetRepositoryProvider)),
+      );
+    });
+
+    test('should say online while no tournée is open', () async {
+      final container = await leasPhone(noSector: true);
+
+      final offline = await container
+          .read(serverConnectionProvider)
+          .watchOffline()
+          .first;
+
+      expect(offline, isFalse);
+      expect(firestoreAsked, 0);
     });
 
     test('should show a teammate the marks of another phone', () async {
@@ -459,7 +530,7 @@ void main() {
 
       expect(seenByPaul, [VisitStatus.toDo, VisitStatus.done]);
       final stored = await db
-          .doc('tournees/t49/campaigns/2026/streets/morin')
+          .doc('sectors/t49/campaigns/2026/streets/morin')
           .get();
       final houses = stored.data()!['houses'] as Map<String, dynamic>;
       expect((houses['32'] as Map<String, dynamic>)['by'], 'uid-lea');
@@ -470,12 +541,12 @@ void main() {
       () async {
         await (await containerWith())
             .read(movedStreetsLogProvider)
-            .rememberMovedInto(tournee49.id);
+            .rememberMovedInto(sector49.id);
 
         final second = await containerWith();
 
         expect(
-          second.read(movedStreetsLogProvider).wereMovedInto(tournee49.id),
+          second.read(movedStreetsLogProvider).wereMovedInto(sector49.id),
           isTrue,
         );
         expect(File('${storage.path}/moved_streets.json').existsSync(), isTrue);

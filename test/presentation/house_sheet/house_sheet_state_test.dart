@@ -1,4 +1,7 @@
 import 'package:test/test.dart';
+import 'package:tournee_calendriers/domain/street/house.dart';
+import 'package:tournee_calendriers/domain/street/street_change.dart';
+import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/come_back_time.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_state.dart';
@@ -149,29 +152,44 @@ void main() {
       );
     });
 
-    HouseSheetShown withStatus(VisitStatus? status) => HouseSheetShown(
-      streetName: 'Rue des Lilas',
-      number: n('5'),
-      status: status,
-      comeBack: false,
-      comeBackTime: ComeBackTime.of(null, today: day('2026-11-02')),
-      lastChange: null,
-    );
+    HouseSheetShown withStatus(VisitStatus? status, {int tries = 0}) =>
+        HouseSheetShown(
+          streetName: 'Rue des Lilas',
+          number: n('5'),
+          status: status,
+          comeBack: false,
+          comeBackTime: ComeBackTime.of(null, today: day('2026-11-02')),
+          lastChange: null,
+          tries: tries,
+        );
 
     test('should have no tries by default', () {
       expect(withStatus(VisitStatus.toDo).tries, 0);
     });
 
-    for (final (status, offers) in [
-      (VisitStatus.toDo, false),
-      (VisitStatus.done, false),
-      (VisitStatus.nobodyHome, true),
-      (VisitStatus.comeBack, true),
-      (null, false),
+    for (final (status, tries, offers) in [
+      (VisitStatus.toDo, 1, false),
+      (VisitStatus.done, 1, false),
+      (VisitStatus.nobodyHome, 1, true),
+      (VisitStatus.nobodyHome, 0, false),
+      (VisitStatus.comeBack, 1, true),
+      (VisitStatus.comeBack, 0, false),
+      (VisitStatus.comeBack, 3, true),
+      (null, 1, false),
     ]) {
-      test('should ${offers ? '' : 'not '}offer « Repassé, toujours '
-          'personne » when the status is $status', () {
-        expect(withStatus(status).offersNobodyHomeAgain, offers);
+      test('should ${offers ? '' : 'not '}offer « De nouveau personne » '
+          'when the status is $status with $tries tries', () {
+        expect(withStatus(status, tries: tries).offersNobodyHomeAgain, offers);
+      });
+    }
+
+    for (final (tries, shows) in [(0, false), (1, true), (2, true)]) {
+      test('should ${shows ? '' : 'not '}show the tries when $tries are '
+          'counted', () {
+        expect(
+          withStatus(VisitStatus.nobodyHome, tries: tries).showsTries,
+          shows,
+        );
       });
     }
 
@@ -186,6 +204,71 @@ void main() {
       );
 
       expect(state.subject, isA<HouseSubject>());
+    });
+  });
+
+  group('StoredStatus', () {
+    final marked = HouseMarked(
+      streetId: StreetId('lilas'),
+      before: House(number: n('7')),
+      stamp: leaAtTwo,
+      status: VisitStatus.nobodyHome,
+    );
+    final stored = StoredStatus(
+      status: VisitStatus.nobodyHome,
+      tries: 3,
+      change: marked,
+    );
+
+    test('should be equal by status, tries and change', () {
+      expect(
+        stored,
+        StoredStatus(status: VisitStatus.nobodyHome, tries: 3, change: marked),
+      );
+      expect(
+        stored.hashCode,
+        StoredStatus(
+          status: VisitStatus.nobodyHome,
+          tries: 3,
+          change: marked,
+        ).hashCode,
+      );
+      expect(
+        stored,
+        isNot(StoredStatus(status: VisitStatus.done, tries: 3, change: marked)),
+      );
+      expect(
+        stored,
+        isNot(
+          StoredStatus(
+            status: VisitStatus.nobodyHome,
+            tries: 2,
+            change: marked,
+          ),
+        ),
+      );
+      expect(
+        stored,
+        isNot(
+          StoredStatus(
+            status: VisitStatus.nobodyHome,
+            tries: 3,
+            change: HouseMarked(
+              streetId: StreetId('lilas'),
+              before: House(number: n('9')),
+              stamp: leaAtTwo,
+              status: VisitStatus.nobodyHome,
+            ),
+          ),
+        ),
+      );
+    });
+
+    test('should name its status and tries when printed', () {
+      expect(
+        stored.toString(),
+        startsWith('StoredStatus(VisitStatus.nobodyHome, 3, '),
+      );
     });
   });
 }

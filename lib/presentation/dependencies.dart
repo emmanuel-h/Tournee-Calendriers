@@ -21,46 +21,59 @@ import 'package:tournee_calendriers/application/ports/id_generator.dart';
 import 'package:tournee_calendriers/application/ports/identity_provider.dart';
 import 'package:tournee_calendriers/application/ports/member_account.dart';
 import 'package:tournee_calendriers/application/ports/moved_streets_log.dart';
-import 'package:tournee_calendriers/application/ports/my_tournees_store.dart';
+import 'package:tournee_calendriers/application/ports/my_sectors_store.dart';
+import 'package:tournee_calendriers/application/ports/offline_map_store.dart';
+import 'package:tournee_calendriers/application/ports/open_round_store.dart';
 import 'package:tournee_calendriers/application/ports/pending_sync.dart';
 import 'package:tournee_calendriers/application/ports/phone_settings.dart';
+import 'package:tournee_calendriers/application/ports/round_ledger.dart';
+import 'package:tournee_calendriers/application/ports/sector_directory.dart';
+import 'package:tournee_calendriers/application/ports/sector_downloads.dart';
+import 'package:tournee_calendriers/application/ports/server_connection.dart';
 import 'package:tournee_calendriers/application/ports/street_shapes.dart';
 import 'package:tournee_calendriers/application/ports/street_view_preferences.dart';
-import 'package:tournee_calendriers/application/ports/tournee_directory.dart';
+import 'package:tournee_calendriers/application/ports/streets_download.dart';
 import 'package:tournee_calendriers/application/use_cases/add_manual_street.dart';
 import 'package:tournee_calendriers/application/use_cases/add_street_from_map.dart';
 import 'package:tournee_calendriers/application/use_cases/admins.dart';
 import 'package:tournee_calendriers/application/use_cases/choose_start_point.dart';
-import 'package:tournee_calendriers/application/use_cases/create_tournee.dart';
+import 'package:tournee_calendriers/application/use_cases/create_sector.dart';
 import 'package:tournee_calendriers/application/use_cases/describe_building.dart';
+import 'package:tournee_calendriers/application/use_cases/download_sector.dart';
 import 'package:tournee_calendriers/application/use_cases/edit_street_numbers.dart';
 import 'package:tournee_calendriers/application/use_cases/fill_street_shape.dart';
 import 'package:tournee_calendriers/application/use_cases/find_imported_streets.dart';
 import 'package:tournee_calendriers/application/use_cases/hide_done.dart';
 import 'package:tournee_calendriers/application/use_cases/import_reference_area.dart';
-import 'package:tournee_calendriers/application/use_cases/join_tournee.dart';
+import 'package:tournee_calendriers/application/use_cases/join_sector.dart';
 import 'package:tournee_calendriers/application/use_cases/list_commune_streets.dart';
 import 'package:tournee_calendriers/application/use_cases/look_up_street.dart';
 import 'package:tournee_calendriers/application/use_cases/look_up_street_shape.dart';
 import 'package:tournee_calendriers/application/use_cases/mark_dwelling.dart';
-import 'package:tournee_calendriers/application/use_cases/move_streets_into_tournee.dart';
-import 'package:tournee_calendriers/application/use_cases/my_tournees.dart';
+import 'package:tournee_calendriers/application/use_cases/move_streets_into_sector.dart';
+import 'package:tournee_calendriers/application/use_cases/my_sectors.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_corbeille.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_my_streets.dart';
+import 'package:tournee_calendriers/application/use_cases/observe_offline.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_pending_sync.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_street.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_streets.dart';
+import 'package:tournee_calendriers/application/use_cases/observe_streets_by_member.dart';
 import 'package:tournee_calendriers/application/use_cases/phone_settings.dart';
 import 'package:tournee_calendriers/application/use_cases/purge_corbeille.dart';
+import 'package:tournee_calendriers/application/use_cases/refresh_offline_maps.dart';
+import 'package:tournee_calendriers/application/use_cases/round_visits.dart';
+import 'package:tournee_calendriers/application/use_cases/rounds.dart';
 import 'package:tournee_calendriers/application/use_cases/search_communes.dart';
 import 'package:tournee_calendriers/application/use_cases/search_street.dart';
+import 'package:tournee_calendriers/application/use_cases/sector_downloads.dart';
 import 'package:tournee_calendriers/application/use_cases/set_house_details.dart';
 import 'package:tournee_calendriers/application/use_cases/sign_in.dart';
 import 'package:tournee_calendriers/application/use_cases/street_assignment.dart';
 import 'package:tournee_calendriers/application/use_cases/team.dart';
 import 'package:tournee_calendriers/application/use_cases/undo_last_change.dart';
+import 'package:tournee_calendriers/domain/sector/sector_repository.dart';
 import 'package:tournee_calendriers/domain/street/street_repository.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_repository.dart';
 
 // Ports, bound by bootstrap/.
 
@@ -73,7 +86,7 @@ final streetRepositoryProvider = Provider<StreetRepository>(
 );
 
 /// The streets kept on the phone since M1, whichever tournée is open: what
-/// « Les ajouter à la tournée » moves (PLAN §5.0).
+/// « Les ajouter au secteur » moves (PLAN §5.0).
 final phoneStreetRepositoryProvider = Provider<StreetRepository>(
   (ref) => _unbound('phone StreetRepository'),
 );
@@ -84,6 +97,13 @@ final phoneStreetRepositoryProvider = Provider<StreetRepository>(
 /// tournée open there is nothing to send.
 final pendingSyncProvider = Provider<PendingSync>(
   (ref) => _unbound('PendingSync'),
+);
+
+/// Whether the phone reaches the server. The composition root binds it to
+/// the same adapter as [streetRepositoryProvider] too: the open tournée's
+/// listener tells it; with no tournée open, nothing does.
+final serverConnectionProvider = Provider<ServerConnection>(
+  (ref) => _unbound('ServerConnection'),
 );
 final addressDirectoryProvider = Provider<AddressDirectory>(
   (ref) => _unbound('AddressDirectory'),
@@ -107,23 +127,49 @@ final streetViewPreferencesProvider = Provider<StreetViewPreferences>(
 final memberAccountProvider = Provider<MemberAccount>(
   (ref) => _unbound('MemberAccount'),
 );
-final myTourneesStoreProvider = Provider<MyTourneesStore>(
-  (ref) => _unbound('MyTourneesStore'),
+final mySectorsStoreProvider = Provider<MySectorsStore>(
+  (ref) => _unbound('MySectorsStore'),
 );
 final phoneSettingsProvider = Provider<PhoneSettings>(
   (ref) => _unbound('PhoneSettings'),
 );
-final tourneeDirectoryProvider = Provider<TourneeDirectory>(
-  (ref) => _unbound('TourneeDirectory'),
+final sectorDirectoryProvider = Provider<SectorDirectory>(
+  (ref) => _unbound('SectorDirectory'),
 );
-final tourneeRepositoryProvider = Provider<TourneeRepository>(
-  (ref) => _unbound('TourneeRepository'),
+final sectorRepositoryProvider = Provider<SectorRepository>(
+  (ref) => _unbound('SectorRepository'),
 );
 final movedStreetsLogProvider = Provider<MovedStreetsLog>(
   (ref) => _unbound('MovedStreetsLog'),
 );
 final adminStatusProvider = Provider<AdminStatus>(
   (ref) => _unbound('AdminStatus'),
+);
+
+/// The streets of a tournée as the server has them, for its download
+/// (PLAN §7).
+final streetsDownloadProvider = Provider<StreetsDownload>(
+  (ref) => _unbound('StreetsDownload'),
+);
+
+/// The map regions kept on the phone for offline use.
+final offlineMapStoreProvider = Provider<OfflineMapStore>(
+  (ref) => _unbound('OfflineMapStore'),
+);
+
+/// The tournées downloaded on this phone, when, and how much.
+final sectorDownloadsProvider = Provider<SectorDownloads>(
+  (ref) => _unbound('SectorDownloads'),
+);
+
+/// The tournée on, kept on the phone (PLAN §6.3).
+final openRoundStoreProvider = Provider<OpenRoundStore>(
+  (ref) => _unbound('OpenRoundStore'),
+);
+
+/// Where the summaries of the validated tournées go (« Collecte »).
+final roundLedgerProvider = Provider<RoundLedger>(
+  (ref) => _unbound('RoundLedger'),
 );
 
 /// The source join codes are drawn from: `Random.secure()` in the app
@@ -152,11 +198,24 @@ final observeMyStreetsProvider = Provider(
     ref.watch(identityProvider),
   ),
 );
+final observeStreetsByMemberProvider = Provider(
+  (ref) => ObserveStreetsByMember(ref.watch(streetRepositoryProvider)),
+);
+
+/// The step of the status use cases that tells the tournée on about a ✓
+/// or ⊘ (PLAN §5.13).
+final roundVisitsProvider = Provider(
+  (ref) => RoundVisits(
+    ref.watch(openRoundStoreProvider),
+    ref.watch(mySectorsStoreProvider),
+  ),
+);
 final setHouseDetailsProvider = Provider(
   (ref) => SetHouseDetails(
     ref.watch(streetRepositoryProvider),
     ref.watch(clockProvider),
     ref.watch(identityProvider),
+    ref.watch(roundVisitsProvider),
   ),
 );
 final markDwellingProvider = Provider(
@@ -164,6 +223,7 @@ final markDwellingProvider = Provider(
     ref.watch(streetRepositoryProvider),
     ref.watch(clockProvider),
     ref.watch(identityProvider),
+    ref.watch(roundVisitsProvider),
   ),
 );
 final describeBuildingProvider = Provider(
@@ -225,7 +285,10 @@ final searchStreetProvider = Provider(
   (ref) => SearchStreet(ref.watch(addressDirectoryProvider)),
 );
 final undoLastChangeProvider = Provider(
-  (ref) => UndoLastChange(ref.watch(streetRepositoryProvider)),
+  (ref) => UndoLastChange(
+    ref.watch(streetRepositoryProvider),
+    ref.watch(roundVisitsProvider),
+  ),
 );
 final listCommuneStreetsProvider = Provider(
   (ref) => ListCommuneStreets(ref.watch(addressDirectoryProvider)),
@@ -258,38 +321,38 @@ final signInProvider = Provider(
 final observeSignInProvider = Provider(
   (ref) => ObserveSignIn(ref.watch(memberAccountProvider)),
 );
-final readMyTourneesProvider = Provider(
-  (ref) => ReadMyTournees(ref.watch(myTourneesStoreProvider)),
+final readMySectorsProvider = Provider(
+  (ref) => ReadMySectors(ref.watch(mySectorsStoreProvider)),
 );
-final observeMyTourneesProvider = Provider(
-  (ref) => ObserveMyTournees(ref.watch(myTourneesStoreProvider)),
+final observeMySectorsProvider = Provider(
+  (ref) => ObserveMySectors(ref.watch(mySectorsStoreProvider)),
 );
-final openTourneeProvider = Provider(
-  (ref) => OpenTournee(ref.watch(myTourneesStoreProvider)),
+final openSectorProvider = Provider(
+  (ref) => OpenSector(ref.watch(mySectorsStoreProvider)),
 );
 final watchJoinRequestProvider = Provider(
   (ref) => WatchJoinRequest(
-    ref.watch(tourneeDirectoryProvider),
+    ref.watch(sectorDirectoryProvider),
     ref.watch(memberAccountProvider),
   ),
 );
 final settleJoinRequestProvider = Provider(
-  (ref) => SettleJoinRequest(ref.watch(myTourneesStoreProvider)),
+  (ref) => SettleJoinRequest(ref.watch(mySectorsStoreProvider)),
 );
 final watchMembershipProvider = Provider(
   (ref) => WatchMembership(
-    ref.watch(tourneeDirectoryProvider),
+    ref.watch(sectorDirectoryProvider),
     ref.watch(memberAccountProvider),
   ),
 );
 final watchOwnNameProvider = Provider(
   (ref) => WatchOwnName(
-    ref.watch(tourneeDirectoryProvider),
+    ref.watch(sectorDirectoryProvider),
     ref.watch(memberAccountProvider),
   ),
 );
-final forgetLostTourneeProvider = Provider(
-  (ref) => ForgetLostTournee(ref.watch(myTourneesStoreProvider)),
+final forgetLostSectorProvider = Provider(
+  (ref) => ForgetLostSector(ref.watch(mySectorsStoreProvider)),
 );
 final readPhoneSettingsProvider = Provider(
   (ref) => ReadPhoneSettings(ref.watch(phoneSettingsProvider)),
@@ -297,15 +360,15 @@ final readPhoneSettingsProvider = Provider(
 final changeMemberNameProvider = Provider(
   (ref) => ChangeMemberName(
     ref.watch(phoneSettingsProvider),
-    ref.watch(tourneeRepositoryProvider),
+    ref.watch(sectorRepositoryProvider),
     ref.watch(identityProvider),
-    ref.watch(myTourneesStoreProvider),
+    ref.watch(mySectorsStoreProvider),
   ),
 );
 final catchUpMemberNameProvider = Provider(
   (ref) => CatchUpMemberName(
     ref.watch(phoneSettingsProvider),
-    ref.watch(tourneeRepositoryProvider),
+    ref.watch(sectorRepositoryProvider),
     ref.watch(identityProvider),
   ),
 );
@@ -324,22 +387,25 @@ final purgeCorbeilleProvider = Provider(
 final observePendingSyncProvider = Provider(
   (ref) => ObservePendingSync(ref.watch(pendingSyncProvider)),
 );
-final observeTeamProvider = Provider(
-  (ref) => ObserveTeam(ref.watch(tourneeRepositoryProvider)),
+final observeOfflineProvider = Provider(
+  (ref) => ObserveOffline(ref.watch(serverConnectionProvider)),
 );
-final observeTourneeCommunesProvider = Provider(
-  (ref) => ObserveTourneeCommunes(ref.watch(tourneeRepositoryProvider)),
+final observeTeamProvider = Provider(
+  (ref) => ObserveTeam(ref.watch(sectorRepositoryProvider)),
+);
+final observeSectorCommunesProvider = Provider(
+  (ref) => ObserveSectorCommunes(ref.watch(sectorRepositoryProvider)),
 );
 final addCommuneProvider = Provider(
   (ref) => AddCommune(
-    ref.watch(tourneeRepositoryProvider),
+    ref.watch(sectorRepositoryProvider),
     ref.watch(identityProvider),
     ref.watch(adminStatusProvider),
   ),
 );
 final removeCommuneProvider = Provider(
   (ref) => RemoveCommune(
-    ref.watch(tourneeRepositoryProvider),
+    ref.watch(sectorRepositoryProvider),
     ref.watch(identityProvider),
     ref.watch(adminStatusProvider),
   ),
@@ -349,7 +415,7 @@ final readCurrentMemberProvider = Provider(
 );
 final acceptMemberProvider = Provider(
   (ref) => AcceptMember(
-    ref.watch(tourneeRepositoryProvider),
+    ref.watch(sectorRepositoryProvider),
     ref.watch(clockProvider),
     ref.watch(identityProvider),
     ref.watch(adminStatusProvider),
@@ -357,53 +423,53 @@ final acceptMemberProvider = Provider(
 );
 final refuseMemberProvider = Provider(
   (ref) => RefuseMember(
-    ref.watch(tourneeRepositoryProvider),
+    ref.watch(sectorRepositoryProvider),
     ref.watch(identityProvider),
     ref.watch(adminStatusProvider),
   ),
 );
 final removeMemberProvider = Provider(
   (ref) => RemoveMember(
-    ref.watch(tourneeRepositoryProvider),
+    ref.watch(sectorRepositoryProvider),
     ref.watch(identityProvider),
     ref.watch(adminStatusProvider),
   ),
 );
-final leaveTourneeProvider = Provider(
-  (ref) => LeaveTournee(
-    ref.watch(tourneeRepositoryProvider),
+final leaveSectorProvider = Provider(
+  (ref) => LeaveSector(
+    ref.watch(sectorRepositoryProvider),
     ref.watch(identityProvider),
-    ref.watch(myTourneesStoreProvider),
+    ref.watch(mySectorsStoreProvider),
   ),
 );
 final regenerateJoinCodeProvider = Provider(
   (ref) => RegenerateJoinCode(
-    ref.watch(tourneeRepositoryProvider),
+    ref.watch(sectorRepositoryProvider),
     ref.watch(identityProvider),
     ref.watch(adminStatusProvider),
     ref.watch(randomProvider),
   ),
 );
-final deleteTourneeProvider = Provider(
-  (ref) => DeleteTournee(
-    ref.watch(tourneeRepositoryProvider),
+final deleteSectorProvider = Provider(
+  (ref) => DeleteSector(
+    ref.watch(sectorRepositoryProvider),
     ref.watch(identityProvider),
     ref.watch(adminStatusProvider),
-    ref.watch(myTourneesStoreProvider),
+    ref.watch(mySectorsStoreProvider),
   ),
 );
 final joinAsAdminProvider = Provider(
   (ref) => JoinAsAdmin(
-    ref.watch(tourneeRepositoryProvider),
+    ref.watch(sectorRepositoryProvider),
     ref.watch(identityProvider),
     ref.watch(adminStatusProvider),
     ref.watch(clockProvider),
     ref.watch(phoneSettingsProvider),
-    ref.watch(myTourneesStoreProvider),
+    ref.watch(mySectorsStoreProvider),
   ),
 );
-final forgetVisitedTourneeProvider = Provider(
-  (ref) => ForgetVisitedTournee(ref.watch(myTourneesStoreProvider)),
+final forgetVisitedSectorProvider = Provider(
+  (ref) => ForgetVisitedSector(ref.watch(mySectorsStoreProvider)),
 );
 final observeAdminStatusProvider = Provider(
   (ref) => ObserveAdminStatus(ref.watch(adminStatusProvider)),
@@ -411,25 +477,25 @@ final observeAdminStatusProvider = Provider(
 final isMemberAdminProvider = Provider(
   (ref) => IsMemberAdmin(ref.watch(adminStatusProvider)),
 );
-final listAllTourneesProvider = Provider(
-  (ref) => ListAllTournees(
-    ref.watch(tourneeDirectoryProvider),
+final listAllSectorsProvider = Provider(
+  (ref) => ListAllSectors(
+    ref.watch(sectorDirectoryProvider),
     ref.watch(memberAccountProvider),
   ),
 );
 final openAsAdminProvider = Provider(
-  (ref) => OpenAsAdmin(ref.watch(myTourneesStoreProvider)),
+  (ref) => OpenAsAdmin(ref.watch(mySectorsStoreProvider)),
 );
 final countStreetsToMoveProvider = Provider(
   (ref) => CountStreetsToMove(
     ref.watch(phoneStreetRepositoryProvider),
     ref.watch(movedStreetsLogProvider),
-    ref.watch(tourneeRepositoryProvider),
+    ref.watch(sectorRepositoryProvider),
     ref.watch(identityProvider),
   ),
 );
-final moveStreetsIntoTourneeProvider = Provider(
-  (ref) => MoveStreetsIntoTournee(
+final moveStreetsIntoSectorProvider = Provider(
+  (ref) => MoveStreetsIntoSector(
     ref.watch(phoneStreetRepositoryProvider),
     ref.watch(streetRepositoryProvider),
     ref.watch(identityProvider),
@@ -438,41 +504,109 @@ final moveStreetsIntoTourneeProvider = Provider(
 );
 final chooseStartPointProvider = Provider(
   (ref) => ChooseStartPoint(
-    ref.watch(myTourneesStoreProvider),
+    ref.watch(mySectorsStoreProvider),
     ref.watch(phoneStreetRepositoryProvider),
   ),
 );
 final listRescueCentresProvider = Provider(
-  (ref) => ListRescueCentres(ref.watch(tourneeDirectoryProvider)),
+  (ref) => ListRescueCentres(ref.watch(sectorDirectoryProvider)),
 );
-final checkTourneeTakenProvider = Provider(
-  (ref) => CheckTourneeTaken(ref.watch(tourneeDirectoryProvider)),
+final checkSectorTakenProvider = Provider(
+  (ref) => CheckSectorTaken(ref.watch(sectorDirectoryProvider)),
 );
-final createTourneeProvider = Provider(
-  (ref) => CreateTournee(
-    ref.watch(tourneeRepositoryProvider),
+final createSectorProvider = Provider(
+  (ref) => CreateSector(
+    ref.watch(sectorRepositoryProvider),
     ref.watch(memberAccountProvider),
-    ref.watch(myTourneesStoreProvider),
+    ref.watch(mySectorsStoreProvider),
     ref.watch(clockProvider),
     ref.watch(idGeneratorProvider),
     ref.watch(randomProvider),
   ),
 );
 final previewJoinProvider = Provider(
-  (ref) => PreviewJoin(ref.watch(tourneeDirectoryProvider)),
+  (ref) => PreviewJoin(ref.watch(sectorDirectoryProvider)),
 );
 final requestToJoinProvider = Provider(
   (ref) => RequestToJoin(
-    ref.watch(tourneeDirectoryProvider),
+    ref.watch(sectorDirectoryProvider),
     ref.watch(memberAccountProvider),
-    ref.watch(myTourneesStoreProvider),
+    ref.watch(mySectorsStoreProvider),
     ref.watch(clockProvider),
   ),
 );
 final cancelJoinRequestProvider = Provider(
   (ref) => CancelJoinRequest(
-    ref.watch(tourneeDirectoryProvider),
+    ref.watch(sectorDirectoryProvider),
     ref.watch(memberAccountProvider),
-    ref.watch(myTourneesStoreProvider),
+    ref.watch(mySectorsStoreProvider),
+  ),
+);
+
+// Offline download (PLAN §7), run by the app unseen.
+
+final downloadSectorProvider = Provider(
+  (ref) => DownloadSector(
+    ref.watch(streetsDownloadProvider),
+    ref.watch(offlineMapStoreProvider),
+    ref.watch(sectorDownloadsProvider),
+    ref.watch(clockProvider),
+  ),
+);
+final refreshOfflineMapsProvider = Provider(
+  (ref) => RefreshOfflineMaps(
+    ref.watch(offlineMapStoreProvider),
+    ref.watch(sectorDownloadsProvider),
+  ),
+);
+final readSectorDownloadsProvider = Provider(
+  (ref) => ReadSectorDownloads(ref.watch(sectorDownloadsProvider)),
+);
+final observeSectorDownloadsProvider = Provider(
+  (ref) => ObserveSectorDownloads(ref.watch(sectorDownloadsProvider)),
+);
+final deleteSectorDownloadProvider = Provider(
+  (ref) => DeleteSectorDownload(
+    ref.watch(offlineMapStoreProvider),
+    ref.watch(sectorDownloadsProvider),
+  ),
+);
+final pruneSectorDownloadsProvider = Provider(
+  (ref) => PruneSectorDownloads(
+    ref.watch(mySectorsStoreProvider),
+    ref.watch(deleteSectorDownloadProvider),
+    ref.watch(offlineMapStoreProvider),
+    ref.watch(sectorDownloadsProvider),
+  ),
+);
+
+// Tournées (PLAN §5.13): all on the phone, offline too, until « Valider la
+// tournée » hands the summary to the ledger.
+
+final startRoundProvider = Provider(
+  (ref) => StartRound(
+    ref.watch(openRoundStoreProvider),
+    ref.watch(mySectorsStoreProvider),
+    ref.watch(clockProvider),
+    ref.watch(idGeneratorProvider),
+  ),
+);
+final watchOpenRoundProvider = Provider(
+  (ref) => WatchOpenRound(ref.watch(openRoundStoreProvider)),
+);
+final addDonationProvider = Provider(
+  (ref) => AddDonation(ref.watch(openRoundStoreProvider)),
+);
+final changeDonationProvider = Provider(
+  (ref) => ChangeDonation(ref.watch(openRoundStoreProvider)),
+);
+final removeDonationProvider = Provider(
+  (ref) => RemoveDonation(ref.watch(openRoundStoreProvider)),
+);
+final validateRoundProvider = Provider(
+  (ref) => ValidateRound(
+    ref.watch(openRoundStoreProvider),
+    ref.watch(roundLedgerProvider),
+    ref.watch(clockProvider),
   ),
 );

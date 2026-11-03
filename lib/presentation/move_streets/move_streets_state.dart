@@ -19,7 +19,7 @@ final class NoStreetsToMove extends MoveStreetsState {
 }
 
 /// The card offers the [count] streets of the phone to the open tournée:
-/// « Les ajouter à la tournée » or « Plus tard ».
+/// « Les ajouter au secteur » or « Plus tard ».
 final class StreetsToMove extends MoveStreetsState {
   const StreetsToMove(this.count);
 
@@ -48,8 +48,8 @@ final class MovingStreets extends MoveStreetsState {
   int get hashCode => Object.hash(done, total);
 }
 
-/// What the move did, for the message after it: « 12 rues ajoutées à la
-/// tournée », « 10 rues ajoutées, 2 déjà dans la tournée ».
+/// What the move did, for the message after it: « 12 rues ajoutées au
+/// secteur », « 10 rues ajoutées, 2 déjà dans le secteur ».
 final class MovedSummary {
   const MovedSummary({required this.moved, required this.alreadyThere});
 

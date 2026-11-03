@@ -1,30 +1,31 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tournee_calendriers/domain/sector/member.dart';
+import 'package:tournee_calendriers/domain/sector/member_name.dart';
+import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
-import 'package:tournee_calendriers/domain/tournee/member.dart';
-import 'package:tournee_calendriers/domain/tournee/member_name.dart';
-import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/screens/home/home_screen.dart';
-import 'package:tournee_calendriers/ui/screens/onboarding/create_tournee_screen.dart';
+import 'package:tournee_calendriers/ui/screens/onboarding/create_sector_screen.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/join_pending_screen.dart';
-import 'package:tournee_calendriers/ui/screens/onboarding/join_tournee_screen.dart';
+import 'package:tournee_calendriers/ui/screens/onboarding/join_sector_screen.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/welcome_screen.dart';
 import 'package:tournee_calendriers/ui/screens/start/start_screen.dart';
 
 import '../../application/use_cases/street_fixtures.dart';
-import '../../domain/tournee/my_tournees_fixtures.dart';
-import '../../domain/tournee/tournee_fixtures.dart' show nameOf;
+import '../../domain/sector/my_sectors_fixtures.dart';
+import '../../domain/sector/sector_fixtures.dart' show nameOf;
 import '../../support/fakes/fake_admin_status.dart';
 import '../../support/fakes/fake_member_account.dart';
-import '../../support/fakes/fake_my_tournees_store.dart';
+import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_phone_settings.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/results.dart';
 import '../support/app_overrides.dart';
 import '../support/buttons.dart';
 import '../support/clipboard.dart';
+import '../support/large_text.dart';
 
 /// The phone's uid, as Firebase makes them.
 final phoneUid = MemberId('x7FqA1b2C3d4E5f6G7h8I9j0k9kP2');
@@ -38,7 +39,7 @@ void main() {
   /// default).
   Future<void> launch(
     WidgetTester tester, {
-    MyTournees mine = MyTournees.none,
+    MySectors mine = MySectors.none,
     FakeStreetRepository? streets,
     MemberName? name,
     bool admin = false,
@@ -48,7 +49,7 @@ void main() {
     await tester.pumpWidget(
       ProviderScope(
         overrides: fakePhone(
-          myTournees: FakeMyTourneesStore(mine),
+          mySectors: FakeMySectorsStore(mine),
           phoneStreets: streets,
           settings: settings,
           account: account ?? FakeMemberAccount(signedInMember: phoneUid),
@@ -91,11 +92,11 @@ void main() {
     ) async {
       await launch(
         tester,
-        mine: valueOf(MyTournees.none.remember(tournee49).open(tournee49.id)),
+        mine: valueOf(MySectors.none.remember(sector49).open(sector49.id)),
       );
 
       expect(find.byType(HomeScreen), findsOneWidget);
-      expect(find.text('Tournée 49 · 2026'), findsOneWidget);
+      expect(find.text('Secteur 49 · 2026'), findsOneWidget);
     });
 
     testWidgets(
@@ -103,13 +104,13 @@ void main() {
       (tester) async {
         await launch(
           tester,
-          mine: MyTournees.none.remember(
+          mine: MySectors.none.remember(
             summaryOf('t49', 49, status: MemberStatus.pending),
           ),
         );
 
         expect(find.byType(JoinPendingScreen), findsOneWidget);
-        expect(find.text('Tournée 49 · CS Villefranche'), findsOneWidget);
+        expect(find.text('Secteur 49 · CS Villefranche'), findsOneWidget);
         expect(find.byKey(const Key('pending.back')), findsNothing);
       },
     );
@@ -147,7 +148,7 @@ void main() {
       expect(isEnabled(tester, create), isFalse);
     });
 
-    testWidgets('should keep the name and open « Nouvelle tournée »', (
+    testWidgets('should keep the name and open « Nouveau secteur »', (
       tester,
     ) async {
       await launch(tester, admin: true);
@@ -158,10 +159,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(settings.names, [nameOf('Léa')]);
-      expect(find.byType(CreateTourneeScreen), findsOneWidget);
+      expect(find.byType(CreateSectorScreen), findsOneWidget);
     });
 
-    testWidgets('should keep the name and open « Rejoindre une tournée »', (
+    testWidgets('should keep the name and open « Rejoindre un secteur »', (
       tester,
     ) async {
       await launch(tester);
@@ -172,7 +173,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(settings.names, [nameOf('Léa')]);
-      expect(find.byType(JoinTourneeScreen), findsOneWidget);
+      expect(find.byType(JoinSectorScreen), findsOneWidget);
     });
 
     testWidgets('should start from the name the phone keeps', (tester) async {
@@ -184,7 +185,7 @@ void main() {
   });
 
   group('admins (PLAN §5.12)', () {
-    testWidgets('should offer only « Rejoindre une tournée », in red, to a '
+    testWidgets('should offer only « Rejoindre un secteur », in red, to a '
         'phone that is not an admin\'s', (tester) async {
       await launch(tester, name: nameOf('Léa'));
 
@@ -195,7 +196,7 @@ void main() {
       );
     });
 
-    testWidgets('should offer « Créer une tournée » to an admin, with '
+    testWidgets('should offer « Créer un secteur » to an admin, with '
         '« Rejoindre » under it', (tester) async {
       await launch(tester, name: nameOf('Manu'), admin: true);
 
@@ -238,5 +239,38 @@ void main() {
       expect(find.byKey(const Key('welcome.deviceId')), findsNothing);
       expect(find.byKey(const Key('welcome.copyDeviceId')), findsNothing);
     });
+  });
+
+  group('at 200 % text', () {
+    setUpAll(loadAppFonts);
+
+    testWidgets('should show « Bienvenue » with no overflow when the text is '
+        'twice as large', (tester) async {
+      useLargeText(tester);
+
+      await launch(tester, admin: true);
+
+      expect(find.byType(WelcomeScreen), findsOneWidget);
+      expect(tester.takeException(), isNull);
+      // The buttons are under the fold: scrolling there lays them out too.
+      await tester.scrollUntilVisible(
+        join,
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(create, findsOneWidget);
+      await tester.pumpAndSettle();
+      expect(join, findsOneWidget);
+      expect(find.byKey(const Key('welcome.deviceId')), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  testWidgets('should label every control and make it 48 dp at least', (
+    tester,
+  ) async {
+    await launch(tester, admin: true);
+
+    await expectAccessibleControls(tester);
   });
 }

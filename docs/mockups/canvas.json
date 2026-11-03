@@ -14,21 +14,21 @@
       "y": 0,
       "w": 390,
       "h": 844,
-      "title": "5.2 Créer une tournée"
+      "title": "5.2 Créer un secteur"
     },
     "Join.dc.html": {
       "x": 940,
       "y": 0,
       "w": 390,
       "h": 844,
-      "title": "5.2 Rejoindre une tournée"
+      "title": "5.2 Rejoindre un secteur"
     },
     "Home.dc.html": {
       "x": 0,
       "y": 1264,
       "w": 390,
       "h": 844,
-      "title": "5.3 Accueil — carte de la tournée",
+      "title": "5.3 Accueil — carte du secteur",
       "is_interactive": true
     },
     "HomeZoom.dc.html": {
@@ -65,7 +65,7 @@
       "y": 2528,
       "w": 390,
       "h": 844,
-      "title": "5.6 Rue — touchez une case",
+      "title": "5.6 Rue — touchez une maison",
       "is_interactive": true
     },
     "House.dc.html": {
@@ -73,7 +73,8 @@
       "y": 2528,
       "w": 390,
       "h": 844,
-      "title": "5.7 Fiche maison (appui long)"
+      "title": "5.6 Statut d’une maison (toucher)",
+      "is_interactive": true
     },
     "Building.dc.html": {
       "x": 1880,
@@ -117,7 +118,7 @@
       "y": 0,
       "w": 390,
       "h": 844,
-      "title": "5.2 Créer — tournée déjà existante"
+      "title": "5.2 Créer — secteur déjà existant"
     },
     "Campaign.dc.html": {
       "x": 940,
@@ -145,7 +146,7 @@
       "y": 1264,
       "w": 390,
       "h": 844,
-      "title": "5.3 Mes tournées (administrateur)"
+      "title": "5.3 Mes secteurs (administrateur)"
     },
     "Doors.dc.html": {
       "x": 2820,
@@ -166,7 +167,7 @@
       "y": 5056,
       "w": 390,
       "h": 844,
-      "title": "5.12 Toutes les tournées (administrateur)"
+      "title": "5.12 Tous les secteurs (administrateur)"
     },
     "HomeAdmin.dc.html": {
       "x": 470,
@@ -183,25 +184,102 @@
       "title": "5.8 Équipe (membre)"
     },
     "AddList.dc.html": {
-      "x": 3290,
+      "x": 2350,
       "y": 1264,
       "w": 390,
       "h": 844,
       "title": "5.4 Ajouter des rues — Liste (#78)"
     },
     "HouseNobody.dc.html": {
+      "x": 3290,
+      "y": 2528,
+      "w": 390,
+      "h": 844,
+      "title": "5.6 Statut — de nouveau personne (#80)",
+      "is_interactive": true
+    },
+    "HouseComeBack.dc.html": {
       "x": 3760,
       "y": 2528,
       "w": 390,
       "h": 844,
-      "title": "5.7 Fiche maison — personne, 2e passage (#80)"
+      "title": "5.6 Quand repasser ? (#81)",
+      "is_interactive": true
     },
-    "HouseComeBack.dc.html": {
-      "x": 4230,
-      "y": 2528,
+    "Start.dc.html": {
+      "x": 0,
+      "y": 6320,
       "w": 390,
       "h": 844,
-      "title": "5.7 Fiche maison — quand repasser (#81)"
+      "title": "5.0 Mes rues (sans secteur ouvert)"
+    },
+    "Import.dc.html": {
+      "x": 470,
+      "y": 6320,
+      "w": 390,
+      "h": 844,
+      "title": "5.0 Importer des rues"
+    },
+    "RunStart.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Tournée — Accueil, commencer (#63)",
+      "w": 390,
+      "x": 0,
+      "y": 7584
+    },
+    "RunHome.dc.html": {
+      "h": 844,
+      "title": "Tournée — Accueil, tournée en cours (#63)",
+      "w": 390,
+      "x": 470,
+      "y": 7584
+    },
+    "RunStreet.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Tournée — Rue, maison ✓ : ajouter un don (#63)",
+      "w": 390,
+      "x": 940,
+      "y": 7584
+    },
+    "RunDon.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Tournée — Modifier le don (#63)",
+      "w": 390,
+      "x": 1410,
+      "y": 7584
+    },
+    "RunDons.dc.html": {
+      "h": 844,
+      "title": "Tournée — Dons de la tournée (#63)",
+      "w": 390,
+      "x": 3290,
+      "y": 7584
+    },
+    "RunRecap.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Tournée — Bilan de la tournée (#63)",
+      "w": 390,
+      "x": 1880,
+      "y": 7584
+    },
+    "RunTeam.dc.html": {
+      "h": 844,
+      "title": "Tournée — Équipe avec la collecte (#63)",
+      "w": 390,
+      "x": 2350,
+      "y": 7584
+    },
+    "Cash.dc.html": {
+      "h": 844,
+      "is_interactive": true,
+      "title": "Tournée — Collecte 2026 (#63)",
+      "w": 390,
+      "x": 2820,
+      "y": 7584
     }
   },
   "createdOnFiles": {
@@ -226,12 +304,12 @@
       "y": 964,
       "text": "Carte et ajout de rues",
       "kind": "title1",
-      "maxW": 2270,
+      "maxW": 2740,
       "w": 240
     },
     "rowStreet": {
       "kind": "title1",
-      "maxW": 2740,
+      "maxW": 4150,
       "text": "Dans la rue et corrections",
       "w": 240,
       "x": 0,
@@ -252,6 +330,22 @@
       "kind": "title1",
       "maxW": 1330,
       "w": 240
+    },
+    "rowPhone": {
+      "x": 0,
+      "y": 6020,
+      "text": "Sans secteur ouvert",
+      "kind": "title1",
+      "maxW": 860,
+      "w": 240
+    },
+    "rowRun": {
+      "kind": "title1",
+      "maxW": 3680,
+      "text": "Tournées et collecte (#63)",
+      "w": 240,
+      "x": 0,
+      "y": 7284
     }
   },
   "order": [
@@ -281,7 +375,18 @@
     "Trash.dc.html",
     "AllTournees.dc.html",
     "HomeAdmin.dc.html",
-    "TeamMember.dc.html"
+    "TeamMember.dc.html",
+    "Start.dc.html",
+    "Import.dc.html",
+    "Changelog.dc.html",
+    "RunStart.dc.html",
+    "RunHome.dc.html",
+    "RunStreet.dc.html",
+    "RunDon.dc.html",
+    "RunRecap.dc.html",
+    "RunTeam.dc.html",
+    "Cash.dc.html",
+    "RunDons.dc.html"
   ],
   "pages": [],
   "title": "Tournée Calendriers screens"

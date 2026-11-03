@@ -131,7 +131,7 @@ final class _CorbeilleTile extends StatelessWidget {
               children: [
                 Text(
                   title,
-                  style: AppTextStyles.tourneeRowTitle.copyWith(
+                  style: AppTextStyles.sectorRowTitle.copyWith(
                     color: colors.ink,
                   ),
                 ),

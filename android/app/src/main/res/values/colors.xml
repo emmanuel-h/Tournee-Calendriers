@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Launch screen ground (#101): the app's Ground token; values-night holds the dark one. -->
+    <color name="launch_ground">#F3F1EC</color>
+</resources>

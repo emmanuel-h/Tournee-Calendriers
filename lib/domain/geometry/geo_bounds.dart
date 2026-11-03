@@ -32,6 +32,23 @@ final class GeoBounds {
     return bounds;
   }
 
+  /// The bounds with these four sides, as a storage or a map library
+  /// gives them; null when a side is out of range (latitudes -90 to 90,
+  /// longitudes -180 to 180, bounds included), not a number, or the
+  /// sides are the wrong way round (south above north, west east of east).
+  static GeoBounds? of({
+    required double south,
+    required double west,
+    required double north,
+    required double east,
+  }) {
+    // Written as « not inside » so that NaN, which fails every comparison,
+    // is refused too.
+    if (!(-90 <= south && south <= north && north <= 90)) return null;
+    if (!(-180 <= west && west <= east && east <= 180)) return null;
+    return GeoBounds._(south: south, west: west, north: north, east: east);
+  }
+
   /// The latitude of the southern side.
   final double south;
 
@@ -65,6 +82,23 @@ final class GeoBounds {
       east: math.min(180.0, east + longitudeMargin),
     );
   }
+
+  /// Whether [other] lies wholly inside these bounds, on a side included:
+  /// the map downloaded for offline use still covers the streets.
+  bool contains(GeoBounds other) =>
+      other.south >= south &&
+      other.west >= west &&
+      other.north <= north &&
+      other.east <= east;
+
+  /// Whether each side of [other] is less than [degrees] away from the
+  /// same side of these bounds: two areas a map library would take for
+  /// the same one, its coordinates having been through a conversion.
+  bool isCloseTo(GeoBounds other, double degrees) =>
+      (other.south - south).abs() < degrees &&
+      (other.west - west).abs() < degrees &&
+      (other.north - north).abs() < degrees &&
+      (other.east - east).abs() < degrees;
 
   @override
   bool operator ==(Object other) =>

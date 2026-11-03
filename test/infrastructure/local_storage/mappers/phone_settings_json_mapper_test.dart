@@ -2,7 +2,7 @@ import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/phone_settings.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/mappers/phone_settings_json_mapper.dart';
 
-import '../../../domain/tournee/tournee_fixtures.dart';
+import '../../../domain/sector/sector_fixtures.dart';
 
 void main() {
   group('phoneSettingsToJson', () {

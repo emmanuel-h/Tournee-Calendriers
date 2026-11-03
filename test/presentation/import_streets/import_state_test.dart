@@ -1,10 +1,10 @@
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
+import 'package:tournee_calendriers/domain/sector/sector_commune.dart';
 import 'package:tournee_calendriers/domain/shared/commune.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_commune.dart';
 import 'package:tournee_calendriers/presentation/import_streets/import_state.dart';
 
 import '../../support/geo_fixtures.dart';
@@ -310,8 +310,8 @@ void main() {
     });
 
     test('should take the commune and centre of a tournée, no postcode', () {
-      final made = CommuneOption.ofTournee(
-        TourneeCommune(commune: gleize, centre: at(45.9915, 4.6883)),
+      final made = CommuneOption.ofSector(
+        SectorCommune(commune: gleize, centre: at(45.9915, 4.6883)),
       );
 
       expect(made.commune, gleize);
@@ -321,8 +321,8 @@ void main() {
 
     test('should give the commune as a tournée keeps it', () {
       expect(
-        option().tourneeCommune,
-        TourneeCommune(commune: villefranche, centre: at(45.9837, 4.726)),
+        option().sectorCommune,
+        SectorCommune(commune: villefranche, centre: at(45.9837, 4.726)),
       );
     });
 

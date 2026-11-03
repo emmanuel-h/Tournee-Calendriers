@@ -2,19 +2,19 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
+import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
+import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
-import 'package:tournee_calendriers/domain/tournee/campaign_year.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 
 /// Where each document lives (PLAN §6.2), in one place for the Firestore
 /// adapters.
 abstract final class FirestoreLayout {
-  static const tournees = 'tournees';
+  static const sectors = 'sectors';
   static const members = 'members';
   static const campaigns = 'campaigns';
   static const streets = 'streets';
   static const joinCodes = 'joinCodes';
-  static const tourneeKeys = 'tourneeKeys';
+  static const sectorKeys = 'sectorKeys';
   static const rescueCentres = 'rescueCentres';
   static const admins = 'admins';
 
@@ -24,26 +24,26 @@ abstract final class FirestoreLayout {
     MemberId member,
   ) => db.collection(admins).doc(member.value);
 
-  /// `tournees/{tournee}`.
-  static DocumentReference<Map<String, dynamic>> tournee(
+  /// `sectors/{sector}`.
+  static DocumentReference<Map<String, dynamic>> sector(
     FirebaseFirestore db,
-    TourneeId tournee,
-  ) => db.collection(tournees).doc(tournee.value);
+    SectorId sector,
+  ) => db.collection(sectors).doc(sector.value);
 
-  /// `tournees/{tournee}/members`.
+  /// `sectors/{sector}/members`.
   static CollectionReference<Map<String, dynamic>> membersOf(
     FirebaseFirestore db,
-    TourneeId tournee,
-  ) => FirestoreLayout.tournee(db, tournee).collection(members);
+    SectorId sector,
+  ) => FirestoreLayout.sector(db, sector).collection(members);
 
-  /// `tournees/{tournee}/campaigns/{year}/streets`.
+  /// `sectors/{sector}/campaigns/{year}/streets`.
   static CollectionReference<Map<String, dynamic>> streetsOf(
     FirebaseFirestore db,
-    TourneeId tournee,
+    SectorId sector,
     CampaignYear campaign,
-  ) => FirestoreLayout.tournee(
+  ) => FirestoreLayout.sector(
     db,
-    tournee,
+    sector,
   ).collection(campaigns).doc('${campaign.value}').collection(streets);
 }
 

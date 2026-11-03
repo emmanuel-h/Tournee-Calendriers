@@ -1,3 +1,5 @@
+import 'dart:ui' show Tristate;
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -10,6 +12,7 @@ import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
+import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 
 import '../../support/building_fixtures.dart';
 import '../../support/fakes/fake_street_repository.dart';
@@ -17,6 +20,7 @@ import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 import '../support/app_overrides.dart';
 import '../support/finders.dart';
+import '../support/large_text.dart';
 
 final _id = StreetId('lilas');
 
@@ -103,8 +107,25 @@ void main() {
       .building!
       .dwellingAt(key)!;
 
+  /// Taps the door [id], then [status] in its picker.
+  Future<void> markDoor(
+    WidgetTester tester,
+    String id,
+    VisitStatus status,
+  ) async {
+    await tester.tap(_door(id));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(ValueKey('door.status.${status.name}')));
+    await tester.pumpAndSettle();
+  }
+
+  List<String> announcements(WidgetTester tester) => [
+    for (final announcement in tester.takeAnnouncements()) announcement.message,
+  ];
+
   testWidgets(
-    'should cycle a door and update the header count when a door is tapped',
+    'should open the picker of a door on a tap, store the status chosen, '
+    'count it and put it back with « Annuler »',
     (tester) async {
       final semantics = tester.ensureSemantics();
       await openStreet(tester);
@@ -115,21 +136,32 @@ void main() {
         labelOf(tester, _door('A1-12')),
         'Escalier A, 1er, porte 12, à faire',
       );
-      expect(find.byKey(const Key('grid.hint')), findsOneWidget);
+      expect(
+        tester.widget<Text>(find.byKey(const Key('grid.hint'))).data,
+        'Appuyez sur une porte pour changer son statut',
+      );
 
       await tester.tap(_door('A1-12'));
       await tester.pumpAndSettle();
+      expect(
+        tester.widget<Text>(find.byKey(const Key('door.number'))).data,
+        'Porte 12 · À faire',
+      );
+      expect(
+        tester.getSemantics(_door('A1-12')).flagsCollection.isSelected,
+        Tristate.isTrue,
+      );
+      await tester.tap(find.byKey(const ValueKey('door.status.done')));
+      await tester.pumpAndSettle();
 
+      expect(find.byKey(const Key('door.number')), findsNothing);
       expect(
         labelOf(tester, _door('A1-12')),
         'Escalier A, 1er, porte 12, fait',
       );
       expect(labelOf(tester, _count), '3 sur 8 logements faits');
-      expect(
-        tester.takeAnnouncements().map((announcement) => announcement.message),
-        ['Escalier A, 1er, porte 12, fait'],
-      );
-      expect(findArrowText('12 → Fait'), findsOneWidget);
+      expect(announcements(tester), ['Escalier A, 1er, porte 12, fait']);
+      expect(findArrowText('Porte 12\u00a0: fait'), findsOneWidget);
       expect(find.byKey(const Key('grid.hint')), findsNothing);
 
       await tester.tap(find.text('Annuler'));
@@ -144,9 +176,32 @@ void main() {
     },
   );
 
+  testWidgets('should store « Refusé » on a door, counted with the done ones', (
+    tester,
+  ) async {
+    final semantics = tester.ensureSemantics();
+    await openStreet(tester);
+    await tester.tap(_tile('8'));
+    await tester.pumpAndSettle();
+
+    await markDoor(tester, 'A1-12', VisitStatus.refused);
+
+    expect(
+      labelOf(tester, _door('A1-12')),
+      'Escalier A, 1er, porte 12, refusé',
+    );
+    expect(labelOf(tester, _count), '3 sur 8 logements faits');
+    expect(findArrowText('Porte 12\u00a0: refusé'), findsOneWidget);
+    expect(
+      storedDoor(DwellingKey(escA, 1, d('12'))).status,
+      VisitStatus.refused,
+    );
+    semantics.dispose();
+  });
+
   testWidgets(
     'should show the floors of the other staircase when it is chosen, and '
-    'open a door sheet on a hold',
+    'name the staircase in the picker of its door',
     (tester) async {
       final semantics = tester.ensureSemantics();
       await openStreet(tester);
@@ -167,11 +222,17 @@ void main() {
       // The count covers the whole building, whatever staircase shows.
       expect(labelOf(tester, _count), '2 sur 8 logements faits');
 
-      await tester.longPress(_door('B0-01'));
+      await tester.tap(_door('B0-01'));
       await tester.pumpAndSettle();
 
-      expect(find.byKey(const Key('door.number')), findsOneWidget);
-      expect(find.text('Esc. B · RdC · 8 Rue des Lilas'), findsOneWidget);
+      expect(
+        tester.widget<Text>(find.byKey(const Key('door.number'))).data,
+        'Porte 01 · Fait',
+      );
+      expect(
+        tester.widget<Text>(find.byKey(const Key('door.place'))).data,
+        'Esc. B · RdC · 8 Rue des Lilas',
+      );
       // No free note on a door: too sensitive (PLAN §8.3).
       expect(find.byKey(const Key('door.note.field')), findsNothing);
       expect(find.byKey(const Key('house.toBuilding')), findsNothing);
@@ -180,15 +241,24 @@ void main() {
   );
 
   testWidgets(
-    'should open the grid of the new building when a house is described '
-    'and validated',
+    'should make a house a building from edit mode, then open its grid',
     (tester) async {
       final semantics = tester.ensureSemantics();
       await openStreet(tester);
-      await tester.longPress(_tile('7'));
+      await tester.tap(find.byKey(const Key('street.edit')));
       await tester.pumpAndSettle();
+      Future<void> tapNumber() async {
+        await tester.tap(
+          find.descendant(
+            of: find.byKey(const ValueKey('edit.tile.7')),
+            matching: find.byKey(const Key('edit.tile.number')),
+          ),
+        );
+        await tester.pumpAndSettle();
+      }
 
-      await tester.tap(find.byKey(const Key('house.toBuilding')));
+      await tapNumber();
+      await tester.tap(find.byKey(const Key('number.toBuilding')));
       await tester.pumpAndSettle();
 
       expect(find.text("Décrire l'immeuble"), findsOneWidget);
@@ -220,7 +290,11 @@ void main() {
       await tester.tap(find.byKey(const Key('setup.validate')));
       await tester.pumpAndSettle();
 
+      // Back in edit mode (PLAN §5.5); its number opens the grid.
       expect(find.text("Décrire l'immeuble"), findsNothing);
+      await tapNumber();
+      await tester.tap(find.byKey(const Key('number.openBuilding')));
+      await tester.pumpAndSettle();
       expect(labelOf(tester, _count), '0 sur 8 logements faits');
       expect(_door('A3-31'), findsOneWidget);
       expect(streets[_id]!.houses.first.building!.progress.total, 8);
@@ -369,8 +443,7 @@ void main() {
     await openStreet(tester);
     await tester.tap(_tile('8'));
     await tester.pumpAndSettle();
-    await tester.tap(_door('A1-12'));
-    await tester.pumpAndSettle();
+    await markDoor(tester, 'A1-12', VisitStatus.done);
     expect(
       tester.getSemantics(find.byKey(const Key('grid.close'))).tooltip,
       'Fermer',
@@ -380,7 +453,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(_count, findsNothing);
-    expect(findArrowText('12 → Fait'), findsNothing);
+    expect(findArrowText('Porte 12\u00a0: fait'), findsNothing);
     expect(find.textContaining('changé en maison'), findsNothing);
     expect(_tile('8'), findsOneWidget);
     expect(storedDoor(DwellingKey(escA, 1, d('12'))).status, VisitStatus.done);
@@ -504,8 +577,8 @@ void main() {
   });
 
   testWidgets(
-    'should mark a door nobody home once more from its sheet, then put it '
-    'back with Annuler',
+    'should count one more try with « De nouveau personne » on a door nobody '
+    'was home at, then put it back with « Annuler »',
     (tester) async {
       final semantics = tester.ensureSemantics();
       await openStreet(tester);
@@ -520,24 +593,32 @@ void main() {
         findsOneWidget,
       );
 
-      await tester.longPress(_door('A0-01'));
+      await tester.tap(_door('A0-01'));
       await tester.pumpAndSettle();
       expect(
         tester.widget<Text>(find.byKey(const Key('door.tries'))).data,
         '2 passages sans personne',
       );
-      await tester.tap(find.byKey(const Key('door.nobodyHomeAgain')));
+      expect(
+        tester
+            .getSemantics(find.byKey(const ValueKey('door.status.nobodyHome')))
+            .label,
+        'De nouveau personne',
+      );
+      await tester.tap(find.byKey(const ValueKey('door.status.nobodyHome')));
       await tester.pumpAndSettle();
 
       // Back on the grid, which tells what changed.
       expect(find.byKey(const Key('door.number')), findsNothing);
       final key = DwellingKey(escA, 0, d('01'));
       expect(storedDoor(key).tries, tries(3));
-      expect(findArrowText('01 → Personne (3e passage)'), findsOneWidget);
       expect(
-        tester.takeAnnouncements().map((announcement) => announcement.message),
-        ['Escalier A, RdC, porte 01, personne, 3e passage'],
+        findArrowText('Porte 01\u00a0: personne (3e passage)'),
+        findsOneWidget,
       );
+      expect(announcements(tester), [
+        'Escalier A, RdC, porte 01, personne, 3e passage',
+      ]);
 
       await tester.tap(find.text('Annuler'));
       await tester.pumpAndSettle();
@@ -547,8 +628,8 @@ void main() {
     },
   );
 
-  testWidgets('should have no « Repassé, toujours personne » on the building '
-      'own sheet', (tester) async {
+  testWidgets('should have no status, nor « De nouveau personne », on the '
+      'building own sheet', (tester) async {
     await openStreet(tester);
     await tester.tap(_tile('8'));
     await tester.pumpAndSettle();
@@ -556,12 +637,15 @@ void main() {
     await tester.tap(find.byKey(const Key('grid.details')));
     await tester.pumpAndSettle();
 
-    expect(find.byKey(const Key('building.nobodyHomeAgain')), findsNothing);
+    // No status of its own: its doors carry them.
+    expect(find.byKey(const ValueKey('building.status.done')), findsNothing);
+    expect(find.text('De nouveau personne'), findsNothing);
+    expect(find.byKey(const Key('building.number')), findsOneWidget);
   });
 
   testWidgets(
-    'should open the door sheet when a tap brings a door to ↻, store its '
-    'day, and put the door back with Annuler',
+    'should ask when to come back to a door after « Repasser », then put it '
+    'back as it was with « Annuler »',
     (tester) async {
       final semantics = tester.ensureSemantics();
       await openStreet(tester);
@@ -569,28 +653,30 @@ void main() {
       await tester.pumpAndSettle();
       final key = DwellingKey(escA, 0, d('01'));
 
-      await tester.tap(_door('A0-01'));
-      await tester.pumpAndSettle();
+      await markDoor(tester, 'A0-01', VisitStatus.comeBack);
 
-      expect(find.byKey(const Key('door.number')), findsOneWidget);
       expect(storedDoor(key).status, VisitStatus.comeBack);
-      expect(find.byKey(const Key('door.ok')), findsOneWidget);
-      expect(findArrowText('01 → Repasser'), findsNothing);
       expect(
-        tester.takeAnnouncements().map((announcement) => announcement.message),
-        ['Escalier A, RdC, porte 01, repasser, 2 passages sans personne'],
+        tester.widget<Text>(find.byKey(const Key('door.comeBackTitle'))).data,
+        'Porte 01 · quand repasser\u00a0?',
       );
       await tester.tap(
         find.byKey(const ValueKey('door.comeBackDay.2026-11-03')),
       );
       await tester.pumpAndSettle();
       expect(storedDoor(key).comeBack, comeBack('2026-11-03'));
-
-      await tester.tap(find.byKey(const Key('door.cancelTap')));
+      await tester.tap(find.byKey(const Key('door.validate')));
       await tester.pumpAndSettle();
 
-      // Back on the grid, the door as before the tap.
-      expect(find.byKey(const Key('door.number')), findsNothing);
+      expect(find.byKey(const Key('door.comeBackTitle')), findsNothing);
+      expect(findArrowText('Porte 01\u00a0: repasser'), findsOneWidget);
+      expect(announcements(tester), [
+        'Escalier A, RdC, porte 01, repasser, 2 passages sans personne',
+      ]);
+
+      await tester.tap(find.text('Annuler'));
+      await tester.pumpAndSettle();
+
       expect(storedDoor(key).status, VisitStatus.nobodyHome);
       expect(storedDoor(key).comeBack, isNull);
       expect(storedDoor(key).tries, tries(2));
@@ -602,23 +688,90 @@ void main() {
     },
   );
 
-  testWidgets('should keep the door ↻ with its day when OK is tapped', (
+  group('buttons with the app fonts (#35)', () {
+    setUpAll(loadAppFonts);
+
+    final manage = find.byKey(const Key('grid.manage'));
+    final details = find.byKey(const Key('grid.details'));
+
+    testWidgets('should put « Gérer l\'immeuble » and « Repasser » side by '
+        'side when the text is at its normal size', (tester) async {
+      usePhoneScreen(tester);
+      await openStreet(tester);
+
+      await tester.tap(_tile('8'));
+      await tester.pumpAndSettle();
+
+      final manageBox = tester.getRect(manage);
+      final detailsBox = tester.getRect(details);
+      expect(find.byKey(const Key('grid.actions.row')), findsOneWidget);
+      expect(detailsBox.top, manageBox.top);
+      expect(detailsBox.left, greaterThan(manageBox.right));
+      expect(detailsBox.width, moreOrLessEquals(manageBox.width));
+    });
+
+    testWidgets('should stack the two buttons full width when the text is '
+        'twice as large', (tester) async {
+      await openStreet(tester);
+      useLargeText(tester);
+      await tester.pumpAndSettle();
+
+      await tester.tap(_tile('8'));
+      await tester.pumpAndSettle();
+
+      final manageBox = tester.getRect(manage);
+      final detailsBox = tester.getRect(details);
+      final screenWidth =
+          tester.view.physicalSize.width / tester.view.devicePixelRatio;
+      expect(find.byKey(const Key('grid.actions.column')), findsOneWidget);
+      expect(detailsBox.top, greaterThan(manageBox.bottom));
+      expect(manageBox.left, AppSizes.gutter);
+      expect(
+        manageBox.width,
+        moreOrLessEquals(screenWidth - 2 * AppSizes.gutter),
+      );
+      expect(detailsBox.width, manageBox.width);
+      // « Gérer l'immeuble » on one line: as tall as « Repasser », which
+      // full width cannot wrap.
+      Finder label(Finder button) =>
+          find.descendant(of: button, matching: find.byType(Text));
+      expect(
+        tester.getSize(label(manage)).height,
+        tester.getSize(label(details)).height,
+      );
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('at 200 % text', () {
+    setUpAll(loadAppFonts);
+
+    testWidgets('should show the grid and a door picker with no overflow when '
+        'the text is twice as large', (tester) async {
+      await openStreet(tester);
+      useLargeText(tester);
+      await tester.pumpAndSettle();
+
+      await tester.tap(_tile('8'));
+      await tester.pumpAndSettle();
+      expect(_count, findsOneWidget);
+      expect(tester.takeException(), isNull);
+
+      await tester.tap(_door('A0-01'));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('door.number')), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  testWidgets('should label every control and make it 48 dp at least', (
     tester,
   ) async {
     await openStreet(tester);
     await tester.tap(_tile('8'));
     await tester.pumpAndSettle();
-    await tester.tap(_door('A0-01'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('door.comeBackDay.2026-11-02')));
-    await tester.pumpAndSettle();
 
-    await tester.tap(find.byKey(const Key('door.ok')));
-    await tester.pumpAndSettle();
-
-    final door = storedDoor(DwellingKey(escA, 0, d('01')));
-    expect(find.byKey(const Key('door.number')), findsNothing);
-    expect(door.status, VisitStatus.comeBack);
-    expect(door.comeBack, comeBack('2026-11-02'));
+    await expectAccessibleControls(tester);
   });
 }

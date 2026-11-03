@@ -6,6 +6,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
+import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
@@ -14,23 +15,23 @@ import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
-import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/screens/add_streets/add_streets_screen.dart';
 import 'package:tournee_calendriers/ui/screens/add_streets/manual_street_screen.dart';
 
-import '../../domain/tournee/my_tournees_fixtures.dart';
-import '../../domain/tournee/tournee_fixtures.dart';
+import '../../domain/sector/my_sectors_fixtures.dart';
+import '../../domain/sector/sector_fixtures.dart';
 import '../../support/fakes/fake_address_directory.dart';
-import '../../support/fakes/fake_my_tournees_store.dart';
+import '../../support/fakes/fake_my_sectors_store.dart';
+import '../../support/fakes/fake_sector_repository.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/fakes/fake_street_shapes.dart';
-import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/geo_fixtures.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart' hide lea;
 import '../support/app_overrides.dart';
 import '../support/fake_map_view.dart';
+import '../support/large_text.dart';
 
 final _bordelanId = BanStreetId('69264_0246');
 
@@ -113,11 +114,11 @@ void main() {
           directory: directory,
           shapes: FakeStreetShapes(Ok(_road)),
           member: leaId,
-          tournees: FakeTourneeRepository([
+          sectors: FakeSectorRepository([
             team(communes: [villefrancheCommune]),
           ]),
-          myTournees: FakeMyTourneesStore(
-            valueOf(MyTournees.none.remember(tournee49).open(tourneeId)),
+          mySectors: FakeMySectorsStore(
+            valueOf(MySectors.none.remember(sector49).open(sectorId)),
           ),
         ),
         child: const TourneeApp(showGallery: false),
@@ -162,7 +163,7 @@ void main() {
       expect(find.text('Petit Chemin de Bordelan'), findsOneWidget);
       expect(find.text('Villefranche-sur-Saône'), findsOneWidget);
       expect(find.text('1 numéro'), findsOneWidget);
-      expect(find.text('Pas encore dans la tournée'), findsOneWidget);
+      expect(find.text('Pas encore dans le secteur'), findsOneWidget);
       expect(find.text("Ajouter sans m'attribuer"), findsOneWidget);
       expect(
         find.text('Rue absente de la carte ? Saisir à la main'),
@@ -282,6 +283,23 @@ void main() {
       expect(button('manual'), findsOneWidget);
     });
 
+    testWidgets('should close the card with its ✕ and stay on the '
+        'screen', (tester) async {
+      await pumpMap(tester);
+      await tapRoad(tester, _onBordelan);
+      expect(shownMap(tester).selectedRoad, _road);
+      expect(shownMap(tester).selectedPoint, _onBordelan);
+
+      // « Fermer » is the screen's ✕ too: the card's is found by its key.
+      await tester.tap(button('close'));
+      await tester.pumpAndSettle();
+
+      expect(card(), findsNothing);
+      expect(find.byType(AddStreetsScreen), findsOneWidget);
+      expect(shownMap(tester).selectedRoad, StreetShape.none);
+      expect(shownMap(tester).selectedPoint, isNull);
+    });
+
     testWidgets('should close the card on the back gesture, then the '
         'screen', (tester) async {
       await pumpMap(tester);
@@ -305,7 +323,13 @@ void main() {
       await pumpMap(tester);
       await tapStreet(tester, 'carnot');
 
-      await tester.tap(find.byTooltip('Fermer'));
+      // The top bar's ✕, not the card's (also « Fermer »).
+      await tester.tap(
+        find.descendant(
+          of: find.byType(AppBar),
+          matching: find.byTooltip('Fermer'),
+        ),
+      );
       await tester.pumpAndSettle();
 
       expect(find.byType(AddStreetsScreen), findsNothing);
@@ -333,7 +357,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Pas encore dans la tournée'), findsOneWidget);
+      expect(find.text('Pas encore dans le secteur'), findsOneWidget);
       expect(
         shownMap(tester).area,
         GeoBounds.around([_onBordelan])!.expandedBy(200),
@@ -381,5 +405,13 @@ void main() {
 
     expect(find.byType(ManualStreetScreen), findsOneWidget);
     expect(find.text('Rue à la main'), findsOneWidget);
+  });
+
+  testWidgets('should label every control and make it 48 dp at least', (
+    tester,
+  ) async {
+    await pumpMap(tester);
+
+    await expectAccessibleControls(tester);
   });
 }

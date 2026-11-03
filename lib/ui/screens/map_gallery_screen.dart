@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:tournee_calendriers/domain/map/map_layers.dart';
-import 'package:tournee_calendriers/domain/map/tournee_area.dart';
+import 'package:tournee_calendriers/domain/map/sector_area.dart';
 import 'package:tournee_calendriers/domain/shared/commune.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
@@ -14,7 +14,7 @@ import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
 import 'package:tournee_calendriers/ui/components/app_buttons.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
-import 'package:tournee_calendriers/ui/map/tournee_map.dart';
+import 'package:tournee_calendriers/ui/map/sector_map.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 
 /// Debug-only screen showing the map widget on sample streets of
@@ -41,9 +41,9 @@ final class _MapGalleryScreenState extends State<MapGalleryScreen> {
       body: Column(
         children: [
           Expanded(
-            child: TourneeMap(
+            child: SectorMap(
               layers: MapLayers.of(_streets),
-              area: tourneeArea(_streets),
+              area: sectorArea(_streets),
               selectedRoad: _roadSelected ? _selectedRoad : StreetShape.none,
               onStreetTapped: (street) => showMessageSnackBar(
                 messenger,

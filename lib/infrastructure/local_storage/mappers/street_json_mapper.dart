@@ -16,7 +16,7 @@
 //                dwellings: [{ label, status, comeBack,
 //                              lastChange, tries }] }] }] }
 //   stamp    = { by: memberId, at: "2026-11-02T14:02:00.000Z" }  (UTC)
-//   status   = "toDo" | "done" | "nobodyHome" | "comeBack"
+//   status   = "toDo" | "done" | "refused" | "nobodyHome" | "comeBack"
 //   when     = "" | "2026-10-24" | "2026-10-24T18"   ← see come_back_text.dart
 //
 // A house or door « comeBack » has its time in `comeBack` ("" for none); any
@@ -38,6 +38,10 @@
 // The time replaced it without a new version: such a text reads as
 // « repasser » with no time set (`comeBackFrom`), and goes from the file
 // the next time the street is written.
+//
+// "refused" (#113) came without a new version either: only an app older
+// than it could not read it, and going back to one (0.9.0 or before) is
+// not supported.
 //
 // `shape` (one encoded polyline per line, see `StreetShape.encode`) and
 // `assignees` came with the map (T3.3) without a new version: they only
@@ -412,6 +416,7 @@ ComeBack? _comeBackOrNull(String? text) =>
 String _statusToJson(VisitStatus status) => switch (status) {
   VisitStatus.toDo => 'toDo',
   VisitStatus.done => 'done',
+  VisitStatus.refused => 'refused',
   VisitStatus.nobodyHome => 'nobodyHome',
   VisitStatus.comeBack => 'comeBack',
 };
@@ -427,6 +432,7 @@ VisitStatus _statusFromJson(
   final status = switch (text) {
     'toDo' => VisitStatus.toDo,
     'done' => VisitStatus.done,
+    'refused' => VisitStatus.refused,
     'nobodyHome' => VisitStatus.nobodyHome,
     'comeBack' when version != _flagVersion => VisitStatus.comeBack,
     _ => throw FormatException('Not a stored status', text),

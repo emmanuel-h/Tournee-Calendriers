@@ -3,14 +3,16 @@ import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
-import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
+import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_notifier.dart';
 import 'package:tournee_calendriers/presentation/street/street_notifier.dart';
 import 'package:tournee_calendriers/presentation/street/street_view_state.dart';
 
 import '../../support/building_fixtures.dart';
+import '../../support/fakes/fake_my_sectors_store.dart';
+import '../../support/fakes/fake_open_round_store.dart';
 import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/fakes/fake_street_view_preferences.dart';
@@ -80,6 +82,8 @@ void main() {
         streetViewPreferencesProvider.overrideWithValue(preferences),
         clockProvider.overrideWithValue(FakeClock(twoPm)),
         identityProvider.overrideWithValue(FakeIdentity(lea)),
+        openRoundStoreProvider.overrideWithValue(FakeOpenRoundStore()),
+        mySectorsStoreProvider.overrideWithValue(FakeMySectorsStore()),
       ],
     );
     addTearDown(container.dispose);
@@ -114,6 +118,7 @@ void main() {
       expect(state.name, 'Rue des Lilas');
       expect(state.done, 3);
       expect(state.total, 8);
+      expect(state.refused, 0);
       expect(state.nobodyHome, 1);
       // 5, and the building 8 itself.
       expect(state.comeBack, 2);
@@ -136,6 +141,63 @@ void main() {
       ]);
     },
   );
+
+  group('refused houses', () {
+    // 1 refused, 3 done, 5 to do, 7 refused; 2 a building with one door
+    // refused and the other done.
+    final refusing = _street(
+      houses: [
+        House(number: n('1'), status: VisitStatus.refused),
+        House(number: n('3'), status: VisitStatus.done),
+        House(number: n('5')),
+        House(number: n('7'), status: VisitStatus.refused),
+        House(
+          number: n('2'),
+          building: building(topFloor: 0, doors: 2)
+              .withDwelling(
+                escA,
+                0,
+                Dwelling(label: d('01'), status: VisitStatus.refused),
+              )
+              .withDwelling(
+                escA,
+                0,
+                Dwelling(label: d('02'), status: VisitStatus.done),
+              ),
+        ),
+      ],
+    );
+
+    test('should count them with the done ones, and apart in ⊘', () async {
+      phoneWith(refusing);
+
+      final state = await shown();
+
+      // 1, 3, 7 and both doors of 2: five of six doors.
+      expect(state.done, 5);
+      expect(state.total, 6);
+      expect(state.refused, 3);
+      expect(state.nobodyHome, 0);
+      expect(state.comeBack, 0);
+      expect(state.odd, [
+        _tile('1', const RefusedMark()),
+        _tile('3', const DoneMark()),
+        _tile('5', const ToDoMark()),
+        _tile('7', const RefusedMark()),
+      ]);
+      expect(state.even, [_tile('2', const DoneMark(), isBuilding: true)]);
+    });
+
+    test('should leave them out with the done ones when the street hides '
+        'them', () async {
+      phoneWith(refusing, hideDone: true);
+
+      final state = await shown();
+
+      expect(state.odd.map((tile) => tile.number.label), ['5']);
+      expect(state.even, isEmpty);
+    });
+  });
 
   test('should say the street is gone when it is not on the phone', () async {
     phoneWith(null);
@@ -286,154 +348,26 @@ void main() {
     });
   });
 
-  group('tap', () {
-    test('should give the house its next status and tell it', () async {
-      phoneWith(_street());
-      await settled();
-
-      final marked = await notifier().cycle(n('1'));
-
-      expect(marked, MarkedHouse(number: n('1'), status: VisitStatus.done));
-      final (saved, change) = streets.saved.single;
-      expect(change, isA<HouseMarked>());
-      expect((change as HouseMarked).status, VisitStatus.done);
-      expect(change.stamp, leaAtTwo);
-      expect(saved.houses.first.status, VisitStatus.done);
-      expect((await shown()).odd.first, _tile('1', const DoneMark()));
-    });
-
-    test('should move a done house to nobody home', () async {
-      phoneWith(_street());
-      await settled();
-
-      final marked = await notifier().cycle(n('3'));
-
-      expect(
-        marked,
-        MarkedHouse(number: n('3'), status: VisitStatus.nobodyHome),
-      );
-    });
-
-    test('should move a nobody-home house to come back', () async {
-      phoneWith(_street());
-      await settled();
-
-      final marked = await notifier().cycle(n('3bis'));
-
-      expect(
-        marked,
-        MarkedHouse(number: n('3bis'), status: VisitStatus.comeBack, tries: 2),
-      );
-      expect(
-        (await shown()).odd[2],
-        _tile('3bis', const ComeBackMark(), tries: 2),
-      );
-      expect((await shown()).comeBack, 3);
-    });
-
-    test('should move a come-back house to do', () async {
-      phoneWith(_street());
-      await settled();
-
-      final marked = await notifier().cycle(n('5'));
-
-      expect(marked, MarkedHouse(number: n('5'), status: VisitStatus.toDo));
-      expect(streets[_id]!.houses[4].number, n('5'));
-      expect(streets[_id]!.houses[4].comeBack, isNull);
-    });
-
-    test('should change nothing when the tile is a building', () async {
-      phoneWith(_street());
-      await settled();
-
-      expect(await notifier().cycle(n('8')), isNull);
-      expect(streets.saved, isEmpty);
-    });
-
-    test('should change nothing when the street is not read yet', () async {
-      phoneWith(_street());
-
-      expect(await notifier().cycle(n('1')), isNull);
-      expect(streets.saved, isEmpty);
-    });
-
-    test('should change nothing when the street has no such number', () async {
-      phoneWith(_street());
-      await settled();
-
-      expect(await notifier().cycle(n('99')), isNull);
-      expect(streets.saved, isEmpty);
-    });
-  });
-
-  group('nobodyHomeAgain', () {
-    test('should add a try to the house and say what changed', () async {
-      phoneWith(_street());
-      await settled();
-
-      final marked = await notifier().nobodyHomeAgain(n('3bis'));
-
-      expect(
-        marked,
-        MarkedHouse(
-          number: n('3bis'),
-          status: VisitStatus.nobodyHome,
-          tries: 3,
-        ),
-      );
-      final (_, change) = streets.saved.single;
-      expect(change, isA<HouseNobodyHomeAgain>());
-      expect((change as HouseNobodyHomeAgain).stamp, leaAtTwo);
-      expect(
-        (await shown()).odd[2],
-        _tile('3bis', const NobodyHomeMark(), tries: 3),
-      );
-    });
-
-    test('should make a come-back house nobody home again', () async {
-      phoneWith(_street());
-      await settled();
-
-      final marked = await notifier().nobodyHomeAgain(n('5'));
-
-      // Its first try: no count shown yet.
-      expect(
-        marked,
-        MarkedHouse(number: n('5'), status: VisitStatus.nobodyHome),
-      );
-      expect((await shown()).odd[3], _tile('5', const NobodyHomeMark()));
-    });
-
-    test('should change nothing when the house is done', () async {
-      phoneWith(_street());
-      await settled();
-
-      expect(await notifier().nobodyHomeAgain(n('3')), isNull);
-      expect(streets.saved, isEmpty);
-    });
-
-    test('should put the house back when Annuler is tapped', () async {
-      final street = _street();
-      phoneWith(street);
-      await settled();
-      await notifier().nobodyHomeAgain(n('3bis'));
-
-      await notifier().undo();
-
-      expect(streets[_id]!.houses, street.houses);
-      expect(
-        (await shown()).odd[2],
-        _tile('3bis', const NobodyHomeMark(), tries: 2),
-      );
-    });
-  });
-
   group('undo', () {
-    test('should put the house back as it was before the tap', () async {
+    /// Chooses [status] in the picker of [number], then keeps what it
+    /// stored for « Annuler », as the street screen does.
+    Future<void> pick(String number, VisitStatus status) async {
+      final key = (street: _id, number: n(number));
+      final picker = container.listen(houseSheetProvider(key), (_, _) {});
+      await Future<void>.delayed(Duration.zero);
+      final stored = await container
+          .read(houseSheetProvider(key).notifier)
+          .setStatus(status);
+      picker.close();
+      notifier().keepForUndo(stored!.change);
+    }
+
+    test('should put the house back as it was before the status was '
+        'chosen', () async {
       final street = _street();
       phoneWith(street);
       await settled();
-      await notifier().cycle(n('5'));
+      await pick('5', VisitStatus.toDo);
 
       await notifier().undo();
 
@@ -441,11 +375,29 @@ void main() {
       expect((await shown()).odd[3], _tile('5', const ComeBackMark()));
     });
 
-    test('should undo only the last tap', () async {
+    test('should put back its status, time and tries after « Repasser » and '
+        'a day were chosen', () async {
+      final street = _street();
+      phoneWith(street);
+      await settled();
+      final key = (street: _id, number: n('3bis'));
+      container.listen(houseSheetProvider(key), (_, _) {});
+      await Future<void>.delayed(Duration.zero);
+      final picker = container.read(houseSheetProvider(key).notifier);
+      final stored = await picker.setStatus(VisitStatus.comeBack);
+      await picker.chooseComeBackDay(day('2026-11-03'));
+      notifier().keepForUndo(stored!.change);
+
+      await notifier().undo();
+
+      expect(streets[_id]!.houses, street.houses);
+    });
+
+    test('should undo only the last status', () async {
       phoneWith(_street());
       await settled();
-      await notifier().cycle(n('1'));
-      await notifier().cycle(n('7'));
+      await pick('1', VisitStatus.done);
+      await pick('7', VisitStatus.done);
 
       await notifier().undo();
 
@@ -454,10 +406,10 @@ void main() {
       expect(state.odd.last, _tile('7', const ToDoMark()));
     });
 
-    test('should undo a tap once only', () async {
+    test('should undo a status once only', () async {
       phoneWith(_street());
       await settled();
-      await notifier().cycle(n('1'));
+      await pick('1', VisitStatus.done);
       await notifier().undo();
 
       await notifier().undo();
@@ -465,7 +417,7 @@ void main() {
       expect(streets.saved, hasLength(2));
     });
 
-    test('should do nothing when nothing was tapped', () async {
+    test('should do nothing when nothing was stored', () async {
       phoneWith(_street());
       await settled();
 

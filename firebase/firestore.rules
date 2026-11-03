@@ -18,10 +18,11 @@ rules_version = '2';
 //   how a rule checks that the other documents of the batch go with it
 //   (a new tournée comes with its code, its reservation and its creator).
 // - The rules language has no loops. A write that changes one house, one
-//   door or one field is checked field by field; one that creates houses
-//   in bulk (a new street, « numéros en plus » of several numbers) is only
-//   counted, and the doors of a building written whole are only counted
-//   (PLAN §8.2).
+//   door or one field is checked field by field. Houses written in bulk (a
+//   new street, « numéros en plus ») come in writes of at most
+//   housesPerWrite() houses, each checked whole by a check written out once
+//   per place (areAddedHouses). The doors and layout rows of a building
+//   written whole are only counted (PLAN §8.2).
 // - Lengths are counted in code points, as the domain counts them
 //   (`characterCount`: 🚒 = 1), with a pattern: the `size()` of a string
 //   counts UTF-16 units (🚒 = 2), the patterns (RE2) count code points.
@@ -43,32 +44,32 @@ service cloud.firestore {
       return request.auth.uid;
     }
 
-    function tourneePath(tournee) {
-      return /databases/$(database)/documents/tournees/$(tournee);
+    function sectorPath(sector) {
+      return /databases/$(database)/documents/sectors/$(sector);
     }
 
-    function memberPath(tournee, member) {
-      return /databases/$(database)/documents/tournees/$(tournee)/members/$(member);
+    function memberPath(sector, member) {
+      return /databases/$(database)/documents/sectors/$(sector)/members/$(member);
     }
 
-    function campaignPath(tournee, year) {
-      return /databases/$(database)/documents/tournees/$(tournee)/campaigns/$(year);
+    function campaignPath(sector, year) {
+      return /databases/$(database)/documents/sectors/$(sector)/campaigns/$(year);
     }
 
     function joinCodePath(code) {
       return /databases/$(database)/documents/joinCodes/$(code);
     }
 
-    function tourneeKeyPath(key) {
-      return /databases/$(database)/documents/tourneeKeys/$(key);
+    function sectorKeyPath(key) {
+      return /databases/$(database)/documents/sectorKeys/$(key);
     }
 
     // An accepted member: a pending one reads and writes nothing of the
     // tournée (PLAN §8.1), only their own member document.
-    function isActiveMember(tournee) {
+    function isActiveMember(sector) {
       return signedIn()
-        && exists(memberPath(tournee, uid()))
-        && get(memberPath(tournee, uid())).data.status == 'active';
+        && exists(memberPath(sector, uid()))
+        && get(memberPath(sector, uid())).data.status == 'active';
     }
 
     // An administrator of the app (PLAN §5.12): an `admins/{uid}` document,
@@ -81,8 +82,8 @@ service cloud.firestore {
 
     // An active member or an admin: who reads a tournée and works on its
     // streets.
-    function isMemberOrAdmin(tournee) {
-      return isActiveMember(tournee) || isAdmin();
+    function isMemberOrAdmin(sector) {
+      return isActiveMember(sector) || isAdmin();
     }
 
     // ------------------------------------------------------------ values
@@ -96,6 +97,14 @@ service cloud.firestore {
     // [optional], nothing else.
     function hasFields(data, fields, optional) {
       return data.keys().hasAll(fields) && data.keys().hasOnly(fields.concat(optional));
+    }
+
+    // An entry of a house or a door: exactly [fields], and maybe `tries`
+    // (hasTries). The same as hasFields(entry, fields, ['tries']), in
+    // fewer expressions: a write of new houses checks it for each one
+    // (housesPerWrite).
+    function hasEntryFields(entry, fields) {
+      return entry.keys().removeAll(['tries']).toSet() == fields.toSet();
     }
 
     // At most [max] characters, counted in code points. `(?s)`: a line
@@ -132,7 +141,7 @@ service cloud.firestore {
       return key is string && key.size() <= 200 && key.matches('[a-z0-9]+(-[a-z0-9]+)*');
     }
 
-    function isTourneeNumber(number) {
+    function isSectorNumber(number) {
       return number is int && number >= 1 && number <= 9999;
     }
 
@@ -147,16 +156,16 @@ service cloud.firestore {
 
     // ----------------------------------------------------- the directory
 
-    // `tourneeKeys/{centreKey}_{number}`: its existence reserves the number
+    // `sectorKeys/{centreKey}_{number}`: its existence reserves the number
     // in the station. Written by the creator, an admin, for the tournée's
     // own pair.
     function isReservation(key, data) {
       return isAdmin()
-        && hasExactly(data, ['tourneeId'])
-        && isId(data.tourneeId)
-        && getAfter(tourneePath(data.tourneeId)).data.createdBy == uid()
-        && key == getAfter(tourneePath(data.tourneeId)).data.centreKey + '_'
-          + string(getAfter(tourneePath(data.tourneeId)).data.number);
+        && hasExactly(data, ['sectorId'])
+        && isId(data.sectorId)
+        && getAfter(sectorPath(data.sectorId)).data.createdBy == uid()
+        && key == getAfter(sectorPath(data.sectorId)).data.centreKey + '_'
+          + string(getAfter(sectorPath(data.sectorId)).data.number);
     }
 
     // `joinCodes/{code}`: what « Rejoindre » shows before the request, and
@@ -164,24 +173,24 @@ service cloud.firestore {
     // new code, and it must say what the tournée says.
     function isPreview(code, data) {
       return isAdmin()
-        && hasExactly(data, ['tourneeId', 'number', 'centreName', 'campaign'])
-        && isId(data.tourneeId)
-        && getAfter(tourneePath(data.tourneeId)).data.joinCode == code
-        && data.number == getAfter(tourneePath(data.tourneeId)).data.number
-        && data.centreName == getAfter(tourneePath(data.tourneeId)).data.centreName
-        && data.campaign == getAfter(tourneePath(data.tourneeId)).data.currentCampaign;
+        && hasExactly(data, ['sectorId', 'number', 'centreName', 'campaign'])
+        && isId(data.sectorId)
+        && getAfter(sectorPath(data.sectorId)).data.joinCode == code
+        && data.number == getAfter(sectorPath(data.sectorId)).data.number
+        && data.centreName == getAfter(sectorPath(data.sectorId)).data.centreName
+        && data.campaign == getAfter(sectorPath(data.sectorId)).data.currentCampaign;
     }
 
     // A code or a reservation goes when its tournée goes, or (a code) when
     // an admin draws a new one.
-    function isFreedByAdmin(tourneeId) {
-      return isAdmin() && !existsAfter(tourneePath(tourneeId));
+    function isFreedByAdmin(sectorId) {
+      return isAdmin() && !existsAfter(sectorPath(sectorId));
     }
 
     function isCodeFreed(code, data) {
       return isAdmin()
-        && (!existsAfter(tourneePath(data.tourneeId))
-          || getAfter(tourneePath(data.tourneeId)).data.joinCode != code);
+        && (!existsAfter(sectorPath(data.sectorId))
+          || getAfter(sectorPath(data.sectorId)).data.joinCode != code);
     }
 
     // `admins/{uid}`: no fields, added and removed by hand in the console,
@@ -201,11 +210,11 @@ service cloud.firestore {
         && isName(request.resource.data.name, 80);
     }
 
-    match /tourneeKeys/{key} {
+    match /sectorKeys/{key} {
       // `get` only: « Créer » asks whether one pair is taken.
       allow get: if signedIn();
       allow create: if signedIn() && isReservation(key, request.resource.data);
-      allow delete: if isFreedByAdmin(resource.data.tourneeId);
+      allow delete: if isFreedByAdmin(resource.data.sectorId);
     }
 
     match /joinCodes/{code} {
@@ -219,17 +228,17 @@ service cloud.firestore {
 
     // ------------------------------------------------------- the tournée
 
-    function tourneeFields() {
+    function sectorFields() {
       return ['number', 'centreKey', 'centreName', 'joinCode', 'createdBy',
         'createdAt', 'currentCampaign', 'communes'];
     }
 
-    // The most communes a tournée covers (Tournee.maxCommunes).
+    // The most communes a tournée covers (Sector.maxCommunes).
     function maxCommunes() {
       return 50;
     }
 
-    // One entry of a tournée's `communes` (#78, TourneeCommune): an INSEE
+    // One entry of a tournée's `communes` (#78, SectorCommune): an INSEE
     // code, the name as geo.api.gouv.fr gives it (trimmed, not blank), and
     // its centre or nothing.
     function isCommuneEntry(entry) {
@@ -254,10 +263,10 @@ service cloud.firestore {
     // by one entry, an added one checked whole; the list never empties.
     // A tournée stored before the communes has no list: it counts as
     // empty, so its first commune can be added.
-    function isCommunesChange(tournee, before, after) {
+    function isCommunesChange(sector, before, after) {
       let old = before.get('communes', []);
       let now = after.communes;
-      return isMemberOrAdmin(tournee)
+      return isMemberOrAdmin(sector)
         && after.diff(before).affectedKeys().hasOnly(['communes'])
         && now is list
         && now.size() >= 1 && now.size() <= maxCommunes()
@@ -270,10 +279,10 @@ service cloud.firestore {
     // creator (already active) and its first campaign (PLAN §8.2): the
     // reservation can only be created if absent, which makes number +
     // station unique.
-    function isNewTournee(tournee, data) {
+    function isNewSector(sector, data) {
       return isAdmin()
-        && hasExactly(data, tourneeFields())
-        && isTourneeNumber(data.number)
+        && hasExactly(data, sectorFields())
+        && isSectorNumber(data.number)
         && isCentreKey(data.centreKey)
         && isName(data.centreName, 80)
         && isJoinCode(data.joinCode)
@@ -281,19 +290,19 @@ service cloud.firestore {
         && data.createdAt is timestamp
         && isCampaignYear(data.currentCampaign)
         && isCommuneList(data.communes)
-        && getAfter(tourneeKeyPath(data.centreKey + '_' + string(data.number))).data.tourneeId == tournee
-        && getAfter(joinCodePath(data.joinCode)).data.tourneeId == tournee
-        && getAfter(memberPath(tournee, uid())).data.status == 'active'
-        && existsAfter(campaignPath(tournee, string(data.currentCampaign)));
+        && getAfter(sectorKeyPath(data.centreKey + '_' + string(data.number))).data.sectorId == sector
+        && getAfter(joinCodePath(data.joinCode)).data.sectorId == sector
+        && getAfter(memberPath(sector, uid())).data.status == 'active'
+        && existsAfter(campaignPath(sector, string(data.currentCampaign)));
     }
 
     // A new code (admins only, member or not): the new code document comes
     // with it and the old one goes, in the same transaction.
-    function isNewCode(tournee, before, after) {
+    function isNewCode(sector, before, after) {
       return isAdmin()
         && after.diff(before).affectedKeys().hasOnly(['joinCode'])
         && isJoinCode(after.joinCode)
-        && getAfter(joinCodePath(after.joinCode)).data.tourneeId == tournee
+        && getAfter(joinCodePath(after.joinCode)).data.sectorId == sector
         && !existsAfter(joinCodePath(before.joinCode));
     }
 
@@ -302,10 +311,10 @@ service cloud.firestore {
     // streets, with whichever member documents remain (there may be none:
     // everyone may leave, PLAN §8.2). The rules cannot list the members,
     // so they do not check that every one goes.
-    function isTourneeDeletion(data) {
+    function isSectorDeletion(data) {
       return isAdmin()
         && !existsAfter(joinCodePath(data.joinCode))
-        && !existsAfter(tourneeKeyPath(data.centreKey + '_' + string(data.number)));
+        && !existsAfter(sectorKeyPath(data.centreKey + '_' + string(data.number)));
     }
 
     // ------------------------------------------------------- the members
@@ -316,14 +325,14 @@ service cloud.firestore {
 
     // A newcomer's request: pending, with the code they used, which must
     // be the tournée's current code (they cannot read the tournée).
-    function isJoinRequest(tournee, data) {
+    function isJoinRequest(sector, data) {
       return hasExactly(data, memberFields().concat(['joinCode']))
         && isName(data.displayName, 30)
         && data.status == 'pending'
         && data.requestedAt is timestamp
         && data.acceptedBy == null
         && data.acceptedAt == null
-        && data.joinCode == get(tourneePath(tournee)).data.joinCode;
+        && data.joinCode == get(sectorPath(sector)).data.joinCode;
     }
 
     // An admin's own document, active at once and accepted by themself,
@@ -341,8 +350,8 @@ service cloud.firestore {
 
     // Any active member or admin accepts a pending one: status, who and
     // when only.
-    function isAcceptance(tournee, before, after) {
-      return isMemberOrAdmin(tournee)
+    function isAcceptance(sector, before, after) {
+      return isMemberOrAdmin(sector)
         && before.status == 'pending'
         && after.diff(before).affectedKeys().hasOnly(['status', 'acceptedBy', 'acceptedAt'])
         && after.status == 'active'
@@ -352,9 +361,9 @@ service cloud.firestore {
 
     // An active member renames themself (« Prénom », PLAN §5.9): their own
     // document, the name only, cleaned as MemberName cleans it.
-    function isRename(tournee, member, before, after) {
+    function isRename(sector, member, before, after) {
       return member == uid()
-        && isActiveMember(tournee)
+        && isActiveMember(sector)
         && after.diff(before).affectedKeys().hasOnly(['displayName'])
         && isName(after.displayName, 30);
     }
@@ -362,11 +371,11 @@ service cloud.firestore {
     // Refuse or cancel a request; remove (an admin, any member, admins
     // included) or leave (the member, the creator too, even the last one)
     // an active one (PLAN §5.12).
-    function isMemberDeletion(tournee, member, data) {
+    function isMemberDeletion(sector, member, data) {
       return signedIn() && (
         member == uid()
         || isAdmin()
-        || (data.status == 'pending' && isActiveMember(tournee)));
+        || (data.status == 'pending' && isActiveMember(sector)));
     }
 
     // ------------------------------------------------------- the streets
@@ -387,9 +396,14 @@ service cloud.firestore {
       return ['labelStyle', 'layout', 'dwellings'];
     }
 
-    // The four statuses, under the names the mapper stores.
+    // The five statuses, under the names the mapper stores; `REFUSED`
+    // (« Refusé », #113) needs no rule of its own: like any status but
+    // `COME_BACK` it has no time (hasMarks), and the app removes its tries.
+    // A pattern rather than `in [list]`: each item of a list is an
+    // expression evaluated, and a write of new houses checks several
+    // (housesPerWrite).
     function isStatus(status) {
-      return status in ['TO_DO', 'DONE', 'NOBODY_HOME', 'COME_BACK'];
+      return status is string && status.matches('TO_DO|DONE|REFUSED|NOBODY_HOME|COME_BACK');
     }
 
     // When to come back (ComeBack, #81, come_back_text.dart): "" for no
@@ -444,20 +458,20 @@ service cloud.firestore {
     function isHouse(house) {
       return house is map
         && (('layout' in house)
-          ? hasFields(house, houseFields().concat(buildingFields()), ['tries']) && isBuilding(house)
-          : hasFields(house, houseFields(), ['tries']) && hasMarks(house))
+          ? hasEntryFields(house, houseFields().concat(buildingFields())) && isBuilding(house)
+          : hasEntryFields(house, houseFields()) && hasMarks(house))
         && house.n is int && house.n >= 0 && house.n <= 99999
         && (house.sfx == null || (house.sfx is string && house.sfx.matches('[a-z][a-z0-9]{0,15}')))
         && isPosition(house.lat, house.lon);
     }
 
     // The key of a house is its number's label (HouseNumber.label):
-    // `12`, `12bis`, `3A`.
+    // `12`, `12bis`, `3A`. The Latin multiplicatives as a pattern, as in
+    // isStatus.
     function labelOf(house) {
       return house.sfx == null
         ? string(house.n)
-        : string(house.n) + (house.sfx in ['bis', 'ter', 'quater', 'quinquies',
-            'sexies', 'septies', 'octies', 'nonies', 'decies']
+        : string(house.n) + (house.sfx.matches('bis|ter|quater|quinquies|sexies|septies|octies|nonies|decies')
           ? house.sfx
           : house.sfx.upper());
     }
@@ -481,11 +495,11 @@ service cloud.firestore {
     // puts back the removal it undoes, which may be a teammate's (PLAN
     // §6.2). Then it must name an active member of the tournée, or an
     // admin, who may have removed it without being in the team.
-    function isNumberRemoval(tournee, house) {
+    function isNumberRemoval(sector, house) {
       return isRemovalStamp(house)
         || (isId(house.deletedBy)
           && house.deletedAt is timestamp
-          && (get(memberPath(tournee, house.deletedBy)).data.status == 'active'
+          && (get(memberPath(sector, house.deletedBy)).data.status == 'active'
             || exists(/databases/$(database)/documents/admins/$(house.deletedBy))));
     }
 
@@ -527,9 +541,12 @@ service cloud.firestore {
         && after.shape[0] is string;
     }
 
-    // A new street (import from the BAN, PLAN §6.2): out of the Corbeille.
-    // Its houses come in bulk: the rules cannot check them one by one.
-    // Nobody covers it, or only the caller (« Ajouter et me l'attribuer »).
+    // A new street (imported from the BAN, typed in, or moved from the
+    // phone, PLAN §6.2): out of the Corbeille. It comes with its first
+    // houses, at most housesPerWrite(), each checked whole; the adapter
+    // sends the others in updates of as many (isHousesChange), so a
+    // teammate may see it partly filled for a moment. Nobody covers it, or
+    // only the caller (« Ajouter et me l'attribuer »).
     function isNewStreet(data) {
       return data.keys().hasAll(streetFields())
         && data.keys().hasOnly(streetFields().concat(mapFields()))
@@ -540,20 +557,21 @@ service cloud.firestore {
         && data.communeCode is string && data.communeCode.matches('([0-9]{2}|2A|2B)[0-9]{3}')
         && (data.banId == null || (data.banId is string && data.banId.size() >= 1 && data.banId.size() <= 100))
         && data.deletedAt == null && data.deletedBy == null
-        && data.houses is map;
+        && data.houses is map
+        && areAddedHouses(data.houses, data.houses.keys());
     }
 
     // A change of a street (the table of PLAN §6.2): its name, its
     // deletion (Corbeille), who covers it, or its houses. The commune and
     // the BAN id never change; the shape only by [isShapeFill].
-    function isStreetChange(tournee, before, after) {
+    function isStreetChange(sector, before, after) {
       return after.diff(before).affectedKeys().hasOnly(['name', 'deletedAt', 'deletedBy', 'houses', 'assignees'])
         && (after.name == before.name || isName(after.name, 150))
         && (after.get('assignees', []) == before.get('assignees', [])
           || isOwnAssignment(before.get('assignees', []), after.assignees))
         && ((after.deletedAt == before.deletedAt && after.deletedBy == before.deletedBy)
           || isRemovalStamp(after))
-        && (after.houses == before.houses || isHousesChange(tournee, before.houses, after.houses));
+        && (after.houses == before.houses || isHousesChange(sector, before.houses, after.houses));
     }
 
     // The caller takes the street (`arrayUnion`) or stops covering it
@@ -567,21 +585,23 @@ service cloud.firestore {
     }
 
     // What a write may do to the `houses` map: change one house in place,
-    // move one house to a new number, add houses (« numéros en plus »), or
-    // drop one house of the Corbeille past its 30 days (the purge).
-    // Restoring or purging several numbers is sent one write per number by
-    // the adapter, so each is checked.
-    function isHousesChange(tournee, before, after) {
+    // move one house to a new number, add houses (« numéros en plus », or
+    // the houses of a new street after its first write), or drop one house
+    // of the Corbeille past its 30 days (the purge). Restoring or purging
+    // several numbers is sent one write per number by the adapter, so each
+    // is checked.
+    function isHousesChange(sector, before, after) {
       let changes = after.diff(before);
       let changed = changes.changedKeys().size();
       let added = changes.addedKeys().size();
       let removed = changes.removedKeys().size();
       return (changed == 1 && added == 0 && removed == 0
-          && isOneHouseEdited(tournee, before.values().removeAll(after.values()),
+          && isOneHouseEdited(sector, before.values().removeAll(after.values()),
             after.values().removeAll(before.values())))
-        || (changed == 0 && added == 1 && removed <= 1
-          && isHouseAt(after.keys().removeAll(before.keys())[0], after, removed == 0))
-        || (changed == 0 && removed == 0 && added >= 2 && added <= 500)
+        || (changed == 0 && added == 1 && removed == 1
+          && isMovedHouse(after.keys().removeAll(before.keys())[0], after))
+        || (changed == 0 && removed == 0 && added >= 1
+          && areAddedHouses(after, after.keys().removeAll(before.keys())))
         || (changed == 0 && added == 0 && removed == 1
           && isPastRetention(before[before.keys().removeAll(after.keys())[0]]));
     }
@@ -590,13 +610,13 @@ service cloud.firestore {
     // the house is found by its value: the one old entry no longer there,
     // the one new entry not there before. Two entries never hold the same
     // value: each holds its own number.
-    function isOneHouseEdited(tournee, olds, news) {
-      return olds.size() == 1 && news.size() == 1 && isHouseEdit(tournee, olds[0], news[0]);
+    function isOneHouseEdited(sector, olds, news) {
+      return olds.size() == 1 && news.size() == 1 && isHouseEdit(sector, olds[0], news[0]);
     }
 
-    function isHouseEdit(tournee, old, new) {
+    function isHouseEdit(sector, old, new) {
       let fields = new.diff(old).affectedKeys();
-      return (fields.hasOnly(['deletedAt', 'deletedBy']) && isNumberRemoval(tournee, new))
+      return (fields.hasOnly(['deletedAt', 'deletedBy']) && isNumberRemoval(sector, new))
         || (fields.hasOnly(['dwellings'])
           && isOneDoorEdited(old.dwellings, new.dwellings))
         || (fields.hasOnly(['status', 'comeBack', 'tries', 'by', 'at'].concat(buildingFields()))
@@ -617,47 +637,95 @@ service cloud.firestore {
         && isCallerStamp(doors[0].by, doors[0].at);
     }
 
-    // A house written whole under a key it did not have: a number added
-    // ([isNew]: unmarked, as `addNumbers` makes it) or a house moved to
-    // its new number (renumbering, or its undo: stamped by the caller).
-    // Either way it is shown, not in the Corbeille, under its own label.
-    function isHouseAt(key, houses, isNew) {
+    // A house moved to its new number (renumbering, or its undo): written
+    // whole under its own label, shown (not in the Corbeille), stamped by
+    // the caller.
+    function isMovedHouse(key, houses) {
       let house = houses[key];
       return isHouse(house)
         && key == labelOf(house)
         && house.deletedAt == null && house.deletedBy == null
-        && (isNew
-          ? !('layout' in house) && house.status == 'TO_DO'
-            && !('tries' in house)
-            && house.by == null && house.at == null
-          : isCallerStamp(house.by, house.at));
+        && isCallerStamp(house.by, house.at);
     }
 
-    match /tournees/{tournee} {
+    // The most houses one write may add: `housesPerWrite` of the adapter
+    // (lib/infrastructure/firestore/mappers/street_writes.dart), which
+    // sends a new street and « numéros en plus » in writes of that many.
+    //
+    // Why 2: a request may evaluate at most 1 000 expressions, and the
+    // rules count every name, value, operator and call. Checking one house
+    // whole costs about 200 of them (300 for the costliest: a building
+    // with a suffix, tries and a « repasser » time, marked and removed by
+    // the caller), on top of about 300 for the membership, the tournée and
+    // the street. Measured in the emulator (#70): two of the costliest
+    // houses in a new street leave about 90 to spare, three do not fit.
+    // The tests write full writes of the costliest houses, so a change
+    // that makes them too dear fails there.
+    function housesPerWrite() {
+      return 2;
+    }
+
+    // A house a write adds under [key] (a number added, a house of a new
+    // street): whole and valid, under its own label. Marked or in the
+    // Corbeille only by the caller: a street moved from the phone comes
+    // stamped with the caller's uid (`Street.restampedBy`). Without a
+    // stamp it is a house as the BAN or « numéros en plus » give it: to do,
+    // no tries, not a building. Its doors and layout rows are only counted
+    // (isBuilding).
+    //
+    // The stamps are written out rather than through isRemovalStamp and
+    // isCallerStamp, and the unmarked case comes first: it saves the
+    // expressions of their calls, for each house. The membership checked
+    // before this ensures the caller is signed in.
+    function isAddedHouse(key, house) {
+      return isHouse(house)
+        && key == labelOf(house)
+        && ((house.deletedBy == null && house.deletedAt == null)
+          || (house.deletedBy == request.auth.uid && house.deletedAt is timestamp))
+        && ((house.by == null && house.at == null
+            && house.status == 'TO_DO' && !('tries' in house) && !('layout' in house))
+          || (house.by == request.auth.uid && house.at is timestamp));
+    }
+
+    // The house of [keys] at [index], when [keys] has one.
+    function isAddedHouseAt(houses, keys, index) {
+      return keys.size() <= index || isAddedHouse(keys[index], houses[keys[index]]);
+    }
+
+    // The houses of [houses] under [keys]: at most housesPerWrite(), each
+    // checked whole. The rules have no loops, so there is one line per
+    // house, as many as housesPerWrite() says.
+    function areAddedHouses(houses, keys) {
+      return keys.size() <= housesPerWrite()
+        && isAddedHouseAt(houses, keys, 0)
+        && isAddedHouseAt(houses, keys, 1);
+    }
+
+    match /sectors/{sector} {
       // A member reaches a tournée by its id, from its code; only admins
       // list them all (« Toutes les tournées », PLAN §5.12).
-      allow get: if isMemberOrAdmin(tournee);
+      allow get: if isMemberOrAdmin(sector);
       allow list: if isAdmin();
-      allow create: if isNewTournee(tournee, request.resource.data);
-      allow update: if isNewCode(tournee, resource.data, request.resource.data)
-        || isCommunesChange(tournee, resource.data, request.resource.data);
-      allow delete: if isTourneeDeletion(resource.data);
+      allow create: if isNewSector(sector, request.resource.data);
+      allow update: if isNewCode(sector, resource.data, request.resource.data)
+        || isCommunesChange(sector, resource.data, request.resource.data);
+      allow delete: if isSectorDeletion(resource.data);
 
       match /members/{member} {
         // A pending newcomer reads their own document (« Demande envoyée »
         // follows it), and nothing else.
-        allow get: if (signedIn() && member == uid()) || isMemberOrAdmin(tournee);
-        allow list: if isMemberOrAdmin(tournee);
+        allow get: if (signedIn() && member == uid()) || isMemberOrAdmin(sector);
+        allow list: if isMemberOrAdmin(sector);
         allow create: if signedIn() && member == uid()
-          && (isJoinRequest(tournee, request.resource.data)
+          && (isJoinRequest(sector, request.resource.data)
             || isAdminMembership(request.resource.data));
-        allow update: if isAcceptance(tournee, resource.data, request.resource.data)
-          || isRename(tournee, member, resource.data, request.resource.data);
-        allow delete: if isMemberDeletion(tournee, member, resource.data);
+        allow update: if isAcceptance(sector, resource.data, request.resource.data)
+          || isRename(sector, member, resource.data, request.resource.data);
+        allow delete: if isMemberDeletion(sector, member, resource.data);
       }
 
       match /campaigns/{year} {
-        allow read: if isMemberOrAdmin(tournee);
+        allow read: if isMemberOrAdmin(sector);
         // The first campaign, written by the creator (an admin) with the
         // tournée. A new campaign (v1.1) extends this rule when it is
         // written.
@@ -665,26 +733,26 @@ service cloud.firestore {
           && hasExactly(request.resource.data, ['startedAt', 'previousYear'])
           && request.resource.data.startedAt is timestamp
           && request.resource.data.previousYear == null
-          && getAfter(tourneePath(tournee)).data.createdBy == uid()
-          && year == string(getAfter(tourneePath(tournee)).data.currentCampaign);
+          && getAfter(sectorPath(sector)).data.createdBy == uid()
+          && year == string(getAfter(sectorPath(sector)).data.currentCampaign);
         allow delete: if isAdmin();
 
         match /streets/{street} {
-          allow read: if isMemberOrAdmin(tournee);
+          allow read: if isMemberOrAdmin(sector);
           // Previous campaigns are read-only.
-          allow create: if isMemberOrAdmin(tournee)
-            && year == string(get(tourneePath(tournee)).data.currentCampaign)
+          allow create: if isMemberOrAdmin(sector)
+            && year == string(get(sectorPath(sector)).data.currentCampaign)
             && isNewStreet(request.resource.data);
-          allow update: if isMemberOrAdmin(tournee)
-            && year == string(get(tourneePath(tournee)).data.currentCampaign)
-            && (isStreetChange(tournee, resource.data, request.resource.data)
+          allow update: if isMemberOrAdmin(sector)
+            && year == string(get(sectorPath(sector)).data.currentCampaign)
+            && (isStreetChange(sector, resource.data, request.resource.data)
               || isShapeFill(resource.data, request.resource.data));
           // A street goes to the Corbeille by an update. Hard deletion goes
           // with the tournée (an admin), or is the 30-day purge, which any
           // active member's or admin's app makes (no server, PLAN §5.11).
           allow delete: if isAdmin()
-            || (isMemberOrAdmin(tournee)
-              && year == string(get(tourneePath(tournee)).data.currentCampaign)
+            || (isMemberOrAdmin(sector)
+              && year == string(get(sectorPath(sector)).data.currentCampaign)
               && isPastRetention(resource.data));
         }
       }

@@ -34,6 +34,18 @@ void main() {
     expect(look.dashedBorder, isFalse);
   });
 
+  test('should use the dark grey tile with white text when refused', () {
+    final look = StatusLook.of(const RefusedTile(), colors);
+
+    expect(look.glyph, StatusGlyphs.refused);
+    expect(look.glyphSize, AppSizes.tileGlyph);
+    expect(look.count, isNull);
+    expect(look.background, const Color(0xFF5A6068));
+    expect(look.foreground, const Color(0xFFFFFFFF));
+    expect(look.border, const Color(0xFF5A6068));
+    expect(look.dashedBorder, isFalse);
+  });
+
   test('should use the yellow tile with ink text when nobody was home', () {
     final look = StatusLook.of(const NobodyHomeTile(), colors);
 

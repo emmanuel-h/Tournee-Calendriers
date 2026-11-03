@@ -25,6 +25,9 @@ final class StreetMemory {
   /// The streets whose writes the server has not received yet.
   var _unsent = <StreetId>{};
 
+  /// Whether the last snapshot came from the phone's copy only.
+  var _fromCache = false;
+
   /// Completes at the first answer of the listener (or its failure).
   final _loaded = Completer<void>();
 
@@ -59,9 +62,13 @@ final class StreetMemory {
   }
 
   /// Takes what a snapshot of the listener says: each street of [changed]
-  /// as it is now (null when it is gone or unreadable), and the [unsent]
-  /// streets.
-  void receive(Map<StreetId, Street?> changed, Set<StreetId> unsent) {
+  /// as it is now (null when it is gone or unreadable), the [unsent]
+  /// streets, and whether it came [fromCache] (the server out of reach).
+  void receive(
+    Map<StreetId, Street?> changed,
+    Set<StreetId> unsent, {
+    bool fromCache = false,
+  }) {
     for (final MapEntry(:key, :value) in changed.entries) {
       if (value == null) {
         _streets.remove(key);
@@ -70,6 +77,7 @@ final class StreetMemory {
       }
     }
     _unsent = unsent;
+    _fromCache = fromCache;
     if (!_loaded.isCompleted) _loaded.complete();
     _changes.add(changed.keys.toSet());
   }
@@ -99,4 +107,9 @@ final class StreetMemory {
   /// changes.
   Stream<int> watchUnsent() =>
       observe((_) => _unsent.length, (_) => true).distinct();
+
+  /// Whether the listener answers from the phone's copy only (offline),
+  /// now and each time it changes.
+  Stream<bool> watchOffline() =>
+      observe((_) => _fromCache, (_) => true).distinct();
 }

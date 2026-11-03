@@ -29,6 +29,10 @@ final class AppColors extends ThemeExtension<AppColors> {
     required this.done,
     required this.onDone,
     required this.doneBorder,
+    required this.doneInk,
+    required this.refused,
+    required this.onRefused,
+    required this.refusedBorder,
     required this.nobodyHome,
     required this.onNobodyHome,
     required this.nobodyHomeBorder,
@@ -40,6 +44,8 @@ final class AppColors extends ThemeExtension<AppColors> {
     required this.onBuildingPartial,
     required this.buildingPartialBorder,
     required this.editTileBorder,
+    required this.unavailable,
+    required this.unavailableMark,
     required this.snackBar,
     required this.onSnackBar,
     required this.snackBarAction,
@@ -47,6 +53,7 @@ final class AppColors extends ThemeExtension<AppColors> {
     required this.mapStreetPartial,
     required this.mapStreetToDo,
     required this.mapStreetFree,
+    required this.mapStreetFreeCasing,
     required this.mapSelectedCasing,
     required this.mapSelectedCore,
   });
@@ -73,6 +80,10 @@ final class AppColors extends ThemeExtension<AppColors> {
     done: Color(0xFF1E6B47),
     onDone: Color(0xFFFFFFFF),
     doneBorder: Color(0xFF1E6B47),
+    doneInk: Color(0xFF1E6B47),
+    refused: Color(0xFF5A6068),
+    onRefused: Color(0xFFFFFFFF),
+    refusedBorder: Color(0xFF5A6068),
     nobodyHome: Color(0xFFF2B33D),
     onNobodyHome: Color(0xFF1B1F24),
     nobodyHomeBorder: Color(0xFFD99A22),
@@ -84,41 +95,53 @@ final class AppColors extends ThemeExtension<AppColors> {
     onBuildingPartial: Color(0xFF1B1F24),
     buildingPartialBorder: Color(0xFFCFC9BD),
     editTileBorder: Color(0xFF8A8F96),
+    unavailable: Color(0xFF8A8F96),
+    unavailableMark: Color(0xFFB5B9BE),
     snackBar: Color(0xFF1B1F24),
     onSnackBar: Color(0xFFFFFFFF),
     snackBarAction: Color(0xFFF2B33D),
     mapStreetDone: Color(0xFF1E6B47),
     mapStreetPartial: Color(0xFFE0A21B),
     mapStreetToDo: Color(0xFF2F5DA8),
-    mapStreetFree: Color(0xFF6B7078),
+    mapStreetFree: Color(0xFF3E434A),
+    mapStreetFreeCasing: Color(0xFFFFFFFF),
     mapSelectedCasing: Color(0xFF1B1F24),
     mapSelectedCore: Color(0xFFFFFFFF),
   );
 
-  /// A first proposal for dark mode, not used yet: T5.1 reviews it on a phone
-  /// and wires it. Status tints stay recognisable (same hues), with
-  /// backgrounds darkened where white text or a dark ground would lose
-  /// contrast.
+  /// The dark palette, reviewed in T5.1: the light palette's hues on a dark
+  /// ground. Every text pair reaches the WCAG 4.5:1 ratio and every border,
+  /// glyph or bar 3:1 (`test/ui/theme/app_colors_test.dart` checks them).
+  /// Two tokens turn over against the light ones because no colour can
+  /// carry white text and also read on a dark surface: [accent] is a light
+  /// red under dark text, and [doneInk] a light green beside the tiles'
+  /// dark [done].
   static const dark = AppColors(
     brightness: Brightness.dark,
     ground: Color(0xFF15181C),
     surface: Color(0xFF1F2328),
     ink: Color(0xFFECEAE5),
     muted: Color(0xFFA9AFB7),
-    line: Color(0xFF4A5058),
+    line: Color(0xFF6B737E),
     divider: Color(0xFF2E3238),
-    accent: Color(0xFFD9473E),
-    onAccent: Color(0xFFFFFFFF),
+    accent: Color(0xFFE5766F),
+    onAccent: Color(0xFF1B1F24),
     disabled: Color(0xFF2E3238),
     onDisabled: Color(0xFFA9AFB7),
     alert: Color(0xFF3A1F1D),
     scrim: Color(0xB3000000),
     toDo: Color(0xFF1F2328),
     onToDo: Color(0xFFECEAE5),
-    toDoBorder: Color(0xFF4A5058),
+    toDoBorder: Color(0xFF6B737E),
     done: Color(0xFF237A51),
     onDone: Color(0xFFFFFFFF),
     doneBorder: Color(0xFF2E9463),
+    doneInk: Color(0xFF33A872),
+    // The light tile: white text holds on it, and a lighter border shows
+    // it on the dark ground, where the tile alone would be dim (#113).
+    refused: Color(0xFF5A6068),
+    onRefused: Color(0xFFFFFFFF),
+    refusedBorder: Color(0xFF8A8F96),
     nobodyHome: Color(0xFFF2B33D),
     onNobodyHome: Color(0xFF1B1F24),
     nobodyHomeBorder: Color(0xFFD99A22),
@@ -130,15 +153,21 @@ final class AppColors extends ThemeExtension<AppColors> {
     onBuildingPartial: Color(0xFFECEAE5),
     buildingPartialBorder: Color(0xFF6B6558),
     editTileBorder: Color(0xFF8A8F96),
+    // Dimmer than the dark [muted], as the light ones are than theirs.
+    unavailable: Color(0xFF6E747C),
+    unavailableMark: Color(0xFF4A5058),
     snackBar: Color(0xFFECEAE5),
     onSnackBar: Color(0xFF1B1F24),
     snackBarAction: Color(0xFF9A3412),
-    mapStreetDone: Color(0xFF2E9463),
+    // The base map (OpenFreeMap « liberty ») stays light in dark mode, so
+    // the lines drawn on it keep the light palette's colours.
+    mapStreetDone: Color(0xFF1E6B47),
     mapStreetPartial: Color(0xFFE0A21B),
-    mapStreetToDo: Color(0xFF5B8BD9),
-    mapStreetFree: Color(0xFF8A9099),
-    mapSelectedCasing: Color(0xFFFFFFFF),
-    mapSelectedCore: Color(0xFF1B1F24),
+    mapStreetToDo: Color(0xFF2F5DA8),
+    mapStreetFree: Color(0xFF3E434A),
+    mapStreetFreeCasing: Color(0xFFFFFFFF),
+    mapSelectedCasing: Color(0xFF1B1F24),
+    mapSelectedCore: Color(0xFFFFFFFF),
   );
 
   /// The palette of the nearest `Theme`. Every `ThemeData` of the app is
@@ -188,6 +217,18 @@ final class AppColors extends ThemeExtension<AppColors> {
   final Color done;
   final Color onDone;
   final Color doneBorder;
+
+  /// The done green as text or a mark on [surface] or [ground]: a finished
+  /// street's count, the open tournée's ring and ✓, progress bars. The
+  /// same as [done] in light; lighter in dark, where white text needs the
+  /// tiles' [done] to stay dark.
+  final Color doneInk;
+
+  /// « Refusé » (#113, PLAN §5.6): a dark grey tile with white text, told
+  /// from a done one by its ⊘ and its lightness, never its colour alone.
+  final Color refused;
+  final Color onRefused;
+  final Color refusedBorder;
   final Color nobodyHome;
   final Color onNobodyHome;
   final Color nobodyHomeBorder;
@@ -206,6 +247,12 @@ final class AppColors extends ThemeExtension<AppColors> {
   /// the tiles read as « being edited », not as a status.
   final Color editTileBorder;
 
+  /// The text of a tournée « Mes secteurs » cannot open offline (Switcher
+  /// mockup): greyed further than [muted], with its ring in
+  /// [unavailableMark]. Never alone: « Disponible avec réseau » says it.
+  final Color unavailable;
+  final Color unavailableMark;
+
   /// The undo snackbar: dark bar, yellow action.
   final Color snackBar;
   final Color onSnackBar;
@@ -216,12 +263,16 @@ final class AppColors extends ThemeExtension<AppColors> {
   final Color mapStreetPartial;
   final Color mapStreetToDo;
   final Color mapStreetFree;
+
+  /// The line under the « libre » dashes, wider than them, so they stand
+  /// out from the base map's roads (mockups README).
+  final Color mapStreetFreeCasing;
   final Color mapSelectedCasing;
   final Color mapSelectedCore;
 
   // `copyWith` and `lerp` are required by ThemeExtension. The app never
   // animates between palettes, so `lerp` switches at the half-way point
-  // instead of blending 36 colours.
+  // instead of blending every colour.
   @override
   AppColors copyWith() => this;
 

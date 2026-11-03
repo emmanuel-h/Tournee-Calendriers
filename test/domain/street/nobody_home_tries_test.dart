@@ -55,6 +55,13 @@ void main() {
   });
 
   group('keptBy', () {
+    test('should reset the tries when the status is refused', () {
+      expect(
+        NobodyHomeTries.keptBy(VisitStatus.refused, _tries(3)),
+        NobodyHomeTries.none,
+      );
+    });
+
     test('should reset the tries when the status is to do', () {
       expect(
         NobodyHomeTries.keptBy(VisitStatus.toDo, _tries(3)),

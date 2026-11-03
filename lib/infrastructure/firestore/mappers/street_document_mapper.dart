@@ -1,5 +1,5 @@
 // Translation between a Street and its Firestore document,
-// `tournees/{id}/campaigns/{year}/streets/{streetId}` (PLAN §6.2). Pure
+// `sectors/{id}/campaigns/{year}/streets/{streetId}` (PLAN §6.2). Pure
 // functions: no database here, so they are tested alone.
 //
 // The document:
@@ -16,7 +16,7 @@
 //                and on a building only: labelStyle, layout, dwellings }
 //   layout   = [ { esc: "A", floor: 5 | null, doors: ["51", "52"] } ]
 //   dwellings = { "A5-51": { status, comeBack, by, at, tries } }   ← tries as a house's
-//   status   = "TO_DO" | "DONE" | "NOBODY_HOME" | "COME_BACK"
+//   status   = "TO_DO" | "DONE" | "REFUSED" | "NOBODY_HOME" | "COME_BACK"
 //   when     = "" | "2026-10-24" | "2026-10-24T18"   ← see come_back_text.dart
 //   labelStyle = "FLOOR_AND_NUMBER" | "FLOOR_AND_LETTER" | "FREE"
 //   time     = a Firestore Timestamp
@@ -38,6 +38,9 @@
 // domain then gives a « personne » without a count its first try
 // (`NobodyHomeTries.keptBy`), and drops a count an older app left on a
 // house it put back to do.
+//
+// `REFUSED` (#113) is read by no app before 0.10.0, which cannot open the
+// streets of a secteur anyway (they moved to `sectors/` with #116).
 //
 // `comeBack` held a free hint (« après 19h ») before #81; such a text reads
 // as « repasser » with no time set (`comeBackFrom`), and is replaced when
@@ -169,10 +172,11 @@ Map<String, Object?> stampFields(
 
 /// The stored name of [status]. Fixed names rather than the Dart enum
 /// names, so renaming an enum value in the code cannot make the stored
-/// streets unreadable; the security rules list the same four.
+/// streets unreadable; the security rules list the same five.
 String statusName(VisitStatus status) => switch (status) {
   VisitStatus.toDo => 'TO_DO',
   VisitStatus.done => 'DONE',
+  VisitStatus.refused => 'REFUSED',
   VisitStatus.nobodyHome => 'NOBODY_HOME',
   VisitStatus.comeBack => 'COME_BACK',
 };
@@ -410,6 +414,7 @@ ComeBack? _comeBackOrNull(String? text) =>
 VisitStatus _statusFrom(String text) => switch (text) {
   'TO_DO' => VisitStatus.toDo,
   'DONE' => VisitStatus.done,
+  'REFUSED' => VisitStatus.refused,
   'NOBODY_HOME' => VisitStatus.nobodyHome,
   'COME_BACK' => VisitStatus.comeBack,
   _ => throw FormatException('Not a stored status', text),

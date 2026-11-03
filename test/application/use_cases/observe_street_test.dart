@@ -6,6 +6,7 @@ import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
+import '../../support/fakes/fake_open_round_store.dart';
 import '../../support/street_fixtures.dart';
 import 'street_fixtures.dart';
 
@@ -17,6 +18,7 @@ void main() {
       streets,
       clockAtTwo(),
       leaOnThePhone(),
+      noRoundOn(),
     );
     final seen = <Street?>[];
     final subscription = observeStreet(lilasId).listen(seen.add);

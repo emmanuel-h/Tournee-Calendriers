@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 /// The ✕ that leaves a screen or a sheet: the top bar of « Modifier la
-/// rue » and « Modifier les portes », the title line of the building grid.
+/// rue » and « Modifier les portes », the title line of the building grid,
+/// the top right of the street card.
 ///
 /// An `IconButton` keeps a 48 dp tap target around its 24 dp glyph; the
 /// [tooltip] is also the name screen readers say.

@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tournee_calendriers/application/use_cases/mark.dart';
+import 'package:tournee_calendriers/application/use_cases/set_house_details.dart';
+import 'package:tournee_calendriers/domain/sector/sector.dart';
 import 'package:tournee_calendriers/domain/shared/calendar_day.dart';
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
@@ -8,14 +10,16 @@ import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/nobody_home_tries.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
+import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/come_back_time.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_state.dart';
-import 'package:tournee_calendriers/presentation/my_tournees/my_tournees_notifier.dart';
+import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
 import 'package:tournee_calendriers/presentation/street/follows_street.dart';
+import 'package:tournee_calendriers/presentation/street/street_view_state.dart'
+    show shownTries;
 
 /// Which house a sheet shows. A record: two records with the same fields
 /// are equal, so `houseSheetProvider(key)` finds the same notifier for the
@@ -29,7 +33,7 @@ typedef DoorSheetKey = ({
   DwellingKey door,
 });
 
-/// The state of the Fiche maison of one single house (PLAN §5.7).
+/// The state of the status picker of one single house (PLAN §5.6).
 ///
 /// `family`: one notifier per house; `autoDispose`: it stops following the
 /// street once the sheet is closed.
@@ -44,7 +48,7 @@ final buildingDetailsProvider = NotifierProvider.autoDispose
       BuildingDetailsNotifier.new,
     );
 
-/// The state of the sheet of one door of a building (hold a door).
+/// The state of the status picker of one door of a building (tap a door).
 final doorSheetProvider = NotifierProvider.autoDispose
     .family<DoorSheetNotifier, HouseSheetState, DoorSheetKey>(
       DoorSheetNotifier.new,
@@ -60,15 +64,12 @@ typedef _Marks = ({
 });
 
 /// Follows one house, building or door of a street on the phone
-/// (`ObserveStreet`, offline) and stores each control of its sheet: the
-/// status (« Repasser » among them) and the day and hour of the
-/// « repasser »; on a building itself, its own « Repasser » box instead of
-/// a status.
-/// « Repassé, toujours personne » is not stored here: the sheet closes and
-/// the screen behind stores it, so its snackbar offers « Annuler »
-/// (`StreetNotifier.nobodyHomeAgain`). The three
-/// sheets differ only in what they read ([_marksIn]) and the use case that
-/// stores ([_storer]); the rules below are written once.
+/// (`ObserveStreet`, offline) and stores each choice of its sheet: the
+/// status of the picker (« De nouveau personne » among them, PLAN §5.6)
+/// and the day and hour of the « repasser »; on a building itself, its own
+/// « Repasser » box instead of a status. The three sheets differ only in
+/// what they read ([_marksIn]) and the use case that stores ([_storer]);
+/// the rules below are written once.
 ///
 /// - **Nothing changed, nothing stored.** A status, a day or an hour
 ///   already there stores nothing, so opening and closing a sheet stamps
@@ -87,7 +88,7 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState>
 
   /// The open tournée as last read, for the name of who made the last
   /// change; null while none is open or it cannot be read.
-  Tournee? _team;
+  Sector? _team;
 
   StreetId get _streetId;
   HouseNumber get _number;
@@ -97,8 +98,9 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState>
   _Marks? _marksIn(Street street);
 
   /// The use case that stores a mark, read from `ref` now: a change queued
-  /// as the sheet closes runs when this notifier may be disposed.
-  Future<void> Function(Mark mark) _storer();
+  /// as the sheet closes runs when this notifier may be disposed. It gives
+  /// the change stored, or null when the street refused it.
+  Future<StreetChange?> Function(Mark mark) _storer();
 
   @override
   HouseSheetState build() {
@@ -115,9 +117,9 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState>
     // Riverpod keeps the notifier when it builds again (another tournée
     // opened): the old team must not name anyone.
     _team = null;
-    final tournee = ref.watch(currentTourneeProvider);
-    if (tournee == null) return;
-    final subscription = ref.watch(observeTeamProvider)(tournee.id).listen(
+    final sector = ref.watch(currentSectorProvider);
+    if (sector == null) return;
+    final subscription = ref.watch(observeTeamProvider)(sector.id).listen(
       (team) {
         _team = team;
         state = render();
@@ -141,16 +143,43 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState>
     };
   }
 
-  /// The status control: gives [status]. Leaving « Repasser » drops its
-  /// time (PLAN §6.1). Nothing happens on a building's own sheet, which has
-  /// no status.
-  Future<void> setStatus(VisitStatus status) => _change(
-    (marks) => switch (marks.status) {
-      null => null,
-      final current when current == status => null,
-      _ => StatusMark(status),
-    },
-  );
+  /// A status tapped in the picker: gives [status] and returns what was
+  /// stored, for the snackbar and its « Annuler »; null when nothing was
+  /// (the status it already has, a building's own sheet, a refusal).
+  /// Leaving « Repasser » drops its time (PLAN §6.1).
+  ///
+  /// « Personne » on a house or door that offers « De nouveau personne »
+  /// ([HouseSheetShown.offersNobodyHomeAgain]) counts one more try instead,
+  /// even when it already is « personne ».
+  Future<StoredStatus?> setStatus(VisitStatus status) async {
+    NobodyHomeTries? triesAfter;
+    final change = await _change((marks) {
+      final current = marks.status;
+      if (current == null) return null;
+      if (status == VisitStatus.nobodyHome && _comesBackTo(marks)) {
+        triesAfter = marks.tries.next;
+        return const NobodyHomeAgainMark();
+      }
+      if (current == status) return null;
+      triesAfter = NobodyHomeTries.keptBy(status, marks.tries);
+      return StatusMark(status);
+    });
+    return switch ((change, triesAfter)) {
+      (final change?, final tries?) => StoredStatus(
+        status: status,
+        tries: shownTries(tries),
+        change: change,
+      ),
+      _ => null,
+    };
+  }
+
+  /// Whether [marks] are of a house or door the team comes back to after
+  /// nobody was home: the rule of [HouseSheetShown.offersNobodyHomeAgain].
+  static bool _comesBackTo(_Marks marks) =>
+      marks.tries.count > 0 &&
+      (marks.status == VisitStatus.nobodyHome ||
+          marks.status == VisitStatus.comeBack);
 
   /// The « Repasser » box of a building's own sheet, ticked ([on]) or not.
   /// Ticking gives a « repasser » without time, which « Quand repasser ? »
@@ -205,16 +234,16 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState>
   Future<void> get settled => _pending;
 
   /// Queues the change [markFor] makes on the marks as they are when its
-  /// turn comes (null: nothing to change). A refused change leaves them as
-  /// they are; the sheet shows it.
-  Future<void> _change(Mark? Function(_Marks marks) markFor) {
+  /// turn comes (null: nothing to change), and gives what was stored. A
+  /// refused change leaves them as they are; the sheet shows it.
+  Future<StreetChange?> _change(Mark? Function(_Marks marks) markFor) {
     final store = _storer();
     final step = _pending.then((_) async {
       final marks = _marks;
-      if (marks == null) return;
+      if (marks == null) return null;
       final mark = markFor(marks);
-      if (mark == null) return;
-      await store(mark);
+      if (mark == null) return null;
+      return store(mark);
     });
     // A change that failed to be stored (a full disk) must not block the
     // ones after it; its caller still gets the error through `step`.
@@ -255,7 +284,7 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState>
   }
 }
 
-/// The Fiche maison of a single house, stored through `SetHouseDetails`.
+/// The status picker of a single house, stored through `SetHouseDetails`.
 /// A house that became a building is gone for this sheet.
 final class HouseSheetNotifier extends MarksSheetNotifier {
   HouseSheetNotifier(this.key);
@@ -281,10 +310,8 @@ final class HouseSheetNotifier extends MarksSheetNotifier {
   };
 
   @override
-  Future<void> Function(Mark mark) _storer() {
-    final setHouseDetails = ref.read(setHouseDetailsProvider);
-    return (mark) => setHouseDetails(key.street, key.number, mark);
-  }
+  Future<StreetChange?> Function(Mark mark) _storer() =>
+      _storedBy(ref.read(setHouseDetailsProvider), key);
 }
 
 /// The building's own « repasser » (« Repasser » under the grid), stored
@@ -314,13 +341,23 @@ final class BuildingDetailsNotifier extends MarksSheetNotifier {
   };
 
   @override
-  Future<void> Function(Mark mark) _storer() {
-    final setHouseDetails = ref.read(setHouseDetailsProvider);
-    return (mark) => setHouseDetails(key.street, key.number, mark);
-  }
+  Future<StreetChange?> Function(Mark mark) _storer() =>
+      _storedBy(ref.read(setHouseDetailsProvider), key);
 }
 
-/// The sheet of one door, stored through `MarkDwelling`: only that door is
+/// Stores a mark of the house [key] through [setHouseDetails]: the change,
+/// or null when the street refused it.
+Future<StreetChange?> Function(Mark mark) _storedBy(
+  SetHouseDetails setHouseDetails,
+  HouseSheetKey key,
+) =>
+    (mark) async =>
+        switch (await setHouseDetails(key.street, key.number, mark)) {
+          Ok(:final value) => value,
+          Err() => null,
+        };
+
+/// The picker of one door, stored through `MarkDwelling`: only that door is
 /// stamped. A door dropped by a new layout is gone for this sheet.
 final class DoorSheetNotifier extends MarksSheetNotifier {
   DoorSheetNotifier(this.key);
@@ -350,8 +387,12 @@ final class DoorSheetNotifier extends MarksSheetNotifier {
   }
 
   @override
-  Future<void> Function(Mark mark) _storer() {
+  Future<StreetChange?> Function(Mark mark) _storer() {
     final markDwelling = ref.read(markDwellingProvider);
-    return (mark) => markDwelling(key.street, key.number, key.door, mark);
+    return (mark) async =>
+        switch (await markDwelling(key.street, key.number, key.door, mark)) {
+          Ok(:final value) => value,
+          Err() => null,
+        };
   }
 }

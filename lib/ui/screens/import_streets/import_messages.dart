@@ -37,17 +37,17 @@ String communeLabel(AppLocalizations l10n, CommuneOption commune) {
 
 /// The message after a complete import: « 3 rues importées », « 1 rue
 /// restaurée » when only streets from the Corbeille came back, or both;
-/// « … ajoutées à la tournée » [inTournee].
+/// « … ajoutées au secteur » [inSector].
 String importDoneMessage(
   AppLocalizations l10n,
   ImportSummary summary, {
-  required bool inTournee,
+  required bool inSector,
 }) => switch ((summary.imported, summary.restored)) {
   (final imported, 0) =>
-    inTournee ? l10n.addDone(imported) : l10n.importDone(imported),
+    inSector ? l10n.addDone(imported) : l10n.importDone(imported),
   (0, final restored) => l10n.importRestored(restored),
   (final imported, final restored) =>
-    inTournee
+    inSector
         ? l10n.addDoneAndRestored(imported, restored)
         : l10n.importDoneAndRestored(imported, restored),
 };
@@ -57,12 +57,12 @@ String importDoneMessage(
 String importPartialMessage(
   AppLocalizations l10n,
   ImportSummary summary, {
-  required bool inTournee,
+  required bool inSector,
 }) {
   // The streets back from the Corbeille are stored too.
   final stored = summary.imported + summary.restored;
   final reason = addressFailureMessage(l10n, summary.failure!);
-  return inTournee
+  return inSector
       ? l10n.addPartial(stored, summary.failed, reason)
       : l10n.importPartial(stored, summary.failed, reason);
 }

@@ -16,8 +16,10 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 /// again unchooses it (no time set). The hour list waits for a day.
 ///
 /// Drawn in the blue of « Repasser » while [enabled]; greyed, nothing to
-/// tap, otherwise (a house that is not « Repasser »). The block around it
-/// belongs to the sheet.
+/// tap, otherwise (a house that is not « Repasser » any more). The block
+/// around it belongs to the sheet; the label « Quand repasser ? » heads it
+/// unless the sheet's title already says it ([titled] false: the status
+/// picker's « N° 5 · quand repasser ? »).
 final class ComeBackTimePicker extends StatelessWidget {
   const ComeBackTimePicker({
     super.key,
@@ -26,6 +28,7 @@ final class ComeBackTimePicker extends StatelessWidget {
     required this.enabled,
     required this.onDay,
     required this.onHour,
+    this.titled = true,
   });
 
   /// Names the parts for tests: `<name>.comeBackDay.2026-10-24`,
@@ -37,6 +40,9 @@ final class ComeBackTimePicker extends StatelessWidget {
   final ValueChanged<CalendarDay?> onDay;
   final ValueChanged<int?> onHour;
 
+  /// Starts with the label « Quand repasser ? ».
+  final bool titled;
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -47,10 +53,11 @@ final class ComeBackTimePicker extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       spacing: 10,
       children: [
-        Text(
-          l10n.comeBackWhenLabel,
-          style: AppTextStyles.fieldLabel.copyWith(color: ink),
-        ),
+        if (titled)
+          Text(
+            l10n.comeBackWhenLabel,
+            style: AppTextStyles.fieldLabel.copyWith(color: ink),
+          ),
         Semantics(
           label: l10n.comeBackDayGroup,
           container: true,

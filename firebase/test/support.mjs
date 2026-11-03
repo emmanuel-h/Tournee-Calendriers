@@ -69,12 +69,12 @@ export const paul = 'paul';
 export const zoe = 'zoe';
 export const sam = 'sam';
 
-export const tourneeId = 't49';
+export const sectorId = 't49';
 export const code = 'K7P2QX';
-export const tourneePath = `tournees/${tourneeId}`;
-export const campaignPath = `${tourneePath}/campaigns/2026`;
+export const sectorPath = `sectors/${sectorId}`;
+export const campaignPath = `${sectorPath}/campaigns/2026`;
 export const streetsPath = `${campaignPath}/streets`;
-export const memberPath = (uid) => `${tourneePath}/members/${uid}`;
+export const memberPath = (uid) => `${sectorPath}/members/${uid}`;
 
 /** communeEntry of Villefranche-sur-Saône, with its centre. */
 export const villefrancheEntry = {
@@ -101,8 +101,8 @@ export const communeEntries = (count) =>
     lon: null,
   }));
 
-/** tourneeToDocument. */
-export const tourneeDoc = (overrides = {}) => ({
+/** sectorToDocument. */
+export const sectorDoc = (overrides = {}) => ({
   number: 49,
   centreKey: 'villefranche',
   centreName: 'CS Villefranche',
@@ -137,7 +137,7 @@ export const requestDoc = (name, overrides = {}) => ({
 
 /** joinCodeDocument. */
 export const previewDoc = (overrides = {}) => ({
-  tourneeId,
+  sectorId,
   number: 49,
   centreName: 'CS Villefranche',
   campaign: 2026,
@@ -223,6 +223,43 @@ export const streetDoc = (overrides = {}) => ({
 });
 
 /**
+ * The most houses one write may add (`housesPerWrite` in the rules and in
+ * lib/infrastructure/firestore/mappers/street_writes.dart, #70).
+ */
+export const housesPerWrite = 2;
+
+/**
+ * The first write of Rue de la Paix just imported from the BAN: the street
+ * with its first houses (as many as one write may add), unmarked.
+ */
+export const newStreetDoc = (overrides = {}) =>
+  streetDoc({
+    name: 'Rue de la Paix',
+    banId: '69264_0610',
+    houses: { 4: houseEntry(4), '4bis': houseEntry(4, { sfx: 'bis' }) },
+    ...overrides,
+  });
+
+/**
+ * Writes the street [data] at [ref] as the adapter writes a new street:
+ * the document with its first houses, then the others in updates of
+ * housesPerWrite, in order. Rejects at the first write refused.
+ */
+export async function writeInChunks(ref, data) {
+  const entries = Object.entries(data.houses);
+  const first = Object.fromEntries(entries.slice(0, housesPerWrite));
+  await setDoc(ref, { ...data, houses: first });
+  for (let start = housesPerWrite; start < entries.length; start += housesPerWrite) {
+    await updateFields(
+      ref,
+      entries
+        .slice(start, start + housesPerWrite)
+        .map(([label, house]) => [['houses', label], house]),
+    );
+  }
+}
+
+/**
  * Stores the team of Tournée 49 as the adapters leave it after creating
  * it, accepting Léa and receiving Paul's request, with Rue Nationale in
  * the campaign 2026; and the two administrators, added by hand in the
@@ -231,7 +268,7 @@ export const streetDoc = (overrides = {}) => ({
 export async function seedTeam(env) {
   await seed(env, `admins/${manu}`, {});
   await seed(env, `admins/${sam}`, {});
-  await seed(env, tourneePath, tourneeDoc());
+  await seed(env, sectorPath, sectorDoc());
   await seed(env, memberPath(manu), activeMemberDoc('Manu', manu));
   await seed(env, memberPath(lea), {
     ...activeMemberDoc('Léa', manu),
@@ -240,7 +277,7 @@ export async function seedTeam(env) {
   await seed(env, memberPath(paul), requestDoc('Paul'));
   await seed(env, campaignPath, campaignDoc());
   await seed(env, `joinCodes/${code}`, previewDoc());
-  await seed(env, 'tourneeKeys/villefranche_49', { tourneeId });
+  await seed(env, 'sectorKeys/villefranche_49', { sectorId });
   await seed(env, 'rescueCentres/villefranche', { name: 'CS Villefranche' });
   await seed(env, `${streetsPath}/nationale`, streetDoc());
 }

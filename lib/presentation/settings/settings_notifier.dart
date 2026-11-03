@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tournee_calendriers/application/ports/phone_settings.dart';
+import 'package:tournee_calendriers/domain/sector/member_name.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
-import 'package:tournee_calendriers/domain/tournee/member_name.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/settings/settings_state.dart';
 

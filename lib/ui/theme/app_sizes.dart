@@ -27,6 +27,12 @@ abstract final class AppSizes {
   /// Main buttons: « Créer », « Rejoindre », « Ajouter des rues ».
   static const buttonHeight = 56.0;
 
+  /// Space left and right of a main button's label, whatever the font size.
+  static const buttonPadding = 24.0;
+
+  /// The same for any other filled or outlined button (the theme's).
+  static const themeButtonPadding = 16.0;
+
   /// Buttons inside sheets and side-by-side pairs.
   static const compactButtonHeight = 52.0;
 
@@ -45,6 +51,10 @@ abstract final class AppSizes {
   static const glyphGap = 4.0;
 
   static const tileRadius = 12.0;
+
+  /// The ink outline of the tile whose status picker shows (PLAN §5.6).
+  static const selectedTileOutline = 3.0;
+
   static const tilePadding = 14.0;
 
   /// A building tile's side padding. Smaller than [tilePadding] because its
@@ -69,6 +79,13 @@ abstract final class AppSizes {
   /// The grabber at the top of a bottom sheet.
   static const dragHandleWidth = 40.0;
   static const dragHandleHeight = 4.0;
+
+  /// The street card's ✕ (Pick mockup): a 48 dp button this far from the
+  /// card's top and right edges, level with the grabber; the street's name
+  /// keeps this much room on its right so it never runs under it.
+  static const sheetCloseTop = 6.0;
+  static const sheetCloseRight = 8.0;
+  static const sheetCloseClearance = 40.0;
 
   /// Text fields (« Commune », « Filtrer les rues… »).
   static const fieldHeight = 52.0;
@@ -96,9 +113,14 @@ abstract final class AppSizes {
   /// block of a building's own sheet.
   static const segmentHeight = 52.0;
 
-  /// The status control of the Fiche maison (« À faire | Fait | Personne |
-  /// Repasser »), glyph above word.
-  static const statusSegmentHeight = 64.0;
+  /// The status buttons of the status picker (PLAN §5.6): 72 dp at least,
+  /// two a row, the current one ringed in ink a gap away.
+  static const statusChoiceHeight = 72.0;
+  static const statusChoiceRadius = 16.0;
+  static const statusChoiceGlyph = 24.0;
+  static const statusChoiceGap = 10.0;
+  static const statusChoiceRing = 2.0;
+  static const statusChoiceRingGap = 3.0;
   static const segmentRadius = 14.0;
   static const segmentGlyph = 18.0;
   static const comeBackPadding = 14.0;
@@ -126,6 +148,9 @@ abstract final class AppSizes {
   /// too ([labelStyleHeight]), not the mockup's 44: a tap target is never
   /// smaller.
   static const gridButtonHeight = 48.0;
+
+  /// The ▾ of « Gérer l'immeuble ▾ » (Material's own button icon size).
+  static const gridButtonIcon = 18.0;
 
   /// A row of the « Décrire l'immeuble » sheet: its (−) and (+) buttons
   /// and the value between them.
@@ -162,13 +187,13 @@ abstract final class AppSizes {
   /// A row of Paramètres (« Prénom    Manu › »).
   static const settingRowHeight = 56.0;
 
-  /// A tournée of « Mes tournées »: its name over its centre.
-  static const tourneeRowHeight = 68.0;
+  /// A tournée of « Mes secteurs »: its name over its centre.
+  static const sectorRowHeight = 68.0;
 
-  /// The round mark before a tournée of « Mes tournées » (● open, ○ another,
+  /// The round mark before a tournée of « Mes secteurs » (● open, ○ another,
   /// dashed while the request waits), and the dot inside it.
-  static const tourneeMark = 22.0;
-  static const tourneeMarkDot = 10.0;
+  static const sectorMark = 22.0;
+  static const sectorMarkDot = 10.0;
 
   /// The ▾ after the open tournée's name in the title.
   static const titleChevron = 22.0;
@@ -185,7 +210,7 @@ abstract final class AppSizes {
   static const requestCardRadius = 16.0;
 
   /// The card of the start screen offering the phone's streets to the
-  /// open tournée (« Les ajouter à la tournée »): drawn like a request's
+  /// open tournée (« Les ajouter au secteur »): drawn like a request's
   /// card.
   static const moveStreetsCardRadius = requestCardRadius;
 
@@ -203,6 +228,12 @@ abstract final class AppSizes {
 
   /// The trash icon in the avatar of the « Corbeille » row.
   static const avatarIcon = 18.0;
+
+  /// The streets of a member unfolded under their row in Équipe (#105):
+  /// indented under the name (16 + the avatar + 12), and the gap between
+  /// a count (« 3 rues ») and its ▸.
+  static const memberStreetsIndent = 64.0;
+  static const memberStreetsChevronGap = 6.0;
 
   /// A deleted street or number of the Corbeille: its name over who
   /// deleted it, and « Restaurer ».

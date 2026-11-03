@@ -23,6 +23,11 @@ final class DoneTile extends TileStatus {
   const DoneTile();
 }
 
+/// The calendar was refused (#113).
+final class RefusedTile extends TileStatus {
+  const RefusedTile();
+}
+
 /// Nobody answered.
 final class NobodyHomeTile extends TileStatus {
   const NobodyHomeTile();
@@ -62,6 +67,9 @@ enum StatusGlyphs {
 
   /// ✓ fait.
   done,
+
+  /// ⊘ refusé.
+  refused,
 
   /// ✗ personne.
   nobodyHome,
@@ -104,6 +112,14 @@ final class StatusLook {
           background: colors.done,
           foreground: colors.onDone,
           border: colors.doneBorder,
+          dashedBorder: false,
+        ),
+        RefusedTile() => StatusLook(
+          glyph: StatusGlyphs.refused,
+          glyphSize: AppSizes.tileGlyph,
+          background: colors.refused,
+          foreground: colors.onRefused,
+          border: colors.refusedBorder,
           dashedBorder: false,
         ),
         NobodyHomeTile() => StatusLook(

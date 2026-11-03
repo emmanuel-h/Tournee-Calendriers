@@ -1,15 +1,15 @@
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_id.dart';
 import 'package:tournee_calendriers/presentation/building/building_grid_notifier.dart';
 import 'package:tournee_calendriers/presentation/launch/launch_place.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/screens/add_streets/add_streets_screen.dart';
 import 'package:tournee_calendriers/ui/screens/add_streets/manual_street_screen.dart';
-import 'package:tournee_calendriers/ui/screens/all_tournees/all_tournees_screen.dart';
+import 'package:tournee_calendriers/ui/screens/all_sectors/all_sectors_screen.dart';
 import 'package:tournee_calendriers/ui/screens/building/adjust_doors_screen.dart';
 import 'package:tournee_calendriers/ui/screens/component_gallery_screen.dart';
 import 'package:tournee_calendriers/ui/screens/corbeille/corbeille_screen.dart';
@@ -17,9 +17,9 @@ import 'package:tournee_calendriers/ui/screens/edit_street/edit_street_screen.da
 import 'package:tournee_calendriers/ui/screens/home/start_or_home.dart';
 import 'package:tournee_calendriers/ui/screens/import_streets/import_screen.dart';
 import 'package:tournee_calendriers/ui/screens/map_gallery_screen.dart';
-import 'package:tournee_calendriers/ui/screens/onboarding/create_tournee_screen.dart';
+import 'package:tournee_calendriers/ui/screens/onboarding/create_sector_screen.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/join_pending_screen.dart';
-import 'package:tournee_calendriers/ui/screens/onboarding/join_tournee_screen.dart';
+import 'package:tournee_calendriers/ui/screens/onboarding/join_sector_screen.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/welcome_screen.dart';
 import 'package:tournee_calendriers/ui/screens/settings/changelog_screen.dart';
 import 'package:tournee_calendriers/ui/screens/settings/privacy_screen.dart';
@@ -93,29 +93,29 @@ GoRouter buildAppRouter({
     ),
     GoRoute(
       path: AppRoutes.create,
-      builder: (context, state) => const CreateTourneeScreen(),
+      builder: (context, state) => const CreateSectorScreen(),
     ),
     GoRoute(
       path: AppRoutes.join,
-      builder: (context, state) => const JoinTourneeScreen(),
+      builder: (context, state) => const JoinSectorScreen(),
     ),
     // `/rejoindre/attente?id=…`; without a tournée, the start screen.
     GoRoute(
       path: AppRoutes.joinPending,
       redirect: (context, state) =>
-          _tourneeIdOf(state) == null ? AppRoutes.home : null,
+          _sectorIdOf(state) == null ? AppRoutes.home : null,
       builder: (context, state) =>
-          JoinPendingScreen(tournee: _tourneeIdOf(state)!),
+          JoinPendingScreen(sector: _sectorIdOf(state)!),
     ),
     // Pushed by 👥 on the start screen; Équipe pushes the Corbeille.
     GoRoute(
       path: AppRoutes.team,
       builder: (context, state) => const TeamScreen(),
     ),
-    // Pushed by « Toutes les tournées › » of « Mes tournées » (admins).
+    // Pushed by « Tous les secteurs › » of « Mes secteurs » (admins).
     GoRoute(
-      path: AppRoutes.allTournees,
-      builder: (context, state) => const AllTourneesScreen(),
+      path: AppRoutes.allSectors,
+      builder: (context, state) => const AllSectorsScreen(),
     ),
     GoRoute(
       path: AppRoutes.settings,
@@ -154,9 +154,9 @@ StreetId? _streetIdOf(GoRouterState state) =>
     };
 
 /// The tournée named by the link's `id`, or null when it names none.
-TourneeId? _tourneeIdOf(GoRouterState state) =>
+SectorId? _sectorIdOf(GoRouterState state) =>
     switch (state.uri.queryParameters['id']) {
-      final String id when id.trim().isNotEmpty => TourneeId(id),
+      final String id when id.trim().isNotEmpty => SectorId(id),
       _ => null,
     };
 
@@ -164,7 +164,7 @@ TourneeId? _tourneeIdOf(GoRouterState state) =>
 String launchLocation(LaunchPlace place) => switch (place) {
   LaunchOnStreets() => AppRoutes.home,
   LaunchOnWelcome() => AppRoutes.welcome,
-  LaunchOnRequest(:final tournee) => AppRoutes.joinPendingOf(tournee),
+  LaunchOnRequest(:final sector) => AppRoutes.joinPendingOf(sector),
 };
 
 /// The building named by the link's `id` and `numero`, or null when it

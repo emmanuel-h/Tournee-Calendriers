@@ -34,16 +34,38 @@ M2 done, milestone closed (2026-10-17): onboarding (#21), Firebase (Spark) wired
 anonymous sign-in (#17, #67); Tournée aggregate (#18); Firestore adapters (#19); security rules in
 `firebase/` (#20); Équipe and Corbeille (#22); Mes tournées and Paramètres (#23); streets of the
 open tournée on Firestore, phone storage when none is open (#24); pending-sync line (#25). Validated
-by the user (2026-10-16); App Check enforced on Firestore and Auth (#68). Admins (#75): global `admins/{uid}` added by hand in the console, « Toutes les tournées », admin visit; validated by the user and closed (2026-10-17), rules deployed. Revoked admins and the emulator-based admin flow (#87) closed (2026-10-17).
+by the user (2026-10-16); App Check enforced on Firestore and Auth (#68). Admins (#75): global `admins/{uid}` added by hand in the console, « Tous les secteurs », admin visit; validated by the user and closed (2026-10-17), rules deployed. Revoked admins and the emulator-based admin flow (#87) closed (2026-10-17).
 Code audit clean-up (#88) and « Modifié par Léa » on the house and door sheets (#89) closed
-(2026-10-17). #90 open: go_router 18.1 done; Firebase (Firestore 7…) waits for
-`fake_cloud_firestore` to support it. `tool/admin_e2e.sh` fails ~1 run in 4 from stale reads of
-the Firestore emulator (firebase-tools 13.35.1); the fix is its upgrade (#69, needs Node ≥ 20).
-M3 delivered (2026-10-18), released as 0.5.0, in phone test: geometry and map layers (#26), geopf adapters (#27), street-picking use cases with shapes and assignees (#28), MapLibre map widget in `ui/map/` (#29), a tournée's communes and « Ajouter des rues » Carte | Liste (#78), Accueil (#30), the street card, search and manual street (#31), tries with nobody home (#80), the sheet on a tap to ↻ with a day + hour (#81). Follow-ups from the phone test: street shapes from the OpenFreeMap vector tiles instead of Overpass, filled once for streets without one (#92); take a street from « Autres rues » (#93); #91 open. Rules deployed 2026-10-18 (0.5.0); **`firestore.rules` changed since** (shape fill, #92): deploy them with the next release.
-Release signing and Play publishing pulled forward from M5 (#37): 0.4.0 (code 4) is on the
-internal track; publish with the `release-store` skill. `lib/bootstrap/firebase_options.dart` and `android/app/google-services.json`
+(2026-10-17). #90 open: go_router 18.1 and Firebase (firebase_core 5.1, cloud_firestore 7.1, firebase_auth 7.0,
+firebase_app_check 0.5.1, fake_cloud_firestore 4.5) done; the fake still cannot read a one-segment
+`FieldPath`, so `FirestoreStreetRepository.save` keeps writing top-level fields by name. #69: rules tooling in `firebase/` upgraded to firebase-tools
+15.34, rules-unit-testing 5, firebase 12 (Node ≥ 20; 22 locally and in CI); the Firestore
+emulator's stale reads are gone (`tool/admin_e2e.sh` 6/6 in a row, 2026-11-02).
+M3 done, milestone closed (2026-11-01), validated on the phone with 0.6.0: geometry and map layers (#26), geopf adapters (#27), street-picking use cases with shapes and assignees (#28), MapLibre map widget in `ui/map/` (#29), a tournée's communes and « Ajouter des rues » Carte | Liste (#78), Accueil (#30), the street card, search and manual street (#31), tries with nobody home (#80), the sheet on a tap to ↻ with a day + hour (#81). Follow-ups from the phone test: street shapes from the OpenFreeMap vector tiles instead of Overpass, filled once for streets without one (#92); take a street from « Autres rues » (#93); released as 0.5.1. A street held only by ex-members of the team is « libre » (#91, display only, no rules change). Rules (with the #92 shape fill) deployed 2026-10-18 and identical to `firestore.rules` (checked 2026-11-01).
+M4 done, milestone closed (2026-11-02), validated on the phone with 0.7.0: the open tournée
+downloads itself for offline use, unseen (#32: streets into the cache + MapLibre region, silent
+re-download for OpenFreeMap's weekly tiles); one line in Paramètres and tournées greyed
+« Disponible avec réseau » offline (#33); airplane-mode day (#34).
+M5 done, milestone closed (2026-11-02), released as 0.8.0 (code 9, internal track, with the store listing), phone test passed: launcher icon, themed icon and launch
+screen (#101); rules tooling on firebase-tools 15 (#69); each house of a bulk street write checked
+in the rules, 2 per write, sent in order (#70, `OrderedWrites`; those rules deployed 2026-11-02
+once 0.8.0 was installed: 0.7.0 and older can no longer add a street of more than 2 houses); Firebase 7 (#90); dark
+palette reviewed and 200 % text checked (#35); the user's Confidentialité text (#79) and the
+policy in `PRIVACY.md` linked from it; MIT `LICENSE`; Play listing texts, icon, feature graphic
+and screenshots in `store/` (#36). Follow-ups: #102–#105.
+Release signing and Play publishing pulled forward from M5 (#37): 0.7.0 (code 8, 2026-11-02: #32,
+#33) is on the internal track; publish with the `release-store` skill. `lib/bootstrap/firebase_options.dart` and `android/app/google-services.json`
 are gitignored: run `flutterfire configure --out=lib/bootstrap/firebase_options.dart` locally;
 CI writes them from secrets.
+M5 follow-ups (2026-11-02), released as 0.9.0 (code 10, internal track); M5 closed by the user (2026-11-02): built-in Kotlin (#103; Flutter still
+warns about firebase_core/auth/app_check, a false positive of its text check, flutter/flutter#189770);
+a new street cut off mid-write is caught up at the next start (#104, `UnfinishedStreets`; debug log
+« Street … written » to time a 300-number street); streets per member in Équipe, bottom buttons
+pinned (#105). #102 waits for a firebase-tools release past 15.34.2.
+#63 designed (2026-11-02), not built (milestone M8, #107–#116): the status picker (a tap shows the five
+statuses, « Refusé » added, no cycle, no hold; calendars per house; PLAN §5.6), tournées (one outing) with dons
+per payment method, free calendars, recap and « Collecte 2026 » per secteur (PLAN §5.13). The team's area is
+renamed « Secteur » (`Sector`) and the outing « Tournée » (`Round`), in the UI and the code (tasks pending).
 
 ## Commands
 
@@ -56,8 +78,10 @@ dart format --set-exit-if-changed lib test
 (cd firebase && npm test)                                # security rules in the emulator
 flutter build appbundle --release                        # release-only breakage
 python3 tool/publish_play.py --help                      # Play publishing (driven by /release-store)
+tool/render_play_icon.py                                 # 512 px Play icon from the launcher drawables
 flutter test integration_test/app_test.dart -d emulator-5554 --dart-define-from-file=$HOME/.config/tournee-calendriers/app_check_debug.json
 tool/admin_e2e.sh                                        # admin flows, local Auth + Firestore emulators
+tool/store_screenshots.sh                                # Play screenshots → store/screenshots/fr-FR/ (not a suite)
 flutter run --dart-define-from-file=$HOME/.config/tournee-calendriers/app_check_debug.json
 ```
 
@@ -119,14 +143,15 @@ on the real app (launch, mark a house, offline cold start…), ≤ 10 tests, < 3
 a task adds a user-visible flow; keep it green before every push. Two files, run separately (each
 is its own app process): `app_test.dart` on the real project, Firestore offline; `admin_test.dart`
 (admin flows, #87) against the **local Firebase emulators** (Auth + Firestore with the real rules,
-`tool/admin_e2e.sh` starts and stops them). Never `flutter test integration_test` on the whole
+`tool/admin_e2e.sh` starts and stops them). `store_screenshots_test.dart` is not part of the suite: it only makes the Play Store
+screenshots, through `tool/store_screenshots.sh`. Never `flutter test integration_test` on the whole
 folder: `admin_test.dart` fails without the emulators. Debug builds may reach `10.0.2.2` over
 plain HTTP for this (`android/app/src/debug/`); release builds may not.
 
 ## Infrastructure (decided at the M2 checkpoint)
 
 Firebase **Spark** (free), Blaze-ready: no Cloud Functions; the join stays on the phone behind
-the `TourneeDirectory` port so a server-side join is only an adapter swap later (PLAN Q20).
+the `SectorDirectory` port so a server-side join is only an adapter swap later (PLAN Q20).
 
 ## Agents
 

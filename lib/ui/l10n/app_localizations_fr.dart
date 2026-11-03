@@ -13,10 +13,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get appTitle => 'Tournée des calendriers';
 
   @override
-  String get screenCreate => 'Nouvelle tournée';
+  String get screenCreate => 'Nouveau secteur';
 
   @override
-  String get screenJoin => 'Rejoindre une tournée';
+  String get screenJoin => 'Rejoindre un secteur';
 
   @override
   String get screenJoinPending => 'Demande envoyée';
@@ -41,6 +41,9 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get tileStatusDone => 'fait';
+
+  @override
+  String get tileStatusRefused => 'refusé';
 
   @override
   String get tileStatusNobodyHome => 'personne';
@@ -70,15 +73,13 @@ class AppLocalizationsFr extends AppLocalizations {
   String get statusDone => 'Fait';
 
   @override
+  String get statusRefused => 'Refusé';
+
+  @override
   String get statusNobodyHome => 'Personne';
 
   @override
   String get statusComeBack => 'Repasser';
-
-  @override
-  String houseMarkedTries(String number, String status, int count) {
-    return '$number → $status (${count}e passage)';
-  }
 
   @override
   String tileTries(int count) {
@@ -102,12 +103,59 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get nobodyHomeAgain => 'Repassé, toujours personne';
+  String get nobodyHomeAgain => 'De nouveau personne';
 
   @override
-  String houseMarked(String number, String status) {
-    return '$number → $status';
+  String houseStatusStored(String number, String status) {
+    return 'N° $number : $status';
   }
+
+  @override
+  String houseStatusStoredTries(String number, String status, int count) {
+    return 'N° $number : $status (${count}e passage)';
+  }
+
+  @override
+  String doorStatusStored(String label, String status) {
+    return 'Porte $label : $status';
+  }
+
+  @override
+  String doorStatusStoredTries(String label, String status, int count) {
+    return 'Porte $label : $status (${count}e passage)';
+  }
+
+  @override
+  String get streetHint => 'Appuyez sur une maison pour changer son statut';
+
+  @override
+  String get gridHint => 'Appuyez sur une porte pour changer son statut';
+
+  @override
+  String houseTilePickSemantics(String number, String status) {
+    return 'Numéro $number, $status, changer le statut';
+  }
+
+  @override
+  String statusPickerHouse(String number) {
+    return 'N° $number';
+  }
+
+  @override
+  String statusPickerDoor(String label, String status) {
+    return 'Porte $label · $status';
+  }
+
+  @override
+  String statusPickerComeBack(String subject) {
+    return '$subject · quand repasser ?';
+  }
+
+  @override
+  String get statusPickerValidate => 'Valider';
+
+  @override
+  String get statusPickerClose => 'Fermer';
 
   @override
   String get editStreetAction => 'Modifier la rue';
@@ -125,21 +173,18 @@ class AppLocalizationsFr extends AppLocalizations {
   String streetCountsSemantics(
     int done,
     int total,
+    int refused,
     int nobodyHome,
     int comeBack,
   ) {
-    return '$done sur $total faits, $nobodyHome personne, $comeBack à repasser';
+    String _temp0 = intl.Intl.pluralLogic(
+      refused,
+      locale: localeName,
+      other: '$refused refusés',
+      one: '$refused refusé',
+    );
+    return '$done sur $total faits, $_temp0, $nobodyHome personne, $comeBack à repasser';
   }
-
-  @override
-  String get tapHintTap => 'Appui :';
-
-  @override
-  String get tapHintHold => 'Appui long : détails';
-
-  @override
-  String get tapHintSemantics =>
-      'Appui : à faire, fait, personne, repasser, à faire. Appui long : détails';
 
   @override
   String get streetGone => 'Cette rue n\'est plus sur ce téléphone.';
@@ -262,12 +307,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
     return 'C\'était le $dayString vers $hour h';
   }
-
-  @override
-  String get comeBackSheetCancel => 'Annuler';
-
-  @override
-  String get comeBackSheetOk => 'OK';
 
   @override
   String houseChangedToday(DateTime time) {
@@ -707,13 +746,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get gridClose => 'Fermer';
 
   @override
-  String get gridHintHold => 'Appui long : détails';
-
-  @override
-  String get gridHintSemantics =>
-      'Appui : à faire, fait, personne, repasser, à faire. Appui long : détails';
-
-  @override
   String get editFloors => 'Modifier les étages';
 
   @override
@@ -1072,38 +1104,38 @@ class AppLocalizationsFr extends AppLocalizations {
   String get saveFailedOk => 'OK';
 
   @override
-  String tourneeTitle(String number, String year) {
-    return 'Tournée $number · $year';
+  String sectorTitle(String number, String year) {
+    return 'Secteur $number · $year';
   }
 
   @override
-  String tourneeTitleSemantics(String title, String centre) {
-    return '$title, $centre. Changer de tournée';
+  String sectorTitleSemantics(String title, String centre) {
+    return '$title, $centre. Changer de secteur';
   }
 
   @override
-  String get myTourneesTitle => 'Mes tournées';
+  String get mySectorsTitle => 'Mes secteurs';
 
   @override
-  String get myTourneesEmpty => 'Aucune tournée pour l\'instant.';
+  String get mySectorsEmpty => 'Aucun secteur pour l\'instant.';
 
   @override
-  String myTourneesPending(String centre) {
+  String mySectorsPending(String centre) {
     return '$centre · votre demande est en attente';
   }
 
   @override
-  String myTourneesOpenSemantics(String title, String centre) {
-    return '$title, $centre, tournée ouverte';
+  String mySectorsOpenSemantics(String title, String centre) {
+    return '$title, $centre, secteur ouvert';
   }
 
   @override
-  String myTourneesClosedSemantics(String title, String centre) {
+  String mySectorsClosedSemantics(String title, String centre) {
     return '$title, $centre, ouvrir';
   }
 
   @override
-  String myTourneesWaiting(String centre, int count) {
+  String mySectorsWaiting(String centre, int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
@@ -1114,7 +1146,7 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String myTourneesWaitingSemantics(String title, String centre, int count) {
+  String mySectorsWaitingSemantics(String title, String centre, int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
@@ -1125,12 +1157,16 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String myTourneesPendingSemantics(String title, String centre) {
+  String mySectorsPendingSemantics(String title, String centre) {
     return '$title, $centre, votre demande est en attente';
   }
 
   @override
   String get settingsYou => 'Vous';
+
+  @override
+  String get settingsOfflineLine =>
+      'L\'application fonctionne sans réseau ; les modifications sont envoyées dès qu\'il revient.';
 
   @override
   String get settingsApplication => 'Application';
@@ -1139,7 +1175,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get settingsName => 'Prénom';
 
   @override
-  String settingsMyTourneesValue(String number, String year) {
+  String settingsMySectorsValue(String number, String year) {
     return '$number · $year';
   }
 
@@ -1192,8 +1228,72 @@ class AppLocalizationsFr extends AppLocalizations {
   String get release010First => 'Première version de test.';
 
   @override
+  String get release0100Sector =>
+      'La tournée s\'appelle maintenant « secteur ».';
+
+  @override
+  String get release0100Picker =>
+      'Rue : touchez une maison ou une porte, puis choisissez son statut. Plus de cycle ni d\'appui long.';
+
+  @override
+  String get release0100Refused =>
+      'Nouveau statut « Refusé » pour une maison ou une porte qui ne veut pas de calendrier : elle compte comme faite.';
+
+  @override
+  String get release0100Privacy =>
+      'Confidentialité : le texte dit aussi ce qui est gardé des tournées, des dons et des calendriers.';
+
+  @override
+  String get release090Streets =>
+      'Équipe : chaque membre montre le nombre de rues qu\'il couvre ; touchez ce nombre pour voir leurs noms.';
+
+  @override
+  String get release090Buttons =>
+      'Équipe : « Quitter le secteur » et « Supprimer le secteur » restent en bas de l\'écran.';
+
+  @override
+  String get release090CaughtUp =>
+      'Une longue rue ajoutée juste avant de fermer l\'application est complétée au démarrage suivant, même sans réseau.';
+
+  @override
+  String get release080Icon =>
+      'Nouvelle icône, et un écran de démarrage aux couleurs de l\'application.';
+
+  @override
+  String get release080Dark =>
+      'Le thème sombre est revu, et les écrans restent lisibles avec une grande taille de texte.';
+
+  @override
+  String get release080Privacy =>
+      'Confidentialité : un nouveau texte, et un lien vers la politique complète en ligne.';
+
+  @override
+  String get release070Offline =>
+      'Le secteur ouvert reste disponible sans réseau : la carte et les rues sont gardées sur le téléphone, toutes seules.';
+
+  @override
+  String get release070Greyed =>
+      'Sans réseau, un secteur jamais ouvert sur ce téléphone apparaît en gris dans « Mes secteurs ».';
+
+  @override
+  String get release070Settings =>
+      'Paramètres rappelle que l\'application fonctionne sans réseau.';
+
+  @override
+  String get release060FreeLines =>
+      'Les rues libres se voient mieux sur la carte : tirets gris foncé sur un liseré blanc.';
+
+  @override
+  String get release060CloseCard =>
+      'La fiche d\'une rue sur la carte se ferme avec ✕.';
+
+  @override
+  String get release060LeftTeam =>
+      'Les rues d\'un membre qui a quitté l\'équipe redeviennent libres.';
+
+  @override
   String get release051Lines =>
-      'Les rues de la tournée apparaissent enfin sur la carte : leur tracé vient du fond de carte, et les rues déjà ajoutées reçoivent le leur.';
+      'Les rues du secteur apparaissent enfin sur la carte : leur tracé vient du fond de carte, et les rues déjà ajoutées reçoivent le leur.';
 
   @override
   String get release051AddAtOnce =>
@@ -1201,15 +1301,15 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get release051TakeFromList =>
-      'Une rue des « Autres rues de la tournée » s\'ouvre sur la carte pour se l\'attribuer.';
+      'Une rue des « Autres rues du secteur » s\'ouvre sur la carte pour se l\'attribuer.';
 
   @override
   String get release050Map =>
-      'Accueil montre la carte de la tournée : ses rues, ses maisons, une légende et le panneau « Mes rues ».';
+      'Accueil montre la carte du secteur : ses rues, ses maisons, une légende et le panneau « Mes rues ».';
 
   @override
   String get release050AddStreets =>
-      'Une tournée a ses communes ; « Ajouter des rues » s\'ouvre dessus, en carte ou en liste : touchez une route, cherchez-la ou saisissez-la.';
+      'Un secteur a ses communes ; « Ajouter des rues » s\'ouvre dessus, en carte ou en liste : touchez une route, cherchez-la ou saisissez-la.';
 
   @override
   String get release050Assignees =>
@@ -1233,15 +1333,15 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get release020Admins =>
-      'Seuls les administrateurs créent une tournée ; les autres la rejoignent avec un code.';
+      'Seuls les administrateurs créent un secteur ; les autres le rejoignent avec un code.';
 
   @override
-  String get release020AllTournees =>
-      'Les administrateurs voient toutes les tournées, les gèrent et peuvent les rejoindre directement.';
+  String get release020AllSectors =>
+      'Les administrateurs voient tous les secteurs, les gèrent et peuvent les rejoindre directement.';
 
   @override
   String get release020Team =>
-      'Équipe : « Nouveau code », « Retirer » et « Supprimer » sont réservés aux administrateurs ; chacun peut quitter la tournée.';
+      'Équipe : « Nouveau code », « Retirer » et « Supprimer » sont réservés aux administrateurs ; chacun peut quitter le secteur.';
 
   @override
   String get release020DeviceId =>
@@ -1275,35 +1375,47 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get privacyAccountBody =>
-      'Un compte anonyme est créé au premier lancement : ni adresse e-mail, ni numéro de téléphone. L\'équipe voit seulement le prénom que vous donnez.';
+      'L\'appli ne demande ni adresse e-mail ni numéro de téléphone. Au premier lancement, elle crée un compte anonyme. Vos coéquipiers voient seulement le prénom que vous avez tapé.';
 
   @override
   String get privacyDataTitle => 'Données enregistrées';
 
   @override
   String get privacyDataBody =>
-      'Les adresses et leur position (données publiques), l\'état de chaque porte, l\'indication « repasser » (20 caractères au plus) et les prénoms des membres. Aucun nom d\'habitant, aucun don, aucune réponse des habitants.';
+      'Pour chaque rue du secteur : les numéros, leur place sur la carte, ce qui s\'est passé à chaque porte (fait, refusé, personne, à repasser), le jour et l\'heure où repasser, combien de calendriers la maison a pris, et le prénom de qui l\'a noté. Pour chaque tournée validée : son début et sa fin, le nombre de maisons visitées, le nombre et le total des dons par moyen de paiement, et les calendriers offerts, sans le prénom de qui l\'a faite. Un don n\'est jamais lié à une maison : la liste des dons reste sur le téléphone jusqu\'à la validation de la tournée, puis elle est effacée. Rien d\'autre : pas de nom d\'habitant, pas de note.';
 
   @override
   String get privacyLocationTitle => 'Position';
 
   @override
   String get privacyLocationBody =>
-      'Votre position sert seulement à vous situer sur la carte. Elle n\'est ni enregistrée ni envoyée. L\'autorisation est demandée la première fois que vous touchez le bouton qui vous situe.';
+      'La position du téléphone sert seulement à vous placer sur la carte, quand vous touchez le bouton. Rien n\'est sauvegardé en dehors de votre téléphone.';
 
   @override
   String get privacyHostingTitle => 'Hébergement';
 
   @override
   String get privacyHostingBody =>
-      'Les données des tournées sont hébergées dans l\'Union européenne (Google Firebase).';
+      'Les secteurs sont stockés chez Google Firebase, dans l\'Union européenne. Les cartes viennent d\'OpenFreeMap et les adresses de la Base Adresse Nationale : comme tout site web, ces services voient l\'adresse IP du téléphone quand ils lui envoient des données.';
 
   @override
   String get privacyDeletionTitle => 'Suppression';
 
   @override
   String get privacyDeletionBody =>
-      'Supprimer la tournée efface toutes ses données. À chaque nouvelle campagne, la campagne d\'avant la précédente est effacée.';
+      'Supprimer le secteur efface tout ce qu\'il contient. Quand une campagne commence, celle d\'il y a deux ans est effacée. Désinstaller l\'appli efface ce qui est sur le téléphone, y compris les dons d\'une tournée pas encore validée ; ce qui est partagé avec l\'équipe reste jusqu\'à la suppression du secteur.';
+
+  @override
+  String get privacyOnline => 'Politique complète en ligne';
+
+  @override
+  String get privacyOnlineSemantics =>
+      'Politique complète en ligne, s\'ouvre dans le navigateur';
+
+  @override
+  String privacyOnlineFailed(String url) {
+    return 'Impossible d\'ouvrir le navigateur. La politique est à l\'adresse $url';
+  }
 
   @override
   String get homeTeam => 'Équipe';
@@ -1321,7 +1433,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String teamTitle(String number) {
-    return 'Tournée $number';
+    return 'Secteur $number';
   }
 
   @override
@@ -1334,7 +1446,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String teamQrSemantics(String code) {
-    return 'QR code de la tournée, code $code';
+    return 'QR code du secteur, code $code';
   }
 
   @override
@@ -1342,7 +1454,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String teamShareText(String number, String centre, String code) {
-    return 'Tournée $number · $centre\nRejoignez-la dans l\'app Tournée Calendriers avec le code $code.';
+    return 'Secteur $number · $centre\nRejoignez-le dans l\'app Tournée Calendriers avec le code $code.';
   }
 
   @override
@@ -1401,6 +1513,33 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String teamMemberStreets(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count rues',
+      one: '1 rue',
+      zero: '0 rue',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String teamMemberStreetsShow(String name, String streets) {
+    return '$name, $streets, afficher les rues';
+  }
+
+  @override
+  String teamMemberStreetsHide(String name, String streets) {
+    return '$name, $streets, masquer les rues';
+  }
+
+  @override
+  String teamMemberStreetsList(String name) {
+    return 'Rues de $name';
+  }
+
+  @override
   String get teamRemove => 'Retirer';
 
   @override
@@ -1410,7 +1549,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String teamRemoveBody(String name) {
-    return '$name n\'aura plus accès à la tournée. Ses marques restent dans les rues.';
+    return '$name n\'aura plus accès au secteur. Ses marques restent dans les rues.';
   }
 
   @override
@@ -1426,11 +1565,11 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get teamLeave => 'Quitter la tournée';
+  String get teamLeave => 'Quitter le secteur';
 
   @override
   String teamLeaveTitle(String number) {
-    return 'Quitter la tournée $number ?';
+    return 'Quitter le secteur $number ?';
   }
 
   @override
@@ -1441,11 +1580,11 @@ class AppLocalizationsFr extends AppLocalizations {
   String get teamLeaveConfirm => 'Quitter';
 
   @override
-  String get teamDelete => 'Supprimer la tournée';
+  String get teamDelete => 'Supprimer le secteur';
 
   @override
   String teamDeleteTitle(String number) {
-    return 'Supprimer la tournée $number ?';
+    return 'Supprimer le secteur $number ?';
   }
 
   @override
@@ -1456,11 +1595,11 @@ class AppLocalizationsFr extends AppLocalizations {
   String get teamDeleteConfirm => 'Supprimer';
 
   @override
-  String get teamNoTournee => 'Aucune tournée ouverte.';
+  String get teamNoSector => 'Aucun secteur ouvert.';
 
   @override
   String get teamUnavailable =>
-      'L\'équipe ne peut pas être affichée : la tournée n\'est pas sur ce téléphone, ou vous n\'en faites plus partie.';
+      'L\'équipe ne peut pas être affichée : le secteur n\'est pas sur ce téléphone, ou vous n\'en faites plus partie.';
 
   @override
   String get teamChanged => 'L\'équipe a changé entre-temps.';
@@ -1553,8 +1692,8 @@ class AppLocalizationsFr extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: 'Les ajouter à la tournée',
-      one: 'L\'ajouter à la tournée',
+      other: 'Les ajouter au secteur',
+      one: 'L\'ajouter au secteur',
     );
     return '$_temp0';
   }
@@ -1572,8 +1711,8 @@ class AppLocalizationsFr extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count rues ajoutées à la tournée',
-      one: '1 rue ajoutée à la tournée',
+      other: '$count rues ajoutées au secteur',
+      one: '1 rue ajoutée au secteur',
     );
     return '$_temp0';
   }
@@ -1590,28 +1729,28 @@ class AppLocalizationsFr extends AppLocalizations {
     String _temp1 = intl.Intl.pluralLogic(
       already,
       locale: localeName,
-      other: '$already déjà dans la tournée',
-      one: '1 déjà dans la tournée',
+      other: '$already déjà dans le secteur',
+      one: '1 déjà dans le secteur',
     );
     return '$_temp0, $_temp1';
   }
 
   @override
   String get welcomeIntro =>
-      'Notez chaque porte de votre tournée et suivez l\'avancement de l\'équipe en direct.';
+      'Notez chaque porte de votre secteur et suivez l\'avancement de l\'équipe en direct.';
 
   @override
   String get welcomeNameHelp => 'Visible par votre équipe.';
 
   @override
-  String get createTourneeAction => 'Créer une tournée';
+  String get createSectorAction => 'Créer un secteur';
 
   @override
-  String get joinTourneeAction => 'Rejoindre une tournée';
+  String get joinSectorAction => 'Rejoindre un secteur';
 
   @override
   String appTitleSemantics(String title) {
-    return '$title. Mes tournées';
+    return '$title. Mes secteurs';
   }
 
   @override
@@ -1619,7 +1758,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get accountOffline =>
-      'Hors ligne : créer ou rejoindre une tournée demande le réseau.';
+      'Hors ligne : créer ou rejoindre un secteur demande le réseau.';
 
   @override
   String get createCentreLabel => 'Centre de secours';
@@ -1638,7 +1777,7 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get createNumberLabel => 'N° de tournée';
+  String get createNumberLabel => 'N° de secteur';
 
   @override
   String createNumberInvalid(int max) {
@@ -1658,7 +1797,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String createTakenTitle(String number, String centre) {
-    return 'La tournée $number du $centre existe déjà.';
+    return 'Le secteur $number du $centre existe déjà.';
   }
 
   @override
@@ -1673,7 +1812,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String createReady(String number, String centre) {
-    return 'Tournée $number · $centre est prête. Montrez ce code à l\'équipe.';
+    return 'Secteur $number · $centre est prêt. Montrez ce code à l\'équipe.';
   }
 
   @override
@@ -1693,19 +1832,19 @@ class AppLocalizationsFr extends AppLocalizations {
       'Un code n\'a que des lettres et des chiffres, sans 0, O, 1, I ni L.';
 
   @override
-  String get joinScanRefused => 'Ce QR code n\'est pas celui d\'une tournée.';
+  String get joinScanRefused => 'Ce QR code n\'est pas celui d\'un secteur.';
 
   @override
   String get joinUnknownCode =>
-      'Aucune tournée n\'a ce code. Vérifiez-le auprès de la personne qui vous l\'a donné.';
+      'Aucun secteur n\'a ce code. Vérifiez-le auprès de la personne qui vous l\'a donné.';
 
   @override
   String get joinLookupOffline =>
-      'Pas de réseau : la tournée ne peut pas être affichée.';
+      'Pas de réseau : le secteur ne peut pas être affiché.';
 
   @override
   String joinPreviewTitle(String number, String centre) {
-    return 'Tournée $number · $centre';
+    return 'Secteur $number · $centre';
   }
 
   @override
@@ -1717,11 +1856,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get joinRequest => 'Demander à rejoindre';
 
   @override
-  String get joinAlreadyJoined =>
-      'Cette tournée est déjà dans « Mes tournées ».';
+  String get joinAlreadyJoined => 'Ce secteur est déjà dans « Mes secteurs ».';
 
   @override
-  String get scannerHint => 'Visez le QR code de la tournée.';
+  String get scannerHint => 'Visez le QR code du secteur.';
 
   @override
   String get scannerUnavailable =>
@@ -1729,11 +1867,11 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get joinPendingBody =>
-      'Un membre de la tournée doit vous accepter. Demandez-le à la personne qui vous a donné le code.';
+      'Un membre du secteur doit vous accepter. Demandez-le à la personne qui vous a donné le code.';
 
   @override
   String get joinPendingOpensItself =>
-      'Cet écran s\'ouvrira tout seul sur la tournée dès que vous serez accepté.';
+      'Cet écran s\'ouvrira tout seul sur le secteur dès que vous serez accepté.';
 
   @override
   String get joinPendingSemantics => 'Demande en attente';
@@ -1745,18 +1883,18 @@ class AppLocalizationsFr extends AppLocalizations {
   String get joinRefused => 'Demande refusée';
 
   @override
-  String tourneeRemoved(String number) {
-    return 'Vous avez été retiré de la tournée $number.';
+  String sectorRemoved(String number) {
+    return 'Vous avez été retiré du secteur $number.';
   }
 
   @override
-  String tourneeDeleted(String number) {
-    return 'La tournée $number a été supprimée.';
+  String sectorDeleted(String number) {
+    return 'Le secteur $number a été supprimé.';
   }
 
   @override
-  String tourneeAdminRevoked(String number) {
-    return 'Vous n\'êtes plus administrateur : la tournée $number est retirée de Mes tournées.';
+  String sectorAdminRevoked(String number) {
+    return 'Vous n\'êtes plus administrateur : le secteur $number est retiré de Mes secteurs.';
   }
 
   @override
@@ -1776,37 +1914,47 @@ class AppLocalizationsFr extends AppLocalizations {
       'Pas encore de compte : connectez-vous au réseau.';
 
   @override
-  String get myTourneesAll => 'Toutes les tournées';
+  String get mySectorsAll => 'Tous les secteurs';
 
   @override
-  String myTourneesVisited(String centre) {
+  String mySectorsVisited(String centre) {
     return '$centre · administrateur';
   }
 
   @override
-  String myTourneesVisitedSemantics(String title, String centre) {
+  String mySectorsVisitedSemantics(String title, String centre) {
     return '$title, $centre, administrateur, ouvrir';
   }
 
   @override
-  String myTourneesVisitedOpenSemantics(String title, String centre) {
-    return '$title, $centre, administrateur, tournée ouverte';
+  String mySectorsVisitedOpenSemantics(String title, String centre) {
+    return '$title, $centre, administrateur, secteur ouvert';
   }
 
   @override
-  String allTourneesSubtitle(int count) {
+  String mySectorsUnavailable(String centre) {
+    return '$centre · Disponible avec réseau';
+  }
+
+  @override
+  String mySectorsUnavailableSemantics(String title, String centre) {
+    return '$title, $centre, disponible avec réseau';
+  }
+
+  @override
+  String allSectorsSubtitle(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count tournées',
-      one: '1 tournée',
-      zero: 'aucune tournée',
+      other: '$count secteurs',
+      one: '1 secteur',
+      zero: 'aucun secteur',
     );
     return 'Administrateur · $_temp0';
   }
 
   @override
-  String allTourneesMembers(int count) {
+  String allSectorsMembers(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
@@ -1818,12 +1966,12 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String allTourneesMine(String members) {
+  String allSectorsMine(String members) {
     return '$members · vous en êtes membre';
   }
 
   @override
-  String allTourneesWaiting(String details, int count) {
+  String allSectorsWaiting(String details, int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
@@ -1834,42 +1982,42 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String allTourneesRowSemantics(String title, String details) {
+  String allSectorsRowSemantics(String title, String details) {
     return '$title, $details, ouvrir';
   }
 
   @override
-  String get allTourneesOffline =>
+  String get allSectorsOffline =>
       'Pas de réseau : la liste ne peut pas être affichée.';
 
   @override
   String get notAdminAnyMore => 'Vous n\'êtes plus administrateur.';
 
   @override
-  String get allTourneesHint =>
-      'Ouvrez une tournée pour la gérer : code, équipe, rues. Vous n\'y entrez comme membre que si vous la rejoignez.';
+  String get allSectorsHint =>
+      'Ouvrez un secteur pour le gérer : code, équipe, rues. Vous n\'y entrez comme membre que si vous le rejoignez.';
 
   @override
-  String get allTourneesEmpty => 'Aucune tournée pour l\'instant.';
+  String get allSectorsEmpty => 'Aucun secteur pour l\'instant.';
 
   @override
   String get adminBannerTitle => 'Administrateur · pas membre';
 
   @override
   String get adminBannerBody =>
-      'Vous n\'êtes pas dans l\'équipe de cette tournée.';
+      'Vous n\'êtes pas dans l\'équipe de ce secteur.';
 
   @override
   String get adminBannerJoin => 'Rejoindre';
 
   @override
-  String get teamForgetVisit => 'Retirer de Mes tournées';
+  String get teamForgetVisit => 'Retirer de Mes secteurs';
 
   @override
   String get corbeilleAdmin => 'un administrateur';
 
   @override
-  String get mapLabel => 'Carte de la tournée';
+  String get mapLabel => 'Carte du secteur';
 
   @override
   String get mapLocateMe => 'Me localiser';
@@ -1932,11 +2080,11 @@ class AppLocalizationsFr extends AppLocalizations {
   String get teamAddCommune => 'Ajouter une commune';
 
   @override
-  String get teamCommuneAlreadyIn => 'Cette commune est déjà dans la tournée.';
+  String get teamCommuneAlreadyIn => 'Cette commune est déjà dans le secteur.';
 
   @override
   String teamTooManyCommunes(int max) {
-    return 'Une tournée a au plus $max communes.';
+    return 'Un secteur a au plus $max communes.';
   }
 
   @override
@@ -1952,7 +2100,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get addStreetsListTab => 'Liste';
 
   @override
-  String get alreadyInTournee => 'déjà dans la tournée';
+  String get alreadyInSector => 'déjà dans le secteur';
 
   @override
   String addButton(int count) {
@@ -1976,8 +2124,8 @@ class AppLocalizationsFr extends AppLocalizations {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count rues ajoutées à la tournée',
-      one: '1 rue ajoutée à la tournée',
+      other: '$count rues ajoutées au secteur',
+      one: '1 rue ajoutée au secteur',
       zero: 'Aucune nouvelle rue',
     );
     return '$_temp0';
@@ -2045,14 +2193,14 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String homeOtherStreets(int count) {
-    return 'Autres rues de la tournée ($count)';
+    return 'Autres rues du secteur ($count)';
   }
 
   @override
   String get homeNoStreetOfMine => 'Vous n\'avez pas encore de rue.';
 
   @override
-  String get homeNoStreet => 'Aucune rue dans la tournée pour l\'instant.';
+  String get homeNoStreet => 'Aucune rue dans le secteur pour l\'instant.';
 
   @override
   String get homePanelExpand => 'Afficher toute la liste';
@@ -2102,6 +2250,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get addStreetsManual => 'Saisir une rue à la main';
 
   @override
+  String get streetCardClose => 'Fermer';
+
+  @override
   String get streetCardLoading => 'Recherche de la rue…';
 
   @override
@@ -2117,7 +2268,7 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get streetCardNotInTournee => 'Pas encore dans la tournée';
+  String get streetCardNotInSector => 'Pas encore dans le secteur';
 
   @override
   String get streetCardAddMine => 'Ajouter et me l\'attribuer';
@@ -2182,7 +2333,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get streetCardNoNetworkHint =>
-      'Les rues déjà dans la tournée se prennent et s\'ouvrent sans réseau.';
+      'Les rues déjà dans le secteur se prennent et s\'ouvrent sans réseau.';
 
   @override
   String get streetCardNoStreetHere => 'Aucune rue connue ici';
@@ -2214,7 +2365,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get manualNoCommune =>
-      'La tournée n\'a pas encore de commune : cherchez celle de la rue.';
+      'Le secteur n\'a pas encore de commune : cherchez celle de la rue.';
 
   @override
   String get manualFrom => 'Du n°';

@@ -34,7 +34,7 @@ final class StartScreen extends ConsumerWidget {
     final l10n = AppLocalizations.of(context);
     final state = ref.watch(streetListProvider);
     return Scaffold(
-      appBar: StartAppBar(tournee: null, showGallery: showGallery),
+      appBar: StartAppBar(sector: null, showGallery: showGallery),
       body: SafeArea(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,

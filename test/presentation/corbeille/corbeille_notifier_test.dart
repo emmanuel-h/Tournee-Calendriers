@@ -1,25 +1,25 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
+import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/corbeille.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
-import 'package:tournee_calendriers/domain/tournee/my_tournees.dart';
 import 'package:tournee_calendriers/presentation/corbeille/corbeille_notifier.dart';
 import 'package:tournee_calendriers/presentation/corbeille/corbeille_state.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/shared/recent_time.dart';
 
 import '../../application/use_cases/street_fixtures.dart';
-import '../../domain/tournee/my_tournees_fixtures.dart';
-import '../../domain/tournee/tournee_fixtures.dart';
+import '../../domain/sector/my_sectors_fixtures.dart';
+import '../../domain/sector/sector_fixtures.dart';
 import '../../support/fakes/fake_admin_status.dart';
-import '../../support/fakes/fake_my_tournees_store.dart';
+import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_ports.dart';
+import '../../support/fakes/fake_sector_repository.dart';
 import '../../support/fakes/fake_street_repository.dart';
-import '../../support/fakes/fake_tournee_repository.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart' show n, streetName, villefranche;
 
@@ -49,25 +49,23 @@ void main() {
   late FakeStreetRepository streets;
   late FakeAdminStatus admins;
 
-  /// Manu's phone; the 49 is open unless [noTournee].
-  ProviderContainer phone(Iterable<Street> stored, {bool noTournee = false}) {
+  /// Manu's phone; the 49 is open unless [noSector].
+  ProviderContainer phone(Iterable<Street> stored, {bool noSector = false}) {
     streets = FakeStreetRepository(stored);
     // Sam is an admin of the app, not in the team of the 49.
     admins = FakeAdminStatus(admins: [samId]);
     final container = ProviderContainer(
       overrides: [
         streetRepositoryProvider.overrideWithValue(streets),
-        tourneeRepositoryProvider.overrideWithValue(
+        sectorRepositoryProvider.overrideWithValue(
           // Manu, Léa and Julie: Paul is no longer in the team.
-          FakeTourneeRepository([team()]),
+          FakeSectorRepository([team()]),
         ),
-        myTourneesStoreProvider.overrideWithValue(
-          FakeMyTourneesStore(
-            noTournee
-                ? MyTournees.none
-                : valueOf(
-                    MyTournees.none.remember(tournee49).open(tournee49.id),
-                  ),
+        mySectorsStoreProvider.overrideWithValue(
+          FakeMySectorsStore(
+            noSector
+                ? MySectors.none
+                : valueOf(MySectors.none.remember(sector49).open(sector49.id)),
           ),
         ),
         identityProvider.overrideWithValue(FakeIdentity(manuId)),
@@ -168,7 +166,7 @@ void main() {
   });
 
   test('should name nobody when no tournée is open', () async {
-    final container = phone([gambettaDeleted(by: leaId)], noTournee: true);
+    final container = phone([gambettaDeleted(by: leaId)], noSector: true);
     await pumpEventQueue();
 
     expect(container.read(corbeilleProvider).rows.single.removedBy, isNull);

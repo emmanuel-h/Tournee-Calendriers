@@ -63,8 +63,8 @@ sealed class HouseChange extends StreetChange {
       other.stamp == stamp;
 }
 
-/// The house at [number] was given a new [status] (a tap on its tile, or
-/// the status control of its sheet).
+/// The house at [number] was given a new [status] (in its status picker,
+/// PLAN §5.6).
 final class HouseMarked extends HouseChange {
   const HouseMarked({
     required super.streetId,
@@ -94,7 +94,7 @@ final class HouseMarked extends HouseChange {
       'HouseMarked(${streetId.value}, ${number.label}, $status, $stamp)';
 }
 
-/// « Repassé, toujours personne » on the house at [number] (#80): it is
+/// « De nouveau personne » on the house at [number] (#80): it is
 /// « personne » with one more try, [tries] in all, and has no « repasser »
 /// time any more.
 ///
@@ -267,8 +267,8 @@ final class NumberRenamed extends HouseChange {
       '$stamp)';
 }
 
-/// A change to one door of the building at [number] (a tap on the door, or
-/// its sheet on a long press).
+/// A change to one door of the building at [number] (in the door's status
+/// picker).
 ///
 /// Like a [HouseChange] it carries the door as it was ([before]), so undo
 /// can put that exact dwelling back, and storage writes only the named
@@ -350,7 +350,7 @@ final class DwellingMarked extends DwellingChange {
   String toString() => 'DwellingMarked($_where, $status, $stamp)';
 }
 
-/// « Repassé, toujours personne » on the door at [key] of the building
+/// « De nouveau personne » on the door at [key] of the building
 /// [number] (#80): « personne » with [tries] tries in all, as
 /// [HouseNobodyHomeAgain] for a house. Storage writes the door's `status`,
 /// `comeBack`, `tries`, `by` and `at`.

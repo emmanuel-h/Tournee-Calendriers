@@ -10,25 +10,33 @@ import 'package:http/http.dart' as http;
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
 import 'package:tournee_calendriers/application/ports/pending_sync.dart';
+import 'package:tournee_calendriers/application/ports/server_connection.dart';
 import 'package:tournee_calendriers/infrastructure/ban/ban_address_directory.dart';
 import 'package:tournee_calendriers/infrastructure/firebase_auth/anonymous_auth.dart';
 import 'package:tournee_calendriers/infrastructure/firebase_auth/firebase_identity.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_admin_status.dart';
+import 'package:tournee_calendriers/infrastructure/firestore/firestore_sector_directory.dart';
+import 'package:tournee_calendriers/infrastructure/firestore/firestore_sector_repository.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_street_repository.dart';
-import 'package:tournee_calendriers/infrastructure/firestore/firestore_tournee_directory.dart';
-import 'package:tournee_calendriers/infrastructure/firestore/firestore_tournee_repository.dart';
+import 'package:tournee_calendriers/infrastructure/firestore/firestore_streets_download.dart';
 import 'package:tournee_calendriers/infrastructure/geo_api/geo_commune_search.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_identity.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_moved_streets_log.dart';
-import 'package:tournee_calendriers/infrastructure/local_storage/local_my_tournees.dart';
+import 'package:tournee_calendriers/infrastructure/local_storage/local_my_sectors.dart';
+import 'package:tournee_calendriers/infrastructure/local_storage/local_open_round.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_phone_settings.dart';
+import 'package:tournee_calendriers/infrastructure/local_storage/local_round_ledger.dart';
+import 'package:tournee_calendriers/infrastructure/local_storage/local_sector_downloads.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_street_repository.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_street_view_preferences.dart';
+import 'package:tournee_calendriers/infrastructure/local_storage/local_unfinished_streets.dart';
 import 'package:tournee_calendriers/infrastructure/map_tiles/openfreemap_street_shapes.dart';
+import 'package:tournee_calendriers/infrastructure/maplibre_offline/maplibre_offline_map_store.dart';
 import 'package:tournee_calendriers/infrastructure/system/random_id_generator.dart';
 import 'package:tournee_calendriers/infrastructure/system/system_clock.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
-import 'package:tournee_calendriers/presentation/my_tournees/my_tournees_notifier.dart';
+import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
+import 'package:tournee_calendriers/ui/map/map_style.dart';
 
 /// The one HTTP client of the app, shared by the services that need the
 /// network (the BAN and geo.api.gouv.fr). Riverpod calls `onDispose` when the
@@ -47,7 +55,14 @@ final httpClientProvider = Provider<http.Client>((ref) {
 ///   street screens' « Masquer faits » in `street_view.json`, « Mes
 ///   tournées » and the open one in `my_tournees.json`, the name and the
 ///   theme in `settings.json`, the tournées that received the streets of
-///   M1 in `moved_streets.json`.
+///   M1 in `moved_streets.json`, the tournées downloaded for offline use
+///   in `tournee_downloads.json`, the new streets of a campaign not yet
+///   all handed to Firestore in `unfinished_streets/<tournée>/<year>/`
+///   (#104), the tournée on (one outing, #63) in `open_round.json`, and
+///   the validated ones in `validated_rounds/<sector>/<year>/` until the
+///   secteur's ledger on Firestore takes them over (#110).
+///   The file names that say « tournee » date from before the code said
+///   « sector » (#116); they stay, so an updated phone keeps its data.
 /// - [auth]: Firebase anonymous sign-in. Its uid is the member; until the
 ///   first sign-in succeeds, the phone's own id stands in for the marks,
 ///   and creating or joining a tournée signs in again (`MemberAccount`).
@@ -63,10 +78,11 @@ final httpClientProvider = Provider<http.Client>((ref) {
 /// The streets follow the open tournée: those of its current campaign in
 /// Firestore while one is open, the phone's own (M1) while none is. So does
 /// the pending sync: the Firestore streets' own count of unsent streets,
-/// always 0 for the phone's streets.
+/// always 0 for the phone's streets; and so does whether the phone is
+/// offline, from the same listener.
 ///
 /// Async because the member id, the street view preferences, « Mes
-/// tournées » and the settings are read from the phone before the first
+/// tournées », the settings and the tournée on are read from the phone before the first
 /// screen, so reading them later never waits.
 Future<List<Override>> bindAdapters({
   required Directory storage,
@@ -89,11 +105,15 @@ Future<List<Override>> bindAdapters({
   final streetView = await LocalStreetViewPreferences.load(
     fileOf('street_view.json'),
   );
-  final myTournees = await LocalMyTournees.load(fileOf('my_tournees.json'));
+  final mySectors = await LocalMySectors.load(fileOf('my_tournees.json'));
   final settings = await LocalPhoneSettings.load(fileOf('settings.json'));
   final movedStreets = await LocalMovedStreetsLog.load(
     fileOf('moved_streets.json'),
   );
+  final sectorDownloads = await LocalSectorDownloads.load(
+    fileOf('tournee_downloads.json'),
+  );
+  final openRound = await LocalOpenRound.load(fileOf('open_round.json'));
   // One phone storage of the streets: it answers from memory and queues
   // its writes, so two instances of it must never run side by side.
   final phoneStreets = LocalStreetRepository(
@@ -116,22 +136,33 @@ Future<List<Override>> bindAdapters({
   // builds again every use case, and every screen, that watches it. The
   // old tournée's listener stops (`onDispose`, which Riverpod runs before
   // building again).
-  final tourneeStreets = Provider<FirestoreStreetRepository?>((ref) {
+  final sectorStreets = Provider<FirestoreStreetRepository?>((ref) {
     // `select`: only the tournée and its campaign name the streets; the
     // summary changing otherwise (a new centre name) keeps them.
     final open = ref.watch(
-      currentTourneeProvider.select(
-        (tournee) => tournee == null ? null : (tournee.id, tournee.campaign),
+      currentSectorProvider.select(
+        (sector) => sector == null ? null : (sector.id, sector.campaign),
       ),
     );
     if (open == null) return null;
-    final (tournee, campaign) = open;
+    final (sector, campaign) = open;
     final streets = FirestoreStreetRepository(
       db,
-      tournee: tournee,
+      sector: sector,
       campaign: campaign,
       identity: identity,
       clock: clock,
+      unfinished: LocalUnfinishedStreets(
+        Directory(
+          [
+            storage.path,
+            'unfinished_streets',
+            // Percent-encoded: whatever the id holds, it stays one folder.
+            Uri.encodeComponent(sector.value),
+            '${campaign.value}',
+          ].join(Platform.pathSeparator),
+        ),
+      ),
     );
     ref.onDispose(() => unawaited(streets.close()));
     return streets;
@@ -139,13 +170,19 @@ Future<List<Override>> bindAdapters({
   return [
     phoneStreetRepositoryProvider.overrideWithValue(phoneStreets),
     streetRepositoryProvider.overrideWith(
-      (ref) => ref.watch(tourneeStreets) ?? phoneStreets,
+      (ref) => ref.watch(sectorStreets) ?? phoneStreets,
     ),
     // The same adapter as the streets: its one listener on the tournée
     // also tells which streets still have writes waiting. The phone's own
     // streets are never sent anywhere.
     pendingSyncProvider.overrideWith(
-      (ref) => ref.watch(tourneeStreets) ?? const _NothingToSend(),
+      (ref) => ref.watch(sectorStreets) ?? const _NothingToSend(),
+    ),
+    // The same adapter again: whether its listener answers from the
+    // phone's copy says whether the phone is offline (PLAN §5.3). With no
+    // tournée open no listener runs, so nothing says offline.
+    serverConnectionProvider.overrideWith(
+      (ref) => ref.watch(sectorStreets) ?? const _NothingToTell(),
     ),
     movedStreetsLogProvider.overrideWithValue(movedStreets),
     addressDirectoryProvider.overrideWith(
@@ -164,16 +201,31 @@ Future<List<Override>> bindAdapters({
     identityProvider.overrideWithValue(identity),
     memberAccountProvider.overrideWithValue(identity),
     streetViewPreferencesProvider.overrideWithValue(streetView),
-    myTourneesStoreProvider.overrideWithValue(myTournees),
+    mySectorsStoreProvider.overrideWithValue(mySectors),
     phoneSettingsProvider.overrideWithValue(settings),
-    // `overrideWith`: built the first time it is read, not at start-up.
-    tourneeDirectoryProvider.overrideWith(
-      (ref) => FirestoreTourneeDirectory(db),
+    // The tournée on and its dons stay on the phone (PLAN §6.3). The
+    // validated ones are kept on the phone too, for now: the secteur's
+    // ledger on Firestore replaces this one (#110).
+    openRoundStoreProvider.overrideWithValue(openRound),
+    roundLedgerProvider.overrideWithValue(
+      LocalRoundLedger(
+        Directory('${storage.path}${Platform.pathSeparator}validated_rounds'),
+      ),
     ),
-    tourneeRepositoryProvider.overrideWith(
-      (ref) => FirestoreTourneeRepository(db, random: random),
+    // `overrideWith`: built the first time it is read, not at start-up.
+    sectorDirectoryProvider.overrideWith((ref) => FirestoreSectorDirectory(db)),
+    sectorRepositoryProvider.overrideWith(
+      (ref) => FirestoreSectorRepository(db, random: random),
     ),
     randomProvider.overrideWithValue(random),
+    // The offline download (PLAN §7): the streets read from the server,
+    // the map regions of the map library over the very style the map
+    // shows, and what was downloaded, kept on the phone.
+    streetsDownloadProvider.overrideWith((ref) => FirestoreStreetsDownload(db)),
+    offlineMapStoreProvider.overrideWithValue(
+      const MapLibreOfflineMapStore(styleUrl: openFreeMapStyle),
+    ),
+    sectorDownloadsProvider.overrideWithValue(sectorDownloads),
     // Whether the phone, or a member, is an admin (PLAN §5.12): the
     // phone's own `admins/{uid}` once it has an account.
     adminStatusProvider.overrideWith(
@@ -189,4 +241,13 @@ final class _NothingToSend implements PendingSync {
 
   @override
   Stream<int> watchUnsentStreets() => Stream.value(0);
+}
+
+/// Whether the phone is offline while no tournée is open: no listener runs
+/// to tell, so it says online, which leaves « Mes secteurs » as it is.
+final class _NothingToTell implements ServerConnection {
+  const _NothingToTell();
+
+  @override
+  Stream<bool> watchOffline() => Stream.value(false);
 }

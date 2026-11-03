@@ -6,7 +6,7 @@ import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/import_streets/import_notifier.dart';
 import 'package:tournee_calendriers/presentation/import_streets/import_state.dart';
 
-/// What « Ajouter une commune… » shows (« Nouvelle tournée », Équipe):
+/// What « Ajouter une commune… » shows (« Nouveau secteur », Équipe):
 /// the text typed and the communes found for it.
 final class CommunePickerState {
   const CommunePickerState({

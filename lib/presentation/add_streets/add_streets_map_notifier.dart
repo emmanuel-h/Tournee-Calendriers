@@ -6,17 +6,17 @@ import 'package:tournee_calendriers/application/use_cases/add_street_from_map.da
 import 'package:tournee_calendriers/application/use_cases/look_up_street.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/map/map_layers.dart';
-import 'package:tournee_calendriers/domain/map/tournee_area.dart';
+import 'package:tournee_calendriers/domain/map/sector_area.dart';
+import 'package:tournee_calendriers/domain/sector/sector_commune.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/shared/insee_code.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
-import 'package:tournee_calendriers/domain/tournee/tournee_commune.dart';
 import 'package:tournee_calendriers/presentation/add_streets/add_streets_map_state.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
-import 'package:tournee_calendriers/presentation/my_tournees/my_tournees_notifier.dart';
+import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
 import 'package:tournee_calendriers/presentation/street_card/follows_team.dart';
 import 'package:tournee_calendriers/presentation/street_card/street_card.dart';
 
@@ -54,7 +54,7 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState>
   static const foundStreetMarginMetres = 200.0;
 
   var _streets = const <Street>[];
-  var _communes = const <TourneeCommune>[];
+  var _communes = const <SectorCommune>[];
 
   /// The area around the street picked in the search, null before.
   GeoBounds? _focus;
@@ -92,9 +92,9 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState>
         );
     ref.onDispose(streets.cancel);
     // `ref.watch`: another tournée opened follows its communes.
-    if (ref.watch(currentTourneeProvider) case final tournee?) {
+    if (ref.watch(currentSectorProvider) case final sector?) {
       final communes = ref
-          .watch(observeTourneeCommunesProvider)(tournee.id)
+          .watch(observeSectorCommunesProvider)(sector.id)
           .listen(
             (communes) {
               _communes = communes;
@@ -115,10 +115,10 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState>
     _streets = streets;
     // The card of a street of the tournée follows it: its progress, who
     // covers it. Gone to the Corbeille (it leaves the list), the card goes.
-    if (_target case _InTournee(:final street)) {
+    if (_target case _InSector(:final street)) {
       final id = street.id;
       if (_streetOf(id) case final fresh?) {
-        _target = _InTournee(fresh);
+        _target = _InSector(fresh);
       } else if (before.any((street) => street.id == id)) {
         _closeCard();
       }
@@ -140,7 +140,7 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState>
     if (street == null) return;
     _lookUps++;
     _search = const NoStreetSearch();
-    _target = _InTournee(street);
+    _target = _InSector(street);
     _point = null;
     _road = StreetShape.none;
     _show();
@@ -240,11 +240,11 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState>
     if (!ref.mounted || ticket != _lookUps) return;
     switch (result) {
       case Ok(value: final street):
-        _target = _InTournee(street);
+        _target = _InSector(street);
         _show();
         _fillAddedStreet();
       // A teammate added it meanwhile: its card as the tournée has it.
-      case Err(failure: AddStreetFailure.alreadyInTournee):
+      case Err(failure: AddStreetFailure.alreadyInSector):
         await _lookUp(FoundStreet(target.found.match), _point);
       case Err(failure: AddStreetFailure.serviceError):
         _target = target.copy(addFailed: true);
@@ -255,7 +255,7 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState>
   /// « Me l'attribuer » or « La faire aussi » on the card of a street of
   /// the tournée. Works offline; the card follows the street.
   Future<void> take() async {
-    if (_target case _InTournee(:final street)) {
+    if (_target case _InSector(:final street)) {
       await ref.read(takeStreetProvider)(street.id);
     }
   }
@@ -263,7 +263,7 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState>
   /// « Ne plus la faire » on the card of a street of the member's. Works
   /// offline.
   Future<void> release() async {
-    if (_target case _InTournee(:final street)) {
+    if (_target case _InSector(:final street)) {
       await ref.read(releaseStreetProvider)(street.id);
     }
   }
@@ -279,8 +279,8 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState>
     switch (result) {
       case Err(:final failure):
         _target = _Failed(_problemOf(failure));
-      case Ok(value: StreetOfTheTournee(:final street)):
-        _target = _InTournee(street);
+      case Ok(value: StreetOfTheSector(:final street)):
+        _target = _InSector(street);
       case Ok(value: final StreetToAdd found):
         _target = _ToAdd(found);
         unawaited(_showRoad(found, ticket));
@@ -305,7 +305,7 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState>
   /// when it was added before the road came. Offline, the write waits on
   /// the phone like any other.
   void _fillAddedStreet() {
-    if (_target case _InTournee(:final street)
+    if (_target case _InSector(:final street)
         when street.shape.isEmpty && !_road.isEmpty) {
       unawaited(ref.read(fillStreetShapeProvider)(street.id, road: _road));
     }
@@ -333,12 +333,12 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState>
   AddStreetsMapState render() {
     final target = _target;
     return AddStreetsMapState(
-      layers: MapLayers.of(_streets),
+      layers: MapLayers.of(_streets, roster: roster),
       area: _focus ?? addStreetsArea(_communes, _streets),
       selectedRoad: switch (target) {
         // A street just added keeps the road the card found until its own
         // comes back from storage.
-        _InTournee(:final street) when !street.shape.isEmpty => street.shape,
+        _InSector(:final street) when !street.shape.isEmpty => street.shape,
         _ => _road,
       },
       selectedPoint: _point,
@@ -354,7 +354,7 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState>
             adding: adding,
             addFailed: addFailed,
           ),
-        _InTournee(:final street) => StreetCardInTournee.of(
+        _InSector(:final street) => StreetCardInSector.of(
           street,
           me: ref.read(readCurrentMemberProvider)(),
           team: team,
@@ -395,8 +395,8 @@ final class _ToAdd extends _Target {
 }
 
 /// A street of the tournée, as last read.
-final class _InTournee extends _Target {
-  const _InTournee(this.street);
+final class _InSector extends _Target {
+  const _InSector(this.street);
 
   final Street street;
 }

@@ -221,6 +221,26 @@ void main() {
       expect(firstFloorOfEight(json)['level'], 1);
     });
 
+    test('should write a refused house and door as « refused »', () {
+      final (five, _) = valueOf(
+        richStreet.markHouse(n('5'), VisitStatus.refused, by: lea, at: twoPm),
+      );
+      final (street, _) = valueOf(
+        five.markDwelling(
+          n('8'),
+          DwellingKey(escA, 1, d('12')),
+          VisitStatus.refused,
+          by: lea,
+          at: twoPm,
+        ),
+      );
+
+      final json = streetToJson(street);
+
+      expect(houseAt(json, 3)['status'], 'refused');
+      expect(doorTwelve(json)['status'], 'refused');
+    });
+
     test('should write the time in UTC whatever the time zone', () {
       final street = valueOf(
         Street.create(
@@ -468,6 +488,22 @@ void main() {
           .building!
           .dwellingAt(DwellingKey(escB, 0, d('01')));
       expect(door!.tries.count, 0);
+    });
+
+    test('should read a refused house and door', () {
+      final json = storedRichStreet((json) {
+        houseAt(json, 3)['status'] = 'refused';
+        doorTwelve(json)['status'] = 'refused';
+      });
+
+      final street = streetFromJson(json);
+      final door = street
+          .houseAt(n('8'))!
+          .building!
+          .dwellingAt(DwellingKey(escA, 1, d('12')));
+      expect(street.houseAt(n('5'))!.status, VisitStatus.refused);
+      expect(street.houseAt(n('5'))!.tries.count, 0);
+      expect(door!.status, VisitStatus.refused);
     });
 
     test('should read a time written with an offset as UTC', () {

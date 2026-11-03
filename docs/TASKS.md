@@ -125,6 +125,7 @@ later screen could be checked with real streets (decided with you on 2026-10-04)
 | [#69](https://github.com/emmanuel-h/Tournee-Calendriers/issues/69) | Upgrade the rules test tooling past Node 18 |  |
 | [#70](https://github.com/emmanuel-h/Tournee-Calendriers/issues/70) | Check bulk street writes entry by entry in the rules |  |
 | [#79](https://github.com/emmanuel-h/Tournee-Calendriers/issues/79) | Rewrite the Confidentialité screen | manual |
+| [#101](https://github.com/emmanuel-h/Tournee-Calendriers/issues/101) | T5.4 App icon |  |
 
 ## M6 Next year (v1.1)
 

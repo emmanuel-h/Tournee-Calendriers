@@ -25,7 +25,25 @@ ThemeData buildAppTheme(AppColors colors) {
     outlineVariant: colors.divider,
     scrim: colors.scrim,
   );
-  const pill = WidgetStatePropertyAll<OutlinedBorder>(StadiumBorder());
+  // A pill: the radius is half a main button's height, so a one-line
+  // button of any height is fully rounded at its ends (a radius larger than
+  // half the height is scaled down to it). Unlike a `StadiumBorder`, a
+  // label wrapped on two lines by a large phone font keeps corners its
+  // text does not cross.
+  const pill = WidgetStatePropertyAll<OutlinedBorder>(
+    RoundedRectangleBorder(
+      borderRadius: BorderRadius.all(
+        Radius.circular(AppSizes.buttonHeight / 2),
+      ),
+    ),
+  );
+
+  // Material narrows a button's padding as the phone's font grows (to 4 dp
+  // at 200 %), which puts a wrapped label on the rounded outline. A fixed
+  // padding keeps it inside; our own buttons widen it (`app_buttons.dart`).
+  const padding = WidgetStatePropertyAll<EdgeInsetsGeometry>(
+    EdgeInsets.symmetric(horizontal: AppSizes.themeButtonPadding),
+  );
 
   return ThemeData(
     useMaterial3: true,
@@ -50,6 +68,7 @@ ThemeData buildAppTheme(AppColors colors) {
     filledButtonTheme: FilledButtonThemeData(
       style: ButtonStyle(
         shape: pill,
+        padding: padding,
         backgroundColor: WidgetStateProperty.resolveWith(
           (states) => states.contains(WidgetState.disabled)
               ? colors.disabled
@@ -66,6 +85,7 @@ ThemeData buildAppTheme(AppColors colors) {
     outlinedButtonTheme: OutlinedButtonThemeData(
       style: ButtonStyle(
         shape: pill,
+        padding: padding,
         backgroundColor: WidgetStatePropertyAll(colors.surface),
         foregroundColor: WidgetStateProperty.resolveWith(
           (states) => states.contains(WidgetState.disabled)
@@ -111,7 +131,7 @@ ThemeData buildAppTheme(AppColors colors) {
       ),
     ),
     progressIndicatorTheme: ProgressIndicatorThemeData(
-      color: colors.done,
+      color: colors.doneInk,
       linearTrackColor: colors.divider,
       circularTrackColor: Colors.transparent,
     ),

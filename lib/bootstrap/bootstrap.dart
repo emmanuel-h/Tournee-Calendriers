@@ -12,6 +12,7 @@ import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
 import 'package:tournee_calendriers/bootstrap/bindings.dart';
 import 'package:tournee_calendriers/bootstrap/firebase.dart';
+import 'package:tournee_calendriers/bootstrap/offline_upkeep.dart';
 import 'package:tournee_calendriers/bootstrap/uncaught_errors.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/components/save_failed_alert.dart';
@@ -56,7 +57,8 @@ Future<void> bootstrap({
   runApp(
     ProviderScope(
       overrides: overrides,
-      child: TourneeApp(navigatorKey: navigatorKey),
+      // The open tournée downloads itself for offline use, unseen.
+      child: OfflineUpkeep(child: TourneeApp(navigatorKey: navigatorKey)),
     ),
   );
 }
