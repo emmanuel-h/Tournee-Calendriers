@@ -718,6 +718,45 @@ service cloud.firestore {
         && isAddedHouseAt(houses, keys, 1);
     }
 
+    // ------------------------------------------- the validated tournées
+
+    // `rounds/{roundId}` (#63, PLAN §6.2): the summary of a validated
+    // tournée, written once by the member's app (RoundLedger). No member
+    // field, on purpose: who ran it is only checked, never stored.
+    function roundFields() {
+      return ['startedAt', 'endedAt', 'housesVisited', 'free', 'cash', 'cheque', 'card'];
+    }
+
+    // A figure of a tournée: a whole number 0–[max].
+    function isFigure(value, max) {
+      return value is int && value >= 0 && value <= max;
+    }
+
+    // The dons of one payment method: how many (0–9 999), and their sum in
+    // cents (0–100 000 000, a million euros).
+    function isMethodTotal(total) {
+      return total is map
+        && hasExactly(total, ['count', 'cents'])
+        && isFigure(total.count, 9999)
+        && isFigure(total.cents, 100000000);
+    }
+
+    // Exactly the fields of a summary, each in its bounds; it ends after it
+    // started (the app makes sure of it, `Round.validate`). Times are the
+    // phone's, never compared with `request.time` (a tournée validated
+    // offline reaches the server hours later).
+    function isRoundSummary(data) {
+      return hasExactly(data, roundFields())
+        && data.startedAt is timestamp
+        && data.endedAt is timestamp
+        && data.startedAt < data.endedAt
+        && isFigure(data.housesVisited, 9999)
+        && isFigure(data.free, 9999)
+        && isMethodTotal(data.cash)
+        && isMethodTotal(data.cheque)
+        && isMethodTotal(data.card);
+    }
+
     match /sectors/{sector} {
       // A member reaches a tournée by its id, from its code; only admins
       // list them all (« Toutes les tournées », PLAN §5.12).
@@ -771,6 +810,21 @@ service cloud.firestore {
             || (isMemberOrAdmin(sector)
               && year == string(get(sectorPath(sector)).data.currentCampaign)
               && isPastRetention(resource.data));
+        }
+
+        // A validated tournée: created once by an active member at the
+        // time of the write (an admin visiting runs none), in a campaign
+        // that exists, then never changed. Sending it again (a second
+        // `set` of the same id) is an update, refused: the first stays.
+        // It goes only with its secteur (or its campaign), which only an
+        // admin deletes.
+        match /rounds/{round} {
+          allow read: if isMemberOrAdmin(sector);
+          allow create: if isActiveMember(sector)
+            && isId(round)
+            && exists(campaignPath(sector, year))
+            && isRoundSummary(request.resource.data);
+          allow delete: if isAdmin();
         }
       }
     }

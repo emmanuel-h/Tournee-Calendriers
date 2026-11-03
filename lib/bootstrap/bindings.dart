@@ -15,6 +15,7 @@ import 'package:tournee_calendriers/infrastructure/ban/ban_address_directory.dar
 import 'package:tournee_calendriers/infrastructure/firebase_auth/anonymous_auth.dart';
 import 'package:tournee_calendriers/infrastructure/firebase_auth/firebase_identity.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_admin_status.dart';
+import 'package:tournee_calendriers/infrastructure/firestore/firestore_round_ledger.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_sector_directory.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_sector_repository.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_street_repository.dart';
@@ -25,7 +26,6 @@ import 'package:tournee_calendriers/infrastructure/local_storage/local_moved_str
 import 'package:tournee_calendriers/infrastructure/local_storage/local_my_sectors.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_open_round.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_phone_settings.dart';
-import 'package:tournee_calendriers/infrastructure/local_storage/local_round_ledger.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_sector_downloads.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_street_repository.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_street_view_preferences.dart';
@@ -58,9 +58,7 @@ final httpClientProvider = Provider<http.Client>((ref) {
 ///   M1 in `moved_streets.json`, the tournées downloaded for offline use
 ///   in `tournee_downloads.json`, the new streets of a campaign not yet
 ///   all handed to Firestore in `unfinished_streets/<tournée>/<year>/`
-///   (#104), the tournée on (one outing, #63) in `open_round.json`, and
-///   the validated ones in `validated_rounds/<sector>/<year>/` until the
-///   secteur's ledger on Firestore takes them over (#110).
+///   (#104), and the tournée on (one outing, #63) in `open_round.json`.
 ///   The file names that say « tournee » date from before the code said
 ///   « sector » (#116); they stay, so an updated phone keeps its data.
 /// - [auth]: Firebase anonymous sign-in. Its uid is the member; until the
@@ -68,9 +66,9 @@ final httpClientProvider = Provider<http.Client>((ref) {
 ///   and creating or joining a tournée signs in again (`MemberAccount`).
 /// - [firestore]: gives the Firestore database, asked once, only when a
 ///   screen first needs it (following a request to join, the open
-///   tournée's team and streets, whether the phone is an admin), so a
-///   phone that shows none of them never touches it. It serves the
-///   phone's copy first, so an offline cold start works.
+///   tournée's team and streets, whether the phone is an admin, a
+///   validated tournée), so a phone that shows none of them never touches
+///   it. It serves the phone's copy first, so an offline cold start works.
 /// - [addressDirectory]: replaces the BAN, so the instrumented suite can
 ///   import streets without the network.
 /// - [communeSearch]: replaces geo.api.gouv.fr, for the same reason.
@@ -203,15 +201,11 @@ Future<List<Override>> bindAdapters({
     streetViewPreferencesProvider.overrideWithValue(streetView),
     mySectorsStoreProvider.overrideWithValue(mySectors),
     phoneSettingsProvider.overrideWithValue(settings),
-    // The tournée on and its dons stay on the phone (PLAN §6.3). The
-    // validated ones are kept on the phone too, for now: the secteur's
-    // ledger on Firestore replaces this one (#110).
+    // The tournée on and its dons stay on the phone (PLAN §6.3); once
+    // validated, only its summary goes to the secteur, in Firestore
+    // (#110), whose offline queue sends it later.
     openRoundStoreProvider.overrideWithValue(openRound),
-    roundLedgerProvider.overrideWithValue(
-      LocalRoundLedger(
-        Directory('${storage.path}${Platform.pathSeparator}validated_rounds'),
-      ),
-    ),
+    roundLedgerProvider.overrideWith((ref) => FirestoreRoundLedger(db)),
     // `overrideWith`: built the first time it is read, not at start-up.
     sectorDirectoryProvider.overrideWith((ref) => FirestoreSectorDirectory(db)),
     sectorRepositoryProvider.overrideWith(

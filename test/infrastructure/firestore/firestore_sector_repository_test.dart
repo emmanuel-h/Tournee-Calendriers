@@ -555,8 +555,14 @@ void main() {
       await db.doc('sectors/t49/campaigns/2026/streets/lilas').set({
         'name': 'Rue des Lilas',
       });
+      await db.doc('sectors/t49/campaigns/2026/rounds/round-1').set({
+        'housesVisited': 23,
+      });
       await db.doc('sectors/t50/campaigns/2026/streets/roses').set({
         'name': 'Allée des Roses',
+      });
+      await db.doc('sectors/t50/campaigns/2026/rounds/round-2').set({
+        'housesVisited': 12,
       });
 
       final deletion = valueOf(team().delete(by: manuAsAdmin));
@@ -570,6 +576,7 @@ void main() {
         'sectors/t49/members/uid-lea',
         'sectors/t49/campaigns/2026',
         'sectors/t49/campaigns/2026/streets/lilas',
+        'sectors/t49/campaigns/2026/rounds/round-1',
         'joinCodes/K7P2QX',
         'sectorKeys/villefranche_49',
       ]) {
@@ -577,6 +584,10 @@ void main() {
       }
       expect(
         await stored('sectors/t50/campaigns/2026/streets/roses'),
+        isNotNull,
+      );
+      expect(
+        await stored('sectors/t50/campaigns/2026/rounds/round-2'),
         isNotNull,
       );
       expect(await stored('rescueCentres/villefranche'), isNotNull);

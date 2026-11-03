@@ -29,6 +29,7 @@ import {
   paul,
   phoneOf,
   previewDoc,
+  roundsPath,
   rulesEnvironment,
   sam,
   seed,
@@ -253,6 +254,7 @@ describe('what an admin outside the team does to the tournée', () => {
     const db = phoneOf(env, uid);
     const contents = writeBatch(db);
     contents.delete(doc(db, `${streetsPath}/nationale`));
+    contents.delete(doc(db, `${roundsPath}/round1`));
     contents.delete(doc(db, campaignPath));
     await contents.commit();
     const last = writeBatch(db);

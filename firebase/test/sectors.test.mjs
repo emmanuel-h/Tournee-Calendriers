@@ -34,6 +34,7 @@ import {
   phoneOf,
   previewDoc,
   requestDoc,
+  roundsPath,
   rulesEnvironment,
   sam,
   seed,
@@ -561,6 +562,7 @@ describe('deleting a tournée', () => {
     const db = phoneOf(env, uid);
     const batch = writeBatch(db);
     batch.delete(doc(db, `${streetsPath}/nationale`));
+    batch.delete(doc(db, `${roundsPath}/round1`));
     batch.delete(doc(db, campaignPath));
     await batch.commit();
   }

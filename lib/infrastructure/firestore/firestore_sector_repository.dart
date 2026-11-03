@@ -248,7 +248,8 @@ final class FirestoreSectorRepository implements SectorRepository {
   /// server: the lists are read from it, so nothing only the server knows
   /// is left behind.
   ///
-  /// The campaigns and their streets go first, in batches. The members
+  /// The campaigns, their streets and their validated tournées go first,
+  /// in batches. The members
   /// still in it (there may be none: everyone may leave, the creator too)
   /// go last, with the tournée, its code and its reservation in one batch:
   /// a member's phone, which learns it lost the tournée when its own
@@ -290,12 +291,13 @@ final class FirestoreSectorRepository implements SectorRepository {
         .collection(FirestoreLayout.campaigns)
         .get(server);
     for (final campaign in campaigns.docs) {
-      final streets = await campaign.reference
-          .collection(FirestoreLayout.streets)
-          .get(server);
-      contents
-        ..addAll([for (final street in streets.docs) street.reference])
-        ..add(campaign.reference);
+      // Its streets and its validated tournées (#63): a sub-collection is
+      // not deleted with its document, it would stay, unreachable.
+      for (final name in [FirestoreLayout.streets, FirestoreLayout.rounds]) {
+        final docs = await campaign.reference.collection(name).get(server);
+        contents.addAll([for (final doc in docs.docs) doc.reference]);
+      }
+      contents.add(campaign.reference);
     }
     final members = await FirestoreLayout.membersOf(_db, sector.id).get(server);
     // A batch holds at most 500 writes.

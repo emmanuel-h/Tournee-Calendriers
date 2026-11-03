@@ -17,6 +17,8 @@ import 'package:tournee_calendriers/application/ports/commune_search.dart';
 import 'package:tournee_calendriers/application/ports/sector_downloads.dart';
 import 'package:tournee_calendriers/bootstrap/bootstrap.dart';
 import 'package:tournee_calendriers/bootstrap/firebase.dart';
+import 'package:tournee_calendriers/domain/round/donation_totals.dart';
+import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/shared/commune.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
@@ -849,13 +851,27 @@ void main() {
       expect(find.byType(HomeScreen), findsOneWidget);
       expect(find.byKey(const Key('round.start')), findsOneWidget);
       expect(find.byKey(const Key('round.card')), findsNothing);
-      final validated = Directory('${storage.path}/validated_rounds');
+      // The summary is in Firestore's offline queue, and its copy shows it
+      // at once (#110): what « Collecte » reads, offline too.
+      final phone = ProviderScope.containerOf(
+        tester.element(find.byType(TourneeApp)),
+      );
+      final validated = await phone
+          .read(roundLedgerProvider)
+          .watch(SectorId(t49), _ok(CampaignYear.create(2026)))
+          .first;
+      expect(validated, hasLength(1));
+      expect(validated.single.housesVisited, 1);
       expect(
-        validated
-            .listSync(recursive: true)
-            .whereType<File>()
-            .where((file) => file.path.endsWith('.json')),
-        hasLength(1),
+        validated.single.totals,
+        DonationTotals(
+          cash: MethodTotal(count: 1, cents: 1000),
+          cheque: MethodTotal.none,
+          card: MethodTotal.none,
+          // The calendar given with « + Ajouter un don »: « − » only took
+          // the house's calendar back, never a don.
+          free: 1,
+        ),
       );
 
       // « Mes secteurs » offline (#33): the 12 was never downloaded on
@@ -871,9 +887,6 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('mySectors.t12')));
       await tester.pumpAndSettle();
       expect(find.byKey(const ValueKey('mySectors.t12')), findsOneWidget);
-      final phone = ProviderScope.containerOf(
-        tester.element(find.byType(TourneeApp)),
-      );
       await phone
           .read(sectorDownloadsProvider)
           .save(

@@ -2489,7 +2489,7 @@ and return aggregates and `StreetChange`s, never Firestore types.
   secteur shown), `AddDonation` (with or without a house: with one, `calendars + 1` too, #114),
   `ChangeDonation`, `RemoveDonation`, `ValidateRound` (`OpenRoundStore` port for the phone,
   `RoundLedger` port for the secteur: the summary is handed over first, then the tournée is
-  forgotten), `WatchCollecte` (#111), `RemoveCalendar` (#114). The status use cases
+  forgotten; its `watch(sector, campaign)` gives the validated summaries, #110), `WatchCollecte` (#111), `RemoveCalendar` (#114). The status use cases
   (`SetHouseDetails`, `MarkDwelling`) tell the open tournée about each change through
   `RoundVisits` (`RoundVisit.of(change)`), and `UndoLastChange` tells it the reverse of the
   change undone, so the count is right whatever screen marked it; only on the secteur the
@@ -2687,11 +2687,11 @@ can never drift.
   | null }`, written at each change (same writing as the others), so a tournée survives a
   kill; the dons carry no house and no time. Emptied once `ValidateRound` has handed the
   summary to Firestore (its offline queue sends it later). An unreadable file means none.
-- `validated_rounds/<sector>/<year>/<roundId>.json` (port `RoundLedger`, #108, until the
-  Firestore ledger of #110 replaces it): each validated tournée's summary, the fields of
-  `rounds/{roundId}` (§6.2) with `version: 1`, written once (a second record of the same id
-  keeps the first), ids percent-encoded. Nothing reads them yet: kept so a tournée validated
-  before #110 is not lost.
+- The validated tournées have no file of their own (#110): their summaries go to
+  `rounds/{roundId}` (§6.2, port `RoundLedger`, `FirestoreRoundLedger`), and Firestore's
+  offline persistence keeps one validated offline in its queue, across restarts, and shows it
+  in its copy at once, which « Collecte » reads offline. (The stand-in of #108, files in
+  `validated_rounds/`, was removed unreleased; a phone that ran it keeps that folder, unread.)
 - MapLibre offline regions (tiles), behind the `OfflineMapStore` port
   (`infrastructure/maplibre_offline/`): one per downloaded secteur (two for a moment while
   one is replaced), in the map library's database (`files/mbgl-offline.db`). Each region's
@@ -2848,8 +2848,8 @@ What the adapters write (T2.3), which the rules must allow:
   `displayName` only.
 - **New code** (one transaction): reads `joinCodes/{new}`, updates `sectors/{id}.joinCode`,
   deletes `joinCodes/{old}`, creates `joinCodes/{new}`.
-- **Delete:** lists `campaigns`, their `streets` and `members` from the server, deletes the
-  campaigns and streets in batches of ≤ 500, then one batch: `joinCodes/{code}`,
+- **Delete:** lists `campaigns`, their `streets` and `rounds` (#110) and `members` from the
+  server, deletes the campaigns, streets and rounds in batches of ≤ 500, then one batch: `joinCodes/{code}`,
   `sectorKeys/{key}`, `sectors/{id}`, the other members' documents and the creator's own.
 - **Streets:** the writes of the table in §6.2. Whole entries (a number added or renamed, a
   layout, an undo) carry door entries with the `by` / `at` they already had, possibly a
@@ -3012,11 +3012,17 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
   `assignees` on a new street `[]` or `[caller]`. An update may change
   `assignees` only by adding or removing **the caller** (set comparison, no duplicate): nobody
   puts a teammate on a street or takes them off it.
-- **Tournées** (#63, to build): `campaigns/{year}/rounds/{roundId}` readable by active members
-  and admins; **create only**, by an active member (checked at write time, not stored),
-  exactly the fields of §6.2, `startedAt < endedAt`, `housesVisited` and `free` 0–9 999, each
-  `count` 0–9 999 and `cents` 0–100 000 000; **no update, no delete** (they go with the
-  secteur or the campaign).
+- **Tournées** (#63, built in #110): `campaigns/{year}/rounds/{roundId}` readable by active members
+  and admins; **create only**, by an active member (checked at write time, not stored; an
+  admin visiting runs no tournée), exactly the fields of §6.2, `startedAt < endedAt` (both
+  timestamps), `housesVisited` and `free` 0–9 999, each `count` 0–9 999 and `cents`
+  0–100 000 000, each total exactly `{ count, cents }`; the id one the app makes (`isId`), in a
+  campaign that exists (not only the current one: a tournée belongs to the campaign it started
+  in); **no update, no delete** (they go with the secteur or the campaign: `delete` for admins,
+  as the streets). `FirestoreRoundLedger.record` is a `set` not awaited: recording the same
+  tournée again reaches the server as an update, refused, so the first summary stays. The
+  domain does not cap at these bounds: a tournée is one outing, far below 9 999 houses or dons
+  and 1 000 000 €.
 - **Statuses and calendars** (#63): `status` also takes `REFUSED` (#113, accepted by the
   rules: like any status but `COME_BACK` it has no time; the app removes its tries); a house or door
   holds an optional `calendars` 1–99, only while its status is `done` (absent reads as 1 on a

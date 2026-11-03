@@ -18,6 +18,7 @@ import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/infrastructure/ban/ban_address_directory.dart';
 import 'package:tournee_calendriers/infrastructure/firebase_auth/firebase_identity.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_admin_status.dart';
+import 'package:tournee_calendriers/infrastructure/firestore/firestore_round_ledger.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_sector_directory.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_sector_repository.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_street_repository.dart';
@@ -28,7 +29,6 @@ import 'package:tournee_calendriers/infrastructure/local_storage/local_moved_str
 import 'package:tournee_calendriers/infrastructure/local_storage/local_my_sectors.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_open_round.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_phone_settings.dart';
-import 'package:tournee_calendriers/infrastructure/local_storage/local_round_ledger.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_sector_downloads.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_street_repository.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_street_view_preferences.dart';
@@ -110,14 +110,6 @@ void main() {
     expect(container.read(mySectorsStoreProvider), isA<LocalMySectors>());
     expect(container.read(phoneSettingsProvider), isA<LocalPhoneSettings>());
     expect(container.read(openRoundStoreProvider), isA<LocalOpenRound>());
-    expect(
-      container.read(roundLedgerProvider),
-      isA<LocalRoundLedger>().having(
-        (ledger) => ledger.directory.path,
-        'directory',
-        '${storage.path}/validated_rounds',
-      ),
-    );
     expect(firestoreAsked, 0);
     expect(
       container.read(sectorDirectoryProvider),
@@ -129,6 +121,7 @@ void main() {
       isA<FirestoreSectorRepository>(),
     );
     expect(container.read(adminStatusProvider), isA<FirestoreAdminStatus>());
+    expect(container.read(roundLedgerProvider), isA<FirestoreRoundLedger>());
     expect(
       container.read(streetsDownloadProvider),
       isA<FirestoreStreetsDownload>(),

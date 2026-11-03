@@ -74,6 +74,7 @@ export const code = 'K7P2QX';
 export const sectorPath = `sectors/${sectorId}`;
 export const campaignPath = `${sectorPath}/campaigns/2026`;
 export const streetsPath = `${campaignPath}/streets`;
+export const roundsPath = `${campaignPath}/rounds`;
 export const memberPath = (uid) => `${sectorPath}/members/${uid}`;
 
 /** communeEntry of Villefranche-sur-Saône, with its centre. */
@@ -260,10 +261,25 @@ export async function writeInChunks(ref, data) {
 }
 
 /**
+ * roundToDocument of a validated tournée of an afternoon: 23 houses, 19
+ * dons, 2 calendars given for free. No member, no don.
+ */
+export const roundDoc = (overrides = {}) => ({
+  startedAt: at('2026-10-24T12:05:00Z'),
+  endedAt: at('2026-10-24T16:20:00Z'),
+  housesVisited: 23,
+  free: 2,
+  cash: { count: 15, cents: 21000 },
+  cheque: { count: 3, cents: 6000 },
+  card: { count: 1, cents: 1000 },
+  ...overrides,
+});
+
+/**
  * Stores the team of Tournée 49 as the adapters leave it after creating
- * it, accepting Léa and receiving Paul's request, with Rue Nationale in
- * the campaign 2026; and the two administrators, added by hand in the
- * console (no fields).
+ * it, accepting Léa and receiving Paul's request, with Rue Nationale and
+ * a validated tournée in the campaign 2026; and the two administrators,
+ * added by hand in the console (no fields).
  */
 export async function seedTeam(env) {
   await seed(env, `admins/${manu}`, {});
@@ -280,4 +296,5 @@ export async function seedTeam(env) {
   await seed(env, 'sectorKeys/villefranche_49', { sectorId });
   await seed(env, 'rescueCentres/villefranche', { name: 'CS Villefranche' });
   await seed(env, `${streetsPath}/nationale`, streetDoc());
+  await seed(env, `${roundsPath}/round1`, roundDoc());
 }

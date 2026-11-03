@@ -13,6 +13,7 @@ abstract final class FirestoreLayout {
   static const members = 'members';
   static const campaigns = 'campaigns';
   static const streets = 'streets';
+  static const rounds = 'rounds';
   static const joinCodes = 'joinCodes';
   static const sectorKeys = 'sectorKeys';
   static const rescueCentres = 'rescueCentres';
@@ -41,10 +42,25 @@ abstract final class FirestoreLayout {
     FirebaseFirestore db,
     SectorId sector,
     CampaignYear campaign,
+  ) => campaignOf(db, sector, campaign).collection(streets);
+
+  /// `sectors/{sector}/campaigns/{year}/rounds`: the validated tournées
+  /// (#63).
+  static CollectionReference<Map<String, dynamic>> roundsOf(
+    FirebaseFirestore db,
+    SectorId sector,
+    CampaignYear campaign,
+  ) => campaignOf(db, sector, campaign).collection(rounds);
+
+  /// `sectors/{sector}/campaigns/{year}`.
+  static DocumentReference<Map<String, dynamic>> campaignOf(
+    FirebaseFirestore db,
+    SectorId sector,
+    CampaignYear campaign,
   ) => FirestoreLayout.sector(
     db,
     sector,
-  ).collection(campaigns).doc('${campaign.value}').collection(streets);
+  ).collection(campaigns).doc('${campaign.value}');
 }
 
 /// Whether [error] means the server could not be reached: offline, or no
