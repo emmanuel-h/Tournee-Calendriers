@@ -1063,6 +1063,8 @@
   },
   "release010First": "Première version de test.",
   "@release010First": { "description": "« Nouveautés », version 0.1.0: what it brings, one short line for the members." },
+  "release0101NoSector": "Sans secteur ouvert, l'accueil propose de rejoindre un secteur (ou d'en créer un, pour un administrateur) : les rues n'existent plus que dans un secteur.",
+  "@release0101NoSector": { "description": "Line of « Nouveautés » for 0.10.1." },
   "release0100Sector": "La zone de l'équipe s'appelle maintenant un « secteur » ; une « tournée » est une sortie dans ce secteur.",
   "@release0100Sector": { "description": "Line of « Nouveautés » for 0.10.0: the team's area is now « secteur » on every screen (#115); « tournée » now names one outing (PLAN §2)." },
   "release0100Picker": "Rue : touchez une maison ou une porte, puis choisissez son statut. Plus de cycle ni d'appui long.",

@@ -1167,6 +1167,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get release010First => 'Première version de test.';
 
   @override
+  String get release0101NoSector =>
+      'Sans secteur ouvert, l\'accueil propose de rejoindre un secteur (ou d\'en créer un, pour un administrateur) : les rues n\'existent plus que dans un secteur.';
+
+  @override
   String get release0100Sector =>
       'La zone de l\'équipe s\'appelle maintenant un « secteur » ; une « tournée » est une sortie dans ce secteur.';
 

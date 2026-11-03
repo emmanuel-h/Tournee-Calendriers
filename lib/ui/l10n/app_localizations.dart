@@ -1696,6 +1696,12 @@ abstract class AppLocalizations {
   /// **'Première version de test.'**
   String get release010First;
 
+  /// Line of « Nouveautés » for 0.10.1.
+  ///
+  /// In fr, this message translates to:
+  /// **'Sans secteur ouvert, l\'accueil propose de rejoindre un secteur (ou d\'en créer un, pour un administrateur) : les rues n\'existent plus que dans un secteur.'**
+  String get release0101NoSector;
+
   /// Line of « Nouveautés » for 0.10.0: the team's area is now « secteur » on every screen (#115); « tournée » now names one outing (PLAN §2).
   ///
   /// In fr, this message translates to:
