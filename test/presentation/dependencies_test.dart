@@ -939,6 +939,17 @@ void main() {
       expect(rounds.openRound, isNull);
     });
 
+    test('should watch the collecte of the bound ledger', () async {
+      roundOnInThe49();
+      final summary = valueOf(await container.read(validateRoundProvider)());
+
+      final collecte = await container
+          .read(watchCollecteProvider)(sector49.id, sector49.campaign)
+          .first;
+
+      expect(collecte.rounds, [summary]);
+    });
+
     test(
       'should count a house and a door in the bound store, and an undo',
       () async {

@@ -11,6 +11,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:go_router/go_router.dart';
 import 'package:integration_test/integration_test.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
@@ -32,6 +33,7 @@ import 'package:tournee_calendriers/infrastructure/local_storage/mappers/street_
 import 'package:tournee_calendriers/main.dart' as app;
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/ui/app.dart';
+import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/screens/add_streets/add_streets_screen.dart';
 import 'package:tournee_calendriers/ui/screens/add_streets/manual_street_screen.dart';
 import 'package:tournee_calendriers/ui/screens/home/home_screen.dart';
@@ -873,6 +875,26 @@ void main() {
           free: 1,
         ),
       );
+
+      // « Collecte 2026 » (#111) reads that copy, offline. Équipe, which
+      // leads there, cannot show the 49 (never read on this phone), so the
+      // screen is opened by its route.
+      GoRouter.of(tester.element(find.byType(HomeScreen)))
+          .push<void>(AppRoutes.collecte)
+          .ignore();
+      await tester.pumpAndSettle();
+      expect(find.text('Collecte 2026'), findsOneWidget);
+      expect(find.text('Secteur 49 · tournées validées'), findsOneWidget);
+      expect(find.text('TOTAL DE LA TOURNÉE'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('collecte.total')),
+          matching: find.text('10\u00a0€'),
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(find.byTooltip('Retour'));
+      await tester.pumpAndSettle();
 
       // « Mes secteurs » offline (#33): the 12 was never downloaded on
       // this phone, so it is greyed and a tap leaves the sheet open. Once

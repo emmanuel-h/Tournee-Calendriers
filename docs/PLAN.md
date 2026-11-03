@@ -1628,6 +1628,13 @@ outing; the team's area is the **secteur** (§2).
   « Bilan » takes its end time from the clock when it opens; « Valider » goes back to Accueil
   once the summary is kept. No ✎ correction per method in the « Bilan » (in RunRecap's script
   only, not in this section).
+- Delivered in #111 (`WatchCollecte`, `presentation/collecte/`, `ui/screens/round/collecte_screen.dart`,
+  the shared `ui/components/money_lines.dart`): « COLLECTE 2026 » sits between the Corbeille and
+  « Communes » in Équipe, shown once the tournées are read (none yet: « 0 € récoltés », « 0 don en
+  0 tournée »), hidden when they cannot be; an admin visiting the secteur sees it too (§5.12, the
+  rules let admins read `rounds/`). A tournée reads « Sam. 24 oct. · 14:05 → 18:20 » (the mockup's
+  short day); every row starts folded and each unfolds on its own. « TOTAL DE LA TOURNÉE » for one,
+  « TOTAL DES TOURNÉES » for none. Unreadable: « La collecte ne peut pas être affichée. ».
 
 ---
 

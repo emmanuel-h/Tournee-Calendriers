@@ -29,18 +29,27 @@ final class FakeRoundLedger implements RoundLedger {
 
   /// The summaries recorded for [sector] and [campaign], now and after
   /// each [record].
+  ///
+  /// A controller rather than an `async*` generator: cancelling a
+  /// generator waiting in an `await for` on [_changes] never completes.
   @override
-  Stream<List<RoundSummary>> watch(
-    SectorId sector,
-    CampaignYear campaign,
-  ) async* {
+  Stream<List<RoundSummary>> watch(SectorId sector, CampaignYear campaign) {
     List<RoundSummary> current() => [
       for (final (s, c, summary) in recorded)
         if (s == sector && c == campaign) summary,
     ];
-    yield current();
-    await for (final _ in _changes.stream) {
-      yield current();
-    }
+    StreamSubscription<void>? changes;
+    late final StreamController<List<RoundSummary>> out;
+    out = StreamController(
+      onListen: () {
+        out.add(current());
+        changes = _changes.stream.listen((_) => out.add(current()));
+      },
+      onCancel: () async {
+        await changes?.cancel();
+        await out.close();
+      },
+    );
+    return out.stream;
   }
 }

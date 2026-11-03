@@ -1780,6 +1780,12 @@ abstract class AppLocalizations {
   /// **'Tournées : « Commencer une tournée » sur l\'accueil, le montant de chaque don après « Fait », la liste des dons et le bilan à valider en fin de tournée.'**
   String get release0100Rounds;
 
+  /// Line of « Nouveautés » for 0.10.0: the collecte of the secteur in Équipe (#111).
+  ///
+  /// In fr, this message translates to:
+  /// **'Équipe : « Collecte 2026 » montre l\'argent récolté par le secteur, tournée par tournée, jamais par membre.'**
+  String get release0100Collecte;
+
   /// Line of « Nouveautés » for 0.9.0.
   ///
   /// In fr, this message translates to:
@@ -3777,6 +3783,90 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Valider'**
   String get recapConfirmOk;
+
+  /// Header of the collecte row of Équipe (shown in capitals, RunTeam mockup) and title of the Collecte screen (Cash mockup, PLAN §5.13).
+  ///
+  /// In fr, this message translates to:
+  /// **'Collecte {campaign}'**
+  String collecteTitle(String campaign);
+
+  /// First line of the collecte row of Équipe: the money of every validated tournée of the campaign (« 600 € récoltés »). Never per member.
+  ///
+  /// In fr, this message translates to:
+  /// **'{amount} récoltés'**
+  String teamCollecteRaised(String amount);
+
+  /// Second line of the collecte row of Équipe: « 41 dons en 4 tournées », « 1 don en 1 tournée », « 0 don en 0 tournée ».
+  ///
+  /// In fr, this message translates to:
+  /// **'{dons} en {rounds, plural, one{{rounds} tournée} other{{rounds} tournées}}'**
+  String teamCollecteDons(String dons, int rounds);
+
+  /// What screen readers hear for the collecte row of Équipe, a button that opens the Collecte screen.
+  ///
+  /// In fr, this message translates to:
+  /// **'{title} : {raised}, {dons}'**
+  String teamCollecteSpoken(String title, String raised, String dons);
+
+  /// Under the title of the Collecte screen.
+  ///
+  /// In fr, this message translates to:
+  /// **'Secteur {number} · tournées validées'**
+  String collecteSubtitle(String number);
+
+  /// Section header of the Collecte screen over the totals of every validated tournée (shown in capitals): « TOTAL DES 4 TOURNÉES ».
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, =0{Total des tournées} =1{Total de la tournée} other{Total des {count} tournées}}'**
+  String collecteTotalHeader(int count);
+
+  /// Line of the totals of the Collecte screen: how many calendars were given for free, with no amount.
+  ///
+  /// In fr, this message translates to:
+  /// **'Calendriers offerts'**
+  String get collecteFree;
+
+  /// Section header of the Collecte screen over the validated tournées, newest first (shown in capitals).
+  ///
+  /// In fr, this message translates to:
+  /// **'Tournées'**
+  String get collecteRoundsHeader;
+
+  /// A validated tournée in the Collecte screen: « Sam. 24 oct. · 14:05 → 18:20 » (shown with a capital first letter). Never its member.
+  ///
+  /// In fr, this message translates to:
+  /// **'{day} · {start} → {end}'**
+  String collecteRoundWhen(DateTime day, DateTime start, DateTime end);
+
+  /// Under a validated tournée in the Collecte screen: « 23 maisons, 19 dons ».
+  ///
+  /// In fr, this message translates to:
+  /// **'{houses, plural, one{{houses} maison} other{{houses} maisons}}, {dons}'**
+  String collecteRoundLine(int houses, String dons);
+
+  /// What screen readers hear for a folded tournée of the Collecte screen; a tap shows its methods.
+  ///
+  /// In fr, this message translates to:
+  /// **'{when}, {amount}, afficher le détail'**
+  String collecteRoundShow(String when, String amount);
+
+  /// What screen readers hear for an unfolded tournée of the Collecte screen; a tap folds it.
+  ///
+  /// In fr, this message translates to:
+  /// **'{when}, {amount}, masquer le détail'**
+  String collecteRoundHide(String when, String amount);
+
+  /// At the bottom of the Collecte screen.
+  ///
+  /// In fr, this message translates to:
+  /// **'Une tournée validée ne peut plus être modifiée. Les dons ne sont jamais associés à une adresse.'**
+  String get collecteNeverChanged;
+
+  /// The Collecte screen when no secteur is open or its tournées cannot be read.
+  ///
+  /// In fr, this message translates to:
+  /// **'La collecte ne peut pas être affichée.'**
+  String get collecteUnavailable;
 }
 
 class _AppLocalizationsDelegate

@@ -348,4 +348,12 @@ abstract final class AppSizes {
   /// A line of « ARGENT RÉCOLTÉ » in the « Bilan », and its amount column.
   static const recapLineHeight = 60.0;
   static const recapAmountWidth = 84.0;
+
+  /// A validated tournée in « TOURNÉES » of the Collecte screen, and, once
+  /// unfolded, each of its methods under it, indented; the column of its
+  /// ▸ / ▾, which the methods leave empty so the amounts line up.
+  static const collecteRoundHeight = 60.0;
+  static const collecteDetailLineHeight = 44.0;
+  static const collecteDetailIndent = 36.0;
+  static const collecteChevronWidth = 18.0;
 }

@@ -8,6 +8,7 @@ import 'package:tournee_calendriers/presentation/round/round_notifier.dart';
 import 'package:tournee_calendriers/presentation/round/round_view.dart';
 import 'package:tournee_calendriers/ui/components/app_buttons.dart';
 import 'package:tournee_calendriers/ui/components/confirm_dialog.dart';
+import 'package:tournee_calendriers/ui/components/money_lines.dart';
 import 'package:tournee_calendriers/ui/components/money_words.dart';
 import 'package:tournee_calendriers/ui/components/open_chevron.dart';
 import 'package:tournee_calendriers/ui/components/section_header.dart';
@@ -263,35 +264,7 @@ final class _Money extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Divider(height: 1, color: colors.divider),
-          _MoneyLine(
-            key: const Key('recap.cash'),
-            name: l10n.paymentCash,
-            count: totals.cash.count,
-            cents: totals.cash.cents,
-          ),
-          _MoneyLine(
-            key: const Key('recap.cheque'),
-            name: l10n.paymentCheques,
-            count: totals.cheque.count,
-            cents: totals.cheque.cents,
-          ),
-          _MoneyLine(
-            key: const Key('recap.card'),
-            name: l10n.paymentCardLong,
-            count: totals.card.count,
-            cents: totals.card.cents,
-          ),
-          ColoredBox(
-            color: colors.ground,
-            child: _MoneyLine(
-              key: const Key('recap.total'),
-              name: l10n.recapTotal,
-              count: totals.count,
-              cents: totals.cents,
-              total: true,
-            ),
-          ),
+          MoneyTotalsLines(totals: totals, keyPrefix: 'recap'),
           Divider(height: 1, color: colors.divider),
           MergeSemantics(
             child: InkWell(
@@ -326,72 +299,6 @@ final class _Money extends StatelessWidget {
             ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-/// One line of « ARGENT RÉCOLTÉ »: the method, its count, its money.
-final class _MoneyLine extends StatelessWidget {
-  const _MoneyLine({
-    super.key,
-    required this.name,
-    required this.count,
-    required this.cents,
-    this.total = false,
-  });
-
-  final String name;
-  final int count;
-  final int cents;
-
-  /// « Total », in larger type, its count in ink.
-  final bool total;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final colors = AppColors.of(context);
-    return MergeSemantics(
-      child: Container(
-        constraints: const BoxConstraints(minHeight: AppSizes.recapLineHeight),
-        padding: const EdgeInsets.symmetric(horizontal: AppSizes.gutter),
-        decoration: total
-            ? null
-            : BoxDecoration(
-                border: Border(bottom: BorderSide(color: colors.divider)),
-              ),
-        child: Row(
-          spacing: 8,
-          children: [
-            Expanded(
-              child: Text(
-                name,
-                style: AppTextStyles.button.copyWith(color: colors.ink),
-              ),
-            ),
-            Text(
-              l10n.donCount(count),
-              style: total
-                  ? AppTextStyles.rowCount.copyWith(color: colors.ink)
-                  : AppTextStyles.streetCounts.copyWith(color: colors.muted),
-            ),
-            ConstrainedBox(
-              constraints: const BoxConstraints(
-                minWidth: AppSizes.recapAmountWidth,
-              ),
-              child: Text(
-                eurosText(l10n, cents),
-                textAlign: TextAlign.right,
-                style:
-                    (total
-                            ? AppTextStyles.recapTotal
-                            : AppTextStyles.donationAmount)
-                        .copyWith(color: colors.ink),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }

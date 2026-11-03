@@ -71,6 +71,9 @@ abstract final class AppRoutes {
   /// « Bilan de la tournée » (§5.13), pushed by « ■ Terminer ».
   static const roundRecap = '/tournee/bilan';
 
+  /// « Collecte 2026 » (§5.13), pushed by Équipe's « COLLECTE 2026 » row.
+  static const collecte = '/equipe/collecte';
+
   /// Debug builds only: every shared component on one screen.
   static const gallery = '/composants';
 

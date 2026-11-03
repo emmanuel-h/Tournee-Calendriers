@@ -625,3 +625,8 @@ final validateRoundProvider = Provider(
     ref.watch(clockProvider),
   ),
 );
+
+/// « Collecte 2026 » (#111): the validated tournées from the ledger.
+final watchCollecteProvider = Provider(
+  (ref) => WatchCollecte(ref.watch(roundLedgerProvider)),
+);

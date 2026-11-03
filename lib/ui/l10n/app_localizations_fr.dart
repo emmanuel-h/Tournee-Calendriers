@@ -1266,6 +1266,10 @@ class AppLocalizationsFr extends AppLocalizations {
       'Tournées : « Commencer une tournée » sur l\'accueil, le montant de chaque don après « Fait », la liste des dons et le bilan à valider en fin de tournée.';
 
   @override
+  String get release0100Collecte =>
+      'Équipe : « Collecte 2026 » montre l\'argent récolté par le secteur, tournée par tournée, jamais par membre.';
+
+  @override
   String get release090Streets =>
       'Équipe : chaque membre montre le nombre de rues qu\'il couvre ; touchez ce nombre pour voir leurs noms.';
 
@@ -2701,4 +2705,93 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get recapConfirmOk => 'Valider';
+
+  @override
+  String collecteTitle(String campaign) {
+    return 'Collecte $campaign';
+  }
+
+  @override
+  String teamCollecteRaised(String amount) {
+    return '$amount récoltés';
+  }
+
+  @override
+  String teamCollecteDons(String dons, int rounds) {
+    String _temp0 = intl.Intl.pluralLogic(
+      rounds,
+      locale: localeName,
+      other: '$rounds tournées',
+      one: '$rounds tournée',
+    );
+    return '$dons en $_temp0';
+  }
+
+  @override
+  String teamCollecteSpoken(String title, String raised, String dons) {
+    return '$title : $raised, $dons';
+  }
+
+  @override
+  String collecteSubtitle(String number) {
+    return 'Secteur $number · tournées validées';
+  }
+
+  @override
+  String collecteTotalHeader(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Total des $count tournées',
+      one: 'Total de la tournée',
+      zero: 'Total des tournées',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get collecteFree => 'Calendriers offerts';
+
+  @override
+  String get collecteRoundsHeader => 'Tournées';
+
+  @override
+  String collecteRoundWhen(DateTime day, DateTime start, DateTime end) {
+    final intl.DateFormat dayDateFormat = intl.DateFormat.MMMEd(localeName);
+    final String dayString = dayDateFormat.format(day);
+    final intl.DateFormat startDateFormat = intl.DateFormat.Hm(localeName);
+    final String startString = startDateFormat.format(start);
+    final intl.DateFormat endDateFormat = intl.DateFormat.Hm(localeName);
+    final String endString = endDateFormat.format(end);
+
+    return '$dayString · $startString → $endString';
+  }
+
+  @override
+  String collecteRoundLine(int houses, String dons) {
+    String _temp0 = intl.Intl.pluralLogic(
+      houses,
+      locale: localeName,
+      other: '$houses maisons',
+      one: '$houses maison',
+    );
+    return '$_temp0, $dons';
+  }
+
+  @override
+  String collecteRoundShow(String when, String amount) {
+    return '$when, $amount, afficher le détail';
+  }
+
+  @override
+  String collecteRoundHide(String when, String amount) {
+    return '$when, $amount, masquer le détail';
+  }
+
+  @override
+  String get collecteNeverChanged =>
+      'Une tournée validée ne peut plus être modifiée. Les dons ne sont jamais associés à une adresse.';
+
+  @override
+  String get collecteUnavailable => 'La collecte ne peut pas être affichée.';
 }

@@ -339,6 +339,10 @@ void main() {
       200,
       scrollable: find.byType(Scrollable).first,
     );
+    // Whole, not only its first pixels: the collecte row above it (#111)
+    // leaves it at the very bottom of the list.
+    await tester.ensureVisible(villefrancheRow);
+    await tester.pumpAndSettle();
 
     expect(find.text('COMMUNES (2)'), findsOneWidget);
     await tester.tap(find.byTooltip('Retirer Villefranche-sur-Saône'));

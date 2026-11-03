@@ -6,10 +6,12 @@ import 'package:tournee_calendriers/application/ports/open_round_store.dart';
 import 'package:tournee_calendriers/application/ports/round_ledger.dart';
 import 'package:tournee_calendriers/application/use_cases/calendars.dart';
 import 'package:tournee_calendriers/application/use_cases/street_command.dart';
+import 'package:tournee_calendriers/domain/round/collecte.dart';
 import 'package:tournee_calendriers/domain/round/donation.dart';
 import 'package:tournee_calendriers/domain/round/round.dart';
 import 'package:tournee_calendriers/domain/round/round_id.dart';
 import 'package:tournee_calendriers/domain/round/round_summary.dart';
+import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
 import 'package:tournee_calendriers/domain/sector/member.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
@@ -245,4 +247,17 @@ final class ValidateRound {
     await _rounds.clear();
     return Ok(summary);
   }
+}
+
+/// « Collecte 2026 » (PLAN §5.13): the validated tournées of [campaign] of
+/// [sector] and their totals, now and again at each tournée validated, by
+/// this phone or a teammate's. Read from the phone's copy first, so it
+/// works offline. Never split per member: a summary names none.
+final class WatchCollecte {
+  const WatchCollecte(this._ledger);
+
+  final RoundLedger _ledger;
+
+  Stream<Collecte> call(SectorId sector, CampaignYear campaign) =>
+      _ledger.watch(sector, campaign).map(Collecte.of);
 }

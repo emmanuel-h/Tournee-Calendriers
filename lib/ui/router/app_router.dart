@@ -21,6 +21,7 @@ import 'package:tournee_calendriers/ui/screens/onboarding/create_sector_screen.d
 import 'package:tournee_calendriers/ui/screens/onboarding/join_pending_screen.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/join_sector_screen.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/welcome_screen.dart';
+import 'package:tournee_calendriers/ui/screens/round/collecte_screen.dart';
 import 'package:tournee_calendriers/ui/screens/round/dons_screen.dart';
 import 'package:tournee_calendriers/ui/screens/round/round_recap_screen.dart';
 import 'package:tournee_calendriers/ui/screens/settings/changelog_screen.dart';
@@ -142,6 +143,11 @@ GoRouter buildAppRouter({
     GoRoute(
       path: AppRoutes.roundRecap,
       builder: (context, state) => const RoundRecapScreen(),
+    ),
+    // Pushed by « COLLECTE 2026 » of Équipe.
+    GoRoute(
+      path: AppRoutes.collecte,
+      builder: (context, state) => const CollecteScreen(),
     ),
     if (showGallery)
       GoRoute(

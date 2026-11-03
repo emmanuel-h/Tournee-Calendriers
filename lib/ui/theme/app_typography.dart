@@ -390,4 +390,12 @@ abstract final class AppTextStyles {
     fontSize: 13,
     height: 1,
   );
+
+  /// The amount of a method under an unfolded tournée of the Collecte
+  /// screen (« 210 € »).
+  static const collecteDetailAmount = TextStyle(
+    fontFamily: AppFonts.display,
+    fontWeight: FontWeight.w700,
+    fontSize: 19,
+  );
 }

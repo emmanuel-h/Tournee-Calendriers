@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tournee_calendriers/presentation/collecte/collecte_notifier.dart';
+import 'package:tournee_calendriers/presentation/collecte/collecte_view.dart';
 import 'package:tournee_calendriers/presentation/corbeille/corbeille_notifier.dart';
 import 'package:tournee_calendriers/presentation/team/team_notifier.dart';
 import 'package:tournee_calendriers/presentation/team/team_state.dart';
@@ -11,6 +13,7 @@ import 'package:tournee_calendriers/ui/components/app_buttons.dart';
 import 'package:tournee_calendriers/ui/components/confirm_dialog.dart';
 import 'package:tournee_calendriers/ui/components/join_code_text.dart';
 import 'package:tournee_calendriers/ui/components/join_qr_code.dart';
+import 'package:tournee_calendriers/ui/components/money_words.dart';
 import 'package:tournee_calendriers/ui/components/recent_time_text.dart';
 import 'package:tournee_calendriers/ui/components/section_header.dart';
 import 'package:tournee_calendriers/ui/components/sheet_scaffold.dart';
@@ -213,6 +216,7 @@ final class _Team extends ConsumerWidget {
                       ],
                     ),
                   ),
+                  const _CollecteSection(),
                   _Communes(state: state, run: run),
                   const SizedBox(height: 16),
                 ],
@@ -766,6 +770,106 @@ final class _CorbeilleTile extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// « COLLECTE 2026 » and its row, « 600 € récoltés » over « 41 dons en 4
+/// tournées », which opens « Collecte 2026 » (PLAN §5.13, RunTeam
+/// mockup). The secteur's money only: never a member's, by decision.
+/// Nothing shows until the tournées are read, or when they cannot be.
+final class _CollecteSection extends ConsumerWidget {
+  const _CollecteSection();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final view = ref.watch(collecteProvider);
+    if (view is! CollecteShown) return const SizedBox.shrink();
+    final l10n = AppLocalizations.of(context);
+    final colors = AppColors.of(context);
+    final title = l10n.collecteTitle('${view.campaign}');
+    final raised = l10n.teamCollecteRaised(eurosText(l10n, view.totals.cents));
+    final dons = l10n.teamCollecteDons(
+      l10n.donCount(view.totals.count),
+      view.rounds.length,
+    );
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SectionHeader(title),
+        Semantics(
+          container: true,
+          button: true,
+          label: l10n.teamCollecteSpoken(title, raised, dons),
+          excludeSemantics: true,
+          child: Material(
+            color: colors.surface,
+            child: InkWell(
+              key: const Key('team.collecte'),
+              onTap: () => context.push(AppRoutes.collecte),
+              child: Container(
+                constraints: const BoxConstraints(
+                  minHeight: AppSizes.memberRowHeight,
+                ),
+                padding: const EdgeInsets.fromLTRB(16, 8, 12, 8),
+                decoration: BoxDecoration(
+                  border: Border.symmetric(
+                    horizontal: BorderSide(color: colors.divider),
+                  ),
+                ),
+                child: Row(
+                  spacing: 12,
+                  children: [
+                    Container(
+                      width: AppSizes.avatar,
+                      height: AppSizes.avatar,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: colors.ground,
+                      ),
+                      child: Text(
+                        l10n.amountSuffix,
+                        style: AppTextStyles.avatarInitial.copyWith(
+                          color: colors.ink,
+                        ),
+                      ),
+                    ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: 2,
+                        children: [
+                          Text(
+                            raised,
+                            key: const Key('team.collecte.raised'),
+                            style: AppTextStyles.bodyLarge.copyWith(
+                              color: colors.ink,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          Text(
+                            dons,
+                            key: const Key('team.collecte.dons'),
+                            style: AppTextStyles.small.copyWith(
+                              color: colors.muted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Icon(
+                      Icons.chevron_right,
+                      size: AppSizes.smallIcon,
+                      color: colors.muted,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -1,5 +1,7 @@
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/use_cases/rounds.dart';
+import 'package:tournee_calendriers/domain/round/collecte.dart';
+import 'package:tournee_calendriers/domain/round/donation.dart';
 import 'package:tournee_calendriers/domain/round/donation_totals.dart';
 import 'package:tournee_calendriers/domain/round/round.dart';
 import 'package:tournee_calendriers/domain/round/round_id.dart';
@@ -271,6 +273,66 @@ void main() {
       expect(ledger.recorded, isEmpty);
       expect(rounds.clears, 0);
     });
+  });
+
+  group('WatchCollecte', () {
+    late FakeRoundLedger ledger;
+    late WatchCollecte watch;
+
+    /// A tournée of the 49 named [id], started [day] at noon UTC, with
+    /// [donations].
+    RoundSummary summary(String id, int day, List<Donation> donations) =>
+        RoundSummary(
+          id: RoundId(id),
+          startedAt: DateTime.utc(2026, 10, day, 12),
+          endedAt: DateTime.utc(2026, 10, day, 16),
+          housesVisited: day,
+          totals: DonationTotals.of(donations),
+        );
+
+    setUp(() {
+      ledger = FakeRoundLedger();
+      watch = WatchCollecte(ledger);
+    });
+
+    test('should give the validated tournées of the secteur and campaign, '
+        'newest first, added up', () async {
+      final saturday = summary('sat', 24, [cash(1000), offered]);
+      final friday = summary('fri', 23, [cheque(2000)]);
+      await ledger.record(sector49Id, year2026, friday);
+      await ledger.record(sector49Id, year2026, saturday);
+      // Another secteur's, and another campaign's: not this collecte.
+      await ledger.record(sector12.id, year2026, summary('t12', 25, []));
+      await ledger.record(sector49Id, campaign2027, summary('old', 26, []));
+
+      final collecte = await watch(sector49Id, year2026).first;
+
+      expect(collecte.rounds, [saturday, friday]);
+      expect(
+        collecte.totals,
+        DonationTotals.of([cash(1000), offered, cheque(2000)]),
+      );
+    });
+
+    test(
+      'should give the collecte again when a tournée is validated',
+      () async {
+        final shown = <Collecte>[];
+        final listening = watch(sector49Id, year2026).listen(shown.add);
+        addTearDown(listening.cancel);
+        await Future<void>.delayed(Duration.zero);
+
+        await ledger.record(
+          sector49Id,
+          year2026,
+          summary('sat', 24, [cash(500)]),
+        );
+        await Future<void>.delayed(Duration.zero);
+
+        expect(shown.map((c) => c.rounds.length), [0, 1]);
+        expect(shown.last.totals.cents, 500);
+      },
+    );
   });
 
   test('should name the missing tournée', () {

@@ -3,6 +3,7 @@
 // `Override` (the type of a ProviderScope's overrides) lives in misc.dart.
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
+import 'package:tournee_calendriers/application/ports/round_ledger.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/import_streets/import_notifier.dart';
@@ -40,7 +41,8 @@ import 'fake_map_view.dart';
 /// streets kept on the phone since M1, none by default: no card offers
 /// them to a tournée), [movedStreets] and [pending] (nothing waiting to be
 /// sent by default), [connection] (online by default), [downloads] (no
-/// tournée downloaded by default) and [rounds] (no tournée on by default);
+/// tournée downloaded by default), [rounds] (no tournée on by default)
+/// and [ledger] (no tournée validated by default);
 /// [member] (Léa by
 /// default) uses the phone and marks the houses at [now] (two o'clock by
 /// default), or on [clock], which a test may move; [account] is the phone's account (none by default, and no
@@ -71,6 +73,7 @@ List<Override> fakePhone({
   FakeServerConnection? connection,
   FakeSectorDownloads? downloads,
   FakeOpenRoundStore? rounds,
+  RoundLedger? ledger,
   MemberId? member,
   DateTime? now,
   FakeClock? clock,
@@ -110,7 +113,7 @@ List<Override> fakePhone({
   mySectorsStoreProvider.overrideWithValue(mySectors ?? FakeMySectorsStore()),
   phoneSettingsProvider.overrideWithValue(settings ?? FakePhoneSettings()),
   openRoundStoreProvider.overrideWithValue(rounds ?? FakeOpenRoundStore()),
-  roundLedgerProvider.overrideWithValue(FakeRoundLedger()),
+  roundLedgerProvider.overrideWithValue(ledger ?? FakeRoundLedger()),
   sectorDirectoryProvider.overrideWithValue(
     sectorDirectory ?? FakeSectorDirectory(),
   ),
