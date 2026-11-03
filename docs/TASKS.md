@@ -142,3 +142,14 @@ later screen could be checked with real streets (decided with you on 2026-10-04)
 |---|---|---|
 | [#41](https://github.com/emmanuel-h/Tournee-Calendriers/issues/41) | T7.1 iOS build in the cloud | manual |
 | [#42](https://github.com/emmanuel-h/Tournee-Calendriers/issues/42) | T7.2 iPhone pass | manual |
+
+## M9 Prepare, then go out
+
+| Issue | Task | Labels |
+|---|---|---|
+| [#120](https://github.com/emmanuel-h/Tournee-Calendriers/issues/120) | T9.1 No attribution: the secteur covers all its streets |  |
+| [#121](https://github.com/emmanuel-h/Tournee-Calendriers/issues/121) | T9.2 Secteur screen: icon, « Ajouter des rues » moves there |  |
+| [#122](https://github.com/emmanuel-h/Tournee-Calendriers/issues/122) | T9.3 Houses are marked only during a tournée |  |
+| [#123](https://github.com/emmanuel-h/Tournee-Calendriers/issues/123) | T9.4 « En tournée » band on top |  |
+| [#124](https://github.com/emmanuel-h/Tournee-Calendriers/issues/124) | T9.5 Ajouter des rues: tick several roads, add them at once |  |
+| [#125](https://github.com/emmanuel-h/Tournee-Calendriers/issues/125) | T9.6 Ajouter des rues: select a zone |  |

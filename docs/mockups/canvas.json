@@ -43,7 +43,7 @@
       "y": 1264,
       "w": 390,
       "h": 844,
-      "title": "5.4 Ajouter des rues — fiche rue",
+      "title": "5.4 Ajouter des rues — toucher pour cocher",
       "is_interactive": true
     },
     "Manual.dc.html": {
@@ -89,7 +89,7 @@
       "y": 3792,
       "w": 390,
       "h": 844,
-      "title": "5.8 Équipe (administrateur)"
+      "title": "5.8 Secteur (administrateur)"
     },
     "Settings.dc.html": {
       "x": 470,
@@ -181,7 +181,7 @@
       "y": 5056,
       "w": 390,
       "h": 844,
-      "title": "5.8 Équipe (membre)"
+      "title": "5.8 Secteur (membre)"
     },
     "AddList.dc.html": {
       "x": 2350,
@@ -216,7 +216,7 @@
     },
     "RunHome.dc.html": {
       "h": 844,
-      "title": "Tournée — Accueil, tournée en cours (#63)",
+      "title": "Tournée — Accueil, bandeau en tournée",
       "w": 390,
       "x": 470,
       "y": 7584
@@ -224,7 +224,7 @@
     "RunStreet.dc.html": {
       "h": 844,
       "is_interactive": true,
-      "title": "Tournée — Rue, maison ✓ : ajouter un don (#63)",
+      "title": "Tournée — Rue avec le bandeau, maison ✓ : ajouter un don",
       "w": 390,
       "x": 940,
       "y": 7584
@@ -254,7 +254,7 @@
     },
     "RunTeam.dc.html": {
       "h": 844,
-      "title": "Tournée — Équipe avec la collecte (#63)",
+      "title": "Tournée — Secteur avec les rues et la collecte",
       "w": 390,
       "x": 2350,
       "y": 7584
@@ -273,6 +273,20 @@
       "w": 390,
       "h": 844,
       "title": "5.0 Accueil sans secteur ouvert"
+    },
+    "PickZone.dc.html": {
+      "x": 2820,
+      "y": 1264,
+      "w": 390,
+      "h": 844,
+      "title": "5.4 Ajouter des rues — zone"
+    },
+    "StreetIdle.dc.html": {
+      "x": 3760,
+      "y": 7584,
+      "w": 390,
+      "h": 844,
+      "title": "5.6 Rue sans tournée : rien à marquer"
     }
   },
   "createdOnFiles": {
@@ -352,6 +366,7 @@
     "Switcher.dc.html",
     "Pick.dc.html",
     "AddList.dc.html",
+    "PickZone.dc.html",
     "Manual.dc.html",
     "Main.dc.html",
     "Edit.dc.html",
@@ -378,7 +393,8 @@
     "RunRecap.dc.html",
     "RunTeam.dc.html",
     "Cash.dc.html",
-    "RunDons.dc.html"
+    "RunDons.dc.html",
+    "StreetIdle.dc.html"
   ],
   "pages": [],
   "title": "Tournée Calendriers screens"

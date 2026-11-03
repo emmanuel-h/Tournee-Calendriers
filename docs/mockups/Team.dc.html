@@ -16,10 +16,6 @@ a{color:#B3261E}a:hover{color:#8C1D18}
 .ib svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .mem{display:flex;align-items:center;gap:12px;min-height:56px;padding:0 4px 0 16px;border-bottom:1px solid #E2DED5;background:#FFFFFF}
 .av{width:36px;height:36px;border-radius:18px;background:#E2DED5;display:flex;align-items:center;justify-content:center;font:700 16px 'Barlow Condensed',sans-serif;flex-shrink:0}
-.cnt{border:0;background:transparent;font:inherit;font-size:14px;color:#4A5058;min-height:48px;display:flex;align-items:center;gap:6px;cursor:pointer;padding:0 4px}
-.chev{font-size:14px;color:#1B1F24}
-.streets{list-style:none;margin:0;padding:4px 16px 8px 64px;background:#FFFFFF;border-bottom:1px solid #E2DED5}
-.streets li{font-size:15px;line-height:32px;color:#1B1F24}
 .hd{padding:16px 20px 8px 20px;font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#4A5058}
 </style>
 </helmet>
@@ -52,10 +48,14 @@ a{color:#B3261E}a:hover{color:#8C1D18}
   </div>
   <div class="hd">Membres (5)</div>
   <div style="border-top: 1px solid #E2DED5">
-    <div class="mem"><span class="av" style="background: #1B1F24; color: #FFFFFF">M</span><span style="flex: 1; font-weight: 700">Manu (vous) · admin</span><button class="cnt" aria-expanded="false" aria-label="Manu, 5 rues, afficher les rues" style="padding-right: 12px">5 rues <span class="chev">▸</span></button></div>
-    <div class="mem"><span class="av">L</span><span style="flex: 1; font-weight: 700">Léa</span><button class="cnt" aria-expanded="true" aria-label="Léa, 12 rues, masquer les rues">12 rues <span class="chev">▾</span></button><button class="ib" aria-label="Options pour Léa"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="19" r="1.2"/></svg></button></div>
-    <ul class="streets" aria-label="Rues de Léa"><li>Rue de Thizy</li><li>Rue Nationale</li><li>Place des Marais</li><li>Rue Victor Hugo</li><li>Rue de la Paix</li><li>Avenue de l'Europe</li><li>Rue Roland</li><li>Boulevard Gambetta</li><li>Rue d'Anse</li><li>Rue Paul Bert</li><li>Rue Grenette</li><li>Rue Corlin</li></ul>
+    <div class="mem"><span class="av" style="background: #1B1F24; color: #FFFFFF">M</span><span style="flex: 1; font-weight: 700">Manu (vous) · admin</span><span style="width: 48px"></span></div>
+    <div class="mem"><span class="av">L</span><span style="flex: 1; font-weight: 700">Léa</span><button class="ib" aria-label="Options pour Léa"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="12" cy="19" r="1.2"/></svg></button></div>
     <div class="mem"><span class="av">+3</span><span style="flex: 1; font-weight: 700">Paul · admin, Sarah, Thomas</span><span style="font-size: 18px; color: #4A5058; padding-right: 12px">›</span></div>
+  </div>
+  <!-- Preparation lives here, not on Accueil: the secteur's streets are added from this screen. -->
+  <div class="hd">Rues (38)</div>
+  <div style="border-top: 1px solid #E2DED5">
+    <a class="mem" href="Pick.dc.html" style="text-decoration: none; color: #1B1F24"><span class="av" style="background: #F3F1EC"><svg viewBox="0 0 24 24" aria-hidden="true" style="width: 18px; height: 18px; fill: none; stroke: #1B1F24; stroke-width: 2.4; stroke-linecap: round"><path d="M12 5v14M5 12h14"/></svg></span><span style="flex: 1; display: flex; flex-direction: column; gap: 2px; padding: 8px 0"><span style="font-weight: 700">Ajouter des rues</span><span style="font-size: 14px; color: #4A5058">Sur la carte ou depuis la liste des communes</span></span><span style="font-size: 18px; color: #4A5058; padding-right: 12px">›</span></a>
     <a class="mem" href="Trash.dc.html" style="text-decoration: none; color: #1B1F24"><span class="av" style="background: #F3F1EC"><svg viewBox="0 0 24 24" style="width: 18px; height: 18px; fill: none; stroke: #1B1F24; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13"/></svg></span><span style="flex: 1; font-weight: 700">Corbeille · 2 éléments</span><span style="font-size: 18px; color: #4A5058; padding-right: 12px">›</span></a>
   </div>
   </div>

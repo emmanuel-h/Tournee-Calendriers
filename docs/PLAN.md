@@ -65,13 +65,13 @@ Code uses English names, the UI uses French.
 | Logement | `Dwelling` | One unit inside a building (`Apt 3`, `B2`) |
 | Statut | `VisitStatus` | `TO_DO` (à faire), `DONE` (fait), `REFUSED` (refusé, #63), `NOBODY_HOME` (personne), `COME_BACK` (repasser): exactly one per house or door |
 | Repasser | `VisitStatus.comeBack` + `ComeBack` | A status: the resident asked to come back later, optionally on a day and at about an hour (« samedi vers 18 h », the `ComeBack` value, #81). A building, which has no status, may carry its own « repasser » |
-| Mes rues | assignees | Streets the current member has taken |
+| ~~Mes rues~~ | ~~assignees~~ | Removed (5.14, 2026-11-03): no street belongs to a member; the whole secteur covers every street |
 | Tournée | `Round` | One outing of one member on the open secteur, from « Commencer une tournée » to « Valider la tournée » (#63). Holds its dons until it is validated, then only its totals remain |
 | Don | `Donation` | Money received during a tournée: a payment method and an amount, or a calendar given for free (« Calendrier offert »). Never tied to a house or a time |
 | Moyen de paiement | `PaymentMethod` | `cash` (Espèces), `cheque` (Chèque), `card` (Carte bancaire) |
 | Collecte | `RoundSummary` (per campaign) | The validated tournées of a campaign and their totals, seen by the whole secteur, never split per member |
 | Calendriers | `House.calendars` | How many calendars a house (or door) marked ✓ took: 1, or more after « + Ajouter un don ». No amount |
-| Libre | — | A street in the secteur that nobody in the team has taken (a member who left or was removed no longer counts, #91) |
+| ~~Libre~~ | — | Removed with the attribution (5.14) |
 
 ---
 
@@ -105,7 +105,7 @@ first launch
  Bienvenue ── name ──┬── Créer un secteur ──▶ QR + code ──┐
                      └── Rejoindre (QR or code) ───────────┤
                                                            ▼
-                               Accueil = map of the secteur + "Mes rues" panel
+                               Accueil = map of the secteur + streets panel (5.14)
                                (the app downloads the secteur for offline use by
                                 itself, unseen, whenever it is online — §7)
               ┌──────────────────┬──────────────┼──────────────────┬─────────────┐
@@ -130,13 +130,14 @@ Before the round (once):
 
 1. Join the secteur with the QR code at the station. Nothing else to do for offline: while
    online, the app saves the streets and the map tiles by itself, unseen (§7).
-2. "Ajouter des rues" → tap each of my roads on the map → "Ajouter et me l'attribuer".
+2. Secteur (🗺) → « Ajouter des rues » → tap each road, or draw a « Zone » → « Ajouter N rues »
+   (5.14; no attribution: the team covers the whole secteur).
 3. A cul-de-sac missing from the map → "Rue absente ? Saisir à la main".
 
 In the street (often offline):
 
-1. Open the app → the map shows my streets coloured; the panel lists them. Leaving for an
-   outing: « Commencer une tournée » (§5.13).
+1. Open the app → the map shows the secteur's streets coloured; the panel lists them. Leaving
+   for an outing: « Commencer une tournée » (§5.13): houses are marked only during a tournée (5.14).
 2. Tap *Rue des Lilas* → Street screen: odd side on the left, even side on the right.
 3. Each door: **tap the tile** → its five statuses → one tap: ✓ Fait (during a tournée, then
    the don: « 10 € », or « Calendrier offert »), ⊘ Refusé, ✗ Personne, ↻ Repasser (then the
@@ -400,6 +401,11 @@ an admin, shows only « Rejoindre un secteur », in red), and the bottom of the 
 
 ### 5.3 Accueil — map + "Mes rues" panel
 
+> **Changed by 5.14 (2026-11-03, to build):** no « Mes rues » / « Autres rues », no « libre »,
+> no « Équipe : n % », no « + Ajouter des rues » row (it moved to Secteur), 🗺 Secteur instead
+> of 👥, street card « Ouvrir » only, and the « En tournée » band over the top bar during
+> a tournée. Read 5.14 first; the text below is the earlier state.
+
 ```
 ┌──────────────────────────────┐
 │ Secteur 49 · 2026 ▾  [👥•][⚙]│  ← title opens « Mes secteurs »; dot: a join request is waiting
@@ -555,6 +561,11 @@ bottom sheet:
 
 ### 5.4 Ajouter des rues — map mode
 
+> **Changed by 5.14 (2026-11-03, to build):** opened from Secteur, not Accueil; a tap ticks a
+> road instead of opening the card (several at once, « Ajouter N rues »), plus « Zone »;
+> « Ajouter et me l'attribuer » / « Ajouter sans m'attribuer » and the state table's
+> attribution actions are gone. The look-up, the search and « Liste » stay as below.
+
 ```
 ┌──────────────────────────────┐
 │ ✕  Ajouter des rues          │
@@ -675,7 +686,7 @@ Edit mode:
   a house, or « Ouvrir l'immeuble » for a building: every change to a building itself (floors,
   doors, back to a single house) is made from its grid (5.7, T1.18).
 - The name field renames the street for the whole team.
-- *Ne plus la faire* removes me from its assignees; *Supprimer* deletes it for everyone
+- ~~*Ne plus la faire* removes me from its assignees~~ (removed, 5.14); *Supprimer* deletes it for everyone
   (confirmation, any member may do it — see Q2).
 - A manual street has no shape on the map; it appears in the lists, marked "saisie à la main".
 
@@ -1178,6 +1189,10 @@ Immeuble details fixed in T1.9 (`lib/presentation/building/`, `lib/ui/screens/bu
 
 ### 5.8 Équipe (👥)
 
+> **Changed by 5.14 (2026-11-03, to build):** now « Secteur », opened by 🗺 (`Icons.map_outlined`);
+> no streets per member (#105's counts go); a « RUES (n) » section with « + Ajouter des rues »
+> and the Corbeille under it. The rest stands.
+
 ```
 ┌──────────────────────────────┐
 │ ← Secteur 49                 │
@@ -1496,6 +1511,10 @@ TeamMember, and Welcome, Switcher, Team, Settings updated):
 
 ### 5.13 Tournées et collecte (#63)
 
+> **Changed by 5.14 (2026-11-03, to build):** the tournée card in Accueil's list and the
+> street's line become the « En tournée » band on top; houses are marked only during a
+> tournée; the sketches below still show « Mes rues » and 👥.
+
 Agreed 2026-11-02 (ASCII, then mockups RunStart, RunHome, RunStreet, RunDons, RunDon,
 RunRecap, RunTeam, Cash; every text reviewed one by one with the user). « Tournée » is one
 outing; the team's area is the **secteur** (§2).
@@ -1591,6 +1610,118 @@ outing; the team's area is the **secteur** (§2).
   rules let admins read `rounds/`). A tournée reads « Sam. 24 oct. · 14:05 → 18:20 » (the mockup's
   short day); every row starts folded and each unfolds on its own. « TOTAL DE LA TOURNÉE » for one,
   « TOTAL DES TOURNÉES » for none. Unreadable: « La collecte ne peut pas être affichée. ».
+
+### 5.14 Préparer le secteur, partir en tournée (to build, #120–#125)
+
+Agreed 2026-11-03 (ASCII in the terminal, then mockups RunStart, RunHome, RunStreet,
+StreetIdle, RunTeam, Team, TeamMember, Pick, PickZone). The app has **two moments that never
+share a screen**: *preparing the secteur* (a few times a year: members, communes, streets) and
+*being out on a tournée* (in the street, often offline). Preparation lives in the **Secteur**
+screen; Accueil is for the street work, and a tournée turns it into the tournée screen. This
+section overrides 4, 5.3, 5.4, 5.5, 5.6, 5.8 and 5.13 wherever they disagree; the parts it
+removes are marked « (removed, 5.14) » there.
+
+```
+  Accueil, no tournée              Accueil, en tournée              Rue, no tournée
+┌────────────────────────────┐   ┌────────────────────────────┐   ┌────────────────────────────┐
+│ Secteur 49 · 2026 ▾ [🗺][⚙]│   │▓● En tournée · 1 h 20     ▓│   │ ← Rue des Lilas 31/42  [✎] │
+│ ░░ map ░░░░░░░░░░░░░░░░░░░ │   │▓19 dons · 280 € ›         ▓│   │ Impair      │  Pair        │
+│ [faite][en partie][à faire]│   │▓            [■ Terminer]  ▓│   │ [1 ✓][3 ○]  │ [2 ✗][4 ○]   │
+├────────────────────────────┤   │ ░░ map ░░░░░░░░░░░░░░░░░░░ │   │ [5 ↻][7 ○]👆│ [6 ○][8 ◐]   │
+│ Rues · 31/50               │   ├────────────────────────────┤   ├────────────────────────────┤
+│ [ ▶ Commencer une tournée ]│   │ Rues · 31/50               │   │ Commencez une tournée pour │
+│ Rue des Lilas ▓▓▓░ 31/42 › │   │ Rue des Lilas ▓▓▓░ 31/42 › │   │ marquer les maisons.       │
+│ Allée des Pins ░░░░  0/8 › │   │ Allée des Pins ░░░░  0/8 › │   │                [Commencer] │
+└────────────────────────────┘   └────────────────────────────┘   └────────────────────────────┘
+  Secteur (🗺)                     Ajouter des rues · Carte         Ajouter des rues · Zone
+┌────────────────────────────┐   ┌────────────────────────────┐   ┌────────────────────────────┐
+│ ← Secteur 49               │   │ ✕  Ajouter des rues        │   │ ✕  Ajouter des rues        │
+│ ▄▄ Code K7P-2QX [⧉]        │   │ [ Carte ]   Liste          │   │ [ Carte ]   Liste          │
+│ EN ATTENTE (1) …           │   │ [🔍 Rechercher…  ] [⬚ Zone]│   │ [🔍 Rechercher…  ] [■ Zone]│
+│ MEMBRES (5)                │   │ ░▓▓▓▓▓✓▓▓▓░░░░░░░░░░░░░░░ │   │ ░░┌┄┄┄┄┄┄┄┄┄┄┄┄┄┄┐░░░░░░░ │
+│ Manu (vous) · admin        │   │ ░░░░║░░░░▓▓▓✓▓▓▓░░░░░░░░░ │   │ ░░┆▓▓✓▓▓░░▓▓✓▓▓┆░░░░░░░ │
+│ Léa                    [⋮] │   ├────────────────────────────┤   │ ░░└┄┄┄┄┄┄┄┄┄┄┄┄┄┄○░░░░░░░ │
+│ RUES (38)                  │   │ 2 rues sélectionnées       │   ├────────────────────────────┤
+│ + Ajouter des rues       › │   │       Tout décocher        │   │ 4 rues dans la zone        │
+│ Corbeille · 2 éléments   › │   │ Rue Pierre Morin · 19 n° ✕ │   │ ☑ Rue Pierre Morin · 19 n° │
+│ COMMUNES (2) …             │   │ Impasse des Tilleuls … ✕   │   │ ☑ Rue du Moulin · 23 n°    │
+│ COLLECTE 2026            › │   │ [     Ajouter 2 rues     ] │   │ ☐ Rue Pasteur · déjà dans… │
+├────────────────────────────┤   │ Rue absente ? Saisir à la …│   │ [     Ajouter 3 rues     ] │
+│ [ Quitter le secteur ]     │   └────────────────────────────┘   └────────────────────────────┘
+└────────────────────────────┘
+```
+
+- **No attribution.** A member of the secteur covers every street of it; the admin decides who
+  is in the secteur (5.12). Gone everywhere: « Mes rues » / « Autres rues du secteur »,
+  « libre » (line, legend, card), « Me l'attribuer », « La faire aussi », « Ne plus la faire »
+  (street card and edit mode), « Ajouter et me l'attribuer » / « Ajouter sans m'attribuer »,
+  « Vous la faites (avec Manu) » / « Faite par … », the streets per member in Équipe (#105) and
+  « Équipe : 43 % » (it would repeat the totals). Data: `Street.assignees`, `MyStreets`,
+  `TeamRoster`'s use for streets, `TakeStreet` / `ReleaseStreet` and the Firestore field
+  `assignees` go, and the rules stop checking it (§6, §8.2). Breaking change, no migration
+  (one user, §3): documents keep a stale `assignees` field that nobody reads, or the test
+  secteurs are created again.
+- **Accueil, no tournée** (RunStart): top bar « Secteur 49 · 2026 ▾ » (opens « Mes secteurs »),
+  the Secteur button and ⚙. The map shows every street of the secteur, coloured « faite · en
+  partie · à faire » (three samples in the legend). The panel shows « Rues · 31/50 » (doors done
+  over every street of the secteur, as the admin visit already counted), « ▶ Commencer une
+  tournée » for an active member (5.13), then every street of the secteur in one list, with no
+  section header and no « + Ajouter des rues » row. A tap on a street's line or row
+  opens its street card: name, commune, « 31/42 faits », « Ouvrir ». The row
+  opens the Street screen directly, as « Mes rues » did. The pending-sync line stays at the bottom.
+- **The Secteur button** replaces 👥: Material `Icons.map_outlined` (a folded map), said
+  « Secteur » (« Secteur, 1 demande en attente » with the red dot, which stays). It opens the
+  screen 5.8 called Équipe, now **Secteur** (title « Secteur 49 » as before). Changes there:
+  member rows have no street count; after « MEMBRES », **« RUES (38) »** with the row « + Ajouter
+  des rues › » (« Sur la carte ou depuis la liste des communes » under it), which opens 5.4,
+  and the Corbeille row moved under it; then « COMMUNES », « COLLECTE 2026 » and the pinned
+  footer, unchanged. The rows show to active members and admins, not to a pending member.
+- **En tournée** (RunHome, RunStreet): while this phone's tournée runs in the open secteur,
+  a band **replaces Accueil's top bar**: Surface background with a 6 dp Accent edge on its left,
+  ink text and an Accent dot, a 1 dp divider under it (dark mode: the dark Surface and Accent);
+  the full red was too loud for something on screen for hours (chosen 2026-11-03). It sits **above the street screen's top bar** (and the building grid's). Its left part,
+  one 48 dp target, reads « ● En tournée · 1 h 20 » (« depuis » rules of 5.13) over « 19 dons ·
+  280 € › » in 24 dp titles, and opens « Dons de la tournée » (TalkBack « En tournée depuis 1 h
+  20, 19 dons, 280 €. Voir les dons »). Its right part is « ■ Terminer », a 48 dp ink pill with Surface text
+  (the theme's inverse pair; « Terminer la tournée »), which opens the « Bilan ». While
+  the band shows, Accueil has no secteur switch, no Secteur button and no ⚙: preparation waits
+  until the tournée ends. The tournée card of 5.13 (Accueil's list, the street's line under the
+  progress bar) goes. At 200 % text the band wraps its lines and « Terminer » stays whole.
+- **Marking only in a tournée** (StreetIdle): with no tournée running, the street screen shows
+  every status but a tap on a house or a door opens nothing. Instead a snackbar says
+  « Commencez une tournée pour marquer les maisons. » with « Commencer », which starts the
+  tournée (as Accueil's button, offline too) and stays on the street, where the band appears.
+  The next tap opens the picker. A building tile still opens its grid, read-only in the same way. « Modifier la rue » (✎) and everything in it
+  (numbers, buildings, doors, the name) stay available without a tournée: that is preparation.
+  The « Appuyez sur une maison… » pill is not shown. A visiting admin (never in a tournée) gets
+  « Seuls les membres en tournée marquent les maisons. » with no action. ✓ therefore always asks
+  for the don (5.13); « N° 7 : fait » without a don no longer exists. The tournée is phone-only
+  (§6.3), so this is an app rule, not a security rule.
+- **Ajouter des rues** (Pick, PickZone), opened from Secteur only; its ✕ and the back gesture go
+  back to Secteur. Still needs the network (5.4); « Liste » unchanged.
+  - **Tap to tick**: a tap on a road ticks it (5.4's look-up: point → BAN street → its road from
+    the map's tiles; the dark casing with a white core, and a ✓ disc on it). A tap on a ticked
+    road unticks it. A tap on a street already in the secteur ticks nothing and says
+    « Rue des Lilas est déjà dans le secteur. ». « Aucune rue connue ici » and the other look-up
+    failures of 5.4 come as a snackbar with « Saisir à la main ». The single-street card is gone.
+  - **Selection sheet** (bottom, over the map): with nothing ticked, « Touchez les rues à ajouter
+    ou tracez une zone. » and « Rue absente de la carte ? Saisir à la main ». With some, « 2 rues
+    sélectionnées » (« 1 rue sélectionnée ») and « Tout décocher », one row each (name, « commune ·
+    19 numéros », ✕ « Retirer rue Pierre Morin »), « Ajouter 2 rues » (red) and the manual link.
+    The rows scroll past four; dragging the handle down leaves only the title.
+  - **Zone**: a 48 dp « ⬚ Zone » pill next to the search (said « Sélectionner une zone »). On, it
+    turns ink (« Zone en cours, annuler ») and a drag on the map draws a rectangle instead of
+    panning (dimmed outside, dashed edge, a round handle at a corner to resize it). On release,
+    the streets inside are listed: the named roads of the map's tiles in the rectangle (as #92
+    reads shapes), each matched to its BAN street by name in the secteur's communes. The list
+    reads « 4 rues dans la zone » with a checkbox per street, all ticked; those already in the
+    secteur are greyed, unticked, « Déjà dans le secteur »; a road with no BAN street « Aucune
+    adresse connue », greyed. Zone needs zoom ≥ 15 (below: « Zoomez pour tracer une zone. ») and
+    keeps 50 streets at most (« Zone trop grande : 50 rues au plus. »). Streets ticked by taps
+    and by the zone add up; « Zone » again leaves the mode and keeps the ticks.
+  - **Adding**: « Ajout en cours… 2/3 », then back to Secteur with « 3 rues ajoutées au
+    secteur » (the Liste tab's path). Streets that failed stay ticked, with the reason
+    above the button. A street in the Corbeille comes back with its marks, as in Liste.
 
 ---
 
@@ -2219,7 +2350,7 @@ Address and shape adapters fixed in T3.2 (`lib/application/ports/address_directo
   ends meet within 1 m (`joinLines`), across tiles too. A 204 is an empty tile.
 Street picking fixed in T3.3 (`lib/domain/street/street.dart`, `lib/application/use_cases/`):
 
-- **`Street.assignees`** (`Set<MemberId>`, read-only): the members who cover the street (their
+- *(To remove, 5.14: no attribution; `Street.assignees`, `TakeStreet`, `ReleaseStreet` and the roster's use for streets go.)* **`Street.assignees`** (`Set<MemberId>`, read-only): the members who cover the street (their
   « Mes rues »); empty is « libre ». `Street.create(assignees:)` and `Street.manual(assignees:)`
   take them (none by default). `take(member)` → `StreetTaken` (refused `alreadyAssigned`),
   `release(member)` → `StreetReleased` (refused `notAssigned`), `AssignmentFailure`; the other
@@ -2286,7 +2417,7 @@ Communes of a secteur fixed in #78 (`lib/domain/sector/`, `lib/application/use_c
 
 Accueil fixed in T3.5 (#30, `lib/domain/street/my_streets.dart`, `lib/presentation/home/`):
 
-- **`MyStreets.of(streets, member)`**: `mine` (the streets whose `assignees` hold the member:
+- *(To remove, 5.14: one list of every street.)* **`MyStreets.of(streets, member)`**: `mine` (the streets whose `assignees` hold the member:
   « Mes rues »), `others` (free or someone else's; a street held only by ex-members is among
   them, « libre » on its card and line, #91) and `all`, each in the order given,
   Corbeille left out; `myProgress` and `teamProgress` add up their doors. `MyStreets.none`
@@ -2482,7 +2613,7 @@ sectors/{sectorId}
       shape: ["<encoded polyline>", …],           ← one per OSM road, simplified, ≈ 1 KB a street;
                                                     [] for none; written once, with the street
                                                     or later while still [] (#92), never replaced
-      assignees: [uid, …],                        ← who covers it, sorted when the street is
+      assignees: [uid, …],                        ← to remove (5.14); who covers it, sorted when the street is
                                                     written; [] for nobody (T3.3)
       deletedAt, deletedBy                        ← set = in the Corbeille (5.11); null otherwise
       houses: {                                   ← a map inside the street document
@@ -2544,7 +2675,7 @@ writes:
 | number renamed | `houses.<old>` deleted, `houses.<new>` whole |
 | street renamed, deleted, restored | `name`; `deletedAt`, `deletedBy` (top level) |
 | shape found later (`StreetShapeFilled`, #92) | `shape` (top level), the whole list, only while the stored one is absent or `[]` |
-| street taken, released (T3.3) | `assignees`: `arrayUnion([uid])` / `arrayRemove([uid])`, never the whole array, so two members taking it at once both stay |
+| street taken, released (T3.3; to remove, 5.14) | `assignees`: `arrayUnion([uid])` / `arrayRemove([uid])`, never the whole array, so two members taking it at once both stay |
 | undo of a house (`HouseReverted`) | as a layout change, or `houses.<old>` deleted and `houses.<n>` whole when it renumbers back; `by` / `at` = who undoes, now |
 | undo of a door (`DwellingReverted`) | `dwellings.<key>` whole, `by` / `at` = who undoes, now |
 | 30-day purge of numbers (`NumbersPurged`, T2.6b) | each `houses.<n>` deleted, in an update of its own |
@@ -2938,7 +3069,7 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
   removal that leaves at least one. A secteur stored before has no list: it counts as empty, so
   its first commune can be added. Duplicates of a code cannot be ruled out (no loops): the
   reader skips them.
-- **Shape and assignees** (T3.3): optional on a new street (an app of before the map writes
+- **Shape and assignees** (T3.3; the `assignees` checks go with 5.14): optional on a new street (an app of before the map writes
   neither); `shape` a list of at most 1 000 lines (counted, not checked line by line), never
   changed afterwards, except **filled once** (#92, `isShapeFill`): an update of `shape` alone,
   1 to 1 000 lines (the first a text), while the stored shape is absent or `[]` (an older
@@ -3176,7 +3307,7 @@ exists. No invented data at any stage.
 | Q6 | Public repo | Yes: `google-services.json` is gitignored and injected in CI from a secret. |
 | Q7 | minSdk | 26 (Android). iOS 15+ later. |
 | Q8 | Street selection | On a map: tap a road → street card → add. Manual entry for what the map or BAN lacks. |
-| Q9 | Where the map lives | Accueil = map + "Mes rues" panel; "Ajouter des rues" is a map mode (replaces the Sector list). |
+| Q9 | Where the map lives | Accueil = map + streets panel; "Ajouter des rues" is a map mode, opened from Secteur since 5.14 (replaces the Sector list). |
 | Q10 | Progress on the map | Streets coloured by progress; houses as status dots when zoomed in. |
 | Q11 | Offline | Download of the secteur (data + map tiles), then fully offline, sync when possible. **Changed 2026-11-01 (#32): automatic and invisible** — the app downloads the open secteur whenever it is online, refreshes the maps silently (weekly tile versions), retries every 2 minutes after a failure; no button, banner or progress (§7). |
 | Q12 | Language | French only. |

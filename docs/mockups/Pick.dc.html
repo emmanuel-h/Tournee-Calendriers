@@ -14,64 +14,68 @@ body{margin:0}
 a{color:#B3261E}a:hover{color:#8C1D18}
 .ib{width:48px;height:48px;border:0;background:transparent;color:#1B1F24;border-radius:24px;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;text-decoration:none;flex-shrink:0}
 .ib svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.pill{height:48px;border-radius:24px;border:1.5px solid #CFC9BD;background:#FFFFFF;display:flex;align-items:center;gap:8px;font:700 15px 'Atkinson Hyperlegible',sans-serif;color:#1B1F24;text-decoration:none;box-sizing:border-box}
+.sel{display:flex;align-items:center;gap:10px;min-height:52px;border-bottom:1px solid #E2DED5}
 .tab{flex:1;height:40px;border:0;font:700 14px 'Atkinson Hyperlegible',sans-serif;cursor:pointer}
 </style>
 </helmet>
 <div style="width: 390px; height: 844px; box-sizing: border-box; background: #F3F1EC; color: #1B1F24; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; display: flex; flex-direction: column; position: relative; overflow: hidden">
   <div style="display: flex; align-items: center; gap: 4px; padding: 8px 8px 4px 8px">
-    <a class="ib" href="Home.dc.html" aria-label="Fermer"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></a>
+    <a class="ib" href="RunTeam.dc.html" aria-label="Fermer"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></a>
     <h1 style="flex: 1; margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 28px">Ajouter des rues</h1>
   </div>
-  <!-- #78: two tabs. « Carte » is this map mode; « Liste » is the checkbox list of the sector's
-       communes (AddList.dc.html, the former « Importer des rues »). 48 dp, chosen one in ink. -->
   <div role="tablist" style="margin: 0 16px 10px 16px; display: flex; border: 1.5px solid #CFC9BD; border-radius: 24px; overflow: hidden; height: 48px">
     <button role="tab" aria-selected="true" style="flex: 1; border: 0; background: #1B1F24; color: #FFFFFF; font: 700 16px 'Atkinson Hyperlegible', sans-serif">Carte</button>
     <a role="tab" aria-selected="false" href="AddList.dc.html" style="flex: 1; background: #FFFFFF; color: #1B1F24; font-weight: 700; font-size: 16px; display: flex; align-items: center; justify-content: center; text-decoration: none">Liste</a>
   </div>
-  <div style="padding: 0 16px 10px 16px">
-    <div style="position: relative">
+  <div style="padding: 0 16px 10px 16px; display: flex; gap: 8px">
+    <div style="position: relative; flex: 1">
       <svg viewBox="0 0 24 24" style="position: absolute; left: 14px; top: 14px; width: 20px; height: 20px; fill: none; stroke: #4A5058; stroke-width: 2; stroke-linecap: round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
       <input aria-label="Rechercher une rue" placeholder="Rechercher une rue" style="height: 48px; box-sizing: border-box; width: 100%; border: 1.5px solid #CFC9BD; border-radius: 24px; background: #FFFFFF; padding: 0 14px 0 44px; font: 400 16px 'Atkinson Hyperlegible', sans-serif; color: #1B1F24">
     </div>
-    <a href="Manual.dc.html" style="margin-top: 8px; height: 44px; border-radius: 22px; border: 1.5px solid #CFC9BD; background: #FFFFFF; color: #1B1F24; font-weight: 700; font-size: 15px; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none"><svg viewBox="0 0 24 24" style="width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>Saisir une rue à la main</a>
+    <!-- « Zone »: drag a rectangle; every street inside is ticked (PickZone.dc.html). -->
+    <a class="pill" href="PickZone.dc.html" aria-label="Sélectionner une zone" style="padding: 0 16px"><svg viewBox="0 0 24 24" aria-hidden="true" style="width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-dasharray: 3 2.5"><rect x="4" y="5" width="16" height="14" rx="1"/></svg>Zone</a>
   </div>
   <div style="position: relative; flex: 1">
-    <svg viewBox="0 0 390 460" style="position: absolute; inset: 0; width: 390px; height: 460px" role="img" aria-label="Carte : la rue Pierre Morin est sélectionnée">
+    <svg viewBox="0 110 390 460" style="position: absolute; inset: 0; width: 390px; height: 460px" role="img" aria-label="Carte : rue Pierre Morin et impasse des Tilleuls cochées">
       <rect width="390" height="460" fill="#F2EFE9"/>
       <rect x="0" y="0" width="80" height="98" fill="#E4DFD5"/><rect x="100" y="0" width="140" height="98" fill="#E4DFD5"/><rect x="262" y="0" width="128" height="98" fill="#E4DFD5"/>
       <rect x="0" y="124" width="80" height="104" fill="#E4DFD5"/><rect x="100" y="124" width="140" height="104" fill="#DCE8CF"/><rect x="262" y="124" width="128" height="104" fill="#E4DFD5"/>
       <rect x="0" y="254" width="240" height="94" fill="#E4DFD5"/><rect x="262" y="254" width="128" height="94" fill="#E4DFD5"/>
       <rect x="0" y="374" width="240" height="86" fill="#E4DFD5"/><rect x="262" y="374" width="128" height="86" fill="#E4DFD5"/>
       <g stroke="#FFFFFF" stroke-width="14" fill="none" stroke-linecap="round">
-        <path d="M0 111H390"/><path d="M0 241H390"/><path d="M0 361H390"/><path d="M90 0V460"/><path d="M251 0V460"/>
+        <path d="M0 111H390"/><path d="M0 241H390"/><path d="M0 361H390"/><path d="M320 241V460"/><path d="M90 0V460"/><path d="M251 0V460"/>
       </g>
       <g fill="none" stroke-linecap="round">
         <path d="M0 111H390" stroke="#E0A21B" stroke-width="7"/>
         <path d="M90 111V241" stroke="#2F5DA8" stroke-width="7"/>
         <path d="M0 241H390" stroke="#1E6B47" stroke-width="7"/>
-        <path d="M251 0V460" stroke="#FFFFFF" stroke-width="11"/><path d="M251 0V460" stroke="#3E434A" stroke-width="7" stroke-dasharray="11.2 8.4"/>
+        <path d="M251 0V460" stroke="#2F5DA8" stroke-width="7"/>
       </g>
       <path d="M0 361H251" stroke="#1B1F24" stroke-width="16" stroke-linecap="round"/>
       <path d="M0 361H251" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round"/>
+      <path d="M320 241V460" stroke="#1B1F24" stroke-width="16" stroke-linecap="round"/>
+      <path d="M320 241V460" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round"/>
+      <g><circle cx="160" cy="361" r="14" fill="#1B1F24"/><path d="M153 361l5 5 9-10" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></g>
+      <g><circle cx="320" cy="300" r="14" fill="#1B1F24"/><path d="M313 300l5 5 9-10" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></g>
       <g font-family="Atkinson Hyperlegible, sans-serif" font-size="12" font-weight="700" fill="#1B1F24">
-        <text x="110" y="100">Rue des Lilas</text><text x="110" y="230">Rue Pasteur</text><text x="110" y="390">Rue Pierre Morin</text>
+        <text x="110" y="100">Rue des Lilas</text><text x="110" y="230">Rue Pasteur</text><text x="110" y="390">Rue Pierre Morin</text><text x="314" y="430" transform="rotate(-90 314 430)">Impasse des Tilleuls</text>
       </g>
-      <circle cx="160" cy="361" r="18" fill="#1B1F24" opacity="0.12"/><circle cx="160" cy="361" r="6" fill="#1B1F24"/>
     </svg>
   </div>
-  <div style="position: absolute; left: 0; right: 0; bottom: 0; background: #FFFFFF; border-radius: 24px 24px 0 0; box-shadow: 0 -4px 20px rgba(27, 31, 36, 0.14); padding: 10px 20px 24px 20px; display: flex; flex-direction: column; gap: 12px">
+  <!-- Each tap on a road ticks it (casing + ✓), a second tap unticks it. A street already in the
+       secteur cannot be ticked: « Rue des Lilas est déjà dans le secteur ». -->
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; background: #FFFFFF; border-radius: 24px 24px 0 0; box-shadow: 0 -4px 20px rgba(27, 31, 36, 0.14); padding: 10px 20px 20px 20px; display: flex; flex-direction: column; gap: 8px">
     <div style="width: 40px; height: 4px; border-radius: 2px; background: #CFC9BD; align-self: center"></div>
-    <button aria-label="Fermer" style="position: absolute; top: 6px; right: 8px; width: 48px; height: 48px; border: none; background: none; font: 400 24px 'Atkinson Hyperlegible', sans-serif; color: #1B1F24">✕</button>
-    <div style="display: flex; flex-direction: column; gap: 2px; padding-right: 40px">
-      <h2 style="margin: 0; font: 700 28px 'Barlow Condensed', sans-serif">Rue Pierre Morin</h2>
-      <span style="font-size: 15px; color: #4A5058">Villefranche-sur-Saône</span>
+    <div style="display: flex; align-items: baseline; justify-content: space-between">
+      <h2 style="margin: 0; font: 700 24px 'Barlow Condensed', sans-serif">2 rues sélectionnées</h2>
+      <button style="height: 48px; border: 0; background: none; font: 700 14px 'Atkinson Hyperlegible', sans-serif; color: #4A5058; text-decoration: underline">Tout décocher</button>
     </div>
-    <div style="display: flex; gap: 8px; flex-wrap: wrap">
-      <span style="background: #F3F1EC; border-radius: 10px; padding: 4px 10px; font-size: 14px; font-weight: 700">19 numéros</span>
-      <span style="background: #F3F1EC; border-radius: 10px; padding: 4px 10px; font-size: 14px; font-weight: 700">Pas encore dans le secteur</span>
+    <div style="border-top: 1px solid #E2DED5">
+      <div class="sel"><span style="flex: 1; display: flex; flex-direction: column"><span style="font-weight: 700">Rue Pierre Morin</span><span style="font-size: 14px; color: #4A5058">Villefranche-sur-Saône · 19 numéros</span></span><button class="ib" aria-label="Retirer rue Pierre Morin"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      <div class="sel"><span style="flex: 1; display: flex; flex-direction: column"><span style="font-weight: 700">Impasse des Tilleuls</span><span style="font-size: 14px; color: #4A5058">Villefranche-sur-Saône · 8 numéros</span></span><button class="ib" aria-label="Retirer impasse des Tilleuls"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     </div>
-    <a href="Home.dc.html" style="height: 56px; border-radius: 28px; background: #B3261E; color: #FFFFFF; font-weight: 700; font-size: 17px; display: flex; align-items: center; justify-content: center; text-decoration: none">Ajouter et me l'attribuer</a>
-    <button style="height: 52px; border-radius: 26px; border: 1.5px solid #CFC9BD; background: #FFFFFF; font: 700 16px 'Atkinson Hyperlegible', sans-serif; color: #1B1F24">Ajouter sans m'attribuer</button>
+    <a href="RunTeam.dc.html" style="margin-top: 4px; height: 56px; border-radius: 28px; background: #B3261E; color: #FFFFFF; font-weight: 700; font-size: 17px; display: flex; align-items: center; justify-content: center; text-decoration: none">Ajouter 2 rues</a>
     <a href="Manual.dc.html" style="font-weight: 700; font-size: 15px; text-align: center; padding: 8px 0">Rue absente de la carte ? Saisir à la main</a>
   </div>
 </div>
