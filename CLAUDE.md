@@ -62,10 +62,13 @@ warns about firebase_core/auth/app_check, a false positive of its text check, fl
 a new street cut off mid-write is caught up at the next start (#104, `UnfinishedStreets`; debug log
 « Street … written » to time a 300-number street); streets per member in Équipe, bottom buttons
 pinned (#105). #102 waits for a firebase-tools release past 15.34.2.
-#63 designed (2026-11-02), not built (milestone M8, #107–#116): the status picker (a tap shows the five
-statuses, « Refusé » added, no cycle, no hold; calendars per house; PLAN §5.6), tournées (one outing) with dons
-per payment method, free calendars, recap and « Collecte 2026 » per secteur (PLAN §5.13). The team's area is
-renamed « Secteur » (`Sector`) and the outing « Tournée » (`Round`), in the UI and the code (tasks pending).
+M8 built (2026-11-03), released as 0.10.0 (code 11, internal track), waiting for the phone test; issues
+#107–#116 open: code and Firestore renamed `Tournee` → `Sector` (`sectors/`, `sectorKeys/`; phone files keep
+their old names) and the outing is `Round` (#116, #115); status picker instead of the tap cycle (#107); « Refusé »
+⊘ (#113); tournées with their dons, kept in `open_round.json` until validated, then a create-only summary under
+`campaigns/{year}/rounds/` without its member (#108–#110); calendars per ✓ house (#114); « Collecte 2026 » in
+Équipe (#111); privacy text drafted by Claude for the user's review (#112). No data migration: the old
+`tournees`, `tourneeKeys`, `joinCodes` were deleted (single user) and the test secteurs are created again.
 
 ## Commands
 

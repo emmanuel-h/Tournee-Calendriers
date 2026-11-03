@@ -2505,8 +2505,9 @@ and return aggregates and `StreetChange`s, never Firestore types.
 ### 6.2 Firestore layout
 
 Until #116 the secteurs lived in `tournees/{id}`, their keys in `tourneeKeys/{key}` and the
-field naming them was `tourneeId`; `firebase/tool/migrate_to_sectors.mjs` copies such data to
-the names below (once, by hand; the rules know only the new names).
+field naming them was `tourneeId`. Nothing was migrated: with a single user (2026-11-03) the old
+`tournees`, `tourneeKeys` and `joinCodes` were deleted and the test secteurs created again; the
+rules know only the new names.
 
 ```
 admins/{uid}                                      ← no fields; added by hand in the console (#75)
