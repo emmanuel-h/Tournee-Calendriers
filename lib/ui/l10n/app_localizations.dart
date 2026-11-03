@@ -1747,7 +1747,7 @@ abstract class AppLocalizations {
   /// Line of « Nouveautés » for 0.10.0: the team's area is now « secteur » on every screen (#115); « tournée » now names one outing (PLAN §2).
   ///
   /// In fr, this message translates to:
-  /// **'La tournée s\'appelle maintenant « secteur ».'**
+  /// **'La zone de l\'équipe s\'appelle maintenant un « secteur » ; une « tournée » est une sortie dans ce secteur.'**
   String get release0100Sector;
 
   /// Line of « Nouveautés » for 0.10.0: the status picker replaces the tap cycle and the hold (#107).

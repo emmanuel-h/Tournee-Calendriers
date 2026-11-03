@@ -1243,7 +1243,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get release0100Sector =>
-      'La tournée s\'appelle maintenant « secteur ».';
+      'La zone de l\'équipe s\'appelle maintenant un « secteur » ; une « tournée » est une sortie dans ce secteur.';
 
   @override
   String get release0100Picker =>

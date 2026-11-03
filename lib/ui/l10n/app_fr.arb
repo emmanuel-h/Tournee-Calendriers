@@ -1107,7 +1107,7 @@
   },
   "release010First": "Première version de test.",
   "@release010First": { "description": "« Nouveautés », version 0.1.0: what it brings, one short line for the members." },
-  "release0100Sector": "La tournée s'appelle maintenant « secteur ».",
+  "release0100Sector": "La zone de l'équipe s'appelle maintenant un « secteur » ; une « tournée » est une sortie dans ce secteur.",
   "@release0100Sector": { "description": "Line of « Nouveautés » for 0.10.0: the team's area is now « secteur » on every screen (#115); « tournée » now names one outing (PLAN §2)." },
   "release0100Picker": "Rue : touchez une maison ou une porte, puis choisissez son statut. Plus de cycle ni d'appui long.",
   "@release0100Picker": { "description": "Line of « Nouveautés » for 0.10.0: the status picker replaces the tap cycle and the hold (#107)." },
