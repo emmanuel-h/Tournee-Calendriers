@@ -316,4 +316,26 @@ abstract final class AppSizes {
   /// The tallest the search results may grow over the map, as a share of
   /// its height.
   static const searchResultsShare = 0.6;
+
+  /// The dot of « ● En tournée » (PLAN §5.13).
+  static const roundDot = 10.0;
+
+  /// The corners of the tournée card on Accueil, and of its line on the
+  /// street screen.
+  static const roundCardRadius = 16.0;
+  static const roundLineRadius = 14.0;
+
+  /// The height of the one-line tournée card of the street screen.
+  static const roundLineHeight = 52.0;
+
+  /// The column of the amounts in « Dons de la tournée », so the methods
+  /// line up.
+  static const donationAmountWidth = 72.0;
+
+  /// The field « Montant ».
+  static const amountFieldHeight = 64.0;
+
+  /// A line of « ARGENT RÉCOLTÉ » in the « Bilan », and its amount column.
+  static const recapLineHeight = 60.0;
+  static const recapAmountWidth = 84.0;
 }

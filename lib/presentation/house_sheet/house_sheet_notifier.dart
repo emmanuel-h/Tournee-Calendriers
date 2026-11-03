@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tournee_calendriers/application/use_cases/mark.dart';
 import 'package:tournee_calendriers/application/use_cases/set_house_details.dart';
+import 'package:tournee_calendriers/domain/round/donation.dart';
 import 'package:tournee_calendriers/domain/sector/sector.dart';
 import 'package:tournee_calendriers/domain/shared/calendar_day.dart';
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
@@ -17,6 +18,9 @@ import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/come_back_time.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_state.dart';
 import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
+import 'package:tournee_calendriers/presentation/round/given_donation.dart';
+import 'package:tournee_calendriers/presentation/round/round_notifier.dart';
+import 'package:tournee_calendriers/presentation/round/round_view.dart';
 import 'package:tournee_calendriers/presentation/street/follows_street.dart';
 import 'package:tournee_calendriers/presentation/street/street_view_state.dart'
     show shownTries;
@@ -90,6 +94,9 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState>
   /// change; null while none is open or it cannot be read.
   Sector? _team;
 
+  /// A tournée (one outing, PLAN §5.13) is on in the secteur shown.
+  var _roundOn = false;
+
   StreetId get _streetId;
   HouseNumber get _number;
 
@@ -106,7 +113,21 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState>
   HouseSheetState build() {
     followStreet(_streetId);
     _followTeam();
+    _followRound();
     return render();
+  }
+
+  /// Follows whether a tournée is on (`roundProvider`), which makes « Fait »
+  /// ask for the don and a house done offer « + Ajouter un don ».
+  /// `ref.listen` rather than `ref.watch`: a don added changes the
+  /// tournée, and the sheet must not build again for it (its queue of
+  /// changes would be lost).
+  void _followRound() {
+    ref.listen(roundProvider, (_, view) {
+      _roundOn = view is RoundOn;
+      state = render();
+    });
+    _roundOn = ref.read(roundProvider) is RoundOn;
   }
 
   /// Follows the open tournée's team (`ObserveTeam`, from the phone's copy
@@ -228,6 +249,33 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState>
     };
   }
 
+  /// A don given in « Montant du don » (PLAN §5.6): it joins the tournée on
+  /// (`AddDonation`), never the house. Returns where it went, for the
+  /// snackbar and its « Annuler »; null when no tournée is on any more
+  /// (validated meanwhile on another screen).
+  Future<GivenDonation?> giveDonation(Donation donation) async =>
+      switch (await ref.read(addDonationProvider)(donation)) {
+        // The tournée adds a don last.
+        Ok(value: final round) => GivenDonation(
+          index: round.donations.length - 1,
+          donation: donation,
+        ),
+        Err() => null,
+      };
+
+  /// ✕ of « Montant du don » after a « Fait » (PLAN §5.6): no calendar was
+  /// handed over after all, so the house or door goes back as it was
+  /// before [change] (status, time, tries), and the tournée counts it no
+  /// more (`UndoLastChange`). Queued after the changes asked before.
+  Future<void> takeBack(StreetChange change) {
+    // Read now: the sheet is closing, this notifier may be disposed by the
+    // time the queue reaches it.
+    final undo = ref.read(undoLastChangeProvider);
+    final step = _pending.then((_) => undo(change));
+    _pending = step.then<void>((_) {}, onError: (Object _) {});
+    return step;
+  }
+
   /// Ends once every change asked so far is stored (or failed): « Annuler »
   /// of a sheet opened by a tap waits for it, so the undo of the tap comes
   /// after a day chosen just before, not under it.
@@ -277,6 +325,7 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState>
         today: CalendarDay.of(now.toLocal()),
       ),
       tries: marks.tries.count,
+      roundOn: _roundOn,
       lastChange: stamp == null
           ? null
           : LastChange.of(stamp.at, now: now, by: _authorOf(stamp)),

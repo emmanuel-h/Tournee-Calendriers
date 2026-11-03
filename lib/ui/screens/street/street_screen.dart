@@ -8,12 +8,15 @@ import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_state.dart';
+import 'package:tournee_calendriers/presentation/round/given_donation.dart';
 import 'package:tournee_calendriers/presentation/street/street_notifier.dart';
 import 'package:tournee_calendriers/presentation/street/street_view_state.dart';
 import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
+import 'package:tournee_calendriers/ui/components/money_words.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/screens/building/building_grid_sheet.dart';
+import 'package:tournee_calendriers/ui/screens/round/round_card.dart';
 import 'package:tournee_calendriers/ui/screens/street/status_picker_sheet.dart';
 import 'package:tournee_calendriers/ui/screens/street/status_words.dart';
 import 'package:tournee_calendriers/ui/screens/street/street_header.dart';
@@ -105,6 +108,8 @@ final class _MarkingScreenState extends ConsumerState<_MarkingScreen>
                 StreetHeader(
                   state: state,
                   onToggleHideDone: () => unawaited(_notifier.toggleHideDone()),
+                  // « ● En tournée · 19 dons · 280 € », while one is on.
+                  belowProgress: RoundStreetLine(onOpenDons: _openDons),
                 ),
                 Expanded(
                   child: StreetTiles(
@@ -135,19 +140,47 @@ final class _MarkingScreenState extends ConsumerState<_MarkingScreen>
     hideUndo();
     final notifier = _notifier;
     StoredStatus? stored;
+    GivenDonation? added;
     setState(() => _picking = number);
     await showHouseStatusPicker(
       context,
       (street: widget.streetId, number: number),
       onStored: (status) {
         // Kept at once: the picker may still change its day and hour.
-        notifier.keepForUndo(status.change);
+        notifier.keepForUndo(status.change, donation: status.donation);
         stored = status;
+      },
+      onDonationAdded: (donation) {
+        notifier.keepDonationForUndo(donation);
+        added = donation;
       },
     );
     if (!mounted) return;
     setState(() => _picking = null);
     if (stored case final stored?) _tell(number, stored);
+    if (added case final added?) _tellDonation(number, added);
+  }
+
+  /// Shows the don given to the house [number] already done (« N° 9 · 5 €
+  /// en chèque ajouté »), with « Annuler », which takes it back.
+  void _tellDonation(HouseNumber number, GivenDonation added) {
+    final l10n = AppLocalizations.of(context);
+    final notifier = _notifier;
+    showUndo(
+      message: l10n.houseDonationAdded(
+        number.label,
+        donationWords(l10n, added.donation),
+      ),
+      undoLabel: l10n.undo,
+      onUndo: () => unawaited(notifier.undo()),
+    );
+  }
+
+  /// « Voir les dons › »: the snackbar goes first, as its « Annuler » names
+  /// a don by its place, which the list may change.
+  void _openDons() {
+    hideUndo();
+    unawaited(context.push(AppRoutes.roundDons));
   }
 
   /// Says what was stored on [number] aloud for screen readers
@@ -168,7 +201,13 @@ final class _MarkingScreenState extends ConsumerState<_MarkingScreen>
       ),
     );
     showUndo(
-      message: houseStoredMessage(l10n, label, stored.status, stored.tries),
+      message: houseStoredMessage(
+        l10n,
+        label,
+        stored.status,
+        stored.tries,
+        donation: stored.donation?.donation,
+      ),
       undoLabel: l10n.undo,
       onUndo: () => unawaited(notifier.undo()),
     );

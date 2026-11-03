@@ -1,5 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
+import 'package:tournee_calendriers/domain/round/round.dart';
+import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
@@ -7,13 +9,17 @@ import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_notifier.dart';
+import 'package:tournee_calendriers/presentation/round/given_donation.dart';
 import 'package:tournee_calendriers/presentation/street/street_notifier.dart';
 import 'package:tournee_calendriers/presentation/street/street_view_state.dart';
 
+import '../../domain/round/round_fixtures.dart';
+import '../../domain/sector/my_sectors_fixtures.dart';
 import '../../support/building_fixtures.dart';
 import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_open_round_store.dart';
 import '../../support/fakes/fake_ports.dart';
+import '../../support/fakes/fake_sector_repository.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/fakes/fake_street_view_preferences.dart';
 import '../../support/results.dart';
@@ -69,21 +75,31 @@ HouseTile _tile(
 void main() {
   late FakeStreetRepository streets;
   late FakeStreetViewPreferences preferences;
+  late FakeOpenRoundStore rounds;
   late ProviderContainer container;
 
   /// A container whose phone holds [street] (none when null), with
-  /// « Masquer faits » on when [hideDone].
-  void phoneWith(Street? street, {bool hideDone = false}) {
+  /// « Masquer faits » on when [hideDone]; [round] is on (none by default)
+  /// in the 49, open when [round] is given.
+  void phoneWith(Street? street, {bool hideDone = false, Round? round}) {
     streets = FakeStreetRepository([?street]);
     preferences = FakeStreetViewPreferences([if (hideDone) _id]);
+    rounds = FakeOpenRoundStore(round);
     container = ProviderContainer(
       overrides: [
         streetRepositoryProvider.overrideWithValue(streets),
         streetViewPreferencesProvider.overrideWithValue(preferences),
         clockProvider.overrideWithValue(FakeClock(twoPm)),
         identityProvider.overrideWithValue(FakeIdentity(lea)),
-        openRoundStoreProvider.overrideWithValue(FakeOpenRoundStore()),
-        mySectorsStoreProvider.overrideWithValue(FakeMySectorsStore()),
+        openRoundStoreProvider.overrideWithValue(rounds),
+        mySectorsStoreProvider.overrideWithValue(
+          FakeMySectorsStore(
+            round == null
+                ? MySectors.none
+                : valueOf(MySectors.none.remember(sector49).open(sector49.id)),
+          ),
+        ),
+        sectorRepositoryProvider.overrideWithValue(FakeSectorRepository()),
       ],
     );
     addTearDown(container.dispose);
@@ -424,6 +440,97 @@ void main() {
       await notifier().undo();
 
       expect(streets.saved, isEmpty);
+    });
+
+    group('during a tournée', () {
+      /// The 49's tournée, with 5 € in cash then a free calendar.
+      Round twoDons() => Round.restore(
+        id: roundId,
+        sector: sector49Id,
+        campaign: year2026,
+        startedAt: startedAt,
+        housesVisited: 0,
+        donations: [cash(500), offered],
+      );
+
+      test('should put the house back and take its don out of the tournée '
+          'when « Fait » came with a don', () async {
+        final street = _street();
+        phoneWith(street, round: twoDons());
+        await settled();
+        final key = (street: _id, number: n('7'));
+        container.listen(houseSheetProvider(key), (_, _) {});
+        await Future<void>.delayed(Duration.zero);
+        final picker = container.read(houseSheetProvider(key).notifier);
+        final stored = await picker.setStatus(VisitStatus.done);
+        final given = await picker.giveDonation(cheque(2000));
+        expect(rounds.openRound!.housesVisited, 1);
+        notifier().keepForUndo(stored!.change, donation: given);
+
+        await notifier().undo();
+
+        expect(streets[_id]!.houses, street.houses);
+        expect(rounds.openRound!.donations, [cash(500), offered]);
+        expect(rounds.openRound!.housesVisited, 0);
+      });
+
+      test('should take the don back alone when it was added to a house '
+          'already done', () async {
+        final street = _street();
+        phoneWith(street, round: twoDons());
+        await settled();
+        notifier().keepDonationForUndo(
+          const GivenDonation(index: 1, donation: offered),
+        );
+
+        await notifier().undo();
+
+        expect(rounds.openRound!.donations, [cash(500)]);
+        expect(streets.saved, isEmpty);
+      });
+
+      test('should forget the change kept before when a don alone is '
+          'kept', () async {
+        phoneWith(_street(), round: twoDons());
+        await settled();
+        await pick('1', VisitStatus.done);
+        notifier().keepDonationForUndo(
+          const GivenDonation(index: 1, donation: offered),
+        );
+
+        await notifier().undo();
+
+        expect((await shown()).odd.first, _tile('1', const DoneMark()));
+        expect(rounds.openRound!.donations, [cash(500)]);
+      });
+
+      test('should forget the don kept before when a change alone is '
+          'kept', () async {
+        phoneWith(_street(), round: twoDons());
+        await settled();
+        notifier().keepDonationForUndo(
+          const GivenDonation(index: 1, donation: offered),
+        );
+        await pick('1', VisitStatus.done);
+
+        await notifier().undo();
+
+        expect((await shown()).odd.first, _tile('1', const ToDoMark()));
+        expect(rounds.openRound!.donations, [cash(500), offered]);
+      });
+
+      test('should take the don back once only', () async {
+        phoneWith(_street(), round: twoDons());
+        await settled();
+        notifier().keepDonationForUndo(
+          const GivenDonation(index: 1, donation: offered),
+        );
+        await notifier().undo();
+
+        await notifier().undo();
+
+        expect(rounds.openRound!.donations, [cash(500)]);
+      });
     });
   });
 

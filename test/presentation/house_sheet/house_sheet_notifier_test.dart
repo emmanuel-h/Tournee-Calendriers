@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
+import 'package:tournee_calendriers/domain/round/round.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
 import 'package:tournee_calendriers/domain/sector/sector_summary.dart';
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
@@ -18,7 +19,9 @@ import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/come_back_time.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_notifier.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_state.dart';
+import 'package:tournee_calendriers/presentation/round/given_donation.dart';
 
+import '../../domain/round/round_fixtures.dart';
 import '../../domain/sector/my_sectors_fixtures.dart';
 import '../../domain/sector/sector_fixtures.dart' as crew;
 import '../../support/building_fixtures.dart';
@@ -64,6 +67,7 @@ Street _street() => valueOf(
 void main() {
   late FakeStreetRepository streets;
   late FakeClock clock;
+  late FakeOpenRoundStore rounds;
   late ProviderContainer container;
 
   /// A container whose phone holds [street] (none when null), with Léa
@@ -73,15 +77,17 @@ void main() {
     Street? street, {
     SectorSummary? open,
     FakeSectorRepository? sectors,
+    Round? round,
   }) {
     streets = FakeStreetRepository([?street]);
     clock = FakeClock(twoPm);
+    rounds = FakeOpenRoundStore(round);
     container = ProviderContainer(
       overrides: [
         streetRepositoryProvider.overrideWithValue(streets),
         clockProvider.overrideWithValue(clock),
         identityProvider.overrideWithValue(FakeIdentity(lea)),
-        openRoundStoreProvider.overrideWithValue(FakeOpenRoundStore()),
+        openRoundStoreProvider.overrideWithValue(rounds),
         mySectorsStoreProvider.overrideWithValue(
           FakeMySectorsStore(switch (open) {
             final open? => valueOf(MySectors.none.remember(open).open(open.id)),
@@ -760,6 +766,96 @@ void main() {
 
       await expectLater(sheet.settled, completes);
       await expectLater(failed, throwsA(isA<FileSystemException>()));
+    });
+  });
+
+  group('during a tournée', () {
+    /// The phone of [_street] with the 49 open and its tournée on, 2 dons
+    /// in it and 1 house visited.
+    void duringRound() => phoneWith(
+      _street(),
+      open: sector49,
+      round: Round.restore(
+        id: roundId,
+        sector: sector49Id,
+        campaign: year2026,
+        startedAt: startedAt,
+        housesVisited: 1,
+        donations: [cash(500), offered],
+      ),
+    );
+
+    test('should know a tournée is on', () async {
+      duringRound();
+      open('7');
+
+      expect((await shown('7')).roundOn, isTrue);
+    });
+
+    test('should know no tournée is on', () async {
+      phoneWith(_street(), open: sector49);
+      open('7');
+
+      expect((await shown('7')).roundOn, isFalse);
+    });
+
+    test('should follow the tournée ending while the sheet shows', () async {
+      duringRound();
+      open('7');
+      await shown('7');
+
+      await rounds.clear();
+
+      expect((await shown('7')).roundOn, isFalse);
+    });
+
+    test('should add a don to the tournée, last, and say where it '
+        'went', () async {
+      duringRound();
+      open('7');
+      await shown('7');
+
+      final given = await notifier('7').giveDonation(cheque(2000));
+
+      expect(given, GivenDonation(index: 2, donation: cheque(2000)));
+      expect(rounds.openRound!.donations, [cash(500), offered, cheque(2000)]);
+    });
+
+    test('should leave the house as it is when a don is given', () async {
+      duringRound();
+      open('7');
+      await shown('7');
+
+      await notifier('7').giveDonation(cash(1000));
+
+      expect(houseNow('7'), houseBefore('7'));
+    });
+
+    test('should give no don when no tournée is on', () async {
+      phoneWith(_street(), open: sector49);
+      open('7');
+      await shown('7');
+
+      expect(await notifier('7').giveDonation(cash(1000)), isNull);
+      expect(rounds.saves, isEmpty);
+    });
+
+    test('should put the house back as it was and count it no more when « '
+        'Fait » is taken back', () async {
+      duringRound();
+      open('3');
+      await shown('3');
+      final sheet = notifier('3');
+      final stored = (await sheet.setStatus(VisitStatus.done))!;
+      expect(rounds.openRound!.housesVisited, 2);
+
+      await sheet.takeBack(stored.change);
+
+      expect(houseNow('3').status, VisitStatus.nobodyHome);
+      expect(houseNow('3').tries, houseBefore('3').tries);
+      expect(houseNow('3').lastChange, houseBefore('3').lastChange);
+      expect(rounds.openRound!.housesVisited, 1);
+      expect(rounds.openRound!.donations, [cash(500), offered]);
     });
   });
 }

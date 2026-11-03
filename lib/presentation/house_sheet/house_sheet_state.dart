@@ -3,6 +3,7 @@ import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/come_back_time.dart';
+import 'package:tournee_calendriers/presentation/round/given_donation.dart';
 
 // The view state of the status picker (PLAN §5.6, mockups House,
 // HouseNobody, HouseComeBack): what the picker of one house or one door
@@ -176,6 +177,7 @@ final class HouseSheetShown extends HouseSheetState {
     required this.lastChange,
     this.subject = const HouseSubject(),
     this.tries = 0,
+    this.roundOn = false,
   });
 
   final String streetName;
@@ -200,6 +202,14 @@ final class HouseSheetShown extends HouseSheetState {
   /// How many times nobody was home (#80): « 2 passages sans personne ».
   final int tries;
 
+  /// A tournée is on in the secteur shown (PLAN §5.13): « Fait » asks for
+  /// the don, and a house done offers « + Ajouter un don ».
+  final bool roundOn;
+
+  /// « + Ajouter un don » shows under the statuses: the house or door is
+  /// done and a tournée is on, so it may take another don (PLAN §5.6).
+  bool get offersDonation => roundOn && status == VisitStatus.done;
+
   /// « ✗ Personne » reads « ✗ De nouveau personne » and counts one more try
   /// (PLAN §5.6) on a house or door the team comes back to: « personne » or
   /// « repasser », already tried with nobody home. Never on a building
@@ -219,27 +229,42 @@ final class HouseSheetShown extends HouseSheetState {
 /// what screen readers hear. [change] is what its « Annuler » undoes: the
 /// screen behind keeps it (`UndoesLastChange.keepForUndo`), as the picker
 /// is gone by then.
+///
+/// [donation] is the don given after a « Fait » during a tournée
+/// (« N° 7 fait · 10 € en espèces »), which « Annuler » takes back too;
+/// null otherwise.
 final class StoredStatus {
   const StoredStatus({
     required this.status,
     required this.tries,
     required this.change,
+    this.donation,
   });
 
   final VisitStatus status;
   final int? tries;
   final StreetChange change;
+  final GivenDonation? donation;
+
+  /// The same, with the don given after it.
+  StoredStatus withDonation(GivenDonation donation) => StoredStatus(
+    status: status,
+    tries: tries,
+    change: change,
+    donation: donation,
+  );
 
   @override
   bool operator ==(Object other) =>
       other is StoredStatus &&
       other.status == status &&
       other.tries == tries &&
-      other.change == change;
+      other.change == change &&
+      other.donation == donation;
 
   @override
-  int get hashCode => Object.hash(status, tries, change);
+  int get hashCode => Object.hash(status, tries, change, donation);
 
   @override
-  String toString() => 'StoredStatus($status, $tries, $change)';
+  String toString() => 'StoredStatus($status, $tries, $change, $donation)';
 }

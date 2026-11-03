@@ -638,7 +638,8 @@ void main() {
   );
 
   testWidgets(
-    'should reopen the last tournée at launch and switch from the title',
+    'should reopen the last tournée at launch, count a tournée\'s don and '
+    'validate it, and switch from the title',
     (tester) async {
       final storage = await _freshStorage('sectors_flow');
       // The 49's id is new at each run: the street typed in by hand below
@@ -792,6 +793,46 @@ void main() {
       expect(unfinished.listSync(), isEmpty);
       await tester.tap(find.byKey(const Key('home.panel.handle')));
       await tester.pumpAndSettle();
+
+      // A tournée (#109), offline: « Commencer une tournée », « Fait » on
+      // the 1 with 10 € in cash, « Terminer », « Valider »: Accueil offers
+      // a new one, and the summary waits on the phone for the secteur.
+      await tester.tap(find.byKey(const Key('round.start')));
+      await tester.pumpAndSettle();
+      expect(find.text("En tournée depuis moins d'une minute"), findsOneWidget);
+      await tester.tap(find.text('Chemin des Vignes'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('street.tile.1')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('house.status.done')));
+      await tester.pumpAndSettle();
+      expect(find.text('Montant du don'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('house.give.1000')));
+      await tester.pumpAndSettle();
+      expect(findArrowText('N° 1 fait · 10\u00a0€ en espèces'), findsOneWidget);
+      expect(find.text('En tournée · 1\u00a0don · 10\u00a0€'), findsOneWidget);
+      await tester.tap(find.byTooltip('Retour'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('round.finish')));
+      await tester.pumpAndSettle();
+      expect(find.text('Bilan de la tournée'), findsOneWidget);
+      expect(find.text('maison visitée'), findsOneWidget);
+      expect(find.text('10\u00a0€'), findsNWidgets(2));
+      await tester.tap(find.byKey(const Key('recap.validate')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('recap.confirm.ok')));
+      await tester.pumpAndSettle();
+      expect(find.byType(HomeScreen), findsOneWidget);
+      expect(find.byKey(const Key('round.start')), findsOneWidget);
+      expect(find.byKey(const Key('round.card')), findsNothing);
+      final validated = Directory('${storage.path}/validated_rounds');
+      expect(
+        validated
+            .listSync(recursive: true)
+            .whereType<File>()
+            .where((file) => file.path.endsWith('.json')),
+        hasLength(1),
+      );
 
       // « Mes secteurs » offline (#33): the 12 was never downloaded on
       // this phone, so it is greyed and a tap leaves the sheet open. Once

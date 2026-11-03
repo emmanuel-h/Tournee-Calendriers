@@ -10,10 +10,12 @@ import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
 import 'package:tournee_calendriers/presentation/building/building_grid_notifier.dart';
 import 'package:tournee_calendriers/presentation/building/building_grid_state.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_state.dart';
+import 'package:tournee_calendriers/presentation/round/given_donation.dart';
 import 'package:tournee_calendriers/presentation/street/street_view_state.dart';
 import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
 import 'package:tournee_calendriers/ui/components/close_icon_button.dart';
 import 'package:tournee_calendriers/ui/components/confirm_dialog.dart';
+import 'package:tournee_calendriers/ui/components/money_words.dart';
 import 'package:tournee_calendriers/ui/components/segmented_choice.dart';
 import 'package:tournee_calendriers/ui/components/sheet_scaffold.dart';
 import 'package:tournee_calendriers/ui/components/status_glyph.dart';
@@ -174,6 +176,7 @@ final class _BuildingGridSheetState extends ConsumerState<BuildingGridSheet>
     hideUndo();
     final notifier = _notifier;
     StoredStatus? stored;
+    GivenDonation? added;
     setState(() => _picking = door);
     await showDoorStatusPicker(
       context,
@@ -183,14 +186,29 @@ final class _BuildingGridSheetState extends ConsumerState<BuildingGridSheet>
         door: door,
       ),
       onStored: (status) {
-        notifier.keepForUndo(status.change);
+        notifier.keepForUndo(status.change, donation: status.donation);
         stored = status;
+      },
+      onDonationAdded: (donation) {
+        notifier.keepDonationForUndo(donation);
+        added = donation;
       },
     );
     if (!mounted) return;
     setState(() => _picking = null);
     if (stored case final stored?) {
       _tell(door, stored, namesStaircase: state.showsStaircases);
+    }
+    if (added case final added?) {
+      final l10n = AppLocalizations.of(context);
+      showUndo(
+        message: l10n.doorDonationAdded(
+          door.label.text,
+          donationWords(l10n, added.donation),
+        ),
+        undoLabel: l10n.undo,
+        onUndo: () => unawaited(notifier.undo()),
+      );
     }
   }
 
@@ -219,6 +237,7 @@ final class _BuildingGridSheetState extends ConsumerState<BuildingGridSheet>
         door.label.text,
         stored.status,
         stored.tries,
+        donation: stored.donation?.donation,
       ),
       undoLabel: l10n.undo,
       onUndo: () => unawaited(notifier.undo()),

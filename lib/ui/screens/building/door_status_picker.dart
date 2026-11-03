@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_notifier.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_state.dart';
+import 'package:tournee_calendriers/presentation/round/given_donation.dart';
 import 'package:tournee_calendriers/ui/components/sheet_scaffold.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/screens/building/floor_names.dart';
@@ -13,11 +14,13 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 /// the door, PLAN §5.6, `docs/mockups/Building.dc.html`): the statuses of a
 /// house, titled « Porte 51 · Fait » and « Esc. A · 5e · 8 Rue des Lilas »
 /// (the staircase only when there are several), with the same steps.
-/// [onStored] hears each status stored; the future ends once it is closed.
+/// [onStored] hears each status stored, [onDonationAdded] a don given
+/// through « + Ajouter un don »; the future ends once it is closed.
 Future<void> showDoorStatusPicker(
   BuildContext context,
   DoorSheetKey door, {
   required ValueChanged<StoredStatus> onStored,
+  required ValueChanged<GivenDonation> onDonationAdded,
 }) => showAppBottomSheet<void>(
   context: context,
   builder: (context) {
@@ -37,7 +40,9 @@ Future<void> showDoorStatusPicker(
         ].join(' · '),
       ),
       comeBackSubject: (_) => l10n.doorTitle(label),
+      takeBackLabel: l10n.donationCancelDoor,
       onStored: onStored,
+      onDonationAdded: onDonationAdded,
     );
   },
 );

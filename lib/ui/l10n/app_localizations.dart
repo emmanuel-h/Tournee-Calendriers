@@ -1756,6 +1756,12 @@ abstract class AppLocalizations {
   /// **'Confidentialité : le texte dit aussi ce qui est gardé des tournées, des dons et des calendriers.'**
   String get release0100Privacy;
 
+  /// Line of « Nouveautés » for 0.10.0: the tournées on screen (#109).
+  ///
+  /// In fr, this message translates to:
+  /// **'Tournées : « Commencer une tournée » sur l\'accueil, le montant de chaque don après « Fait », la liste des dons et le bilan à valider en fin de tournée.'**
+  String get release0100Rounds;
+
   /// Line of « Nouveautés » for 0.9.0.
   ///
   /// In fr, this message translates to:
@@ -3363,6 +3369,396 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'« {name} » ajoutée à vos rues.'**
   String manualAdded(String name);
+
+  /// Outlined button under the totals of Accueil's panel (RunStart mockup), for an active member of the open secteur while no tournée is on (PLAN §5.13).
+  ///
+  /// In fr, this message translates to:
+  /// **'Commencer une tournée'**
+  String get roundStart;
+
+  /// Snackbar of Accueil when « Commencer une tournée » is tapped while a tournée started in another secteur is still on: one tournée at a time on a phone.
+  ///
+  /// In fr, this message translates to:
+  /// **'Une tournée est déjà en cours dans un autre secteur.'**
+  String get roundAlreadyOnElsewhere;
+
+  /// First line of the tournée card on Accueil, in its first minute.
+  ///
+  /// In fr, this message translates to:
+  /// **'En tournée depuis moins d\'une minute'**
+  String get roundSinceJustStarted;
+
+  /// First line of the tournée card on Accueil (RunHome mockup), under an hour.
+  ///
+  /// In fr, this message translates to:
+  /// **'En tournée depuis {minutes} min'**
+  String roundSinceMinutes(int minutes);
+
+  /// First line of the tournée card on Accueil (RunHome mockup): « En tournée depuis 1 h 20 »; minutes with two digits.
+  ///
+  /// In fr, this message translates to:
+  /// **'En tournée depuis {hours} h {minutes}'**
+  String roundSinceHours(int hours, String minutes);
+
+  /// First line of the tournée card on Accueil on a whole hour: « En tournée depuis 2 h ».
+  ///
+  /// In fr, this message translates to:
+  /// **'En tournée depuis {hours} h'**
+  String roundSinceWholeHours(int hours);
+
+  /// The paid dons of the tournée and their money (PLAN §5.13): « 19 dons · 280 € », « 1 don · 10 € », « 0 don · 0 € ». A free calendar is not a don of money.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, one{{count} don · {amount}} other{{count} dons · {amount}}}'**
+  String roundTotals(int count, String amount);
+
+  /// Link of the tournée card (Accueil) and line (street screen) that opens « Dons de la tournée ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Voir les dons ›'**
+  String get roundSeeDons;
+
+  /// What screen readers hear for « Voir les dons › ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Voir les dons'**
+  String get roundSeeDonsSpoken;
+
+  /// Button of the tournée card on Accueil (■), which opens « Bilan de la tournée ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Terminer'**
+  String get roundFinish;
+
+  /// What screen readers hear for « ■ Terminer ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Terminer la tournée'**
+  String get roundFinishSpoken;
+
+  /// The one-line tournée card under the street screen's progress bar (RunStreet mockup): « En tournée · 19 dons · 280 € ».
+  ///
+  /// In fr, this message translates to:
+  /// **'En tournée · {totals}'**
+  String roundStreetLine(String totals);
+
+  /// An amount in whole euros: « 10 € », « 1 280 € ».
+  ///
+  /// In fr, this message translates to:
+  /// **'{euros} €'**
+  String amountEuros(int euros);
+
+  /// An amount with cents: « 7,50 € ».
+  ///
+  /// In fr, this message translates to:
+  /// **'{euros},{cents} €'**
+  String amountEurosCents(int euros, String cents);
+
+  /// An amount with cents as « Montant » shows it, prefilled in « Modifier le don »: « 7,50 ».
+  ///
+  /// In fr, this message translates to:
+  /// **'{euros},{cents}'**
+  String amountInputCents(int euros, String cents);
+
+  /// Title of the step of the status picker after « Fait » during a tournée, or « + Ajouter un don » (PLAN §5.6, RunStreet mockup).
+  ///
+  /// In fr, this message translates to:
+  /// **'Montant du don'**
+  String get donationStepTitle;
+
+  /// Screen-reader name and tooltip of the ✕ of « Montant du don » after « Fait » on a house: no calendar was handed over, the house goes back as it was.
+  ///
+  /// In fr, this message translates to:
+  /// **'Annuler : la maison reprend son statut'**
+  String get donationCancelHouse;
+
+  /// The same on a door of a building.
+  ///
+  /// In fr, this message translates to:
+  /// **'Annuler : la porte reprend son statut'**
+  String get donationCancelDoor;
+
+  /// Screen-reader name of the choice « Espèces | Chèque | Carte ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Moyen de paiement'**
+  String get paymentMethodGroup;
+
+  /// A payment method: on the choice, in « Dons de la tournée » and in the « Bilan ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Espèces'**
+  String get paymentCash;
+
+  /// A payment method, on the choice and in « Dons de la tournée ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Chèque'**
+  String get paymentCheque;
+
+  /// A payment method, on the choice (short).
+  ///
+  /// In fr, this message translates to:
+  /// **'Carte'**
+  String get paymentCard;
+
+  /// A payment method in « Dons de la tournée » and in the « Bilan ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Carte bancaire'**
+  String get paymentCardLong;
+
+  /// The cheques line of « ARGENT RÉCOLTÉ » in the « Bilan ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Chèques'**
+  String get paymentCheques;
+
+  /// Button of « Montant du don », and title of the step it opens, where the amount is typed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Autre montant'**
+  String get donationOtherAmount;
+
+  /// Button of « Montant du don » (a calendar given for free), and such a don in « Dons de la tournée ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Calendrier offert'**
+  String get donationFreeCalendar;
+
+  /// Label of the amount field of « Autre montant », « Nouveau don » and « Modifier le don ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Montant'**
+  String get amountLabel;
+
+  /// After the amount typed in « Montant ».
+  ///
+  /// In fr, this message translates to:
+  /// **'€'**
+  String get amountSuffix;
+
+  /// Under the amount field of « Autre montant ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Par exemple 7,50'**
+  String get amountHint;
+
+  /// Under « Montant » when « Valider » is tapped with nothing typed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Écrivez un montant.'**
+  String get amountEmpty;
+
+  /// Under « Montant » when what is typed is not a number, or 0.
+  ///
+  /// In fr, this message translates to:
+  /// **'Entrez un montant valide.'**
+  String get amountNotValid;
+
+  /// Under « Montant » when three digits follow the comma.
+  ///
+  /// In fr, this message translates to:
+  /// **'Deux chiffres après la virgule au plus.'**
+  String get amountTooManyDecimals;
+
+  /// Under « Montant » past 1 000 €.
+  ///
+  /// In fr, this message translates to:
+  /// **'1 000 € au plus par don.'**
+  String get amountTooLarge;
+
+  /// Button of « Autre montant », « Nouveau don » and « Modifier le don »: the don is kept.
+  ///
+  /// In fr, this message translates to:
+  /// **'Valider'**
+  String get donationValidate;
+
+  /// What a paid don is in a snackbar: « 10 € en espèces ».
+  ///
+  /// In fr, this message translates to:
+  /// **'{amount} en {method}'**
+  String donationPaid(String amount, String method);
+
+  /// The cash method inside a sentence: « 10 € en espèces ».
+  ///
+  /// In fr, this message translates to:
+  /// **'espèces'**
+  String get paymentCashWord;
+
+  /// The cheque method inside a sentence: « 5 € en chèque ».
+  ///
+  /// In fr, this message translates to:
+  /// **'chèque'**
+  String get paymentChequeWord;
+
+  /// The card method inside a sentence: « 10 € en carte ».
+  ///
+  /// In fr, this message translates to:
+  /// **'carte'**
+  String get paymentCardWord;
+
+  /// A free calendar inside a sentence: « N° 7 fait · calendrier offert ».
+  ///
+  /// In fr, this message translates to:
+  /// **'calendrier offert'**
+  String get donationFreeWord;
+
+  /// Snackbar once « Fait » and its don are stored during a tournée (PLAN §5.6), with « Annuler », which takes the don back too: « N° 7 fait · 10 € en espèces ».
+  ///
+  /// In fr, this message translates to:
+  /// **'N° {number} fait · {donation}'**
+  String houseDoneWithDonation(String number, String donation);
+
+  /// The same for a door of a building: « Porte 51 : fait · 10 € en espèces ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Porte {label} : fait · {donation}'**
+  String doorDoneWithDonation(String label, String donation);
+
+  /// Snackbar once « + Ajouter un don » gave a don for a house already done: « N° 9 · 5 € en chèque ajouté ».
+  ///
+  /// In fr, this message translates to:
+  /// **'N° {number} · {donation} ajouté'**
+  String houseDonationAdded(String number, String donation);
+
+  /// The same for a door: « Porte 51 · 5 € en chèque ajouté ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Porte {label} · {donation} ajouté'**
+  String doorDonationAdded(String label, String donation);
+
+  /// « + Ajouter un don » of the status picker on a house done during a tournée (RunStreet mockup), and the button of « Dons de la tournée » (RunDons mockup).
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter un don'**
+  String get addDonation;
+
+  /// Title of the list of the tournée's dons (RunDons mockup).
+  ///
+  /// In fr, this message translates to:
+  /// **'Dons de la tournée'**
+  String get donsTitle;
+
+  /// « Dons de la tournée » before the first don.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun don pour l\'instant.'**
+  String get donsEmpty;
+
+  /// Title of the sheet « Ajouter un don » of « Dons de la tournée » opens: money from someone with no house.
+  ///
+  /// In fr, this message translates to:
+  /// **'Nouveau don'**
+  String get donationNewTitle;
+
+  /// Title of the sheet a don of « Dons de la tournée » opens (RunDon mockup).
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier le don'**
+  String get donationEditTitle;
+
+  /// Link of « Modifier le don »: the don leaves the tournée.
+  ///
+  /// In fr, this message translates to:
+  /// **'Supprimer ce don'**
+  String get donationRemove;
+
+  /// Title of the screen « Terminer » opens (RunRecap mockup).
+  ///
+  /// In fr, this message translates to:
+  /// **'Bilan de la tournée'**
+  String get recapTitle;
+
+  /// Under « Bilan de la tournée »: « samedi 24 octobre, de 14 h 05 à 18 h 20 » (shown with a capital first letter).
+  ///
+  /// In fr, this message translates to:
+  /// **'{day}, de {start} à {end}'**
+  String recapWhen(DateTime day, String start, String end);
+
+  /// A time of day: « 14 h 05 »; minutes with two digits.
+  ///
+  /// In fr, this message translates to:
+  /// **'{hour} h {minute}'**
+  String clockTime(int hour, String minute);
+
+  /// A time of day on the hour: « 18 h ».
+  ///
+  /// In fr, this message translates to:
+  /// **'{hour} h'**
+  String clockTimeWhole(int hour);
+
+  /// Under the first figure of the « Bilan » (« 23 maisons visitées »).
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, one{maison visitée} other{maisons visitées}}'**
+  String recapHouses(int count);
+
+  /// Under the second figure of the « Bilan » (« 19 dons »).
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, one{don} other{dons}}'**
+  String recapDons(int count);
+
+  /// Under the third figure of the « Bilan » (« 2 calendriers offerts »).
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, one{calendrier offert} other{calendriers offerts}}'**
+  String recapFree(int count);
+
+  /// Section header of the « Bilan » (shown in capitals).
+  ///
+  /// In fr, this message translates to:
+  /// **'Argent récolté'**
+  String get recapMoney;
+
+  /// How many dons of a method, in the « Bilan »: « 15 dons », « 1 don », « 0 don ».
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, one{{count} don} other{{count} dons}}'**
+  String donCount(int count);
+
+  /// Last line of « ARGENT RÉCOLTÉ ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Total'**
+  String get recapTotal;
+
+  /// Row of the « Bilan » that opens « Dons de la tournée ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Voir les dons'**
+  String get recapSeeDons;
+
+  /// Red button of the « Bilan »: asks, then sends the summary.
+  ///
+  /// In fr, this message translates to:
+  /// **'Valider la tournée'**
+  String get recapValidate;
+
+  /// Button of the « Bilan »: back, the tournée goes on.
+  ///
+  /// In fr, this message translates to:
+  /// **'Continuer la tournée'**
+  String get recapContinue;
+
+  /// Title of the dialog « Valider la tournée » opens.
+  ///
+  /// In fr, this message translates to:
+  /// **'Valider la tournée ?'**
+  String get recapConfirmTitle;
+
+  /// Body of that dialog: a validated tournée is never changed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Vous ne pourrez plus la modifier.'**
+  String get recapConfirmBody;
+
+  /// Button of that dialog that validates the tournée.
+  ///
+  /// In fr, this message translates to:
+  /// **'Valider'**
+  String get recapConfirmOk;
 }
 
 class _AppLocalizationsDelegate

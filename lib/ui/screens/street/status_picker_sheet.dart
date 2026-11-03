@@ -2,13 +2,20 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tournee_calendriers/domain/round/amount.dart';
+import 'package:tournee_calendriers/domain/round/donation.dart';
+import 'package:tournee_calendriers/domain/round/payment_method.dart';
+import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_notifier.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_state.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/picker_step.dart';
+import 'package:tournee_calendriers/presentation/round/given_donation.dart';
+import 'package:tournee_calendriers/ui/components/amount_field.dart';
 import 'package:tournee_calendriers/ui/components/app_buttons.dart';
 import 'package:tournee_calendriers/ui/components/close_icon_button.dart';
 import 'package:tournee_calendriers/ui/components/come_back_time_picker.dart';
+import 'package:tournee_calendriers/ui/components/money_words.dart';
 import 'package:tournee_calendriers/ui/components/sheet_scaffold.dart';
 import 'package:tournee_calendriers/ui/components/status_glyph.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
@@ -21,13 +28,15 @@ import 'package:tournee_calendriers/ui/theme/status_look.dart';
 
 /// Opens the status picker of one house over the street screen (a tap on
 /// its tile, PLAN §5.6, `docs/mockups/House.dc.html`): « N° 7 » and, in
-/// grey, its status. [onStored] hears each status the picker stores, at
-/// once, for the snackbar and its « Annuler »; the future ends once the
-/// picker is closed, whichever way.
+/// grey, its status. [onStored] hears each status the picker stores, for
+/// the snackbar and its « Annuler »; during a tournée, a « Fait » is told
+/// with its don. [onDonationAdded] hears a don given through « + Ajouter un
+/// don ». The future ends once the picker is closed, whichever way.
 Future<void> showHouseStatusPicker(
   BuildContext context,
   HouseSheetKey house, {
   required ValueChanged<StoredStatus> onStored,
+  required ValueChanged<GivenDonation> onDonationAdded,
 }) => showAppBottomSheet<void>(
   context: context,
   builder: (context) {
@@ -44,7 +53,9 @@ Future<void> showHouseStatusPicker(
         status: statusName(l10n, state.status!),
       ),
       comeBackSubject: number,
+      takeBackLabel: l10n.donationCancelHouse,
       onStored: onStored,
+      onDonationAdded: onDonationAdded,
     );
   },
 );
@@ -62,6 +73,14 @@ Future<void> showHouseStatusPicker(
 /// - **« Quand repasser ? »**, after « Repasser »: the day chips, the hour
 ///   and the summary line, each choice stored at once; « Valider » closes
 ///   once they all are.
+/// - **« Montant du don »**, after a « Fait » stored while a tournée is on
+///   (PLAN §5.13), or « + Ajouter un don » on a house done: « Espèces |
+///   Chèque | Carte » (Espèces each time), 5 / 10 / 20 €, « Autre montant »
+///   (its own step, the amount typed in) and « Calendrier offert ». A tap
+///   gives the don to the tournée and closes. After « Fait », the « Fait »
+///   is told to [onStored] only then, with its don: a « Fait » means a
+///   calendar was handed over, so closing this step without a don puts the
+///   house back as it was.
 ///
 /// ✕, a swipe down, a tap on the dimmed screen or back close it with
 /// nothing more stored.
@@ -77,7 +96,9 @@ final class StatusPickerSheet extends ConsumerStatefulWidget {
     required this.goneMessage,
     required this.title,
     required this.comeBackSubject,
+    required this.takeBackLabel,
     required this.onStored,
+    required this.onDonationAdded,
   });
 
   /// The notifier of the house or door (`houseSheetProvider(key)`…).
@@ -96,8 +117,16 @@ final class StatusPickerSheet extends ConsumerStatefulWidget {
   /// What « … · quand repasser ? » is about: « N° 5 », « Porte 51 ».
   final String Function(HouseSheetShown state) comeBackSubject;
 
-  /// Told each status stored, as soon as it is.
+  /// What the ✕ of « Montant du don » is said to do after « Fait »
+  /// (« Annuler : la maison reprend son statut »).
+  final String takeBackLabel;
+
+  /// Told each status stored, as soon as it is; a « Fait » during a
+  /// tournée once its don is given.
   final ValueChanged<StoredStatus> onStored;
+
+  /// Told a don given through « + Ajouter un don ».
+  final ValueChanged<GivenDonation> onDonationAdded;
 
   @override
   ConsumerState<StatusPickerSheet> createState() => _StatusPickerSheetState();
@@ -110,7 +139,33 @@ final class _StatusPickerSheetState extends ConsumerState<StatusPickerSheet> {
   /// double tap stores one status, not two.
   var _picking = false;
 
+  /// The « Fait » whose don « Montant du don » asks for; null when the step
+  /// came from « + Ajouter un don », or shows not.
+  StoredStatus? _awaitingDon;
+
+  /// A don was chosen: the sheet closes, and the « Fait » stays.
+  var _donGiven = false;
+
+  /// The method of the don, Espèces each time the step opens.
+  var _method = PaymentMethod.cash;
+
+  /// What « Autre montant » holds, and why it was refused.
+  final _amount = TextEditingController();
+  AmountFailure? _amountError;
+
   MarksSheetNotifier get _notifier => ref.read(widget.provider.notifier);
+
+  /// The quick amounts of « Montant du don »: 5, 10 and 20 €.
+  static final _quickAmounts = [
+    for (final euros in const [5, 10, 20])
+      if (Amount.create(euros * 100) case Ok(:final value)) value,
+  ];
+
+  @override
+  void dispose() {
+    _amount.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -119,23 +174,41 @@ final class _StatusPickerSheetState extends ConsumerState<StatusPickerSheet> {
     // teammate; it also keeps the auto-disposed notifier alive while the
     // sheet shows.
     final state = ref.watch(widget.provider);
-    return SheetScaffold(
-      spacing: 14,
-      children: switch (state) {
-        HouseSheetLoading() => const [],
-        HouseSheetGone() => [
-          Text(
-            widget.goneMessage,
-            key: ValueKey('${widget.name}.gone'),
-            style: AppTextStyles.body.copyWith(color: colors.muted),
-          ),
-        ],
-        HouseSheetShown() => switch (_step) {
-          PickerStep.statuses => _statuses(state),
-          PickerStep.comeBackTime => _comeBackTime(state),
-        },
+    // Told of every way the sheet closes (✕, a swipe, a tap beside it,
+    // back), while it is still on screen: the place to put the house back
+    // when « Montant du don » closes without a don.
+    return PopScope(
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) _takeBackUnpaid();
       },
+      child: SheetScaffold(
+        spacing: 14,
+        children: switch (state) {
+          HouseSheetLoading() => const [],
+          HouseSheetGone() => [
+            Text(
+              widget.goneMessage,
+              key: ValueKey('${widget.name}.gone'),
+              style: AppTextStyles.body.copyWith(color: colors.muted),
+            ),
+          ],
+          HouseSheetShown() => switch (_step) {
+            PickerStep.statuses => _statuses(state),
+            PickerStep.comeBackTime => _comeBackTime(state),
+            PickerStep.donation => _donation(),
+            PickerStep.otherAmount => _otherAmount(),
+          },
+        },
+      ),
     );
+  }
+
+  /// The sheet closes: a « Fait » still waiting for its don goes back
+  /// (PLAN §5.6), and nothing is told of it.
+  void _takeBackUnpaid() {
+    final awaiting = _awaitingDon;
+    if (awaiting == null || _donGiven) return;
+    unawaited(_notifier.takeBack(awaiting.change));
   }
 
   List<Widget> _statuses(HouseSheetShown state) {
@@ -149,6 +222,16 @@ final class _StatusPickerSheetState extends ConsumerState<StatusPickerSheet> {
         nobodyHomeAgain: state.offersNobodyHomeAgain,
         onPicked: (status) => unawaited(_pick(status)),
       ),
+      // During a tournée, a house done takes another don (PLAN §5.6).
+      if (state.offersDonation)
+        SecondaryButton(
+          key: ValueKey('${widget.name}.addDonation'),
+          label: l10n.addDonation,
+          leading: const Icon(Icons.add),
+          strong: true,
+          compact: true,
+          onPressed: _addDonation,
+        ),
       if (state.showsTries) _Tries(name: widget.name, tries: state.tries),
       if (state.lastChange case final change?)
         Text(
@@ -192,22 +275,201 @@ final class _StatusPickerSheetState extends ConsumerState<StatusPickerSheet> {
     ];
   }
 
+  /// « Montant du don »: the method, the quick amounts, « Autre montant »
+  /// and « Calendrier offert ».
+  List<Widget> _donation() {
+    final l10n = AppLocalizations.of(context);
+    final colors = AppColors.of(context);
+    final name = widget.name;
+    return [
+      Row(
+        children: [
+          Expanded(
+            child: Semantics(
+              header: true,
+              child: Text(
+                l10n.donationStepTitle,
+                key: ValueKey('$name.donationTitle'),
+                style: AppTextStyles.title.copyWith(color: colors.ink),
+              ),
+            ),
+          ),
+          CloseIconButton(
+            key: ValueKey('$name.close'),
+            // After « Fait », the ✕ puts the house back: it says so.
+            tooltip: _awaitingDon == null
+                ? l10n.statusPickerClose
+                : widget.takeBackLabel,
+            onPressed: () => Navigator.of(context).pop(),
+          ),
+        ],
+      ),
+      PaymentMethodChoice(
+        name: name,
+        selected: _method,
+        onSelected: (method) => setState(() => _method = method),
+      ),
+      Row(
+        spacing: AppSizes.statusChoiceGap,
+        children: [
+          for (final amount in _quickAmounts)
+            Expanded(
+              child: SecondaryButton(
+                key: ValueKey('$name.give.${amount.cents}'),
+                label: eurosText(l10n, amount.cents),
+                compact: true,
+                onPressed: () =>
+                    unawaited(_give(Donation.paid(_method, amount))),
+              ),
+            ),
+        ],
+      ),
+      Row(
+        spacing: AppSizes.statusChoiceGap,
+        children: [
+          Expanded(
+            child: SecondaryButton(
+              key: ValueKey('$name.otherAmount'),
+              label: l10n.donationOtherAmount,
+              compact: true,
+              onPressed: () => setState(() {
+                _amountError = null;
+                _step = PickerStep.otherAmount;
+              }),
+            ),
+          ),
+          Expanded(
+            child: SecondaryButton(
+              key: ValueKey('$name.freeCalendar'),
+              label: l10n.donationFreeCalendar,
+              compact: true,
+              onPressed: () => unawaited(_give(const Donation.free())),
+            ),
+          ),
+        ],
+      ),
+    ];
+  }
+
+  /// « Autre montant »: the method chosen before, the amount typed in,
+  /// « Valider ». The arrow goes back to « Montant du don ».
+  List<Widget> _otherAmount() {
+    final l10n = AppLocalizations.of(context);
+    final colors = AppColors.of(context);
+    final name = widget.name;
+    return [
+      Row(
+        spacing: 4,
+        children: [
+          IconButton(
+            key: ValueKey('$name.otherAmountBack'),
+            tooltip: MaterialLocalizations.of(context).backButtonTooltip,
+            icon: const Icon(Icons.arrow_back),
+            onPressed: () => setState(() => _step = PickerStep.donation),
+          ),
+          Expanded(
+            child: Semantics(
+              header: true,
+              child: Text(
+                l10n.donationOtherAmount,
+                key: ValueKey('$name.otherAmountTitle'),
+                style: AppTextStyles.title.copyWith(color: colors.ink),
+              ),
+            ),
+          ),
+        ],
+      ),
+      PaymentMethodChoice(
+        name: name,
+        selected: _method,
+        onSelected: (method) => setState(() => _method = method),
+      ),
+      AmountField(
+        name: name,
+        controller: _amount,
+        hint: l10n.amountHint,
+        error: _amountError,
+        onSubmitted: _giveTyped,
+      ),
+      PrimaryButton(
+        key: ValueKey('$name.giveTyped'),
+        label: l10n.donationValidate,
+        onPressed: _giveTyped,
+      ),
+    ];
+  }
+
+  /// « + Ajouter un don »: « Montant du don » for a house already done; its
+  /// ✕ only closes.
+  void _addDonation() => setState(() {
+    _awaitingDon = null;
+    _method = PaymentMethod.cash;
+    _step = PickerStep.donation;
+  });
+
+  /// « Valider » of « Autre montant »: the amount typed, or why it is
+  /// refused, under the field (the keyboard stays).
+  void _giveTyped() {
+    switch (Amount.parse(_amount.text)) {
+      case Ok(value: final amount):
+        unawaited(_give(Donation.paid(_method, amount)));
+      case Err(:final failure):
+        setState(() => _amountError = failure);
+    }
+  }
+
+  /// [donation] goes to the tournée; the sheet tells what was stored and
+  /// closes. A second tap meanwhile gives nothing more.
+  Future<void> _give(Donation donation) async {
+    if (_donGiven) return;
+    // Before the `await`: closed meanwhile, the sheet must not take the
+    // « Fait » back from under its don.
+    _donGiven = true;
+    final given = await _notifier.giveDonation(donation);
+    switch ((_awaitingDon, given)) {
+      case (final awaiting?, final given?):
+        widget.onStored(awaiting.withDonation(given));
+      // No tournée any more (validated meanwhile): the « Fait » stays.
+      case (final awaiting?, null):
+        widget.onStored(awaiting);
+      case (null, final given?):
+        widget.onDonationAdded(given);
+      case (null, null):
+        break;
+    }
+    if (mounted) Navigator.of(context).pop();
+  }
+
   /// A status tapped: stores it (the notifier knows when there is nothing
   /// to store), tells [StatusPickerSheet.onStored], then closes or moves to
-  /// the next step.
+  /// the next step. A « Fait » during a tournée is told once its don is
+  /// given (« Montant du don »).
   Future<void> _pick(VisitStatus status) async {
     if (_picking) return;
     _picking = true;
+    final roundOn = switch (ref.read(widget.provider)) {
+      HouseSheetShown(:final roundOn) => roundOn,
+      HouseSheetLoading() || HouseSheetGone() => false,
+    };
     final StoredStatus? stored;
     try {
       stored = await _notifier.setStatus(status);
     } finally {
       _picking = false;
     }
+    final step = stepAfter(status, roundOn: roundOn, stored: stored != null);
+    if (step == PickerStep.donation && mounted) {
+      setState(() {
+        _awaitingDon = stored;
+        _method = PaymentMethod.cash;
+        _step = PickerStep.donation;
+      });
+      return;
+    }
     // Told even when the sheet was closed meanwhile: it is stored.
     if (stored != null) widget.onStored(stored);
     if (!mounted) return;
-    switch (stepAfter(status)) {
+    switch (step) {
       case final step?:
         setState(() => _step = step);
       case null:

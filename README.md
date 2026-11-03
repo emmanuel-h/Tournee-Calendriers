@@ -85,6 +85,15 @@ Street screen (« Rue »):
   visited with the done houses (a street can be « faite » with refusals), no tries, no
   come-back.
 - « Masquer faits » hides the done and refused houses, remembered per street on the phone.
+- Tournées (one outing, offline too): « Commencer une tournée » on Accueil for a member of the
+  team; while it runs, a card « En tournée depuis 1 h 20 · 19 dons · 280 € » with « Voir les
+  dons › » and « ■ Terminer », and a one-line card on the street. « ✓ Fait » then asks
+  « Montant du don » (Espèces | Chèque | Carte, 5 / 10 / 20 €, « Autre montant », « Calendrier
+  offert »; ✕ puts the house back), and a house done offers « + Ajouter un don »; « Annuler »
+  in the snackbar takes the don back too. « Dons de la tournée » lists them newest first, to
+  change, remove or add one; « Bilan de la tournée » shows the houses visited, the dons and the
+  money per method, then « Valider la tournée » (asked first; only the totals are kept, never a
+  don per house).
 - « ↻ Repasser » then asks « N° 5 · quand repasser ? »: a day among the next week's chips, an
   hour 8 h–21 h or « Pas d'heure », « Le samedi 24 oct. vers 18 h », each stored at once, and
   « Valider ». No free note: too likely to hold personal data, so the app keeps none (notes

@@ -1,5 +1,7 @@
+import 'package:tournee_calendriers/domain/round/donation.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/presentation/street/street_view_state.dart';
+import 'package:tournee_calendriers/ui/components/money_words.dart';
 import 'package:tournee_calendriers/ui/components/tries_words.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/theme/status_look.dart';
@@ -63,14 +65,21 @@ String statusName(AppLocalizations l10n, VisitStatus status) =>
 
 /// What the snackbar says once the picker of the house [label] stored
 /// [status]: « N° 7 : fait », or « N° 3bis : personne (3e passage) » once
-/// nobody was home two times or more ([tries], the count the tile shows).
+/// nobody was home two times or more ([tries], the count the tile shows);
+/// « N° 7 fait · 10 € en espèces » when a [donation] came with it, during
+/// a tournée.
 String houseStoredMessage(
   AppLocalizations l10n,
   String label,
   VisitStatus status,
-  int? tries,
-) => switch ((status, tries)) {
-  (VisitStatus.nobodyHome, final int count) => l10n.houseStatusStoredTries(
+  int? tries, {
+  Donation? donation,
+}) => switch ((status, tries, donation)) {
+  (_, _, final donation?) => l10n.houseDoneWithDonation(
+    label,
+    donationWords(l10n, donation),
+  ),
+  (VisitStatus.nobodyHome, final int count, _) => l10n.houseStatusStoredTries(
     label,
     spokenStatus(l10n, status),
     count,
@@ -79,14 +88,20 @@ String houseStoredMessage(
 };
 
 /// The same for the door [label] of a building: « Porte 51 : fait »,
-/// « Porte 51 : personne (3e passage) ».
+/// « Porte 51 : personne (3e passage) », « Porte 51 : fait · 10 € en
+/// espèces ».
 String doorStoredMessage(
   AppLocalizations l10n,
   String label,
   VisitStatus status,
-  int? tries,
-) => switch ((status, tries)) {
-  (VisitStatus.nobodyHome, final int count) => l10n.doorStatusStoredTries(
+  int? tries, {
+  Donation? donation,
+}) => switch ((status, tries, donation)) {
+  (_, _, final donation?) => l10n.doorDoneWithDonation(
+    label,
+    donationWords(l10n, donation),
+  ),
+  (VisitStatus.nobodyHome, final int count, _) => l10n.doorStatusStoredTries(
     label,
     spokenStatus(l10n, status),
     count,

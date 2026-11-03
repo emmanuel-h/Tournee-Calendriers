@@ -125,6 +125,16 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    // « + Ajouter des rues » ends the panel's list, under « Commencer une
+    // tournée » and the streets: on the small test screen, scrolled to.
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('start.import')),
+      100,
+      scrollable: find.descendant(
+        of: find.byKey(const Key('home.panel.list')),
+        matching: find.byType(Scrollable),
+      ),
+    );
     await tester.tap(find.byKey(const Key('start.import')));
     await tester.pumpAndSettle();
   }

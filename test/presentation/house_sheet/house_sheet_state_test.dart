@@ -5,6 +5,9 @@ import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/come_back_time.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_state.dart';
+import 'package:tournee_calendriers/presentation/round/given_donation.dart';
+
+import '../../domain/round/round_fixtures.dart';
 
 import '../../support/street_fixtures.dart';
 
@@ -152,16 +155,39 @@ void main() {
       );
     });
 
-    HouseSheetShown withStatus(VisitStatus? status, {int tries = 0}) =>
-        HouseSheetShown(
-          streetName: 'Rue des Lilas',
-          number: n('5'),
-          status: status,
-          comeBack: false,
-          comeBackTime: ComeBackTime.of(null, today: day('2026-11-02')),
-          lastChange: null,
-          tries: tries,
-        );
+    HouseSheetShown withStatus(
+      VisitStatus? status, {
+      int tries = 0,
+      bool roundOn = false,
+    }) => HouseSheetShown(
+      streetName: 'Rue des Lilas',
+      number: n('5'),
+      status: status,
+      comeBack: false,
+      comeBackTime: ComeBackTime.of(null, today: day('2026-11-02')),
+      lastChange: null,
+      tries: tries,
+      roundOn: roundOn,
+    );
+
+    for (final (status, roundOn, offers) in [
+      (VisitStatus.done, true, true),
+      (VisitStatus.done, false, false),
+      (VisitStatus.refused, true, false),
+      (VisitStatus.toDo, true, false),
+      (VisitStatus.nobodyHome, true, false),
+      (VisitStatus.comeBack, true, false),
+      (null, true, false),
+    ]) {
+      test('should ${offers ? '' : 'not '}offer « + Ajouter un don » when the '
+          'status is $status and roundOn is $roundOn', () {
+        expect(withStatus(status, roundOn: roundOn).offersDonation, offers);
+      });
+    }
+
+    test('should know no tournée by default', () {
+      expect(withStatus(VisitStatus.done).roundOn, isFalse);
+    });
 
     test('should have no tries by default', () {
       expect(withStatus(VisitStatus.toDo).tries, 0);
@@ -269,6 +295,59 @@ void main() {
         stored.toString(),
         startsWith('StoredStatus(VisitStatus.nobodyHome, 3, '),
       );
+    });
+
+    test('should have no don by default', () {
+      expect(stored.donation, isNull);
+    });
+
+    group('with a don', () {
+      final given = GivenDonation(index: 4, donation: cash(1000));
+      final withDon = stored.withDonation(given);
+
+      test('should keep the status, tries and change, with the don', () {
+        expect(withDon.status, VisitStatus.nobodyHome);
+        expect(withDon.tries, 3);
+        expect(withDon.change, marked);
+        expect(withDon.donation, given);
+      });
+
+      test('should be equal by its don too', () {
+        expect(withDon, stored.withDonation(given));
+        expect(withDon.hashCode, stored.withDonation(given).hashCode);
+        expect(withDon, isNot(stored));
+        expect(
+          withDon,
+          isNot(
+            stored.withDonation(GivenDonation(index: 3, donation: cash(1000))),
+          ),
+        );
+      });
+
+      test('should name its don when printed', () {
+        expect(
+          withDon.toString(),
+          endsWith(', GivenDonation(4, ${cash(1000)}))'),
+        );
+      });
+    });
+  });
+
+  group('GivenDonation', () {
+    final given = GivenDonation(index: 2, donation: cheque(2000));
+
+    test('should be equal by place and don', () {
+      expect(given, GivenDonation(index: 2, donation: cheque(2000)));
+      expect(
+        given.hashCode,
+        GivenDonation(index: 2, donation: cheque(2000)).hashCode,
+      );
+      expect(given, isNot(GivenDonation(index: 1, donation: cheque(2000))));
+      expect(given, isNot(GivenDonation(index: 2, donation: cash(2000))));
+    });
+
+    test('should name its place and don when printed', () {
+      expect(given.toString(), 'GivenDonation(2, PaidDonation(cheque, 2000))');
     });
   });
 }

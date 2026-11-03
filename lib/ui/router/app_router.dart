@@ -21,6 +21,8 @@ import 'package:tournee_calendriers/ui/screens/onboarding/create_sector_screen.d
 import 'package:tournee_calendriers/ui/screens/onboarding/join_pending_screen.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/join_sector_screen.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/welcome_screen.dart';
+import 'package:tournee_calendriers/ui/screens/round/dons_screen.dart';
+import 'package:tournee_calendriers/ui/screens/round/round_recap_screen.dart';
 import 'package:tournee_calendriers/ui/screens/settings/changelog_screen.dart';
 import 'package:tournee_calendriers/ui/screens/settings/privacy_screen.dart';
 import 'package:tournee_calendriers/ui/screens/settings/settings_screen.dart';
@@ -132,6 +134,14 @@ GoRouter buildAppRouter({
     GoRoute(
       path: AppRoutes.trash,
       builder: (context, state) => const CorbeilleScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.roundDons,
+      builder: (context, state) => const DonsScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.roundRecap,
+      builder: (context, state) => const RoundRecapScreen(),
     ),
     if (showGallery)
       GoRoute(

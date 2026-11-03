@@ -1602,6 +1602,26 @@ outing; the team's area is the **secteur** (§2).
   modifiée. Les dons ne sont jamais associés à une adresse. ». Read from the phone's copy, so
   it works offline. Every member sees it.
 - Plurals: « 0 don », « 1 don », « 2 dons »; « 1 calendrier offert », « 2 calendriers offerts ».
+- Delivered in #109 (`presentation/round/`, `ui/screens/round/`, the don steps in
+  `ui/screens/street/status_picker_sheet.dart`): « Commencer une tournée » is the first row of
+  Accueil's list (it scrolls with it), the card in its place while one is on; « depuis » reads
+  « moins d'une minute », « 20 min », « 1 h 20 », « 2 h », kept up every 30 s; tapped in a
+  secteur while a tournée started in another is on, « Une tournée est déjà en cours dans un
+  autre secteur. ». The street's line sits between the progress bar and « Côté impair | Côté
+  pair », a tap opens « Dons de la tournée » (the snackbar goes first). « Montant du don »
+  after a « Fait » is closed without a don by ✕, a swipe, a tap beside it or back alike: each
+  puts the house back (`UndoLastChange`, so « maisons visitées » counts it no more) and shows
+  no snackbar; its ✕ reads « Annuler : la maison reprend son statut » (« la porte » on a door).
+  « Autre montant » has a ← back to « Montant du don »; « OK » on the keyboard validates.
+  Snackbars: « N° 7 fait · 10 € en espèces », « N° 7 fait · calendrier offert », « N° 9 · 5 €
+  en chèque ajouté », « Porte 51 : fait · 10 € en espèces », « Porte 51 · 5 € en chèque
+  ajouté »; « Annuler » removes the don by its place in the tournée. « + Ajouter un don » here
+  only gives the don (the calendar comes with #114). « Dons de la tournée » before the first
+  don: « Aucun don pour l'instant. »; « Modifier le don » on a « Calendrier offert » opens on
+  Espèces, empty (« Valider » makes it a don of money); « Supprimer ce don » asks nothing. The
+  « Bilan » takes its end time from the clock when it opens; « Valider » goes back to Accueil
+  once the summary is kept. No ✎ correction per method in the « Bilan » (in RunRecap's script
+  only, not in this section).
 
 ---
 

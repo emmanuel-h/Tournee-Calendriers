@@ -105,11 +105,17 @@ void main() {
   testWidgets('should open « Ajouter des rues » on the list of the '
       'tournée\'s first commune, a chip per commune', (tester) async {
     await pumpStart(tester, [villefrancheCommune, gleizeCommune]);
-    expect(find.text('Ajouter des rues'), findsOneWidget);
 
     // A row after the streets: scrolled to, as the member would.
-    await tester.ensureVisible(find.byKey(const Key('start.import')));
-    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('start.import')),
+      100,
+      scrollable: find.descendant(
+        of: find.byKey(const Key('home.panel.list')),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    expect(find.text('Ajouter des rues'), findsOneWidget);
     await tester.tap(find.byKey(const Key('start.import')));
     await tester.pumpAndSettle();
 
@@ -141,8 +147,14 @@ void main() {
       'ticked to the tournée', (tester) async {
     await pumpStart(tester, [villefrancheCommune]);
     // A row after the streets: scrolled to, as the member would.
-    await tester.ensureVisible(find.byKey(const Key('start.import')));
-    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('start.import')),
+      100,
+      scrollable: find.descendant(
+        of: find.byKey(const Key('home.panel.list')),
+        matching: find.byType(Scrollable),
+      ),
+    );
     await tester.tap(find.byKey(const Key('start.import')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('addStreets.tab.list')));
@@ -166,8 +178,14 @@ void main() {
   ) async {
     await pumpStart(tester, []);
     // A row after the streets: scrolled to, as the member would.
-    await tester.ensureVisible(find.byKey(const Key('start.import')));
-    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('start.import')),
+      100,
+      scrollable: find.descendant(
+        of: find.byKey(const Key('home.panel.list')),
+        matching: find.byType(Scrollable),
+      ),
+    );
     await tester.tap(find.byKey(const Key('start.import')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('addStreets.tab.list')));
@@ -179,8 +197,14 @@ void main() {
   testWidgets('should close with ✕', (tester) async {
     await pumpStart(tester, [villefrancheCommune]);
     // A row after the streets: scrolled to, as the member would.
-    await tester.ensureVisible(find.byKey(const Key('start.import')));
-    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('start.import')),
+      100,
+      scrollable: find.descendant(
+        of: find.byKey(const Key('home.panel.list')),
+        matching: find.byType(Scrollable),
+      ),
+    );
     await tester.tap(find.byKey(const Key('start.import')));
     await tester.pumpAndSettle();
 

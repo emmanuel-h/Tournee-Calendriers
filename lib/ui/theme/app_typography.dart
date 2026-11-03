@@ -334,4 +334,43 @@ abstract final class AppTextStyles {
     letterSpacing: 34 * 0.04,
     height: 1.1,
   );
+
+  /// The amount typed in « Montant » (« 7,50 »), and its « € ».
+  static const amountInput = TextStyle(
+    fontFamily: AppFonts.display,
+    fontWeight: FontWeight.w700,
+    fontSize: 34,
+  );
+
+  /// The amount of a don in « Dons de la tournée » (« 10 € ») and of a
+  /// method in the « Bilan ».
+  static const donationAmount = TextStyle(
+    fontFamily: AppFonts.display,
+    fontWeight: FontWeight.w700,
+    fontSize: 24,
+  );
+
+  /// The dons and money of the tournée on Accueil's card (« 19 dons ·
+  /// 280 € »).
+  static const roundTotals = TextStyle(
+    fontFamily: AppFonts.display,
+    fontWeight: FontWeight.w700,
+    fontSize: 22,
+    height: 1.1,
+  );
+
+  /// A figure of the « Bilan » (« 23 »).
+  static const recapFigure = TextStyle(
+    fontFamily: AppFonts.display,
+    fontWeight: FontWeight.w700,
+    fontSize: 34,
+    height: 1.1,
+  );
+
+  /// The total of « ARGENT RÉCOLTÉ » (« 280 € »).
+  static const recapTotal = TextStyle(
+    fontFamily: AppFonts.display,
+    fontWeight: FontWeight.w700,
+    fontSize: 28,
+  );
 }

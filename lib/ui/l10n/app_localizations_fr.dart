@@ -1244,6 +1244,10 @@ class AppLocalizationsFr extends AppLocalizations {
       'Confidentialité : le texte dit aussi ce qui est gardé des tournées, des dons et des calendriers.';
 
   @override
+  String get release0100Rounds =>
+      'Tournées : « Commencer une tournée » sur l\'accueil, le montant de chaque don après « Fait », la liste des dons et le bilan à valider en fin de tournée.';
+
+  @override
   String get release090Streets =>
       'Équipe : chaque membre montre le nombre de rues qu\'il couvre ; touchez ce nombre pour voir leurs noms.';
 
@@ -2402,4 +2406,281 @@ class AppLocalizationsFr extends AppLocalizations {
   String manualAdded(String name) {
     return '« $name » ajoutée à vos rues.';
   }
+
+  @override
+  String get roundStart => 'Commencer une tournée';
+
+  @override
+  String get roundAlreadyOnElsewhere =>
+      'Une tournée est déjà en cours dans un autre secteur.';
+
+  @override
+  String get roundSinceJustStarted => 'En tournée depuis moins d\'une minute';
+
+  @override
+  String roundSinceMinutes(int minutes) {
+    return 'En tournée depuis $minutes min';
+  }
+
+  @override
+  String roundSinceHours(int hours, String minutes) {
+    return 'En tournée depuis $hours h $minutes';
+  }
+
+  @override
+  String roundSinceWholeHours(int hours) {
+    return 'En tournée depuis $hours h';
+  }
+
+  @override
+  String roundTotals(int count, String amount) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count dons · $amount',
+      one: '$count don · $amount',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get roundSeeDons => 'Voir les dons ›';
+
+  @override
+  String get roundSeeDonsSpoken => 'Voir les dons';
+
+  @override
+  String get roundFinish => 'Terminer';
+
+  @override
+  String get roundFinishSpoken => 'Terminer la tournée';
+
+  @override
+  String roundStreetLine(String totals) {
+    return 'En tournée · $totals';
+  }
+
+  @override
+  String amountEuros(int euros) {
+    final intl.NumberFormat eurosNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String eurosString = eurosNumberFormat.format(euros);
+
+    return '$eurosString €';
+  }
+
+  @override
+  String amountEurosCents(int euros, String cents) {
+    final intl.NumberFormat eurosNumberFormat =
+        intl.NumberFormat.decimalPattern(localeName);
+    final String eurosString = eurosNumberFormat.format(euros);
+
+    return '$eurosString,$cents €';
+  }
+
+  @override
+  String amountInputCents(int euros, String cents) {
+    return '$euros,$cents';
+  }
+
+  @override
+  String get donationStepTitle => 'Montant du don';
+
+  @override
+  String get donationCancelHouse => 'Annuler : la maison reprend son statut';
+
+  @override
+  String get donationCancelDoor => 'Annuler : la porte reprend son statut';
+
+  @override
+  String get paymentMethodGroup => 'Moyen de paiement';
+
+  @override
+  String get paymentCash => 'Espèces';
+
+  @override
+  String get paymentCheque => 'Chèque';
+
+  @override
+  String get paymentCard => 'Carte';
+
+  @override
+  String get paymentCardLong => 'Carte bancaire';
+
+  @override
+  String get paymentCheques => 'Chèques';
+
+  @override
+  String get donationOtherAmount => 'Autre montant';
+
+  @override
+  String get donationFreeCalendar => 'Calendrier offert';
+
+  @override
+  String get amountLabel => 'Montant';
+
+  @override
+  String get amountSuffix => '€';
+
+  @override
+  String get amountHint => 'Par exemple 7,50';
+
+  @override
+  String get amountEmpty => 'Écrivez un montant.';
+
+  @override
+  String get amountNotValid => 'Entrez un montant valide.';
+
+  @override
+  String get amountTooManyDecimals => 'Deux chiffres après la virgule au plus.';
+
+  @override
+  String get amountTooLarge => '1 000 € au plus par don.';
+
+  @override
+  String get donationValidate => 'Valider';
+
+  @override
+  String donationPaid(String amount, String method) {
+    return '$amount en $method';
+  }
+
+  @override
+  String get paymentCashWord => 'espèces';
+
+  @override
+  String get paymentChequeWord => 'chèque';
+
+  @override
+  String get paymentCardWord => 'carte';
+
+  @override
+  String get donationFreeWord => 'calendrier offert';
+
+  @override
+  String houseDoneWithDonation(String number, String donation) {
+    return 'N° $number fait · $donation';
+  }
+
+  @override
+  String doorDoneWithDonation(String label, String donation) {
+    return 'Porte $label : fait · $donation';
+  }
+
+  @override
+  String houseDonationAdded(String number, String donation) {
+    return 'N° $number · $donation ajouté';
+  }
+
+  @override
+  String doorDonationAdded(String label, String donation) {
+    return 'Porte $label · $donation ajouté';
+  }
+
+  @override
+  String get addDonation => 'Ajouter un don';
+
+  @override
+  String get donsTitle => 'Dons de la tournée';
+
+  @override
+  String get donsEmpty => 'Aucun don pour l\'instant.';
+
+  @override
+  String get donationNewTitle => 'Nouveau don';
+
+  @override
+  String get donationEditTitle => 'Modifier le don';
+
+  @override
+  String get donationRemove => 'Supprimer ce don';
+
+  @override
+  String get recapTitle => 'Bilan de la tournée';
+
+  @override
+  String recapWhen(DateTime day, String start, String end) {
+    final intl.DateFormat dayDateFormat = intl.DateFormat.MMMMEEEEd(localeName);
+    final String dayString = dayDateFormat.format(day);
+
+    return '$dayString, de $start à $end';
+  }
+
+  @override
+  String clockTime(int hour, String minute) {
+    return '$hour h $minute';
+  }
+
+  @override
+  String clockTimeWhole(int hour) {
+    return '$hour h';
+  }
+
+  @override
+  String recapHouses(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'maisons visitées',
+      one: 'maison visitée',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String recapDons(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'dons',
+      one: 'don',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String recapFree(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'calendriers offerts',
+      one: 'calendrier offert',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get recapMoney => 'Argent récolté';
+
+  @override
+  String donCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count dons',
+      one: '$count don',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get recapTotal => 'Total';
+
+  @override
+  String get recapSeeDons => 'Voir les dons';
+
+  @override
+  String get recapValidate => 'Valider la tournée';
+
+  @override
+  String get recapContinue => 'Continuer la tournée';
+
+  @override
+  String get recapConfirmTitle => 'Valider la tournée ?';
+
+  @override
+  String get recapConfirmBody => 'Vous ne pourrez plus la modifier.';
+
+  @override
+  String get recapConfirmOk => 'Valider';
 }

@@ -43,7 +43,7 @@ import 'fake_map_view.dart';
 /// tournée downloaded by default) and [rounds] (no tournée on by default);
 /// [member] (Léa by
 /// default) uses the phone and marks the houses at [now] (two o'clock by
-/// default); [account] is the phone's account (none by default, and no
+/// default), or on [clock], which a test may move; [account] is the phone's account (none by default, and no
 /// network to get one); [admins] says whether the phone, and which
 /// members, are admins of the app (none by default). The commune search and the duplicate check of
 /// « Nouveau secteur » answer without waiting for a pause in the typing;
@@ -73,6 +73,7 @@ List<Override> fakePhone({
   FakeOpenRoundStore? rounds,
   MemberId? member,
   DateTime? now,
+  FakeClock? clock,
   FakeMemberAccount? account,
   FakeAdminStatus? admins,
   bool chooseLaunch = false,
@@ -100,7 +101,7 @@ List<Override> fakePhone({
   streetShapesProvider.overrideWithValue(shapes ?? FakeStreetShapes()),
   communeSearchProvider.overrideWithValue(communes ?? FakeCommuneSearch()),
   idGeneratorProvider.overrideWithValue(FakeIdGenerator('street')),
-  clockProvider.overrideWithValue(FakeClock(now ?? twoPm)),
+  clockProvider.overrideWithValue(clock ?? FakeClock(now ?? twoPm)),
   identityProvider.overrideWithValue(FakeIdentity(member ?? lea)),
   streetViewPreferencesProvider.overrideWithValue(
     preferences ?? FakeStreetViewPreferences(),

@@ -65,6 +65,12 @@ abstract final class AppRoutes {
   static const changelog = '/parametres/nouveautes';
   static const trash = '/corbeille';
 
+  /// « Dons de la tournée » (§5.13), pushed by « Voir les dons › ».
+  static const roundDons = '/tournee/dons';
+
+  /// « Bilan de la tournée » (§5.13), pushed by « ■ Terminer ».
+  static const roundRecap = '/tournee/bilan';
+
   /// Debug builds only: every shared component on one screen.
   static const gallery = '/composants';
 
