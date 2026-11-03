@@ -12,10 +12,10 @@ import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/home/home_state.dart';
 import 'package:tournee_calendriers/presentation/home/missing_shapes.dart';
+import 'package:tournee_calendriers/presentation/home/street_row.dart';
 import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
 import 'package:tournee_calendriers/presentation/street_card/follows_team.dart';
 import 'package:tournee_calendriers/presentation/street_card/street_card.dart';
-import 'package:tournee_calendriers/presentation/street_list/street_list_state.dart';
 
 /// The state of Accueil. `autoDispose`: it follows the streets and the
 /// communes only while the screen shows.

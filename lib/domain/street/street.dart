@@ -323,38 +323,6 @@ final class Street {
       !isDeleted &&
       houses.any((house) => house.position != null);
 
-  /// This street with every stamp made by [member] at the time it had: the
-  /// last change of each house and door, the removal of each number in the
-  /// Corbeille, the street's own deletion; and a street someone covered is
-  /// covered by [member] alone. Nothing else changes.
-  ///
-  /// It is the street as [member] brings it from the phone into a tournée
-  /// (« Les ajouter au secteur », PLAN §5.0): the marks made in M1 are
-  /// stamped with the phone's own id, which is no member of the tournée,
-  /// and the tournée's security rules only accept the caller's uid (PLAN
-  /// §8.2). The times stay, so « Modifié à 14:02 » still says when.
-  ///
-  /// Not a command: it returns no change, since the moved street is stored
-  /// as a new street of the tournée (`StreetRepository.add`).
-  Street restampedBy(MemberId member) => Street._(
-    id: id,
-    name: name,
-    commune: commune,
-    banId: banId,
-    shape: shape,
-    // The phone's streets were only ever covered by the phone's own id.
-    assignees: Set.unmodifiable({if (assignees.isNotEmpty) member}),
-    // The order and the numbers are those of this street: still sorted,
-    // still unique.
-    houses: List.unmodifiable([
-      for (final house in houses) house.restampedBy(member),
-    ]),
-    removedHouses: List.unmodifiable([
-      for (final removed in removedHouses) removed.restampedBy(member),
-    ]),
-    deletion: deletion?.restampedBy(member),
-  );
-
   /// The odd side of the street (left column of PLAN §5.6), in order.
   List<House> get oddHouses =>
       List.unmodifiable(houses.where((house) => house.number.isOdd));

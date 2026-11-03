@@ -8,10 +8,9 @@ import 'package:tournee_calendriers/infrastructure/local_storage/atomic_file.dar
 import 'package:tournee_calendriers/infrastructure/local_storage/mappers/street_json_mapper.dart';
 
 /// The [UnfinishedStreets] of one campaign on the phone: one JSON file per
-/// street in [directory], in the form of the phone's own streets
-/// ([streetToJson]). No network, ever.
+/// street in [directory] ([streetToJson]). No network, ever.
 ///
-/// One file per street, as `LocalStreetRepository`: a street of 300
+/// One file per street: a street of 300
 /// numbers is ≈ 100 kB, and an import adds dozens of streets in a row, so
 /// one file for all would be written again whole for each. The folder is
 /// empty nearly always: a file lives the second or two a street takes to

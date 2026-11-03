@@ -7,20 +7,18 @@ import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/screens/home/home_screen.dart';
+import 'package:tournee_calendriers/ui/screens/home/no_sector_screen.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/create_sector_screen.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/join_pending_screen.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/join_sector_screen.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/welcome_screen.dart';
-import 'package:tournee_calendriers/ui/screens/start/start_screen.dart';
 
-import '../../application/use_cases/street_fixtures.dart';
 import '../../domain/sector/my_sectors_fixtures.dart';
 import '../../domain/sector/sector_fixtures.dart' show nameOf;
 import '../../support/fakes/fake_admin_status.dart';
 import '../../support/fakes/fake_member_account.dart';
 import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_phone_settings.dart';
-import '../../support/fakes/fake_street_repository.dart';
 import '../../support/results.dart';
 import '../support/app_overrides.dart';
 import '../support/buttons.dart';
@@ -33,14 +31,12 @@ final phoneUid = MemberId('x7FqA1b2C3d4E5f6G7h8I9j0k9kP2');
 void main() {
   late FakePhoneSettings settings;
 
-  /// Launches the app on a phone holding [mine], the phone [streets] and
-  /// the name [name], letting it choose where to open. The phone is an
+  /// Launches the app on a phone holding [mine] and the name [name], letting it choose where to open. The phone is an
   /// admin's when [admin] says so; it has [account] (an account by
   /// default).
   Future<void> launch(
     WidgetTester tester, {
     MySectors mine = MySectors.none,
-    FakeStreetRepository? streets,
     MemberName? name,
     bool admin = false,
     FakeMemberAccount? account,
@@ -50,7 +46,6 @@ void main() {
       ProviderScope(
         overrides: fakePhone(
           mySectors: FakeMySectorsStore(mine),
-          phoneStreets: streets,
           settings: settings,
           account: account ?? FakeMemberAccount(signedInMember: phoneUid),
           admins: FakeAdminStatus(phoneIsAdmin: admin),
@@ -78,11 +73,12 @@ void main() {
     });
 
     testWidgets(
-      'should open « Mes rues » on a phone holding streets of its own',
+      'should open « Aucun secteur ouvert » on a phone knowing a secteur, '
+      'none open',
       (tester) async {
-        await launch(tester, streets: FakeStreetRepository([lilas]));
+        await launch(tester, mine: MySectors.none.remember(sector12));
 
-        expect(find.byType(StartScreen), findsOneWidget);
+        expect(find.byType(NoSectorScreen), findsOneWidget);
         expect(find.byType(WelcomeScreen), findsNothing);
       },
     );

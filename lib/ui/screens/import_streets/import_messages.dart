@@ -35,34 +35,24 @@ String communeLabel(AppLocalizations l10n, CommuneOption commune) {
   };
 }
 
-/// The message after a complete import: « 3 rues importées », « 1 rue
-/// restaurée » when only streets from the Corbeille came back, or both;
-/// « … ajoutées au secteur » [inSector].
-String importDoneMessage(
-  AppLocalizations l10n,
-  ImportSummary summary, {
-  required bool inSector,
-}) => switch ((summary.imported, summary.restored)) {
-  (final imported, 0) =>
-    inSector ? l10n.addDone(imported) : l10n.importDone(imported),
-  (0, final restored) => l10n.importRestored(restored),
-  (final imported, final restored) =>
-    inSector
-        ? l10n.addDoneAndRestored(imported, restored)
-        : l10n.importDoneAndRestored(imported, restored),
-};
+/// The message after a complete import: « 3 rues ajoutées au secteur »,
+/// « 1 rue restaurée » when only streets from the Corbeille came back, or
+/// both.
+String importDoneMessage(AppLocalizations l10n, ImportSummary summary) =>
+    switch ((summary.imported, summary.restored)) {
+      (final imported, 0) => l10n.addDone(imported),
+      (0, final restored) => l10n.importRestored(restored),
+      (final imported, final restored) => l10n.addDoneAndRestored(
+        imported,
+        restored,
+      ),
+    };
 
 /// Under the checklist when some streets failed: how many are stored, how
 /// many failed, why, and that the ticked ones remain to do.
-String importPartialMessage(
-  AppLocalizations l10n,
-  ImportSummary summary, {
-  required bool inSector,
-}) {
+String importPartialMessage(AppLocalizations l10n, ImportSummary summary) {
   // The streets back from the Corbeille are stored too.
   final stored = summary.imported + summary.restored;
   final reason = addressFailureMessage(l10n, summary.failure!);
-  return inSector
-      ? l10n.addPartial(stored, summary.failed, reason)
-      : l10n.importPartial(stored, summary.failed, reason);
+  return l10n.addPartial(stored, summary.failed, reason);
 }

@@ -122,12 +122,6 @@ void main() {
         isNot(contains('calendar')),
       );
     });
-
-    test('should keep its calendars when restamped', () {
-      final house = _houseOf(_nine(VisitStatus.done, count: 4));
-
-      expect(house.restampedBy(lea).calendars, calendars(4));
-    });
   });
 
   group('Dwelling', () {
@@ -155,12 +149,6 @@ void main() {
         'Dwelling(01, VisitStatus.done, null, '
         'ChangeStamp(paul, 2026-11-02 15:00:00.000Z), ×2, 2 calendars)',
       );
-    });
-
-    test('should keep its calendars when restamped', () {
-      final door = _doorOf(_eight(VisitStatus.done, count: 4));
-
-      expect(door.restampedBy(lea).calendars, calendars(4));
     });
   });
 

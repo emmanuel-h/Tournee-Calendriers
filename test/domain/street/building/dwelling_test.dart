@@ -146,17 +146,6 @@ void main() {
 
         expect(dwelling.tries, NobodyHomeTries.none);
       });
-
-      test('should keep its tries when restamped', () {
-        final dwelling = Dwelling(
-          label: d('51'),
-          status: VisitStatus.done,
-          tries: tries(2),
-          lastChange: leaAtTwo,
-        );
-
-        expect(dwelling.restampedBy(paul).tries, tries(2));
-      });
     });
 
     test('should show its tries after its fields when it has some', () {

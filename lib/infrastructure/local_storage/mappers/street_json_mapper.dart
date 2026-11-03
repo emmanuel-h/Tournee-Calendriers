@@ -1,6 +1,8 @@
-// Translation between a Street and the JSON the phone storage keeps for it
-// (the streets used while no tournée is open). Pure functions: no file
-// here, so they are tested alone.
+// Translation between a Street and the JSON the phone storage keeps for it:
+// a new street of a secteur not yet all handed to Firestore
+// (`LocalUnfinishedStreets`, #104). Until #119 it was also the form of the
+// streets of a phone with no secteur open, hence the older versions it
+// still reads. Pure functions: no file here, so they are tested alone.
 //
 // The schema, version 3 (PLAN §6.3):
 //
@@ -31,9 +33,8 @@
 //
 // Versions 1 and 2 (up to T1.19) held a free `note` on each house and door.
 // Notes were removed for privacy (PLAN §8.3, Q23): reading an older file
-// ignores them, so the street comes back without any. The file is written
-// again in version 3 as soon as it is read (see `LocalStreetRepository`),
-// so no note stays on the phone. Every other mark is kept.
+// ignores them, so the street comes back without any. Every other mark is
+// kept.
 //
 // Until #81, `comeBack` held a free hint (« après 19h »), in every version.
 // The time replaced it without a new version: such a text reads as

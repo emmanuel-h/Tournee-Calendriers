@@ -35,13 +35,14 @@ Street _deleted(String id, int days) =>
         .$1;
 
 void main() {
-  late FakeStreetRepository phone;
+  late FakeStreetRepository none;
   late FakeStreetRepository streets49;
   late FakeStreetRepository streets12;
   late FakeMySectorsStore store;
 
   setUp(() {
-    phone = FakeStreetRepository([_deleted('Thiers', 31)]);
+    // No secteur open: no street, as the composition root binds.
+    none = FakeStreetRepository();
     streets49 = FakeStreetRepository([
       _deleted('Gambetta', 31),
       _deleted('Pasteur', 30),
@@ -58,7 +59,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         streetsOfTheOpenSector(
-          phone: phone,
+          none: none,
           sectors: {sector49.id: streets49, sector12.id: streets12},
         ),
         mySectorsStoreProvider.overrideWithValue(store),
@@ -79,7 +80,6 @@ void main() {
     expect(purged, (streets: 1, numbers: 0));
     expect(streets49.purged, [StreetId('Gambetta')]);
     expect(await streets49.find(StreetId('Pasteur')), isNotNull);
-    expect(phone.purged, isEmpty);
     expect(streets12.purged, isEmpty);
   });
 
@@ -95,17 +95,16 @@ void main() {
     expect(streets49.purged, [StreetId('Gambetta')]);
   });
 
-  test(
-    "should purge the phone's own streets while no tournée is open",
-    () async {
-      store = FakeMySectorsStore();
-      final container = leasPhone();
+  test('should purge nothing while no secteur is open', () async {
+    store = FakeMySectorsStore();
+    final container = leasPhone();
 
-      await container.read(corbeillePurgeProvider.future);
+    final purged = await container.read(corbeillePurgeProvider.future);
 
-      expect(phone.purged, [StreetId('Thiers')]);
-    },
-  );
+    expect(purged, (streets: 0, numbers: 0));
+    expect(streets49.purged, isEmpty);
+    expect(streets12.purged, isEmpty);
+  });
 
   test(
     'should settle on the failure when the streets cannot be read',

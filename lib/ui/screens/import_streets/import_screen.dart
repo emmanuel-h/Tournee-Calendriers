@@ -15,31 +15,14 @@ import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
-/// « Importer des rues » (PLAN §5.0, `docs/mockups/Import.dc.html`), the
-/// screen of a phone with no tournée open: type a commune, choose it among
-/// the suggestions, tick its streets, import them. Needs the network.
-final class ImportScreen extends StatelessWidget {
-  const ImportScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-    // The mockup puts the title right after the back arrow.
-    appBar: AppBar(
-      title: Text(AppLocalizations.of(context).importStreetsAction),
-      titleSpacing: 0,
-    ),
-    body: const SafeArea(child: ImportList()),
-  );
-}
-
-/// The import checklist, shown by « Importer des rues » and by the
-/// « Liste » tab of « Ajouter des rues » (PLAN §5.4, AddList mockup).
+/// The import checklist, the « Liste » tab of « Ajouter des rues » (PLAN
+/// §5.4, AddList mockup).
 ///
-/// With a tournée open that has communes, there is no commune field: a
-/// chip per commune when there are several, the streets of the one chosen,
-/// « déjà dans le secteur » and « Ajouter N rues ». Otherwise the commune
-/// is searched as in M1. Once every street ticked is stored, the screen
-/// closes with a message.
+/// With a secteur that has communes, there is no commune field: a chip per
+/// commune when there are several, the streets of the one chosen, « déjà
+/// dans le secteur » and « Ajouter N rues ». A secteur created before the
+/// communes searches its commune in a field instead. Once every street
+/// ticked is stored, the screen closes with a message.
 ///
 /// A `ConsumerStatefulWidget`: like a `StatefulWidget`, plus `ref`. The
 /// state object owns the commune field's `TextEditingController`, which
@@ -71,11 +54,7 @@ final class _ImportListState extends ConsumerState<ImportList> {
     ref.listen(importProvider.select((state) => state.run), (_, run) {
       if (run case ImportFinished(:final summary) when summary.complete) {
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text(
-              importDoneMessage(l10n, summary, inSector: state.inSector),
-            ),
-          ),
+          SnackBar(content: Text(importDoneMessage(l10n, summary))),
         );
         context.pop();
       }
@@ -434,7 +413,6 @@ final class _Checklist extends ConsumerWidget {
                   itemCount: visible.length,
                   itemBuilder: (context, index) => _ChoiceRow(
                     street: visible[index],
-                    inSector: state.inSector,
                     enabled: !state.importing,
                     onToggle: notifier.toggle,
                   ),
@@ -453,13 +431,11 @@ final class _Checklist extends ConsumerWidget {
             children: [
               ..._outcome(l10n, colors),
               if (state.run case ImportRunning(:final done, :final total))
-                _Progress(done: done, total: total, inSector: state.inSector)
+                _Progress(done: done, total: total)
               else
                 PrimaryButton(
                   key: const Key('import.button'),
-                  label: state.inSector
-                      ? l10n.addButton(state.checkedCount)
-                      : l10n.importButton(state.checkedCount),
+                  label: l10n.addButton(state.checkedCount),
                   onPressed: state.canImport
                       ? () => unawaited(notifier.import())
                       : null,
@@ -476,7 +452,7 @@ final class _Checklist extends ConsumerWidget {
     final message = switch (state.run) {
       ImportFailed(:final failure) => addressFailureMessage(l10n, failure),
       ImportFinished(:final summary) when !summary.complete =>
-        importPartialMessage(l10n, summary, inSector: state.inSector),
+        importPartialMessage(l10n, summary),
       ImportNotStarted() || ImportRunning() || ImportFinished() => null,
     };
     return [
@@ -492,19 +468,15 @@ final class _Checklist extends ConsumerWidget {
 }
 
 /// One street of the checklist: « ☑ Rue Nationale  403 n° », greyed and
-/// « déjà importée », or « dans la Corbeille ».
+/// « déjà dans le secteur », or « dans la Corbeille ».
 final class _ChoiceRow extends StatelessWidget {
   const _ChoiceRow({
     required this.street,
-    required this.inSector,
     required this.enabled,
     required this.onToggle,
   });
 
   final StreetChoice street;
-
-  /// « déjà dans le secteur » rather than « déjà importée ».
-  final bool inSector;
   final bool enabled;
   final ValueChanged<BanStreetId> onToggle;
 
@@ -534,7 +506,7 @@ final class _ChoiceRow extends StatelessWidget {
         ),
         secondary: Text(
           street.alreadyImported
-              ? (inSector ? l10n.alreadyInSector : l10n.alreadyImported)
+              ? l10n.alreadyInSector
               : street.inCorbeille
               ? l10n.inCorbeille
               : l10n.streetNumberCount(street.numberCount),
@@ -595,19 +567,12 @@ final class _Message extends StatelessWidget {
   );
 }
 
-/// « Import en cours… 2/5 » over a bar, in place of the import button.
+/// « Ajout en cours… 2/5 » over a bar, in place of the button.
 final class _Progress extends StatelessWidget {
-  const _Progress({
-    required this.done,
-    required this.total,
-    required this.inSector,
-  });
+  const _Progress({required this.done, required this.total});
 
   final int done;
   final int total;
-
-  /// « Ajout en cours… » rather than « Import en cours… ».
-  final bool inSector;
 
   @override
   Widget build(BuildContext context) => SizedBox(
@@ -619,9 +584,7 @@ final class _Progress extends StatelessWidget {
       spacing: 8,
       children: [
         Text(
-          inSector
-              ? AppLocalizations.of(context).addProgress(done, total)
-              : AppLocalizations.of(context).importProgress(done, total),
+          AppLocalizations.of(context).addProgress(done, total),
           textAlign: TextAlign.center,
           style: AppTextStyles.fieldLabel,
         ),

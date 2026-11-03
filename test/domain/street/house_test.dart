@@ -66,17 +66,6 @@ void main() {
 
       expect(house.tries, NobodyHomeTries.none);
     });
-
-    test('should keep its tries when restamped', () {
-      final house = House(
-        number: n('7'),
-        status: VisitStatus.nobodyHome,
-        tries: tries(4),
-        lastChange: leaAtTwo,
-      );
-
-      expect(house.restampedBy(paul).tries, tries(4));
-    });
   });
 
   test('should keep its position when given one', () {

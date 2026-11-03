@@ -115,8 +115,16 @@ void main() {
         idGeneratorProvider.overrideWithValue(FakeIdGenerator('street')),
         // Zero, so the debounce is a single turn of the event loop.
         communeSearchDelayProvider.overrideWithValue(Duration.zero),
-        // No tournée open: the phone's own streets, as in M1.
-        mySectorsStoreProvider.overrideWithValue(FakeMySectorsStore()),
+        // The 49 open, created before the communes: its commune is
+        // searched in the field.
+        mySectorsStoreProvider.overrideWithValue(
+          FakeMySectorsStore(
+            valueOf(MySectors.none.remember(sector49).open(sectorId)),
+          ),
+        ),
+        sectorRepositoryProvider.overrideWithValue(
+          FakeSectorRepository([team()]),
+        ),
       ],
     );
     addTearDown(container.dispose);
@@ -729,7 +737,6 @@ void main() {
         'streets', () async {
       await openTab([villefrancheCommune, gleizeCommune]);
 
-      expect(tab().inSector, isTrue);
       expect(tab().sectorCommunes, [
         CommuneOption.ofSector(villefrancheCommune),
         CommuneOption.ofSector(gleizeCommune),
@@ -786,15 +793,28 @@ void main() {
         'communes', () async {
       await openTab([]);
 
-      expect(tab().inSector, isTrue);
       expect(tab().sectorCommunes, isEmpty);
       expect(tab().commune, isNull);
       expect(tab().streets, isA<NoCommuneChosen>());
     });
   });
 
-  test('should not be in a tournée when none is open', () {
-    expect(state().inSector, isFalse);
-    expect(state().sectorCommunes, isEmpty);
+  test('should offer no commune while no secteur is open', () async {
+    final noSector = ProviderContainer(
+      overrides: [
+        mySectorsStoreProvider.overrideWithValue(FakeMySectorsStore()),
+        sectorRepositoryProvider.overrideWithValue(
+          FakeSectorRepository([
+            team(communes: [villefrancheCommune]),
+          ]),
+        ),
+      ],
+    );
+    addTearDown(noSector.dispose);
+    noSector.listen(importProvider, (_, _) {});
+    await _settle();
+
+    expect(noSector.read(importProvider).sectorCommunes, isEmpty);
+    expect(noSector.read(importProvider).commune, isNull);
   });
 }

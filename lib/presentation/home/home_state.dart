@@ -1,8 +1,8 @@
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/map/map_layers.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
+import 'package:tournee_calendriers/presentation/home/street_row.dart';
 import 'package:tournee_calendriers/presentation/street_card/street_card.dart';
-import 'package:tournee_calendriers/presentation/street_list/street_list_state.dart';
 
 /// What Accueil shows (PLAN §5.3, Home and HomeZoom mockups): the map of
 /// the tournée and its « Mes rues » panel. Immutable: the notifier

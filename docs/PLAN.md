@@ -119,10 +119,11 @@ first launch
 Next launches open the last secteur directly, on the map.
 
 Where the app opens (T2.5, decided from the phone alone, so an offline cold start opens
-where it should): a secteur open → it (the start screen); otherwise the phone holds streets
-of its own (Corbeille included, as in M1) → « Mes rues »; otherwise a request to join waits →
+where it should): a secteur open → it (Accueil); otherwise a request to join waits →
 « Demande envoyée » for the latest one; otherwise the phone knows secteurs, none open → the
-start screen; otherwise → « Bienvenue ». Nothing on the marking path ever waits for a
+start screen with none open (« Aucun secteur ouvert », 5.0); otherwise → « Bienvenue ».
+Streets only ever live in a secteur (#119): a phone with no secteur open holds none, and
+offers to join one (or, for an admin, to create one). Nothing on the marking path ever waits for a
 request.
 
 Before the round (once):
@@ -201,95 +202,48 @@ value taken behaves as with a button. **Typography:** French texts put a non-bre
   colours in both themes; the house dots take the theme's tile colours (each with its glyph).
   Over a dark legend, « libre » gets the map's white casing back.
 
-### 5.0 Mes rues and Importer des rues
+### 5.0 Accueil with no secteur open
 
-In M1 the app opened on a plain list so the street screen could be used on a real area. From
-T3.5 (#30) it is the start screen while no secteur is open; with one open, Accueil (5.3)
-shows instead. Mockups: `docs/mockups/Start.dc.html` and `docs/mockups/Import.dc.html`.
-
-```
-┌──────────────────────────────┐     ┌──────────────────────────────┐
-│ Tournée des calendriers      │     │ ←  Importer des rues         │
-│ Mes rues · 3   Villefranche… │     │ Commune                      │
-│ [ Filtrer les rues…        ] │     │ [Villefranche-sur-Saône (69400)]
-│ Rue Nationale   ▓░░░ 31/403 ›│     │ 312 RUES · 1 COCHÉE [Tout cocher]
-│ Rue Pierre Morin ░░░░  0/19 ›│     │ [ Filtrer les rues…        ] │
-│ Route de Beaur… ████ ✓ 8/8  ›│     │ ☑ Rue Nationale       403 n° │
-│                              │     │ ☐ Rue Pierre Morin     19 n° │
-│                              │     │ ☑ Rue de Thizy  déjà importée│  ← greyed
-│                              │     │ ☐ Rue Paul… dans la Corbeille│
-│                              │     │                              │
-│ [   + Importer des rues    ] │     │ [      Importer 1 rue      ] │
-└──────────────────────────────┘     └──────────────────────────────┘
-```
-
-- **Mes rues** (`/`): the streets on the phone, French order (case and accents ignored:
-  « Église » sorts with E), each with a progress bar and « done/total » (green « ✓ 8/8 » once
-  complete); the filter ignores case, accents, hyphens and apostrophes. A row opens the street.
-  No street yet: « Aucune rue pour l'instant » and « Importez les rues d'une commune pour
-  commencer. ». Works offline. Debug builds
-  show an app-bar action to the component gallery.
-- **Top bar** (T2.7): Accueil's (5.3, Home mockup) already. With a secteur open, its title
-  « Secteur 49 · 2026 ▾ » over the CS opens « Mes secteurs »; with none, the title stays
-  « Tournée des calendriers ». [⚙] opens Paramètres (5.9) either way; [👥] comes with Équipe
-  (5.8). From T2.5 the app's name has a ▾ too and opens « Mes secteurs » the same way, so a
-  phone with streets of its own reaches « Créer » / « Rejoindre » without Paramètres.
-- **Streets of the secteur** (T2.8): with a secteur open, « Mes rues », the street screen,
-  the sheets, edit mode, « Importer des rues » and the Corbeille work on the streets of its
-  current campaign in Firestore, shared live with the team; with none open, on the phone's
-  own streets as in M1. Opening another secteur switches them at once: nothing of the one
-  left stays on screen, and « Annuler » no longer undoes a change made there. Streets the
-  member can no longer read (removed from the secteur) show as none, a street as gone.
-- **Moving the phone's streets into the secteur** (T2.8): while a secteur is open, the member
-  is one of its active members (as the phone last read it), the phone still holds streets
-  (Corbeille left out) and they never went into this secteur, a card sits above the list
-  (above « Aucune rue pour l'instant » too; on Accueil from T3.5, above the map):
+Agreed 2026-11-03 (#119, ASCII then `docs/mockups/NoSector.dc.html`). Streets only ever live
+in a secteur: with none open, Accueil has nothing to list and says how to get one.
 
 ```
 ┌──────────────────────────────┐
-│ Secteur 49 · 2026 ▾   [👥][⚙]│
-│ CS Villefranche              │
-│ ┌──────────────────────────┐ │
-│ │ 12 rues sont enregistrées│ │
-│ │ sur ce téléphone.        │ │
-│ │ [Les ajouter au secteur]  │ │  ← primary button
-│ │        Plus tard         │ │  ← text button
-│ └──────────────────────────┘ │
-│ Mes rues · 3   Villefranche… │
-│ [ Filtrer les rues…        ] │
+│ Tournée des calendriers ▾ [⚙]│  ← opens « Mes secteurs »; no 👥
+│ ░░░░░░░░░░░░░░░░░░░░░░░░ (◎) │  ← base map, no street, no legend; « Me localiser »
+│ ░░░░░░░░░░░░░░░░░░░░░░░░░░░  │
+│ ░░░░░░░░░░░░░░░░░░░░░░░░░░░  │
+├──────────────────────────────┤
+│            ━━━               │
+│ Aucun secteur ouvert         │
+│ Rejoignez le secteur de votre│
+│ équipe avec le code qu'on    │
+│ vous a donné.                │
+│ [   Rejoindre un secteur   ] │  ← red
+│ [    Créer un secteur      ] │  ← outlined, admins only (5.12)
 └──────────────────────────────┘
 ```
 
-  « 1 rue est enregistrée… » / « L'ajouter au secteur » for one. While moving: « Ajout en
-  cours… n/N » in place of the buttons. Done: « 12 rues ajoutées au secteur », or « 10 rues
-  ajoutées, 2 déjà dans le secteur » (« Aucune rue ajoutée, … » when all were there), and the
-  card never comes back for that secteur (another secteur may still be offered them). « Plus
-  tard » hides it for that secteur until the next launch. Each street goes as it is (marks,
-  buildings, « repasser » times, removed numbers) with every stamp's `by` made the member's, times kept;
-  a street whose BAN street (or id) the secteur already has is skipped and counted. The
-  phone keeps its copies, only no longer shown while a secteur is open. No network needed to
-  start: Firestore queues the new streets.
+- Shown at `/` whenever no secteur is open: a phone that knows secteurs (a request
+  refused, a secteur left or lost, another forgotten) and has no request waiting (§4).
+- **Map**: the OpenFreeMap background alone, on France (the map's default with no area),
+  with « Me localiser » and the attribution clear of the panel; no street, no legend.
+- **Top bar**: Accueil's (5.3), the app's name with ▾ opening « Mes secteurs » and ⚙
+  Paramètres; no 👥. Debug builds show the gallery action.
+- **Panel** (fixed, not draggable; its handle is decoration): « Aucun secteur ouvert », the
+  line under it, then « Rejoindre un secteur » (red) and, for an admin only (`AdminStatus`,
+  as on « Bienvenue »), « Créer un secteur » (outlined) under it. Each asks « Votre
+  prénom » first when the phone has no name (as « Mes secteurs » does), then opens 5.2.
+  It scrolls rather than overflow with very large text.
+- **Removed in #119**: the phone-only street list of M1 (« Mes rues » with no secteur open),
+  « Importer des rues » outside « Ajouter des rues », the « Les ajouter au secteur » card that
+  moved the phone's streets into a secteur, and the phone street store used with no secteur
+  open. The checklist lives on as the « Liste » tab of « Ajouter des rues » (5.4). Streets
+  already kept on a phone are deleted at the next start (§6.3), never shown or offered.
 - **Pending sync** (T2.9): while a secteur is open and changes made on the phone have not
-  reached the server, a line sits above « Ajouter des rues » on Accueil (5.3, Home mockup;
-  above « Importer des rues » on this list until T3.5): a cloud glyph and « Modifications de 3 rues en attente d'envoi » (« … d'une rue … »
-  for one), read out as such. It goes away once all is sent (§7).
-- **Importer des rues**: the commune field searches geo.api.gouv.fr as you type (from two
-  characters, after a 300 ms pause; a late answer to older text is ignored); a suggestion shows
-  « name (postcode) », « … » after the first of several postcodes. Choosing one closes the
-  keyboard and lists its BAN streets in French order, none ticked; streets already in « Mes
-  rues » are ticked, greyed and « déjà importée »; streets in the Corbeille read « dans la
-  Corbeille », unticked and free to tick. « Tout cocher » / « Tout décocher » act on the
-  streets the filter shows (Corbeille ones included); the import takes every ticked street,
-  shown or not. A ticked Corbeille street comes back with its marks, without the
-  network. While importing: « Import en cours… n/N » and no way back. All imported → back
-  to the list with « N rues importées », « N rues restaurées » or « N rues importées,
-  M restaurées »; some failed → the screen stays, says why (no network
-  first) and keeps them ticked so « Importer » tries them again. No network, service error and
-  unknown commune each have a French message, with « Réessayer » for the street list.
-- **Kept** (#78, decided 2026-10-17): « Mes rues » gives way to Accueil (5.3); « Importer des
-  rues » stays as it is for a phone with no secteur open, and becomes the « Liste » tab of
-  « Ajouter des rues » (5.4) while a secteur is open. The start button then reads « Ajouter des
-  rues » and opens that screen.
+  reached the server, a line sits at the bottom of Accueil's panel (5.3): a cloud glyph and
+  « Modifications de 3 rues en attente d'envoi » (« … d'une rue … » for one), read out as
+  such. It goes away once all is sent (§7).
 
 ### 5.1 Bienvenue (first launch only)
 
@@ -397,8 +351,7 @@ an admin, shows only « Rejoindre un secteur », in red), and the bottom of the 
     réseau. Réessayez une fois connecté. », a number taken meanwhile shows as taken. Then,
     the form frozen, a card « Secteur 49 · CS Villefranche est prêt. Montrez ce code à
     l'équipe. », the QR code (Équipe's, larger), « 234-567 » with its copy button (Équipe's)
-    and « Partager » (Équipe's text); « Continuer » (and back) open the start screen on the new secteur, where the
-    phone's streets are offered to it (5.0).
+    and « Partager » (Équipe's text); « Continuer » (and back) open the start screen on the new secteur.
   - **Rejoindre:** « Scanner le QR code » opens the camera full screen (permission asked
     then; refused: « L'appareil photo n'est pas disponible. Saisissez le code à la main. »),
     which closes on the first QR code read; one that is not a code: « Ce QR code n'est pas
@@ -496,9 +449,8 @@ an admin, shows only « Rejoindre un secteur », in red), and the bottom of the 
   centres at zoom 17 and then shows the phone's dot; refused, off or no fix: a message
   (« Réglages » when refused for good). The ⓘ attribution stays visible.
 - Delivered in T3.5 (#30, Home and HomeZoom mockups; `ui/screens/home/`): Accueil is the
-  start screen while a secteur is open (`/`; with none, « Mes rues » of 5.0 as in M1). Under
-  the top bar of 5.0 and its cards (« Administrateur · pas membre », the phone's streets to
-  move), the map fills the screen. **Legend** top left, clear of « Me localiser »: line
+  start screen while a secteur is open (`/`; with none, « Aucun secteur ouvert », 5.0). Under
+  the top bar and its banner (« Administrateur · pas membre »), the map fills the screen. **Legend** top left, clear of « Me localiser »: line
   samples « faite · en partie · à faire · libre » (« libre » dashed, as wide as the others,
   without the map's white casing), or, once the map is at zoom ≥ 16, house
   dots « fait · personne · repasser · à faire »; a tap folds it into a « Légende » chip, a tap
@@ -644,11 +596,15 @@ The street card adapts to the street's state:
   tabs, the chosen one in ink. **Carte** is the map above, opened on the secteur's communes
   (their centres, 2 km around each, `communesArea`), on its streets when no commune has a
   centre (`sectorArea`), on France when neither; works offline. **Liste** is the checklist of
-  « Importer des rues » (5.0) on the secteur's communes: no commune field, a chip per commune
+  the import of streets on the secteur's communes: no commune field, a chip per commune
   when there are several (the first chosen at once), « déjà dans le secteur » on a street the
   secteur has, « Ajouter N rues », « Ajout en cours… n/N », then back with « N rues ajoutées au
-  secteur ». A secteur without commune (created before #78) searches the commune as in
-  5.0. Delivered in #78: the tabs, the map opened on the communes and the list.
+  secteur ». A secteur without commune (created before #78) searches its commune in a field
+  (geo.api.gouv.fr as you type, from two characters, after a 300 ms pause, « name
+  (postcode) »). A street in the Corbeille reads « dans la Corbeille » and comes back with
+  its marks, without the network (« N rues restaurées »); some failed → the tab stays, says
+  why and keeps them ticked. Delivered in #78: the tabs, the map opened on the communes and
+  the list.
 - **Delivered in #31** (`presentation/add_streets/`, `presentation/street_card/`,
   `ui/components/street_card_sheet.dart`): the screen opens on **Carte**. Under the tabs, the
   search pill « Rechercher une rue » (48 dp; the keyboard's search key asks, ✕ empties it) and
@@ -1421,8 +1377,8 @@ admin » for « Nouveau code », « Retirer », « Supprimer » and the campaign
   with its marks; nothing when empty but « La corbeille est vide. ». Works offline, with
   whichever street storage is bound.
 - The 30-day purge (T2.6b) runs by itself, with nothing on screen, when the app starts and
-  each time a secteur is opened, on the streets bound (the secteur's, or the phone's own while
-  none is open): each street deleted more than 30 days ago goes for good, and each number
+  each time a secteur is opened, on the streets of the open secteur (none while none is
+  open): each street deleted more than 30 days ago goes for good, and each number
   removed more than 30 days ago (counted from its own removal, the street deleted or not).
   At 30 days exactly it is still kept. Offline, the phone's copy changes at once and the
   deletes are sent later; the server refuses any that is not past 30 days by its own clock
@@ -1866,7 +1822,8 @@ Address directory rules fixed in T1.5 (`lib/application/ports/address_directory.
   and are tested on fixtures captured from Villefranche-sur-Saône (`test/fixtures/ban/`).
 
 Use cases and phone storage fixed in T1.6 (`lib/application/use_cases/`,
-`lib/domain/street/street_repository.dart`, `lib/infrastructure/local_storage/`):
+`lib/domain/street/street_repository.dart`, `lib/infrastructure/local_storage/`; the phone
+storage of streets was removed in #119, streets only living in a secteur since, §5.0, §6.3):
 
 - **`House.position`** (`GeoPoint?`): where the entrance is, from the BAN; null for a number typed
   by hand or one the BAN gives no position. Every command keeps it (a renumbered house too).
@@ -2165,16 +2122,15 @@ Onboarding fixed in T2.5 (`lib/application/use_cases/choose_start_point.dart`,
   use and once per process; `bindAdapters` asks for the database once, lazily, for every
   Firestore adapter.
 
-Streets on Firestore fixed in T2.8 (`lib/bootstrap/bindings.dart`,
-`lib/application/use_cases/move_streets_into_sector.dart`, `lib/presentation/`):
+Streets on Firestore fixed in T2.8 (`lib/bootstrap/bindings.dart`, `lib/presentation/`):
 
 - **Binding.** `streetRepositoryProvider` follows `currentSectorProvider` (its id and
   campaign only): a `FirestoreStreetRepository` of the open secteur's current campaign,
-  closed (`onDispose`) when another secteur or none is opened; the phone storage
-  (`phoneStreetRepositoryProvider`, one `LocalStreetRepository`) while none is open. Every use
+  closed (`onDispose`) when another secteur or none is opened; while none is open, a
+  stand-in with no street whose writes fail (#119: streets only live in a secteur). Every use
   case watches it, so it is built again with the new storage. A Riverpod 3 notifier is
   **kept** when it builds again (only its `ref` is new): notifiers reset what they read in
-  `build` (`FollowsStreet`, « Mes rues »), the kept undo change remembers the `ref` it was
+  `build` (`FollowsStreet`, Accueil), the kept undo change remembers the `ref` it was
   made under and is dropped once that `ref` is no longer `mounted`, and the Corbeille waits
   while its stream reloads (`isLoading`) rather than showing the old secteur's items. A
   stream that fails (the member may no longer read the secteur) shows no street, or the
@@ -2185,22 +2141,9 @@ Streets on Firestore fixed in T2.8 (`lib/bootstrap/bindings.dart`,
   secteur is open, a stand-in that always says 0. `ObservePendingSync` hands the count to
   `PendingSyncNotifier` (`AllSent` / `ChangesWaiting(streets)`; a failed stream shows
   nothing).
-- **`Street.restampedBy(member)`** (also on `House`, `Building`, `Dwelling`, `RemovedHouse`,
-  `ChangeStamp`): every stamp — each house's and door's last change, each removed number's
-  removal, the street's deletion — made by `member` at the time it had; nothing else
-  changes.
-- **Port `MovedStreetsLog`** (application): `wereMovedInto(sector)`, `rememberMovedInto`.
-  Use cases `CountStreetsToMove(sector)` (0 when they went there, when the member is not an
-  active member of the secteur as `SectorRepository.find` gives it, or the phone holds none
-  out of its Corbeille) and `MoveStreetsIntoSector(sector, onProgress)`: each phone street
-  out of the Corbeille, unless the secteur has its id or its BAN id (Corbeille included), is
-  `add`ed restamped by `IdentityProvider.currentMember`; then the secteur is remembered;
-  returns `StreetsMoved(moved, alreadyThere)`. Started again after an interruption, it skips
-  what already went. `MoveStreetsNotifier` (`NoStreetsToMove` | `StreetsToMove(count)` |
-  `MovingStreets(done, total)`; « Plus tard » in `postponedMovesProvider`, in memory).
 - **Size.** One `set` per street with its first houses, then the others 2 per update (#70,
   8.2 « Houses written in bulk »): a street of 300 numbers is ≈ 150 writes. Each house is
-  checked by the rules, its stamps the caller's (hence the restamping); the doors of a
+  checked by the rules, its stamps the caller's; the doors of a
   building are only counted. The 1 MB document limit is far off (a street of 1 500 numbers
   and a 500-door building ≈ 300 kB).
 
@@ -2281,8 +2224,7 @@ Street picking fixed in T3.3 (`lib/domain/street/street.dart`, `lib/application/
   take them (none by default). `take(member)` → `StreetTaken` (refused `alreadyAssigned`),
   `release(member)` → `StreetReleased` (refused `notAssigned`), `AssignmentFailure`; the other
   assignees stay, nothing else changes. Undo releases a take and takes a release back (`gone`
-  when it was undone by hand meanwhile). `restampedBy(member)` makes a covered street
-  covered by `member` alone (the phone's own id of M1 is no member of the secteur).
+  when it was undone by hand meanwhile).
 - **Ex-members are ignored** (#91, `lib/domain/sector/team_roster.dart`): someone removed
   (« Retirer ») or gone (« Quitter le secteur ») stays in `assignees` in Firestore (the rules
   let a member add or remove only themself, 8.2), but no longer covers the street.
@@ -2638,31 +2580,19 @@ can never drift.
 
 ### 6.3 Local-only state
 
-- **M1 phone storage** (the streets while no secteur is open; Firestore's cache holds a
-  secteur's, T2.8):
-  `infrastructure/local_storage/`, in the app support folder (private, kept across updates).
-  One JSON file per street, `streets/<id>.json` (a commune of ≈ 300 streets / 6 000 numbers would
-  make one file of a few MB rewritten at every tap; a street's file is a few kB to ≈ 100 kB).
-  Schema `version: 3` (T1.20: no `note`; T1.16: status `comeBack`, its time in `comeBack` only
-  then — the same text as in Firestore since #81, "" / "2026-10-24" / "2026-10-24T18"; T3.3 added `shape`, the encoded lines, and `assignees`, member ids, without a new
-  version: a file without them reads as no shape, nobody; #80 added `tries` on houses and doors
-  the same way, written from the first try, absent = 0; #114 added `calendars` the same way,
-  written only while done, absent = 1 on a ✓ and 0 otherwise), written and read by pure mappers (`mappers/street_json_mapper.dart`). Version 1 files
-  (« repasser » as a flag) are still read: a house or door to do or nobody home with a
-  `comeBack` becomes « repasser ». Every file written before #81 may hold a free hint in
-  `comeBack` (« après 19h »): it reads as « repasser » with no time set (no new version: the
-  text goes the next time the street is written). Version 1 and 2 files held a
-  free `note` on houses, doors and buildings: reading drops it (every other mark kept), and
-  **a file of an older version is written again in version 3 as soon as it is read** (not at
-  the next change), so no note stays on the phone. Mappers go
-  through the domain's checks (`Street.create`, `Building.create`, `ComeBack.create`…); statuses and
-  label styles under fixed names, times as ISO 8601 UTC. Every file is read once into memory,
-  which answers all reads and is updated at once on a write (listeners told), then the file is
-  written to `<id>.json.tmp` and renamed over the old one (a kill mid-write leaves the old
-  street), writes queued one after the other. An unreadable file (newer version, damaged) is
-  skipped and left on the disk. The phone's own member id is kept in `member_id` (from M2 it
-  only stands in until the first Firebase sign-in, §6.1). No network, ever: works
-  after an offline cold start.
+- **The phone storage folder** (`infrastructure/local_storage/`, the app support folder:
+  private, kept across updates) holds the small files below. Every file is written to
+  `<name>.tmp` and renamed over the old one (a kill mid-write leaves the old file), writes
+  queued one after the other; an unreadable file means none / defaults. No network, ever:
+  works after an offline cold start. The phone's own member id is kept in `member_id` (it
+  only stands in until the first Firebase sign-in, §6.1). A secteur's streets are in
+  Firestore's cache, not here.
+- **Retired** (#119): the streets of a phone with no secteur open (M1 to 0.10.0, one JSON
+  file per street in `streets/`) and `moved_streets.json` (the secteurs they were moved
+  into) are no longer read; `deleteRetiredFiles` deletes them at start-up, before anything
+  else is read (a file the system refuses to delete is left for the next start). Their JSON
+  form (`mappers/street_json_mapper.dart`, schema `version: 3`, still reading versions 1
+  and 2) stays as the form of the unfinished streets below.
 - `street_view.json` in the same folder (port `StreetViewPreferences`, T1.7): « Masquer faits »
   per street, `{ version: 1, hideDone: [streetId…] }`, read once at start-up; an unreadable file
   means nothing hidden.
@@ -2674,9 +2604,6 @@ can never drift.
   null, theme: "system" | "light" | "dark" }`. Same writing as the streets (`.tmp` then
   rename, queued); an unreadable file means none / defaults and is left until the next save.
   Files of the storage folder rather than `shared_preferences`: no plugin, plain Dart tests.
-- `moved_streets.json` (port `MovedStreetsLog`, T2.8): the secteurs the phone's streets went
-  into, `{ version: 1, movedInto: [sectorId…] }`, read once at start-up; an unreadable file
-  means none (moving again skips what is already there).
 - `tournee_downloads.json` (port `SectorDownloads`, #32): the secteurs downloaded on this
   phone, `{ version: 1, downloads: [{ tournee, at, mapBytes, area: [south, west, north, east]
   | null }] }` (sorted by secteur; `at` ISO 8601 UTC; `area` the bounds of the map kept, null
@@ -2686,7 +2613,7 @@ can never drift.
   downloaded again).
 - `unfinished_streets/<sector>/<year>/<streetId>.json` (port `UnfinishedStreets` of the
   Firestore adapter, #104): each new street of more houses than one write holds, whole, in
-  the form of the phone's own streets, from just before its first write until all its
+  the JSON form of `street_json_mapper.dart`, from just before its first write until all its
   writes are in Firestore's hands (a second or two); read when the secteur's streets are
   first listened to, to finish a street cut off by a kill (§8.2 « Killed in the middle »).
   Ids percent-encoded; same writing as the streets; an unreadable file is skipped.
@@ -2731,8 +2658,8 @@ versions.
   rue … » for one) comes from the snapshot metadata `hasPendingWrites` (port `PendingSync`,
   T2.3): it counts the **streets** with writes waiting, since Firestore tells it per document,
   and words it so (not « 3 modifications »). The Firestore street adapter of the open secteur
-  is the `PendingSync` too (one listener for both); with no secteur open the phone's streets
-  are never sent, so nothing is pending. Shown only while the count is above 0.
+  is the `PendingSync` too (one listener for both); with no secteur open there is no street,
+  so nothing is pending. Shown only while the count is above 0.
 - **Automatic download** (`DownloadSector`, run by `OfflineAutoDownload`, #32): the open
   secteur (not a pending request) is downloaded when it is opened (start-up, created, joined,
   switched to) and not downloaded yet, and again when its streets reach beyond the area kept
@@ -2990,8 +2917,7 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
     0–99999 and suffix, under its own label, position in range or both null, status among
     the four, a `comeBack` time only on « repasser » (no free hint), tries 1–99 or none,
     label style among the three for a building; marked (`by` / `at`) and in the Corbeille
-    (`deletedBy` / `deletedAt`) only **by the caller** (a street moved from the phone is
-    restamped with the caller's uid, `Street.restampedBy`), or not at all, and then it is to
+    (`deletedBy` / `deletedAt`) only **by the caller**, or not at all, and then it is to
     do, without tries, not a building. So a number added may now come marked by the caller,
     which is harmless: the caller could mark it in the next write.
   - **Only counted**: the doors and layout rows of a building (doors ≤ 500, layout rows
@@ -3080,7 +3006,7 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
 | Map tiles + style | `https://tiles.openfreemap.org/styles/liberty` (or `positron`) | OSM vector tiles for MapLibre. Offline download through `maplibre_gl` offline regions; check OpenFreeMap's terms on bulk download in the spike task |
 | Street under a tap | `https://data.geopf.fr/geocodage/reverse?lon={lon}&lat={lat}&index=address&type=street&limit=1` | Returns BAN `id` = idVoie (`69264_1460`), `name`, `citycode`, `city`, one point of the street; always the nearest street, whatever the distance |
 | Street search by name | `https://data.geopf.fr/geocodage/search?q={q}&index=address&type=street&citycode={code}&limit=10` | For the search box; `q` 3–200 characters starting with a letter or digit, else HTTP 400 |
-| Commune by name | `https://geo.api.gouv.fr/communes?nom={q}&fields=nom,code,codesPostaux,centre&boost=population&limit=5` | Import screen (5.0), the communes of a secteur (5.2, 5.8): `nom`, `code` (INSEE), `codesPostaux`, `centre` (GeoJSON point); `[]` when nothing matches |
+| Commune by name | `https://geo.api.gouv.fr/communes?nom={q}&fields=nom,code,codesPostaux,centre&boost=population&limit=5` | « Liste » of « Ajouter des rues » (5.4), the communes of a secteur (5.2, 5.8): `nom`, `code` (INSEE), `codesPostaux`, `centre` (GeoJSON point); `[]` when nothing matches |
 | Streets of a commune | `https://plateforme.adresse.data.gouv.fr/lookup/{inseeCode}` | `voies[]`: `idVoie`, `nomVoie`, `nbNumeros`, `type`; 404 for an unknown commune |
 | Numbers of a street | `https://plateforme.adresse.data.gouv.fr/lookup/{idVoie}` | `numeros[]`: `numero`, `suffixe`, `position.coordinates` [lon, lat]; a number may appear twice; 404 for an unknown street |
 | Shape of a street | OpenFreeMap TileJSON `https://tiles.openfreemap.org/planet` (its `tiles` template, versioned weekly: `…/planet/20261011_080001_pt/{z}/{x}/{y}.pbf`), then the z14 vector tiles around the street's houses, layer `transportation_name`, property `name` (§6.1, #92) | Same data as the map. A tile ≈ 50–250 kB, ≈ 0.1 s; max zoom 14. Lines clipped per tile with a buffer: cut and joined by the app. Fallback when empty: no shape, house dots only. Replaced Overpass (#92: 41 s then 502 on 2026-10-18) |

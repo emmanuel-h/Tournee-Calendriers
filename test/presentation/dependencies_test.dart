@@ -16,7 +16,6 @@ import 'package:tournee_calendriers/application/use_cases/find_imported_streets.
 import 'package:tournee_calendriers/application/use_cases/import_reference_area.dart';
 import 'package:tournee_calendriers/application/use_cases/look_up_street.dart';
 import 'package:tournee_calendriers/application/use_cases/mark.dart';
-import 'package:tournee_calendriers/application/use_cases/move_streets_into_sector.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/sector/member.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
@@ -55,7 +54,6 @@ import '../support/fakes/fake_address_directory.dart';
 import '../support/fakes/fake_admin_status.dart';
 import '../support/fakes/fake_commune_search.dart';
 import '../support/fakes/fake_member_account.dart';
-import '../support/fakes/fake_moved_streets_log.dart';
 import '../support/fakes/fake_my_sectors_store.dart';
 import '../support/fakes/fake_offline_map_store.dart';
 import '../support/fakes/fake_open_round_store.dart';
@@ -78,8 +76,6 @@ import '../support/street_fixtures.dart';
 
 void main() {
   late FakeStreetRepository streets;
-  late FakeStreetRepository phoneStreets;
-  late FakeMovedStreetsLog movedStreets;
   late FakeAddressDirectory directory;
   late FakeStreetShapes shapes;
   late FakeCommuneSearch communes;
@@ -99,8 +95,6 @@ void main() {
   /// [member].
   List<Override> overridesAs(MemberId member) => [
     streetRepositoryProvider.overrideWithValue(streets),
-    phoneStreetRepositoryProvider.overrideWithValue(phoneStreets),
-    movedStreetsLogProvider.overrideWithValue(movedStreets),
     pendingSyncProvider.overrideWithValue(pending),
     serverConnectionProvider.overrideWithValue(
       FakeServerConnection(offline: true),
@@ -133,18 +127,6 @@ void main() {
 
   setUp(() {
     streets = repositoryWithLilas();
-    // Rue Pierre Morin, kept on the phone since M1.
-    phoneStreets = FakeStreetRepository([
-      valueOf(
-        Street.create(
-          id: StreetId('morin'),
-          name: 'Rue Pierre Morin',
-          commune: villefranche,
-          banId: BanStreetId('69264_1460'),
-        ),
-      ),
-    ]);
-    movedStreets = FakeMovedStreetsLog();
     directory = FakeAddressDirectory(
       communes: {
         '69264': Ok(
@@ -199,8 +181,6 @@ void main() {
       'PhoneSettings': phoneSettingsProvider,
       'SectorDirectory': sectorDirectoryProvider,
       'SectorRepository': sectorRepositoryProvider,
-      'phone StreetRepository': phoneStreetRepositoryProvider,
-      'MovedStreetsLog': movedStreetsLogProvider,
       'PendingSync': pendingSyncProvider,
       'Random': randomProvider,
       'AdminStatus': adminStatusProvider,
@@ -767,43 +747,13 @@ void main() {
       },
     );
 
-    test(
-      'should count the phone streets for the bound tournées and member',
-      () async {
-        // Léa of the team (`uid-lea`): an active member of the 49.
-        final leasPhone = ProviderContainer(overrides: overridesAs(leaId));
-        addTearDown(leasPhone.dispose);
-
-        expect(await leasPhone.read(countStreetsToMoveProvider)(sectorId), 1);
-      },
-    );
-
-    test(
-      'should move the phone streets into the bound repository and log',
-      () async {
-        final moved = await container.read(moveStreetsIntoSectorProvider)(
-          sectorId,
-        );
-
-        expect(moved, const StreetsMoved(moved: 1, alreadyThere: 0));
-        expect(
-          streets[StreetId('morin')]?.name,
-          streetName('Rue Pierre Morin'),
-        );
-        expect(movedStreets.remembered, [sectorId]);
-      },
-    );
-
-    test(
-      'should choose where to start from the bound store and phone streets',
-      () async {
-        // The phone holds Rue Pierre Morin: the start screen.
-        expect(
-          await container.read(chooseStartPointProvider)(),
-          const StartOnStreets(),
-        );
-      },
-    );
+    test('should choose where to start from the bound store', () async {
+      // No secteur open, the request to the 7 waits: its waiting screen.
+      expect(
+        await container.read(chooseStartPointProvider)(),
+        StartOnRequest(sector7),
+      );
+    });
 
     test('should list the centres of the bound directory', () async {
       sectorDirectory.centres = [csVillefranche];

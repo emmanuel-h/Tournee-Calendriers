@@ -92,7 +92,7 @@ abstract final class AppSizes {
   static const fieldRadius = 12.0;
   static const fieldPadding = 14.0;
 
-  /// A street of the start list (name over its progress bar).
+  /// A street of Accueil's panel (name over its progress bar).
   static const streetRowHeight = 64.0;
 
   /// A street of the import checklist.
@@ -218,11 +218,6 @@ abstract final class AppSizes {
 
   /// A join request's card in Équipe.
   static const requestCardRadius = 16.0;
-
-  /// The card of the start screen offering the phone's streets to the
-  /// open tournée (« Les ajouter au secteur »): drawn like a request's
-  /// card.
-  static const moveStreetsCardRadius = requestCardRadius;
 
   /// The banner « Administrateur · pas membre » on Accueil (HomeAdmin
   /// mockup): 14 radius, a 22 dp shield, a 40 dp-high « Rejoindre » pill

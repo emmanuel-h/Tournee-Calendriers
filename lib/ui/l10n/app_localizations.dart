@@ -1276,37 +1276,25 @@ abstract class AppLocalizations {
   /// **'Nom limité à {max} caractères.'**
   String doorLabelTooLong(int max);
 
-  /// Header of the street list of the temporary start screen (PLAN §5.0), with the number of streets.
-  ///
-  /// In fr, this message translates to:
-  /// **'Mes rues · {count}'**
-  String startStreetsHeader(int count);
-
   /// Placeholder and screen-reader name of the field that filters a list of streets by name.
   ///
   /// In fr, this message translates to:
   /// **'Filtrer les rues…'**
   String get filterStreetsHint;
 
-  /// Button of the start screen that opens the import screen, and title of that screen (PLAN §5.0).
+  /// Title of the panel of Accueil with no secteur open (PLAN §5.0, NoSector mockup).
   ///
   /// In fr, this message translates to:
-  /// **'Importer des rues'**
-  String get importStreetsAction;
+  /// **'Aucun secteur ouvert'**
+  String get noSectorTitle;
 
-  /// Start screen, first launch: no street imported yet.
+  /// Accueil with no secteur open, under « Aucun secteur ouvert »: what to do (PLAN §5.0).
   ///
   /// In fr, this message translates to:
-  /// **'Aucune rue pour l\'instant'**
-  String get startEmptyTitle;
+  /// **'Rejoignez le secteur de votre équipe avec le code qu\'on vous a donné.'**
+  String get noSectorBody;
 
-  /// Start screen, first launch: what to do.
-  ///
-  /// In fr, this message translates to:
-  /// **'Importez les rues d\'une commune pour commencer.'**
-  String get startEmptyBody;
-
-  /// Line above « Importer des rues » while changes made on this phone wait to be sent (PLAN §5.3, §7), after a cloud glyph. Firestore tells only which streets have writes waiting, so it counts streets, not changes. Never shown for 0.
+  /// Line at the bottom of Accueil's panel while changes made on this phone wait to be sent (PLAN §5.3, §7), after a cloud glyph. Firestore tells only which streets have writes waiting, so it counts streets, not changes. Never shown for 0.
   ///
   /// In fr, this message translates to:
   /// **'{count, plural, =1{Modifications d\'une rue en attente d\'envoi} other{Modifications de {count} rues en attente d\'envoi}}'**
@@ -1432,53 +1420,17 @@ abstract class AppLocalizations {
   /// **'{count} n°'**
   String streetNumberCount(int count);
 
-  /// A street of the import checklist that is already on the phone.
-  ///
-  /// In fr, this message translates to:
-  /// **'déjà importée'**
-  String get alreadyImported;
-
   /// A street of the import checklist imported before and now in the Corbeille: ticking it brings it back with its marks.
   ///
   /// In fr, this message translates to:
   /// **'dans la Corbeille'**
   String get inCorbeille;
 
-  /// Import button with the number of ticked streets.
-  ///
-  /// In fr, this message translates to:
-  /// **'{count, plural, =0{Importer} =1{Importer 1 rue} other{Importer {count} rues}}'**
-  String importButton(int count);
-
-  /// Shown while the ticked streets are imported.
-  ///
-  /// In fr, this message translates to:
-  /// **'Import en cours… {done}/{total}'**
-  String importProgress(int done, int total);
-
-  /// Message on the start screen after a complete import.
-  ///
-  /// In fr, this message translates to:
-  /// **'{count, plural, =0{Aucune nouvelle rue} =1{1 rue importée} other{{count} rues importées}}'**
-  String importDone(int count);
-
   /// Message on the start screen after an import that only brought streets back from the Corbeille.
   ///
   /// In fr, this message translates to:
   /// **'{count, plural, =1{1 rue restaurée} other{{count} rues restaurées}}'**
   String importRestored(int count);
-
-  /// Message on the start screen after an import that downloaded streets and brought others back from the Corbeille.
-  ///
-  /// In fr, this message translates to:
-  /// **'{imported, plural, =1{1 rue importée} other{{imported} rues importées}}, {restored, plural, =1{1 restaurée} other{{restored} restaurées}}'**
-  String importDoneAndRestored(int imported, int restored);
-
-  /// After an import where some streets failed; reason is one of the address* messages.
-  ///
-  /// In fr, this message translates to:
-  /// **'{imported, plural, =0{Aucune rue importée} =1{1 rue importée} other{{imported} rues importées}}, {failed, plural, =1{1 en échec} other{{failed} en échec}}. {reason} Les rues encore cochées restent à importer.'**
-  String importPartial(int imported, int failed, String reason);
 
   /// Title of the debug-only component gallery, and of the button opening it.
   ///
@@ -2385,42 +2337,6 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Restaurer {item}'**
   String corbeilleRestoreSemantics(String item);
-
-  /// Card of the start screen, with a sector open, while the phone still holds streets from before the sector (PLAN §5.0).
-  ///
-  /// In fr, this message translates to:
-  /// **'{count, plural, =1{1 rue est enregistrée sur ce téléphone.} other{{count} rues sont enregistrées sur ce téléphone.}}'**
-  String moveStreetsCount(int count);
-
-  /// Primary button of the card: moves the phone's streets into the open sector.
-  ///
-  /// In fr, this message translates to:
-  /// **'{count, plural, =1{L\'ajouter au secteur} other{Les ajouter au secteur}}'**
-  String moveStreetsAction(int count);
-
-  /// Text button of the card: hides it until the next launch.
-  ///
-  /// In fr, this message translates to:
-  /// **'Plus tard'**
-  String get moveStreetsLater;
-
-  /// In the card while the phone's streets go into the sector.
-  ///
-  /// In fr, this message translates to:
-  /// **'Ajout en cours… {done}/{total}'**
-  String moveStreetsProgress(int done, int total);
-
-  /// Message once every street of the phone went into the sector.
-  ///
-  /// In fr, this message translates to:
-  /// **'{count, plural, =1{1 rue ajoutée au secteur} other{{count} rues ajoutées au secteur}}'**
-  String moveStreetsDone(int count);
-
-  /// Message once the phone's streets went into the sector, some of them skipped because the sector already had them.
-  ///
-  /// In fr, this message translates to:
-  /// **'{moved, plural, =0{Aucune rue ajoutée} =1{1 rue ajoutée} other{{moved} rues ajoutées}}, {already, plural, =1{1 déjà dans le secteur} other{{already} déjà dans le secteur}}'**
-  String moveStreetsDoneSome(int moved, int already);
 
   /// Line under the app's name on « Bienvenue » (PLAN §5.1, Welcome mockup).
   ///

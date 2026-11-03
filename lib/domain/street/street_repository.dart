@@ -2,8 +2,8 @@ import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 
-/// Where the streets are kept: in Firestore for the open tournée, on the
-/// phone while none is open (PLAN §6.1, §6.2, §6.3). A repository port: the domain owns
+/// Where the streets are kept: in Firestore, those of the open secteur
+/// (PLAN §6.1, §6.2); none while no secteur is open. A repository port: the domain owns
 /// this interface, an adapter in `infrastructure/` implements it, and tests
 /// use an in-memory fake.
 ///

@@ -7,12 +7,9 @@ import 'package:tournee_calendriers/domain/street/street_id.dart';
 /// Sheets (Fiche maison, Immeuble, Mes tournées, Ajouter des numéros…) are
 /// not routes: they open over the screen that owns them.
 abstract final class AppRoutes {
-  /// Where the app starts: Accueil (§5.3) while a tournée is open, the
-  /// phone's own « Mes rues » (§5.0) otherwise.
+  /// Where the app starts: Accueil (§5.3) while a secteur is open,
+  /// « Aucun secteur ouvert » (§5.0) otherwise.
   static const home = '/';
-
-  /// « Importer des rues », with no tournée open (§5.0).
-  static const importStreets = '/importer-des-rues';
 
   /// « Ajouter des rues », « Carte | Liste », while a tournée is open
   /// (§5.4).

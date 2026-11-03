@@ -140,8 +140,7 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState>
 
   /// Follows the open tournée's team (`ObserveTeam`, from the phone's copy
   /// offline), which names who made the last change. Nothing to follow
-  /// while no tournée is open: the phone's own streets name nobody but
-  /// the member on the phone.
+  /// while no secteur is open: there is no street then.
   void _followTeam() {
     // Riverpod keeps the notifier when it builds again (another tournée
     // opened): the old team must not name anyone.

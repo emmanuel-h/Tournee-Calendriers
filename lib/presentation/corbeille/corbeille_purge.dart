@@ -3,7 +3,7 @@ import 'package:tournee_calendriers/application/use_cases/purge_corbeille.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 
 /// The 30-day purge of the Corbeille (PLAN §5.11), run on the streets bound
-/// now: the open tournée's, or the phone's own while none is open.
+/// now: the open secteur's (none while no secteur is open).
 ///
 /// A `FutureProvider` runs its function once and keeps the result. It
 /// `ref.watch`es the use case, which watches the street storage: when

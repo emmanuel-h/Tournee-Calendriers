@@ -8,14 +8,12 @@ import 'package:tournee_calendriers/presentation/join/join_request_notifier.dart
 import 'package:tournee_calendriers/presentation/join/join_request_state.dart';
 import 'package:tournee_calendriers/presentation/launch/launch_place.dart';
 
-import '../../application/use_cases/street_fixtures.dart';
 import '../../domain/sector/my_sectors_fixtures.dart';
 import '../../domain/sector/sector_fixtures.dart' show julieId;
 import '../../support/fakes/fake_member_account.dart';
 import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_sector_directory.dart';
 import '../../support/fakes/fake_sector_repository.dart';
-import '../../support/fakes/fake_street_repository.dart';
 import '../../support/results.dart';
 
 /// Lets every pending future run.
@@ -38,7 +36,6 @@ void main() {
   late FakeSectorDirectory directory;
   late FakeMemberAccount account;
   late FakeMySectorsStore store;
-  late FakeStreetRepository phoneStreets;
   late ProviderContainer container;
 
   /// Opens « Demande envoyée » for the 49 on a phone holding [mine].
@@ -51,7 +48,6 @@ void main() {
         mySectorsStoreProvider.overrideWithValue(store),
         // « Mes secteurs » follows the teams of the tournées not open.
         sectorRepositoryProvider.overrideWithValue(FakeSectorRepository()),
-        phoneStreetRepositoryProvider.overrideWithValue(phoneStreets),
       ],
     );
     addTearDown(container.dispose);
@@ -66,7 +62,6 @@ void main() {
   setUp(() {
     directory = FakeSectorDirectory();
     account = FakeMemberAccount(signedInMember: julieId);
-    phoneStreets = FakeStreetRepository();
   });
 
   group('while the request waits', () {
@@ -76,17 +71,6 @@ void main() {
       expect(state(), waiting49);
       expect(directory.watched, [(t49, julieId)]);
     });
-
-    test(
-      'should offer a way back when the phone holds streets of its own',
-      () async {
-        phoneStreets = FakeStreetRepository([lilas]);
-
-        await open(MySectors.none.remember(request49));
-
-        expect(state(), waiting49.withCanLeave(true));
-      },
-    );
 
     test('should offer a way back when a tournée is open', () async {
       await open(
@@ -183,21 +167,18 @@ void main() {
       expect(store.mySectors, MySectors.none);
     });
 
-    test(
-      'should go back to the start screen when the phone holds streets',
-      () async {
-        phoneStreets = FakeStreetRepository([lilas]);
-        await open(MySectors.none.remember(request49));
+    test('should go back to the start screen when the phone knows another '
+        'secteur', () async {
+      await open(MySectors.none.remember(sector12).remember(request49));
 
-        directory.answer(t49, null);
-        await _settle();
+      directory.answer(t49, null);
+      await _settle();
 
-        expect(
-          state(),
-          const RequestClosed(refused: true, next: LaunchOnStreets()),
-        );
-      },
-    );
+      expect(
+        state(),
+        const RequestClosed(refused: true, next: LaunchOnStreets()),
+      );
+    });
 
     test('should go on to another request still waiting', () async {
       await open(MySectors.none.remember(sector7).remember(request49));

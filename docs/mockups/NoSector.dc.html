@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Accueil, sans secteur ouvert</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B3261E}a:hover{color:#8C1D18}
+.ib{width:48px;height:48px;border:0;background:transparent;color:#1B1F24;border-radius:24px;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;text-decoration:none;flex-shrink:0}
+.ib svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.row{display:flex;align-items:center;gap:12px;min-height:56px;text-decoration:none;color:#1B1F24;border-bottom:1px solid #E2DED5}
+.row:hover{color:#1B1F24}
+.lg{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;white-space:nowrap}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F3F1EC; color: #1B1F24; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; display: flex; flex-direction: column; position: relative; overflow: hidden">
+  <div style="display: flex; align-items: center; gap: 4px; padding: 8px 8px 4px 20px; background: #F3F1EC; position: relative; z-index: 2">
+    <a href="Switcher.dc.html" aria-label="Tournée des calendriers. Mes secteurs" style="flex: 1; display: flex; align-items: center; gap: 4px; text-decoration: none; color: #1B1F24; min-height: 48px"><h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 30px; line-height: 1.05">Tournée des calendriers</h1><svg viewBox="0 0 24 24" style="width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round"><path d="M6 9l6 6 6-6"/></svg></a>
+    <a class="ib" href="Settings.dc.html" aria-label="Paramètres"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.9 4.9l2.1 2.1M17 17l2.1 2.1M2 12h3M19 12h3M4.9 19.1L7 17M17 7l2.1-2.1"/></svg></a>
+  </div>
+  <div style="position: relative; flex: 1; min-height: 0">
+    <svg viewBox="0 0 390 520" style="position: absolute; inset: 0; width: 390px; height: 520px" role="img" aria-label="Carte, aucun secteur ouvert">
+      <rect width="390" height="520" fill="#F2EFE9"/>
+      <rect x="0" y="0" width="80" height="108" fill="#E4DFD5"/><rect x="100" y="0" width="140" height="108" fill="#E4DFD5"/><rect x="262" y="0" width="128" height="108" fill="#E4DFD5"/>
+      <rect x="0" y="134" width="80" height="114" fill="#E4DFD5"/><rect x="100" y="134" width="140" height="114" fill="#DCE8CF"/><rect x="262" y="134" width="128" height="114" fill="#E4DFD5"/>
+      <rect x="0" y="274" width="240" height="94" fill="#E4DFD5"/><rect x="262" y="274" width="46" height="94" fill="#E4DFD5"/><rect x="332" y="274" width="58" height="94" fill="#E4DFD5"/>
+      <rect x="0" y="394" width="240" height="126" fill="#E4DFD5"/><rect x="262" y="394" width="128" height="126" fill="#E4DFD5"/>
+      <path d="M0 470 C120 440 250 500 390 455" stroke="#CFE0EE" stroke-width="16" fill="none"/>
+      <g stroke="#FFFFFF" stroke-width="14" fill="none" stroke-linecap="round">
+        <path d="M0 121H390"/><path d="M0 261H390"/><path d="M0 381H390"/>
+        <path d="M90 0V520"/><path d="M251 0V520"/><path d="M320 261V381"/>
+      </g>
+      <g font-family="Atkinson Hyperlegible, sans-serif" font-size="12" font-weight="700" fill="#1B1F24">
+        <text x="110" y="110">Rue des Lilas</text>
+        <text x="110" y="250">Rue Pasteur</text>
+        <text x="110" y="370">Rue Carnot</text>
+        <text x="96" y="200" transform="rotate(-90 96 200)">Allée des Pins</text>
+        <text x="245" y="60" transform="rotate(90 245 60)">Rue Gambetta</text>
+      </g>
+    </svg>
+    <div style="position: absolute; right: 12px; top: 12px; display: flex; flex-direction: column; gap: 8px">
+      <button aria-label="Me localiser" style="width: 48px; height: 48px; border-radius: 24px; border: 1px solid #E2DED5; background: #FFFFFF; display: flex; align-items: center; justify-content: center; color: #1B1F24; cursor: pointer"><svg viewBox="0 0 24 24" style="width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round"><circle cx="12" cy="12" r="4"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg></button>
+    </div>
+  </div>
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; background: #FFFFFF; border-radius: 24px 24px 0 0; box-shadow: 0 -4px 20px rgba(27, 31, 36, 0.12); padding: 10px 16px 28px 16px; box-sizing: border-box; display: flex; flex-direction: column; gap: 12px; z-index: 3">
+    <div style="width: 40px; height: 4px; border-radius: 2px; background: #CFC9BD; align-self: center"></div>
+    <span style="font: 700 24px 'Barlow Condensed', sans-serif">Aucun secteur ouvert</span>
+    <span style="font-size: 17px; line-height: 1.4; color: #4A5058">Rejoignez le secteur de votre équipe avec le code qu'on vous a donné.</span>
+    <a href="Join.dc.html" style="margin-top: 8px; height: 56px; border-radius: 28px; background: #B3261E; color: #FFFFFF; font-weight: 700; font-size: 17px; display: flex; align-items: center; justify-content: center; text-decoration: none">Rejoindre un secteur</a>
+    <!-- Only for an admin (§5.12), as on Bienvenue -->
+    <a href="Create.dc.html" style="height: 56px; border-radius: 28px; border: 1.5px solid #CFC9BD; background: #FFFFFF; color: #1B1F24; font-weight: 700; font-size: 17px; display: flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box">Créer un secteur</a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

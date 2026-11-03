@@ -72,8 +72,4 @@ void main() {
 
     expect(street.shape, _shape);
   });
-
-  test('should keep the shape when the street is restamped', () {
-    expect(_street.restampedBy(paul).shape, _shape);
-  });
 }

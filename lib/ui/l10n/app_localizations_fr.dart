@@ -862,22 +862,14 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String startStreetsHeader(int count) {
-    return 'Mes rues · $count';
-  }
-
-  @override
   String get filterStreetsHint => 'Filtrer les rues…';
 
   @override
-  String get importStreetsAction => 'Importer des rues';
+  String get noSectorTitle => 'Aucun secteur ouvert';
 
   @override
-  String get startEmptyTitle => 'Aucune rue pour l\'instant';
-
-  @override
-  String get startEmptyBody =>
-      'Importez les rues d\'une commune pour commencer.';
+  String get noSectorBody =>
+      'Rejoignez le secteur de votre équipe avec le code qu\'on vous a donné.';
 
   @override
   String pendingSyncLine(int count) {
@@ -985,39 +977,7 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get alreadyImported => 'déjà importée';
-
-  @override
   String get inCorbeille => 'dans la Corbeille';
-
-  @override
-  String importButton(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'Importer $count rues',
-      one: 'Importer 1 rue',
-      zero: 'Importer',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String importProgress(int done, int total) {
-    return 'Import en cours… $done/$total';
-  }
-
-  @override
-  String importDone(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count rues importées',
-      one: '1 rue importée',
-      zero: 'Aucune nouvelle rue',
-    );
-    return '$_temp0';
-  }
 
   @override
   String importRestored(int count) {
@@ -1028,41 +988,6 @@ class AppLocalizationsFr extends AppLocalizations {
       one: '1 rue restaurée',
     );
     return '$_temp0';
-  }
-
-  @override
-  String importDoneAndRestored(int imported, int restored) {
-    String _temp0 = intl.Intl.pluralLogic(
-      imported,
-      locale: localeName,
-      other: '$imported rues importées',
-      one: '1 rue importée',
-    );
-    String _temp1 = intl.Intl.pluralLogic(
-      restored,
-      locale: localeName,
-      other: '$restored restaurées',
-      one: '1 restaurée',
-    );
-    return '$_temp0, $_temp1';
-  }
-
-  @override
-  String importPartial(int imported, int failed, String reason) {
-    String _temp0 = intl.Intl.pluralLogic(
-      imported,
-      locale: localeName,
-      other: '$imported rues importées',
-      one: '1 rue importée',
-      zero: 'Aucune rue importée',
-    );
-    String _temp1 = intl.Intl.pluralLogic(
-      failed,
-      locale: localeName,
-      other: '$failed en échec',
-      one: '1 en échec',
-    );
-    return '$_temp0, $_temp1. $reason Les rues encore cochées restent à importer.';
   }
 
   @override
@@ -1700,65 +1625,6 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String corbeilleRestoreSemantics(String item) {
     return 'Restaurer $item';
-  }
-
-  @override
-  String moveStreetsCount(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count rues sont enregistrées sur ce téléphone.',
-      one: '1 rue est enregistrée sur ce téléphone.',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String moveStreetsAction(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'Les ajouter au secteur',
-      one: 'L\'ajouter au secteur',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get moveStreetsLater => 'Plus tard';
-
-  @override
-  String moveStreetsProgress(int done, int total) {
-    return 'Ajout en cours… $done/$total';
-  }
-
-  @override
-  String moveStreetsDone(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count rues ajoutées au secteur',
-      one: '1 rue ajoutée au secteur',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String moveStreetsDoneSome(int moved, int already) {
-    String _temp0 = intl.Intl.pluralLogic(
-      moved,
-      locale: localeName,
-      other: '$moved rues ajoutées',
-      one: '1 rue ajoutée',
-      zero: 'Aucune rue ajoutée',
-    );
-    String _temp1 = intl.Intl.pluralLogic(
-      already,
-      locale: localeName,
-      other: '$already déjà dans le secteur',
-      one: '1 déjà dans le secteur',
-    );
-    return '$_temp0, $_temp1';
   }
 
   @override

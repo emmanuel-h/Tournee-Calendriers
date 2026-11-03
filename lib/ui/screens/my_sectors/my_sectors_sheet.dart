@@ -30,13 +30,14 @@ Future<void> showMySectorsSheet(BuildContext context) async {
     builder: (_) => const MySectorsSheet(),
   );
   if (location != null && context.mounted) {
-    await _openWithName(context, location);
+    await openWithName(context, location);
   }
 }
 
 /// Opens [location] once the member has a first name, which the team will
-/// see: « Votre prénom » first when the phone has none yet.
-Future<void> _openWithName(BuildContext context, String location) async {
+/// see: « Votre prénom » first when the phone has none yet. From « Mes
+/// secteurs » and from Accueil with no secteur open (PLAN §5.0).
+Future<void> openWithName(BuildContext context, String location) async {
   if (!await ensureMemberName(context) || !context.mounted) return;
   // Not awaited: `push` ends only when the screen opened is closed.
   unawaited(context.push(location));

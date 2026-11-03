@@ -2,7 +2,6 @@
 // (« Me l'attribuer », « La faire aussi ») or stops (« Ne plus la faire »),
 // for themself only, and nothing else of the street changes.
 import 'package:test/test.dart';
-import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
@@ -230,33 +229,6 @@ void main() {
       final (takenBack, _) = valueOf(released.take(paul));
 
       expect(failureOf(takenBack.undo(change)), UndoFailure.gone);
-    });
-  });
-
-  group('restamp', () {
-    // The phone's own id of M1 is no member of the tournée the street moves
-    // into: the street is covered by the member who moves it instead.
-    final phoneId = MemberId('phone42');
-
-    test('should give the street to the member when it was covered', () {
-      final covered = valueOf(
-        Street.create(
-          id: _id,
-          name: 'Rue Nationale',
-          commune: villefranche,
-          assignees: {phoneId},
-        ),
-      );
-
-      expect(covered.restampedBy(lea).assignees, {lea});
-    });
-
-    test('should leave a street nobody covered free', () {
-      final free = valueOf(
-        Street.create(id: _id, name: 'Rue Nationale', commune: villefranche),
-      );
-
-      expect(free.restampedBy(lea).assignees, isEmpty);
     });
   });
 

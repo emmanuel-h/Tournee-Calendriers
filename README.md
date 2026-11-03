@@ -12,8 +12,7 @@ Onboarding:
 
 - « Bienvenue » on a phone that holds nothing yet: the first name, then « Rejoindre un
   secteur » (and « Créer un secteur » for an admin), disabled until a name is typed;
-  « Identifiant de l'appareil » with a copy button at the bottom. A phone with streets of
-  its own opens on « Mes rues » as before.
+  « Identifiant de l'appareil » with a copy button at the bottom.
 - « Nouveau secteur »: the centre de secours picked from the known ones as you type (or
   added), its communes (one or more, searched on geo.api.gouv.fr), the number checked as
   you type (« … existe déjà » with « Rejoindre avec un code »), the year; then the code (with a copy button), its QR code and « Partager ».
@@ -31,16 +30,12 @@ Start screen:
   41 % », the member's streets, then « Autres rues du secteur »; a row opens the street.
   A street tapped on the map shows its card: progress, who covers it, « Ouvrir » and « Me
   l'attribuer » / « La faire aussi » / « Ne plus la faire ». Works offline.
-- « Mes rues » (no secteur open): the streets on the phone, their progress, a filter that
-  ignores accents and case; works offline.
-- With a secteur open, a card offers the streets kept on the phone: « Les ajouter au
-  secteur » moves them with their marks (once per secteur; a street the secteur already has
-  is skipped), « Plus tard » hides the card until the next launch.
-- « Importer des rues » (no secteur open): find a commune by name (geo.api.gouv.fr), tick
-  some of its streets (national address base, BAN) and import them with their house numbers
-  onto the phone. Needs the network once; streets already imported keep their marks.
+- No secteur open: the map alone and « Aucun secteur ouvert », with « Rejoindre un
+  secteur » (and « Créer un secteur » for an admin). Streets only live in a secteur.
 - « Ajouter des rues » (a secteur open): tabs « Carte | Liste ». « Liste » ticks the streets
-  of the secteur's communes (a chip per commune) and adds them to the secteur; « Carte »
+  of the secteur's communes (a chip per commune; a commune searched by name for a secteur
+  without any) with their house numbers from the national address base (BAN), and adds
+  them to the secteur, a street from the Corbeille coming back with its marks; « Carte »
   (first) shows the secteur's map, opened on its communes: a tap on a road highlights it and
   shows its street card (« Ajouter et me l'attribuer », « Ajouter sans m'attribuer », or take /
   open a street of the secteur), the search box finds a street of the communes by name, and
@@ -68,7 +63,7 @@ Start screen:
 - Corbeille (from Équipe): the deleted streets and numbers, who deleted them and when, and
   « Restaurer », which brings them back with their marks. What stayed there more than 30 days
   is deleted for good by the first member's app that starts (no server).
-- « ☁ Modifications de 3 rues en attente d'envoi » above « Importer des rues » while marks
+- « ☁ Modifications de 3 rues en attente d'envoi » at the bottom of Accueil's panel while marks
   made offline in the open secteur have not reached the server yet.
 
 Street screen (« Rue »):

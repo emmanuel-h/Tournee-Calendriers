@@ -13,7 +13,6 @@ import 'package:tournee_calendriers/ui/map/map_view.dart';
 import 'package:tournee_calendriers/ui/map/sector_map.dart';
 import 'package:tournee_calendriers/ui/screens/home/home_panel.dart';
 import 'package:tournee_calendriers/ui/screens/start/admin_visit_banner.dart';
-import 'package:tournee_calendriers/ui/screens/start/move_streets_card.dart';
 import 'package:tournee_calendriers/ui/screens/start/start_app_bar.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 
@@ -119,9 +118,6 @@ final class _HomeScreenState extends ConsumerState<HomeScreen> {
             children: [
               // Only while an admin visits the open tournée.
               const AdminVisitBanner(),
-              // The phone's streets offered to the open tournée (nothing
-              // when there is none to offer).
-              const MoveStreetsCard(),
               Expanded(
                 child: LayoutBuilder(
                   builder: (context, constraints) {

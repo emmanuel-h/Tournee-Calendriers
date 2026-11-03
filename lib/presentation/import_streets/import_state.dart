@@ -8,7 +8,8 @@ import 'package:tournee_calendriers/domain/shared/insee_code.dart';
 import 'package:tournee_calendriers/domain/shared/same_items.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 
-// The view state of « Importer des rues » (PLAN §5.0), made of small
+// The view state of the « Liste » tab of « Ajouter des rues » (PLAN
+// §5.4), made of small
 // `sealed` families: the screen `switch`es over each one, and a new case
 // breaks the build wherever it must be shown.
 
@@ -276,12 +277,10 @@ final class ImportSummary {
   bool get complete => failed == 0;
 }
 
-/// Everything « Importer des rues » shows, and the « Liste » tab of
-/// « Ajouter des rues » while a tournée is open (PLAN §5.4). Immutable:
-/// each intent of the notifier makes a new one.
+/// Everything the « Liste » tab of « Ajouter des rues » shows (PLAN
+/// §5.4). Immutable: each intent of the notifier makes a new one.
 final class ImportState {
   const ImportState({
-    this.inSector = false,
     this.sectorCommunes = const [],
     this.query = '',
     this.searching = false,
@@ -292,14 +291,11 @@ final class ImportState {
     this.run = const ImportNotStarted(),
   });
 
-  /// A tournée is open: the streets go into it (« Ajouter N rues », « déjà
-  /// dans la tournée »), not onto the phone alone.
-  final bool inSector;
-
-  /// The open tournée's communes, whose streets the list offers: a chip
-  /// each when there are several, and no commune field. None with no
-  /// tournée open, or for a tournée created before the communes: the
-  /// commune is then searched as in M1. Read-only.
+  /// The open secteur's communes, whose streets the list offers: a chip
+  /// each when there are several, and no commune field. None for a
+  /// secteur created before the communes (or none open, for the moment a
+  /// secteur lost takes to close the screen): the commune is then searched
+  /// in a field. Read-only.
   final List<CommuneOption> sectorCommunes;
 
   /// The text of the « Commune » field.
@@ -364,7 +360,6 @@ final class ImportState {
     String? filter,
     ImportRun? run,
   }) => ImportState(
-    inSector: inSector,
     sectorCommunes: sectorCommunes ?? this.sectorCommunes,
     query: query ?? this.query,
     searching: searching ?? this.searching,

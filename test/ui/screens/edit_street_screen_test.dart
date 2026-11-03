@@ -266,8 +266,8 @@ void main() {
     );
   });
 
-  testWidgets('should go back to Mes rues without the street when it is '
-      'deleted', (tester) async {
+  testWidgets('should go back to the start screen without the street when '
+      'it is deleted', (tester) async {
     await openEditMode(tester);
 
     await tester.tap(find.byKey(const Key('edit.deleteStreet')));
@@ -275,7 +275,9 @@ void main() {
     await tester.tap(find.byKey(const ValueKey('edit.confirmDelete.ok')));
     await tester.pumpAndSettle();
 
-    expect(find.text("Aucune rue pour l'instant"), findsOneWidget);
+    // No secteur is open on this phone: the start screen says so.
+    expect(find.byKey(const Key('noSector.panel')), findsOneWidget);
+    expect(find.byKey(const Key('edit.name')), findsNothing);
     expect(streets[_id]!.isDeleted, isTrue);
   });
 

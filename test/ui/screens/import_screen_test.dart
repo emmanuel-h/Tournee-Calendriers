@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
+import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
@@ -10,10 +11,14 @@ import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/ui/app.dart';
-import 'package:tournee_calendriers/ui/screens/import_streets/import_screen.dart';
+import 'package:tournee_calendriers/ui/screens/add_streets/add_streets_screen.dart';
 
+import '../../domain/sector/my_sectors_fixtures.dart';
+import '../../domain/sector/sector_fixtures.dart' show sectorId, team;
 import '../../support/fakes/fake_address_directory.dart';
 import '../../support/fakes/fake_commune_search.dart';
+import '../../support/fakes/fake_my_sectors_store.dart';
+import '../../support/fakes/fake_sector_repository.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
@@ -53,13 +58,18 @@ void main() {
   bool checked(WidgetTester tester, BanStreetId id) =>
       tester.widget<CheckboxListTile>(street(id)).value!;
 
-  /// Opens the import screen from the start screen and chooses
-  /// Villefranche-sur-Saône.
+  /// Opens the « Liste » tab of « Ajouter des rues » from Accueil of the
+  /// 49, a secteur created before the communes (so the commune is searched
+  /// in a field, PLAN §5.4), and chooses Villefranche-sur-Saône.
   Future<void> openVillefranche(WidgetTester tester) async {
     await tester.pumpWidget(
       ProviderScope(
         overrides: fakePhone(
           streets: streets,
+          sectors: FakeSectorRepository([team()]),
+          mySectors: FakeMySectorsStore(
+            valueOf(MySectors.none.remember(sector49).open(sectorId)),
+          ),
           directory: directory,
           communes: FakeCommuneSearch(
             answers: {
@@ -73,7 +83,18 @@ void main() {
       ),
     );
     await tester.pumpAndSettle();
+    // A row after the streets: scrolled to, as the member would.
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('start.import')),
+      100,
+      scrollable: find.descendant(
+        of: find.byKey(const Key('home.panel.list')),
+        matching: find.byType(Scrollable),
+      ),
+    );
     await tester.tap(find.byKey(const Key('start.import')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('addStreets.tab.list')));
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byKey(const Key('import.commune')), 'Villef');
@@ -145,13 +166,13 @@ void main() {
 
     expect(checked(tester, _morin), isTrue);
     expect(find.text('3 RUES · 1 COCHÉE'), findsOneWidget);
-    expect(find.text('Importer 1 rue'), findsOneWidget);
+    expect(find.text('Ajouter 1 rue'), findsOneWidget);
 
     await tester.tap(find.text('Tout cocher'));
     await tester.pump();
 
     expect(find.text('3 RUES · 3 COCHÉES'), findsOneWidget);
-    expect(find.text('Importer 3 rues'), findsOneWidget);
+    expect(find.text('Ajouter 3 rues'), findsOneWidget);
     expect(find.text('Tout décocher'), findsOneWidget);
 
     await tester.tap(find.text('Tout décocher'));
@@ -162,7 +183,8 @@ void main() {
   });
 
   testWidgets(
-    'should show a street already on the phone ticked, disabled and labelled',
+    'should show a street already in the secteur ticked, disabled and '
+    'labelled',
     (tester) async {
       await streets.add(
         valueOf(
@@ -182,7 +204,7 @@ void main() {
       expect(
         find.descendant(
           of: street(_morin),
-          matching: find.text('déjà importée'),
+          matching: find.text('déjà dans le secteur'),
         ),
         findsOneWidget,
       );
@@ -225,10 +247,10 @@ void main() {
 
     await tester.tap(street(_morin));
     await tester.pump();
-    await tester.tap(find.text('Importer 1 rue'));
+    await tester.tap(find.text('Ajouter 1 rue'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(ImportScreen), findsNothing);
+    expect(find.byType(AddStreetsScreen), findsNothing);
     expect(find.text('1 rue restaurée'), findsOneWidget);
     expect(
       find.bySemanticsLabel('Rue Pierre Morin, 1 sur 2 faits'),
@@ -237,23 +259,34 @@ void main() {
   });
 
   testWidgets(
-    'should go back to the list with the new streets when every street is imported',
+    'should go back to Accueil with the new streets when every street is '
+    'added',
     (tester) async {
       await openVillefranche(tester);
       await tester.tap(street(_morin));
       await tester.tap(street(_bordelan));
       await tester.pump();
 
-      await tester.tap(find.text('Importer 2 rues'));
+      await tester.tap(find.text('Ajouter 2 rues'));
       await tester.pumpAndSettle();
 
-      expect(find.byType(ImportScreen), findsNothing);
-      expect(find.text('2 rues importées'), findsOneWidget);
-      expect(find.text('Mes rues · 2'), findsOneWidget);
+      expect(find.byType(AddStreetsScreen), findsNothing);
+      expect(find.text('2 rues ajoutées au secteur'), findsOneWidget);
+      // Nobody's yet: among the other streets of the secteur.
       expect(
-        find.bySemanticsLabel('Rue Pierre Morin, 0 sur 3 faits'),
+        find.text('Autres rues du secteur (2)'.toUpperCase()),
         findsOneWidget,
       );
+      final morin = find.bySemanticsLabel('Rue Pierre Morin, 0 sur 3 faits');
+      await tester.scrollUntilVisible(
+        morin,
+        100,
+        scrollable: find.descendant(
+          of: find.byKey(const Key('home.panel.list')),
+          matching: find.byType(Scrollable),
+        ),
+      );
+      expect(morin, findsOneWidget);
     },
   );
 
@@ -265,19 +298,19 @@ void main() {
       await tester.tap(street(_bonnet));
       await tester.pump();
 
-      await tester.tap(find.text('Importer 2 rues'));
+      await tester.tap(find.text('Ajouter 2 rues'));
       await tester.pumpAndSettle();
 
-      expect(find.byType(ImportScreen), findsOneWidget);
+      expect(find.byType(AddStreetsScreen), findsOneWidget);
       expect(
         find.text(
-          '1 rue importée, 1 en échec. Pas de réseau. Réessayez quand le '
-          'téléphone capte. Les rues encore cochées restent à importer.',
+          '1 rue ajoutée, 1 en échec. Pas de réseau. Réessayez quand le '
+          'téléphone capte. Les rues encore cochées restent à ajouter.',
         ),
         findsOneWidget,
       );
       expect(checked(tester, _bonnet), isTrue);
-      expect(find.text('Importer 1 rue'), findsOneWidget);
+      expect(find.text('Ajouter 1 rue'), findsOneWidget);
     },
   );
 

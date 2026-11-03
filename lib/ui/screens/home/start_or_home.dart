@@ -2,14 +2,14 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
 import 'package:tournee_calendriers/ui/screens/home/home_screen.dart';
-import 'package:tournee_calendriers/ui/screens/start/start_screen.dart';
+import 'package:tournee_calendriers/ui/screens/home/no_sector_screen.dart';
 
 /// The start screen (`/`): Accueil, the map and its « Mes rues » panel,
-/// while a tournée is open (PLAN §5.3); the phone's own streets of M1
-/// (« Mes rues », §5.0) when none is.
+/// while a secteur is open (PLAN §5.3); « Aucun secteur ouvert » (§5.0)
+/// when none is.
 ///
-/// `select`: only opening or closing a tournée switches the screen;
-/// switching from one tournée to another keeps Accueil, which follows it.
+/// `select`: only opening or closing a secteur switches the screen;
+/// switching from one secteur to another keeps Accueil, which follows it.
 final class StartOrHome extends ConsumerWidget {
   const StartOrHome({super.key, required this.showGallery});
 
@@ -20,5 +20,5 @@ final class StartOrHome extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) =>
       ref.watch(currentSectorProvider.select((sector) => sector != null))
       ? HomeScreen(showGallery: showGallery)
-      : StartScreen(showGallery: showGallery);
+      : NoSectorScreen(showGallery: showGallery);
 }

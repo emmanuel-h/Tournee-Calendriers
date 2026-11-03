@@ -77,8 +77,8 @@ sealed class LastChange {
   /// The time of the change, in the phone's time zone.
   final DateTime at;
 
-  /// Who made it; null when the phone cannot name them (no tournée open,
-  /// or a member no longer in its team).
+  /// Who made it; null when the phone cannot name them (the team not read
+  /// yet, or a member no longer in it).
   final ChangeAuthor? by;
 }
 

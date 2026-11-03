@@ -8,12 +8,12 @@ import 'package:tournee_calendriers/ui/screens/my_sectors/sector_title_button.da
 import 'package:tournee_calendriers/ui/screens/team/team_button.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 
-/// The top bar of the start screen, Accueil's (PLAN §5.3, Home mockup) as
-/// much as the phone's « Mes rues » (§5.0): the open tournée (« Tournée
-/// 49 · 2026 ▾ » over its centre) opens « Mes secteurs », 👥 opens Équipe
-/// (with a dot while a request waits), ⚙ opens Paramètres. With no
-/// tournée open, the app's name stays, opens « Mes secteurs » too, and
-/// there is no 👥.
+/// The top bar of the start screen, Accueil's (PLAN §5.3, Home mockup)
+/// with a secteur open or none (§5.0, NoSector mockup): the open secteur
+/// (« Secteur 49 · 2026 ▾ » over its centre) opens « Mes secteurs », 👥
+/// opens Équipe (with a dot while a request waits), ⚙ opens Paramètres.
+/// With no secteur open, the app's name stays, opens « Mes secteurs » too,
+/// and there is no 👥.
 ///
 /// A `Scaffold` asks its app bar for its height before building it: hence
 /// `PreferredSizeWidget`, taller with the centre under the title.

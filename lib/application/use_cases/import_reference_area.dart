@@ -90,8 +90,8 @@ final class ImportReport {
   final int emptyStreets;
 }
 
-/// Brings the reference area onto the phone (PLAN §12, M1): the streets of
-/// a commune typed in by the user, all of them or a chosen few, with their
+/// Adds streets of a commune to the open secteur (« Liste » of « Ajouter
+/// des rues », PLAN §5.4): all of them or a chosen few, with their
 /// numbers and positions from the BAN. Nothing is hard-coded. Needs the
 /// network, once; afterwards everything works offline.
 ///

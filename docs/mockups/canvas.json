@@ -206,20 +206,6 @@
       "title": "5.6 Quand repasser ? (#81)",
       "is_interactive": true
     },
-    "Start.dc.html": {
-      "x": 0,
-      "y": 6320,
-      "w": 390,
-      "h": 844,
-      "title": "5.0 Mes rues (sans secteur ouvert)"
-    },
-    "Import.dc.html": {
-      "x": 470,
-      "y": 6320,
-      "w": 390,
-      "h": 844,
-      "title": "5.0 Importer des rues"
-    },
     "RunStart.dc.html": {
       "h": 844,
       "is_interactive": true,
@@ -280,6 +266,13 @@
       "w": 390,
       "x": 2820,
       "y": 7584
+    },
+    "NoSector.dc.html": {
+      "x": 0,
+      "y": 6320,
+      "w": 390,
+      "h": 844,
+      "title": "5.0 Accueil sans secteur ouvert"
     }
   },
   "createdOnFiles": {
@@ -336,7 +329,7 @@
       "y": 6020,
       "text": "Sans secteur ouvert",
       "kind": "title1",
-      "maxW": 860,
+      "maxW": 390,
       "w": 240
     },
     "rowRun": {
@@ -376,8 +369,7 @@
     "AllTournees.dc.html",
     "HomeAdmin.dc.html",
     "TeamMember.dc.html",
-    "Start.dc.html",
-    "Import.dc.html",
+    "NoSector.dc.html",
     "Changelog.dc.html",
     "RunStart.dc.html",
     "RunHome.dc.html",

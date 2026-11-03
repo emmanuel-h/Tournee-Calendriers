@@ -1,9 +1,10 @@
 # Screen mockups
 
 Source of the visual mockups for `docs/PLAN.md` §5, one `.dc.html` file per screen
-(`Main.dc.html` is the Street screen). `Start.dc.html` (« Mes rues ») is a
-temporary M1 screen (PLAN §5.0), replaced by Accueil in M3; `Import.dc.html` (« Importer des
-rues ») stays for a phone with no secteur open, and is the « Liste » tab while one is open (#78).
+(`Main.dc.html` is the Street screen). `NoSector.dc.html` is Accueil with no secteur open
+(PLAN §5.0, #119): the base map, « Aucun secteur ouvert » and « Rejoindre un secteur »
+(« Créer un secteur » for an admin only); it replaced `Start.dc.html` (« Mes rues » of M1) and
+`Import.dc.html` (« Importer des rues »), removed with the phone-only streets.
 `Doors.dc.html` is « Modifier les portes » (PLAN §5.7), opened from « Gérer l'immeuble » under a
 building's grid (`Building.dc.html`). `AllTournees.dc.html`, `HomeAdmin.dc.html` and `TeamMember.dc.html` are the admin
 screens of PLAN §5.12 (#75): `Team.dc.html` is Équipe seen by an admin, `TeamMember.dc.html` by a

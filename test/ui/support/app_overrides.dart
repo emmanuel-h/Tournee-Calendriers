@@ -15,7 +15,6 @@ import '../../support/fakes/fake_address_directory.dart';
 import '../../support/fakes/fake_admin_status.dart';
 import '../../support/fakes/fake_commune_search.dart';
 import '../../support/fakes/fake_member_account.dart';
-import '../../support/fakes/fake_moved_streets_log.dart';
 import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_open_round_store.dart';
 import '../../support/fakes/fake_pending_sync.dart';
@@ -33,14 +32,11 @@ import '../../support/scripted_random.dart';
 import '../../support/street_fixtures.dart';
 import 'fake_map_view.dart';
 
-/// Every port the screens use, bound to [streets] (empty by default: the
-/// start screen shows its first-launch state), [directory], [shapes] (no
+/// Every port the screens use, bound to [streets] (empty by default), [directory], [shapes] (no
 /// road known by default), [communes],
 /// [preferences], [mySectors] (none by default), [settings] and
-/// [sectorDirectory], [sectors] (none by default), [phoneStreets] (the
-/// streets kept on the phone since M1, none by default: no card offers
-/// them to a tournée), [movedStreets] and [pending] (nothing waiting to be
-/// sent by default), [connection] (online by default), [downloads] (no
+/// [sectorDirectory], [sectors] (none by default), [pending] (nothing
+/// waiting to be sent by default), [connection] (online by default), [downloads] (no
 /// tournée downloaded by default), [rounds] (no tournée on by default)
 /// and [ledger] (no tournée validated by default);
 /// [member] (Léa by
@@ -54,8 +50,8 @@ import 'fake_map_view.dart';
 /// MapLibre maps, for the store screenshots run on a device
 /// (`integration_test/store_screenshots_test.dart`).
 ///
-/// The app opens on the start screen, as on a phone that already holds
-/// streets or tournées; with [chooseLaunch], it decides from the fakes as
+/// The app opens on the start screen, as on a phone that already knows
+/// secteurs; with [chooseLaunch], it decides from the fakes as
 /// at a real launch (« Bienvenue » on an empty phone).
 List<Override> fakePhone({
   FakeStreetRepository? streets,
@@ -67,8 +63,6 @@ List<Override> fakePhone({
   FakePhoneSettings? settings,
   FakeSectorDirectory? sectorDirectory,
   FakeSectorRepository? sectors,
-  FakeStreetRepository? phoneStreets,
-  FakeMovedStreetsLog? movedStreets,
   FakePendingSync? pending,
   FakeServerConnection? connection,
   FakeSectorDownloads? downloads,
@@ -87,12 +81,6 @@ List<Override> fakePhone({
   duplicateCheckDelayProvider.overrideWithValue(Duration.zero),
   if (!nativeMap) sectorMapViewProvider.overrideWithValue(FakeMapView.new),
   streetRepositoryProvider.overrideWithValue(streets ?? FakeStreetRepository()),
-  phoneStreetRepositoryProvider.overrideWithValue(
-    phoneStreets ?? FakeStreetRepository(),
-  ),
-  movedStreetsLogProvider.overrideWithValue(
-    movedStreets ?? FakeMovedStreetsLog(),
-  ),
   pendingSyncProvider.overrideWithValue(pending ?? FakePendingSync()),
   serverConnectionProvider.overrideWithValue(
     connection ?? FakeServerConnection(),

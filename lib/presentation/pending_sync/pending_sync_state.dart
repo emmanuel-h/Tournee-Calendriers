@@ -6,8 +6,7 @@ sealed class PendingSyncState {
 }
 
 /// No line: the server has everything this phone changed, or the count is
-/// not known yet, or no tournée is open (the phone's own streets are never
-/// sent).
+/// not known yet, or no secteur is open (no street to send).
 final class AllSent extends PendingSyncState {
   const AllSent();
 

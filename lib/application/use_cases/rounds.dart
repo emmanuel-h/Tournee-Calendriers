@@ -24,7 +24,7 @@ import 'package:tournee_calendriers/domain/street/street_repository.dart';
 
 /// Why « Commencer une tournée » cannot start one.
 enum StartRoundFailure {
-  /// No secteur is open: the phone's own streets (M1) have no tournée.
+  /// No secteur is open: a tournée is one of a secteur's outings.
   noSectorOpen,
 
   /// The open secteur is one an admin visits without being in its team

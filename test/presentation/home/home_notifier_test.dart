@@ -18,8 +18,8 @@ import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/home/home_notifier.dart';
+import 'package:tournee_calendriers/presentation/home/street_row.dart';
 import 'package:tournee_calendriers/presentation/street_card/street_card.dart';
-import 'package:tournee_calendriers/presentation/street_list/street_list_state.dart';
 
 import '../../domain/sector/my_sectors_fixtures.dart';
 import '../../domain/sector/sector_fixtures.dart'

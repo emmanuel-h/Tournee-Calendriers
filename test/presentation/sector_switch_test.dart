@@ -11,10 +11,10 @@ import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/presentation/corbeille/corbeille_notifier.dart';
 import 'package:tournee_calendriers/presentation/corbeille/corbeille_state.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
+import 'package:tournee_calendriers/presentation/home/home_notifier.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_notifier.dart';
 import 'package:tournee_calendriers/presentation/street/street_notifier.dart';
 import 'package:tournee_calendriers/presentation/street/street_view_state.dart';
-import 'package:tournee_calendriers/presentation/street_list/street_list_notifier.dart';
 
 import '../application/use_cases/street_fixtures.dart';
 import '../domain/sector/my_sectors_fixtures.dart';
@@ -25,6 +25,7 @@ import '../support/fakes/fake_open_round_store.dart';
 import '../support/fakes/fake_ports.dart';
 import '../support/fakes/fake_sector_repository.dart';
 import '../support/fakes/fake_street_repository.dart';
+import '../support/fakes/fake_street_shapes.dart';
 import '../support/fakes/fake_street_view_preferences.dart';
 import '../support/results.dart';
 import '../support/street_fixtures.dart' show n, villefranche;
@@ -40,16 +41,15 @@ void main() {
     ),
   ).delete(by: leaId, at: DateTime.utc(2026, 11, 3, 18)).$1;
 
-  late FakeStreetRepository phone;
+  late FakeStreetRepository none;
   late FakeStreetRepository streets49;
   late FakeStreetRepository streets12;
   late FakeMySectorsStore store;
 
   setUp(() {
-    phone = FakeStreetRepository();
+    none = FakeStreetRepository();
     // The 49 holds the Rue des Lilas and Rue Gambetta in its Corbeille;
-    // the 12 holds a Rue des Lilas of the same id (moved from the same
-    // phone), still untouched.
+    // the 12 holds a Rue des Lilas of the same id, still untouched.
     streets49 = FakeStreetRepository([lilas, gambetta]);
     streets12 = FakeStreetRepository([lilas]);
     store = FakeMySectorsStore(
@@ -63,7 +63,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         streetsOfTheOpenSector(
-          phone: phone,
+          none: none,
           sectors: {sector49.id: streets49, sector12.id: streets12},
         ),
         mySectorsStoreProvider.overrideWithValue(store),
@@ -77,6 +77,7 @@ void main() {
         identityProvider.overrideWithValue(FakeIdentity(leaId)),
         openRoundStoreProvider.overrideWithValue(FakeOpenRoundStore()),
         adminStatusProvider.overrideWithValue(FakeAdminStatus()),
+        streetShapesProvider.overrideWithValue(FakeStreetShapes()),
       ],
     );
     addTearDown(container.dispose);
@@ -86,33 +87,33 @@ void main() {
   Future<void> openThe12() =>
       store.save(valueOf(store.mySectors.open(sector12.id)));
 
-  group('Mes rues', () {
-    test('should show no street of the tournée left', () async {
+  group('Accueil', () {
+    test('should show no street of the secteur left', () async {
       streets12 = FakeStreetRepository();
       final container = leasPhone();
-      container.listen(streetListProvider, (_, _) {});
+      container.listen(homeProvider, (_, _) {});
       await pumpEventQueue();
-      expect(container.read(streetListProvider).streetCount, 1);
+      expect(container.read(homeProvider).others, hasLength(1));
 
       await openThe12();
 
       // Nothing until the 12's streets are read, then those.
-      expect(container.read(streetListProvider).loading, isTrue);
-      expect(container.read(streetListProvider).rows, isEmpty);
+      expect(container.read(homeProvider).loading, isTrue);
+      expect(container.read(homeProvider).others, isEmpty);
       await pumpEventQueue();
-      expect(container.read(streetListProvider).loading, isFalse);
-      expect(container.read(streetListProvider).streetCount, 0);
+      expect(container.read(homeProvider).loading, isFalse);
+      expect(container.read(homeProvider).hasNoStreet, isTrue);
     });
 
     test('should show no street when they cannot be read', () async {
       streets49.watchError = StateError('permission-denied');
       final container = leasPhone();
-      container.listen(streetListProvider, (_, _) {});
+      container.listen(homeProvider, (_, _) {});
       await pumpEventQueue();
 
-      final state = container.read(streetListProvider);
+      final state = container.read(homeProvider);
       expect(state.loading, isFalse);
-      expect(state.isEmpty, isTrue);
+      expect(state.hasNoStreet, isTrue);
     });
   });
 

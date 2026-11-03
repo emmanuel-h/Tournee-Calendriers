@@ -20,7 +20,6 @@ import 'package:tournee_calendriers/application/ports/commune_search.dart';
 import 'package:tournee_calendriers/application/ports/id_generator.dart';
 import 'package:tournee_calendriers/application/ports/identity_provider.dart';
 import 'package:tournee_calendriers/application/ports/member_account.dart';
-import 'package:tournee_calendriers/application/ports/moved_streets_log.dart';
 import 'package:tournee_calendriers/application/ports/my_sectors_store.dart';
 import 'package:tournee_calendriers/application/ports/offline_map_store.dart';
 import 'package:tournee_calendriers/application/ports/open_round_store.dart';
@@ -51,7 +50,6 @@ import 'package:tournee_calendriers/application/use_cases/list_commune_streets.d
 import 'package:tournee_calendriers/application/use_cases/look_up_street.dart';
 import 'package:tournee_calendriers/application/use_cases/look_up_street_shape.dart';
 import 'package:tournee_calendriers/application/use_cases/mark_dwelling.dart';
-import 'package:tournee_calendriers/application/use_cases/move_streets_into_sector.dart';
 import 'package:tournee_calendriers/application/use_cases/my_sectors.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_corbeille.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_my_streets.dart';
@@ -79,17 +77,11 @@ import 'package:tournee_calendriers/domain/street/street_repository.dart';
 // Ports, bound by bootstrap/.
 
 /// The streets every street use case works on: those of the open
-/// tournée, or the phone's own (M1) while none is open. The composition
-/// root makes it follow the open tournée, so every use case, and every
-/// screen that watches one, follows a switch of tournée by itself.
+/// secteur; none while no secteur is open (PLAN §5.0). The composition
+/// root makes it follow the open secteur, so every use case, and every
+/// screen that watches one, follows a switch of secteur by itself.
 final streetRepositoryProvider = Provider<StreetRepository>(
   (ref) => _unbound('StreetRepository'),
-);
-
-/// The streets kept on the phone since M1, whichever tournée is open: what
-/// « Les ajouter au secteur » moves (PLAN §5.0).
-final phoneStreetRepositoryProvider = Provider<StreetRepository>(
-  (ref) => _unbound('phone StreetRepository'),
 );
 
 /// What the open tournée's streets still have to send to the server. The
@@ -139,9 +131,6 @@ final sectorDirectoryProvider = Provider<SectorDirectory>(
 );
 final sectorRepositoryProvider = Provider<SectorRepository>(
   (ref) => _unbound('SectorRepository'),
-);
-final movedStreetsLogProvider = Provider<MovedStreetsLog>(
-  (ref) => _unbound('MovedStreetsLog'),
 );
 final adminStatusProvider = Provider<AdminStatus>(
   (ref) => _unbound('AdminStatus'),
@@ -487,27 +476,8 @@ final listAllSectorsProvider = Provider(
 final openAsAdminProvider = Provider(
   (ref) => OpenAsAdmin(ref.watch(mySectorsStoreProvider)),
 );
-final countStreetsToMoveProvider = Provider(
-  (ref) => CountStreetsToMove(
-    ref.watch(phoneStreetRepositoryProvider),
-    ref.watch(movedStreetsLogProvider),
-    ref.watch(sectorRepositoryProvider),
-    ref.watch(identityProvider),
-  ),
-);
-final moveStreetsIntoSectorProvider = Provider(
-  (ref) => MoveStreetsIntoSector(
-    ref.watch(phoneStreetRepositoryProvider),
-    ref.watch(streetRepositoryProvider),
-    ref.watch(identityProvider),
-    ref.watch(movedStreetsLogProvider),
-  ),
-);
 final chooseStartPointProvider = Provider(
-  (ref) => ChooseStartPoint(
-    ref.watch(mySectorsStoreProvider),
-    ref.watch(phoneStreetRepositoryProvider),
-  ),
+  (ref) => ChooseStartPoint(ref.watch(mySectorsStoreProvider)),
 );
 final listRescueCentresProvider = Provider(
   (ref) => ListRescueCentres(ref.watch(sectorDirectoryProvider)),

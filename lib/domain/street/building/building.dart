@@ -1,6 +1,5 @@
 import 'dart:math' as math;
 
-import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/shared/same_items.dart';
 import 'package:tournee_calendriers/domain/street/building/building_plan.dart';
@@ -205,25 +204,6 @@ final class Building {
     }
     return dropped;
   }
-
-  /// This building with every door's last change made by [member], at the
-  /// same time (see `Street.restampedBy`). The layout stays as it is.
-  Building restampedBy(MemberId member) => Building._(style, [
-    for (final staircase in staircases)
-      Staircase(
-        name: staircase.name,
-        floors: [
-          for (final floor in staircase.floors)
-            Floor(
-              level: floor.level,
-              dwellings: [
-                for (final dwelling in floor.dwellings)
-                  dwelling.restampedBy(member),
-              ],
-            ),
-        ],
-      ),
-  ]);
 
   /// The dwelling at [key], or null when the building has none.
   Dwelling? dwellingAt(DwellingKey key) =>

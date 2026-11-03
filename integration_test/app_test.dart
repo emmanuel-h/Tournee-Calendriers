@@ -102,10 +102,9 @@ Future<Directory> _freshStorage(String name) async {
   return storage;
 }
 
-/// A fresh storage folder of a phone that already knows a tournée, none of
-/// them open: the app opens on « Mes rues » and the phone's own streets, as
-/// on a phone of M1, rather than on « Bienvenue ». Nothing of it needs the
-/// network.
+/// A fresh storage folder of a phone that already knows a secteur, none
+/// open: the app opens on « Aucun secteur ouvert » (PLAN §5.0) rather than
+/// on « Bienvenue ». Nothing of it needs the network.
 Future<Directory> _knownPhone(String name) async {
   final storage = await _freshStorage(name);
   File('${storage.path}/my_tournees.json').writeAsStringSync(
@@ -124,6 +123,78 @@ Future<Directory> _knownPhone(String name) async {
     }),
   );
   return storage;
+}
+
+/// A fresh storage folder of a phone where the 49 of the CS Villefranche
+/// is open, as « Rejoindre » leaves it. Its id is new at each run: what the
+/// test writes waits in Firestore's offline cache, which outlives the run,
+/// and must not show in the next one. Nothing of it needs the network.
+Future<Directory> _phoneInSector(String name) async {
+  final storage = await _freshStorage(name);
+  final id = 't49-${storage.path.split('/').last}';
+  File('${storage.path}/my_tournees.json').writeAsStringSync(
+    jsonEncode({
+      'version': 1,
+      'open': id,
+      'tournees': [
+        {
+          'id': id,
+          'number': 49,
+          'centre': 'CS Villefranche',
+          'campaign': 2026,
+          'status': 'active',
+        },
+      ],
+    }),
+  );
+  return storage;
+}
+
+/// The commune search the « Liste » tab needs, without the network: the
+/// secteur was never read on this phone, so it has no commune and the tab
+/// searches one (PLAN §5.4).
+FakeCommuneSearch _communes() => FakeCommuneSearch(
+  answers: {
+    'Villef': Ok([
+      CommuneMatch(commune: _villefranche, postcodes: const ['69400']),
+    ]),
+  },
+);
+
+/// From Accueil, « + Ajouter des rues », « Liste », Villefranche-sur-Saône,
+/// then the street [banId] ticked and added (« Ajouter 1 rue »): back on
+/// Accueil. All offline: the BAN and the commune search are fakes, and
+/// Firestore queues the street.
+Future<void> _addFromList(WidgetTester tester, BanStreetId banId) async {
+  final add = find.byKey(const Key('start.import'));
+  await tester.ensureVisible(add);
+  await tester.pumpAndSettle();
+  await tester.tap(add);
+  // The map comes first, with MapLibre on the device: it may never settle.
+  await tester.pump(const Duration(seconds: 2));
+  await tester.tap(find.byKey(const Key('addStreets.tab.list')));
+  await tester.pumpAndSettle();
+  await tester.enterText(find.byKey(const Key('import.commune')), 'Villef');
+  // The search waits for a pause in the typing.
+  await tester.pumpAndSettle(const Duration(milliseconds: 400));
+  await tester.tap(find.byKey(const ValueKey('import.suggestion.69264')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(ValueKey('import.street.${banId.value}')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.text('Ajouter 1 rue'));
+  await tester.pumpAndSettle();
+}
+
+/// On Accueil, takes the Rue Pierre Morin, just added and nobody's, from
+/// its card (« Me l'attribuer »), then opens it (« Ouvrir »): from then on
+/// it is one of « Mes rues ».
+Future<void> _takeAndOpenMorin(WidgetTester tester) async {
+  await tester.tap(find.text('Rue Pierre Morin'));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const Key('streetCard.take')));
+  await tester.pumpAndSettle();
+  await tester.tap(find.byKey(const Key('streetCard.open')));
+  await tester.pumpAndSettle();
 }
 
 void main() {
@@ -154,10 +225,17 @@ void main() {
   });
 
   testWidgets(
-    'should open the component gallery when the app is a debug build',
+    'should open on « Aucun secteur ouvert » with none open, and open the '
+    'component gallery when the app is a debug build',
     (tester) async {
       await bootstrap(storage: await _knownPhone('gallery'));
       await tester.pumpAndSettle();
+      // No secteur open (#119): the map, « Aucun secteur ouvert » and the
+      // way in, « Rejoindre un secteur »; no street of the phone's own.
+      expect(find.byKey(const Key('noSector.map')), findsOneWidget);
+      expect(find.text('Aucun secteur ouvert'), findsOneWidget);
+      expect(find.byKey(const Key('noSector.join')), findsOneWidget);
+      expect(find.byKey(const Key('home.team')), findsNothing);
 
       await tester.tap(find.byKey(const Key('home.gallery')));
       await tester.pumpAndSettle();
@@ -170,42 +248,29 @@ void main() {
     },
   );
 
-  testWidgets('should import a street of a commune and open it from the list', (
-    tester,
-  ) async {
-    // A fresh folder: the app starts with no street.
-    final storage = await _knownPhone('import_flow');
+  testWidgets('should add a street of a commune to the secteur from the list '
+      'and open it from Accueil', (tester) async {
     await bootstrap(
       addressDirectory: _ban(),
-      communeSearch: FakeCommuneSearch(
-        answers: {
-          'Villef': Ok([
-            CommuneMatch(commune: _villefranche, postcodes: const ['69400']),
-          ]),
-        },
-      ),
-      storage: storage,
+      communeSearch: _communes(),
+      storage: await _phoneInSector('import_flow'),
     );
     await tester.pumpAndSettle();
-    expect(find.text("Aucune rue pour l'instant"), findsOneWidget);
+    expect(
+      find.text("Aucune rue dans le secteur pour l'instant."),
+      findsOneWidget,
+    );
 
-    await tester.tap(find.byKey(const Key('start.import')));
-    await tester.pumpAndSettle();
-    await tester.enterText(find.byKey(const Key('import.commune')), 'Villef');
-    // The search waits for a pause in the typing.
-    await tester.pumpAndSettle(const Duration(milliseconds: 400));
-    await tester.tap(find.byKey(const ValueKey('import.suggestion.69264')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('import.street.69264_1460')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Importer 1 rue'));
-    await tester.pumpAndSettle();
+    await _addFromList(tester, _morin);
 
-    expect(find.text('Mes rues · 1'), findsOneWidget);
+    expect(find.text('1 rue ajoutée au secteur'), findsOneWidget);
+    expect(
+      find.text('Autres rues du secteur (1)'.toUpperCase()),
+      findsOneWidget,
+    );
     expect(find.text('0/3'), findsOneWidget);
 
-    await tester.tap(find.text('Rue Pierre Morin'));
-    await tester.pumpAndSettle();
+    await _takeAndOpenMorin(tester);
 
     expect(find.widgetWithText(AppBar, 'Rue Pierre Morin'), findsOneWidget);
   });
@@ -215,32 +280,15 @@ void main() {
     'then found nobody home twice',
     (tester) async {
       final semantics = tester.ensureSemantics();
-      final storage = await _knownPhone('mark_flow');
-      final communes = FakeCommuneSearch(
-        answers: {
-          'Villef': Ok([
-            CommuneMatch(commune: _villefranche, postcodes: const ['69400']),
-          ]),
-        },
-      );
+      final storage = await _phoneInSector('mark_flow');
       await bootstrap(
         addressDirectory: _ban(),
-        communeSearch: communes,
+        communeSearch: _communes(),
         storage: storage,
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('start.import')));
-      await tester.pumpAndSettle();
-      await tester.enterText(find.byKey(const Key('import.commune')), 'Villef');
-      await tester.pumpAndSettle(const Duration(milliseconds: 400));
-      await tester.tap(find.byKey(const ValueKey('import.suggestion.69264')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('import.street.69264_1460')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Importer 1 rue'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Rue Pierre Morin'));
-      await tester.pumpAndSettle();
+      await _addFromList(tester, _morin);
+      await _takeAndOpenMorin(tester);
       // A tap on a house opens its status picker (PLAN §5.6); one tap on a
       // status stores it and closes, with « Annuler » in the snackbar.
       Future<void> mark(Finder tile, String status) async {
@@ -304,12 +352,14 @@ void main() {
         tester.getSemantics(other).label,
         'Numéro 34, repasser, changer le statut',
       );
-      // The phone storage writes its file just after the tap: let it land.
+      // Firestore keeps the marks in its cache just after the tap: let them
+      // land.
       await Future<void>.delayed(const Duration(seconds: 1));
 
       // Offline cold start: the whole app goes away (a fresh ProviderScope,
       // nothing kept in memory), then starts again on the same folder, with
-      // a BAN and a commune search that know nothing: none is needed.
+      // a BAN and a commune search that know nothing: none is needed. The
+      // secteur's streets come from Firestore's copy on the phone.
       runApp(const SizedBox.shrink());
       await tester.pumpAndSettle();
       await bootstrap(
@@ -370,31 +420,14 @@ void main() {
     'and staircase B made smaller',
     (tester) async {
       final semantics = tester.ensureSemantics();
-      final storage = await _knownPhone('building_flow');
       await bootstrap(
         addressDirectory: _ban(),
-        communeSearch: FakeCommuneSearch(
-          answers: {
-            'Villef': Ok([
-              CommuneMatch(commune: _villefranche, postcodes: const ['69400']),
-            ]),
-          },
-        ),
-        storage: storage,
+        communeSearch: _communes(),
+        storage: await _phoneInSector('building_flow'),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('start.import')));
-      await tester.pumpAndSettle();
-      await tester.enterText(find.byKey(const Key('import.commune')), 'Villef');
-      await tester.pumpAndSettle(const Duration(milliseconds: 400));
-      await tester.tap(find.byKey(const ValueKey('import.suggestion.69264')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('import.street.69264_1460')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Importer 1 rue'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Rue Pierre Morin'));
-      await tester.pumpAndSettle();
+      await _addFromList(tester, _morin);
+      await _takeAndOpenMorin(tester);
 
       // ✏, tap 34, « Transformer en immeuble… », « Valider » the default
       // (one staircase, RdC–2e, two doors a floor): back in edit mode.
@@ -505,33 +538,16 @@ void main() {
   testWidgets(
     'should show added numbers on both sides when a number is removed, '
     'brought back and 21-25 added in edit mode, and bring the street back '
-    'with its mark when it is deleted and imported again',
+    'with its mark when it is deleted and added again',
     (tester) async {
-      final storage = await _knownPhone('edit_flow');
       await bootstrap(
         addressDirectory: _ban(),
-        communeSearch: FakeCommuneSearch(
-          answers: {
-            'Villef': Ok([
-              CommuneMatch(commune: _villefranche, postcodes: const ['69400']),
-            ]),
-          },
-        ),
-        storage: storage,
+        communeSearch: _communes(),
+        storage: await _phoneInSector('edit_flow'),
       );
       await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const Key('start.import')));
-      await tester.pumpAndSettle();
-      await tester.enterText(find.byKey(const Key('import.commune')), 'Villef');
-      await tester.pumpAndSettle(const Duration(milliseconds: 400));
-      await tester.tap(find.byKey(const ValueKey('import.suggestion.69264')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.byKey(const ValueKey('import.street.69264_1460')));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Importer 1 rue'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Rue Pierre Morin'));
-      await tester.pumpAndSettle();
+      await _addFromList(tester, _morin);
+      await _takeAndOpenMorin(tester);
 
       // ✏, then ✕ on 33 and « Annuler »: 33 is back.
       await tester.tap(find.byKey(const Key('street.edit')));
@@ -571,7 +587,7 @@ void main() {
       }
       expect(sideOf('33'), lessThan(sideOf('32')));
 
-      // 33 marked, then ✏ « Supprimer la rue »: « Mes rues » is empty.
+      // 33 marked, then ✏ « Supprimer la rue »: the secteur has no street.
       await tester.tap(find.byKey(const ValueKey('street.tile.33')));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('house.status.done')));
@@ -582,10 +598,18 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('edit.confirmDelete.ok')));
       await tester.pumpAndSettle();
-      expect(find.text("Aucune rue pour l'instant"), findsOneWidget);
+      expect(
+        find.text("Aucune rue dans le secteur pour l'instant."),
+        findsOneWidget,
+      );
 
-      // Imported again from « dans la Corbeille »: back with 33 done.
-      await tester.tap(find.byKey(const Key('start.import')));
+      // Added again from « dans la Corbeille »: back with 33 done.
+      final add = find.byKey(const Key('start.import'));
+      await tester.ensureVisible(add);
+      await tester.pumpAndSettle();
+      await tester.tap(add);
+      await tester.pump(const Duration(seconds: 2));
+      await tester.tap(find.byKey(const Key('addStreets.tab.list')));
       await tester.pumpAndSettle();
       await tester.enterText(find.byKey(const Key('import.commune')), 'Villef');
       await tester.pumpAndSettle(const Duration(milliseconds: 400));
@@ -598,10 +622,13 @@ void main() {
       );
       await tester.tap(morin);
       await tester.pumpAndSettle();
-      await tester.tap(find.text('Importer 1 rue'));
+      await tester.tap(find.text('Ajouter 1 rue'));
       await tester.pumpAndSettle();
       expect(find.text('1 rue restaurée'), findsOneWidget);
-      expect(find.text('1/8'), findsOneWidget);
+      // Accueil still shows the card the street was opened from: its marks
+      // and Léa's cover came back with it.
+      expect(find.text('1/8 faits'), findsOneWidget);
+      expect(find.text('Vous la faites'), findsOneWidget);
     },
   );
 

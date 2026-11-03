@@ -11,6 +11,7 @@ import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/ui/app.dart';
+import 'package:tournee_calendriers/ui/components/status_glyph.dart';
 import 'package:tournee_calendriers/ui/screens/add_streets/add_streets_screen.dart';
 import 'package:tournee_calendriers/ui/screens/home/home_panel.dart';
 import 'package:tournee_calendriers/ui/screens/home/home_screen.dart';
@@ -165,6 +166,28 @@ void main() {
       );
       expect(top(row('carnot')), lessThan(top(row('pasteur'))));
       expect(find.text('Vous n\'avez pas encore de rue.'), findsNothing);
+    });
+
+    testWidgets('should mark a complete street with ✓ next to its count, '
+        'never colour alone, and keep each row 56 dp high', (tester) async {
+      await pumpHome(tester);
+      await tester.scrollUntilVisible(row('pasteur'), 100);
+
+      // Rue Pasteur, 12 of 12: ✓ next to its count; Rue des Lilas, 31 of
+      // 42: none.
+      expect(
+        find.descendant(of: row('pasteur'), matching: find.byType(StatusGlyph)),
+        findsOneWidget,
+      );
+      expect(
+        find.bySemanticsLabel('Rue Pasteur, terminée, 12 sur 12 faits'),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: row('carnot'), matching: find.byType(StatusGlyph)),
+        findsNothing,
+      );
+      expect(tester.getSize(row('carnot')).height, greaterThanOrEqualTo(56));
     });
 
     testWidgets('should open the street when one of « Mes rues » is tapped', (

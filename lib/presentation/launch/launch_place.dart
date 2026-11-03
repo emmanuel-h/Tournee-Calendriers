@@ -10,7 +10,8 @@ sealed class LaunchPlace {
   const LaunchPlace();
 }
 
-/// « Mes rues »: the open tournée's streets, or the phone's own.
+/// The start screen: Accueil of the open secteur, or « Aucun secteur
+/// ouvert » when none is.
 final class LaunchOnStreets extends LaunchPlace {
   const LaunchOnStreets();
 }

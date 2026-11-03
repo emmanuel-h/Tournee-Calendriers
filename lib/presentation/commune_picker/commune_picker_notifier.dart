@@ -33,7 +33,8 @@ final communePickerProvider =
     );
 
 /// Searches geo.api.gouv.fr as the user types a commune's name, as
-/// « Importer des rues » does (PLAN §5.0): from two characters, after a
+/// the « Liste » tab of « Ajouter des rues » does (PLAN §5.4): from two
+/// characters, after a
 /// pause in the typing ([communeSearchDelayProvider]), a late answer to
 /// older text ignored. Picking a suggestion is the screen's business: it
 /// then calls [clear].

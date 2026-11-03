@@ -22,7 +22,7 @@ final class PrimaryButton extends StatelessWidget {
   /// 52 dp instead of 56 dp, for buttons inside sheets or side by side.
   final bool compact;
 
-  /// Drawn before the label (« + Importer des rues »); decoration only, the
+  /// Drawn before the label (« + Créer un secteur »); decoration only, the
   /// label names the action.
   final IconData? icon;
 

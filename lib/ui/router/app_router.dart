@@ -15,7 +15,6 @@ import 'package:tournee_calendriers/ui/screens/component_gallery_screen.dart';
 import 'package:tournee_calendriers/ui/screens/corbeille/corbeille_screen.dart';
 import 'package:tournee_calendriers/ui/screens/edit_street/edit_street_screen.dart';
 import 'package:tournee_calendriers/ui/screens/home/start_or_home.dart';
-import 'package:tournee_calendriers/ui/screens/import_streets/import_screen.dart';
 import 'package:tournee_calendriers/ui/screens/map_gallery_screen.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/create_sector_screen.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/join_pending_screen.dart';
@@ -50,12 +49,8 @@ GoRouter buildAppRouter({
   routes: [
     GoRoute(
       path: AppRoutes.home,
-      // Accueil while a tournée is open, the phone's streets otherwise.
+      // Accueil while a secteur is open, « Aucun secteur ouvert » otherwise.
       builder: (context, state) => StartOrHome(showGallery: showGallery),
-    ),
-    GoRoute(
-      path: AppRoutes.importStreets,
-      builder: (context, state) => const ImportScreen(),
     ),
     GoRoute(
       path: AppRoutes.addStreets,

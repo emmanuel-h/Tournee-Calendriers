@@ -21,20 +21,20 @@ final communeSearchDelayProvider = Provider<Duration>(
   (ref) => const Duration(milliseconds: 300),
 );
 
-/// The state of « Importer des rues ». `autoDispose`: each visit to the
-/// screen starts afresh.
+/// The state of the « Liste » tab of « Ajouter des rues ». `autoDispose`:
+/// each visit to the screen starts afresh.
 final importProvider =
     NotifierProvider.autoDispose<ImportNotifier, ImportState>(
       ImportNotifier.new,
     );
 
-/// The import flow (PLAN §5.0, §5.4): search a commune, choose it, tick
-/// streets, import them. Each method is an intent of the screen.
+/// The « Liste » tab of « Ajouter des rues » (PLAN §5.4): choose a
+/// commune, tick its streets, add them to the open secteur. Each method is
+/// an intent of the screen.
 ///
-/// While a tournée is open it is the « Liste » tab of « Ajouter des rues »:
-/// the commune is one of the tournée's (the first at once, another by its
-/// chip), followed live and offline from the phone's copy; a tournée
-/// without commune searches one as with none open.
+/// The commune is one of the secteur's (the first at once, another by its
+/// chip), followed live and offline from the phone's copy; a secteur
+/// without commune searches one in a field.
 final class ImportNotifier extends Notifier<ImportState> {
   /// Raised by each key typed and each commune chosen. A search remembers
   /// the value it started with and gives up when it has changed since:
@@ -55,7 +55,7 @@ final class ImportNotifier extends Notifier<ImportState> {
         .watch(observeSectorCommunesProvider)(sector.id)
         .listen(_showCommunes);
     ref.onDispose(listening.cancel);
-    return const ImportState(inSector: true);
+    return const ImportState();
   }
 
   /// The tournée's communes are [communes]: chips for them, and the streets

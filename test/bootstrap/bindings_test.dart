@@ -25,12 +25,10 @@ import 'package:tournee_calendriers/infrastructure/firestore/firestore_street_re
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_streets_download.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_document_mapper.dart';
 import 'package:tournee_calendriers/infrastructure/geo_api/geo_commune_search.dart';
-import 'package:tournee_calendriers/infrastructure/local_storage/local_moved_streets_log.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_my_sectors.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_open_round.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_phone_settings.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_sector_downloads.dart';
-import 'package:tournee_calendriers/infrastructure/local_storage/local_street_repository.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_street_view_preferences.dart';
 import 'package:tournee_calendriers/infrastructure/map_tiles/openfreemap_street_shapes.dart';
 import 'package:tournee_calendriers/infrastructure/maplibre_offline/maplibre_offline_map_store.dart';
@@ -45,7 +43,7 @@ import '../support/fakes/fake_address_directory.dart';
 import '../support/fakes/fake_anonymous_auth.dart';
 import '../support/fakes/fake_commune_search.dart';
 import '../support/results.dart';
-import '../support/street_fixtures.dart' show n, villefranche;
+import '../support/street_fixtures.dart' show lea, n, twoPm, villefranche;
 
 void main() {
   late Directory storage;
@@ -85,12 +83,6 @@ void main() {
   test('should bind each port to the adapter of the phone', () async {
     final container = await containerWith();
 
-    final streets = container.read(streetRepositoryProvider);
-    expect(streets, isA<LocalStreetRepository>());
-    expect(
-      (streets as LocalStreetRepository).directory.path,
-      '${storage.path}/streets',
-    );
     expect(
       container.read(addressDirectoryProvider),
       isA<BanAddressDirectory>(),
@@ -151,6 +143,19 @@ void main() {
       container.read(memberAccountProvider),
       same(container.read(identityProvider)),
     );
+  });
+
+  test('should delete the streets of a phone with no secteur open, kept by '
+      'older versions', () async {
+    File('${storage.path}/streets/lilas.json')
+      ..createSync(recursive: true)
+      ..writeAsStringSync('{}');
+    File('${storage.path}/moved_streets.json').writeAsStringSync('{}');
+
+    await containerWith();
+
+    expect(Directory('${storage.path}/streets').existsSync(), isFalse);
+    expect(File('${storage.path}/moved_streets.json').existsSync(), isFalse);
   });
 
   test('should stamp with the uid when the phone signed in before', () async {
@@ -335,18 +340,31 @@ void main() {
       ),
     );
 
-    test('should be the phone storage while no tournée is open', () async {
+    test('should hold no street while no secteur is open', () async {
       final container = await leasPhone(noSector: true);
 
       final streets = container.read(streetRepositoryProvider);
 
-      expect(streets, same(container.read(phoneStreetRepositoryProvider)));
-      expect(streets, isA<LocalStreetRepository>());
+      expect(streets, isNot(isA<FirestoreStreetRepository>()));
+      expect(await streets.watchAll().first, isEmpty);
+      expect(await streets.watchDeleted().first, isEmpty);
+      expect(await streets.watch(morin.id).first, isNull);
+      expect(await streets.find(morin.id), isNull);
+      expect(await streets.findByBanId(morin.banId!), isNull);
       expect(firestoreAsked, 0);
-      expect(
-        container.read(movedStreetsLogProvider),
-        isA<LocalMovedStreetsLog>(),
+    });
+
+    test('should refuse every write while no secteur is open', () async {
+      final container = await leasPhone(noSector: true);
+      final streets = container.read(streetRepositoryProvider);
+      final (marked, change) = valueOf(
+        morin.markHouse(n('32'), VisitStatus.done, by: lea, at: twoPm),
       );
+
+      await expectLater(streets.add(morin), throwsStateError);
+      await expectLater(streets.save(marked, change), throwsStateError);
+      await expectLater(streets.purge(morin.id), throwsStateError);
+      expect(firestoreAsked, 0);
     });
 
     test('should be the open tournée\'s campaign in Firestore', () async {
@@ -357,18 +375,12 @@ void main() {
       await pumpEventQueue();
 
       expect(streets, isA<FirestoreStreetRepository>());
-      expect(
-        container.read(phoneStreetRepositoryProvider),
-        isA<LocalStreetRepository>(),
-      );
       final stored = await db
           .doc('sectors/t49/campaigns/2026/streets/morin')
           .get();
       expect(stored.data()?['name'], 'Rue Pierre Morin');
-      expect(
-        await container.read(phoneStreetRepositoryProvider).find(morin.id),
-        isNull,
-      );
+      // Nothing of it in the folder the phone kept its own streets in.
+      expect(Directory('${storage.path}/streets').existsSync(), isFalse);
     });
 
     test(
@@ -403,17 +415,17 @@ void main() {
       },
     );
 
-    test('should be the phone storage again once no tournée is open', () async {
+    test('should hold no street again once no secteur is open', () async {
       final container = await leasPhone();
-      container.read(streetRepositoryProvider);
+      await container.read(streetRepositoryProvider).add(morin);
+      await pumpEventQueue();
 
       final store = container.read(mySectorsStoreProvider);
       await store.save(store.mySectors.forget(sector49.id));
 
-      expect(
-        container.read(streetRepositoryProvider),
-        same(container.read(phoneStreetRepositoryProvider)),
-      );
+      final streets = container.read(streetRepositoryProvider);
+      expect(streets, isNot(isA<FirestoreStreetRepository>()));
+      expect(await streets.watchAll().first, isEmpty);
     });
 
     test(
@@ -528,22 +540,5 @@ void main() {
       final houses = stored.data()!['houses'] as Map<String, dynamic>;
       expect((houses['32'] as Map<String, dynamic>)['by'], 'uid-lea');
     });
-
-    test(
-      'should keep the tournées the streets went into across starts',
-      () async {
-        await (await containerWith())
-            .read(movedStreetsLogProvider)
-            .rememberMovedInto(sector49.id);
-
-        final second = await containerWith();
-
-        expect(
-          second.read(movedStreetsLogProvider).wereMovedInto(sector49.id),
-          isTrue,
-        );
-        expect(File('${storage.path}/moved_streets.json').existsSync(), isTrue);
-      },
-    );
   });
 }

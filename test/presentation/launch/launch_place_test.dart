@@ -6,23 +6,15 @@ import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/launch/launch_place.dart';
 
-import '../../application/use_cases/street_fixtures.dart';
 import '../../domain/sector/my_sectors_fixtures.dart';
 import '../../support/fakes/fake_my_sectors_store.dart';
-import '../../support/fakes/fake_street_repository.dart';
 
 void main() {
-  /// Where a phone holding [mine] and the phone [streets] opens.
-  Future<LaunchPlace> launchOf(
-    MySectors mine, [
-    FakeStreetRepository? streets,
-  ]) {
+  /// Where a phone holding [mine] opens.
+  Future<LaunchPlace> launchOf(MySectors mine) {
     final container = ProviderContainer(
       overrides: [
         mySectorsStoreProvider.overrideWithValue(FakeMySectorsStore(mine)),
-        phoneStreetRepositoryProvider.overrideWithValue(
-          streets ?? FakeStreetRepository(),
-        ),
       ],
     );
     addTearDown(container.dispose);
@@ -33,9 +25,9 @@ void main() {
     expect(await launchOf(MySectors.none), const LaunchOnWelcome());
   });
 
-  test('should open the streets on a phone holding streets', () async {
+  test('should open the start screen on a phone knowing a secteur', () async {
     expect(
-      await launchOf(MySectors.none, FakeStreetRepository([lilas])),
+      await launchOf(MySectors.none.remember(sector12)),
       const LaunchOnStreets(),
     );
   });

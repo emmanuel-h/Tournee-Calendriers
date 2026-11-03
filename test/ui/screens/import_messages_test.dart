@@ -9,14 +9,10 @@ void main() {
   final l10n = lookupAppLocalizations(const Locale('fr'));
 
   group('importDoneMessage', () {
-    test('should count the new streets when none came back', () {
+    test('should say the streets were added to the secteur', () {
       expect(
-        importDoneMessage(
-          l10n,
-          const ImportSummary(imported: 3, failed: 0),
-          inSector: false,
-        ),
-        '3 rues importées',
+        importDoneMessage(l10n, const ImportSummary(imported: 3, failed: 0)),
+        '3 rues ajoutées au secteur',
       );
     });
 
@@ -25,42 +21,16 @@ void main() {
         importDoneMessage(
           l10n,
           const ImportSummary(imported: 0, restored: 2, failed: 0),
-          inSector: false,
         ),
         '2 rues restaurées',
       );
     });
 
-    test('should count both when streets are new and restored', () {
-      expect(
-        importDoneMessage(
-          l10n,
-          const ImportSummary(imported: 2, restored: 1, failed: 0),
-          inSector: false,
-        ),
-        '2 rues importées, 1 restaurée',
-      );
-    });
-  });
-
-  group('in a tournée', () {
-    test('should say the streets were added to the tournée', () {
-      expect(
-        importDoneMessage(
-          l10n,
-          const ImportSummary(imported: 3, failed: 0),
-          inSector: true,
-        ),
-        '3 rues ajoutées au secteur',
-      );
-    });
-
-    test('should count the restored streets alone the same way', () {
+    test('should count one restored street alone the same way', () {
       expect(
         importDoneMessage(
           l10n,
           const ImportSummary(imported: 0, restored: 1, failed: 0),
-          inSector: true,
         ),
         '1 rue restaurée',
       );
@@ -71,31 +41,29 @@ void main() {
         importDoneMessage(
           l10n,
           const ImportSummary(imported: 2, restored: 1, failed: 0),
-          inSector: true,
         ),
         '2 rues ajoutées, 1 restaurée',
       );
     });
-
-    test('should say which streets remain to add when some failed', () {
-      expect(
-        importPartialMessage(
-          l10n,
-          const ImportSummary(
-            imported: 1,
-            restored: 1,
-            failed: 1,
-            failure: ImportProblem.noNetwork,
-          ),
-          inSector: true,
-        ),
-        '2 rues ajoutées, 1 en échec. ${l10n.addressNoNetwork} '
-        'Les rues encore cochées restent à ajouter.',
-      );
-    });
   });
 
-  test('should say which streets remain to import when some failed', () {
+  test('should say which streets remain to add when some failed', () {
+    expect(
+      importPartialMessage(
+        l10n,
+        const ImportSummary(
+          imported: 1,
+          restored: 1,
+          failed: 1,
+          failure: ImportProblem.noNetwork,
+        ),
+      ),
+      '2 rues ajoutées, 1 en échec. ${l10n.addressNoNetwork} '
+      'Les rues encore cochées restent à ajouter.',
+    );
+  });
+
+  test('should give the reason the service gave when some failed', () {
     expect(
       importPartialMessage(
         l10n,
@@ -104,10 +72,9 @@ void main() {
           failed: 1,
           failure: ImportProblem.serviceError,
         ),
-        inSector: false,
       ),
-      '2 rues importées, 1 en échec. ${l10n.addressServiceError} '
-      'Les rues encore cochées restent à importer.',
+      '2 rues ajoutées, 1 en échec. ${l10n.addressServiceError} '
+      'Les rues encore cochées restent à ajouter.',
     );
   });
 }
