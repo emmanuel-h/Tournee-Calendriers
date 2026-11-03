@@ -41,28 +41,26 @@ firebase_app_check 0.5.1, fake_cloud_firestore 4.5) done; the fake still cannot 
 `FieldPath`, so `FirestoreStreetRepository.save` keeps writing top-level fields by name. #69: rules tooling in `firebase/` upgraded to firebase-tools
 15.34, rules-unit-testing 5, firebase 12 (Node ≥ 20; 22 locally and in CI); the Firestore
 emulator's stale reads are gone (`tool/admin_e2e.sh` 6/6 in a row, 2026-11-02).
-M3 done, milestone closed (2026-11-01), validated on the phone with 0.6.0: geometry and map layers (#26), geopf adapters (#27), street-picking use cases with shapes and assignees (#28), MapLibre map widget in `ui/map/` (#29), a tournée's communes and « Ajouter des rues » Carte | Liste (#78), Accueil (#30), the street card, search and manual street (#31), tries with nobody home (#80), the sheet on a tap to ↻ with a day + hour (#81). Follow-ups from the phone test: street shapes from the OpenFreeMap vector tiles instead of Overpass, filled once for streets without one (#92); take a street from « Autres rues » (#93); released as 0.5.1. A street held only by ex-members of the team is « libre » (#91, display only, no rules change). Rules (with the #92 shape fill) deployed 2026-10-18 and identical to `firestore.rules` (checked 2026-11-01).
-M4 done, milestone closed (2026-11-02), validated on the phone with 0.7.0: the open tournée
+M3 done, milestone closed (2026-11-01): geometry and map layers (#26), geopf adapters (#27), street-picking use cases with shapes and assignees (#28), MapLibre map widget in `ui/map/` (#29), a tournée's communes and « Ajouter des rues » Carte | Liste (#78), Accueil (#30), the street card, search and manual street (#31), tries with nobody home (#80), the sheet on a tap to ↻ with a day + hour (#81). Follow-ups from the phone test: street shapes from the OpenFreeMap vector tiles instead of Overpass, filled once for streets without one (#92); take a street from « Autres rues » (#93). A street held only by ex-members of the team is « libre » (#91, display only, no rules change). Rules (with the #92 shape fill) deployed 2026-10-18 and identical to `firestore.rules` (checked 2026-11-01).
+M4 done, milestone closed (2026-11-02): the open tournée
 downloads itself for offline use, unseen (#32: streets into the cache + MapLibre region, silent
 re-download for OpenFreeMap's weekly tiles); one line in Paramètres and tournées greyed
 « Disponible avec réseau » offline (#33); airplane-mode day (#34).
-M5 done, milestone closed (2026-11-02), released as 0.8.0 (code 9, internal track, with the store listing), phone test passed: launcher icon, themed icon and launch
+M5 done, milestone closed (2026-11-02): launcher icon, themed icon and launch
 screen (#101); rules tooling on firebase-tools 15 (#69); each house of a bulk street write checked
-in the rules, 2 per write, sent in order (#70, `OrderedWrites`; those rules deployed 2026-11-02
-once 0.8.0 was installed: 0.7.0 and older can no longer add a street of more than 2 houses); Firebase 7 (#90); dark
+in the rules, 2 per write, sent in order (#70, `OrderedWrites`; those rules deployed 2026-11-02); Firebase 7 (#90); dark
 palette reviewed and 200 % text checked (#35); the user's Confidentialité text (#79) and the
 policy in `PRIVACY.md` linked from it; MIT `LICENSE`; Play listing texts, icon, feature graphic
 and screenshots in `store/` (#36). Follow-ups: #102–#105.
-Release signing and Play publishing pulled forward from M5 (#37): 0.7.0 (code 8, 2026-11-02: #32,
-#33) is on the internal track; publish with the `release-store` skill. `lib/bootstrap/firebase_options.dart` and `android/app/google-services.json`
+Release signing and Play publishing (#37): publish with the `release-store` skill; versions are GitHub releases. `lib/bootstrap/firebase_options.dart` and `android/app/google-services.json`
 are gitignored: run `flutterfire configure --out=lib/bootstrap/firebase_options.dart` locally;
 CI writes them from secrets.
-M5 follow-ups (2026-11-02), released as 0.9.0 (code 10, internal track); M5 closed by the user (2026-11-02): built-in Kotlin (#103; Flutter still
+M5 follow-ups (2026-11-02); M5 closed by the user (2026-11-02): built-in Kotlin (#103; Flutter still
 warns about firebase_core/auth/app_check, a false positive of its text check, flutter/flutter#189770);
 a new street cut off mid-write is caught up at the next start (#104, `UnfinishedStreets`; debug log
 « Street … written » to time a 300-number street); streets per member in Équipe, bottom buttons
 pinned (#105). #102 waits for a firebase-tools release past 15.34.2.
-M8 built (2026-11-03), released as 0.10.0 (code 11, internal track), waiting for the phone test; issues
+M8 built (2026-11-03), waiting for the user's phone test; issues
 #107–#116 open: code and Firestore renamed `Tournee` → `Sector` (`sectors/`, `sectorKeys/`; phone files keep
 their old names) and the outing is `Round` (#116, #115); status picker instead of the tap cycle (#107); « Refusé »
 ⊘ (#113); tournées with their dons, kept in `open_round.json` until validated, then a create-only summary under
