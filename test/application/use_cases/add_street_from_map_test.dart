@@ -1,6 +1,6 @@
-// « Ajouter et me l'attribuer » / « Ajouter sans m'attribuer » on the street
-// card (PLAN §5.4): the BAN street with its numbers and positions, and the
-// road the card found when it did, stored in the tournée at once.
+// « Ajouter au secteur » on the street card (PLAN §5.4, §5.14): the BAN
+// street with its numbers and positions, and the road the card found when
+// it did, stored in the secteur at once.
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/use_cases/add_street_from_map.dart';
@@ -44,12 +44,12 @@ void main() {
 
   setUp(() {
     streets = repositoryWithLilas();
-    add = AddStreetFromMap(streets, FakeIdGenerator('street'), leaOnThePhone());
+    add = AddStreetFromMap(streets, FakeIdGenerator('street'));
   });
 
   group('a new street', () {
     test('should store the street with its numbers and positions', () async {
-      final street = valueOf(await add(_morinNumbers, assignToMe: false));
+      final street = valueOf(await add(_morinNumbers));
 
       expect(streets.added, [same(street)]);
       expect(street.id, StreetId('street-1'));
@@ -64,24 +64,8 @@ void main() {
       expect(street.deletion, isNull);
     });
 
-    test('should give the street to the member with « Ajouter et me '
-        'l\'attribuer »', () async {
-      final street = valueOf(await add(_morinNumbers, assignToMe: true));
-
-      expect(street.assignees, {lea});
-    });
-
-    test('should leave the street free with « Ajouter sans '
-        'm\'attribuer »', () async {
-      final street = valueOf(await add(_morinNumbers, assignToMe: false));
-
-      expect(street.assignees, isEmpty);
-    });
-
     test('should store the road the card found', () async {
-      final street = valueOf(
-        await add(_morinNumbers, assignToMe: false, shape: _road),
-      );
+      final street = valueOf(await add(_morinNumbers, shape: _road));
 
       expect(street.shape, _road);
       expect(streets.added.single.shape, _road);
@@ -91,7 +75,7 @@ void main() {
     // street gets its line later (`FillStreetShape`).
     test('should store the street without shape when the card has no '
         'road', () async {
-      final street = valueOf(await add(_morinNumbers, assignToMe: false));
+      final street = valueOf(await add(_morinNumbers));
 
       expect(street.shape, StreetShape.none);
       expect(streets.added, hasLength(1));
@@ -110,7 +94,7 @@ void main() {
         duplicateNumbers: 0,
       );
 
-      final failure = failureOf(await add(twice, assignToMe: false));
+      final failure = failureOf(await add(twice));
 
       expect(failure, AddStreetFailure.serviceError);
       expect(streets.added, isEmpty);
@@ -128,7 +112,7 @@ void main() {
     );
 
     test('should refuse it and change nothing', () async {
-      final failure = failureOf(await add(lilasNumbers, assignToMe: true));
+      final failure = failureOf(await add(lilasNumbers));
 
       expect(failure, AddStreetFailure.alreadyInSector);
       expect(streets.added, isEmpty);
@@ -150,7 +134,7 @@ void main() {
       });
 
       test('should bring it back with its marks', () async {
-        final street = valueOf(await add(lilasNumbers, assignToMe: false));
+        final street = valueOf(await add(lilasNumbers));
 
         expect(street.isDeleted, isFalse);
         expect(street.id, lilasId);
@@ -158,31 +142,6 @@ void main() {
         expect(streets[lilasId]!.isDeleted, isFalse);
         expect(streets.added, isEmpty);
         expect(streets.saved.single.$2, StreetRestored(streetId: lilasId));
-      });
-
-      test('should give it to the member with « Ajouter et me '
-          'l\'attribuer »', () async {
-        final street = valueOf(await add(lilasNumbers, assignToMe: true));
-
-        expect(street.assignees, {lea});
-        expect(streets[lilasId]!.assignees, {lea});
-        expect(streets.saved.map((saved) => saved.$2), [
-          StreetRestored(streetId: lilasId),
-          StreetTaken(streetId: lilasId, member: lea),
-        ]);
-      });
-
-      test('should not take it again when the member covers it', () async {
-        final (taken, change) = valueOf(streets[lilasId]!.take(lea));
-        await streets.save(taken, change);
-        streets.saved.clear();
-
-        final street = valueOf(await add(lilasNumbers, assignToMe: true));
-
-        expect(street.assignees, {lea});
-        expect(streets.saved.map((saved) => saved.$2), [
-          StreetRestored(streetId: lilasId),
-        ]);
       });
     });
   });

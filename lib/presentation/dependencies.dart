@@ -52,12 +52,10 @@ import 'package:tournee_calendriers/application/use_cases/look_up_street_shape.d
 import 'package:tournee_calendriers/application/use_cases/mark_dwelling.dart';
 import 'package:tournee_calendriers/application/use_cases/my_sectors.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_corbeille.dart';
-import 'package:tournee_calendriers/application/use_cases/observe_my_streets.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_offline.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_pending_sync.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_street.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_streets.dart';
-import 'package:tournee_calendriers/application/use_cases/observe_streets_by_member.dart';
 import 'package:tournee_calendriers/application/use_cases/phone_settings.dart';
 import 'package:tournee_calendriers/application/use_cases/purge_corbeille.dart';
 import 'package:tournee_calendriers/application/use_cases/refresh_offline_maps.dart';
@@ -68,7 +66,6 @@ import 'package:tournee_calendriers/application/use_cases/search_street.dart';
 import 'package:tournee_calendriers/application/use_cases/sector_downloads.dart';
 import 'package:tournee_calendriers/application/use_cases/set_house_details.dart';
 import 'package:tournee_calendriers/application/use_cases/sign_in.dart';
-import 'package:tournee_calendriers/application/use_cases/street_assignment.dart';
 import 'package:tournee_calendriers/application/use_cases/team.dart';
 import 'package:tournee_calendriers/application/use_cases/undo_last_change.dart';
 import 'package:tournee_calendriers/domain/sector/sector_repository.dart';
@@ -182,15 +179,6 @@ final observeStreetProvider = Provider(
 final observeStreetsProvider = Provider(
   (ref) => ObserveStreets(ref.watch(streetRepositoryProvider)),
 );
-final observeMyStreetsProvider = Provider(
-  (ref) => ObserveMyStreets(
-    ref.watch(streetRepositoryProvider),
-    ref.watch(identityProvider),
-  ),
-);
-final observeStreetsByMemberProvider = Provider(
-  (ref) => ObserveStreetsByMember(ref.watch(streetRepositoryProvider)),
-);
 
 /// The step of the status use cases that tells the tournée on about a ✓
 /// or ⊘ (PLAN §5.13).
@@ -230,18 +218,6 @@ final editStreetNumbersProvider = Provider(
     ref.watch(identityProvider),
   ),
 );
-final takeStreetProvider = Provider(
-  (ref) => TakeStreet(
-    ref.watch(streetRepositoryProvider),
-    ref.watch(identityProvider),
-  ),
-);
-final releaseStreetProvider = Provider(
-  (ref) => ReleaseStreet(
-    ref.watch(streetRepositoryProvider),
-    ref.watch(identityProvider),
-  ),
-);
 final lookUpStreetProvider = Provider(
   (ref) => LookUpStreet(
     ref.watch(addressDirectoryProvider),
@@ -252,7 +228,6 @@ final addStreetFromMapProvider = Provider(
   (ref) => AddStreetFromMap(
     ref.watch(streetRepositoryProvider),
     ref.watch(idGeneratorProvider),
-    ref.watch(identityProvider),
   ),
 );
 final lookUpStreetShapeProvider = Provider(
@@ -268,7 +243,6 @@ final addManualStreetProvider = Provider(
   (ref) => AddManualStreet(
     ref.watch(streetRepositoryProvider),
     ref.watch(idGeneratorProvider),
-    ref.watch(identityProvider),
   ),
 );
 final searchStreetProvider = Provider(

@@ -10,8 +10,12 @@ final _close = find.byKey(const Key('streetCard.close'));
 
 void main() {
   late int closed;
+  late int added;
 
-  setUp(() => closed = 0);
+  setUp(() {
+    closed = 0;
+    added = 0;
+  });
 
   Future<void> pumpCard(WidgetTester tester, StreetCard card) {
     tester.view
@@ -24,8 +28,7 @@ void main() {
           alignment: Alignment.bottomCenter,
           child: StreetCardSheet(
             card: card,
-            onTake: () {},
-            onRelease: () {},
+            onAdd: () => added++,
             onClose: () => closed++,
           ),
         ),
@@ -40,9 +43,54 @@ void main() {
     commune: 'Villefranche-sur-Saône',
     done: 3,
     total: 12,
-    coverage: StreetCoverage.free,
-    coveredBy: const [],
   );
+
+  testWidgets('should show a street of the secteur with its progress and '
+      '« Ouvrir » only (PLAN §5.14)', (tester) async {
+    await pumpCard(tester, longName);
+
+    expect(find.text('3/12 faits'), findsOneWidget);
+    expect(find.bySemanticsLabel('3 sur 12 faits'), findsOneWidget);
+    expect(find.byKey(const Key('streetCard.chip.1')), findsNothing);
+    expect(find.byKey(const Key('streetCard.open')), findsOneWidget);
+    expect(find.text('Ouvrir'), findsOneWidget);
+    expect(find.byType(OutlinedButton), findsNothing);
+  });
+
+  testWidgets('should add a street with its one « Ajouter au secteur » '
+      'button', (tester) async {
+    await pumpCard(
+      tester,
+      const StreetCardToAdd(
+        name: 'Rue Pierre Morin',
+        commune: 'Villefranche-sur-Saône',
+        numberCount: 19,
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('streetCard.add')));
+
+    expect(added, 1);
+    expect(find.text('Ajouter au secteur'), findsOneWidget);
+    expect(find.textContaining('attribuer'), findsNothing);
+  });
+
+  testWidgets('should wait while the street is being added', (tester) async {
+    await pumpCard(
+      tester,
+      const StreetCardToAdd(
+        name: 'Rue Pierre Morin',
+        commune: 'Villefranche-sur-Saône',
+        numberCount: 19,
+        adding: true,
+      ),
+    );
+
+    await tester.tap(find.byKey(const Key('streetCard.add')));
+
+    expect(added, 0);
+    expect(find.text('Ajout en cours…'), findsOneWidget);
+  });
 
   testWidgets('should close the card when its ✕ is tapped', (tester) async {
     await pumpCard(tester, longName);

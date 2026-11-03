@@ -36,9 +36,9 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 /// live; it opens offline from the phone's copy, where a new code and
 /// deleting say they need the network.
 ///
-/// Each member shows how many streets they cover (« 3 rues ▸ »); tapping
-/// the count unfolds their names under the row (#105). « Quitter » and
-/// « Supprimer » stay pinned at the bottom while the rest scrolls.
+/// Every member covers every street of the secteur (PLAN §5.14): the rows
+/// name nobody's streets. « Quitter » and « Supprimer » stay pinned at the
+/// bottom while the rest scrolls.
 /// « Démarrer une nouvelle campagne » comes with v1.1.
 final class TeamScreen extends ConsumerWidget {
   const TeamScreen({super.key});
@@ -511,194 +511,71 @@ final class _RequestCard extends StatelessWidget {
   }
 }
 
-/// A member: « Manu (vous) · admin », the streets they cover (« 3 rues
-/// ▸ »), and for an admin a ⋮ on the others that offers « Retirer ». The
-/// member on the phone has the dark avatar.
-///
-/// Tapping the count unfolds the names of the streets under the row, and
-/// folds them again (#105). A `StatefulWidget` holds whether it is open:
-/// only this row needs to know, every row starts folded each time Équipe
-/// opens, and the key of the row (the member's id) keeps it with the
-/// member when the team changes.
-final class _MemberTile extends StatefulWidget {
+/// A member: « Manu (vous) · admin », and for an admin a ⋮ on the others
+/// that offers « Retirer ». The member on the phone has the dark avatar.
+final class _MemberTile extends StatelessWidget {
   const _MemberTile({super.key, required this.member, required this.onRemove});
 
   final MemberRow member;
   final VoidCallback onRemove;
 
   @override
-  State<_MemberTile> createState() => _MemberTileState();
-}
-
-final class _MemberTileState extends State<_MemberTile> {
-  var _open = false;
-
-  @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final colors = AppColors.of(context);
-    final member = widget.member;
     final named = member.isMe ? l10n.teamMemberYou(member.name) : member.name;
     final label = member.isAdmin ? l10n.teamMemberAdmin(named) : named;
-    // A member who covers no street has nothing to unfold, even when the
-    // row was open before they let their last street go.
-    final open = _open && member.streets.isNotEmpty;
-    final divider = Border(bottom: BorderSide(color: colors.divider));
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      children: [
-        Container(
-          constraints: const BoxConstraints(
-            minHeight: AppSizes.memberRowHeight,
-          ),
-          padding: EdgeInsets.fromLTRB(16, 0, member.canRemove ? 4 : 12, 0),
-          decoration: BoxDecoration(color: colors.surface, border: divider),
-          child: Row(
-            spacing: 12,
-            children: [
-              member.isMe
-                  ? _Avatar(
-                      name: member.name,
-                      background: colors.ink,
-                      foreground: colors.surface,
-                    )
-                  : _Avatar(
-                      name: member.name,
-                      background: colors.divider,
-                      foreground: colors.ink,
-                    ),
-              Expanded(
-                child: Text(
-                  label,
-                  style: AppTextStyles.bodyLarge.copyWith(
-                    color: colors.ink,
-                    fontWeight: FontWeight.w700,
-                  ),
+    return Container(
+      constraints: const BoxConstraints(minHeight: AppSizes.memberRowHeight),
+      padding: EdgeInsets.fromLTRB(16, 0, member.canRemove ? 4 : 16, 0),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        border: Border(bottom: BorderSide(color: colors.divider)),
+      ),
+      child: Row(
+        spacing: 12,
+        children: [
+          member.isMe
+              ? _Avatar(
+                  name: member.name,
+                  background: colors.ink,
+                  foreground: colors.surface,
+                )
+              : _Avatar(
+                  name: member.name,
+                  background: colors.divider,
+                  foreground: colors.ink,
                 ),
-              ),
-              _StreetCount(
-                member: member,
-                open: open,
-                onTap: () => setState(() => _open = !open),
-              ),
-              if (member.canRemove)
-                // A menu of one item, as the mockup's ⋮: removing someone is
-                // never one tap away.
-                // `onSelected` runs once the menu has closed, so the dialog it
-                // opens is not closed with the menu.
-                PopupMenuButton<_MemberAction>(
-                  key: const Key('team.member.options'),
-                  tooltip: l10n.teamMemberOptions(member.name),
-                  icon: Icon(Icons.more_vert, color: colors.ink),
-                  onSelected: (action) => switch (action) {
-                    _MemberAction.remove => widget.onRemove(),
-                  },
-                  itemBuilder: (context) => [
-                    PopupMenuItem(
-                      key: const Key('team.member.remove'),
-                      value: _MemberAction.remove,
-                      child: Text(l10n.teamRemove),
-                    ),
-                  ],
-                ),
-            ],
-          ),
-        ),
-        if (open)
-          Semantics(
-            // One node named « Rues de Léa » around the names, which
-            // TalkBack still reads one by one.
-            container: true,
-            label: l10n.teamMemberStreetsList(member.name),
-            child: Container(
-              key: const Key('team.member.streetList'),
-              padding: const EdgeInsets.fromLTRB(
-                AppSizes.memberStreetsIndent,
-                4,
-                16,
-                8,
-              ),
-              decoration: BoxDecoration(color: colors.surface, border: divider),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  for (final street in member.streets)
-                    // A node of its own per street, so the names are not
-                    // merged into the label of the list.
-                    Semantics(
-                      container: true,
-                      child: Text(
-                        street,
-                        style: AppTextStyles.memberStreet.copyWith(
-                          color: colors.ink,
-                        ),
-                      ),
-                    ),
-                ],
+          Expanded(
+            child: Text(
+              label,
+              style: AppTextStyles.bodyLarge.copyWith(
+                color: colors.ink,
+                fontWeight: FontWeight.w700,
               ),
             ),
           ),
-      ],
-    );
-  }
-}
-
-/// « 3 rues ▸ » at the end of a member's row, muted, which unfolds the
-/// streets (▾ while they show); a plain « 0 rue » when there is none.
-final class _StreetCount extends StatelessWidget {
-  const _StreetCount({
-    required this.member,
-    required this.open,
-    required this.onTap,
-  });
-
-  final MemberRow member;
-
-  /// The streets show under the row.
-  final bool open;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final colors = AppColors.of(context);
-    final count = l10n.teamMemberStreets(member.streets.length);
-    final countText = Text(
-      count,
-      style: AppTextStyles.small.copyWith(color: colors.muted),
-    );
-    if (member.streets.isEmpty) {
-      return Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 4),
-        child: countText,
-      );
-    }
-    return Semantics(
-      button: true,
-      label: open
-          ? l10n.teamMemberStreetsHide(member.name, count)
-          : l10n.teamMemberStreetsShow(member.name, count),
-      // The label says it all: the count and ▸ are not read again.
-      excludeSemantics: true,
-      child: TextButton(
-        key: const Key('team.member.streets'),
-        onPressed: onTap,
-        style: TextButton.styleFrom(
-          minimumSize: const Size.square(AppSizes.minTapTarget),
-          padding: const EdgeInsets.symmetric(horizontal: 4),
-          foregroundColor: colors.muted,
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          spacing: AppSizes.memberStreetsChevronGap,
-          children: [
-            countText,
-            Text(
-              open ? '▾' : '▸',
-              style: AppTextStyles.small.copyWith(color: colors.ink),
+          if (member.canRemove)
+            // A menu of one item, as the mockup's ⋮: removing someone is
+            // never one tap away.
+            // `onSelected` runs once the menu has closed, so the dialog it
+            // opens is not closed with the menu.
+            PopupMenuButton<_MemberAction>(
+              key: const Key('team.member.options'),
+              tooltip: l10n.teamMemberOptions(member.name),
+              icon: Icon(Icons.more_vert, color: colors.ink),
+              onSelected: (action) => switch (action) {
+                _MemberAction.remove => onRemove(),
+              },
+              itemBuilder: (context) => [
+                PopupMenuItem(
+                  key: const Key('team.member.remove'),
+                  value: _MemberAction.remove,
+                  child: Text(l10n.teamRemove),
+                ),
+              ],
             ),
-          ],
-        ),
+        ],
       ),
     );
   }

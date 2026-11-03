@@ -17,7 +17,7 @@ void main() {
 
   setUp(() {
     streets = repositoryWithLilas();
-    add = AddManualStreet(streets, FakeIdGenerator('street'), leaOnThePhone());
+    add = AddManualStreet(streets, FakeIdGenerator('street'));
   });
 
   test('should store the street with a house to do per number', () async {
@@ -25,7 +25,6 @@ void main() {
       name: streetName('Chemin des Vignes'),
       commune: villefranche,
       numbers: [n('3'), n('1'), n('2bis')],
-      assignToMe: false,
     );
 
     expect(streets.added, [same(street)]);
@@ -41,41 +40,17 @@ void main() {
     ]);
   });
 
-  test('should give the street to the member when asked', () async {
-    final street = await add(
-      name: streetName('Chemin des Vignes'),
-      commune: villefranche,
-      numbers: [n('1')],
-      assignToMe: true,
-    );
-
-    expect(street.assignees, {lea});
-  });
-
-  test('should leave the street free when not asked', () async {
-    final street = await add(
-      name: streetName('Chemin des Vignes'),
-      commune: villefranche,
-      numbers: [n('1')],
-      assignToMe: false,
-    );
-
-    expect(street.assignees, isEmpty);
-  });
-
   test('should give each new street its own id', () async {
     await add(
       name: streetName('Chemin des Vignes'),
       commune: villefranche,
       numbers: [n('1')],
-      assignToMe: false,
     );
 
     final second = await add(
       name: streetName('Impasse des Roses'),
       commune: villefranche,
       numbers: const [],
-      assignToMe: false,
     );
 
     expect(second.id, StreetId('street-2'));

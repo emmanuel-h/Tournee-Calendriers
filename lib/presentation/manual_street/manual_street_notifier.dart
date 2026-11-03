@@ -132,9 +132,6 @@ final class ManualStreetNotifier extends Notifier<ManualStreetState> {
       name: name.value,
       commune: commune,
       numbers: numbers,
-      // So the street is not lost to nobody's « Mes rues »: the member
-      // who types it knows it is to be done.
-      assignToMe: true,
     );
     if (ref.mounted) {
       _adding = false;

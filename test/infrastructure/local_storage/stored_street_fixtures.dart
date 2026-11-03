@@ -148,8 +148,7 @@ final lilasShape = StreetShape([
   [northDoor, townHallDoor, northDoor],
 ]);
 
-/// The Rue des Lilas with every kind of house, in the Corbeille, covered by
-/// Léa and Paul.
+/// The Rue des Lilas with every kind of house, in the Corbeille.
 final richStreet = valueOf(
   Street.create(
     id: StreetId('aB3dE5gH7jK9mN1pQ2sT'),
@@ -157,15 +156,14 @@ final richStreet = valueOf(
     commune: villefranche,
     banId: BanStreetId('69264_0420'),
     shape: lilasShape,
-    assignees: {lea, paul},
     houses: everyKindOfHouse,
     removedHouses: [removedFourteen],
     deletion: leaAtTwo,
   ),
 );
 
-/// A street typed in by hand: no BAN id, no position, no shape, nobody
-/// covering it, not deleted.
+/// A street typed in by hand: no BAN id, no position, no shape, not
+/// deleted.
 final manualStreet = valueOf(
   Street.create(
     id: StreetId('manual-1'),
@@ -183,7 +181,6 @@ void expectSameStreet(Street actual, Street expected) {
   expect(actual.commune, expected.commune);
   expect(actual.banId, expected.banId);
   expect(actual.shape, expected.shape);
-  expect(actual.assignees, expected.assignees);
   expect(actual.houses, expected.houses);
   expect(actual.removedHouses, expected.removedHouses);
   expect(actual.deletion, expected.deletion);

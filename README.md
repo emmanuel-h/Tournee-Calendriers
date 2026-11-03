@@ -24,12 +24,11 @@ Onboarding:
 Start screen:
 
 - Accueil (a secteur open): the secteur's map, its streets coloured by progress (« faite »,
-  « en partie », « à faire », « libre ») and, from street zoom, a dot per house; a legend
-  chip that folds away and explains the dots once zoomed in. Below, the « Mes rues » panel
-  (drag it up for the whole list, down for the totals): « Mes rues · 43/62 », « Équipe :
-  41 % », the member's streets, then « Autres rues du secteur »; a row opens the street.
-  A street tapped on the map shows its card: progress, who covers it, « Ouvrir » and « Me
-  l'attribuer » / « La faire aussi » / « Ne plus la faire ». Works offline.
+  « en partie », « à faire ») and, from street zoom, a dot per house; a legend chip that
+  folds away and explains the dots once zoomed in. Below, the « Rues » panel (drag it up for
+  the whole list, down for the totals): « Rues · 31/50 » over every street of the secteur,
+  then every street in one list (each member covers the whole secteur); a row opens the
+  street. A street tapped on the map shows its card: progress and « Ouvrir ». Works offline.
 - No secteur open: the map alone and « Aucun secteur ouvert », with « Rejoindre un
   secteur » (and « Créer un secteur » for an admin). Streets only live in a secteur.
 - « Ajouter des rues » (a secteur open): tabs « Carte | Liste ». « Liste » ticks the streets
@@ -37,8 +36,8 @@ Start screen:
   without any) with their house numbers from the national address base (BAN), and adds
   them to the secteur, a street from the Corbeille coming back with its marks; « Carte »
   (first) shows the secteur's map, opened on its communes: a tap on a road highlights it and
-  shows its street card (« Ajouter et me l'attribuer », « Ajouter sans m'attribuer », or take /
-  open a street of the secteur), the search box finds a street of the communes by name, and
+  shows its street card (« Ajouter au secteur », or « Ouvrir » for a street of the
+  secteur), the search box finds a street of the communes by name, and
   « Saisir une rue à la main » adds a street the map lacks, offline (« Connexion nécessaire
   pour ajouter une rue » otherwise).
 - Top bar: the open secteur (« Secteur 49 · 2026 » over its centre de secours), or the
@@ -48,8 +47,7 @@ Start screen:
   Clair, Sombre), confidentialité, version (opens « Nouveautés », what each version brings), licences, data credits.
 - Équipe (👥): the join code (copy button: « Code copié ») and its QR code, « Partager »,
   « Nouveau code » (admins), the requests to join with « Accepter » / « Refuser » (any
-  member or admin), the members (« · admin ») with the streets each one covers (« 3 rues »;
-  a tap unfolds their names) and « Retirer » (admins), the Corbeille, the secteur's
+  member or admin), the members (« · admin ») and « Retirer » (admins), the Corbeille, the secteur's
   communes (« + Ajouter une commune », ✕ but on the last one), and pinned at the bottom
   « Quitter le secteur » (every member) and « Supprimer le secteur » (admins).
   Answering, removing and leaving work offline; a new code and deleting need the network.
@@ -117,8 +115,7 @@ Street screen (« Rue »):
   adds a number, a list or a range (`12bis, 21-25`) with a live preview, each on its side
   (numbers in the Corbeille come back with their marks). Tap a number to change it
   (`3` → `3bis`), make it a building, or open a building's grid (« Ouvrir l'immeuble »).
-  « Ne plus la faire », shown to a member who covers the street, takes them off it (the
-  street stays for the others); « Supprimer la rue » sends the street to the Corbeille.
+  « Supprimer la rue » sends the street to the Corbeille.
 - « Modifier les portes » (« Gérer l'immeuble » under the grid): floor by floor, « + » adds a
   door, ✕ removes one (with « Annuler »; asks first when it has a mark), a tap renames it
   (« Gauche », « Droite » on every floor). The other doors keep their marks.

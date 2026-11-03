@@ -1,6 +1,5 @@
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/map/map_layers.dart';
-import 'package:tournee_calendriers/domain/sector/team_roster.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/progress_level.dart';
@@ -13,7 +12,6 @@ import '../../support/building_fixtures.dart';
 import '../../support/geo_fixtures.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
-import '../sector/sector_fixtures.dart' as sector;
 
 final _nationale = StreetId('rue-nationale');
 final _paix = StreetId('rue-de-la-paix');
@@ -30,7 +28,7 @@ final _door1 = at(45.98920, 4.71860);
 final _door2 = at(45.98930, 4.71850);
 final _door3 = at(45.98940, 4.71840);
 
-/// Rue Nationale, covered by Léa: 1 done, 2 to do, both placed; 4 typed in
+/// Rue Nationale: 1 done, 2 to do, both placed; 4 typed in
 /// by hand (no position).
 final _nationaleStreet = valueOf(
   Street.create(
@@ -38,7 +36,6 @@ final _nationaleStreet = valueOf(
     name: 'Rue Nationale',
     commune: villefranche,
     shape: _nationaleShape,
-    assignees: {lea},
     houses: [
       House(number: n('1'), status: VisitStatus.done, position: _door1),
       House(number: n('2'), position: _door2),
@@ -47,7 +44,7 @@ final _nationaleStreet = valueOf(
   ),
 );
 
-/// Rue de la Paix: one house, to do; nobody covers it.
+/// Rue de la Paix: one house, to do.
 final _paixStreet = valueOf(
   Street.create(
     id: _paix,
@@ -69,36 +66,8 @@ void main() {
           shape: _nationaleShape,
           level: ProgressLevel.partial,
         ),
-        StreetLine(street: _paix, shape: _paixShape, level: ProgressLevel.free),
+        StreetLine(street: _paix, shape: _paixShape, level: ProgressLevel.toDo),
       ]);
-    });
-
-    test('should be « à faire » when taken and nothing visited', () {
-      final (taken, _) = valueOf(_paixStreet.take(paul));
-
-      final layers = MapLayers.of([taken]);
-
-      expect(layers.lines.single.level, ProgressLevel.toDo);
-    });
-
-    test('should be « libre » when its only assignee left the team', () {
-      final (taken, _) = valueOf(_paixStreet.take(sector.paulId));
-
-      final layers = MapLayers.of([
-        taken,
-      ], roster: TeamRoster.of(sector.team(), me: sector.leaId));
-
-      expect(layers.lines.single.level, ProgressLevel.free);
-    });
-
-    test('should be « à faire » while an assignee is in the team', () {
-      final (taken, _) = valueOf(_paixStreet.take(sector.manuId));
-
-      final layers = MapLayers.of([
-        taken,
-      ], roster: TeamRoster.of(sector.team(), me: sector.leaId));
-
-      expect(layers.lines.single.level, ProgressLevel.toDo);
     });
 
     test('should draw no line for a street without shape', () {

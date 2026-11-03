@@ -1,8 +1,6 @@
 import 'package:tournee_calendriers/domain/sector/sector.dart';
 import 'package:tournee_calendriers/domain/shared/insee_code.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
-import 'package:tournee_calendriers/domain/shared/same_items.dart';
-import 'package:tournee_calendriers/domain/street/streets_by_member.dart';
 import 'package:tournee_calendriers/presentation/shared/recent_time.dart';
 
 /// Why a command of Équipe was not done, as the screen tells it.
@@ -76,14 +74,13 @@ final class TeamShown extends TeamState {
 
   /// [sector] as [me] sees it at [now] (« il y a 2 min »): [iAmAdmin]
   /// when the phone is an admin's, [admins] the other members known to be
-  /// admins, [streets] the streets each member covers.
+  /// admins.
   factory TeamShown.of(
     Sector sector, {
     required MemberId me,
     required DateTime now,
     required bool iAmAdmin,
     required Set<MemberId> admins,
-    required StreetsByMember streets,
   }) {
     // An active member or an admin changes the communes (PLAN §5.8);
     // never the last one.
@@ -126,9 +123,6 @@ final class TeamShown extends TeamState {
             // An admin removes any other member, admins included; leaving
             // is « Quitter » (PLAN §5.12).
             canRemove: iAmAdmin && member.id != me,
-            streets: [
-              for (final name in streets.streetsOf(member.id)) name.text,
-            ],
           ),
       ],
     );
@@ -237,17 +231,15 @@ final class RequestRow {
   int get hashCode => Object.hash(id, name, asked);
 }
 
-/// A member in « Membres »: « Manu (vous) · admin  5 rues ▸ »,
-/// « Léa  3 rues ▸ [⋮] ».
+/// A member in « Membres »: « Manu (vous) · admin », « Léa [⋮] ».
 final class MemberRow {
-  MemberRow({
+  const MemberRow({
     required this.id,
     required this.name,
     required this.isMe,
     required this.isAdmin,
     required this.canRemove,
-    List<String> streets = const [],
-  }) : streets = List.unmodifiable(streets);
+  });
 
   final MemberId id;
   final String name;
@@ -261,10 +253,6 @@ final class MemberRow {
   /// The member on the phone may « Retirer » this one (⋮).
   final bool canRemove;
 
-  /// The names of the streets this member covers, in French order: their
-  /// count (« 3 rues ») and, unfolded, the names under the row.
-  final List<String> streets;
-
   @override
   bool operator ==(Object other) =>
       other is MemberRow &&
@@ -272,10 +260,8 @@ final class MemberRow {
       other.name == name &&
       other.isMe == isMe &&
       other.isAdmin == isAdmin &&
-      other.canRemove == canRemove &&
-      sameItems(other.streets, streets);
+      other.canRemove == canRemove;
 
   @override
-  int get hashCode =>
-      Object.hash(id, name, isMe, isAdmin, canRemove, Object.hashAll(streets));
+  int get hashCode => Object.hash(id, name, isMe, isAdmin, canRemove);
 }

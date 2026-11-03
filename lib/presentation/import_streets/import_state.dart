@@ -167,7 +167,7 @@ final class StreetChoice {
   /// How many numbers the BAN lists for it.
   final int numberCount;
 
-  /// In « Mes rues » already: shown ticked and greyed, « déjà importée », and
+  /// In the secteur already: shown ticked and greyed, « déjà importée », and
   /// never imported again (its marks stay).
   final bool alreadyImported;
 

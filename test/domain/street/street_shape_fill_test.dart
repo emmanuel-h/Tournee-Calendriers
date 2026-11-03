@@ -31,7 +31,6 @@ Street _nationale({
     commune: villefranche,
     banId: BanStreetId('69264_1460'),
     shape: shape,
-    assignees: {lea},
     houses: [
       House(
         number: n('1'),
@@ -63,7 +62,6 @@ void main() {
       expect(street.name, before.name);
       expect(street.commune, before.commune);
       expect(street.banId, before.banId);
-      expect(street.assignees, {lea});
       expect(street.houses, before.houses);
       expect(street.removedHouses, before.removedHouses);
       expect(street.deletion, isNull);

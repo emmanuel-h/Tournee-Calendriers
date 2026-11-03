@@ -281,24 +281,9 @@ void main() {
     expect(streets[_id]!.isDeleted, isTrue);
   });
 
-  testWidgets('should take Léa off the street with « Ne plus la faire », '
-      'Paul staying', (tester) async {
-    final (pauls, _) = valueOf(_lilas.take(paul));
-    final (shared, _) = valueOf(pauls.take(lea));
-    await openEditMode(tester, street: shared);
-
-    await tester.tap(find.byKey(const Key('edit.stopCovering')));
-    await tester.pumpAndSettle();
-
-    expect(streets[_id]!.assignees, {paul});
-    expect(find.byKey(const Key('edit.stopCovering')), findsNothing);
-    expect(find.byKey(const Key('edit.deleteStreet')), findsOneWidget);
-  });
-
-  testWidgets('should not offer « Ne plus la faire » on a street Léa does '
-      'not cover', (tester) async {
-    final (pauls, _) = valueOf(_lilas.take(paul));
-    await openEditMode(tester, street: pauls);
+  testWidgets('should offer only « Supprimer la rue » at the bottom, never '
+      '« Ne plus la faire » (PLAN §5.14)', (tester) async {
+    await openEditMode(tester);
 
     expect(find.text('Ne plus la faire'), findsNothing);
     expect(find.text('Supprimer la rue'), findsOneWidget);

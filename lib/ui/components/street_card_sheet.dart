@@ -11,40 +11,25 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
 /// The street card at the bottom of the map (PLAN §5.4, Pick mockup), on
 /// « Ajouter des rues » and Accueil: the street's name and commune, its
-/// facts in grey chips, and two buttons that depend on what the street is
-/// to the tournée:
+/// facts in grey chips, and one button that depends on what the street is
+/// to the secteur (PLAN §5.14): « Ajouter au secteur » for a street to add,
+/// « Ouvrir » for a street of the secteur.
 ///
-/// | Street | Red button | Second button |
-/// |---|---|---|
-/// | to add | Ajouter et me l'attribuer | Ajouter sans m'attribuer |
-/// | libre | Me l'attribuer | Ouvrir |
-/// | mine | Ouvrir | Ne plus la faire |
-/// | someone else's | La faire aussi | Ouvrir |
-///
-/// « Ouvrir » and « Saisir une rue à la main » open their screens; the
-/// other buttons are the screen's ([onAdd], [onTake], [onRelease]), as is
-/// the ✕ at the top right ([onClose]).
+/// « Ouvrir » and « Saisir une rue à la main » open their screens; « Ajouter
+/// au secteur » is the screen's ([onAdd]), as is the ✕ at the top right
+/// ([onClose]).
 final class StreetCardSheet extends StatelessWidget {
   const StreetCardSheet({
     super.key,
     required this.card,
     this.onAdd,
-    required this.onTake,
-    required this.onRelease,
     required this.onClose,
   });
 
   final StreetCard card;
 
-  /// « Ajouter et me l'attribuer » (true) or « Ajouter sans m'attribuer »
-  /// (false); only a street to add calls it.
-  final ValueChanged<bool>? onAdd;
-
-  /// « Me l'attribuer », « La faire aussi ».
-  final VoidCallback onTake;
-
-  /// « Ne plus la faire ».
-  final VoidCallback onRelease;
+  /// « Ajouter au secteur »; only a street to add calls it.
+  final VoidCallback? onAdd;
 
   /// The ✕: closes the card, as a tap elsewhere on the map or the back
   /// gesture does.
@@ -154,7 +139,6 @@ final class StreetCardSheet extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final colors = AppColors.of(context);
     final adding = street.adding;
-    void add(bool assignToMe) => onAdd?.call(assignToMe);
     return [
       _Title(name: street.name, commune: street.commune),
       _Chips([
@@ -168,15 +152,9 @@ final class StreetCardSheet extends StatelessWidget {
           style: AppTextStyles.body.copyWith(color: colors.accent),
         ),
       PrimaryButton(
-        key: const Key('streetCard.addMine'),
-        label: adding ? l10n.streetCardAdding : l10n.streetCardAddMine,
-        onPressed: adding ? null : () => add(true),
-      ),
-      SecondaryButton(
-        key: const Key('streetCard.addFree'),
-        compact: true,
-        label: l10n.streetCardAddFree,
-        onPressed: adding ? null : () => add(false),
+        key: const Key('streetCard.add'),
+        label: adding ? l10n.streetCardAdding : l10n.streetCardAdd,
+        onPressed: adding ? null : onAdd,
       ),
       // A link in the mockup; a text button keeps its 48 dp of tap target.
       TextButton(
@@ -194,56 +172,22 @@ final class StreetCardSheet extends StatelessWidget {
 
   List<Widget> _inSector(BuildContext context, StreetCardInSector street) {
     final l10n = AppLocalizations.of(context);
-    void open() =>
-        context.push(AppRoutes.streetOf(street.id), extra: street.name);
-    final names = _joined(l10n, street.coveredBy);
-    final cover = switch (street.coverage) {
-      StreetCoverage.free => l10n.streetCardFree,
-      StreetCoverage.mine when names == null => l10n.streetCardMine,
-      StreetCoverage.mine => l10n.streetCardMineWith(names!),
-      StreetCoverage.others when names == null => l10n.streetCardOthersUnknown,
-      StreetCoverage.others => l10n.streetCardOthers(names!),
-    };
-    final (primary, secondary) = switch (street.coverage) {
-      StreetCoverage.free => (
-        (const Key('streetCard.take'), l10n.streetCardTake, onTake),
-        (const Key('streetCard.open'), l10n.streetCardOpen, open),
-      ),
-      StreetCoverage.mine => (
-        (const Key('streetCard.open'), l10n.streetCardOpen, open),
-        (const Key('streetCard.release'), l10n.streetCardRelease, onRelease),
-      ),
-      StreetCoverage.others => (
-        (const Key('streetCard.take'), l10n.streetCardTakeToo, onTake),
-        (const Key('streetCard.open'), l10n.streetCardOpen, open),
-      ),
-    };
     return [
       _Title(name: street.name, commune: street.commune),
       _Chips(
-        [l10n.streetCardProgress(street.done, street.total), cover],
+        [l10n.streetCardProgress(street.done, street.total)],
         semanticsLabels: [
           l10n.streetCardProgressSemantics(street.done, street.total),
-          cover,
         ],
       ),
-      PrimaryButton(key: primary.$1, label: primary.$2, onPressed: primary.$3),
-      SecondaryButton(
-        key: secondary.$1,
-        compact: true,
-        label: secondary.$2,
-        onPressed: secondary.$3,
+      PrimaryButton(
+        key: const Key('streetCard.open'),
+        label: l10n.streetCardOpen,
+        onPressed: () =>
+            context.push(AppRoutes.streetOf(street.id), extra: street.name),
       ),
     ];
   }
-
-  /// « Manu », « Manu et Julie », « Manu, Léa et Julie »; null for none.
-  static String? _joined(AppLocalizations l10n, List<String> names) =>
-      switch (names) {
-        [] => null,
-        [final only] => only,
-        [...final first, final last] => l10n.namesAnd(first.join(', '), last),
-      };
 }
 
 /// « Rue Pierre Morin » over « Villefranche-sur-Saône ».

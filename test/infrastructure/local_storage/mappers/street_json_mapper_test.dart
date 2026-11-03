@@ -107,7 +107,6 @@ void main() {
           shape: StreetShape([
             [townHallDoor, northDoor],
           ]),
-          assignees: {paul, lea},
           houses: [
             House(
               number: n('3bis'),
@@ -130,7 +129,6 @@ void main() {
         'banId': '69264_0420',
         'deletion': {'by': 'paul', 'at': '2026-11-02T15:00:00.000Z'},
         'shape': ['eguwGkrx[mQxH'],
-        'assignees': ['lea', 'paul'],
         'houses': [
           {
             'number': '3bis',
@@ -173,11 +171,8 @@ void main() {
       });
     });
 
-    test('should write no line and nobody for a street typed in by hand', () {
-      final json = streetToJson(manualStreet);
-
-      expect(json['shape'], isEmpty);
-      expect(json['assignees'], isEmpty);
+    test('should write no line for a street typed in by hand', () {
+      expect(streetToJson(manualStreet)['shape'], isEmpty);
     });
 
     test(
@@ -481,11 +476,18 @@ void main() {
       expect(streetFromJson(json).shape, StreetShape.none);
     });
 
-    test('should read nobody covering the street when the file has no '
-        'assignees', () {
-      final json = storedRichStreet((json) => json.remove('assignees'));
+    // PLAN §5.14: who covered a street is gone; a file written before
+    // keeps the field, whatever it holds, and reads as the same street.
+    test('should read a file that still has its old assignees', () {
+      for (final assignees in [
+        ['lea', 'paul'],
+        'lea',
+        [12],
+      ]) {
+        final json = storedRichStreet((json) => json['assignees'] = assignees);
 
-      expect(streetFromJson(json).assignees, isEmpty);
+        expectSameStreet(streetFromJson(json), richStreet);
+      }
     });
 
     // Files written before the tries (#80) have none.
@@ -634,9 +636,6 @@ void main() {
       'the shape is not a list': (json) => json['shape'] = 'abc',
       'a line of the shape is not text': (json) => json['shape'] = [12],
       'a line is not an encoded polyline': (json) => json['shape'] = [' '],
-      'the assignees are not a list': (json) => json['assignees'] = 'lea',
-      'an assignee is not text': (json) => json['assignees'] = [12],
-      'an assignee is blank': (json) => json['assignees'] = [''],
       'the tries are text': (json) => houseAt(json, 3)['tries'] = '3',
       'the tries pass the limit': (json) => houseAt(json, 3)['tries'] = 100,
       'the tries of a door are negative': (json) =>

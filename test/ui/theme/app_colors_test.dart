@@ -178,8 +178,6 @@ void main() {
     expect(dark.mapStreetDone, light.mapStreetDone);
     expect(dark.mapStreetPartial, light.mapStreetPartial);
     expect(dark.mapStreetToDo, light.mapStreetToDo);
-    expect(dark.mapStreetFree, light.mapStreetFree);
-    expect(dark.mapStreetFreeCasing, light.mapStreetFreeCasing);
     expect(dark.mapSelectedCasing, light.mapSelectedCasing);
     expect(dark.mapSelectedCore, light.mapSelectedCore);
   });

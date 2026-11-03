@@ -1,8 +1,7 @@
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 
-/// One row of Accueil's panel (« Mes rues », « Autres rues du secteur »,
-/// PLAN §5.3): a street's name and how many of its doors are
-/// visited, done or refused (« 31/403 »).
+/// One row of Accueil's panel (« Rues », PLAN §5.14): a street's name and
+/// how many of its doors are visited, done or refused (« 31/403 »).
 final class StreetRow {
   const StreetRow({
     required this.id,

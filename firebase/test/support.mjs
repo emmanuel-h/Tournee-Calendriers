@@ -198,10 +198,9 @@ export const streetDoc = (overrides = {}) => ({
   banId: '69264_0420',
   deletedAt: null,
   deletedBy: null,
-  // Where it runs (one encoded polyline per piece of road) and who covers
-  // it, from the map (T3.3).
+  // Where it runs (one encoded polyline per piece of road), from the map
+  // (T3.3).
   shape: ['eguwGkrx[mQxH'],
-  assignees: [],
   houses: {
     4: houseEntry(4, { status: 'DONE', by: lea, at: twoPm }),
     '4bis': houseEntry(4, { sfx: 'bis' }),

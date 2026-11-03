@@ -856,12 +856,6 @@ abstract class AppLocalizations {
   /// **'Supprimer la rue'**
   String get deleteStreetAction;
 
-  /// Bottom button of the edit mode, shown when the member covers the street: takes them off it; the street stays in the sector for the others.
-  ///
-  /// In fr, this message translates to:
-  /// **'Ne plus la faire'**
-  String get stopCoveringStreetAction;
-
   /// Undo snackbar after ✕ on a number.
   ///
   /// In fr, this message translates to:
@@ -2140,30 +2134,6 @@ abstract class AppLocalizations {
   /// **'Options pour {name}'**
   String teamMemberOptions(String name);
 
-  /// Right of a member row in Équipe: the streets of the sector the member covers (#105). Followed by ▸ (▾ while unfolded) when there is at least one.
-  ///
-  /// In fr, this message translates to:
-  /// **'{count, plural, =0{0 rue} =1{1 rue} other{{count} rues}}'**
-  String teamMemberStreets(int count);
-
-  /// Screen-reader name of a member's street count while folded; {streets} is teamMemberStreets.
-  ///
-  /// In fr, this message translates to:
-  /// **'{name}, {streets}, afficher les rues'**
-  String teamMemberStreetsShow(String name, String streets);
-
-  /// Screen-reader name of a member's street count while unfolded; {streets} is teamMemberStreets.
-  ///
-  /// In fr, this message translates to:
-  /// **'{name}, {streets}, masquer les rues'**
-  String teamMemberStreetsHide(String name, String streets);
-
-  /// Screen-reader name of the street names unfolded under a member in Équipe.
-  ///
-  /// In fr, this message translates to:
-  /// **'Rues de {name}'**
-  String teamMemberStreetsList(String name);
-
   /// Item of a member's ⋮ menu, and the confirm button.
   ///
   /// In fr, this message translates to:
@@ -2926,47 +2896,17 @@ abstract class AppLocalizations {
   /// **'{added, plural, =0{Aucune rue ajoutée} =1{1 rue ajoutée} other{{added} rues ajoutées}}, {failed, plural, =1{1 en échec} other{{failed} en échec}}. {reason} Les rues encore cochées restent à ajouter.'**
   String addPartial(int added, int failed, String reason);
 
-  /// Header of Accueil's panel (PLAN §5.3): the doors done of the member's streets, out of all their doors.
-  ///
-  /// In fr, this message translates to:
-  /// **'Mes rues · {done}/{total}'**
-  String homeMyStreets(int done, int total);
-
-  /// What screen readers say for « Mes rues · 43/62 ».
-  ///
-  /// In fr, this message translates to:
-  /// **'Mes rues, {done} sur {total} faits'**
-  String homeMyStreetsSemantics(int done, int total);
-
-  /// Header of Accueil's panel for an admin who visits the sector (PLAN §5.12): the doors done of every street.
+  /// Header of Accueil's panel (PLAN §5.14): the doors done of every street of the sector, out of all their doors.
   ///
   /// In fr, this message translates to:
   /// **'Rues · {done}/{total}'**
-  String homeStreetsVisitor(int done, int total);
+  String homeStreets(int done, int total);
 
-  /// What screen readers say for « Rues · 9/38 ».
+  /// What screen readers say for « Rues · 31/50 ».
   ///
   /// In fr, this message translates to:
   /// **'Rues, {done} sur {total} faits'**
-  String homeStreetsVisitorSemantics(int done, int total);
-
-  /// Right of the panel's header: the share of the whole sector's doors done, rounded down.
-  ///
-  /// In fr, this message translates to:
-  /// **'Équipe : {percent} %'**
-  String homeTeamProgress(int percent);
-
-  /// Section of Accueil's panel under « Mes rues »: the streets of the sector the member does not cover, free or someone else's.
-  ///
-  /// In fr, this message translates to:
-  /// **'Autres rues du secteur ({count})'**
-  String homeOtherStreets(int count);
-
-  /// Accueil's panel, under « Mes rues · 0/0 », when the member covers no street.
-  ///
-  /// In fr, this message translates to:
-  /// **'Vous n\'avez pas encore de rue.'**
-  String get homeNoStreetOfMine;
+  String homeStreetsSemantics(int done, int total);
 
   /// Accueil's panel when the sector has no street at all.
   ///
@@ -3016,17 +2956,11 @@ abstract class AppLocalizations {
   /// **'en partie'**
   String get mapLegendStreetPartial;
 
-  /// Legend of the map: a street taken, nothing visited yet (blue line).
+  /// Legend of the map: a street with nothing visited yet (blue line).
   ///
   /// In fr, this message translates to:
   /// **'à faire'**
   String get mapLegendStreetToDo;
-
-  /// Legend of the map: a street nobody took (dark grey dashed line).
-  ///
-  /// In fr, this message translates to:
-  /// **'libre'**
-  String get mapLegendStreetFree;
 
   /// Placeholder and screen-reader name of the search box of « Ajouter des rues » (Pick mockup).
   ///
@@ -3088,19 +3022,13 @@ abstract class AppLocalizations {
   /// **'Pas encore dans le secteur'**
   String get streetCardNotInSector;
 
-  /// Red button of the card of a street to add: adds it, in the member's streets.
+  /// Red button of the card of a street to add: adds it to the sector, for the whole team (PLAN §5.14).
   ///
   /// In fr, this message translates to:
-  /// **'Ajouter et me l\'attribuer'**
-  String get streetCardAddMine;
+  /// **'Ajouter au secteur'**
+  String get streetCardAdd;
 
-  /// Second button of the card of a street to add: adds it, free.
-  ///
-  /// In fr, this message translates to:
-  /// **'Ajouter sans m\'attribuer'**
-  String get streetCardAddFree;
-
-  /// In place of the buttons' labels while the street is added (its road may take a while).
+  /// In place of the button's label while the street is added (its road may take a while).
   ///
   /// In fr, this message translates to:
   /// **'Ajout en cours…'**
@@ -3130,54 +3058,6 @@ abstract class AppLocalizations {
   /// **'{done} sur {total} faits'**
   String streetCardProgressSemantics(int done, int total);
 
-  /// Chip of the card of a street nobody covers.
-  ///
-  /// In fr, this message translates to:
-  /// **'Libre'**
-  String get streetCardFree;
-
-  /// Chip of the card of a street the member covers alone.
-  ///
-  /// In fr, this message translates to:
-  /// **'Vous la faites'**
-  String get streetCardMine;
-
-  /// Chip of the card of a street the member covers with others.
-  ///
-  /// In fr, this message translates to:
-  /// **'Vous la faites avec {names}'**
-  String streetCardMineWith(String names);
-
-  /// Chip of the card of a street others cover.
-  ///
-  /// In fr, this message translates to:
-  /// **'Faite par {names}'**
-  String streetCardOthers(String names);
-
-  /// Chip of the card of a street others cover, when the phone cannot name them.
-  ///
-  /// In fr, this message translates to:
-  /// **'Faite par un autre membre'**
-  String get streetCardOthersUnknown;
-
-  /// Red button of the card of a free street.
-  ///
-  /// In fr, this message translates to:
-  /// **'Me l\'attribuer'**
-  String get streetCardTake;
-
-  /// Red button of the card of a street others cover.
-  ///
-  /// In fr, this message translates to:
-  /// **'La faire aussi'**
-  String get streetCardTakeToo;
-
-  /// Second button of the card of a street of the member's.
-  ///
-  /// In fr, this message translates to:
-  /// **'Ne plus la faire'**
-  String get streetCardRelease;
-
   /// Button of the card of a street of the sector: opens the street.
   ///
   /// In fr, this message translates to:
@@ -3193,7 +3073,7 @@ abstract class AppLocalizations {
   /// Under « Connexion nécessaire pour ajouter une rue ».
   ///
   /// In fr, this message translates to:
-  /// **'Les rues déjà dans le secteur se prennent et s\'ouvrent sans réseau.'**
+  /// **'Les rues déjà dans le secteur s\'ouvrent sans réseau.'**
   String get streetCardNoNetworkHint;
 
   /// Title of the card when the BAN knows no street at the point tapped.
@@ -3219,12 +3099,6 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Réessayez dans un moment, ou saisissez la rue à la main.'**
   String get streetCardServiceErrorHint;
-
-  /// Joins the last two first names of a list (« Manu et Julie »).
-  ///
-  /// In fr, this message translates to:
-  /// **'{first} et {last}'**
-  String namesAnd(String first, String last);
 
   /// Title of the manual street form (PLAN §5.5, Manual mockup).
   ///
@@ -3313,7 +3187,7 @@ abstract class AppLocalizations {
   /// Snackbar once a street typed in by hand is added.
   ///
   /// In fr, this message translates to:
-  /// **'« {name} » ajoutée à vos rues.'**
+  /// **'« {name} » ajoutée au secteur.'**
   String manualAdded(String name);
 
   /// Outlined button under the totals of Accueil's panel (RunStart mockup), for an active member of the open secteur while no tournée is on (PLAN §5.13).

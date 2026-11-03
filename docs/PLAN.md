@@ -199,9 +199,8 @@ value taken behaves as with a button. **Typography:** French texts put a non-bre
   saying it. The light palette's outlines (to-do tiles, fields) are under 3:1 as approved:
   their words identify them, so WCAG does not require it; the dark ones reach 3:1.
 - **The map stays light in dark mode:** OpenFreeMap's « liberty » style has no dark variant
-  here, so the street lines, the « libre » dashes and the picked road keep the light palette's
-  colours in both themes; the house dots take the theme's tile colours (each with its glyph).
-  Over a dark legend, « libre » gets the map's white casing back.
+  here, so the street lines and the picked road keep the light palette's colours in both
+  themes; the house dots take the theme's tile colours (each with its glyph).
 
 ### 5.0 Accueil with no secteur open
 
@@ -401,10 +400,12 @@ an admin, shows only « Rejoindre un secteur », in red), and the bottom of the 
 
 ### 5.3 Accueil — map + "Mes rues" panel
 
-> **Changed by 5.14 (2026-11-03, to build):** no « Mes rues » / « Autres rues », no « libre »,
-> no « Équipe : n % », no « + Ajouter des rues » row (it moved to Secteur), 🗺 Secteur instead
-> of 👥, street card « Ouvrir » only, and the « En tournée » band over the top bar during
-> a tournée. Read 5.14 first; the text below is the earlier state.
+> **Changed by 5.14 (2026-11-03):** built in #120: no « Mes rues » / « Autres rues », one list
+> of every street under « Rues · 31/50 » (each row opens its street), no « libre » (line,
+> legend), no « Équipe : n % », street card « Ouvrir » only. To build: no « + Ajouter des
+> rues » row (it moves to Secteur, #121), 🗺 Secteur instead of 👥 (#121), and the « En
+> tournée » band over the top bar during a tournée (#123). Read 5.14 first; the text below is
+> the earlier state.
 
 ```
 ┌──────────────────────────────┐
@@ -561,10 +562,12 @@ bottom sheet:
 
 ### 5.4 Ajouter des rues — map mode
 
-> **Changed by 5.14 (2026-11-03, to build):** opened from Secteur, not Accueil; a tap ticks a
-> road instead of opening the card (several at once, « Ajouter N rues »), plus « Zone »;
-> « Ajouter et me l'attribuer » / « Ajouter sans m'attribuer » and the state table's
-> attribution actions are gone. The look-up, the search and « Liste » stay as below.
+> **Changed by 5.14 (2026-11-03):** built in #120: « Ajouter et me l'attribuer » / « Ajouter
+> sans m'attribuer » and the state table's attribution actions are gone; until #124 the card of
+> a street to add has one red « Ajouter au secteur », a street of the secteur « Ouvrir ». To
+> build: opened from Secteur, not Accueil (#121); a tap ticks a road instead of opening the card
+> (several at once, « Ajouter N rues », #124), plus « Zone » (#125). The look-up, the search
+> and « Liste » stay as below.
 
 ```
 ┌──────────────────────────────┐
@@ -580,8 +583,7 @@ bottom sheet:
 │ Villefranche-sur-Saône       │
 │ 19 numéros · pas encore dans │
 │ le secteur                   │
-│ [ Ajouter et me l'attribuer ]│
-│ [ Ajouter sans m'attribuer  ]│
+│ [    Ajouter au secteur     ]│  ← one button since #120 (5.14)
 │ Rue absente ? Saisir à la main│
 └──────────────────────────────┘
 ```
@@ -590,15 +592,16 @@ The street card adapts to the street's state:
 
 | State | Card content | Actions |
 |---|---|---|
-| Not in the secteur | name, commune, number count | *Ajouter et me l'attribuer* · *Ajouter sans m'attribuer* |
-| In the secteur, libre (nobody, or only people no longer in the team) | progress | *Me l'attribuer* · *Ouvrir* |
-| Mine (maybe shared) | progress, other members | *Ouvrir* · *Ne plus la faire* |
-| Someone else's | progress, who covers it | *La faire aussi* · *Ouvrir* |
+| Not in the secteur | name, commune, number count | *Ajouter au secteur* |
+| In the secteur | name, commune, progress | *Ouvrir* |
+
+(Until #120 the card also said who covered the street and offered *Me l'attribuer*, *La faire
+aussi*, *Ne plus la faire*, *Ajouter et me l'attribuer* / *sans m'attribuer*: gone with 5.14.)
 
 - Tapping a road calls the reverse geocoder at that point (type `street`) to get the BAN street;
   then BAN gives the numbers and their positions, and the map's tiles give the road's shape. All three
   are needed only once per street, when it is added: **this screen needs the network**.
-  Offline, the map still shows and existing streets can still be taken, but adding says
+  Offline, the map still shows and existing streets can still be opened, but adding says
   "Connexion nécessaire pour ajouter une rue" and offers manual entry.
 - The search box finds a street by name (BAN search, limited to the secteur's communes) and
   centres the map on it.
@@ -727,11 +730,8 @@ Edit mode details fixed in T1.10 (`lib/presentation/edit_street/`,
   closes it back to the edit mode with « N° 8 changé en maison [Annuler] ».
 - **« Supprimer la rue »** (red outline) asks « Supprimer la rue ? — « Rue des Lilas » part à
   la Corbeille avec ses numéros et leurs marques, pour toute l'équipe. » then goes back to
-  « Mes rues », where the street no longer shows. **« Ne plus la faire »** (T3.3, dark
-  outline, left of « Supprimer la rue », both half width) shows only to a member who covers the
-  street: it removes them from its assignees at once (`ReleaseStreet`, no confirmation, no
-  « Annuler »), the edit mode stays open and the button goes. Otherwise « Supprimer la rue »
-  takes the whole width.
+  Accueil, where the street no longer shows. « Supprimer la rue » takes the whole width
+  (« Ne plus la faire » went with 5.14).
 - Not yet: the Corbeille screen (§5.11) comes in M2.
 
 « Rue à la main » delivered in #31 (Manual mockup, `/ajouter-des-rues/a-la-main`,
@@ -1189,9 +1189,9 @@ Immeuble details fixed in T1.9 (`lib/presentation/building/`, `lib/ui/screens/bu
 
 ### 5.8 Équipe (👥)
 
-> **Changed by 5.14 (2026-11-03, to build):** now « Secteur », opened by 🗺 (`Icons.map_outlined`);
-> no streets per member (#105's counts go); a « RUES (n) » section with « + Ajouter des rues »
-> and the Corbeille under it. The rest stands.
+> **Changed by 5.14 (2026-11-03):** built in #120: no streets per member (#105's counts are
+> gone). To build (#121): now « Secteur », opened by 🗺 (`Icons.map_outlined`); a « RUES (n) »
+> section with « + Ajouter des rues » and the Corbeille under it. The rest stands.
 
 ```
 ┌──────────────────────────────┐
@@ -1354,8 +1354,9 @@ admin » for « Nouveau code », « Retirer », « Supprimer » and the campaign
 └──────────────────────────────┘    └──────────────────────────────┘
 ```
 
-- Copied: streets (with shapes and edits), numbers, buildings and their floors. Reset: statuses, *repasser*, last-change info, assignees.
-- *Reprendre mes rues 2026* re-takes in one tap the streets the member covered last year.
+- Copied: streets (with shapes and edits), numbers, buildings and their floors. Reset: statuses, *repasser*, last-change info.
+- ~~*Reprendre mes rues 2026* re-takes in one tap the streets the member covered last year~~
+  (no attribution since 5.14: nothing to re-take; the sketch above still shows it).
 - The house sheet and door sheet show last year's result in small type: *En 2026 : ✗ personne*.
   It helps ("nobody home last year either, try the evening") and is read-only.
 - The previous campaign stays readable from Paramètres → Secteur → *Campagne 2026*. The one
@@ -1651,7 +1652,7 @@ removes are marked « (removed, 5.14) » there.
 └────────────────────────────┘
 ```
 
-- **No attribution.** A member of the secteur covers every street of it; the admin decides who
+- **No attribution** (built in #120). A member of the secteur covers every street of it; the admin decides who
   is in the secteur (5.12). Gone everywhere: « Mes rues » / « Autres rues du secteur »,
   « libre » (line, legend, card), « Me l'attribuer », « La faire aussi », « Ne plus la faire »
   (street card and edit mode), « Ajouter et me l'attribuer » / « Ajouter sans m'attribuer »,
@@ -1666,9 +1667,10 @@ removes are marked « (removed, 5.14) » there.
   partie · à faire » (three samples in the legend). The panel shows « Rues · 31/50 » (doors done
   over every street of the secteur, as the admin visit already counted), « ▶ Commencer une
   tournée » for an active member (5.13), then every street of the secteur in one list, with no
-  section header and no « + Ajouter des rues » row. A tap on a street's line or row
-  opens its street card: name, commune, « 31/42 faits », « Ouvrir ». The row
-  opens the Street screen directly, as « Mes rues » did. The pending-sync line stays at the bottom.
+  section header and no « + Ajouter des rues » row. A tap on a street's line on the map
+  opens its street card: name, commune, « 31/42 faits », « Ouvrir ». A row opens the Street
+  screen directly, as « Mes rues » did (no card, the map does not move: #93's « Autres rues »
+  card is gone with them). The pending-sync line stays at the bottom.
 - **The Secteur button** replaces 👥: Material `Icons.map_outlined` (a folded map), said
   « Secteur » (« Secteur, 1 demande en attente » with the red dot, which stays). It opens the
   screen 5.8 called Équipe, now **Secteur** (title « Secteur 49 » as before). Changes there:
@@ -2297,17 +2299,15 @@ Geometry and map layers fixed in T3.1 (`lib/domain/geometry/`, `lib/domain/map/`
   (0.00001°, rounded to nearest); one text per line (`StreetShape.encode` / `decode`). Decoding
   fails with `malformed` (character outside `?`…`~`, value cut short or over six 5-bit chunks,
   a latitude without its longitude) or `outOfRange` (a point off Earth), never throws.
-- **`ProgressLevel.of(progress, taken:)`**: `done` when every door is done and nothing is left
-  to come back to (no building « repasser »), whether or not someone holds the street; otherwise
-  `free` when nobody took it; otherwise `toDo` when every door is to do, `partial` when any door
-  was visited (« personne » and « repasser » count as visited, not done). A street without any
-  door is never done.
+- **`ProgressLevel.of(progress)`**: `done` when every door is done or refused and nothing is
+  left to come back to (no building « repasser »); otherwise `toDo` when every door is to do,
+  `partial` when any door was visited (« personne » and « repasser » count as visited, not
+  done). A street without any door is never done. (`free`, « libre », went with 5.14.)
 - **`MapLayers.of(streets)`**: a `StreetLine` (street id, shape, level) per street with a
   shape and a `HouseDot` (street id, number, position, `HouseDotStatus`) per house with a
   position, streets in the Corbeille left out. A single house's dot shows its status; a
   building's shows `comeBack` when it has its own « repasser », otherwise `toDo` / `partial` /
-  `done` from its doors. Dots show from zoom 16 (`MapLayers.houseDotsMinZoom`). A street is
-  taken when it has an assignee (T3.3).
+  `done` from its doors. Dots show from zoom 16 (`MapLayers.houseDotsMinZoom`).
 - **`sectorArea(streets)`**: the `GeoBounds` (south, west, north, east; never across the
   antimeridian) around every shape point and house position of the streets, Corbeille included
   (a street may be restored offline), plus 300 m; null when no street has a place on the map.
@@ -2350,48 +2350,29 @@ Address and shape adapters fixed in T3.2 (`lib/application/ports/address_directo
   ends meet within 1 m (`joinLines`), across tiles too. A 204 is an empty tile.
 Street picking fixed in T3.3 (`lib/domain/street/street.dart`, `lib/application/use_cases/`):
 
-- *(To remove, 5.14: no attribution; `Street.assignees`, `TakeStreet`, `ReleaseStreet` and the roster's use for streets go.)* **`Street.assignees`** (`Set<MemberId>`, read-only): the members who cover the street (their
-  « Mes rues »); empty is « libre ». `Street.create(assignees:)` and `Street.manual(assignees:)`
-  take them (none by default). `take(member)` → `StreetTaken` (refused `alreadyAssigned`),
-  `release(member)` → `StreetReleased` (refused `notAssigned`), `AssignmentFailure`; the other
-  assignees stay, nothing else changes. Undo releases a take and takes a release back (`gone`
-  when it was undone by hand meanwhile).
-- **Ex-members are ignored** (#91, `lib/domain/sector/team_roster.dart`): someone removed
-  (« Retirer ») or gone (« Quitter le secteur ») stays in `assignees` in Firestore (the rules
-  let a member add or remove only themself, 8.2), but no longer covers the street.
-  `TeamRoster.of(team, me:)` keeps the assignees in `team.members` (pending requests
-  included) and `me`, who always counts (a visiting admin is no member); `assigneesOf(street)`
-  and `isTaken(street)`. While the team is not read yet (`team == null`, an offline cold start
-  before it was ever cached) it is `TeamRoster.unknown`, which trusts every assignee, so
-  streets never flash to « libre ». The map's lines (`MapLayers.of(streets, roster:)`) and
-  the street card (`StreetCardInSector.of`) read the assignees through it: a street held
-  only by ex-members is « libre » and anyone may « Me l'attribuer » it (`arrayUnion`, the
-  stale uid stays). Known limit: a street taken only by an admin visiting the secteur (no
-  member of it) shows « libre » to the team: the roster knows only the team, not the admins.
+- **No attribution** (5.14, #120): a street belongs to no member; every member of the secteur
+  covers all of its streets. `Street.assignees`, `take` / `release`, `StreetTaken` /
+  `StreetReleased`, `AssignmentFailure`, `TeamRoster` (#91), `TakeStreet` / `ReleaseStreet`,
+  `MyStreets` / `ObserveMyStreets` and `StreetsByMember` / `ObserveStreetsByMember` (#105) are
+  gone.
 - **`LookUpStreet(StreetLookup)`** — `StreetAtPoint(GeoPoint)` (a tap: the geocoder) or
   `FoundStreet(StreetMatch)` (a search result) — gives the street card's subject:
   `StreetOfTheSector(match, street)` when the secteur has its BAN id out of the Corbeille (its
   numbers are not asked), otherwise `StreetToAdd(match, numbers)` with the BAN's numbers and
   positions (`numberCount`). Failures are the `AddressDirectoryFailure`s: `notFound` (no BAN
   match), `noNetwork` (offline), `serviceError`. Changes nothing.
-- **`AddStreetFromMap(numbers, assignToMe:, shape:)`** stores a `StreetToAdd`'s street with
+- **`AddStreetFromMap(numbers, shape:)`** stores a `StreetToAdd`'s street with
   the road the card found (`LookUpStreetShape`, simplified), or without shape while it has
   none: since #92 it **never asks the map nor waits for it**. A street of the Corbeille with
-  that BAN id comes back with its marks instead, and is taken when asked and not yet
-  covered. `AddStreetFailure.alreadyInSector` and `serviceError` (the BAN gave a number
+  that BAN id comes back with its marks instead. `AddStreetFailure.alreadyInSector` and `serviceError` (the BAN gave a number
   twice).
 - **`LookUpStreetShape(streetToAdd)`** (#92): the road around the street's numbers and the
   BAN's point of it, simplified. **`FillStreetShape(streetId, road:)`** (#92): a street that
   needs a shape gets the road given, or else the one the map draws around its houses,
   simplified, through `Street.fillShape` (read again after the map answered: a teammate's
   phone may have filled it); `ShapeFillOutcome.filled | noRoad | notNeeded`, or the
-  `StreetShapesFailure`. `assignToMe` puts the member on the phone in `assignees` (the
-  card's two buttons).
-- **`AddManualStreet(name, commune, numbers, assignToMe:)`** (« Rue à la main »): `Street.manual`,
-  offline, assigned to the member when asked (a street without shape cannot be tapped on the
-  map to be taken).
-- **`TakeStreet(streetId)`** / **`ReleaseStreet(streetId)`**: the member on the phone, through
-  the root; offline; `CommandFailure<AssignmentFailure>`.
+  `StreetShapesFailure`.
+- **`AddManualStreet(name, commune, numbers)`** (« Rue à la main »): `Street.manual`, offline.
 - **`SearchStreet(text, communes:)`**: `AddressDirectory.searchStreets` for each commune in turn
   (the secteur's communes, which #78 stores; #31 passes them in), results in commune order, a
   BAN id listed once; the first failure fails the search; no commune → nothing, no request.
@@ -2415,16 +2396,11 @@ Communes of a secteur fixed in #78 (`lib/domain/sector/`, `lib/application/use_c
 - **Map area**: `communesArea(communes)` = the centres plus 2 km (`communeMarginMetres`), null
   without centre; `addStreetsArea(communes, streets)` = that, else `sectorArea(streets)`.
 
-Accueil fixed in T3.5 (#30, `lib/domain/street/my_streets.dart`, `lib/presentation/home/`):
+Accueil fixed in T3.5 (#30, `lib/presentation/home/`), one list since 5.14 (#120):
 
-- *(To remove, 5.14: one list of every street.)* **`MyStreets.of(streets, member)`**: `mine` (the streets whose `assignees` hold the member:
-  « Mes rues »), `others` (free or someone else's; a street held only by ex-members is among
-  them, « libre » on its card and line, #91) and `all`, each in the order given,
-  Corbeille left out; `myProgress` and `teamProgress` add up their doors. `MyStreets.none`
-  before the streets are read. `ObserveMyStreets()` gives them in French order for the member
-  on the phone (`IdentityProvider`), now and on each change, offline.
-- **`Progress.donePercent`**: the doors done in whole percent, rounded down (199 of 200 is
-  99: 100 % means finished), 0 without door; « Équipe : 41 % ».
+- **`ObserveStreets()`** gives every street of the secteur in French order, Corbeille left
+  out, now and on each change, offline. Accueil's rows (`StreetRow`: name, doors visited of
+  doors) and its « Rues · 31/50 » add up every street; a visiting admin sees the same.
 - **`homeArea(communes, streets)`**: `sectorArea(streets)`, else `communesArea(communes)`.
   Accueil decides it once, when the streets are first read, so a street added meanwhile
   never moves the map. `MapLayers.showsHouseDots(zoom)`: zoom ≥ 16, when the legend explains
@@ -2478,7 +2454,6 @@ final class Street {                       // aggregate root
   final Commune commune;
   final BanStreetId? banId;                // null when entered by hand
   final StreetShape shape;                 // map (T3.1): none when entered by hand
-  final Set<MemberId> assignees;          // "Mes rues" (T3.3): who covers it, empty = libre
   final List<House> houses;                // always sorted by HouseNumber, numbers unique
   final List<RemovedHouse> removedHouses;  // numbers in the Corbeille, with their marks (T1.4)
   final ChangeStamp? deletion;             // set = in the Corbeille
@@ -2613,8 +2588,6 @@ sectors/{sectorId}
       shape: ["<encoded polyline>", …],           ← one per OSM road, simplified, ≈ 1 KB a street;
                                                     [] for none; written once, with the street
                                                     or later while still [] (#92), never replaced
-      assignees: [uid, …],                        ← to remove (5.14); who covers it, sorted when the street is
-                                                    written; [] for nobody (T3.3)
       deletedAt, deletedBy                        ← set = in the Corbeille (5.11); null otherwise
       houses: {                                   ← a map inside the street document
         "12":  { n: 12, sfx: null, lat, lon, status: "DONE", comeBack: null,
@@ -2649,8 +2622,10 @@ sectors/{sectorId}
 
 The street document fixed in T2.3 (`infrastructure/firestore/mappers/`): field names above,
 statuses and label styles under fixed names. `prev` (last campaign's status) comes with the new
-campaign (v1.1). `shape` and `assignees` came with the map (T3.3): a document written before
-has neither and reads as no shape, nobody covering it. `tries` (#80) is written only from the
+campaign (v1.1). `shape` came with the map (T3.3): a document written before has none and
+reads as no shape. `assignees` (who covered the street, T3.3) went with 5.14 (#120): it is no
+longer written, a document that still has it is read as if it had not, and the rules let no
+write add or change it. `tries` (#80) is written only from the
 first try and read as 0 when absent (or null), so older documents, and the marks of an app
 older than #80 (which leave the field as it was), need no rewriting: the domain reads it
 through the status (none when to do, at least one when nobody is home).
@@ -2675,7 +2650,6 @@ writes:
 | number renamed | `houses.<old>` deleted, `houses.<new>` whole |
 | street renamed, deleted, restored | `name`; `deletedAt`, `deletedBy` (top level) |
 | shape found later (`StreetShapeFilled`, #92) | `shape` (top level), the whole list, only while the stored one is absent or `[]` |
-| street taken, released (T3.3; to remove, 5.14) | `assignees`: `arrayUnion([uid])` / `arrayRemove([uid])`, never the whole array, so two members taking it at once both stay |
 | undo of a house (`HouseReverted`) | as a layout change, or `houses.<old>` deleted and `houses.<n>` whole when it renumbers back; `by` / `at` = who undoes, now |
 | undo of a door (`DwellingReverted`) | `dwellings.<key>` whole, `by` / `at` = who undoes, now |
 | 30-day purge of numbers (`NumbersPurged`, T2.6b) | each `houses.<n>` deleted, in an update of its own |
@@ -2860,7 +2834,7 @@ photo of the QR) is even more likely. So **knowing a code must not be enough**:
   absent; never updated; deleted only with the secteur.
 - `rescueCentres`: readable by signed-in users (station names only), create-only.
 - Street and house writes: field-path updates only on `status`, `comeBack`, `tries`, `by`, `at`,
-  `assignees`, `deletedAt/By`, numbers and dwellings; `status` in the enum; `comeBack` a time
+  `deletedAt/By`, numbers and dwellings; `status` in the enum; `comeBack` a time
   as the app writes it (#81, `isComeBackTime`: "", a day "2026-10-24" of the years 2000–2999,
   or a day and an hour "2026-10-24T18" of 08–21), so no free text at all (no `note`, §8.3; the
   free hint of before #81 is refused in a write, one already stored only goes when the house is
@@ -3069,14 +3043,14 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
   removal that leaves at least one. A secteur stored before has no list: it counts as empty, so
   its first commune can be added. Duplicates of a code cannot be ruled out (no loops): the
   reader skips them.
-- **Shape and assignees** (T3.3; the `assignees` checks go with 5.14): optional on a new street (an app of before the map writes
-  neither); `shape` a list of at most 1 000 lines (counted, not checked line by line), never
+- **Shape** (T3.3): optional on a new street (an app of before the map writes none); `shape` a
+  list of at most 1 000 lines (counted, not checked line by line), never
   changed afterwards, except **filled once** (#92, `isShapeFill`): an update of `shape` alone,
   1 to 1 000 lines (the first a text), while the stored shape is absent or `[]` (an older
-  app never writes it; two phones filling at once cannot replace each other's);
-  `assignees` on a new street `[]` or `[caller]`. An update may change
-  `assignees` only by adding or removing **the caller** (set comparison, no duplicate): nobody
-  puts a teammate on a street or takes them off it.
+  app never writes it; two phones filling at once cannot replace each other's).
+- **No `assignees`** (5.14, #120): a new street may not carry the field (not even `[]`), and no
+  update may add, change or delete it; a document written before keeps it, and every other
+  write to it is checked as usual.
 - **Tournées** (#63, built in #110): `campaigns/{year}/rounds/{roundId}` readable by active members
   and admins; **create only**, by an active member (checked at write time, not stored; an
   admin visiting runs no tournée), exactly the fields of §6.2, `startedAt < endedAt` (both

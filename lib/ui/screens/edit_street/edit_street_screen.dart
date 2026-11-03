@@ -166,11 +166,7 @@ final class _EditScreenState extends ConsumerState<_EditScreen>
             ),
           },
           bottomNavigationBar: switch (state) {
-            EditStreetShown(:final name, :final isMine) => _BottomActions(
-              // Only to a member who covers the street.
-              onStopCovering: isMine
-                  ? () => unawaited(_notifier.stopCovering())
-                  : null,
+            EditStreetShown(:final name) => _BottomActions(
               onDelete: () => unawaited(_deleteStreet(name)),
             ),
             EditStreetLoading() || EditStreetGone() => null,
@@ -293,7 +289,7 @@ final class _EditScreenState extends ConsumerState<_EditScreen>
   }
 
   /// « Supprimer la rue », after a confirmation: the street goes to the
-  /// Corbeille, and the app goes back to « Mes rues », where it no longer
+  /// Corbeille, and the app goes back to Accueil, where it no longer
   /// shows.
   Future<void> _deleteStreet(String name) async {
     final l10n = AppLocalizations.of(context);
@@ -405,22 +401,17 @@ final class _NameField extends StatelessWidget {
   }
 }
 
-/// The white bar at the bottom: « Ne plus la faire » (when the member
-/// covers the street) and « Supprimer la rue », side by side as in the
-/// Edit mockup; « Supprimer la rue » alone takes the whole width.
+/// The white bar at the bottom: « Supprimer la rue », the whole width
+/// (Edit mockup).
 final class _BottomActions extends StatelessWidget {
-  const _BottomActions({required this.onStopCovering, required this.onDelete});
+  const _BottomActions({required this.onDelete});
 
-  /// Null when the member does not cover the street: the button is left
-  /// out rather than disabled, there is nothing to stop.
-  final VoidCallback? onStopCovering;
   final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     final l10n = AppLocalizations.of(context);
-    final onStopCovering = this.onStopCovering;
     return DecoratedBox(
       decoration: BoxDecoration(
         color: colors.surface,
@@ -438,29 +429,12 @@ final class _BottomActions extends StatelessWidget {
             AppSizes.gutter,
             0,
           ),
-          child: Row(
-            children: [
-              if (onStopCovering != null) ...[
-                Expanded(
-                  child: SecondaryButton(
-                    key: const Key('edit.stopCovering'),
-                    label: l10n.stopCoveringStreetAction,
-                    compact: true,
-                    onPressed: onStopCovering,
-                  ),
-                ),
-                const SizedBox(width: 10),
-              ],
-              Expanded(
-                child: SecondaryButton(
-                  key: const Key('edit.deleteStreet'),
-                  label: l10n.deleteStreetAction,
-                  compact: true,
-                  destructive: true,
-                  onPressed: onDelete,
-                ),
-              ),
-            ],
+          child: SecondaryButton(
+            key: const Key('edit.deleteStreet'),
+            label: l10n.deleteStreetAction,
+            compact: true,
+            destructive: true,
+            onPressed: onDelete,
           ),
         ),
       ),

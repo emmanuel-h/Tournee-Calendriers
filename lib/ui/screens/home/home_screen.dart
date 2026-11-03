@@ -1,4 +1,3 @@
-import 'dart:async';
 import 'dart:math' show max;
 
 import 'package:flutter/material.dart';
@@ -16,7 +15,7 @@ import 'package:tournee_calendriers/ui/screens/start/admin_visit_banner.dart';
 import 'package:tournee_calendriers/ui/screens/start/start_app_bar.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 
-/// The three heights the « Mes rues » panel rests at.
+/// The three heights the « Rues » panel rests at.
 enum PanelSize {
   /// Only the handle and the totals.
   folded,
@@ -57,16 +56,15 @@ PanelSize snapPanel(
       .key;
 }
 
-/// Accueil (PLAN §5.3, Home and HomeZoom mockups), the start screen while
-/// a tournée is open: the map of the tournée, its streets coloured by
-/// progress and, from street zoom, its houses; the legend chip; the
-/// « Mes rues » panel at the bottom. Its top bar is the start screen's.
+/// Accueil (PLAN §5.3, §5.14, RunStart and HomeZoom mockups), the start
+/// screen while a secteur is open: the map of the secteur, its streets
+/// coloured by progress and, from street zoom, its houses; the legend chip;
+/// the « Rues » panel at the bottom, every street of the secteur. Its top
+/// bar is the start screen's.
 ///
-/// A tap on one of the tournée's streets on the map, or on a row under
-/// « Autres rues du secteur » (#93), shows its street card (§5.4) in
-/// place of the panel, its line lit up: « Ouvrir », and « Me l'attribuer »
-/// or « Ne plus la faire »; from a row, the map also goes to the street. A
-/// tap elsewhere on the map, or the back gesture, brings the panel back.
+/// A tap on one of the secteur's streets on the map shows its street card
+/// (§5.4) in place of the panel, its line lit up, with « Ouvrir ». A tap
+/// elsewhere on the map, the ✕ or the back gesture brings the panel back.
 /// Works offline: the streets come from the phone's copy, the map from the
 /// tiles it keeps.
 ///
@@ -201,7 +199,6 @@ final class _HomeScreenState extends ConsumerState<HomeScreen> {
                                         ? PanelSize.rest
                                         : PanelSize.full;
                                   }),
-                                  onOtherStreetTapped: home.focus,
                                 )
                               : SizeReporter(
                                   onHeight: (height) {
@@ -212,8 +209,6 @@ final class _HomeScreenState extends ConsumerState<HomeScreen> {
                                   child: StreetCardSheet(
                                     key: const Key('home.selected'),
                                     card: card,
-                                    onTake: () => unawaited(home.take()),
-                                    onRelease: () => unawaited(home.release()),
                                     onClose: home.unselect,
                                   ),
                                 ),

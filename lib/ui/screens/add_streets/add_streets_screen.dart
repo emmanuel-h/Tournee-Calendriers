@@ -28,7 +28,7 @@ enum AddStreetsTab { map, list }
 /// « Carte » (the default) is the tournée's map, opened on its communes,
 /// with the search box and « Saisir une rue à la main » above it: a tap on
 /// a road, or a street picked among the search results, shows its street
-/// card, which adds it or takes it. « Liste » is the checklist of the
+/// card, which adds it or opens it. « Liste » is the checklist of the
 /// communes' streets ([ImportList]).
 ///
 /// Only the tab shown is built: the map follows the streets only while it
@@ -232,10 +232,7 @@ final class _MapTabState extends ConsumerState<_MapTab> {
                         },
                         child: StreetCardSheet(
                           card: card,
-                          onAdd: (assignToMe) =>
-                              unawaited(map.add(assignToMe: assignToMe)),
-                          onTake: () => unawaited(map.take()),
-                          onRelease: () => unawaited(map.release()),
+                          onAdd: () => unawaited(map.add()),
                           onClose: map.closeCard,
                         ),
                       ),

@@ -7,7 +7,7 @@ import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 import 'package:tournee_calendriers/ui/theme/status_look.dart';
 
-/// One street of « Mes rues »: its name over a progress bar, « 31/403 »
+/// One street of Accueil's list: its name over a progress bar, « 31/403 »
 /// (green « ✓ 8/8 » once every door is done) and a chevron. Tapping it
 /// opens the street.
 final class StreetRowTile extends StatelessWidget {

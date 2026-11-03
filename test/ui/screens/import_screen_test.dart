@@ -272,11 +272,8 @@ void main() {
 
       expect(find.byType(AddStreetsScreen), findsNothing);
       expect(find.text('2 rues ajoutées au secteur'), findsOneWidget);
-      // Nobody's yet: among the other streets of the secteur.
-      expect(
-        find.text('Autres rues du secteur (2)'.toUpperCase()),
-        findsOneWidget,
-      );
+      // In the one list of the secteur's streets.
+      expect(find.byKey(const Key('home.header')), findsOneWidget);
       final morin = find.bySemanticsLabel('Rue Pierre Morin, 0 sur 3 faits');
       await tester.scrollUntilVisible(
         morin,

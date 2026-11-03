@@ -1,22 +1,19 @@
 import 'package:test/test.dart';
-import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/presentation/street_card/street_card.dart';
 
-import '../../domain/sector/sector_fixtures.dart';
 import '../../support/results.dart';
-import '../../support/street_fixtures.dart' show n, twoPm, villefranche;
+import '../../support/street_fixtures.dart' show lea, n, twoPm, villefranche;
 
-/// Rue des Lilas, 1 of 3 doors done, covered by [assignees].
-Street _lilas(Set<MemberId> assignees) => valueOf(
+/// Rue des Lilas, 1 of 3 doors done.
+final _lilas = valueOf(
   Street.create(
     id: StreetId('lilas'),
     name: 'Rue des Lilas',
     commune: villefranche,
-    assignees: assignees,
     houses: [
       House(number: n('1'), status: VisitStatus.done),
       House(number: n('2')),
@@ -26,9 +23,9 @@ Street _lilas(Set<MemberId> assignees) => valueOf(
 );
 
 void main() {
-  group('a street of the tournée', () {
+  group('a street of the secteur', () {
     test('should show its name, commune and progress', () {
-      final card = StreetCardInSector.of(_lilas({}), me: leaId, team: team());
+      final card = StreetCardInSector.of(_lilas);
 
       expect(card.id, StreetId('lilas'));
       expect(card.name, 'Rue des Lilas');
@@ -39,154 +36,41 @@ void main() {
 
     test('should count a refused house as visited in its progress', () {
       final (refusing, _) = valueOf(
-        _lilas({}).markHouse(n('2'), VisitStatus.refused, by: leaId, at: twoPm),
+        _lilas.markHouse(n('2'), VisitStatus.refused, by: lea, at: twoPm),
       );
 
-      final card = StreetCardInSector.of(refusing, me: leaId, team: team());
+      final card = StreetCardInSector.of(refusing);
 
       expect(card.done, 2);
       expect(card.total, 3);
     });
 
-    test('should be free when nobody covers it', () {
-      final card = StreetCardInSector.of(_lilas({}), me: leaId, team: team());
-
-      expect(card.coverage, StreetCoverage.free);
-      expect(card.coveredBy, isEmpty);
-    });
-
-    test('should be mine when the member covers it alone', () {
-      final card = StreetCardInSector.of(
-        _lilas({leaId}),
-        me: leaId,
-        team: team(),
-      );
-
-      expect(card.coverage, StreetCoverage.mine);
-      expect(card.coveredBy, isEmpty);
-    });
-
-    test('should be mine and name the others who cover it too, in the '
-        'team\'s order', () {
-      final card = StreetCardInSector.of(
-        _lilas({julieId, leaId, manuId}),
-        me: leaId,
-        team: team(),
-      );
-
-      expect(card.coverage, StreetCoverage.mine);
-      expect(card.coveredBy, ['Manu', 'Julie']);
-    });
-
-    test('should be someone else\'s and name who covers it', () {
-      final card = StreetCardInSector.of(
-        _lilas({manuId}),
-        me: leaId,
-        team: team(),
-      );
-
-      expect(card.coverage, StreetCoverage.others);
-      expect(card.coveredBy, ['Manu']);
-    });
-
-    test('should be free when its only assignee is no longer in the '
-        'team', () {
-      final card = StreetCardInSector.of(
-        _lilas({paulId}),
-        me: leaId,
-        team: team(),
-      );
-
-      expect(card.coverage, StreetCoverage.free);
-      expect(card.coveredBy, isEmpty);
-    });
-
-    test('should be someone else\'s and name only who is still in the team '
-        'when one assignee left', () {
-      final card = StreetCardInSector.of(
-        _lilas({paulId, manuId}),
-        me: leaId,
-        team: team(),
-      );
-
-      expect(card.coverage, StreetCoverage.others);
-      expect(card.coveredBy, ['Manu']);
-    });
-
-    test('should be mine when a visiting admin covers it, though no member '
-        'of the team', () {
-      final card = StreetCardInSector.of(
-        _lilas({samId}),
-        me: samId,
-        team: team(),
-      );
-
-      expect(card.coverage, StreetCoverage.mine);
-      expect(card.coveredBy, isEmpty);
-    });
-
-    test('should trust every assignee while the team cannot be read', () {
-      final card = StreetCardInSector.of(
-        _lilas({paulId}),
-        me: leaId,
-        team: null,
-      );
-
-      expect(card.coverage, StreetCoverage.others);
-    });
-
-    test('should name nobody while the team cannot be read', () {
-      final card = StreetCardInSector.of(
-        _lilas({manuId}),
-        me: leaId,
-        team: null,
-      );
-
-      expect(card.coverage, StreetCoverage.others);
-      expect(card.coveredBy, isEmpty);
-    });
-
     test('should equal a card with the same values only', () {
       StreetCardInSector card({
+        String id = 'lilas',
         String name = 'Rue des Lilas',
         String commune = 'Villefranche-sur-Saône',
         int done = 1,
         int total = 3,
-        StreetCoverage coverage = StreetCoverage.mine,
-        List<String> coveredBy = const ['Manu'],
       }) => StreetCardInSector(
-        id: StreetId('lilas'),
+        id: StreetId(id),
         name: name,
         commune: commune,
         done: done,
         total: total,
-        coverage: coverage,
-        coveredBy: coveredBy,
       );
 
       expect(card(), card());
       expect(card().hashCode, card().hashCode);
+      expect(card(), isNot(card(id: 'pasteur')));
       expect(card(), isNot(card(name: 'Rue Pasteur')));
       expect(card(), isNot(card(commune: 'Gleizé')));
       expect(card(), isNot(card(done: 2)));
       expect(card(), isNot(card(total: 4)));
-      expect(card(), isNot(card(coverage: StreetCoverage.others)));
-      expect(card(), isNot(card(coveredBy: ['Julie'])));
       expect(
-        card(),
-        isNot(
-          StreetCardInSector(
-            id: StreetId('pasteur'),
-            name: 'Rue des Lilas',
-            commune: 'Villefranche-sur-Saône',
-            done: 1,
-            total: 3,
-            coverage: StreetCoverage.mine,
-            coveredBy: const ['Manu'],
-          ),
-        ),
+        card().toString(),
+        'StreetCardInSector(lilas, Rue des Lilas, Villefranche-sur-Saône, 1/3)',
       );
-      expect(card().toString(), contains('Rue des Lilas'));
     });
   });
 

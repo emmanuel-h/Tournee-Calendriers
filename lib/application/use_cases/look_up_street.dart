@@ -47,9 +47,8 @@ final class StreetToAdd extends LookedUpStreet {
   int get numberCount => numbers.numbers.length;
 }
 
-/// The tournée has the street already, out of the Corbeille: the card shows
-/// its progress and who covers it, and offers to take it
-/// (`TakeStreet`) or open it.
+/// The secteur has the street already, out of the Corbeille: the card shows
+/// its progress and offers to open it.
 final class StreetOfTheSector extends LookedUpStreet {
   const StreetOfTheSector(super.match, this.street);
 

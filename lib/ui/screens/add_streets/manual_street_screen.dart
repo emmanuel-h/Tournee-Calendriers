@@ -24,7 +24,7 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 /// numbers. Works offline; the street has no road on the map.
 ///
 /// « Ajouter la rue » gives it to the member who types it and goes back,
-/// saying « « Chemin des Vignes » ajoutée à vos rues. ».
+/// saying « « Chemin des Vignes » ajoutée au secteur. ».
 final class ManualStreetScreen extends ConsumerWidget {
   const ManualStreetScreen({super.key});
 

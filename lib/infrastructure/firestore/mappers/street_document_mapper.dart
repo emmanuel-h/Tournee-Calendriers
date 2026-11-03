@@ -7,7 +7,6 @@
 //   { name, communeName, communeCode, banId | null,
 //     deletedAt: time | null, deletedBy: uid | null,      ← street in the Corbeille
 //     shape: ["<encoded polyline>", …],                   ← one per line, [] for none
-//     assignees: [uid, …],                                ← who covers it, [] for nobody
 //     houses: { "<label>": house } }                       ← "12", "3bis", "3A"
 //   house    = { n: 3, sfx: "bis" | null, lat | null, lon | null,
 //                status, comeBack: when | null, by: uid | null, at: time | null,
@@ -31,8 +30,12 @@
 // holds the marks, one entry per door, so a mark is a write of
 // `houses.8.dwellings.A5-51.status` that never touches another door.
 //
-// `shape` and `assignees` came with the map (T3.3): a street written before
-// has neither, and reads as having no shape and nobody covering it.
+// `shape` came with the map (T3.3): a street written before has none, and
+// reads as having no shape.
+//
+// `assignees` (who covered the street, T3.3) went with PLAN §5.14: every
+// member covers the whole secteur. A document written before keeps the
+// field; it is never read nor written again.
 //
 // `tries` (the tries with nobody home, #80) is written only when there is
 // at least one, and a missing field reads as none: the houses and doors
@@ -69,7 +72,6 @@ import 'package:cloud_firestore/cloud_firestore.dart' show Timestamp;
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
 import 'package:tournee_calendriers/domain/shared/commune.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
-import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/building/building.dart';
 import 'package:tournee_calendriers/domain/street/building/building_plan.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
@@ -97,8 +99,6 @@ Map<String, Object?> streetToDocument(Street street) => {
   'banId': street.banId?.value,
   ...stampFields(street.deletion, by: 'deletedBy', at: 'deletedAt'),
   'shape': street.shape.encode(),
-  // Sorted, so the same street always makes the same document.
-  'assignees': [for (final member in street.assignees) member.value]..sort(),
   'houses': {
     for (final house in street.houses) house.number.label: houseEntry(house),
     for (final removed in street.removedHouses)
@@ -241,7 +241,6 @@ Street streetFromDocument(String id, Map<String, Object?> data) {
         ),
         banId: banId == null ? null : identifier(banId, BanStreetId.new),
         shape: _shapeFrom(data['shape']),
-        assignees: _assigneesFrom(data['assignees']),
         houses: shown,
         removedHouses: removed,
         deletion: stampOrNull(deletedBy, deletedAt),
@@ -266,19 +265,6 @@ StreetShape _shapeFrom(Object? json) => switch (json) {
     'shape',
   ),
   _ => throw const FormatException('Not a stored shape'),
-};
-
-/// The members stored as [json]; nobody when the field is missing (a
-/// street written before the map).
-Set<MemberId> _assigneesFrom(Object? json) => switch (json) {
-  null => const {},
-  final List<Object?> ids => {
-    for (final id in ids)
-      id is String
-          ? identifier(id, MemberId.new)
-          : throw const FormatException('Not a stored assignee'),
-  },
-  _ => throw const FormatException('Not stored assignees'),
 };
 
 /// The house stored under [key], and its removal when it is in the

@@ -17,21 +17,20 @@ import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/presentation/add_streets/add_streets_map_state.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
-import 'package:tournee_calendriers/presentation/street_card/follows_team.dart';
 import 'package:tournee_calendriers/presentation/street_card/street_card.dart';
 
 export 'package:tournee_calendriers/presentation/add_streets/add_streets_map_state.dart';
 
-/// The state of the « Carte » tab. `autoDispose`: it follows the streets,
-/// communes and team only while the screen shows.
+/// The state of the « Carte » tab. `autoDispose`: it follows the streets
+/// and communes only while the screen shows.
 final addStreetsMapProvider =
     NotifierProvider.autoDispose<AddStreetsMapNotifier, AddStreetsMapState>(
       AddStreetsMapNotifier.new,
     );
 
 /// The « Carte » tab of « Ajouter des rues » (PLAN §5.4): follows the open
-/// tournée's streets, communes and team from the phone's copy (offline
-/// too), and answers the map and the search box with the street card.
+/// secteur's streets and communes from the phone's copy (offline too), and
+/// answers the map and the search box with the street card.
 ///
 /// - **A tap on a road** looks the street up (`LookUpStreet`, network):
 ///   the card of the tournée's street, or of the street to add, with its
@@ -47,8 +46,7 @@ final addStreetsMapProvider =
 ///
 /// Answers come back in any order: each lookup and search has a ticket,
 /// and an answer whose ticket is no longer the last is dropped.
-final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState>
-    with FollowsTeam<AddStreetsMapState> {
+final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
   /// How much of the map shows around a street picked among the search
   /// results: the street and its neighbours, at about street zoom.
   static const foundStreetMarginMetres = 200.0;
@@ -106,15 +104,14 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState>
           );
       ref.onDispose(communes.cancel);
     }
-    followTeam();
-    return render();
+    return _render();
   }
 
   void _showStreets(List<Street> streets) {
     final before = _streets;
     _streets = streets;
-    // The card of a street of the tournée follows it: its progress, who
-    // covers it. Gone to the Corbeille (it leaves the list), the card goes.
+    // The card of a street of the secteur follows its progress. Gone to
+    // the Corbeille (it leaves the list), the card goes.
     if (_target case _InSector(:final street)) {
       final id = street.id;
       if (_streetOf(id) case final fresh?) {
@@ -218,11 +215,10 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState>
     await _lookUp(FoundStreet(match), match.position);
   }
 
-  /// « Ajouter et me l'attribuer » ([assignToMe]) or « Ajouter sans
-  /// m'attribuer » on the card of a street to add: the street joins the
-  /// tournée at once, with its road when the map told it already, and its
+  /// « Ajouter au secteur » on the card of a street to add: the street joins
+  /// the secteur at once, with its road when the map told it already, and its
   /// card becomes the one of a street of the tournée.
-  Future<void> add({required bool assignToMe}) async {
+  Future<void> add() async {
     final target = _target;
     if (target is! _ToAdd || target.adding) return;
     // Read now: the screen may close while the street is stored, and the
@@ -231,11 +227,7 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState>
     final ticket = _lookUps;
     _target = target.copy(adding: true);
     _show();
-    final result = await addStreet(
-      target.found.numbers,
-      assignToMe: assignToMe,
-      shape: _road,
-    );
+    final result = await addStreet(target.found.numbers, shape: _road);
     // Another card was asked for meanwhile: it stays.
     if (!ref.mounted || ticket != _lookUps) return;
     switch (result) {
@@ -249,22 +241,6 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState>
       case Err(failure: AddStreetFailure.serviceError):
         _target = target.copy(addFailed: true);
         _show();
-    }
-  }
-
-  /// « Me l'attribuer » or « La faire aussi » on the card of a street of
-  /// the tournée. Works offline; the card follows the street.
-  Future<void> take() async {
-    if (_target case _InSector(:final street)) {
-      await ref.read(takeStreetProvider)(street.id);
-    }
-  }
-
-  /// « Ne plus la faire » on the card of a street of the member's. Works
-  /// offline.
-  Future<void> release() async {
-    if (_target case _InSector(:final street)) {
-      await ref.read(releaseStreetProvider)(street.id);
     }
   }
 
@@ -327,13 +303,12 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState>
         AddressDirectoryFailure.serviceError => LookUpProblem.serviceError,
       };
 
-  void _show() => state = render();
+  void _show() => state = _render();
 
-  @override
-  AddStreetsMapState render() {
+  AddStreetsMapState _render() {
     final target = _target;
     return AddStreetsMapState(
-      layers: MapLayers.of(_streets, roster: roster),
+      layers: MapLayers.of(_streets),
       area: _focus ?? addStreetsArea(_communes, _streets),
       selectedRoad: switch (target) {
         // A street just added keeps the road the card found until its own
@@ -354,18 +329,14 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState>
             adding: adding,
             addFailed: addFailed,
           ),
-        _InSector(:final street) => StreetCardInSector.of(
-          street,
-          me: ref.read(readCurrentMemberProvider)(),
-          team: team,
-        ),
+        _InSector(:final street) => StreetCardInSector.of(street),
       },
       search: _search,
     );
   }
 }
 
-/// What the card is about. `sealed`: [AddStreetsMapNotifier.render] shows
+/// What the card is about. `sealed`: [AddStreetsMapNotifier._render] shows
 /// each case.
 sealed class _Target {
   const _Target();

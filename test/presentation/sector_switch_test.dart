@@ -93,13 +93,13 @@ void main() {
       final container = leasPhone();
       container.listen(homeProvider, (_, _) {});
       await pumpEventQueue();
-      expect(container.read(homeProvider).others, hasLength(1));
+      expect(container.read(homeProvider).streets, hasLength(1));
 
       await openThe12();
 
       // Nothing until the 12's streets are read, then those.
       expect(container.read(homeProvider).loading, isTrue);
-      expect(container.read(homeProvider).others, isEmpty);
+      expect(container.read(homeProvider).streets, isEmpty);
       await pumpEventQueue();
       expect(container.read(homeProvider).loading, isFalse);
       expect(container.read(homeProvider).hasNoStreet, isTrue);

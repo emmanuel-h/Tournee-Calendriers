@@ -185,15 +185,10 @@ Future<void> _addFromList(WidgetTester tester, BanStreetId banId) async {
   await tester.pumpAndSettle();
 }
 
-/// On Accueil, takes the Rue Pierre Morin, just added and nobody's, from
-/// its card (« Me l'attribuer »), then opens it (« Ouvrir »): from then on
-/// it is one of « Mes rues ».
-Future<void> _takeAndOpenMorin(WidgetTester tester) async {
+/// On Accueil, opens the Rue Pierre Morin, just added, from its row: every
+/// street of the secteur is in the one list (PLAN §5.14).
+Future<void> _openMorin(WidgetTester tester) async {
   await tester.tap(find.text('Rue Pierre Morin'));
-  await tester.pumpAndSettle();
-  await tester.tap(find.byKey(const Key('streetCard.take')));
-  await tester.pumpAndSettle();
-  await tester.tap(find.byKey(const Key('streetCard.open')));
   await tester.pumpAndSettle();
 }
 
@@ -264,13 +259,10 @@ void main() {
     await _addFromList(tester, _morin);
 
     expect(find.text('1 rue ajoutée au secteur'), findsOneWidget);
-    expect(
-      find.text('Autres rues du secteur (1)'.toUpperCase()),
-      findsOneWidget,
-    );
+    expect(find.text('Rues · 0/3'), findsOneWidget);
     expect(find.text('0/3'), findsOneWidget);
 
-    await _takeAndOpenMorin(tester);
+    await _openMorin(tester);
 
     expect(find.widgetWithText(AppBar, 'Rue Pierre Morin'), findsOneWidget);
   });
@@ -288,7 +280,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       await _addFromList(tester, _morin);
-      await _takeAndOpenMorin(tester);
+      await _openMorin(tester);
       // A tap on a house opens its status picker (PLAN §5.6); one tap on a
       // status stores it and closes, with « Annuler » in the snackbar.
       Future<void> mark(Finder tile, String status) async {
@@ -427,7 +419,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       await _addFromList(tester, _morin);
-      await _takeAndOpenMorin(tester);
+      await _openMorin(tester);
 
       // ✏, tap 34, « Transformer en immeuble… », « Valider » the default
       // (one staircase, RdC–2e, two doors a floor): back in edit mode.
@@ -547,7 +539,7 @@ void main() {
       );
       await tester.pumpAndSettle();
       await _addFromList(tester, _morin);
-      await _takeAndOpenMorin(tester);
+      await _openMorin(tester);
 
       // ✏, then ✕ on 33 and « Annuler »: 33 is back.
       await tester.tap(find.byKey(const Key('street.edit')));
@@ -625,10 +617,8 @@ void main() {
       await tester.tap(find.text('Ajouter 1 rue'));
       await tester.pumpAndSettle();
       expect(find.text('1 rue restaurée'), findsOneWidget);
-      // Accueil still shows the card the street was opened from: its marks
-      // and Léa's cover came back with it.
-      expect(find.text('1/8 faits'), findsOneWidget);
-      expect(find.text('Vous la faites'), findsOneWidget);
+      // Back on Accueil, the street came back with its mark.
+      expect(find.text('Rues · 1/8'), findsOneWidget);
     },
   );
 
@@ -709,13 +699,13 @@ void main() {
       expect(find.text('CS Villefranche'), findsOneWidget);
 
       // Accueil (#30), offline: the map of the tournée under the legend,
-      // and the « Mes rues » panel. The tournée was never read, so it has
+      // and the « Rues » panel. The secteur was never read, so it has
       // no street; a tap on the handle shows the whole list, another
       // brings the map back.
       expect(find.byType(HomeScreen), findsOneWidget);
       expect(find.byKey(const Key('home.map')), findsOneWidget);
       expect(find.byKey(const Key('map.legend')), findsOneWidget);
-      expect(find.text('Mes rues · 0/0'), findsOneWidget);
+      expect(find.text('Rues · 0/0'), findsOneWidget);
       expect(
         find.text("Aucune rue dans le secteur pour l'instant."),
         findsOneWidget,
@@ -749,7 +739,7 @@ void main() {
       expect(find.byKey(const Key('addStreets.map')), findsOneWidget);
 
       // « Saisir une rue à la main » works offline (#31): the commune is
-      // searched (here without network), the street joins « Mes rues ».
+      // searched (here without network), the street joins the secteur.
       await tester.tap(find.byKey(const Key('addStreets.manual')));
       await tester.pumpAndSettle();
       await tester.enterText(find.byKey(const Key('communes.field')), 'Villef');
@@ -785,7 +775,7 @@ void main() {
       expect(find.byKey(const Key('import.commune')), findsOneWidget);
       await tester.tap(find.byTooltip('Fermer'));
       await tester.pumpAndSettle();
-      expect(find.text('Mes rues · 0/5'), findsOneWidget);
+      expect(find.text('Rues · 0/5'), findsOneWidget);
       expect(find.text('Chemin des Vignes'), findsOneWidget);
 
       // Killed in the middle of a new street's writes (#104): the street
@@ -816,7 +806,8 @@ void main() {
       await Future<void>.delayed(const Duration(seconds: 1));
       await tester.tap(find.byKey(const Key('home.panel.handle')));
       await tester.pumpAndSettle();
-      expect(find.text('Mes rues · 0/5'), findsOneWidget);
+      // Its 3 houses count with the 5 of Chemin des Vignes.
+      expect(find.text('Rues · 0/8'), findsOneWidget);
       expect(
         find.byKey(ValueKey('home.street.${ecoles.id.value}')),
         findsOneWidget,

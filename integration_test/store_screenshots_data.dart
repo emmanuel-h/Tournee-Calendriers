@@ -98,35 +98,35 @@ const comeBackHouse = '11';
 /// The immeuble of Rue de Thizy whose grid is shown.
 const buildingHouse = '12';
 
-/// The streets of the tournée: Léa's three (one partly done, one to do,
-/// one done) and the others'. A few streets close together: the map
+/// The streets of the secteur, each marked by one member: Léa's three
+/// (one partly done, one to do, one done) and the others'. A few streets close together: the map
 /// fits them with a 300 m margin (`sectorArea`), so a wider round would
 /// show them smaller.
 List<Street> storeStreets() => [
   _thizy(),
-  _plain("Rue d'Alma", {leaOnPhone}, done: 0, total: 14),
-  _plain('Rue Pierre Morin', {leaOnPhone}, done: 10, total: 10),
-  _plain('Rue de Villars', {camille}, done: 18, total: 18),
-  _plain('Rue de la République', {camille}, done: 6, total: 20),
-  _plain('Rue Roland', {hugo}, done: 12, total: 12),
-  _plain('Rue des Jardiniers', {hugo}, done: 9, total: 24),
-  _plain('Rue de la Gare', {thomas}, done: 0, total: 16),
-  _plain('Rue de Stalingrad', {thomas}, done: 14, total: 14),
-  _plain('Rue Victor Hugo', {julie}, done: 11, total: 30),
-  _plain('Rue Corlin', {julie}, done: 0, total: 12),
-  _plain('Rue Nationale', {thomas}, done: 0, total: 40),
-  _plain('Rue de la Paix', {camille}, done: 8, total: 8),
-  _plain('Rue Thivend', {camille}, done: 3, total: 6),
-  _plain('Rue Jean Moulin', {hugo}, done: 0, total: 10),
-  _plain('Rue de Prony', {julie}, done: 0, total: 6),
-  _plain('Rue André Chénier', {hugo}, done: 4, total: 4),
+  _plain("Rue d'Alma", leaOnPhone, done: 0, total: 14),
+  _plain('Rue Pierre Morin', leaOnPhone, done: 10, total: 10),
+  _plain('Rue de Villars', camille, done: 18, total: 18),
+  _plain('Rue de la République', camille, done: 6, total: 20),
+  _plain('Rue Roland', hugo, done: 12, total: 12),
+  _plain('Rue des Jardiniers', hugo, done: 9, total: 24),
+  _plain('Rue de la Gare', thomas, done: 0, total: 16),
+  _plain('Rue de Stalingrad', thomas, done: 14, total: 14),
+  _plain('Rue Victor Hugo', julie, done: 11, total: 30),
+  _plain('Rue Corlin', julie, done: 0, total: 12),
+  _plain('Rue Nationale', thomas, done: 0, total: 40),
+  _plain('Rue de la Paix', camille, done: 8, total: 8),
+  _plain('Rue Thivend', camille, done: 3, total: 6),
+  _plain('Rue Jean Moulin', hugo, done: 0, total: 10),
+  _plain('Rue de Prony', julie, done: 0, total: 6),
+  _plain('Rue André Chénier', hugo, done: 4, total: 4),
 ];
 
 /// A street named [name] of [total] houses numbered 1, 2, 3…, the first
-/// [done] done, covered by [assignees].
+/// [done] done by [markedBy].
 Street _plain(
   String name,
-  Set<MemberId> assignees, {
+  MemberId markedBy, {
   required int done,
   required int total,
 }) => valueOf(
@@ -135,17 +135,13 @@ Street _plain(
     name: name,
     commune: villefranche,
     shape: _shapeOf(name),
-    assignees: assignees,
     houses: [
       for (var i = 1; i <= total; i++)
         House(
           number: n('$i'),
           status: i <= done ? VisitStatus.done : VisitStatus.toDo,
           lastChange: i <= done
-              ? ChangeStamp(
-                  by: assignees.firstOrNull ?? hugo,
-                  at: _today(10, i),
-                )
+              ? ChangeStamp(by: markedBy, at: _today(10, i))
               : null,
         ),
     ],
@@ -176,7 +172,6 @@ Street _thizy() {
       name: 'Rue de Thizy',
       commune: villefranche,
       shape: _shapeOf('Rue de Thizy'),
-      assignees: {leaOnPhone},
       houses: [
         house('1', VisitStatus.done, minute: 2),
         house('2', VisitStatus.done, minute: 4),

@@ -8,7 +8,6 @@ import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
-import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
@@ -53,14 +52,12 @@ final _road = StreetShape([
   [at(45.98800, 4.72500), at(45.98900, 4.72500)],
 ]);
 
-/// A street of the tournée with 2 doors, the first done, covered by
-/// [assignees].
-Street _street(String id, String name, Set<MemberId> assignees) => valueOf(
+/// A street of the secteur with 2 doors, the first done.
+Street _street(String id, String name) => valueOf(
   Street.create(
     id: StreetId(id),
     name: name,
     commune: villefranche,
-    assignees: assignees,
     houses: [
       House(number: n('1'), status: VisitStatus.done),
       House(number: n('2')),
@@ -81,9 +78,9 @@ void main() {
       ..devicePixelRatio = 3;
     addTearDown(tester.view.reset);
     streets = FakeStreetRepository([
-      _street('morin', 'Rue Pierre Morin', {}),
-      _street('lilas', 'Rue des Lilas', {leaId, manuId}),
-      _street('carnot', 'Rue Carnot', {manuId}),
+      _street('morin', 'Rue Pierre Morin'),
+      _street('lilas', 'Rue des Lilas'),
+      _street('carnot', 'Rue Carnot'),
     ]);
     directory = FakeAddressDirectory(
       places: {
@@ -164,8 +161,8 @@ void main() {
   });
 
   group('street card', () {
-    testWidgets('should offer to add a street the tournée does not have, '
-        'and add it for the member', (tester) async {
+    testWidgets('should offer to add a street the secteur does not have, '
+        'and add it with « Ajouter au secteur »', (tester) async {
       await pumpMap(tester);
 
       await tapRoad(tester, _onBordelan);
@@ -174,7 +171,7 @@ void main() {
       expect(find.text('Villefranche-sur-Saône'), findsOneWidget);
       expect(find.text('1 numéro'), findsOneWidget);
       expect(find.text('Pas encore dans le secteur'), findsOneWidget);
-      expect(find.text("Ajouter sans m'attribuer"), findsOneWidget);
+      expect(find.textContaining('attribuer'), findsNothing);
       expect(
         find.text('Rue absente de la carte ? Saisir à la main'),
         findsOneWidget,
@@ -182,80 +179,36 @@ void main() {
       expect(shownMap(tester).selectedRoad, _road);
       expect(shownMap(tester).selectedPoint, _onBordelan);
 
-      await tester.tap(find.text("Ajouter et me l'attribuer"));
+      await tester.tap(button('add'));
       await tester.pumpAndSettle();
 
       final added = streets.added.single;
       expect(added.banId, _bordelanId);
-      expect(added.assignees, {leaId});
-      expect(find.text('Vous la faites'), findsOneWidget);
       expect(find.text('0/1 faits'), findsOneWidget);
+      expect(button('open'), findsOneWidget);
     });
 
-    testWidgets('should add a street free with « Ajouter sans '
-        'm\'attribuer »', (tester) async {
-      await pumpMap(tester);
-      await tapRoad(tester, _onBordelan);
-
-      await tester.tap(button('addFree'));
-      await tester.pumpAndSettle();
-
-      expect(streets.added.single.assignees, isEmpty);
-      expect(find.text('Libre'), findsOneWidget);
-    });
-
-    testWidgets('should offer « Me l\'attribuer » and « Ouvrir » for a free '
-        'street', (tester) async {
-      await pumpMap(tester);
-
-      await tapStreet(tester, 'morin');
-
-      expect(find.text('Rue Pierre Morin'), findsOneWidget);
-      expect(find.text('1/2 faits'), findsOneWidget);
-      expect(find.text('Libre'), findsOneWidget);
-      expect(find.text('Ouvrir'), findsOneWidget);
-
-      await tester.tap(find.text("Me l'attribuer"));
-      await tester.pumpAndSettle();
-
-      expect(streets[StreetId('morin')]!.assignees, {leaId});
-      expect(find.text('Vous la faites'), findsOneWidget);
-    });
-
-    testWidgets('should offer « Ouvrir » and « Ne plus la faire » for a '
-        'street of the member\'s, naming who covers it too', (tester) async {
+    testWidgets('should offer only « Ouvrir » for a street of the '
+        'secteur', (tester) async {
       await pumpMap(tester);
 
       await tapStreet(tester, 'lilas');
 
-      expect(find.text('Vous la faites avec Manu'), findsOneWidget);
-      expect(find.text('Ne plus la faire'), findsOneWidget);
+      expect(find.text('Rue des Lilas'), findsWidgets);
+      expect(find.text('1/2 faits'), findsOneWidget);
+      for (final gone in [
+        'Libre',
+        "Me l'attribuer",
+        'La faire aussi',
+        'Ne plus la faire',
+      ]) {
+        expect(find.text(gone), findsNothing, reason: gone);
+      }
 
-      await tester.tap(find.text('Ouvrir'));
+      await tester.tap(button('open'));
       await tester.pumpAndSettle();
 
       expect(find.widgetWithText(AppBar, 'Rue des Lilas'), findsOneWidget);
-    });
-
-    testWidgets('should offer « La faire aussi » and « Ouvrir » for someone '
-        'else\'s street, naming who covers it', (tester) async {
-      await pumpMap(tester);
-
-      await tapStreet(tester, 'carnot');
-
-      expect(find.text('Faite par Manu'), findsOneWidget);
-      expect(button('open'), findsOneWidget);
-
-      await tester.tap(find.text('La faire aussi'));
-      await tester.pumpAndSettle();
-
-      expect(streets[StreetId('carnot')]!.assignees, {manuId, leaId});
-      expect(find.text('Vous la faites avec Manu'), findsOneWidget);
-
-      await tester.tap(find.text('Ne plus la faire'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Faite par Manu'), findsOneWidget);
     });
 
     testWidgets('should keep the map clear of the card', (tester) async {

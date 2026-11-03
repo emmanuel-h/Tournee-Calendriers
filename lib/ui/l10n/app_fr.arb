@@ -537,8 +537,6 @@
   "@editHint": { "description": "Under the numbers of the edit mode." },
   "deleteStreetAction": "Supprimer la rue",
   "@deleteStreetAction": { "description": "Bottom button of the edit mode: sends the street to the Corbeille after a confirmation." },
-  "stopCoveringStreetAction": "Ne plus la faire",
-  "@stopCoveringStreetAction": { "description": "Bottom button of the edit mode, shown when the member covers the street: takes them off it; the street stays in the sector for the others." },
   "numberRemoved": "N° {number} supprimé",
   "@numberRemoved": {
     "description": "Undo snackbar after ✕ on a number.",
@@ -1295,36 +1293,6 @@
       "name": { "type": "String", "example": "Léa" }
     }
   },
-  "teamMemberStreets": "{count, plural, =0{0 rue} =1{1 rue} other{{count} rues}}",
-  "@teamMemberStreets": {
-    "description": "Right of a member row in Équipe: the streets of the sector the member covers (#105). Followed by ▸ (▾ while unfolded) when there is at least one.",
-    "placeholders": {
-      "count": { "type": "int", "example": "3" }
-    }
-  },
-  "teamMemberStreetsShow": "{name}, {streets}, afficher les rues",
-  "@teamMemberStreetsShow": {
-    "description": "Screen-reader name of a member's street count while folded; {streets} is teamMemberStreets.",
-    "placeholders": {
-      "name": { "type": "String", "example": "Léa" },
-      "streets": { "type": "String", "example": "3 rues" }
-    }
-  },
-  "teamMemberStreetsHide": "{name}, {streets}, masquer les rues",
-  "@teamMemberStreetsHide": {
-    "description": "Screen-reader name of a member's street count while unfolded; {streets} is teamMemberStreets.",
-    "placeholders": {
-      "name": { "type": "String", "example": "Léa" },
-      "streets": { "type": "String", "example": "3 rues" }
-    }
-  },
-  "teamMemberStreetsList": "Rues de {name}",
-  "@teamMemberStreetsList": {
-    "description": "Screen-reader name of the street names unfolded under a member in Équipe.",
-    "placeholders": {
-      "name": { "type": "String", "example": "Léa" }
-    }
-  },
   "teamRemove": "Retirer",
   "@teamRemove": { "description": "Item of a member's ⋮ menu, and the confirm button." },
   "teamRemoveTitle": "Retirer {name} ?",
@@ -1783,20 +1751,10 @@
       "reason": { "type": "String", "example": "Pas de réseau." }
     }
   },
-  "homeMyStreets": "Mes rues · {done}/{total}",
-  "@homeMyStreets": {"description": "Header of Accueil's panel (PLAN §5.3): the doors done of the member's streets, out of all their doors.", "placeholders": {"done": {"type": "int", "example": "43"}, "total": {"type": "int", "example": "62"}}},
-  "homeMyStreetsSemantics": "Mes rues, {done} sur {total} faits",
-  "@homeMyStreetsSemantics": {"description": "What screen readers say for « Mes rues · 43/62 ».", "placeholders": {"done": {"type": "int", "example": "43"}, "total": {"type": "int", "example": "62"}}},
-  "homeStreetsVisitor": "Rues · {done}/{total}",
-  "@homeStreetsVisitor": {"description": "Header of Accueil's panel for an admin who visits the sector (PLAN §5.12): the doors done of every street.", "placeholders": {"done": {"type": "int", "example": "9"}, "total": {"type": "int", "example": "38"}}},
-  "homeStreetsVisitorSemantics": "Rues, {done} sur {total} faits",
-  "@homeStreetsVisitorSemantics": {"description": "What screen readers say for « Rues · 9/38 ».", "placeholders": {"done": {"type": "int", "example": "9"}, "total": {"type": "int", "example": "38"}}},
-  "homeTeamProgress": "Équipe : {percent} %",
-  "@homeTeamProgress": {"description": "Right of the panel's header: the share of the whole sector's doors done, rounded down.", "placeholders": {"percent": {"type": "int", "example": "41"}}},
-  "homeOtherStreets": "Autres rues du secteur ({count})",
-  "@homeOtherStreets": {"description": "Section of Accueil's panel under « Mes rues »: the streets of the sector the member does not cover, free or someone else's.", "placeholders": {"count": {"type": "int", "example": "12"}}},
-  "homeNoStreetOfMine": "Vous n'avez pas encore de rue.",
-  "@homeNoStreetOfMine": {"description": "Accueil's panel, under « Mes rues · 0/0 », when the member covers no street."},
+  "homeStreets": "Rues · {done}/{total}",
+  "@homeStreets": {"description": "Header of Accueil's panel (PLAN §5.14): the doors done of every street of the sector, out of all their doors.", "placeholders": {"done": {"type": "int", "example": "31"}, "total": {"type": "int", "example": "50"}}},
+  "homeStreetsSemantics": "Rues, {done} sur {total} faits",
+  "@homeStreetsSemantics": {"description": "What screen readers say for « Rues · 31/50 ».", "placeholders": {"done": {"type": "int", "example": "31"}, "total": {"type": "int", "example": "50"}}},
   "homeNoStreet": "Aucune rue dans le secteur pour l'instant.",
   "@homeNoStreet": {"description": "Accueil's panel when the sector has no street at all."},
   "homePanelExpand": "Afficher toute la liste",
@@ -1814,9 +1772,7 @@
   "mapLegendStreetPartial": "en partie",
   "@mapLegendStreetPartial": {"description": "Legend of the map: a street partly visited (orange line)."},
   "mapLegendStreetToDo": "à faire",
-  "@mapLegendStreetToDo": {"description": "Legend of the map: a street taken, nothing visited yet (blue line)."},
-  "mapLegendStreetFree": "libre",
-  "@mapLegendStreetFree": {"description": "Legend of the map: a street nobody took (dark grey dashed line)."},
+  "@mapLegendStreetToDo": {"description": "Legend of the map: a street with nothing visited yet (blue line)."},
   "addStreetsSearchHint": "Rechercher une rue",
   "@addStreetsSearchHint": {"description": "Placeholder and screen-reader name of the search box of « Ajouter des rues » (Pick mockup)."},
   "addStreetsSearchClear": "Effacer la recherche",
@@ -1837,12 +1793,10 @@
   "@streetCardNumbers": {"description": "Chip of the card of a street to add: how many numbers it brings.", "placeholders": {"count": {"type": "int", "example": "19"}}},
   "streetCardNotInSector": "Pas encore dans le secteur",
   "@streetCardNotInSector": {"description": "Chip of the card of a street the sector does not have."},
-  "streetCardAddMine": "Ajouter et me l'attribuer",
-  "@streetCardAddMine": {"description": "Red button of the card of a street to add: adds it, in the member's streets."},
-  "streetCardAddFree": "Ajouter sans m'attribuer",
-  "@streetCardAddFree": {"description": "Second button of the card of a street to add: adds it, free."},
+  "streetCardAdd": "Ajouter au secteur",
+  "@streetCardAdd": {"description": "Red button of the card of a street to add: adds it to the sector, for the whole team (PLAN §5.14)."},
   "streetCardAdding": "Ajout en cours…",
-  "@streetCardAdding": {"description": "In place of the buttons' labels while the street is added (its road may take a while)."},
+  "@streetCardAdding": {"description": "In place of the button's label while the street is added (its road may take a while)."},
   "streetCardAddFailed": "Les numéros donnés par la Base Adresse Nationale sont incohérents : la rue n'a pas été ajoutée. Saisissez-la à la main.",
   "@streetCardAddFailed": {"description": "On the card when the numbers of the BAN cannot make a street (a number twice)."},
   "streetCardManualLink": "Rue absente de la carte ? Saisir à la main",
@@ -1851,27 +1805,11 @@
   "@streetCardProgress": {"description": "Chip of the card of a street of the sector: its doors done.", "placeholders": {"done": {"type": "int", "example": "31"}, "total": {"type": "int", "example": "42"}}},
   "streetCardProgressSemantics": "{done} sur {total} faits",
   "@streetCardProgressSemantics": {"description": "What screen readers say for « 31/42 faits ».", "placeholders": {"done": {"type": "int", "example": "31"}, "total": {"type": "int", "example": "42"}}},
-  "streetCardFree": "Libre",
-  "@streetCardFree": {"description": "Chip of the card of a street nobody covers."},
-  "streetCardMine": "Vous la faites",
-  "@streetCardMine": {"description": "Chip of the card of a street the member covers alone."},
-  "streetCardMineWith": "Vous la faites avec {names}",
-  "@streetCardMineWith": {"description": "Chip of the card of a street the member covers with others.", "placeholders": {"names": {"type": "String", "example": "Manu et Julie"}}},
-  "streetCardOthers": "Faite par {names}",
-  "@streetCardOthers": {"description": "Chip of the card of a street others cover.", "placeholders": {"names": {"type": "String", "example": "Manu"}}},
-  "streetCardOthersUnknown": "Faite par un autre membre",
-  "@streetCardOthersUnknown": {"description": "Chip of the card of a street others cover, when the phone cannot name them."},
-  "streetCardTake": "Me l'attribuer",
-  "@streetCardTake": {"description": "Red button of the card of a free street."},
-  "streetCardTakeToo": "La faire aussi",
-  "@streetCardTakeToo": {"description": "Red button of the card of a street others cover."},
-  "streetCardRelease": "Ne plus la faire",
-  "@streetCardRelease": {"description": "Second button of the card of a street of the member's."},
   "streetCardOpen": "Ouvrir",
   "@streetCardOpen": {"description": "Button of the card of a street of the sector: opens the street."},
   "streetCardNoNetwork": "Connexion nécessaire pour ajouter une rue",
   "@streetCardNoNetwork": {"description": "Title of the card when the phone is offline (PLAN §5.4)."},
-  "streetCardNoNetworkHint": "Les rues déjà dans le secteur se prennent et s'ouvrent sans réseau.",
+  "streetCardNoNetworkHint": "Les rues déjà dans le secteur s'ouvrent sans réseau.",
   "@streetCardNoNetworkHint": {"description": "Under « Connexion nécessaire pour ajouter une rue »."},
   "streetCardNoStreetHere": "Aucune rue connue ici",
   "@streetCardNoStreetHere": {"description": "Title of the card when the BAN knows no street at the point tapped."},
@@ -1881,8 +1819,6 @@
   "@streetCardServiceError": {"description": "Title of the card when the address service failed."},
   "streetCardServiceErrorHint": "Réessayez dans un moment, ou saisissez la rue à la main.",
   "@streetCardServiceErrorHint": {"description": "Under « Le service des adresses ne répond pas »."},
-  "namesAnd": "{first} et {last}",
-  "@namesAnd": {"description": "Joins the last two first names of a list (« Manu et Julie »).", "placeholders": {"first": {"type": "String", "example": "Manu, Léa"}, "last": {"type": "String", "example": "Julie"}}},
   "manualTitle": "Rue à la main",
   "@manualTitle": {"description": "Title of the manual street form (PLAN §5.5, Manual mockup)."},
   "manualName": "Nom de la rue",
@@ -1911,7 +1847,7 @@
   "@manualOffline": {"description": "Under the preview of « Rue à la main »."},
   "manualAdd": "Ajouter la rue",
   "@manualAdd": {"description": "Button of « Rue à la main »."},
-  "manualAdded": "« {name} » ajoutée à vos rues.",
+  "manualAdded": "« {name} » ajoutée au secteur.",
   "@manualAdded": {"description": "Snackbar once a street typed in by hand is added.", "placeholders": {"name": {"type": "String", "example": "Chemin des Vignes"}}},
 
   "roundStart": "Commencer une tournée",

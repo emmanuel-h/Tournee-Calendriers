@@ -31,8 +31,6 @@ abstract final class MapIds {
   static const selectedPointSource = 'tc-selected-point';
 
   static const streetLines = 'tc-street-lines';
-  static const freeStreetCasing = 'tc-free-street-casing';
-  static const freeStreetLines = 'tc-free-street-lines';
   static const selectedCasing = 'tc-selected-casing';
   static const selectedCore = 'tc-selected-core';
   static const selectedPointHalo = 'tc-selected-point-halo';
@@ -49,10 +47,7 @@ String houseDotImage(HouseDotStatus status) => 'tc-house-${status.name}';
 /// picked on « Ajouter des rues »). Every street feature carries its
 /// street's id as its own (see `map_geojson.dart`).
 StreetId? tappedStreet(String layerId, String featureId) => switch (layerId) {
-  MapIds.streetLines ||
-  MapIds.freeStreetCasing ||
-  MapIds.freeStreetLines ||
-  MapIds.houseDots => StreetId(featureId),
+  MapIds.streetLines || MapIds.houseDots => StreetId(featureId),
   _ => null,
 };
 
@@ -81,152 +76,111 @@ final class MapLayerSpec {
   final bool interactive;
 }
 
-/// Every layer the map adds, bottom to top: the streets (solid, then the
-/// « libre » ones, dark grey dashes on a white casing), the road picked on
+/// Every layer the map adds, bottom to top: the streets, the road picked on
 /// « Ajouter des rues » (dark casing, white core, mockups README) and the
 /// point tapped (a dark dot in a faint halo, Pick mockup), then the house
 /// dots from street zoom (PLAN §5.3). Colours are the map tokens of
 /// [colors].
-List<MapLayerSpec> sectorMapLayers(AppColors colors) {
-  final isFree = ['==', _level, ProgressLevel.free.name];
-  return [
-    MapLayerSpec(
-      id: MapIds.streetLines,
-      source: MapIds.streetsSource,
-      properties: LineLayerProperties(
-        lineColor: _levelColor(colors),
-        lineWidth: _streetWidth,
-        lineCap: 'round',
-        lineJoin: 'round',
-      ),
-      filter: ['!', isFree],
-      belowLabels: true,
-      interactive: true,
+List<MapLayerSpec> sectorMapLayers(AppColors colors) => [
+  MapLayerSpec(
+    id: MapIds.streetLines,
+    source: MapIds.streetsSource,
+    properties: LineLayerProperties(
+      lineColor: _levelColor(colors),
+      lineWidth: _streetWidth,
+      lineCap: 'round',
+      lineJoin: 'round',
     ),
-    // A white casing under the dashes, wider than them, so a « libre »
-    // street stands out from the base map's grey roads (mockups README).
-    // It is also the fallback line: some GPUs (the emulator's at least)
-    // draw no dashed line at all, and a « libre » street must never vanish
-    // from the map. Opaque, so it shows on its own when the dashes do not.
-    MapLayerSpec(
-      id: MapIds.freeStreetCasing,
-      source: MapIds.streetsSource,
-      properties: LineLayerProperties(
-        lineColor: colors.mapStreetFreeCasing.toHexStringRGB(),
-        lineWidth: _byZoom(const {12: 6, 16: 11, 19: 16}),
-        lineCap: 'round',
-        lineJoin: 'round',
-      ),
-      filter: isFree,
-      belowLabels: true,
-      interactive: true,
+    belowLabels: true,
+    interactive: true,
+  ),
+  MapLayerSpec(
+    id: MapIds.selectedCasing,
+    source: MapIds.selectedSource,
+    properties: LineLayerProperties(
+      lineColor: colors.mapSelectedCasing.toHexStringRGB(),
+      lineWidth: _byZoom(const {12: 8, 16: 16, 19: 24}),
+      lineCap: 'round',
+      lineJoin: 'round',
     ),
-    MapLayerSpec(
-      id: MapIds.freeStreetLines,
-      source: MapIds.streetsSource,
-      properties: LineLayerProperties(
-        // Only « libre » streets reach this layer (the filter): their
-        // colour needs no `match` on the level.
-        lineColor: streetLineColor(ProgressLevel.free, colors).toHexStringRGB(),
-        lineWidth: _streetWidth,
-        // Dash and gap in line widths, so the pattern keeps its proportions
-        // at every zoom: 11.2 px dash, 8.4 px gap at width 7, as the
-        // mockups draw « libre ».
-        lineDasharray: const [1.6, 1.2],
-        lineJoin: 'round',
-      ),
-      filter: isFree,
-      belowLabels: true,
-      interactive: true,
+    belowLabels: false,
+    // Not a street of the tournée: a tap on it goes on to the map, which
+    // looks up the road under the finger again.
+    interactive: false,
+  ),
+  MapLayerSpec(
+    id: MapIds.selectedCore,
+    source: MapIds.selectedSource,
+    properties: LineLayerProperties(
+      lineColor: colors.mapSelectedCore.toHexStringRGB(),
+      lineWidth: _byZoom(const {12: 3, 16: 6, 19: 10}),
+      lineCap: 'round',
+      lineJoin: 'round',
     ),
-    MapLayerSpec(
-      id: MapIds.selectedCasing,
-      source: MapIds.selectedSource,
-      properties: LineLayerProperties(
-        lineColor: colors.mapSelectedCasing.toHexStringRGB(),
-        lineWidth: _byZoom(const {12: 8, 16: 16, 19: 24}),
-        lineCap: 'round',
-        lineJoin: 'round',
-      ),
-      belowLabels: false,
-      // Not a street of the tournée: a tap on it goes on to the map, which
-      // looks up the road under the finger again.
-      interactive: false,
+    belowLabels: false,
+    interactive: false,
+  ),
+  MapLayerSpec(
+    id: MapIds.selectedPointHalo,
+    source: MapIds.selectedPointSource,
+    properties: CircleLayerProperties(
+      circleColor: colors.mapSelectedCasing.toHexStringRGB(),
+      circleRadius: 18,
+      circleOpacity: 0.12,
     ),
-    MapLayerSpec(
-      id: MapIds.selectedCore,
-      source: MapIds.selectedSource,
-      properties: LineLayerProperties(
-        lineColor: colors.mapSelectedCore.toHexStringRGB(),
-        lineWidth: _byZoom(const {12: 3, 16: 6, 19: 10}),
-        lineCap: 'round',
-        lineJoin: 'round',
-      ),
-      belowLabels: false,
-      interactive: false,
+    belowLabels: false,
+    interactive: false,
+  ),
+  MapLayerSpec(
+    id: MapIds.selectedPointDot,
+    source: MapIds.selectedPointSource,
+    properties: CircleLayerProperties(
+      circleColor: colors.mapSelectedCasing.toHexStringRGB(),
+      circleRadius: 6,
     ),
-    MapLayerSpec(
-      id: MapIds.selectedPointHalo,
-      source: MapIds.selectedPointSource,
-      properties: CircleLayerProperties(
-        circleColor: colors.mapSelectedCasing.toHexStringRGB(),
-        circleRadius: 18,
-        circleOpacity: 0.12,
-      ),
-      belowLabels: false,
-      interactive: false,
-    ),
-    MapLayerSpec(
-      id: MapIds.selectedPointDot,
-      source: MapIds.selectedPointSource,
-      properties: CircleLayerProperties(
-        circleColor: colors.mapSelectedCasing.toHexStringRGB(),
-        circleRadius: 6,
-      ),
-      belowLabels: false,
-      interactive: false,
-    ),
-    MapLayerSpec(
-      id: MapIds.houseDots,
-      source: MapIds.housesSource,
-      properties: SymbolLayerProperties(
-        iconImage: [
-          'match',
-          ['get', statusProperty],
-          for (final status in HouseDotStatus.values) ...[
-            status.name,
-            houseDotImage(status),
-          ],
-          houseDotImage(HouseDotStatus.toDo),
+    belowLabels: false,
+    interactive: false,
+  ),
+  MapLayerSpec(
+    id: MapIds.houseDots,
+    source: MapIds.housesSource,
+    properties: SymbolLayerProperties(
+      iconImage: [
+        'match',
+        ['get', statusProperty],
+        for (final status in HouseDotStatus.values) ...[
+          status.name,
+          houseDotImage(status),
         ],
-        // The pictures are drawn at their full size for street zoom 18;
-        // smaller further out, where houses sit closer on screen.
-        iconSize: _byZoom(const {16: 0.6, 18: 1}),
-        // Every dot shows, even over another: a hidden house would read as
-        // no house at all.
-        iconAllowOverlap: true,
-        iconIgnorePlacement: true,
-        textField: ['get', numberProperty],
-        textFont: const ['Noto Sans Bold'],
-        textSize: 12,
-        textAnchor: 'top',
-        textOffset: const [0, 1.3],
-        textColor: colors.ink.toHexStringRGB(),
-        textHaloColor: colors.surface.toHexStringRGB(),
-        textHaloWidth: 1.5,
-        // A number that would overlap another is left out, its dot is not.
-        textOptional: true,
-      ),
-      minZoom: MapLayers.houseDotsMinZoom.toDouble(),
-      belowLabels: false,
-      interactive: true,
+        houseDotImage(HouseDotStatus.toDo),
+      ],
+      // The pictures are drawn at their full size for street zoom 18;
+      // smaller further out, where houses sit closer on screen.
+      iconSize: _byZoom(const {16: 0.6, 18: 1}),
+      // Every dot shows, even over another: a hidden house would read as
+      // no house at all.
+      iconAllowOverlap: true,
+      iconIgnorePlacement: true,
+      textField: ['get', numberProperty],
+      textFont: const ['Noto Sans Bold'],
+      textSize: 12,
+      textAnchor: 'top',
+      textOffset: const [0, 1.3],
+      textColor: colors.ink.toHexStringRGB(),
+      textHaloColor: colors.surface.toHexStringRGB(),
+      textHaloWidth: 1.5,
+      // A number that would overlap another is left out, its dot is not.
+      textOptional: true,
     ),
-  ];
-}
+    minZoom: MapLayers.houseDotsMinZoom.toDouble(),
+    belowLabels: false,
+    interactive: true,
+  ),
+];
 
 const _level = ['get', levelProperty];
 
-/// The width of a street line, taken or « libre », by zoom.
+/// The width of a street line, by zoom.
 final _streetWidth = _byZoom(const {12: 3, 16: 7, 19: 12});
 
 /// A line's colour from its level: the map tokens of the mockups README.
@@ -237,13 +191,13 @@ List<Object> _levelColor(AppColors colors) => [
     level.name,
     streetLineColor(level, colors).toHexStringRGB(),
   ],
-  colors.mapStreetFree.toHexStringRGB(),
+  // `match` needs a fallback, never used: every line has a level.
+  colors.mapStreetToDo.toHexStringRGB(),
 ];
 
 /// The colour of a street line at [level], from the map tokens of
 /// [colors]; the legend under the map draws its samples with it too.
 Color streetLineColor(ProgressLevel level, AppColors colors) => switch (level) {
-  ProgressLevel.free => colors.mapStreetFree,
   ProgressLevel.toDo => colors.mapStreetToDo,
   ProgressLevel.partial => colors.mapStreetPartial,
   ProgressLevel.done => colors.mapStreetDone,

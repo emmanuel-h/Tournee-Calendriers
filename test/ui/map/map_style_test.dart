@@ -17,7 +17,6 @@ void main() {
         colors.mapStreetPartial,
       );
       expect(streetLineColor(ProgressLevel.toDo, colors), colors.mapStreetToDo);
-      expect(streetLineColor(ProgressLevel.free, colors), colors.mapStreetFree);
     });
   });
 
@@ -26,20 +25,6 @@ void main() {
       expect(
         tappedStreet(MapIds.streetLines, 'rue-nationale'),
         StreetId('rue-nationale'),
-      );
-    });
-
-    test('should name the street when a « libre » line is tapped', () {
-      expect(
-        tappedStreet(MapIds.freeStreetLines, 'rue-de-la-paix'),
-        StreetId('rue-de-la-paix'),
-      );
-    });
-
-    test('should name the street when the casing of « libre » is tapped', () {
-      expect(
-        tappedStreet(MapIds.freeStreetCasing, 'rue-de-la-paix'),
-        StreetId('rue-de-la-paix'),
       );
     });
 
@@ -94,8 +79,6 @@ void main() {
     test('should stack streets, then the picked road, then the dots', () {
       expect(layers.map((l) => l.id), [
         MapIds.streetLines,
-        MapIds.freeStreetCasing,
-        MapIds.freeStreetLines,
         MapIds.selectedCasing,
         MapIds.selectedCore,
         MapIds.selectedPointHalo,
@@ -103,8 +86,6 @@ void main() {
         MapIds.houseDots,
       ]);
       expect(layers.map((l) => l.source), [
-        MapIds.streetsSource,
-        MapIds.streetsSource,
         MapIds.streetsSource,
         MapIds.selectedSource,
         MapIds.selectedSource,
@@ -117,8 +98,6 @@ void main() {
     test('should draw only the street lines under the labels', () {
       expect(layers.map((l) => l.belowLabels), [
         true,
-        true,
-        true,
         false,
         false,
         false,
@@ -129,8 +108,6 @@ void main() {
 
     test('should answer taps on streets and dots, not on the picked road', () {
       expect(layers.map((l) => l.interactive), [
-        true,
-        true,
         true,
         false,
         false,
@@ -145,59 +122,23 @@ void main() {
       expect(layers.where((l) => l.minZoom != null), hasLength(1));
     });
 
-    test('should split the « libre » streets into their own layer', () {
-      expect(layer(MapIds.streetLines).filter, [
-        '!',
-        [
-          '==',
-          ['get', 'level'],
-          'free',
-        ],
-      ]);
-      for (final id in [MapIds.freeStreetCasing, MapIds.freeStreetLines]) {
-        expect(layer(id).filter, [
-          '==',
-          ['get', 'level'],
-          'free',
-        ]);
-      }
-      expect(layers.where((l) => l.filter != null), hasLength(3));
+    test('should draw every street in one layer, with no filter (PLAN '
+        '§5.14)', () {
+      expect(layers.where((l) => l.filter != null), isEmpty);
     });
 
     test('should colour each street line by its level with the map tokens', () {
       expect(json(MapIds.streetLines)['line-color'], [
         'match',
         ['get', 'level'],
-        'free',
-        '#3e434a',
         'toDo',
         '#2f5da8',
         'partial',
         '#e0a21b',
         'done',
         '#1e6b47',
-        '#3e434a',
+        '#2f5da8',
       ]);
-    });
-
-    test('should draw an opaque white casing, wider, under the « libre » '
-        'dashes', () {
-      expect(json(MapIds.freeStreetCasing), {
-        'line-color': '#ffffff',
-        'line-width': [
-          'interpolate',
-          ['linear'],
-          ['zoom'],
-          12,
-          6,
-          16,
-          11,
-          19,
-          16,
-        ],
-        'line-cap': 'round',
-        'line-join': 'round',
-      });
     });
 
     test('should draw solid round lines that widen with the zoom', () {
@@ -215,26 +156,6 @@ void main() {
           12,
         ],
         'line-cap': 'round',
-        'line-join': 'round',
-      });
-    });
-
-    test('should dash the « libre » lines in dark grey, as wide as the '
-        'others', () {
-      expect(json(MapIds.freeStreetLines), {
-        'line-color': '#3e434a',
-        'line-width': [
-          'interpolate',
-          ['linear'],
-          ['zoom'],
-          12,
-          3,
-          16,
-          7,
-          19,
-          12,
-        ],
-        'line-dasharray': [1.6, 1.2],
         'line-join': 'round',
       });
     });

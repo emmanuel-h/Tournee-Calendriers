@@ -3,7 +3,7 @@ import 'package:tournee_calendriers/domain/street/street_repository.dart';
 
 /// Where a street imported before stands on the phone.
 enum ImportedStreetState {
-  /// In « Mes rues »: importing it again leaves it as it is.
+  /// In the secteur: importing it again leaves it as it is.
   active,
 
   /// In the Corbeille: importing it again brings it back with its marks.

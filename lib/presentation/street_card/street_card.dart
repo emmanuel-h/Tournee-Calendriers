@@ -1,14 +1,9 @@
-import 'package:tournee_calendriers/domain/sector/member.dart';
-import 'package:tournee_calendriers/domain/sector/sector.dart';
-import 'package:tournee_calendriers/domain/sector/team_roster.dart';
-import 'package:tournee_calendriers/domain/shared/member_id.dart';
-import 'package:tournee_calendriers/domain/shared/same_items.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 
 // The street card of « Ajouter des rues » and Accueil (PLAN §5.4, Pick
 // mockup): what a street tapped on the map, or found by the search, is to
-// the tournée, and what the member can do with it.
+// the secteur, and what the member can do with it.
 
 /// What the street card shows. `sealed`: the card has a layout for each
 /// case, and the compiler checks that none is forgotten.
@@ -55,8 +50,8 @@ final class StreetCardFailed extends StreetCard {
   int get hashCode => problem.hashCode;
 }
 
-/// A street the tournée does not have: « 19 numéros · Pas encore dans la
-/// tournée », « Ajouter et me l'attribuer », « Ajouter sans m'attribuer ».
+/// A street the secteur does not have: « 19 numéros · Pas encore dans le
+/// secteur », « Ajouter au secteur ».
 final class StreetCardToAdd extends StreetCard {
   const StreetCardToAdd({
     required this.name,
@@ -72,8 +67,8 @@ final class StreetCardToAdd extends StreetCard {
   /// How many numbers the street would bring.
   final int numberCount;
 
-  /// The street is being added (its road may take a while): the buttons
-  /// wait.
+  /// The street is being added (its road may take a while): the button
+  /// waits.
   final bool adding;
 
   /// The address service gave numbers the street cannot take: nothing was
@@ -94,45 +89,19 @@ final class StreetCardToAdd extends StreetCard {
       Object.hash(name, commune, numberCount, adding, addFailed);
 }
 
-/// Who covers a street of the tournée, as its card tells it (PLAN §5.4).
-enum StreetCoverage {
-  /// Nobody: « Me l'attribuer » · « Ouvrir ».
-  free,
-
-  /// The member on the phone, maybe with others: « Ouvrir » · « Ne plus la
-  /// faire ».
-  mine,
-
-  /// Others only: « La faire aussi » · « Ouvrir ».
-  others,
-}
-
-/// A street of the tournée: its progress, who covers it, and the actions
-/// of its [coverage].
+/// A street of the secteur: its progress and « Ouvrir » (PLAN §5.14). Every
+/// member covers every street, so the card names nobody.
 final class StreetCardInSector extends StreetCard {
-  StreetCardInSector({
+  const StreetCardInSector({
     required this.id,
     required this.name,
     required this.commune,
     required this.done,
     required this.total,
-    required this.coverage,
-    required List<String> coveredBy,
-  }) : coveredBy = List.unmodifiable(coveredBy);
+  });
 
-  /// The card of [street], seen by the member [me]. The [team] names the
-  /// others who cover it; null while it cannot be read (offline, never
-  /// seen), when nobody is named.
-  ///
-  /// Only the assignees still in the [team] cover the street (#91): one
-  /// whose every assignee left it is free, and anyone may take it. While
-  /// the [team] is null, every assignee counts (see [TeamRoster]).
-  factory StreetCardInSector.of(
-    Street street, {
-    required MemberId me,
-    required Sector? team,
-  }) {
-    final assignees = TeamRoster.of(team, me: me).assigneesOf(street);
+  /// The card of [street].
+  factory StreetCardInSector.of(Street street) {
     final progress = street.progress;
     return StreetCardInSector(
       id: street.id,
@@ -140,22 +109,10 @@ final class StreetCardInSector extends StreetCard {
       commune: street.commune.name,
       done: progress.visited,
       total: progress.total,
-      coverage: assignees.isEmpty
-          ? StreetCoverage.free
-          : assignees.contains(me)
-          ? StreetCoverage.mine
-          : StreetCoverage.others,
-      // In the team's order (oldest first), so the names never shuffle.
-      // Someone no longer in the team is not among the [assignees].
-      coveredBy: [
-        for (final Member member in team?.members ?? const [])
-          if (member.id != me && assignees.contains(member.id))
-            member.name.text,
-      ],
     );
   }
 
-  /// The street « Ouvrir » opens, and the one « Me l'attribuer » takes.
+  /// The street « Ouvrir » opens.
   final StreetId id;
   final String name;
   final String commune;
@@ -164,15 +121,6 @@ final class StreetCardInSector extends StreetCard {
   final int done;
   final int total;
 
-  final StreetCoverage coverage;
-
-  /// The first names of the teammates who cover the street, the member on
-  /// the phone left out: « avec Paul » when [coverage] is
-  /// [StreetCoverage.mine], « Faite par Paul » when it is
-  /// [StreetCoverage.others]. Read-only; may be empty even then (the team
-  /// not read yet).
-  final List<String> coveredBy;
-
   @override
   bool operator ==(Object other) =>
       other is StreetCardInSector &&
@@ -180,23 +128,12 @@ final class StreetCardInSector extends StreetCard {
       other.name == name &&
       other.commune == commune &&
       other.done == done &&
-      other.total == total &&
-      other.coverage == coverage &&
-      sameItems(other.coveredBy, coveredBy);
+      other.total == total;
 
   @override
-  int get hashCode => Object.hash(
-    id,
-    name,
-    commune,
-    done,
-    total,
-    coverage,
-    Object.hashAll(coveredBy),
-  );
+  int get hashCode => Object.hash(id, name, commune, done, total);
 
   @override
   String toString() =>
-      'StreetCardInSector(${id.value}, $name, $done/$total, $coverage, '
-      '$coveredBy)';
+      'StreetCardInSector(${id.value}, $name, $commune, $done/$total)';
 }

@@ -85,7 +85,7 @@ abstract final class AppTextStyles {
     height: 1.1,
   );
 
-  /// The header of a list (« Mes rues · 3 »).
+  /// The header of a list (« Rues · 31/50 »).
   static const listHeader = TextStyle(
     fontFamily: AppFonts.display,
     fontWeight: FontWeight.w700,
@@ -255,15 +255,6 @@ abstract final class AppTextStyles {
     fontSize: 28,
     letterSpacing: 28 * 0.04,
     height: 1.1,
-  );
-
-  /// A street unfolded under a member in Équipe (« Rue de Thizy »): one
-  /// per 32 dp line.
-  static const memberStreet = TextStyle(
-    fontFamily: AppFonts.text,
-    fontWeight: FontWeight.w400,
-    fontSize: 15,
-    height: 32 / 15,
   );
 
   /// The initial in a member's round avatar (« M »).

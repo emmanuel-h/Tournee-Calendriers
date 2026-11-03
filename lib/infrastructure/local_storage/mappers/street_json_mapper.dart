@@ -8,8 +8,7 @@
 //
 //   { version: 3, id, name, commune: { inseeCode, name }, banId | null,
 //     deletion: stamp | null, shape: ["<encoded polyline>", …],
-//     assignees: [memberId, …], houses: [house], removedHouses: [{ house,
-//     removal: stamp }] }
+//     houses: [house], removedHouses: [{ house, removal: stamp }] }
 //   house    = { number: "3bis", status, comeBack: when | null,
 //                lastChange: stamp | null, tries: 1–99,   ← only from the first try
 //                calendars: 1–99,                         ← only while done
@@ -45,10 +44,11 @@
 // than it could not read it, and going back to one (0.9.0 or before) is
 // not supported.
 //
-// `shape` (one encoded polyline per line, see `StreetShape.encode`) and
-// `assignees` came with the map (T3.3) without a new version: they only
-// add to version 3, so a file written before reads as a street without
-// shape that nobody covers, and nothing in it needs rewriting. `tries`
+// `shape` (one encoded polyline per line, see `StreetShape.encode`) came
+// with the map (T3.3) without a new version: it only adds to version 3, so
+// a file written before reads as a street without shape, and nothing in it
+// needs rewriting. `assignees` (who covered the street, T3.3) went with
+// PLAN §5.14: a file that still has it is read without it. `tries`
 // (the tries with nobody home, #80) came the same way: written only from
 // the first try, a missing one reads as none (and a « personne » without
 // it as its first try, see `NobodyHomeTries.keptBy`). `calendars` (how
@@ -121,8 +121,6 @@ Map<String, Object?> streetToJson(Street street) => {
   'banId': street.banId?.value,
   'deletion': _stampToJson(street.deletion),
   'shape': street.shape.encode(),
-  // Sorted, so the same street always makes the same file.
-  'assignees': [for (final member in street.assignees) member.value]..sort(),
   'houses': [for (final house in street.houses) _houseToJson(house)],
   'removedHouses': [
     for (final removed in street.removedHouses)
@@ -165,9 +163,8 @@ Street streetFromJson(Object? json) {
         ),
         banId: banId == null ? null : _identifier(banId, BanStreetId.new),
         // Read apart: a map pattern requires its keys, and files written
-        // before the map have neither.
+        // before the map have none.
         shape: _shapeFromJson(json['shape']),
-        assignees: _assigneesFromJson(json['assignees']),
         houses: [for (final house in houses) _houseFromJson(house, version)],
         removedHouses: [
           for (final removed in removedHouses)
@@ -194,18 +191,6 @@ StreetShape _shapeFromJson(Object? json) => switch (json) {
     'shape',
   ),
   _ => throw const FormatException('Not a stored shape'),
-};
-
-/// The members stored as [json]; nobody when the field is missing.
-Set<MemberId> _assigneesFromJson(Object? json) => switch (json) {
-  null => const {},
-  final List<Object?> ids => {
-    for (final id in ids)
-      id is String
-          ? _identifier(id, MemberId.new)
-          : throw const FormatException('Not a stored assignee'),
-  },
-  _ => throw const FormatException('Not stored assignees'),
 };
 
 Map<String, Object?> _houseToJson(House house) => {

@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
-import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/presentation/home/home_state.dart';
 import 'package:tournee_calendriers/presentation/home/street_row.dart';
-import 'package:tournee_calendriers/ui/components/section_header.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/screens/round/round_card.dart';
@@ -13,14 +11,12 @@ import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
-/// The « Mes rues » panel at the bottom of Accueil (PLAN §5.3, Home
-/// mockup): a handle and the totals (« Mes rues · 43/62 », « Équipe :
-/// 41 % »), then « Commencer une tournée » or the tournée's card (PLAN
-/// §5.13), the member's streets, the other streets of the secteur
-/// under « Autres rues du secteur » and a muted « + Ajouter des rues » row
-/// after them (used a few times a year, #63), then the pending-sync line. A row of « Mes rues » opens its street; a row of
-/// the others asks Accueil to show its street card ([onOtherStreetTapped],
-/// #93), from which the member may take it.
+/// The « Rues » panel at the bottom of Accueil (PLAN §5.14, RunStart
+/// mockup): a handle and the totals (« Rues · 31/50 », over every street
+/// of the secteur), then « Commencer une tournée » or the tournée's card
+/// (PLAN §5.13), every street of the secteur in one list and a muted « +
+/// Ajouter des rues » row after them (used a few times a year, #63), then
+/// the pending-sync line. A row opens its street.
 ///
 /// It is as tall as it is told ([height]): Accueil decides, as the handle
 /// is dragged ([onDrag], [onDragEnd]) or tapped ([onToggle]). Folded down
@@ -34,7 +30,6 @@ final class HomePanel extends StatelessWidget {
     required this.onDrag,
     required this.onDragEnd,
     required this.onToggle,
-    required this.onOtherStreetTapped,
   });
 
   final HomeState state;
@@ -51,9 +46,6 @@ final class HomePanel extends StatelessWidget {
   final ValueChanged<double> onDragEnd;
 
   final VoidCallback onToggle;
-
-  /// A row under « Autres rues du secteur » was tapped.
-  final ValueChanged<StreetId> onOtherStreetTapped;
 
   /// Under this room, the list does not fit: only the handle and the
   /// totals show.
@@ -94,12 +86,7 @@ final class HomePanel extends StatelessWidget {
                   : Column(
                       crossAxisAlignment: CrossAxisAlignment.stretch,
                       children: [
-                        Expanded(
-                          child: _StreetList(
-                            state: state,
-                            onOtherStreetTapped: onOtherStreetTapped,
-                          ),
-                        ),
+                        Expanded(child: _StreetList(state: state)),
                         // « ☁ Modifications de 3 rues en attente d'envoi »,
                         // only while some wait to be sent.
                         const PendingSyncLine(),
@@ -116,7 +103,7 @@ final class HomePanel extends StatelessWidget {
 
 /// The height of the folded panel (its handle and totals) when text is
 /// drawn through [textScaler]: [AppSizes.homePanelFolded] at 100 %, taller
-/// by as much as the « Mes rues · 43/62 » line grows with the phone's font
+/// by as much as the « Rues · 31/50 » line grows with the phone's font
 /// size, so it still holds the totals at 200 %.
 double homePanelFoldedHeight(TextScaler textScaler) {
   double lineHeight(TextScaler scaler) {
@@ -165,8 +152,7 @@ final class _PanelSheet extends StatelessWidget {
   }
 }
 
-/// The handle, « Mes rues · 43/62 » (« Rues · 9/38 » for a visiting
-/// admin) and « Équipe : 41 % ».
+/// The handle and « Rues · 31/50 ».
 final class _Totals extends StatelessWidget {
   const _Totals({required this.state});
 
@@ -176,15 +162,6 @@ final class _Totals extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final colors = AppColors.of(context);
-    final (header, spoken) = state.visiting
-        ? (
-            l10n.homeStreetsVisitor(state.done, state.total),
-            l10n.homeStreetsVisitorSemantics(state.done, state.total),
-          )
-        : (
-            l10n.homeMyStreets(state.done, state.total),
-            l10n.homeMyStreetsSemantics(state.done, state.total),
-          );
     return SizedBox(
       height: homePanelFoldedHeight(MediaQuery.textScalerOf(context)),
       child: Column(
@@ -205,27 +182,16 @@ final class _Totals extends StatelessWidget {
           ),
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: AppSizes.gutter),
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              spacing: 12,
-              children: [
-                Expanded(
-                  child: Text(
-                    header,
-                    key: const Key('home.header'),
-                    semanticsLabel: spoken,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.listHeader.copyWith(color: colors.ink),
-                  ),
-                ),
-                Text(
-                  l10n.homeTeamProgress(state.teamPercent),
-                  key: const Key('home.teamProgress'),
-                  style: AppTextStyles.small.copyWith(color: colors.muted),
-                ),
-              ],
+            child: Text(
+              l10n.homeStreets(state.done, state.total),
+              key: const Key('home.header'),
+              semanticsLabel: l10n.homeStreetsSemantics(
+                state.done,
+                state.total,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: AppTextStyles.listHeader.copyWith(color: colors.ink),
             ),
           ),
         ],
@@ -234,13 +200,11 @@ final class _Totals extends StatelessWidget {
   }
 }
 
-/// « Mes rues », then « Autres rues du secteur »; or why there is
-/// nothing to list.
+/// Every street of the secteur, or why there is nothing to list.
 final class _StreetList extends StatelessWidget {
-  const _StreetList({required this.state, required this.onOtherStreetTapped});
+  const _StreetList({required this.state});
 
   final HomeState state;
-  final ValueChanged<StreetId> onOtherStreetTapped;
 
   @override
   Widget build(BuildContext context) {
@@ -254,11 +218,6 @@ final class _StreetList extends StatelessWidget {
         style: AppTextStyles.body.copyWith(color: colors.muted),
       ),
     );
-    Widget row(StreetRow street, VoidCallback onTap) => StreetRowTile(
-      key: ValueKey('home.street.${street.id.value}'),
-      row: street,
-      onTap: onTap,
-    );
     return ListView(
       key: const Key('home.panel.list'),
       padding: const EdgeInsets.symmetric(horizontal: AppSizes.gutter),
@@ -267,21 +226,13 @@ final class _StreetList extends StatelessWidget {
         const RoundPanelEntry(),
         if (state.hasNoStreet)
           note(l10n.homeNoStreet, const Key('home.noStreet'))
-        else if (!state.loading) ...[
-          for (final street in state.mine)
-            row(street, () => _open(context, street)),
-          if (state.mine.isEmpty)
-            note(l10n.homeNoStreetOfMine, const Key('home.noStreetOfMine')),
-          if (state.others.isNotEmpty) ...[
-            SectionHeader(
-              l10n.homeOtherStreets(state.others.length),
-              key: const Key('home.others'),
-              padding: const EdgeInsets.only(top: 16, bottom: 4),
+        else
+          for (final street in state.streets)
+            StreetRowTile(
+              key: ValueKey('home.street.${street.id.value}'),
+              row: street,
+              onTap: () => _open(context, street),
             ),
-            for (final street in state.others)
-              row(street, () => onOtherStreetTapped(street.id)),
-          ],
-        ],
         const _AddStreetsRow(),
       ],
     );

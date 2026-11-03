@@ -252,8 +252,6 @@ final class FirestoreStreetRepository
       change,
       undoStamp: ChangeStamp(by: _identity.currentMember, at: _clock.now()),
       removal: FieldValue.delete(),
-      arrayUnion: (item) => FieldValue.arrayUnion([item]),
-      arrayRemove: (item) => FieldValue.arrayRemove([item]),
     );
     final doc = _streets.doc(street.id.value);
     // Behind the writes of the street still going (a street just added),

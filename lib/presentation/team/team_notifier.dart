@@ -7,7 +7,6 @@ import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/shared/insee_code.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
-import 'package:tournee_calendriers/domain/street/streets_by_member.dart';
 import 'package:tournee_calendriers/presentation/admin/admin_notifier.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/import_streets/import_state.dart';
@@ -28,8 +27,7 @@ final teamProvider = NotifierProvider<TeamNotifier, TeamState>(
 ///
 /// It asks once about each other member whether they are an admin
 /// (« · admin »), and follows whether the phone is one (`adminProvider`),
-/// which gives or takes away the admin's commands at once. It follows the
-/// tournée's streets too, for the streets each member covers (« 3 rues »).
+/// which gives or takes away the admin's commands at once.
 final class TeamNotifier extends Notifier<TeamState> {
   /// What each member asked about turned out to be: admin or not. Kept
   /// across tournées: an admin is one everywhere.
@@ -39,13 +37,9 @@ final class TeamNotifier extends Notifier<TeamState> {
   /// arrives or the phone's own status changes.
   Sector? _sector;
 
-  /// The streets each member covers, as last read; none until then.
-  StreetsByMember _streets = StreetsByMember.none;
-
   @override
   TeamState build() {
     _sector = null;
-    _streets = StreetsByMember.none;
     // `ref.watch`: when another tournée is opened (or none), Riverpod runs
     // `build` again, which stops following the old one (`onDispose`) and
     // follows the new one.
@@ -63,18 +57,6 @@ final class TeamNotifier extends Notifier<TeamState> {
           onError: (Object _) => state = const TeamUnavailable(),
         );
     ref.onDispose(listening.cancel);
-    // The streets come apart from the team: the team shows at once, and
-    // the counts follow when the streets are read.
-    final streets = ref
-        .watch(observeStreetsByMemberProvider)()
-        .listen(
-          _showStreets,
-          // The streets cannot be read when the team cannot either, which
-          // the team's own stream tells; until then, the counts stay as
-          // they were.
-          onError: (Object _) {},
-        );
-    ref.onDispose(streets.cancel);
     return const TeamLoading();
   }
 
@@ -86,11 +68,6 @@ final class TeamNotifier extends Notifier<TeamState> {
     }
     _showLast();
     _askAboutAdmins(sector);
-  }
-
-  void _showStreets(StreetsByMember streets) {
-    _streets = streets;
-    _showLast();
   }
 
   void _showLast() {
@@ -107,7 +84,6 @@ final class TeamNotifier extends Notifier<TeamState> {
         for (final MapEntry(key: member, value: isAdmin) in _admins.entries)
           if (isAdmin) member,
       },
-      streets: _streets,
     );
   }
 

@@ -4,10 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/map/map_layers.dart';
 import 'package:tournee_calendriers/domain/map/sector_area.dart';
-import 'package:tournee_calendriers/domain/sector/member.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
 import 'package:tournee_calendriers/domain/sector/sector_summary.dart';
-import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
@@ -29,8 +27,6 @@ import '../../domain/sector/sector_fixtures.dart'
         julie,
         lea,
         manu,
-        manuId,
-        nameOf,
         team,
         sectorId,
         villefrancheCommune;
@@ -44,28 +40,18 @@ import '../../support/results.dart';
 import '../../support/street_fixtures.dart' hide lea;
 
 final _lea = MemberId('lea');
-final _paul = MemberId('paul');
-
-/// Paul in the team, so the cards name him.
-final _paulMember = Member(
-  id: _paul,
-  name: nameOf('Paul'),
-  requestedAt: createdAt,
-  acceptance: ChangeStamp(by: manuId, at: createdAt),
-);
 
 final _nationaleShape = StreetShape([
   [at(45.98915, 4.71862), at(45.99210, 4.71705)],
 ]);
 
-/// Rue Nationale: Léa's, on the map, 1 of 3 doors done.
+/// Rue Nationale: on the map, 1 of 3 doors done.
 final _nationale = valueOf(
   Street.create(
     id: StreetId('nationale'),
     name: 'Rue Nationale',
     commune: villefranche,
     shape: _nationaleShape,
-    assignees: {_lea},
     houses: [
       House(
         number: n('1'),
@@ -78,18 +64,17 @@ final _nationale = valueOf(
   ),
 );
 
-/// Allée Émile Zola: Léa's and Paul's, typed in by hand, 0 of 1.
+/// Allée Émile Zola: typed in by hand, 0 of 1.
 final _emile = valueOf(
   Street.create(
     id: StreetId('emile'),
     name: 'Allée Émile Zola',
     commune: villefranche,
-    assignees: {_lea, _paul},
     houses: [House(number: n('4'))],
   ),
 );
 
-/// Rue de la Paix: nobody's, 2 of 2 done.
+/// Rue de la Paix: 2 of 2 done.
 final _paix = valueOf(
   Street.create(
     id: StreetId('paix'),
@@ -102,20 +87,19 @@ final _paix = valueOf(
   ),
 );
 
-/// Rue Victor Hugo: Paul's, 0 of 4.
+/// Rue Victor Hugo: 0 of 4.
 final _hugo = valueOf(
   Street.create(
     id: StreetId('hugo'),
     name: 'Rue Victor Hugo',
     commune: villefranche,
-    assignees: {_paul},
     houses: [
       for (final number in ['7', '8', '9', '10']) House(number: n(number)),
     ],
   ),
 );
 
-/// Rue Pierre Morin: nobody's, a single house on the map, far north.
+/// Rue Pierre Morin: a single house on the map, far north.
 final _morin = valueOf(
   Street.create(
     id: StreetId('morin'),
@@ -129,22 +113,6 @@ final _morin = valueOf(
 final _morinRoad = StreetShape([
   [at(46.0095, 4.7300), at(46.0105, 4.7300)],
 ]);
-
-final _gareShape = StreetShape([
-  [at(45.98500, 4.72000), at(45.98600, 4.72100)],
-]);
-
-/// Rue de la Gare: Paul's alone, on the map, 0 of 1.
-final _gare = valueOf(
-  Street.create(
-    id: StreetId('gare'),
-    name: 'Rue de la Gare',
-    commune: villefranche,
-    shape: _gareShape,
-    assignees: {_paul},
-    houses: [House(number: n('12'))],
-  ),
-);
 
 final _nationaleRow = StreetRow(
   id: StreetId('nationale'),
@@ -206,50 +174,35 @@ void main() {
     sectors = FakeSectorRepository([
       team(
         communes: [villefrancheCommune, gleizeCommune],
-        members: [manu, lea, julie, _paulMember],
+        members: [manu, lea, julie],
       ),
     ]);
   });
 
   group('panel', () {
-    test(
-      'should list « Mes rues » with their progress, in French order',
-      () async {
-        final container = phone();
-        await pumpEventQueue();
-
-        final state = container.read(homeProvider);
-
-        expect(state.loading, isFalse);
-        expect(state.visiting, isFalse);
-        expect(state.mine, [_emileRow, _nationaleRow]);
-      },
-    );
-
-    test('should list the other streets of the tournée, free or someone '
-        'else\'s, in French order', () async {
-      final container = phone();
-      await pumpEventQueue();
-
-      expect(container.read(homeProvider).others, [_paixRow, _hugoRow]);
-    });
-
-    test('should add up the doors of « Mes rues » and the team\'s share '
-        'done', () async {
+    test('should list every street of the secteur with its progress, in '
+        'French order', () async {
       final container = phone();
       await pumpEventQueue();
 
       final state = container.read(homeProvider);
 
-      expect(state.done, 1);
-      expect(state.total, 4);
-      // 3 of the tournée's 10 doors.
-      expect(state.teamPercent, 30);
+      expect(state.loading, isFalse);
+      expect(state.streets, [_emileRow, _paixRow, _nationaleRow, _hugoRow]);
       expect(state.hasNoStreet, isFalse);
     });
 
-    test('should count the refused doors as visited, in « Mes rues » and '
-        'the team\'s share', () async {
+    test('should add up the doors of every street', () async {
+      final container = phone();
+      await pumpEventQueue();
+
+      final state = container.read(homeProvider);
+
+      expect(state.done, 3);
+      expect(state.total, 10);
+    });
+
+    test('should count the refused doors as visited', () async {
       final (refusing, change) = valueOf(
         _nationale.markHouse(
           n('3'),
@@ -264,42 +217,52 @@ void main() {
 
       final state = container.read(homeProvider);
 
-      expect(state.done, 2);
-      expect(state.total, 4);
-      // 4 of the tournée's 10 doors.
-      expect(state.teamPercent, 40);
+      expect(state.done, 4);
+      expect(state.total, 10);
     });
 
-    test(
-      'should list every street under « Rues » for a visiting admin',
-      () async {
-        final container = phone(open: sector12Visited);
-        await pumpEventQueue();
+    test('should list every street for a visiting admin too', () async {
+      final container = phone(open: sector12Visited);
+      await pumpEventQueue();
 
-        final state = container.read(homeProvider);
+      final state = container.read(homeProvider);
 
-        expect(state.visiting, isTrue);
-        expect(state.mine, [_emileRow, _paixRow, _nationaleRow, _hugoRow]);
-        expect(state.others, isEmpty);
-        expect(state.done, 3);
-        expect(state.total, 10);
-        expect(state.teamPercent, 30);
-      },
-    );
+      expect(state.streets, [_emileRow, _paixRow, _nationaleRow, _hugoRow]);
+      expect(state.done, 3);
+      expect(state.total, 10);
+    });
 
     test('should follow the streets as the team changes them', () async {
       final container = phone();
       await pumpEventQueue();
 
-      final (taken, change) = valueOf(_paix.take(_lea));
-      await streets.save(taken, change);
+      final (marked, change) = valueOf(
+        _hugo.markHouse(n('7'), VisitStatus.done, by: _lea, at: twoPm),
+      );
+      await streets.save(marked, change);
       await pumpEventQueue();
 
       final state = container.read(homeProvider);
-      expect(state.mine, [_emileRow, _paixRow, _nationaleRow]);
-      expect(state.others, [_hugoRow]);
-      expect(state.done, 3);
-      expect(state.total, 6);
+      expect(
+        state.streets.last,
+        StreetRow(id: _hugo.id, name: 'Rue Victor Hugo', done: 1, total: 4),
+      );
+      expect(state.done, 4);
+      expect(state.total, 10);
+    });
+
+    test('should leave out a street sent to the Corbeille', () async {
+      final container = phone();
+      await pumpEventQueue();
+
+      final (deleted, change) = _paix.delete(by: _lea, at: twoPm);
+      await streets.save(deleted, change);
+      await pumpEventQueue();
+
+      final state = container.read(homeProvider);
+      expect(state.streets, [_emileRow, _nationaleRow, _hugoRow]);
+      expect(state.done, 1);
+      expect(state.total, 8);
     });
 
     test('should be loading, with nothing, before the streets are read', () {
@@ -310,9 +273,9 @@ void main() {
 
       expect(state.loading, isTrue);
       expect(state.hasNoStreet, isFalse);
-      expect(state.mine, isEmpty);
-      expect(state.others, isEmpty);
-      expect(state.teamPercent, 0);
+      expect(state.streets, isEmpty);
+      expect(state.done, 0);
+      expect(state.total, 0);
     });
 
     test('should show no street once the streets cannot be read', () async {
@@ -327,7 +290,7 @@ void main() {
       expect(state.layers.lines, isEmpty);
     });
 
-    test('should say the tournée has no street when it has none', () async {
+    test('should say the secteur has no street when it has none', () async {
       streets = FakeStreetRepository();
       final container = phone();
       await pumpEventQueue();
@@ -341,7 +304,7 @@ void main() {
   });
 
   group('map', () {
-    test('should draw every street of the tournée', () async {
+    test('should draw every street of the secteur', () async {
       final container = phone();
       await pumpEventQueue();
 
@@ -403,6 +366,17 @@ void main() {
       expect(container.read(homeProvider).area, sectorArea([_nationale]));
     });
 
+    test('should still show the streets when the secteur can no longer be '
+        'read', () async {
+      sectors.watchError = StateError('removed');
+      final container = phone();
+      await pumpEventQueue();
+
+      final state = container.read(homeProvider);
+      expect(state.streets, [_emileRow, _paixRow, _nationaleRow, _hugoRow]);
+      expect(state.area, sectorArea([_nationale]));
+    });
+
     test('should open on the communes read after the streets', () async {
       streets = FakeStreetRepository([_emile]);
       sectors.put(team());
@@ -456,8 +430,6 @@ void main() {
           commune: 'Villefranche-sur-Saône',
           done: 0,
           total: 4,
-          coverage: StreetCoverage.others,
-          coveredBy: const ['Paul'],
         ),
       );
     });
@@ -479,18 +451,6 @@ void main() {
       await pumpEventQueue();
 
       expect(container.read(homeProvider).selectedRoad, StreetShape.none);
-    });
-
-    test('should show a street of the member\'s as theirs, naming who '
-        'covers it too', () async {
-      final container = phone();
-      await pumpEventQueue();
-
-      container.read(homeProvider.notifier).select(StreetId('emile'));
-
-      final card = container.read(homeProvider).card!;
-      expect(card.coverage, StreetCoverage.mine);
-      expect(card.coveredBy, ['Paul']);
     });
 
     test('should show nothing once the map is tapped elsewhere', () async {
@@ -531,248 +491,9 @@ void main() {
 
       expect(container.read(homeProvider).card, isNull);
     });
-
-    test('should give the street tapped to the member with « La faire '
-        'aussi »', () async {
-      final container = phone();
-      await pumpEventQueue();
-      final notifier = container.read(homeProvider.notifier);
-      notifier.select(StreetId('hugo'));
-
-      await notifier.take();
-      await pumpEventQueue();
-
-      expect(streets[StreetId('hugo')]!.assignees, {_paul, _lea});
-      final card = container.read(homeProvider).card!;
-      expect(card.coverage, StreetCoverage.mine);
-      expect(card.coveredBy, ['Paul']);
-    });
-
-    test('should take the member off the street tapped with « Ne plus la '
-        'faire »', () async {
-      final container = phone();
-      await pumpEventQueue();
-      final notifier = container.read(homeProvider.notifier);
-      notifier.select(StreetId('nationale'));
-
-      await notifier.release();
-      await pumpEventQueue();
-
-      expect(streets[StreetId('nationale')]!.assignees, isEmpty);
-      expect(container.read(homeProvider).card!.coverage, StreetCoverage.free);
-    });
-
-    test('should name nobody on the card when the team cannot be '
-        'read', () async {
-      sectors.watchError = StateError('removed');
-      final container = phone();
-      await pumpEventQueue();
-
-      container.read(homeProvider.notifier).select(StreetId('hugo'));
-
-      final card = container.read(homeProvider).card!;
-      expect(card.coverage, StreetCoverage.others);
-      expect(card.coveredBy, isEmpty);
-    });
-
-    test('should take or release nothing while no street is tapped', () async {
-      final container = phone();
-      await pumpEventQueue();
-      final notifier = container.read(homeProvider.notifier);
-
-      await notifier.take();
-      await notifier.release();
-
-      expect(streets.saved, isEmpty);
-    });
   });
 
-  group('street tapped among « Autres rues du secteur »', () {
-    test('should show its card, as a tap on its line does', () async {
-      final container = phone();
-      await pumpEventQueue();
-
-      container.read(homeProvider.notifier).focus(StreetId('paix'));
-
-      expect(
-        container.read(homeProvider).card,
-        StreetCardInSector(
-          id: StreetId('paix'),
-          name: 'Rue de la Paix',
-          commune: 'Villefranche-sur-Saône',
-          done: 2,
-          total: 2,
-          coverage: StreetCoverage.free,
-          coveredBy: const [],
-        ),
-      );
-    });
-
-    test('should move the map to its line and light it up', () async {
-      final (free, change) = valueOf(_nationale.release(_lea));
-      await streets.save(free, change);
-      final container = phone();
-      await pumpEventQueue();
-
-      container.read(homeProvider.notifier).focus(StreetId('nationale'));
-
-      final state = container.read(homeProvider);
-      expect(state.area, streetArea(free));
-      expect(state.area, isNot(sectorArea([free])));
-      expect(state.selectedRoad, _nationaleShape);
-    });
-
-    test('should move the map to its houses when it has no line', () async {
-      // The map knows no road of its name: it keeps no line.
-      shapes = FakeStreetShapes();
-      await streets.add(_morin);
-      final container = phone();
-      await pumpEventQueue();
-
-      container.read(homeProvider.notifier).focus(StreetId('morin'));
-
-      final state = container.read(homeProvider);
-      expect(state.area, streetArea(_morin));
-      expect(state.area, isNotNull);
-      expect(state.selectedRoad, StreetShape.none);
-      expect(state.card!.name, 'Rue Pierre Morin');
-    });
-
-    test('should leave the map where it is when the street has no place '
-        'on it', () async {
-      final container = phone();
-      await pumpEventQueue();
-
-      container.read(homeProvider.notifier).focus(StreetId('hugo'));
-
-      final state = container.read(homeProvider);
-      expect(state.area, sectorArea([_nationale]));
-      expect(state.card!.name, 'Rue Victor Hugo');
-    });
-
-    test('should keep the map on the street once its card is '
-        'closed', () async {
-      final container = phone();
-      await pumpEventQueue();
-      final notifier = container.read(homeProvider.notifier);
-      notifier.focus(StreetId('nationale'));
-
-      notifier.unselect();
-
-      final state = container.read(homeProvider);
-      expect(state.card, isNull);
-      expect(state.selectedRoad, StreetShape.none);
-      expect(state.area, streetArea(_nationale));
-    });
-
-    test('should give it to the member with « Me l\'attribuer »', () async {
-      final container = phone();
-      await pumpEventQueue();
-      final notifier = container.read(homeProvider.notifier);
-      notifier.focus(StreetId('paix'));
-
-      await notifier.take();
-      await pumpEventQueue();
-
-      expect(streets[StreetId('paix')]!.assignees, {_lea});
-      expect(container.read(homeProvider).card!.coverage, StreetCoverage.mine);
-    });
-
-    test('should change nothing when the street is gone', () async {
-      final container = phone();
-      await pumpEventQueue();
-
-      container.read(homeProvider.notifier).focus(StreetId('gone'));
-
-      final state = container.read(homeProvider);
-      expect(state.card, isNull);
-      expect(state.area, sectorArea([_nationale]));
-    });
-  });
-
-  group('a member no longer in the team (#91)', () {
-    /// Paul was removed: the team is Manu, Léa (`uid-lea`) and Julie, and
-    /// the member on the phone is `lea`, who is in it only as themself.
-    setUp(() {
-      streets = FakeStreetRepository([_nationale, _gare]);
-      sectors = FakeSectorRepository([team()]);
-    });
-
-    test('should draw their street « libre » on the map', () async {
-      final container = phone();
-      await pumpEventQueue();
-
-      expect(container.read(homeProvider).layers.lines, [
-        StreetLine(
-          street: StreetId('gare'),
-          shape: _gareShape,
-          level: ProgressLevel.free,
-        ),
-        StreetLine(
-          street: StreetId('nationale'),
-          shape: _nationaleShape,
-          level: ProgressLevel.partial,
-        ),
-      ]);
-    });
-
-    test('should list their street among « Autres rues de la '
-        'tournée »', () async {
-      final container = phone();
-      await pumpEventQueue();
-
-      final state = container.read(homeProvider);
-      expect(state.mine.map((row) => row.id), [StreetId('nationale')]);
-      expect(state.others.map((row) => row.id), [StreetId('gare')]);
-    });
-
-    test('should show the card of their street free, naming '
-        'nobody', () async {
-      final container = phone();
-      await pumpEventQueue();
-
-      container.read(homeProvider.notifier).select(StreetId('gare'));
-
-      final card = container.read(homeProvider).card!;
-      expect(card.coverage, StreetCoverage.free);
-      expect(card.coveredBy, isEmpty);
-    });
-
-    test('should give their street to the member with « Me '
-        'l\'attribuer »', () async {
-      final container = phone();
-      await pumpEventQueue();
-      final notifier = container.read(homeProvider.notifier);
-      notifier.select(StreetId('gare'));
-
-      await notifier.take();
-      await pumpEventQueue();
-
-      // Storage keeps Paul: only he may take himself off (PLAN §8.2).
-      expect(streets[StreetId('gare')]!.assignees, {_paul, _lea});
-      final state = container.read(homeProvider);
-      expect(state.card!.coverage, StreetCoverage.mine);
-      expect(state.card!.coveredBy, isEmpty);
-      expect(state.layers.lines.first.level, ProgressLevel.toDo);
-    });
-
-    test('should still draw their street taken while the team cannot be '
-        'read', () async {
-      sectors.watchError = StateError('not read');
-      final container = phone();
-      await pumpEventQueue();
-
-      final state = container.read(homeProvider);
-      expect(state.layers.lines.first.level, ProgressLevel.toDo);
-      container.read(homeProvider.notifier).select(StreetId('gare'));
-      expect(
-        container.read(homeProvider).card!.coverage,
-        StreetCoverage.others,
-      );
-    });
-  });
-
-  test('should not follow any commune with no tournée open', () async {
+  test('should not follow any commune with no secteur open', () async {
     final container = ProviderContainer(
       overrides: [
         streetRepositoryProvider.overrideWithValue(streets),
@@ -791,7 +512,7 @@ void main() {
     expect(container.read(homeProvider).area, sectorArea([_nationale]));
   });
 
-  test('should follow the communes of the tournée open', () async {
+  test('should follow the communes of the secteur open', () async {
     phone();
     await pumpEventQueue();
 

@@ -10,7 +10,7 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
 /// The legend chip over Accueil's map (PLAN §5.3, Home and HomeZoom
 /// mockups): what the street colours mean (« faite », « en partie », « à
-/// faire », « libre »), or, once the map shows the house dots, what the
+/// faire »), or, once the map shows the house dots, what the
 /// dots mean (« fait », « personne », « repasser », « à faire »).
 ///
 /// A tap folds it into a small « Légende » chip, out of the way of the
@@ -105,7 +105,6 @@ final class _MapLegendState extends State<MapLegend> {
           (_line(ProgressLevel.done, colors), l10n.mapLegendStreetDone),
           (_line(ProgressLevel.partial, colors), l10n.mapLegendStreetPartial),
           (_line(ProgressLevel.toDo, colors), l10n.mapLegendStreetToDo),
-          (_line(ProgressLevel.free, colors), l10n.mapLegendStreetFree),
         ];
 
   /// A house dot as the map draws it, made smaller.
@@ -121,72 +120,32 @@ final class _MapLegendState extends State<MapLegend> {
         ),
       );
 
-  /// A short piece of street line, dashed for « libre » as on the map.
-  /// On the dark legend, the « libre » dashes keep their dark grey (the map
-  /// under them stays light) and get the map's white casing back, or they
-  /// would not show.
-  static Widget _line(ProgressLevel level, AppColors colors) {
-    final free = level == ProgressLevel.free;
-    return CustomPaint(
-      size: const Size(AppSizes.legendLineSample, 8),
-      painter: _LinePainter(
-        streetLineColor(level, colors),
-        dashed: free,
-        casing: free && colors.brightness == Brightness.dark
-            ? colors.mapStreetFreeCasing
-            : null,
-      ),
-    );
-  }
+  /// A short piece of street line, as the map draws it.
+  static Widget _line(ProgressLevel level, AppColors colors) => CustomPaint(
+    size: const Size(AppSizes.legendLineSample, 8),
+    painter: _LinePainter(streetLineColor(level, colors)),
+  );
 }
 
-/// Paints a horizontal line across its box, as wide either way: solid and
-/// round-capped, or dashed, as the map draws a street and a « libre » one.
-/// The map's white casing under « libre » is left out on the legend's
-/// white ground, where it would not show; a dark legend draws it.
+/// Paints a solid, round-capped horizontal line across its box, as the map
+/// draws a street.
 final class _LinePainter extends CustomPainter {
-  const _LinePainter(this.color, {required this.dashed, this.casing});
+  const _LinePainter(this.color);
 
   final Color color;
-  final bool dashed;
-
-  /// A wider line drawn under the dashes, across the whole sample.
-  final Color? casing;
 
   static const _width = 6.0;
-  static const _dash = 6.0;
-  static const _gap = 4.0;
 
   @override
   void paint(Canvas canvas, Size size) {
     final y = size.height / 2;
-    final casing = this.casing;
-    if (casing != null) {
-      canvas.drawLine(
-        Offset(0, y),
-        Offset(size.width, y),
-        Paint()
-          ..color = casing
-          ..strokeWidth = size.height,
-      );
-    }
     final paint = Paint()
       ..color = color
       ..strokeWidth = _width
-      ..strokeCap = dashed ? StrokeCap.butt : StrokeCap.round;
-    if (!dashed) {
-      canvas.drawLine(Offset(2, y), Offset(size.width - 2, y), paint);
-      return;
-    }
-    for (var x = 2.0; x < size.width - 2; x += _dash + _gap) {
-      final end = (x + _dash).clamp(x, size.width - 2);
-      canvas.drawLine(Offset(x, y), Offset(end, y), paint);
-    }
+      ..strokeCap = StrokeCap.round;
+    canvas.drawLine(Offset(2, y), Offset(size.width - 2, y), paint);
   }
 
   @override
-  bool shouldRepaint(_LinePainter oldDelegate) =>
-      oldDelegate.color != color ||
-      oldDelegate.dashed != dashed ||
-      oldDelegate.casing != casing;
+  bool shouldRepaint(_LinePainter oldDelegate) => oldDelegate.color != color;
 }

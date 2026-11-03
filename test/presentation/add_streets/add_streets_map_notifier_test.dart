@@ -90,13 +90,12 @@ final _nationale = valueOf(
   ),
 );
 
-/// Allée Émile Zola, typed in by hand, the member's.
+/// Allée Émile Zola, typed in by hand.
 final _emile = valueOf(
   Street.create(
     id: StreetId('emile'),
     name: 'Allée Émile Zola',
     commune: villefranche,
-    assignees: {_me},
     houses: [House(number: n('4'))],
   ),
 );
@@ -167,19 +166,7 @@ void main() {
       expect(state.search, const NoStreetSearch());
     });
 
-    test('should draw « libre » a street whose only assignee left the '
-        'team (#91)', () async {
-      final (taken, change) = valueOf(_nationale.take(paulId));
-      await streets.save(taken, change);
-      final container = phone();
-      await pumpEventQueue();
-
-      expect(stateOf(container).layers.lines.single.level, ProgressLevel.free);
-    });
-
-    test('should draw « à faire » a street a teammate took', () async {
-      final (taken, change) = valueOf(_nationale.take(manuId));
-      await streets.save(taken, change);
+    test('should draw « à faire » a street with nothing visited', () async {
       final container = phone();
       await pumpEventQueue();
 
@@ -246,7 +233,7 @@ void main() {
     notifierOf(container).tapStreet(StreetId('emile'));
 
     final card = stateOf(container).card! as StreetCardInSector;
-    expect(card.coverage, StreetCoverage.mine);
+    expect(card.id, StreetId('emile'));
     expect(stateOf(container).area, sectorArea([_nationale, _emile]));
   });
 
@@ -328,7 +315,6 @@ void main() {
       final state = stateOf(container);
       final card = state.card! as StreetCardInSector;
       expect(card.id, StreetId('nationale'));
-      expect(card.coverage, StreetCoverage.free);
       expect(state.selectedRoad, _nationaleRoad);
       expect(shapes.asked, isEmpty);
     });
@@ -443,8 +429,6 @@ void main() {
           commune: 'Villefranche-sur-Saône',
           done: 0,
           total: 1,
-          coverage: StreetCoverage.free,
-          coveredBy: const [],
         ),
       );
       expect(state.selectedRoad, _nationaleRoad);
@@ -459,49 +443,6 @@ void main() {
       notifierOf(container).tapStreet(StreetId('gone'));
 
       expect(stateOf(container).card, isNull);
-    });
-
-    test('should give it to the member with « Me l\'attribuer »', () async {
-      final container = phone();
-      await pumpEventQueue();
-      final notifier = notifierOf(container)..tapStreet(StreetId('nationale'));
-
-      await notifier.take();
-      await pumpEventQueue();
-
-      expect(streets[StreetId('nationale')]!.assignees, {_me});
-      expect(
-        (stateOf(container).card! as StreetCardInSector).coverage,
-        StreetCoverage.mine,
-      );
-    });
-
-    test('should take the member off it with « Ne plus la faire »', () async {
-      final container = phone();
-      await pumpEventQueue();
-      final notifier = notifierOf(container)..tapStreet(StreetId('emile'));
-
-      await notifier.release();
-      await pumpEventQueue();
-
-      expect(streets[StreetId('emile')]!.assignees, isEmpty);
-      expect(
-        (stateOf(container).card! as StreetCardInSector).coverage,
-        StreetCoverage.free,
-      );
-    });
-
-    test('should take or release nothing without a street of the '
-        'tournée\'s card', () async {
-      final container = phone();
-      await pumpEventQueue();
-      final notifier = notifierOf(container);
-      await notifier.tapMap(_onMorin);
-
-      await notifier.take();
-      await notifier.release();
-
-      expect(streets.saved, isEmpty);
     });
 
     test('should close the card once the street went to the '
@@ -549,8 +490,8 @@ void main() {
   });
 
   group('adding the street of the card', () {
-    test('should add it for the member with « Ajouter et me '
-        'l\'attribuer », with the road found', () async {
+    test('should add it to the secteur with « Ajouter au secteur », with '
+        'the road found', () async {
       final container = phone();
       await pumpEventQueue();
       final notifier = notifierOf(container);
@@ -558,12 +499,11 @@ void main() {
       // The road comes.
       await pumpEventQueue();
 
-      await notifier.add(assignToMe: true);
+      await notifier.add();
       await pumpEventQueue();
 
       final added = streets.added.single;
       expect(added.banId, _morinId);
-      expect(added.assignees, {_me});
       expect(added.shape, _morinRoad);
       // Asked once, for the card; the street was stored with it, and needs
       // no other write.
@@ -571,24 +511,8 @@ void main() {
       expect(streets.saved, isEmpty);
       final card = stateOf(container).card! as StreetCardInSector;
       expect(card.id, added.id);
-      expect(card.coverage, StreetCoverage.mine);
+      expect(card.name, 'Rue Pierre Morin');
       expect(stateOf(container).selectedRoad, _morinRoad);
-    });
-
-    test('should add it free with « Ajouter sans m\'attribuer »', () async {
-      final container = phone();
-      await pumpEventQueue();
-      final notifier = notifierOf(container);
-      await notifier.tapMap(_onMorin);
-
-      await notifier.add(assignToMe: false);
-      await pumpEventQueue();
-
-      expect(streets.added.single.assignees, isEmpty);
-      expect(
-        (stateOf(container).card! as StreetCardInSector).coverage,
-        StreetCoverage.free,
-      );
     });
 
     test('should add the street at once while its road is awaited, and '
@@ -600,7 +524,7 @@ void main() {
       final notifier = notifierOf(container);
       await notifier.tapMap(_onMorin);
 
-      await notifier.add(assignToMe: true);
+      await notifier.add();
 
       final added = streets.added.single;
       expect(added.shape, StreetShape.none);
@@ -625,7 +549,7 @@ void main() {
       await pumpEventQueue();
       final notifier = notifierOf(container);
       await notifier.tapMap(_onMorin);
-      final adding = notifier.add(assignToMe: true);
+      final adding = notifier.add();
       answer.complete();
       await pumpEventQueue();
       // The road shows already, the street is not stored yet.
@@ -649,7 +573,7 @@ void main() {
       final notifier = notifierOf(container);
       await notifier.tapMap(_onMorin);
 
-      final adding = notifier.add(assignToMe: true);
+      final adding = notifier.add();
       await pumpEventQueue();
 
       expect(
@@ -661,7 +585,7 @@ void main() {
           adding: true,
         ),
       );
-      await notifier.add(assignToMe: true);
+      await notifier.add();
       streets.holdAdds!.complete();
       await adding;
 
@@ -677,7 +601,7 @@ void main() {
       await notifier.tapMap(_onMorin);
       await pumpEventQueue();
 
-      await notifier.add(assignToMe: true);
+      await notifier.add();
       await pumpEventQueue();
 
       expect(streets.added.single.shape, StreetShape.none);
@@ -696,7 +620,7 @@ void main() {
       await pumpEventQueue();
       final notifier = notifierOf(container);
       await notifier.tapMap(_onMorin);
-      await notifier.add(assignToMe: true);
+      await notifier.add();
 
       answer.complete();
       await pumpEventQueue();
@@ -716,17 +640,14 @@ void main() {
           name: 'Rue Pierre Morin',
           commune: villefranche,
           banId: _morinId,
-          // Manu, in the team: a street of someone who left it is free.
-          assignees: {manuId},
         ),
       );
       await streets.add(teammates);
 
-      await notifier.add(assignToMe: true);
+      await notifier.add();
 
       final card = stateOf(container).card! as StreetCardInSector;
       expect(card.id, StreetId('by-paul'));
-      expect(card.coverage, StreetCoverage.others);
       expect(streets.added, [teammates]);
     });
 
@@ -754,7 +675,7 @@ void main() {
       final notifier = notifierOf(container);
       await notifier.tapMap(_onMorin);
 
-      await notifier.add(assignToMe: true);
+      await notifier.add();
 
       expect(
         stateOf(container).card,
@@ -773,7 +694,7 @@ void main() {
       await pumpEventQueue();
       final notifier = notifierOf(container)..tapStreet(StreetId('nationale'));
 
-      await notifier.add(assignToMe: true);
+      await notifier.add();
 
       expect(streets.added, isEmpty);
     });
@@ -785,7 +706,7 @@ void main() {
       await pumpEventQueue();
       final notifier = notifierOf(container);
       await notifier.tapMap(_onMorin);
-      final adding = notifier.add(assignToMe: true);
+      final adding = notifier.add();
       await pumpEventQueue();
 
       notifier.tapStreet(StreetId('emile'));
@@ -805,7 +726,7 @@ void main() {
       await pumpEventQueue();
       final notifier = notifierOf(container);
       await notifier.tapMap(_onMorin);
-      final adding = notifier.add(assignToMe: true);
+      final adding = notifier.add();
       await pumpEventQueue();
 
       container.dispose();
@@ -1000,7 +921,7 @@ void main() {
       await notifier.search('morin');
       await notifier.pick(_morinId);
 
-      await notifier.add(assignToMe: true);
+      await notifier.add();
       await pumpEventQueue();
 
       expect(

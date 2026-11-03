@@ -14,85 +14,48 @@ void main() {
     ),
   );
 
-  testWidgets('should draw « libre » as dark dashes as wide as the other '
-      'samples, with no casing', (tester) async {
+  testWidgets('should show the three street samples, and no « libre » '
+      '(PLAN §5.14)', (tester) async {
     await tester.pumpWidget(testApp(const MapLegend(houses: false)));
 
-    // Dash 6, gap 4 across the 22 dp sample from 2 to 20: two dashes, and
-    // no other line (no white casing on the legend's white ground).
-    expect(
-      sample(tester, 'libre'),
-      paints
-        ..line(
-          p1: const Offset(2, 4),
-          p2: const Offset(8, 4),
-          color: AppColors.light.mapStreetFree,
-          strokeWidth: 6,
-        )
-        ..line(
-          p1: const Offset(12, 4),
-          p2: const Offset(18, 4),
-          color: AppColors.light.mapStreetFree,
-          strokeWidth: 6,
-        ),
-    );
-    expect(sample(tester, 'libre'), paintsExactlyCountTimes(#drawLine, 2));
+    for (final word in ['faite', 'en partie', 'à faire']) {
+      expect(find.text(word), findsOneWidget);
+    }
+    expect(find.text('libre'), findsNothing);
   });
 
-  testWidgets('should draw a taken street as one solid line', (tester) async {
+  testWidgets('should draw each street as one solid line in its '
+      'colour', (tester) async {
     await tester.pumpWidget(testApp(const MapLegend(houses: false)));
 
-    expect(
-      sample(tester, 'à faire'),
-      paints..line(
-        p1: const Offset(2, 4),
-        p2: const Offset(20, 4),
-        color: AppColors.light.mapStreetToDo,
-        strokeWidth: 6,
-      ),
-    );
-    expect(sample(tester, 'à faire'), paintsExactlyCountTimes(#drawLine, 1));
-  });
-
-  testWidgets('should draw « libre » on the map\'s white casing when the '
-      'legend is dark', (tester) async {
-    await tester.pumpWidget(
-      testApp(const MapLegend(houses: false), colors: AppColors.dark),
-    );
-
-    // The casing across the whole 22 × 8 sample, then the same dark grey
-    // dashes as on the map.
-    expect(
-      sample(tester, 'libre'),
-      paints
-        ..line(
-          p1: const Offset(0, 4),
-          p2: const Offset(22, 4),
-          color: AppColors.dark.mapStreetFreeCasing,
-          strokeWidth: 8,
-        )
-        ..line(
+    for (final (word, color) in [
+      ('faite', AppColors.light.mapStreetDone),
+      ('en partie', AppColors.light.mapStreetPartial),
+      ('à faire', AppColors.light.mapStreetToDo),
+    ]) {
+      expect(
+        sample(tester, word),
+        paints..line(
           p1: const Offset(2, 4),
-          p2: const Offset(8, 4),
-          color: AppColors.dark.mapStreetFree,
-          strokeWidth: 6,
-        )
-        ..line(
-          p1: const Offset(12, 4),
-          p2: const Offset(18, 4),
-          color: AppColors.dark.mapStreetFree,
+          p2: const Offset(20, 4),
+          color: color,
           strokeWidth: 6,
         ),
-    );
-    expect(sample(tester, 'libre'), paintsExactlyCountTimes(#drawLine, 3));
+      );
+      expect(sample(tester, word), paintsExactlyCountTimes(#drawLine, 1));
+    }
   });
 
-  testWidgets('should draw a taken street with no casing when the legend is '
+  testWidgets('should draw the light map colours when the legend is '
       'dark', (tester) async {
     await tester.pumpWidget(
       testApp(const MapLegend(houses: false), colors: AppColors.dark),
     );
 
+    expect(
+      sample(tester, 'à faire'),
+      paints..line(color: AppColors.dark.mapStreetToDo, strokeWidth: 6),
+    );
     expect(sample(tester, 'à faire'), paintsExactlyCountTimes(#drawLine, 1));
   });
 }

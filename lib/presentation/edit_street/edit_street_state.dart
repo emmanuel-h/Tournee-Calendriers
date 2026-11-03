@@ -53,7 +53,6 @@ final class EditStreetGone extends EditStreetState {
 final class EditStreetShown extends EditStreetState {
   EditStreetShown({
     required this.name,
-    required this.isMine,
     required this.columns,
     required List<EditTile> odd,
     required List<EditTile> even,
@@ -62,10 +61,6 @@ final class EditStreetShown extends EditStreetState {
 
   /// The name as stored; the name field starts from it.
   final String name;
-
-  /// The member on the phone covers the street: « Ne plus la faire » is
-  /// offered.
-  final bool isMine;
 
   /// One column when the street has numbers on one side only, as on the
   /// street screen.

@@ -31,7 +31,7 @@ void main() {
           shape: StreetShape([
             [at(45.98500, 4.72000), at(45.98600, 4.72100)],
           ]),
-          level: ProgressLevel.free,
+          level: ProgressLevel.toDo,
         ),
       ]);
 
@@ -60,7 +60,7 @@ void main() {
           {
             'type': 'Feature',
             'id': 'rue-de-la-paix',
-            'properties': {'level': 'free'},
+            'properties': {'level': 'toDo'},
             'geometry': {
               'type': 'MultiLineString',
               'coordinates': [

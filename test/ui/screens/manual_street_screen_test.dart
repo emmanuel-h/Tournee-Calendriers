@@ -108,11 +108,10 @@ void main() {
     final street = streets.added.single;
     expect(street.name.text, 'Chemin des Vignes');
     expect(street.commune, villefranche);
-    expect(street.assignees, {leaId});
     expect(find.byType(ManualStreetScreen), findsNothing);
     expect(find.byType(AddStreetsScreen), findsOneWidget);
     expect(
-      find.text('« Chemin des Vignes » ajoutée à vos rues.'),
+      find.text('« Chemin des Vignes » ajoutée au secteur.'),
       findsOneWidget,
     );
   });

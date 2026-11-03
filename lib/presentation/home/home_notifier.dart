@@ -5,7 +5,6 @@ import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/map/map_layers.dart';
 import 'package:tournee_calendriers/domain/map/sector_area.dart';
 import 'package:tournee_calendriers/domain/sector/sector_commune.dart';
-import 'package:tournee_calendriers/domain/street/my_streets.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
@@ -14,7 +13,6 @@ import 'package:tournee_calendriers/presentation/home/home_state.dart';
 import 'package:tournee_calendriers/presentation/home/missing_shapes.dart';
 import 'package:tournee_calendriers/presentation/home/street_row.dart';
 import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
-import 'package:tournee_calendriers/presentation/street_card/follows_team.dart';
 import 'package:tournee_calendriers/presentation/street_card/street_card.dart';
 
 /// The state of Accueil. `autoDispose`: it follows the streets and the
@@ -23,17 +21,14 @@ final homeProvider = NotifierProvider.autoDispose<HomeNotifier, HomeState>(
   HomeNotifier.new,
 );
 
-/// Follows the open tournée's streets (`ObserveMyStreets`), communes and
-/// team, from the phone's copy, offline too, and the street tapped on the
-/// map or among « Autres rues du secteur », which the member may take
-/// or release from its card.
+/// Follows the open secteur's streets (`ObserveStreets`) and communes, from
+/// the phone's copy, offline too, and the street tapped on the map.
 ///
 /// Each time the streets change, it hands them to [MissingShapes], which
 /// finds in the background the line on the map of those that have none.
-final class HomeNotifier extends Notifier<HomeState>
-    with FollowsTeam<HomeState> {
+final class HomeNotifier extends Notifier<HomeState> {
   /// The last streets read, null until the first arrive.
-  MyStreets? _streets;
+  List<Street>? _streets;
   var _communes = const <SectorCommune>[];
 
   /// Where the map opens, kept once decided (see [HomeState.area]).
@@ -42,22 +37,22 @@ final class HomeNotifier extends Notifier<HomeState>
 
   @override
   HomeState build() {
-    // Riverpod keeps the notifier when it builds again (another tournée
-    // opened): nothing of the tournée left may stay.
+    // Riverpod keeps the notifier when it builds again (another secteur
+    // opened): nothing of the secteur left may stay.
     _streets = null;
     _communes = const [];
     _area = null;
     _selected = null;
     final streets = ref
-        .watch(observeMyStreetsProvider)()
+        .watch(observeStreetsProvider)()
         .listen(
           _showStreets,
           // The streets can no longer be read (the member left the
-          // tournée): none to show.
-          onError: (Object _) => _showStreets(MyStreets.none),
+          // secteur): none to show.
+          onError: (Object _) => _showStreets(const []),
         );
     ref.onDispose(streets.cancel);
-    // `select`: the notifier is built again when another tournée opens,
+    // `select`: the notifier is built again when another secteur opens,
     // not when something else of the one open changes (its waiting
     // requests), which would move the map back to where it opened.
     final sector = ref.watch(
@@ -69,115 +64,69 @@ final class HomeNotifier extends Notifier<HomeState>
           _communes = communes;
           _show();
         },
-        // The tournée can no longer be read (the member was removed):
+        // The secteur can no longer be read (the member was removed):
         // the communes last read stay.
         onError: (Object _) {},
       );
       ref.onDispose(communes.cancel);
     }
-    followTeam();
-    return render();
+    return _render();
   }
 
-  void _showStreets(MyStreets streets) {
+  void _showStreets(List<Street> streets) {
     _streets = streets;
     _show();
     // `unawaited`: the shapes come in the background, and the map follows
     // them through the streets; Accueil never waits for the network.
-    unawaited(ref.read(missingShapesProvider).fillAmong(streets.all));
+    unawaited(ref.read(missingShapesProvider).fillAmong(streets));
   }
 
-  /// A street of the tournée was tapped on the map.
+  /// A street of the secteur was tapped on the map.
   void select(StreetId street) {
     _selected = street;
     _show();
   }
 
-  /// A street was tapped among « Autres rues du secteur » (#93): its
-  /// card shows, as on a tap on its line, and the map goes to the street
-  /// (its line, else its houses), where it then stays. A street with no
-  /// place on the map leaves the map where it is.
-  void focus(StreetId street) {
-    _selected = street;
-    if (_find(street) case final found?) {
-      _area = streetArea(found) ?? _area;
-    }
-    _show();
-  }
-
-  /// The map was tapped away from the tournée's streets, or the card
-  /// closed with the back gesture.
+  /// The map was tapped away from the secteur's streets, or the card
+  /// closed with the back gesture or its ✕.
   void unselect() {
     _selected = null;
     _show();
   }
 
-  /// « Me l'attribuer » or « La faire aussi » on the card: the member
-  /// covers the street tapped. Works offline. A street that changed
-  /// meanwhile (taken already, gone) changes nothing; the card follows it.
-  Future<void> take() async {
-    if (_selected case final street?) {
-      await ref.read(takeStreetProvider)(street);
-    }
-  }
+  void _show() => state = _render();
 
-  /// « Ne plus la faire » on the card: the member stops covering the street
-  /// tapped. Works offline.
-  Future<void> release() async {
-    if (_selected case final street?) {
-      await ref.read(releaseStreetProvider)(street);
-    }
-  }
-
-  void _show() => state = render();
-
-  @override
-  HomeState render() {
-    final streets = _streets ?? MyStreets.none;
-    // `ref.read`: whether the member visits is read with the rest, the
-    // notifier needs no build of its own for it.
-    final visiting = ref.read(currentSectorProvider)?.isVisiting ?? false;
-    if (_streets != null) _area ??= homeArea(_communes, streets.all);
-    final progress = visiting ? streets.teamProgress : streets.myProgress;
-    final selected = _find(_selected);
+  HomeState _render() {
+    final streets = _streets ?? const <Street>[];
+    if (_streets != null) _area ??= homeArea(_communes, streets);
+    final rows = [
+      for (final street in streets)
+        // `progress` adds up every door of the street: read it once.
+        if (street.progress case final progress)
+          StreetRow(
+            id: street.id,
+            name: street.name.text,
+            done: progress.visited,
+            total: progress.total,
+          ),
+    ];
+    final selected = streets
+        .where((street) => street.id == _selected)
+        .firstOrNull;
     return HomeState(
       loading: _streets == null,
-      visiting: visiting,
-      done: progress.visited,
-      total: progress.total,
-      teamPercent: streets.teamProgress.visitedPercent,
-      mine: _rows(visiting ? streets.all : streets.mine),
-      others: visiting ? const [] : _rows(streets.others),
-      layers: MapLayers.of(streets.all, roster: roster),
+      done: rows.fold(0, (sum, row) => sum + row.done),
+      total: rows.fold(0, (sum, row) => sum + row.total),
+      streets: rows,
+      layers: MapLayers.of(streets),
       area: _area,
       // None tapped, or the street went to the Corbeille: no card, no line
       // lit up.
       card: switch (selected) {
-        final street? => StreetCardInSector.of(
-          street,
-          me: ref.read(readCurrentMemberProvider)(),
-          team: team,
-        ),
+        final street? => StreetCardInSector.of(street),
         null => null,
       },
       selectedRoad: selected?.shape ?? StreetShape.none,
     );
   }
-
-  /// The street [id] among those last read, null when it is not there
-  /// (gone to the Corbeille, or none read yet).
-  Street? _find(StreetId? id) =>
-      _streets?.all.where((street) => street.id == id).firstOrNull;
-
-  static List<StreetRow> _rows(Iterable<Street> streets) => [
-    for (final street in streets)
-      // `progress` adds up every door of the street: read it once.
-      if (street.progress case final progress)
-        StreetRow(
-          id: street.id,
-          name: street.name.text,
-          done: progress.visited,
-          total: progress.total,
-        ),
-  ];
 }

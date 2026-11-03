@@ -571,9 +571,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get deleteStreetAction => 'Supprimer la rue';
 
   @override
-  String get stopCoveringStreetAction => 'Ne plus la faire';
-
-  @override
   String numberRemoved(String number) {
     return 'N° $number supprimé';
   }
@@ -1468,33 +1465,6 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String teamMemberStreets(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count rues',
-      one: '1 rue',
-      zero: '0 rue',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String teamMemberStreetsShow(String name, String streets) {
-    return '$name, $streets, afficher les rues';
-  }
-
-  @override
-  String teamMemberStreetsHide(String name, String streets) {
-    return '$name, $streets, masquer les rues';
-  }
-
-  @override
-  String teamMemberStreetsList(String name) {
-    return 'Rues de $name';
-  }
-
-  @override
   String get teamRemove => 'Retirer';
 
   @override
@@ -2063,37 +2033,14 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String homeMyStreets(int done, int total) {
-    return 'Mes rues · $done/$total';
-  }
-
-  @override
-  String homeMyStreetsSemantics(int done, int total) {
-    return 'Mes rues, $done sur $total faits';
-  }
-
-  @override
-  String homeStreetsVisitor(int done, int total) {
+  String homeStreets(int done, int total) {
     return 'Rues · $done/$total';
   }
 
   @override
-  String homeStreetsVisitorSemantics(int done, int total) {
+  String homeStreetsSemantics(int done, int total) {
     return 'Rues, $done sur $total faits';
   }
-
-  @override
-  String homeTeamProgress(int percent) {
-    return 'Équipe : $percent %';
-  }
-
-  @override
-  String homeOtherStreets(int count) {
-    return 'Autres rues du secteur ($count)';
-  }
-
-  @override
-  String get homeNoStreetOfMine => 'Vous n\'avez pas encore de rue.';
 
   @override
   String get homeNoStreet => 'Aucune rue dans le secteur pour l\'instant.';
@@ -2121,9 +2068,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get mapLegendStreetToDo => 'à faire';
-
-  @override
-  String get mapLegendStreetFree => 'libre';
 
   @override
   String get addStreetsSearchHint => 'Rechercher une rue';
@@ -2167,10 +2111,7 @@ class AppLocalizationsFr extends AppLocalizations {
   String get streetCardNotInSector => 'Pas encore dans le secteur';
 
   @override
-  String get streetCardAddMine => 'Ajouter et me l\'attribuer';
-
-  @override
-  String get streetCardAddFree => 'Ajouter sans m\'attribuer';
+  String get streetCardAdd => 'Ajouter au secteur';
 
   @override
   String get streetCardAdding => 'Ajout en cours…';
@@ -2194,34 +2135,6 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get streetCardFree => 'Libre';
-
-  @override
-  String get streetCardMine => 'Vous la faites';
-
-  @override
-  String streetCardMineWith(String names) {
-    return 'Vous la faites avec $names';
-  }
-
-  @override
-  String streetCardOthers(String names) {
-    return 'Faite par $names';
-  }
-
-  @override
-  String get streetCardOthersUnknown => 'Faite par un autre membre';
-
-  @override
-  String get streetCardTake => 'Me l\'attribuer';
-
-  @override
-  String get streetCardTakeToo => 'La faire aussi';
-
-  @override
-  String get streetCardRelease => 'Ne plus la faire';
-
-  @override
   String get streetCardOpen => 'Ouvrir';
 
   @override
@@ -2229,7 +2142,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get streetCardNoNetworkHint =>
-      'Les rues déjà dans le secteur se prennent et s\'ouvrent sans réseau.';
+      'Les rues déjà dans le secteur s\'ouvrent sans réseau.';
 
   @override
   String get streetCardNoStreetHere => 'Aucune rue connue ici';
@@ -2244,11 +2157,6 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get streetCardServiceErrorHint =>
       'Réessayez dans un moment, ou saisissez la rue à la main.';
-
-  @override
-  String namesAnd(String first, String last) {
-    return '$first et $last';
-  }
 
   @override
   String get manualTitle => 'Rue à la main';
@@ -2296,7 +2204,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String manualAdded(String name) {
-    return '« $name » ajoutée à vos rues.';
+    return '« $name » ajoutée au secteur.';
   }
 
   @override

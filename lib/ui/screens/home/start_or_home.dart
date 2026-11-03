@@ -4,7 +4,7 @@ import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.
 import 'package:tournee_calendriers/ui/screens/home/home_screen.dart';
 import 'package:tournee_calendriers/ui/screens/home/no_sector_screen.dart';
 
-/// The start screen (`/`): Accueil, the map and its « Mes rues » panel,
+/// The start screen (`/`): Accueil, the map and its « Rues » panel,
 /// while a secteur is open (PLAN §5.3); « Aucun secteur ouvert » (§5.0)
 /// when none is.
 ///

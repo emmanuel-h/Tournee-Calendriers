@@ -102,11 +102,21 @@ void main() {
     await tester.fling(handle, const Offset(0, 300), 2000);
     await capture(tester, 'phone-1', seconds: 8);
 
-    // 2. Rue de Thizy, from « Mes rues » (a tap on the handle shows them
-    // all).
+    // 2. Rue de Thizy, from the list of every street (a tap on the handle
+    // shows them all; it sits down the list, in French order).
     await tester.tap(handle);
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(ValueKey('home.street.${rueDeThizy.value}')));
+    final thizy = find.byKey(ValueKey('home.street.${rueDeThizy.value}'));
+    await tester.scrollUntilVisible(
+      thizy,
+      200,
+      scrollable: find.descendant(
+        of: find.byKey(const Key('home.panel.list')),
+        matching: find.byType(Scrollable),
+      ),
+    );
+    await tester.pumpAndSettle();
+    await tester.tap(thizy);
     await capture(tester, 'phone-2');
 
     // 3. The status picker of the house to come back to, tapped.
@@ -126,9 +136,6 @@ void main() {
     await tester.tap(find.byTooltip('Retour'));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('home.team')));
-    await tester.pumpAndSettle();
-    // Léa's own streets unfolded under her row (#105).
-    await tester.tap(find.byKey(const Key('team.member.streets')).at(1));
     await capture(tester, 'phone-5');
   });
 }

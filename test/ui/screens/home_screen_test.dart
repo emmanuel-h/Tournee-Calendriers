@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tournee_calendriers/domain/map/sector_area.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
 import 'package:tournee_calendriers/domain/sector/sector_summary.dart';
-import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
@@ -20,7 +19,7 @@ import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 
 import '../../domain/sector/my_sectors_fixtures.dart';
-import '../../domain/sector/sector_fixtures.dart' show manuId, team;
+import '../../domain/sector/sector_fixtures.dart' show team;
 import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_pending_sync.dart';
 import '../../support/fakes/fake_sector_repository.dart';
@@ -33,20 +32,18 @@ import '../support/fake_map_view.dart';
 import '../support/large_text.dart';
 
 /// A street of Villefranche-sur-Saône with [total] houses, the first
-/// [done] done, covered by [assignees].
+/// [done] done.
 Street _street(
   String id,
   String name, {
   int done = 0,
   int total = 1,
-  Set<MemberId> assignees = const {},
   StreetShape shape = StreetShape.none,
 }) => valueOf(
   Street.create(
     id: StreetId(id),
     name: name,
     commune: villefranche,
-    assignees: assignees,
     shape: shape,
     houses: [
       for (var i = 1; i <= total; i++)
@@ -62,20 +59,13 @@ final _lilasShape = StreetShape([
   [at(45.98915, 4.71862), at(45.99210, 4.71705)],
 ]);
 
-/// Léa covers Rue des Lilas (31 of 42 done) and Allée des Pins (0 of 8);
-/// Rue Pasteur (12 of 12) is nobody's, Rue Carnot (0 of 38) Paul's.
+/// Rue des Lilas (31 of 42 done), Allée des Pins (0 of 8), Rue Pasteur
+/// (12 of 12) and Rue Carnot (0 of 38): 43 of 100 doors.
 List<Street> _streets() => [
-  _street(
-    'lilas',
-    'Rue des Lilas',
-    done: 31,
-    total: 42,
-    assignees: {lea},
-    shape: _lilasShape,
-  ),
-  _street('pins', 'Allée des Pins', total: 8, assignees: {lea}),
+  _street('lilas', 'Rue des Lilas', done: 31, total: 42, shape: _lilasShape),
+  _street('pins', 'Allée des Pins', total: 8),
   _street('pasteur', 'Rue Pasteur', done: 12, total: 12),
-  _street('carnot', 'Rue Carnot', total: 38, assignees: {paul}),
+  _street('carnot', 'Rue Carnot', total: 38),
 ];
 
 void main() {
@@ -114,20 +104,16 @@ void main() {
   Finder row(String id) => find.byKey(ValueKey('home.street.$id'));
 
   group('panel', () {
-    testWidgets('should total « Mes rues » and the team over the map', (
-      tester,
-    ) async {
+    testWidgets('should total every street of the secteur over the map '
+        '(PLAN §5.14)', (tester) async {
       await pumpHome(tester);
 
       expect(find.byType(HomeScreen), findsOneWidget);
       expect(find.text('Secteur 49 · 2026'), findsOneWidget);
-      expect(find.text('Mes rues · 31/50'), findsOneWidget);
-      expect(
-        find.bySemanticsLabel(RegExp('^Mes rues, 31 sur 50 faits')),
-        findsOneWidget,
-      );
-      // 43 of the tournée's 100 doors.
-      expect(find.text('Équipe : 43 %'), findsOneWidget);
+      expect(find.text('Rues · 43/100'), findsOneWidget);
+      expect(find.bySemanticsLabel('Rues, 43 sur 100 faits'), findsOneWidget);
+      expect(find.textContaining('Mes rues'), findsNothing);
+      expect(find.textContaining('Équipe :'), findsNothing);
       expect(
         tester.getTopLeft(panel()).dy,
         greaterThan(tester.getTopLeft(find.byType(FakeMapView)).dy),
@@ -145,27 +131,21 @@ void main() {
       expect(find.textContaining('réseau'), findsNothing);
     });
 
-    testWidgets('should list « Mes rues », then the other streets of the '
-        'tournée under their header', (tester) async {
+    testWidgets('should list every street of the secteur in one list, in '
+        'French order, with no section', (tester) async {
       await pumpHome(tester);
+      await tester.drag(
+        find.byKey(const Key('home.panel.handle')),
+        const Offset(0, -300),
+      );
+      await tester.pumpAndSettle();
 
       double top(Finder finder) => tester.getTopLeft(finder).dy;
-      expect(top(row('pins')), lessThan(top(row('lilas'))));
-      expect(
-        find.text('Autres rues du secteur (2)'.toUpperCase()),
-        findsOneWidget,
-      );
-      expect(
-        top(row('lilas')),
-        lessThan(top(find.byKey(const Key('home.others')))),
-      );
-      await tester.scrollUntilVisible(row('pasteur'), 100);
-      expect(
-        top(find.byKey(const Key('home.others'))),
-        lessThan(top(row('carnot'))),
-      );
-      expect(top(row('carnot')), lessThan(top(row('pasteur'))));
-      expect(find.text('Vous n\'avez pas encore de rue.'), findsNothing);
+      expect(top(row('pins')), lessThan(top(row('carnot'))));
+      expect(top(row('carnot')), lessThan(top(row('lilas'))));
+      expect(top(row('lilas')), lessThan(top(row('pasteur'))));
+      expect(find.textContaining('AUTRES RUES'), findsNothing);
+      expect(find.textContaining('Autres rues'), findsNothing);
     });
 
     testWidgets('should mark a complete street with ✓ next to its count, '
@@ -190,7 +170,7 @@ void main() {
       expect(tester.getSize(row('carnot')).height, greaterThanOrEqualTo(56));
     });
 
-    testWidgets('should open the street when one of « Mes rues » is tapped', (
+    testWidgets('should open the street when its row is tapped', (
       tester,
     ) async {
       await pumpHome(tester);
@@ -202,51 +182,23 @@ void main() {
       expect(find.widgetWithText(AppBar, 'Rue des Lilas'), findsOneWidget);
     });
 
-    testWidgets('should show the card of a street tapped among the others '
-        'in place of the panel, and take it with « Me l\'attribuer »', (
-      tester,
-    ) async {
+    testWidgets('should open any street of the secteur from its row, '
+        'with no card', (tester) async {
       await pumpHome(tester);
       await tester.scrollUntilVisible(row('pasteur'), 100);
 
       await tester.tap(row('pasteur'));
       await tester.pumpAndSettle();
 
-      expect(find.byType(StreetScreen), findsNothing);
-      expect(panel(), findsNothing);
-      expect(find.byKey(const Key('home.selected')), findsOneWidget);
-      expect(find.text('Rue Pasteur'), findsOneWidget);
-      expect(find.text('Libre'), findsOneWidget);
-
-      await tester.tap(find.text("Me l'attribuer"));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Vous la faites'), findsOneWidget);
-    });
-
-    testWidgets('should move the map to a street tapped among the others, '
-        'its line lit up', (tester) async {
-      final lilas = _street(
-        'lilas',
-        'Rue des Lilas',
-        total: 42,
-        shape: _lilasShape,
-      );
-      await pumpHome(tester, streets: [lilas]);
-
-      await tester.tap(row('lilas'));
-      await tester.pumpAndSettle();
-
-      final map = shownMap(tester);
-      expect(map.area, streetArea(lilas));
-      expect(map.selectedRoad, _lilasShape);
+      expect(find.byKey(const Key('home.selected')), findsNothing);
+      expect(find.byType(StreetScreen), findsOneWidget);
+      expect(find.widgetWithText(AppBar, 'Rue Pasteur'), findsOneWidget);
     });
 
     testWidgets('should close the card of a street with the back gesture, '
         'and stay on Accueil', (tester) async {
       await pumpHome(tester);
-      await tester.scrollUntilVisible(row('carnot'), 100);
-      await tester.tap(row('carnot'));
+      shownMap(tester).onStreetTapped!(StreetId('carnot'));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('home.selected')), findsOneWidget);
 
@@ -269,7 +221,7 @@ void main() {
         shape: _lilasShape,
       );
       await pumpHome(tester, streets: [lilas]);
-      await tester.tap(row('lilas'));
+      shownMap(tester).onStreetTapped!(StreetId('lilas'));
       await tester.pumpAndSettle();
       expect(shownMap(tester).selectedRoad, _lilasShape);
       final close = find.byKey(const Key('streetCard.close'));
@@ -294,31 +246,14 @@ void main() {
       expect(shownMap(tester).selectedRoad, StreetShape.none);
     });
 
-    testWidgets('should keep every street of the tournée reachable when the '
-        'member covers none', (tester) async {
-      await pumpHome(
-        tester,
-        streets: [
-          _street('pasteur', 'Rue Pasteur', done: 12, total: 12),
-          _street('carnot', 'Rue Carnot', total: 38),
-        ],
-      );
-
-      expect(find.text('Mes rues · 0/0'), findsOneWidget);
-      expect(find.text('Vous n\'avez pas encore de rue.'), findsOneWidget);
-      expect(row('carnot'), findsOneWidget);
-      expect(row('pasteur'), findsOneWidget);
-    });
-
-    testWidgets('should say when the tournée has no street', (tester) async {
+    testWidgets('should say when the secteur has no street', (tester) async {
       await pumpHome(tester, streets: []);
 
       expect(
         find.text('Aucune rue dans le secteur pour l\'instant.'),
         findsOneWidget,
       );
-      expect(find.byKey(const Key('home.others')), findsNothing);
-      expect(find.text('Vous n\'avez pas encore de rue.'), findsNothing);
+      expect(find.text('Rues · 0/0'), findsOneWidget);
     });
 
     testWidgets('should list every street under « Rues » for a visiting '
@@ -328,7 +263,6 @@ void main() {
       expect(find.text('Rues · 43/100'), findsOneWidget);
       expect(find.byKey(const Key('home.adminBanner')), findsOneWidget);
       expect(row('carnot'), findsOneWidget);
-      expect(find.byKey(const Key('home.others')), findsNothing);
     });
 
     testWidgets('should show « Ajouter des rues » as a muted row after the '
@@ -465,7 +399,7 @@ void main() {
           isButton: true,
           hasTapAction: true,
           onTapHint: 'Réduire la liste',
-          label: 'Mes rues, 31 sur 50 faits\nÉquipe : 43 %',
+          label: 'Rues, 43 sur 100 faits',
         ),
       );
 
@@ -483,7 +417,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(tester.getSize(panel()).height, AppSizes.homePanelFolded);
-      expect(find.text('Mes rues · 31/50'), findsOneWidget);
+      expect(find.text('Rues · 43/100'), findsOneWidget);
       expect(row('lilas'), findsNothing);
       expect(find.byKey(const Key('start.import')), findsNothing);
       expect(shownMap(tester).padding.bottom, AppSizes.homePanelFolded);
@@ -505,7 +439,7 @@ void main() {
   });
 
   group('map', () {
-    testWidgets('should draw the tournée\'s streets and open on them', (
+    testWidgets('should draw the secteur\'s streets and open on them', (
       tester,
     ) async {
       final streets = _streets();
@@ -518,68 +452,30 @@ void main() {
     });
 
     testWidgets('should show the card of a street tapped on the map in '
-        'place of the panel, and take it with « La faire aussi »', (
+        'place of the panel, with its progress and « Ouvrir » only', (
       tester,
     ) async {
-      await pumpHome(
-        tester,
-        streets: [
-          ..._streets().where((street) => street.id != StreetId('carnot')),
-          // Manu is in the team: he covers Rue Carnot.
-          _street('carnot', 'Rue Carnot', total: 38, assignees: {manuId}),
-        ],
-      );
+      await pumpHome(tester);
 
-      shownMap(tester).onStreetTapped!(StreetId('carnot'));
+      shownMap(tester).onStreetTapped!(StreetId('lilas'));
       await tester.pumpAndSettle();
 
       expect(panel(), findsNothing);
       expect(find.byKey(const Key('home.selected')), findsOneWidget);
-      expect(find.text('Rue Carnot'), findsOneWidget);
-      expect(find.text('0/38 faits'), findsOneWidget);
-      expect(find.text('Faite par Manu'), findsOneWidget);
-
-      await tester.tap(find.text('La faire aussi'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Vous la faites avec Manu'), findsOneWidget);
-      expect(find.text('Ne plus la faire'), findsOneWidget);
-    });
-
-    testWidgets('should show « Libre » the card of a street whose only '
-        'assignee left the team, and take it with « Me l\'attribuer » '
-        '(#91)', (tester) async {
-      // Paul covers Rue Carnot but is no longer in the team.
-      await pumpHome(tester);
-
-      shownMap(tester).onStreetTapped!(StreetId('carnot'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Rue Carnot'), findsOneWidget);
-      expect(find.text('Libre'), findsOneWidget);
-      expect(find.text('La faire aussi'), findsNothing);
-
-      await tester.tap(find.byKey(const Key('streetCard.take')));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Vous la faites'), findsOneWidget);
-      expect(find.text('Ne plus la faire'), findsOneWidget);
-    });
-
-    testWidgets('should release a street of the member\'s from its card, '
-        'and open a street from it', (tester) async {
-      await pumpHome(tester);
-      shownMap(tester).onStreetTapped!(StreetId('lilas'));
-      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('streetCard.name')), findsOneWidget);
       expect(find.text('31/42 faits'), findsOneWidget);
       expect(find.bySemanticsLabel('31 sur 42 faits'), findsOneWidget);
+      for (final gone in [
+        'Libre',
+        "Me l'attribuer",
+        'La faire aussi',
+        'Ne plus la faire',
+        'Vous la faites',
+      ]) {
+        expect(find.text(gone), findsNothing, reason: gone);
+      }
 
-      await tester.tap(find.text('Ne plus la faire'));
-      await tester.pumpAndSettle();
-      expect(find.text('Libre'), findsOneWidget);
-      expect(find.text("Me l'attribuer"), findsOneWidget);
-
-      await tester.tap(find.text('Ouvrir'));
+      await tester.tap(find.byKey(const Key('streetCard.open')));
       await tester.pumpAndSettle();
 
       expect(find.widgetWithText(AppBar, 'Rue des Lilas'), findsOneWidget);
@@ -611,13 +507,14 @@ void main() {
     ) async {
       await pumpHome(tester);
 
-      for (final word in ['faite', 'en partie', 'à faire', 'libre']) {
+      for (final word in ['faite', 'en partie', 'à faire']) {
         expect(
           find.descendant(of: legend, matching: find.text(word)),
           findsOneWidget,
           reason: word,
         );
       }
+      expect(find.text('libre'), findsNothing);
     });
 
     testWidgets('should explain the house dots from street zoom, and the '
@@ -640,12 +537,12 @@ void main() {
           reason: word,
         );
       }
-      expect(find.text('libre'), findsNothing);
+      expect(find.text('en partie'), findsNothing);
 
       shownMap(tester).onZoomChanged!(15.5);
       await tester.pumpAndSettle();
 
-      expect(find.text('libre'), findsOneWidget);
+      expect(find.text('en partie'), findsOneWidget);
     });
 
     testWidgets('should fold into « Légende » on a tap, and unfold on '
@@ -656,7 +553,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Légende'), findsOneWidget);
-      expect(find.text('libre'), findsNothing);
+      expect(find.text('en partie'), findsNothing);
       expect(
         tester.getSemantics(legend),
         isSemantics(
@@ -671,7 +568,7 @@ void main() {
       await tester.tap(legend);
       await tester.pumpAndSettle();
 
-      expect(find.text('libre'), findsOneWidget);
+      expect(find.text('en partie'), findsOneWidget);
     });
   });
 
@@ -726,7 +623,7 @@ void main() {
       final folded = homePanelFoldedHeight(const TextScaler.linear(2));
       expect(folded, greaterThan(AppSizes.homePanelFolded + 20));
       expect(tester.getSize(panel()).height, folded);
-      expect(find.text('Mes rues · 31/50'), findsOneWidget);
+      expect(find.text('Rues · 43/100'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });

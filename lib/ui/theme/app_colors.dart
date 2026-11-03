@@ -52,8 +52,6 @@ final class AppColors extends ThemeExtension<AppColors> {
     required this.mapStreetDone,
     required this.mapStreetPartial,
     required this.mapStreetToDo,
-    required this.mapStreetFree,
-    required this.mapStreetFreeCasing,
     required this.mapSelectedCasing,
     required this.mapSelectedCore,
   });
@@ -103,8 +101,6 @@ final class AppColors extends ThemeExtension<AppColors> {
     mapStreetDone: Color(0xFF1E6B47),
     mapStreetPartial: Color(0xFFE0A21B),
     mapStreetToDo: Color(0xFF2F5DA8),
-    mapStreetFree: Color(0xFF3E434A),
-    mapStreetFreeCasing: Color(0xFFFFFFFF),
     mapSelectedCasing: Color(0xFF1B1F24),
     mapSelectedCore: Color(0xFFFFFFFF),
   );
@@ -164,8 +160,6 @@ final class AppColors extends ThemeExtension<AppColors> {
     mapStreetDone: Color(0xFF1E6B47),
     mapStreetPartial: Color(0xFFE0A21B),
     mapStreetToDo: Color(0xFF2F5DA8),
-    mapStreetFree: Color(0xFF3E434A),
-    mapStreetFreeCasing: Color(0xFFFFFFFF),
     mapSelectedCasing: Color(0xFF1B1F24),
     mapSelectedCore: Color(0xFFFFFFFF),
   );
@@ -262,11 +256,6 @@ final class AppColors extends ThemeExtension<AppColors> {
   final Color mapStreetDone;
   final Color mapStreetPartial;
   final Color mapStreetToDo;
-  final Color mapStreetFree;
-
-  /// The line under the « libre » dashes, wider than them, so they stand
-  /// out from the base map's roads (mockups README).
-  final Color mapStreetFreeCasing;
   final Color mapSelectedCasing;
   final Color mapSelectedCore;
 

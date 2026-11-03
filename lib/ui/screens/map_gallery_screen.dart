@@ -3,7 +3,6 @@ import 'package:tournee_calendriers/domain/map/map_layers.dart';
 import 'package:tournee_calendriers/domain/map/sector_area.dart';
 import 'package:tournee_calendriers/domain/shared/commune.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
-import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
@@ -82,20 +81,17 @@ List<Street> _sampleStreets() {
   final commune = _ok(
     Commune.create(inseeCode: '69264', name: 'Villefranche-sur-Saône'),
   );
-  final lea = MemberId('lea');
   Street street(
     String id,
     String name,
     List<GeoPoint> line,
-    List<House> houses, {
-    bool taken = true,
-  }) => _ok(
+    List<House> houses,
+  ) => _ok(
     Street.create(
       id: StreetId(id),
       name: name,
       commune: commune,
       shape: StreetShape([line]),
-      assignees: {if (taken) lea},
       houses: houses,
     ),
   );
@@ -139,7 +135,6 @@ List<Street> _sampleStreets() {
       'Rue de la Paix',
       [_at(45.98800, 4.71700), _at(45.98915, 4.71862)],
       [house('8', VisitStatus.toDo, _at(45.98850, 4.71770))],
-      taken: false,
     ),
   ];
 }

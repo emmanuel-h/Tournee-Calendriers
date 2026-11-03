@@ -195,49 +195,4 @@ void main() {
       'buildingComeBacks: 1, total: 4)',
     );
   });
-
-  group('visitedPercent', () {
-    Progress doors({required int done, required int toDo}) => [
-      for (var i = 0; i < done; i++) Progress.of(VisitStatus.done),
-      for (var i = 0; i < toDo; i++) Progress.of(VisitStatus.toDo),
-    ].fold(Progress.empty, (sum, door) => sum + door);
-
-    test('should be 0 when there is no door', () {
-      expect(Progress.empty.visitedPercent, 0);
-    });
-
-    test('should round down, so 100 % means every door done', () {
-      // 199 of 200: 99.5 %, which rounding would make 100.
-      expect(doors(done: 199, toDo: 1).visitedPercent, 99);
-    });
-
-    test('should be 100 when every door is visited', () {
-      expect(doors(done: 3, toDo: 0).visitedPercent, 100);
-    });
-
-    test('should leave out doors nobody home or to come back to', () {
-      final progress =
-          doors(done: 2, toDo: 1) +
-          Progress.of(VisitStatus.nobodyHome) +
-          Progress.of(VisitStatus.comeBack) +
-          Progress.buildingComeBack;
-
-      // 2 of 5 doors.
-      expect(progress.visitedPercent, 40);
-    });
-
-    test('should count refused doors with the done ones', () {
-      final progress =
-          doors(done: 1, toDo: 2) +
-          Progress.of(VisitStatus.refused) +
-          Progress.of(VisitStatus.refused);
-
-      // 3 of 5 doors.
-      expect(progress.visitedPercent, 60);
-    });
-
-    test('should be 41 for 41 doors done of 100', () {
-      expect(doors(done: 41, toDo: 59).visitedPercent, 41);
-    });
-  });
 }

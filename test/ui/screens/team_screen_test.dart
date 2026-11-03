@@ -33,21 +33,16 @@ import '../support/navigation.dart';
 /// Two minutes after Julie asked to join the 49.
 final twoMinutesLater = DateTime.utc(2026, 11, 2, 8, 14);
 
-/// A street of the 49 named [name], covered by [assignees].
-Street _street(String name, Set<MemberId> assignees) => valueOf(
-  Street.create(
-    id: StreetId(name.toLowerCase().replaceAll(' ', '-')),
-    name: name,
-    commune: villefranche,
-    assignees: assignees,
-  ),
-);
-
-/// Léa's three streets of the Team mockup, one of them Manu's too.
-List<Street> leasStreets() => [
-  _street('Rue de Thizy', {leaId}),
-  _street('Rue Nationale', {leaId, manuId}),
-  _street('Place des Marais', {leaId}),
+/// Streets of the 49, as Accueil lists them.
+List<Street> _streetsOf49() => [
+  for (final name in ['Rue de Thizy', 'Rue Nationale', 'Place des Marais'])
+    valueOf(
+      Street.create(
+        id: StreetId(name.toLowerCase().replaceAll(' ', '-')),
+        name: name,
+        commune: villefranche,
+      ),
+    ),
 ];
 
 void main() {
@@ -408,117 +403,38 @@ void main() {
     );
   });
 
-  group('streets per member', () {
-    testWidgets('should show how many streets each member covers, folded', (
-      tester,
-    ) async {
-      await pumpTeam(tester, manuId, streets: leasStreets());
+  testWidgets('should name nobody\'s streets on the member rows (PLAN '
+      '§5.14)', (tester) async {
+    await pumpTeam(tester, manuId, streets: _streetsOf49());
 
-      expect(inMember(manuId, find.text('1 rue')), findsOneWidget);
-      expect(inMember(leaId, find.text('3 rues')), findsOneWidget);
-      expect(inMember(leaId, find.text('▸')), findsOneWidget);
-      expect(find.bySemanticsLabel('Léa, 3 rues, afficher les rues'), findsOne);
-      expect(find.bySemanticsLabel('Manu, 1 rue, afficher les rues'), findsOne);
-      expect(find.text('Rue de Thizy'), findsNothing);
-      expect(find.byKey(const Key('team.member.streetList')), findsNothing);
-    });
-
-    testWidgets('should unfold the member\'s streets, in French order, when '
-        'the count is tapped, and fold them on a second tap', (tester) async {
-      await pumpTeam(tester, manuId, streets: leasStreets());
-
-      await tester.tap(find.bySemanticsLabel('Léa, 3 rues, afficher les rues'));
-      await tester.pumpAndSettle();
-
-      final list = inMember(
-        leaId,
-        find.byKey(const Key('team.member.streetList')),
-      );
-      expect(list, findsOneWidget);
-      final names = tester
-          .widgetList<Text>(
-            find.descendant(of: list, matching: find.byType(Text)),
-          )
-          .map((text) => text.data);
-      expect(names, ['Place des Marais', 'Rue de Thizy', 'Rue Nationale']);
-      expect(inMember(leaId, find.text('▾')), findsOneWidget);
-      expect(inMember(leaId, find.text('▸')), findsNothing);
-      expect(find.bySemanticsLabel('Léa, 3 rues, masquer les rues'), findsOne);
-      expect(find.bySemanticsLabel('Rues de Léa'), findsOne);
-      // Indented under the name, not under the avatar.
-      expect(
-        tester.getTopLeft(find.text('Rue de Thizy')).dx,
-        tester.getTopLeft(inMember(leaId, find.text('Léa'))).dx,
-      );
-
-      await tester.tap(find.bySemanticsLabel('Léa, 3 rues, masquer les rues'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Rue de Thizy'), findsNothing);
-      expect(inMember(leaId, find.text('▸')), findsOneWidget);
-    });
-
-    testWidgets('should keep several members unfolded at once', (tester) async {
-      await pumpTeam(tester, manuId, streets: leasStreets());
-
-      await tester.tap(find.bySemanticsLabel('Léa, 3 rues, afficher les rues'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.bySemanticsLabel('Manu, 1 rue, afficher les rues'));
-      await tester.pumpAndSettle();
-
-      expect(inMember(manuId, find.text('Rue Nationale')), findsOneWidget);
-      expect(inMember(leaId, find.text('Rue Nationale')), findsOneWidget);
-      expect(inMember(leaId, find.text('Rue de Thizy')), findsOneWidget);
-    });
-
-    testWidgets('should show « 0 rue » with nothing to unfold for a member '
-        'who covers none', (tester) async {
-      await pumpTeam(tester, manuId);
-
-      expect(inMember(manuId, find.text('0 rue')), findsOneWidget);
-      expect(inMember(leaId, find.text('0 rue')), findsOneWidget);
-      expect(find.text('▸'), findsNothing);
-      expect(find.bySemanticsLabel(RegExp('afficher les rues')), findsNothing);
-
-      await tester.tap(inMember(leaId, find.text('0 rue')));
-      await tester.pumpAndSettle();
-
-      expect(find.byKey(const Key('team.member.streetList')), findsNothing);
-    });
-
-    testWidgets('should give the count a 48 dp tap target', (tester) async {
-      await pumpTeam(tester, manuId, streets: leasStreets());
-
-      final count = inMember(
-        leaId,
-        find.byKey(const Key('team.member.streets')),
-      );
-      expect(tester.getSize(count).height, greaterThanOrEqualTo(48));
-      expect(tester.getSize(count).width, greaterThanOrEqualTo(48));
-    });
+    for (final member in [manuId, leaId]) {
+      expect(inMember(member, find.textContaining('rue')), findsNothing);
+      expect(inMember(member, find.text('▸')), findsNothing);
+    }
+    expect(find.bySemanticsLabel(RegExp('afficher les rues')), findsNothing);
+    expect(find.text('Rue de Thizy'), findsNothing);
   });
 
   group('pinned bottom buttons', () {
-    /// Manu and Léa each cover [count] streets: a team longer than the
-    /// screen once unfolded.
-    List<Street> manyStreets(int count) => [
-      for (var i = 1; i <= count; i++)
-        _street('Rue numéro $i', {leaId, manuId}),
-    ];
-
     testWidgets('should keep « Quitter » and « Supprimer » at the bottom, '
         'over a divider, while the rest scrolls', (tester) async {
-      await pumpTeam(tester, manuId, streets: manyStreets(20));
-      await tester.tap(
-        find.bySemanticsLabel('Léa, 20 rues, afficher les rues'),
-      );
-      await tester.pumpAndSettle();
+      // Twice as large, the screen is longer than the phone's.
+      useLargeText(tester);
+      await pumpTeam(tester, manuId);
       final footer = find.byKey(const Key('team.footer'));
       final leave = find.byKey(const Key('team.leave'));
       final before = tester.getTopLeft(leave);
-      final memberBefore = tester.getTopLeft(
-        find.byKey(ValueKey('team.member.${leaId.value}')),
-      );
+      ScrollPosition scrolled() => tester
+          .state<ScrollableState>(
+            find
+                .descendant(
+                  of: find.byType(CustomScrollView),
+                  matching: find.byType(Scrollable),
+                )
+                .first,
+          )
+          .position;
+      expect(scrolled().pixels, 0);
 
       await tester.drag(find.byType(CustomScrollView), const Offset(0, -300));
       await tester.pumpAndSettle();
@@ -526,12 +442,8 @@ void main() {
       expect(tester.getTopLeft(leave), before);
       expect(find.byKey(const Key('team.delete')).hitTestable(), findsOne);
       expect(leave.hitTestable(), findsOne);
-      expect(
-        tester
-            .getTopLeft(find.byKey(ValueKey('team.member.${leaId.value}')))
-            .dy,
-        lessThan(memberBefore.dy),
-      );
+      // The list moved under the buttons, which stayed.
+      expect(scrolled().pixels, greaterThan(0));
       // The footer sits at the very bottom, under the scrolling list.
       expect(tester.getBottomLeft(footer).dy, 852);
       expect(
@@ -569,31 +481,12 @@ void main() {
         expect(tester.takeException(), isNull);
       });
     }
-
-    testWidgets('should unfold a member\'s streets with no overflow when the '
-        'text is twice as large', (tester) async {
-      useLargeText(tester);
-
-      await pumpTeam(tester, manuId, streets: leasStreets());
-      // Below the code card and the request at this size.
-      await tapVisible(
-        tester,
-        find.bySemanticsLabel('Léa, 3 rues, afficher les rues'),
-      );
-      await tester.pumpAndSettle();
-
-      expect(inMember(leaId, find.text('Rue de Thizy')), findsOneWidget);
-      expect(find.byKey(const Key('team.leave')).hitTestable(), findsOne);
-      expect(tester.takeException(), isNull);
-    });
   });
 
   testWidgets('should label every control and make it 48 dp at least', (
     tester,
   ) async {
-    await pumpTeam(tester, manuId, streets: leasStreets());
-    await tester.tap(find.bySemanticsLabel('Léa, 3 rues, afficher les rues'));
-    await tester.pumpAndSettle();
+    await pumpTeam(tester, manuId);
 
     await expectAccessibleControls(tester);
   });

@@ -46,18 +46,14 @@ import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_writ
 /// already there, since they cannot check them one by one (PLAN §8.2).
 ///
 /// [undoStamp] (who is undoing, now) stamps what an undo puts back.
-/// [removal] is the value that removes a field, `FieldValue.delete()`;
-/// [arrayUnion] and [arrayRemove] make the values that add one item to an
-/// array, or remove it, leaving the others (`FieldValue.arrayUnion([item])`,
-/// `FieldValue.arrayRemove([item])`). They are passed in so this mapping
-/// needs no Firestore platform and its tests can recognise them.
+/// [removal] is the value that removes a field, `FieldValue.delete()`. It
+/// is passed in so this mapping needs no Firestore platform and its tests
+/// can recognise it.
 List<Map<FieldPath, Object?>> streetUpdates(
   Street street,
   StreetChange change, {
   required ChangeStamp undoStamp,
   required Object removal,
-  required Object Function(Object item) arrayUnion,
-  required Object Function(Object item) arrayRemove,
 }) {
   Map<FieldPath, Object?> doorUpdate(
     HouseNumber number,
@@ -109,18 +105,6 @@ List<Map<FieldPath, Object?>> streetUpdates(
     ],
     StreetDeleted(:final deletion) => [_stampUpdate([], deletion, 'deleted')],
     StreetRestored() => [_stampUpdate([], null, 'deleted')],
-    // The member alone, never the whole array: a teammate taking the same
-    // street at the same moment is not overwritten.
-    StreetTaken(:final member) => [
-      {
-        _path([_assignees]): arrayUnion(member.value),
-      },
-    ],
-    StreetReleased(:final member) => [
-      {
-        _path([_assignees]): arrayRemove(member.value),
-      },
-    ],
     // The new houses a few per update: the security rules check each
     // house a write adds, and only so many fit in one write (#70).
     NumbersAdded(:final added, :final restored) => [
@@ -195,7 +179,6 @@ const _markFields = ['status', 'comeBack', 'tries', 'calendars', 'by', 'at'];
 const _calendarFields = ['calendars', 'by', 'at'];
 
 const _houses = 'houses';
-const _assignees = 'assignees';
 const _dwellings = 'dwellings';
 
 FieldPath _path(List<String> segments) => FieldPath(segments);

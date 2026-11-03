@@ -217,15 +217,6 @@ void main() {
       expect(all, [same(lilas)]);
     });
 
-    test('should observe the streets the bound member covers', () async {
-      valueOf(await container.read(takeStreetProvider)(lilasId));
-
-      final streets = await container.read(observeMyStreetsProvider)().first;
-
-      expect([for (final street in streets.mine) street.id], [lilasId]);
-      expect(streets.others, isEmpty);
-    });
-
     test('should set a detail of a house', () async {
       final change = valueOf(
         await container.read(setHouseDetailsProvider)(
@@ -289,22 +280,6 @@ void main() {
       expect(houseOf(streets[lilasId]!, '7'), seven);
     });
 
-    test('should take a street of the bound repository as the bound '
-        'member', () async {
-      valueOf(await container.read(takeStreetProvider)(lilasId));
-
-      expect(streets[lilasId]!.assignees, {lea});
-    });
-
-    test('should release a street of the bound repository as the bound '
-        'member', () async {
-      valueOf(await container.read(takeStreetProvider)(lilasId));
-
-      valueOf(await container.read(releaseStreetProvider)(lilasId));
-
-      expect(streets[lilasId]!.assignees, isEmpty);
-    });
-
     test('should look a street up in the bound directory and '
         'repository', () async {
       final found = valueOf(
@@ -324,7 +299,7 @@ void main() {
     });
 
     test('should add a street from the map with the bound ids and '
-        'member', () async {
+        'repository', () async {
       final street = valueOf(
         await container.read(addStreetFromMapProvider)(
           StreetNumbers(
@@ -335,12 +310,10 @@ void main() {
             invalidNumbers: 0,
             duplicateNumbers: 0,
           ),
-          assignToMe: true,
         ),
       );
 
       expect(street.id, StreetId('street-1'));
-      expect(street.assignees, {lea});
       expect(streets[StreetId('street-1')], same(street));
     });
 
@@ -388,16 +361,14 @@ void main() {
     });
 
     test('should add a street typed in by hand with the bound ids and '
-        'member', () async {
+        'repository', () async {
       final street = await container.read(addManualStreetProvider)(
         name: streetName('Chemin des Vignes'),
         commune: villefranche,
         numbers: [n('1')],
-        assignToMe: true,
       );
 
       expect(street.id, StreetId('street-1'));
-      expect(street.assignees, {lea});
       expect(streets[StreetId('street-1')], same(street));
     });
 

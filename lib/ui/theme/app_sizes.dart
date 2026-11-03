@@ -234,12 +234,6 @@ abstract final class AppSizes {
   /// The trash icon in the avatar of the « Corbeille » row.
   static const avatarIcon = 18.0;
 
-  /// The streets of a member unfolded under their row in Équipe (#105):
-  /// indented under the name (16 + the avatar + 12), and the gap between
-  /// a count (« 3 rues ») and its ▸.
-  static const memberStreetsIndent = 64.0;
-  static const memberStreetsChevronGap = 6.0;
-
   /// A deleted street or number of the Corbeille: its name over who
   /// deleted it, and « Restaurer ».
   static const corbeilleRowHeight = 72.0;
@@ -304,7 +298,7 @@ abstract final class AppSizes {
   static const legendLineSample = 22.0;
   static const legendDot = 18.0;
 
-  /// Accueil's « Mes rues » panel (Home mockup): folded down, only its
+  /// Accueil's « Rues » panel (RunStart mockup): folded down, only its
   /// handle and its totals show, in this height; at rest it takes this
   /// share of the room under the top bar.
   static const homePanelFolded = 76.0;

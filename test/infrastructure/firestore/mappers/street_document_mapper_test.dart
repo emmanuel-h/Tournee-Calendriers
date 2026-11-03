@@ -13,7 +13,6 @@ import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_document_mapper.dart';
 
-import '../../../support/results.dart';
 import '../../../support/street_fixtures.dart';
 import '../../local_storage/stored_street_fixtures.dart';
 
@@ -108,7 +107,6 @@ void main() {
         'deletedAt',
         'deletedBy',
         'shape',
-        'assignees',
         'houses',
       });
     });
@@ -120,13 +118,6 @@ void main() {
       expect(data['shape'], hasLength(2));
     });
 
-    test('should write the assignees as their ids, sorted', () {
-      final (street, _) = valueOf(manualStreet.take(paul));
-      final (both, _) = valueOf(street.take(lea));
-
-      expect(streetToDocument(both)['assignees'], ['lea', 'paul']);
-    });
-
     test('should write null or empty for what a street typed by hand '
         'lacks', () {
       final data = streetToDocument(manualStreet);
@@ -135,7 +126,6 @@ void main() {
       expect(data['deletedAt'], isNull);
       expect(data['deletedBy'], isNull);
       expect(data['shape'], isEmpty);
-      expect(data['assignees'], isEmpty);
     });
 
     test('should key each house by its label, removed ones included', () {
@@ -443,18 +433,25 @@ void main() {
       expect(read(data).deletion, isNull);
     });
 
-    // Streets written before the map (T3.3) have neither field.
+    // Streets written before the map (T3.3) have no shape.
     test('should read no shape when the document has none', () {
       final data = storedRich((data) => data.remove('shape'));
 
       expect(read(data).shape, StreetShape.none);
     });
 
-    test('should read nobody covering the street when the document has no '
-        'assignees', () {
-      final data = storedRich((data) => data.remove('assignees'));
+    // PLAN §5.14: who covered a street is gone; documents written before
+    // keep the field, whatever it holds, and read as the same street.
+    test('should read a document that still has its old assignees', () {
+      for (final assignees in [
+        ['lea', 'paul'],
+        'lea',
+        [12],
+      ]) {
+        final data = storedRich((data) => data['assignees'] = assignees);
 
-      expect(read(data).assignees, isEmpty);
+        expectSameStreet(read(data), richStreet);
+      }
     });
 
     test('should read the first try of a house nobody answered when it has '
@@ -591,18 +588,6 @@ void main() {
 
     test('should refuse a line that is not an encoded polyline', () {
       expectUnreadable((data) => data['shape'] = [' ']);
-    });
-
-    test('should refuse assignees that are not a list', () {
-      expectUnreadable((data) => data['assignees'] = 'lea');
-    });
-
-    test('should refuse an assignee that is not text', () {
-      expectUnreadable((data) => data['assignees'] = [12]);
-    });
-
-    test('should refuse a blank assignee', () {
-      expectUnreadable((data) => data['assignees'] = [' ']);
     });
 
     test('should refuse a document without a name', () {

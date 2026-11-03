@@ -70,6 +70,9 @@ their old names) and the outing is `Round` (#116, #115); status picker instead o
 M9 planned (2026-11-03, #120–#125, PLAN §5.14): preparing the secteur and being on a tournée on separate
 screens; no attribution (the secteur covers all its streets); « Ajouter des rues » in Secteur (🗺) with several
 roads and a zone; houses marked only during a tournée; « En tournée » band on top (white, red edge).
+#120 built (2026-11-03), waiting for review: no `Street.assignees`, `MyStreets`, `TeamRoster`, `TakeStreet` /
+`ReleaseStreet`, streets per member; Accueil lists every street under « Rues · 31/50 »; the card says « Ouvrir »
+or « Ajouter au secteur »; the rules refuse any `assignees` write (to deploy, the user).
 
 ## Commands
 

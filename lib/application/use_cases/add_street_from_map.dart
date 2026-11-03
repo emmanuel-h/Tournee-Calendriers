@@ -1,6 +1,5 @@
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/id_generator.dart';
-import 'package:tournee_calendriers/application/ports/identity_provider.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
@@ -20,8 +19,7 @@ enum AddStreetFailure {
   serviceError,
 }
 
-/// « Ajouter et me l'attribuer » / « Ajouter sans m'attribuer » on the
-/// street card (PLAN §5.4): stores the street the card shows, with the
+/// « Ajouter au secteur » on the street card (PLAN §5.4): stores the street the card shows, with the
 /// numbers and positions `LookUpStreet` read from the BAN, and its shape
 /// on the map.
 ///
@@ -31,14 +29,11 @@ enum AddStreetFailure {
 ///   its line later (`FillStreetShape`, PLAN §5.3).
 /// - **A street of the Corbeille** comes back with its marks, as importing
 ///   it again would (PLAN §6.1).
-/// - **[assignToMe]** gives the street to the member on the phone: it joins
-///   their « Mes rues ».
 final class AddStreetFromMap {
-  const AddStreetFromMap(this._streets, this._ids, this._identity);
+  const AddStreetFromMap(this._streets, this._ids);
 
   final StreetRepository _streets;
   final IdGenerator _ids;
-  final IdentityProvider _identity;
 
   /// Adds the street of [numbers] to the tournée and returns it as stored.
   ///
@@ -46,13 +41,12 @@ final class AddStreetFromMap {
   /// simplified), stored as it is; none while the card has not found it.
   Future<Result<Street, AddStreetFailure>> call(
     StreetNumbers numbers, {
-    required bool assignToMe,
     StreetShape shape = StreetShape.none,
   }) async {
     final known = await _streets.findByBanId(numbers.id);
     if (known != null) {
       if (!known.isDeleted) return const Err(AddStreetFailure.alreadyInSector);
-      return Ok(await _bringBack(known, assignToMe: assignToMe));
+      return Ok(await _bringBack(known));
     }
 
     switch (Street.create(
@@ -61,7 +55,6 @@ final class AddStreetFromMap {
       commune: numbers.commune,
       banId: numbers.id,
       shape: shape,
-      assignees: {if (assignToMe) _identity.currentMember},
       houses: [
         for (final number in numbers.numbers)
           House(number: number.number, position: number.position),
@@ -75,19 +68,10 @@ final class AddStreetFromMap {
     }
   }
 
-  /// [deleted] out of the Corbeille, given to the member when [assignToMe]
-  /// and they do not cover it yet.
-  Future<Street> _bringBack(Street deleted, {required bool assignToMe}) async {
+  /// [deleted] out of the Corbeille, with its marks.
+  Future<Street> _bringBack(Street deleted) async {
     final (restored, change) = deleted.restore();
     await _streets.save(restored, change);
-    if (!assignToMe) return restored;
-    switch (restored.take(_identity.currentMember)) {
-      case Err():
-        // They cover it already: nothing to change.
-        return restored;
-      case Ok(value: (final taken, final took)):
-        await _streets.save(taken, took);
-        return taken;
-    }
+    return restored;
   }
 }

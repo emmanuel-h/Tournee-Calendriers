@@ -260,7 +260,6 @@ void main() {
       final street = streets.added.single;
       expect(street.name, streetName('Chemin des Vignes'));
       expect(street.commune, _gleize);
-      expect(street.assignees, {_me});
       expect(street.banId, isNull);
       expect(
         [for (final house in street.houses) house.number],
