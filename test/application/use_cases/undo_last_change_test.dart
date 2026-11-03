@@ -11,6 +11,7 @@ import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
+import '../../support/fakes/fake_open_round_store.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
@@ -22,7 +23,7 @@ void main() {
 
   setUp(() {
     streets = repositoryWithLilas();
-    undo = UndoLastChange(streets);
+    undo = UndoLastChange(streets, noRoundOn());
   });
 
   test('should put the exact previous house back after a tap', () async {
@@ -30,6 +31,7 @@ void main() {
       streets,
       clockAtTwo(),
       leaOnThePhone(),
+      noRoundOn(),
     );
     final marked = valueOf(
       await setHouseDetails(
@@ -60,7 +62,12 @@ void main() {
   });
 
   test('should put the exact previous door back', () async {
-    final markDwelling = MarkDwelling(streets, clockAtTwo(), leaOnThePhone());
+    final markDwelling = MarkDwelling(
+      streets,
+      clockAtTwo(),
+      leaOnThePhone(),
+      noRoundOn(),
+    );
     final marked = valueOf(
       await markDwelling(
         lilasId,
@@ -105,5 +112,83 @@ void main() {
     final failure = failureOf(await undo(change));
 
     expect(failure, const StreetNotFound<UndoFailure>());
+  });
+
+  group('the tournée on', () {
+    late FakeOpenRoundStore rounds;
+    late SetHouseDetails setHouseDetails;
+
+    setUp(() {
+      rounds = aRoundOn();
+      setHouseDetails = SetHouseDetails(
+        streets,
+        clockAtTwo(),
+        leaOnThePhone(),
+        visitsTo(rounds),
+      );
+      undo = UndoLastChange(streets, visitsTo(rounds));
+    });
+
+    test('should not count a ✓ undone', () async {
+      final marked = valueOf(
+        await setHouseDetails(
+          lilasId,
+          n('7'),
+          const StatusMark(VisitStatus.done),
+        ),
+      );
+
+      await undo(marked);
+
+      expect(rounds.openRound!.housesVisited, 0);
+      expect(rounds.saves.map((round) => round.housesVisited), [1, 0]);
+    });
+
+    test('should count again a ✓ whose undo is undone', () async {
+      final marked = valueOf(
+        await setHouseDetails(
+          lilasId,
+          n('7'),
+          const StatusMark(VisitStatus.done),
+        ),
+      );
+      final undone = valueOf(await undo(marked));
+
+      await undo(undone);
+
+      expect(rounds.openRound!.housesVisited, 1);
+    });
+
+    test('should count back a ✓ taken back, then undone', () async {
+      await setHouseDetails(
+        lilasId,
+        n('5'),
+        const StatusMark(VisitStatus.done),
+      );
+      final back = valueOf(
+        await setHouseDetails(
+          lilasId,
+          n('5'),
+          const StatusMark(VisitStatus.toDo),
+        ),
+      );
+
+      await undo(back);
+
+      expect(rounds.saves.map((round) => round.housesVisited), [1, 0, 1]);
+    });
+
+    test('should count nothing for an undo refused', () async {
+      final elsewhere = HouseMarked(
+        streetId: StreetId('rue-inconnue'),
+        before: seven,
+        stamp: leaAtTwo,
+        status: VisitStatus.done,
+      );
+
+      await undo(elsewhere);
+
+      expect(rounds.saves, isEmpty);
+    });
   });
 }

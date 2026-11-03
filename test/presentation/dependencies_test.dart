@@ -33,6 +33,8 @@ import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 
 import '../application/use_cases/street_fixtures.dart';
+import '../domain/round/round_fixtures.dart'
+    show cash, cheque, newRound, offered;
 import '../domain/sector/my_sectors_fixtures.dart';
 import '../domain/sector/sector_fixtures.dart'
     show
@@ -56,9 +58,11 @@ import '../support/fakes/fake_member_account.dart';
 import '../support/fakes/fake_moved_streets_log.dart';
 import '../support/fakes/fake_my_sectors_store.dart';
 import '../support/fakes/fake_offline_map_store.dart';
+import '../support/fakes/fake_open_round_store.dart';
 import '../support/fakes/fake_pending_sync.dart';
 import '../support/fakes/fake_phone_settings.dart';
 import '../support/fakes/fake_ports.dart';
+import '../support/fakes/fake_round_ledger.dart';
 import '../support/fakes/fake_sector_directory.dart';
 import '../support/fakes/fake_sector_downloads.dart';
 import '../support/fakes/fake_sector_repository.dart';
@@ -87,6 +91,8 @@ void main() {
   late FakeSectorRepository sectors;
   late FakePendingSync pending;
   late FakeAdminStatus admins;
+  late FakeOpenRoundStore rounds;
+  late FakeRoundLedger ledger;
   late ProviderContainer container;
 
   /// Every port bound to the fakes, the member on the phone being
@@ -112,6 +118,8 @@ void main() {
     sectorDirectoryProvider.overrideWithValue(sectorDirectory),
     sectorRepositoryProvider.overrideWithValue(sectors),
     adminStatusProvider.overrideWithValue(admins),
+    openRoundStoreProvider.overrideWithValue(rounds),
+    roundLedgerProvider.overrideWithValue(ledger),
     // The indexes of `2`…`7` in the alphabet: the code `234567`.
     randomProvider.overrideWithValue(ScriptedRandom([23, 24, 25, 26, 27, 28])),
   ];
@@ -167,6 +175,8 @@ void main() {
     pending = FakePendingSync(2);
     // The phone is an admin's, and Manu is one.
     admins = FakeAdminStatus(phoneIsAdmin: true, admins: [manuId]);
+    rounds = FakeOpenRoundStore();
+    ledger = FakeRoundLedger();
     // A ProviderContainer is what a ProviderScope holds, without widgets:
     // the overrides bind the ports to the fakes.
     container = ProviderContainer(overrides: overridesAs(lea));
@@ -198,6 +208,8 @@ void main() {
       'OfflineMapStore': offlineMapStoreProvider,
       'SectorDownloads': sectorDownloadsProvider,
       'ServerConnection': serverConnectionProvider,
+      'OpenRoundStore': openRoundStoreProvider,
+      'RoundLedger': roundLedgerProvider,
     };
     ports.forEach((name, port) {
       test('should name $name when nobody bound it', () {
@@ -873,6 +885,83 @@ void main() {
 
         expect(sectorDirectory.cancelled, [(sector7.id, MemberId('uid-lea'))]);
         expect(mySectors.mySectors.find(sector7.id), isNull);
+      },
+    );
+  });
+
+  group('tournées', () {
+    /// The 49 open, a tournée of it on.
+    void roundOnInThe49() {
+      mySectors.mySectors = valueOf(mySectors.mySectors.open(sector49.id));
+      rounds.openRound = newRound();
+    }
+
+    test('should start a tournée in the bound store with the bound clock '
+        'and ids', () async {
+      mySectors.mySectors = valueOf(mySectors.mySectors.open(sector49.id));
+
+      final round = valueOf(await container.read(startRoundProvider)());
+
+      expect(round.id.value, 'street-1');
+      expect(round.sector, sector49.id);
+      expect(round.startedAt, twoPm);
+      expect(rounds.openRound, round);
+    });
+
+    test('should watch the tournée of the bound store', () async {
+      roundOnInThe49();
+
+      final round = await container
+          .read(watchOpenRoundProvider)(sector49.id)
+          .first;
+
+      expect(round, newRound());
+    });
+
+    test('should add, change and remove a don in the bound store', () async {
+      roundOnInThe49();
+
+      valueOf(await container.read(addDonationProvider)(cash(1000)));
+      valueOf(await container.read(addDonationProvider)(offered));
+      valueOf(await container.read(changeDonationProvider)(0, cheque(2000)));
+      valueOf(await container.read(removeDonationProvider)(1));
+
+      expect(rounds.openRound!.donations, [cheque(2000)]);
+    });
+
+    test('should validate into the bound ledger at the bound time', () async {
+      roundOnInThe49();
+
+      final summary = valueOf(await container.read(validateRoundProvider)());
+
+      expect(summary.endedAt, twoPm);
+      expect(ledger.recorded.single.$3, summary);
+      expect(rounds.openRound, isNull);
+    });
+
+    test(
+      'should count a house and a door in the bound store, and an undo',
+      () async {
+        roundOnInThe49();
+
+        final house = valueOf(
+          await container.read(setHouseDetailsProvider)(
+            lilasId,
+            n('7'),
+            const StatusMark(VisitStatus.done),
+          ),
+        );
+        valueOf(
+          await container.read(markDwellingProvider)(
+            lilasId,
+            n('8'),
+            rdc('02'),
+            const StatusMark(VisitStatus.refused),
+          ),
+        );
+        valueOf(await container.read(undoLastChangeProvider)(house));
+
+        expect(rounds.saves.map((round) => round.housesVisited), [1, 2, 1]);
       },
     );
   });

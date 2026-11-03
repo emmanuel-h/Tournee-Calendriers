@@ -23,6 +23,7 @@ import '../../domain/sector/my_sectors_fixtures.dart';
 import '../../domain/sector/sector_fixtures.dart' as crew;
 import '../../support/building_fixtures.dart';
 import '../../support/fakes/fake_my_sectors_store.dart';
+import '../../support/fakes/fake_open_round_store.dart';
 import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_sector_repository.dart';
 import '../../support/fakes/fake_street_repository.dart';
@@ -80,6 +81,7 @@ void main() {
         streetRepositoryProvider.overrideWithValue(streets),
         clockProvider.overrideWithValue(clock),
         identityProvider.overrideWithValue(FakeIdentity(lea)),
+        openRoundStoreProvider.overrideWithValue(FakeOpenRoundStore()),
         mySectorsStoreProvider.overrideWithValue(
           FakeMySectorsStore(switch (open) {
             final open? => valueOf(MySectors.none.remember(open).open(open.id)),

@@ -23,7 +23,9 @@ import 'package:tournee_calendriers/infrastructure/geo_api/geo_commune_search.da
 import 'package:tournee_calendriers/infrastructure/local_storage/local_identity.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_moved_streets_log.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_my_sectors.dart';
+import 'package:tournee_calendriers/infrastructure/local_storage/local_open_round.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_phone_settings.dart';
+import 'package:tournee_calendriers/infrastructure/local_storage/local_round_ledger.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_sector_downloads.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_street_repository.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_street_view_preferences.dart';
@@ -56,7 +58,9 @@ final httpClientProvider = Provider<http.Client>((ref) {
 ///   M1 in `moved_streets.json`, the tournées downloaded for offline use
 ///   in `tournee_downloads.json`, the new streets of a campaign not yet
 ///   all handed to Firestore in `unfinished_streets/<tournée>/<year>/`
-///   (#104).
+///   (#104), the tournée on (one outing, #63) in `open_round.json`, and
+///   the validated ones in `validated_rounds/<sector>/<year>/` until the
+///   secteur's ledger on Firestore takes them over (#110).
 ///   The file names that say « tournee » date from before the code said
 ///   « sector » (#116); they stay, so an updated phone keeps its data.
 /// - [auth]: Firebase anonymous sign-in. Its uid is the member; until the
@@ -78,7 +82,7 @@ final httpClientProvider = Provider<http.Client>((ref) {
 /// offline, from the same listener.
 ///
 /// Async because the member id, the street view preferences, « Mes
-/// tournées » and the settings are read from the phone before the first
+/// tournées », the settings and the tournée on are read from the phone before the first
 /// screen, so reading them later never waits.
 Future<List<Override>> bindAdapters({
   required Directory storage,
@@ -109,6 +113,7 @@ Future<List<Override>> bindAdapters({
   final sectorDownloads = await LocalSectorDownloads.load(
     fileOf('tournee_downloads.json'),
   );
+  final openRound = await LocalOpenRound.load(fileOf('open_round.json'));
   // One phone storage of the streets: it answers from memory and queues
   // its writes, so two instances of it must never run side by side.
   final phoneStreets = LocalStreetRepository(
@@ -198,6 +203,15 @@ Future<List<Override>> bindAdapters({
     streetViewPreferencesProvider.overrideWithValue(streetView),
     mySectorsStoreProvider.overrideWithValue(mySectors),
     phoneSettingsProvider.overrideWithValue(settings),
+    // The tournée on and its dons stay on the phone (PLAN §6.3). The
+    // validated ones are kept on the phone too, for now: the secteur's
+    // ledger on Firestore replaces this one (#110).
+    openRoundStoreProvider.overrideWithValue(openRound),
+    roundLedgerProvider.overrideWithValue(
+      LocalRoundLedger(
+        Directory('${storage.path}${Platform.pathSeparator}validated_rounds'),
+      ),
+    ),
     // `overrideWith`: built the first time it is read, not at start-up.
     sectorDirectoryProvider.overrideWith((ref) => FirestoreSectorDirectory(db)),
     sectorRepositoryProvider.overrideWith(

@@ -17,6 +17,8 @@ import 'package:tournee_calendriers/presentation/edit_street/edit_street_state.d
 import 'package:tournee_calendriers/presentation/street/street_view_state.dart';
 
 import '../../support/building_fixtures.dart';
+import '../../support/fakes/fake_my_sectors_store.dart';
+import '../../support/fakes/fake_open_round_store.dart';
 import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/results.dart';
@@ -77,6 +79,8 @@ void main() {
         streetRepositoryProvider.overrideWithValue(streets),
         clockProvider.overrideWithValue(FakeClock(twoPm)),
         identityProvider.overrideWithValue(FakeIdentity(lea)),
+        openRoundStoreProvider.overrideWithValue(FakeOpenRoundStore()),
+        mySectorsStoreProvider.overrideWithValue(FakeMySectorsStore()),
       ],
     );
     addTearDown(container.dispose);

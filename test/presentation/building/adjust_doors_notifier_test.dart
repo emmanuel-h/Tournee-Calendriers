@@ -17,6 +17,8 @@ import 'package:tournee_calendriers/presentation/building/building_grid_notifier
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 
 import '../../support/building_fixtures.dart';
+import '../../support/fakes/fake_my_sectors_store.dart';
+import '../../support/fakes/fake_open_round_store.dart';
 import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/fakes/lost_streets.dart';
@@ -104,6 +106,8 @@ void main() {
         ),
         clockProvider.overrideWithValue(FakeClock(twoPm)),
         identityProvider.overrideWithValue(FakeIdentity(lea)),
+        openRoundStoreProvider.overrideWithValue(FakeOpenRoundStore()),
+        mySectorsStoreProvider.overrideWithValue(FakeMySectorsStore()),
       ],
     );
     addTearDown(container.dispose);

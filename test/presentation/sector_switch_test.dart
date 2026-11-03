@@ -21,6 +21,7 @@ import '../domain/sector/my_sectors_fixtures.dart';
 import '../domain/sector/sector_fixtures.dart';
 import '../support/fakes/fake_admin_status.dart';
 import '../support/fakes/fake_my_sectors_store.dart';
+import '../support/fakes/fake_open_round_store.dart';
 import '../support/fakes/fake_ports.dart';
 import '../support/fakes/fake_sector_repository.dart';
 import '../support/fakes/fake_street_repository.dart';
@@ -74,6 +75,7 @@ void main() {
         ),
         clockProvider.overrideWithValue(FakeClock(DateTime.utc(2026, 11, 4))),
         identityProvider.overrideWithValue(FakeIdentity(leaId)),
+        openRoundStoreProvider.overrideWithValue(FakeOpenRoundStore()),
         adminStatusProvider.overrideWithValue(FakeAdminStatus()),
       ],
     );

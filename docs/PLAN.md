@@ -2421,31 +2421,44 @@ bounding box for the offline download, shape simplification (Douglas–Peucker).
 Repository **ports** live in the domain (`SectorRepository`, `StreetRepository`); they take
 and return aggregates and `StreetChange`s, never Firestore types.
 
-**Tournées (#63, to build)** — `lib/domain/round/`:
+**Tournées (#63; domain and phone storage built in #108)** — `lib/domain/round/`:
 
 - **`PaymentMethod`**: `cash`, `cheque`, `card`.
 - **`Amount`**: whole euro cents, 1 to 100 000 (0,01 € to 1 000 €); `parse(text)` takes « 7,50 »,
   « 7.5 », « 7 » (refusals: empty, not a number or 0, more than two decimals, too large).
-- **`Donation`** (value): a method and an `Amount`, or `Donation.free()` (« Calendrier
-  offert »). **No house, no time** on purpose (§8.3).
-- **`MethodTotal`** (value): a count and a sum of cents.
-- **`Round`** (aggregate, the open tournée on the phone): id, secteur, campaign, member,
-  `startedAt`, `housesVisited` and the list of `Donation`s in the order added; `add`,
-  `replace(index)`, `remove(index)`, `visited()` / `unvisited()` (a ✓ or ⊘ stored during the
-  tournée, and its undo), `totals()` per method plus the free count, `validate(at)` →
-  `RoundSummary`.
-- **`RoundSummary`** (value): start, end, houses visited, the three `MethodTotal`s and the free
-  count; **no member**, nothing else leaves the phone. `Collecte.of(summaries)` sums them per
-  method for the secteur (never per member).
+- **`Donation`** (sealed value): `Donation.paid(method, amount)` (`PaidDonation`) or
+  `Donation.free()` (`FreeCalendar`, « Calendrier offert »). **No house, no time** on purpose
+  (§8.3).
+- **`MethodTotal`** (value): a count and a sum of cents. **`DonationTotals`**: the three
+  `MethodTotal`s and the free count; `count` and `cents` are the paid dons only (« 19 dons ·
+  280 € »), a free calendar counts in `free` alone.
+- **`Round`** (aggregate, the open tournée on the phone): id, secteur, campaign, `startedAt`,
+  `housesVisited` and the list of `Donation`s in the order added; **no member field**: it lives
+  on the member's own phone, one at a time (`open_round.json` names none either). `add`,
+  `replace(index)`, `remove(index)` (`NoSuchDonation` for an index past the list), `visited()` /
+  `unvisited()` (never below 0), `totals`, `validate(at)` → `RoundSummary`, ending at least one
+  second after the start (the rules want `startedAt < endedAt`, whatever the phone's clock did).
+- **`RoundVisit.of(change)`** (domain service): what a `StreetChange` does to « maisons
+  visitées »: a house or door going from not visited to ✓ / ⊘ is `visited`, the other way
+  `unvisited`, anything else `none` (✓ → ⊘ stays counted once); `undone` turns it around.
+- **`RoundSummary`** (value): its round's id (the document id, so a second send makes no
+  second tournée), start, end, houses visited and the `DonationTotals`; **no member**, nothing
+  else leaves the phone. `Collecte.of(summaries)`: the tournées newest first and their totals
+  summed per method for the secteur (never per member).
 - **`VisitStatus.refused`** (⊘): counts as visited in `Progress` and `ProgressLevel` (with done),
   resets the tries, never has a `ComeBack`.
 - **`House.calendars`** / **`Dwelling.calendars`** (`0..99`): 1 when a house becomes ✓, 0 on any
   other status; `+1` through « + Ajouter un don », `−1` (not below 1) through « − ». No amount.
-- Use cases: `StartRound`, `AddDonation` (with or without a house: with one, `calendars + 1`
-  too), `ChangeDonation`, `RemoveDonation`, `ValidateRound` (`OpenRoundStore` port for the
-  phone, `RoundLedger` port for the secteur), `WatchCollecte`, `RemoveCalendar`. The status use
-  cases tell the open tournée about a ✓ or ⊘ (and its undo) through `MarkHouse` /
-  `MarkDwelling`, so the count is right whatever screen marked it.
+- Use cases: `StartRound` (an active member of the open secteur, not a visiting admin, no
+  tournée already on), `WatchOpenRound(openSector)` (the tournée on, only when it belongs to the
+  secteur shown), `AddDonation` (with or without a house: with one, `calendars + 1` too, #114),
+  `ChangeDonation`, `RemoveDonation`, `ValidateRound` (`OpenRoundStore` port for the phone,
+  `RoundLedger` port for the secteur: the summary is handed over first, then the tournée is
+  forgotten), `WatchCollecte` (#111), `RemoveCalendar` (#114). The status use cases
+  (`SetHouseDetails`, `MarkDwelling`) tell the open tournée about each change through
+  `RoundVisits` (`RoundVisit.of(change)`), and `UndoLastChange` tells it the reverse of the
+  change undone, so the count is right whatever screen marked it; only on the secteur the
+  tournée started in.
 
 ### 6.2 Firestore layout
 
@@ -2634,6 +2647,11 @@ can never drift.
   | null }`, written at each change (same writing as the others), so a tournée survives a
   kill; the dons carry no house and no time. Emptied once `ValidateRound` has handed the
   summary to Firestore (its offline queue sends it later). An unreadable file means none.
+- `validated_rounds/<sector>/<year>/<roundId>.json` (port `RoundLedger`, #108, until the
+  Firestore ledger of #110 replaces it): each validated tournée's summary, the fields of
+  `rounds/{roundId}` (§6.2) with `version: 1`, written once (a second record of the same id
+  keeps the first), ids percent-encoded. Nothing reads them yet: kept so a tournée validated
+  before #110 is not lost.
 - MapLibre offline regions (tiles), behind the `OfflineMapStore` port
   (`infrastructure/maplibre_offline/`): one per downloaded secteur (two for a moment while
   one is replaced), in the map library's database (`files/mbgl-offline.db`). Each region's

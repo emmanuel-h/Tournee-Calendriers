@@ -23,8 +23,10 @@ import 'package:tournee_calendriers/application/ports/member_account.dart';
 import 'package:tournee_calendriers/application/ports/moved_streets_log.dart';
 import 'package:tournee_calendriers/application/ports/my_sectors_store.dart';
 import 'package:tournee_calendriers/application/ports/offline_map_store.dart';
+import 'package:tournee_calendriers/application/ports/open_round_store.dart';
 import 'package:tournee_calendriers/application/ports/pending_sync.dart';
 import 'package:tournee_calendriers/application/ports/phone_settings.dart';
+import 'package:tournee_calendriers/application/ports/round_ledger.dart';
 import 'package:tournee_calendriers/application/ports/sector_directory.dart';
 import 'package:tournee_calendriers/application/ports/sector_downloads.dart';
 import 'package:tournee_calendriers/application/ports/server_connection.dart';
@@ -60,6 +62,8 @@ import 'package:tournee_calendriers/application/use_cases/observe_streets_by_mem
 import 'package:tournee_calendriers/application/use_cases/phone_settings.dart';
 import 'package:tournee_calendriers/application/use_cases/purge_corbeille.dart';
 import 'package:tournee_calendriers/application/use_cases/refresh_offline_maps.dart';
+import 'package:tournee_calendriers/application/use_cases/round_visits.dart';
+import 'package:tournee_calendriers/application/use_cases/rounds.dart';
 import 'package:tournee_calendriers/application/use_cases/search_communes.dart';
 import 'package:tournee_calendriers/application/use_cases/search_street.dart';
 import 'package:tournee_calendriers/application/use_cases/sector_downloads.dart';
@@ -158,6 +162,16 @@ final sectorDownloadsProvider = Provider<SectorDownloads>(
   (ref) => _unbound('SectorDownloads'),
 );
 
+/// The tournée on, kept on the phone (PLAN §6.3).
+final openRoundStoreProvider = Provider<OpenRoundStore>(
+  (ref) => _unbound('OpenRoundStore'),
+);
+
+/// Where the summaries of the validated tournées go (« Collecte »).
+final roundLedgerProvider = Provider<RoundLedger>(
+  (ref) => _unbound('RoundLedger'),
+);
+
 /// The source join codes are drawn from: `Random.secure()` in the app
 /// (PLAN §5.2), a scripted one in tests. `Random` (`dart:math`) is an
 /// interface, so it is bound like a port.
@@ -187,11 +201,21 @@ final observeMyStreetsProvider = Provider(
 final observeStreetsByMemberProvider = Provider(
   (ref) => ObserveStreetsByMember(ref.watch(streetRepositoryProvider)),
 );
+
+/// The step of the status use cases that tells the tournée on about a ✓
+/// or ⊘ (PLAN §5.13).
+final roundVisitsProvider = Provider(
+  (ref) => RoundVisits(
+    ref.watch(openRoundStoreProvider),
+    ref.watch(mySectorsStoreProvider),
+  ),
+);
 final setHouseDetailsProvider = Provider(
   (ref) => SetHouseDetails(
     ref.watch(streetRepositoryProvider),
     ref.watch(clockProvider),
     ref.watch(identityProvider),
+    ref.watch(roundVisitsProvider),
   ),
 );
 final markDwellingProvider = Provider(
@@ -199,6 +223,7 @@ final markDwellingProvider = Provider(
     ref.watch(streetRepositoryProvider),
     ref.watch(clockProvider),
     ref.watch(identityProvider),
+    ref.watch(roundVisitsProvider),
   ),
 );
 final describeBuildingProvider = Provider(
@@ -260,7 +285,10 @@ final searchStreetProvider = Provider(
   (ref) => SearchStreet(ref.watch(addressDirectoryProvider)),
 );
 final undoLastChangeProvider = Provider(
-  (ref) => UndoLastChange(ref.watch(streetRepositoryProvider)),
+  (ref) => UndoLastChange(
+    ref.watch(streetRepositoryProvider),
+    ref.watch(roundVisitsProvider),
+  ),
 );
 final listCommuneStreetsProvider = Provider(
   (ref) => ListCommuneStreets(ref.watch(addressDirectoryProvider)),
@@ -549,5 +577,36 @@ final pruneSectorDownloadsProvider = Provider(
     ref.watch(deleteSectorDownloadProvider),
     ref.watch(offlineMapStoreProvider),
     ref.watch(sectorDownloadsProvider),
+  ),
+);
+
+// Tournées (PLAN §5.13): all on the phone, offline too, until « Valider la
+// tournée » hands the summary to the ledger.
+
+final startRoundProvider = Provider(
+  (ref) => StartRound(
+    ref.watch(openRoundStoreProvider),
+    ref.watch(mySectorsStoreProvider),
+    ref.watch(clockProvider),
+    ref.watch(idGeneratorProvider),
+  ),
+);
+final watchOpenRoundProvider = Provider(
+  (ref) => WatchOpenRound(ref.watch(openRoundStoreProvider)),
+);
+final addDonationProvider = Provider(
+  (ref) => AddDonation(ref.watch(openRoundStoreProvider)),
+);
+final changeDonationProvider = Provider(
+  (ref) => ChangeDonation(ref.watch(openRoundStoreProvider)),
+);
+final removeDonationProvider = Provider(
+  (ref) => RemoveDonation(ref.watch(openRoundStoreProvider)),
+);
+final validateRoundProvider = Provider(
+  (ref) => ValidateRound(
+    ref.watch(openRoundStoreProvider),
+    ref.watch(roundLedgerProvider),
+    ref.watch(clockProvider),
   ),
 );

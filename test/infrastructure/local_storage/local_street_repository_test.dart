@@ -16,6 +16,7 @@ import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_street_repository.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/mappers/street_json_mapper.dart';
 
+import '../../support/fakes/fake_open_round_store.dart';
 import '../../support/fakes/fake_ports.dart';
 import '../../support/geo_fixtures.dart';
 import '../../support/results.dart';
@@ -130,6 +131,7 @@ void main() {
         streets,
         FakeClock(twoPm),
         FakeIdentity(lea),
+        noRoundOn(),
       );
 
       // Two taps are two events: the second comes on a later turn of the

@@ -1,11 +1,17 @@
 // The street most use-case tests start from, and the fakes wired around it.
+import 'package:tournee_calendriers/application/use_cases/round_visits.dart';
+import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
+import '../../domain/round/round_fixtures.dart';
+import '../../domain/sector/my_sectors_fixtures.dart';
 import '../../support/building_fixtures.dart';
+import '../../support/fakes/fake_my_sectors_store.dart';
+import '../../support/fakes/fake_open_round_store.dart';
 import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/results.dart';
@@ -56,3 +62,15 @@ FakeIdentity leaOnThePhone() => FakeIdentity(lea);
 
 /// A repository holding the Rue des Lilas.
 FakeStreetRepository repositoryWithLilas() => FakeStreetRepository([lilas]);
+
+/// A tournée of the 49 on, nothing counted yet.
+FakeOpenRoundStore aRoundOn() => FakeOpenRoundStore(newRound());
+
+/// The tournée step of the status use cases, telling [rounds], with the 49
+/// open.
+RoundVisits visitsTo(FakeOpenRoundStore rounds) => RoundVisits(
+  rounds,
+  FakeMySectorsStore(
+    valueOf(MySectors.none.remember(sector49).open(sector49.id)),
+  ),
+);

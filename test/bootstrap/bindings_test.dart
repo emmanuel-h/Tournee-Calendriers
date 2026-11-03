@@ -26,7 +26,9 @@ import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_docu
 import 'package:tournee_calendriers/infrastructure/geo_api/geo_commune_search.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_moved_streets_log.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_my_sectors.dart';
+import 'package:tournee_calendriers/infrastructure/local_storage/local_open_round.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_phone_settings.dart';
+import 'package:tournee_calendriers/infrastructure/local_storage/local_round_ledger.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_sector_downloads.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_street_repository.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_street_view_preferences.dart';
@@ -36,6 +38,7 @@ import 'package:tournee_calendriers/infrastructure/system/random_id_generator.da
 import 'package:tournee_calendriers/infrastructure/system/system_clock.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 
+import '../domain/round/round_fixtures.dart' show cash;
 import '../domain/sector/my_sectors_fixtures.dart';
 import '../domain/sector/sector_fixtures.dart' show nameOf;
 import '../support/fakes/fake_address_directory.dart';
@@ -106,6 +109,15 @@ void main() {
     expect(container.read(identityProvider), isA<FirebaseIdentity>());
     expect(container.read(mySectorsStoreProvider), isA<LocalMySectors>());
     expect(container.read(phoneSettingsProvider), isA<LocalPhoneSettings>());
+    expect(container.read(openRoundStoreProvider), isA<LocalOpenRound>());
+    expect(
+      container.read(roundLedgerProvider),
+      isA<LocalRoundLedger>().having(
+        (ledger) => ledger.directory.path,
+        'directory',
+        '${storage.path}/validated_rounds',
+      ),
+    );
     expect(firestoreAsked, 0);
     expect(
       container.read(sectorDirectoryProvider),
@@ -257,6 +269,22 @@ void main() {
 
     expect(second.read(mySectorsStoreProvider).mySectors, opened);
     expect(File('${storage.path}/my_tournees.json').existsSync(), isTrue);
+  });
+
+  test('should keep the tournée on and its dons across starts', () async {
+    final first = await containerWith();
+    await first
+        .read(mySectorsStoreProvider)
+        .save(valueOf(MySectors.none.remember(sector49).open(sector49.id)));
+    valueOf(await first.read(startRoundProvider)());
+    valueOf(await first.read(addDonationProvider)(cash(1000)));
+
+    final second = await containerWith();
+    final round = second.read(openRoundStoreProvider).openRound!;
+
+    expect(round.sector, sector49.id);
+    expect(round.donations, [cash(1000)]);
+    expect(File('${storage.path}/open_round.json').existsSync(), isTrue);
   });
 
   test('should keep the name and the theme across starts', () async {

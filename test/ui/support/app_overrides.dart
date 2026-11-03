@@ -16,9 +16,11 @@ import '../../support/fakes/fake_commune_search.dart';
 import '../../support/fakes/fake_member_account.dart';
 import '../../support/fakes/fake_moved_streets_log.dart';
 import '../../support/fakes/fake_my_sectors_store.dart';
+import '../../support/fakes/fake_open_round_store.dart';
 import '../../support/fakes/fake_pending_sync.dart';
 import '../../support/fakes/fake_phone_settings.dart';
 import '../../support/fakes/fake_ports.dart';
+import '../../support/fakes/fake_round_ledger.dart';
 import '../../support/fakes/fake_sector_directory.dart';
 import '../../support/fakes/fake_sector_downloads.dart';
 import '../../support/fakes/fake_sector_repository.dart';
@@ -37,8 +39,9 @@ import 'fake_map_view.dart';
 /// [sectorDirectory], [sectors] (none by default), [phoneStreets] (the
 /// streets kept on the phone since M1, none by default: no card offers
 /// them to a tournée), [movedStreets] and [pending] (nothing waiting to be
-/// sent by default), [connection] (online by default) and [downloads] (no
-/// tournée downloaded by default); [member] (Léa by
+/// sent by default), [connection] (online by default), [downloads] (no
+/// tournée downloaded by default) and [rounds] (no tournée on by default);
+/// [member] (Léa by
 /// default) uses the phone and marks the houses at [now] (two o'clock by
 /// default); [account] is the phone's account (none by default, and no
 /// network to get one); [admins] says whether the phone, and which
@@ -67,6 +70,7 @@ List<Override> fakePhone({
   FakePendingSync? pending,
   FakeServerConnection? connection,
   FakeSectorDownloads? downloads,
+  FakeOpenRoundStore? rounds,
   MemberId? member,
   DateTime? now,
   FakeMemberAccount? account,
@@ -104,6 +108,8 @@ List<Override> fakePhone({
   communeSearchDelayProvider.overrideWithValue(Duration.zero),
   mySectorsStoreProvider.overrideWithValue(mySectors ?? FakeMySectorsStore()),
   phoneSettingsProvider.overrideWithValue(settings ?? FakePhoneSettings()),
+  openRoundStoreProvider.overrideWithValue(rounds ?? FakeOpenRoundStore()),
+  roundLedgerProvider.overrideWithValue(FakeRoundLedger()),
   sectorDirectoryProvider.overrideWithValue(
     sectorDirectory ?? FakeSectorDirectory(),
   ),
