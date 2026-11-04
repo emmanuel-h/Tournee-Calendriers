@@ -16,6 +16,7 @@ import 'package:tournee_calendriers/bootstrap/offline_upkeep.dart';
 import 'package:tournee_calendriers/bootstrap/uncaught_errors.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/components/save_failed_alert.dart';
+import 'package:tournee_calendriers/ui/map/started_map_channel.dart';
 import 'package:tournee_calendriers/ui/theme/font_licenses.dart';
 
 /// Starts the app.
@@ -38,6 +39,7 @@ Future<void> bootstrap({
   // which need Flutter's binding before `runApp` creates it.
   WidgetsFlutterBinding.ensureInitialized();
   registerFontLicenses();
+  StartedMapChannel.install();
   // A failed save surfaces as an error nothing caught; the dialog that
   // tells the user reaches the screens through the navigator's key.
   final navigatorKey = GlobalKey<NavigatorState>();
