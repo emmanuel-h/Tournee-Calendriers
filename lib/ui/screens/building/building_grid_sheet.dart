@@ -30,6 +30,7 @@ import 'package:tournee_calendriers/ui/screens/building/building_setup_sheet.dar
 import 'package:tournee_calendriers/ui/screens/building/door_status_picker.dart';
 import 'package:tournee_calendriers/ui/screens/building/floor_names.dart';
 import 'package:tournee_calendriers/ui/screens/round/marks_only_in_round.dart';
+import 'package:tournee_calendriers/ui/screens/round/round_band.dart';
 import 'package:tournee_calendriers/ui/screens/street/status_words.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
@@ -57,7 +58,8 @@ Future<BuildingGridExit?> showBuildingGrid(
 /// The floors of one staircase from the top down, four doors a row; during
 /// a tournée, a tap on a door opens its status picker (PLAN §5.6), and what
 /// it stores shows in the snackbar with « Annuler » for 4 s; with none on,
-/// the grid is read-only as the street is (PLAN §5.14). The header counts
+/// the grid is read-only as the street is (PLAN §5.14), and the « En
+/// tournée » band shows above the header during one. The header counts
 /// the doors of the whole building; the staircase control shows when there
 /// are several.
 /// « Gérer l'immeuble » holds every change to the building itself. Works
@@ -97,67 +99,88 @@ final class _BuildingGridSheetState extends ConsumerState<BuildingGridSheet>
           child: Scaffold(
             // The sheet's own white and rounded corners show through.
             backgroundColor: Colors.transparent,
-            body: Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSizes.gutter,
-                12,
-                AppSizes.gutter,
-                0,
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                spacing: 12,
-                children: [
-                  const _Grabber(),
-                  ...switch (state) {
-                    BuildingGridLoading() => const <Widget>[],
-                    BuildingGridGone() => [
-                      Text(
-                        l10n.buildingGone,
-                        key: const Key('grid.gone'),
-                        style: AppTextStyles.body.copyWith(color: colors.muted),
-                      ),
-                    ],
-                    BuildingGridShown() => [
-                      _Header(state: state),
-                      if (state.showsStaircases)
-                        _StaircaseControl(
-                          state: state,
-                          onSelected: _notifier.selectStaircase,
-                        ),
-                      Expanded(
-                        child: _Floors(
-                          state: state,
-                          selected: _picking,
-                          onTap: (door) {
-                            if (mayMark()) unawaited(_pick(door, state));
-                          },
-                        ),
-                      ),
-                      // Gives way to the snackbar, which floats here, and
-                      // shows only during a tournée. At least 48 dp; taller
-                      // with a large phone font.
-                      ConstrainedBox(
-                        constraints: const BoxConstraints(
-                          minHeight: AppSizes.minTapTarget,
-                        ),
-                        child: snackBarShown || marking != MarkingAccess.open
-                            ? null
-                            : Center(
-                                child: Text(
-                                  l10n.gridHint,
-                                  key: const Key('grid.hint'),
-                                  textAlign: TextAlign.center,
-                                  style: AppTextStyles.small.copyWith(
-                                    color: colors.muted,
-                                  ),
-                                ),
+            body: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                const Padding(
+                  padding: EdgeInsets.only(top: 12),
+                  child: _Grabber(),
+                ),
+                // Above the grid's header during a tournée (PLAN §5.14),
+                // the width of the sheet. « Voir les dons » and
+                // « Terminer » drop the snackbar first: its « Annuler »
+                // names a don by its place in the tournée.
+                RoundBand(
+                  onLeave: hideUndo,
+                  margin: const EdgeInsets.only(top: 12),
+                ),
+                Expanded(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(
+                      AppSizes.gutter,
+                      12,
+                      AppSizes.gutter,
+                      0,
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      spacing: 12,
+                      children: [
+                        ...switch (state) {
+                          BuildingGridLoading() => const <Widget>[],
+                          BuildingGridGone() => [
+                            Text(
+                              l10n.buildingGone,
+                              key: const Key('grid.gone'),
+                              style: AppTextStyles.body.copyWith(
+                                color: colors.muted,
                               ),
-                      ),
-                    ],
-                  },
-                ],
-              ),
+                            ),
+                          ],
+                          BuildingGridShown() => [
+                            _Header(state: state),
+                            if (state.showsStaircases)
+                              _StaircaseControl(
+                                state: state,
+                                onSelected: _notifier.selectStaircase,
+                              ),
+                            Expanded(
+                              child: _Floors(
+                                state: state,
+                                selected: _picking,
+                                onTap: (door) {
+                                  if (mayMark()) unawaited(_pick(door, state));
+                                },
+                              ),
+                            ),
+                            // Gives way to the snackbar, which floats here, and
+                            // shows only during a tournée. At least 48 dp; taller
+                            // with a large phone font.
+                            ConstrainedBox(
+                              constraints: const BoxConstraints(
+                                minHeight: AppSizes.minTapTarget,
+                              ),
+                              child:
+                                  snackBarShown || marking != MarkingAccess.open
+                                  ? null
+                                  : Center(
+                                      child: Text(
+                                        l10n.gridHint,
+                                        key: const Key('grid.hint'),
+                                        textAlign: TextAlign.center,
+                                        style: AppTextStyles.small.copyWith(
+                                          color: colors.muted,
+                                        ),
+                                      ),
+                                    ),
+                            ),
+                          ],
+                        },
+                      ],
+                    ),
+                  ),
+                ),
+              ],
             ),
             // The snackbar floats above these buttons, over the hint.
             bottomNavigationBar: switch (state) {

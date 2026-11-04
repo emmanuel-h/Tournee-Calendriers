@@ -2,8 +2,8 @@ import 'package:tournee_calendriers/domain/round/donation.dart';
 import 'package:tournee_calendriers/domain/round/donation_totals.dart';
 import 'package:tournee_calendriers/domain/shared/same_items.dart';
 
-// The view state of the tournée on (PLAN §5.13, mockups RunStart, RunHome,
-// RunStreet, RunDons, RunRecap): what Accueil's card, the street's line,
+// The view state of the tournée on (PLAN §5.13, §5.14, mockups RunStart,
+// RunHome, RunStreet, RunDons, RunRecap): what the « En tournée » band,
 // « Dons de la tournée » and « Bilan de la tournée » show, as plain data
 // tested without widgets.
 
@@ -99,7 +99,7 @@ final class RoundOn extends RoundView {
   /// The dons, newest first (« Dons de la tournée »).
   final List<DonationRow> donations;
 
-  /// How long the tournée has been on (« En tournée depuis 1 h 20 »);
+  /// How long the tournée has been on (« En tournée · 1 h 20 »);
   /// never negative, should the phone's clock be set back meanwhile.
   Duration get elapsed {
     final elapsed = now.difference(startedAt);

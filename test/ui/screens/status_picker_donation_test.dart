@@ -14,7 +14,6 @@ import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
-import 'package:tournee_calendriers/ui/screens/round/dons_screen.dart';
 
 import '../../domain/round/round_fixtures.dart';
 import '../../domain/sector/my_sectors_fixtures.dart';
@@ -70,15 +69,15 @@ void main() {
   late FakeStreetRepository streets;
   late FakeOpenRoundStore rounds;
 
-  /// The street screen of [_lilas] in the 49, open, with [round] on
-  /// (the one of [_round] by default).
-  Future<void> openStreet(WidgetTester tester, {bool roundOn = true}) async {
+  /// The street screen of [_lilas] in the 49, open, with the tournée of
+  /// [_round] on.
+  Future<void> openStreet(WidgetTester tester) async {
     tester.view
       ..physicalSize = const Size(1080, 2400)
       ..devicePixelRatio = 2.625;
     addTearDown(tester.view.reset);
     streets = FakeStreetRepository([_lilas]);
-    rounds = FakeOpenRoundStore(roundOn ? _round() : null);
+    rounds = FakeOpenRoundStore(_round());
     await tester.pumpWidget(
       ProviderScope(
         overrides: fakePhone(
@@ -367,48 +366,6 @@ void main() {
       expect(find.text('Montant du don'), findsNothing);
       expect(stored('3'), _lilas.houses.first);
       expect(dons(), [cheque(2000)]);
-      expect(find.text('Annuler'), findsNothing);
-    });
-  });
-
-  group('the street screen', () {
-    testWidgets('should show the tournée under the progress bar and open its '
-        'dons', (tester) async {
-      await openStreet(tester);
-
-      expect(
-        tester.widget<Text>(_key('round.line.totals')).data,
-        'En tournée · 1${_nbsp}don · 20$_nbsp€',
-      );
-      final line = tester.getRect(_key('round.line'));
-      expect(
-        line.top,
-        greaterThan(tester.getRect(_key('street.progress')).bottom),
-      );
-      expect(
-        line.bottom,
-        lessThan(tester.getTopLeft(find.text('CÔTÉ IMPAIR')).dy),
-      );
-      await tap(tester, _key('round.line'));
-
-      expect(find.byType(DonsScreen), findsOneWidget);
-    });
-
-    testWidgets('should show no tournée line when none is on', (tester) async {
-      await openStreet(tester, roundOn: false);
-
-      expect(_key('round.line'), findsNothing);
-    });
-
-    testWidgets('should drop the snackbar when the dons open, so its '
-        '« Annuler » takes no other don back', (tester) async {
-      await openStreet(tester);
-      await markDone(tester, '7');
-      await tap(tester, _key('house.give.1000'));
-
-      await tap(tester, _key('round.line'));
-      await tap(tester, find.byTooltip('Retour'));
-
       expect(find.text('Annuler'), findsNothing);
     });
   });

@@ -9,6 +9,7 @@ import 'package:tournee_calendriers/domain/round/round.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
 import 'package:tournee_calendriers/domain/sector/sector_summary.dart';
 import 'package:tournee_calendriers/ui/app.dart';
+import 'package:tournee_calendriers/ui/map/map_legend.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/screens/home/home_screen.dart';
 import 'package:tournee_calendriers/ui/screens/round/dons_screen.dart';
@@ -25,8 +26,8 @@ import '../../support/results.dart';
 import '../support/app_overrides.dart';
 
 // The tournée on Accueil, « Dons de la tournée », « Nouveau don » /
-// « Modifier le don » and « Bilan de la tournée » (PLAN §5.13, mockups
-// RunStart, RunHome, RunDons, RunDon, RunRecap).
+// « Modifier le don » and « Bilan de la tournée » (PLAN §5.13, §5.14,
+// mockups RunStart, RunHome, RunDons, RunDon, RunRecap).
 
 const _nbsp = ' ';
 
@@ -106,16 +107,16 @@ void main() {
     testWidgets('should offer « Commencer une tournée » to a member of the '
         'team, and start one offline on a tap', (tester) async {
       await pumpHome(tester);
-      expect(_key('round.card'), findsNothing);
+      expect(_key('round.band'), findsNothing);
 
       await tap(tester, _key('round.start'));
 
       expect(_key('round.start'), findsNothing);
       expect(
-        _text(tester, 'round.card.since'),
-        "En tournée depuis moins d'une minute",
+        _text(tester, 'round.band.since'),
+        "En tournée · moins d'une minute",
       );
-      expect(_text(tester, 'round.card.totals'), '0${_nbsp}don · 0$_nbsp€');
+      expect(_text(tester, 'round.band.totals'), '0${_nbsp}don · 0$_nbsp€ ›');
       expect(rounds.openRound!.sector, sector49Id);
       expect(rounds.openRound!.startedAt, _now);
     });
@@ -127,7 +128,7 @@ void main() {
 
       expect(find.byType(HomeScreen), findsOneWidget);
       expect(_key('round.start'), findsNothing);
-      expect(_key('round.card'), findsNothing);
+      expect(_key('round.band'), findsNothing);
     });
 
     testWidgets('should say a tournée is on in another secteur when one is '
@@ -140,7 +141,7 @@ void main() {
         find.text('Une tournée est déjà en cours dans un autre secteur.'),
         findsOneWidget,
       );
-      expect(_key('round.card'), findsNothing);
+      expect(_key('round.band'), findsNothing);
     });
 
     testWidgets('should show the tournée on: since when, its dons and their '
@@ -149,14 +150,47 @@ void main() {
 
       expect(_key('round.start'), findsNothing);
       expect(
-        _text(tester, 'round.card.since'),
-        'En tournée depuis 4${_nbsp}h${_nbsp}15',
+        _text(tester, 'round.band.since'),
+        'En tournée · 4${_nbsp}h${_nbsp}15',
       );
       expect(
-        _text(tester, 'round.card.totals'),
-        '3${_nbsp}dons · 37,50$_nbsp€',
+        _text(tester, 'round.band.totals'),
+        '3${_nbsp}dons · 37,50$_nbsp€ ›',
       );
       expect(find.bySemanticsLabel('Terminer la tournée'), findsOneWidget);
+      expect(
+        find.bySemanticsLabel(
+          'En tournée depuis 4${_nbsp}h${_nbsp}15, 3${_nbsp}dons, '
+          '37,50$_nbsp€. Voir les dons',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('should show the top bar, and no band, while no tournée is '
+        'on', (tester) async {
+      await pumpHome(tester);
+
+      expect(_key('home.sector'), findsOneWidget);
+      expect(_key('home.sectorButton'), findsOneWidget);
+      expect(_key('home.settings'), findsOneWidget);
+      expect(_key('round.band'), findsNothing);
+    });
+
+    testWidgets('should put the band in the top bar\'s place during a '
+        'tournée: no secteur switch, no Secteur, no ⚙', (tester) async {
+      await pumpHome(tester, round: _round());
+
+      expect(find.byType(AppBar), findsNothing);
+      expect(_key('home.sector'), findsNothing);
+      expect(_key('home.sectorButton'), findsNothing);
+      expect(_key('home.settings'), findsNothing);
+      // At the top of the screen, its Surface under the status bar too.
+      expect(tester.getRect(_key('round.band')).top, 0);
+      expect(
+        tester.getRect(_key('round.band')).bottom,
+        lessThan(tester.getRect(find.byType(MapLegend)).top),
+      );
     });
 
     testWidgets('should keep « depuis » up as time goes by', (tester) async {
@@ -166,8 +200,8 @@ void main() {
       await tester.pump(const Duration(seconds: 30));
 
       expect(
-        _text(tester, 'round.card.since'),
-        'En tournée depuis 4${_nbsp}h${_nbsp}20',
+        _text(tester, 'round.band.since'),
+        'En tournée · 4${_nbsp}h${_nbsp}20',
       );
     });
 
@@ -176,7 +210,7 @@ void main() {
     ) async {
       await pumpHome(tester, round: _round());
 
-      await tap(tester, _key('round.card.dons'));
+      await tap(tester, _key('round.band.dons'));
 
       expect(find.byType(DonsScreen), findsOneWidget);
     });
@@ -467,7 +501,7 @@ void main() {
       await tap(tester, _key('recap.continue'));
 
       expect(find.byType(HomeScreen), findsOneWidget);
-      expect(_key('round.card'), findsOneWidget);
+      expect(_key('round.band'), findsOneWidget);
     });
 
     testWidgets('should ask before validating, and change nothing on '
@@ -492,8 +526,9 @@ void main() {
 
       expect(find.byType(HomeScreen), findsOneWidget);
       expect(rounds.openRound, isNull);
-      expect(_key('round.card'), findsNothing);
+      expect(_key('round.band'), findsNothing);
       expect(_key('round.start'), findsOneWidget);
+      expect(_key('home.settings'), findsOneWidget);
     });
   });
 }

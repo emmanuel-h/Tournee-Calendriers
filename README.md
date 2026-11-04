@@ -85,8 +85,9 @@ Street screen (« Rue »):
   come-back.
 - « Masquer faits » hides the done and refused houses, remembered per street on the phone.
 - Tournées (one outing, offline too): « Commencer une tournée » on Accueil for a member of the
-  team; while it runs, a card « En tournée depuis 1 h 20 · 19 dons · 280 € » with « Voir les
-  dons › » and « ■ Terminer », and a one-line card on the street. « ✓ Fait » then asks
+  team; while it runs, the « En tournée · 1 h 20 » band with « 19 dons · 280 € › » and
+  « ■ Terminer » takes the place of Accueil's top bar (no secteur switch, Secteur or ⚙ until it
+  ends) and sits above the street screen and the building grid. « ✓ Fait » then asks
   « Montant du don » (Espèces | Chèque | Carte, 5 / 10 / 20 €, « Autre montant », « Calendrier
   offert »; ✕ puts the house back), and a house done offers « + Ajouter un don »; « Annuler »
   in the snackbar takes the don back too. « Dons de la tournée » lists them newest first, to

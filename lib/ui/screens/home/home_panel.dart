@@ -4,7 +4,7 @@ import 'package:tournee_calendriers/presentation/home/home_state.dart';
 import 'package:tournee_calendriers/presentation/home/street_row.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
-import 'package:tournee_calendriers/ui/screens/round/round_card.dart';
+import 'package:tournee_calendriers/ui/screens/round/round_start_button.dart';
 import 'package:tournee_calendriers/ui/screens/start/pending_sync_line.dart';
 import 'package:tournee_calendriers/ui/screens/start/street_row.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
@@ -13,8 +13,8 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
 /// The « Rues » panel at the bottom of Accueil (PLAN §5.14, RunStart
 /// mockup): a handle and the totals (« Rues · 31/50 », over every street
-/// of the secteur), then « Commencer une tournée » or the tournée's card
-/// (PLAN §5.13), every street of the secteur in one list, then the
+/// of the secteur), then « Commencer une tournée » while none is on
+/// (PLAN §5.13; the « En tournée » band on top shows one), every street of the secteur in one list, then the
 /// pending-sync line. A row opens its street. « Ajouter des rues » is not
 /// here: it is preparation, in Secteur (§5.14).
 ///
@@ -222,8 +222,8 @@ final class _StreetList extends StatelessWidget {
       key: const Key('home.panel.list'),
       padding: const EdgeInsets.symmetric(horizontal: AppSizes.gutter),
       children: [
-        // « Commencer une tournée », or the tournée's card (#63).
-        const RoundPanelEntry(),
+        // « Commencer une tournée » (#63), while none is on.
+        const RoundStartButton(),
         if (state.hasNoStreet)
           note(l10n.homeNoStreet, const Key('home.noStreet'))
         else

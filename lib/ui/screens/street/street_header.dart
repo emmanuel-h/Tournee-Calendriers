@@ -10,19 +10,17 @@ import 'package:tournee_calendriers/ui/theme/status_look.dart';
 
 /// Everything above the tiles: « 31/42 · ⊘ 2 · ✗ 3 · ↻ 1 » with « Masquer
 /// faits » (on the next line when the phone's font leaves no room beside
-/// the counts), the progress bar, [belowProgress] if any (the tournée's
-/// line, PLAN §5.13), and the « Côté impair | Côté pair » labels.
+/// the counts), the progress bar and the « Côté impair | Côté pair »
+/// labels.
 final class StreetHeader extends StatelessWidget {
   const StreetHeader({
     super.key,
     required this.state,
     required this.onToggleHideDone,
-    this.belowProgress,
   });
 
   final StreetShown state;
   final VoidCallback onToggleHideDone;
-  final Widget? belowProgress;
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +74,6 @@ final class StreetHeader extends StatelessWidget {
             ),
           ),
         ),
-        ?belowProgress,
         Padding(
           padding: const EdgeInsets.fromLTRB(
             AppSizes.gutter,

@@ -5,12 +5,15 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tournee_calendriers/domain/map/map_layers.dart';
 import 'package:tournee_calendriers/presentation/home/home_notifier.dart';
 import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
+import 'package:tournee_calendriers/presentation/round/round_notifier.dart';
+import 'package:tournee_calendriers/presentation/round/round_view.dart';
 import 'package:tournee_calendriers/ui/components/size_reporter.dart';
 import 'package:tournee_calendriers/ui/components/street_card_sheet.dart';
 import 'package:tournee_calendriers/ui/map/map_legend.dart';
 import 'package:tournee_calendriers/ui/map/map_view.dart';
 import 'package:tournee_calendriers/ui/map/sector_map.dart';
 import 'package:tournee_calendriers/ui/screens/home/home_panel.dart';
+import 'package:tournee_calendriers/ui/screens/round/round_band.dart';
 import 'package:tournee_calendriers/ui/screens/start/admin_visit_banner.dart';
 import 'package:tournee_calendriers/ui/screens/start/start_app_bar.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
@@ -60,7 +63,8 @@ PanelSize snapPanel(
 /// screen while a secteur is open: the map of the secteur, its streets
 /// coloured by progress and, from street zoom, its houses; the legend chip;
 /// the « Rues » panel at the bottom, every street of the secteur. Its top
-/// bar is the start screen's.
+/// bar is the start screen's; during a tournée, the « En tournée » band
+/// takes its place: no secteur switch, no Secteur, no ⚙ until it ends.
 ///
 /// A tap on one of the secteur's streets on the map shows its street card
 /// (§5.4) in place of the panel, its line lit up, with « Ouvrir ». A tap
@@ -99,6 +103,11 @@ final class _HomeScreenState extends ConsumerState<HomeScreen> {
     // `ref.read` for the intents: they are sent, never watched.
     final home = ref.read(homeProvider.notifier);
     final showMap = ref.watch(sectorMapViewProvider);
+    // `select`: the screen is built again when a tournée starts or ends,
+    // not each time a don is added (the band follows those itself).
+    final roundOn = ref.watch(
+      roundProvider.select((round) => round is RoundOn),
+    );
     // The back gesture closes the street card first, then leaves the app.
     return PopScope(
       canPop: state.card == null,
@@ -106,120 +115,138 @@ final class _HomeScreenState extends ConsumerState<HomeScreen> {
         if (!didPop) home.unselect();
       },
       child: Scaffold(
-        appBar: StartAppBar(
-          sector: ref.watch(currentSectorProvider),
-          showGallery: widget.showGallery,
-        ),
-        body: SafeArea(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Only while an admin visits the open tournée.
-              const AdminVisitBanner(),
-              Expanded(
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    final room = constraints.maxHeight;
-                    final folded = homePanelFoldedHeight(
-                      MediaQuery.textScalerOf(context),
-                    );
-                    final heights = {
-                      PanelSize.folded: folded,
-                      PanelSize.rest: max(
-                        folded,
-                        room * AppSizes.homePanelRestShare,
-                      ),
-                      PanelSize.full: max(folded, room),
-                    };
-                    final card = state.card;
-                    // The room the panel (or the street card) takes over the
-                    // map once at rest: « Me localiser », the attribution and
-                    // the area the map fits stay clear of it.
-                    final covered = card == null
-                        ? heights[_size]!
-                        : _cardHeight;
-                    return Stack(
-                      children: [
-                        Positioned.fill(
-                          child: showMap(
-                            SectorMap(
-                              key: const Key('home.map'),
-                              layers: state.layers,
-                              area: state.area,
-                              selectedRoad: state.selectedRoad,
-                              onStreetTapped: home.select,
-                              onMapTapped: (_) => home.unselect(),
-                              onZoomChanged: _zoomed,
-                              padding: EdgeInsets.only(bottom: covered),
+        appBar: roundOn
+            ? null
+            : StartAppBar(
+                sector: ref.watch(currentSectorProvider),
+                showGallery: widget.showGallery,
+              ),
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // In the top bar's place during a tournée, under the status bar.
+            const RoundBand(),
+            Expanded(
+              // `top: false`: the top bar or the band keeps clear of the
+              // status bar already.
+              child: SafeArea(
+                top: false,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Only while an admin visits the open secteur.
+                    const AdminVisitBanner(),
+                    Expanded(
+                      child: LayoutBuilder(
+                        builder: (context, constraints) {
+                          final room = constraints.maxHeight;
+                          final folded = homePanelFoldedHeight(
+                            MediaQuery.textScalerOf(context),
+                          );
+                          final heights = {
+                            PanelSize.folded: folded,
+                            PanelSize.rest: max(
+                              folded,
+                              room * AppSizes.homePanelRestShare,
                             ),
-                          ),
-                        ),
-                        Positioned(
-                          top: AppSizes.mapControlsMargin,
-                          left: AppSizes.mapControlsMargin,
-                          // Clear of « Me localiser », top right.
-                          right:
-                              AppSizes.mapControlsMargin * 2 +
-                              AppSizes.mapButton,
-                          child: Align(
-                            alignment: Alignment.topLeft,
-                            child: MapLegend(houses: _houses),
-                          ),
-                        ),
-                        Positioned(
-                          left: 0,
-                          right: 0,
-                          bottom: 0,
-                          child: card == null
-                              ? HomePanel(
-                                  key: const Key('home.panel'),
-                                  state: state,
-                                  height: _dragHeight ?? heights[_size]!,
-                                  expanded: _size == PanelSize.full,
-                                  onDrag: (dy) => setState(() {
-                                    _dragHeight =
-                                        ((_dragHeight ?? heights[_size]!) - dy)
-                                            .clamp(
-                                              heights[PanelSize.folded]!,
-                                              heights[PanelSize.full]!,
-                                            );
-                                  }),
-                                  onDragEnd: (velocity) => setState(() {
-                                    _size = snapPanel(
-                                      _dragHeight ?? heights[_size]!,
-                                      velocity,
-                                      folded: heights[PanelSize.folded]!,
-                                      rest: heights[PanelSize.rest]!,
-                                      full: heights[PanelSize.full]!,
-                                    );
-                                    _dragHeight = null;
-                                  }),
-                                  onToggle: () => setState(() {
-                                    _size = _size == PanelSize.full
-                                        ? PanelSize.rest
-                                        : PanelSize.full;
-                                  }),
-                                )
-                              : SizeReporter(
-                                  onHeight: (height) {
-                                    if (mounted) {
-                                      setState(() => _cardHeight = height);
-                                    }
-                                  },
-                                  child: StreetCardSheet(
-                                    key: const Key('home.selected'),
-                                    card: card,
-                                    onClose: home.unselect,
+                            PanelSize.full: max(folded, room),
+                          };
+                          final card = state.card;
+                          // The room the panel (or the street card) takes over the
+                          // map once at rest: « Me localiser », the attribution and
+                          // the area the map fits stay clear of it.
+                          final covered = card == null
+                              ? heights[_size]!
+                              : _cardHeight;
+                          return Stack(
+                            children: [
+                              Positioned.fill(
+                                child: showMap(
+                                  SectorMap(
+                                    key: const Key('home.map'),
+                                    layers: state.layers,
+                                    area: state.area,
+                                    selectedRoad: state.selectedRoad,
+                                    onStreetTapped: home.select,
+                                    onMapTapped: (_) => home.unselect(),
+                                    onZoomChanged: _zoomed,
+                                    padding: EdgeInsets.only(bottom: covered),
                                   ),
                                 ),
-                        ),
-                      ],
-                    );
-                  },
+                              ),
+                              Positioned(
+                                top: AppSizes.mapControlsMargin,
+                                left: AppSizes.mapControlsMargin,
+                                // Clear of « Me localiser », top right.
+                                right:
+                                    AppSizes.mapControlsMargin * 2 +
+                                    AppSizes.mapButton,
+                                child: Align(
+                                  alignment: Alignment.topLeft,
+                                  child: MapLegend(houses: _houses),
+                                ),
+                              ),
+                              Positioned(
+                                left: 0,
+                                right: 0,
+                                bottom: 0,
+                                child: card == null
+                                    ? HomePanel(
+                                        key: const Key('home.panel'),
+                                        state: state,
+                                        height: _dragHeight ?? heights[_size]!,
+                                        expanded: _size == PanelSize.full,
+                                        onDrag: (dy) => setState(() {
+                                          _dragHeight =
+                                              ((_dragHeight ??
+                                                          heights[_size]!) -
+                                                      dy)
+                                                  .clamp(
+                                                    heights[PanelSize.folded]!,
+                                                    heights[PanelSize.full]!,
+                                                  );
+                                        }),
+                                        onDragEnd: (velocity) => setState(() {
+                                          _size = snapPanel(
+                                            _dragHeight ?? heights[_size]!,
+                                            velocity,
+                                            folded: heights[PanelSize.folded]!,
+                                            rest: heights[PanelSize.rest]!,
+                                            full: heights[PanelSize.full]!,
+                                          );
+                                          _dragHeight = null;
+                                        }),
+                                        onToggle: () => setState(() {
+                                          _size = _size == PanelSize.full
+                                              ? PanelSize.rest
+                                              : PanelSize.full;
+                                        }),
+                                      )
+                                    : SizeReporter(
+                                        onHeight: (height) {
+                                          if (mounted) {
+                                            setState(
+                                              () => _cardHeight = height,
+                                            );
+                                          }
+                                        },
+                                        child: StreetCardSheet(
+                                          key: const Key('home.selected'),
+                                          card: card,
+                                          onClose: home.unselect,
+                                        ),
+                                      ),
+                              ),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );

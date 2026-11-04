@@ -74,7 +74,9 @@ M9 built so far (waiting for the user's phone test): no attribution (#120); the 
 (🗺, `Icons.map_outlined`) and « RUES (n) » with « + Ajouter des rues » and the Corbeille in Secteur,
 no « Ajouter des rues » on Accueil (#121); houses marked only during a tournée (#122: with none on, a tap
 on a house, a door or a building's « Repasser » says « Commencez une tournée… » with « Commencer », or
-« Seuls les membres en tournée… » to a visiting admin; `MarkingAccess`).
+« Seuls les membres en tournée… » to a visiting admin; `MarkingAccess`); the « En tournée » band on top
+(#123: in place of Accueil's top bar, so no secteur switch, Secteur or ⚙ during a tournée; above the
+street's top bar and the building grid's header; the tournée card and the street's line are gone).
 #120 built (2026-11-03), waiting for review: no `Street.assignees`, `MyStreets`, `TeamRoster`, `TakeStreet` /
 `ReleaseStreet`, streets per member; Accueil lists every street under « Rues · 31/50 »; the card says « Ouvrir »
 or « Ajouter au secteur »; the rules refuse any `assignees` write (to deploy, the user).

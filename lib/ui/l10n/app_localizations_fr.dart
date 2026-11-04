@@ -2238,21 +2238,42 @@ class AppLocalizationsFr extends AppLocalizations {
       'Seuls les membres en tournée marquent les maisons.';
 
   @override
-  String get roundSinceJustStarted => 'En tournée depuis moins d\'une minute';
+  String get roundElapsedJustStarted => 'moins d\'une minute';
 
   @override
-  String roundSinceMinutes(int minutes) {
-    return 'En tournée depuis $minutes min';
+  String roundElapsedMinutes(int minutes) {
+    return '$minutes min';
   }
 
   @override
-  String roundSinceHours(int hours, String minutes) {
-    return 'En tournée depuis $hours h $minutes';
+  String roundElapsedHours(int hours, String minutes) {
+    return '$hours h $minutes';
   }
 
   @override
-  String roundSinceWholeHours(int hours) {
-    return 'En tournée depuis $hours h';
+  String roundElapsedWholeHours(int hours) {
+    return '$hours h';
+  }
+
+  @override
+  String roundBandSince(String elapsed) {
+    return 'En tournée · $elapsed';
+  }
+
+  @override
+  String roundBandTotals(String totals) {
+    return '$totals ›';
+  }
+
+  @override
+  String roundBandSpoken(String elapsed, int count, String amount) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'En tournée depuis $elapsed, $count dons, $amount. Voir les dons',
+      one: 'En tournée depuis $elapsed, $count don, $amount. Voir les dons',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -2267,21 +2288,10 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get roundSeeDons => 'Voir les dons ›';
-
-  @override
-  String get roundSeeDonsSpoken => 'Voir les dons';
-
-  @override
   String get roundFinish => 'Terminer';
 
   @override
   String get roundFinishSpoken => 'Terminer la tournée';
-
-  @override
-  String roundStreetLine(String totals) {
-    return 'En tournée · $totals';
-  }
 
   @override
   String amountEuros(int euros) {

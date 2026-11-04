@@ -31,19 +31,19 @@ String _twoDigits(int value) => '$value'.padLeft(2, '0');
 String roundTotalsText(AppLocalizations l10n, DonationTotals totals) =>
     l10n.roundTotals(totals.count, eurosText(l10n, totals.cents));
 
-/// How long a tournée has been on: « En tournée depuis 1 h 20 », « … 2 h »,
-/// « … 20 min », « … moins d'une minute ».
-String roundSinceText(AppLocalizations l10n, Duration elapsed) {
+/// How long a tournée has been on, as « En tournée · … » says it:
+/// « 1 h 20 », « 2 h », « 20 min », « moins d'une minute ».
+String roundElapsedText(AppLocalizations l10n, Duration elapsed) {
   final hours = elapsed.inHours;
   final minutes = elapsed.inMinutes % 60;
   if (hours == 0) {
     return minutes == 0
-        ? l10n.roundSinceJustStarted
-        : l10n.roundSinceMinutes(minutes);
+        ? l10n.roundElapsedJustStarted
+        : l10n.roundElapsedMinutes(minutes);
   }
   return minutes == 0
-      ? l10n.roundSinceWholeHours(hours)
-      : l10n.roundSinceHours(hours, _twoDigits(minutes));
+      ? l10n.roundElapsedWholeHours(hours)
+      : l10n.roundElapsedHours(hours, _twoDigits(minutes));
 }
 
 /// The time of day of [at], as French writes it: « 14 h 05 », « 18 h ».

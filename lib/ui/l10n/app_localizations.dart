@@ -3238,29 +3238,47 @@ abstract class AppLocalizations {
   /// **'Seuls les membres en tournée marquent les maisons.'**
   String get markingMembersOnly;
 
-  /// First line of the tournée card on Accueil, in its first minute.
+  /// How long the tournée has been on, in its first minute: « En tournée · moins d'une minute » (PLAN §5.13, §5.14).
   ///
   /// In fr, this message translates to:
-  /// **'En tournée depuis moins d\'une minute'**
-  String get roundSinceJustStarted;
+  /// **'moins d\'une minute'**
+  String get roundElapsedJustStarted;
 
-  /// First line of the tournée card on Accueil (RunHome mockup), under an hour.
+  /// How long the tournée has been on, under an hour: « 20 min ».
   ///
   /// In fr, this message translates to:
-  /// **'En tournée depuis {minutes} min'**
-  String roundSinceMinutes(int minutes);
+  /// **'{minutes} min'**
+  String roundElapsedMinutes(int minutes);
 
-  /// First line of the tournée card on Accueil (RunHome mockup): « En tournée depuis 1 h 20 »; minutes with two digits.
+  /// How long the tournée has been on: « 1 h 20 »; minutes with two digits.
   ///
   /// In fr, this message translates to:
-  /// **'En tournée depuis {hours} h {minutes}'**
-  String roundSinceHours(int hours, String minutes);
+  /// **'{hours} h {minutes}'**
+  String roundElapsedHours(int hours, String minutes);
 
-  /// First line of the tournée card on Accueil on a whole hour: « En tournée depuis 2 h ».
+  /// How long the tournée has been on, on a whole hour: « 2 h ».
   ///
   /// In fr, this message translates to:
-  /// **'En tournée depuis {hours} h'**
-  String roundSinceWholeHours(int hours);
+  /// **'{hours} h'**
+  String roundElapsedWholeHours(int hours);
+
+  /// First line of the « En tournée » band on top of Accueil, the street screen and the building grid (RunHome, RunStreet mockups, PLAN §5.14): « En tournée · 1 h 20 ».
+  ///
+  /// In fr, this message translates to:
+  /// **'En tournée · {elapsed}'**
+  String roundBandSince(String elapsed);
+
+  /// Second line of the « En tournée » band, which opens « Dons de la tournée »: « 19 dons · 280 € › ».
+  ///
+  /// In fr, this message translates to:
+  /// **'{totals} ›'**
+  String roundBandTotals(String totals);
+
+  /// What screen readers hear for the left part of the « En tournée » band, a button that opens « Dons de la tournée »: « En tournée depuis 1 h 20, 19 dons, 280 €. Voir les dons ».
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, one{En tournée depuis {elapsed}, {count} don, {amount}. Voir les dons} other{En tournée depuis {elapsed}, {count} dons, {amount}. Voir les dons}}'**
+  String roundBandSpoken(String elapsed, int count, String amount);
 
   /// The paid dons of the tournée and their money (PLAN §5.13): « 19 dons · 280 € », « 1 don · 10 € », « 0 don · 0 € ». A free calendar is not a don of money.
   ///
@@ -3268,19 +3286,7 @@ abstract class AppLocalizations {
   /// **'{count, plural, one{{count} don · {amount}} other{{count} dons · {amount}}}'**
   String roundTotals(int count, String amount);
 
-  /// Link of the tournée card (Accueil) and line (street screen) that opens « Dons de la tournée ».
-  ///
-  /// In fr, this message translates to:
-  /// **'Voir les dons ›'**
-  String get roundSeeDons;
-
-  /// What screen readers hear for « Voir les dons › ».
-  ///
-  /// In fr, this message translates to:
-  /// **'Voir les dons'**
-  String get roundSeeDonsSpoken;
-
-  /// Button of the tournée card on Accueil (■), which opens « Bilan de la tournée ».
+  /// The ink pill (■) at the right of the « En tournée » band, which opens « Bilan de la tournée ».
   ///
   /// In fr, this message translates to:
   /// **'Terminer'**
@@ -3291,12 +3297,6 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Terminer la tournée'**
   String get roundFinishSpoken;
-
-  /// The one-line tournée card under the street screen's progress bar (RunStreet mockup): « En tournée · 19 dons · 280 € ».
-  ///
-  /// In fr, this message translates to:
-  /// **'En tournée · {totals}'**
-  String roundStreetLine(String totals);
 
   /// An amount in whole euros: « 10 € », « 1 280 € ».
   ///

@@ -64,14 +64,16 @@ void main() {
   late FakeStreetRepository streets;
   late FakeStreetViewPreferences preferences;
 
-  /// Starts the app on « Mes rues » with [street] on the phone, then opens
-  /// [location] (the street screen of [street] by default), as the start
-  /// list does.
+  /// Starts the app on Accueil with [street] on the phone and a tournée
+  /// on, then opens [location] (the street screen of [street] by default),
+  /// as the list does. A phone's screen: the « En tournée » band takes
+  /// room above the top bar, which a 800 × 600 test window cannot spare.
   Future<void> openStreet(
     WidgetTester tester, {
     Street? street,
     String? location,
   }) async {
+    usePhoneScreen(tester);
     streets = FakeStreetRepository([street ?? _lilas]);
     preferences = FakeStreetViewPreferences();
     await tester.pumpWidget(

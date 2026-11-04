@@ -80,26 +80,20 @@ void main() {
     });
   });
 
-  group('roundSinceText', () {
+  group('roundElapsedText', () {
     for (final (elapsed, text) in [
-      (Duration.zero, "En tournée depuis moins d'une minute"),
-      (const Duration(seconds: 59), "En tournée depuis moins d'une minute"),
-      (const Duration(minutes: 1), 'En tournée depuis 1${_nbsp}min'),
-      (const Duration(minutes: 59), 'En tournée depuis 59${_nbsp}min'),
-      (const Duration(minutes: 60), 'En tournée depuis 1${_nbsp}h'),
-      (const Duration(minutes: 61), 'En tournée depuis 1${_nbsp}h${_nbsp}01'),
-      (
-        const Duration(hours: 1, minutes: 20),
-        'En tournée depuis 1${_nbsp}h${_nbsp}20',
-      ),
-      (const Duration(hours: 2), 'En tournée depuis 2${_nbsp}h'),
-      (
-        const Duration(hours: 12, minutes: 5),
-        'En tournée depuis 12${_nbsp}h${_nbsp}05',
-      ),
+      (Duration.zero, "moins d'une minute"),
+      (const Duration(seconds: 59), "moins d'une minute"),
+      (const Duration(minutes: 1), '1${_nbsp}min'),
+      (const Duration(minutes: 59), '59${_nbsp}min'),
+      (const Duration(minutes: 60), '1${_nbsp}h'),
+      (const Duration(minutes: 61), '1${_nbsp}h${_nbsp}01'),
+      (const Duration(hours: 1, minutes: 20), '1${_nbsp}h${_nbsp}20'),
+      (const Duration(hours: 2), '2${_nbsp}h'),
+      (const Duration(hours: 12, minutes: 5), '12${_nbsp}h${_nbsp}05'),
     ]) {
       test('should say « $text » after $elapsed', () {
-        expect(roundSinceText(l10n, elapsed), text);
+        expect(roundElapsedText(l10n, elapsed), text);
       });
     }
   });

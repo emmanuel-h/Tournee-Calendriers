@@ -323,7 +323,8 @@ void main() {
       );
       await tester.tap(find.widgetWithText(SnackBarAction, 'Commencer'));
       await tester.pumpAndSettle();
-      expect(find.byKey(const Key('round.line')), findsOneWidget);
+      // The « En tournée » band above the street's top bar (PLAN §5.14).
+      expect(find.byKey(const Key('round.band')), findsOneWidget);
 
       await markDone(tile);
       expect(
@@ -861,7 +862,9 @@ void main() {
       // a new one, and the summary waits on the phone for the secteur.
       await tester.tap(find.byKey(const Key('round.start')));
       await tester.pumpAndSettle();
-      expect(find.text("En tournée depuis moins d'une minute"), findsOneWidget);
+      // The band takes the top bar's place: no ⚙ until the tournée ends.
+      expect(find.text("En tournée · moins d'une minute"), findsOneWidget);
+      expect(find.byKey(const Key('home.settings')), findsNothing);
       await tester.tap(find.text('Chemin des Vignes'));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('street.tile.1')));
@@ -872,7 +875,7 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('house.give.1000')));
       await tester.pumpAndSettle();
       expect(findArrowText('N° 1 fait · 10\u00a0€ en espèces'), findsOneWidget);
-      expect(find.text('En tournée · 1\u00a0don · 10\u00a0€'), findsOneWidget);
+      expect(find.text('1\u00a0don · 10\u00a0€ ›'), findsOneWidget);
       // A second calendar for the 1 (#114): « + Ajouter un don », offered;
       // the tile shows its badge « 2 », and « − » takes it away again.
       await tester.tap(find.byKey(const ValueKey('street.tile.1')));
@@ -910,7 +913,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.byType(HomeScreen), findsOneWidget);
       expect(find.byKey(const Key('round.start')), findsOneWidget);
-      expect(find.byKey(const Key('round.card')), findsNothing);
+      expect(find.byKey(const Key('round.band')), findsNothing);
+      expect(find.byKey(const Key('home.settings')), findsOneWidget);
       // The summary is in Firestore's offline queue, and its copy shows it
       // at once (#110): what « Collecte » reads, offline too.
       final phone = ProviderScope.containerOf(

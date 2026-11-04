@@ -341,12 +341,12 @@ abstract final class AppTextStyles {
     fontSize: 24,
   );
 
-  /// The dons and money of the tournée on Accueil's card (« 19 dons ·
-  /// 280 € »).
+  /// The dons and money of the tournée in the « En tournée » band (« 19
+  /// dons · 280 € › »).
   static const roundTotals = TextStyle(
     fontFamily: AppFonts.display,
     fontWeight: FontWeight.w700,
-    fontSize: 22,
+    fontSize: 24,
     height: 1.1,
   );
 

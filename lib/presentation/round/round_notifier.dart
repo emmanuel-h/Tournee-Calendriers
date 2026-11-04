@@ -8,8 +8,8 @@ import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
 import 'package:tournee_calendriers/presentation/round/round_view.dart';
 
-/// The tournée on in the open secteur (PLAN §5.13), for Accueil's card, the
-/// street's line, « Dons de la tournée » and « Bilan de la tournée ».
+/// The tournée on in the open secteur (PLAN §5.13, §5.14), for the « En
+/// tournée » band, « Dons de la tournée » and « Bilan de la tournée ».
 ///
 /// `autoDispose`: it stops following the tournée once no screen shows it;
 /// Accueil, always under the others, keeps it alive while the app runs.
@@ -19,7 +19,7 @@ final roundProvider = NotifierProvider.autoDispose<RoundNotifier, RoundView>(
 
 /// What « Commencer une tournée » did, for the screen to say.
 enum StartOutcome {
-  /// The tournée is on: its card takes the button's place.
+  /// The tournée is on: the « En tournée » band shows.
   started,
 
   /// One is on in another secteur: one tournée at a time on a phone.
@@ -80,7 +80,7 @@ final class RoundNotifier extends Notifier<RoundView> {
     );
   }
 
-  /// Time went by: « En tournée depuis 1 h 20 » and the end of the « Bilan »
+  /// Time went by: « En tournée · 1 h 20 » and the end of the « Bilan »
   /// are read again from the clock.
   void tick() => state = _render();
 

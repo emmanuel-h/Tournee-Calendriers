@@ -119,7 +119,7 @@ void main() {
     expect(rounds.openRound!.startedAt, twoPm);
     expect(find.text(_needsRound), findsNothing);
     expect(_key('street.tiles'), findsOneWidget);
-    expect(_key('round.line'), findsOneWidget);
+    expect(_key('round.band'), findsOneWidget);
     expect(_key('street.hint'), findsOneWidget);
 
     await tap(tester, _tile('7'));

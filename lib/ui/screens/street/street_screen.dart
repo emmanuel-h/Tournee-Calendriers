@@ -10,6 +10,8 @@ import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_state.dart';
 import 'package:tournee_calendriers/presentation/round/given_donation.dart';
 import 'package:tournee_calendriers/presentation/round/marking_access.dart';
+import 'package:tournee_calendriers/presentation/round/round_notifier.dart';
+import 'package:tournee_calendriers/presentation/round/round_view.dart';
 import 'package:tournee_calendriers/presentation/street/street_notifier.dart';
 import 'package:tournee_calendriers/presentation/street/street_view_state.dart';
 import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
@@ -18,7 +20,7 @@ import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/screens/building/building_grid_sheet.dart';
 import 'package:tournee_calendriers/ui/screens/round/marks_only_in_round.dart';
-import 'package:tournee_calendriers/ui/screens/round/round_card.dart';
+import 'package:tournee_calendriers/ui/screens/round/round_band.dart';
 import 'package:tournee_calendriers/ui/screens/street/status_picker_sheet.dart';
 import 'package:tournee_calendriers/ui/screens/street/status_words.dart';
 import 'package:tournee_calendriers/ui/screens/street/street_header.dart';
@@ -30,7 +32,8 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 /// `docs/mockups/Main.dc.html`): odd numbers on the left, even on the
 /// right; during a tournée, a tap on a house opens its status picker, and
 /// what it stores shows in the snackbar with « Annuler » for 4 s; with none
-/// on, the tap says to start one (PLAN §5.14, mockup StreetIdle). A tap on
+/// on, the tap says to start one (PLAN §5.14, mockup StreetIdle); during
+/// one, the « En tournée » band sits above the top bar (RunStreet). A tap on
 /// a building opens its Immeuble grid (PLAN §5.7). Works offline:
 /// everything it reads and writes is on the phone.
 final class StreetScreen extends StatelessWidget {
@@ -80,58 +83,78 @@ final class _MarkingScreenState extends ConsumerState<_MarkingScreen>
     // faits » changes, on this phone or on a teammate's.
     final state = ref.watch(streetProvider(widget.streetId));
     final marking = watchMarkingAccess();
+    // `select`: built again when a tournée starts or ends, not for each don.
+    final roundOn = ref.watch(
+      roundProvider.select((round) => round is RoundOn),
+    );
     return ScaffoldMessenger(
       key: messengerKey,
+      // The top bar is laid out in the body, not as the `Scaffold`'s
+      // `appBar`, so the « En tournée » band can sit above it (PLAN §5.14)
+      // whatever its height with a large phone font.
       child: Scaffold(
-        appBar: AppBar(
-          titleSpacing: 4,
-          title: Text(switch (state) {
-            StreetShown(:final name) => name,
-            StreetLoading() ||
-            StreetGone() => widget.title ?? l10n.screenStreet,
-          }),
-          actions: [
-            if (state is StreetShown)
-              IconButton(
-                key: const Key('street.edit'),
-                tooltip: l10n.editStreetAction,
-                icon: const Icon(Icons.edit_outlined),
-                onPressed: () =>
-                    context.push(AppRoutes.editStreetOf(widget.streetId)),
-              ),
-            const SizedBox(width: 8),
-          ],
-        ),
-        body: SafeArea(
-          top: false,
-          child: switch (state) {
-            StreetLoading() => const SizedBox.shrink(),
-            StreetGone() => const _GoneMessage(),
-            StreetShown() => Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                StreetHeader(
-                  state: state,
-                  onToggleHideDone: () => unawaited(_notifier.toggleHideDone()),
-                  // « ● En tournée · 19 dons · 280 € », while one is on.
-                  belowProgress: RoundStreetLine(onOpenDons: _openDons),
-                ),
-                Expanded(
-                  child: StreetTiles(
-                    state: state,
-                    // « Appuyez sur une maison… » only says the truth
-                    // during a tournée.
-                    showHint: !snackBarShown && marking == MarkingAccess.open,
-                    selected: _picking,
-                    onTap: (number) {
-                      if (mayMark()) unawaited(_pick(number));
-                    },
-                    onOpenBuilding: _openBuilding,
+        body: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            // « Voir les dons » and « Terminer » drop the snackbar first:
+            // its « Annuler » names a don by its place in the tournée.
+            RoundBand(onLeave: hideUndo),
+            AppBar(
+              // `primary`: the top bar keeps clear of the status bar,
+              // unless the band above it does.
+              primary: !roundOn,
+              titleSpacing: 4,
+              title: Text(switch (state) {
+                StreetShown(:final name) => name,
+                StreetLoading() ||
+                StreetGone() => widget.title ?? l10n.screenStreet,
+              }),
+              actions: [
+                if (state is StreetShown)
+                  IconButton(
+                    key: const Key('street.edit'),
+                    tooltip: l10n.editStreetAction,
+                    icon: const Icon(Icons.edit_outlined),
+                    onPressed: () =>
+                        context.push(AppRoutes.editStreetOf(widget.streetId)),
                   ),
-                ),
+                const SizedBox(width: 8),
               ],
             ),
-          },
+            Expanded(
+              child: SafeArea(
+                top: false,
+                child: switch (state) {
+                  StreetLoading() => const SizedBox.shrink(),
+                  StreetGone() => const _GoneMessage(),
+                  StreetShown() => Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      StreetHeader(
+                        state: state,
+                        onToggleHideDone: () =>
+                            unawaited(_notifier.toggleHideDone()),
+                      ),
+                      Expanded(
+                        child: StreetTiles(
+                          state: state,
+                          // « Appuyez sur une maison… » only says the truth
+                          // during a tournée.
+                          showHint:
+                              !snackBarShown && marking == MarkingAccess.open,
+                          selected: _picking,
+                          onTap: (number) {
+                            if (mayMark()) unawaited(_pick(number));
+                          },
+                          onOpenBuilding: _openBuilding,
+                        ),
+                      ),
+                    ],
+                  ),
+                },
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -183,13 +206,6 @@ final class _MarkingScreenState extends ConsumerState<_MarkingScreen>
       undoLabel: l10n.undo,
       onUndo: () => unawaited(notifier.undo()),
     );
-  }
-
-  /// « Voir les dons › »: the snackbar goes first, as its « Annuler » names
-  /// a don by its place, which the list may change.
-  void _openDons() {
-    hideUndo();
-    unawaited(context.push(AppRoutes.roundDons));
   }
 
   /// Says what was stored on [number] aloud for screen readers

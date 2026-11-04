@@ -404,8 +404,8 @@ an admin, shows only « Rejoindre un secteur », in red), and the bottom of the 
 > **Changed by 5.14 (2026-11-03):** built in #120: no « Mes rues » / « Autres rues », one list
 > of every street under « Rues · 31/50 » (each row opens its street), no « libre » (line,
 > legend), no « Équipe : n % », street card « Ouvrir » only. Built in #121: no « + Ajouter
-> des rues » row (it moved to Secteur), 🗺 Secteur instead of 👥. To build: the « En
-> tournée » band over the top bar during a tournée (#123). Read 5.14 first; the text below is
+> des rues » row (it moved to Secteur), 🗺 Secteur instead of 👥. Built in #123: the « En
+> tournée » band in the top bar's place during a tournée. Read 5.14 first; the text below is
 > the earlier state.
 
 ```
@@ -1518,8 +1518,8 @@ TeamMember, and Welcome, Switcher, Team, Settings updated):
 ### 5.13 Tournées et collecte (#63)
 
 > **Changed by 5.14 (2026-11-03):** houses are marked only during a tournée (built in #122);
-> to build (#123): the tournée card in Accueil's list and the street's line become the « En
-> tournée » band on top; the sketches below still show « Mes rues » and 👥.
+> the tournée card in Accueil's list and the street's line became the « En tournée » band on
+> top (built in #123); the sketches below still show « Mes rues », 👥 and the card.
 
 Agreed 2026-11-02 (ASCII, then mockups RunStart, RunHome, RunStreet, RunDons, RunDon,
 RunRecap, RunTeam, Cash; every text reviewed one by one with the user). « Tournée » is one
@@ -1685,7 +1685,7 @@ removes are marked « (removed, 5.14) » there.
   footer, unchanged. The rows show to active members and admins, not to a pending member.
   « RUES (38) » counts the streets Accueil lists (outside the Corbeille), from the phone's
   copy; it reads « RUES » until they are read.
-- **En tournée** (RunHome, RunStreet): while this phone's tournée runs in the open secteur,
+- **En tournée** (RunHome, RunStreet, built in #123): while this phone's tournée runs in the open secteur,
   a band **replaces Accueil's top bar**: Surface background with a 6 dp Accent edge on its left,
   ink text and an Accent dot, a 1 dp divider under it (dark mode: the dark Surface and Accent);
   the full red was too loud for something on screen for hours (chosen 2026-11-03). It sits **above the street screen's top bar** (and the building grid's). Its left part,
@@ -1696,6 +1696,15 @@ removes are marked « (removed, 5.14) » there.
   the band shows, Accueil has no secteur switch, no Secteur button and no ⚙: preparation waits
   until the tournée ends. The tournée card of 5.13 (Accueil's list, the street's line under the
   progress bar) goes. At 200 % text the band wraps its lines and « Terminer » stays whole.
+  Delivered in #123 (`ui/screens/round/round_band.dart`; « Commencer une tournée » alone in
+  `round_start_button.dart`): the band paints under the status bar, its icons dark on the light
+  Surface and light on the dark one; « 1 h 20 » follows « depuis » (« moins d'une minute »,
+  « 20 min », « 2 h »), kept up every 30 s. On the street screen the top bar sits under it
+  (laid out in the screen, not as the `Scaffold`'s app bar, so the band's height may grow with
+  the font); in the building grid it spans the sheet under its grabber, above « ✕ 8 Rue des
+  Lilas ». « Dons de la tournée » and « Terminer » drop the street's or the grid's snackbar first
+  (its « Annuler » names a don by its place). The debug gallery button of Accueil's top bar goes
+  with it during a tournée.
 - **Marking only in a tournée** (StreetIdle, built in #122): with no tournée running, the street screen shows
   every status but a tap on a house or a door opens nothing. Instead a snackbar says
   « Commencez une tournée pour marquer les maisons. » with « Commencer », which starts the
@@ -1712,8 +1721,7 @@ removes are marked « (removed, 5.14) » there.
   grid's « Appuyez sur une porte… » shows during a tournée only; while the phone's tournée is
   still being read (a moment at start), a tap does nothing. « Commencer » tapped while a
   tournée of another secteur is on says « Une tournée est déjà en cours dans un autre
-  secteur. » (5.13). Until #123, the tournée shows on the street as 5.13's line under the
-  progress bar.
+  secteur. » (5.13).
 - **Ajouter des rues** (Pick, PickZone), opened from Secteur only; its ✕ and the back gesture go
   back to Secteur. Still needs the network (5.4); « Liste » unchanged.
   - **Tap to tick**: a tap on a road ticks it (5.4's look-up: point → BAN street → its road from

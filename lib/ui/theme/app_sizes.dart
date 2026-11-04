@@ -317,16 +317,17 @@ abstract final class AppSizes {
   /// its height.
   static const searchResultsShare = 0.6;
 
-  /// The dot of « ● En tournée » (PLAN §5.13).
+  /// The dot of « ● En tournée » (PLAN §5.14).
   static const roundDot = 10.0;
 
-  /// The corners of the tournée card on Accueil, and of its line on the
-  /// street screen.
+  /// The corners of the « Bilan »'s figures.
   static const roundCardRadius = 16.0;
-  static const roundLineRadius = 14.0;
 
-  /// The height of the one-line tournée card of the street screen.
-  static const roundLineHeight = 52.0;
+  /// The « En tournée » band (PLAN §5.14): its Accent edge on the left, the
+  /// room between the edge and the words, and the sides of « ■ Terminer ».
+  static const roundBandEdge = 6.0;
+  static const roundBandIndent = 20.0;
+  static const roundFinishPadding = 18.0;
 
   /// The column of the amounts in « Dons de la tournée », so the methods
   /// line up.
