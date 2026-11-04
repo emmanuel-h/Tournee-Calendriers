@@ -78,7 +78,7 @@ void main() {
     streets = FakeStreetRepository([_lilas]);
     await tester.pumpWidget(
       ProviderScope(
-        overrides: fakePhone(streets: streets),
+        overrides: fakePhoneInRound(streets: streets),
         child: const TourneeApp(showGallery: false),
       ),
     );
@@ -153,6 +153,9 @@ void main() {
       );
       await tester.tap(find.byKey(const ValueKey('door.status.done')));
       await tester.pumpAndSettle();
+      // During a tournée, « Fait » asks for the don (PLAN §5.13).
+      await tester.tap(find.byKey(const ValueKey('door.freeCalendar')));
+      await tester.pumpAndSettle();
 
       expect(find.byKey(const Key('door.number')), findsNothing);
       expect(
@@ -161,7 +164,10 @@ void main() {
       );
       expect(labelOf(tester, _count), '3 sur 8 logements faits');
       expect(announcements(tester), ['Escalier A, 1er, porte 12, fait']);
-      expect(findArrowText('Porte 12\u00a0: fait'), findsOneWidget);
+      expect(
+        findArrowText('Porte 12\u00a0: fait · calendrier offert'),
+        findsOneWidget,
+      );
       expect(find.byKey(const Key('grid.hint')), findsNothing);
 
       await tester.tap(find.text('Annuler'));
@@ -443,7 +449,7 @@ void main() {
     await openStreet(tester);
     await tester.tap(_tile('8'));
     await tester.pumpAndSettle();
-    await markDoor(tester, 'A1-12', VisitStatus.done);
+    await markDoor(tester, 'A1-12', VisitStatus.refused);
     expect(
       tester.getSemantics(find.byKey(const Key('grid.close'))).tooltip,
       'Fermer',
@@ -453,10 +459,13 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(_count, findsNothing);
-    expect(findArrowText('Porte 12\u00a0: fait'), findsNothing);
+    expect(findArrowText('Porte 12\u00a0: refusé'), findsNothing);
     expect(find.textContaining('changé en maison'), findsNothing);
     expect(_tile('8'), findsOneWidget);
-    expect(storedDoor(DwellingKey(escA, 1, d('12'))).status, VisitStatus.done);
+    expect(
+      storedDoor(DwellingKey(escA, 1, d('12'))).status,
+      VisitStatus.refused,
+    );
     semantics.dispose();
   });
 

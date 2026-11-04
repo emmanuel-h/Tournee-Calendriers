@@ -11,6 +11,7 @@ import 'package:tournee_calendriers/presentation/building/building_grid_notifier
 import 'package:tournee_calendriers/presentation/building/building_grid_state.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_state.dart';
 import 'package:tournee_calendriers/presentation/round/given_donation.dart';
+import 'package:tournee_calendriers/presentation/round/marking_access.dart';
 import 'package:tournee_calendriers/presentation/street/street_view_state.dart';
 import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
 import 'package:tournee_calendriers/ui/components/calendars_badge.dart';
@@ -28,6 +29,7 @@ import 'package:tournee_calendriers/ui/screens/building/building_menu_sheet.dart
 import 'package:tournee_calendriers/ui/screens/building/building_setup_sheet.dart';
 import 'package:tournee_calendriers/ui/screens/building/door_status_picker.dart';
 import 'package:tournee_calendriers/ui/screens/building/floor_names.dart';
+import 'package:tournee_calendriers/ui/screens/round/marks_only_in_round.dart';
 import 'package:tournee_calendriers/ui/screens/street/status_words.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
@@ -52,10 +54,12 @@ Future<BuildingGridExit?> showBuildingGrid(
   builder: (_) => BuildingGridSheet(building: building),
 );
 
-/// The floors of one staircase from the top down, four doors a row; a tap
-/// on a door opens its status picker (PLAN §5.6), and what it stores shows
-/// in the snackbar with « Annuler » for 4 s. The header counts the doors of
-/// the whole building; the staircase control shows when there are several.
+/// The floors of one staircase from the top down, four doors a row; during
+/// a tournée, a tap on a door opens its status picker (PLAN §5.6), and what
+/// it stores shows in the snackbar with « Annuler » for 4 s; with none on,
+/// the grid is read-only as the street is (PLAN §5.14). The header counts
+/// the doors of the whole building; the staircase control shows when there
+/// are several.
 /// « Gérer l'immeuble » holds every change to the building itself. Works
 /// offline.
 ///
@@ -71,7 +75,7 @@ final class BuildingGridSheet extends ConsumerStatefulWidget {
 }
 
 final class _BuildingGridSheetState extends ConsumerState<BuildingGridSheet>
-    with UndoSnackBarHost {
+    with UndoSnackBarHost, MarksOnlyInRound {
   BuildingGridNotifier get _notifier =>
       ref.read(buildingGridProvider(widget.building).notifier);
 
@@ -83,6 +87,7 @@ final class _BuildingGridSheetState extends ConsumerState<BuildingGridSheet>
     final l10n = AppLocalizations.of(context);
     final colors = AppColors.of(context);
     final state = ref.watch(buildingGridProvider(widget.building));
+    final marking = watchMarkingAccess();
     // Full height but a strip at the top, where the street stays visible.
     return LayoutBuilder(
       builder: (context, constraints) => SizedBox(
@@ -124,16 +129,19 @@ final class _BuildingGridSheetState extends ConsumerState<BuildingGridSheet>
                         child: _Floors(
                           state: state,
                           selected: _picking,
-                          onTap: (door) => unawaited(_pick(door, state)),
+                          onTap: (door) {
+                            if (mayMark()) unawaited(_pick(door, state));
+                          },
                         ),
                       ),
-                      // Gives way to the snackbar, which floats here.
-                      // At least 48 dp; taller with a large phone font.
+                      // Gives way to the snackbar, which floats here, and
+                      // shows only during a tournée. At least 48 dp; taller
+                      // with a large phone font.
                       ConstrainedBox(
                         constraints: const BoxConstraints(
                           minHeight: AppSizes.minTapTarget,
                         ),
-                        child: snackBarShown
+                        child: snackBarShown || marking != MarkingAccess.open
                             ? null
                             : Center(
                                 child: Text(
@@ -286,9 +294,11 @@ final class _BuildingGridSheetState extends ConsumerState<BuildingGridSheet>
     Navigator.of(context).pop(BuildingGridExit.backToHouse);
   }
 
-  /// « Repasser »: the building's own « repasser ».
+  /// « Repasser »: the building's own « repasser », a mark like a door's,
+  /// so only during a tournée.
   void _openDetails() {
     hideUndo();
+    if (!mayMark()) return;
     unawaited(showBuildingDetailsSheet(context, widget.building));
   }
 }

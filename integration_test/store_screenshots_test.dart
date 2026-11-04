@@ -102,6 +102,14 @@ void main() {
     await tester.fling(handle, const Offset(0, 300), 2000);
     await capture(tester, 'phone-1', seconds: 8);
 
+    // 5. Secteur, from its button on Accueil (the folded map). Taken now,
+    // before the tournée below starts: Accueil shows no Secteur button
+    // during one (PLAN §5.14).
+    await tester.tap(find.byKey(const Key('home.sectorButton')));
+    await capture(tester, 'phone-5');
+    await tester.tap(find.byTooltip('Retour'));
+    await tester.pumpAndSettle();
+
     // 2. Rue de Thizy, from the list of every street (a tap on the handle
     // shows them all; it sits down the list, in French order).
     await tester.tap(handle);
@@ -119,8 +127,15 @@ void main() {
     await tester.tap(thizy);
     await capture(tester, 'phone-2');
 
-    // 3. The status picker of the house to come back to, tapped.
-    await tester.tap(find.byKey(const ValueKey('street.tile.$comeBackHouse')));
+    // 3. The status picker of the house to come back to, tapped. Houses
+    // are marked only during a tournée (PLAN §5.14): the first tap offers
+    // to start one, « Commencer » does, and the next tap opens the picker.
+    final comeBack = find.byKey(const ValueKey('street.tile.$comeBackHouse'));
+    await tester.tap(comeBack);
+    await tester.pumpAndSettle();
+    await tester.tap(find.widgetWithText(SnackBarAction, 'Commencer'));
+    await tester.pumpAndSettle();
+    await tester.tap(comeBack);
     await capture(tester, 'phone-3');
     // A tap above the sheet closes it.
     await tester.tapAt(const Offset(200, 120));
@@ -131,11 +146,5 @@ void main() {
     await capture(tester, 'phone-4');
     await tester.tap(find.byKey(const Key('grid.close')));
     await tester.pumpAndSettle();
-
-    // 5. Secteur, from its button on Accueil (the folded map).
-    await tester.tap(find.byTooltip('Retour'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const Key('home.sectorButton')));
-    await capture(tester, 'phone-5');
   });
 }

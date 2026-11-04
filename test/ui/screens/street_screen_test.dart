@@ -76,7 +76,7 @@ void main() {
     preferences = FakeStreetViewPreferences();
     await tester.pumpWidget(
       ProviderScope(
-        overrides: fakePhone(streets: streets, preferences: preferences),
+        overrides: fakePhoneInRound(streets: streets, preferences: preferences),
         child: const TourneeApp(showGallery: false),
       ),
     );
@@ -120,9 +120,12 @@ void main() {
       expect(find.byKey(const Key('house.number')), findsOneWidget);
       await tester.tap(find.byKey(const ValueKey('house.status.done')));
       await tester.pumpAndSettle();
+      // During a tournée, « Fait » asks for the don (PLAN §5.13).
+      await tester.tap(find.byKey(const ValueKey('house.freeCalendar')));
+      await tester.pumpAndSettle();
 
       expect(labelOf(tester, _tile('1')), 'Numéro 1, fait, changer le statut');
-      expect(findArrowText('N° 1\u00a0: fait'), findsOneWidget);
+      expect(findArrowText('N° 1 fait · calendrier offert'), findsOneWidget);
       expect(find.byKey(const Key('street.hint')), findsNothing);
       expect(
         labelOf(tester, find.byKey(const Key('street.counts'))),
@@ -132,7 +135,7 @@ void main() {
       // The next house: the snackbar of the first goes as its picker opens.
       await tester.tap(_tile('7'));
       await tester.pumpAndSettle();
-      expect(findArrowText('N° 1\u00a0: fait'), findsNothing);
+      expect(findArrowText('N° 1 fait · calendrier offert'), findsNothing);
       await tester.tap(find.byKey(const ValueKey('house.status.nobodyHome')));
       await tester.pumpAndSettle();
 
@@ -215,17 +218,17 @@ void main() {
     'should leave the snackbar after 4 s and keep the mark when not undone',
     (tester) async {
       await openStreet(tester);
-      await mark(tester, '4', VisitStatus.done);
-      expect(findArrowText('N° 4\u00a0: fait'), findsOneWidget);
+      await mark(tester, '4', VisitStatus.refused);
+      expect(findArrowText('N° 4\u00a0: refusé'), findsOneWidget);
 
       await tester.pump(const Duration(seconds: 4));
       await tester.pumpAndSettle();
 
-      expect(findArrowText('N° 4\u00a0: fait'), findsNothing);
+      expect(findArrowText('N° 4\u00a0: refusé'), findsNothing);
       expect(find.byKey(const Key('street.hint')), findsOneWidget);
       expect(
         streets[_id]!.houses.singleWhere((h) => h.number == n('4')).status,
-        VisitStatus.done,
+        VisitStatus.refused,
       );
     },
   );
@@ -392,9 +395,12 @@ void main() {
       useLargeText(tester);
       await openStreet(tester);
 
-      await mark(tester, '1', VisitStatus.done);
+      await mark(tester, '1', VisitStatus.nobodyHome);
 
-      expect(labelOf(tester, _tile('1')), 'Numéro 1, fait, changer le statut');
+      expect(
+        labelOf(tester, _tile('1')),
+        'Numéro 1, personne, changer le statut',
+      );
       expect(tester.takeException(), isNull);
       semantics.dispose();
     });

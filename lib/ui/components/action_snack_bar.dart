@@ -88,13 +88,21 @@ mixin UndoSnackBarHost<T extends StatefulWidget> on State<T> {
     required String message,
     required String undoLabel,
     required VoidCallback onUndo,
+  }) => showAction(message: message, actionLabel: undoLabel, onAction: onUndo);
+
+  /// Shows [message] with one action other than « Annuler » for 4 s
+  /// (« Commencez une tournée… [Commencer] »), replacing any previous one.
+  void showAction({
+    required String message,
+    required String actionLabel,
+    required VoidCallback onAction,
   }) {
     _track(
       showActionSnackBar(
         messengerKey.currentState!,
         message: message,
-        actionLabel: undoLabel,
-        onAction: onUndo,
+        actionLabel: actionLabel,
+        onAction: onAction,
       ),
     );
   }

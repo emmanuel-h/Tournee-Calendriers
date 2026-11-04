@@ -3220,6 +3220,24 @@ abstract class AppLocalizations {
   /// **'Une tournée est déjà en cours dans un autre secteur.'**
   String get roundAlreadyOnElsewhere;
 
+  /// Snackbar of the street screen and the building grid when a house, a door or the building's « Repasser » is tapped while no tournée is on (StreetIdle mockup, PLAN §5.14): houses are marked only during a tournée.
+  ///
+  /// In fr, this message translates to:
+  /// **'Commencez une tournée pour marquer les maisons.'**
+  String get markingNeedsRound;
+
+  /// Action of the « Commencez une tournée… » snackbar: starts the tournée (offline too) and stays on the street.
+  ///
+  /// In fr, this message translates to:
+  /// **'Commencer'**
+  String get markingStartRound;
+
+  /// Snackbar, with no action, when an admin visiting the secteur (never in a tournée) taps a house, a door or the building's « Repasser » (PLAN §5.14).
+  ///
+  /// In fr, this message translates to:
+  /// **'Seuls les membres en tournée marquent les maisons.'**
+  String get markingMembersOnly;
+
   /// First line of the tournée card on Accueil, in its first minute.
   ///
   /// In fr, this message translates to:

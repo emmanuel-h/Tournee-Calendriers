@@ -69,12 +69,17 @@ Street screen (« Rue »):
 
 - Odd numbers on the left, even on the right, scrolling together (one column when the street
   has one side only); counts « visited/total · ⊘ · ✗ · ↻ » and a progress bar.
-- A tap on a house (light vibration, the tile outlined) opens its status picker: « N° 7 »,
+- During a tournée, a tap on a house (light vibration, the tile outlined) opens its status
+  picker: « N° 7 »,
   its status in grey, « ✓ Fait », « ⊘ Refusé », « ✗ Personne », « ↻ Repasser » two by two
   and « ○ À faire » across,
   then the tries and who changed it last. One tap stores a status and closes, with « N° 7 :
   personne » and « Annuler » for 4 s and a screen-reader announcement; the status it already
   has stores nothing. No hold any more.
+- Houses are marked only during a tournée: with none on, the street and its buildings show
+  every status, but a tap says « Commencez une tournée pour marquer les maisons. » with
+  « Commencer », which starts one there (offline too); a visiting admin is told « Seuls les
+  membres en tournée marquent les maisons. ». « Modifier la rue » needs no tournée.
 - « ⊘ Refusé » (no calendar wanted): a dark grey tile and a ⊘ dot on the map, counted as
   visited with the done houses (a street can be « faite » with refusals), no tries, no
   come-back.
@@ -89,7 +94,7 @@ Street screen (« Rue »):
   money per method, then « Valider la tournée » (asked first; only the totals are kept, never a
   don per house).
 - Calendars per house: a house or door done shows « 1 calendrier » / « 2 calendriers » in its
-  picker with « − » (disabled at one, tournée or not); « + Ajouter un don » adds one, and its
+  picker with « − » (disabled at one); « + Ajouter un don » adds one, and its
   « Annuler » takes the don and the calendar back; from two, the tile and the door carry a
   round badge with the number. Only the count is kept, no amount.
 - « ↻ Repasser » then asks « N° 5 · quand repasser ? »: a day among the next week's chips, an

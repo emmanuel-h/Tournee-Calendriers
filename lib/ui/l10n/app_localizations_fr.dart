@@ -2227,6 +2227,17 @@ class AppLocalizationsFr extends AppLocalizations {
       'Une tournée est déjà en cours dans un autre secteur.';
 
   @override
+  String get markingNeedsRound =>
+      'Commencez une tournée pour marquer les maisons.';
+
+  @override
+  String get markingStartRound => 'Commencer';
+
+  @override
+  String get markingMembersOnly =>
+      'Seuls les membres en tournée marquent les maisons.';
+
+  @override
   String get roundSinceJustStarted => 'En tournée depuis moins d\'une minute';
 
   @override

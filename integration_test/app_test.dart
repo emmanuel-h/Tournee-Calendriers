@@ -276,9 +276,9 @@ void main() {
     expect(find.widgetWithText(AppBar, 'Rue Pierre Morin'), findsOneWidget);
   });
   testWidgets(
-    'should keep the marks across a restart when a house is marked in its '
-    'picker, undone, marked again and another to come back tomorrow at 18 h, '
-    'then found nobody home twice',
+    'should keep the marks across a restart when a tournée is started from '
+    'the street, a house is marked in its picker, undone, marked again and '
+    'another to come back tomorrow at 18 h, then found nobody home twice',
     (tester) async {
       final semantics = tester.ensureSemantics();
       final storage = await _phoneInSector('mark_flow');
@@ -299,18 +299,38 @@ void main() {
         await tester.pumpAndSettle();
       }
 
+      // « Fait » asks for the don of the tournée: a calendar offered.
+      Future<void> markDone(Finder tile) async {
+        await mark(tile, 'done');
+        await tester.tap(find.byKey(const ValueKey('house.freeCalendar')));
+        await tester.pumpAndSettle();
+      }
+
       final tile = find.byKey(const ValueKey('street.tile.33'));
       expect(
         tester.getSemantics(tile).label,
         'Numéro 33, à faire, changer le statut',
       );
 
-      await mark(tile, 'done');
+      // No tournée yet: a tap opens no picker but offers to start one
+      // (PLAN §5.14); « Commencer » starts it, offline, on the street.
+      await tester.tap(tile);
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('house.number')), findsNothing);
+      expect(
+        find.text('Commencez une tournée pour marquer les maisons.'),
+        findsOneWidget,
+      );
+      await tester.tap(find.widgetWithText(SnackBarAction, 'Commencer'));
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('round.line')), findsOneWidget);
+
+      await markDone(tile);
       expect(
         tester.getSemantics(tile).label,
         'Numéro 33, fait, changer le statut',
       );
-      expect(findArrowText('N° 33\u00a0: fait'), findsOneWidget);
+      expect(findArrowText('N° 33 fait · calendrier offert'), findsOneWidget);
 
       await tester.tap(find.text('Annuler'));
       await tester.pumpAndSettle();
@@ -319,7 +339,7 @@ void main() {
         'Numéro 33, à faire, changer le statut',
       );
 
-      await mark(tile, 'done');
+      await markDone(tile);
       expect(
         tester.getSemantics(tile).label,
         'Numéro 33, fait, changer le statut',
@@ -428,6 +448,9 @@ void main() {
       );
       await tester.pumpAndSettle();
       await _addFromList(tester, _morin);
+      // Doors are marked only during a tournée (PLAN §5.14).
+      await tester.tap(find.byKey(const Key('round.start')));
+      await tester.pumpAndSettle();
       await _openMorin(tester);
 
       // ✏, tap 34, « Transformer en immeuble… », « Valider » the default
@@ -452,7 +475,7 @@ void main() {
       await tester.pumpAndSettle();
 
       // Tap 34 again, « Ouvrir l'immeuble »: its grid, where door 01 is
-      // marked done in its picker.
+      // marked done in its picker, a calendar offered.
       await tapNumber();
       await tester.tap(find.byKey(const Key('number.openBuilding')));
       await tester.pumpAndSettle();
@@ -462,8 +485,13 @@ void main() {
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('door.status.done')));
       await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('door.freeCalendar')));
+      await tester.pumpAndSettle();
       expect(tester.getSemantics(count).label, '1 sur 6 logements faits');
-      expect(findArrowText('Porte 01\u00a0: fait'), findsOneWidget);
+      expect(
+        findArrowText('Porte 01\u00a0: fait · calendrier offert'),
+        findsOneWidget,
+      );
 
       // « Gérer l'immeuble », « Modifier les étages »: a staircase more,
       // the box unticked, B down to the RdC alone. The grid has « Esc. B ·
@@ -548,6 +576,10 @@ void main() {
       );
       await tester.pumpAndSettle();
       await _addFromList(tester, _morin);
+      // A tournée for the mark of 33 below (PLAN §5.14); editing the street
+      // needs none.
+      await tester.tap(find.byKey(const Key('round.start')));
+      await tester.pumpAndSettle();
       await _openMorin(tester);
 
       // ✏, then ✕ on 33 and « Annuler »: 33 is back.
@@ -592,6 +624,8 @@ void main() {
       await tester.tap(find.byKey(const ValueKey('street.tile.33')));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const ValueKey('house.status.done')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('house.freeCalendar')));
       await tester.pumpAndSettle();
       await tester.tap(find.byKey(const Key('street.edit')));
       await tester.pumpAndSettle();

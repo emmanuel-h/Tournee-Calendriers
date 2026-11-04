@@ -77,15 +77,15 @@ void main() {
   late FakeStreetRepository streets;
   late FakeOpenRoundStore rounds;
 
-  /// The street screen of [_lilas] in the 49, open, with a tournée on
-  /// unless [roundOn] is false.
-  Future<void> openStreet(WidgetTester tester, {bool roundOn = true}) async {
+  /// The street screen of [_lilas] in the 49, open, with a tournée on: a
+  /// house's picker opens only then (PLAN §5.14).
+  Future<void> openStreet(WidgetTester tester) async {
     tester.view
       ..physicalSize = const Size(1080, 2400)
       ..devicePixelRatio = 2.625;
     addTearDown(tester.view.reset);
     streets = FakeStreetRepository([_lilas]);
-    rounds = FakeOpenRoundStore(roundOn ? _round() : null);
+    rounds = FakeOpenRoundStore(_round());
     await tester.pumpWidget(
       ProviderScope(
         overrides: fakePhone(
@@ -150,17 +150,6 @@ void main() {
 
       expect(tester.widget<Text>(_key('house.calendars')).data, '1 calendrier');
       expect(minus(tester, 'house').onPressed, isNull);
-    });
-
-    testWidgets('should show the calendars without a tournée on too', (
-      tester,
-    ) async {
-      await openStreet(tester, roundOn: false);
-
-      await tap(tester, _tile('9'));
-
-      expect(_key('house.calendars'), findsOneWidget);
-      expect(_key('house.addDonation'), findsNothing);
     });
 
     testWidgets('should show no calendars on a house not done', (tester) async {

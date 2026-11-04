@@ -70,7 +70,7 @@ void main() {
     streets = FakeStreetRepository([_lilas]);
     await tester.pumpWidget(
       ProviderScope(
-        overrides: fakePhone(streets: streets),
+        overrides: fakePhoneInRound(streets: streets),
         child: const TourneeApp(showGallery: false),
       ),
     );
@@ -225,15 +225,15 @@ void main() {
       final semantics = tester.ensureSemantics();
       await pick(tester, '7');
 
-      await choose(tester, VisitStatus.done);
+      await choose(tester, VisitStatus.refused);
 
       expect(_picker, findsNothing);
-      expect(stored('7').status, VisitStatus.done);
-      expect(findArrowText('N° 7 : fait'), findsOneWidget);
-      expect(announcements(tester), ['Numéro 7, fait']);
+      expect(stored('7').status, VisitStatus.refused);
+      expect(findArrowText('N° 7 : refusé'), findsOneWidget);
+      expect(announcements(tester), ['Numéro 7, refusé']);
       expect(
         tester.getSemantics(_tile('7')).label,
-        'Numéro 7, fait, changer le statut',
+        'Numéro 7, refusé, changer le statut',
       );
       expect(
         semanticsOf(tester, _tile('7')).flagsCollection.isSelected,

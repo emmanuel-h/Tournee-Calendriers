@@ -218,17 +218,6 @@ void main() {
       expect(stored('7').lastChange, isNull);
     });
 
-    testWidgets('should not ask for a don when no tournée is on', (
-      tester,
-    ) async {
-      await openStreet(tester, roundOn: false);
-
-      await markDone(tester, '7');
-
-      expect(find.text('Montant du don'), findsNothing);
-      expect(findArrowText('N° 7$_nbsp: fait'), findsOneWidget);
-    });
-
     testWidgets('should not ask for a don when « Fait » is tapped on a house '
         'done', (tester) async {
       await openStreet(tester);
@@ -341,14 +330,6 @@ void main() {
       await tap(tester, _key('house.close'));
 
       await tap(tester, _tile('5'));
-
-      expect(_key('house.addDonation'), findsNothing);
-    });
-
-    testWidgets('should not show when no tournée is on', (tester) async {
-      await openStreet(tester, roundOn: false);
-
-      await tap(tester, _tile('3'));
 
       expect(_key('house.addDonation'), findsNothing);
     });

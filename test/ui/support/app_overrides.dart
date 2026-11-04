@@ -4,6 +4,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_riverpod/misc.dart';
 import 'package:tournee_calendriers/application/ports/round_ledger.dart';
+import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/import_streets/import_notifier.dart';
@@ -11,6 +12,9 @@ import 'package:tournee_calendriers/presentation/launch/launch_place.dart';
 import 'package:tournee_calendriers/presentation/new_sector/new_sector_notifier.dart';
 import 'package:tournee_calendriers/ui/map/map_view.dart';
 
+import '../../domain/round/round_fixtures.dart';
+import '../../domain/sector/my_sectors_fixtures.dart';
+import '../../domain/sector/sector_fixtures.dart' show team;
 import '../../support/fakes/fake_address_directory.dart';
 import '../../support/fakes/fake_admin_status.dart';
 import '../../support/fakes/fake_commune_search.dart';
@@ -28,6 +32,7 @@ import '../../support/fakes/fake_server_connection.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/fakes/fake_street_shapes.dart';
 import '../../support/fakes/fake_street_view_preferences.dart';
+import '../../support/results.dart';
 import '../../support/scripted_random.dart';
 import '../../support/street_fixtures.dart';
 import 'fake_map_view.dart';
@@ -111,6 +116,26 @@ List<Override> fakePhone({
   // The indexes of `2`…`7` in the code alphabet: the code `234567`.
   randomProvider.overrideWithValue(ScriptedRandom([23, 24, 25, 26, 27, 28])),
 ];
+
+/// [fakePhone] with the 49 open, Léa in its team, and its tournée on:
+/// [rounds] (a tournée started at [startedAt], nothing in it yet, by
+/// default). Houses are marked only during a tournée (PLAN §5.14), so this
+/// is the phone of the tests that tap a house or a door.
+List<Override> fakePhoneInRound({
+  FakeStreetRepository? streets,
+  FakeStreetViewPreferences? preferences,
+  FakeOpenRoundStore? rounds,
+  FakeClock? clock,
+}) => fakePhone(
+  streets: streets,
+  preferences: preferences,
+  clock: clock,
+  rounds: rounds ?? FakeOpenRoundStore(newRound()),
+  sectors: FakeSectorRepository([team()]),
+  mySectors: FakeMySectorsStore(
+    valueOf(MySectors.none.remember(sector49).open(sector49.id)),
+  ),
+);
 
 /// No street on the phone, no network service needed.
 List<Override> emptyPhone() => fakePhone();

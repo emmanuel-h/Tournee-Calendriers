@@ -72,7 +72,9 @@ screens; no attribution (the secteur covers all its streets); « Ajouter des rue
 roads and a zone; houses marked only during a tournée; « En tournée » band on top (white, red edge).
 M9 built so far (waiting for the user's phone test): no attribution (#120); the Secteur button
 (🗺, `Icons.map_outlined`) and « RUES (n) » with « + Ajouter des rues » and the Corbeille in Secteur,
-no « Ajouter des rues » on Accueil (#121).
+no « Ajouter des rues » on Accueil (#121); houses marked only during a tournée (#122: with none on, a tap
+on a house, a door or a building's « Repasser » says « Commencez une tournée… » with « Commencer », or
+« Seuls les membres en tournée… » to a visiting admin; `MarkingAccess`).
 #120 built (2026-11-03), waiting for review: no `Street.assignees`, `MyStreets`, `TeamRoster`, `TakeStreet` /
 `ReleaseStreet`, streets per member; Accueil lists every street under « Rues · 31/50 »; the card says « Ouvrir »
 or « Ajouter au secteur »; the rules refuse any `assignees` write (to deploy, the user).

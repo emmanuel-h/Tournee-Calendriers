@@ -160,8 +160,9 @@ shown by colour alone: every status has a glyph too.
 Glyphs: `○` à faire · `✓` fait · `⊘` refusé (#63, to build) · `✗` personne · `↻` repasser · `◐ 7/12` immeuble en partie.
 
 **One gesture everywhere** (decided 2026-11-02, #63, §5.6 « Status picker »): **a tap on a
-house or a door shows its five statuses; one tap on a status stores it**, and only ✓ during a
-tournée (the don) and ↻ (the day and hour) ask for more. No hold. A building tile opens its unit
+house or a door shows its five statuses; one tap on a status stores it**, and only ✓ (the
+don) and ↻ (the day and hour) ask for more. Only during a tournée (5.14, #122): with none on,
+the tap says to start one. No hold. A building tile opens its unit
 grid on tap. *(Before: the tap cycled `○ → ✓ → ✗ → ↻ → ○` and a hold opened the details; the
 code still does so until the picker is built.)*
 
@@ -851,7 +852,8 @@ where they disagree with this block):
   Fait », « Esc. A · 5e · 8 Rue des Lilas » (staircase only when several), with the same
   follow-ups and snackbar.
 - The hint under the tiles reads « Appuyez sur une maison pour changer son statut » (« … une
-  porte … » in the grid). TalkBack: « Numéro 7, à faire, changer le statut »; after a choice
+  porte … » in the grid), during a tournée only (5.14, #122): with none on, a tap on a house
+  or a door opens no picker. TalkBack: « Numéro 7, à faire, changer le statut »; after a choice
   « Numéro 7, personne, 3e passage » as before.
 - Delivered in #107 (`ui/screens/street/status_picker_sheet.dart`, the steps in
   `presentation/house_sheet/picker_step.dart`), with « Refusé » since #113: the five
@@ -1462,7 +1464,8 @@ TeamMember, and Welcome, Switcher, Team, Settings updated):
   as **visited** (a third `MemberStatus`, `visiting`: row « CS Gleizé · administrateur », a
   shield instead of the ring) and opened on the normal screens: map, streets panel (« Rues ·
   9/38 » instead of « Mes rues »), streets, houses, marks, Corbeille and Équipe, all as a
-  member, plus the admin's powers. A banner under the title on Accueil: shield, « Administrateur
+  member, plus the admin's powers; houses are marked only during a tournée, which a visitor
+  never runs (5.14, #122). A banner under the title on Accueil: shield, « Administrateur
   · pas membre » over « Vous n'êtes pas dans l'équipe de ce secteur. » and « Rejoindre »
   (come-back blue, `#D6E6F5` / `#1D4E7A`). A visitor is not listed in MEMBRES. Their marks are
   stamped with their uid; where a name is shown for a uid that is not a member: « un
@@ -1514,9 +1517,9 @@ TeamMember, and Welcome, Switcher, Team, Settings updated):
 
 ### 5.13 Tournées et collecte (#63)
 
-> **Changed by 5.14 (2026-11-03, to build):** the tournée card in Accueil's list and the
-> street's line become the « En tournée » band on top; houses are marked only during a
-> tournée; the sketches below still show « Mes rues » and 👥.
+> **Changed by 5.14 (2026-11-03):** houses are marked only during a tournée (built in #122);
+> to build (#123): the tournée card in Accueil's list and the street's line become the « En
+> tournée » band on top; the sketches below still show « Mes rues » and 👥.
 
 Agreed 2026-11-02 (ASCII, then mockups RunStart, RunHome, RunStreet, RunDons, RunDon,
 RunRecap, RunTeam, Cash; every text reviewed one by one with the user). « Tournée » is one
@@ -1693,7 +1696,7 @@ removes are marked « (removed, 5.14) » there.
   the band shows, Accueil has no secteur switch, no Secteur button and no ⚙: preparation waits
   until the tournée ends. The tournée card of 5.13 (Accueil's list, the street's line under the
   progress bar) goes. At 200 % text the band wraps its lines and « Terminer » stays whole.
-- **Marking only in a tournée** (StreetIdle): with no tournée running, the street screen shows
+- **Marking only in a tournée** (StreetIdle, built in #122): with no tournée running, the street screen shows
   every status but a tap on a house or a door opens nothing. Instead a snackbar says
   « Commencez une tournée pour marquer les maisons. » with « Commencer », which starts the
   tournée (as Accueil's button, offline too) and stays on the street, where the band appears.
@@ -1703,6 +1706,14 @@ removes are marked « (removed, 5.14) » there.
   « Seuls les membres en tournée marquent les maisons. » with no action. ✓ therefore always asks
   for the don (5.13); « N° 7 : fait » without a don no longer exists. The tournée is phone-only
   (§6.3), so this is an app rule, not a security rule.
+  Delivered in #122 (`presentation/round/marking_access.dart`,
+  `ui/screens/round/marks_only_in_round.dart`): the snackbar lasts 4 s like the others; the
+  building's own « Repasser » under the grid is a mark too, so it answers the same way, and the
+  grid's « Appuyez sur une porte… » shows during a tournée only; while the phone's tournée is
+  still being read (a moment at start), a tap does nothing. « Commencer » tapped while a
+  tournée of another secteur is on says « Une tournée est déjà en cours dans un autre
+  secteur. » (5.13). Until #123, the tournée shows on the street as 5.13's line under the
+  progress bar.
 - **Ajouter des rues** (Pick, PickZone), opened from Secteur only; its ✕ and the back gesture go
   back to Secteur. Still needs the network (5.4); « Liste » unchanged.
   - **Tap to tick**: a tap on a road ticks it (5.4's look-up: point → BAN street → its road from

@@ -9,6 +9,7 @@ import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_state.dart';
 import 'package:tournee_calendriers/presentation/round/given_donation.dart';
+import 'package:tournee_calendriers/presentation/round/marking_access.dart';
 import 'package:tournee_calendriers/presentation/street/street_notifier.dart';
 import 'package:tournee_calendriers/presentation/street/street_view_state.dart';
 import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
@@ -16,6 +17,7 @@ import 'package:tournee_calendriers/ui/components/money_words.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/screens/building/building_grid_sheet.dart';
+import 'package:tournee_calendriers/ui/screens/round/marks_only_in_round.dart';
 import 'package:tournee_calendriers/ui/screens/round/round_card.dart';
 import 'package:tournee_calendriers/ui/screens/street/status_picker_sheet.dart';
 import 'package:tournee_calendriers/ui/screens/street/status_words.dart';
@@ -26,10 +28,11 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
 /// Rue, the screen used 95 % of the time (PLAN §5.6,
 /// `docs/mockups/Main.dc.html`): odd numbers on the left, even on the
-/// right; a tap on a house opens its status picker, and what it stores
-/// shows in the snackbar with « Annuler » for 4 s. A tap on a building
-/// opens its Immeuble grid (PLAN §5.7). Works offline: everything it reads
-/// and writes is on the phone.
+/// right; during a tournée, a tap on a house opens its status picker, and
+/// what it stores shows in the snackbar with « Annuler » for 4 s; with none
+/// on, the tap says to start one (PLAN §5.14, mockup StreetIdle). A tap on
+/// a building opens its Immeuble grid (PLAN §5.7). Works offline:
+/// everything it reads and writes is on the phone.
 final class StreetScreen extends StatelessWidget {
   const StreetScreen({super.key, required this.streetId, this.title});
 
@@ -61,8 +64,9 @@ final class _MarkingScreen extends ConsumerStatefulWidget {
 /// A `State` (not a plain `ConsumerWidget`) because the screen remembers
 /// whether its snackbar shows ([UndoSnackBarHost]), the tap hint taking its
 /// place meanwhile, and which house's picker shows, outlined.
+/// [MarksOnlyInRound] keeps the pickers for a tournée.
 final class _MarkingScreenState extends ConsumerState<_MarkingScreen>
-    with UndoSnackBarHost {
+    with UndoSnackBarHost, MarksOnlyInRound {
   StreetNotifier get _notifier =>
       ref.read(streetProvider(widget.streetId).notifier);
 
@@ -75,6 +79,7 @@ final class _MarkingScreenState extends ConsumerState<_MarkingScreen>
     // `ref.watch`: the screen redraws whenever the street or « Masquer
     // faits » changes, on this phone or on a teammate's.
     final state = ref.watch(streetProvider(widget.streetId));
+    final marking = watchMarkingAccess();
     return ScaffoldMessenger(
       key: messengerKey,
       child: Scaffold(
@@ -114,9 +119,13 @@ final class _MarkingScreenState extends ConsumerState<_MarkingScreen>
                 Expanded(
                   child: StreetTiles(
                     state: state,
-                    showHint: !snackBarShown,
+                    // « Appuyez sur une maison… » only says the truth
+                    // during a tournée.
+                    showHint: !snackBarShown && marking == MarkingAccess.open,
                     selected: _picking,
-                    onTap: (number) => unawaited(_pick(number)),
+                    onTap: (number) {
+                      if (mayMark()) unawaited(_pick(number));
+                    },
                     onOpenBuilding: _openBuilding,
                   ),
                 ),
