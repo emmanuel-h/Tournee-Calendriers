@@ -1171,6 +1171,26 @@ class AppLocalizationsFr extends AppLocalizations {
   String get release010First => 'Première version de test.';
 
   @override
+  String get release0120Title =>
+      'Le titre de l\'accueil ouvre le Secteur ; « Changer de secteur » s\'y trouve.';
+
+  @override
+  String get release0120StayOpen =>
+      '« Ajouter des rues » reste ouvert après l\'ajout pour continuer.';
+
+  @override
+  String get release0120Zone =>
+      'Une zone se trace à tout zoom ; deux doigts déplacent la carte.';
+
+  @override
+  String get release0120Tap =>
+      'Toucher une rue coche bien la rue sous le doigt.';
+
+  @override
+  String get release0120Abandon =>
+      'Une tournée commencée par erreur peut être abandonnée depuis le bilan.';
+
+  @override
   String get release0110Sector =>
       'Plus de rues attribuées : toute l\'équipe couvre tout le secteur.';
 

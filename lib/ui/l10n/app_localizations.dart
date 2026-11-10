@@ -1690,6 +1690,36 @@ abstract class AppLocalizations {
   /// **'Première version de test.'**
   String get release010First;
 
+  /// Line of « Nouveautés » for 0.12.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le titre de l\'accueil ouvre le Secteur ; « Changer de secteur » s\'y trouve.'**
+  String get release0120Title;
+
+  /// Line of « Nouveautés » for 0.12.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'« Ajouter des rues » reste ouvert après l\'ajout pour continuer.'**
+  String get release0120StayOpen;
+
+  /// Line of « Nouveautés » for 0.12.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'Une zone se trace à tout zoom ; deux doigts déplacent la carte.'**
+  String get release0120Zone;
+
+  /// Line of « Nouveautés » for 0.12.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'Toucher une rue coche bien la rue sous le doigt.'**
+  String get release0120Tap;
+
+  /// Line of « Nouveautés » for 0.12.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'Une tournée commencée par erreur peut être abandonnée depuis le bilan.'**
+  String get release0120Abandon;
+
   /// Line of « Nouveautés » for 0.11.0.
   ///
   /// In fr, this message translates to:

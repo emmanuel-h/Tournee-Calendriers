@@ -76,7 +76,7 @@ void main() {
     expect(find.bySemanticsLabel('Confidentialité'), findsOneWidget);
     // The version of pubspec.yaml, which `flutter test` gives too.
     expect(
-      find.bySemanticsLabel('Version 0.11.0, voir les nouveautés'),
+      find.bySemanticsLabel('Version 0.12.0, voir les nouveautés'),
       findsOneWidget,
     );
     expect(
@@ -262,9 +262,13 @@ void main() {
     await tester.tap(find.byKey(const Key('settings.version')));
     await tester.pumpAndSettle();
 
+    expect(find.bySemanticsLabel('0.12.0 · 10 nov. 2026'), findsOneWidget);
     expect(find.bySemanticsLabel('0.11.0 · 10 nov. 2026'), findsOneWidget);
-    expect(find.bySemanticsLabel('0.10.1 · 3 nov. 2026'), findsOneWidget);
-    expect(find.bySemanticsLabel('0.10.0 · 3 nov. 2026'), findsOneWidget);
+    // A lazy list: the older versions are built once scrolled to.
+    for (final label in ['0.10.1 · 3 nov. 2026', '0.10.0 · 3 nov. 2026']) {
+      await tester.scrollUntilVisible(find.bySemanticsLabel(label), 100);
+      expect(find.bySemanticsLabel(label), findsOneWidget);
+    }
     expect(
       find.bySemanticsLabel(
         "La zone de l'équipe s'appelle maintenant un « secteur » ; une "
