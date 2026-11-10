@@ -103,12 +103,33 @@ void main() {
         () async => bytes('{"nom":"x"}', 200),
         CommuneSearchFailure.serviceError,
       ),
+      // The service down while the phone has a connection (#137).
       'a refused connection': (
-        () async => throw http.ClientException('Connection refused'),
+        () async => throw const SocketException(
+          'Connection refused',
+          osError: OSError('Connection refused', 111),
+        ),
+        CommuneSearchFailure.serviceError,
+      ),
+      'an http error without a socket': (
+        () async => throw http.ClientException('Connection closed'),
+        CommuneSearchFailure.serviceError,
+      ),
+      'a TLS failure': (
+        () async => throw const HandshakeException('Connection reset'),
+        CommuneSearchFailure.serviceError,
+      ),
+      'a failed host lookup': (
+        () async => throw const SocketException(
+          "Failed host lookup: 'geo.api.gouv.fr'",
+        ),
         CommuneSearchFailure.noNetwork,
       ),
-      'a socket error': (
-        () async => throw const SocketException('Network is unreachable'),
+      'an unreachable network': (
+        () async => throw const SocketException(
+          'Connection failed',
+          osError: OSError('Network is unreachable', 101),
+        ),
         CommuneSearchFailure.noNetwork,
       ),
     };

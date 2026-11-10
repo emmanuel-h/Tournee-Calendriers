@@ -1354,10 +1354,10 @@ abstract class AppLocalizations {
   /// **'Pas de réseau : la recherche de communes en a besoin. Réessayez quand le téléphone capte.'**
   String get communeSearchNoNetwork;
 
-  /// The commune search service answered with an error.
+  /// Both commune searches (geo.api.gouv.fr, then the Géoplateforme) failed while the phone has a connection: refused, an error or an unreadable answer (#137).
   ///
   /// In fr, this message translates to:
-  /// **'La recherche de communes ne répond pas. Réessayez plus tard.'**
+  /// **'Impossible de chercher les communes pour l\'instant. Réessayez plus tard.'**
   String get communeSearchServiceError;
 
   /// While the streets of the chosen commune are being listed.
@@ -1372,10 +1372,10 @@ abstract class AppLocalizations {
   /// **'Pas de réseau. Réessayez quand le téléphone capte.'**
   String get addressNoNetwork;
 
-  /// The address base (BAN) answered with an error.
+  /// The address base (BAN) refused the connection or answered with an error, while the phone has a connection (#137).
   ///
   /// In fr, this message translates to:
-  /// **'Le service des adresses ne répond pas. Réessayez plus tard.'**
+  /// **'Impossible d\'ajouter des rues pour l\'instant. Réessayez plus tard.'**
   String get addressServiceError;
 
   /// The address base (BAN) does not know the commune or a street.
@@ -3064,10 +3064,10 @@ abstract class AppLocalizations {
   /// **'Connexion nécessaire pour chercher une rue.'**
   String get addStreetsSearchNoNetwork;
 
-  /// Under the search box when the address service failed.
+  /// Under the search box when the address service failed while the phone has a connection (#137).
   ///
   /// In fr, this message translates to:
-  /// **'Le service des adresses ne répond pas. Réessayez dans un moment.'**
+  /// **'Impossible de chercher une rue pour l\'instant. Réessayez plus tard.'**
   String get addStreetsSearchError;
 
   /// Screen-reader name and tooltip of the ✕ at the top right of the street card, which closes it like a tap elsewhere on the map or the back gesture (PLAN §5.3, §5.4).
@@ -3766,10 +3766,10 @@ abstract class AppLocalizations {
   /// **'Aucune rue connue ici.'**
   String get addStreetsNoStreetHere;
 
-  /// Snackbar when the address service failed for the road tapped.
+  /// Snackbar when the address service or the map's tiles failed for the road tapped or the zone, while the phone has a connection (#137).
   ///
   /// In fr, this message translates to:
-  /// **'Le service des adresses ne répond pas.'**
+  /// **'Impossible d\'ajouter des rues pour l\'instant. Réessayez plus tard.'**
   String get addStreetsServiceError;
 
   /// Action of the look-up snackbars: opens « Rue à la main », which works offline.
@@ -3799,7 +3799,7 @@ abstract class AppLocalizations {
   /// Above « Ajouter N rues » when the address service failed for streets found in a zone; they stay ticked.
   ///
   /// In fr, this message translates to:
-  /// **'{count, plural, =1{1 rue n\'a pas pu être ajoutée : le service des adresses ne répond pas. Réessayez plus tard.} other{{count} rues n\'ont pas pu être ajoutées : le service des adresses ne répond pas. Réessayez plus tard.}}'**
+  /// **'{count, plural, =1{Impossible d\'ajouter 1 rue pour l\'instant. Réessayez plus tard.} other{Impossible d\'ajouter {count} rues pour l\'instant. Réessayez plus tard.}}'**
   String addStreetsAddFailedService(int count);
 
   /// The pill next to the search box of « Ajouter des rues »: on, a drag on the map draws a zone (PLAN §5.14, PickZone mockup).

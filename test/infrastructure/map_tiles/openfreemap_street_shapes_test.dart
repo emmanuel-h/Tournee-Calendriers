@@ -240,7 +240,7 @@ void main() {
 
       expect(
         failureOf(await shapes().roadsIn(_inside(_west))),
-        StreetShapesFailure.noNetwork,
+        StreetShapesFailure.serviceError,
       );
     });
 
@@ -327,9 +327,21 @@ void main() {
       expect(await failureFor(shapes()), StreetShapesFailure.noNetwork);
     });
 
-    test('should be no network when a tile does not come', () async {
+    test('should be a service error when a tile is cut off', () async {
+      // The connection worked, so the phone has a network (#137).
       answers[_urlOf(_west)] = () =>
           Future.error(http.ClientException('Connection closed'));
+
+      expect(await failureFor(shapes()), StreetShapesFailure.serviceError);
+    });
+
+    test('should be no network when the network is unreachable', () async {
+      answers[_urlOf(_west)] = () => Future.error(
+        const SocketException(
+          'Connection failed',
+          osError: OSError('Network is unreachable', 101),
+        ),
+      );
 
       expect(await failureFor(shapes()), StreetShapesFailure.noNetwork);
     });

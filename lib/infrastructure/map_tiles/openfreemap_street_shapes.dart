@@ -9,6 +9,7 @@ import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/infrastructure/http/app_user_agent.dart';
+import 'package:tournee_calendriers/infrastructure/http/no_network.dart';
 import 'package:tournee_calendriers/infrastructure/map_tiles/mappers/street_lines.dart';
 import 'package:tournee_calendriers/infrastructure/map_tiles/mappers/tile_grid.dart';
 import 'package:tournee_calendriers/infrastructure/map_tiles/mappers/tile_json.dart';
@@ -180,7 +181,9 @@ final class OpenFreeMapStreetShapes implements StreetShapes {
   }
 
   /// The answer to a GET of [url], or [StreetShapesFailure.noNetwork] when
-  /// none came in time.
+  /// none came in time or the phone found no way out
+  /// ([StreetShapesFailure.serviceError] when the connection was refused or
+  /// cut, #137).
   Future<Result<http.Response, StreetShapesFailure>> _get(Uri url) async {
     try {
       return Ok(
@@ -190,10 +193,16 @@ final class OpenFreeMapStreetShapes implements StreetShapes {
       );
     } on TimeoutException {
       return const Err(StreetShapesFailure.noNetwork);
-    } on http.ClientException {
-      return const Err(StreetShapesFailure.noNetwork);
-    } on IOException {
-      return const Err(StreetShapesFailure.noNetwork);
+    } on http.ClientException catch (error) {
+      return Err(_transportFailure(error));
+    } on IOException catch (error) {
+      return Err(_transportFailure(error));
     }
   }
 }
+
+/// No network only when the phone found no way out; a service that refused
+/// or cut the connection is a service error (#137).
+StreetShapesFailure _transportFailure(Object error) => meansNoNetwork(error)
+    ? StreetShapesFailure.noNetwork
+    : StreetShapesFailure.serviceError;

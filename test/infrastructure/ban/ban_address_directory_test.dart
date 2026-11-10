@@ -531,27 +531,58 @@ void main() {
         },
       );
 
-      test('should fail with no network when the connection fails', () async {
+      test('should fail with a service error when the server refuses the '
+          'connection', () async {
+        // The service down while the phone has a connection (#137).
         final directory = directoryAnswering(
-          () async => throw http.ClientException('Connection refused'),
+          () async => throw const SocketException(
+            'Connection refused',
+            osError: OSError('Connection refused', 111),
+          ),
         );
 
-        expect(await failureFrom(directory), AddressDirectoryFailure.noNetwork);
-      });
-
-      test('should fail with no network when the socket fails', () async {
-        final directory = directoryAnswering(
-          () async => throw const SocketException('Network is unreachable'),
+        expect(
+          await failureFrom(directory),
+          AddressDirectoryFailure.serviceError,
         );
-
-        expect(await failureFrom(directory), AddressDirectoryFailure.noNetwork);
       });
 
       test(
-        'should fail with no network when the TLS handshake fails',
+        'should fail with a service error when the connection closes',
+        () async {
+          final directory = directoryAnswering(
+            () async => throw http.ClientException('Connection closed'),
+          );
+
+          expect(
+            await failureFrom(directory),
+            AddressDirectoryFailure.serviceError,
+          );
+        },
+      );
+
+      test(
+        'should fail with a service error when the TLS handshake fails',
         () async {
           final directory = directoryAnswering(
             () async => throw const HandshakeException('Connection reset'),
+          );
+
+          expect(
+            await failureFrom(directory),
+            AddressDirectoryFailure.serviceError,
+          );
+        },
+      );
+
+      test(
+        'should fail with no network when the network is unreachable',
+        () async {
+          final directory = directoryAnswering(
+            () async => throw const SocketException(
+              'Connection failed',
+              osError: OSError('Network is unreachable', 101),
+            ),
           );
 
           expect(
@@ -560,6 +591,16 @@ void main() {
           );
         },
       );
+
+      test('should fail with no network when the host lookup fails', () async {
+        final directory = directoryAnswering(
+          () async => throw const SocketException(
+            "Failed host lookup: 'plateforme.adresse.data.gouv.fr'",
+          ),
+        );
+
+        expect(await failureFrom(directory), AddressDirectoryFailure.noNetwork);
+      });
 
       test(
         'should fail with no network when no answer comes in time',

@@ -9,9 +9,14 @@ privacy, `CLAUDE.md`), sending the app's `User-Agent`. None is trimmed or change
 | `reverse_nothing.json` | `/geocodage/reverse?lon=0&lat=0&index=address&type=street&limit=1` (open sea, far from France) | `features: []` |
 | `search_rue_pierre.json` | `/geocodage/search?q=rue%20pierre&type=street&citycode=69264&limit=10` | nine streets of the commune, best first |
 | `search_none.json` | `/geocodage/search?q=zzzzqx&type=street&citycode=69264&limit=10` | `features: []` |
+| `municipality_villefranche.json` | `/geocodage/search?q=Villefranche&type=municipality&limit=5`, captured 2026-11-10 (#137) | the answer listed 5 communes; only Villefranche-sur-Saône is kept, all its fields |
+| `municipality_none.json` | `/geocodage/search?q=zzzzqx&type=municipality&limit=5`, captured 2026-11-10 | untouched: `features: []` |
 | `search_too_short.json` | `/geocodage/search?q=ru&…` (HTTP 400) | the service refuses a `q` outside 3–200 characters or not starting with a letter or digit |
 
 Seen when capturing: `content-type: application/json; charset=utf-8`; positions are GeoJSON
 `[longitude, latitude]`; a street's point is one point of the street (not the tap's projection
 on it), so `distance` is measured to that point; a tap near a commune boundary may answer a
 street of the next commune (`citycode` differs); a latitude outside −90…90 answers HTTP 400.
+
+A `municipality` feature gives the commune's `name`, `citycode` (INSEE), a single `postcode` and
+its centre as the point; `q` must have 3 to 200 characters there too (HTTP 400 otherwise).

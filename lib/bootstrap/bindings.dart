@@ -25,7 +25,9 @@ import 'package:tournee_calendriers/infrastructure/firestore/firestore_sector_di
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_sector_repository.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_street_repository.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_streets_download.dart';
+import 'package:tournee_calendriers/infrastructure/geo_api/fallback_commune_search.dart';
 import 'package:tournee_calendriers/infrastructure/geo_api/geo_commune_search.dart';
+import 'package:tournee_calendriers/infrastructure/geo_api/geopf_commune_search.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_identity.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_my_sectors.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_open_round.dart';
@@ -187,7 +189,14 @@ Future<List<Override>> bindAdapters({
           BanAddressDirectory(ref.watch(httpClientProvider)),
     ),
     communeSearchProvider.overrideWith(
-      (ref) => communeSearch ?? GeoCommuneSearch(ref.watch(httpClientProvider)),
+      (ref) =>
+          communeSearch ??
+          // geo.api.gouv.fr first (all the postcodes, the large towns
+          // first), the Géoplateforme when it fails (#137).
+          FallbackCommuneSearch(
+            GeoCommuneSearch(ref.watch(httpClientProvider)),
+            GeopfCommuneSearch(ref.watch(httpClientProvider)),
+          ),
     ),
     streetShapesProvider.overrideWith(
       (ref) =>

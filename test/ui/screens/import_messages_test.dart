@@ -77,4 +77,31 @@ void main() {
       'Les rues encore cochées restent à ajouter.',
     );
   });
+
+  group('communeSearchFailureMessage', () {
+    test('should say there is no network when the phone has none', () {
+      expect(
+        communeSearchFailureMessage(l10n, ImportProblem.noNetwork),
+        'Pas de réseau\u00a0: la recherche de communes en a besoin. '
+        'Réessayez quand le téléphone capte.',
+      );
+    });
+
+    test('should say the search is not possible for now when the service '
+        'fails with a connection', () {
+      expect(
+        communeSearchFailureMessage(l10n, ImportProblem.serviceError),
+        "Impossible de chercher les communes pour l'instant. "
+        'Réessayez plus tard.',
+      );
+    });
+  });
+
+  test('should say the streets cannot be added for now when the address '
+      'service fails with a connection', () {
+    expect(
+      addressFailureMessage(l10n, ImportProblem.serviceError),
+      "Impossible d'ajouter des rues pour l'instant. Réessayez plus tard.",
+    );
+  });
 }

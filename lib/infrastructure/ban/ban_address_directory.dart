@@ -11,6 +11,7 @@ import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/infrastructure/ban/mappers/ban_lookup_mapper.dart';
 import 'package:tournee_calendriers/infrastructure/ban/mappers/geopf_geocoding_mapper.dart';
 import 'package:tournee_calendriers/infrastructure/http/app_user_agent.dart';
+import 'package:tournee_calendriers/infrastructure/http/no_network.dart';
 
 /// The [AddressDirectory] backed by the BAN (PLAN §9): its `lookup` API on
 /// plateforme.adresse.data.gouv.fr for a commune's streets and a street's
@@ -134,13 +135,13 @@ final class BanAddressDirectory implements AddressDirectory {
           .timeout(timeout);
     } on TimeoutException {
       return const Err(AddressDirectoryFailure.noNetwork);
-    } on http.ClientException {
+    } on http.ClientException catch (error) {
       // What `http` throws when the connection fails (it wraps the socket
       // error).
-      return const Err(AddressDirectoryFailure.noNetwork);
-    } on IOException {
+      return Err(_transportFailure(error));
+    } on IOException catch (error) {
       // A socket or TLS error that reached us unwrapped.
-      return const Err(AddressDirectoryFailure.noNetwork);
+      return Err(_transportFailure(error));
     }
 
     if (response.statusCode == HttpStatus.notFound) {
@@ -160,3 +161,9 @@ final class BanAddressDirectory implements AddressDirectory {
     }
   }
 }
+
+/// No network only when the phone found no way out; a service that refused
+/// or cut the connection is a service error (#137).
+AddressDirectoryFailure _transportFailure(Object error) => meansNoNetwork(error)
+    ? AddressDirectoryFailure.noNetwork
+    : AddressDirectoryFailure.serviceError;

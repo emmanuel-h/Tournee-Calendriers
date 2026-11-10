@@ -426,7 +426,12 @@ void main() {
 
     await tapRoad(tester, _onFailing);
 
-    expect(find.text('Le service des adresses ne répond pas.'), findsOneWidget);
+    expect(
+      find.text(
+        "Impossible d'ajouter des rues pour l'instant. Réessayez plus tard.",
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('should keep the map clear of the sheet', (tester) async {

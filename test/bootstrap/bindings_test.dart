@@ -24,7 +24,9 @@ import 'package:tournee_calendriers/infrastructure/firestore/firestore_sector_re
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_street_repository.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_streets_download.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_document_mapper.dart';
+import 'package:tournee_calendriers/infrastructure/geo_api/fallback_commune_search.dart';
 import 'package:tournee_calendriers/infrastructure/geo_api/geo_commune_search.dart';
+import 'package:tournee_calendriers/infrastructure/geo_api/geopf_commune_search.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_my_sectors.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_open_round.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_phone_settings.dart';
@@ -87,7 +89,12 @@ void main() {
       container.read(addressDirectoryProvider),
       isA<BanAddressDirectory>(),
     );
-    expect(container.read(communeSearchProvider), isA<GeoCommuneSearch>());
+    expect(
+      container.read(communeSearchProvider),
+      isA<FallbackCommuneSearch>()
+          .having((search) => search.first, 'first', isA<GeoCommuneSearch>())
+          .having((search) => search.then, 'then', isA<GeopfCommuneSearch>()),
+    );
     expect(
       container.read(streetShapesProvider),
       isA<OpenFreeMapStreetShapes>(),

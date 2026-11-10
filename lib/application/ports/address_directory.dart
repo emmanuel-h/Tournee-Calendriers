@@ -63,16 +63,18 @@ abstract interface class AddressDirectory {
 /// Why the [AddressDirectory] could not answer. Each case is phrased in
 /// French by the screen that asked.
 enum AddressDirectoryFailure {
-  /// The phone could not reach the service, or it did not answer in time.
-  /// Trying again with a better signal may work.
+  /// The phone has no way out (no route, the name of the service not
+  /// found), or the service did not answer in time. Trying again with a
+  /// better signal may work.
   noNetwork,
 
   /// The service has no commune or street with that code, or no street near
   /// the point asked.
   notFound,
 
-  /// The service answered with an error or with something unreadable.
-  /// Trying again later may work.
+  /// The phone has a connection, but the service refused or cut it, or
+  /// answered with an error or with something unreadable. Trying again
+  /// later may work.
   serviceError,
 }
 

@@ -333,6 +333,11 @@ an admin, shows only « Rejoindre un secteur », in red), and the bottom of the 
   becomes a chip and empties the field, one already picked is not added twice. « Créer » stays
   off until at least one commune is picked; at most 50 (`Sector.maxCommunes`). Each commune
   keeps the centre geo.api.gouv.fr gives (`centre`), so the map of 5.4 is centred offline.
+  When geo.api.gouv.fr fails, the Géoplateforme answers instead (§9, #137). Under the field:
+  « Pas de réseau : la recherche de communes en a besoin. Réessayez quand le téléphone
+  capte. » when the phone has no way out (no route, the name not found, no answer in time),
+  « Impossible de chercher les communes pour l'instant. Réessayez plus tard. » when it has a
+  connection but both services refused it or answered an error.
 - Delivered in T2.5 (Create, CreateTaken, Join mockups). Both screens first need the phone's
   account (§6.1): a line « Connexion au serveur… » while it signs in, « Hors ligne : créer ou
   rejoindre un secteur demande le réseau. » with « Réessayer » when it cannot; the server
@@ -650,11 +655,13 @@ aussi*, *Ne plus la faire*, *Ajouter et me l'attribuer* / *sans m'attribuer*: go
   (teammates named in the team's order; « Faite par un autre membre » when none can be
   named, the team not read yet), with the actions of the table; take and release need no network and have no
   « Annuler » (the other button undoes it). Failures: « Connexion nécessaire pour ajouter une
-  rue » (offline), « Aucune rue connue ici » (no BAN match), « Le service des adresses ne
-  répond pas », each with a hint and « Saisir une rue à la main ». The card's own ✕ (48 dp,
+  rue » (offline), « Aucune rue connue ici » (no BAN match), « Impossible d'ajouter des
+  rues pour l'instant. Réessayez plus tard. » (the service refused or failed while the phone
+  has a connection, #137), each with a hint and « Saisir une rue à la main ». The card's own ✕ (48 dp,
   top right, level with the handle, « Fermer »; the name keeps clear of it) closes it, and so
   does the back gesture, first; the top bar's ✕ closes the screen. **The search** lists « name / commune » rows over the map
-  (« Aucune rue trouvée. », « Connexion nécessaire pour chercher une rue. »); it searches the
+  (« Aucune rue trouvée. », « Connexion nécessaire pour chercher une rue. », « Impossible de
+  chercher une rue pour l'instant. Réessayez plus tard. »); it searches the
   secteur's communes, or the communes of its streets for a secteur without commune; picking a
   row moves the map 200 m around the street and shows its card. A newer tap or search always
   wins over a late answer.
@@ -1807,8 +1814,8 @@ removes are marked « (removed, 5.14) » there.
     ticked and the map moves 200 m around it. « Tout décocher » also drops the answers still on
     their way. A street of the secteur (its line, its dots, or the BAN's answer) says « Rue des
     Lilas est déjà dans le secteur. » (4 s); the look-up failures say « Connexion nécessaire
-    pour ajouter une rue. », « Aucune rue connue ici. », « Le service des adresses ne répond
-    pas. » with « Saisir à la main ». With nothing ticked the sheet reads « Touchez les rues à
+    pour ajouter une rue. », « Aucune rue connue ici. », « Impossible d'ajouter des rues pour
+    l'instant. Réessayez plus tard. » with « Saisir à la main ». With nothing ticked the sheet reads « Touchez les rues à
     ajouter ou tracez une zone. » (#125). Each row: name, « Villefranche-sur-
     Saône · 19 numéros », ✕ (« Retirer Rue Pierre Morin »); rows are 52 dp, four show, then
     they scroll (never over 35 % of the map's height). The handle and title fold the sheet
@@ -1850,8 +1857,8 @@ removes are marked « (removed, 5.14) » there.
     of a tap. Each ✓ sits half-way along the road's first piece inside the zone. A zone's
     street brings no numbers until added: « Ajouter » reads them (`LookUpStreet`) one street
     after the other; offline, that street and the next ones stay ticked, « 1 rue n'a pas pu
-    être ajoutée : connexion nécessaire. »; a service error, « … : le service des adresses ne
-    répond pas. Réessayez plus tard. ». Its road is not stored (it may be cut where the tiles
+    être ajoutée : connexion nécessaire. »; a service error, « Impossible d'ajouter 1 rue pour
+    l'instant. Réessayez plus tard. » (#137). Its road is not stored (it may be cut where the tiles
     end): Accueil fills it from its houses (5.3). A new zone replaces the one shown, its
     ticks staying; « Zone » off drops the zone, keeps the ticks and the selection sheet comes
     back, which with « Zone » on and nothing ticked reads « Faites glisser le doigt sur la
@@ -2167,7 +2174,9 @@ Start screen rules fixed in T1.11 (`lib/domain/shared/french_text.dart`,
   and apostrophes read as spaces, spaces collapsed. `ObserveStreets` sorts with it (then by id).
 - **Port `CommuneSearch`** (`search(name)` → `CommuneMatch`es: `Commune` + five-digit
   postcodes; failures `noNetwork`, `serviceError`), adapter `GeoCommuneSearch`
-  (`infrastructure/geo_api/`, 10 s timeout). An entry without a valid `Commune` or a postcode
+  (`infrastructure/geo_api/`, 10 s timeout), and since #137 `FallbackCommuneSearch`: it asks
+  `GeopfCommuneSearch` (the Géoplateforme, one postcode per commune) only when
+  `GeoCommuneSearch` fails, and fails with `noNetwork` only when both did. An entry without a valid `Commune` or a postcode
   that is not five digits is left out. Use cases `SearchCommunes` (nothing asked under two
   characters) and `FindImportedStreets` (BAN ids already on the phone, each `active` or `inCorbeille`).
 
@@ -3258,6 +3267,7 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
 | Street under a tap | `https://data.geopf.fr/geocodage/reverse?lon={lon}&lat={lat}&index=address&type=street&limit=1` | Returns BAN `id` = idVoie (`69264_1460`), `name`, `citycode`, `city`, one point of the street; always the nearest street, whatever the distance |
 | Street search by name | `https://data.geopf.fr/geocodage/search?q={q}&index=address&type=street&citycode={code}&limit=10` | For the search box; `q` 3–200 characters starting with a letter or digit, else HTTP 400 |
 | Commune by name | `https://geo.api.gouv.fr/communes?nom={q}&fields=nom,code,codesPostaux,centre&boost=population&limit=5` | « Liste » of « Ajouter des rues » (5.4), the communes of a secteur (5.2, 5.8): `nom`, `code` (INSEE), `codesPostaux`, `centre` (GeoJSON point); `[]` when nothing matches |
+| Commune by name, fallback | `https://data.geopf.fr/geocodage/search?q={q}&type=municipality&limit=5` | Asked only when geo.api.gouv.fr fails (transport error, timeout, non-200, unreadable answer; it refused connections for a minute on 2026-11-10, #137): `name`, `citycode` (INSEE), one `postcode`, the point as centre; ranked by its score, not by population; `q` 3–200 characters, else HTTP 400 |
 | Streets of a commune | `https://plateforme.adresse.data.gouv.fr/lookup/{inseeCode}` | `voies[]`: `idVoie`, `nomVoie`, `nbNumeros`, `type`; 404 for an unknown commune |
 | Numbers of a street | `https://plateforme.adresse.data.gouv.fr/lookup/{idVoie}` | `numeros[]`: `numero`, `suffixe`, `position.coordinates` [lon, lat]; a number may appear twice; 404 for an unknown street |
 | Shape of a street | OpenFreeMap TileJSON `https://tiles.openfreemap.org/planet` (its `tiles` template, versioned weekly: `…/planet/20261011_080001_pt/{z}/{x}/{y}.pbf`), then the z14 vector tiles around the street's houses, layer `transportation_name`, property `name` (§6.1, #92) | Same data as the map. A tile ≈ 50–250 kB, ≈ 0.1 s; max zoom 14. Lines clipped per tile with a buffer: cut and joined by the app. Fallback when empty: no shape, house dots only. Replaced Overpass (#92: 41 s then 502 on 2026-10-18) |
@@ -3265,6 +3275,14 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
 All of them are wrapped behind domain interfaces (`AddressDirectory`, `CommuneSearch`, `StreetShapes`), so the rest
 of the app never sees HTTP or JSON, and tests use fakes. Parsing is tested against JSON fixtures
 captured from the real services.
+
+**No network or a service down (#137).** A call that gets no answer is `noNetwork` only when
+the phone has no way out: the service's name not found (airplane mode, no signal), no route to
+the network (`ENETUNREACH`, `EHOSTUNREACH`, an OS connect timeout), or no answer within the
+adapter's timeout (`infrastructure/http/no_network.dart`, shared by the BAN, geopf, commune and
+tiles adapters). A refused or reset connection, a TLS failure, a connection cut mid-answer, an
+HTTP error or an unreadable answer is `serviceError`: the screens then say « Impossible de
+<what the user does> pour l'instant. Réessayez plus tard. » instead of « Pas de réseau ».
 
 ---
 

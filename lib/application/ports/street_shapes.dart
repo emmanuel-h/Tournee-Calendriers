@@ -59,12 +59,14 @@ final class NamedRoad {
 
 /// Why the [StreetShapes] could not answer.
 enum StreetShapesFailure {
-  /// The phone could not reach the service, or it did not answer in time.
-  /// Trying again with a better signal may work.
+  /// The phone has no way out (no route, the name of the service not
+  /// found), or the service did not answer in time. Trying again with a
+  /// better signal may work.
   noNetwork,
 
-  /// The service answered with an error or with something unreadable.
-  /// Trying again later may work.
+  /// The phone has a connection, but the service refused or cut it, or
+  /// answered with an error or with something unreadable. Trying again
+  /// later may work.
   serviceError,
 
   /// The area asked of [StreetShapes.roadsIn] spans too many of the map's

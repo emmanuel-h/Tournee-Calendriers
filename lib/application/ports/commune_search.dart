@@ -7,8 +7,9 @@ import 'package:tournee_calendriers/domain/shared/same_items.dart';
 /// screen suggests them while the user types (« Villefranche » →
 /// Villefranche-sur-Saône (69400), …).
 ///
-/// An outbound port: an adapter in `infrastructure/geo_api/` implements it
-/// over HTTP (geo.api.gouv.fr, PLAN §9), tests use a fake. Every call needs
+/// An outbound port: adapters in `infrastructure/geo_api/` implement it
+/// over HTTP (geo.api.gouv.fr, the Géoplateforme geocoder when it fails,
+/// PLAN §9), tests use a fake. Every call needs
 /// the network; a failure comes back as an [Err] holding a
 /// [CommuneSearchFailure], never as an exception.
 abstract interface class CommuneSearch {
@@ -20,10 +21,12 @@ abstract interface class CommuneSearch {
 /// Why the [CommuneSearch] could not answer. The import screen says each
 /// in French.
 enum CommuneSearchFailure {
-  /// The phone could not reach the service, or it did not answer in time.
+  /// The phone has no way out (no route, the name of the service not
+  /// found), or the service did not answer in time.
   noNetwork,
 
-  /// The service answered with an error or with something unreadable.
+  /// The phone has a connection, but the service refused or cut it, or
+  /// answered with an error or with something unreadable.
   serviceError,
 }
 

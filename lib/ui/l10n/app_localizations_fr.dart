@@ -924,7 +924,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get communeSearchServiceError =>
-      'La recherche de communes ne répond pas. Réessayez plus tard.';
+      'Impossible de chercher les communes pour l\'instant. Réessayez plus tard.';
 
   @override
   String get streetsLoading => 'Chargement des rues…';
@@ -935,7 +935,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get addressServiceError =>
-      'Le service des adresses ne répond pas. Réessayez plus tard.';
+      'Impossible d\'ajouter des rues pour l\'instant. Réessayez plus tard.';
 
   @override
   String get addressNotFound =>
@@ -2136,7 +2136,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get addStreetsSearchError =>
-      'Le service des adresses ne répond pas. Réessayez dans un moment.';
+      'Impossible de chercher une rue pour l\'instant. Réessayez plus tard.';
 
   @override
   String get streetCardClose => 'Fermer';
@@ -2662,7 +2662,8 @@ class AppLocalizationsFr extends AppLocalizations {
   String get addStreetsNoStreetHere => 'Aucune rue connue ici.';
 
   @override
-  String get addStreetsServiceError => 'Le service des adresses ne répond pas.';
+  String get addStreetsServiceError =>
+      'Impossible d\'ajouter des rues pour l\'instant. Réessayez plus tard.';
 
   @override
   String get addStreetsManualAction => 'Saisir à la main';
@@ -2700,8 +2701,8 @@ class AppLocalizationsFr extends AppLocalizations {
       count,
       locale: localeName,
       other:
-          '$count rues n\'ont pas pu être ajoutées : le service des adresses ne répond pas. Réessayez plus tard.',
-      one: '1 rue n\'a pas pu être ajoutée : le service des adresses ne répond pas. Réessayez plus tard.',
+          'Impossible d\'ajouter $count rues pour l\'instant. Réessayez plus tard.',
+      one: 'Impossible d\'ajouter 1 rue pour l\'instant. Réessayez plus tard.',
     );
     return '$_temp0';
   }
