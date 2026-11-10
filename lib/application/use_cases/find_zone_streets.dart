@@ -7,6 +7,7 @@ import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/shared/insee_code.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_name.dart';
 import 'package:tournee_calendriers/domain/street/street_repository.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 
@@ -132,7 +133,8 @@ enum FindZoneFailure {
 
 /// The streets of a zone drawn on « Ajouter des rues » (PLAN §5.14): the
 /// named roads of the map's tiles in it (as #92 reads shapes), each matched
-/// to its BAN street by name in the secteur's communes. Changes nothing.
+/// to its BAN street by name in the secteur's communes (the exact name,
+/// else the name the road misspells, `closestNamed`). Changes nothing.
 /// Needs the network.
 ///
 /// Only the commune lists are read (one request per commune), not the
@@ -182,6 +184,19 @@ final class FindZoneStreets {
     // The BAN street of each road, by its index in `roads`.
     final matches = <int, StreetMatch>{};
     final numberCounts = <BanStreetId, int>{};
+    void take(int i, CommuneStreets listed, DirectoryStreet street) {
+      final match = StreetMatch(
+        id: street.id,
+        name: street.name,
+        commune: listed.commune,
+        position: markInZone(roads[i].shape, zone)!,
+      );
+      matches[i] = match;
+      numberCounts[match.id] = street.numberCount;
+    }
+
+    // First the names as they are, commune by commune.
+    final read = <CommuneStreets>[];
     for (final insee in communes.take(communesAsked)) {
       if (matches.length == roads.length) break;
       final CommuneStreets listed;
@@ -195,21 +210,30 @@ final class FindZoneStreets {
         case Ok(:final value):
           listed = value;
       }
+      read.add(listed);
       for (var i = 0; i < roads.length; i++) {
         if (matches.containsKey(i)) continue;
-        final road = roads[i];
         final street = listed.streets
-            .where((street) => street.name.matches(road.name))
+            .where((street) => street.name.matches(roads[i].name))
             .firstOrNull;
-        if (street == null) continue;
-        final match = StreetMatch(
-          id: street.id,
-          name: street.name,
-          commune: listed.commune,
-          position: markInZone(road.shape, zone)!,
+        if (street != null) take(i, listed, street);
+      }
+    }
+    // Then a road still unmatched may be a BAN street misspelt by the map
+    // (« Rue de le Paix », #134): the closest name, in the nearest commune
+    // that has one. Only after every commune read, so that a name exact in
+    // a farther commune wins over a near one in the first.
+    for (var i = 0; i < roads.length; i++) {
+      if (matches.containsKey(i)) continue;
+      for (final listed in read) {
+        final street = closestNamed(
+          roads[i].name,
+          listed.streets,
+          (street) => street.name,
         );
-        matches[i] = match;
-        numberCounts[match.id] = street.numberCount;
+        if (street == null) continue;
+        take(i, listed, street);
+        break;
       }
     }
 

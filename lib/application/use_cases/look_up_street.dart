@@ -4,6 +4,7 @@ import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
+import 'package:tournee_calendriers/domain/street/street_name.dart';
 import 'package:tournee_calendriers/domain/street/street_repository.dart';
 
 /// Where the street to show on the card of « Ajouter des rues » comes from
@@ -114,7 +115,8 @@ final class LookUpStreet {
   /// The BAN street of the road under the finger at [point]: the
   /// geocoder's nearest street when it is that road, or when the map has
   /// no named road within [tapReachMetres] (or cannot answer); otherwise
-  /// the street of the road's name in the nearest street's commune.
+  /// the street of the road's name in the nearest street's commune, or of
+  /// a name close enough to be the road's misspelt (#134).
   Future<Result<StreetMatch, AddressDirectoryFailure>> _streetAt(
     GeoPoint point,
   ) async {
@@ -134,13 +136,19 @@ final class LookUpStreet {
           commune: street.commune.inseeCode,
         )) {
           Err(:final failure) => Err(failure),
-          Ok(value: final found) => switch (found
-              .where((each) => each.name.matches(road))
-              .firstOrNull) {
+          // The map may misspell the road (« Rue de le Paix » for the
+          // BAN's « Rue de la Paix »): the street named exactly is taken,
+          // else the closest to the road's name, the geocoder's own street
+          // included, which the search may not list (`closestNamed`).
+          Ok(value: final found) => switch (closestNamed(road, [
+            ...found,
+            street,
+          ], (each) => each.name)) {
             final named? => Ok(named),
             // The road has a name the BAN does not give a street there (a
-            // path, a road of the next commune): better nothing than a
-            // street the finger was not on.
+            // path, a road of the next commune), or two streets are as
+            // close to it: better nothing than a street the finger was not
+            // on.
             null => const Err(AddressDirectoryFailure.notFound),
           },
         };

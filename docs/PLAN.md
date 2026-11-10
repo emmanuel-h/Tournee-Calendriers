@@ -1796,7 +1796,12 @@ removes are marked « (removed, 5.14) » there.
     tiles are read around the tap too (`StreetShapes.roadsIn`, 30 m around): the nearest named
     road within 30 m is the one tapped; when the geocoder's street does not bear its name, the
     BAN street of that name is searched in the geocoder's street's commune (« Aucune rue connue
-    ici. » when none has it). With no named road within 30 m, or the tiles unreadable, the
+    ici. » when none has it). The map may misspell a name (« Rue de le Paix » for the BAN's
+    « Rue de la Paix », #134): among the search's streets and the geocoder's own, the one named
+    exactly is taken, else the closest name within a misspelling (`StreetName.typosFrom`: the
+    small words « de », « la », « du »… may differ or be missing, the other words must be the
+    same bar one letter of one word of 7 letters or more, so « Rue de la Mare » never becomes
+    « Rue de la Gare »); two streets as close give « Aucune rue connue ici. ». With no named road within 30 m, or the tiles unreadable, the
     geocoder's street stands. The ✓ disc is a dark circle (drawn by every renderer, even the emulator's, which draws no symbol layer) under the ✓ picture. A tap on a ticked road or its ✓, or a tap
     whose answer is a street already ticked, unticks it; a street picked in the search stays
     ticked and the map moves 200 m around it. « Tout décocher » also drops the answers still on
@@ -1834,7 +1839,8 @@ removes are marked « (removed, 5.14) » there.
     roads are those of the zoom-14 tiles under the zone (`StreetShapes.roadsIn`; the most
     detailed OpenFreeMap has, the map's street zoom showing them enlarged), whatever the map's
     zoom (#134), at most 16 tiles, one per name, drawn whole as far as the tiles go; a road is matched by name
-    (`StreetName.matches`) in the secteur's communes nearest first (the zone's middle against
+    (`StreetName.matches`, then, for a road still unmatched once the communes are read, the
+    closest name within a misspelling as for a tap, #134) in the secteur's communes nearest first (the zone's middle against
     each commune's centre; without communes, those of its streets), at most 3 communes read,
     a name in two communes taken in the nearest; two roads naming one BAN street make one row.
     More than 50 named roads, or a zone over more than 16 tiles (none read,

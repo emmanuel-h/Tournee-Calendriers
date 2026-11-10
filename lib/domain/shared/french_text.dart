@@ -52,3 +52,26 @@ int compareFrench(String a, String b) => searchKey(a).compareTo(searchKey(b));
 /// accents. A blank [filter] matches everything.
 bool matchesFilter(String text, String filter) =>
     searchKey(text).contains(searchKey(filter));
+
+/// How many letters must be changed, added or dropped to turn [a] into [b]
+/// (the Levenshtein distance): « la » → « le » is 1, « paix » → « gare »
+/// is 3. Two letters swapped count as 2.
+int editDistance(String a, String b) {
+  final from = a.runes.toList();
+  final to = b.runes.toList();
+  // One row of the classic table at a time: `previous[j]` is the distance
+  // from the letters of [from] read so far, less one, to the first `j`
+  // letters of [to].
+  var previous = List<int>.generate(to.length + 1, (j) => j);
+  for (var i = 1; i <= from.length; i++) {
+    final current = List<int>.filled(to.length + 1, i);
+    for (var j = 1; j <= to.length; j++) {
+      final changed = previous[j - 1] + (from[i - 1] == to[j - 1] ? 0 : 1);
+      final dropped = previous[j] + 1;
+      final added = current[j - 1] + 1;
+      current[j] = [changed, dropped, added].reduce((x, y) => x < y ? x : y);
+    }
+    previous = current;
+  }
+  return previous[to.length];
+}

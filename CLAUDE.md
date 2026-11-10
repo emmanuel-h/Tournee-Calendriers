@@ -60,8 +60,8 @@ warns about firebase_core/auth/app_check, a false positive of its text check, fl
 a new street cut off mid-write is caught up at the next start (#104, `UnfinishedStreets`; debug log
 « Street … written » to time a 300-number street); streets per member in Équipe, bottom buttons
 pinned (#105). #102 waits for a firebase-tools release past 15.34.2.
-M8 built (2026-11-03), waiting for the user's phone test; issues
-#107–#116 open: code and Firestore renamed `Tournee` → `Sector` (`sectors/`, `sectorKeys/`; phone files keep
+M8 done (2026-11-03), validated and closed by the user (2026-11-10, #63, #107–#111, #113–#116); only #112 (privacy
+text, the user's review) keeps the milestone open: code and Firestore renamed `Tournee` → `Sector` (`sectors/`, `sectorKeys/`; phone files keep
 their old names) and the outing is `Round` (#116, #115); status picker instead of the tap cycle (#107); « Refusé »
 ⊘ (#113); tournées with their dons, kept in `open_round.json` until validated, then a create-only summary under
 `campaigns/{year}/rounds/` without its member (#108–#110); calendars per ✓ house (#114); « Collecte 2026 » in
@@ -70,7 +70,7 @@ their old names) and the outing is `Round` (#116, #115); status picker instead o
 M9 planned (2026-11-03, #120–#125, PLAN §5.14): preparing the secteur and being on a tournée on separate
 screens; no attribution (the secteur covers all its streets); « Ajouter des rues » in Secteur (🗺) with several
 roads and a zone; houses marked only during a tournée; « En tournée » band on top (white, red edge).
-M9 built so far (waiting for the user's phone test): no attribution (#120); the Secteur button
+M9 built; #120–#125, #135, #136 validated and closed (2026-11-10): no attribution (#120); the Secteur button
 (🗺, `Icons.map_outlined`) and « RUES (n) » with « + Ajouter des rues » and the Corbeille in Secteur,
 no « Ajouter des rues » on Accueil (#121); houses marked only during a tournée (#122: with none on, a tap
 on a house, a door or a building's « Repasser » says « Commencez une tournée… » with « Commencer », or
@@ -81,7 +81,12 @@ street's top bar and the building grid's header; the tournée card and the stree
 (#124: `PickedRoad` on the map, no street card on that screen); « Zone » draws a rectangle and lists its
 streets (#125: `StreetShapes.roadsIn`, `FindZoneStreets` matching the tiles' road names to the BAN's in the
 3 nearest communes, numbers read when added, `ZoneDrawing` over the map, zoom ≥ 15, 50 streets).
-Released as 0.11.0 on internal testing; rules without `assignees` deployed 2026-11-10 (identical to `firestore.rules`).
+Rules without `assignees` deployed 2026-11-10 (identical to `firestore.rules`).
+From the 0.11.0 phone test: « Ajouter des rues » stays open after adding, zone at any zoom, two fingers pan in
+« Zone », a tap names the road under the finger from the tiles and the BAN street of that name, tolerating a map
+typo (`StreetName.typosFrom`, also in « Zone ») (#134, open); the title opens Secteur, « Changer de secteur » in it
+(#135); « Abandonner la tournée » in the Bilan (#136). Still open: #132 (sheets over the map), #137 (commune search
+fallback when geo.api.gouv.fr is down).
 
 ## Commands
 

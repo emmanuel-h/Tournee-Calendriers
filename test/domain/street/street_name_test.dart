@@ -145,4 +145,115 @@ void main() {
       expect(musee.matches('Rue du Marché'), isFalse);
     });
   });
+
+  group('typosFrom', () {
+    final paix = streetName('Rue de la Paix');
+
+    test('should be 0 for a name it matches', () {
+      expect(paix.typosFrom('RUE DE LA PAIX'), 0);
+    });
+
+    test('should count a misspelt small word', () {
+      expect(paix.typosFrom('Rue de le Paix'), 1);
+      expect(paix.typosFrom('Rue du la Paix'), 1);
+    });
+
+    test('should count a small word left out or added', () {
+      expect(paix.typosFrom('Rue la Paix'), 3);
+      expect(streetName('Rue Paix').typosFrom('Rue de la Paix'), 6);
+    });
+
+    test('should not be close when a short word differs by one letter', () {
+      // « Mare » and « Gare »: two streets, not a typo.
+      expect(streetName('Rue de la Mare').typosFrom('Rue de la Gare'), isNull);
+      expect(paix.typosFrom('Rue de la Gare'), isNull);
+    });
+
+    test('should count one letter off in a long word', () {
+      expect(streetName('Rue Pasteur').typosFrom('Rue Pasteir'), 1);
+      expect(streetName('Rue Pasteur').typosFrom('Rue Pasteurs'), 1);
+    });
+
+    test('should not be close when a word one letter off is under seven '
+        'letters', () {
+      expect(streetName('Rue Morand').typosFrom('Rue Morant'), isNull);
+      expect(streetName('Rue Pasteur').typosFrom('Rue Paster'), isNull);
+    });
+
+    test('should not be close when a long word is two letters off', () {
+      expect(streetName('Rue Pasteur').typosFrom('Rue Pastoor'), isNull);
+    });
+
+    test('should not be close when two long words are one letter off', () {
+      expect(
+        streetName('Avenue Antoine Lumière')
+            .typosFrom('Avenue Antoinne Lumieres'),
+        isNull,
+      );
+    });
+
+    test('should not be close when a word is added', () {
+      expect(
+        streetName('Rue Nationale').typosFrom('Rue Nationale Prolongée'),
+        isNull,
+      );
+    });
+
+    test('should not be close for another kind of road', () {
+      expect(paix.typosFrom('Impasse de la Paix'), isNull);
+    });
+  });
+
+  group('closestNamed', () {
+    String? closest(String name, List<String> names) =>
+        closestNamed(name, names, streetName)?.toString();
+
+    test('should take the first name it matches', () {
+      expect(
+        closestNamed('Rue du Musee', [
+          'Rue de la Paix',
+          'Rue du Musée',
+          'RUE DU MUSEE',
+        ], streetName),
+        'Rue du Musée',
+      );
+    });
+
+    test('should take the name it matches before a closer typo', () {
+      expect(
+        closest('Rue de le Paix', ['Rue de la Paix', 'Rue de le Paix']),
+        'Rue de le Paix',
+      );
+    });
+
+    test('should take the name with the fewest typos', () {
+      expect(
+        closest('Rue de le Paix', [
+          'Rue Paix',
+          'Rue de la Paix',
+          'Rue la Paix',
+        ]),
+        'Rue de la Paix',
+      );
+    });
+
+    test('should take none when no name is close', () {
+      expect(closest('Rue de la Mare', ['Rue de la Gare']), isNull);
+      expect(closest('Rue de la Mare', []), isNull);
+    });
+
+    test('should take none when two names are as close', () {
+      expect(closest('Rue d Paix', ['Rue de Paix', 'Rue du Paix']), isNull);
+    });
+
+    test('should take the first when the closest name comes twice', () {
+      final first = streetName('Rue de la Paix');
+      final second = streetName('Rue de la Paix');
+
+      expect(
+        closestNamed('Rue de le Paix', [first, second], (name) => name),
+        same(first),
+      );
+    });
+  });
 }

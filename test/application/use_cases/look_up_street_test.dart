@@ -281,6 +281,140 @@ void main() {
       expect(directory.streetsAsked, isEmpty);
     });
 
+    group('a road misspelt on the map', () {
+      // The map's road says « Rue de le Paix », the BAN « Rue de la Paix »
+      // (#134: « Aucune rue connue ici. » although the street exists).
+      final paix = StreetMatch(
+        id: BanStreetId('69264_1500'),
+        name: streetName('Rue de la Paix'),
+        commune: villefranche,
+        position: at(45.98805, 4.72495),
+      );
+      final paixNumbers = StreetNumbers(
+        id: paix.id,
+        name: paix.name,
+        commune: villefranche,
+        numbers: [DirectoryNumber(number: n('4'))],
+        invalidNumbers: 0,
+        duplicateNumbers: 0,
+      );
+      final gare = StreetMatch(
+        id: BanStreetId('69264_1510'),
+        name: streetName('Rue de la Gare'),
+        commune: villefranche,
+        position: at(45.98900, 4.72400),
+      );
+
+      setUp(() {
+        shapes.roads = Ok([_roadNorthOfTap('Rue de le Paix', 2)]);
+      });
+
+      test('should give the BAN street of the commune whose name is that '
+          'road misspelt', () async {
+        final directory = FakeAddressDirectory(
+          places: {_tap: Ok(_lilasMatch)},
+          searches: {
+            'Rue de le Paix': Ok([gare, paix]),
+          },
+          streets: {paix.id: Ok(paixNumbers)},
+        );
+
+        final found = valueOf(await lookUp(directory)(StreetAtPoint(_tap)));
+
+        expect(found, isA<StreetToAdd>());
+        expect(found.match, paix);
+        expect(directory.searchesAsked, [('Rue de le Paix', '69264')]);
+        expect(directory.streetsAsked, [paix.id]);
+      });
+
+      test('should give the nearest BAN street when its name is that road '
+          'misspelt and the search does not find it', () async {
+        final directory = FakeAddressDirectory(
+          places: {_tap: Ok(paix)},
+          searches: {
+            'Rue de le Paix': Ok([gare]),
+          },
+          streets: {paix.id: Ok(paixNumbers)},
+        );
+
+        final found = valueOf(await lookUp(directory)(StreetAtPoint(_tap)));
+
+        expect(found.match, paix);
+        expect(directory.streetsAsked, [paix.id]);
+      });
+
+      test('should prefer a BAN street named exactly as the road to a '
+          'nearest street that is close', () async {
+        final dePaix = StreetMatch(
+          id: BanStreetId('69264_1520'),
+          name: streetName('Rue de Paix'),
+          commune: villefranche,
+          position: at(45.98806, 4.72496),
+        );
+        final duPaix = StreetMatch(
+          id: BanStreetId('69264_1530'),
+          name: streetName('Rue du Paix'),
+          commune: villefranche,
+          position: at(45.98807, 4.72497),
+        );
+        shapes.roads = Ok([_roadNorthOfTap('Rue du Paix', 2)]);
+        final directory = FakeAddressDirectory(
+          places: {_tap: Ok(dePaix)},
+          searches: {
+            'Rue du Paix': Ok([duPaix]),
+          },
+          streets: {duPaix.id: Ok(paixNumbers)},
+        );
+
+        final found = valueOf(await lookUp(directory)(StreetAtPoint(_tap)));
+
+        expect(found.match, duPaix);
+      });
+
+      test('should say no street is there when two BAN streets are as close '
+          'to the road\'s name', () async {
+        final dePaix = StreetMatch(
+          id: BanStreetId('69264_1520'),
+          name: streetName('Rue de Paix'),
+          commune: villefranche,
+          position: at(45.98806, 4.72496),
+        );
+        final duPaix = StreetMatch(
+          id: BanStreetId('69264_1530'),
+          name: streetName('Rue du Paix'),
+          commune: villefranche,
+          position: at(45.98807, 4.72497),
+        );
+        shapes.roads = Ok([_roadNorthOfTap('Rue d Paix', 2)]);
+        final directory = FakeAddressDirectory(
+          places: {_tap: Ok(_lilasMatch)},
+          searches: {
+            'Rue d Paix': Ok([dePaix, duPaix]),
+          },
+        );
+
+        final failure = failureOf(await lookUp(directory)(StreetAtPoint(_tap)));
+
+        expect(failure, AddressDirectoryFailure.notFound);
+        expect(directory.streetsAsked, isEmpty);
+      });
+
+      test('should say no street is there when the only BAN street near the '
+          'name is another one', () async {
+        shapes.roads = Ok([_roadNorthOfTap('Rue de la Mare', 2)]);
+        final directory = FakeAddressDirectory(
+          places: {_tap: Ok(gare)},
+          searches: {
+            'Rue de la Mare': Ok([gare]),
+          },
+        );
+
+        final failure = failureOf(await lookUp(directory)(StreetAtPoint(_tap)));
+
+        expect(failure, AddressDirectoryFailure.notFound);
+      });
+    });
+
     test('should pass on a search that fails', () async {
       final directory = FakeAddressDirectory(
         places: {_tap: Ok(_lilasMatch)},

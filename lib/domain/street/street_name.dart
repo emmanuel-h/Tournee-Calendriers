@@ -52,6 +52,58 @@ final class StreetName {
   /// Nationale » is not « Rue Nationale Prolongée ».
   bool matches(String other) => searchKey(other) == searchKey(text);
 
+  /// The small words of a street name, which a map often gets wrong
+  /// (« Rue de le Paix » for « Rue de la Paix ») or leaves out, and which
+  /// never tell two streets apart on their own.
+  static const _smallWords = {
+    'a', 'au', 'aux', 'd', 'de', 'des', 'du', 'et', 'l', 'la', 'le', 'les', //
+  };
+
+  /// The shortest word in which [typosFrom] allows one letter off. A short
+  /// word one letter off is often another street (« Rue de la Mare », « Rue
+  /// de la Gare »); a long one rarely is (« Pasteur », « Pasteir »).
+  static const _longWordLength = 7;
+
+  /// How many letters [other], a name as another source writes it (a road
+  /// of OpenStreetMap), is away from this name, when it is close enough to
+  /// be this street misspelt (#134); null when it is not.
+  ///
+  /// 0 when it [matches]. Otherwise it is close when, leaving the small
+  /// words out (« de », « la », « du »…: they may differ, be missing or be
+  /// added), the other words are the same, in the same order, except at
+  /// most one word of [_longWordLength] letters or more (both spellings)
+  /// that is one letter off. The count is then [editDistance] of both
+  /// names, as [searchKey] writes them, so that the closest of several
+  /// names can be told (`closestNamed`).
+  ///
+  /// So « Rue de le Paix » is « Rue de la Paix » (1), but « Rue de la
+  /// Gare » is not, nor « Impasse de la Paix », nor « Rue Nationale
+  /// Prolongée »: a word that carries the name must be there and spelt the
+  /// same, bar one letter of a long one.
+  int? typosFrom(String other) {
+    final mine = searchKey(text);
+    final theirs = searchKey(other);
+    if (mine == theirs) return 0;
+    final myWords = _mainWords(mine);
+    final theirWords = _mainWords(theirs);
+    if (myWords.length != theirWords.length) return null;
+    var longWordsOff = 0;
+    for (var i = 0; i < myWords.length; i++) {
+      final (a, b) = (myWords[i], theirWords[i]);
+      if (a == b) continue;
+      final long = a.length >= _longWordLength && b.length >= _longWordLength;
+      if (!long || editDistance(a, b) > 1) return null;
+      longWordsOff++;
+    }
+    if (longWordsOff > 1) return null;
+    return editDistance(mine, theirs);
+  }
+
+  static List<String> _mainWords(String key) => [
+    for (final word in key.split(' '))
+      if (!_smallWords.contains(word)) word,
+  ];
+
   @override
   bool operator ==(Object other) => other is StreetName && other.text == text;
 
@@ -60,4 +112,31 @@ final class StreetName {
 
   @override
   String toString() => 'StreetName($text)';
+}
+
+/// The one of [streets] that [name] (a road of the map) names, by
+/// `nameOf` each: the first that [StreetName.matches] it, else the one
+/// with the fewest [StreetName.typosFrom] it; null when none is close, or
+/// when two different names are as close (better no street than another
+/// one than the road tapped). Two of [streets] of the same name count as
+/// one: the first is taken.
+T? closestNamed<T>(
+  String name,
+  Iterable<T> streets,
+  StreetName Function(T street) nameOf,
+) {
+  T? closest;
+  int? fewest;
+  var tied = false;
+  for (final street in streets) {
+    final typos = nameOf(street).typosFrom(name);
+    if (typos == null) continue;
+    if (typos == 0) return street;
+    if (fewest == null || typos < fewest) {
+      (closest, fewest, tied) = (street, typos, false);
+    } else if (typos == fewest && nameOf(street) != nameOf(closest as T)) {
+      tied = true;
+    }
+  }
+  return tied ? null : closest;
 }

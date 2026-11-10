@@ -223,6 +223,118 @@ void main() {
     );
   });
 
+  group('a road misspelt on the map', () {
+    // The map's road says « Rue de le Paix », the BAN « Rue de la Paix »
+    // (#134).
+    final paixId = BanStreetId('69264_1500');
+    final gleizePaixId = BanStreetId('69092_0200');
+
+    test('should match the BAN street whose name is the road\'s '
+        'misspelt', () async {
+      shapes.roads = Ok([_road('Rue de le Paix', 45.985)]);
+      directory = FakeAddressDirectory(
+        communes: {
+          '69264': Ok(
+            _listing(villefranche, {
+              _pasteurId: 'Rue Pasteur',
+              paixId: 'Rue de la Paix',
+            }),
+          ),
+        },
+      );
+
+      final street = (await found()).single as ZoneStreetToAdd;
+
+      expect(street.match.id, paixId);
+      expect(street.name, 'Rue de la Paix');
+      expect(street.road, _roadAt(45.985));
+    });
+
+    test(
+      'should grey a road whose name is only near another street\'s',
+      () async {
+        shapes.roads = Ok([_road('Rue de la Mare', 45.985)]);
+        directory = FakeAddressDirectory(
+          communes: {
+            '69264': Ok(_listing(villefranche, {paixId: 'Rue de la Gare'})),
+          },
+        );
+
+        expect((await found()).single, isA<ZoneRoadWithoutAddress>());
+      },
+    );
+
+    test('should grey a road two streets are as near to', () async {
+      shapes.roads = Ok([_road('Rue d Paix', 45.985)]);
+      directory = FakeAddressDirectory(
+        communes: {
+          '69264': Ok(
+            _listing(villefranche, {
+              paixId: 'Rue de Paix',
+              _pasteurId: 'Rue du Paix',
+            }),
+          ),
+        },
+      );
+
+      expect((await found()).single, isA<ZoneRoadWithoutAddress>());
+    });
+
+    test('should take an exact name in a later commune before a near one in '
+        'the first', () async {
+      shapes.roads = Ok([_road('Rue de le Paix', 45.985)]);
+      directory = FakeAddressDirectory(
+        communes: {
+          '69092': Ok(_listing(_gleize, {gleizePaixId: 'Rue de la Paix'})),
+          '69264': Ok(_listing(villefranche, {paixId: 'Rue de le Paix'})),
+        },
+      );
+
+      final street =
+          (await found(communes: ['69092', '69264'])).single as ZoneStreetToAdd;
+
+      expect(street.match.id, paixId);
+      expect(directory.communesAsked, ['69092', '69264']);
+    });
+
+    test('should take a near name in the first commune read', () async {
+      shapes.roads = Ok([_road('Rue de le Paix', 45.985)]);
+      directory = FakeAddressDirectory(
+        communes: {
+          '69092': Ok(_listing(_gleize, {gleizePaixId: 'Rue de la Paix'})),
+          '69264': Ok(_listing(villefranche, {paixId: 'Rue de la Paix'})),
+        },
+      );
+
+      final street =
+          (await found(communes: ['69092', '69264'])).single as ZoneStreetToAdd;
+
+      expect(street.match.id, gleizePaixId);
+      expect(street.match.commune, _gleize);
+    });
+
+    test('should show a misspelt road and the road named exactly as one '
+        'row', () async {
+      shapes.roads = Ok([
+        _road('Rue de la Paix', 45.985),
+        _road('Rue de le Paix', 45.987),
+      ]);
+      directory = FakeAddressDirectory(
+        communes: {
+          '69264': Ok(_listing(villefranche, {paixId: 'Rue de la Paix'})),
+        },
+      );
+
+      final street = (await found()).single as ZoneStreetToAdd;
+
+      expect(street.match.id, paixId);
+      expect(
+        street.road,
+        StreetShape([..._roadAt(45.985).lines, ..._roadAt(45.987).lines]),
+      );
+    });
+  });
+
   group('the communes', () {
     test('should take a name found in two communes in the first', () async {
       shapes.roads = Ok([_road('Rue Pierre Morin', 45.985)]);

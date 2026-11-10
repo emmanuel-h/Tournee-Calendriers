@@ -86,4 +86,30 @@ void main() {
       expect(matchesFilter('Rue Nationale', ''), isTrue);
     });
   });
+
+  group('editDistance', () {
+    test('should be 0 for the same text', () {
+      expect(editDistance('rue de la paix', 'rue de la paix'), 0);
+    });
+
+    test('should count a letter changed, added or dropped as one', () {
+      expect(editDistance('la', 'le'), 1);
+      expect(editDistance('paix', 'paixx'), 1);
+      expect(editDistance('paixx', 'paix'), 1);
+    });
+
+    test('should count two letters swapped as two', () {
+      expect(editDistance('pasteur', 'pastuer'), 2);
+    });
+
+    test('should count every letter against an empty text', () {
+      expect(editDistance('', 'gare'), 4);
+      expect(editDistance('gare', ''), 4);
+    });
+
+    test('should add up the changes spread along the text', () {
+      expect(editDistance('rue de la paix', 'rue de la gare'), 3);
+      expect(editDistance('kitten', 'sitting'), 3);
+    });
+  });
 }
