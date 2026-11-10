@@ -81,6 +81,7 @@ street's top bar and the building grid's header; the tournée card and the stree
 (#124: `PickedRoad` on the map, no street card on that screen); « Zone » draws a rectangle and lists its
 streets (#125: `StreetShapes.roadsIn`, `FindZoneStreets` matching the tiles' road names to the BAN's in the
 3 nearest communes, numbers read when added, `ZoneDrawing` over the map, zoom ≥ 15, 50 streets).
+Released as 0.11.0 on internal testing; rules without `assignees` deployed 2026-11-10 (identical to `firestore.rules`).
 
 ## Commands
 
