@@ -28,7 +28,7 @@ dependencies:
   # licences page).
   flutter_localizations:
     sdk: flutter
-  flutter_riverpod: 3.4.3
+  flutter_riverpod: 3.5.0
   # The phone's position for « Me localiser » on the map (PLAN §5.3,
   # §10.2); only in ui/map/. The permission is asked the first time the
   # button is tapped, never at launch, and the position is never stored.
