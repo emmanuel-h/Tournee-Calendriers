@@ -1164,6 +1164,30 @@ class AppLocalizationsFr extends AppLocalizations {
   String get release010First => 'Première version de test.';
 
   @override
+  String get release0110Sector =>
+      'Plus de rues attribuées : toute l\'équipe couvre tout le secteur.';
+
+  @override
+  String get release0110SectorButton =>
+      'Le bouton 🗺 ouvre le Secteur, d\'où l\'on ajoute des rues.';
+
+  @override
+  String get release0110MarkInRound =>
+      'Les maisons se marquent seulement pendant une tournée.';
+
+  @override
+  String get release0110Band =>
+      'Pendant une tournée, un bandeau en haut montre la durée, les dons et « Terminer ».';
+
+  @override
+  String get release0110SeveralStreets =>
+      'Sur la carte, cochez plusieurs rues et ajoutez-les d\'un coup.';
+
+  @override
+  String get release0110Zone =>
+      'Tracez une zone sur la carte pour ajouter toutes ses rues.';
+
+  @override
   String get release0101NoSector =>
       'Sans secteur ouvert, l\'accueil propose de rejoindre un secteur (ou d\'en créer un, pour un administrateur) : les rues n\'existent plus que dans un secteur.';
 

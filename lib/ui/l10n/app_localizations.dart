@@ -1690,6 +1690,42 @@ abstract class AppLocalizations {
   /// **'Première version de test.'**
   String get release010First;
 
+  /// Line of « Nouveautés » for 0.11.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'Plus de rues attribuées : toute l\'équipe couvre tout le secteur.'**
+  String get release0110Sector;
+
+  /// Line of « Nouveautés » for 0.11.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le bouton 🗺 ouvre le Secteur, d\'où l\'on ajoute des rues.'**
+  String get release0110SectorButton;
+
+  /// Line of « Nouveautés » for 0.11.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'Les maisons se marquent seulement pendant une tournée.'**
+  String get release0110MarkInRound;
+
+  /// Line of « Nouveautés » for 0.11.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pendant une tournée, un bandeau en haut montre la durée, les dons et « Terminer ».'**
+  String get release0110Band;
+
+  /// Line of « Nouveautés » for 0.11.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'Sur la carte, cochez plusieurs rues et ajoutez-les d\'un coup.'**
+  String get release0110SeveralStreets;
+
+  /// Line of « Nouveautés » for 0.11.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tracez une zone sur la carte pour ajouter toutes ses rues.'**
+  String get release0110Zone;
+
   /// Line of « Nouveautés » for 0.10.1.
   ///
   /// In fr, this message translates to:
