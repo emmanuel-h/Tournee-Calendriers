@@ -1567,7 +1567,8 @@ outing; the team's area is the **secteur** (§2).
 │ Voir les dons            › │                                      │ Samedi 24 oct. · 14:05 →   │
 │ [  Valider la tournée  ]   │                                      │ 18:20 · 23 maisons, 19 dons│
 │ [ Continuer la tournée ]   │                                      │                    280 € ▾ │
-└────────────────────────────┘                                      └────────────────────────────┘
+│    Abandonner la tournée   │                                      └────────────────────────────┘
+└────────────────────────────┘
 ```
 
 - **Start**: « Commencer une tournée » (outlined, a red ▶) under the totals of Accueil's panel,
@@ -1593,11 +1594,17 @@ outing; the team's area is the **secteur** (§2).
   figures — « 23 maisons visitées » (the houses and doors this member made ✓ or ⊘ during the
   tournée; one undone does not count), « 19 dons », « 2 calendriers offerts » —, « ARGENT
   RÉCOLTÉ » with count and amount per method (« Espèces », « Chèques », « Carte bancaire ») and
-  « Total », « Voir les dons › », then « Valider la tournée » (red) and « Continuer la tournée »
-  (the tournée goes on). « Valider » asks « Valider la tournée ? — Vous ne pourrez plus la
+  « Total », « Voir les dons › », then « Valider la tournée » (red), « Continuer la tournée »
+  (the tournée goes on) and « Abandonner la tournée » (red text, #136). « Valider » asks « Valider la tournée ? — Vous ne pourrez plus la
   modifier. [Annuler] [Valider] », then sends the summary (queued offline), forgets the dons
   and goes back to Accueil without a tournée. **A validated tournée is never changed or
   deleted** (only with its secteur, or its campaign, §5.10).
+- **Abandonner** (#136, for a tournée started by mistake) asks « Abandonner la tournée ? —
+  Ses dons seront perdus. Les maisons marquées restent marquées. [Annuler] [Abandonner] »
+  (« Abandonner » in red), then the phone forgets the tournée and its dons (`open_round.json`,
+  `AbandonRound`): nothing is sent, so « Collecte » never counts it; the houses marked during it
+  stay marked. Works offline. Back to Accueil with its usual top bar, « Commencer une
+  tournée » offered again.
 - **Équipe**: **no money per member**, by decision. After the members and the Corbeille,
   « COLLECTE 2026 » with « 600 € récoltés » and « 41 dons en 4 tournées » under it, ›, which opens
   **Collecte 2026** (« Secteur 49 · tournées validées »): « TOTAL DES 4 TOURNÉES », the count and

@@ -275,6 +275,31 @@ void main() {
     });
   });
 
+  group('AbandonRound', () {
+    late AbandonRound abandon;
+
+    // Built without the `RoundLedger`: nothing of an abandoned tournée can
+    // reach « Collecte ».
+    setUp(() => abandon = AbandonRound(rounds));
+
+    test('should forget the tournée and its dons, and give it back', () async {
+      final round = newRound().visited().add(cash(1000));
+      rounds.openRound = round;
+
+      final forgotten = valueOf(await abandon());
+
+      expect(forgotten, round);
+      expect(rounds.openRound, isNull);
+      expect(rounds.clears, 1);
+      expect(rounds.saves, isEmpty);
+    });
+
+    test('should refuse with no tournée on', () async {
+      expect(failureOf(await abandon()), const NoRoundOn());
+      expect(rounds.clears, 0);
+    });
+  });
+
   group('WatchCollecte', () {
     late FakeRoundLedger ledger;
     late WatchCollecte watch;

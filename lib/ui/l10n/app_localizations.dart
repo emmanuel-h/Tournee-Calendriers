@@ -3562,6 +3562,30 @@ abstract class AppLocalizations {
   /// **'Valider'**
   String get recapConfirmOk;
 
+  /// Red text button of the « Bilan », under « Continuer la tournée »: asks, then forgets a tournée started by mistake (#136).
+  ///
+  /// In fr, this message translates to:
+  /// **'Abandonner la tournée'**
+  String get recapAbandon;
+
+  /// Title of the dialog « Abandonner la tournée » opens.
+  ///
+  /// In fr, this message translates to:
+  /// **'Abandonner la tournée ?'**
+  String get recapAbandonTitle;
+
+  /// Body of that dialog: the dons go, nothing reaches « Collecte », the marks stay.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ses dons seront perdus. Les maisons marquées restent marquées.'**
+  String get recapAbandonBody;
+
+  /// Red button of that dialog that forgets the tournée.
+  ///
+  /// In fr, this message translates to:
+  /// **'Abandonner'**
+  String get recapAbandonOk;
+
   /// Header of the collecte row of Équipe (shown in capitals, RunTeam mockup) and title of the Collecte screen (Cash mockup, PLAN §5.13).
   ///
   /// In fr, this message translates to:

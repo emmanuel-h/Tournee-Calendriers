@@ -32,7 +32,7 @@ enum StartOutcome {
 
 /// Follows the tournée on (`WatchOpenRound`, from the phone, offline too)
 /// and sends what the member does with it to the use cases: start it, add,
-/// change or remove a don, validate it.
+/// change or remove a don, validate or abandon it.
 final class RoundNotifier extends Notifier<RoundView> {
   /// The tournée as last read; null while none is on here.
   Round? _round;
@@ -114,4 +114,9 @@ final class RoundNotifier extends Notifier<RoundView> {
   /// secteur (queued offline) and the phone forgets its dons. Nothing
   /// happens when it was validated already.
   Future<void> validate() => ref.read(validateRoundProvider)();
+
+  /// « Abandonner » of « Abandonner la tournée ? »: the phone forgets the
+  /// tournée and its dons, nothing goes to the secteur; the houses marked
+  /// stay marked. Nothing happens when none is on any more.
+  Future<void> abandon() => ref.read(abandonRoundProvider)();
 }

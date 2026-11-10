@@ -249,6 +249,24 @@ final class ValidateRound {
   }
 }
 
+/// « Abandonner » of « Abandonner la tournée ? » (#136), for a tournée
+/// started by mistake: the phone forgets it and its dons, and nothing is
+/// sent to the secteur, so « Collecte » never counts it. The houses marked
+/// during it stay marked: they are the streets', not the tournée's. Needs
+/// no network. Returns the tournée forgotten.
+final class AbandonRound {
+  const AbandonRound(this._rounds);
+
+  final OpenRoundStore _rounds;
+
+  Future<Result<Round, NoRoundOn>> call() async {
+    final round = _rounds.openRound;
+    if (round == null) return const Err(NoRoundOn());
+    await _rounds.clear();
+    return Ok(round);
+  }
+}
+
 /// « Collecte 2026 » (PLAN §5.13): the validated tournées of [campaign] of
 /// [sector] and their totals, now and again at each tournée validated, by
 /// this phone or a teammate's. Read from the phone's copy first, so it

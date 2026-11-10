@@ -265,6 +265,19 @@ void main() {
       expect(rounds.openRound, isNull);
       expect(container.read(roundProvider), const RoundOff(canStart: true));
     });
+
+    test('should abandon the tournée: nothing recorded, the tournée gone, '
+        'a new one can start', () async {
+      phoneWith(open: sector49, round: _threeDons());
+      await settled();
+
+      await notifier().abandon();
+
+      expect(ledger.recorded, isEmpty);
+      expect(rounds.openRound, isNull);
+      expect(rounds.clears, 1);
+      expect(container.read(roundProvider), const RoundOff(canStart: true));
+    });
   });
 
   test('should follow the tournée of the secteur opened next', () async {

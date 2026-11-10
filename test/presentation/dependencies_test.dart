@@ -860,6 +860,15 @@ void main() {
       expect(rounds.openRound, isNull);
     });
 
+    test('should abandon the tournée of the bound store', () async {
+      roundOnInThe49();
+
+      final forgotten = valueOf(await container.read(abandonRoundProvider)());
+
+      expect(forgotten, newRound());
+      expect(rounds.openRound, isNull);
+    });
+
     test('should watch the collecte of the bound ledger', () async {
       roundOnInThe49();
       final summary = valueOf(await container.read(validateRoundProvider)());

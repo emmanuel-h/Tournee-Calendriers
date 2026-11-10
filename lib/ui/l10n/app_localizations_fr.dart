@@ -2482,6 +2482,19 @@ class AppLocalizationsFr extends AppLocalizations {
   String get recapConfirmOk => 'Valider';
 
   @override
+  String get recapAbandon => 'Abandonner la tournée';
+
+  @override
+  String get recapAbandonTitle => 'Abandonner la tournée ?';
+
+  @override
+  String get recapAbandonBody =>
+      'Ses dons seront perdus. Les maisons marquées restent marquées.';
+
+  @override
+  String get recapAbandonOk => 'Abandonner';
+
+  @override
   String collecteTitle(String campaign) {
     return 'Collecte $campaign';
   }

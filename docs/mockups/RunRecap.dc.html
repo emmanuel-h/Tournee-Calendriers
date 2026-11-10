@@ -47,6 +47,8 @@ a{color:#B3261E}a:hover{color:#8C1D18}
   <div style="display: flex; flex-direction: column; gap: 10px; padding: 0 16px 24px 16px">
     <button onClick="{{askClose}}" style="height: 56px; border-radius: 28px; border: 0; background: #B3261E; color: #FFFFFF; font: 700 17px 'Atkinson Hyperlegible', sans-serif; cursor: pointer">Valider la tournée</button>
     <a href="RunHome.dc.html" style="height: 52px; border-radius: 26px; border: 1.5px solid #CFC9BD; background: #FFFFFF; color: #1B1F24; font-weight: 700; font-size: 16px; display: flex; align-items: center; justify-content: center; text-decoration: none; box-sizing: border-box">Continuer la tournée</a>
+    <!-- #136: red text only, for a tournée started by mistake; asks first. -->
+    <button onClick="{{askAbandon}}" style="height: 48px; border: 0; background: transparent; color: #B3261E; font: 700 16px 'Atkinson Hyperlegible', sans-serif; cursor: pointer">Abandonner la tournée</button>
   </div>
   <!-- ✎: correct one method's count and amount, before closing only. -->
   <sc-if value="{{editing}}" hint-placeholder-val="{{false}}">
@@ -76,13 +78,26 @@ a{color:#B3261E}a:hover{color:#8C1D18}
       </div>
     </div>
   </sc-if>
+  <!-- #136: the dons are forgotten, nothing goes to « Collecte », the marks stay. -->
+  <sc-if value="{{abandoning}}" hint-placeholder-val="{{false}}">
+    <div style="position: absolute; inset: 0; background: rgba(27, 31, 36, 0.5); display: flex; align-items: center; justify-content: center; padding: 24px">
+      <div role="alertdialog" aria-labelledby="at" style="background: #FFFFFF; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 14px; width: 100%; box-sizing: border-box">
+        <h2 id="at" style="margin: 0; font: 700 26px 'Barlow Condensed', sans-serif">Abandonner la tournée&#160;?</h2>
+        <span style="font-size: 16px; color: #4A5058">Ses dons seront perdus. Les maisons marquées restent marquées.</span>
+        <div style="display: flex; justify-content: flex-end; gap: 8px">
+          <button onClick="{{cancelAbandon}}" style="height: 48px; padding: 0 18px; border: 0; background: transparent; font: 700 16px 'Atkinson Hyperlegible', sans-serif; color: #1B1F24">Annuler</button>
+          <a href="RunStart.dc.html" style="height: 48px; padding: 0 18px; color: #B3261E; font-weight: 700; font-size: 16px; display: flex; align-items: center; text-decoration: none">Abandonner</a>
+        </div>
+      </div>
+    </div>
+  </sc-if>
 </div>
 </x-dc>
 <script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
 class Component extends DCLogic {
   constructor(props) {
     super(props);
-    this.state = { edit: -1, confirm: false };
+    this.state = { edit: -1, confirm: false, abandon: false };
     this.data = [
       { name: 'Espèces', count: 15, sum: 210 },
       { name: 'Chèques', count: 3, sum: 60 },
@@ -105,7 +120,10 @@ class Component extends DCLogic {
       closeEdit: () => this.setState({ edit: -1 }),
       confirming: this.state.confirm,
       askClose: () => this.setState({ confirm: true }),
-      cancelClose: () => this.setState({ confirm: false })
+      cancelClose: () => this.setState({ confirm: false }),
+      abandoning: this.state.abandon,
+      askAbandon: () => this.setState({ abandon: true }),
+      cancelAbandon: () => this.setState({ abandon: false })
     };
   }
 }

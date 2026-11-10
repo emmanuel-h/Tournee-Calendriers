@@ -98,7 +98,8 @@ Street screen (« Rue »):
   in the snackbar takes the don back too. « Dons de la tournée » lists them newest first, to
   change, remove or add one; « Bilan de la tournée » shows the houses visited, the dons and the
   money per method, then « Valider la tournée » (asked first; only the totals are kept, never a
-  don per house).
+  don per house), or « Abandonner la tournée » for one started by mistake (asked first; its
+  dons are forgotten, nothing reaches « Collecte », the houses stay marked).
 - Calendars per house: a house or door done shows « 1 calendrier » / « 2 calendriers » in its
   picker with « − » (disabled at one); « + Ajouter un don » adds one, and its
   « Annuler » takes the don and the calendar back; from two, the tile and the door carry a

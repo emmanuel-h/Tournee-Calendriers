@@ -579,6 +579,12 @@ final validateRoundProvider = Provider(
   ),
 );
 
+/// « Abandonner la tournée » (#136): only the phone's store, so nothing of
+/// the tournée can reach the ledger.
+final abandonRoundProvider = Provider(
+  (ref) => AbandonRound(ref.watch(openRoundStoreProvider)),
+);
+
 /// « Collecte 2026 » (#111): the validated tournées from the ledger.
 final watchCollecteProvider = Provider(
   (ref) => WatchCollecte(ref.watch(roundLedgerProvider)),

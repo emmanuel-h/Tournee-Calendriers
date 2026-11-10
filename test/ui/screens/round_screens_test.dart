@@ -14,6 +14,7 @@ import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/screens/home/home_screen.dart';
 import 'package:tournee_calendriers/ui/screens/round/dons_screen.dart';
 import 'package:tournee_calendriers/ui/screens/round/round_recap_screen.dart';
+import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 
 import '../../domain/round/round_fixtures.dart';
 import '../../domain/sector/my_sectors_fixtures.dart';
@@ -21,6 +22,7 @@ import '../../domain/sector/sector_fixtures.dart' show team;
 import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_open_round_store.dart';
 import '../../support/fakes/fake_ports.dart';
+import '../../support/fakes/fake_round_ledger.dart';
 import '../../support/fakes/fake_sector_repository.dart';
 import '../../support/results.dart';
 import '../support/app_overrides.dart';
@@ -56,6 +58,7 @@ String? _text(WidgetTester tester, String key) =>
 void main() {
   late FakeOpenRoundStore rounds;
   late FakeClock clock;
+  late FakeRoundLedger ledger;
 
   /// Léa's phone with [open] open (the 49 by default), [round] on (none
   /// by default) and [also] known; the clock reads [_now].
@@ -76,12 +79,14 @@ void main() {
       mine = mine.remember(sector);
     }
     clock = FakeClock(_now);
+    ledger = FakeRoundLedger();
     await tester.pumpWidget(
       ProviderScope(
         overrides: fakePhone(
           sectors: FakeSectorRepository([team()]),
           mySectors: FakeMySectorsStore(valueOf(mine.open(opened.id))),
           rounds: rounds,
+          ledger: ledger,
           clock: clock,
         ),
         child: const TourneeApp(showGallery: false),
@@ -524,6 +529,73 @@ void main() {
 
       expect(find.byType(HomeScreen), findsOneWidget);
       expect(rounds.openRound, isNull);
+      expect(_key('round.band'), findsNothing);
+      expect(_key('round.start'), findsOneWidget);
+      expect(_key('home.settings'), findsOneWidget);
+    });
+
+    testWidgets('should offer « Abandonner la tournée » in red under '
+        '« Continuer la tournée »', (tester) async {
+      await pumpRecap(tester);
+
+      final abandon = tester.widget<TextButton>(_key('recap.abandon'));
+      expect(
+        find.descendant(
+          of: _key('recap.abandon'),
+          matching: find.text('Abandonner la tournée'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        abandon.style!.foregroundColor!.resolve({}),
+        AppColors.of(tester.element(_key('recap.abandon'))).accent,
+      );
+      expect(
+        tester.getTopLeft(_key('recap.abandon')).dy,
+        greaterThan(tester.getBottomLeft(_key('recap.continue')).dy),
+      );
+      expect(
+        tester.getSize(_key('recap.abandon')).height,
+        greaterThanOrEqualTo(48),
+      );
+    });
+
+    testWidgets('should ask before abandoning, and change nothing on '
+        '« Annuler »', (tester) async {
+      await pumpRecap(tester);
+
+      await tap(tester, _key('recap.abandon'));
+      expect(find.text('Abandonner la tournée$_nbsp?'), findsOneWidget);
+      expect(
+        find.text(
+          'Ses dons seront perdus. Les maisons marquées restent marquées.',
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: _key('recap.abandonConfirm.ok'),
+          matching: find.text('Abandonner'),
+        ),
+        findsOneWidget,
+      );
+      await tap(tester, _key('recap.abandonConfirm.cancel'));
+
+      expect(find.byType(RoundRecapScreen), findsOneWidget);
+      expect(rounds.openRound, _round());
+      expect(rounds.clears, 0);
+    });
+
+    testWidgets('should abandon the tournée and go back to Accueil with its '
+        'top bar, nothing sent to the secteur', (tester) async {
+      await pumpRecap(tester);
+
+      await tap(tester, _key('recap.abandon'));
+      await tap(tester, _key('recap.abandonConfirm.ok'));
+
+      expect(find.byType(HomeScreen), findsOneWidget);
+      expect(rounds.openRound, isNull);
+      expect(ledger.recorded, isEmpty);
       expect(_key('round.band'), findsNothing);
       expect(_key('round.start'), findsOneWidget);
       expect(_key('home.settings'), findsOneWidget);

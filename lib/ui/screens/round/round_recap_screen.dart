@@ -23,8 +23,9 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 /// three figures (« 23 maisons visitées », « 19 dons », « 2 calendriers
 /// offerts »), « ARGENT RÉCOLTÉ » per method and « Total », « Voir les dons
 /// › »; then « Valider la tournée », which asks first, sends the summary
-/// (queued offline) and goes back to Accueil, and « Continuer la
-/// tournée », which only goes back.
+/// (queued offline) and goes back to Accueil, « Continuer la tournée »,
+/// which only goes back, and « Abandonner la tournée », which asks first,
+/// forgets a tournée started by mistake and goes back to Accueil (#136).
 ///
 /// A `State`: the end of the tournée is « now », read from the clock once
 /// the screen shows.
@@ -77,6 +78,7 @@ final class _RoundRecapScreenState extends ConsumerState<RoundRecapScreen> {
           final RoundOn round => _Recap(
             round: round,
             onValidate: () => unawaited(_validate()),
+            onAbandon: () => unawaited(_abandon()),
           ),
         },
       ),
@@ -111,14 +113,38 @@ final class _RoundRecapScreenState extends ConsumerState<RoundRecapScreen> {
     await ref.read(roundProvider.notifier).validate();
     if (mounted) context.go(AppRoutes.home);
   }
+
+  /// « Abandonner la tournée ? — Ses dons seront perdus. Les maisons
+  /// marquées restent marquées. », then the phone forgets the tournée,
+  /// sends nothing, and Accueil shows with its top bar again. Offline too:
+  /// only the phone's file changes.
+  Future<void> _abandon() async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showConfirmDialog(
+      context,
+      name: 'recap.abandonConfirm',
+      title: l10n.recapAbandonTitle,
+      body: l10n.recapAbandonBody,
+      confirmLabel: l10n.recapAbandonOk,
+      destructive: true,
+    );
+    if (!confirmed || !mounted) return;
+    await ref.read(roundProvider.notifier).abandon();
+    if (mounted) context.go(AppRoutes.home);
+  }
 }
 
-/// The figures, the money and the two buttons.
+/// The figures, the money and the three buttons.
 final class _Recap extends StatelessWidget {
-  const _Recap({required this.round, required this.onValidate});
+  const _Recap({
+    required this.round,
+    required this.onValidate,
+    required this.onAbandon,
+  });
 
   final RoundOn round;
   final VoidCallback onValidate;
+  final VoidCallback onAbandon;
 
   @override
   Widget build(BuildContext context) {
@@ -194,6 +220,17 @@ final class _Recap extends StatelessWidget {
                 label: l10n.recapContinue,
                 compact: true,
                 onPressed: () => context.pop(),
+              ),
+              // Text only, in red: the way out of a tournée started by
+              // mistake, set apart from the two buttons of a real one.
+              TextButton(
+                key: const Key('recap.abandon'),
+                style: TextButton.styleFrom(
+                  foregroundColor: colors.accent,
+                  minimumSize: const Size.fromHeight(AppSizes.minTapTarget),
+                ),
+                onPressed: onAbandon,
+                child: Text(l10n.recapAbandon),
               ),
             ],
           ),

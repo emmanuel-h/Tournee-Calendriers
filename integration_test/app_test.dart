@@ -1052,6 +1052,44 @@ void main() {
       await tester.tap(find.byTooltip('Retour'));
       await tester.pumpAndSettle();
 
+      // A tournée started by mistake (#136), offline: the 2 marked « Fait »
+      // with a calendar offered, then « Abandonner la tournée ». Accueil
+      // shows its top bar again, nothing more reaches « Collecte », and the
+      // 2 stays done.
+      await tester.tap(find.byKey(const Key('round.start')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Chemin des Vignes'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('street.tile.2')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('house.status.done')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('house.freeCalendar')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Retour'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('round.finish')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('recap.abandon')));
+      await tester.pumpAndSettle();
+      expect(find.text('Abandonner la tournée\u00a0?'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('recap.abandonConfirm.ok')));
+      await tester.pumpAndSettle();
+      expect(find.byType(HomeScreen), findsOneWidget);
+      expect(find.byKey(const Key('round.band')), findsNothing);
+      expect(find.byKey(const Key('home.settings')), findsOneWidget);
+      expect(phone.read(openRoundStoreProvider).openRound, isNull);
+      final stillOne = await phone
+          .read(roundLedgerProvider)
+          .watch(SectorId(t49), _ok(CampaignYear.create(2026)))
+          .first;
+      expect(stillOne, validated);
+      await tester.tap(find.byKey(const Key('home.panel.handle')));
+      await tester.pumpAndSettle();
+      expect(find.text('Rues · 2/8'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('home.panel.handle')));
+      await tester.pumpAndSettle();
+
       // « Mes secteurs » offline (#33), from « Changer de secteur » in
       // Secteur (#135): the 12 was never downloaded on this phone, so it is
       // greyed and a tap leaves the sheet open. Once it counts as
