@@ -10,6 +10,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
+import 'package:tournee_calendriers/application/ports/street_shapes.dart';
 import 'package:tournee_calendriers/bootstrap/bindings.dart';
 import 'package:tournee_calendriers/bootstrap/firebase.dart';
 import 'package:tournee_calendriers/bootstrap/offline_upkeep.dart';
@@ -26,13 +27,14 @@ import 'package:tournee_calendriers/ui/theme/font_licenses.dart';
 ///
 /// The instrumented suite starts the real app through here, replacing what
 /// it must: [addressDirectory] (a fake BAN, so no network is needed),
-/// [communeSearch] (a fake commune search, for the same reason) and
-/// [storage] (a fresh folder, so each test starts with no street). By
-/// default the storage is the app's support folder: private to the app,
+/// [communeSearch] (a fake commune search, for the same reason),
+/// [streetShapes] (the map's roads, for the same reason) and [storage] (a
+/// fresh folder, so each test starts with no street). By default the storage is the app's support folder: private to the app,
 /// kept across updates, removed with the app.
 Future<void> bootstrap({
   AddressDirectory? addressDirectory,
   CommuneSearch? communeSearch,
+  StreetShapes? streetShapes,
   Directory? storage,
 }) async {
   // `path_provider` and Firebase talk to the platform through channels,
@@ -55,6 +57,7 @@ Future<void> bootstrap({
     firestore: offlineFirestore,
     addressDirectory: addressDirectory,
     communeSearch: communeSearch,
+    streetShapes: streetShapes,
   );
   runApp(
     ProviderScope(

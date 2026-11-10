@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/map/map_layers.dart';
 import 'package:tournee_calendriers/domain/map/picked_road.dart';
 import 'package:tournee_calendriers/domain/street/progress_level.dart';
@@ -263,6 +264,80 @@ void main() {
 
       expect(pickedRoadsGeoJson(const []), empty);
       expect(pickedMarksGeoJson(const []), empty);
+    });
+  });
+
+  group('zoneGeoJson', () {
+    test('should dim the world around the zone, edge it and put the handle '
+        'at its south-east corner', () {
+      final zone = GeoBounds.of(
+        south: 45.98,
+        west: 4.71,
+        north: 45.99,
+        east: 4.73,
+      )!;
+      const ring = [
+        [4.71, 45.98],
+        [4.73, 45.98],
+        [4.73, 45.99],
+        [4.71, 45.99],
+        [4.71, 45.98],
+      ];
+
+      expect(zoneGeoJson(zone), {
+        'type': 'FeatureCollection',
+        'features': [
+          {
+            'type': 'Feature',
+            'id': 'zone-shade',
+            'properties': {'part': 'shade'},
+            'geometry': {
+              'type': 'Polygon',
+              'coordinates': [
+                [
+                  [-180.0, -85.0],
+                  [180.0, -85.0],
+                  [180.0, 85.0],
+                  [-180.0, 85.0],
+                  [-180.0, -85.0],
+                ],
+                ring,
+              ],
+            },
+          },
+          {
+            'type': 'Feature',
+            'id': 'zone-edge',
+            'properties': {'part': 'edge'},
+            'geometry': {'type': 'LineString', 'coordinates': ring},
+          },
+          {
+            'type': 'Feature',
+            'id': 'zone-handle',
+            'properties': {'part': 'handle'},
+            'geometry': {
+              'type': 'Point',
+              'coordinates': [4.73, 45.98],
+            },
+          },
+        ],
+      });
+    });
+
+    test('should write an empty collection with no zone', () {
+      expect(zoneGeoJson(null), {
+        'type': 'FeatureCollection',
+        'features': <Object>[],
+      });
+    });
+
+    test('should name the parts of a zone', () {
+      expect(zonePartProperty, 'part');
+      expect(ZonePart.values.map((part) => part.name), [
+        'shade',
+        'edge',
+        'handle',
+      ]);
     });
   });
 }

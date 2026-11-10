@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
+import 'package:tournee_calendriers/application/ports/street_shapes.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/map/picked_road.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
@@ -18,6 +19,7 @@ import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/ui/app.dart';
+import 'package:tournee_calendriers/ui/components/app_buttons.dart';
 import 'package:tournee_calendriers/ui/screens/add_streets/add_streets_screen.dart';
 import 'package:tournee_calendriers/ui/screens/add_streets/manual_street_screen.dart';
 import 'package:tournee_calendriers/ui/screens/team/team_screen.dart';
@@ -117,6 +119,7 @@ Street _street(String id, String name, {BanStreetId? banId}) => valueOf(
 void main() {
   late FakeStreetRepository streets;
   late FakeAddressDirectory directory;
+  late FakeStreetShapes shapes;
 
   /// « Ajouter des rues » on Léa's phone, the size of the mockups'; the
   /// 49 is open, with Manu, Léa and Julie. Rue Pierre Morin is free, Rue
@@ -132,6 +135,26 @@ void main() {
       _street('carnot', 'Rue Carnot'),
     ]);
     directory = FakeAddressDirectory(
+      communes: {
+        '69264': Ok(
+          CommuneStreets(
+            commune: villefranche,
+            streets: [
+              for (final (id, name, count) in [
+                (_bordelanId, 'Petit Chemin de Bordelan', 1),
+                (_gareId, 'Rue de la Gare', 3),
+                (_lilasId, 'Rue des Lilas', 2),
+              ])
+                DirectoryStreet(
+                  id: id,
+                  name: streetName(name),
+                  numberCount: count,
+                ),
+            ],
+            skippedStreets: 0,
+          ),
+        ),
+      },
       places: {
         _onBordelan: Ok(_bordelanMatch),
         _onGare: Ok(_matchOf(_gareId, 'Rue de la Gare', _onGare)),
@@ -166,7 +189,7 @@ void main() {
         overrides: fakePhone(
           streets: streets,
           directory: directory,
-          shapes: FakeStreetShapes()
+          shapes: shapes = FakeStreetShapes()
             ..answers['Petit Chemin de Bordelan'] = Ok(_road),
           member: leaId,
           sectors: FakeSectorRepository([
@@ -205,7 +228,10 @@ void main() {
     expect(find.byType(AddStreetsScreen), findsOneWidget);
     expect(find.byType(FakeMapView), findsOneWidget);
     expect(find.text('Rechercher une rue'), findsOneWidget);
-    expect(find.text('Touchez les rues à ajouter.'), findsOneWidget);
+    expect(
+      find.text('Touchez les rues à ajouter ou tracez une zone.'),
+      findsOneWidget,
+    );
     expect(
       find.text('Rue absente de la carte ? Saisir à la main'),
       findsOneWidget,
@@ -312,7 +338,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(shownMap(tester).pickedRoads, isEmpty);
-    expect(find.text('Touchez les rues à ajouter.'), findsOneWidget);
+    expect(
+      find.text('Touchez les rues à ajouter ou tracez une zone.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('should untick a street with its ✕, and all of them with '
@@ -331,7 +360,10 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(row(_gareId), findsNothing);
-    expect(find.text('Touchez les rues à ajouter.'), findsOneWidget);
+    expect(
+      find.text('Touchez les rues à ajouter ou tracez une zone.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('should say a street of the secteur is in it already, from '
@@ -560,6 +592,231 @@ void main() {
       await tapRoad(tester, _onGare);
 
       expect(find.text('2 rues sélectionnées'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('zone', () {
+    final zone = GeoBounds.of(
+      south: 45.98,
+      west: 4.71,
+      north: 45.99,
+      east: 4.73,
+    )!;
+
+    /// A road across the zone at [latitude].
+    NamedRoad road(String name, double latitude) => NamedRoad(
+      name: name,
+      shape: StreetShape([
+        [at(latitude, 4.712), at(latitude, 4.716)],
+      ]),
+    );
+
+    Finder zonePill() => find.byKey(const Key('addStreets.zone'));
+    Finder zoneRow(String key) =>
+        find.byKey(ValueKey('addStreets.zoneRow.$key'));
+
+    /// « Zone » on, then a zone drawn at [zoom] with the Gare, the Lilas
+    /// and the Chemin de Halage in it.
+    Future<void> drawZone(WidgetTester tester, {double zoom = 16}) async {
+      shapes.roads = Ok([
+        road('Rue de la Gare', 45.985),
+        road('Rue des Lilas', 45.986),
+        road('Chemin de Halage', 45.987),
+      ]);
+      await tester.tap(zonePill());
+      await tester.pumpAndSettle();
+      shownMap(tester).onZoneDrawn!(zone, zoom);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('should turn « Zone » on next to the search, and say how '
+        'to draw one', (tester) async {
+      await pumpMap(tester);
+      expect(find.bySemanticsLabel('Sélectionner une zone'), findsOneWidget);
+      expect(shownMap(tester).zoneMode, isFalse);
+
+      await tester.tap(zonePill());
+      await tester.pumpAndSettle();
+
+      expect(shownMap(tester).zoneMode, isTrue);
+      expect(find.bySemanticsLabel('Zone en cours, annuler'), findsOneWidget);
+      expect(
+        find.text('Faites glisser le doigt sur la carte pour tracer une zone.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('should list the streets of the zone drawn, those to add '
+        'ticked, the others greyed', (tester) async {
+      await pumpMap(tester);
+
+      await drawZone(tester);
+
+      expect(find.byKey(const Key('addStreets.zoneSheet')), findsOneWidget);
+      expect(find.text('3 rues dans la zone'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: zoneRow(_gareId.value),
+          matching: find.text('3 numéros'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: zoneRow(_lilasId.value),
+          matching: find.text('Déjà dans le secteur'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: zoneRow('Chemin de Halage'),
+          matching: find.text('Aucune adresse connue'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Ajouter 1 rue'), findsOneWidget);
+      expect(shownMap(tester).zone, zone);
+      expect(shownMap(tester).pickedRoads.single.street, _gareId);
+      expect(
+        tester.getSemantics(zoneRow(_gareId.value)),
+        isSemantics(isChecked: true, isEnabled: true),
+      );
+      expect(
+        tester.getSemantics(zoneRow(_lilasId.value)),
+        isSemantics(isChecked: false, isEnabled: false),
+      );
+    });
+
+    testWidgets('should untick a street of the zone with its checkbox, and '
+        'tick nothing on a greyed one', (tester) async {
+      await pumpMap(tester);
+      await drawZone(tester);
+
+      await tester.tap(zoneRow(_gareId.value));
+      await tester.pumpAndSettle();
+      await tester.tap(zoneRow(_lilasId.value));
+      await tester.pumpAndSettle();
+
+      expect(shownMap(tester).pickedRoads, isEmpty);
+      final add = tester.widget<PrimaryButton>(
+        find.byKey(const Key('addStreets.add')),
+      );
+      expect(add.label, 'Ajouter');
+      expect(add.onPressed, isNull);
+    });
+
+    testWidgets('should add the streets of a zone and those tapped at once, '
+        'then go back to Secteur', (tester) async {
+      await pumpMap(tester);
+      await tapRoad(tester, _onBordelan);
+      await drawZone(tester);
+
+      await tester.tap(find.text('Ajouter 2 rues'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(TeamScreen), findsOneWidget);
+      expect(find.text('2 rues ajoutées au secteur'), findsOneWidget);
+      expect(
+        [for (final street in streets.added) street.name.text],
+        ['Petit Chemin de Bordelan', 'Rue de la Gare'],
+      );
+    });
+
+    testWidgets('should say why the streets of a zone could not be added '
+        'offline', (tester) async {
+      await pumpMap(tester);
+      await drawZone(tester);
+      // Offline once the zone is listed: the numbers cannot be read.
+      directory.streets[_gareId] = const Err(AddressDirectoryFailure.noNetwork);
+
+      await tester.tap(find.text('Ajouter 1 rue'));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AddStreetsScreen), findsOneWidget);
+      expect(
+        find.text("1 rue n'a pas pu être ajoutée : connexion nécessaire."),
+        findsOneWidget,
+      );
+      expect(find.text('Ajouter 1 rue'), findsOneWidget);
+    });
+
+    testWidgets('should leave the zone and keep its ticks when « Zone » goes '
+        'off', (tester) async {
+      await pumpMap(tester);
+      await drawZone(tester);
+
+      await tester.tap(zonePill());
+      await tester.pumpAndSettle();
+
+      expect(shownMap(tester).zoneMode, isFalse);
+      expect(shownMap(tester).zone, isNull);
+      expect(find.byKey(const Key('addStreets.zoneSheet')), findsNothing);
+      expect(find.text('1 rue sélectionnée'), findsOneWidget);
+      expect(row(_gareId), findsOneWidget);
+    });
+
+    testWidgets('should show the zone while its streets are looked for', (
+      tester,
+    ) async {
+      await pumpMap(tester);
+      shapes.holdRoads();
+      await tester.tap(zonePill());
+      await tester.pumpAndSettle();
+
+      shownMap(tester).onZoneDrawn!(zone, 16);
+      await tester.pump();
+
+      expect(find.text('Recherche des rues de la zone…'), findsOneWidget);
+      expect(shownMap(tester).zone, zone);
+      shapes.releaseRoads();
+      await tester.pumpAndSettle();
+      expect(find.text('Aucune rue dans la zone'), findsOneWidget);
+    });
+
+    testWidgets('should ask to zoom in under zoom 15', (tester) async {
+      await pumpMap(tester);
+
+      await drawZone(tester, zoom: 14);
+
+      expect(find.text('Zoomez pour tracer une zone.'), findsOneWidget);
+      expect(shownMap(tester).zone, isNull);
+    });
+
+    testWidgets('should say a zone of more than 50 streets is too large', (
+      tester,
+    ) async {
+      await pumpMap(tester);
+      await tester.tap(zonePill());
+      await tester.pumpAndSettle();
+      shapes.roads = Ok([
+        for (var i = 0; i < 51; i++) road('Chemin $i', 45.981 + i * 0.0001),
+      ]);
+
+      shownMap(tester).onZoneDrawn!(zone, 16);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Zone trop grande : 50 rues au plus.'), findsOneWidget);
+    });
+
+    testWidgets('should label the zone\'s controls and make them 48 dp at '
+        'least', (tester) async {
+      await pumpMap(tester);
+      await drawZone(tester);
+
+      await expectAccessibleControls(tester);
+    });
+
+    testWidgets('should hold the zone\'s sheet at 200 %', (tester) async {
+      await loadAppFonts();
+      await pumpMap(tester);
+      useLargeText(tester);
+      await tester.pumpAndSettle();
+
+      await drawZone(tester);
+
+      expect(find.text('3 rues dans la zone'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
   });

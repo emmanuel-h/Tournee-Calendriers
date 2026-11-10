@@ -19,6 +19,7 @@ import 'package:tournee_calendriers/ui/map/map_camera.dart';
 import 'package:tournee_calendriers/ui/map/map_geojson.dart';
 import 'package:tournee_calendriers/ui/map/map_style.dart';
 import 'package:tournee_calendriers/ui/map/phone_location.dart';
+import 'package:tournee_calendriers/ui/map/zone_drawing.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 
@@ -44,6 +45,9 @@ final class SectorMap extends StatefulWidget {
     this.onPickTapped,
     this.onMapTapped,
     this.onZoomChanged,
+    this.zoneMode = false,
+    this.zone,
+    this.onZoneDrawn,
     this.padding = EdgeInsets.zero,
     this.phoneLocation = const GeolocatorPhoneLocation(),
   });
@@ -82,6 +86,18 @@ final class SectorMap extends StatefulWidget {
   /// zoom.
   final ValueChanged<double>? onZoomChanged;
 
+  /// « Zone » on « Ajouter des rues » (PLAN §5.14): a drag draws a
+  /// rectangle ([onZoneDrawn]) instead of moving the map; a pinch still
+  /// zooms.
+  final bool zoneMode;
+
+  /// The zone drawn, dimmed around and dashed; none by default.
+  final GeoBounds? zone;
+
+  /// A zone drawn with a finger, « Zone » on: its area on the map, and the
+  /// map's zoom level then.
+  final void Function(GeoBounds area, double zoom)? onZoneDrawn;
+
   /// The room other widgets take over the map's edges (a banner on top, a
   /// panel at the bottom): « Me localiser », the attribution and the fitted
   /// area keep clear of it.
@@ -107,6 +123,11 @@ final class _SectorMapState extends State<SectorMap> {
   StreetShape? _shownRoad;
   GeoPoint? _shownPoint;
   List<PickedRoad>? _shownPicks;
+  GeoBounds? _shownZone;
+
+  /// Where [SectorMap.zone] is on screen, in logical pixels, so a finger on
+  /// its handle resizes it; measured each time it or the camera changes.
+  Rect? _zoneOnScreen;
 
   /// The phone's dot shows once « Me localiser » found it: MapLibre then
   /// follows the position itself, with the access already granted.
@@ -188,6 +209,7 @@ final class _SectorMapState extends State<SectorMap> {
     _shownRoad = widget.selectedRoad;
     _shownPoint = widget.selectedPoint;
     _shownPicks = widget.pickedRoads;
+    _shownZone = widget.zone;
     await controller.addGeoJsonSource(
       MapIds.streetsSource,
       streetLinesGeoJson(_shownLines!),
@@ -212,6 +234,10 @@ final class _SectorMapState extends State<SectorMap> {
       MapIds.pickedMarksSource,
       pickedMarksGeoJson(_shownPicks!),
     );
+    await controller.addGeoJsonSource(
+      MapIds.zoneSource,
+      zoneGeoJson(_shownZone),
+    );
     final below = lineLayersBelow(await controller.getLayerIds());
     for (final layer in sectorMapLayers(colors)) {
       if (!mounted) return;
@@ -227,6 +253,7 @@ final class _SectorMapState extends State<SectorMap> {
     }
     if (!mounted) return;
     _styleReady = true;
+    await _measureZone();
     // The screen may have sent new data while the layers were added.
     await _sync();
     await _fit(animate: false);
@@ -275,6 +302,65 @@ final class _SectorMapState extends State<SectorMap> {
         pickedMarksGeoJson(_shownPicks!),
       );
     }
+    if (_shownZone != widget.zone) {
+      _shownZone = widget.zone;
+      await controller.setGeoJsonSource(
+        MapIds.zoneSource,
+        zoneGeoJson(_shownZone),
+      );
+      await _measureZone();
+    }
+  }
+
+  /// How many of MapLibre's screen units make one logical pixel: Android's
+  /// map counts physical pixels.
+  double get _screenScale => defaultTargetPlatform == TargetPlatform.android
+      ? MediaQuery.devicePixelRatioOf(context)
+      : 1;
+
+  /// Measures where the zone shown is on screen.
+  Future<void> _measureZone() async {
+    final controller = _controller;
+    final zone = _shownZone;
+    if (controller == null || zone == null || !mounted) {
+      _zoneOnScreen = null;
+      return;
+    }
+    final scale = _screenScale;
+    final corners = await controller.toScreenLocationBatch([
+      LatLng(zone.north, zone.west),
+      LatLng(zone.south, zone.east),
+    ]);
+    // Measured for another zone, or none, since the call left.
+    if (_shownZone != zone) return;
+    _zoneOnScreen = Rect.fromPoints(
+      Offset(corners[0].x / scale, corners[0].y / scale),
+      Offset(corners[1].x / scale, corners[1].y / scale),
+    );
+  }
+
+  /// The rectangle [drawn] on screen, in logical pixels, as an area of the
+  /// map, handed to [SectorMap.onZoneDrawn] with the zoom.
+  Future<void> _zoneDrawn(Rect drawn) async {
+    final controller = _controller;
+    final onZoneDrawn = widget.onZoneDrawn;
+    if (controller == null || onZoneDrawn == null) return;
+    final scale = _screenScale;
+    final zoom = controller.cameraPosition?.zoom;
+    final northWest = await controller.toLatLng(
+      Point(drawn.left * scale, drawn.top * scale),
+    );
+    final southEast = await controller.toLatLng(
+      Point(drawn.right * scale, drawn.bottom * scale),
+    );
+    final area = GeoBounds.of(
+      south: southEast.latitude,
+      west: northWest.longitude,
+      north: northWest.latitude,
+      east: southEast.longitude,
+    );
+    if (area == null || zoom == null || !mounted) return;
+    onZoneDrawn(area, zoom);
   }
 
   /// Shows the whole [SectorMap.area], clear of [SectorMap.padding].
@@ -317,6 +403,7 @@ final class _SectorMapState extends State<SectorMap> {
 
   void _onCameraIdle() {
     _fitting = false;
+    unawaited(_measureZone());
     if (_controller?.cameraPosition case final camera?) {
       widget.onZoomChanged?.call(camera.zoom);
     }
@@ -341,33 +428,40 @@ final class _SectorMapState extends State<SectorMap> {
         Semantics(
           container: true,
           label: AppLocalizations.of(context).mapLabel,
-          child: MapLibreMap(
-            styleString: openFreeMapStyle,
-            initialCameraPosition: initialCamera(widget.area),
-            onMapCreated: _onMapCreated,
-            onStyleLoadedCallback: _onStyleLoaded,
-            onMapClick: _onMapClick,
-            // Keeps `controller.cameraPosition` up to date, read when the
-            // camera stops.
-            trackCameraPosition: true,
-            onCameraIdle: _onCameraIdle,
-            // A map that turns or tilts under a gloved finger in the street
-            // is harder to read than it is useful: north stays up.
-            // Our streets and dots are sources and layers of our own: none
-            // of MapLibre's annotation layers is needed. Without them, the
-            // style loading also adds nothing that could fail once the map
-            // has left the screen.
-            annotationOrder: const [],
-            rotateGesturesEnabled: false,
-            tiltGesturesEnabled: false,
-            compassEnabled: false,
-            myLocationEnabled: _showPhone,
-            // The ⓘ button shows « © OpenStreetMap, OpenFreeMap » from the
-            // tiles: required by their terms (docs/spikes/map.md), kept
-            // clear of the panels over the map.
-            attributionButtonMargins: Point(
-              padding.right + AppSizes.glyphGap,
-              padding.bottom + AppSizes.glyphGap,
+          child: ZoneDrawing(
+            enabled: widget.zoneMode,
+            zoneOnScreen: () => _zoneOnScreen,
+            onDrawn: (drawn) => unawaited(_zoneDrawn(drawn)),
+            child: MapLibreMap(
+              styleString: openFreeMapStyle,
+              initialCameraPosition: initialCamera(widget.area),
+              onMapCreated: _onMapCreated,
+              onStyleLoadedCallback: _onStyleLoaded,
+              onMapClick: _onMapClick,
+              // Keeps `controller.cameraPosition` up to date, read when the
+              // camera stops.
+              trackCameraPosition: true,
+              onCameraIdle: _onCameraIdle,
+              // A map that turns or tilts under a gloved finger in the street
+              // is harder to read than it is useful: north stays up.
+              // Our streets and dots are sources and layers of our own: none
+              // of MapLibre's annotation layers is needed. Without them, the
+              // style loading also adds nothing that could fail once the map
+              // has left the screen.
+              annotationOrder: const [],
+              rotateGesturesEnabled: false,
+              tiltGesturesEnabled: false,
+              compassEnabled: false,
+              myLocationEnabled: _showPhone,
+              // The ⓘ button shows « © OpenStreetMap, OpenFreeMap » from the
+              // tiles: required by their terms (docs/spikes/map.md), kept
+              // clear of the panels over the map.
+              attributionButtonMargins: Point(
+                padding.right + AppSizes.glyphGap,
+                padding.bottom + AppSizes.glyphGap,
+              ),
+              // « Zone » on: a drag draws the zone, the map stays put.
+              scrollGesturesEnabled: !widget.zoneMode,
             ),
           ),
         ),

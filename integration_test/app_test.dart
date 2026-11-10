@@ -16,8 +16,10 @@ import 'package:integration_test/integration_test.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
 import 'package:tournee_calendriers/application/ports/sector_downloads.dart';
+import 'package:tournee_calendriers/application/ports/street_shapes.dart';
 import 'package:tournee_calendriers/bootstrap/bootstrap.dart';
 import 'package:tournee_calendriers/bootstrap/firebase.dart';
+import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/round/donation_totals.dart';
 import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
@@ -30,6 +32,7 @@ import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
+import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/mappers/street_json_mapper.dart';
 import 'package:tournee_calendriers/main.dart' as app;
 import 'package:tournee_calendriers/presentation/dependencies.dart';
@@ -43,6 +46,7 @@ import 'package:tournee_calendriers/ui/screens/team/team_screen.dart';
 
 import '../test/support/fakes/fake_address_directory.dart';
 import '../test/support/fakes/fake_commune_search.dart';
+import '../test/support/fakes/fake_street_shapes.dart';
 import '../test/ui/support/finders.dart';
 
 /// The value of [result], which the test data guarantees.
@@ -752,6 +756,19 @@ void main() {
         storage: storage,
         communeSearch: communes,
         addressDirectory: _ban(),
+        // The map's roads in the zone drawn below (#125), offline.
+        streetShapes: FakeStreetShapes()
+          ..roads = Ok([
+            NamedRoad(
+              name: 'Rue Pierre Morin',
+              shape: StreetShape([
+                [
+                  _ok(GeoPoint.create(latitude: 45.9883, longitude: 4.7245)),
+                  _onMorin,
+                ],
+              ]),
+            ),
+          ]),
       );
       await tester.pumpAndSettle();
       expect(find.text('Secteur 49 · 2026'), findsOneWidget);
@@ -798,14 +815,18 @@ void main() {
       await _openAddStreets(tester);
       expect(find.byType(AddStreetsScreen), findsOneWidget);
       expect(find.byKey(const Key('addStreets.map')), findsOneWidget);
-      expect(find.text('Touchez les rues à ajouter.'), findsOneWidget);
+      expect(
+        find.text('Touchez les rues à ajouter ou tracez une zone.'),
+        findsOneWidget,
+      );
 
       // A road tapped (#124) is ticked, on the real MapLibre map: its ✓
       // and, once known, its road are sent to the map. The tap is handed
       // to the map's callback: a test's tap does not reach the native view
       // (only real touches do, with `shouldPropagateDevicePointerEvents`).
-      // The BAN is the fake, so no network is needed; the road is not
-      // found offline. « Tout décocher » empties the sheet again.
+      // The BAN and the map's roads are fakes, so no network is needed;
+      // the fake map has no road for it. « Tout décocher » empties the
+      // sheet again.
       tester.widget<SectorMap>(find.byType(SectorMap).last).onMapTapped!(
         _onMorin,
       );
@@ -817,7 +838,10 @@ void main() {
       );
       await tester.tap(find.byKey(const Key('addStreets.untickAll')));
       await tester.pump(const Duration(seconds: 1));
-      expect(find.text('Touchez les rues à ajouter.'), findsOneWidget);
+      expect(
+        find.text('Touchez les rues à ajouter ou tracez une zone.'),
+        findsOneWidget,
+      );
 
       // « Rue absente de la carte ? Saisir à la main », at the bottom of
       // the sheet, works offline (#31): the commune is searched (here
@@ -850,6 +874,37 @@ void main() {
       await tester.tap(find.byKey(const Key('manual.add')));
       await tester.pump(const Duration(seconds: 2));
       expect(find.byType(AddStreetsScreen), findsOneWidget);
+
+      // « Zone » (#125), on the real MapLibre map: the drag is handed to
+      // the map's callback, as the tap above. The secteur has a street of
+      // Villefranche-sur-Saône now, so the road of the zone is matched in
+      // its commune, ticked, and the zone sent to the map. « Zone » off
+      // keeps the tick; « Tout décocher » drops it.
+      await tester.tap(find.byKey(const Key('addStreets.zone')));
+      await tester.pump(const Duration(seconds: 1));
+      expect(
+        tester.widget<SectorMap>(find.byType(SectorMap).last).zoneMode,
+        isTrue,
+      );
+      final zone = GeoBounds.of(
+        south: 45.9870,
+        west: 4.7230,
+        north: 45.9900,
+        east: 4.7270,
+      )!;
+      tester.widget<SectorMap>(find.byType(SectorMap).last).onZoneDrawn!(
+        zone,
+        16,
+      );
+      await tester.pump(const Duration(seconds: 2));
+      expect(find.text('1 rue dans la zone'), findsOneWidget);
+      expect(find.text('Ajouter 1 rue'), findsOneWidget);
+      expect(tester.widget<SectorMap>(find.byType(SectorMap).last).zone, zone);
+      await tester.tap(find.byKey(const Key('addStreets.zone')));
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.text('1 rue sélectionnée'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('addStreets.untickAll')));
+      await tester.pump(const Duration(seconds: 1));
 
       // The list still searches a commune: the tournée has none.
       await tester.tap(find.byKey(const Key('addStreets.tab.list')));

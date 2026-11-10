@@ -6,9 +6,10 @@ import 'package:tournee_calendriers/domain/shared/same_items.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 
 /// What the « Carte » tab of « Ajouter des rues » shows (PLAN §5.14, Pick
-/// mockup): the secteur's streets and houses, the area the map shows, the
-/// streets ticked (on the map and in the selection sheet), the point being
-/// looked up, the search box's results and how adding goes.
+/// and PickZone mockups): the secteur's streets and houses, the area the
+/// map shows, the streets ticked (on the map and in the selection sheet),
+/// the point being looked up, the search box's results, « Zone » and the
+/// streets found in the zone drawn, and how adding goes.
 /// Immutable: the notifier replaces it as a whole.
 final class AddStreetsMapState {
   AddStreetsMapState({
@@ -18,6 +19,8 @@ final class AddStreetsMapState {
     List<PickedRoad> pickedRoads = const [],
     this.lookingAt,
     this.search = const NoStreetSearch(),
+    this.zoneMode = false,
+    this.zone = const NoZone(),
     this.run = const AddIdle(),
   }) : picked = List.unmodifiable(picked),
        pickedRoads = List.unmodifiable(pickedRoads);
@@ -45,6 +48,13 @@ final class AddStreetsMapState {
 
   /// The search box's results.
   final StreetSearch search;
+
+  /// Whether « Zone » is on: a drag on the map draws a rectangle instead
+  /// of moving the map.
+  final bool zoneMode;
+
+  /// The zone drawn, and the streets found in it.
+  final ZoneView zone;
 
   /// How adding the ticked streets goes.
   final AddRun run;
@@ -155,9 +165,159 @@ final class LookUpFailed extends TapAnswer {
   String toString() => 'LookUpFailed(${problem.name})';
 }
 
+/// A zone drawn with a finger, too far out to list its streets: nothing
+/// listed, « Zoomez pour tracer une zone. ».
+final class ZoomInForZone extends TapAnswer {
+  const ZoomInForZone();
+
+  @override
+  bool operator ==(Object other) => other is ZoomInForZone;
+
+  @override
+  int get hashCode => (ZoomInForZone).hashCode;
+}
+
+/// A zone with more streets than a zone keeps (`zoneMaxStreets`): nothing
+/// listed, « Zone trop grande : 50 rues au plus. ».
+final class ZoneTooLarge extends TapAnswer {
+  const ZoneTooLarge();
+
+  @override
+  bool operator ==(Object other) => other is ZoneTooLarge;
+
+  @override
+  int get hashCode => (ZoneTooLarge).hashCode;
+}
+
+/// The zone drawn on the map and the streets found in it (PLAN §5.14,
+/// PickZone mockup). `sealed`: the sheet shows each case.
+sealed class ZoneView {
+  const ZoneView();
+
+  /// The rectangle the map draws; null when there is none.
+  GeoBounds? get area;
+}
+
+/// No zone drawn: the selection sheet shows.
+final class NoZone extends ZoneView {
+  const NoZone();
+
+  @override
+  GeoBounds? get area => null;
+
+  @override
+  bool operator ==(Object other) => other is NoZone;
+
+  @override
+  int get hashCode => (NoZone).hashCode;
+}
+
+/// The streets of the zone [area] are being looked for.
+final class FindingZoneStreets extends ZoneView {
+  const FindingZoneStreets(this.area);
+
+  @override
+  final GeoBounds area;
+
+  @override
+  bool operator ==(Object other) =>
+      other is FindingZoneStreets && other.area == area;
+
+  @override
+  int get hashCode => area.hashCode;
+}
+
+/// The streets of the zone [area]: « 4 rues dans la zone », one row each.
+final class ZoneStreetsFound extends ZoneView {
+  ZoneStreetsFound(this.area, List<ZoneStreetRow> rows)
+    : rows = List.unmodifiable(rows);
+
+  @override
+  final GeoBounds area;
+
+  /// Read-only.
+  final List<ZoneStreetRow> rows;
+
+  @override
+  bool operator ==(Object other) =>
+      other is ZoneStreetsFound &&
+      other.area == area &&
+      sameItems(other.rows, rows);
+
+  @override
+  int get hashCode => Object.hash(area, Object.hashAll(rows));
+}
+
+/// What a row of the zone's list is about.
+enum ZoneRowKind {
+  /// A street to add: a checkbox, « 19 numéros ».
+  toAdd,
+
+  /// A street of the secteur: greyed, « Déjà dans le secteur ».
+  inSector,
+
+  /// A road of the map no BAN street is named after: greyed, « Aucune
+  /// adresse connue ».
+  noAddress,
+}
+
+/// A row of the zone's list: « ☑ Rue Pierre Morin · 19 numéros ».
+final class ZoneStreetRow {
+  const ZoneStreetRow({
+    required this.kind,
+    required this.name,
+    this.id,
+    this.numberCount = 0,
+    this.ticked = false,
+  });
+
+  final ZoneRowKind kind;
+  final String name;
+
+  /// The BAN street its checkbox ticks; null for a road without address.
+  final BanStreetId? id;
+
+  /// How many numbers the BAN lists for a street to add.
+  final int numberCount;
+
+  /// Whether the street is ticked, here or by a tap on the map.
+  final bool ticked;
+
+  @override
+  bool operator ==(Object other) =>
+      other is ZoneStreetRow &&
+      other.kind == kind &&
+      other.name == name &&
+      other.id == id &&
+      other.numberCount == numberCount &&
+      other.ticked == ticked;
+
+  @override
+  int get hashCode => Object.hash(kind, name, id, numberCount, ticked);
+
+  @override
+  String toString() =>
+      'ZoneStreetRow(${kind.name}, $name, ${id?.value}, $numberCount, '
+      '$ticked)';
+}
+
 /// How adding the ticked streets goes. `sealed`: the sheet shows each case.
 sealed class AddRun {
   const AddRun();
+}
+
+/// Why streets could not be added (PLAN §5.14): said above the button.
+enum AddProblem {
+  /// The numbers the BAN gave cannot make a street (a number twice).
+  badNumbers,
+
+  /// The numbers of a street found in a zone could not be read: offline.
+  /// The streets after it were not tried.
+  noNetwork,
+
+  /// The numbers of a street found in a zone could not be read: the
+  /// address service answered with an error.
+  serviceError,
 }
 
 /// Nothing being added, nothing failed: « Ajouter 2 rues ».
@@ -189,23 +349,24 @@ final class AddRunning extends AddRun {
   String toString() => 'AddRunning($done/$total)';
 }
 
-/// [failed] streets could not be added: the numbers the BAN gave cannot
-/// make a street (a number twice). They stay ticked, the others are in the
-/// secteur; the sheet says why above the button.
+/// [failed] streets could not be added, for [problem] (the first one met).
+/// They stay ticked, the others are in the secteur; the sheet says why
+/// above the button.
 final class AddFailed extends AddRun {
-  const AddFailed(this.failed);
+  const AddFailed(this.failed, {this.problem = AddProblem.badNumbers});
 
   final int failed;
+  final AddProblem problem;
 
   @override
   bool operator ==(Object other) =>
-      other is AddFailed && other.failed == failed;
+      other is AddFailed && other.failed == failed && other.problem == problem;
 
   @override
-  int get hashCode => failed.hashCode;
+  int get hashCode => Object.hash(failed, problem);
 
   @override
-  String toString() => 'AddFailed($failed)';
+  String toString() => 'AddFailed($failed, ${problem.name})';
 }
 
 /// Where the search box is. `sealed`: the results list has a look for

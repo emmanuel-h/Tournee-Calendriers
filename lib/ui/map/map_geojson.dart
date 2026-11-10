@@ -1,3 +1,4 @@
+import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/map/map_layers.dart';
 import 'package:tournee_calendriers/domain/map/picked_road.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
@@ -94,6 +95,65 @@ Map<String, Object> pickedMarksGeoJson(Iterable<PickedRoad> picked) =>
           geometry: {'type': 'Point', 'coordinates': _position(pick.mark)},
         ),
     ]);
+
+/// The property telling which part of the zone a feature draws:
+/// [ZonePart.name], so each layer of the zone keeps its own.
+const zonePartProperty = 'part';
+
+/// The parts of a zone drawn on « Ajouter des rues » (PLAN §5.14).
+enum ZonePart {
+  /// The map outside the zone, dimmed: the whole world with the zone as a
+  /// hole.
+  shade,
+
+  /// The zone's dashed edge.
+  edge,
+
+  /// The round handle at its south-east corner, where a drag resizes it.
+  handle,
+}
+
+/// The zone drawn on « Ajouter des rues » (PLAN §5.14, PickZone mockup):
+/// one feature per [ZonePart]; an empty collection when there is none.
+Map<String, Object> zoneGeoJson(GeoBounds? zone) {
+  if (zone == null) return _collection([]);
+  // The zone's corners, round from the south-west, back to the first
+  // (GeoJSON closes a ring by repeating its first position).
+  final ring = [
+    [zone.west, zone.south],
+    [zone.east, zone.south],
+    [zone.east, zone.north],
+    [zone.west, zone.north],
+    [zone.west, zone.south],
+  ];
+  Map<String, Object> part(ZonePart part, Map<String, Object> geometry) =>
+      _feature(
+        id: 'zone-${part.name}',
+        properties: {zonePartProperty: part.name},
+        geometry: geometry,
+      );
+  return _collection([
+    part(ZonePart.shade, {
+      'type': 'Polygon',
+      'coordinates': [_world, ring],
+    }),
+    part(ZonePart.edge, {'type': 'LineString', 'coordinates': ring}),
+    part(ZonePart.handle, {
+      'type': 'Point',
+      'coordinates': [zone.east, zone.south],
+    }),
+  ]);
+}
+
+/// The whole map as Web Mercator shows it (to 85° north and south), the
+/// outer ring of the zone's shade.
+const _world = [
+  [-180.0, -85.0],
+  [180.0, -85.0],
+  [180.0, 85.0],
+  [-180.0, 85.0],
+  [-180.0, -85.0],
+];
 
 Map<String, Object> _collection(List<Map<String, Object>> features) => {
   'type': 'FeatureCollection',

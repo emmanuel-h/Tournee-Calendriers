@@ -2551,7 +2551,8 @@ class AppLocalizationsFr extends AppLocalizations {
   String get collecteUnavailable => 'La collecte ne peut pas être affichée.';
 
   @override
-  String get addStreetsPickHint => 'Touchez les rues à ajouter.';
+  String get addStreetsPickHint =>
+      'Touchez les rues à ajouter ou tracez une zone.';
 
   @override
   String addStreetsPicked(int count) {
@@ -2627,5 +2628,70 @@ class AppLocalizationsFr extends AppLocalizations {
       one: '1 rue n\'a pas pu être ajoutée : la Base Adresse Nationale donne des numéros incohérents. Saisissez-la à la main.',
     );
     return '$_temp0';
+  }
+
+  @override
+  String addStreetsAddFailedNoNetwork(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count rues n\'ont pas pu être ajoutées : connexion nécessaire.',
+      one: '1 rue n\'a pas pu être ajoutée : connexion nécessaire.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String addStreetsAddFailedService(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count rues n\'ont pas pu être ajoutées : le service des adresses ne répond pas. Réessayez plus tard.',
+      one: '1 rue n\'a pas pu être ajoutée : le service des adresses ne répond pas. Réessayez plus tard.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get addStreetsZone => 'Zone';
+
+  @override
+  String get addStreetsZoneStart => 'Sélectionner une zone';
+
+  @override
+  String get addStreetsZoneStop => 'Zone en cours, annuler';
+
+  @override
+  String get addStreetsZoneHint =>
+      'Faites glisser le doigt sur la carte pour tracer une zone.';
+
+  @override
+  String get addStreetsZoneLooking => 'Recherche des rues de la zone…';
+
+  @override
+  String addStreetsZoneStreets(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count rues dans la zone',
+      one: '1 rue dans la zone',
+      zero: 'Aucune rue dans la zone',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get addStreetsZoneInSector => 'Déjà dans le secteur';
+
+  @override
+  String get addStreetsZoneNoAddress => 'Aucune adresse connue';
+
+  @override
+  String get addStreetsZoomIn => 'Zoomez pour tracer une zone.';
+
+  @override
+  String addStreetsZoneTooLarge(int max) {
+    return 'Zone trop grande : $max rues au plus.';
   }
 }

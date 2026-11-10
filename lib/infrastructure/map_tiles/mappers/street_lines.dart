@@ -1,7 +1,9 @@
 // The shape of a street from the roads of the map's tiles: the lines named
 // like the street, cut to each tile (each repeats a strip of its
 // neighbours) and to the area around the street's houses, then joined
-// again across the tiles. Pure function, tested alone.
+// again across the tiles; and the named roads of an area drawn on the map
+// (« Zone »). Pure functions, tested alone.
+import 'package:tournee_calendriers/application/ports/street_shapes.dart';
 import 'package:tournee_calendriers/domain/geometry/clip_line.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/geometry/join_lines.dart';
@@ -39,4 +41,43 @@ StreetShape streetShapeFromTiles(
     }
   }
   return StreetShape(joinLines(pieces, toleranceMetres: joinToleranceMetres));
+}
+
+/// The roads of [tiles] that run through [area], one per name in the
+/// order the tiles give them first, each joined across the tiles but not
+/// cut to [area] (« Zone », PLAN §5.14). A blank name is no street.
+List<NamedRoad> namedRoadsFromTiles(
+  Iterable<(TileId, TileLayer)> tiles, {
+  required GeoBounds area,
+}) {
+  // A Dart map keeps the order its keys were added in.
+  final piecesByName = <String, List<List<GeoPoint>>>{};
+  final inArea = <String>{};
+  for (final (tile, layer) in tiles) {
+    final inTile = tileBounds(tile);
+    for (final road in layer.roads) {
+      final name = road.name.trim();
+      if (name.isEmpty) continue;
+      final pieces = piecesByName.putIfAbsent(name, () => []);
+      for (final line in road.lines) {
+        final points = [
+          for (final point in line) ?geoPointOf(tile, point, layer.extent),
+        ];
+        for (final piece in clipLine(points, inTile)) {
+          pieces.add(piece);
+          if (clipLine(piece, area).isNotEmpty) inArea.add(name);
+        }
+      }
+    }
+  }
+  return [
+    for (final MapEntry(key: name, value: pieces) in piecesByName.entries)
+      if (inArea.contains(name))
+        NamedRoad(
+          name: name,
+          shape: StreetShape(
+            joinLines(pieces, toleranceMetres: joinToleranceMetres),
+          ),
+        ),
+  ];
 }

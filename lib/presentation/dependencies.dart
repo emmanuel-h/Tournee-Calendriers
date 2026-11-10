@@ -43,6 +43,7 @@ import 'package:tournee_calendriers/application/use_cases/download_sector.dart';
 import 'package:tournee_calendriers/application/use_cases/edit_street_numbers.dart';
 import 'package:tournee_calendriers/application/use_cases/fill_street_shape.dart';
 import 'package:tournee_calendriers/application/use_cases/find_imported_streets.dart';
+import 'package:tournee_calendriers/application/use_cases/find_zone_streets.dart';
 import 'package:tournee_calendriers/application/use_cases/hide_done.dart';
 import 'package:tournee_calendriers/application/use_cases/import_reference_area.dart';
 import 'package:tournee_calendriers/application/use_cases/join_sector.dart';
@@ -232,6 +233,13 @@ final addStreetFromMapProvider = Provider(
 );
 final lookUpStreetShapeProvider = Provider(
   (ref) => LookUpStreetShape(ref.watch(streetShapesProvider)),
+);
+final findZoneStreetsProvider = Provider(
+  (ref) => FindZoneStreets(
+    ref.watch(streetShapesProvider),
+    ref.watch(addressDirectoryProvider),
+    ref.watch(streetRepositoryProvider),
+  ),
 );
 final fillStreetShapeProvider = Provider(
   (ref) => FillStreetShape(

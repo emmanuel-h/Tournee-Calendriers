@@ -4,6 +4,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tournee_calendriers/domain/map/street_zone.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/presentation/add_streets/add_streets_map_notifier.dart';
 import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
@@ -28,9 +29,9 @@ enum AddStreetsTab { map, list }
 /// AddList mockups): the tabs « Carte | Liste ».
 ///
 /// « Carte » (the default) is the secteur's map, opened on its communes,
-/// with the search box above it: a tap on a road, or a street picked among
-/// the search results, ticks it, and the selection sheet at the bottom adds
-/// every street ticked at once. « Liste » is the checklist of the
+/// with the search box and « Zone » above it: a tap on a road, a street
+/// picked among the search results, or a zone drawn ticks streets, and the
+/// sheet at the bottom adds every street ticked at once. « Liste » is the checklist of the
 /// communes' streets ([ImportList]).
 ///
 /// Only the tab shown is built: the map runs only while it shows. The
@@ -110,8 +111,8 @@ final class _AddStreetsScreenState extends ConsumerState<AddStreetsScreen> {
   }
 }
 
-/// The search box over the secteur's map, and the selection sheet at the
-/// bottom (Pick mockup).
+/// The search box and « Zone » over the secteur's map, and the selection
+/// sheet at the bottom, or the zone's (Pick and PickZone mockups).
 ///
 /// A `ConsumerStatefulWidget`: the search text, the sheet's height and
 /// whether it is folded belong to this tab only.
@@ -156,82 +157,111 @@ final class _MapTabState extends ConsumerState<_MapTab> {
               AppSizes.gutter,
               10,
             ),
-            child: _SearchBox(
-              controller: _search,
-              onSubmitted: (text) => unawaited(map.search(text)),
-              onCleared: () {
-                _search.clear();
-                map.clearSearch();
-              },
+            child: Row(
+              spacing: 8,
+              children: [
+                Expanded(
+                  child: _SearchBox(
+                    controller: _search,
+                    onSubmitted: (text) => unawaited(map.search(text)),
+                    onCleared: () {
+                      _search.clear();
+                      map.clearSearch();
+                    },
+                  ),
+                ),
+                _ZonePill(
+                  on: state.zoneMode,
+                  onPressed: state.adding ? null : map.toggleZone,
+                ),
+              ],
             ),
           ),
           Expanded(
             child: LayoutBuilder(
-              builder: (context, constraints) => Stack(
-                children: [
-                  Positioned.fill(
-                    child: showMap(
-                      SectorMap(
-                        key: const Key('addStreets.map'),
-                        layers: state.layers,
-                        area: state.area,
-                        selectedPoint: state.lookingAt,
-                        pickedRoads: state.pickedRoads,
-                        onMapTapped: (point) {
-                          FocusScope.of(context).unfocus();
-                          unawaited(_answer(map.tapMap(point)));
-                        },
-                        onStreetTapped: (street) {
-                          FocusScope.of(context).unfocus();
-                          _say(map.tapStreet(street));
-                        },
-                        onPickTapped: map.untick,
-                        padding: EdgeInsets.only(bottom: _sheetHeight),
-                      ),
-                    ),
-                  ),
-                  if (state.search is! NoStreetSearch)
-                    Positioned(
-                      top: 0,
-                      left: AppSizes.gutter,
-                      right: AppSizes.gutter,
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                          maxHeight:
-                              constraints.maxHeight *
-                              AppSizes.searchResultsShare,
-                        ),
-                        child: _SearchResults(
-                          search: state.search,
-                          onPick: (street) {
+              builder: (context, constraints) {
+                // The rows of either sheet scroll past this height.
+                final maxListHeight = math.min(
+                  AppSizes.pickedRowHeight * AppSizes.pickedRowsShown,
+                  constraints.maxHeight * AppSizes.selectionListShare,
+                );
+                return Stack(
+                  children: [
+                    Positioned.fill(
+                      child: showMap(
+                        SectorMap(
+                          key: const Key('addStreets.map'),
+                          layers: state.layers,
+                          area: state.area,
+                          selectedPoint: state.lookingAt,
+                          pickedRoads: state.pickedRoads,
+                          onMapTapped: (point) {
                             FocusScope.of(context).unfocus();
-                            unawaited(_answer(map.pick(street)));
+                            unawaited(_answer(map.tapMap(point)));
                           },
+                          onStreetTapped: (street) {
+                            FocusScope.of(context).unfocus();
+                            _say(map.tapStreet(street));
+                          },
+                          onPickTapped: map.untick,
+                          zoneMode: state.zoneMode,
+                          zone: state.zone.area,
+                          onZoneDrawn: (area, zoom) => unawaited(
+                            _answer(map.drawZone(area, zoom: zoom)),
+                          ),
+                          padding: EdgeInsets.only(bottom: _sheetHeight),
                         ),
                       ),
                     ),
-                  Positioned(
-                    left: 0,
-                    right: 0,
-                    bottom: 0,
-                    child: SizeReporter(
-                      onHeight: (height) {
-                        if (mounted) setState(() => _sheetHeight = height);
-                      },
-                      child: _SelectionSheet(
-                        state: state,
-                        folded: _folded,
-                        maxListHeight: math.min(
-                          AppSizes.pickedRowHeight * AppSizes.pickedRowsShown,
-                          constraints.maxHeight * AppSizes.selectionListShare,
+                    if (state.search is! NoStreetSearch)
+                      Positioned(
+                        top: 0,
+                        left: AppSizes.gutter,
+                        right: AppSizes.gutter,
+                        child: ConstrainedBox(
+                          constraints: BoxConstraints(
+                            maxHeight:
+                                constraints.maxHeight *
+                                AppSizes.searchResultsShare,
+                          ),
+                          child: _SearchResults(
+                            search: state.search,
+                            onPick: (street) {
+                              FocusScope.of(context).unfocus();
+                              unawaited(_answer(map.pick(street)));
+                            },
+                          ),
                         ),
-                        onFold: (folded) => setState(() => _folded = folded),
-                        onAdd: () => unawaited(_add()),
+                      ),
+                    Positioned(
+                      left: 0,
+                      right: 0,
+                      bottom: 0,
+                      child: SizeReporter(
+                        onHeight: (height) {
+                          if (mounted) setState(() => _sheetHeight = height);
+                        },
+                        child: switch (state.zone) {
+                          NoZone() => _SelectionSheet(
+                            state: state,
+                            folded: _folded,
+                            maxListHeight: maxListHeight,
+                            onFold: (folded) =>
+                                setState(() => _folded = folded),
+                            onAdd: () => unawaited(_add()),
+                          ),
+                          final ZoneView zone => _ZoneSheet(
+                            state: state,
+                            zone: zone,
+                            maxListHeight: maxListHeight,
+                            onAdd: () => unawaited(_add()),
+                          ),
+                        },
                       ),
                     ),
-                  ),
-                ],
-              ),
+                  ],
+                );
+              },
             ),
           ),
         ],
@@ -250,6 +280,13 @@ final class _MapTabState extends ConsumerState<_MapTab> {
     switch (answer) {
       case NothingToSay():
         break;
+      case ZoomInForZone():
+        showMessageSnackBar(messenger, message: l10n.addStreetsZoomIn);
+      case ZoneTooLarge():
+        showMessageSnackBar(
+          messenger,
+          message: l10n.addStreetsZoneTooLarge(zoneMaxStreets),
+        );
       case AlreadyInSector(:final name):
         showMessageSnackBar(messenger, message: l10n.addStreetsAlreadyIn(name));
       case LookUpFailed(:final problem):
@@ -371,7 +408,9 @@ final class _SelectionSheet extends ConsumerWidget {
                   handle,
                   if (looking) loading,
                   Text(
-                    l10n.addStreetsPickHint,
+                    state.zoneMode
+                        ? l10n.addStreetsZoneHint
+                        : l10n.addStreetsPickHint,
                     key: const Key('addStreets.hint'),
                     style: AppTextStyles.body.copyWith(color: colors.muted),
                   ),
@@ -458,30 +497,349 @@ final class _SelectionSheet extends ConsumerWidget {
                         ),
                       ),
                     ),
-                    if (state.run case AddFailed(:final failed))
-                      Text(
-                        l10n.addStreetsAddFailed(failed),
-                        key: const Key('addStreets.failed'),
-                        textAlign: TextAlign.center,
-                        style: AppTextStyles.body.copyWith(
-                          color: colors.accent,
-                        ),
-                      ),
-                    if (state.run case AddRunning(:final done, :final total))
-                      AddProgress(
-                        key: const Key('addStreets.progress'),
-                        done: done,
-                        total: total,
-                      )
-                    else
-                      PrimaryButton(
-                        key: const Key('addStreets.add'),
-                        label: l10n.addButton(picked.length),
-                        onPressed: onAdd,
-                      ),
+                    ..._addControls(context, state, onAdd),
                     manualLink,
                   ],
                 ],
+        ),
+      ),
+    );
+  }
+}
+
+/// What both sheets end with: why streets could not be added, if they
+/// could not, then « Ajouter N rues » (N counts every street ticked, by
+/// taps and zones), or « Ajout en cours… 2/3 » meanwhile.
+List<Widget> _addControls(
+  BuildContext context,
+  AddStreetsMapState state,
+  VoidCallback onAdd,
+) {
+  final l10n = AppLocalizations.of(context);
+  final colors = AppColors.of(context);
+  final count = state.picked.length;
+  return [
+    if (state.run case AddFailed(:final failed, :final problem))
+      Text(
+        switch (problem) {
+          AddProblem.badNumbers => l10n.addStreetsAddFailed(failed),
+          AddProblem.noNetwork => l10n.addStreetsAddFailedNoNetwork(failed),
+          AddProblem.serviceError => l10n.addStreetsAddFailedService(failed),
+        },
+        key: const Key('addStreets.failed'),
+        textAlign: TextAlign.center,
+        style: AppTextStyles.body.copyWith(color: colors.accent),
+      ),
+    if (state.run case AddRunning(:final done, :final total))
+      AddProgress(
+        key: const Key('addStreets.progress'),
+        done: done,
+        total: total,
+      )
+    else
+      PrimaryButton(
+        key: const Key('addStreets.add'),
+        label: l10n.addButton(count),
+        onPressed: count == 0 ? null : onAdd,
+      ),
+  ];
+}
+
+/// « ⬚ Zone » next to the search box (PickZone mockup): a white pill, ink
+/// while on. Screen readers hear « Sélectionner une zone », then « Zone en
+/// cours, annuler ».
+final class _ZonePill extends StatelessWidget {
+  const _ZonePill({required this.on, required this.onPressed});
+
+  final bool on;
+
+  /// Null while the streets are being added.
+  final VoidCallback? onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = AppColors.of(context);
+    final foreground = on ? colors.surface : colors.ink;
+    final shape = StadiumBorder(
+      side: BorderSide(
+        color: on ? colors.ink : colors.line,
+        width: AppSizes.borderWidth,
+      ),
+    );
+    return Semantics(
+      button: true,
+      toggled: on,
+      enabled: onPressed != null,
+      label: on ? l10n.addStreetsZoneStop : l10n.addStreetsZoneStart,
+      excludeSemantics: true,
+      child: Material(
+        color: on ? colors.ink : colors.surface,
+        shape: shape,
+        clipBehavior: Clip.antiAlias,
+        child: InkWell(
+          key: const Key('addStreets.zone'),
+          onTap: onPressed,
+          customBorder: shape,
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(
+              minWidth: AppSizes.minTapTarget,
+              minHeight: AppSizes.minTapTarget,
+            ),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                spacing: 8,
+                children: [
+                  CustomPaint(
+                    size: const Size.square(AppSizes.zoneIcon),
+                    painter: _DashedSquare(foreground),
+                  ),
+                  Text(
+                    l10n.addStreetsZone,
+                    style: AppTextStyles.pill.copyWith(color: foreground),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The dashed square of « Zone ».
+final class _DashedSquare extends CustomPainter {
+  const _DashedSquare(this.color);
+
+  final Color color;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+    // A 16 × 14 frame inside the 20 dp square, as in the mockup's icon;
+    // dashes of 3 and gaps of 2.5 along each side.
+    final frame = Rect.fromLTWH(
+      size.width * 0.2,
+      size.height * 0.25,
+      size.width * 0.6,
+      size.height * 0.5,
+    );
+    for (final (from, to) in [
+      (frame.topLeft, frame.topRight),
+      (frame.topRight, frame.bottomRight),
+      (frame.bottomRight, frame.bottomLeft),
+      (frame.bottomLeft, frame.topLeft),
+    ]) {
+      final length = (to - from).distance;
+      final step = (to - from) / length;
+      for (var at = 0.0; at < length; at += 5.5) {
+        canvas.drawLine(
+          from + step * at,
+          from + step * math.min(at + 3, length),
+          paint,
+        );
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_DashedSquare oldDelegate) => oldDelegate.color != color;
+}
+
+/// The sheet of a zone drawn (PickZone mockup): « Recherche des rues de la
+/// zone… » while they are looked for; then « 4 rues dans la zone », a row
+/// with a checkbox per street, those of the secteur and the roads without
+/// address greyed, then « Ajouter N rues ».
+final class _ZoneSheet extends ConsumerWidget {
+  const _ZoneSheet({
+    required this.state,
+    required this.zone,
+    required this.maxListHeight,
+    required this.onAdd,
+  });
+
+  final AddStreetsMapState state;
+  final ZoneView zone;
+  final double maxListHeight;
+  final VoidCallback onAdd;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final colors = AppColors.of(context);
+    final map = ref.read(addStreetsMapProvider.notifier);
+    return Material(
+      key: const Key('addStreets.zoneSheet'),
+      color: colors.surface,
+      elevation: 8,
+      shadowColor: colors.ink,
+      borderRadius: const BorderRadius.vertical(
+        top: Radius.circular(AppSizes.sheetRadius),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 10, 20, 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: 8,
+          children: [
+            Center(
+              child: Container(
+                width: AppSizes.dragHandleWidth,
+                height: AppSizes.dragHandleHeight,
+                decoration: BoxDecoration(
+                  color: colors.line,
+                  borderRadius: BorderRadius.circular(
+                    AppSizes.dragHandleHeight / 2,
+                  ),
+                ),
+              ),
+            ),
+            ...switch (zone) {
+              ZoneStreetsFound(:final rows) => [
+                Text(
+                  l10n.addStreetsZoneStreets(rows.length),
+                  key: const Key('addStreets.zone.title'),
+                  style: AppTextStyles.listHeader.copyWith(color: colors.ink),
+                ),
+                if (rows.isNotEmpty)
+                  ConstrainedBox(
+                    constraints: BoxConstraints(maxHeight: maxListHeight),
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        border: Border(top: BorderSide(color: colors.divider)),
+                      ),
+                      child: ListView(
+                        key: const Key('addStreets.zone.rows'),
+                        shrinkWrap: true,
+                        padding: EdgeInsets.zero,
+                        children: [
+                          for (final row in rows)
+                            _ZoneRow(
+                              row: row,
+                              onToggle:
+                                  row.kind == ZoneRowKind.toAdd && !state.adding
+                                  ? () => map.toggleZoneStreet(row.id!)
+                                  : null,
+                            ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ..._addControls(context, state, onAdd),
+              ],
+              // Shown only with a zone, the sheet never has `NoZone`.
+              NoZone() || FindingZoneStreets() => [
+                Row(
+                  key: const Key('addStreets.zone.looking'),
+                  spacing: 12,
+                  children: [
+                    const SizedBox.square(
+                      dimension: 20,
+                      child: CircularProgressIndicator(strokeWidth: 2),
+                    ),
+                    Flexible(
+                      child: Text(
+                        l10n.addStreetsZoneLooking,
+                        style: AppTextStyles.body.copyWith(color: colors.muted),
+                      ),
+                    ),
+                  ],
+                ),
+              ],
+            },
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A street of the zone: its checkbox, its name over « 19 numéros »;
+/// greyed with « Déjà dans le secteur » or « Aucune adresse connue ».
+final class _ZoneRow extends StatelessWidget {
+  const _ZoneRow({required this.row, required this.onToggle});
+
+  final ZoneStreetRow row;
+
+  /// Null for a greyed row, and while the streets are being added.
+  final VoidCallback? onToggle;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = AppColors.of(context);
+    final toAdd = row.kind == ZoneRowKind.toAdd;
+    final facts = switch (row.kind) {
+      ZoneRowKind.toAdd => l10n.addStreetsNumbers(row.numberCount),
+      ZoneRowKind.inSector => l10n.addStreetsZoneInSector,
+      ZoneRowKind.noAddress => l10n.addStreetsZoneNoAddress,
+    };
+    // One node for screen readers: « Rue Pierre Morin, 19 numéros »,
+    // a checkbox, ticked or not, greyed rows disabled.
+    return MergeSemantics(
+      child: Semantics(
+        checked: row.ticked,
+        enabled: toAdd,
+        child: InkWell(
+          key: ValueKey('addStreets.zoneRow.${row.id?.value ?? row.name}'),
+          onTap: onToggle,
+          child: Container(
+            constraints: const BoxConstraints(
+              minHeight: AppSizes.pickedRowHeight,
+            ),
+            decoration: BoxDecoration(
+              border: Border(bottom: BorderSide(color: colors.divider)),
+            ),
+            child: Row(
+              spacing: 10,
+              children: [
+                Container(
+                  width: AppSizes.zoneCheckBox,
+                  height: AppSizes.zoneCheckBox,
+                  decoration: BoxDecoration(
+                    color: row.ticked ? colors.ink : null,
+                    border: row.ticked
+                        ? null
+                        : Border.all(color: colors.line, width: 2),
+                    borderRadius: BorderRadius.circular(
+                      AppSizes.zoneCheckRadius,
+                    ),
+                  ),
+                  child: row.ticked
+                      ? Icon(Icons.check, size: 18, color: colors.surface)
+                      : null,
+                ),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        row.name,
+                        style: AppTextStyles.bodyLarge.copyWith(
+                          color: toAdd ? colors.ink : colors.muted,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      Text(
+                        facts,
+                        style: AppTextStyles.small.copyWith(
+                          color: colors.muted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ),
     );

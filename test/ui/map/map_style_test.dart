@@ -106,7 +106,7 @@ void main() {
     Map<String, dynamic> json(String id) => layer(id).properties.toJson();
 
     test('should stack streets, the picked and ticked roads, the point, '
-        'the dots, then the ✓ of the ticked roads', () {
+        'the dots, the ✓ of the ticked roads, then the zone', () {
       expect(layers.map((l) => l.id), [
         MapIds.streetLines,
         MapIds.selectedCasing,
@@ -118,6 +118,9 @@ void main() {
         MapIds.houseDots,
         MapIds.pickedMarks,
         MapIds.pickedTicks,
+        MapIds.zoneShade,
+        MapIds.zoneEdge,
+        MapIds.zoneHandle,
       ]);
       expect(layers.map((l) => l.source), [
         MapIds.streetsSource,
@@ -130,12 +133,18 @@ void main() {
         MapIds.housesSource,
         MapIds.pickedMarksSource,
         MapIds.pickedMarksSource,
+        MapIds.zoneSource,
+        MapIds.zoneSource,
+        MapIds.zoneSource,
       ]);
     });
 
     test('should draw only the street lines under the labels', () {
       expect(layers.map((l) => l.belowLabels), [
         true,
+        false,
+        false,
+        false,
         false,
         false,
         false,
@@ -161,6 +170,9 @@ void main() {
         true,
         true,
         false,
+        false,
+        false,
+        false,
       ]);
     });
 
@@ -171,7 +183,49 @@ void main() {
 
     test('should draw every street in one layer, with no filter (PLAN '
         '§5.14)', () {
-      expect(layers.where((l) => l.filter != null), isEmpty);
+      expect(layers.where((l) => l.filter != null).map((l) => l.id), [
+        MapIds.zoneShade,
+        MapIds.zoneEdge,
+        MapIds.zoneHandle,
+      ]);
+    });
+
+    test('should draw each part of the zone from its own features', () {
+      expect(layer(MapIds.zoneShade).filter, [
+        '==',
+        ['get', 'part'],
+        'shade',
+      ]);
+      expect(layer(MapIds.zoneEdge).filter, [
+        '==',
+        ['get', 'part'],
+        'edge',
+      ]);
+      expect(layer(MapIds.zoneHandle).filter, [
+        '==',
+        ['get', 'part'],
+        'handle',
+      ]);
+    });
+
+    test('should dim the map around the zone, dash its edge and draw a '
+        'white handle (PickZone mockup)', () {
+      expect(json(MapIds.zoneShade), {
+        'fill-opacity': 0.18,
+        'fill-color': '#1b1f24',
+      });
+      expect(json(MapIds.zoneEdge), {
+        'line-color': '#1b1f24',
+        'line-width': 2.5,
+        'line-dasharray': [3.2, 2.4],
+      });
+      expect(json(MapIds.zoneHandle), {
+        'circle-radius': 9,
+        'circle-color': '#ffffff',
+        'circle-stroke-width': 2.5,
+        'circle-stroke-color': '#1b1f24',
+      });
+      expect(layer(MapIds.zoneShade).properties, isA<FillLayerProperties>());
     });
 
     test('should colour each street line by its level with the map tokens', () {

@@ -3,11 +3,14 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/use_cases/add_street_from_map.dart';
+import 'package:tournee_calendriers/application/use_cases/find_zone_streets.dart';
 import 'package:tournee_calendriers/application/use_cases/look_up_street.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
+import 'package:tournee_calendriers/domain/geometry/geo_distance.dart';
 import 'package:tournee_calendriers/domain/map/map_layers.dart';
 import 'package:tournee_calendriers/domain/map/picked_road.dart';
 import 'package:tournee_calendriers/domain/map/sector_area.dart';
+import 'package:tournee_calendriers/domain/map/street_zone.dart';
 import 'package:tournee_calendriers/domain/sector/sector_commune.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/shared/insee_code.dart';
@@ -42,6 +45,10 @@ final addStreetsMapProvider =
 ///   §5.3). Streets that fail stay ticked.
 /// - **The search** asks the BAN in the secteur's communes; a street picked
 ///   moves the map to it and ticks it.
+/// - **« Zone »** on, a rectangle drawn on the map lists the streets in it
+///   (`FindZoneStreets`) and ticks those to add; their numbers are read
+///   only when they are added. Ticks from taps and zones add up; « Zone »
+///   off drops the zone and keeps the ticks.
 ///
 /// Answers come back in any order: each one ticks what it found, except
 /// once « Tout décocher » was pressed after its tap, or while the streets
@@ -77,6 +84,18 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
   var _found = const <StreetMatch>[];
   var _searches = 0;
 
+  var _zoneMode = false;
+
+  /// The zone drawn, null when none.
+  GeoBounds? _zone;
+
+  /// The streets found in [_zone]; null while they are looked for.
+  List<ZoneStreet>? _zoneStreets;
+
+  /// Raised by each zone drawn and by « Zone » turned on or off: only the
+  /// answer for the zone still shown is listed.
+  var _zones = 0;
+
   @override
   AddStreetsMapState build() {
     _streets = const [];
@@ -87,6 +106,9 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
     _run = const AddIdle();
     _search = const NoStreetSearch();
     _found = const [];
+    _zoneMode = false;
+    _zone = null;
+    _zoneStreets = null;
     final streets = ref
         .watch(observeStreetsProvider)()
         .listen(
@@ -226,25 +248,34 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
   /// every one is; null when some failed (they stay ticked and the state
   /// says why), or when there was nothing to add.
   ///
+  /// A street found in a zone has its numbers read first (`LookUpStreet`);
+  /// offline, it and the streets after it stay ticked.
+  ///
   /// Once started, it goes to the end even if the screen closes.
   Future<int?> add() async {
     if (_picks.isEmpty || _run is AddRunning) return null;
     // Read now: the screen may close while the streets are stored, and
     // they must still be added.
     final addStreet = ref.read(addStreetFromMapProvider);
+    final lookUp = ref.read(lookUpStreetProvider);
     final chosen = _picks;
     final failed = <BanStreetId>{};
+    AddProblem? problem;
     var stored = 0;
     _setRun(AddRunning(0, chosen.length));
     for (final pick in chosen) {
       // Its road may have come since the button was pressed.
       final latest = _pickOf(pick.id) ?? pick;
-      switch (await addStreet(latest.found.numbers, shape: latest.road)) {
-        // A teammate added it meanwhile: it is in the secteur all the same.
-        case Ok() || Err(failure: AddStreetFailure.alreadyInSector):
-          stored++;
-        case Err(failure: AddStreetFailure.serviceError):
-          failed.add(pick.id);
+      final outcome = problem == AddProblem.noNetwork
+          // Offline: the next ones would fail the same way, each after
+          // its wait.
+          ? AddProblem.noNetwork
+          : await _addOne(latest, addStreet, lookUp);
+      if (outcome == null) {
+        stored++;
+      } else {
+        failed.add(pick.id);
+        problem ??= outcome;
       }
       _setRun(AddRunning(stored + failed.length, chosen.length));
     }
@@ -252,8 +283,141 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
       for (final pick in _picks)
         if (failed.contains(pick.id)) pick,
     ];
-    _setRun(failed.isEmpty ? const AddIdle() : AddFailed(failed.length));
+    _setRun(
+      problem == null
+          ? const AddIdle()
+          : AddFailed(failed.length, problem: problem),
+    );
     return failed.isEmpty ? stored : null;
+  }
+
+  /// Adds the street of [pick]: null once it is in the secteur, otherwise
+  /// why not.
+  Future<AddProblem?> _addOne(
+    _Pick pick,
+    AddStreetFromMap addStreet,
+    LookUpStreet lookUp,
+  ) async {
+    var numbers = pick.found?.numbers;
+    if (numbers == null) {
+      switch (await lookUp(FoundStreet(pick.match))) {
+        case Ok(value: StreetToAdd(numbers: final read)):
+          numbers = read;
+        // A teammate added it meanwhile: it is in the secteur all the same.
+        case Ok(value: StreetOfTheSector()):
+          return null;
+        case Err(failure: AddressDirectoryFailure.noNetwork):
+          return AddProblem.noNetwork;
+        case Err(
+          failure: AddressDirectoryFailure.notFound ||
+              AddressDirectoryFailure.serviceError,
+        ):
+          return AddProblem.serviceError;
+      }
+    }
+    return switch (await addStreet(numbers, shape: pick.storedRoad)) {
+      // A teammate added it meanwhile: it is in the secteur all the same.
+      Ok() || Err(failure: AddStreetFailure.alreadyInSector) => null,
+      Err(failure: AddStreetFailure.serviceError) => AddProblem.badNumbers,
+    };
+  }
+
+  /// « Zone » turned on, or off: off, the zone and its list go, the ticks
+  /// stay.
+  void toggleZone() {
+    if (_run is AddRunning) return;
+    _zoneMode = !_zoneMode;
+    _clearZone();
+    _show();
+  }
+
+  /// A rectangle [area] drawn on the map at [zoom], « Zone » on: lists its
+  /// streets and ticks those to add. Too far out (under `zoneMinZoom`), or
+  /// with too many streets, nothing is listed and the answer says why.
+  Future<TapAnswer> drawZone(GeoBounds area, {required double zoom}) async {
+    if (!_zoneMode || _run is AddRunning) return const NothingToSay();
+    _search = const NoStreetSearch();
+    _clearZone();
+    if (zoom < zoneMinZoom) {
+      _show();
+      return const ZoomInForZone();
+    }
+    final ticket = _zones;
+    _zone = area;
+    _show();
+    final result = await ref.read(findZoneStreetsProvider)(
+      area,
+      communes: _zoneCommunes(area),
+    );
+    if (!ref.mounted || ticket != _zones) return const NothingToSay();
+    final TapAnswer answer;
+    switch (result) {
+      case Err(failure: FindZoneFailure.tooManyStreets):
+        _clearZone();
+        answer = const ZoneTooLarge();
+      case Err(failure: FindZoneFailure.noNetwork):
+        _clearZone();
+        answer = const LookUpFailed(LookUpProblem.noNetwork);
+      case Err(failure: FindZoneFailure.serviceError):
+        _clearZone();
+        answer = const LookUpFailed(LookUpProblem.serviceError);
+      case Ok(value: final streets):
+        _zoneStreets = streets;
+        final ticked = [
+          for (final street in streets)
+            if (street is ZoneStreetToAdd && _pickOf(street.match.id) == null)
+              _Pick.inZone(street),
+        ];
+        // While streets are added, the ticks wait.
+        if (ticked.isNotEmpty && _run is! AddRunning) {
+          _picks = [..._picks, ...ticked];
+          _run = const AddIdle();
+        }
+        answer = const NothingToSay();
+    }
+    _show();
+    return answer;
+  }
+
+  /// The checkbox of the street [id] in the zone's list: ticks it, or
+  /// unticks it.
+  void toggleZoneStreet(BanStreetId id) {
+    if (_run is AddRunning) return;
+    if (_pickOf(id) != null) {
+      untick(id);
+      return;
+    }
+    final street = (_zoneStreets ?? const [])
+        .whereType<ZoneStreetToAdd>()
+        .where((street) => street.match.id == id)
+        .firstOrNull;
+    if (street != null) _setPicks([..._picks, _Pick.inZone(street)]);
+  }
+
+  /// No zone; an answer on its way for the one before is dropped.
+  void _clearZone() {
+    _zones++;
+    _zone = null;
+    _zoneStreets = null;
+  }
+
+  /// The communes a zone's streets are matched in: the secteur's, the
+  /// nearest to [zone] first (one without a centre last); for a secteur
+  /// without commune, those of its streets.
+  List<InseeCode> _zoneCommunes(GeoBounds zone) {
+    if (_communes.isEmpty) return _searchCommunes();
+    // The middle of a zone on Earth is on Earth: it cannot fail.
+    final middle = (GeoPoint.create(
+      latitude: (zone.south + zone.north) / 2,
+      longitude: (zone.west + zone.east) / 2,
+    ) as Ok<GeoPoint, GeoPointFailure>).value;
+    double distance(SectorCommune commune) => switch (commune.centre) {
+      null => double.infinity,
+      final centre => metresBetween(centre, middle),
+    };
+    final nearest = [..._communes]
+      ..sort((a, b) => distance(a).compareTo(distance(b)));
+    return [for (final commune in nearest) commune.inseeCode];
   }
 
   void _setRun(AddRun run) {
@@ -303,7 +467,7 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
       if (toggle) untick(id);
       return;
     }
-    final pick = _Pick(found, mark: mark, road: StreetShape.none);
+    final pick = _Pick.tapped(found, mark: mark);
     _picks = [..._picks, pick];
     _run = const AddIdle();
     unawaited(_findRoad(pick));
@@ -312,7 +476,7 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
   /// Draws the road of [pick] once the map tells it, if the street is still
   /// ticked by that tap. A failure, or no road, leaves the ✓ alone.
   Future<void> _findRoad(_Pick pick) async {
-    final road = await ref.read(lookUpStreetShapeProvider)(pick.found);
+    final road = await ref.read(lookUpStreetShapeProvider)(pick.found!);
     if (!ref.mounted) return;
     if (road case Ok(:final value)) {
       // `identical`: unticked then ticked again is another tick, which
@@ -353,9 +517,9 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
       for (final pick in _picks)
         PickedStreetRow(
           id: pick.id,
-          name: pick.found.match.name.text,
-          commune: pick.found.match.commune.name,
-          numberCount: pick.found.numberCount,
+          name: pick.match.name.text,
+          commune: pick.match.commune.name,
+          numberCount: pick.numberCount,
         ),
     ],
     pickedRoads: [
@@ -364,20 +528,83 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
     ],
     lookingAt: _lookingAt,
     search: _search,
+    zoneMode: _zoneMode,
+    zone: switch ((_zone, _zoneStreets)) {
+      (null, _) => const NoZone(),
+      (final area?, null) => FindingZoneStreets(area),
+      (final area?, final streets?) => ZoneStreetsFound(area, [
+        for (final street in streets) _rowOf(street),
+      ]),
+    },
     run: _run,
   );
+
+  ZoneStreetRow _rowOf(ZoneStreet street) => switch (street) {
+    ZoneStreetToAdd(:final match, :final numberCount) => ZoneStreetRow(
+      kind: ZoneRowKind.toAdd,
+      name: street.name,
+      id: match.id,
+      numberCount: numberCount,
+      ticked: _pickOf(match.id) != null,
+    ),
+    ZoneStreetInSector(:final match) => ZoneStreetRow(
+      kind: ZoneRowKind.inSector,
+      name: street.name,
+      id: match.id,
+    ),
+    ZoneRoadWithoutAddress() => ZoneStreetRow(
+      kind: ZoneRowKind.noAddress,
+      name: street.name,
+    ),
+  };
 }
 
-/// A street ticked: what the BAN told of it (its numbers, to add it), where
-/// its ✓ sits, and its road once the map told it.
+/// A street ticked: the BAN street, how many numbers it brings, where its
+/// ✓ sits, and its road once the map told it.
+///
+/// Ticked by a tap or the search, it comes with its numbers ([found]) and
+/// its road is asked of the map (`LookUpStreetShape`), whole: it is stored
+/// with the street. Ticked in a zone, its road is the map's in the zone's
+/// tiles, drawn only (it may be cut where they end), and its numbers are
+/// read when it is added.
 final class _Pick {
-  const _Pick(this.found, {required this.mark, required this.road});
+  _Pick.tapped(StreetToAdd this.found, {required this.mark})
+    : match = found.match,
+      numberCount = found.numberCount,
+      road = StreetShape.none;
 
-  final StreetToAdd found;
+  _Pick.inZone(ZoneStreetToAdd street)
+    : found = null,
+      match = street.match,
+      numberCount = street.numberCount,
+      mark = street.mark,
+      road = street.road;
+
+  const _Pick._(
+    this.found, {
+    required this.match,
+    required this.numberCount,
+    required this.mark,
+    required this.road,
+  });
+
+  final StreetToAdd? found;
+  final StreetMatch match;
+  final int numberCount;
   final GeoPoint mark;
   final StreetShape road;
 
-  BanStreetId get id => found.match.id;
+  BanStreetId get id => match.id;
 
-  _Pick withRoad(StreetShape road) => _Pick(found, mark: mark, road: road);
+  /// The road stored with the street: none for a zone's, which Accueil
+  /// fills from the street's houses (PLAN §5.3).
+  StreetShape get storedRoad => found == null ? StreetShape.none : road;
+
+  _Pick withRoad(StreetShape road) => _Pick._(
+    found,
+    match: match,
+    numberCount: numberCount,
+    mark: mark,
+    road: road,
+  );
 }

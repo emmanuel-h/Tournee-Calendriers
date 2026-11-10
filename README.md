@@ -37,8 +37,10 @@ Start screen:
   them to the secteur, a street from the Corbeille coming back with its marks; « Carte »
   (first) shows the secteur's map, opened on its communes: a tap on a road ticks it (a ✓ on
   its road; a second tap unticks it; a street of the secteur says it is in it already), the
-  search box finds a street of the communes by name and ticks it, and the sheet at the
-  bottom lists the streets ticked and adds them all at once (« Ajouter 3 rues »); « Rue
+  search box finds a street of the communes by name and ticks it, « Zone » draws a
+  rectangle with a finger and lists its streets (those to add ticked, those of the secteur
+  and roads without address greyed; zoom 15 at least, 50 streets at most), and the sheet at
+  the bottom lists the streets ticked and adds them all at once (« Ajouter 3 rues »); « Rue
   absente de la carte ? Saisir à la main » adds a street the map lacks, offline
   (« Connexion nécessaire pour ajouter une rue. » otherwise).
 - Top bar: the open secteur (« Secteur 49 · 2026 » over its centre de secours), or the

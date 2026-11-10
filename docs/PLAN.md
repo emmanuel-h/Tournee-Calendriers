@@ -568,7 +568,7 @@ bottom sheet:
 > from Secteur, not Accueil; ✕ and « N rues ajoutées » go back to Secteur. Built in #124: a tap
 > ticks a road instead of opening the street card, several at once, and the selection sheet
 > adds them (« Ajouter N rues »); the street card, its table and « ✎ Saisir une rue à la main »
-> under the search box are gone from this screen (5.14). To build: « Zone » (#125). The
+> under the search box are gone from this screen (5.14). Built in #125: « Zone ». The
 > look-up, the search and « Liste » stay as below; what this section says of the card is
 > history.
 
@@ -1618,7 +1618,7 @@ outing; the team's area is the **secteur** (§2).
   short day); every row starts folded and each unfolds on its own. « TOTAL DE LA TOURNÉE » for one,
   « TOTAL DES TOURNÉES » for none. Unreadable: « La collecte ne peut pas être affichée. ».
 
-### 5.14 Préparer le secteur, partir en tournée (built #120–#124; « Zone » to build, #125)
+### 5.14 Préparer le secteur, partir en tournée (built #120–#125)
 
 Agreed 2026-11-03 (ASCII in the terminal, then mockups RunStart, RunHome, RunStreet,
 StreetIdle, RunTeam, Team, TeamMember, Pick, PickZone). The app has **two moments that never
@@ -1749,8 +1749,7 @@ removes are marked « (removed, 5.14) » there.
     secteur » (the Liste tab's path). Streets that failed stay ticked, with the reason
     above the button. A street in the Corbeille comes back with its marks, as in Liste.
   - Delivered in #124 (`presentation/add_streets/`, `ui/screens/add_streets/add_streets_screen.dart`,
-    `domain/map/picked_road.dart`): the search box alone above the map (room for « Zone » on its
-    right, #125). **A tap on a road** marks the point (dark dot in a faint halo) and the sheet
+    `domain/map/picked_road.dart`): the search box above the map, « Zone » on its right (#125). **A tap on a road** marks the point (dark dot in a faint halo) and the sheet
     says « Recherche de la rue… » while the BAN is asked; the street found is ticked, its ✓ disc
     at the point tapped (at the BAN's point for a street picked in the search; a dark circle
     under the ✓ picture, so the disc shows even where symbols do not render), its road drawn
@@ -1762,7 +1761,7 @@ removes are marked « (removed, 5.14) » there.
     Lilas est déjà dans le secteur. » (4 s); the look-up failures say « Connexion nécessaire
     pour ajouter une rue. », « Aucune rue connue ici. », « Le service des adresses ne répond
     pas. » with « Saisir à la main ». With nothing ticked the sheet reads « Touchez les rues à
-    ajouter. » (« ou tracez une zone » comes with #125). Each row: name, « Villefranche-sur-
+    ajouter ou tracez une zone. » (#125). Each row: name, « Villefranche-sur-
     Saône · 19 numéros », ✕ (« Retirer Rue Pierre Morin »); rows are 52 dp, four show, then
     they scroll (never over 35 % of the map's height). The handle and title fold the sheet
     (drag down or tap; TalkBack « Réduire la sélection » / « Afficher la sélection »); the
@@ -1775,6 +1774,34 @@ removes are marked « (removed, 5.14) » there.
     la main. »; it goes once the ticks change. The ticks stay while « Liste » shows, until the
     screen closes. The snackbar counts every street now in the secteur (« 3 rues ajoutées au
     secteur »), those brought back from the Corbeille included.
+  - Delivered in #125 (`application/use_cases/find_zone_streets.dart`, `domain/map/street_zone.dart`,
+    `ui/map/zone_drawing.dart`): « ⬚ Zone » is a 48 dp pill right of the search box (white,
+    ink while on). On, the map does not pan: one finger draws the rectangle (painted by the
+    app while the finger moves, then drawn by the map itself, so it follows a zoom: the rest
+    dimmed at 18 %, a dashed edge, a white handle at the south-east corner); a drag starting
+    within 24 dp of the handle resizes the zone from its opposite corner; two fingers still
+    zoom, and drop the drawing; a drag under 16 dp is no zone; a tap still ticks a road. On
+    release the sheet becomes the zone's: « Recherche des rues de la zone… », then « 4 rues
+    dans la zone » (« Aucune rue dans la zone ») with a row per street (checkbox, name, « 19
+    numéros », or greyed « Déjà dans le secteur » / « Aucune adresse connue »), to add first,
+    then those of the secteur, then the roads without address, each in French order, and
+    « Ajouter N rues » counting every street ticked, by taps and zones (disabled at 0). The
+    roads are those of the zoom-14 tiles under the zone (`StreetShapes.roadsIn`, at most 16
+    tiles), one per name, drawn whole as far as the tiles go; a road is matched by name
+    (`StreetName.matches`) in the secteur's communes nearest first (the zone's middle against
+    each commune's centre; without communes, those of its streets), at most 3 communes read,
+    a name in two communes taken in the nearest; two roads naming one BAN street make one row.
+    More than 50 named roads: nothing listed, « Zone trop grande : 50 rues au plus. »; under
+    zoom 15: « Zoomez pour tracer une zone. »; offline or a failing service: the snackbars
+    of a tap. Each ✓ sits half-way along the road's first piece inside the zone. A zone's
+    street brings no numbers until added: « Ajouter » reads them (`LookUpStreet`) one street
+    after the other; offline, that street and the next ones stay ticked, « 1 rue n'a pas pu
+    être ajoutée : connexion nécessaire. »; a service error, « … : le service des adresses ne
+    répond pas. Réessayez plus tard. ». Its road is not stored (it may be cut where the tiles
+    end): Accueil fills it from its houses (5.3). A new zone replaces the one shown, its
+    ticks staying; « Zone » off drops the zone, keeps the ticks and the selection sheet comes
+    back, which with « Zone » on and nothing ticked reads « Faites glisser le doigt sur la
+    carte pour tracer une zone. ».
 
 ---
 
@@ -2402,6 +2429,10 @@ Address and shape adapters fixed in T3.2 (`lib/application/ports/address_directo
   gives the named roads (`name`). The lines of the name are cut to their tile (each tile
   repeats a strip of its neighbours), cut to the area (`clipLine`), and joined where their
   ends meet within 1 m (`joinLines`), across tiles too. A 204 is an empty tile.
+- **Port `StreetShapes.roadsIn(area)`** (#125, « Zone ») → the `NamedRoad`s (the map's name,
+  the shape) running through the area, one per name in the order the tiles give them, each
+  cut to its tiles but not to the area (`namedRoadsFromTiles`); a blank name is left out.
+  The same tiles, memory and failures as `shapeOf`; more than 16 tiles gives no road.
 Street picking fixed in T3.3 (`lib/domain/street/street.dart`, `lib/application/use_cases/`):
 
 - **No attribution** (5.14, #120): a street belongs to no member; every member of the secteur

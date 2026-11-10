@@ -25,6 +25,34 @@ abstract interface class StreetShapes {
     required StreetName name,
     required GeoBounds area,
   });
+
+  /// The named roads that run through [area] (« Zone » on « Ajouter des
+  /// rues », PLAN §5.14), one per name, in the order the map gives them.
+  /// Each is drawn whole as far as the map's tiles under [area] go, not cut
+  /// to [area]: it shows where the street runs. None when the area is too
+  /// large to read (the zone needs street zoom, see `zoneMinZoom`).
+  Future<Result<List<NamedRoad>, StreetShapesFailure>> roadsIn(GeoBounds area);
+}
+
+/// A road of the map with its name, as OpenStreetMap writes it (« Rue du
+/// Musée », where the BAN may write « Rue du Musee »).
+final class NamedRoad {
+  const NamedRoad({required this.name, required this.shape});
+
+  final String name;
+
+  /// Its pieces, each with every point the map has.
+  final StreetShape shape;
+
+  @override
+  bool operator ==(Object other) =>
+      other is NamedRoad && other.name == name && other.shape == shape;
+
+  @override
+  int get hashCode => Object.hash(name, shape);
+
+  @override
+  String toString() => 'NamedRoad($name)';
 }
 
 /// Why the [StreetShapes] could not answer.

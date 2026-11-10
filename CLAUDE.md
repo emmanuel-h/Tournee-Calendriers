@@ -78,10 +78,9 @@ on a house, a door or a building's « Repasser » says « Commencez une tournée
 (#123: in place of Accueil's top bar, so no secteur switch, Secteur or ⚙ during a tournée; above the
 street's top bar and the building grid's header; the tournée card and the street's line are gone);
 « Ajouter des rues » ticks several roads on « Carte » and adds them at once from a selection sheet
-(#124: `PickedRoad` on the map, no street card on that screen; « Zone » is #125).
-#120 built (2026-11-03), waiting for review: no `Street.assignees`, `MyStreets`, `TeamRoster`, `TakeStreet` /
-`ReleaseStreet`, streets per member; Accueil lists every street under « Rues · 31/50 »; the card says « Ouvrir »
-or « Ajouter au secteur »; the rules refuse any `assignees` write (to deploy, the user).
+(#124: `PickedRoad` on the map, no street card on that screen); « Zone » draws a rectangle and lists its
+streets (#125: `StreetShapes.roadsIn`, `FindZoneStreets` matching the tiles' road names to the BAN's in the
+3 nearest communes, numbers read when added, `ZoneDrawing` over the map, zoom ≥ 15, 50 streets).
 
 ## Commands
 

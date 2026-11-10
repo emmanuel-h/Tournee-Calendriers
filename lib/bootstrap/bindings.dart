@@ -11,6 +11,7 @@ import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
 import 'package:tournee_calendriers/application/ports/pending_sync.dart';
 import 'package:tournee_calendriers/application/ports/server_connection.dart';
+import 'package:tournee_calendriers/application/ports/street_shapes.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
@@ -76,6 +77,8 @@ final httpClientProvider = Provider<http.Client>((ref) {
 /// - [addressDirectory]: replaces the BAN, so the instrumented suite can
 ///   import streets without the network.
 /// - [communeSearch]: replaces geo.api.gouv.fr, for the same reason.
+/// - [streetShapes]: replaces the OpenFreeMap tiles' roads, for the same
+///   reason (a zone drawn on « Ajouter des rues »).
 ///
 /// The streets follow the open secteur: those of its current campaign in
 /// Firestore while one is open, none while none is (streets only live in a
@@ -92,6 +95,7 @@ Future<List<Override>> bindAdapters({
   required FirebaseFirestore Function() firestore,
   AddressDirectory? addressDirectory,
   CommuneSearch? communeSearch,
+  StreetShapes? streetShapes,
 }) async {
   await deleteRetiredFiles(storage);
   final ids = RandomIdGenerator();
@@ -186,7 +190,9 @@ Future<List<Override>> bindAdapters({
       (ref) => communeSearch ?? GeoCommuneSearch(ref.watch(httpClientProvider)),
     ),
     streetShapesProvider.overrideWith(
-      (ref) => OpenFreeMapStreetShapes(ref.watch(httpClientProvider)),
+      (ref) =>
+          streetShapes ??
+          OpenFreeMapStreetShapes(ref.watch(httpClientProvider)),
     ),
     clockProvider.overrideWithValue(clock),
     idGeneratorProvider.overrideWithValue(ids),

@@ -3619,7 +3619,7 @@ abstract class AppLocalizations {
   /// Selection sheet of « Ajouter des rues » with nothing ticked (PLAN §5.14, Pick mockup).
   ///
   /// In fr, this message translates to:
-  /// **'Touchez les rues à ajouter.'**
+  /// **'Touchez les rues à ajouter ou tracez une zone.'**
   String get addStreetsPickHint;
 
   /// Title of the selection sheet: how many streets are ticked.
@@ -3705,6 +3705,78 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'{count, plural, =1{1 rue n\'a pas pu être ajoutée : la Base Adresse Nationale donne des numéros incohérents. Saisissez-la à la main.} other{{count} rues n\'ont pas pu être ajoutées : la Base Adresse Nationale donne des numéros incohérents. Saisissez-les à la main.}}'**
   String addStreetsAddFailed(int count);
+
+  /// Above « Ajouter N rues » when the numbers of a street found in a zone could not be read offline; it and the streets after it stay ticked.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, =1{1 rue n\'a pas pu être ajoutée : connexion nécessaire.} other{{count} rues n\'ont pas pu être ajoutées : connexion nécessaire.}}'**
+  String addStreetsAddFailedNoNetwork(int count);
+
+  /// Above « Ajouter N rues » when the address service failed for streets found in a zone; they stay ticked.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, =1{1 rue n\'a pas pu être ajoutée : le service des adresses ne répond pas. Réessayez plus tard.} other{{count} rues n\'ont pas pu être ajoutées : le service des adresses ne répond pas. Réessayez plus tard.}}'**
+  String addStreetsAddFailedService(int count);
+
+  /// The pill next to the search box of « Ajouter des rues »: on, a drag on the map draws a zone (PLAN §5.14, PickZone mockup).
+  ///
+  /// In fr, this message translates to:
+  /// **'Zone'**
+  String get addStreetsZone;
+
+  /// Screen-reader name of the « Zone » pill while it is off.
+  ///
+  /// In fr, this message translates to:
+  /// **'Sélectionner une zone'**
+  String get addStreetsZoneStart;
+
+  /// Screen-reader name of the « Zone » pill while it is on: a tap leaves the mode, the ticks stay.
+  ///
+  /// In fr, this message translates to:
+  /// **'Zone en cours, annuler'**
+  String get addStreetsZoneStop;
+
+  /// Selection sheet with nothing ticked while « Zone » is on and no zone is drawn.
+  ///
+  /// In fr, this message translates to:
+  /// **'Faites glisser le doigt sur la carte pour tracer une zone.'**
+  String get addStreetsZoneHint;
+
+  /// In the zone's sheet while the streets of the zone drawn are looked for.
+  ///
+  /// In fr, this message translates to:
+  /// **'Recherche des rues de la zone…'**
+  String get addStreetsZoneLooking;
+
+  /// Title of the zone's sheet: how many streets the zone holds, greyed ones included.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, =0{Aucune rue dans la zone} =1{1 rue dans la zone} other{{count} rues dans la zone}}'**
+  String addStreetsZoneStreets(int count);
+
+  /// Under a greyed street of the zone's list that the sector has already.
+  ///
+  /// In fr, this message translates to:
+  /// **'Déjà dans le secteur'**
+  String get addStreetsZoneInSector;
+
+  /// Under a greyed road of the zone's list that no street of the address base is named after.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune adresse connue'**
+  String get addStreetsZoneNoAddress;
+
+  /// Snackbar when a zone is drawn too far out (under zoom 15): nothing is listed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Zoomez pour tracer une zone.'**
+  String get addStreetsZoomIn;
+
+  /// Snackbar when the zone drawn holds more streets than a zone keeps: nothing is listed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Zone trop grande : {max} rues au plus.'**
+  String addStreetsZoneTooLarge(int max);
 }
 
 class _AppLocalizationsDelegate

@@ -329,6 +329,31 @@ abstract final class AppSizes {
   /// still shows with a large font.
   static const selectionListShare = 0.35;
 
+  /// A zone drawn on « Ajouter des rues » (PickZone mockup): the map
+  /// outside it dimmed by the ink at this opacity, its edge a dashed line
+  /// of this width (dashes and gaps of these lengths), and a round handle
+  /// of this radius at its south-east corner.
+  static const zoneShadeOpacity = 0.18;
+  static const zoneEdgeWidth = 2.5;
+  static const zoneDash = 8.0;
+  static const zoneGap = 6.0;
+  static const zoneHandleRadius = 9.0;
+
+  /// A finger down this close to the zone's handle resizes the zone
+  /// rather than drawing a new one: half a tap target around it.
+  static const zoneHandleReach = 24.0;
+
+  /// A drag shorter than this on either side draws no zone: a tap that
+  /// slid a little.
+  static const zoneMinSide = 16.0;
+
+  /// The checkbox of a street in the zone's list, and its corners.
+  static const zoneCheckBox = 24.0;
+  static const zoneCheckRadius = 6.0;
+
+  /// The dashed square of the « Zone » pill.
+  static const zoneIcon = 20.0;
+
   /// The dot of « ● En tournée » (PLAN §5.14).
   static const roundDot = 10.0;
 

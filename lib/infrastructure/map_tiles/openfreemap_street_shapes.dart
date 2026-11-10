@@ -50,6 +50,11 @@ final class OpenFreeMapStreetShapes implements StreetShapes {
   /// a download of a whole region.
   static const maxTilesPerStreet = 16;
 
+  /// The most tiles read for a zone. At street zoom (`zoneMinZoom`) a
+  /// phone's screen spans two to six tiles; a larger area finds no road
+  /// rather than downloading a whole town.
+  static const maxTilesPerZone = 16;
+
   /// The zoom of the tiles read: the most detailed OpenFreeMap has.
   static const zoom = 14;
 
@@ -79,6 +84,24 @@ final class OpenFreeMapStreetShapes implements StreetShapes {
   }) async {
     final tiles = tilesCovering(area, zoom: zoom);
     if (tiles.length > maxTilesPerStreet) return const Ok(StreetShape.none);
+    return (await _read(tiles))
+        .map((read) => streetShapeFromTiles(read, name: name, area: area));
+  }
+
+  @override
+  Future<Result<List<NamedRoad>, StreetShapesFailure>> roadsIn(
+    GeoBounds area,
+  ) async {
+    final tiles = tilesCovering(area, zoom: zoom);
+    if (tiles.length > maxTilesPerZone) return const Ok([]);
+    return (await _read(tiles))
+        .map((read) => namedRoadsFromTiles(read, area: area));
+  }
+
+  /// The named roads of each of [tiles], or the first failure.
+  Future<Result<List<(TileId, TileLayer)>, StreetShapesFailure>> _read(
+    List<TileId> tiles,
+  ) async {
     final read = <(TileId, TileLayer)>[];
     // One tile after the other: a street needs one to four, and a public
     // service is better asked gently.
@@ -90,7 +113,7 @@ final class OpenFreeMapStreetShapes implements StreetShapes {
           read.add((tile, value));
       }
     }
-    return Ok(streetShapeFromTiles(read, name: name, area: area));
+    return Ok(read);
   }
 
   /// The named roads of [tile], from memory or from the server.

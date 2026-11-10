@@ -1,4 +1,5 @@
 import 'package:test/test.dart';
+import 'package:tournee_calendriers/application/ports/street_shapes.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
@@ -160,6 +161,140 @@ void main() {
 
   test('should join ends at most a metre apart', () {
     expect(joinToleranceMetres, 1);
+  });
+
+  group('namedRoadsFromTiles', () {
+    /// A zone in the north-west of the west tile.
+    final zone = GeoBounds.around([
+      _at(_west, 500, 500),
+      _at(_west, 1500, 1500),
+    ])!;
+
+    test('should keep the roads running through the area, whole', () {
+      final roads = namedRoadsFromTiles([
+        (
+          _west,
+          _layer([
+            _road('Rue Nationale', [
+              [(1000, 1000), (3000, 1000)],
+            ]),
+            _road('Rue de la Paix', [
+              [(3000, 3000), (3500, 3000)],
+            ]),
+            _road('Rue Pasteur', [
+              [(600, 1200), (900, 1200)],
+            ]),
+          ]),
+        ),
+      ], area: zone);
+
+      expect(roads, [
+        NamedRoad(
+          name: 'Rue Nationale',
+          shape: StreetShape([
+            [_at(_west, 1000, 1000), _at(_west, 3000, 1000)],
+          ]),
+        ),
+        NamedRoad(
+          name: 'Rue Pasteur',
+          shape: StreetShape([
+            [_at(_west, 600, 1200), _at(_west, 900, 1200)],
+          ]),
+        ),
+      ]);
+    });
+
+    test('should keep the pieces of a road outside the area too', () {
+      final roads = namedRoadsFromTiles([
+        (
+          _west,
+          _layer([
+            _road('Rue Nationale', [
+              [(3000, 3000), (3500, 3000)],
+              [(1000, 1000), (1200, 1000)],
+            ]),
+          ]),
+        ),
+      ], area: zone);
+
+      expect(roads.single.shape.lines, hasLength(2));
+    });
+
+    test('should join a road across two tiles, cut to each tile', () {
+      final roads = namedRoadsFromTiles([
+        (
+          _west,
+          _layer([
+            _road('Rue Nationale', [
+              [(1000, 1000), (4200, 1000)],
+            ]),
+          ]),
+        ),
+        (
+          _east,
+          _layer([
+            _road('Rue Nationale', [
+              [(-104, 1000), (1000, 1000)],
+            ]),
+          ]),
+        ),
+      ], area: zone);
+
+      final line = roads.single.shape.lines.single;
+      expect(line, hasLength(3));
+      expect(line.first, _at(_west, 1000, 1000));
+      expect(line[1].longitude, tileBounds(_west).east);
+      expect(line.last, _at(_east, 1000, 1000));
+    });
+
+    test('should keep a road met first outside the area once it comes in', () {
+      final roads = namedRoadsFromTiles([
+        (
+          _east,
+          _layer([
+            _road('Rue Nationale', [
+              [(1000, 1000), (2000, 1000)],
+            ]),
+          ]),
+        ),
+        (
+          _west,
+          _layer([
+            _road('Rue Nationale', [
+              [(1000, 1000), (1200, 1000)],
+            ]),
+          ]),
+        ),
+      ], area: zone);
+
+      expect(roads.single.name, 'Rue Nationale');
+      expect(roads.single.shape.lines, hasLength(2));
+    });
+
+    test('should leave out a road without a name', () {
+      final roads = namedRoadsFromTiles([
+        (
+          _west,
+          _layer([
+            _road('  ', [
+              [(1000, 1000), (1200, 1000)],
+            ]),
+            _road(' Rue Pasteur ', [
+              [(600, 1200), (900, 1200)],
+            ]),
+          ]),
+        ),
+      ], area: zone);
+
+      expect([for (final road in roads) road.name], ['Rue Pasteur']);
+    });
+
+    test('should find nothing in an area without road', () {
+      expect(
+        namedRoadsFromTiles([(_west, TileLayer.empty)], area: zone),
+        isEmpty,
+      );
+    });
   });
 }
 

@@ -32,6 +32,7 @@ abstract final class MapIds {
   static const selectedPointSource = 'tc-selected-point';
   static const pickedSource = 'tc-picked';
   static const pickedMarksSource = 'tc-picked-marks';
+  static const zoneSource = 'tc-zone';
 
   static const streetLines = 'tc-street-lines';
   static const selectedCasing = 'tc-selected-casing';
@@ -43,6 +44,9 @@ abstract final class MapIds {
   static const pickedMarks = 'tc-picked-mark-discs';
   static const pickedTicks = 'tc-picked-mark-ticks';
   static const houseDots = 'tc-house-dots';
+  static const zoneShade = 'tc-zone-shade';
+  static const zoneEdge = 'tc-zone-edge';
+  static const zoneHandle = 'tc-zone-handle';
 }
 
 /// The name of the picture of a house dot with [status], added to the map
@@ -99,7 +103,10 @@ final class MapLayerSpec {
 /// on Accueil and the roads ticked on « Ajouter des rues » (dark casing,
 /// white core, mockups README), the point being looked up (a dark dot in a
 /// faint halo, Pick mockup), the house dots from street zoom (PLAN §5.3),
-/// then the ✓ discs of the ticked roads (a dark disc, the ✓ picture on it). Colours are the map tokens of
+/// then the ✓ discs of the ticked roads (a dark disc, the ✓ picture on it),
+/// and the zone drawn on « Ajouter des rues » over everything (the map
+/// dimmed around it, its dashed edge, its handle; fill, line and circle
+/// layers, which every renderer draws). Colours are the map tokens of
 /// [colors].
 List<MapLayerSpec> sectorMapLayers(AppColors colors) => [
   MapLayerSpec(
@@ -229,6 +236,55 @@ List<MapLayerSpec> sectorMapLayers(AppColors colors) => [
     // The disc under it answers the tap.
     interactive: false,
   ),
+  MapLayerSpec(
+    id: MapIds.zoneShade,
+    source: MapIds.zoneSource,
+    properties: FillLayerProperties(
+      fillColor: colors.mapSelectedCasing.toHexStringRGB(),
+      fillOpacity: AppSizes.zoneShadeOpacity,
+    ),
+    filter: _zonePart(ZonePart.shade),
+    belowLabels: false,
+    // Taps go through to the map: a road may be tapped in « Zone » too.
+    interactive: false,
+  ),
+  MapLayerSpec(
+    id: MapIds.zoneEdge,
+    source: MapIds.zoneSource,
+    properties: LineLayerProperties(
+      lineColor: colors.mapSelectedCasing.toHexStringRGB(),
+      lineWidth: AppSizes.zoneEdgeWidth,
+      // MapLibre counts dashes in line widths.
+      lineDasharray: const [
+        AppSizes.zoneDash / AppSizes.zoneEdgeWidth,
+        AppSizes.zoneGap / AppSizes.zoneEdgeWidth,
+      ],
+    ),
+    filter: _zonePart(ZonePart.edge),
+    belowLabels: false,
+    interactive: false,
+  ),
+  MapLayerSpec(
+    id: MapIds.zoneHandle,
+    source: MapIds.zoneSource,
+    properties: CircleLayerProperties(
+      circleColor: colors.mapSelectedCore.toHexStringRGB(),
+      circleRadius: AppSizes.zoneHandleRadius,
+      circleStrokeColor: colors.mapSelectedCasing.toHexStringRGB(),
+      circleStrokeWidth: AppSizes.zoneEdgeWidth,
+    ),
+    filter: _zonePart(ZonePart.handle),
+    belowLabels: false,
+    // A drag from it resizes the zone (`ZoneDrawing`), not a tap.
+    interactive: false,
+  ),
+];
+
+/// The filter keeping the features of the zone's [part].
+List<Object> _zonePart(ZonePart part) => [
+  '==',
+  ['get', zonePartProperty],
+  part.name,
 ];
 
 /// The dark casing of a road picked or ticked (mockups README).

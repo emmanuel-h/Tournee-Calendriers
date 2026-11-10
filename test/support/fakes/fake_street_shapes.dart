@@ -1,5 +1,7 @@
 // A hand-written StreetShapes: answers what the test gives and records each
 // call, so a use-case test needs no map tiles.
+import 'dart:async';
+
 import 'package:tournee_calendriers/application/ports/street_shapes.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
@@ -33,5 +35,32 @@ final class FakeStreetShapes implements StreetShapes {
     asked.add((name.text, area));
     await whileAsked?.call();
     return answers[name.text] ?? answer;
+  }
+
+  /// The answer to every [roadsIn].
+  Result<List<NamedRoad>, StreetShapesFailure> roads = const Ok([]);
+
+  /// Every area [roadsIn] was asked, in order.
+  final zonesAsked = <GeoBounds>[];
+
+  /// Makes the next [roadsIn] wait until [releaseRoads].
+  void holdRoads() => _toHold = Completer();
+
+  /// Lets the [roadsIn] held answer, with [roads] as they are then.
+  void releaseRoads() => _held!.complete();
+
+  Completer<void>? _toHold;
+  Completer<void>? _held;
+
+  @override
+  Future<Result<List<NamedRoad>, StreetShapesFailure>> roadsIn(
+    GeoBounds area,
+  ) async {
+    zonesAsked.add(area);
+    final hold = _toHold;
+    _toHold = null;
+    if (hold != null) _held = hold;
+    await hold?.future;
+    return roads;
   }
 }

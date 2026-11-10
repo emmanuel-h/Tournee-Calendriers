@@ -204,6 +204,51 @@ void main() {
     });
   });
 
+  group('roadsIn', () {
+    /// An area of [columns] tiles side by side, one row.
+    GeoBounds wide(int columns) => GeoBounds.around([
+      _at(_west, 2000, 2000),
+      _at(TileId(zoom: 14, x: _west.x + columns - 1, y: _west.y), 2000, 2000),
+    ])!;
+
+    test('should give the named roads running through the area', () async {
+      final roads = await shapes().roadsIn(_inside(_west));
+
+      expect(valueOf(roads), [
+        NamedRoad(name: 'Rue Nationale', shape: _nationaleInWest),
+      ]);
+      expect(asked(), [OpenFreeMapStreetShapes.tileJsonUrl, _urlOf(_west)]);
+    });
+
+    test('should read the 16 tiles of a large zone', () async {
+      await shapes().roadsIn(wide(16));
+
+      // The TileJSON and 16 tiles.
+      expect(requests, hasLength(17));
+    });
+
+    test('should give no road, reading nothing, for a larger zone', () async {
+      final roads = await shapes().roadsIn(wide(17));
+
+      expect(valueOf(roads), isEmpty);
+      expect(requests, isEmpty);
+    });
+
+    test('should pass a failure on', () async {
+      answers[_urlOf(_west)] = () =>
+          Future.error(http.ClientException('Connection closed'));
+
+      expect(
+        failureOf(await shapes().roadsIn(_inside(_west))),
+        StreetShapesFailure.noNetwork,
+      );
+    });
+
+    test('should read at most 16 tiles for a zone', () {
+      expect(OpenFreeMapStreetShapes.maxTilesPerZone, 16);
+    });
+  });
+
   test('should read a tile with nothing on it', () async {
     answers[_urlOf(_west)] = () async => http.Response('', 204);
 

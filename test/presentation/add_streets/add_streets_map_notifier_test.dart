@@ -8,6 +8,7 @@ import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/map/picked_road.dart';
 import 'package:tournee_calendriers/domain/map/sector_area.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
+import 'package:tournee_calendriers/domain/sector/sector_commune.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
@@ -1025,6 +1026,673 @@ void main() {
       expect(answer, const NothingToSay());
       expect(stateOf(container).picked, isEmpty);
       expect(directory.streetsAsked, isEmpty);
+    });
+  });
+  group('zone', () {
+    /// A zone in the centre of Villefranche-sur-Saône.
+    final zone = GeoBounds.of(
+      south: 45.98,
+      west: 4.71,
+      north: 45.99,
+      east: 4.73,
+    )!;
+
+    /// Another zone, just south of it.
+    final southZone = GeoBounds.of(
+      south: 45.97,
+      west: 4.71,
+      north: 45.98,
+      east: 4.73,
+    )!;
+
+    /// A road across [zone] at [latitude]: its mark is at 4.714 E.
+    StreetShape across(double latitude) => StreetShape([
+      [at(latitude, 4.712), at(latitude, 4.716)],
+    ]);
+
+    final morinInZone = NamedRoad(
+      name: 'Rue Pierre Morin',
+      shape: across(45.985),
+    );
+    final pasteurInZone = NamedRoad(name: 'Rue Pasteur', shape: across(45.984));
+    final nationaleInZone = NamedRoad(
+      name: 'Rue Nationale',
+      shape: across(45.986),
+    );
+    final halage = NamedRoad(name: 'Chemin de Halage', shape: across(45.987));
+    final saoneInSouth = NamedRoad(
+      name: 'Quai de la Saône',
+      shape: StreetShape([
+        [at(45.975, 4.712), at(45.975, 4.716)],
+      ]),
+    );
+    final saoneId = BanStreetId('69264_1900');
+
+    final morinZoneRow = ZoneStreetRow(
+      kind: ZoneRowKind.toAdd,
+      name: 'Rue Pierre Morin',
+      id: _morinId,
+      numberCount: 19,
+      ticked: true,
+    );
+
+    DirectoryStreet listed(BanStreetId id, String name, int count) =>
+        DirectoryStreet(id: id, name: streetName(name), numberCount: count);
+
+    setUp(() {
+      directory = FakeAddressDirectory(
+        communes: {
+          '69264': Ok(
+            CommuneStreets(
+              commune: villefranche,
+              streets: [
+                listed(_morinId, 'Rue Pierre Morin', 19),
+                listed(_pasteurId, 'Rue Pasteur', 3),
+                listed(_nationaleId, 'Rue Nationale', 40),
+                listed(saoneId, 'Quai de la Saône', 12),
+              ],
+              skippedStreets: 0,
+            ),
+          ),
+        },
+        places: {_onMorin: Ok(_morinMatch)},
+        streets: {_morinId: Ok(_morinNumbers), _pasteurId: Ok(_pasteurNumbers)},
+      );
+      shapes.roads = Ok([morinInZone, nationaleInZone, halage]);
+    });
+
+    /// Léa's phone, « Zone » on.
+    Future<ProviderContainer> zoning() async {
+      final container = phone();
+      await pumpEventQueue();
+      notifierOf(container).toggleZone();
+      return container;
+    }
+
+    test('should be off when the screen opens', () async {
+      final container = phone();
+      await pumpEventQueue();
+
+      expect(stateOf(container).zoneMode, isFalse);
+      expect(stateOf(container).zone, const NoZone());
+    });
+
+    test('should turn « Zone » on, then off', () async {
+      final container = await zoning();
+
+      expect(stateOf(container).zoneMode, isTrue);
+      notifierOf(container).toggleZone();
+      expect(stateOf(container).zoneMode, isFalse);
+    });
+
+    test('should list the streets of the zone drawn, ticking those to '
+        'add', () async {
+      final container = await zoning();
+
+      final answer = await notifierOf(container).drawZone(zone, zoom: 16);
+
+      expect(answer, const NothingToSay());
+      expect(
+        stateOf(container).zone,
+        ZoneStreetsFound(zone, [
+          morinZoneRow,
+          ZoneStreetRow(
+            kind: ZoneRowKind.inSector,
+            name: 'Rue Nationale',
+            id: _nationaleId,
+          ),
+          const ZoneStreetRow(
+            kind: ZoneRowKind.noAddress,
+            name: 'Chemin de Halage',
+          ),
+        ]),
+      );
+      expect(stateOf(container).picked, [
+        PickedStreetRow(
+          id: _morinId,
+          name: 'Rue Pierre Morin',
+          commune: 'Villefranche-sur-Saône',
+          numberCount: 19,
+        ),
+      ]);
+      expect(stateOf(container).pickedRoads, [
+        PickedRoad(
+          street: _morinId,
+          road: across(45.985),
+          mark: at(45.985, 4.714),
+        ),
+      ]);
+      expect(shapes.zonesAsked, [zone]);
+      // The numbers wait until the street is added.
+      expect(directory.streetsAsked, isEmpty);
+    });
+
+    test('should show the zone while its streets are looked for', () async {
+      shapes.holdRoads();
+      final container = await zoning();
+
+      final drawing = notifierOf(container).drawZone(zone, zoom: 16);
+      await pumpEventQueue();
+
+      expect(stateOf(container).zone, FindingZoneStreets(zone));
+      shapes.releaseRoads();
+      await drawing;
+      expect(stateOf(container).zone, isA<ZoneStreetsFound>());
+    });
+
+    test('should draw no zone with « Zone » off', () async {
+      final container = phone();
+      await pumpEventQueue();
+
+      final answer = await notifierOf(container).drawZone(zone, zoom: 16);
+
+      expect(answer, const NothingToSay());
+      expect(stateOf(container).zone, const NoZone());
+      expect(shapes.zonesAsked, isEmpty);
+    });
+
+    test('should ask to zoom in under zoom 15, listing nothing', () async {
+      final container = await zoning();
+
+      final answer = await notifierOf(container).drawZone(zone, zoom: 14.99);
+
+      expect(answer, const ZoomInForZone());
+      expect(stateOf(container).zone, const NoZone());
+      expect(shapes.zonesAsked, isEmpty);
+    });
+
+    test('should list the streets of a zone drawn at zoom 15', () async {
+      final container = await zoning();
+
+      final answer = await notifierOf(container).drawZone(zone, zoom: 15);
+
+      expect(answer, const NothingToSay());
+      expect(shapes.zonesAsked, [zone]);
+    });
+
+    test('should drop a zone drawn before, zoomed out', () async {
+      final container = await zoning();
+      final notifier = notifierOf(container);
+      await notifier.drawZone(zone, zoom: 16);
+
+      await notifier.drawZone(southZone, zoom: 14);
+
+      expect(stateOf(container).zone, const NoZone());
+      // Its ticks stay.
+      expect(stateOf(container).picked, hasLength(1));
+    });
+
+    test('should say the zone is too large, listing nothing', () async {
+      shapes.roads = Ok([
+        for (var i = 0; i < 51; i++)
+          NamedRoad(name: 'Chemin $i', shape: across(45.981 + i * 0.0001)),
+      ]);
+      final container = await zoning();
+
+      final answer = await notifierOf(container).drawZone(zone, zoom: 16);
+
+      expect(answer, const ZoneTooLarge());
+      expect(stateOf(container).zone, const NoZone());
+      expect(stateOf(container).picked, isEmpty);
+    });
+
+    test('should say a connection is needed when offline', () async {
+      shapes.roads = const Err(StreetShapesFailure.noNetwork);
+      final container = await zoning();
+
+      final answer = await notifierOf(container).drawZone(zone, zoom: 16);
+
+      expect(answer, const LookUpFailed(LookUpProblem.noNetwork));
+      expect(stateOf(container).zone, const NoZone());
+    });
+
+    test('should say the service failed', () async {
+      shapes.roads = const Err(StreetShapesFailure.serviceError);
+      final container = await zoning();
+
+      final answer = await notifierOf(container).drawZone(zone, zoom: 16);
+
+      expect(answer, const LookUpFailed(LookUpProblem.serviceError));
+      expect(stateOf(container).zone, const NoZone());
+    });
+
+    test(
+      'should keep a street ticked by a tap, once, among the zone\'s',
+      () async {
+        final container = await zoning();
+        final notifier = notifierOf(container);
+        await notifier.tapMap(_onMorin);
+
+        await notifier.drawZone(zone, zoom: 16);
+
+        expect(stateOf(container).picked, [morinRow]);
+        // The ✓ stays where the finger tapped.
+        expect(stateOf(container).pickedRoads.single.mark, _onMorin);
+        final found = stateOf(container).zone as ZoneStreetsFound;
+        expect(found.rows.first, morinZoneRow);
+      },
+    );
+
+    test('should add up the streets of two zones', () async {
+      final container = await zoning();
+      final notifier = notifierOf(container);
+      await notifier.drawZone(zone, zoom: 16);
+      shapes.roads = Ok([saoneInSouth]);
+
+      await notifier.drawZone(southZone, zoom: 16);
+
+      expect(
+        [for (final row in stateOf(container).picked) row.id],
+        [_morinId, saoneId],
+      );
+      final found = stateOf(container).zone as ZoneStreetsFound;
+      expect(found.area, southZone);
+      expect([for (final row in found.rows) row.name], ['Quai de la Saône']);
+    });
+
+    test('should list only the last zone drawn', () async {
+      shapes.holdRoads();
+      final container = await zoning();
+      final notifier = notifierOf(container);
+      final first = notifier.drawZone(zone, zoom: 16);
+      await pumpEventQueue();
+      shapes.roads = Ok([saoneInSouth]);
+
+      await notifier.drawZone(southZone, zoom: 16);
+      shapes
+        ..roads = Ok([morinInZone])
+        ..releaseRoads();
+
+      expect(await first, const NothingToSay());
+      expect((stateOf(container).zone as ZoneStreetsFound).area, southZone);
+      expect([for (final row in stateOf(container).picked) row.id], [saoneId]);
+    });
+
+    test('should leave the zone and keep the ticks when « Zone » goes '
+        'off', () async {
+      final container = await zoning();
+      final notifier = notifierOf(container);
+      await notifier.drawZone(zone, zoom: 16);
+
+      notifier.toggleZone();
+
+      expect(stateOf(container).zone, const NoZone());
+      expect(stateOf(container).picked, hasLength(1));
+    });
+
+    test('should list nothing once « Zone » went off meanwhile', () async {
+      shapes.holdRoads();
+      final container = await zoning();
+      final notifier = notifierOf(container);
+      final drawing = notifier.drawZone(zone, zoom: 16);
+      await pumpEventQueue();
+
+      notifier.toggleZone();
+      shapes.releaseRoads();
+
+      expect(await drawing, const NothingToSay());
+      expect(stateOf(container).zone, const NoZone());
+      expect(stateOf(container).picked, isEmpty);
+    });
+
+    test('should drop the answer once the screen is closed', () async {
+      shapes.holdRoads();
+      final container = await zoning();
+      final drawing = notifierOf(container).drawZone(zone, zoom: 16);
+      await pumpEventQueue();
+
+      container.dispose();
+      shapes.releaseRoads();
+
+      expect(await drawing, const NothingToSay());
+    });
+
+    test('should close the search when a zone is drawn', () async {
+      final container = await zoning();
+      final notifier = notifierOf(container);
+      await notifier.search('morin');
+
+      await notifier.drawZone(zone, zoom: 16);
+
+      expect(stateOf(container).search, const NoStreetSearch());
+    });
+
+    group('its checkboxes', () {
+      test('should untick a street of the zone, then tick it again', () async {
+        final container = await zoning();
+        final notifier = notifierOf(container);
+        await notifier.drawZone(zone, zoom: 16);
+
+        notifier.toggleZoneStreet(_morinId);
+
+        expect(stateOf(container).picked, isEmpty);
+        final unticked = stateOf(container).zone as ZoneStreetsFound;
+        expect(unticked.rows.first.ticked, isFalse);
+
+        notifier.toggleZoneStreet(_morinId);
+
+        expect(stateOf(container).picked, hasLength(1));
+        expect(stateOf(container).pickedRoads.single.mark, at(45.985, 4.714));
+      });
+
+      test('should tick nothing for a street of the secteur', () async {
+        final container = await zoning();
+        final notifier = notifierOf(container);
+        await notifier.drawZone(zone, zoom: 16);
+
+        notifier.toggleZoneStreet(_nationaleId);
+
+        expect(
+          [for (final row in stateOf(container).picked) row.id],
+          [_morinId],
+        );
+      });
+
+      test('should tick nothing with no zone listed', () async {
+        final container = await zoning();
+
+        notifierOf(container).toggleZoneStreet(_morinId);
+
+        expect(stateOf(container).picked, isEmpty);
+      });
+    });
+
+    group('adding', () {
+      test('should read the numbers of a street of the zone and add it '
+          'without its road', () async {
+        final container = await zoning();
+        final notifier = notifierOf(container);
+        await notifier.drawZone(zone, zoom: 16);
+
+        expect(await notifier.add(), 1);
+
+        expect(directory.streetsAsked, [_morinId]);
+        expect(streets.added.single.banId, _morinId);
+        expect(streets.added.single.houses, hasLength(2));
+        expect(streets.added.single.shape, StreetShape.none);
+        expect(stateOf(container).run, const AddIdle());
+      });
+
+      test('should count a street of the zone a teammate added '
+          'meanwhile', () async {
+        final container = await zoning();
+        final notifier = notifierOf(container);
+        await notifier.drawZone(zone, zoom: 16);
+        await streets.add(
+          valueOf(
+            Street.create(
+              id: StreetId('morin-by-manu'),
+              name: 'Rue Pierre Morin',
+              commune: villefranche,
+              banId: _morinId,
+              houses: [House(number: n('1'))],
+            ),
+          ),
+        );
+
+        expect(await notifier.add(), 1);
+
+        expect(directory.streetsAsked, isEmpty);
+        expect(stateOf(container).picked, isEmpty);
+      });
+
+      test('should stop offline, keeping the street and those after it '
+          'ticked', () async {
+        shapes.roads = Ok([morinInZone, pasteurInZone]);
+        directory = FakeAddressDirectory(
+          communes: {
+            '69264': Ok(
+              CommuneStreets(
+                commune: villefranche,
+                streets: [
+                  listed(_morinId, 'Rue Pierre Morin', 19),
+                  listed(_pasteurId, 'Rue Pasteur', 3),
+                ],
+                skippedStreets: 0,
+              ),
+            ),
+          },
+          places: {_onMorin: Ok(_morinMatch)},
+          streets: {
+            _morinId: Ok(_morinNumbers),
+            _pasteurId: const Err(AddressDirectoryFailure.noNetwork),
+          },
+        );
+        final container = await zoning();
+        final notifier = notifierOf(container);
+        await notifier.drawZone(zone, zoom: 16);
+        // Ticked after the zone's, so it comes after Rue Pasteur.
+        notifier
+          ..toggleZoneStreet(_morinId)
+          ..toggleZoneStreet(_morinId);
+
+        expect(await notifier.add(), isNull);
+
+        expect(directory.streetsAsked, [_pasteurId]);
+        expect(streets.added, isEmpty);
+        expect(
+          stateOf(container).run,
+          const AddFailed(2, problem: AddProblem.noNetwork),
+        );
+        expect(
+          [for (final row in stateOf(container).picked) row.id],
+          [_pasteurId, _morinId],
+        );
+      });
+
+      test('should say the service failed, adding the others', () async {
+        shapes.roads = Ok([morinInZone, pasteurInZone]);
+        directory = FakeAddressDirectory(
+          communes: {
+            '69264': Ok(
+              CommuneStreets(
+                commune: villefranche,
+                streets: [
+                  listed(_morinId, 'Rue Pierre Morin', 19),
+                  listed(_pasteurId, 'Rue Pasteur', 3),
+                ],
+                skippedStreets: 0,
+              ),
+            ),
+          },
+          streets: {
+            _morinId: Ok(_morinNumbers),
+            _pasteurId: const Err(AddressDirectoryFailure.serviceError),
+          },
+        );
+        final container = await zoning();
+        final notifier = notifierOf(container);
+        await notifier.drawZone(zone, zoom: 16);
+
+        expect(await notifier.add(), isNull);
+
+        expect(streets.added.single.banId, _morinId);
+        expect(
+          stateOf(container).run,
+          const AddFailed(1, problem: AddProblem.serviceError),
+        );
+      });
+
+      test('should say the service failed for a street the BAN no longer '
+          'knows', () async {
+        shapes.roads = Ok([pasteurInZone]);
+        directory = FakeAddressDirectory(
+          communes: {
+            '69264': Ok(
+              CommuneStreets(
+                commune: villefranche,
+                streets: [listed(_pasteurId, 'Rue Pasteur', 3)],
+                skippedStreets: 0,
+              ),
+            ),
+          },
+        );
+        final container = await zoning();
+        final notifier = notifierOf(container);
+        await notifier.drawZone(zone, zoom: 16);
+
+        expect(await notifier.add(), isNull);
+
+        expect(
+          stateOf(container).run,
+          const AddFailed(1, problem: AddProblem.serviceError),
+        );
+      });
+
+      test('should draw no zone and change no tick while adding', () async {
+        final stored = Completer<void>();
+        final container = await zoning();
+        final notifier = notifierOf(container);
+        await notifier.tapMap(_onMorin);
+        streets.holdAdds = stored;
+        final adding = notifier.add();
+        await pumpEventQueue();
+
+        final answer = await notifier.drawZone(zone, zoom: 16);
+        notifier
+          ..toggleZone()
+          ..toggleZoneStreet(_morinId);
+
+        expect(answer, const NothingToSay());
+        expect(shapes.zonesAsked, isEmpty);
+        expect(stateOf(container).zoneMode, isTrue);
+        expect(stateOf(container).picked, [morinRow]);
+        stored.complete();
+        await adding;
+      });
+
+      test('should tick nothing for a zone answered while adding', () async {
+        shapes
+          ..roads = Ok([pasteurInZone])
+          ..holdRoads();
+        final stored = Completer<void>();
+        final container = await zoning();
+        final notifier = notifierOf(container);
+        await notifier.tapMap(_onMorin);
+        final drawing = notifier.drawZone(zone, zoom: 16);
+        await pumpEventQueue();
+        streets.holdAdds = stored;
+        final adding = notifier.add();
+        await pumpEventQueue();
+
+        shapes.releaseRoads();
+        await drawing;
+
+        expect(
+          [for (final row in stateOf(container).picked) row.id],
+          [_morinId],
+        );
+        expect(stateOf(container).run, const AddRunning(0, 1));
+        stored.complete();
+        await adding;
+      });
+
+      test('should keep a failure when a zone ticks nothing new', () async {
+        directory = FakeAddressDirectory(
+          communes: {
+            '69264': Ok(
+              CommuneStreets(
+                commune: villefranche,
+                streets: [listed(_pasteurId, 'Rue Pasteur', 3)],
+                skippedStreets: 0,
+              ),
+            ),
+          },
+        );
+        shapes.roads = Ok([pasteurInZone]);
+        final container = await zoning();
+        final notifier = notifierOf(container);
+        await notifier.drawZone(zone, zoom: 16);
+        await notifier.add();
+
+        await notifier.drawZone(zone, zoom: 16);
+
+        expect(
+          stateOf(container).run,
+          const AddFailed(1, problem: AddProblem.serviceError),
+        );
+      });
+
+      test('should forget a failure when a zone ticks a new street', () async {
+        directory = FakeAddressDirectory(
+          communes: {
+            '69264': Ok(
+              CommuneStreets(
+                commune: villefranche,
+                streets: [
+                  listed(_pasteurId, 'Rue Pasteur', 3),
+                  listed(saoneId, 'Quai de la Saône', 12),
+                ],
+                skippedStreets: 0,
+              ),
+            ),
+          },
+        );
+        shapes.roads = Ok([pasteurInZone]);
+        final container = await zoning();
+        final notifier = notifierOf(container);
+        await notifier.drawZone(zone, zoom: 16);
+        await notifier.add();
+        shapes.roads = Ok([saoneInSouth]);
+
+        await notifier.drawZone(southZone, zoom: 16);
+
+        expect(stateOf(container).run, const AddIdle());
+      });
+    });
+
+    group('the communes', () {
+      test('should match the streets in the nearest commune first', () async {
+        // Around the centre of Gleizé, which the BAN fake does not list.
+        final nearGleize = GeoBounds.of(
+          south: 45.99,
+          west: 4.68,
+          north: 45.995,
+          east: 4.69,
+        )!;
+        shapes.roads = Ok([
+          NamedRoad(
+            name: 'Rue Pierre Morin',
+            shape: StreetShape([
+              [at(45.992, 4.682), at(45.992, 4.686)],
+            ]),
+          ),
+        ]);
+        final container = await zoning();
+
+        await notifierOf(container).drawZone(nearGleize, zoom: 16);
+
+        expect(directory.communesAsked, ['69092', '69264']);
+      });
+
+      test('should match last a commune without centre', () async {
+        sectors.put(
+          team(
+            communes: [
+              SectorCommune(commune: villefranche),
+              gleizeCommune,
+            ],
+          ),
+        );
+        shapes.roads = Ok([halage]);
+        final container = await zoning();
+        await pumpEventQueue();
+
+        await notifierOf(container).drawZone(zone, zoom: 16);
+
+        expect(directory.communesAsked, ['69092', '69264']);
+      });
+
+      test('should match in the communes of the streets for a secteur '
+          'without commune', () async {
+        sectors.put(team());
+        final container = await zoning();
+        await pumpEventQueue();
+
+        await notifierOf(container).drawZone(zone, zoom: 16);
+
+        expect(directory.communesAsked, ['69264']);
+      });
     });
   });
 }
