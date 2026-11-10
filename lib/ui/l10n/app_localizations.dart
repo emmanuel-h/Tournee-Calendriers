@@ -3802,13 +3802,7 @@ abstract class AppLocalizations {
   /// **'Aucune adresse connue'**
   String get addStreetsZoneNoAddress;
 
-  /// Snackbar when a zone is drawn too far out (under zoom 15): nothing is listed.
-  ///
-  /// In fr, this message translates to:
-  /// **'Zoomez pour tracer une zone.'**
-  String get addStreetsZoomIn;
-
-  /// Snackbar when the zone drawn holds more streets than a zone keeps: nothing is listed.
+  /// Snackbar when the zone drawn holds more streets than a zone keeps, or spans too many map tiles to read: nothing is listed.
   ///
   /// In fr, this message translates to:
   /// **'Zone trop grande : {max} rues au plus.'**

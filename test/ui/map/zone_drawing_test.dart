@@ -9,10 +9,12 @@ import 'package:tournee_calendriers/ui/theme/app_theme.dart';
 void main() {
   late List<Rect> drawn;
   late List<String> tapped;
+  late List<bool> twoFingers;
 
   setUp(() {
     drawn = [];
     tapped = [];
+    twoFingers = [];
   });
 
   /// A 400 × 600 area standing for the map, which counts its taps.
@@ -28,6 +30,7 @@ void main() {
               child: ZoneDrawing(
                 enabled: enabled,
                 onDrawn: drawn.add,
+                onTwoFingersChanged: twoFingers.add,
                 zoneOnScreen: () => shown,
                 child: GestureDetector(
                   onTap: () => tapped.add('map'),
@@ -152,6 +155,87 @@ void main() {
       drawn.single,
       rectMoreOrLessEquals(const Rect.fromLTRB(100, 100, 150, 150)),
     );
+  });
+
+  group('two fingers', () {
+    testWidgets('should free the map from the second finger until the last '
+        'is up', (tester) async {
+      await pump(tester);
+      final first = await tester.startGesture(const Offset(100, 100));
+      expect(twoFingers, isEmpty);
+
+      final second = await tester.startGesture(
+        const Offset(300, 300),
+        pointer: 2,
+      );
+      expect(twoFingers, [true]);
+
+      await second.up();
+      // One finger still down: the map goes on moving under it.
+      expect(twoFingers, [true]);
+
+      await first.up();
+      expect(twoFingers, [true, false]);
+    });
+
+    testWidgets('should free the map once for a third finger', (tester) async {
+      await pump(tester);
+      final first = await tester.startGesture(const Offset(100, 100));
+      final second = await tester.startGesture(
+        const Offset(300, 300),
+        pointer: 2,
+      );
+      final third = await tester.startGesture(
+        const Offset(200, 400),
+        pointer: 3,
+      );
+
+      await third.up();
+      await second.up();
+      await first.up();
+
+      expect(twoFingers, [true, false]);
+    });
+
+    testWidgets('should not free the map for one finger', (tester) async {
+      await pump(tester);
+
+      await tester.dragFrom(const Offset(100, 100), const Offset(200, 150));
+
+      expect(twoFingers, isEmpty);
+    });
+
+    testWidgets('should say nothing while off: the map is free', (
+      tester,
+    ) async {
+      await pump(tester, enabled: false);
+      final first = await tester.startGesture(const Offset(100, 100));
+      final second = await tester.startGesture(
+        const Offset(300, 300),
+        pointer: 2,
+      );
+
+      await second.up();
+      await first.up();
+
+      expect(twoFingers, isEmpty);
+    });
+
+    testWidgets('should hold the map again when the fingers are '
+        'cancelled', (tester) async {
+      await pump(tester);
+      final first = await tester.startGesture(const Offset(100, 100));
+      final second = await tester.startGesture(
+        const Offset(300, 300),
+        pointer: 2,
+      );
+
+      await second.cancel();
+      expect(twoFingers, [true]);
+      await first.cancel();
+
+      expect(twoFingers, [true, false]);
+    });
   });
 
   testWidgets('should drop the drawing when the pointer is cancelled', (

@@ -1,5 +1,6 @@
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/geometry/encoded_polyline.dart';
+import 'package:tournee_calendriers/domain/geometry/geo_distance.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 
 import '../../support/geo_fixtures.dart';
@@ -72,6 +73,59 @@ void main() {
     ]);
 
     expect(shape.points, [a, b, d, e]);
+  });
+
+  group('metresFrom', () {
+    // Two roads of Villefranche-sur-Saône running north: the first at
+    // 4.7170 E, the second 0.001° east of it.
+    final shape = StreetShape([
+      [at(45.9900, 4.7170), at(45.9910, 4.7170)],
+      [at(45.9900, 4.7180), at(45.9910, 4.7180)],
+    ]);
+
+    test('should measure to the nearest line', () {
+      // 0.0002° east of the first road, 0.0008° west of the second.
+      final point = at(45.9905, 4.7172);
+
+      expect(
+        shape.metresFrom(point),
+        closeTo(
+          metresFromSegment(point, shape.lines[0][0], shape.lines[0][1]),
+          1e-9,
+        ),
+      );
+      expect(shape.metresFrom(point), greaterThan(10));
+    });
+
+    test('should measure to the second line when it is the nearest', () {
+      final point = at(45.9905, 4.7179);
+
+      expect(
+        shape.metresFrom(point),
+        closeTo(
+          metresFromSegment(point, shape.lines[1][0], shape.lines[1][1]),
+          1e-9,
+        ),
+      );
+    });
+
+    test('should measure to the nearest segment of a line', () {
+      final bent = StreetShape([
+        [at(45.9900, 4.7170), at(45.9910, 4.7170), at(45.9910, 4.7190)],
+      ]);
+      // Just south of the second segment, far from the first.
+      final point = at(45.9909, 4.7185);
+
+      expect(bent.metresFrom(point), closeTo(0.0001 * metresPerDegree, 1e-6));
+    });
+
+    test('should be on a line for a point of it', () {
+      expect(shape.metresFrom(at(45.9905, 4.7170)), closeTo(0, 1e-9));
+    });
+
+    test('should have no distance without a line', () {
+      expect(StreetShape.none.metresFrom(at(45.9905, 4.7170)), isNull);
+    });
   });
 
   group('simplified', () {

@@ -165,20 +165,9 @@ final class LookUpFailed extends TapAnswer {
   String toString() => 'LookUpFailed(${problem.name})';
 }
 
-/// A zone drawn with a finger, too far out to list its streets: nothing
-/// listed, « Zoomez pour tracer une zone. ».
-final class ZoomInForZone extends TapAnswer {
-  const ZoomInForZone();
-
-  @override
-  bool operator ==(Object other) => other is ZoomInForZone;
-
-  @override
-  int get hashCode => (ZoomInForZone).hashCode;
-}
-
-/// A zone with more streets than a zone keeps (`zoneMaxStreets`): nothing
-/// listed, « Zone trop grande : 50 rues au plus. ».
+/// A zone with more streets than a zone keeps (`zoneMaxStreets`), or too
+/// large to read its roads: nothing listed, « Zone trop grande : 50 rues au
+/// plus. ».
 final class ZoneTooLarge extends TapAnswer {
   const ZoneTooLarge();
 

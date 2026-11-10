@@ -2059,8 +2059,6 @@
   "@addStreetsZoneInSector": {"description": "Under a greyed street of the zone's list that the sector has already."},
   "addStreetsZoneNoAddress": "Aucune adresse connue",
   "@addStreetsZoneNoAddress": {"description": "Under a greyed road of the zone's list that no street of the address base is named after."},
-  "addStreetsZoomIn": "Zoomez pour tracer une zone.",
-  "@addStreetsZoomIn": {"description": "Snackbar when a zone is drawn too far out (under zoom 15): nothing is listed."},
   "addStreetsZoneTooLarge": "Zone trop grande : {max} rues au plus.",
-  "@addStreetsZoneTooLarge": {"description": "Snackbar when the zone drawn holds more streets than a zone keeps: nothing is listed.", "placeholders": {"max": {"type": "int", "example": "50"}}}
+  "@addStreetsZoneTooLarge": {"description": "Snackbar when the zone drawn holds more streets than a zone keeps, or spans too many map tiles to read: nothing is listed.", "placeholders": {"max": {"type": "int", "example": "50"}}}
 }

@@ -2712,9 +2712,6 @@ class AppLocalizationsFr extends AppLocalizations {
   String get addStreetsZoneNoAddress => 'Aucune adresse connue';
 
   @override
-  String get addStreetsZoomIn => 'Zoomez pour tracer une zone.';
-
-  @override
   String addStreetsZoneTooLarge(int max) {
     return 'Zone trop grande : $max rues au plus.';
   }

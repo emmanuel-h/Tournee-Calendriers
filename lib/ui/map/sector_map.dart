@@ -86,17 +86,16 @@ final class SectorMap extends StatefulWidget {
   /// zoom.
   final ValueChanged<double>? onZoomChanged;
 
-  /// « Zone » on « Ajouter des rues » (PLAN §5.14): a drag draws a
-  /// rectangle ([onZoneDrawn]) instead of moving the map; a pinch still
-  /// zooms.
+  /// « Zone » on « Ajouter des rues » (PLAN §5.14): a drag of one finger
+  /// draws a rectangle ([onZoneDrawn]) instead of moving the map; two
+  /// fingers still move and zoom it.
   final bool zoneMode;
 
   /// The zone drawn, dimmed around and dashed; none by default.
   final GeoBounds? zone;
 
-  /// A zone drawn with a finger, « Zone » on: its area on the map, and the
-  /// map's zoom level then.
-  final void Function(GeoBounds area, double zoom)? onZoneDrawn;
+  /// A zone drawn with a finger, « Zone » on: its area on the map.
+  final ValueChanged<GeoBounds>? onZoneDrawn;
 
   /// The room other widgets take over the map's edges (a banner on top, a
   /// panel at the bottom): « Me localiser », the attribution and the fitted
@@ -128,6 +127,10 @@ final class _SectorMapState extends State<SectorMap> {
   /// Where [SectorMap.zone] is on screen, in logical pixels, so a finger on
   /// its handle resizes it; measured each time it or the camera changes.
   Rect? _zoneOnScreen;
+
+  /// Two fingers are on the map in « Zone » mode: it moves under them
+  /// (see [ZoneDrawing]).
+  var _twoFingers = false;
 
   /// The phone's dot shows once « Me localiser » found it: MapLibre then
   /// follows the position itself, with the access already granted.
@@ -340,13 +343,12 @@ final class _SectorMapState extends State<SectorMap> {
   }
 
   /// The rectangle [drawn] on screen, in logical pixels, as an area of the
-  /// map, handed to [SectorMap.onZoneDrawn] with the zoom.
+  /// map, handed to [SectorMap.onZoneDrawn].
   Future<void> _zoneDrawn(Rect drawn) async {
     final controller = _controller;
     final onZoneDrawn = widget.onZoneDrawn;
     if (controller == null || onZoneDrawn == null) return;
     final scale = _screenScale;
-    final zoom = controller.cameraPosition?.zoom;
     final northWest = await controller.toLatLng(
       Point(drawn.left * scale, drawn.top * scale),
     );
@@ -359,8 +361,8 @@ final class _SectorMapState extends State<SectorMap> {
       north: northWest.latitude,
       east: southEast.longitude,
     );
-    if (area == null || zoom == null || !mounted) return;
-    onZoneDrawn(area, zoom);
+    if (area == null || !mounted) return;
+    onZoneDrawn(area);
   }
 
   /// Shows the whole [SectorMap.area], clear of [SectorMap.padding].
@@ -432,6 +434,10 @@ final class _SectorMapState extends State<SectorMap> {
             enabled: widget.zoneMode,
             zoneOnScreen: () => _zoneOnScreen,
             onDrawn: (drawn) => unawaited(_zoneDrawn(drawn)),
+            // Rebuilt with the map free to move under two fingers: the
+            // plugin sends the new option to the native map, which reads it
+            // on the gesture's next move.
+            onTwoFingersChanged: (two) => setState(() => _twoFingers = two),
             child: MapLibreMap(
               styleString: openFreeMapStyle,
               initialCameraPosition: initialCamera(widget.area),
@@ -460,8 +466,9 @@ final class _SectorMapState extends State<SectorMap> {
                 padding.right + AppSizes.glyphGap,
                 padding.bottom + AppSizes.glyphGap,
               ),
-              // « Zone » on: a drag draws the zone, the map stays put.
-              scrollGesturesEnabled: !widget.zoneMode,
+              // « Zone » on: one finger draws the zone, the map stays put;
+              // two fingers move it.
+              scrollGesturesEnabled: !widget.zoneMode || _twoFingers,
             ),
           ),
         ),

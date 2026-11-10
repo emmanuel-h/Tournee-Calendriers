@@ -148,10 +148,6 @@ void main() {
 
   test('should tell the zone answers apart', () {
     // ignore: prefer_const_constructors
-    expect(ZoomInForZone(), const ZoomInForZone());
-    expect(const ZoomInForZone().hashCode, const ZoomInForZone().hashCode);
-    expect(const ZoomInForZone(), isNot(const ZoneTooLarge()));
-    // ignore: prefer_const_constructors
     expect(ZoneTooLarge(), const ZoneTooLarge());
     expect(const ZoneTooLarge().hashCode, const ZoneTooLarge().hashCode);
     expect(const ZoneTooLarge(), isNot(const NothingToSay()));

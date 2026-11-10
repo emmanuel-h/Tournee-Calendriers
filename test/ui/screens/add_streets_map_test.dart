@@ -263,8 +263,8 @@ void main() {
     expect(shownMap(tester).selectedPoint, isNull);
   });
 
-  testWidgets('should add the streets ticked at once, then go back to '
-      'Secteur and say how many', (tester) async {
+  testWidgets('should add the streets ticked at once, say how many and stay '
+      'to add more, the streets added leaving the selection', (tester) async {
     await pumpMap(tester);
     await tapRoad(tester, _onBordelan);
     await tapRoad(tester, _onGare);
@@ -273,9 +273,18 @@ void main() {
     await tester.tap(find.text('Ajouter 2 rues'));
     await tester.pumpAndSettle();
 
-    expect(find.byType(AddStreetsScreen), findsNothing);
-    expect(find.byType(TeamScreen), findsOneWidget);
+    expect(find.byType(AddStreetsScreen), findsOneWidget);
+    expect(find.byType(TeamScreen), findsNothing);
     expect(find.text('2 rues ajoutées au secteur'), findsOneWidget);
+    expect(shownMap(tester).pickedRoads, isEmpty);
+    expect(
+      find.text('Touchez les rues à ajouter ou tracez une zone.'),
+      findsOneWidget,
+    );
+    // Now the secteur's: drawn as its streets.
+    expect([
+      for (final line in shownMap(tester).layers.lines) line.street,
+    ], contains(streets.added.first.id));
     expect(
       [for (final street in streets.added) street.name.text],
       ['Petit Chemin de Bordelan', 'Rue de la Gare'],
@@ -302,6 +311,10 @@ void main() {
     expect(find.byType(AddStreetsScreen), findsOneWidget);
 
     stored.complete();
+    await tester.pumpAndSettle();
+    expect(find.text('2 rues ajoutées au secteur'), findsOneWidget);
+    // Once added, the way back is open again.
+    await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
     expect(find.byType(AddStreetsScreen), findsNothing);
   });
@@ -616,9 +629,9 @@ void main() {
     Finder zoneRow(String key) =>
         find.byKey(ValueKey('addStreets.zoneRow.$key'));
 
-    /// « Zone » on, then a zone drawn at [zoom] with the Gare, the Lilas
-    /// and the Chemin de Halage in it.
-    Future<void> drawZone(WidgetTester tester, {double zoom = 16}) async {
+    /// « Zone » on, then a zone drawn with the Gare, the Lilas and the
+    /// Chemin de Halage in it.
+    Future<void> drawZone(WidgetTester tester) async {
       shapes.roads = Ok([
         road('Rue de la Gare', 45.985),
         road('Rue des Lilas', 45.986),
@@ -626,7 +639,7 @@ void main() {
       ]);
       await tester.tap(zonePill());
       await tester.pumpAndSettle();
-      shownMap(tester).onZoneDrawn!(zone, zoom);
+      shownMap(tester).onZoneDrawn!(zone);
       await tester.pumpAndSettle();
     }
 
@@ -708,7 +721,7 @@ void main() {
     });
 
     testWidgets('should add the streets of a zone and those tapped at once, '
-        'then go back to Secteur', (tester) async {
+        'then stay in « Zone » for the next one', (tester) async {
       await pumpMap(tester);
       await tapRoad(tester, _onBordelan);
       await drawZone(tester);
@@ -716,8 +729,14 @@ void main() {
       await tester.tap(find.text('Ajouter 2 rues'));
       await tester.pumpAndSettle();
 
-      expect(find.byType(TeamScreen), findsOneWidget);
+      expect(find.byType(AddStreetsScreen), findsOneWidget);
       expect(find.text('2 rues ajoutées au secteur'), findsOneWidget);
+      expect(shownMap(tester).zone, isNull);
+      expect(shownMap(tester).zoneMode, isTrue);
+      expect(
+        find.text('Faites glisser le doigt sur la carte pour tracer une zone.'),
+        findsOneWidget,
+      );
       expect(
         [for (final street in streets.added) street.name.text],
         ['Petit Chemin de Bordelan', 'Rue de la Gare'],
@@ -765,7 +784,7 @@ void main() {
       await tester.tap(zonePill());
       await tester.pumpAndSettle();
 
-      shownMap(tester).onZoneDrawn!(zone, 16);
+      shownMap(tester).onZoneDrawn!(zone);
       await tester.pump();
 
       expect(find.text('Recherche des rues de la zone…'), findsOneWidget);
@@ -773,15 +792,6 @@ void main() {
       shapes.releaseRoads();
       await tester.pumpAndSettle();
       expect(find.text('Aucune rue dans la zone'), findsOneWidget);
-    });
-
-    testWidgets('should ask to zoom in under zoom 15', (tester) async {
-      await pumpMap(tester);
-
-      await drawZone(tester, zoom: 14);
-
-      expect(find.text('Zoomez pour tracer une zone.'), findsOneWidget);
-      expect(shownMap(tester).zone, isNull);
     });
 
     testWidgets('should say a zone of more than 50 streets is too large', (
@@ -794,7 +804,7 @@ void main() {
         for (var i = 0; i < 51; i++) road('Chemin $i', 45.981 + i * 0.0001),
       ]);
 
-      shownMap(tester).onZoneDrawn!(zone, 16);
+      shownMap(tester).onZoneDrawn!(zone);
       await tester.pumpAndSettle();
 
       expect(find.text('Zone trop grande : 50 rues au plus.'), findsOneWidget);

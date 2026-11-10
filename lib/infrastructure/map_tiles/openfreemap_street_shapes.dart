@@ -50,9 +50,10 @@ final class OpenFreeMapStreetShapes implements StreetShapes {
   /// a download of a whole region.
   static const maxTilesPerStreet = 16;
 
-  /// The most tiles read for a zone. At street zoom (`zoneMinZoom`) a
-  /// phone's screen spans two to six tiles; a larger area finds no road
-  /// rather than downloading a whole town.
+  /// The most tiles read for a zone: an area of about 3 to 7 km across.
+  /// Drawn on a map zoomed far out, a zone could span hundreds of tiles; it
+  /// is refused ([StreetShapesFailure.tooLarge]) rather than downloading a
+  /// whole region.
   static const maxTilesPerZone = 16;
 
   /// The zoom of the tiles read: the most detailed OpenFreeMap has.
@@ -93,7 +94,9 @@ final class OpenFreeMapStreetShapes implements StreetShapes {
     GeoBounds area,
   ) async {
     final tiles = tilesCovering(area, zoom: zoom);
-    if (tiles.length > maxTilesPerZone) return const Ok([]);
+    if (tiles.length > maxTilesPerZone) {
+      return const Err(StreetShapesFailure.tooLarge);
+    }
     return (await _read(tiles))
         .map((read) => namedRoadsFromTiles(read, area: area));
   }

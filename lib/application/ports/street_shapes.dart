@@ -27,10 +27,12 @@ abstract interface class StreetShapes {
   });
 
   /// The named roads that run through [area] (« Zone » on « Ajouter des
-  /// rues », PLAN §5.14), one per name, in the order the map gives them.
-  /// Each is drawn whole as far as the map's tiles under [area] go, not cut
-  /// to [area]: it shows where the street runs. None when the area is too
-  /// large to read (the zone needs street zoom, see `zoneMinZoom`).
+  /// rues », and the road under a tap, PLAN §5.14), one per name, in the
+  /// order the map gives them. Each is drawn whole as far as the map's
+  /// tiles under [area] go, not cut to [area]: it shows where the street
+  /// runs. Read at street level (where small roads exist) however far out
+  /// the map is; [StreetShapesFailure.tooLarge] when [area] needs too many
+  /// tiles to read.
   Future<Result<List<NamedRoad>, StreetShapesFailure>> roadsIn(GeoBounds area);
 }
 
@@ -64,4 +66,8 @@ enum StreetShapesFailure {
   /// The service answered with an error or with something unreadable.
   /// Trying again later may work.
   serviceError,
+
+  /// The area asked of [StreetShapes.roadsIn] spans too many of the map's
+  /// tiles to read them all: a smaller one may work.
+  tooLarge,
 }

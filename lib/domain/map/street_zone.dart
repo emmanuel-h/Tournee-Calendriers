@@ -7,11 +7,6 @@ import 'package:tournee_calendriers/domain/street/street_shape.dart';
 // « Zone » on « Ajouter des rues » (PLAN §5.14, PickZone mockup): a
 // rectangle drawn on the map, whose named roads are offered to add at once.
 
-/// The map must be at least this close for a zone to be drawn: at zoom 15
-/// a phone's screen shows about a kilometre, a few dozen streets. Further
-/// out, « Zoomez pour tracer une zone. ».
-const zoneMinZoom = 15.0;
-
 /// The most streets a zone keeps: more, and the list could not be checked
 /// street by street. « Zone trop grande : 50 rues au plus. ».
 const zoneMaxStreets = 50;

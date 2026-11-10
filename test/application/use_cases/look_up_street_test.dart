@@ -3,13 +3,18 @@
 // it already.
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
+import 'package:tournee_calendriers/application/ports/street_shapes.dart';
 import 'package:tournee_calendriers/application/use_cases/look_up_street.dart';
+import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
+import 'package:tournee_calendriers/domain/geometry/geo_distance.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_shape.dart';
 
 import '../../support/fakes/fake_address_directory.dart';
 import '../../support/fakes/fake_street_repository.dart';
+import '../../support/fakes/fake_street_shapes.dart';
 import '../../support/geo_fixtures.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
@@ -45,13 +50,30 @@ final _lilasMatch = StreetMatch(
   position: northDoor,
 );
 
+/// A road of the map running east–west, [metres] north of [_tap].
+NamedRoad _roadNorthOfTap(String name, double metres) {
+  final latitude = _tap.latitude + metres / metresPerDegree;
+  return NamedRoad(
+    name: name,
+    shape: StreetShape([
+      [at(latitude, 4.72400), at(latitude, 4.72600)],
+    ]),
+  );
+}
+
 void main() {
   late FakeStreetRepository streets;
+  late FakeStreetShapes shapes;
 
-  setUp(() => streets = repositoryWithLilas());
+  setUp(() {
+    streets = repositoryWithLilas();
+    // By default the map has no road near the tap: the BAN's nearest
+    // street is taken.
+    shapes = FakeStreetShapes();
+  });
 
   LookUpStreet lookUp(FakeAddressDirectory directory) =>
-      LookUpStreet(directory, streets);
+      LookUpStreet(directory, streets, shapes);
 
   group('a tap on the map', () {
     test('should give the street under the tap with its numbers when the '
@@ -128,6 +150,155 @@ void main() {
       final failure = failureOf(await lookUp(directory)(StreetAtPoint(_tap)));
 
       expect(failure, AddressDirectoryFailure.noNetwork);
+    });
+  });
+
+  group('the road under the finger', () {
+    // The geocoder answers the street whose one point is nearest the tap,
+    // not the road under the finger: here the Rue des Lilas, whose middle
+    // is nearer than the Rue Pierre Morin's, which the finger is on.
+    late FakeAddressDirectory directory;
+
+    setUp(() {
+      directory = FakeAddressDirectory(
+        places: {_tap: Ok(_lilasMatch)},
+        searches: {
+          'Rue Pierre Morin': Ok([_morin]),
+        },
+        streets: {_morinId: Ok(_morinNumbers)},
+      );
+    });
+
+    test('should look for the roads of the map around the tap', () async {
+      await lookUp(directory)(StreetAtPoint(_tap));
+
+      expect(shapes.zonesAsked, [
+        GeoBounds.around([_tap])!.expandedBy(LookUpStreet.tapReachMetres),
+      ]);
+    });
+
+    test('should give the BAN street named as the road under the finger '
+        'when the nearest BAN street is another one', () async {
+      shapes.roads = Ok([_roadNorthOfTap('Rue Pierre Morin', 2)]);
+
+      final found = valueOf(await lookUp(directory)(StreetAtPoint(_tap)));
+
+      expect(found, isA<StreetToAdd>());
+      expect(found.match, _morin);
+      expect(directory.searchesAsked, [('Rue Pierre Morin', '69264')]);
+      expect(directory.streetsAsked, [_morinId]);
+    });
+
+    test('should take the nearest of the roads around the tap', () async {
+      shapes.roads = Ok([
+        _roadNorthOfTap('Rue des Lilas', 20),
+        _roadNorthOfTap('Rue Pierre Morin', 5),
+        _roadNorthOfTap('Rue du Moulin', 25),
+      ]);
+
+      final found = valueOf(await lookUp(directory)(StreetAtPoint(_tap)));
+
+      expect(found.match, _morin);
+    });
+
+    test('should take a road just within reach', () async {
+      shapes.roads = Ok([
+        _roadNorthOfTap('Rue Pierre Morin', LookUpStreet.tapReachMetres - 1),
+      ]);
+
+      final found = valueOf(await lookUp(directory)(StreetAtPoint(_tap)));
+
+      expect(found.match, _morin);
+    });
+
+    test('should give the nearest BAN street when no road is within '
+        'reach', () async {
+      shapes.roads = Ok([
+        _roadNorthOfTap('Rue Pierre Morin', LookUpStreet.tapReachMetres + 1),
+      ]);
+
+      final found = valueOf(await lookUp(directory)(StreetAtPoint(_tap)));
+
+      expect(found, isA<StreetOfTheSector>());
+      expect(found.match, _lilasMatch);
+      expect(directory.searchesAsked, isEmpty);
+    });
+
+    test('should give the nearest BAN street when the map cannot '
+        'answer', () async {
+      shapes.roads = const Err(StreetShapesFailure.noNetwork);
+
+      final found = valueOf(await lookUp(directory)(StreetAtPoint(_tap)));
+
+      expect(found.match, _lilasMatch);
+      expect(directory.searchesAsked, isEmpty);
+    });
+
+    test('should not search when the nearest BAN street is the road under '
+        'the finger, written without its accents', () async {
+      final musee = StreetMatch(
+        id: BanStreetId('69264_1300'),
+        name: streetName('Rue du Musee'),
+        commune: villefranche,
+        position: at(45.98820, 4.72490),
+      );
+      final museeNumbers = StreetNumbers(
+        id: musee.id,
+        name: musee.name,
+        commune: villefranche,
+        numbers: [DirectoryNumber(number: n('2'))],
+        invalidNumbers: 0,
+        duplicateNumbers: 0,
+      );
+      final directory = FakeAddressDirectory(
+        places: {_tap: Ok(musee)},
+        streets: {musee.id: Ok(museeNumbers)},
+      );
+      shapes.roads = Ok([_roadNorthOfTap('Rue du Musée', 3)]);
+
+      final found = valueOf(await lookUp(directory)(StreetAtPoint(_tap)));
+
+      expect(found.match, musee);
+      expect(directory.searchesAsked, isEmpty);
+    });
+
+    test('should say no street is there when the BAN has none named as the '
+        'road under the finger', () async {
+      final directory = FakeAddressDirectory(
+        places: {_tap: Ok(_lilasMatch)},
+        // The search is loose: it finds a longer name, which is not the
+        // road's.
+        searches: {
+          'Rue Pierre': Ok([_morin]),
+        },
+      );
+      shapes.roads = Ok([_roadNorthOfTap('Rue Pierre', 2)]);
+
+      final failure = failureOf(await lookUp(directory)(StreetAtPoint(_tap)));
+
+      expect(failure, AddressDirectoryFailure.notFound);
+      expect(directory.searchesAsked, [('Rue Pierre', '69264')]);
+      expect(directory.streetsAsked, isEmpty);
+    });
+
+    test('should pass on a search that fails', () async {
+      final directory = FakeAddressDirectory(
+        places: {_tap: Ok(_lilasMatch)},
+        searches: {
+          'Rue Pierre Morin': const Err(AddressDirectoryFailure.noNetwork),
+        },
+      );
+      shapes.roads = Ok([_roadNorthOfTap('Rue Pierre Morin', 2)]);
+
+      final failure = failureOf(await lookUp(directory)(StreetAtPoint(_tap)));
+
+      expect(failure, AddressDirectoryFailure.noNetwork);
+    });
+
+    test('should not ask the map for a street found by the search', () async {
+      await lookUp(directory)(FoundStreet(_morin));
+
+      expect(shapes.zonesAsked, isEmpty);
     });
   });
 

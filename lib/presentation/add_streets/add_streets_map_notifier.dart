@@ -10,7 +10,6 @@ import 'package:tournee_calendriers/domain/geometry/geo_distance.dart';
 import 'package:tournee_calendriers/domain/map/map_layers.dart';
 import 'package:tournee_calendriers/domain/map/picked_road.dart';
 import 'package:tournee_calendriers/domain/map/sector_area.dart';
-import 'package:tournee_calendriers/domain/map/street_zone.dart';
 import 'package:tournee_calendriers/domain/sector/sector_commune.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/shared/insee_code.dart';
@@ -248,6 +247,11 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
   /// every one is; null when some failed (they stay ticked and the state
   /// says why), or when there was nothing to add.
   ///
+  /// The screen stays open to go on adding (#134): the streets added leave
+  /// the selection and show as the secteur's on the map. When every one
+  /// is added, the zone shown goes too (« Zone » stays on, for the next
+  /// one).
+  ///
   /// A street found in a zone has its numbers read first (`LookUpStreet`);
   /// offline, it and the streets after it stay ticked.
   ///
@@ -283,6 +287,7 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
       for (final pick in _picks)
         if (failed.contains(pick.id)) pick,
     ];
+    if (failed.isEmpty) _clearZone();
     _setRun(
       problem == null
           ? const AddIdle()
@@ -331,17 +336,14 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
     _show();
   }
 
-  /// A rectangle [area] drawn on the map at [zoom], « Zone » on: lists its
-  /// streets and ticks those to add. Too far out (under `zoneMinZoom`), or
-  /// with too many streets, nothing is listed and the answer says why.
-  Future<TapAnswer> drawZone(GeoBounds area, {required double zoom}) async {
+  /// A rectangle [area] drawn on the map, « Zone » on, however far out the
+  /// map is: lists its streets and ticks those to add. With too many
+  /// streets, or too large to read, nothing is listed and the answer says
+  /// why.
+  Future<TapAnswer> drawZone(GeoBounds area) async {
     if (!_zoneMode || _run is AddRunning) return const NothingToSay();
     _search = const NoStreetSearch();
     _clearZone();
-    if (zoom < zoneMinZoom) {
-      _show();
-      return const ZoomInForZone();
-    }
     final ticket = _zones;
     _zone = area;
     _show();
@@ -489,6 +491,10 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
     }
   }
 
+  /// Whether the secteur has the BAN street [id], out of the Corbeille.
+  bool _inSector(BanStreetId id) =>
+      _streets.any((street) => street.banId == id && !street.isDeleted);
+
   _Pick? _pickOf(BanStreetId id) =>
       _picks.where((pick) => pick.id == id).firstOrNull;
 
@@ -540,6 +546,13 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
   );
 
   ZoneStreetRow _rowOf(ZoneStreet street) => switch (street) {
+    // Added since the zone was drawn (some others failed): the secteur has
+    // it now.
+    ZoneStreetToAdd(:final match) when _inSector(match.id) => ZoneStreetRow(
+      kind: ZoneRowKind.inSector,
+      name: street.name,
+      id: match.id,
+    ),
     ZoneStreetToAdd(:final match, :final numberCount) => ZoneStreetRow(
       kind: ZoneRowKind.toAdd,
       name: street.name,

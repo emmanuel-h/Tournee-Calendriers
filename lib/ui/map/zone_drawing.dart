@@ -11,8 +11,10 @@ import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 ///
 /// A [Listener], not a gesture detector: it sees the pointers without
 /// taking part in the gesture arena, so the map under it still gets them.
-/// The map must not pan meanwhile (`scrollGesturesEnabled` off), but a
-/// pinch still zooms: a second finger down drops the drawing.
+/// The map must not pan under one finger (`scrollGesturesEnabled` off), but
+/// two fingers move and zoom it (#134): a second finger down drops the
+/// drawing and tells [onTwoFingersChanged], so the map lets them move it
+/// until every finger is up.
 ///
 /// Only the drawing in progress is painted here, in screen coordinates;
 /// once handed over, the zone is drawn by the map itself, so it follows the
@@ -23,6 +25,7 @@ final class ZoneDrawing extends StatefulWidget {
     required this.enabled,
     required this.onDrawn,
     required this.child,
+    this.onTwoFingersChanged,
     this.zoneOnScreen,
   });
 
@@ -32,6 +35,11 @@ final class ZoneDrawing extends StatefulWidget {
   /// The rectangle drawn, in this widget's coordinates, at least
   /// [AppSizes.zoneMinSide] on each side.
   final ValueChanged<Rect> onDrawn;
+
+  /// Told `true` when a second finger comes down while [enabled]: the map
+  /// may then pan and zoom under the fingers; `false` once the last finger
+  /// is up, when one finger draws again.
+  final ValueChanged<bool>? onTwoFingersChanged;
 
   /// Where the zone shown is on screen, read when a finger goes down to
   /// tell whether it took the handle; null when there is none.
@@ -48,6 +56,9 @@ final class _ZoneDrawingState extends State<ZoneDrawing> {
   /// The fingers on the screen, drawing or not.
   var _pointers = 0;
 
+  /// Two fingers or more came down, « Zone » on, and are not all up yet.
+  var _twoFingers = false;
+
   /// The corner the drag holds still, and the one under the finger; null
   /// when nothing is being drawn.
   Offset? _anchor;
@@ -55,8 +66,12 @@ final class _ZoneDrawingState extends State<ZoneDrawing> {
 
   void _down(PointerDownEvent event) {
     _pointers++;
+    if (widget.enabled && _pointers > 1 && !_twoFingers) {
+      _twoFingers = true;
+      widget.onTwoFingersChanged?.call(true);
+    }
     if (!widget.enabled || _pointers > 1) {
-      // A second finger: a pinch, which zooms the map.
+      // A second finger: the map moves or zooms under both.
       _drop();
       return;
     }
@@ -77,7 +92,7 @@ final class _ZoneDrawingState extends State<ZoneDrawing> {
   }
 
   void _up(PointerUpEvent event) {
-    _pointers--;
+    _lift();
     final (anchor, corner) = (_anchor, _corner);
     _drop();
     if (anchor == null || corner == null) return;
@@ -91,8 +106,17 @@ final class _ZoneDrawingState extends State<ZoneDrawing> {
   }
 
   void _cancel(PointerCancelEvent event) {
-    _pointers--;
+    _lift();
     _drop();
+  }
+
+  /// A finger up, or taken away: the last one holds the map still again.
+  void _lift() {
+    _pointers--;
+    if (_pointers == 0 && _twoFingers) {
+      _twoFingers = false;
+      widget.onTwoFingersChanged?.call(false);
+    }
   }
 
   void _drop() {

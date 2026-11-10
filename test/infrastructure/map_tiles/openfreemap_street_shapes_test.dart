@@ -227,10 +227,10 @@ void main() {
       expect(requests, hasLength(17));
     });
 
-    test('should give no road, reading nothing, for a larger zone', () async {
+    test('should refuse a larger zone, reading nothing', () async {
       final roads = await shapes().roadsIn(wide(17));
 
-      expect(valueOf(roads), isEmpty);
+      expect(failureOf(roads), StreetShapesFailure.tooLarge);
       expect(requests, isEmpty);
     });
 

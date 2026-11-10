@@ -565,7 +565,8 @@ bottom sheet:
 
 > **Changed by 5.14 (2026-11-03):** built in #120: « Ajouter et me l'attribuer » / « Ajouter
 > sans m'attribuer » and the state table's attribution actions are gone. Built in #121: opened
-> from Secteur, not Accueil; ✕ and « N rues ajoutées » go back to Secteur. Built in #124: a tap
+> from Secteur, not Accueil; ✕ goes back to Secteur (« N rues ajoutées » too until #134, which
+> stays on the screen). Built in #124: a tap
 > ticks a road instead of opening the street card, several at once, and the selection sheet
 > adds them (« Ajouter N rues »); the street card, its table and « ✎ Saisir une rue à la main »
 > under the search box are gone from this screen (5.14). Built in #125: « Zone ». The
@@ -1742,19 +1743,31 @@ removes are marked « (removed, 5.14) » there.
     reads shapes), each matched to its BAN street by name in the secteur's communes. The list
     reads « 4 rues dans la zone » with a checkbox per street, all ticked; those already in the
     secteur are greyed, unticked, « Déjà dans le secteur »; a road with no BAN street « Aucune
-    adresse connue », greyed. Zone needs zoom ≥ 15 (below: « Zoomez pour tracer une zone. ») and
-    keeps 50 streets at most (« Zone trop grande : 50 rues au plus. »). Streets ticked by taps
-    and by the zone add up; « Zone » again leaves the mode and keeps the ticks.
-  - **Adding**: « Ajout en cours… 2/3 », then back to Secteur with « 3 rues ajoutées au
-    secteur » (the Liste tab's path). Streets that failed stay ticked, with the reason
-    above the button. A street in the Corbeille comes back with its marks, as in Liste.
+    adresse connue », greyed. A zone is drawn at any zoom (#134; its roads are always read at
+    street level, where small roads exist) and keeps 50 streets at most (« Zone trop grande :
+    50 rues au plus. », also for a zone too large to read). One finger draws; two fingers move
+    and zoom the map, « Zone » staying on (#134). Streets ticked by taps and by the zone add
+    up; « Zone » again leaves the mode and keeps the ticks.
+  - **Adding**: « Ajout en cours… 2/3 », then « 3 rues ajoutées au secteur » **on this
+    screen, which stays open** (#134): the streets added leave the selection and show as the
+    secteur's on the map, and the user goes on adding; ✕ or back leaves. Streets that failed
+    stay ticked, with the reason above the button. A street in the Corbeille comes back with
+    its marks, as in Liste (whose « Ajouter N rues » still goes back to Secteur).
   - Delivered in #124 (`presentation/add_streets/`, `ui/screens/add_streets/add_streets_screen.dart`,
     `domain/map/picked_road.dart`): the search box above the map, « Zone » on its right (#125). **A tap on a road** marks the point (dark dot in a faint halo) and the sheet
     says « Recherche de la rue… » while the BAN is asked; the street found is ticked, its ✓ disc
     at the point tapped (at the BAN's point for a street picked in the search; a dark circle
     under the ✓ picture, so the disc shows even where symbols do not render), its road drawn
     when the map's tiles give it (`LookUpStreetShape`, asked once per tick); several taps may be
-    on their way at once, each answer ticks its street. The ✓ disc is a dark circle (drawn by every renderer, even the emulator's, which draws no symbol layer) under the ✓ picture. A tap on a ticked road or its ✓, or a tap
+    on their way at once, each answer ticks its street. **The street of a tap is the road under
+    the finger** (#134, `LookUpStreet`): the geocoder answers the street whose one point (about
+    its middle) is nearest, often a side street near a crossing or along a long road, which put
+    a ✓ on the road tapped for another street, drawn elsewhere or not at all. So the map's
+    tiles are read around the tap too (`StreetShapes.roadsIn`, 30 m around): the nearest named
+    road within 30 m is the one tapped; when the geocoder's street does not bear its name, the
+    BAN street of that name is searched in the geocoder's street's commune (« Aucune rue connue
+    ici. » when none has it). With no named road within 30 m, or the tiles unreadable, the
+    geocoder's street stands. The ✓ disc is a dark circle (drawn by every renderer, even the emulator's, which draws no symbol layer) under the ✓ picture. A tap on a ticked road or its ✓, or a tap
     whose answer is a street already ticked, unticks it; a street picked in the search stays
     ticked and the map moves 200 m around it. « Tout décocher » also drops the answers still on
     their way. A street of the secteur (its line, its dots, or the BAN's answer) says « Rue des
@@ -1776,23 +1789,28 @@ removes are marked « (removed, 5.14) » there.
     secteur »), those brought back from the Corbeille included.
   - Delivered in #125 (`application/use_cases/find_zone_streets.dart`, `domain/map/street_zone.dart`,
     `ui/map/zone_drawing.dart`): « ⬚ Zone » is a 48 dp pill right of the search box (white,
-    ink while on). On, the map does not pan: one finger draws the rectangle (painted by the
-    app while the finger moves, then drawn by the map itself, so it follows a zoom: the rest
-    dimmed at 18 %, a dashed edge, a white handle at the south-east corner); a drag starting
-    within 24 dp of the handle resizes the zone from its opposite corner; two fingers still
-    zoom, and drop the drawing; a drag under 16 dp is no zone; a tap still ticks a road. On
+    ink while on). On, the map does not pan under one finger: one finger draws the rectangle
+    (painted by the app while the finger moves, then drawn by the map itself, so it follows a
+    zoom: the rest dimmed at 18 %, a dashed edge, a white handle at the south-east corner); a
+    drag starting within 24 dp of the handle resizes the zone from its opposite corner; two
+    fingers move and zoom the map and drop the drawing, « Zone » staying on (#134: the map is
+    free to pan from the second finger down until the last is up, `ZoneDrawing`); a drag
+    under 16 dp is no zone; a tap still ticks a road. On
     release the sheet becomes the zone's: « Recherche des rues de la zone… », then « 4 rues
     dans la zone » (« Aucune rue dans la zone ») with a row per street (checkbox, name, « 19
     numéros », or greyed « Déjà dans le secteur » / « Aucune adresse connue »), to add first,
     then those of the secteur, then the roads without address, each in French order, and
     « Ajouter N rues » counting every street ticked, by taps and zones (disabled at 0). The
-    roads are those of the zoom-14 tiles under the zone (`StreetShapes.roadsIn`, at most 16
-    tiles), one per name, drawn whole as far as the tiles go; a road is matched by name
+    roads are those of the zoom-14 tiles under the zone (`StreetShapes.roadsIn`; the most
+    detailed OpenFreeMap has, the map's street zoom showing them enlarged), whatever the map's
+    zoom (#134), at most 16 tiles, one per name, drawn whole as far as the tiles go; a road is matched by name
     (`StreetName.matches`) in the secteur's communes nearest first (the zone's middle against
     each commune's centre; without communes, those of its streets), at most 3 communes read,
     a name in two communes taken in the nearest; two roads naming one BAN street make one row.
-    More than 50 named roads: nothing listed, « Zone trop grande : 50 rues au plus. »; under
-    zoom 15: « Zoomez pour tracer une zone. »; offline or a failing service: the snackbars
+    More than 50 named roads, or a zone over more than 16 tiles (none read,
+    `StreetShapesFailure.tooLarge`): nothing listed, « Zone trop grande : 50 rues au plus. »
+    (« Zoomez pour tracer une zone. » and zoom ≥ 15 went with #134); offline or a failing
+    service: the snackbars
     of a tap. Each ✓ sits half-way along the road's first piece inside the zone. A zone's
     street brings no numbers until added: « Ajouter » reads them (`LookUpStreet`) one street
     after the other; offline, that street and the next ones stay ticked, « 1 rue n'a pas pu
@@ -1802,6 +1820,11 @@ removes are marked « (removed, 5.14) » there.
     ticks staying; « Zone » off drops the zone, keeps the ticks and the selection sheet comes
     back, which with « Zone » on and nothing ticked reads « Faites glisser le doigt sur la
     carte pour tracer une zone. ».
+  - Delivered in #134: « Ajouter N rues » stays on the screen (« 3 rues ajoutées au
+    secteur » there; the streets added leave the selection and their ✓, and are drawn as the
+    secteur's); once every street is added the zone shown goes too, « Zone » staying on for
+    the next one; when some failed the zone stays, its streets added now « Déjà dans le
+    secteur ». ✕ and the back gesture still leave (not while adding).
 
 ---
 
@@ -2404,7 +2427,8 @@ Address and shape adapters fixed in T3.2 (`lib/application/ports/address_directo
   the geocoder's one `GeoPoint` for the street). The Géoplateforme reverse geocoder (`type=street`,
   `limit=1`) measures the distance to that one point, not to the road, and answers the nearest
   street **whatever the distance**, possibly in the next commune; the card shows the name found.
-  `notFound` only when it answers nothing (or nothing readable).
+  `notFound` only when it answers nothing (or nothing readable). Since #134 `LookUpStreet` does
+  not trust it alone for a tap: see 5.14 (« the road under the finger »).
 - **`AddressDirectory.searchStreets(text, commune:)`** → the `StreetMatch`es of one commune, best
   first, at most 10 (one call per commune of the secteur). The text is trimmed and cut before its
   first letter or digit; under 3 or over 200 characters (counted as code points) it finds nothing

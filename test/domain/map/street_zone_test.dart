@@ -14,8 +14,7 @@ void main() {
     east: 4.73,
   )!;
 
-  test('should limit a zone to zoom 15 and 50 streets', () {
-    expect(zoneMinZoom, 15);
+  test('should limit a zone to 50 streets', () {
     expect(zoneMaxStreets, 50);
   });
 

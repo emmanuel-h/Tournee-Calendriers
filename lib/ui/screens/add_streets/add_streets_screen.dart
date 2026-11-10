@@ -206,9 +206,8 @@ final class _MapTabState extends ConsumerState<_MapTab> {
                           onPickTapped: map.untick,
                           zoneMode: state.zoneMode,
                           zone: state.zone.area,
-                          onZoneDrawn: (area, zoom) => unawaited(
-                            _answer(map.drawZone(area, zoom: zoom)),
-                          ),
+                          onZoneDrawn: (area) =>
+                              unawaited(_answer(map.drawZone(area))),
                           padding: EdgeInsets.only(bottom: _sheetHeight),
                         ),
                       ),
@@ -280,8 +279,6 @@ final class _MapTabState extends ConsumerState<_MapTab> {
     switch (answer) {
       case NothingToSay():
         break;
-      case ZoomInForZone():
-        showMessageSnackBar(messenger, message: l10n.addStreetsZoomIn);
       case ZoneTooLarge():
         showMessageSnackBar(
           messenger,
@@ -306,17 +303,16 @@ final class _MapTabState extends ConsumerState<_MapTab> {
     }
   }
 
-  /// « Ajouter N rues »: once every street ticked is in the secteur, back
-  /// to Secteur with « 3 rues ajoutées au secteur ». Otherwise the sheet
-  /// says why and keeps the ones that failed.
+  /// « Ajouter N rues »: once every street ticked is in the secteur, « 3
+  /// rues ajoutées au secteur », and the screen stays to add more (#134).
+  /// Otherwise the sheet says why and keeps the ones that failed.
   Future<void> _add() async {
     final l10n = AppLocalizations.of(context);
-    // The app's messenger: the snackbar shows on Secteur, once back there.
     final messenger = ScaffoldMessenger.of(context);
     final added = await ref.read(addStreetsMapProvider.notifier).add();
+    // Left meanwhile: the streets are added all the same, unsaid.
     if (added == null || !mounted) return;
     showMessageSnackBar(messenger, message: l10n.addDone(added));
-    context.pop();
   }
 }
 

@@ -319,6 +319,14 @@ void main() {
       expect(await failure(), FindZoneFailure.serviceError);
     });
 
+    test('should be too many streets when the zone spans too many of the '
+        'map\'s tiles', () async {
+      shapes.roads = const Err(StreetShapesFailure.tooLarge);
+
+      expect(await failure(), FindZoneFailure.tooManyStreets);
+      expect(directory.communesAsked, isEmpty);
+    });
+
     test('should be no network when the BAN cannot be reached', () async {
       shapes.roads = Ok([_road('Rue Pierre Morin', 45.985)]);
       directory = FakeAddressDirectory(

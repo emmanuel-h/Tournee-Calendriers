@@ -892,10 +892,7 @@ void main() {
         north: 45.9900,
         east: 4.7270,
       )!;
-      tester.widget<SectorMap>(find.byType(SectorMap).last).onZoneDrawn!(
-        zone,
-        16,
-      );
+      tester.widget<SectorMap>(find.byType(SectorMap).last).onZoneDrawn!(zone);
       await tester.pump(const Duration(seconds: 2));
       expect(find.text('1 rue dans la zone'), findsOneWidget);
       expect(find.text('Ajouter 1 rue'), findsOneWidget);

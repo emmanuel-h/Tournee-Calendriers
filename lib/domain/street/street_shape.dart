@@ -1,4 +1,5 @@
 import 'package:tournee_calendriers/domain/geometry/encoded_polyline.dart';
+import 'package:tournee_calendriers/domain/geometry/geo_distance.dart';
 import 'package:tournee_calendriers/domain/geometry/simplify_line.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
@@ -58,6 +59,20 @@ final class StreetShape {
   /// Every point of every line, line after line: what the street adds to
   /// the area of its tournée.
   Iterable<GeoPoint> get points => lines.expand((line) => line);
+
+  /// How far [point] is from the nearest point of any line, in metres
+  /// (see `metresFromSegment`); null when there is no line. Tells which
+  /// road a finger tapped (PLAN §5.14).
+  double? metresFrom(GeoPoint point) {
+    double? nearest;
+    for (final line in lines) {
+      for (var i = 1; i < line.length; i++) {
+        final metres = metresFromSegment(point, line[i - 1], line[i]);
+        if (nearest == null || metres < nearest) nearest = metres;
+      }
+    }
+    return nearest;
+  }
 
   /// This shape with each line simplified (see `simplifyLine`): the points
   /// closer than [toleranceMetres] to the simplified line are dropped.

@@ -223,6 +223,7 @@ final lookUpStreetProvider = Provider(
   (ref) => LookUpStreet(
     ref.watch(addressDirectoryProvider),
     ref.watch(streetRepositoryProvider),
+    ref.watch(streetShapesProvider),
   ),
 );
 final addStreetFromMapProvider = Provider(

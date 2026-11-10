@@ -304,6 +304,44 @@ void main() {
       expect(directory.streetsAsked, [_morinId]);
     });
 
+    test('should tick the road under the finger, with its own road, when '
+        'the geocoder answers a street ticked next to it (#134)', () async {
+      // 23 m east of Rue Pierre Morin, on Rue Pasteur, which runs north
+      // there. The geocoder answers Rue Pierre Morin, whose middle is
+      // nearer: the tap used to untick it, or tick a street the finger was
+      // not on, its ✓ there without its road.
+      final nearMorin = at(45.98850, 4.72530);
+      final pasteurRoad = StreetShape([
+        [at(45.98800, 4.72530), at(45.98900, 4.72530)],
+      ]);
+      directory = FakeAddressDirectory(
+        places: {_onMorin: Ok(_morinMatch), nearMorin: Ok(_morinMatch)},
+        streets: {_morinId: Ok(_morinNumbers), _pasteurId: Ok(_pasteurNumbers)},
+        searches: {
+          'Rue Pasteur': Ok([_pasteurMatch]),
+        },
+      );
+      shapes
+        ..roads = Ok([
+          NamedRoad(name: 'Rue Pierre Morin', shape: _morinRoad),
+          NamedRoad(name: 'Rue Pasteur', shape: pasteurRoad),
+        ])
+        ..answers['Rue Pasteur'] = Ok(pasteurRoad);
+      final container = phone();
+      await pumpEventQueue();
+      await notifierOf(container).tapMap(_onMorin);
+      await pumpEventQueue();
+
+      await notifierOf(container).tapMap(nearMorin);
+      await pumpEventQueue();
+
+      expect(stateOf(container).picked, [morinRow, pasteurRow]);
+      expect(stateOf(container).pickedRoads, [
+        PickedRoad(street: _morinId, road: _morinRoad, mark: _onMorin),
+        PickedRoad(street: _pasteurId, road: pasteurRoad, mark: nearMorin),
+      ]);
+    });
+
     test('should draw its road with its ✓ once the map tells it', () async {
       final container = phone();
       await pumpEventQueue();
@@ -1129,7 +1167,7 @@ void main() {
         'add', () async {
       final container = await zoning();
 
-      final answer = await notifierOf(container).drawZone(zone, zoom: 16);
+      final answer = await notifierOf(container).drawZone(zone);
 
       expect(answer, const NothingToSay());
       expect(
@@ -1171,7 +1209,7 @@ void main() {
       shapes.holdRoads();
       final container = await zoning();
 
-      final drawing = notifierOf(container).drawZone(zone, zoom: 16);
+      final drawing = notifierOf(container).drawZone(zone);
       await pumpEventQueue();
 
       expect(stateOf(container).zone, FindingZoneStreets(zone));
@@ -1184,42 +1222,38 @@ void main() {
       final container = phone();
       await pumpEventQueue();
 
-      final answer = await notifierOf(container).drawZone(zone, zoom: 16);
+      final answer = await notifierOf(container).drawZone(zone);
 
       expect(answer, const NothingToSay());
       expect(stateOf(container).zone, const NoZone());
       expect(shapes.zonesAsked, isEmpty);
     });
 
-    test('should ask to zoom in under zoom 15, listing nothing', () async {
+    test('should list the streets of a zone drawn however far out the '
+        'map is', () async {
+      // The zone has no zoom: its roads are read at street level whatever
+      // the map shows.
       final container = await zoning();
 
-      final answer = await notifierOf(container).drawZone(zone, zoom: 14.99);
-
-      expect(answer, const ZoomInForZone());
-      expect(stateOf(container).zone, const NoZone());
-      expect(shapes.zonesAsked, isEmpty);
-    });
-
-    test('should list the streets of a zone drawn at zoom 15', () async {
-      final container = await zoning();
-
-      final answer = await notifierOf(container).drawZone(zone, zoom: 15);
+      final answer = await notifierOf(container).drawZone(zone);
 
       expect(answer, const NothingToSay());
       expect(shapes.zonesAsked, [zone]);
     });
 
-    test('should drop a zone drawn before, zoomed out', () async {
+    test('should say the zone is too large when it needs too many tiles, '
+        'listing nothing', () async {
       final container = await zoning();
       final notifier = notifierOf(container);
-      await notifier.drawZone(zone, zoom: 16);
+      await notifier.drawZone(zone);
+      shapes.roads = const Err(StreetShapesFailure.tooLarge);
 
-      await notifier.drawZone(southZone, zoom: 14);
+      final answer = await notifier.drawZone(southZone);
 
+      expect(answer, const ZoneTooLarge());
       expect(stateOf(container).zone, const NoZone());
-      // Its ticks stay.
-      expect(stateOf(container).picked, hasLength(1));
+      // The ticks of the zone before stay.
+      expect([for (final row in stateOf(container).picked) row.id], [_morinId]);
     });
 
     test('should say the zone is too large, listing nothing', () async {
@@ -1229,7 +1263,7 @@ void main() {
       ]);
       final container = await zoning();
 
-      final answer = await notifierOf(container).drawZone(zone, zoom: 16);
+      final answer = await notifierOf(container).drawZone(zone);
 
       expect(answer, const ZoneTooLarge());
       expect(stateOf(container).zone, const NoZone());
@@ -1240,7 +1274,7 @@ void main() {
       shapes.roads = const Err(StreetShapesFailure.noNetwork);
       final container = await zoning();
 
-      final answer = await notifierOf(container).drawZone(zone, zoom: 16);
+      final answer = await notifierOf(container).drawZone(zone);
 
       expect(answer, const LookUpFailed(LookUpProblem.noNetwork));
       expect(stateOf(container).zone, const NoZone());
@@ -1250,7 +1284,7 @@ void main() {
       shapes.roads = const Err(StreetShapesFailure.serviceError);
       final container = await zoning();
 
-      final answer = await notifierOf(container).drawZone(zone, zoom: 16);
+      final answer = await notifierOf(container).drawZone(zone);
 
       expect(answer, const LookUpFailed(LookUpProblem.serviceError));
       expect(stateOf(container).zone, const NoZone());
@@ -1263,7 +1297,7 @@ void main() {
         final notifier = notifierOf(container);
         await notifier.tapMap(_onMorin);
 
-        await notifier.drawZone(zone, zoom: 16);
+        await notifier.drawZone(zone);
 
         expect(stateOf(container).picked, [morinRow]);
         // The ✓ stays where the finger tapped.
@@ -1276,10 +1310,10 @@ void main() {
     test('should add up the streets of two zones', () async {
       final container = await zoning();
       final notifier = notifierOf(container);
-      await notifier.drawZone(zone, zoom: 16);
+      await notifier.drawZone(zone);
       shapes.roads = Ok([saoneInSouth]);
 
-      await notifier.drawZone(southZone, zoom: 16);
+      await notifier.drawZone(southZone);
 
       expect(
         [for (final row in stateOf(container).picked) row.id],
@@ -1294,11 +1328,11 @@ void main() {
       shapes.holdRoads();
       final container = await zoning();
       final notifier = notifierOf(container);
-      final first = notifier.drawZone(zone, zoom: 16);
+      final first = notifier.drawZone(zone);
       await pumpEventQueue();
       shapes.roads = Ok([saoneInSouth]);
 
-      await notifier.drawZone(southZone, zoom: 16);
+      await notifier.drawZone(southZone);
       shapes
         ..roads = Ok([morinInZone])
         ..releaseRoads();
@@ -1312,7 +1346,7 @@ void main() {
         'off', () async {
       final container = await zoning();
       final notifier = notifierOf(container);
-      await notifier.drawZone(zone, zoom: 16);
+      await notifier.drawZone(zone);
 
       notifier.toggleZone();
 
@@ -1324,7 +1358,7 @@ void main() {
       shapes.holdRoads();
       final container = await zoning();
       final notifier = notifierOf(container);
-      final drawing = notifier.drawZone(zone, zoom: 16);
+      final drawing = notifier.drawZone(zone);
       await pumpEventQueue();
 
       notifier.toggleZone();
@@ -1338,7 +1372,7 @@ void main() {
     test('should drop the answer once the screen is closed', () async {
       shapes.holdRoads();
       final container = await zoning();
-      final drawing = notifierOf(container).drawZone(zone, zoom: 16);
+      final drawing = notifierOf(container).drawZone(zone);
       await pumpEventQueue();
 
       container.dispose();
@@ -1352,7 +1386,7 @@ void main() {
       final notifier = notifierOf(container);
       await notifier.search('morin');
 
-      await notifier.drawZone(zone, zoom: 16);
+      await notifier.drawZone(zone);
 
       expect(stateOf(container).search, const NoStreetSearch());
     });
@@ -1361,7 +1395,7 @@ void main() {
       test('should untick a street of the zone, then tick it again', () async {
         final container = await zoning();
         final notifier = notifierOf(container);
-        await notifier.drawZone(zone, zoom: 16);
+        await notifier.drawZone(zone);
 
         notifier.toggleZoneStreet(_morinId);
 
@@ -1378,7 +1412,7 @@ void main() {
       test('should tick nothing for a street of the secteur', () async {
         final container = await zoning();
         final notifier = notifierOf(container);
-        await notifier.drawZone(zone, zoom: 16);
+        await notifier.drawZone(zone);
 
         notifier.toggleZoneStreet(_nationaleId);
 
@@ -1402,7 +1436,7 @@ void main() {
           'without its road', () async {
         final container = await zoning();
         final notifier = notifierOf(container);
-        await notifier.drawZone(zone, zoom: 16);
+        await notifier.drawZone(zone);
 
         expect(await notifier.add(), 1);
 
@@ -1413,11 +1447,71 @@ void main() {
         expect(stateOf(container).run, const AddIdle());
       });
 
+      test('should drop the zone once every street is added, « Zone » '
+          'staying on for the next one', () async {
+        final container = await zoning();
+        final notifier = notifierOf(container);
+        await notifier.drawZone(zone);
+
+        await notifier.add();
+
+        expect(stateOf(container).zone, const NoZone());
+        expect(stateOf(container).zoneMode, isTrue);
+        expect(stateOf(container).picked, isEmpty);
+        expect(stateOf(container).pickedRoads, isEmpty);
+      });
+
+      test('should keep the zone when a street failed, the street added '
+          'showing as one of the secteur', () async {
+        shapes.roads = Ok([morinInZone, pasteurInZone]);
+        directory = FakeAddressDirectory(
+          communes: {
+            '69264': Ok(
+              CommuneStreets(
+                commune: villefranche,
+                streets: [
+                  listed(_morinId, 'Rue Pierre Morin', 19),
+                  listed(_pasteurId, 'Rue Pasteur', 3),
+                ],
+                skippedStreets: 0,
+              ),
+            ),
+          },
+          streets: {
+            _morinId: Ok(_morinNumbers),
+            _pasteurId: const Err(AddressDirectoryFailure.serviceError),
+          },
+        );
+        final container = await zoning();
+        final notifier = notifierOf(container);
+        await notifier.drawZone(zone);
+
+        await notifier.add();
+        await pumpEventQueue();
+
+        final found = stateOf(container).zone as ZoneStreetsFound;
+        expect(found.area, zone);
+        expect(found.rows, [
+          ZoneStreetRow(
+            kind: ZoneRowKind.toAdd,
+            name: 'Rue Pasteur',
+            id: _pasteurId,
+            numberCount: 3,
+            ticked: true,
+          ),
+          ZoneStreetRow(
+            kind: ZoneRowKind.inSector,
+            name: 'Rue Pierre Morin',
+            id: _morinId,
+          ),
+        ]);
+      });
+
       test('should count a street of the zone a teammate added '
           'meanwhile', () async {
         final container = await zoning();
         final notifier = notifierOf(container);
-        await notifier.drawZone(zone, zoom: 16);
+        await notifier.drawZone(zone);
         await streets.add(
           valueOf(
             Street.create(
@@ -1460,7 +1554,7 @@ void main() {
         );
         final container = await zoning();
         final notifier = notifierOf(container);
-        await notifier.drawZone(zone, zoom: 16);
+        await notifier.drawZone(zone);
         // Ticked after the zone's, so it comes after Rue Pasteur.
         notifier
           ..toggleZoneStreet(_morinId)
@@ -1502,7 +1596,7 @@ void main() {
         );
         final container = await zoning();
         final notifier = notifierOf(container);
-        await notifier.drawZone(zone, zoom: 16);
+        await notifier.drawZone(zone);
 
         expect(await notifier.add(), isNull);
 
@@ -1529,7 +1623,7 @@ void main() {
         );
         final container = await zoning();
         final notifier = notifierOf(container);
-        await notifier.drawZone(zone, zoom: 16);
+        await notifier.drawZone(zone);
 
         expect(await notifier.add(), isNull);
 
@@ -1548,13 +1642,14 @@ void main() {
         final adding = notifier.add();
         await pumpEventQueue();
 
-        final answer = await notifier.drawZone(zone, zoom: 16);
+        final answer = await notifier.drawZone(zone);
         notifier
           ..toggleZone()
           ..toggleZoneStreet(_morinId);
 
         expect(answer, const NothingToSay());
-        expect(shapes.zonesAsked, isEmpty);
+        // The tap asked for the roads under the finger, not the zone.
+        expect(shapes.zonesAsked, isNot(contains(zone)));
         expect(stateOf(container).zoneMode, isTrue);
         expect(stateOf(container).picked, [morinRow]);
         stored.complete();
@@ -1562,14 +1657,13 @@ void main() {
       });
 
       test('should tick nothing for a zone answered while adding', () async {
-        shapes
-          ..roads = Ok([pasteurInZone])
-          ..holdRoads();
+        shapes.roads = Ok([pasteurInZone]);
         final stored = Completer<void>();
         final container = await zoning();
         final notifier = notifierOf(container);
         await notifier.tapMap(_onMorin);
-        final drawing = notifier.drawZone(zone, zoom: 16);
+        shapes.holdRoads();
+        final drawing = notifier.drawZone(zone);
         await pumpEventQueue();
         streets.holdAdds = stored;
         final adding = notifier.add();
@@ -1602,10 +1696,10 @@ void main() {
         shapes.roads = Ok([pasteurInZone]);
         final container = await zoning();
         final notifier = notifierOf(container);
-        await notifier.drawZone(zone, zoom: 16);
+        await notifier.drawZone(zone);
         await notifier.add();
 
-        await notifier.drawZone(zone, zoom: 16);
+        await notifier.drawZone(zone);
 
         expect(
           stateOf(container).run,
@@ -1631,11 +1725,11 @@ void main() {
         shapes.roads = Ok([pasteurInZone]);
         final container = await zoning();
         final notifier = notifierOf(container);
-        await notifier.drawZone(zone, zoom: 16);
+        await notifier.drawZone(zone);
         await notifier.add();
         shapes.roads = Ok([saoneInSouth]);
 
-        await notifier.drawZone(southZone, zoom: 16);
+        await notifier.drawZone(southZone);
 
         expect(stateOf(container).run, const AddIdle());
       });
@@ -1660,7 +1754,7 @@ void main() {
         ]);
         final container = await zoning();
 
-        await notifierOf(container).drawZone(nearGleize, zoom: 16);
+        await notifierOf(container).drawZone(nearGleize);
 
         expect(directory.communesAsked, ['69092', '69264']);
       });
@@ -1678,7 +1772,7 @@ void main() {
         final container = await zoning();
         await pumpEventQueue();
 
-        await notifierOf(container).drawZone(zone, zoom: 16);
+        await notifierOf(container).drawZone(zone);
 
         expect(directory.communesAsked, ['69092', '69264']);
       });
@@ -1689,7 +1783,7 @@ void main() {
         final container = await zoning();
         await pumpEventQueue();
 
-        await notifierOf(container).drawZone(zone, zoom: 16);
+        await notifierOf(container).drawZone(zone);
 
         expect(directory.communesAsked, ['69264']);
       });

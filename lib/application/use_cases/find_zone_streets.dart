@@ -125,7 +125,8 @@ enum FindZoneFailure {
   /// The map's tiles or the BAN answered with an error.
   serviceError,
 
-  /// More than [zoneMaxStreets] named roads in the zone.
+  /// More than [zoneMaxStreets] named roads in the zone, or a zone too
+  /// large to read its roads.
   tooManyStreets,
 }
 
@@ -139,8 +140,8 @@ enum FindZoneFailure {
 final class FindZoneStreets {
   const FindZoneStreets(this._shapes, this._directory, this._streets);
 
-  /// The most communes whose streets are read for one zone. A zone at
-  /// street zoom touches one to three communes; a secteur may have fifty,
+  /// The most communes whose streets are read for one zone. A zone of a
+  /// few streets touches one to three communes; a secteur may have fifty,
   /// and a road no BAN street is named after must not read them all.
   static const communesAsked = 3;
 
@@ -165,6 +166,8 @@ final class FindZoneStreets {
         return Err(switch (failure) {
           StreetShapesFailure.noNetwork => FindZoneFailure.noNetwork,
           StreetShapesFailure.serviceError => FindZoneFailure.serviceError,
+          // Too many tiles: certainly too many streets, unread.
+          StreetShapesFailure.tooLarge => FindZoneFailure.tooManyStreets,
         });
       case Ok(:final value):
         roads = [
