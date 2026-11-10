@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
+import 'package:tournee_calendriers/domain/shared/result.dart';
 
 /// The mean radius of the Earth, in metres (IUGG).
 const earthRadiusMetres = 6371008.8;
@@ -17,6 +18,33 @@ const metresPerDegree = earthRadiusMetres * math.pi / 180;
 /// (equirectangular projection). Over a street, a few hundred metres, the
 /// error is far below a metre, and the sums stay simple.
 double metresFromSegment(GeoPoint point, GeoPoint start, GeoPoint end) {
+  final (:dx, :dy, fraction: _) = _projection(point, start, end);
+  return math.sqrt(dx * dx + dy * dy);
+}
+
+/// The point of the segment [start]–[end] closest to [point], on the same
+/// tangent plane as [metresFromSegment]: where a ✓ tapped beside a road
+/// sits on it (PLAN §5.14).
+GeoPoint nearestOnSegment(GeoPoint point, GeoPoint start, GeoPoint end) {
+  final (:fraction, dx: _, dy: _) = _projection(point, start, end);
+  // The projection is linear in degrees too: the point lies the same
+  // fraction of the way in latitude and longitude. A point between two
+  // points of the Earth is on the Earth: it cannot fail.
+  return (GeoPoint.create(
+    latitude: start.latitude + fraction * (end.latitude - start.latitude),
+    longitude: start.longitude + fraction * (end.longitude - start.longitude),
+  ) as Ok<GeoPoint, GeoPointFailure>).value;
+}
+
+/// Where [point] projects on the segment [start]–[end], as a [fraction] of
+/// it (0 at start, 1 at end, clamped so a point beyond an end projects to
+/// that end), and the gap from there to [point] in metres east ([dx]) and
+/// north ([dy]).
+({double fraction, double dx, double dy}) _projection(
+  GeoPoint point,
+  GeoPoint start,
+  GeoPoint end,
+) {
   final scale = math.cos(start.latitude * math.pi / 180) * metresPerDegree;
   // Local function: x and y of a point, in metres east and north of start.
   double x(GeoPoint p) => (p.longitude - start.longitude) * scale;
@@ -25,14 +53,10 @@ double metresFromSegment(GeoPoint point, GeoPoint start, GeoPoint end) {
   final (px, py) = (x(point), y(point));
   final (ex, ey) = (x(end), y(end));
   final lengthSquared = ex * ex + ey * ey;
-  // Where the point projects on the segment, as a fraction of it: 0 at
-  // start, 1 at end, clamped so a point beyond an end measures to that end.
   final fraction = lengthSquared == 0
       ? 0.0
       : ((px * ex + py * ey) / lengthSquared).clamp(0.0, 1.0);
-  final dx = px - fraction * ex;
-  final dy = py - fraction * ey;
-  return math.sqrt(dx * dx + dy * dy);
+  return (fraction: fraction, dx: px - fraction * ex, dy: py - fraction * ey);
 }
 
 /// How far apart [a] and [b] are, in metres, on the same tangent plane as

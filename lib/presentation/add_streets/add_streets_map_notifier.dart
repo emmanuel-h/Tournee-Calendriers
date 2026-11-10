@@ -66,6 +66,11 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
   /// The streets ticked, in the order they were.
   var _picks = const <_Pick>[];
 
+  /// The street last ticked by a tap or the search, whose ✓ the map keeps
+  /// in view while it is ticked; null once a zone is drawn, which the map
+  /// keeps in view instead.
+  _Pick? _latest;
+
   /// Where the last tap is being looked up; null once it is answered.
   GeoPoint? _lookingAt;
 
@@ -101,6 +106,7 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
     _communes = const [];
     _focus = null;
     _picks = const [];
+    _latest = null;
     _lookingAt = null;
     _run = const AddIdle();
     _search = const NoStreetSearch();
@@ -346,6 +352,9 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
     _clearZone();
     final ticket = _zones;
     _zone = area;
+    // The zone takes the ✓'s place in view, and keeps it once gone: the
+    // map does not go back to an older tick.
+    _latest = null;
     _show();
     final result = await ref.read(findZoneStreetsProvider)(
       area,
@@ -469,8 +478,10 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
       if (toggle) untick(id);
       return;
     }
-    final pick = _Pick.tapped(found, mark: mark);
+    // On the road under the finger when the map told it (#132).
+    final pick = _Pick.tapped(found, mark: found.mark ?? mark);
     _picks = [..._picks, pick];
+    _latest = pick;
     _run = const AddIdle();
     unawaited(_findRoad(pick));
   }
@@ -483,10 +494,11 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
     if (road case Ok(:final value)) {
       // `identical`: unticked then ticked again is another tick, which
       // asked for its own road.
+      final drawn = pick.withRoad(value);
       _picks = [
-        for (final each in _picks)
-          identical(each, pick) ? each.withRoad(value) : each,
+        for (final each in _picks) identical(each, pick) ? drawn : each,
       ];
+      if (identical(_latest, pick)) _latest = drawn;
       _show();
     }
   }
@@ -533,6 +545,13 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
         PickedRoad(street: pick.id, road: pick.road, mark: pick.mark),
     ],
     lookingAt: _lookingAt,
+    keepInView: switch ((_zone, _latest)) {
+      (final zone?, _) => zone,
+      // `identical`: the same tick, not the street ticked again since.
+      (null, final latest?) when _picks.any((p) => identical(p, latest)) =>
+        GeoBounds.around([latest.mark]),
+      _ => null,
+    },
     search: _search,
     zoneMode: _zoneMode,
     zone: switch ((_zone, _zoneStreets)) {

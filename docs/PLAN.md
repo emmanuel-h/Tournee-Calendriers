@@ -1784,7 +1784,8 @@ removes are marked « (removed, 5.14) » there.
     street level, where small roads exist) and keeps 50 streets at most (« Zone trop grande :
     50 rues au plus. », also for a zone too large to read). One finger draws; two fingers move
     and zoom the map, « Zone » staying on (#134). Streets ticked by taps and by the zone add
-    up; « Zone » again leaves the mode and keeps the ticks.
+    up; « Zone » again leaves the mode and keeps the ticks. The map moves to keep the zone
+    drawn, and else the latest ✓, clear of the sheet (#132).
   - **Adding**: « Ajout en cours… 2/3 », then « 3 rues ajoutées au secteur » **on this
     screen, which stays open** (#134): the streets added leave the selection and show as the
     secteur's on the map, and the user goes on adding; ✕ or back leaves. Streets that failed
@@ -1793,7 +1794,7 @@ removes are marked « (removed, 5.14) » there.
   - Delivered in #124 (`presentation/add_streets/`, `ui/screens/add_streets/add_streets_screen.dart`,
     `domain/map/picked_road.dart`): the search box above the map, « Zone » on its right (#125). **A tap on a road** marks the point (dark dot in a faint halo) and the sheet
     says « Recherche de la rue… » while the BAN is asked; the street found is ticked, its ✓ disc
-    at the point tapped (at the BAN's point for a street picked in the search; a dark circle
+    at the point tapped (on the road under the finger since #132; at the BAN's point for a street picked in the search; a dark circle
     under the ✓ picture, so the disc shows even where symbols do not render), its road drawn
     when the map's tiles give it (`LookUpStreetShape`, asked once per tick); several taps may be
     on their way at once, each answer ticks its street. **The street of a tap is the road under
@@ -1868,6 +1869,23 @@ removes are marked « (removed, 5.14) » there.
     secteur's); once every street is added the zone shown goes too, « Zone » staying on for
     the next one; when some failed the zone stays, its streets added now « Déjà dans le
     secteur ». ✕ and the back gesture still leave (not while adding).
+  - Delivered in #132 (camera moves and the ✓'s place only; nothing new on screen): **the
+    zone drawn and the latest ✓ stay clear of the sheet.** The map keeps one thing in view
+    (`AddStreetsMapState.keepInView`): the zone shown, else the ✓ of the street last ticked by
+    a tap or the search while it is ticked (none once a zone was drawn, « Zone » turned off,
+    the streets added, or that street unticked: the map never goes back to an older ✓). When
+    it changes, and each time the sheet grows (a row ticked, the zone's « Recherche… » becoming
+    its list) until a finger touches the map or « Me localiser » moves it, the map slides just
+    far enough to show it 40 dp (the handle's 24 dp reach and a 16 dp gutter) inside the part
+    the sheet and the edges leave; a zone too large for that part makes the map zoom out to fit
+    it, never in (`cameraReveal` in `ui/map/map_camera.dart`). The zone's handle is so always
+    within reach above the sheet; with no zoom limit on zones (#134), zooming out risks
+    nothing. A street picked in the search moves the map 200 m around it first; the ✓ is then
+    kept in view once that move ends. **The ✓ sits on the road tapped**: at the point of the
+    road under the finger nearest to it (`LookUpStreet` reads that road from the tiles, 30 m
+    around, `StreetShape.nearestPointTo`), so it no longer floats beside the road; where the
+    map names no road within 30 m it stays where the finger was, and a street picked in the
+    search keeps the BAN's point.
 
 ---
 
@@ -2456,7 +2474,8 @@ Geometry and map layers fixed in T3.1 (`lib/domain/geometry/`, `lib/domain/map/`
   `done` from its doors. Dots show from zoom 16 (`MapLayers.houseDotsMinZoom`).
 - **`PickedRoad(street, road, mark)`** (#124): a street ticked on « Ajouter des rues » as the
   map draws it, its BAN id, its road (`StreetShape.none` until the map's tiles give it) and
-  where its ✓ disc sits. A tap on the road or the ✓ names the BAN id.
+  where its ✓ disc sits (for a tap, the point of the road under the finger nearest to it,
+  #132). A tap on the road or the ✓ names the BAN id.
 - **`sectorArea(streets)`**: the `GeoBounds` (south, west, north, east; never across the
   antimeridian) around every shape point and house position of the streets, Corbeille included
   (a street may be restored offline), plus 300 m; null when no street has a place on the map.

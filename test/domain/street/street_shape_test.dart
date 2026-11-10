@@ -128,6 +128,56 @@ void main() {
     });
   });
 
+  group('nearestPointTo', () {
+    // The same two roads running north, 0.001° apart.
+    final shape = StreetShape([
+      [at(45.9900, 4.7170), at(45.9910, 4.7170)],
+      [at(45.9900, 4.7180), at(45.9910, 4.7180)],
+    ]);
+
+    test('should give the point of the nearest line facing the point', () {
+      final nearest = shape.nearestPointTo(at(45.9905, 4.7172))!;
+
+      expect(nearest.latitude, closeTo(45.9905, 1e-12));
+      expect(nearest.longitude, closeTo(4.7170, 1e-12));
+    });
+
+    test('should give the point of the second line when it is the '
+        'nearest', () {
+      final nearest = shape.nearestPointTo(at(45.9903, 4.7179))!;
+
+      expect(nearest.latitude, closeTo(45.9903, 1e-12));
+      expect(nearest.longitude, closeTo(4.7180, 1e-12));
+    });
+
+    test('should give the point of the nearest segment of a line', () {
+      final bent = StreetShape([
+        [at(45.9900, 4.7170), at(45.9910, 4.7170), at(45.9910, 4.7190)],
+      ]);
+
+      final nearest = bent.nearestPointTo(at(45.9909, 4.7185))!;
+
+      expect(nearest.latitude, closeTo(45.9910, 1e-12));
+      expect(nearest.longitude, closeTo(4.7185, 1e-12));
+    });
+
+    test('should keep the first line when two are as near', () {
+      // Whole degrees, so both distances are computed exactly alike.
+      final apart = StreetShape([
+        [at(45.9900, 4), at(45.9910, 4)],
+        [at(45.9900, 6), at(45.9910, 6)],
+      ]);
+
+      final nearest = apart.nearestPointTo(at(45.9905, 5))!;
+
+      expect(nearest.longitude, 4);
+    });
+
+    test('should give nothing without a line', () {
+      expect(StreetShape.none.nearestPointTo(at(45.9905, 4.7170)), isNull);
+    });
+  });
+
   group('simplified', () {
     // 1 m off the straight line: under the default 2 m tolerance.
     final wobble = at(45.99001, 4.7170);

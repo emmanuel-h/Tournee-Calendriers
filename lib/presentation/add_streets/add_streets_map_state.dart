@@ -18,6 +18,7 @@ final class AddStreetsMapState {
     List<PickedStreetRow> picked = const [],
     List<PickedRoad> pickedRoads = const [],
     this.lookingAt,
+    this.keepInView,
     this.search = const NoStreetSearch(),
     this.zoneMode = false,
     this.zone = const NoZone(),
@@ -45,6 +46,12 @@ final class AddStreetsMapState {
   /// (the BAN needs a moment): marked by a dot, and the sheet says
   /// « Recherche de la rue… ». Null when nothing is looked up.
   final GeoPoint? lookingAt;
+
+  /// What the map keeps clear of the sheet, moving if needed (#132): the
+  /// zone drawn, so its handle can be reached; else the ✓ of the street
+  /// last ticked by a tap or the search, while it is ticked. Null when
+  /// nothing: the map stays where the user put it.
+  final GeoBounds? keepInView;
 
   /// The search box's results.
   final StreetSearch search;

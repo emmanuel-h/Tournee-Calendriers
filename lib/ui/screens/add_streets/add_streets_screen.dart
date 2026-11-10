@@ -208,6 +208,7 @@ final class _MapTabState extends ConsumerState<_MapTab> {
                           zone: state.zone.area,
                           onZoneDrawn: (area) =>
                               unawaited(_answer(map.drawZone(area))),
+                          keepInView: state.keepInView,
                           padding: EdgeInsets.only(bottom: _sheetHeight),
                         ),
                       ),

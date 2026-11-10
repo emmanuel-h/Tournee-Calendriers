@@ -261,6 +261,8 @@ void main() {
       PickedRoad(street: _bordelanId, road: _road, mark: _onBordelan),
     ]);
     expect(shownMap(tester).selectedPoint, isNull);
+    // Kept clear of the sheet as it grows (#132).
+    expect(shownMap(tester).keepInView, GeoBounds.around([_onBordelan]));
   });
 
   testWidgets('should add the streets ticked at once, say how many and stay '
@@ -696,6 +698,8 @@ void main() {
       );
       expect(find.text('Ajouter 1 rue'), findsOneWidget);
       expect(shownMap(tester).zone, zone);
+      // Kept clear of the zone's sheet, its handle within reach (#132).
+      expect(shownMap(tester).keepInView, zone);
       expect(shownMap(tester).pickedRoads.single.street, _gareId);
       expect(
         tester.getSemantics(zoneRow(_gareId.value)),

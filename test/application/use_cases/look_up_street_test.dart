@@ -415,6 +415,63 @@ void main() {
       });
     });
 
+    group('where the ✓ sits', () {
+      test('should put it on the road under the finger, facing the '
+          'tap', () async {
+        shapes.roads = Ok([_roadNorthOfTap('Rue Pierre Morin', 5)]);
+
+        final found = valueOf(await lookUp(directory)(StreetAtPoint(_tap)));
+
+        final mark = (found as StreetToAdd).mark!;
+        expect(
+          mark.latitude,
+          closeTo(_tap.latitude + 5 / metresPerDegree, 1e-9),
+        );
+        expect(mark.longitude, closeTo(_tap.longitude, 1e-9));
+      });
+
+      test('should put it on the road under the finger when the nearest BAN '
+          'street is that road', () async {
+        final directory = FakeAddressDirectory(
+          places: {_tap: Ok(_morin)},
+          streets: {_morinId: Ok(_morinNumbers)},
+        );
+        shapes.roads = Ok([_roadNorthOfTap('Rue Pierre Morin', 3)]);
+
+        final found = valueOf(await lookUp(directory)(StreetAtPoint(_tap)));
+
+        final mark = (found as StreetToAdd).mark!;
+        expect(
+          mark.latitude,
+          closeTo(_tap.latitude + 3 / metresPerDegree, 1e-9),
+        );
+        expect(mark.longitude, closeTo(_tap.longitude, 1e-9));
+      });
+
+      test('should leave it where the finger was when no road is within '
+          'reach', () async {
+        final directory = FakeAddressDirectory(
+          places: {_tap: Ok(_morin)},
+          streets: {_morinId: Ok(_morinNumbers)},
+        );
+        shapes.roads = Ok([
+          _roadNorthOfTap('Rue Pierre Morin', LookUpStreet.tapReachMetres + 1),
+        ]);
+
+        final found = valueOf(await lookUp(directory)(StreetAtPoint(_tap)));
+
+        expect((found as StreetToAdd).mark, isNull);
+      });
+
+      test('should not place it for a street found by the search', () async {
+        shapes.roads = Ok([_roadNorthOfTap('Rue Pierre Morin', 2)]);
+
+        final found = valueOf(await lookUp(directory)(FoundStreet(_morin)));
+
+        expect((found as StreetToAdd).mark, isNull);
+      });
+    });
+
     test('should pass on a search that fails', () async {
       final directory = FakeAddressDirectory(
         places: {_tap: Ok(_lilasMatch)},

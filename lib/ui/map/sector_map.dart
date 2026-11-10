@@ -48,6 +48,7 @@ final class SectorMap extends StatefulWidget {
     this.zoneMode = false,
     this.zone,
     this.onZoneDrawn,
+    this.keepInView,
     this.padding = EdgeInsets.zero,
     this.phoneLocation = const GeolocatorPhoneLocation(),
   });
@@ -97,6 +98,12 @@ final class SectorMap extends StatefulWidget {
   /// A zone drawn with a finger, « Zone » on: its area on the map.
   final ValueChanged<GeoBounds>? onZoneDrawn;
 
+  /// What the map keeps clear of [padding] (#132): when it changes, and
+  /// when [padding] grows until the user touches the map, the map slides
+  /// just enough to show it, or zooms out if it cannot fit (see
+  /// `cameraReveal`). Null leaves the camera alone.
+  final GeoBounds? keepInView;
+
   /// The room other widgets take over the map's edges (a banner on top, a
   /// panel at the bottom): « Me localiser », the attribution and the fitted
   /// area keep clear of it.
@@ -143,6 +150,12 @@ final class _SectorMapState extends State<SectorMap> {
   /// camera where the user put it.
   var _fitting = false;
 
+  /// [SectorMap.keepInView] is to be kept in view: from when it changes
+  /// until a finger touches the map (or « Me localiser » moves it). Meanwhile
+  /// a panel over the map that grows (a row ticked, the zone's streets
+  /// listed, measured only once drawn) moves the map again.
+  var _revealing = false;
+
   @override
   void didUpdateWidget(SectorMap oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -154,6 +167,20 @@ final class _SectorMapState extends State<SectorMap> {
       _fitting = true;
       unawaited(_fit(animate: true));
     }
+    if (widget.keepInView != oldWidget.keepInView) {
+      _revealing = widget.keepInView != null;
+      _revealAfterLayout();
+    } else if (_revealing && widget.padding != oldWidget.padding) {
+      _revealAfterLayout();
+    }
+  }
+
+  /// [_reveal] once this frame is laid out: the map's size cannot be read
+  /// while widgets are being built, which is when [didUpdateWidget] runs.
+  void _revealAfterLayout() {
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_reveal());
+    });
   }
 
   @override
@@ -383,6 +410,61 @@ final class _SectorMapState extends State<SectorMap> {
         : controller.moveCamera(update));
   }
 
+  /// Moves the map, if needed, so [SectorMap.keepInView] is clear of
+  /// [SectorMap.padding] (`cameraReveal`). Waits for a fit on its way: the
+  /// screen positions are read once the camera stops.
+  Future<void> _reveal() async {
+    final controller = _controller;
+    final target = widget.keepInView;
+    if (controller == null || !_styleReady || _fitting || target == null) {
+      return;
+    }
+    final size = context.size;
+    if (size == null) return;
+    final scale = _screenScale;
+    final corners = await controller.toScreenLocationBatch([
+      LatLng(target.north, target.west),
+      LatLng(target.south, target.east),
+    ]);
+    // Something else to show since the call left, or the screen closed.
+    if (!mounted || widget.keepInView != target) return;
+    final padding = widget.padding;
+    const margin = AppSizes.keptInViewMargin;
+    final free = Rect.fromLTRB(
+      padding.left + margin,
+      padding.top + margin,
+      size.width - padding.right - margin,
+      size.height - padding.bottom - margin,
+    );
+    final onScreen = Rect.fromPoints(
+      Offset(corners[0].x / scale, corners[0].y / scale),
+      Offset(corners[1].x / scale, corners[1].y / scale),
+    );
+    switch (cameraReveal(onScreen, free)) {
+      case StayPut():
+        return;
+      case PanBy(:final offset):
+        // For everything to slide by `offset`, the point now that far
+        // the other way from the centre becomes the centre.
+        final centre = size.center(Offset.zero) - offset;
+        final newCentre = await controller.toLatLng(
+          Point(centre.dx * scale, centre.dy * scale),
+        );
+        if (!mounted) return;
+        await controller.animateCamera(CameraUpdate.newLatLng(newCentre));
+      case FitTarget():
+        await controller.animateCamera(
+          CameraUpdate.newLatLngBounds(
+            latLngBoundsOf(target),
+            left: padding.left + margin,
+            top: padding.top + margin,
+            right: padding.right + margin,
+            bottom: padding.bottom + margin,
+          ),
+        );
+    }
+  }
+
   void _onFeatureTapped(
     Point<double> point,
     LatLng coordinates,
@@ -404,7 +486,11 @@ final class _SectorMapState extends State<SectorMap> {
   }
 
   void _onCameraIdle() {
+    final fitted = _fitting;
     _fitting = false;
+    // A target kept in view while the area was fitted: shown once the
+    // camera stopped.
+    if (fitted && _revealing) unawaited(_reveal());
     unawaited(_measureZone());
     if (_controller?.cameraPosition case final camera?) {
       widget.onZoomChanged?.call(camera.zoom);
@@ -412,6 +498,9 @@ final class _SectorMapState extends State<SectorMap> {
   }
 
   void _onLocated(GeoPoint position) {
+    // The user sent the map elsewhere: a panel growing no longer brings it
+    // back.
+    _revealing = false;
     setState(() => _showPhone = true);
     final controller = _controller;
     if (controller == null) return;
@@ -430,45 +519,51 @@ final class _SectorMapState extends State<SectorMap> {
         Semantics(
           container: true,
           label: AppLocalizations.of(context).mapLabel,
-          child: ZoneDrawing(
-            enabled: widget.zoneMode,
-            zoneOnScreen: () => _zoneOnScreen,
-            onDrawn: (drawn) => unawaited(_zoneDrawn(drawn)),
-            // Rebuilt with the map free to move under two fingers: the
-            // plugin sends the new option to the native map, which reads it
-            // on the gesture's next move.
-            onTwoFingersChanged: (two) => setState(() => _twoFingers = two),
-            child: MapLibreMap(
-              styleString: openFreeMapStyle,
-              initialCameraPosition: initialCamera(widget.area),
-              onMapCreated: _onMapCreated,
-              onStyleLoadedCallback: _onStyleLoaded,
-              onMapClick: _onMapClick,
-              // Keeps `controller.cameraPosition` up to date, read when the
-              // camera stops.
-              trackCameraPosition: true,
-              onCameraIdle: _onCameraIdle,
-              // A map that turns or tilts under a gloved finger in the street
-              // is harder to read than it is useful: north stays up.
-              // Our streets and dots are sources and layers of our own: none
-              // of MapLibre's annotation layers is needed. Without them, the
-              // style loading also adds nothing that could fail once the map
-              // has left the screen.
-              annotationOrder: const [],
-              rotateGesturesEnabled: false,
-              tiltGesturesEnabled: false,
-              compassEnabled: false,
-              myLocationEnabled: _showPhone,
-              // The ⓘ button shows « © OpenStreetMap, OpenFreeMap » from the
-              // tiles: required by their terms (docs/spikes/map.md), kept
-              // clear of the panels over the map.
-              attributionButtonMargins: Point(
-                padding.right + AppSizes.glyphGap,
-                padding.bottom + AppSizes.glyphGap,
+          // A finger on the map: the user moves it, or taps or draws what
+          // will be kept in view next. Until then, the map stays where it
+          // is put.
+          child: Listener(
+            onPointerDown: (_) => _revealing = false,
+            child: ZoneDrawing(
+              enabled: widget.zoneMode,
+              zoneOnScreen: () => _zoneOnScreen,
+              onDrawn: (drawn) => unawaited(_zoneDrawn(drawn)),
+              // Rebuilt with the map free to move under two fingers: the
+              // plugin sends the new option to the native map, which reads it
+              // on the gesture's next move.
+              onTwoFingersChanged: (two) => setState(() => _twoFingers = two),
+              child: MapLibreMap(
+                styleString: openFreeMapStyle,
+                initialCameraPosition: initialCamera(widget.area),
+                onMapCreated: _onMapCreated,
+                onStyleLoadedCallback: _onStyleLoaded,
+                onMapClick: _onMapClick,
+                // Keeps `controller.cameraPosition` up to date, read when the
+                // camera stops.
+                trackCameraPosition: true,
+                onCameraIdle: _onCameraIdle,
+                // A map that turns or tilts under a gloved finger in the street
+                // is harder to read than it is useful: north stays up.
+                // Our streets and dots are sources and layers of our own: none
+                // of MapLibre's annotation layers is needed. Without them, the
+                // style loading also adds nothing that could fail once the map
+                // has left the screen.
+                annotationOrder: const [],
+                rotateGesturesEnabled: false,
+                tiltGesturesEnabled: false,
+                compassEnabled: false,
+                myLocationEnabled: _showPhone,
+                // The ⓘ button shows « © OpenStreetMap, OpenFreeMap » from the
+                // tiles: required by their terms (docs/spikes/map.md), kept
+                // clear of the panels over the map.
+                attributionButtonMargins: Point(
+                  padding.right + AppSizes.glyphGap,
+                  padding.bottom + AppSizes.glyphGap,
+                ),
+                // « Zone » on: one finger draws the zone, the map stays put;
+                // two fingers move it.
+                scrollGesturesEnabled: !widget.zoneMode || _twoFingers,
               ),
-              // « Zone » on: one finger draws the zone, the map stays put;
-              // two fingers move it.
-              scrollGesturesEnabled: !widget.zoneMode || _twoFingers,
             ),
           ),
         ),

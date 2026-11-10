@@ -343,6 +343,11 @@ abstract final class AppSizes {
   /// rather than drawing a new one: half a tap target around it.
   static const zoneHandleReach = 24.0;
 
+  /// How far inside the part of the map left by the sheet a zone or the
+  /// latest ✓ is kept on « Ajouter des rues » (#132): the zone's handle
+  /// stays within a finger's reach of the map, and a gutter beyond.
+  static const keptInViewMargin = zoneHandleReach + gutter;
+
   /// A drag shorter than this on either side draws no zone: a tap that
   /// slid a little.
   static const zoneMinSide = 16.0;

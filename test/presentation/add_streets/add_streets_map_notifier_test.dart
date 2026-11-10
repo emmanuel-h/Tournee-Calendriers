@@ -5,6 +5,7 @@ import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/street_shapes.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
+import 'package:tournee_calendriers/domain/geometry/geo_distance.dart';
 import 'package:tournee_calendriers/domain/map/picked_road.dart';
 import 'package:tournee_calendriers/domain/map/sector_area.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
@@ -342,6 +343,29 @@ void main() {
       ]);
     });
 
+    test('should put the ✓ on the road under the finger (#132)', () async {
+      // The finger lands 10 m south of Rue Pierre Morin's road, which runs
+      // east there.
+      final roadLatitude = _onMorin.latitude + 10 / metresPerDegree;
+      shapes.roads = Ok([
+        NamedRoad(
+          name: 'Rue Pierre Morin',
+          shape: StreetShape([
+            [at(roadLatitude, 4.72400), at(roadLatitude, 4.72600)],
+          ]),
+        ),
+      ]);
+      final container = phone();
+      await pumpEventQueue();
+
+      await notifierOf(container).tapMap(_onMorin);
+      await pumpEventQueue();
+
+      final mark = stateOf(container).pickedRoads.single.mark;
+      expect(mark.latitude, closeTo(roadLatitude, 1e-9));
+      expect(mark.longitude, closeTo(_onMorin.longitude, 1e-9));
+    });
+
     test('should draw its road with its ✓ once the map tells it', () async {
       final container = phone();
       await pumpEventQueue();
@@ -613,6 +637,110 @@ void main() {
 
       expect(stateOf(container).picked, isEmpty);
       expect(stateOf(container).pickedRoads, isEmpty);
+    });
+  });
+
+  group('what the map keeps in view', () {
+    test('should keep nothing in view when the screen opens', () async {
+      final container = phone();
+      await pumpEventQueue();
+
+      expect(stateOf(container).keepInView, isNull);
+    });
+
+    test('should keep the ✓ of the street just tapped in view', () async {
+      final container = phone();
+      await pumpEventQueue();
+
+      await notifierOf(container).tapMap(_onPasteur);
+
+      expect(stateOf(container).keepInView, GeoBounds.around([_onPasteur]));
+    });
+
+    test('should keep the latest ✓ in view, once its road is drawn '
+        'too', () async {
+      final container = phone();
+      await pumpEventQueue();
+      final notifier = notifierOf(container);
+      await notifier.tapMap(_onPasteur);
+
+      await notifier.tapMap(_onMorin);
+      await pumpEventQueue();
+
+      expect(stateOf(container).pickedRoads.last.road, _morinRoad);
+      expect(stateOf(container).keepInView, GeoBounds.around([_onMorin]));
+    });
+
+    test('should keep the street picked in the search in view', () async {
+      final container = phone();
+      await pumpEventQueue();
+      final notifier = notifierOf(container);
+      await notifier.search('morin');
+
+      await notifier.pick(_morinId);
+
+      expect(stateOf(container).keepInView, GeoBounds.around([_onMorin]));
+    });
+
+    test('should keep the latest ✓ in view when an earlier street is '
+        'unticked', () async {
+      final container = phone();
+      await pumpEventQueue();
+      final notifier = notifierOf(container);
+      await notifier.tapMap(_onMorin);
+      await notifier.tapMap(_onPasteur);
+
+      notifier.untick(_morinId);
+
+      expect(stateOf(container).keepInView, GeoBounds.around([_onPasteur]));
+    });
+
+    test('should keep nothing in view once the latest street is unticked, '
+        'rather than an earlier one', () async {
+      final container = phone();
+      await pumpEventQueue();
+      final notifier = notifierOf(container);
+      await notifier.tapMap(_onMorin);
+      await notifier.tapMap(_onPasteur);
+
+      await notifier.tapMap(_onPasteur);
+
+      expect(stateOf(container).picked, [morinRow]);
+      expect(stateOf(container).keepInView, isNull);
+    });
+
+    test('should keep nothing in view after « Tout décocher »', () async {
+      final container = phone();
+      await pumpEventQueue();
+      final notifier = notifierOf(container);
+      await notifier.tapMap(_onMorin);
+
+      notifier.untickAll();
+
+      expect(stateOf(container).keepInView, isNull);
+    });
+
+    test('should keep the latest ✓ in view when a tap ticks nothing', () async {
+      final container = phone();
+      await pumpEventQueue();
+      final notifier = notifierOf(container);
+      await notifier.tapMap(_onMorin);
+
+      await notifier.tapMap(_nowhere);
+      notifier.tapStreet(StreetId('emile'));
+
+      expect(stateOf(container).keepInView, GeoBounds.around([_onMorin]));
+    });
+
+    test('should keep nothing in view once the streets are added', () async {
+      final container = phone();
+      await pumpEventQueue();
+      final notifier = notifierOf(container);
+      await notifier.tapMap(_onMorin);
+
+      await notifier.add();
+
+      expect(stateOf(container).keepInView, isNull);
     });
   });
 
@@ -1161,6 +1289,56 @@ void main() {
       expect(stateOf(container).zoneMode, isTrue);
       notifierOf(container).toggleZone();
       expect(stateOf(container).zoneMode, isFalse);
+    });
+
+    test('should keep the zone drawn in view while its streets are looked '
+        'for, and once they are listed', () async {
+      shapes.holdRoads();
+      final container = await zoning();
+
+      final listed = notifierOf(container).drawZone(zone);
+      await pumpEventQueue();
+
+      expect(stateOf(container).zone, FindingZoneStreets(zone));
+      expect(stateOf(container).keepInView, zone);
+      shapes.releaseRoads();
+      await listed;
+      expect(stateOf(container).zone, isA<ZoneStreetsFound>());
+      expect(stateOf(container).keepInView, zone);
+    });
+
+    test(
+      'should keep the zone in view when a road is tapped meanwhile',
+      () async {
+        final container = await zoning();
+        await notifierOf(container).drawZone(zone);
+
+        await notifierOf(container).tapMap(_onMorin);
+
+        expect(stateOf(container).keepInView, zone);
+      },
+    );
+
+    test('should keep nothing in view once « Zone » is off, not even the ✓ '
+        'tapped before the zone', () async {
+      final container = await zoning();
+      final notifier = notifierOf(container);
+      await notifier.tapMap(_onMorin);
+      await notifier.drawZone(zone);
+
+      notifier.toggleZone();
+
+      expect(stateOf(container).picked, isNotEmpty);
+      expect(stateOf(container).keepInView, isNull);
+    });
+
+    test('should keep nothing in view when the zone is too large', () async {
+      shapes.roads = const Err(StreetShapesFailure.tooLarge);
+      final container = await zoning();
+
+      await notifierOf(container).drawZone(zone);
+
+      expect(stateOf(container).keepInView, isNull);
     });
 
     test('should list the streets of the zone drawn, ticking those to '

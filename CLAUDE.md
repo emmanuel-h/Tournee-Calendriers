@@ -86,7 +86,8 @@ From the 0.11.0 phone test: « Ajouter des rues » stays open after adding, zone
 typo (`StreetName.typosFrom`, also in « Zone ») (#134, open); the title opens Secteur, « Changer de secteur » in it
 (#135); « Abandonner la tournée » in the Bilan (#136). The commune search falls back to the Géoplateforme when
 geo.api.gouv.fr fails; « Pas de réseau » only for a real lack of network (`meansNoNetwork`), otherwise « Impossible
-de … pour l'instant. Réessayez plus tard. » (#137). Still open: #132 (sheets over the map).
+de … pour l'instant. Réessayez plus tard. » (#137). The map keeps the drawn zone, or the latest ✓, clear of the sheet
+(`keepInView`, `cameraReveal`, moving as little as possible); the ✓ sits on the road under the finger (#132).
 
 ## Commands
 

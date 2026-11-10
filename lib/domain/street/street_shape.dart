@@ -74,6 +74,24 @@ final class StreetShape {
     return nearest;
   }
 
+  /// The point of its lines nearest to [point] (see `nearestOnSegment`);
+  /// null when there is no line. Where the ✓ of a road tapped sits on it
+  /// (PLAN §5.14).
+  GeoPoint? nearestPointTo(GeoPoint point) {
+    GeoPoint? nearest;
+    var shortest = double.infinity;
+    for (final line in lines) {
+      for (var i = 1; i < line.length; i++) {
+        final metres = metresFromSegment(point, line[i - 1], line[i]);
+        if (metres < shortest) {
+          shortest = metres;
+          nearest = nearestOnSegment(point, line[i - 1], line[i]);
+        }
+      }
+    }
+    return nearest;
+  }
+
   /// This shape with each line simplified (see `simplifyLine`): the points
   /// closer than [toleranceMetres] to the simplified line are dropped.
   StreetShape simplified({double toleranceMetres = defaultToleranceMetres}) =>

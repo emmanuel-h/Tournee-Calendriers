@@ -40,11 +40,17 @@ sealed class LookedUpStreet {
 /// card offers « Ajouter et me l'attribuer » and « Ajouter sans
 /// m'attribuer », which give [numbers] to `AddStreetFromMap`.
 final class StreetToAdd extends LookedUpStreet {
-  const StreetToAdd(super.match, this.numbers);
+  const StreetToAdd(super.match, this.numbers, {this.mark});
 
   /// The numbers of the street, each with its position when the BAN has
   /// one.
   final StreetNumbers numbers;
+
+  /// Where its ✓ sits on the map of « Ajouter des rues » (#132): the point
+  /// of the road under the finger nearest to it, so the ✓ is on the road
+  /// rather than beside it. Null when the map has no named road within
+  /// reach of the tap, and for a street found by the search.
+  final GeoPoint? mark;
 
   /// « 19 numéros » on the card.
   int get numberCount => numbers.numbers.length;
@@ -91,15 +97,25 @@ final class LookUpStreet {
     StreetLookup lookup,
   ) async {
     final StreetMatch match;
+    GeoPoint? mark;
     switch (lookup) {
       case FoundStreet(match: final found):
         match = found;
       case StreetAtPoint(:final point):
-        switch (await _streetAt(point)) {
+        // Both asked at once: a tap waits for the slower one only. A record
+        // of futures has `wait`, which gives back a record of their values.
+        // The road tells which street was tapped, and where on it the ✓
+        // goes.
+        final (nearest, road) = await (
+          _directory.streetAt(point),
+          _roadAt(point),
+        ).wait;
+        switch (await _streetAt(nearest, road?.name)) {
           case Err(:final failure):
             return Err(failure);
           case Ok(:final value):
             match = value;
+            mark = road?.shape.nearestPointTo(point);
         }
     }
     final known = await _streets.findByBanId(match.id);
@@ -109,23 +125,18 @@ final class LookUpStreet {
       return Ok(StreetOfTheSector(match, known));
     }
     return (await _directory.numbersOf(match.id))
-        .map((numbers) => StreetToAdd(match, numbers));
+        .map((numbers) => StreetToAdd(match, numbers, mark: mark));
   }
 
-  /// The BAN street of the road under the finger at [point]: the
-  /// geocoder's nearest street when it is that road, or when the map has
-  /// no named road within [tapReachMetres] (or cannot answer); otherwise
-  /// the street of the road's name in the nearest street's commune, or of
-  /// a name close enough to be the road's misspelt (#134).
+  /// The BAN street of the road [road] under the finger, given the
+  /// geocoder's [nearest] street: that street when it is the road, or when
+  /// the map has no named road within [tapReachMetres] (or cannot answer);
+  /// otherwise the street of the road's name in the nearest street's
+  /// commune, or of a name close enough to be the road's misspelt (#134).
   Future<Result<StreetMatch, AddressDirectoryFailure>> _streetAt(
-    GeoPoint point,
+    Result<StreetMatch, AddressDirectoryFailure> nearest,
+    String? road,
   ) async {
-    // Both asked at once: a tap waits for the slower one only. A record of
-    // futures has `wait`, which gives back a record of their values.
-    final (nearest, road) = await (
-      _directory.streetAt(point),
-      _roadAt(point),
-    ).wait;
     switch (nearest) {
       case Err():
         return nearest;
@@ -155,25 +166,25 @@ final class LookUpStreet {
     }
   }
 
-  /// The name of the named road of the map nearest to [point], within
+  /// The named road of the map nearest to [point], within
   /// [tapReachMetres]; null when there is none, or the map's tiles could
   /// not be read (the geocoder's answer then stands alone, as it did
   /// before #134).
-  Future<String?> _roadAt(GeoPoint point) async {
+  Future<NamedRoad?> _roadAt(GeoPoint point) async {
     final area = GeoBounds.around([point])!.expandedBy(tapReachMetres);
     final roads = switch (await _shapes.roadsIn(area)) {
       Ok(:final value) => value,
       Err() => const <NamedRoad>[],
     };
-    String? name;
+    NamedRoad? nearestRoad;
     var nearest = tapReachMetres;
     for (final road in roads) {
       final metres = road.shape.metresFrom(point);
       if (metres != null && metres <= nearest) {
-        name = road.name;
+        nearestRoad = road;
         nearest = metres;
       }
     }
-    return name;
+    return nearestRoad;
   }
 }
