@@ -9,9 +9,9 @@ void unawaitedPush(GoRouter router, String location) {
 }
 
 /// Opens « Ajouter des rues » from Accueil as a member does (PLAN §5.14):
-/// the Secteur button, then « + Ajouter des rues » in Secteur, scrolled to.
+/// the title (Secteur), then « + Ajouter des rues » in Secteur, scrolled to.
 Future<void> openAddStreets(WidgetTester tester) async {
-  await tester.tap(find.byKey(const Key('home.sectorButton')));
+  await tester.tap(find.byKey(const Key('home.sector')));
   await tester.pumpAndSettle();
   await tester.scrollUntilVisible(
     find.byKey(const Key('team.addStreets')),

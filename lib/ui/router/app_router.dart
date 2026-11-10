@@ -105,7 +105,7 @@ GoRouter buildAppRouter({
       builder: (context, state) =>
           JoinPendingScreen(sector: _sectorIdOf(state)!),
     ),
-    // Pushed by the Secteur button of Accueil; Secteur pushes « Ajouter des
+    // Pushed by Accueil's title; Secteur pushes « Ajouter des
     // rues », the Corbeille and « Collecte ».
     GoRoute(
       path: AppRoutes.team,

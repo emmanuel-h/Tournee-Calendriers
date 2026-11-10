@@ -21,13 +21,15 @@ import 'package:tournee_calendriers/ui/components/sheet_scaffold.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/screens/communes/commune_picker_field.dart';
+import 'package:tournee_calendriers/ui/screens/my_sectors/my_sectors_sheet.dart';
 import 'package:tournee_calendriers/ui/screens/team/team_messages.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
-/// Secteur (PLAN §5.8, §5.14, Team and TeamMember mockups), opened by the
-/// Secteur button of Accueil: where the secteur is prepared. The join code
+/// Secteur (PLAN §5.8, §5.14, Team and TeamMember mockups), opened by
+/// Accueil's title: where the secteur is prepared. First « Changer de
+/// secteur », which opens « Mes secteurs » (#135), then the join code
 /// and its QR code to show or share, the requests to answer, the members,
 /// « RUES (38) » with « + Ajouter des rues » and the Corbeille, the
 /// communes, « COLLECTE 2026 », and leaving or deleting the secteur.
@@ -69,9 +71,17 @@ final class TeamScreen extends ConsumerWidget {
       body: SafeArea(
         child: switch (state) {
           TeamShown() => _Team(state: state),
-          TeamLoading() => const SizedBox.shrink(),
+          // « Changer de secteur » stays while the secteur is read, or when
+          // it cannot be: Accueil's title only leads here (#135). First, as
+          // in the list, so it does not move once the secteur shows.
+          TeamLoading() => const Column(children: [_ChangeSector()]),
           NoTeam() => _Message(l10n.teamNoSector),
-          TeamUnavailable() => _Message(l10n.teamUnavailable),
+          TeamUnavailable() => Column(
+            children: [
+              const _ChangeSector(),
+              Expanded(child: _Message(l10n.teamUnavailable)),
+            ],
+          ),
         },
       ),
     );
@@ -164,6 +174,8 @@ final class _Team extends ConsumerWidget {
             slivers: [
               SliverList.list(
                 children: [
+                  const _ChangeSector(),
+                  const SizedBox(height: 12),
                   _CodeCard(
                     state: state,
                     onShare: () => shareJoinCode(
@@ -632,6 +644,25 @@ final class _Streets extends ConsumerWidget {
       ],
     );
   }
+}
+
+/// « ⇄ Changer de secteur › », the first row of Secteur (#135): opens
+/// « Mes secteurs », over Secteur, which then shows the secteur picked.
+final class _ChangeSector extends StatelessWidget {
+  const _ChangeSector();
+
+  @override
+  Widget build(BuildContext context) => DecoratedBox(
+    decoration: BoxDecoration(
+      border: Border(top: BorderSide(color: AppColors.of(context).divider)),
+    ),
+    child: _LinkTile(
+      key: const Key('team.changeSector'),
+      icon: Icons.swap_horiz,
+      title: AppLocalizations.of(context).teamChangeSector,
+      onTap: () => showMySectorsSheet(context),
+    ),
+  );
 }
 
 /// A row that opens another screen: an icon in a round ground-coloured

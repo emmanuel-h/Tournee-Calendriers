@@ -20,8 +20,9 @@ import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 import 'package:tournee_calendriers/ui/theme/status_look.dart';
 
-/// Opens « Mes secteurs » (tap the title, or Paramètres → Mes tournées,
-/// PLAN §5.3, Switcher mockup), then « Nouveau secteur », « Rejoindre une
+/// Opens « Mes secteurs » (« Changer de secteur » in Secteur, the app's
+/// name with no secteur open, or Paramètres → Mes secteurs, PLAN §5.3,
+/// Switcher mockup), then « Nouveau secteur », « Rejoindre une
 /// tournée » or « Tous les secteurs » when the sheet's buttons chose one.
 Future<void> showMySectorsSheet(BuildContext context) async {
   // The sheet closes with the screen to open, if any.
@@ -270,7 +271,7 @@ final class _SectorRowTile extends StatelessWidget {
                     color: colors.doneInk,
                   ),
                 )
-              // The open tournée's requests show on the Secteur button, not here.
+              // The open secteur's requests show on Accueil's title, not here.
               else if (row.status == SectorRowStatus.closed &&
                   !unavailable &&
                   row.waitingRequests > 0)

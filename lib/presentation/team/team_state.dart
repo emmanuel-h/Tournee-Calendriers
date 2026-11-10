@@ -29,16 +29,16 @@ enum TeamActionFailure {
   tooManyCommunes,
 }
 
-/// What Secteur (PLAN §5.8, §5.14) and the Secteur button of Accueil show
+/// What Secteur (PLAN §5.8, §5.14) and the title of Accueil show
 /// of the open secteur. `sealed`: the screen's `switch` handles each case.
 sealed class TeamState {
   const TeamState();
 
-  /// The requests waiting for an answer: the dot on the Secteur button.
+  /// The requests waiting for an answer: the dot on Accueil's title.
   int get waitingRequests => 0;
 }
 
-/// No secteur is open: no Secteur button, nothing to show.
+/// No secteur is open: nothing to show.
 final class NoTeam extends TeamState {
   const NoTeam();
 }

@@ -291,7 +291,7 @@ void main() {
     expect(sectors.deleted, hasLength(1));
     expect(store.mySectors.sectors, isEmpty);
     expect(find.text('Tournée des calendriers'), findsOneWidget);
-    expect(find.byKey(const Key('home.sectorButton')), findsNothing);
+    expect(find.byKey(const Key('home.sector')), findsNothing);
   });
 
   testWidgets('should keep the tournée when deleting is cancelled', (

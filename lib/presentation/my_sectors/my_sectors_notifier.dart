@@ -82,7 +82,7 @@ final class MySectorsNotifier extends Notifier<MySectorsState> {
 
   /// Follows the team of each tournée of [mine] that the member is in and
   /// that is not open, for the dot of a request waiting there; the open
-  /// one's requests show on the Secteur button (`teamProvider`).
+  /// one's requests show on Accueil's title (`teamProvider`).
   void _followTeams(MySectors mine) {
     final others = {
       for (final sector in mine.sectors)

@@ -5,15 +5,13 @@ import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/screens/my_sectors/my_sectors_sheet.dart';
 import 'package:tournee_calendriers/ui/screens/my_sectors/sector_title_button.dart';
-import 'package:tournee_calendriers/ui/screens/team/sector_button.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 
 /// The top bar of the start screen, Accueil's (PLAN §5.3, Home mockup)
 /// with a secteur open or none (§5.0, NoSector mockup): the open secteur
-/// (« Secteur 49 · 2026 ▾ » over its centre) opens « Mes secteurs », the
-/// Secteur button (a folded map, §5.14) opens Secteur (with a dot while a
-/// request waits), ⚙ opens Paramètres. With no secteur open, the app's
-/// name stays, opens « Mes secteurs » too, and there is no Secteur button.
+/// (« Secteur 49 · 2026 ▾ » over its centre, with a dot while a request
+/// waits) opens Secteur (§5.14, #135), ⚙ opens Paramètres. With no secteur
+/// open, the app's name stays and opens « Mes secteurs ».
 ///
 /// A `Scaffold` asks its app bar for its height before building it: hence
 /// `PreferredSizeWidget`, taller with the centre under the title.
@@ -48,7 +46,8 @@ final class StartAppBar extends StatelessWidget implements PreferredSizeWidget {
             )
           : SectorTitleButton(
               sector: sector,
-              onPressed: () => showMySectorsSheet(context),
+              // `push`: Secteur stacks on Accueil, so its ← comes back here.
+              onPressed: () => context.push(AppRoutes.team),
             ),
       titleSpacing: AppSizes.gutter,
       actions: [
@@ -60,7 +59,6 @@ final class StartAppBar extends StatelessWidget implements PreferredSizeWidget {
             // `push` stacks the gallery on top, so it offers a back arrow.
             onPressed: () => context.push(AppRoutes.gallery),
           ),
-        if (sector != null) const SectorButton(key: Key('home.sectorButton')),
         IconButton(
           key: const Key('home.settings'),
           tooltip: l10n.screenSettings,

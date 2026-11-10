@@ -945,10 +945,11 @@
       "year": { "type": "String", "example": "2026" }
     }
   },
-  "sectorTitleSemantics": "{title}, {centre}. Changer de secteur",
+  "sectorTitleSemantics": "{count, plural, =0{{title}, {centre}} =1{{title}, {centre}, 1 demande en attente} other{{title}, {centre}, {count} demandes en attente}}",
   "@sectorTitleSemantics": {
-    "description": "Screen-reader label of the title button that opens « Mes secteurs » (Home mockup).",
+    "description": "Screen-reader label of Accueil's title, a button that opens Secteur (PLAN §5.14, #135); with the join requests waiting, which its red dot shows.",
     "placeholders": {
+      "count": { "type": "int", "example": "1" },
       "title": { "type": "String", "example": "Secteur 49 · 2026" },
       "centre": { "type": "String", "example": "CS Villefranche" }
     }
@@ -1195,15 +1196,6 @@
       "url": { "type": "String", "example": "https://github.com/emmanuel-h/Tournee-Calendriers/blob/main/PRIVACY.md" }
     }
   },
-  "homeSector": "Secteur",
-  "@homeSector": { "description": "Tooltip and screen-reader name of Accueil's Secteur button, a folded map (PLAN §5.14)." },
-  "homeSectorWaiting": "{count, plural, =1{Secteur, 1 demande en attente} other{Secteur, {count} demandes en attente}}",
-  "@homeSectorWaiting": {
-    "description": "Screen-reader name of the Secteur button when join requests wait (the dot, PLAN §5.14).",
-    "placeholders": {
-      "count": { "type": "int", "example": "1" }
-    }
-  },
   "teamTitle": "Secteur {number}",
   "@teamTitle": {
     "description": "Title of Équipe (Team mockup).",
@@ -1321,6 +1313,8 @@
       "name": { "type": "String", "example": "Léa" }
     }
   },
+  "teamChangeSector": "Changer de secteur",
+  "@teamChangeSector": { "description": "First row of Secteur, which opens « Mes secteurs » (PLAN §5.8, #135)." },
   "teamCorbeille": "{count, plural, =0{Corbeille · vide} =1{Corbeille · 1 élément} other{Corbeille · {count} éléments}}",
   "@teamCorbeille": {
     "description": "Row of « Rues » in Secteur that opens the Corbeille (PLAN §5.11, §5.14).",

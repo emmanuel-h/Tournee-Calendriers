@@ -258,7 +258,7 @@ void main() {
       expect(find.byKey(const Key('noSector.map')), findsOneWidget);
       expect(find.text('Aucun secteur ouvert'), findsOneWidget);
       expect(find.byKey(const Key('noSector.join')), findsOneWidget);
-      expect(find.byKey(const Key('home.sectorButton')), findsNothing);
+      expect(find.byKey(const Key('home.sector')), findsNothing);
 
       await tester.tap(find.byKey(const Key('home.gallery')));
       await tester.pumpAndSettle();
@@ -719,7 +719,7 @@ void main() {
 
   testWidgets(
     'should reopen the last tournée at launch, count a tournée\'s don and '
-    'validate it, and switch from the title',
+    'validate it, and switch secteur from Secteur',
     (tester) async {
       final storage = await _freshStorage('sectors_flow');
       // The 49's id is new at each run: the street typed in by hand below
@@ -795,16 +795,17 @@ void main() {
       await tester.pumpAndSettle();
       expect(tester.getSize(panel).height, atRest);
 
-      // The Secteur button (a folded map, PLAN §5.14) opens Secteur, which
-      // follows the secteur in Firestore (the first use of the real
-      // database, with its offline settings), offline: the phone never read
-      // it, so Secteur says it cannot show it, or is still waiting; either
-      // way nothing breaks, and the phone keeps both secteurs. Accueil has
-      // no « Ajouter des rues » row any more.
+      // The title (PLAN §5.14, #135) opens Secteur, which follows the
+      // secteur in Firestore (the first use of the real database, with its
+      // offline settings), offline: the phone never read it, so Secteur
+      // says it cannot show it, or is still waiting; either way nothing
+      // breaks, « Changer de secteur » is there, and the phone keeps both
+      // secteurs. Accueil has no « Ajouter des rues » row any more.
       expect(find.text('Ajouter des rues'), findsNothing);
-      await tester.tap(find.byKey(const Key('home.sectorButton')));
+      await tester.tap(find.byKey(const Key('home.sector')));
       await tester.pumpAndSettle();
       expect(find.byType(TeamScreen), findsOneWidget);
+      expect(find.byKey(const Key('team.changeSector')), findsOneWidget);
       await tester.tap(find.byTooltip('Retour'));
       await tester.pumpAndSettle();
 
@@ -1051,11 +1052,15 @@ void main() {
       await tester.tap(find.byTooltip('Retour'));
       await tester.pumpAndSettle();
 
-      // « Mes secteurs » offline (#33): the 12 was never downloaded on
-      // this phone, so it is greyed and a tap leaves the sheet open. Once
-      // it counts as downloaded, it opens as before. Firestore's network
-      // is off for the whole suite, so « offline » is certain here.
+      // « Mes secteurs » offline (#33), from « Changer de secteur » in
+      // Secteur (#135): the 12 was never downloaded on this phone, so it is
+      // greyed and a tap leaves the sheet open. Once it counts as
+      // downloaded, it opens as before, and Accueil shows it once back.
+      // Firestore's network is off for the whole suite, so « offline » is
+      // certain here.
       await tester.tap(find.byKey(const Key('home.sector')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('team.changeSector')));
       await tester.pumpAndSettle();
       expect(
         find.text('CS Villefranche · Disponible avec réseau'),
@@ -1077,6 +1082,8 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.textContaining('Disponible avec réseau'), findsNothing);
       await tester.tap(find.byKey(const ValueKey('mySectors.t12')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byTooltip('Retour'));
       await tester.pumpAndSettle();
       expect(find.text('Secteur 12 · 2026'), findsOneWidget);
 

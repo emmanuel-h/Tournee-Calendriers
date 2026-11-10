@@ -1534,11 +1534,11 @@ abstract class AppLocalizations {
   /// **'Secteur {number} · {year}'**
   String sectorTitle(String number, String year);
 
-  /// Screen-reader label of the title button that opens « Mes secteurs » (Home mockup).
+  /// Screen-reader label of Accueil's title, a button that opens Secteur (PLAN §5.14, #135); with the join requests waiting, which its red dot shows.
   ///
   /// In fr, this message translates to:
-  /// **'{title}, {centre}. Changer de secteur'**
-  String sectorTitleSemantics(String title, String centre);
+  /// **'{count, plural, =0{{title}, {centre}} =1{{title}, {centre}, 1 demande en attente} other{{title}, {centre}, {count} demandes en attente}}'**
+  String sectorTitleSemantics(int count, String title, String centre);
 
   /// Title of the sheet listing the member's sectors (PLAN §5.3), and of its row in Paramètres.
   ///
@@ -2044,18 +2044,6 @@ abstract class AppLocalizations {
   /// **'Impossible d\'ouvrir le navigateur. La politique est à l\'adresse {url}'**
   String privacyOnlineFailed(String url);
 
-  /// Tooltip and screen-reader name of Accueil's Secteur button, a folded map (PLAN §5.14).
-  ///
-  /// In fr, this message translates to:
-  /// **'Secteur'**
-  String get homeSector;
-
-  /// Screen-reader name of the Secteur button when join requests wait (the dot, PLAN §5.14).
-  ///
-  /// In fr, this message translates to:
-  /// **'{count, plural, =1{Secteur, 1 demande en attente} other{Secteur, {count} demandes en attente}}'**
-  String homeSectorWaiting(int count);
-
   /// Title of Équipe (Team mockup).
   ///
   /// In fr, this message translates to:
@@ -2187,6 +2175,12 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'{name} n\'aura plus accès au secteur. Ses marques restent dans les rues.'**
   String teamRemoveBody(String name);
+
+  /// First row of Secteur, which opens « Mes secteurs » (PLAN §5.8, #135).
+  ///
+  /// In fr, this message translates to:
+  /// **'Changer de secteur'**
+  String get teamChangeSector;
 
   /// Row of « Rues » in Secteur that opens the Corbeille (PLAN §5.11, §5.14).
   ///

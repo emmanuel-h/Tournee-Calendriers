@@ -13,6 +13,7 @@ import 'package:tournee_calendriers/ui/screens/onboarding/create_sector_screen.d
 import 'package:tournee_calendriers/ui/screens/onboarding/join_sector_screen.dart';
 import 'package:tournee_calendriers/ui/screens/settings/name_sheet.dart';
 import 'package:tournee_calendriers/ui/screens/settings/settings_screen.dart';
+import 'package:tournee_calendriers/ui/screens/team/team_screen.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 
 import '../../domain/sector/my_sectors_fixtures.dart';
@@ -80,8 +81,18 @@ void main() {
     await tester.pumpAndSettle();
   }
 
+  /// Opens « Mes secteurs » as a member does with a secteur open (#135):
+  /// the title opens Secteur, whose first row is « Changer de secteur ».
   Future<void> openSheet(WidgetTester tester) async {
     await tester.tap(find.byKey(const Key('home.sector')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('team.changeSector')));
+    await tester.pumpAndSettle();
+  }
+
+  /// From Secteur, where « Changer de secteur » is, back to Accueil.
+  Future<void> backToAccueil(WidgetTester tester) async {
+    await tester.tap(find.byType(BackButton));
     await tester.pumpAndSettle();
   }
 
@@ -95,9 +106,7 @@ void main() {
       expect(find.text('CS Villefranche'), findsOneWidget);
       expect(find.text('Tournée des calendriers'), findsNothing);
       expect(
-        find.bySemanticsLabel(
-          'Secteur 49 · 2026, CS Villefranche. Changer de secteur',
-        ),
+        find.bySemanticsLabel('Secteur 49 · 2026, CS Villefranche'),
         findsOneWidget,
       );
     },
@@ -105,7 +114,7 @@ void main() {
 
   testWidgets(
     'should list the open tournée, the others and the pending request '
-    'when the title is tapped',
+    'when « Changer de secteur » is tapped',
     (tester) async {
       await pumpApp(tester, _manusPhone());
 
@@ -174,9 +183,10 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(MySectorsSheet), findsNothing);
+      expect(store.saves.single.current, sector12);
+      await backToAccueil(tester);
       expect(find.text('Secteur 12 · 2026'), findsOneWidget);
       expect(find.text('Secteur 49 · 2026'), findsNothing);
-      expect(store.saves.single.current, sector12);
     },
   );
 
@@ -190,8 +200,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byType(MySectorsSheet), findsNothing);
-    expect(find.text('Secteur 49 · 2026'), findsOneWidget);
     expect(store.saves, isEmpty);
+    await backToAccueil(tester);
+    expect(find.text('Secteur 49 · 2026'), findsOneWidget);
   });
 
   testWidgets('should not open a tournée whose request is pending', (
@@ -425,7 +436,7 @@ void main() {
 
     expect(find.byType(NameSheet), findsNothing);
     expect(find.byType(CreateSectorScreen), findsNothing);
-    expect(find.text('Secteur 49 · 2026'), findsOneWidget);
+    expect(find.byType(TeamScreen), findsOneWidget);
   });
 
   group('admins (PLAN §5.12)', () {

@@ -230,9 +230,9 @@ void main() {
       await _tap(tester, const Key('create.continue'));
       expect(find.text('Secteur 49 · 2026'), findsOneWidget);
 
-      // Secteur (the folded map, PLAN §5.14): the creator is in the team,
+      // Secteur (the title, PLAN §5.14, #135): the creator is in the team,
       // as an admin.
-      await _tap(tester, const Key('home.sectorButton'));
+      await _tap(tester, const Key('home.sector'));
       await _waitFor(tester, find.text('Sam (vous) · admin'));
       // « Ajouter des rues » is in Secteur now, and its ✕ comes back here.
       final addStreets = find.byKey(const Key('team.addStreets'));
@@ -257,8 +257,10 @@ void main() {
       await tester.pumpAndSettle();
 
       // « Tous les secteurs » → the 12, which Sam is not in: the banner
-      // « Administrateur · pas membre », then « Rejoindre ».
+      // « Administrateur · pas membre », then « Rejoindre ». « Mes
+      // secteurs » is « Changer de secteur » in Secteur (#135).
       await _tap(tester, const Key('home.sector'));
+      await _tap(tester, const Key('team.changeSector'));
       await _tap(tester, const Key('mySectors.all'));
       await _tap(tester, const ValueKey('allSectors.e2eSector12'));
       expect(find.text('Secteur 12 · 2026'), findsOneWidget);
@@ -269,6 +271,7 @@ void main() {
       // A new tournée is started, then the console removes admins/{uid}
       // before « Créer »: the server refuses, the screen says why.
       await _tap(tester, const Key('home.sector'));
+      await _tap(tester, const Key('team.changeSector'));
       await _tap(tester, const Key('mySectors.create'));
       await tester.enterText(find.byKey(const Key('create.centre')), 'villef');
       await _tap(tester, const ValueKey('create.centre.villefranche'));
@@ -282,10 +285,10 @@ void main() {
       await _waitFor(tester, find.byKey(const Key('create.notAdmin')));
       expect(find.text("Vous n'êtes plus administrateur."), findsOneWidget);
 
-      // Back on Accueil, « Mes secteurs » no longer offers « Créer ».
+      // Back on Secteur, « Mes secteurs » no longer offers « Créer ».
       await tester.tap(find.byTooltip('Retour'));
       await tester.pumpAndSettle();
-      await _tap(tester, const Key('home.sector'));
+      await _tap(tester, const Key('team.changeSector'));
       expect(find.byKey(const Key('mySectors.create')), findsNothing);
       expect(find.byKey(const Key('mySectors.all')), findsNothing);
     },

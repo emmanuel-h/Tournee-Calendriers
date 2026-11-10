@@ -102,10 +102,9 @@ void main() {
     await tester.fling(handle, const Offset(0, 300), 2000);
     await capture(tester, 'phone-1', seconds: 8);
 
-    // 5. Secteur, from its button on Accueil (the folded map). Taken now,
-    // before the tournée below starts: Accueil shows no Secteur button
-    // during one (PLAN §5.14).
-    await tester.tap(find.byKey(const Key('home.sectorButton')));
+    // 5. Secteur, from Accueil's title. Taken now, before the tournée
+    // below starts: the band replaces the title during one (PLAN §5.14).
+    await tester.tap(find.byKey(const Key('home.sector')));
     await capture(tester, 'phone-5');
     await tester.tap(find.byTooltip('Retour'));
     await tester.pumpAndSettle();

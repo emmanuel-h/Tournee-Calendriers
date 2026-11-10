@@ -28,7 +28,7 @@ final _noStreets = MapLayers.of(const []);
 /// secteur: there is nothing to list here.
 ///
 /// Its top bar is Accueil's ([StartAppBar]): the app's name opens « Mes
-/// secteurs », ⚙ Paramètres, and there is no Secteur button.
+/// secteurs », ⚙ Paramètres.
 ///
 /// A `ConsumerStatefulWidget`: the screen keeps the panel's measured
 /// height in its `State`, so the map keeps « Me localiser »'s neighbours

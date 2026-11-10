@@ -405,8 +405,9 @@ an admin, shows only « Rejoindre un secteur », in red), and the bottom of the 
 > of every street under « Rues · 31/50 » (each row opens its street), no « libre » (line,
 > legend), no « Équipe : n % », street card « Ouvrir » only. Built in #121: no « + Ajouter
 > des rues » row (it moved to Secteur), 🗺 Secteur instead of 👥. Built in #123: the « En
-> tournée » band in the top bar's place during a tournée. Read 5.14 first; the text below is
-> the earlier state.
+> tournée » band in the top bar's place during a tournée. Built in #135: the title opens
+> Secteur and carries the request dot; no 🗺 button; « Mes secteurs » is « Changer de
+> secteur », the first row of Secteur. Read 5.14 first; the text below is the earlier state.
 
 ```
 ┌──────────────────────────────┐
@@ -494,8 +495,10 @@ an admin, shows only « Rejoindre un secteur », in red), and the bottom of the 
   when it is stored. Streets typed in by hand (no position) keep no line. Nothing on the
   marking path waits for it.
 
-**Mes secteurs (tap the title).** The title "Secteur 49 · 2026 ▾" is a button that opens a
-bottom sheet:
+**Mes secteurs (« Changer de secteur » in Secteur).** Until #135 the title "Secteur 49 · 2026
+▾" opened it; now the title opens Secteur (5.14), whose first row « ⇄ Changer de secteur › »
+opens this bottom sheet over Secteur. With no secteur open, the app's name in the title still
+opens it (5.0):
 
 ```
 ┌──────────────────────────────┐
@@ -522,6 +525,10 @@ bottom sheet:
 - *Créer* and *Rejoindre* open 5.2; the current secteur stays untouched until the new one is
   ready (or accepted).
 - Paramètres → *Mes secteurs* opens the same sheet.
+- Delivered in #135: a secteur tapped from Secteur becomes the open one, the sheet closes and
+  Secteur shows the secteur tapped (its title, code, members…); back goes to its Accueil.
+  *Créer*, *Rejoindre* and *Tous les secteurs* open over Secteur, and their own way back
+  leads there.
 - Delivered in T2.7: the rows keep the order the phone met the secteurs (opening one does not
   move them); the open one shows ● and ✓, another ○ (a tap opens it and closes the sheet),
   a request a dashed ○ in grey, « CS … · votre demande est en attente », and cannot be tapped.
@@ -543,7 +550,7 @@ bottom sheet:
   « CS … · 1 demande en attente » (« 2 demandes… ») and a red dot at the end of its row, said
   by screen readers (« Secteur 12 · 2026, CS Villefranche, 1 demande en attente, ouvrir »);
   its team is followed from the phone's copy first, offline too. The open secteur's requests
-  stay on 👥 only.
+  stay on 👥 only (on Accueil's title since #135).
 - **A secteur lost** (T2.6c): when the server says the member was removed (« Retirer ») or
   the secteur deleted, the phone forgets it at once (its row leaves « Mes secteurs »; when it
   was the open one, the app goes back to the start screen with none open, whatever screen
@@ -1197,12 +1204,15 @@ Immeuble details fixed in T1.9 (`lib/presentation/building/`, `lib/ui/screens/bu
 > **Changed by 5.14 (2026-11-03):** built in #120: no streets per member (#105's counts are
 > gone). Built in #121: now « Secteur », opened by 🗺 (`Icons.map_outlined`); after
 > « MEMBRES », a « RUES (n) » section with « + Ajouter des rues » and the Corbeille under it
-> (not for a pending member), then « COMMUNES » and « COLLECTE ». The rest stands.
+> (not for a pending member), then « COMMUNES » and « COLLECTE ». Built in #135: opened by
+> Accueil's title (no 🗺 button), with « ⇄ Changer de secteur › » as its first row. The rest
+> stands.
 
 ```
 ┌──────────────────────────────┐
 │ ← Secteur 49                 │
 │   CS Villefranche · 2026     │
+│ ⇄ Changer de secteur       › │  ← « Mes secteurs » (5.3), #135
 │  ▄▄▄▄ ▄ ▄▄▄▄ Code K7P-2QX [⧉]│  ← ⧉ copies the code
 │  █▄▄█ ▀ █▄▄█ [Partager]      │
 │              [Nouveau code]  │  ← admins only (#75)
@@ -1275,6 +1285,12 @@ admin » for « Nouveau code », « Retirer », « Supprimer » and the campaign
   server says so, with a message (« Vous avez été retiré du secteur 49. », 5.3), which
   closes Équipe; « L'équipe ne peut pas être affichée » stays for a secteur never read
   offline.
+- **Changer de secteur** (#135, Team mockup): the first row of Secteur, above the code card,
+  in the look of « + Ajouter des rues » (⇄ in a round badge, « Changer de secteur », ›; 56 dp,
+  said « Changer de secteur »), for everyone, pending members and visiting admins included.
+  It opens « Mes secteurs » (5.3) over Secteur; a secteur picked there is then the one
+  Secteur shows. It also shows alone while the secteur is being read, and above « L'équipe ne
+  peut pas être affichée », since Accueil's title now only leads here.
 
 ### 5.9 Paramètres (⚙)
 
@@ -1632,7 +1648,7 @@ removes are marked « (removed, 5.14) » there.
 ```
   Accueil, no tournée              Accueil, en tournée              Rue, no tournée
 ┌────────────────────────────┐   ┌────────────────────────────┐   ┌────────────────────────────┐
-│ Secteur 49 · 2026 ▾ [🗺][⚙]│   │▓● En tournée · 1 h 20     ▓│   │ ← Rue des Lilas 31/42  [✎] │
+│ Secteur 49 · 2026 ▾•    [⚙]│   │▓● En tournée · 1 h 20     ▓│   │ ← Rue des Lilas 31/42  [✎] │
 │ ░░ map ░░░░░░░░░░░░░░░░░░░ │   │▓19 dons · 280 € ›         ▓│   │ Impair      │  Pair        │
 │ [faite][en partie][à faire]│   │▓            [■ Terminer]  ▓│   │ [1 ✓][3 ○]  │ [2 ✗][4 ○]   │
 ├────────────────────────────┤   │ ░░ map ░░░░░░░░░░░░░░░░░░░ │   │ [5 ↻][7 ○]👆│ [6 ○][8 ◐]   │
@@ -1641,14 +1657,14 @@ removes are marked « (removed, 5.14) » there.
 │ Rue des Lilas ▓▓▓░ 31/42 › │   │ Rue des Lilas ▓▓▓░ 31/42 › │   │ marquer les maisons.       │
 │ Allée des Pins ░░░░  0/8 › │   │ Allée des Pins ░░░░  0/8 › │   │                [Commencer] │
 └────────────────────────────┘   └────────────────────────────┘   └────────────────────────────┘
-  Secteur (🗺)                     Ajouter des rues · Carte         Ajouter des rues · Zone
+  Secteur (the title)              Ajouter des rues · Carte         Ajouter des rues · Zone
 ┌────────────────────────────┐   ┌────────────────────────────┐   ┌────────────────────────────┐
 │ ← Secteur 49               │   │ ✕  Ajouter des rues        │   │ ✕  Ajouter des rues        │
-│ ▄▄ Code K7P-2QX [⧉]        │   │ [ Carte ]   Liste          │   │ [ Carte ]   Liste          │
-│ EN ATTENTE (1) …           │   │ [🔍 Rechercher…  ] [⬚ Zone]│   │ [🔍 Rechercher…  ] [■ Zone]│
-│ MEMBRES (5)                │   │ ░▓▓▓▓▓✓▓▓▓░░░░░░░░░░░░░░░ │   │ ░░┌┄┄┄┄┄┄┄┄┄┄┄┄┄┄┐░░░░░░░ │
-│ Manu (vous) · admin        │   │ ░░░░║░░░░▓▓▓✓▓▓▓░░░░░░░░░ │   │ ░░┆▓▓✓▓▓░░▓▓✓▓▓┆░░░░░░░ │
-│ Léa                    [⋮] │   ├────────────────────────────┤   │ ░░└┄┄┄┄┄┄┄┄┄┄┄┄┄┄○░░░░░░░ │
+│ ⇄ Changer de secteur     › │   │ [ Carte ]   Liste          │   │ [ Carte ]   Liste          │
+│ ▄▄ Code K7P-2QX [⧉]        │   │ [🔍 Rechercher…  ] [⬚ Zone]│   │ [🔍 Rechercher…  ] [■ Zone]│
+│ EN ATTENTE (1) …           │   │ ░▓▓▓▓▓✓▓▓▓░░░░░░░░░░░░░░░ │   │ ░░┌┄┄┄┄┄┄┄┄┄┄┄┄┄┄┐░░░░░░░ │
+│ MEMBRES (5)                │   │ ░░░░║░░░░▓▓▓✓▓▓▓░░░░░░░░░ │   │ ░░┆▓▓✓▓▓░░▓▓✓▓▓┆░░░░░░░ │
+│ Manu (vous) · admin, Léa … │   ├────────────────────────────┤   │ ░░└┄┄┄┄┄┄┄┄┄┄┄┄┄┄○░░░░░░░ │
 │ RUES (38)                  │   │ 2 rues sélectionnées       │   ├────────────────────────────┤
 │ + Ajouter des rues       › │   │       Tout décocher        │   │ 4 rues dans la zone        │
 │ Corbeille · 2 éléments   › │   │ Rue Pierre Morin · 19 n° ✕ │   │ ☑ Rue Pierre Morin · 19 n° │
@@ -1669,8 +1685,8 @@ removes are marked « (removed, 5.14) » there.
   `assignees` go, and the rules stop checking it (§6, §8.2). Breaking change, no migration
   (one user, §3): documents keep a stale `assignees` field that nobody reads, or the test
   secteurs are created again.
-- **Accueil, no tournée** (RunStart): top bar « Secteur 49 · 2026 ▾ » (opens « Mes secteurs »),
-  the Secteur button and ⚙. The map shows every street of the secteur, coloured « faite · en
+- **Accueil, no tournée** (RunStart): top bar « Secteur 49 · 2026 ▾ » (opens Secteur since
+  #135, see below) and ⚙. The map shows every street of the secteur, coloured « faite · en
   partie · à faire » (three samples in the legend). The panel shows « Rues · 31/50 » (doors done
   over every street of the secteur, as the admin visit already counted), « ▶ Commencer une
   tournée » for an active member (5.13), then every street of the secteur in one list, with no
@@ -1678,9 +1694,16 @@ removes are marked « (removed, 5.14) » there.
   opens its street card: name, commune, « 31/42 faits », « Ouvrir ». A row opens the Street
   screen directly, as « Mes rues » did (no card, the map does not move: #93's « Autres rues »
   card is gone with them). The pending-sync line stays at the bottom.
-- **The Secteur button** (built in #121) replaces 👥: Material `Icons.map_outlined` (a folded map), said
-  « Secteur » (« Secteur, 1 demande en attente » with the red dot, which stays). It opens the
-  screen 5.8 called Équipe, now **Secteur** (title « Secteur 49 » as before). Changes there:
+- **The title opens Secteur** (#135, from the user's phone test of 0.11.0: the 🗺 button
+  confused, and the title was tapped for the secteur's details). Built in #121 as a Secteur
+  button (`Icons.map_outlined`) replacing 👥; #135 removes it. Accueil's title « Secteur 49 ·
+  2026 ▾ » now opens Secteur, and the red dot of a waiting join request sits after its ▾,
+  said by screen readers in the title's name (« Secteur 49 · 2026, CS Villefranche, 1
+  demande en attente »; without one « Secteur 49 · 2026, CS Villefranche »). « Mes
+  secteurs » is reached from **« ⇄ Changer de secteur › »**, the first row of Secteur (5.8),
+  or Paramètres; with no secteur open the app's name still opens it (5.0). During a tournée
+  the band replaces the top bar, title included, as before. Secteur is the screen 5.8 called
+  Équipe (title « Secteur 49 » as before). Changes there:
   member rows have no street count; after « MEMBRES », **« RUES (38) »** with the row « + Ajouter
   des rues › » (« Sur la carte ou depuis la liste des communes » under it), which opens 5.4,
   and the Corbeille row moved under it; then « COMMUNES », « COLLECTE 2026 » and the pinned
@@ -1695,7 +1718,7 @@ removes are marked « (removed, 5.14) » there.
   280 € › » in 24 dp titles, and opens « Dons de la tournée » (TalkBack « En tournée depuis 1 h
   20, 19 dons, 280 €. Voir les dons »). Its right part is « ■ Terminer », a 48 dp ink pill with Surface text
   (the theme's inverse pair; « Terminer la tournée »), which opens the « Bilan ». While
-  the band shows, Accueil has no secteur switch, no Secteur button and no ⚙: preparation waits
+  the band shows, Accueil has no title (so no Secteur, nor secteur switch) and no ⚙: preparation waits
   until the tournée ends. The tournée card of 5.13 (Accueil's list, the street's line under the
   progress bar) goes. At 200 % text the band wraps its lines and « Terminer » stays whole.
   Delivered in #123 (`ui/screens/round/round_band.dart`; « Commencer une tournée » alone in
@@ -3403,7 +3426,7 @@ exists. No invented data at any stage.
 | Q18 | Who starts a campaign, what is kept | The creator (an admin from #75, 5.12). Previous campaign read-only; the one before is deleted. |
 | Q19 | Guessed / leaked codes | A code only creates a pending request; any accepted member accepts or refuses. App Check in v1. Soft delete with a 30-day Corbeille. |
 | Q20 | Infrastructure | **Decided at the M2 checkpoint (2026-10-05): Spark (free), Blaze-ready.** Join on the phone (`joinCodes` get → pending member) behind a `SectorDirectory` port; App Check + approval are the guard; the Corbeille purge runs on members' phones (5.11). Move to Blaze (1 click, no data migration) and a rate-limited callable join + scheduled purge when real usage nears Spark's shared daily quota (50 k reads, 20 k writes for the whole app ≈ 10 busy secteurs a day) or abuse shows up. Another backend was rejected: it loses Firestore's offline cache. |
-| Q21 | Switching / creating from Accueil | The title is a button: « Mes secteurs » sheet with all my secteurs (progress, pending requests), *Créer*, *Rejoindre*. |
+| Q21 | Switching / creating from Accueil | The title is a button: « Mes secteurs » sheet with all my secteurs (progress, pending requests), *Créer*, *Rejoindre*. Since #135 the title opens Secteur, whose first row « Changer de secteur » opens that sheet. |
 | Q22 | Technical stack | **Flutter + Riverpod**, strict DDD (hexagonal: domain, use cases, ports, adapters). Android first; iOS later from the same code, built in the cloud (no Mac). Mutation gate dropped (no Dart tool); 100 % coverage gate kept. |
 | Q23 | Notes | **Removed for privacy, 2026-10-05** (after the phone test of M1): a free note on a house, door or building is too likely to hold personal data (GDPR). No note field anywhere; notes already on a phone are erased when the app reads them (storage schema v3). The « repasser » hint stayed, limited to 20 characters (was 50); since #81 it is a day and an hour, no free text. |
 

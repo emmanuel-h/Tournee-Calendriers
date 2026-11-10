@@ -25,6 +25,10 @@ a{color:#B3261E}a:hover{color:#8C1D18}
     <div style="display: flex; flex-direction: column"><h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 28px; line-height: 1.05">Secteur 49</h1><span style="font-size: 14px; color: #4A5058">CS Villefranche · campagne 2026</span></div>
   </div>
   <div class="scroll" style="flex: 1; min-height: 0; overflow-y: auto; padding-bottom: 16px">
+  <!-- #135: Accueil's title opens Secteur; « Mes secteurs » is reached from here. -->
+  <div style="border-top: 1px solid #E2DED5; margin-bottom: 12px">
+    <a class="mem" href="Switcher.dc.html" style="text-decoration: none; color: #1B1F24"><span class="av" style="background: #F3F1EC"><svg viewBox="0 0 24 24" aria-hidden="true" style="width: 18px; height: 18px; fill: none; stroke: #1B1F24; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round"><path d="M4 8h15M15 4l4 4-4 4M20 16H5M9 12l-4 4 4 4"/></svg></span><span style="flex: 1; font-weight: 700">Changer de secteur</span><span style="font-size: 18px; color: #4A5058; padding-right: 12px">›</span></a>
+  </div>
   <div style="display: flex; align-items: center; gap: 16px; margin: 0 16px; background: #FFFFFF; border: 1px solid #E2DED5; border-radius: 20px; padding: 14px">
     <div style="width: 100px; height: 100px; display: grid; grid-template-columns: repeat(21, minmax(0, 1fr)); flex-shrink: 0" role="img" aria-label="QR code du secteur, code K7P-2QX">
       <sc-for list="{{cells}}" as="c" hint-placeholder-count="441"><div style="{{c.style}}"></div></sc-for>

@@ -1045,8 +1045,15 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String sectorTitleSemantics(String title, String centre) {
-    return '$title, $centre. Changer de secteur';
+  String sectorTitleSemantics(int count, String title, String centre) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$title, $centre, $count demandes en attente',
+      one: '$title, $centre, 1 demande en attente',
+      zero: '$title, $centre',
+    );
+    return '$_temp0';
   }
 
   @override
@@ -1394,20 +1401,6 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get homeSector => 'Secteur';
-
-  @override
-  String homeSectorWaiting(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: 'Secteur, $count demandes en attente',
-      one: 'Secteur, 1 demande en attente',
-    );
-    return '$_temp0';
-  }
-
-  @override
   String teamTitle(String number) {
     return 'Secteur $number';
   }
@@ -1500,6 +1493,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String teamRemoveBody(String name) {
     return '$name n\'aura plus accès au secteur. Ses marques restent dans les rues.';
   }
+
+  @override
+  String get teamChangeSector => 'Changer de secteur';
 
   @override
   String teamCorbeille(int count) {

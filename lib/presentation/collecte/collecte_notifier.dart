@@ -7,7 +7,7 @@ import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.
 /// and the Collecte screen.
 ///
 /// `autoDispose`: it follows the ledger only while Secteur (or the Collecte
-/// screen over it) shows, unlike the team, whose dot on the Secteur button
+/// screen over it) shows, unlike the team, whose dot on Accueil's title
 /// is needed on Accueil too.
 final collecteProvider =
     NotifierProvider.autoDispose<CollecteNotifier, CollecteView>(

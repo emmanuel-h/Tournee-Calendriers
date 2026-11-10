@@ -172,7 +172,6 @@ void main() {
       await pumpHome(tester);
 
       expect(_key('home.sector'), findsOneWidget);
-      expect(_key('home.sectorButton'), findsOneWidget);
       expect(_key('home.settings'), findsOneWidget);
       expect(_key('round.band'), findsNothing);
     });
@@ -183,7 +182,6 @@ void main() {
 
       expect(find.byType(AppBar), findsNothing);
       expect(_key('home.sector'), findsNothing);
-      expect(_key('home.sectorButton'), findsNothing);
       expect(_key('home.settings'), findsNothing);
       // At the top of the screen, its Surface under the status bar too.
       expect(tester.getRect(_key('round.band')).top, 0);

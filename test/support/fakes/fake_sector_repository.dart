@@ -48,6 +48,10 @@ final class FakeSectorRepository implements SectorRepository {
   /// When set, [watch] fails with it instead of giving the tournée.
   Object? watchError;
 
+  /// When true, [watch] gives nothing at all, as Firestore before its
+  /// first answer: what follows it stays loading.
+  bool watchSilent = false;
+
   /// When set, [find] fails with it instead of giving the tournée.
   Error? findError;
 
@@ -105,6 +109,7 @@ final class FakeSectorRepository implements SectorRepository {
           controller.addError(error);
           return;
         }
+        if (watchSilent) return;
         controller.add(_sectors[id]);
         subscription = _changed.stream.listen(
           (_) => controller.add(_sectors[id]),

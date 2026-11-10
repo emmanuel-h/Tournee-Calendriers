@@ -49,7 +49,7 @@ abstract final class AppRoutes {
     queryParameters: {'id': id.value, 'numero': number.label},
   ).toString();
 
-  /// Secteur (§5.8, §5.14), pushed by the Secteur button of Accueil.
+  /// Secteur (§5.8, §5.14), pushed by Accueil's title (#135).
   static const team = '/equipe';
 
   /// « Tous les secteurs », for admins, pushed from « Mes secteurs »

@@ -14,7 +14,7 @@ import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.
 import 'package:tournee_calendriers/presentation/team/team_state.dart';
 
 /// The team of the open secteur for the whole app. Not `autoDispose`: the
-/// Secteur button of Accueil shows a dot while a request waits, so the
+/// title of Accueil shows a dot while a request waits, so the
 /// team is followed as long as a secteur is open, not only while Secteur
 /// is shown.
 final teamProvider = NotifierProvider<TeamNotifier, TeamState>(

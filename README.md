@@ -44,12 +44,13 @@ Start screen:
   (« Ajouter 3 rues »), staying open to add more; « Rue
   absente de la carte ? Saisir à la main » adds a street the map lacks, offline
   (« Connexion nécessaire pour ajouter une rue. » otherwise).
-- Top bar: the open secteur (« Secteur 49 · 2026 » over its centre de secours), or the
-  app's name when none is open, opens « Mes secteurs », to switch secteur (the app reopens
-  the last one at launch, offline too) or create or join one, with a dot on another
-  secteur where a join request waits; the Secteur button (a folded map) opens Secteur (a dot while a join request waits); ⚙ opens Paramètres: first name (the team sees the new one), « Mes secteurs », theme (Système,
+- Top bar: the open secteur (« Secteur 49 · 2026 » over its centre de secours) opens
+  Secteur, with a dot while a join request waits; the app's name, when none is open, opens
+  « Mes secteurs » (also « Changer de secteur » in Secteur), to switch secteur (the app
+  reopens the last one at launch, offline too) or create or join one, with a dot on another
+  secteur where a join request waits; ⚙ opens Paramètres: first name (the team sees the new one), « Mes secteurs », theme (Système,
   Clair, Sombre), confidentialité, version (opens « Nouveautés », what each version brings), licences, data credits.
-- Secteur (the folded map, once called Équipe): the join code (copy button: « Code copié ») and its QR code, « Partager »,
+- Secteur (Accueil's title, once called Équipe): « Changer de secteur », the join code (copy button: « Code copié ») and its QR code, « Partager »,
   « Nouveau code » (admins), the requests to join with « Accepter » / « Refuser » (any
   member or admin), the members (« · admin ») and « Retirer » (admins), « RUES (n) » with
   « + Ajouter des rues » and the Corbeille (not for a pending member), the secteur's

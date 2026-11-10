@@ -45,7 +45,7 @@ void main() {
     'to the start screen with none open',
     (tester) async {
       await pumpApp(tester);
-      await tester.tap(find.byKey(const Key('home.sectorButton')));
+      await tester.tap(find.byKey(const Key('home.sector')));
       await tester.pumpAndSettle();
       expect(find.byType(TeamScreen), findsOneWidget);
 
@@ -55,7 +55,7 @@ void main() {
       expect(find.text('Vous avez été retiré du secteur 49.'), findsOneWidget);
       expect(find.byType(TeamScreen), findsNothing);
       expect(find.text('Secteur 49 · 2026'), findsNothing);
-      expect(find.byKey(const Key('home.sectorButton')), findsNothing);
+      expect(find.byKey(const Key('home.sector')), findsNothing);
     },
   );
 
