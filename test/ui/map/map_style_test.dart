@@ -43,6 +43,35 @@ void main() {
     test('should name nothing when a layer of the style is tapped', () {
       expect(tappedStreet('highway-name-minor', '42'), isNull);
     });
+
+    test('should name nothing when a ticked road is tapped', () {
+      expect(tappedStreet(MapIds.pickedTicks, '69264_1460'), isNull);
+      expect(tappedStreet(MapIds.pickedCasing, '69264_1460'), isNull);
+      expect(tappedStreet(MapIds.pickedMarks, '69264_1460'), isNull);
+    });
+  });
+
+  group('tappedPick', () {
+    test('should name the street when a ticked road is tapped', () {
+      expect(
+        tappedPick(MapIds.pickedCasing, '69264_1460'),
+        BanStreetId('69264_1460'),
+      );
+    });
+
+    test('should name the street when its ✓ is tapped', () {
+      expect(
+        tappedPick(MapIds.pickedMarks, '69264_1460'),
+        BanStreetId('69264_1460'),
+      );
+    });
+
+    test('should name nothing for the other layers', () {
+      expect(tappedPick(MapIds.streetLines, 'rue-nationale'), isNull);
+      expect(tappedPick(MapIds.pickedTicks, '69264_1460'), isNull);
+      expect(tappedPick(MapIds.selectedCasing, 'selected'), isNull);
+      expect(tappedPick('highway-name-minor', '42'), isNull);
+    });
   });
 
   group('lineLayersBelow', () {
@@ -76,22 +105,31 @@ void main() {
     MapLayerSpec layer(String id) => layers.singleWhere((l) => l.id == id);
     Map<String, dynamic> json(String id) => layer(id).properties.toJson();
 
-    test('should stack streets, then the picked road, then the dots', () {
+    test('should stack streets, the picked and ticked roads, the point, '
+        'the dots, then the ✓ of the ticked roads', () {
       expect(layers.map((l) => l.id), [
         MapIds.streetLines,
         MapIds.selectedCasing,
         MapIds.selectedCore,
+        MapIds.pickedCasing,
+        MapIds.pickedCore,
         MapIds.selectedPointHalo,
         MapIds.selectedPointDot,
         MapIds.houseDots,
+        MapIds.pickedMarks,
+        MapIds.pickedTicks,
       ]);
       expect(layers.map((l) => l.source), [
         MapIds.streetsSource,
         MapIds.selectedSource,
         MapIds.selectedSource,
+        MapIds.pickedSource,
+        MapIds.pickedSource,
         MapIds.selectedPointSource,
         MapIds.selectedPointSource,
         MapIds.housesSource,
+        MapIds.pickedMarksSource,
+        MapIds.pickedMarksSource,
       ]);
     });
 
@@ -103,17 +141,26 @@ void main() {
         false,
         false,
         false,
+        false,
+        false,
+        false,
+        false,
       ]);
     });
 
-    test('should answer taps on streets and dots, not on the picked road', () {
+    test('should answer taps on streets, dots, ticked roads and their ✓, '
+        'not on the picked road', () {
       expect(layers.map((l) => l.interactive), [
         true,
         false,
         false,
+        true,
+        false,
         false,
         false,
         true,
+        true,
+        false,
       ]);
     });
 
@@ -193,6 +240,30 @@ void main() {
         'line-cap': 'round',
         'line-join': 'round',
       });
+    });
+
+    test('should draw a ticked road as the picked one', () {
+      expect(json(MapIds.pickedCasing), json(MapIds.selectedCasing));
+      expect(json(MapIds.pickedCore), json(MapIds.selectedCore));
+    });
+
+    test('should draw the ✓ of every ticked road as a dark disc that every '
+        'renderer shows, and its picture over it, even over a label', () {
+      expect(json(MapIds.pickedMarks), {
+        'circle-radius': 15.0,
+        'circle-color': '#1b1f24',
+      });
+      expect(json(MapIds.pickedTicks), {
+        'icon-image': 'tc-picked-mark',
+        'icon-allow-overlap': true,
+        'icon-ignore-placement': true,
+      });
+    });
+
+    test('should keep the layer ids apart from the source ids', () {
+      final sources = layers.map((l) => l.source).toSet();
+
+      expect(layers.where((l) => sources.contains(l.id)), isEmpty);
     });
 
     test('should mark the point tapped as a dark dot in a faint halo', () {

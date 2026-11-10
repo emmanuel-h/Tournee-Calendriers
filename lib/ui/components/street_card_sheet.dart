@@ -9,27 +9,14 @@ import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
-/// The street card at the bottom of the map (PLAN §5.4, Pick mockup), on
-/// « Ajouter des rues » and Accueil: the street's name and commune, its
-/// facts in grey chips, and one button that depends on what the street is
-/// to the secteur (PLAN §5.14): « Ajouter au secteur » for a street to add,
-/// « Ouvrir » for a street of the secteur.
-///
-/// « Ouvrir » and « Saisir une rue à la main » open their screens; « Ajouter
-/// au secteur » is the screen's ([onAdd]), as is the ✕ at the top right
-/// ([onClose]).
+/// The street card at the bottom of Accueil's map (PLAN §5.14): a street
+/// of the secteur tapped on the map, its name and commune, « 31/42 faits »
+/// in a grey chip, and « Ouvrir », which opens it. The ✕ at the top right
+/// is the screen's ([onClose]).
 final class StreetCardSheet extends StatelessWidget {
-  const StreetCardSheet({
-    super.key,
-    required this.card,
-    this.onAdd,
-    required this.onClose,
-  });
+  const StreetCardSheet({super.key, required this.card, required this.onClose});
 
-  final StreetCard card;
-
-  /// « Ajouter au secteur »; only a street to add calls it.
-  final VoidCallback? onAdd;
+  final StreetCardInSector card;
 
   /// The ✕: closes the card, as a tap elsewhere on the map or the back
   /// gesture does.
@@ -69,12 +56,7 @@ final class StreetCardSheet extends StatelessWidget {
                     ),
                   ),
                 ),
-                ...switch (card) {
-                  StreetCardLoading() => [const _Loading()],
-                  StreetCardFailed(:final problem) => _failed(context, problem),
-                  final StreetCardToAdd street => _toAdd(context, street),
-                  final StreetCardInSector street => _inSector(context, street),
-                },
+                ..._inSector(context, card),
               ],
             ),
           ),
@@ -90,84 +72,6 @@ final class StreetCardSheet extends StatelessWidget {
         ],
       ),
     );
-  }
-
-  List<Widget> _failed(BuildContext context, LookUpProblem problem) {
-    final l10n = AppLocalizations.of(context);
-    final colors = AppColors.of(context);
-    final (title, hint) = switch (problem) {
-      LookUpProblem.noNetwork => (
-        l10n.streetCardNoNetwork,
-        l10n.streetCardNoNetworkHint,
-      ),
-      LookUpProblem.noStreetHere => (
-        l10n.streetCardNoStreetHere,
-        l10n.streetCardNoStreetHereHint,
-      ),
-      LookUpProblem.serviceError => (
-        l10n.streetCardServiceError,
-        l10n.streetCardServiceErrorHint,
-      ),
-    };
-    return [
-      Padding(
-        padding: const EdgeInsets.only(right: AppSizes.sheetCloseClearance),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          spacing: 4,
-          children: [
-            Text(
-              title,
-              key: const Key('streetCard.problem'),
-              style: AppTextStyles.streetName.copyWith(color: colors.ink),
-            ),
-            Text(hint, style: AppTextStyles.body.copyWith(color: colors.muted)),
-          ],
-        ),
-      ),
-      SecondaryButton(
-        key: const Key('streetCard.manual'),
-        compact: true,
-        leading: const Icon(Icons.edit_outlined, size: AppSizes.smallIcon),
-        label: l10n.addStreetsManual,
-        onPressed: () => context.push(AppRoutes.manualStreet),
-      ),
-    ];
-  }
-
-  List<Widget> _toAdd(BuildContext context, StreetCardToAdd street) {
-    final l10n = AppLocalizations.of(context);
-    final colors = AppColors.of(context);
-    final adding = street.adding;
-    return [
-      _Title(name: street.name, commune: street.commune),
-      _Chips([
-        l10n.streetCardNumbers(street.numberCount),
-        l10n.streetCardNotInSector,
-      ]),
-      if (street.addFailed)
-        Text(
-          l10n.streetCardAddFailed,
-          key: const Key('streetCard.addFailed'),
-          style: AppTextStyles.body.copyWith(color: colors.accent),
-        ),
-      PrimaryButton(
-        key: const Key('streetCard.add'),
-        label: adding ? l10n.streetCardAdding : l10n.streetCardAdd,
-        onPressed: adding ? null : onAdd,
-      ),
-      // A link in the mockup; a text button keeps its 48 dp of tap target.
-      TextButton(
-        key: const Key('streetCard.manualLink'),
-        style: TextButton.styleFrom(
-          foregroundColor: colors.accent,
-          minimumSize: const Size.fromHeight(AppSizes.minTapTarget),
-          textStyle: AppTextStyles.rowCount,
-        ),
-        onPressed: () => context.push(AppRoutes.manualStreet),
-        child: Text(l10n.streetCardManualLink),
-      ),
-    ];
   }
 
   List<Widget> _inSector(BuildContext context, StreetCardInSector street) {
@@ -222,8 +126,7 @@ final class _Title extends StatelessWidget {
   }
 }
 
-/// The street's facts, each in a grey chip (« 19 numéros », « Pas encore
-/// dans la tournée »).
+/// The street's facts, each in a grey chip (« 31/42 faits »).
 final class _Chips extends StatelessWidget {
   const _Chips(this.texts, {this.semanticsLabels});
 
@@ -255,33 +158,6 @@ final class _Chips extends StatelessWidget {
             ),
           ),
       ],
-    );
-  }
-}
-
-/// « Recherche de la rue… » while the BAN is asked.
-final class _Loading extends StatelessWidget {
-  const _Loading();
-
-  @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    return Padding(
-      key: const Key('streetCard.loading'),
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      child: Row(
-        spacing: 12,
-        children: [
-          const SizedBox.square(
-            dimension: 20,
-            child: CircularProgressIndicator(strokeWidth: 2),
-          ),
-          Text(
-            AppLocalizations.of(context).streetCardLoading,
-            style: AppTextStyles.body.copyWith(color: colors.muted),
-          ),
-        ],
-      ),
     );
   }
 }

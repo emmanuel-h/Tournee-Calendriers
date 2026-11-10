@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tournee_calendriers/domain/map/map_layers.dart';
+import 'package:tournee_calendriers/domain/map/picked_road.dart';
 import 'package:tournee_calendriers/domain/street/progress_level.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
@@ -188,6 +189,80 @@ void main() {
         'type': 'FeatureCollection',
         'features': <Object>[],
       });
+    });
+  });
+
+  group('picked roads', () {
+    final morin = PickedRoad(
+      street: BanStreetId('69264_1460'),
+      road: _twoPieces,
+      mark: at(45.98915, 4.71862),
+    );
+    final pasteur = PickedRoad(
+      street: BanStreetId('69264_1200'),
+      road: StreetShape.none,
+      mark: at(45.98700, 4.72000),
+    );
+
+    test('should write the known roads as MultiLineStrings named by their '
+        'BAN id', () {
+      expect(pickedRoadsGeoJson([morin, pasteur]), {
+        'type': 'FeatureCollection',
+        'features': [
+          {
+            'type': 'Feature',
+            'id': '69264_1460',
+            'properties': <String, Object>{},
+            'geometry': {
+              'type': 'MultiLineString',
+              'coordinates': [
+                [
+                  [4.71862, 45.98915],
+                  [4.71705, 45.99210],
+                ],
+                [
+                  [4.71705, 45.99210],
+                  [4.71650, 45.99300],
+                  [4.71600, 45.99400],
+                ],
+              ],
+            },
+          },
+        ],
+      });
+    });
+
+    test('should write a ✓ for every street ticked, road known or not', () {
+      expect(pickedMarksGeoJson([morin, pasteur]), {
+        'type': 'FeatureCollection',
+        'features': [
+          {
+            'type': 'Feature',
+            'id': '69264_1460',
+            'properties': <String, Object>{},
+            'geometry': {
+              'type': 'Point',
+              'coordinates': [4.71862, 45.98915],
+            },
+          },
+          {
+            'type': 'Feature',
+            'id': '69264_1200',
+            'properties': <String, Object>{},
+            'geometry': {
+              'type': 'Point',
+              'coordinates': [4.72000, 45.98700],
+            },
+          },
+        ],
+      });
+    });
+
+    test('should write empty collections with nothing ticked', () {
+      const empty = {'type': 'FeatureCollection', 'features': <Object>[]};
+
+      expect(pickedRoadsGeoJson(const []), empty);
+      expect(pickedMarksGeoJson(const []), empty);
     });
   });
 }

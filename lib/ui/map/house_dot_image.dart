@@ -73,6 +73,17 @@ final class HouseDotLook {
         ),
       };
 
+  /// The ✓ disc of a road ticked on « Ajouter des rues » (Pick mockup): a
+  /// white ✓ on the dark casing of the road, the same in both themes, as
+  /// the map stays light.
+  factory HouseDotLook.pickedMark(AppColors colors) => HouseDotLook(
+    fill: colors.mapSelectedCasing,
+    border: colors.mapSelectedCasing,
+    dashed: false,
+    glyph: StatusGlyphs.done,
+    glyphColor: colors.mapSelectedCore,
+  );
+
   final Color fill;
   final Color border;
   final bool dashed;

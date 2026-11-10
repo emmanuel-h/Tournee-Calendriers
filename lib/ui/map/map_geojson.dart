@@ -1,4 +1,5 @@
 import 'package:tournee_calendriers/domain/map/map_layers.dart';
+import 'package:tournee_calendriers/domain/map/picked_road.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 
@@ -67,6 +68,32 @@ Map<String, Object> selectedPointGeoJson(GeoPoint? point) => _collection([
       geometry: {'type': 'Point', 'coordinates': _position(point)},
     ),
 ]);
+
+/// The roads ticked on « Ajouter des rues » (PLAN §5.14): one
+/// `MultiLineString` per ticked street whose road is known, with the
+/// street's BAN id as its id, so a tap on it names the street.
+Map<String, Object> pickedRoadsGeoJson(Iterable<PickedRoad> picked) =>
+    _collection([
+      for (final pick in picked)
+        if (!pick.road.isEmpty)
+          _feature(
+            id: pick.street.value,
+            properties: {},
+            geometry: _multiLine(pick.road),
+          ),
+    ]);
+
+/// The ✓ discs of the roads ticked: one `Point` per ticked street at its
+/// mark, road known or not, with the street's BAN id as its id.
+Map<String, Object> pickedMarksGeoJson(Iterable<PickedRoad> picked) =>
+    _collection([
+      for (final pick in picked)
+        _feature(
+          id: pick.street.value,
+          properties: {},
+          geometry: {'type': 'Point', 'coordinates': _position(pick.mark)},
+        ),
+    ]);
 
 Map<String, Object> _collection(List<Map<String, Object>> features) => {
   'type': 'FeatureCollection',

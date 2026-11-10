@@ -1,15 +1,17 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/presentation/add_streets/add_streets_map_notifier.dart';
-import 'package:tournee_calendriers/presentation/street_card/street_card.dart';
+import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
+import 'package:tournee_calendriers/ui/components/add_progress.dart';
+import 'package:tournee_calendriers/ui/components/app_buttons.dart';
 import 'package:tournee_calendriers/ui/components/close_icon_button.dart';
 import 'package:tournee_calendriers/ui/components/segmented_choice.dart';
 import 'package:tournee_calendriers/ui/components/size_reporter.dart';
-import 'package:tournee_calendriers/ui/components/street_card_sheet.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/map/map_view.dart';
 import 'package:tournee_calendriers/ui/map/sector_map.dart';
@@ -22,38 +24,44 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 /// The two ways of « Ajouter des rues ».
 enum AddStreetsTab { map, list }
 
-/// « Ajouter des rues » while a tournée is open (PLAN §5.4, Pick and
+/// « Ajouter des rues », opened from Secteur (PLAN §5.4, §5.14, Pick and
 /// AddList mockups): the tabs « Carte | Liste ».
 ///
-/// « Carte » (the default) is the tournée's map, opened on its communes,
-/// with the search box and « Saisir une rue à la main » above it: a tap on
-/// a road, or a street picked among the search results, shows its street
-/// card, which adds it or opens it. « Liste » is the checklist of the
+/// « Carte » (the default) is the secteur's map, opened on its communes,
+/// with the search box above it: a tap on a road, or a street picked among
+/// the search results, ticks it, and the selection sheet at the bottom adds
+/// every street ticked at once. « Liste » is the checklist of the
 /// communes' streets ([ImportList]).
 ///
-/// Only the tab shown is built: the map follows the streets only while it
-/// shows.
-final class AddStreetsScreen extends StatefulWidget {
+/// Only the tab shown is built: the map runs only while it shows. The
+/// ticks of « Carte » stay while « Liste » shows (see [build]).
+final class AddStreetsScreen extends ConsumerStatefulWidget {
   const AddStreetsScreen({super.key, this.initialTab = AddStreetsTab.map});
 
   final AddStreetsTab initialTab;
 
   @override
-  State<AddStreetsScreen> createState() => _AddStreetsScreenState();
+  ConsumerState<AddStreetsScreen> createState() => _AddStreetsScreenState();
 }
 
-final class _AddStreetsScreenState extends State<AddStreetsScreen> {
+final class _AddStreetsScreenState extends ConsumerState<AddStreetsScreen> {
   late var _tab = widget.initialTab;
 
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    // An `autoDispose` provider lives while someone listens to it: this
+    // listener, which does nothing, keeps the streets ticked on « Carte »
+    // while « Liste » shows, until the screen closes.
+    ref.listen(addStreetsMapProvider, (_, _) {});
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
         leading: CloseIconButton(
           tooltip: l10n.gridClose,
-          onPressed: () => context.pop(),
+          // `maybePop`, unlike `pop`, asks the tab's `PopScope` first: no
+          // way back while streets are being written.
+          onPressed: () => Navigator.of(context).maybePop(),
         ),
         title: Text(l10n.addStreetsTitle),
         titleSpacing: 0,
@@ -102,11 +110,11 @@ final class _AddStreetsScreenState extends State<AddStreetsScreen> {
   }
 }
 
-/// The search box, « Saisir une rue à la main », and the tournée's map
-/// with the street card over it (Pick mockup).
+/// The search box over the secteur's map, and the selection sheet at the
+/// bottom (Pick mockup).
 ///
-/// A `ConsumerStatefulWidget`: the search text and the card's height
-/// belong to this tab only.
+/// A `ConsumerStatefulWidget`: the search text, the sheet's height and
+/// whether it is folded belong to this tab only.
 final class _MapTab extends ConsumerStatefulWidget {
   const _MapTab();
 
@@ -117,8 +125,11 @@ final class _MapTab extends ConsumerStatefulWidget {
 final class _MapTabState extends ConsumerState<_MapTab> {
   final _search = TextEditingController();
 
-  /// How tall the street card is, so the map keeps clear of it.
-  var _cardHeight = 0.0;
+  /// How tall the selection sheet is, so the map keeps clear of it.
+  var _sheetHeight = 0.0;
+
+  /// The sheet shows only its title (its handle dragged down).
+  var _folded = false;
 
   @override
   void dispose() {
@@ -128,18 +139,13 @@ final class _MapTabState extends ConsumerState<_MapTab> {
 
   @override
   Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
     final state = ref.watch(addStreetsMapProvider);
     // `ref.read` for the intents: they are sent, never watched.
     final map = ref.read(addStreetsMapProvider.notifier);
     final showMap = ref.watch(sectorMapViewProvider);
-    final card = state.card;
-    // The back gesture closes the card first, then the screen.
     return PopScope(
-      canPop: card == null,
-      onPopInvokedWithResult: (didPop, _) {
-        if (!didPop) map.closeCard();
-      },
+      // No way back while streets are being written.
+      canPop: !state.adding,
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -150,29 +156,13 @@ final class _MapTabState extends ConsumerState<_MapTab> {
               AppSizes.gutter,
               10,
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              spacing: 8,
-              children: [
-                _SearchBox(
-                  controller: _search,
-                  onSubmitted: (text) => unawaited(map.search(text)),
-                  onCleared: () {
-                    _search.clear();
-                    map.clearSearch();
-                  },
-                ),
-                OutlinedButton.icon(
-                  key: const Key('addStreets.manual'),
-                  style: OutlinedButton.styleFrom(
-                    minimumSize: const Size.fromHeight(AppSizes.minTapTarget),
-                    textStyle: AppTextStyles.rowCount,
-                  ),
-                  icon: const Icon(Icons.edit_outlined, size: 18),
-                  label: Text(l10n.addStreetsManual),
-                  onPressed: () => context.push(AppRoutes.manualStreet),
-                ),
-              ],
+            child: _SearchBox(
+              controller: _search,
+              onSubmitted: (text) => unawaited(map.search(text)),
+              onCleared: () {
+                _search.clear();
+                map.clearSearch();
+              },
             ),
           ),
           Expanded(
@@ -185,19 +175,18 @@ final class _MapTabState extends ConsumerState<_MapTab> {
                         key: const Key('addStreets.map'),
                         layers: state.layers,
                         area: state.area,
-                        selectedRoad: state.selectedRoad,
-                        selectedPoint: state.selectedPoint,
+                        selectedPoint: state.lookingAt,
+                        pickedRoads: state.pickedRoads,
                         onMapTapped: (point) {
                           FocusScope.of(context).unfocus();
-                          unawaited(map.tapMap(point));
+                          unawaited(_answer(map.tapMap(point)));
                         },
                         onStreetTapped: (street) {
                           FocusScope.of(context).unfocus();
-                          map.tapStreet(street);
+                          _say(map.tapStreet(street));
                         },
-                        padding: EdgeInsets.only(
-                          bottom: card == null ? 0 : _cardHeight,
-                        ),
+                        onPickTapped: map.untick,
+                        padding: EdgeInsets.only(bottom: _sheetHeight),
                       ),
                     ),
                   ),
@@ -216,30 +205,339 @@ final class _MapTabState extends ConsumerState<_MapTab> {
                           search: state.search,
                           onPick: (street) {
                             FocusScope.of(context).unfocus();
-                            unawaited(map.pick(street));
+                            unawaited(_answer(map.pick(street)));
                           },
                         ),
                       ),
                     ),
-                  if (card != null)
-                    Positioned(
-                      left: 0,
-                      right: 0,
-                      bottom: 0,
-                      child: SizeReporter(
-                        onHeight: (height) {
-                          if (mounted) setState(() => _cardHeight = height);
-                        },
-                        child: StreetCardSheet(
-                          card: card,
-                          onAdd: () => unawaited(map.add()),
-                          onClose: map.closeCard,
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    bottom: 0,
+                    child: SizeReporter(
+                      onHeight: (height) {
+                        if (mounted) setState(() => _sheetHeight = height);
+                      },
+                      child: _SelectionSheet(
+                        state: state,
+                        folded: _folded,
+                        maxListHeight: math.min(
+                          AppSizes.pickedRowHeight * AppSizes.pickedRowsShown,
+                          constraints.maxHeight * AppSizes.selectionListShare,
                         ),
+                        onFold: (folded) => setState(() => _folded = folded),
+                        onAdd: () => unawaited(_add()),
                       ),
                     ),
+                  ),
                 ],
               ),
             ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _answer(Future<TapAnswer> answer) async => _say(await answer);
+
+  /// What a tap had to say, in a snackbar: a street already in the
+  /// secteur, or why none could be looked up, with « Saisir à la main ».
+  void _say(TapAnswer answer) {
+    if (!mounted) return;
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    switch (answer) {
+      case NothingToSay():
+        break;
+      case AlreadyInSector(:final name):
+        showMessageSnackBar(messenger, message: l10n.addStreetsAlreadyIn(name));
+      case LookUpFailed(:final problem):
+        // Read now: the action may be tapped once this tab is gone (the
+        // « Liste » tab shown), when its context can no longer be used.
+        final router = GoRouter.of(context);
+        showActionSnackBar(
+          messenger,
+          message: switch (problem) {
+            LookUpProblem.noNetwork => l10n.addStreetsNoNetwork,
+            LookUpProblem.noStreetHere => l10n.addStreetsNoStreetHere,
+            LookUpProblem.serviceError => l10n.addStreetsServiceError,
+          },
+          actionLabel: l10n.addStreetsManualAction,
+          onAction: () => router.push(AppRoutes.manualStreet).ignore(),
+        );
+    }
+  }
+
+  /// « Ajouter N rues »: once every street ticked is in the secteur, back
+  /// to Secteur with « 3 rues ajoutées au secteur ». Otherwise the sheet
+  /// says why and keeps the ones that failed.
+  Future<void> _add() async {
+    final l10n = AppLocalizations.of(context);
+    // The app's messenger: the snackbar shows on Secteur, once back there.
+    final messenger = ScaffoldMessenger.of(context);
+    final added = await ref.read(addStreetsMapProvider.notifier).add();
+    if (added == null || !mounted) return;
+    showMessageSnackBar(messenger, message: l10n.addDone(added));
+    context.pop();
+  }
+}
+
+/// The white sheet at the bottom of the map (Pick mockup): « Touchez les
+/// rues à ajouter. » with nothing ticked; otherwise « 2 rues
+/// sélectionnées », « Tout décocher », a row per street with its ✕, why
+/// some failed, « Ajouter 2 rues » (« Ajout en cours… 2/3 » meanwhile).
+/// « Rue absente de la carte ? Saisir à la main » closes it in both cases.
+///
+/// Dragging the handle down (or tapping it) leaves only the title, so more
+/// of the map shows; up (or a tap) brings the rows back.
+final class _SelectionSheet extends ConsumerWidget {
+  const _SelectionSheet({
+    required this.state,
+    required this.folded,
+    required this.maxListHeight,
+    required this.onFold,
+    required this.onAdd,
+  });
+
+  final AddStreetsMapState state;
+  final bool folded;
+
+  /// The rows scroll past this height.
+  final double maxListHeight;
+
+  final ValueChanged<bool> onFold;
+  final VoidCallback onAdd;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final colors = AppColors.of(context);
+    final map = ref.read(addStreetsMapProvider.notifier);
+    final picked = state.picked;
+    final looking = state.lookingAt != null;
+    final handle = Center(
+      child: Container(
+        width: AppSizes.dragHandleWidth,
+        height: AppSizes.dragHandleHeight,
+        decoration: BoxDecoration(
+          color: colors.line,
+          borderRadius: BorderRadius.circular(AppSizes.dragHandleHeight / 2),
+        ),
+      ),
+    );
+    final manualLink = TextButton(
+      key: const Key('addStreets.manual'),
+      style: TextButton.styleFrom(
+        foregroundColor: colors.accent,
+        minimumSize: const Size.fromHeight(AppSizes.minTapTarget),
+        textStyle: AppTextStyles.rowCount,
+      ),
+      onPressed: () => context.push(AppRoutes.manualStreet),
+      child: Text(l10n.addStreetsManualLink, textAlign: TextAlign.center),
+    );
+    final loading = Row(
+      key: const Key('addStreets.lookingUp'),
+      spacing: 12,
+      children: [
+        const SizedBox.square(
+          dimension: 20,
+          child: CircularProgressIndicator(strokeWidth: 2),
+        ),
+        Flexible(
+          child: Text(
+            l10n.addStreetsLookingUp,
+            style: AppTextStyles.body.copyWith(color: colors.muted),
+          ),
+        ),
+      ],
+    );
+    return Material(
+      key: const Key('addStreets.sheet'),
+      color: colors.surface,
+      elevation: 8,
+      shadowColor: colors.ink,
+      borderRadius: const BorderRadius.vertical(
+        top: Radius.circular(AppSizes.sheetRadius),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 10, 20, 12),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: 8,
+          children: picked.isEmpty
+              ? [
+                  handle,
+                  if (looking) loading,
+                  Text(
+                    l10n.addStreetsPickHint,
+                    key: const Key('addStreets.hint'),
+                    style: AppTextStyles.body.copyWith(color: colors.muted),
+                  ),
+                  manualLink,
+                ]
+              : [
+                  // The handle and the title fold the sheet. A tap there
+                  // does too; screen readers have it as a button.
+                  Semantics(
+                    button: true,
+                    onTapHint: folded
+                        ? l10n.addStreetsUnfold
+                        : l10n.addStreetsFold,
+                    child: GestureDetector(
+                      key: const Key('addStreets.sheet.handle'),
+                      // `opaque`: the empty room around the handle answers
+                      // too.
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () => onFold(!folded),
+                      onVerticalDragEnd: (details) {
+                        final speed = details.primaryVelocity ?? 0;
+                        if (speed != 0) onFold(speed > 0);
+                      },
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        spacing: 8,
+                        children: [
+                          handle,
+                          Row(
+                            children: [
+                              Expanded(
+                                child: Text(
+                                  l10n.addStreetsPicked(picked.length),
+                                  key: const Key('addStreets.picked'),
+                                  style: AppTextStyles.listHeader.copyWith(
+                                    color: colors.ink,
+                                  ),
+                                ),
+                              ),
+                              TextButton(
+                                key: const Key('addStreets.untickAll'),
+                                style: TextButton.styleFrom(
+                                  foregroundColor: colors.muted,
+                                  minimumSize: const Size(
+                                    AppSizes.minTapTarget,
+                                    AppSizes.minTapTarget,
+                                  ),
+                                  textStyle: AppTextStyles.pill.copyWith(
+                                    decoration: TextDecoration.underline,
+                                  ),
+                                ),
+                                onPressed: state.adding ? null : map.untickAll,
+                                child: Text(l10n.uncheckAll),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  if (!folded) ...[
+                    if (looking) loading,
+                    ConstrainedBox(
+                      constraints: BoxConstraints(maxHeight: maxListHeight),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(
+                          border: Border(
+                            top: BorderSide(color: colors.divider),
+                          ),
+                        ),
+                        child: ListView(
+                          key: const Key('addStreets.rows'),
+                          shrinkWrap: true,
+                          padding: EdgeInsets.zero,
+                          children: [
+                            for (final street in picked)
+                              _PickedRow(
+                                street: street,
+                                onUntick: state.adding
+                                    ? null
+                                    : () => map.untick(street.id),
+                              ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    if (state.run case AddFailed(:final failed))
+                      Text(
+                        l10n.addStreetsAddFailed(failed),
+                        key: const Key('addStreets.failed'),
+                        textAlign: TextAlign.center,
+                        style: AppTextStyles.body.copyWith(
+                          color: colors.accent,
+                        ),
+                      ),
+                    if (state.run case AddRunning(:final done, :final total))
+                      AddProgress(
+                        key: const Key('addStreets.progress'),
+                        done: done,
+                        total: total,
+                      )
+                    else
+                      PrimaryButton(
+                        key: const Key('addStreets.add'),
+                        label: l10n.addButton(picked.length),
+                        onPressed: onAdd,
+                      ),
+                    manualLink,
+                  ],
+                ],
+        ),
+      ),
+    );
+  }
+}
+
+/// A street ticked: « Rue Pierre Morin » over « Villefranche-sur-Saône ·
+/// 19 numéros », and the ✕ that unticks it (« Retirer Rue Pierre Morin »).
+final class _PickedRow extends StatelessWidget {
+  const _PickedRow({required this.street, required this.onUntick});
+
+  final PickedStreetRow street;
+
+  /// Null while the streets are being added.
+  final VoidCallback? onUntick;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = AppColors.of(context);
+    return Container(
+      key: ValueKey('addStreets.row.${street.id.value}'),
+      constraints: const BoxConstraints(minHeight: AppSizes.pickedRowHeight),
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: colors.divider)),
+      ),
+      child: Row(
+        spacing: 10,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  street.name,
+                  style: AppTextStyles.bodyLarge.copyWith(
+                    color: colors.ink,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Text(
+                  l10n.addStreetsPickedFacts(
+                    street.commune,
+                    l10n.addStreetsNumbers(street.numberCount),
+                  ),
+                  style: AppTextStyles.small.copyWith(color: colors.muted),
+                ),
+              ],
+            ),
+          ),
+          IconButton(
+            key: ValueKey('addStreets.untick.${street.id.value}'),
+            tooltip: l10n.addStreetsUntick(street.name),
+            icon: Icon(Icons.close, color: colors.ink),
+            onPressed: onUntick,
           ),
         ],
       ),

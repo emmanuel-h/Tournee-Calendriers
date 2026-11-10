@@ -5,6 +5,7 @@ import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/street_shapes.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
+import 'package:tournee_calendriers/domain/map/picked_road.dart';
 import 'package:tournee_calendriers/domain/map/sector_area.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
@@ -16,7 +17,6 @@ import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/presentation/add_streets/add_streets_map_notifier.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
-import 'package:tournee_calendriers/presentation/street_card/street_card.dart';
 
 import '../../domain/sector/my_sectors_fixtures.dart';
 import '../../domain/sector/sector_fixtures.dart';
@@ -53,7 +53,13 @@ StreetMatch _match(BanStreetId id, String name, GeoPoint position) =>
       position: position,
     );
 
+final _pasteurId = BanStreetId('69264_1200');
+
+/// Where the finger taps on Rue Pasteur, not yet in the secteur.
+final _onPasteur = at(45.98700, 4.72000);
+
 final _morinMatch = _match(_morinId, 'Rue Pierre Morin', _onMorin);
+final _pasteurMatch = _match(_pasteurId, 'Rue Pasteur', _onPasteur);
 final _nationaleMatch = _match(_nationaleId, 'Rue Nationale', _onNationale);
 
 final _morinNumbers = StreetNumbers(
@@ -63,6 +69,20 @@ final _morinNumbers = StreetNumbers(
   numbers: [
     DirectoryNumber(number: n('1'), position: _onMorin),
     DirectoryNumber(number: n('2')),
+  ],
+  invalidNumbers: 0,
+  duplicateNumbers: 0,
+);
+
+/// Rue Pasteur, three numbers.
+final _pasteurNumbers = StreetNumbers(
+  id: _pasteurId,
+  name: streetName('Rue Pasteur'),
+  commune: villefranche,
+  numbers: [
+    DirectoryNumber(number: n('1')),
+    DirectoryNumber(number: n('3')),
+    DirectoryNumber(number: n('5')),
   ],
   invalidNumbers: 0,
   duplicateNumbers: 0,
@@ -144,10 +164,18 @@ void main() {
       team(communes: [villefrancheCommune, gleizeCommune]),
     ]);
     directory = FakeAddressDirectory(
-      places: {_onMorin: Ok(_morinMatch), _onNationale: Ok(_nationaleMatch)},
-      streets: {_morinId: Ok(_morinNumbers)},
+      places: {
+        _onMorin: Ok(_morinMatch),
+        _onPasteur: Ok(_pasteurMatch),
+        _onNationale: Ok(_nationaleMatch),
+      },
+      streets: {_morinId: Ok(_morinNumbers), _pasteurId: Ok(_pasteurNumbers)},
+      searches: {
+        'morin': Ok([_morinMatch]),
+      },
     );
-    shapes = FakeStreetShapes(Ok(_morinRoad));
+    // OpenStreetMap knows Rue Pierre Morin, not Rue Pasteur.
+    shapes = FakeStreetShapes()..answers['Rue Pierre Morin'] = Ok(_morinRoad);
   });
 
   group('map', () {
@@ -160,10 +188,11 @@ void main() {
       expect(state.layers.lines.single.street, StreetId('nationale'));
       expect(state.layers.dots.single.street, StreetId('nationale'));
       expect(state.area, communesArea([villefrancheCommune, gleizeCommune]));
-      expect(state.card, isNull);
-      expect(state.selectedRoad, StreetShape.none);
-      expect(state.selectedPoint, isNull);
+      expect(state.picked, isEmpty);
+      expect(state.pickedRoads, isEmpty);
+      expect(state.lookingAt, isNull);
       expect(state.search, const NoStreetSearch());
+      expect(state.run, const AddIdle());
     });
 
     test('should draw « à faire » a street with nothing visited', () async {
@@ -224,62 +253,70 @@ void main() {
     });
   });
 
-  test('should keep showing the map when the tournée can no longer be '
+  test('should keep showing the map when the secteur can no longer be '
       'read', () async {
     sectors.watchError = StateError('removed');
     final container = phone();
     await pumpEventQueue();
 
-    notifierOf(container).tapStreet(StreetId('emile'));
+    final answer = notifierOf(container).tapStreet(StreetId('emile'));
 
-    final card = stateOf(container).card! as StreetCardInSector;
-    expect(card.id, StreetId('emile'));
+    expect(answer, const AlreadyInSector('Allée Émile Zola'));
     expect(stateOf(container).area, sectorArea([_nationale, _emile]));
   });
 
+  final morinRow = PickedStreetRow(
+    id: _morinId,
+    name: 'Rue Pierre Morin',
+    commune: 'Villefranche-sur-Saône',
+    numberCount: 2,
+  );
+  final pasteurRow = PickedStreetRow(
+    id: _pasteurId,
+    name: 'Rue Pasteur',
+    commune: 'Villefranche-sur-Saône',
+    numberCount: 3,
+  );
+
   group('a road tapped', () {
-    test('should show the card loading and mark the point', () async {
+    test('should mark the point while the street there is looked up', () async {
       final container = phone();
       await pumpEventQueue();
 
       unawaited(notifierOf(container).tapMap(_onMorin));
 
-      expect(stateOf(container).card, const StreetCardLoading());
-      expect(stateOf(container).selectedPoint, _onMorin);
+      expect(stateOf(container).lookingAt, _onMorin);
+      expect(stateOf(container).picked, isEmpty);
       expect(directory.pointsAsked, [_onMorin]);
     });
 
-    test('should show the card of a street to add, with its numbers', () async {
+    test('should tick a street the secteur does not have, with its '
+        'numbers', () async {
       final container = phone();
       await pumpEventQueue();
 
-      await notifierOf(container).tapMap(_onMorin);
+      final answer = await notifierOf(container).tapMap(_onMorin);
 
-      expect(
-        stateOf(container).card,
-        const StreetCardToAdd(
-          name: 'Rue Pierre Morin',
-          commune: 'Villefranche-sur-Saône',
-          numberCount: 2,
-        ),
-      );
+      expect(answer, const NothingToSay());
+      expect(stateOf(container).picked, [morinRow]);
+      expect(stateOf(container).lookingAt, isNull);
       expect(directory.streetsAsked, [_morinId]);
     });
 
-    test('should highlight the road once OpenStreetMap tells it', () async {
+    test('should draw its road with its ✓ once the map tells it', () async {
       final container = phone();
       await pumpEventQueue();
 
       await notifierOf(container).tapMap(_onMorin);
       await pumpEventQueue();
 
-      expect(stateOf(container).selectedRoad, _morinRoad);
-      expect(stateOf(container).selectedPoint, _onMorin);
+      expect(stateOf(container).pickedRoads, [
+        PickedRoad(street: _morinId, road: _morinRoad, mark: _onMorin),
+      ]);
       expect(shapes.askedNames, ['Rue Pierre Morin']);
     });
 
-    test('should mark only the point while OpenStreetMap does not '
-        'answer', () async {
+    test('should show only the ✓ while the map does not answer', () async {
       final answer = Completer<void>();
       shapes.whileAsked = () => answer.future;
       final container = phone();
@@ -288,34 +325,70 @@ void main() {
       await notifierOf(container).tapMap(_onMorin);
       await pumpEventQueue();
 
-      expect(stateOf(container).selectedRoad, StreetShape.none);
-      expect(stateOf(container).selectedPoint, _onMorin);
+      expect(stateOf(container).pickedRoads, [
+        PickedRoad(street: _morinId, road: StreetShape.none, mark: _onMorin),
+      ]);
       answer.complete();
     });
 
-    test('should mark only the point when OpenStreetMap fails', () async {
-      shapes.answer = const Err(StreetShapesFailure.serviceError);
+    test('should show only the ✓ when the map fails', () async {
+      shapes.answers['Rue Pierre Morin'] = const Err(
+        StreetShapesFailure.serviceError,
+      );
       final container = phone();
       await pumpEventQueue();
 
       await notifierOf(container).tapMap(_onMorin);
       await pumpEventQueue();
 
-      expect(stateOf(container).selectedRoad, StreetShape.none);
-      expect(stateOf(container).selectedPoint, _onMorin);
+      expect(stateOf(container).pickedRoads.single.road, StreetShape.none);
+      expect(stateOf(container).picked, [morinRow]);
     });
 
-    test('should show the card of the tournée\'s street at the point, with '
-        'its road', () async {
+    test('should add up the streets tapped, in the order they were', () async {
+      final container = phone();
+      await pumpEventQueue();
+      final notifier = notifierOf(container);
+
+      await notifier.tapMap(_onPasteur);
+      await notifier.tapMap(_onMorin);
+      await pumpEventQueue();
+
+      expect(stateOf(container).picked, [pasteurRow, morinRow]);
+      expect(stateOf(container).pickedRoads, [
+        PickedRoad(
+          street: _pasteurId,
+          road: StreetShape.none,
+          mark: _onPasteur,
+        ),
+        PickedRoad(street: _morinId, road: _morinRoad, mark: _onMorin),
+      ]);
+    });
+
+    test('should untick a ticked street tapped again', () async {
+      final container = phone();
+      await pumpEventQueue();
+      final notifier = notifierOf(container);
+      await notifier.tapMap(_onPasteur);
+      await notifier.tapMap(_onMorin);
+
+      final answer = await notifier.tapMap(_onMorin);
+
+      expect(answer, const NothingToSay());
+      expect(stateOf(container).picked, [pasteurRow]);
+      expect(stateOf(container).pickedRoads.single.street, _pasteurId);
+    });
+
+    test('should tick nothing on a street of the secteur, and say it is in '
+        'it already', () async {
       final container = phone();
       await pumpEventQueue();
 
-      await notifierOf(container).tapMap(_onNationale);
+      final answer = await notifierOf(container).tapMap(_onNationale);
 
-      final state = stateOf(container);
-      final card = state.card! as StreetCardInSector;
-      expect(card.id, StreetId('nationale'));
-      expect(state.selectedRoad, _nationaleRoad);
+      expect(answer, const AlreadyInSector('Rue Nationale'));
+      expect(stateOf(container).picked, isEmpty);
+      expect(stateOf(container).lookingAt, isNull);
       expect(shapes.asked, isEmpty);
     });
 
@@ -326,25 +399,21 @@ void main() {
       final container = phone();
       await pumpEventQueue();
 
-      await notifierOf(container).tapMap(_onMorin);
+      final answer = await notifierOf(container).tapMap(_onMorin);
 
-      expect(
-        stateOf(container).card,
-        const StreetCardFailed(LookUpProblem.noNetwork),
-      );
-      expect(stateOf(container).selectedPoint, _onMorin);
+      expect(answer, const LookUpFailed(LookUpProblem.noNetwork));
+      expect(stateOf(container).picked, isEmpty);
+      expect(stateOf(container).lookingAt, isNull);
     });
 
     test('should say the BAN knows no street there', () async {
       final container = phone();
       await pumpEventQueue();
 
-      await notifierOf(container).tapMap(_nowhere);
+      final answer = await notifierOf(container).tapMap(_nowhere);
 
-      expect(
-        stateOf(container).card,
-        const StreetCardFailed(LookUpProblem.noStreetHere),
-      );
+      expect(answer, const LookUpFailed(LookUpProblem.noStreetHere));
+      expect(stateOf(container).picked, isEmpty);
     });
 
     test('should say the address service failed', () async {
@@ -355,45 +424,76 @@ void main() {
       final container = phone();
       await pumpEventQueue();
 
-      await notifierOf(container).tapMap(_onMorin);
+      final answer = await notifierOf(container).tapMap(_onMorin);
 
-      expect(
-        stateOf(container).card,
-        const StreetCardFailed(LookUpProblem.serviceError),
-      );
+      expect(answer, const LookUpFailed(LookUpProblem.serviceError));
     });
 
-    test('should keep the last card asked when an earlier answer comes '
-        'late', () async {
-      directory.holdStreet(_morinId);
+    test('should keep the point of the last tap while an earlier one is '
+        'answered, and tick both', () async {
+      directory
+        ..holdStreet(_morinId)
+        ..holdStreet(_pasteurId);
       final container = phone();
       await pumpEventQueue();
       final notifier = notifierOf(container);
-      final late = notifier.tapMap(_onMorin);
+      final first = notifier.tapMap(_onMorin);
+      final last = notifier.tapMap(_onPasteur);
       await pumpEventQueue();
 
-      notifier.tapStreet(StreetId('emile'));
       directory.releaseStreet(_morinId);
-      await late;
+      await first;
 
-      final card = stateOf(container).card! as StreetCardInSector;
-      expect(card.id, StreetId('emile'));
-      expect(shapes.asked, isEmpty);
+      expect(stateOf(container).lookingAt, _onPasteur);
+      expect(stateOf(container).picked, [morinRow]);
+
+      directory.releaseStreet(_pasteurId);
+      await last;
+
+      expect(stateOf(container).lookingAt, isNull);
+      expect(stateOf(container).picked, [morinRow, pasteurRow]);
     });
 
-    test('should drop the road of a card replaced meanwhile', () async {
+    test(
+      'should tick nothing for a tap answered after « Tout décocher »',
+      () async {
+        directory.holdStreet(_morinId);
+        final container = phone();
+        await pumpEventQueue();
+        final notifier = notifierOf(container);
+        final late = notifier.tapMap(_onMorin);
+        await pumpEventQueue();
+
+        notifier.untickAll();
+        expect(stateOf(container).lookingAt, isNull);
+        directory.releaseStreet(_morinId);
+
+        expect(await late, const NothingToSay());
+        expect(stateOf(container).picked, isEmpty);
+        expect(stateOf(container).lookingAt, isNull);
+      },
+    );
+
+    test('should drop the road of a street unticked meanwhile', () async {
       final answer = Completer<void>();
       shapes.whileAsked = () => answer.future;
       final container = phone();
       await pumpEventQueue();
       final notifier = notifierOf(container);
+      await notifier.tapMap(_onPasteur);
       await notifier.tapMap(_onMorin);
 
-      notifier.tapStreet(StreetId('emile'));
+      notifier.untick(_morinId);
       answer.complete();
       await pumpEventQueue();
 
-      expect(stateOf(container).selectedRoad, StreetShape.none);
+      expect(stateOf(container).pickedRoads, [
+        PickedRoad(
+          street: _pasteurId,
+          road: StreetShape.none,
+          mark: _onPasteur,
+        ),
+      ]);
     });
 
     test(
@@ -408,257 +508,100 @@ void main() {
         container.dispose();
         directory.releaseStreet(_morinId);
 
-        await expectLater(late, completes);
+        expect(await late, const NothingToSay());
       },
     );
+
+    test('should drop a road that comes once the screen is closed', () async {
+      final answer = Completer<void>();
+      shapes.whileAsked = () => answer.future;
+      final container = phone();
+      await pumpEventQueue();
+      await notifierOf(container).tapMap(_onMorin);
+
+      container.dispose();
+      answer.complete();
+
+      await expectLater(pumpEventQueue(), completes);
+    });
   });
 
-  group('a street of the tournée tapped', () {
-    test('should show its card at once, with its road', () async {
+  group('a street of the secteur tapped', () {
+    test('should say at once that it is in the secteur, ticking '
+        'nothing', () async {
       final container = phone();
       await pumpEventQueue();
 
-      notifierOf(container).tapStreet(StreetId('nationale'));
+      final answer = notifierOf(container).tapStreet(StreetId('emile'));
 
-      final state = stateOf(container);
-      expect(
-        state.card,
-        StreetCardInSector(
-          id: StreetId('nationale'),
-          name: 'Rue Nationale',
-          commune: 'Villefranche-sur-Saône',
-          done: 0,
-          total: 1,
-        ),
-      );
-      expect(state.selectedRoad, _nationaleRoad);
-      expect(state.selectedPoint, isNull);
+      expect(answer, const AlreadyInSector('Allée Émile Zola'));
+      expect(stateOf(container).picked, isEmpty);
       expect(directory.pointsAsked, isEmpty);
     });
 
-    test('should show nothing for a street no longer on the phone', () async {
+    test('should say nothing for a street no longer on the phone', () async {
       final container = phone();
       await pumpEventQueue();
 
-      notifierOf(container).tapStreet(StreetId('gone'));
+      final answer = notifierOf(container).tapStreet(StreetId('gone'));
 
-      expect(stateOf(container).card, isNull);
-    });
-
-    test('should close the card once the street went to the '
-        'Corbeille', () async {
-      final container = phone();
-      await pumpEventQueue();
-      notifierOf(container).tapStreet(StreetId('emile'));
-
-      final (deleted, change) = _emile.delete(by: _me, at: twoPm);
-      await streets.save(deleted, change);
-      await pumpEventQueue();
-
-      expect(stateOf(container).card, isNull);
-    });
-
-    test('should keep the card when another street changes', () async {
-      final container = phone();
-      await pumpEventQueue();
-      notifierOf(container).tapStreet(StreetId('emile'));
-
-      final (deleted, change) = _nationale.delete(by: _me, at: twoPm);
-      await streets.save(deleted, change);
-      await pumpEventQueue();
-
-      expect(
-        (stateOf(container).card! as StreetCardInSector).id,
-        StreetId('emile'),
-      );
+      expect(answer, const NothingToSay());
     });
   });
 
-  test('should close the card, its road and its point', () async {
-    final container = phone();
-    await pumpEventQueue();
-    final notifier = notifierOf(container);
-    await notifier.tapMap(_onMorin);
-    await pumpEventQueue();
+  group('unticking', () {
+    test('should untick only the street of the ✕', () async {
+      final container = phone();
+      await pumpEventQueue();
+      final notifier = notifierOf(container);
+      await notifier.tapMap(_onMorin);
+      await notifier.tapMap(_onPasteur);
 
-    notifier.closeCard();
+      notifier.untick(_morinId);
 
-    final state = stateOf(container);
-    expect(state.card, isNull);
-    expect(state.selectedRoad, StreetShape.none);
-    expect(state.selectedPoint, isNull);
+      expect(stateOf(container).picked, [pasteurRow]);
+      expect(stateOf(container).pickedRoads.single.street, _pasteurId);
+    });
+
+    test('should untick every street with « Tout décocher »', () async {
+      final container = phone();
+      await pumpEventQueue();
+      final notifier = notifierOf(container);
+      await notifier.tapMap(_onMorin);
+      await notifier.tapMap(_onPasteur);
+
+      notifier.untickAll();
+
+      expect(stateOf(container).picked, isEmpty);
+      expect(stateOf(container).pickedRoads, isEmpty);
+    });
   });
 
-  group('adding the street of the card', () {
-    test('should add it to the secteur with « Ajouter au secteur », with '
-        'the road found', () async {
-      final container = phone();
-      await pumpEventQueue();
-      final notifier = notifierOf(container);
-      await notifier.tapMap(_onMorin);
-      // The road comes.
-      await pumpEventQueue();
+  group('adding', () {
+    /// Rue Brisée: the BAN gives its 1 twice, which no street can take.
+    final brokenId = BanStreetId('69264_9999');
+    final onBroken = at(45.98600, 4.71900);
+    final brokenRow = PickedStreetRow(
+      id: brokenId,
+      name: 'Rue Brisée',
+      commune: 'Villefranche-sur-Saône',
+      numberCount: 2,
+    );
 
-      await notifier.add();
-      await pumpEventQueue();
-
-      final added = streets.added.single;
-      expect(added.banId, _morinId);
-      expect(added.shape, _morinRoad);
-      // Asked once, for the card; the street was stored with it, and needs
-      // no other write.
-      expect(shapes.asked, hasLength(1));
-      expect(streets.saved, isEmpty);
-      final card = stateOf(container).card! as StreetCardInSector;
-      expect(card.id, added.id);
-      expect(card.name, 'Rue Pierre Morin');
-      expect(stateOf(container).selectedRoad, _morinRoad);
-    });
-
-    test('should add the street at once while its road is awaited, and '
-        'give it the road once it comes', () async {
-      final answer = Completer<void>();
-      shapes.whileAsked = () => answer.future;
-      final container = phone();
-      await pumpEventQueue();
-      final notifier = notifierOf(container);
-      await notifier.tapMap(_onMorin);
-
-      await notifier.add();
-
-      final added = streets.added.single;
-      expect(added.shape, StreetShape.none);
-      expect((stateOf(container).card! as StreetCardInSector).id, added.id);
-      expect(stateOf(container).selectedRoad, StreetShape.none);
-
-      answer.complete();
-      await pumpEventQueue();
-
-      expect(streets[added.id]!.shape, _morinRoad);
-      expect(stateOf(container).selectedRoad, _morinRoad);
-      // The card's answer, not a second question.
-      expect(shapes.asked, hasLength(1));
-    });
-
-    test('should give the street the road that came while it was being '
-        'added', () async {
-      final answer = Completer<void>();
-      shapes.whileAsked = () => answer.future;
-      streets.holdAdds = Completer();
-      final container = phone();
-      await pumpEventQueue();
-      final notifier = notifierOf(container);
-      await notifier.tapMap(_onMorin);
-      final adding = notifier.add();
-      answer.complete();
-      await pumpEventQueue();
-      // The road shows already, the street is not stored yet.
-      expect(stateOf(container).selectedRoad, _morinRoad);
-      expect(streets.added, isEmpty);
-
-      streets.holdAdds!.complete();
-      await adding;
-      await pumpEventQueue();
-
-      final added = streets.added.single;
-      expect(added.shape, StreetShape.none);
-      expect(streets[added.id]!.shape, _morinRoad);
-    });
-
-    test('should show the street being added, and add it once on a second '
-        'tap', () async {
-      streets.holdAdds = Completer();
-      final container = phone();
-      await pumpEventQueue();
-      final notifier = notifierOf(container);
-      await notifier.tapMap(_onMorin);
-
-      final adding = notifier.add();
-      await pumpEventQueue();
-
-      expect(
-        stateOf(container).card,
-        const StreetCardToAdd(
-          name: 'Rue Pierre Morin',
-          commune: 'Villefranche-sur-Saône',
-          numberCount: 2,
-          adding: true,
-        ),
-      );
-      await notifier.add();
-      streets.holdAdds!.complete();
-      await adding;
-
-      expect(streets.added, hasLength(1));
-    });
-
-    test('should add the street without road when the map failed for the '
-        'card', () async {
-      shapes.answer = const Err(StreetShapesFailure.noNetwork);
-      final container = phone();
-      await pumpEventQueue();
-      final notifier = notifierOf(container);
-      await notifier.tapMap(_onMorin);
-      await pumpEventQueue();
-
-      await notifier.add();
-      await pumpEventQueue();
-
-      expect(streets.added.single.shape, StreetShape.none);
-      expect(streets.saved, isEmpty);
-      // Not asked again: the street gets its road later, from Accueil.
-      expect(shapes.asked, hasLength(1));
-    });
-
-    test('should store nothing more when the map has no road for the '
-        'street added', () async {
-      final answer = Completer<void>();
-      shapes
-        ..answer = const Ok(StreetShape.none)
-        ..whileAsked = () => answer.future;
-      final container = phone();
-      await pumpEventQueue();
-      final notifier = notifierOf(container);
-      await notifier.tapMap(_onMorin);
-      await notifier.add();
-
-      answer.complete();
-      await pumpEventQueue();
-
-      expect(streets.saved, isEmpty);
-    });
-
-    test('should show the tournée\'s street when a teammate added it '
-        'meanwhile', () async {
-      final container = phone();
-      await pumpEventQueue();
-      final notifier = notifierOf(container);
-      await notifier.tapMap(_onMorin);
-      final teammates = valueOf(
-        Street.create(
-          id: StreetId('by-paul'),
-          name: 'Rue Pierre Morin',
-          commune: villefranche,
-          banId: _morinId,
-        ),
-      );
-      await streets.add(teammates);
-
-      await notifier.add();
-
-      final card = stateOf(container).card! as StreetCardInSector;
-      expect(card.id, StreetId('by-paul'));
-      expect(streets.added, [teammates]);
-    });
-
-    test('should say so when the numbers cannot make a street', () async {
+    setUp(() {
       directory = FakeAddressDirectory(
-        places: {_onMorin: Ok(_morinMatch)},
+        places: {
+          _onMorin: Ok(_morinMatch),
+          _onPasteur: Ok(_pasteurMatch),
+          onBroken: Ok(_match(brokenId, 'Rue Brisée', onBroken)),
+        },
         streets: {
-          _morinId: Ok(
+          _morinId: Ok(_morinNumbers),
+          _pasteurId: Ok(_pasteurNumbers),
+          brokenId: Ok(
             StreetNumbers(
-              id: _morinId,
-              name: streetName('Rue Pierre Morin'),
+              id: brokenId,
+              name: streetName('Rue Brisée'),
               commune: villefranche,
               numbers: [
                 DirectoryNumber(number: n('1')),
@@ -670,85 +613,239 @@ void main() {
           ),
         },
       );
+    });
+
+    test('should add every street ticked, in order, each with its road '
+        'when known, and say how many', () async {
       final container = phone();
       await pumpEventQueue();
       final notifier = notifierOf(container);
       await notifier.tapMap(_onMorin);
+      await notifier.tapMap(_onPasteur);
+      await pumpEventQueue();
 
-      await notifier.add();
+      final added = await notifier.add();
 
+      expect(added, 2);
       expect(
-        stateOf(container).card,
-        const StreetCardToAdd(
-          name: 'Rue Pierre Morin',
-          commune: 'Villefranche-sur-Saône',
-          numberCount: 2,
-          addFailed: true,
-        ),
+        [for (final street in streets.added) street.banId],
+        [_morinId, _pasteurId],
       );
-      expect(streets.added, isEmpty);
+      expect(streets.added.first.name.text, 'Rue Pierre Morin');
+      expect(streets.added.first.shape, _morinRoad);
+      expect(streets.added.last.shape, StreetShape.none);
+      expect(streets.added.last.houses, hasLength(3));
+      expect(stateOf(container).picked, isEmpty);
+      expect(stateOf(container).run, const AddIdle());
     });
 
-    test('should add nothing without a street to add on the card', () async {
-      final container = phone();
-      await pumpEventQueue();
-      final notifier = notifierOf(container)..tapStreet(StreetId('nationale'));
-
-      await notifier.add();
-
-      expect(streets.added, isEmpty);
-    });
-
-    test('should keep another card asked while the street was '
-        'added', () async {
-      streets.holdAdds = Completer();
+    test('should tell the progress while adding', () async {
       final container = phone();
       await pumpEventQueue();
       final notifier = notifierOf(container);
       await notifier.tapMap(_onMorin);
+      await notifier.tapMap(_onPasteur);
+      final runs = <AddRun>[];
+      container.listen(
+        addStreetsMapProvider.select((state) => state.run),
+        (_, run) => runs.add(run),
+      );
+
+      await notifier.add();
+
+      expect(runs, [
+        const AddRunning(0, 2),
+        const AddRunning(1, 2),
+        const AddRunning(2, 2),
+        const AddIdle(),
+      ]);
+    });
+
+    test('should add a street at once while its road is awaited', () async {
+      final answer = Completer<void>();
+      shapes.whileAsked = () => answer.future;
+      final container = phone();
+      await pumpEventQueue();
+      final notifier = notifierOf(container);
+      await notifier.tapMap(_onMorin);
+
+      expect(await notifier.add(), 1);
+
+      expect(streets.added.single.shape, StreetShape.none);
+      answer.complete();
+    });
+
+    test('should add a street with the road that came after the button was '
+        'pressed', () async {
+      final road = Completer<void>();
+      shapes.whileAsked = () => road.future;
+      final container = phone();
+      await pumpEventQueue();
+      final notifier = notifierOf(container);
+      await notifier.tapMap(_onPasteur);
+      await notifier.tapMap(_onMorin);
+      final stored = Completer<void>();
+      streets.holdAdds = stored;
       final adding = notifier.add();
       await pumpEventQueue();
 
-      notifier.tapStreet(StreetId('emile'));
-      streets.holdAdds!.complete();
+      road.complete();
+      await pumpEventQueue();
+      stored.complete();
       await adding;
 
-      expect(streets.added, hasLength(1));
-      expect(
-        (stateOf(container).card! as StreetCardInSector).id,
-        StreetId('emile'),
-      );
+      expect(streets.added.last.banId, _morinId);
+      expect(streets.added.last.shape, _morinRoad);
     });
 
-    test('should still add the street when the screen closes', () async {
-      streets.holdAdds = Completer();
+    test('should keep ticked the streets that failed, and say how '
+        'many', () async {
+      final container = phone();
+      await pumpEventQueue();
+      final notifier = notifierOf(container);
+      await notifier.tapMap(onBroken);
+      await notifier.tapMap(_onMorin);
+
+      final added = await notifier.add();
+
+      expect(added, isNull);
+      expect(stateOf(container).picked, [brokenRow]);
+      expect(stateOf(container).run, const AddFailed(1));
+      expect(streets.added.single.banId, _morinId);
+    });
+
+    test('should forget the failure once the ticks change', () async {
+      final container = phone();
+      await pumpEventQueue();
+      final notifier = notifierOf(container);
+      await notifier.tapMap(onBroken);
+      await notifier.add();
+
+      await notifier.tapMap(_onMorin);
+
+      expect(stateOf(container).run, const AddIdle());
+      expect(stateOf(container).picked, [brokenRow, morinRow]);
+    });
+
+    test('should count a street a teammate added meanwhile', () async {
       final container = phone();
       await pumpEventQueue();
       final notifier = notifierOf(container);
       await notifier.tapMap(_onMorin);
+      await streets.add(
+        valueOf(
+          Street.create(
+            id: StreetId('morin-by-manu'),
+            name: 'Rue Pierre Morin',
+            commune: villefranche,
+            banId: _morinId,
+            houses: [House(number: n('1'))],
+          ),
+        ),
+      );
+
+      expect(await notifier.add(), 1);
+
+      expect(
+        [for (final street in streets.added) street.id.value],
+        ['morin-by-manu'],
+      );
+      expect(stateOf(container).picked, isEmpty);
+    });
+
+    test('should add nothing with nothing ticked', () async {
+      final container = phone();
+      await pumpEventQueue();
+
+      expect(await notifierOf(container).add(), isNull);
+
+      expect(streets.added, isEmpty);
+      expect(stateOf(container).run, const AddIdle());
+    });
+
+    test('should add once on a second press while adding', () async {
+      final stored = Completer<void>();
+      final container = phone();
+      await pumpEventQueue();
+      final notifier = notifierOf(container);
+      await notifier.tapMap(_onMorin);
+      streets.holdAdds = stored;
+      final first = notifier.add();
+
+      expect(await notifier.add(), isNull);
+      stored.complete();
+
+      expect(await first, 1);
+      expect(streets.added, hasLength(1));
+    });
+
+    test('should keep the ticks as they are while adding', () async {
+      final stored = Completer<void>();
+      final container = phone();
+      await pumpEventQueue();
+      final notifier = notifierOf(container);
+      await notifier.tapMap(_onMorin);
+      streets.holdAdds = stored;
+      final adding = notifier.add();
+      await pumpEventQueue();
+
+      final answer = await notifier.tapMap(_onPasteur);
+      notifier
+        ..untick(_morinId)
+        ..untickAll();
+
+      expect(answer, const NothingToSay());
+      expect(directory.pointsAsked, [_onMorin]);
+      expect(stateOf(container).picked, [morinRow]);
+      expect(stateOf(container).run, const AddRunning(0, 1));
+      stored.complete();
+      await adding;
+    });
+
+    test('should tick nothing for a tap answered while adding', () async {
+      directory.holdStreet(_pasteurId);
+      final stored = Completer<void>();
+      final container = phone();
+      await pumpEventQueue();
+      final notifier = notifierOf(container);
+      await notifier.tapMap(_onMorin);
+      final late = notifier.tapMap(_onPasteur);
+      await pumpEventQueue();
+      streets.holdAdds = stored;
+      final adding = notifier.add();
+
+      directory.releaseStreet(_pasteurId);
+
+      expect(await late, const NothingToSay());
+      expect(stateOf(container).picked, [morinRow]);
+      stored.complete();
+      await adding;
+    });
+
+    test('should still add the streets when the screen closes', () async {
+      final stored = Completer<void>();
+      final container = phone();
+      await pumpEventQueue();
+      final notifier = notifierOf(container);
+      await notifier.tapMap(_onMorin);
+      await notifier.tapMap(_onPasteur);
+      streets.holdAdds = stored;
       final adding = notifier.add();
       await pumpEventQueue();
 
       container.dispose();
-      streets.holdAdds!.complete();
+      stored.complete();
       await adding;
 
-      expect(streets.added, hasLength(1));
+      expect(streets.added, hasLength(2));
     });
   });
 
   group('search', () {
-    final pasteurId = BanStreetId('69264_1200');
-    final pasteurMatch = _match(
-      pasteurId,
-      'Rue Pasteur',
-      at(45.98700, 4.72000),
-    );
-
-    test('should list the streets found in the tournée\'s communes', () async {
+    test('should list the streets found in the secteur\'s communes', () async {
       directory = FakeAddressDirectory(
         searches: {
-          'rue p': Ok([_morinMatch, pasteurMatch]),
+          'rue p': Ok([_morinMatch, _pasteurMatch]),
         },
       );
       final container = phone();
@@ -765,7 +862,7 @@ void main() {
             commune: 'Villefranche-sur-Saône',
           ),
           FoundStreetRow(
-            id: pasteurId,
+            id: _pasteurId,
             name: 'Rue Pasteur',
             commune: 'Villefranche-sur-Saône',
           ),
@@ -783,7 +880,7 @@ void main() {
       expect(stateOf(container).search, const SearchingStreets());
     });
 
-    test('should search the communes of the streets for a tournée without '
+    test('should search the communes of the streets for a secteur without '
         'commune', () async {
       sectors.put(team());
       final container = phone();
@@ -848,13 +945,6 @@ void main() {
     });
 
     test('should close the list when the map is tapped', () async {
-      directory = FakeAddressDirectory(
-        places: {_onMorin: Ok(_morinMatch)},
-        streets: {_morinId: Ok(_morinNumbers)},
-        searches: {
-          'morin': Ok([_morinMatch]),
-        },
-      );
       final container = phone();
       await pumpEventQueue();
       final notifier = notifierOf(container);
@@ -865,13 +955,8 @@ void main() {
       expect(stateOf(container).search, const NoStreetSearch());
     });
 
-    test('should close the list when a street of the tournée is '
+    test('should close the list when a street of the secteur is '
         'tapped', () async {
-      directory = FakeAddressDirectory(
-        searches: {
-          'morin': Ok([_morinMatch]),
-        },
-      );
       final container = phone();
       await pumpEventQueue();
       final notifier = notifierOf(container);
@@ -882,38 +967,39 @@ void main() {
       expect(stateOf(container).search, const NoStreetSearch());
     });
 
-    test('should move the map to the street picked and show its '
-        'card', () async {
-      directory = FakeAddressDirectory(
-        streets: {_morinId: Ok(_morinNumbers)},
-        searches: {
-          'morin': Ok([_morinMatch]),
-        },
-      );
+    test('should move the map to the street picked and tick it', () async {
       final container = phone();
       await pumpEventQueue();
       final notifier = notifierOf(container);
       await notifier.search('morin');
 
-      await notifier.pick(_morinId);
+      final answer = await notifier.pick(_morinId);
 
       final state = stateOf(container);
+      expect(answer, const NothingToSay());
       expect(state.search, const NoStreetSearch());
       expect(state.area, GeoBounds.around([_onMorin])!.expandedBy(200));
-      expect(state.selectedPoint, _onMorin);
-      expect((state.card! as StreetCardToAdd).name, 'Rue Pierre Morin');
+      expect(state.picked, [morinRow]);
+      expect(state.pickedRoads.single.mark, _onMorin);
       // The street is known: no point to look up.
       expect(directory.pointsAsked, isEmpty);
     });
 
+    test('should keep ticked a street picked again', () async {
+      final container = phone();
+      await pumpEventQueue();
+      final notifier = notifierOf(container);
+      await notifier.search('morin');
+      await notifier.pick(_morinId);
+      await notifier.search('morin');
+
+      await notifier.pick(_morinId);
+
+      expect(stateOf(container).picked, [morinRow]);
+    });
+
     test('should keep the map on the street picked as the team adds '
         'streets', () async {
-      directory = FakeAddressDirectory(
-        streets: {_morinId: Ok(_morinNumbers)},
-        searches: {
-          'morin': Ok([_morinMatch]),
-        },
-      );
       sectors.put(team());
       final container = phone();
       await pumpEventQueue();
@@ -934,9 +1020,10 @@ void main() {
       final container = phone();
       await pumpEventQueue();
 
-      await notifierOf(container).pick(_morinId);
+      final answer = await notifierOf(container).pick(_morinId);
 
-      expect(stateOf(container).card, isNull);
+      expect(answer, const NothingToSay());
+      expect(stateOf(container).picked, isEmpty);
       expect(directory.streetsAsked, isEmpty);
     });
   });

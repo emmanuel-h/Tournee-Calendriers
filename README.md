@@ -35,11 +35,12 @@ Start screen:
   of the secteur's communes (a chip per commune; a commune searched by name for a secteur
   without any) with their house numbers from the national address base (BAN), and adds
   them to the secteur, a street from the Corbeille coming back with its marks; « Carte »
-  (first) shows the secteur's map, opened on its communes: a tap on a road highlights it and
-  shows its street card (« Ajouter au secteur », or « Ouvrir » for a street of the
-  secteur), the search box finds a street of the communes by name, and
-  « Saisir une rue à la main » adds a street the map lacks, offline (« Connexion nécessaire
-  pour ajouter une rue » otherwise).
+  (first) shows the secteur's map, opened on its communes: a tap on a road ticks it (a ✓ on
+  its road; a second tap unticks it; a street of the secteur says it is in it already), the
+  search box finds a street of the communes by name and ticks it, and the sheet at the
+  bottom lists the streets ticked and adds them all at once (« Ajouter 3 rues »); « Rue
+  absente de la carte ? Saisir à la main » adds a street the map lacks, offline
+  (« Connexion nécessaire pour ajouter une rue. » otherwise).
 - Top bar: the open secteur (« Secteur 49 · 2026 » over its centre de secours), or the
   app's name when none is open, opens « Mes secteurs », to switch secteur (the app reopens
   the last one at launch, offline too) or create or join one, with a dot on another

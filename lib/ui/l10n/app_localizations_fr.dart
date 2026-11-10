@@ -2099,42 +2099,7 @@ class AppLocalizationsFr extends AppLocalizations {
       'Le service des adresses ne répond pas. Réessayez dans un moment.';
 
   @override
-  String get addStreetsManual => 'Saisir une rue à la main';
-
-  @override
   String get streetCardClose => 'Fermer';
-
-  @override
-  String get streetCardLoading => 'Recherche de la rue…';
-
-  @override
-  String streetCardNumbers(int count) {
-    String _temp0 = intl.Intl.pluralLogic(
-      count,
-      locale: localeName,
-      other: '$count numéros',
-      one: '1 numéro',
-      zero: 'Aucun numéro',
-    );
-    return '$_temp0';
-  }
-
-  @override
-  String get streetCardNotInSector => 'Pas encore dans le secteur';
-
-  @override
-  String get streetCardAdd => 'Ajouter au secteur';
-
-  @override
-  String get streetCardAdding => 'Ajout en cours…';
-
-  @override
-  String get streetCardAddFailed =>
-      'Les numéros donnés par la Base Adresse Nationale sont incohérents : la rue n\'a pas été ajoutée. Saisissez-la à la main.';
-
-  @override
-  String get streetCardManualLink =>
-      'Rue absente de la carte ? Saisir à la main';
 
   @override
   String streetCardProgress(int done, int total) {
@@ -2148,27 +2113,6 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get streetCardOpen => 'Ouvrir';
-
-  @override
-  String get streetCardNoNetwork => 'Connexion nécessaire pour ajouter une rue';
-
-  @override
-  String get streetCardNoNetworkHint =>
-      'Les rues déjà dans le secteur s\'ouvrent sans réseau.';
-
-  @override
-  String get streetCardNoStreetHere => 'Aucune rue connue ici';
-
-  @override
-  String get streetCardNoStreetHereHint =>
-      'Chemin privé, nouveau lotissement ? Saisissez la rue à la main.';
-
-  @override
-  String get streetCardServiceError => 'Le service des adresses ne répond pas';
-
-  @override
-  String get streetCardServiceErrorHint =>
-      'Réessayez dans un moment, ou saisissez la rue à la main.';
 
   @override
   String get manualTitle => 'Rue à la main';
@@ -2605,4 +2549,83 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get collecteUnavailable => 'La collecte ne peut pas être affichée.';
+
+  @override
+  String get addStreetsPickHint => 'Touchez les rues à ajouter.';
+
+  @override
+  String addStreetsPicked(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count rues sélectionnées',
+      one: '1 rue sélectionnée',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String addStreetsPickedFacts(String commune, String numbers) {
+    return '$commune · $numbers';
+  }
+
+  @override
+  String addStreetsNumbers(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count numéros',
+      one: '1 numéro',
+      zero: 'aucun numéro',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String addStreetsUntick(String name) {
+    return 'Retirer $name';
+  }
+
+  @override
+  String get addStreetsFold => 'Réduire la sélection';
+
+  @override
+  String get addStreetsUnfold => 'Afficher la sélection';
+
+  @override
+  String get addStreetsLookingUp => 'Recherche de la rue…';
+
+  @override
+  String addStreetsAlreadyIn(String name) {
+    return '$name est déjà dans le secteur.';
+  }
+
+  @override
+  String get addStreetsNoNetwork =>
+      'Connexion nécessaire pour ajouter une rue.';
+
+  @override
+  String get addStreetsNoStreetHere => 'Aucune rue connue ici.';
+
+  @override
+  String get addStreetsServiceError => 'Le service des adresses ne répond pas.';
+
+  @override
+  String get addStreetsManualAction => 'Saisir à la main';
+
+  @override
+  String get addStreetsManualLink =>
+      'Rue absente de la carte ? Saisir à la main';
+
+  @override
+  String addStreetsAddFailed(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count rues n\'ont pas pu être ajoutées : la Base Adresse Nationale donne des numéros incohérents. Saisissez-les à la main.',
+      one: '1 rue n\'a pas pu être ajoutée : la Base Adresse Nationale donne des numéros incohérents. Saisissez-la à la main.',
+    );
+    return '$_temp0';
+  }
 }

@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/presentation/import_streets/import_notifier.dart';
 import 'package:tournee_calendriers/presentation/import_streets/import_state.dart';
+import 'package:tournee_calendriers/ui/components/add_progress.dart';
 import 'package:tournee_calendriers/ui/components/app_buttons.dart';
 import 'package:tournee_calendriers/ui/components/filter_field.dart';
 import 'package:tournee_calendriers/ui/components/section_header.dart';
@@ -431,7 +432,11 @@ final class _Checklist extends ConsumerWidget {
             children: [
               ..._outcome(l10n, colors),
               if (state.run case ImportRunning(:final done, :final total))
-                _Progress(done: done, total: total)
+                AddProgress(
+                  key: const Key('import.progress'),
+                  done: done,
+                  total: total,
+                )
               else
                 PrimaryButton(
                   key: const Key('import.button'),
@@ -562,36 +567,6 @@ final class _Message extends StatelessWidget {
           ),
         ),
         ?action,
-      ],
-    ),
-  );
-}
-
-/// « Ajout en cours… 2/5 » over a bar, in place of the button.
-final class _Progress extends StatelessWidget {
-  const _Progress({required this.done, required this.total});
-
-  final int done;
-  final int total;
-
-  @override
-  Widget build(BuildContext context) => SizedBox(
-    height: AppSizes.buttonHeight,
-    child: Column(
-      key: const Key('import.progress'),
-      mainAxisAlignment: MainAxisAlignment.center,
-      crossAxisAlignment: CrossAxisAlignment.stretch,
-      spacing: 8,
-      children: [
-        Text(
-          AppLocalizations.of(context).addProgress(done, total),
-          textAlign: TextAlign.center,
-          style: AppTextStyles.fieldLabel,
-        ),
-        LinearProgressIndicator(
-          value: total == 0 ? null : done / total,
-          minHeight: AppSizes.progressBarHeight,
-        ),
       ],
     ),
   );

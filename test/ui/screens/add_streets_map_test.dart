@@ -1,11 +1,14 @@
-// The « Carte » tab of « Ajouter des rues » (PLAN §5.4, Pick mockup): the
-// street card in its four states, its loading and failures, the search and
-// « Saisir une rue à la main ».
+// The « Carte » tab of « Ajouter des rues » (PLAN §5.14, Pick mockup):
+// streets ticked on the map, the selection sheet, adding them at once, what
+// a tap says in a snackbar, the search and « Saisir une rue à la main ».
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
+import 'package:tournee_calendriers/domain/map/picked_road.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
@@ -17,6 +20,7 @@ import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/screens/add_streets/add_streets_screen.dart';
 import 'package:tournee_calendriers/ui/screens/add_streets/manual_street_screen.dart';
+import 'package:tournee_calendriers/ui/screens/team/team_screen.dart';
 
 import '../../domain/sector/my_sectors_fixtures.dart';
 import '../../domain/sector/sector_fixtures.dart';
@@ -34,9 +38,30 @@ import '../support/large_text.dart';
 import '../support/navigation.dart';
 
 final _bordelanId = BanStreetId('69264_0246');
+final _gareId = BanStreetId('69264_0800');
+final _brokenId = BanStreetId('69264_9999');
 
-/// Where the finger taps on Petit Chemin de Bordelan, not in the tournée.
+/// Where the finger taps on Petit Chemin de Bordelan, not in the secteur.
 final _onBordelan = at(45.98850, 4.72500);
+
+/// Where the finger taps on Rue de la Gare, not in the secteur either.
+final _onGare = at(45.98700, 4.72000);
+
+/// Where the finger taps on Rue Brisée, whose numbers the BAN gives twice.
+final _onBroken = at(45.98600, 4.71900);
+
+/// Where the finger taps on two more streets to add, Rue Victor Hugo and
+/// Rue Paul Bert.
+final _moreStreets = [at(45.98300, 4.71600), at(45.98200, 4.71500)];
+final _hugoId = BanStreetId('69264_1100');
+final _bertId = BanStreetId('69264_1300');
+
+/// Where the finger taps on a street whose numbers the BAN fails to give.
+final _onFailing = at(45.98400, 4.71700);
+final _failingId = BanStreetId('69264_0900');
+
+/// Where the finger taps on Rue des Lilas, in the secteur.
+final _onLilas = at(45.98950, 4.71800);
 
 /// Where the BAN cannot be reached, and where it knows no street.
 final _offline = at(45.99000, 4.72000);
@@ -49,16 +74,39 @@ final _bordelanMatch = StreetMatch(
   position: _onBordelan,
 );
 
+StreetMatch _matchOf(BanStreetId id, String name, GeoPoint position) =>
+    StreetMatch(
+      id: id,
+      name: streetName(name),
+      commune: villefranche,
+      position: position,
+    );
+
+StreetNumbers _numbersOf(BanStreetId id, String name, List<String> numbers) =>
+    StreetNumbers(
+      id: id,
+      name: streetName(name),
+      commune: villefranche,
+      numbers: [
+        for (final number in numbers) DirectoryNumber(number: n(number)),
+      ],
+      invalidNumbers: 0,
+      duplicateNumbers: 0,
+    );
+
 final _road = StreetShape([
   [at(45.98800, 4.72500), at(45.98900, 4.72500)],
 ]);
 
+final _lilasId = BanStreetId('69264_0500');
+
 /// A street of the secteur with 2 doors, the first done.
-Street _street(String id, String name) => valueOf(
+Street _street(String id, String name, {BanStreetId? banId}) => valueOf(
   Street.create(
     id: StreetId(id),
     name: name,
     commune: villefranche,
+    banId: banId,
     houses: [
       House(number: n('1'), status: VisitStatus.done),
       House(number: n('2')),
@@ -80,25 +128,33 @@ void main() {
     addTearDown(tester.view.reset);
     streets = FakeStreetRepository([
       _street('morin', 'Rue Pierre Morin'),
-      _street('lilas', 'Rue des Lilas'),
+      _street('lilas', 'Rue des Lilas', banId: _lilasId),
       _street('carnot', 'Rue Carnot'),
     ]);
     directory = FakeAddressDirectory(
       places: {
         _onBordelan: Ok(_bordelanMatch),
+        _onGare: Ok(_matchOf(_gareId, 'Rue de la Gare', _onGare)),
+        _onBroken: Ok(_matchOf(_brokenId, 'Rue Brisée', _onBroken)),
+        _onLilas: Ok(_matchOf(_lilasId, 'Rue des Lilas', _onLilas)),
+        _onFailing: Ok(_matchOf(_failingId, 'Rue du Port', _onFailing)),
+        _moreStreets[0]: Ok(
+          _matchOf(_hugoId, 'Rue Victor Hugo', _moreStreets[0]),
+        ),
+        _moreStreets[1]: Ok(
+          _matchOf(_bertId, 'Rue Paul Bert', _moreStreets[1]),
+        ),
         _offline: const Err(AddressDirectoryFailure.noNetwork),
       },
       streets: {
         _bordelanId: Ok(
-          StreetNumbers(
-            id: _bordelanId,
-            name: streetName('Petit Chemin de Bordelan'),
-            commune: villefranche,
-            numbers: [DirectoryNumber(number: n('1'))],
-            invalidNumbers: 0,
-            duplicateNumbers: 0,
-          ),
+          _numbersOf(_bordelanId, 'Petit Chemin de Bordelan', ['1']),
         ),
+        _gareId: Ok(_numbersOf(_gareId, 'Rue de la Gare', ['1', '2', '3'])),
+        _brokenId: Ok(_numbersOf(_brokenId, 'Rue Brisée', ['1', '1'])),
+        _failingId: const Err(AddressDirectoryFailure.serviceError),
+        _hugoId: Ok(_numbersOf(_hugoId, 'Rue Victor Hugo', ['2'])),
+        _bertId: Ok(_numbersOf(_bertId, 'Rue Paul Bert', ['4'])),
       },
       searches: {
         'bordelan': Ok([_bordelanMatch]),
@@ -110,7 +166,8 @@ void main() {
         overrides: fakePhone(
           streets: streets,
           directory: directory,
-          shapes: FakeStreetShapes(Ok(_road)),
+          shapes: FakeStreetShapes()
+            ..answers['Petit Chemin de Bordelan'] = Ok(_road),
           member: leaId,
           sectors: FakeSectorRepository([
             team(communes: [villefrancheCommune]),
@@ -137,157 +194,271 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  Finder card() => find.byKey(const Key('streetCard'));
-  Finder button(String key) => find.byKey(Key('streetCard.$key'));
+  Finder sheet() => find.byKey(const Key('addStreets.sheet'));
+  Finder row(BanStreetId id) =>
+      find.byKey(ValueKey('addStreets.row.${id.value}'));
 
-  testWidgets('should open on the map, under the search box and « Saisir '
-      'une rue à la main »', (tester) async {
+  testWidgets('should open on the map under the search box, with the sheet '
+      'saying what to do', (tester) async {
     await pumpMap(tester);
 
     expect(find.byType(AddStreetsScreen), findsOneWidget);
     expect(find.byType(FakeMapView), findsOneWidget);
     expect(find.text('Rechercher une rue'), findsOneWidget);
-    expect(find.text('Saisir une rue à la main'), findsOneWidget);
-    expect(card(), findsNothing);
+    expect(find.text('Touchez les rues à ajouter.'), findsOneWidget);
+    expect(
+      find.text('Rue absente de la carte ? Saisir à la main'),
+      findsOneWidget,
+    );
+    expect(find.byKey(const Key('addStreets.add')), findsNothing);
+    expect(find.byType(OutlinedButton), findsNothing);
+    expect(shownMap(tester).pickedRoads, isEmpty);
   });
 
-  group('street card', () {
-    testWidgets('should offer to add a street the secteur does not have, '
-        'and add it with « Ajouter au secteur »', (tester) async {
-      await pumpMap(tester);
+  testWidgets('should tick the road tapped, on the map and in the '
+      'sheet', (tester) async {
+    await pumpMap(tester);
 
-      await tapRoad(tester, _onBordelan);
+    await tapRoad(tester, _onBordelan);
 
-      expect(find.text('Petit Chemin de Bordelan'), findsOneWidget);
-      expect(find.text('Villefranche-sur-Saône'), findsOneWidget);
-      expect(find.text('1 numéro'), findsOneWidget);
-      expect(find.text('Pas encore dans le secteur'), findsOneWidget);
-      expect(find.textContaining('attribuer'), findsNothing);
-      expect(
-        find.text('Rue absente de la carte ? Saisir à la main'),
-        findsOneWidget,
-      );
-      expect(shownMap(tester).selectedRoad, _road);
-      expect(shownMap(tester).selectedPoint, _onBordelan);
+    expect(find.text('1 rue sélectionnée'), findsOneWidget);
+    expect(
+      find.descendant(
+        of: row(_bordelanId),
+        matching: find.text('Petit Chemin de Bordelan'),
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Villefranche-sur-Saône · 1 numéro'), findsOneWidget);
+    expect(find.text('Ajouter 1 rue'), findsOneWidget);
+    expect(shownMap(tester).pickedRoads, [
+      PickedRoad(street: _bordelanId, road: _road, mark: _onBordelan),
+    ]);
+    expect(shownMap(tester).selectedPoint, isNull);
+  });
 
-      await tester.tap(button('add'));
-      await tester.pumpAndSettle();
+  testWidgets('should add the streets ticked at once, then go back to '
+      'Secteur and say how many', (tester) async {
+    await pumpMap(tester);
+    await tapRoad(tester, _onBordelan);
+    await tapRoad(tester, _onGare);
+    expect(find.text('2 rues sélectionnées'), findsOneWidget);
 
-      final added = streets.added.single;
-      expect(added.banId, _bordelanId);
-      expect(find.text('0/1 faits'), findsOneWidget);
-      expect(button('open'), findsOneWidget);
-    });
+    await tester.tap(find.text('Ajouter 2 rues'));
+    await tester.pumpAndSettle();
 
-    testWidgets('should offer only « Ouvrir » for a street of the '
-        'secteur', (tester) async {
-      await pumpMap(tester);
+    expect(find.byType(AddStreetsScreen), findsNothing);
+    expect(find.byType(TeamScreen), findsOneWidget);
+    expect(find.text('2 rues ajoutées au secteur'), findsOneWidget);
+    expect(
+      [for (final street in streets.added) street.name.text],
+      ['Petit Chemin de Bordelan', 'Rue de la Gare'],
+    );
+  });
 
-      await tapStreet(tester, 'lilas');
+  testWidgets('should tell the progress while the streets are '
+      'added', (tester) async {
+    await pumpMap(tester);
+    await tapRoad(tester, _onBordelan);
+    await tapRoad(tester, _onGare);
+    final stored = Completer<void>();
+    streets.holdAdds = stored;
 
-      expect(find.text('Rue des Lilas'), findsWidgets);
-      expect(find.text('1/2 faits'), findsOneWidget);
-      for (final gone in [
-        'Libre',
-        "Me l'attribuer",
-        'La faire aussi',
-        'Ne plus la faire',
-      ]) {
-        expect(find.text(gone), findsNothing, reason: gone);
-      }
+    await tester.tap(find.text('Ajouter 2 rues'));
+    await tester.pump();
 
-      await tester.tap(button('open'));
-      await tester.pumpAndSettle();
+    expect(find.text('Ajout en cours… 0/2'), findsOneWidget);
+    expect(find.byKey(const Key('addStreets.add')), findsNothing);
 
-      expect(find.widgetWithText(AppBar, 'Rue des Lilas'), findsOneWidget);
-    });
+    // No way back meanwhile.
+    await tester.binding.handlePopRoute();
+    await tester.pump();
+    expect(find.byType(AddStreetsScreen), findsOneWidget);
 
-    testWidgets('should keep the map clear of the card', (tester) async {
-      await pumpMap(tester);
+    stored.complete();
+    await tester.pumpAndSettle();
+    expect(find.byType(AddStreetsScreen), findsNothing);
+  });
 
-      await tapStreet(tester, 'carnot');
+  testWidgets('should keep a street that failed ticked, and say why', (
+    tester,
+  ) async {
+    await pumpMap(tester);
+    await tapRoad(tester, _onBroken);
+    await tapRoad(tester, _onBordelan);
 
-      expect(shownMap(tester).padding.bottom, tester.getSize(card()).height);
-    });
+    await tester.tap(find.text('Ajouter 2 rues'));
+    await tester.pumpAndSettle();
 
-    testWidgets('should say a connection is needed offline, and offer the '
-        'manual entry', (tester) async {
-      await pumpMap(tester);
+    expect(find.byType(AddStreetsScreen), findsOneWidget);
+    expect(find.text('1 rue sélectionnée'), findsOneWidget);
+    expect(row(_brokenId), findsOneWidget);
+    expect(row(_bordelanId), findsNothing);
+    expect(
+      find.text(
+        "1 rue n'a pas pu être ajoutée : la Base Adresse Nationale "
+        'donne des numéros incohérents. Saisissez-la à la main.',
+      ),
+      findsOneWidget,
+    );
+    expect(streets.added.single.banId, _bordelanId);
+  });
 
-      await tapRoad(tester, _offline);
+  testWidgets('should untick a ticked road tapped again', (tester) async {
+    await pumpMap(tester);
+    await tapRoad(tester, _onBordelan);
 
-      expect(
-        find.text('Connexion nécessaire pour ajouter une rue'),
-        findsOneWidget,
-      );
-      await tester.tap(button('manual'));
-      await tester.pumpAndSettle();
+    shownMap(tester).onPickTapped!(_bordelanId);
+    await tester.pumpAndSettle();
 
-      expect(find.byType(ManualStreetScreen), findsOneWidget);
-    });
+    expect(shownMap(tester).pickedRoads, isEmpty);
+    expect(find.text('Touchez les rues à ajouter.'), findsOneWidget);
+  });
 
-    testWidgets('should say when the BAN knows no street there', (
-      tester,
-    ) async {
-      await pumpMap(tester);
+  testWidgets('should untick a street with its ✕, and all of them with '
+      '« Tout décocher »', (tester) async {
+    await pumpMap(tester);
+    await tapRoad(tester, _onBordelan);
+    await tapRoad(tester, _onGare);
 
-      await tapRoad(tester, _nowhere);
+    await tester.tap(find.byTooltip('Retirer Petit Chemin de Bordelan'));
+    await tester.pumpAndSettle();
 
-      expect(find.text('Aucune rue connue ici'), findsOneWidget);
-      expect(button('manual'), findsOneWidget);
-    });
+    expect(row(_bordelanId), findsNothing);
+    expect(row(_gareId), findsOneWidget);
 
-    testWidgets('should close the card with its ✕ and stay on the '
-        'screen', (tester) async {
-      await pumpMap(tester);
-      await tapRoad(tester, _onBordelan);
-      expect(shownMap(tester).selectedRoad, _road);
-      expect(shownMap(tester).selectedPoint, _onBordelan);
+    await tester.tap(find.text('Tout décocher'));
+    await tester.pumpAndSettle();
 
-      // « Fermer » is the screen's ✕ too: the card's is found by its key.
-      await tester.tap(button('close'));
-      await tester.pumpAndSettle();
+    expect(row(_gareId), findsNothing);
+    expect(find.text('Touchez les rues à ajouter.'), findsOneWidget);
+  });
 
-      expect(card(), findsNothing);
-      expect(find.byType(AddStreetsScreen), findsOneWidget);
-      expect(shownMap(tester).selectedRoad, StreetShape.none);
-      expect(shownMap(tester).selectedPoint, isNull);
-    });
+  testWidgets('should say a street of the secteur is in it already, from '
+      'its line or from the map', (tester) async {
+    await pumpMap(tester);
 
-    testWidgets('should close the card on the back gesture, then the '
-        'screen', (tester) async {
-      await pumpMap(tester);
-      await tapStreet(tester, 'carnot');
+    await tapStreet(tester, 'carnot');
 
-      await tester.binding.handlePopRoute();
-      await tester.pumpAndSettle();
+    expect(find.text('Rue Carnot est déjà dans le secteur.'), findsOneWidget);
 
-      expect(card(), findsNothing);
-      expect(find.byType(AddStreetsScreen), findsOneWidget);
+    await tapRoad(tester, _onLilas);
 
-      await tester.binding.handlePopRoute();
-      await tester.pumpAndSettle();
+    expect(
+      find.text('Rue des Lilas est déjà dans le secteur.'),
+      findsOneWidget,
+    );
+    expect(shownMap(tester).pickedRoads, isEmpty);
+  });
 
-      expect(find.byType(AddStreetsScreen), findsNothing);
-    });
+  testWidgets('should say a connection is needed offline, and offer the '
+      'manual entry', (tester) async {
+    await pumpMap(tester);
 
-    testWidgets('should close the screen with ✕ while a card shows', (
-      tester,
-    ) async {
-      await pumpMap(tester);
-      await tapStreet(tester, 'carnot');
+    await tapRoad(tester, _offline);
 
-      // The top bar's ✕, not the card's (also « Fermer »).
-      await tester.tap(
-        find.descendant(
-          of: find.byType(AppBar),
-          matching: find.byTooltip('Fermer'),
-        ),
-      );
-      await tester.pumpAndSettle();
+    expect(
+      find.text('Connexion nécessaire pour ajouter une rue.'),
+      findsOneWidget,
+    );
+    await tester.tap(find.text('Saisir à la main'));
+    await tester.pumpAndSettle();
 
-      expect(find.byType(AddStreetsScreen), findsNothing);
-    });
+    expect(find.byType(ManualStreetScreen), findsOneWidget);
+  });
+
+  testWidgets('should say when the BAN knows no street there', (tester) async {
+    await pumpMap(tester);
+
+    await tapRoad(tester, _nowhere);
+
+    expect(find.text('Aucune rue connue ici.'), findsOneWidget);
+    expect(find.text('Saisir à la main'), findsOneWidget);
+  });
+
+  testWidgets('should say when the address service fails', (tester) async {
+    await pumpMap(tester);
+
+    await tapRoad(tester, _onFailing);
+
+    expect(find.text('Le service des adresses ne répond pas.'), findsOneWidget);
+  });
+
+  testWidgets('should keep the map clear of the sheet', (tester) async {
+    await pumpMap(tester);
+    await tapRoad(tester, _onBordelan);
+
+    expect(shownMap(tester).padding.bottom, tester.getSize(sheet()).height);
+  });
+
+  testWidgets('should fold the sheet to its title, and unfold it', (
+    tester,
+  ) async {
+    await pumpMap(tester);
+    await tapRoad(tester, _onBordelan);
+    final unfolded = tester.getSize(sheet()).height;
+
+    await tester.fling(
+      find.byKey(const Key('addStreets.sheet.handle')),
+      const Offset(0, 200),
+      1000,
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('1 rue sélectionnée'), findsOneWidget);
+    expect(row(_bordelanId), findsNothing);
+    expect(find.text('Ajouter 1 rue'), findsNothing);
+    expect(tester.getSize(sheet()).height, lessThan(unfolded));
+    expect(shownMap(tester).padding.bottom, tester.getSize(sheet()).height);
+
+    await tester.tap(find.text('1 rue sélectionnée'));
+    await tester.pumpAndSettle();
+
+    expect(row(_bordelanId), findsOneWidget);
+    expect(find.text('Ajouter 1 rue'), findsOneWidget);
+  });
+
+  testWidgets('should scroll the rows past four streets', (tester) async {
+    await pumpMap(tester);
+    for (final point in [_onBordelan, _onGare, _onBroken, ..._moreStreets]) {
+      await tapRoad(tester, point);
+    }
+    expect(find.text('5 rues sélectionnées'), findsOneWidget);
+
+    final rows = find.byKey(const Key('addStreets.rows'));
+    expect(tester.getSize(rows).height, 4 * 52.0);
+    expect(
+      tester
+          .state<ScrollableState>(
+            find.descendant(of: rows, matching: find.byType(Scrollable)),
+          )
+          .position
+          .maxScrollExtent,
+      greaterThan(0),
+    );
+  });
+
+  testWidgets('should keep the ticks while « Liste » shows', (tester) async {
+    await pumpMap(tester);
+    await tapRoad(tester, _onBordelan);
+
+    await tester.tap(find.byKey(const Key('addStreets.tab.list')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('addStreets.tab.map')));
+    await tester.pumpAndSettle();
+
+    expect(row(_bordelanId), findsOneWidget);
+  });
+
+  testWidgets('should go back to Secteur on the back gesture', (tester) async {
+    await pumpMap(tester);
+    await tapRoad(tester, _onBordelan);
+
+    await tester.binding.handlePopRoute();
+    await tester.pumpAndSettle();
+
+    expect(find.byType(AddStreetsScreen), findsNothing);
+    expect(find.byType(TeamScreen), findsOneWidget);
   });
 
   group('search', () {
@@ -297,8 +468,8 @@ void main() {
       await tester.pumpAndSettle();
     }
 
-    testWidgets('should list the streets found, and show the one picked on '
-        'the map with its card', (tester) async {
+    testWidgets('should list the streets found, and tick the one picked, '
+        'the map around it', (tester) async {
       await pumpMap(tester);
 
       await search(tester, 'bordelan');
@@ -311,7 +482,7 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('Pas encore dans le secteur'), findsOneWidget);
+      expect(row(_bordelanId), findsOneWidget);
       expect(
         shownMap(tester).area,
         GeoBounds.around([_onBordelan])!.expandedBy(200),
@@ -351,7 +522,9 @@ void main() {
     });
   });
 
-  testWidgets('should open « Rue à la main » from its button', (tester) async {
+  testWidgets('should open « Rue à la main » from the sheet\'s link', (
+    tester,
+  ) async {
     await pumpMap(tester);
 
     await tester.tap(find.byKey(const Key('addStreets.manual')));
@@ -361,11 +534,33 @@ void main() {
     expect(find.text('Rue à la main'), findsOneWidget);
   });
 
-  testWidgets('should label every control and make it 48 dp at least', (
-    tester,
-  ) async {
+  testWidgets('should label every control and make it 48 dp at least, '
+      'streets ticked or not', (tester) async {
     await pumpMap(tester);
 
     await expectAccessibleControls(tester);
+
+    await tapRoad(tester, _onBordelan);
+
+    await expectAccessibleControls(tester);
+    expect(find.byTooltip('Retirer Petit Chemin de Bordelan'), findsOneWidget);
+  });
+
+  group('large text', () {
+    setUpAll(loadAppFonts);
+
+    testWidgets('should hold the sheet with streets ticked at 200 %', (
+      tester,
+    ) async {
+      await pumpMap(tester);
+      useLargeText(tester);
+      await tester.pumpAndSettle();
+
+      await tapRoad(tester, _onBordelan);
+      await tapRoad(tester, _onGare);
+
+      expect(find.text('2 rues sélectionnées'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
   });
 }

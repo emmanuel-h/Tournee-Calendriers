@@ -5,6 +5,7 @@ import 'package:tournee_calendriers/domain/street/progress_level.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/ui/map/map_geojson.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
+import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 
 /// The background map: OpenFreeMap's « liberty » style, chosen in the map
 /// spike (docs/spikes/map.md): free, no key, OpenStreetMap data, and its
@@ -29,12 +30,18 @@ abstract final class MapIds {
   static const housesSource = 'tc-houses';
   static const selectedSource = 'tc-selected';
   static const selectedPointSource = 'tc-selected-point';
+  static const pickedSource = 'tc-picked';
+  static const pickedMarksSource = 'tc-picked-marks';
 
   static const streetLines = 'tc-street-lines';
   static const selectedCasing = 'tc-selected-casing';
   static const selectedCore = 'tc-selected-core';
   static const selectedPointHalo = 'tc-selected-point-halo';
   static const selectedPointDot = 'tc-selected-point-dot';
+  static const pickedCasing = 'tc-picked-casing';
+  static const pickedCore = 'tc-picked-core';
+  static const pickedMarks = 'tc-picked-mark-discs';
+  static const pickedTicks = 'tc-picked-mark-ticks';
   static const houseDots = 'tc-house-dots';
 }
 
@@ -42,12 +49,24 @@ abstract final class MapIds {
 /// by `addImage` (see `house_dot_image.dart`).
 String houseDotImage(HouseDotStatus status) => 'tc-house-${status.name}';
 
+/// The name of the ✓ disc of a road ticked on « Ajouter des rues », added
+/// to the map by `addImage` (see `house_dot_image.dart`).
+const pickedMarkImage = 'tc-picked-mark';
+
 /// The street a tap on a feature of [layerId] names, or null when the layer
 /// is not one of the tournée's streets (a layer of the style, or the road
 /// picked on « Ajouter des rues »). Every street feature carries its
 /// street's id as its own (see `map_geojson.dart`).
 StreetId? tappedStreet(String layerId, String featureId) => switch (layerId) {
   MapIds.streetLines || MapIds.houseDots => StreetId(featureId),
+  _ => null,
+};
+
+/// The ticked street a tap on a feature of [layerId] names: its road or
+/// its ✓ disc on « Ajouter des rues » (PLAN §5.14), whose features carry
+/// the street's BAN id as their own; null for any other layer.
+BanStreetId? tappedPick(String layerId, String featureId) => switch (layerId) {
+  MapIds.pickedCasing || MapIds.pickedMarks => BanStreetId(featureId),
   _ => null,
 };
 
@@ -76,10 +95,11 @@ final class MapLayerSpec {
   final bool interactive;
 }
 
-/// Every layer the map adds, bottom to top: the streets, the road picked on
-/// « Ajouter des rues » (dark casing, white core, mockups README) and the
-/// point tapped (a dark dot in a faint halo, Pick mockup), then the house
-/// dots from street zoom (PLAN §5.3). Colours are the map tokens of
+/// Every layer the map adds, bottom to top: the streets, the street picked
+/// on Accueil and the roads ticked on « Ajouter des rues » (dark casing,
+/// white core, mockups README), the point being looked up (a dark dot in a
+/// faint halo, Pick mockup), the house dots from street zoom (PLAN §5.3),
+/// then the ✓ discs of the ticked roads (a dark disc, the ✓ picture on it). Colours are the map tokens of
 /// [colors].
 List<MapLayerSpec> sectorMapLayers(AppColors colors) => [
   MapLayerSpec(
@@ -97,12 +117,7 @@ List<MapLayerSpec> sectorMapLayers(AppColors colors) => [
   MapLayerSpec(
     id: MapIds.selectedCasing,
     source: MapIds.selectedSource,
-    properties: LineLayerProperties(
-      lineColor: colors.mapSelectedCasing.toHexStringRGB(),
-      lineWidth: _byZoom(const {12: 8, 16: 16, 19: 24}),
-      lineCap: 'round',
-      lineJoin: 'round',
-    ),
+    properties: _casing(colors),
     belowLabels: false,
     // Not a street of the tournée: a tap on it goes on to the map, which
     // looks up the road under the finger again.
@@ -111,13 +126,24 @@ List<MapLayerSpec> sectorMapLayers(AppColors colors) => [
   MapLayerSpec(
     id: MapIds.selectedCore,
     source: MapIds.selectedSource,
-    properties: LineLayerProperties(
-      lineColor: colors.mapSelectedCore.toHexStringRGB(),
-      lineWidth: _byZoom(const {12: 3, 16: 6, 19: 10}),
-      lineCap: 'round',
-      lineJoin: 'round',
-    ),
+    properties: _core(colors),
     belowLabels: false,
+    interactive: false,
+  ),
+  MapLayerSpec(
+    id: MapIds.pickedCasing,
+    source: MapIds.pickedSource,
+    properties: _casing(colors),
+    belowLabels: false,
+    // A tap on a ticked road unticks it, without asking the BAN again.
+    interactive: true,
+  ),
+  MapLayerSpec(
+    id: MapIds.pickedCore,
+    source: MapIds.pickedSource,
+    properties: _core(colors),
+    belowLabels: false,
+    // The casing under it is wider: a tap on the core reaches it.
     interactive: false,
   ),
   MapLayerSpec(
@@ -176,7 +202,50 @@ List<MapLayerSpec> sectorMapLayers(AppColors colors) => [
     belowLabels: false,
     interactive: true,
   ),
+  // The ✓ disc is two layers. The disc is a circle, which every renderer
+  // draws (the emulator's software renderer draws no symbol layer at all,
+  // not even the style's street names); the ✓ picture over it is the same
+  // disc with its ✓, as the house dots are drawn.
+  MapLayerSpec(
+    id: MapIds.pickedMarks,
+    source: MapIds.pickedMarksSource,
+    properties: CircleLayerProperties(
+      circleColor: colors.mapSelectedCasing.toHexStringRGB(),
+      circleRadius: AppSizes.houseDot / 2,
+    ),
+    belowLabels: false,
+    interactive: true,
+  ),
+  const MapLayerSpec(
+    id: MapIds.pickedTicks,
+    source: MapIds.pickedMarksSource,
+    properties: SymbolLayerProperties(
+      iconImage: pickedMarkImage,
+      // A ✓ hidden behind a label would read as a street not ticked.
+      iconAllowOverlap: true,
+      iconIgnorePlacement: true,
+    ),
+    belowLabels: false,
+    // The disc under it answers the tap.
+    interactive: false,
+  ),
 ];
+
+/// The dark casing of a road picked or ticked (mockups README).
+LineLayerProperties _casing(AppColors colors) => LineLayerProperties(
+  lineColor: colors.mapSelectedCasing.toHexStringRGB(),
+  lineWidth: _byZoom(const {12: 8, 16: 16, 19: 24}),
+  lineCap: 'round',
+  lineJoin: 'round',
+);
+
+/// The white core over [_casing].
+LineLayerProperties _core(AppColors colors) => LineLayerProperties(
+  lineColor: colors.mapSelectedCore.toHexStringRGB(),
+  lineWidth: _byZoom(const {12: 3, 16: 6, 19: 10}),
+  lineCap: 'round',
+  lineJoin: 'round',
+);
 
 const _level = ['get', levelProperty];
 

@@ -111,8 +111,8 @@ first launch
               ┌──────────────────┬──────────────┼──────────────────┬─────────────┐
               ▼                  ▼              ▼                  ▼             ▼
         Rue (2 sides)     Ajouter des rues   Rue à la main     Équipe        Paramètres
-              │           (map mode: tap a    (missing street)
-              ▼            road → street card)
+              │           (map mode: tap      (missing street)
+              ▼            roads → tick them)
    Fiche maison / Immeuble
 ```
 
@@ -564,12 +564,13 @@ bottom sheet:
 ### 5.4 Ajouter des rues — map mode
 
 > **Changed by 5.14 (2026-11-03):** built in #120: « Ajouter et me l'attribuer » / « Ajouter
-> sans m'attribuer » and the state table's attribution actions are gone; until #124 the card of
-> a street to add has one red « Ajouter au secteur », a street of the secteur « Ouvrir ». Built
-> in #121: opened from Secteur, not Accueil; ✕ and « N rues ajoutées » go back to Secteur. To
-> build: a tap ticks a road instead of opening the card
-> (several at once, « Ajouter N rues », #124), plus « Zone » (#125). The look-up, the search
-> and « Liste » stay as below.
+> sans m'attribuer » and the state table's attribution actions are gone. Built in #121: opened
+> from Secteur, not Accueil; ✕ and « N rues ajoutées » go back to Secteur. Built in #124: a tap
+> ticks a road instead of opening the street card, several at once, and the selection sheet
+> adds them (« Ajouter N rues »); the street card, its table and « ✎ Saisir une rue à la main »
+> under the search box are gone from this screen (5.14). To build: « Zone » (#125). The
+> look-up, the search and « Liste » stay as below; what this section says of the card is
+> history.
 
 ```
 ┌──────────────────────────────┐
@@ -656,7 +657,7 @@ Three entry points, all of which work offline:
 
 | To… | From |
 |---|---|
-| Add a street missing from the map | *Ajouter des rues* → **Saisir une rue à la main** (always visible under the search box), or the link on a street card |
+| Add a street missing from the map | *Ajouter des rues* → « Rue absente de la carte ? Saisir à la main » (always at the bottom of the selection sheet, 5.14), or « Saisir à la main » on a look-up failure |
 | Add, remove or rename numbers; rename the street; make a number a building | Street screen → **✏** in the top bar → edit mode |
 | Stop covering / delete the street | Edit mode → buttons at the bottom |
 
@@ -1617,7 +1618,7 @@ outing; the team's area is the **secteur** (§2).
   short day); every row starts folded and each unfolds on its own. « TOTAL DE LA TOURNÉE » for one,
   « TOTAL DES TOURNÉES » for none. Unreadable: « La collecte ne peut pas être affichée. ».
 
-### 5.14 Préparer le secteur, partir en tournée (to build, #120–#125)
+### 5.14 Préparer le secteur, partir en tournée (built #120–#124; « Zone » to build, #125)
 
 Agreed 2026-11-03 (ASCII in the terminal, then mockups RunStart, RunHome, RunStreet,
 StreetIdle, RunTeam, Team, TeamMember, Pick, PickZone). The app has **two moments that never
@@ -1747,6 +1748,33 @@ removes are marked « (removed, 5.14) » there.
   - **Adding**: « Ajout en cours… 2/3 », then back to Secteur with « 3 rues ajoutées au
     secteur » (the Liste tab's path). Streets that failed stay ticked, with the reason
     above the button. A street in the Corbeille comes back with its marks, as in Liste.
+  - Delivered in #124 (`presentation/add_streets/`, `ui/screens/add_streets/add_streets_screen.dart`,
+    `domain/map/picked_road.dart`): the search box alone above the map (room for « Zone » on its
+    right, #125). **A tap on a road** marks the point (dark dot in a faint halo) and the sheet
+    says « Recherche de la rue… » while the BAN is asked; the street found is ticked, its ✓ disc
+    at the point tapped (at the BAN's point for a street picked in the search; a dark circle
+    under the ✓ picture, so the disc shows even where symbols do not render), its road drawn
+    when the map's tiles give it (`LookUpStreetShape`, asked once per tick); several taps may be
+    on their way at once, each answer ticks its street. The ✓ disc is a dark circle (drawn by every renderer, even the emulator's, which draws no symbol layer) under the ✓ picture. A tap on a ticked road or its ✓, or a tap
+    whose answer is a street already ticked, unticks it; a street picked in the search stays
+    ticked and the map moves 200 m around it. « Tout décocher » also drops the answers still on
+    their way. A street of the secteur (its line, its dots, or the BAN's answer) says « Rue des
+    Lilas est déjà dans le secteur. » (4 s); the look-up failures say « Connexion nécessaire
+    pour ajouter une rue. », « Aucune rue connue ici. », « Le service des adresses ne répond
+    pas. » with « Saisir à la main ». With nothing ticked the sheet reads « Touchez les rues à
+    ajouter. » (« ou tracez une zone » comes with #125). Each row: name, « Villefranche-sur-
+    Saône · 19 numéros », ✕ (« Retirer Rue Pierre Morin »); rows are 52 dp, four show, then
+    they scroll (never over 35 % of the map's height). The handle and title fold the sheet
+    (drag down or tap; TalkBack « Réduire la sélection » / « Afficher la sélection »); the
+    map keeps clear of the sheet. **Adding** stores the streets one after the other in the
+    order ticked (`AddStreetFromMap`), each with its road when known, never waiting for one
+    (Accueil fills a missing road later, 5.3); a street a teammate added meanwhile counts as
+    added. While adding, ticks, taps, ✕ and the way back wait; once started it goes on even
+    if the app leaves the screen. A failure (the BAN gave a number twice) reads « 1 rue n'a pas
+    pu être ajoutée : la Base Adresse Nationale donne des numéros incohérents. Saisissez-la à
+    la main. »; it goes once the ticks change. The ticks stay while « Liste » shows, until the
+    screen closes. The snackbar counts every street now in the secteur (« 3 rues ajoutées au
+    secteur »), those brought back from the Corbeille included.
 
 ---
 
@@ -2331,6 +2359,9 @@ Geometry and map layers fixed in T3.1 (`lib/domain/geometry/`, `lib/domain/map/`
   position, streets in the Corbeille left out. A single house's dot shows its status; a
   building's shows `comeBack` when it has its own « repasser », otherwise `toDo` / `partial` /
   `done` from its doors. Dots show from zoom 16 (`MapLayers.houseDotsMinZoom`).
+- **`PickedRoad(street, road, mark)`** (#124): a street ticked on « Ajouter des rues » as the
+  map draws it, its BAN id, its road (`StreetShape.none` until the map's tiles give it) and
+  where its ✓ disc sits. A tap on the road or the ✓ names the BAN id.
 - **`sectorArea(streets)`**: the `GeoBounds` (south, west, north, east; never across the
   antimeridian) around every shape point and house position of the streets, Corbeille included
   (a street may be restored offline), plus 300 m; null when no street has a place on the map.
@@ -2379,14 +2410,15 @@ Street picking fixed in T3.3 (`lib/domain/street/street.dart`, `lib/application/
   `MyStreets` / `ObserveMyStreets` and `StreetsByMember` / `ObserveStreetsByMember` (#105) are
   gone.
 - **`LookUpStreet(StreetLookup)`** — `StreetAtPoint(GeoPoint)` (a tap: the geocoder) or
-  `FoundStreet(StreetMatch)` (a search result) — gives the street card's subject:
+  `FoundStreet(StreetMatch)` (a search result) — tells what a street tapped or picked on
+  « Ajouter des rues » is (5.14):
   `StreetOfTheSector(match, street)` when the secteur has its BAN id out of the Corbeille (its
   numbers are not asked), otherwise `StreetToAdd(match, numbers)` with the BAN's numbers and
   positions (`numberCount`). Failures are the `AddressDirectoryFailure`s: `notFound` (no BAN
   match), `noNetwork` (offline), `serviceError`. Changes nothing.
-- **`AddStreetFromMap(numbers, shape:)`** stores a `StreetToAdd`'s street with
-  the road the card found (`LookUpStreetShape`, simplified), or without shape while it has
-  none: since #92 it **never asks the map nor waits for it**. A street of the Corbeille with
+- **`AddStreetFromMap(numbers, shape:)`** stores a `StreetToAdd`'s street (« Ajouter N
+  rues » calls it once per street ticked, #124) with the road found for its tick
+  (`LookUpStreetShape`, simplified), or without shape while it has none: since #92 it **never asks the map nor waits for it**. A street of the Corbeille with
   that BAN id comes back with its marks instead. `AddStreetFailure.alreadyInSector` and `serviceError` (the BAN gave a number
   twice).
 - **`LookUpStreetShape(streetToAdd)`** (#92): the road around the street's numbers and the
@@ -3238,7 +3270,7 @@ but they run once per task and in CI.
 | Application | use cases with **hand-written fakes** of the ports | Dart VM | every TDD cycle | ms per test |
 | Presentation | Riverpod notifiers via `ProviderContainer`, ports overridden by fakes | Dart VM | every TDD cycle | ms per test |
 | Adapters | Firestore adapter against `fake_cloud_firestore` (in memory, no emulator); geopf / BAN parsing with `MockClient` + JSON fixtures captured from the real services, vector tiles built byte by byte by the tests | Dart VM | when touched | < 10 s |
-| Widgets | widget tests for the critical interactions only: welcome gating, tap-cycle + undo on street tiles, hold → house sheet (to become: tap → status picker → ✓ / don / ⊘ / ↻ steps + undo, calendars badge, #63), building grid, edit mode remove + undo, street card states, join pending screen | `flutter test` (headless) | end of each UI task, CI | a few per UI task; the whole suite stays under 60 s |
+| Widgets | widget tests for the critical interactions only: welcome gating, tap-cycle + undo on street tiles, hold → house sheet (to become: tap → status picker → ✓ / don / ⊘ / ↻ steps + undo, calendars badge, #63), building grid, edit mode remove + undo, street card, ticking and adding streets on « Ajouter des rues », join pending screen | `flutter test` (headless) | end of each UI task, CI | a few per UI task; the whole suite stays under 60 s |
 | Architecture | import rules between layers | Dart VM | every run | < 1 s |
 | Coverage | **100 % line coverage** on `domain/`, `application/`, `presentation/` and the adapters' mapping code, checked by a script on `coverage/lcov.info` | — | end of task, CI | piggybacks |
 | Rules | Firestore security rules in the Firebase emulator (`@firebase/rules-unit-testing`, `node --test`): `cd firebase && npm ci && npm test` starts the emulator itself (`firebase emulators:exec`, demo project, versions pinned: firebase-tools 15, rules-unit-testing 5, Node 20+, Java 11+) | Node + emulator | when `firebase/` or the Firestore adapters change, CI | < 1 min |
@@ -3303,7 +3335,7 @@ exists. No invented data at any stage.
 | Q5 | App id | `fr.mandarine.tourneecalendriers`, store name "Tournée Calendriers". |
 | Q6 | Public repo | Yes: `google-services.json` is gitignored and injected in CI from a secret. |
 | Q7 | minSdk | 26 (Android). iOS 15+ later. |
-| Q8 | Street selection | On a map: tap a road → street card → add. Manual entry for what the map or BAN lacks. |
+| Q8 | Street selection | On a map: tap roads to tick them → add them at once (5.14, #124; before: a street card per road). Manual entry for what the map or BAN lacks. |
 | Q9 | Where the map lives | Accueil = map + streets panel; "Ajouter des rues" is a map mode, opened from Secteur since 5.14 (replaces the Sector list). |
 | Q10 | Progress on the map | Streets coloured by progress; houses as status dots when zoomed in. |
 | Q11 | Offline | Download of the secteur (data + map tiles), then fully offline, sync when possible. **Changed 2026-11-01 (#32): automatic and invisible** — the app downloads the open secteur whenever it is online, refreshes the maps silently (weekly tile versions), retries every 2 minutes after a failure; no button, banner or progress (§7). |

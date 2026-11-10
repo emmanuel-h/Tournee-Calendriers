@@ -22,6 +22,7 @@ import 'package:tournee_calendriers/domain/round/donation_totals.dart';
 import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/shared/commune.dart';
+import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
@@ -33,6 +34,7 @@ import 'package:tournee_calendriers/infrastructure/local_storage/mappers/street_
 import 'package:tournee_calendriers/main.dart' as app;
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/ui/app.dart';
+import 'package:tournee_calendriers/ui/map/sector_map.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/screens/add_streets/add_streets_screen.dart';
 import 'package:tournee_calendriers/ui/screens/add_streets/manual_street_screen.dart';
@@ -53,6 +55,9 @@ final _villefranche = _ok(
   Commune.create(inseeCode: '69264', name: 'Villefranche-sur-Saône'),
 );
 final _morin = BanStreetId('69264_1460');
+
+/// A point on Rue Pierre Morin, where « Ajouter des rues » is tapped.
+final _onMorin = _ok(GeoPoint.create(latitude: 45.98850, longitude: 4.72500));
 final _bonnet = BanStreetId('69264_0682');
 
 /// A BAN that knows two streets of Villefranche-sur-Saône (from the
@@ -75,6 +80,16 @@ FakeAddressDirectory _ban() => FakeAddressDirectory(
           ),
         ],
         skippedStreets: 0,
+      ),
+    ),
+  },
+  places: {
+    _onMorin: Ok(
+      StreetMatch(
+        id: _morin,
+        name: _ok(StreetName.create('Rue Pierre Morin')),
+        commune: _villefranche,
+        position: _onMorin,
       ),
     ),
   },
@@ -733,7 +748,11 @@ void main() {
         },
       );
 
-      await bootstrap(storage: storage, communeSearch: communes);
+      await bootstrap(
+        storage: storage,
+        communeSearch: communes,
+        addressDirectory: _ban(),
+      );
       await tester.pumpAndSettle();
       expect(find.text('Secteur 49 · 2026'), findsOneWidget);
       expect(find.text('CS Villefranche'), findsOneWidget);
@@ -772,15 +791,37 @@ void main() {
       await tester.tap(find.byTooltip('Retour'));
       await tester.pumpAndSettle();
 
-      // « Ajouter des rues » (#78, #31): « Carte | Liste », offline. The
+      // « Ajouter des rues » (#78, #124): « Carte | Liste », offline. The
       // map comes first, on France with MapLibre on the device: the
-      // tournée was never read, so it has no commune.
+      // secteur was never read, so it has no commune. The selection sheet
+      // says what to do.
       await _openAddStreets(tester);
       expect(find.byType(AddStreetsScreen), findsOneWidget);
       expect(find.byKey(const Key('addStreets.map')), findsOneWidget);
+      expect(find.text('Touchez les rues à ajouter.'), findsOneWidget);
 
-      // « Saisir une rue à la main » works offline (#31): the commune is
-      // searched (here without network), the street joins the secteur.
+      // A road tapped (#124) is ticked, on the real MapLibre map: its ✓
+      // and, once known, its road are sent to the map. The tap is handed
+      // to the map's callback: a test's tap does not reach the native view
+      // (only real touches do, with `shouldPropagateDevicePointerEvents`).
+      // The BAN is the fake, so no network is needed; the road is not
+      // found offline. « Tout décocher » empties the sheet again.
+      tester.widget<SectorMap>(find.byType(SectorMap).last).onMapTapped!(
+        _onMorin,
+      );
+      await tester.pump(const Duration(seconds: 2));
+      expect(find.text('1 rue sélectionnée'), findsOneWidget);
+      expect(
+        tester.widget<SectorMap>(find.byType(SectorMap).last).pickedRoads,
+        hasLength(1),
+      );
+      await tester.tap(find.byKey(const Key('addStreets.untickAll')));
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.text('Touchez les rues à ajouter.'), findsOneWidget);
+
+      // « Rue absente de la carte ? Saisir à la main », at the bottom of
+      // the sheet, works offline (#31): the commune is searched (here
+      // without network), the street joins the secteur.
       await tester.tap(find.byKey(const Key('addStreets.manual')));
       await tester.pumpAndSettle();
       await tester.enterText(find.byKey(const Key('communes.field')), 'Villef');

@@ -3010,59 +3010,11 @@ abstract class AppLocalizations {
   /// **'Le service des adresses ne répond pas. Réessayez dans un moment.'**
   String get addStreetsSearchError;
 
-  /// Button under the search box of « Ajouter des rues » (always shown, works offline), and on the street card when no street could be shown.
-  ///
-  /// In fr, this message translates to:
-  /// **'Saisir une rue à la main'**
-  String get addStreetsManual;
-
   /// Screen-reader name and tooltip of the ✕ at the top right of the street card, which closes it like a tap elsewhere on the map or the back gesture (PLAN §5.3, §5.4).
   ///
   /// In fr, this message translates to:
   /// **'Fermer'**
   String get streetCardClose;
-
-  /// Street card while the street tapped is looked up.
-  ///
-  /// In fr, this message translates to:
-  /// **'Recherche de la rue…'**
-  String get streetCardLoading;
-
-  /// Chip of the card of a street to add: how many numbers it brings.
-  ///
-  /// In fr, this message translates to:
-  /// **'{count, plural, =0{Aucun numéro} =1{1 numéro} other{{count} numéros}}'**
-  String streetCardNumbers(int count);
-
-  /// Chip of the card of a street the sector does not have.
-  ///
-  /// In fr, this message translates to:
-  /// **'Pas encore dans le secteur'**
-  String get streetCardNotInSector;
-
-  /// Red button of the card of a street to add: adds it to the sector, for the whole team (PLAN §5.14).
-  ///
-  /// In fr, this message translates to:
-  /// **'Ajouter au secteur'**
-  String get streetCardAdd;
-
-  /// In place of the button's label while the street is added (its road may take a while).
-  ///
-  /// In fr, this message translates to:
-  /// **'Ajout en cours…'**
-  String get streetCardAdding;
-
-  /// On the card when the numbers of the BAN cannot make a street (a number twice).
-  ///
-  /// In fr, this message translates to:
-  /// **'Les numéros donnés par la Base Adresse Nationale sont incohérents : la rue n\'a pas été ajoutée. Saisissez-la à la main.'**
-  String get streetCardAddFailed;
-
-  /// Link under the buttons of the card of a street to add.
-  ///
-  /// In fr, this message translates to:
-  /// **'Rue absente de la carte ? Saisir à la main'**
-  String get streetCardManualLink;
 
   /// Chip of the card of a street of the sector: its doors done.
   ///
@@ -3081,42 +3033,6 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Ouvrir'**
   String get streetCardOpen;
-
-  /// Title of the card when the phone is offline (PLAN §5.4).
-  ///
-  /// In fr, this message translates to:
-  /// **'Connexion nécessaire pour ajouter une rue'**
-  String get streetCardNoNetwork;
-
-  /// Under « Connexion nécessaire pour ajouter une rue ».
-  ///
-  /// In fr, this message translates to:
-  /// **'Les rues déjà dans le secteur s\'ouvrent sans réseau.'**
-  String get streetCardNoNetworkHint;
-
-  /// Title of the card when the BAN knows no street at the point tapped.
-  ///
-  /// In fr, this message translates to:
-  /// **'Aucune rue connue ici'**
-  String get streetCardNoStreetHere;
-
-  /// Under « Aucune rue connue ici ».
-  ///
-  /// In fr, this message translates to:
-  /// **'Chemin privé, nouveau lotissement ? Saisissez la rue à la main.'**
-  String get streetCardNoStreetHereHint;
-
-  /// Title of the card when the address service failed.
-  ///
-  /// In fr, this message translates to:
-  /// **'Le service des adresses ne répond pas'**
-  String get streetCardServiceError;
-
-  /// Under « Le service des adresses ne répond pas ».
-  ///
-  /// In fr, this message translates to:
-  /// **'Réessayez dans un moment, ou saisissez la rue à la main.'**
-  String get streetCardServiceErrorHint;
 
   /// Title of the manual street form (PLAN §5.5, Manual mockup).
   ///
@@ -3699,6 +3615,96 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'La collecte ne peut pas être affichée.'**
   String get collecteUnavailable;
+
+  /// Selection sheet of « Ajouter des rues » with nothing ticked (PLAN §5.14, Pick mockup).
+  ///
+  /// In fr, this message translates to:
+  /// **'Touchez les rues à ajouter.'**
+  String get addStreetsPickHint;
+
+  /// Title of the selection sheet: how many streets are ticked.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, =1{1 rue sélectionnée} other{{count} rues sélectionnées}}'**
+  String addStreetsPicked(int count);
+
+  /// Under the name of a ticked street in the selection sheet: « Villefranche-sur-Saône · 19 numéros ».
+  ///
+  /// In fr, this message translates to:
+  /// **'{commune} · {numbers}'**
+  String addStreetsPickedFacts(String commune, String numbers);
+
+  /// How many numbers a ticked street brings, after its commune.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, =0{aucun numéro} =1{1 numéro} other{{count} numéros}}'**
+  String addStreetsNumbers(int count);
+
+  /// Screen-reader name and tooltip of the ✕ of a ticked street: unticks it.
+  ///
+  /// In fr, this message translates to:
+  /// **'Retirer {name}'**
+  String addStreetsUntick(String name);
+
+  /// Screen-reader name of the handle of the selection sheet: leaves only its title.
+  ///
+  /// In fr, this message translates to:
+  /// **'Réduire la sélection'**
+  String get addStreetsFold;
+
+  /// Screen-reader name of the handle of the folded selection sheet: shows the ticked streets again.
+  ///
+  /// In fr, this message translates to:
+  /// **'Afficher la sélection'**
+  String get addStreetsUnfold;
+
+  /// In the selection sheet while the street tapped is looked up.
+  ///
+  /// In fr, this message translates to:
+  /// **'Recherche de la rue…'**
+  String get addStreetsLookingUp;
+
+  /// Snackbar when the street tapped on the map is in the sector already: nothing is ticked.
+  ///
+  /// In fr, this message translates to:
+  /// **'{name} est déjà dans le secteur.'**
+  String addStreetsAlreadyIn(String name);
+
+  /// Snackbar when a road is tapped offline (PLAN §5.4).
+  ///
+  /// In fr, this message translates to:
+  /// **'Connexion nécessaire pour ajouter une rue.'**
+  String get addStreetsNoNetwork;
+
+  /// Snackbar when the BAN knows no street at the point tapped (a private road, a new estate).
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucune rue connue ici.'**
+  String get addStreetsNoStreetHere;
+
+  /// Snackbar when the address service failed for the road tapped.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le service des adresses ne répond pas.'**
+  String get addStreetsServiceError;
+
+  /// Action of the look-up snackbars: opens « Rue à la main », which works offline.
+  ///
+  /// In fr, this message translates to:
+  /// **'Saisir à la main'**
+  String get addStreetsManualAction;
+
+  /// Link at the bottom of the selection sheet: opens « Rue à la main », offline too.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rue absente de la carte ? Saisir à la main'**
+  String get addStreetsManualLink;
+
+  /// Above « Ajouter N rues » when some ticked streets could not be added; they stay ticked.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, =1{1 rue n\'a pas pu être ajoutée : la Base Adresse Nationale donne des numéros incohérents. Saisissez-la à la main.} other{{count} rues n\'ont pas pu être ajoutées : la Base Adresse Nationale donne des numéros incohérents. Saisissez-les à la main.}}'**
+  String addStreetsAddFailed(int count);
 }
 
 class _AppLocalizationsDelegate

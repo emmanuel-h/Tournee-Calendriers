@@ -7,6 +7,7 @@ import 'package:flutter/services.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/map/map_layers.dart';
+import 'package:tournee_calendriers/domain/map/picked_road.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
@@ -21,9 +22,10 @@ import 'package:tournee_calendriers/ui/map/phone_location.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 
-/// The map of a tournée (PLAN §5.3, §5.4): the OpenFreeMap background, the
-/// streets coloured by progress, the house dots from street zoom, the road
-/// picked on « Ajouter des rues », and « Me localiser ».
+/// The map of a secteur (PLAN §5.3, §5.14): the OpenFreeMap background,
+/// the streets coloured by progress, the house dots from street zoom, the
+/// street picked on Accueil, the roads ticked on « Ajouter des rues », and
+/// « Me localiser ».
 ///
 /// It only draws what it is given: what to show is decided by the domain
 /// ([MapLayers]) and the screen; this widget turns it into MapLibre
@@ -36,8 +38,10 @@ final class SectorMap extends StatefulWidget {
     required this.layers,
     this.selectedRoad = StreetShape.none,
     this.selectedPoint,
+    this.pickedRoads = const [],
     this.area,
     this.onStreetTapped,
+    this.onPickTapped,
     this.onMapTapped,
     this.onZoomChanged,
     this.padding = EdgeInsets.zero,
@@ -47,13 +51,17 @@ final class SectorMap extends StatefulWidget {
   /// The streets and houses to draw.
   final MapLayers layers;
 
-  /// The road picked on « Ajouter des rues », drawn over the others; none
-  /// by default.
+  /// The line of the street whose card shows on Accueil, drawn over the
+  /// others; none by default.
   final StreetShape selectedRoad;
 
-  /// Where the finger tapped on « Ajouter des rues », marked by a dot until
-  /// the road shows; none by default.
+  /// Where the finger tapped on « Ajouter des rues », marked by a dot while
+  /// the street there is looked up; none by default.
   final GeoPoint? selectedPoint;
+
+  /// The roads ticked on « Ajouter des rues », each with its ✓ disc; none
+  /// by default.
+  final List<PickedRoad> pickedRoads;
 
   /// The area to show: the map fits it when it opens, and again each time
   /// it changes (another tournée opened, a street found by the search).
@@ -62,6 +70,9 @@ final class SectorMap extends StatefulWidget {
 
   /// A tap on one of the tournée's streets, or on one of its house dots.
   final ValueChanged<StreetId>? onStreetTapped;
+
+  /// A tap on a ticked road, or on its ✓ disc: its BAN street.
+  final ValueChanged<BanStreetId>? onPickTapped;
 
   /// A tap anywhere else on the map: where the finger was.
   final ValueChanged<GeoPoint>? onMapTapped;
@@ -95,6 +106,7 @@ final class _SectorMapState extends State<SectorMap> {
   List<HouseDot>? _shownDots;
   StreetShape? _shownRoad;
   GeoPoint? _shownPoint;
+  List<PickedRoad>? _shownPicks;
 
   /// The phone's dot shows once « Me localiser » found it: MapLibre then
   /// follows the position itself, with the access already granted.
@@ -166,10 +178,16 @@ final class _SectorMapState extends State<SectorMap> {
         await houseDotPng(HouseDotLook.of(status, colors), pixelRatio),
       );
     }
+    if (!mounted) return;
+    await controller.addImage(
+      pickedMarkImage,
+      await houseDotPng(HouseDotLook.pickedMark(colors), pixelRatio),
+    );
     _shownLines = widget.layers.lines;
     _shownDots = widget.layers.dots;
     _shownRoad = widget.selectedRoad;
     _shownPoint = widget.selectedPoint;
+    _shownPicks = widget.pickedRoads;
     await controller.addGeoJsonSource(
       MapIds.streetsSource,
       streetLinesGeoJson(_shownLines!),
@@ -185,6 +203,14 @@ final class _SectorMapState extends State<SectorMap> {
     await controller.addGeoJsonSource(
       MapIds.selectedPointSource,
       selectedPointGeoJson(_shownPoint),
+    );
+    await controller.addGeoJsonSource(
+      MapIds.pickedSource,
+      pickedRoadsGeoJson(_shownPicks!),
+    );
+    await controller.addGeoJsonSource(
+      MapIds.pickedMarksSource,
+      pickedMarksGeoJson(_shownPicks!),
     );
     final below = lineLayersBelow(await controller.getLayerIds());
     for (final layer in sectorMapLayers(colors)) {
@@ -238,6 +264,17 @@ final class _SectorMapState extends State<SectorMap> {
         selectedPointGeoJson(_shownPoint),
       );
     }
+    if (!listEquals(_shownPicks, widget.pickedRoads)) {
+      _shownPicks = widget.pickedRoads;
+      await controller.setGeoJsonSource(
+        MapIds.pickedSource,
+        pickedRoadsGeoJson(_shownPicks!),
+      );
+      await controller.setGeoJsonSource(
+        MapIds.pickedMarksSource,
+        pickedMarksGeoJson(_shownPicks!),
+      );
+    }
   }
 
   /// Shows the whole [SectorMap.area], clear of [SectorMap.padding].
@@ -267,6 +304,8 @@ final class _SectorMapState extends State<SectorMap> {
   ) {
     if (tappedStreet(layerId, id) case final street?) {
       widget.onStreetTapped?.call(street);
+    } else if (tappedPick(layerId, id) case final pick?) {
+      widget.onPickTapped?.call(pick);
     }
   }
 

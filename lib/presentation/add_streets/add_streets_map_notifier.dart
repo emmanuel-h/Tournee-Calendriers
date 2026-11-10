@@ -6,6 +6,7 @@ import 'package:tournee_calendriers/application/use_cases/add_street_from_map.da
 import 'package:tournee_calendriers/application/use_cases/look_up_street.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/map/map_layers.dart';
+import 'package:tournee_calendriers/domain/map/picked_road.dart';
 import 'package:tournee_calendriers/domain/map/sector_area.dart';
 import 'package:tournee_calendriers/domain/sector/sector_commune.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
@@ -17,35 +18,34 @@ import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/presentation/add_streets/add_streets_map_state.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
-import 'package:tournee_calendriers/presentation/street_card/street_card.dart';
 
 export 'package:tournee_calendriers/presentation/add_streets/add_streets_map_state.dart';
 
 /// The state of the « Carte » tab. `autoDispose`: it follows the streets
-/// and communes only while the screen shows.
+/// and communes, and keeps the ticks, only while the screen is open.
 final addStreetsMapProvider =
     NotifierProvider.autoDispose<AddStreetsMapNotifier, AddStreetsMapState>(
       AddStreetsMapNotifier.new,
     );
 
-/// The « Carte » tab of « Ajouter des rues » (PLAN §5.4): follows the open
-/// secteur's streets and communes from the phone's copy (offline too), and
-/// answers the map and the search box with the street card.
+/// The « Carte » tab of « Ajouter des rues » (PLAN §5.14, Pick mockup):
+/// follows the open secteur's streets and communes from the phone's copy
+/// (offline too), ticks the streets tapped on the map or picked in the
+/// search, and adds them all at once.
 ///
-/// - **A tap on a road** looks the street up (`LookUpStreet`, network):
-///   the card of the tournée's street, or of the street to add, with its
-///   road asked of the map meanwhile (`LookUpStreetShape`) and highlighted
-///   as soon as it is known.
-/// - **« Ajouter »** never waits for the road: the street is added with
-///   the road when it is known, and given it once it comes otherwise
-///   (`FillStreetShape`).
-/// - **A tap on a street of the tournée** shows its card at once, offline
-///   too.
-/// - **The search** asks the BAN in the tournée's communes; a street
-///   picked moves the map to it and shows its card.
+/// - **A tap on a road** looks the street up (`LookUpStreet`, network) and
+///   ticks it; its road is asked of the map meanwhile (`LookUpStreetShape`)
+///   and drawn as soon as it is known. A tap on a ticked street unticks it.
+///   A street the secteur has is not ticked: the tap says so.
+/// - **« Ajouter N rues »** never waits for a road: a street whose road is
+///   not known yet is added without, and Accueil fills it later (PLAN
+///   §5.3). Streets that fail stay ticked.
+/// - **The search** asks the BAN in the secteur's communes; a street picked
+///   moves the map to it and ticks it.
 ///
-/// Answers come back in any order: each lookup and search has a ticket,
-/// and an answer whose ticket is no longer the last is dropped.
+/// Answers come back in any order: each one ticks what it found, except
+/// once « Tout décocher » was pressed after its tap, or while the streets
+/// are being added.
 final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
   /// How much of the map shows around a street picked among the search
   /// results: the street and its neighbours, at about street zoom.
@@ -57,15 +57,21 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
   /// The area around the street picked in the search, null before.
   GeoBounds? _focus;
 
-  /// What the card is about; null when no card shows.
-  _Target? _target;
-  GeoPoint? _point;
+  /// The streets ticked, in the order they were.
+  var _picks = const <_Pick>[];
 
-  /// The road of the street to add (or just added from the card), once
-  /// the map told it.
-  StreetShape _road = StreetShape.none;
+  /// Where the last tap is being looked up; null once it is answered.
+  GeoPoint? _lookingAt;
 
+  /// Raised by each look-up: only the last one's answer takes its point
+  /// off the map.
   var _lookUps = 0;
+
+  /// Raised by « Tout décocher »: an answer to a tap made before it ticks
+  /// nothing.
+  var _clears = 0;
+
+  AddRun _run = const AddIdle();
 
   StreetSearch _search = const NoStreetSearch();
   var _found = const <StreetMatch>[];
@@ -76,9 +82,9 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
     _streets = const [];
     _communes = const [];
     _focus = null;
-    _target = null;
-    _point = null;
-    _road = StreetShape.none;
+    _picks = const [];
+    _lookingAt = null;
+    _run = const AddIdle();
     _search = const NoStreetSearch();
     _found = const [];
     final streets = ref
@@ -89,7 +95,7 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
           onError: (Object _) => _showStreets(const []),
         );
     ref.onDispose(streets.cancel);
-    // `ref.watch`: another tournée opened follows its communes.
+    // `ref.watch`: another secteur opened follows its communes.
     if (ref.watch(currentSectorProvider) case final sector?) {
       final communes = ref
           .watch(observeSectorCommunesProvider)(sector.id)
@@ -98,7 +104,7 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
               _communes = communes;
               _show();
             },
-            // The tournée can no longer be read (the member was removed):
+            // The secteur can no longer be read (the member was removed):
             // the communes last read stay.
             onError: (Object _) {},
           );
@@ -108,57 +114,57 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
   }
 
   void _showStreets(List<Street> streets) {
-    final before = _streets;
     _streets = streets;
-    // The card of a street of the secteur follows its progress. Gone to
-    // the Corbeille (it leaves the list), the card goes.
-    if (_target case _InSector(:final street)) {
-      final id = street.id;
-      if (_streetOf(id) case final fresh?) {
-        _target = _InSector(fresh);
-      } else if (before.any((street) => street.id == id)) {
-        _closeCard();
-      }
-    }
     _show();
   }
 
-  /// A tap on the map, away from the tournée's streets, at [point]: the
-  /// card of the street there, once the BAN tells which it is.
-  Future<void> tapMap(GeoPoint point) {
+  /// A tap on the map, away from the secteur's streets and the ticked
+  /// ones, at [point]: ticks the street there once the BAN tells which it
+  /// is, or unticks it when it is ticked already.
+  Future<TapAnswer> tapMap(GeoPoint point) {
     _search = const NoStreetSearch();
-    return _lookUp(StreetAtPoint(point), point);
+    return _lookUp(StreetAtPoint(point), point, toggle: true);
   }
 
-  /// A tap on the line or a house of the tournée's street [id]: its card
-  /// at once, offline too.
-  void tapStreet(StreetId id) {
-    final street = _streetOf(id);
-    if (street == null) return;
-    _lookUps++;
+  /// A tap on the line or a house of the secteur's street [id]: it is in
+  /// the secteur already, which needs no network to say.
+  TapAnswer tapStreet(StreetId id) {
     _search = const NoStreetSearch();
-    _target = _InSector(street);
-    _point = null;
-    _road = StreetShape.none;
     _show();
+    return switch (_streetOf(id)) {
+      final street? => AlreadyInSector(street.name.text),
+      null => const NothingToSay(),
+    };
   }
 
-  /// The back gesture with a card shown: the card goes.
-  void closeCard() {
-    _closeCard();
-    _show();
+  /// The ✕ of a row of the sheet, or a tap on a ticked road or its ✓ disc:
+  /// the street [id] is no longer ticked.
+  void untick(BanStreetId id) {
+    if (_run is AddRunning) return;
+    _setPicks([
+      for (final pick in _picks)
+        if (pick.id != id) pick,
+    ]);
   }
 
-  void _closeCard() {
-    // A lookup on its way is dropped.
-    _lookUps++;
-    _target = null;
-    _point = null;
-    _road = StreetShape.none;
+  /// « Tout décocher »: no street ticked, and the look-ups on their way
+  /// will tick none.
+  void untickAll() {
+    if (_run is AddRunning) return;
+    _clears++;
+    _lookingAt = null;
+    _setPicks(const []);
+  }
+
+  /// The ticks changed: a failure told before no longer applies.
+  void _setPicks(List<_Pick> picks) {
+    _picks = picks;
+    _run = const AddIdle();
+    _show();
   }
 
   /// The search box was submitted with [text]: the streets of the
-  /// tournée's communes whose name looks like it. A blank text closes the
+  /// secteur's communes whose name looks like it. A blank text closes the
   /// list.
   Future<void> search(String text) async {
     final ticket = ++_searches;
@@ -203,94 +209,129 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
   }
 
   /// The street [id] was picked among the search results: the map goes to
-  /// it and its card shows.
-  Future<void> pick(BanStreetId id) async {
+  /// it and it is ticked (it stays ticked if it was).
+  Future<TapAnswer> pick(BanStreetId id) async {
     final match = _found.where((match) => match.id == id).firstOrNull;
-    if (match == null) return;
+    if (match == null) return const NothingToSay();
     _searches++;
     _search = const NoStreetSearch();
     _found = const [];
     _focus = GeoBounds.around([match.position])!
         .expandedBy(foundStreetMarginMetres);
-    await _lookUp(FoundStreet(match), match.position);
+    return _lookUp(FoundStreet(match), match.position, toggle: false);
   }
 
-  /// « Ajouter au secteur » on the card of a street to add: the street joins
-  /// the secteur at once, with its road when the map told it already, and its
-  /// card becomes the one of a street of the tournée.
-  Future<void> add() async {
-    final target = _target;
-    if (target is! _ToAdd || target.adding) return;
-    // Read now: the screen may close while the street is stored, and the
-    // street must still be added.
+  /// « Ajouter N rues »: adds the ticked streets one after the other,
+  /// telling the progress. Returns how many are now in the secteur when
+  /// every one is; null when some failed (they stay ticked and the state
+  /// says why), or when there was nothing to add.
+  ///
+  /// Once started, it goes to the end even if the screen closes.
+  Future<int?> add() async {
+    if (_picks.isEmpty || _run is AddRunning) return null;
+    // Read now: the screen may close while the streets are stored, and
+    // they must still be added.
     final addStreet = ref.read(addStreetFromMapProvider);
-    final ticket = _lookUps;
-    _target = target.copy(adding: true);
-    _show();
-    final result = await addStreet(target.found.numbers, shape: _road);
-    // Another card was asked for meanwhile: it stays.
-    if (!ref.mounted || ticket != _lookUps) return;
-    switch (result) {
-      case Ok(value: final street):
-        _target = _InSector(street);
-        _show();
-        _fillAddedStreet();
-      // A teammate added it meanwhile: its card as the tournée has it.
-      case Err(failure: AddStreetFailure.alreadyInSector):
-        await _lookUp(FoundStreet(target.found.match), _point);
-      case Err(failure: AddStreetFailure.serviceError):
-        _target = target.copy(addFailed: true);
-        _show();
+    final chosen = _picks;
+    final failed = <BanStreetId>{};
+    var stored = 0;
+    _setRun(AddRunning(0, chosen.length));
+    for (final pick in chosen) {
+      // Its road may have come since the button was pressed.
+      final latest = _pickOf(pick.id) ?? pick;
+      switch (await addStreet(latest.found.numbers, shape: latest.road)) {
+        // A teammate added it meanwhile: it is in the secteur all the same.
+        case Ok() || Err(failure: AddStreetFailure.alreadyInSector):
+          stored++;
+        case Err(failure: AddStreetFailure.serviceError):
+          failed.add(pick.id);
+      }
+      _setRun(AddRunning(stored + failed.length, chosen.length));
     }
+    _picks = [
+      for (final pick in _picks)
+        if (failed.contains(pick.id)) pick,
+    ];
+    _setRun(failed.isEmpty ? const AddIdle() : AddFailed(failed.length));
+    return failed.isEmpty ? stored : null;
   }
 
-  Future<void> _lookUp(StreetLookup lookup, GeoPoint? point) async {
+  void _setRun(AddRun run) {
+    _run = run;
+    if (ref.mounted) _show();
+  }
+
+  Future<TapAnswer> _lookUp(
+    StreetLookup lookup,
+    GeoPoint point, {
+    required bool toggle,
+  }) async {
+    if (_run is AddRunning) {
+      _show();
+      return const NothingToSay();
+    }
     final ticket = ++_lookUps;
-    _target = const _Looking();
-    _point = point;
-    _road = StreetShape.none;
+    final clears = _clears;
+    _lookingAt = point;
     _show();
     final result = await ref.read(lookUpStreetProvider)(lookup);
-    if (!ref.mounted || ticket != _lookUps) return;
+    if (!ref.mounted) return const NothingToSay();
+    if (ticket == _lookUps) _lookingAt = null;
+    if (clears != _clears || _run is AddRunning) {
+      _show();
+      return const NothingToSay();
+    }
+    final TapAnswer answer;
     switch (result) {
       case Err(:final failure):
-        _target = _Failed(_problemOf(failure));
+        answer = LookUpFailed(_problemOf(failure));
       case Ok(value: StreetOfTheSector(:final street)):
-        _target = _InSector(street);
+        answer = AlreadyInSector(street.name.text);
       case Ok(value: final StreetToAdd found):
-        _target = _ToAdd(found);
-        unawaited(_showRoad(found, ticket));
+        answer = const NothingToSay();
+        _tick(found, point, toggle: toggle);
     }
     _show();
+    return answer;
   }
 
-  /// Highlights the road of [found] once the map tells it, if the card is
-  /// still the one of [ticket]; when the street was added meanwhile, gives
-  /// it that road. A failure only leaves the point marked.
-  Future<void> _showRoad(StreetToAdd found, int ticket) async {
-    final road = await ref.read(lookUpStreetShapeProvider)(found);
-    if (!ref.mounted || ticket != _lookUps) return;
+  /// Ticks [found], its ✓ at [mark], and asks the map for its road; when
+  /// it is ticked already, unticks it if [toggle].
+  void _tick(StreetToAdd found, GeoPoint mark, {required bool toggle}) {
+    final id = found.match.id;
+    if (_pickOf(id) != null) {
+      if (toggle) untick(id);
+      return;
+    }
+    final pick = _Pick(found, mark: mark, road: StreetShape.none);
+    _picks = [..._picks, pick];
+    _run = const AddIdle();
+    unawaited(_findRoad(pick));
+  }
+
+  /// Draws the road of [pick] once the map tells it, if the street is still
+  /// ticked by that tap. A failure, or no road, leaves the ✓ alone.
+  Future<void> _findRoad(_Pick pick) async {
+    final road = await ref.read(lookUpStreetShapeProvider)(pick.found);
+    if (!ref.mounted) return;
     if (road case Ok(:final value)) {
-      _road = value;
+      // `identical`: unticked then ticked again is another tick, which
+      // asked for its own road.
+      _picks = [
+        for (final each in _picks)
+          identical(each, pick) ? each.withRoad(value) : each,
+      ];
       _show();
-      _fillAddedStreet();
     }
   }
 
-  /// Gives the street just added from the card the road the map told,
-  /// when it was added before the road came. Offline, the write waits on
-  /// the phone like any other.
-  void _fillAddedStreet() {
-    if (_target case _InSector(:final street)
-        when street.shape.isEmpty && !_road.isEmpty) {
-      unawaited(ref.read(fillStreetShapeProvider)(street.id, road: _road));
-    }
-  }
+  _Pick? _pickOf(BanStreetId id) =>
+      _picks.where((pick) => pick.id == id).firstOrNull;
 
   Street? _streetOf(StreetId id) =>
       _streets.where((street) => street.id == id).firstOrNull;
 
-  /// The communes the search looks in: the tournée's; for a tournée
+  /// The communes the search looks in: the secteur's; for a secteur
   /// without commune (created before them), those of its streets.
   List<InseeCode> _searchCommunes() => _communes.isNotEmpty
       ? [for (final commune in _communes) commune.inseeCode]
@@ -305,69 +346,38 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
 
   void _show() => state = _render();
 
-  AddStreetsMapState _render() {
-    final target = _target;
-    return AddStreetsMapState(
-      layers: MapLayers.of(_streets),
-      area: _focus ?? addStreetsArea(_communes, _streets),
-      selectedRoad: switch (target) {
-        // A street just added keeps the road the card found until its own
-        // comes back from storage.
-        _InSector(:final street) when !street.shape.isEmpty => street.shape,
-        _ => _road,
-      },
-      selectedPoint: _point,
-      card: switch (target) {
-        null => null,
-        _Looking() => const StreetCardLoading(),
-        _Failed(:final problem) => StreetCardFailed(problem),
-        _ToAdd(:final found, :final adding, :final addFailed) =>
-          StreetCardToAdd(
-            name: found.match.name.text,
-            commune: found.match.commune.name,
-            numberCount: found.numberCount,
-            adding: adding,
-            addFailed: addFailed,
-          ),
-        _InSector(:final street) => StreetCardInSector.of(street),
-      },
-      search: _search,
-    );
-  }
+  AddStreetsMapState _render() => AddStreetsMapState(
+    layers: MapLayers.of(_streets),
+    area: _focus ?? addStreetsArea(_communes, _streets),
+    picked: [
+      for (final pick in _picks)
+        PickedStreetRow(
+          id: pick.id,
+          name: pick.found.match.name.text,
+          commune: pick.found.match.commune.name,
+          numberCount: pick.found.numberCount,
+        ),
+    ],
+    pickedRoads: [
+      for (final pick in _picks)
+        PickedRoad(street: pick.id, road: pick.road, mark: pick.mark),
+    ],
+    lookingAt: _lookingAt,
+    search: _search,
+    run: _run,
+  );
 }
 
-/// What the card is about. `sealed`: [AddStreetsMapNotifier._render] shows
-/// each case.
-sealed class _Target {
-  const _Target();
-}
-
-final class _Looking extends _Target {
-  const _Looking();
-}
-
-final class _Failed extends _Target {
-  const _Failed(this.problem);
-
-  final LookUpProblem problem;
-}
-
-/// A street to add.
-final class _ToAdd extends _Target {
-  const _ToAdd(this.found, {this.adding = false, this.addFailed = false});
+/// A street ticked: what the BAN told of it (its numbers, to add it), where
+/// its ✓ sits, and its road once the map told it.
+final class _Pick {
+  const _Pick(this.found, {required this.mark, required this.road});
 
   final StreetToAdd found;
-  final bool adding;
-  final bool addFailed;
+  final GeoPoint mark;
+  final StreetShape road;
 
-  /// The same street, being added, or refused.
-  _ToAdd copy({bool adding = false, bool addFailed = false}) =>
-      _ToAdd(found, adding: adding, addFailed: addFailed);
-}
+  BanStreetId get id => found.match.id;
 
-/// A street of the tournée, as last read.
-final class _InSector extends _Target {
-  const _InSector(this.street);
-
-  final Street street;
+  _Pick withRoad(StreetShape road) => _Pick(found, mark: mark, road: road);
 }

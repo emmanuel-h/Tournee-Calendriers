@@ -317,6 +317,18 @@ abstract final class AppSizes {
   /// its height.
   static const searchResultsShare = 0.6;
 
+  /// A street ticked in the selection sheet of « Ajouter des rues » (Pick
+  /// mockup): its name over its commune, and its ✕.
+  static const pickedRowHeight = 52.0;
+
+  /// The selection sheet shows this many rows of streets ticked, then
+  /// scrolls (PLAN §5.14)...
+  static const pickedRowsShown = 4;
+
+  /// ... and never more than this share of the map's height, so the map
+  /// still shows with a large font.
+  static const selectionListShare = 0.35;
+
   /// The dot of « ● En tournée » (PLAN §5.14).
   static const roundDot = 10.0;
 

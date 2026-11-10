@@ -9,8 +9,11 @@ import 'package:tournee_calendriers/domain/street/street_shape.dart';
 final class FakeStreetShapes implements StreetShapes {
   FakeStreetShapes([this.answer = const Ok(StreetShape.none)]);
 
-  /// The answer to every call.
+  /// The answer to every call, unless [answers] has one for the name.
   Result<StreetShape, StreetShapesFailure> answer;
+
+  /// The answer for each street name, before [answer].
+  final answers = <String, Result<StreetShape, StreetShapesFailure>>{};
 
   /// Run during each call, before it answers: a test plays what happens
   /// meanwhile (a teammate filling the same street).
@@ -29,6 +32,6 @@ final class FakeStreetShapes implements StreetShapes {
   }) async {
     asked.add((name.text, area));
     await whileAsked?.call();
-    return answer;
+    return answers[name.text] ?? answer;
   }
 }

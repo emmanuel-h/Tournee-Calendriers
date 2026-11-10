@@ -10,14 +10,12 @@ final _close = find.byKey(const Key('streetCard.close'));
 
 void main() {
   late int closed;
-  late int added;
 
   setUp(() {
     closed = 0;
-    added = 0;
   });
 
-  Future<void> pumpCard(WidgetTester tester, StreetCard card) {
+  Future<void> pumpCard(WidgetTester tester, StreetCardInSector card) {
     tester.view
       ..physicalSize = const Size(1170, 2532)
       ..devicePixelRatio = 3;
@@ -26,11 +24,7 @@ void main() {
       testApp(
         Align(
           alignment: Alignment.bottomCenter,
-          child: StreetCardSheet(
-            card: card,
-            onAdd: () => added++,
-            onClose: () => closed++,
-          ),
+          child: StreetCardSheet(card: card, onClose: () => closed++),
         ),
       ),
     );
@@ -57,41 +51,6 @@ void main() {
     expect(find.byType(OutlinedButton), findsNothing);
   });
 
-  testWidgets('should add a street with its one « Ajouter au secteur » '
-      'button', (tester) async {
-    await pumpCard(
-      tester,
-      const StreetCardToAdd(
-        name: 'Rue Pierre Morin',
-        commune: 'Villefranche-sur-Saône',
-        numberCount: 19,
-      ),
-    );
-
-    await tester.tap(find.byKey(const Key('streetCard.add')));
-
-    expect(added, 1);
-    expect(find.text('Ajouter au secteur'), findsOneWidget);
-    expect(find.textContaining('attribuer'), findsNothing);
-  });
-
-  testWidgets('should wait while the street is being added', (tester) async {
-    await pumpCard(
-      tester,
-      const StreetCardToAdd(
-        name: 'Rue Pierre Morin',
-        commune: 'Villefranche-sur-Saône',
-        numberCount: 19,
-        adding: true,
-      ),
-    );
-
-    await tester.tap(find.byKey(const Key('streetCard.add')));
-
-    expect(added, 0);
-    expect(find.text('Ajout en cours…'), findsOneWidget);
-  });
-
   testWidgets('should close the card when its ✕ is tapped', (tester) async {
     await pumpCard(tester, longName);
 
@@ -105,17 +64,6 @@ void main() {
 
     expect(
       tester.getTopRight(find.byKey(const Key('streetCard.name'))).dx,
-      lessThanOrEqualTo(tester.getTopLeft(_close).dx),
-    );
-  });
-
-  testWidgets('should keep the title of a failure clear of the ✕', (
-    tester,
-  ) async {
-    await pumpCard(tester, const StreetCardFailed(LookUpProblem.serviceError));
-
-    expect(
-      tester.getTopRight(find.byKey(const Key('streetCard.problem'))).dx,
       lessThanOrEqualTo(tester.getTopLeft(_close).dx),
     );
     expect(tester.getSize(_close), const Size(48, 48));

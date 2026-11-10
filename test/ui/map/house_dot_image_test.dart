@@ -121,6 +121,19 @@ void main() {
       expect(look.glyphColor, _colors.onBuildingPartial);
     });
 
+    test('should be a dark round with a white ✓ for a road ticked, in both '
+        'palettes', () {
+      for (final colors in [AppColors.light, AppColors.dark]) {
+        final look = HouseDotLook.pickedMark(colors);
+
+        expect(look.fill, const Color(0xFF1B1F24));
+        expect(look.border, const Color(0xFF1B1F24));
+        expect(look.dashed, isFalse);
+        expect(look.glyph, StatusGlyphs.done);
+        expect(look.glyphColor, const Color(0xFFFFFFFF));
+      }
+    });
+
     test('should be equal when every field is', () {
       final done = HouseDotLook.of(HouseDotStatus.done, _colors);
 
