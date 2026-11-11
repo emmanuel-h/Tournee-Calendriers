@@ -1690,6 +1690,30 @@ abstract class AppLocalizations {
   /// **'Première version de test.'**
   String get release010First;
 
+  /// Line of « Nouveautés » for 0.13.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'Une rue mal orthographiée sur la carte se coche quand même.'**
+  String get release0130Names;
+
+  /// Line of « Nouveautés » for 0.13.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'La recherche de communes passe par un second service si le premier ne répond pas.'**
+  String get release0130Communes;
+
+  /// Line of « Nouveautés » for 0.13.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'Quand un service ne répond pas, l\'app le dit au lieu d\'annoncer « Pas de réseau ».'**
+  String get release0130Messages;
+
+  /// Line of « Nouveautés » for 0.13.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'La carte garde la zone tracée et la dernière rue cochée au-dessus du panneau ; la coche se pose sur la rue.'**
+  String get release0130InView;
+
   /// Line of « Nouveautés » for 0.12.0.
   ///
   /// In fr, this message translates to:

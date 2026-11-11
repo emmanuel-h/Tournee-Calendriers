@@ -1171,6 +1171,22 @@ class AppLocalizationsFr extends AppLocalizations {
   String get release010First => 'Première version de test.';
 
   @override
+  String get release0130Names =>
+      'Une rue mal orthographiée sur la carte se coche quand même.';
+
+  @override
+  String get release0130Communes =>
+      'La recherche de communes passe par un second service si le premier ne répond pas.';
+
+  @override
+  String get release0130Messages =>
+      'Quand un service ne répond pas, l\'app le dit au lieu d\'annoncer « Pas de réseau ».';
+
+  @override
+  String get release0130InView =>
+      'La carte garde la zone tracée et la dernière rue cochée au-dessus du panneau ; la coche se pose sur la rue.';
+
+  @override
   String get release0120Title =>
       'Le titre de l\'accueil ouvre le Secteur ; « Changer de secteur » s\'y trouve.';
 
