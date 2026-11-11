@@ -2281,12 +2281,13 @@ storage of streets was removed in #119, streets only living in a secteur since, 
 
 - **`House.position`** (`GeoPoint?`): where the entrance is, from the BAN; null for a number typed
   by hand or one the BAN gives no position. Every command keeps it (a renumbered house too).
-- **Undo** (`Street.undo(change)`): puts back exactly what the change replaced and returns the
-  change the undo makes, itself undoable. A house change (mark, « repasser », layout, door
-  added / removed / renamed, back to a single house, renumbering) puts the **whole house** back,
-  last change included → `HouseReverted(replaced, house)` (storage writes the whole house entry,
-  deleting the old key when it renumbers back). A door change puts that door back →
-  `DwellingReverted`. `NumberRemoved` → restore; `NumberRestored` → removed again with its old
+- **Undo** (`Street.undo(change, by, at)`): puts back exactly what the change replaced and
+  returns the change the undo makes, itself undoable. A house change (mark, « repasser », layout,
+  door added / removed / renamed, back to a single house, renumbering) puts the **whole house**
+  back, last change included → `HouseReverted(replaced, house, stamp)` (storage writes the whole
+  house entry, deleting the old key when it renumbers back). A door change puts that door back →
+  `DwellingReverted(…, stamp)`. The `stamp` is who undoes and when (`by`, `at`, from
+  `UndoLastChange`'s `IdentityProvider` and `Clock`). `NumberRemoved` → restore; `NumberRestored` → removed again with its old
   removal stamp; `StreetRenamed` → old name; `StreetDeleted` → restored. Refused (`UndoFailure`):
   `otherStreet`, `gone` (the house, number or door is no longer there), `numberTaken` (the old
   number was taken again, shown or in the Corbeille), `notUndoable` (`NumbersAdded`, removed with ✕
@@ -2773,9 +2774,9 @@ Firestore adapters fixed in T2.3 (`lib/infrastructure/firestore/`, `lib/applicat
   and its reservation in one batch, so a member's phone sees its membership and the
   reservation go together and says « supprimée », not « retiré » (T2.6c).
 - **Undo is stamped with who undoes, now** (`HouseReverted`, `DwellingReverted`): the adapter
-  writes the current member and the `Clock`'s time as `by` / `at`, not the old stamp, since the
-  rules accept only the caller's uid (§8.2). The domain's undo still puts the exact house back;
-  the stored one carries the new stamp, which the listener then shows.
+  writes the change's `stamp` (decided by `UndoLastChange`) as `by` / `at`, not the old stamp,
+  since the rules accept only the caller's uid (§8.2). The domain's undo still puts the exact
+  house back; the stored one carries the new stamp, which the listener then shows.
 - **Times** are the phone's (`Clock`), stored as Firestore `Timestamp`s and read back in UTC: a
   mark made offline keeps the time it was made, not the time it reached the server.
 

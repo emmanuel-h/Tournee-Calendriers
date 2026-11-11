@@ -259,7 +259,7 @@ void main() {
         street.markNobodyHomeAgain(n('7'), by: lea, at: twoPm),
       );
 
-      final (undone, _) = valueOf(marked.undo(change));
+      final (undone, _) = valueOf(marked.undo(change, by: paul, at: threePm));
 
       expect(_houseOf(undone), _houseOf(street));
       expect(_houseOf(undone).tries, tries(2));
@@ -437,7 +437,7 @@ void main() {
         street.markDwellingNobodyHomeAgain(n('8'), _door, by: lea, at: twoPm),
       );
 
-      final (undone, _) = valueOf(marked.undo(change));
+      final (undone, _) = valueOf(marked.undo(change, by: paul, at: threePm));
 
       expect(_doorOf(undone), _doorOf(street));
     });

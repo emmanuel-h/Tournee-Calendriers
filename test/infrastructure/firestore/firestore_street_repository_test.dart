@@ -21,7 +21,6 @@ import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_writ
 import 'package:tournee_calendriers/infrastructure/firestore/unfinished_streets.dart';
 
 import '../../domain/sector/sector_fixtures.dart' show campaign2026;
-import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_unfinished_streets.dart';
 import '../../support/geo_fixtures.dart';
 import '../../support/results.dart';
@@ -75,19 +74,16 @@ void main() {
   late FakeFirebaseFirestore db;
   final repositories = <FirestoreStreetRepository>[];
 
-  /// The repository of one phone of the team, used by [member], with
-  /// [unfinished] as its phone storage of the streets being written.
-  FirestoreStreetRepository phone([
-    String member = 'lea',
+  /// The repository of one phone of the team, with [unfinished] as its
+  /// phone storage of the streets being written.
+  FirestoreStreetRepository phone({
     UnfinishedStreets? unfinished,
     FakeFirebaseFirestore? on,
-  ]) {
+  }) {
     final repository = FirestoreStreetRepository(
       on ?? db,
       sector: SectorId('t49'),
       campaign: campaign2026,
-      identity: FakeIdentity(MemberId(member)),
-      clock: FakeClock(fourPm),
       unfinished: unfinished ?? FakeUnfinishedStreets(),
     );
     repositories.add(repository);
@@ -115,7 +111,7 @@ void main() {
       await phone().add(richStreet);
       await pumpEventQueue();
 
-      final found = await phone('paul').find(richStreet.id);
+      final found = await phone().find(richStreet.id);
 
       expectSameStreet(found!, richStreet);
     });
@@ -163,7 +159,7 @@ void main() {
 
       final stored = await db.doc('$streetsPath/paix').get();
       expect(stored.data(), streetToDocument(paix));
-      expectSameStreet((await phone('paul').find(paix.id))!, paix);
+      expectSameStreet((await phone().find(paix.id))!, paix);
     });
 
     test('should have the whole street on this phone as soon as it is '
@@ -214,7 +210,7 @@ void main() {
       final unfinished = FakeUnfinishedStreets()..slowDisk = Completer();
       final paix = _paixOf(housesPerWrite + 1);
 
-      await phone('lea', unfinished).add(paix);
+      await phone(unfinished: unfinished).add(paix);
       await pumpEventQueue();
 
       expect(unfinished.keptEver, [paix.id]);
@@ -229,7 +225,7 @@ void main() {
     test('should not keep a street that one write holds', () async {
       final unfinished = FakeUnfinishedStreets();
 
-      await phone('lea', unfinished).add(_paixOf(housesPerWrite));
+      await phone(unfinished: unfinished).add(_paixOf(housesPerWrite));
       await pumpEventQueue();
 
       expect(await storedHouses(db, 'paix'), housesPerWrite);
@@ -241,7 +237,7 @@ void main() {
         'until after its writes', () async {
       final unfinished = FakeUnfinishedStreets()..slowDisk = Completer();
       final paix = _paixOf(5);
-      final streets = phone('lea', unfinished);
+      final streets = phone(unfinished: unfinished);
       await streets.add(paix);
       final (marked, change) = valueOf(
         paix.markHouse(
@@ -266,7 +262,7 @@ void main() {
       final unfinished = FakeUnfinishedStreets();
       final paix = _paixOf(101);
 
-      await phone('lea', unfinished).add(paix);
+      await phone(unfinished: unfinished).add(paix);
       await _settle(() async => unfinished.forgotten.isNotEmpty);
 
       expect(await storedHouses(db, 'paix'), 101);
@@ -279,7 +275,7 @@ void main() {
       final unfinished = FakeUnfinishedStreets()..keepFails = true;
       final paix = _paixOf(11);
 
-      await phone('lea', unfinished).add(paix);
+      await phone(unfinished: unfinished).add(paix);
       await _settle(() async => await storedHouses(db, 'paix') == 11);
 
       expect(
@@ -327,7 +323,7 @@ void main() {
           kept = unfinished.copy();
         }
       });
-      await phone('lea', unfinished).add(paix);
+      await phone(unfinished: unfinished).add(paix);
       await _settle(() async => copy != null);
       await killing.cancel();
       final afterKill = FakeFirebaseFirestore();
@@ -335,7 +331,7 @@ void main() {
       expect((copy!['houses'] as Map<String, dynamic>).length, lessThan(101));
       expect(kept!.kept.keys, [paix.id]);
 
-      final restarted = phone('lea', kept, afterKill);
+      final restarted = phone(unfinished: kept, on: afterKill);
       await restarted.find(paix.id);
       await _settle(() async => kept!.kept.isEmpty);
 
@@ -344,10 +340,7 @@ void main() {
         streetToDocument(paix),
       );
       expectSameStreet((await restarted.find(paix.id))!, paix);
-      expectSameStreet(
-        (await phone('paul', null, afterKill).find(paix.id))!,
-        paix,
-      );
+      expectSameStreet((await phone(on: afterKill).find(paix.id))!, paix);
     });
 
     test('should leave the houses a teammate marked since the kill as they '
@@ -369,7 +362,7 @@ void main() {
       });
       final kept = FakeUnfinishedStreets([paix]);
 
-      await phone('lea', kept).find(paix.id);
+      await phone(unfinished: kept).find(paix.id);
       await _settle(() async => kept.kept.isEmpty);
 
       expect((await storedHouse('paix', '1'))['by'], 'paul');
@@ -381,7 +374,7 @@ void main() {
         'reached Firestore', () async {
       final paix = _paixOf(5);
       final kept = FakeUnfinishedStreets([paix]);
-      final streets = phone('lea', kept);
+      final streets = phone(unfinished: kept);
 
       await streets.watchAll().first;
       expectSameStreet((await streets.find(paix.id))!, paix);
@@ -404,7 +397,7 @@ void main() {
           .listen((snapshot) => updates.add(snapshot.data()));
       await pumpEventQueue();
 
-      await phone('lea', kept).find(lilas.id);
+      await phone(unfinished: kept).find(lilas.id);
       await _settle(() async => kept.kept.isEmpty);
       await following.cancel();
 
@@ -417,7 +410,7 @@ void main() {
       await pumpEventQueue();
       final unreadable = FakeUnfinishedStreets()..loadFails = true;
 
-      final found = await phone('lea', unreadable).find(lilas.id);
+      final found = await phone(unfinished: unreadable).find(lilas.id);
       await pumpEventQueue();
 
       expectSameStreet(found!, lilas);
@@ -428,8 +421,8 @@ void main() {
     test('should keep two marks made at once on different houses', () async {
       await phone().add(lilas);
       await pumpEventQueue();
-      final lea = phone('lea');
-      final paul = phone('paul');
+      final lea = phone();
+      final paul = phone();
       // Both phones read the street before either marks it.
       final leaSees = (await lea.find(lilas.id))!;
       final paulSees = (await paul.find(lilas.id))!;
@@ -454,7 +447,7 @@ void main() {
       await paul.save(paulMarked, paulChange);
       await pumpEventQueue();
 
-      final both = (await phone('manu').find(lilas.id))!;
+      final both = (await phone().find(lilas.id))!;
       expect(both.houses.map((house) => house.status), [
         VisitStatus.done,
         VisitStatus.nobodyHome,
@@ -479,7 +472,7 @@ void main() {
 
       final stored = (await db.doc('$streetsPath/lilas').get()).data()!;
       expect(stored['shape'], shape.encode());
-      expect((await phone('paul').find(lilas.id))!.shape, shape);
+      expect((await phone().find(lilas.id))!.shape, shape);
     });
 
     test('should store a new part, then the whole street again without '
@@ -497,7 +490,7 @@ void main() {
 
       final stored = (await db.doc('$streetsPath/lilas').get()).data()!;
       expect(stored['part'], {'odd': 'all', 'even': 'none'});
-      final seenByPaul = (await phone('paul').find(lilas.id))!;
+      final seenByPaul = (await phone().find(lilas.id))!;
       expect(seenByPaul.part, odds);
       expect(seenByPaul.removedHouses.single.number, n('2'));
 
@@ -509,7 +502,7 @@ void main() {
 
       final after = (await db.doc('$streetsPath/lilas').get()).data()!;
       expect(after.containsKey('part'), isFalse);
-      expect((await phone('sam').find(lilas.id))!.houses, hasLength(2));
+      expect((await phone().find(lilas.id))!.houses, hasLength(2));
     });
 
     test('should write only the fields the change names', () async {
@@ -601,10 +594,10 @@ void main() {
       },
     );
 
-    test('should stamp an undo with who undoes and when', () async {
+    test('should store an undo with the stamp the undo carries', () async {
       await phone().add(lilas);
       await pumpEventQueue();
-      final streets = phone('manu');
+      final streets = phone();
       final street = (await streets.find(lilas.id))!;
       final (marked, change) = valueOf(
         street.markHouse(
@@ -615,7 +608,9 @@ void main() {
         ),
       );
       await streets.save(marked, change);
-      final (undone, undo) = valueOf(marked.undo(change));
+      final (undone, undo) = valueOf(
+        marked.undo(change, by: MemberId('manu'), at: fourPm),
+      );
 
       await streets.save(undone, undo);
       await pumpEventQueue();
@@ -642,7 +637,7 @@ void main() {
         await streets.save(added, change);
         await pumpEventQueue();
 
-        final found = (await phone('paul').find(lilas.id))!;
+        final found = (await phone().find(lilas.id))!;
         expect(found.houses.map((house) => house.number.label), [
           '1',
           '2',
@@ -702,7 +697,7 @@ void main() {
 
       expect((await db.doc('$streetsPath/lilas').get()).exists, isFalse);
       expect((await db.doc('$streetsPath/roses').get()).exists, isTrue);
-      expect(await phone('paul').find(lilas.id), isNull);
+      expect(await phone().find(lilas.id), isNull);
     });
 
     test('should drop the purged numbers from the street document', () async {
@@ -720,7 +715,7 @@ void main() {
 
       final data = (await db.doc('$streetsPath/lilas').get()).data()!;
       expect((data['houses'] as Map<String, dynamic>).keys, ['2']);
-      final seen = (await phone('paul').find(lilas.id))!;
+      final seen = (await phone().find(lilas.id))!;
       expect(seen.removedHouses, isEmpty);
       expect(seen.houses.map((house) => house.number), [n('2')]);
     });
@@ -737,7 +732,7 @@ void main() {
       await phone().add(_street('roses', banId: '69264_0680'));
       await pumpEventQueue();
 
-      final streets = phone('paul');
+      final streets = phone();
 
       expect(
         (await streets.findByBanId(BanStreetId('69264_0420')))!.id,
@@ -751,7 +746,7 @@ void main() {
       await phone().add(lilas);
       await pumpEventQueue();
 
-      final streets = phone('paul');
+      final streets = phone();
 
       expect(await streets.find(StreetId('broken')), isNull);
       expect(await streets.find(lilas.id), isNotNull);
@@ -763,12 +758,12 @@ void main() {
       await phone().add(lilas);
       await pumpEventQueue();
       final seen = <VisitStatus?>[];
-      final subscription = phone('lea')
+      final subscription = phone()
           .watch(lilas.id)
           .listen((street) => seen.add(street?.houses.first.status));
       await pumpEventQueue();
 
-      final paul = phone('paul');
+      final paul = phone();
       final street = (await paul.find(lilas.id))!;
       final (marked, change) = valueOf(
         street.markHouse(
@@ -796,7 +791,7 @@ void main() {
       await streets.save(deleted, change);
       await pumpEventQueue();
 
-      final other = phone('paul');
+      final other = phone();
       final shown = await other.watchAll().first;
       final binned = await other.watchDeleted().first;
 

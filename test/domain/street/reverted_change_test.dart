@@ -1,6 +1,7 @@
 // The changes an undo makes (PLAN §7: undo is a normal write of the
 // previous value): a whole house, or a whole door, put back.
 import 'package:test/test.dart';
+import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
@@ -29,19 +30,22 @@ void main() {
       StreetId? streetId,
       House? replaced,
       House? house,
+      ChangeStamp? stamp,
     }) => HouseReverted(
       streetId: streetId ?? lilas,
       replaced: replaced ?? twelveDone,
       house: house ?? twelve,
+      stamp: stamp ?? paulAtThree,
     );
 
-    test('should carry the house it replaced and the house put back', () {
+    test('should carry the houses and who undoes, when', () {
       final change = reverted();
 
       expect(change.streetId, lilas);
       expect(change.replaced, twelveDone);
       expect(change.house, twelve);
       expect(change.number, n('12'));
+      expect(change.stamp, paulAtThree);
     });
 
     test('should not renumber when both houses have the same number', () {
@@ -64,6 +68,7 @@ void main() {
       'streets': () => reverted(streetId: gambetta),
       'houses replaced': () => reverted(replaced: twelve),
       'houses put back': () => reverted(house: twelveDone),
+      'stamps': () => reverted(stamp: leaAtTwo),
     };
     others.forEach((field, other) {
       test('should differ when the $field differ', () {
@@ -94,6 +99,7 @@ void main() {
       int? level = 5,
       Dwelling? replaced,
       Dwelling? dwelling,
+      ChangeStamp? stamp,
     }) => DwellingReverted(
       streetId: streetId ?? lilas,
       number: number ?? n('8'),
@@ -101,9 +107,10 @@ void main() {
       level: level,
       replaced: replaced ?? doneDoor,
       dwelling: dwelling ?? door,
+      stamp: stamp ?? paulAtThree,
     );
 
-    test('should name the house, the door and its key', () {
+    test('should name the house, the door, its key and who undoes', () {
       final change = reverted(staircase: escB);
 
       expect(change.streetId, lilas);
@@ -113,6 +120,7 @@ void main() {
       expect(change.replaced, doneDoor);
       expect(change.dwelling, door);
       expect(change.key, DwellingKey(escB, 5, d('51')));
+      expect(change.stamp, paulAtThree);
     });
 
     test('should be equal when every field is equal', () {
@@ -128,6 +136,7 @@ void main() {
       'floors, one unknown': () => reverted(level: null),
       'doors replaced': () => reverted(replaced: door),
       'doors put back': () => reverted(dwelling: doneDoor),
+      'stamps': () => reverted(stamp: leaAtTwo),
     };
     others.forEach((field, other) {
       test('should differ when the $field differ', () {

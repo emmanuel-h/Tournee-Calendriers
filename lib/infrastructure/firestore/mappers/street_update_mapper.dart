@@ -21,8 +21,9 @@
 // rather than holding 0.
 //
 // An undo writes the house or door back as it was, with one exception: it
-// is stamped with who undoes and when, not with the old stamp, since the
-// security rules accept only the caller's own uid as `by` (PLAN §8.2).
+// is stamped with the change's stamp (who undoes and when, decided by the
+// use case), not with the old one, since the security rules accept only the
+// caller's own uid as `by` (PLAN §8.2).
 import 'package:cloud_firestore/cloud_firestore.dart' show FieldPath;
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
@@ -48,14 +49,12 @@ import 'package:tournee_calendriers/infrastructure/shared/mappers/street_part_fi
 /// [housesPerWrite]; they refuse a write that changes several houses
 /// already there, since they cannot check them one by one (PLAN §8.2).
 ///
-/// [undoStamp] (who is undoing, now) stamps what an undo puts back.
 /// [removal] is the value that removes a field, `FieldValue.delete()`. It
 /// is passed in so this mapping needs no Firestore platform and its tests
 /// can recognise it.
 List<Map<FieldPath, Object?>> streetUpdates(
   Street street,
   StreetChange change, {
-  required ChangeStamp undoStamp,
   required Object removal,
 }) {
   Map<FieldPath, Object?> doorUpdate(
@@ -167,31 +166,43 @@ List<Map<FieldPath, Object?>> streetUpdates(
       ],
     // Before the general undo of a house: a `switch` takes the first case
     // that matches, and this one needs the key moved.
-    HouseReverted(renumbers: true, :final replaced, :final house) => [
-      {
-        _path([_houses, replaced.number.label]): removal,
-        _path([_houses, house.number.label]): houseEntry(
-          _stamped(house, undoStamp),
-        ),
-      },
-    ],
-    HouseReverted(:final replaced, :final house) => [
-      _houseRewritten(replaced, _stamped(house, undoStamp), removal),
-    ],
-    DwellingReverted(:final number, :final key, :final dwelling) => [
-      {
-        _path([_houses, number.label, _dwellings, key.id]): dwellingEntry(
-          Dwelling(
-            label: dwelling.label,
-            status: dwelling.status,
-            comeBack: dwelling.comeBack,
-            lastChange: undoStamp,
-            tries: dwelling.tries,
-            calendars: dwelling.calendars,
+    HouseReverted(
+      renumbers: true,
+      :final replaced,
+      :final house,
+      :final stamp,
+    ) =>
+      [
+        {
+          _path([_houses, replaced.number.label]): removal,
+          _path([_houses, house.number.label]): houseEntry(
+            _stamped(house, stamp),
           ),
-        ),
-      },
+        },
+      ],
+    HouseReverted(:final replaced, :final house, :final stamp) => [
+      _houseRewritten(replaced, _stamped(house, stamp), removal),
     ],
+    DwellingReverted(
+      :final number,
+      :final key,
+      :final dwelling,
+      :final stamp,
+    ) =>
+      [
+        {
+          _path([_houses, number.label, _dwellings, key.id]): dwellingEntry(
+            Dwelling(
+              label: dwelling.label,
+              status: dwelling.status,
+              comeBack: dwelling.comeBack,
+              lastChange: stamp,
+              tries: dwelling.tries,
+              calendars: dwelling.calendars,
+            ),
+          ),
+        },
+      ],
   };
 }
 

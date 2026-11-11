@@ -189,7 +189,10 @@ void main() {
       final street = _street(removed: [_removed('3', 31)]);
       final (purged, change) = street.purgeNumbers(now: _now)!;
 
-      expect(failureOf(purged.undo(change)), UndoFailure.notUndoable);
+      expect(
+        failureOf(purged.undo(change, by: paul, at: threePm)),
+        UndoFailure.notUndoable,
+      );
     });
   });
 }

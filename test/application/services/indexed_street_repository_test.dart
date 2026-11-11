@@ -151,7 +151,12 @@ void main() {
         before: streetName('Rue des Lilas'),
         name: streetName('Rue des Lys'),
       ),
-      HouseReverted(streetId: lilasId, replaced: seven, house: seven),
+      HouseReverted(
+        streetId: lilasId,
+        replaced: seven,
+        house: seven,
+        stamp: leaAtTwo,
+      ),
       DwellingReverted(
         streetId: lilasId,
         number: n('8'),
@@ -159,6 +164,7 @@ void main() {
         level: 0,
         replaced: doorOne,
         dwelling: doorOne,
+        stamp: leaAtTwo,
       ),
     ]) {
       test('should leave the index alone for ${change.runtimeType}', () async {

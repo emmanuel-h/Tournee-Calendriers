@@ -46,12 +46,7 @@ List<Map<FieldPath, Object?>> updatesOf<C extends StreetChange, F>(
   Result<(Street, C), F> Function(Street street) command,
 ) {
   final (changed, change) = valueOf(command(street));
-  return streetUpdates(
-    changed,
-    change,
-    undoStamp: manuAtFour,
-    removal: removed,
-  );
+  return streetUpdates(changed, change, removal: removed);
 }
 
 /// The update storing the change [command] makes on [street], when it is
@@ -61,13 +56,17 @@ Map<FieldPath, Object?> updateOf<C extends StreetChange, F>(
   Result<(Street, C), F> Function(Street street) command,
 ) => updatesOf(street, command).single;
 
-/// The update storing the undo of the change [command] makes on [street].
+/// The update storing the undo, by Manu at four, of the change [command]
+/// makes on [street].
 Map<FieldPath, Object?> undoOf<C extends StreetChange, F>(
   Street street,
   Result<(Street, C), F> Function(Street street) command,
 ) {
   final (changed, change) = valueOf(command(street));
-  return updateOf(changed, (street) => street.undo(change));
+  return updateOf(
+    changed,
+    (street) => street.undo(change, by: manu, at: fourPm),
+  );
 }
 
 /// A street with a single house 4 and building 8 of two staircases, out of
@@ -572,12 +571,7 @@ void main() {
         now: threePm.add(const Duration(days: 31)),
       )!;
 
-      final updates = streetUpdates(
-        purged,
-        change,
-        undoStamp: manuAtFour,
-        removal: removed,
-      );
+      final updates = streetUpdates(purged, change, removal: removed);
 
       // One house dropped per write: the security rules check the one
       // house a write drops, not several.

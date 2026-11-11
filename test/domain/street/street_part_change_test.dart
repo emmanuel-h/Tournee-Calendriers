@@ -430,7 +430,10 @@ void main() {
         street.changePart(_held, by: lea, at: twoPm),
       );
 
-      expect(failureOf(changed.undo(change)), UndoFailure.notUndoable);
+      expect(
+        failureOf(changed.undo(change, by: paul, at: threePm)),
+        UndoFailure.notUndoable,
+      );
     });
   });
 

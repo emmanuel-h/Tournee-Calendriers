@@ -92,7 +92,10 @@ void main() {
     test('should not be undone', () {
       final (street, change) = valueOf(_nationale().fillShape(_road));
 
-      expect(failureOf(street.undo(change)), UndoFailure.notUndoable);
+      expect(
+        failureOf(street.undo(change, by: paul, at: threePm)),
+        UndoFailure.notUndoable,
+      );
     });
   });
 

@@ -2,13 +2,10 @@ import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
-import 'package:tournee_calendriers/application/ports/clock.dart';
-import 'package:tournee_calendriers/application/ports/identity_provider.dart';
 import 'package:tournee_calendriers/application/ports/pending_sync.dart';
 import 'package:tournee_calendriers/application/ports/server_connection.dart';
 import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
-import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
@@ -45,24 +42,18 @@ import 'package:tournee_calendriers/infrastructure/firestore/unfinished_streets.
 ///   more houses than one write holds is kept on the phone until all its
 ///   writes are in Firestore's hands; at the next start, the houses missing
 ///   from the phone's copy are sent again (#104).
-/// - **Undo** is stamped with who undoes, read from [IdentityProvider] and
-///   [Clock] at the time of the write (PLAN §8.2).
 final class FirestoreStreetRepository
     implements StreetRepository, PendingSync, ServerConnection {
   FirestoreStreetRepository(
     FirebaseFirestore db, {
     required SectorId sector,
     required CampaignYear campaign,
-    // `this._identity` as a named parameter: callers write it without the
-    // underscore, `identity:`.
-    required this._identity,
-    required this._clock,
+    // `this._unfinished` as a named parameter: callers write it without the
+    // underscore, `unfinished:`.
     required this._unfinished,
   }) : _streets = FirestoreLayout.streetsOf(db, sector, campaign);
 
   final CollectionReference<Map<String, dynamic>> _streets;
-  final IdentityProvider _identity;
-  final Clock _clock;
   final UnfinishedStreets _unfinished;
 
   /// The whole document of each new street whose writes are still going,
@@ -248,12 +239,7 @@ final class FirestoreStreetRepository
   @override
   Future<void> save(Street street, StreetChange change) async {
     _ready.put(street);
-    final updates = streetUpdates(
-      street,
-      change,
-      undoStamp: ChangeStamp(by: _identity.currentMember, at: _clock.now()),
-      removal: FieldValue.delete(),
-    );
+    final updates = streetUpdates(street, change, removal: FieldValue.delete());
     final doc = _streets.doc(street.id.value);
     // Behind the writes of the street still going (a street just added),
     // then all at once: when a change needs several updates (numbers

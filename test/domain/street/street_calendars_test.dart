@@ -363,7 +363,7 @@ void main() {
         street.addCalendar(n('9'), by: lea, at: twoPm),
       );
 
-      final (undone, _) = valueOf(counted.undo(change));
+      final (undone, _) = valueOf(counted.undo(change, by: paul, at: threePm));
 
       expect(_houseOf(undone), _houseOf(street));
     });
@@ -519,7 +519,7 @@ void main() {
         street.addCalendar(n('8'), door: _door, by: lea, at: twoPm),
       );
 
-      final (undone, _) = valueOf(counted.undo(change));
+      final (undone, _) = valueOf(counted.undo(change, by: paul, at: threePm));
 
       expect(_doorOf(undone), _doorOf(street));
     });

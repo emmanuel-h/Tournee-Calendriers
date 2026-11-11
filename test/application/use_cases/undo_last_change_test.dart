@@ -3,6 +3,7 @@ import 'package:tournee_calendriers/application/use_cases/command_failure.dart';
 import 'package:tournee_calendriers/application/use_cases/edit_street_numbers.dart';
 import 'package:tournee_calendriers/application/use_cases/mark.dart';
 import 'package:tournee_calendriers/application/use_cases/mark_dwelling.dart';
+import 'package:tournee_calendriers/application/use_cases/round_visits.dart';
 import 'package:tournee_calendriers/application/use_cases/set_house_details.dart';
 import 'package:tournee_calendriers/application/use_cases/undo_last_change.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
@@ -12,10 +13,16 @@ import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
 import '../../support/fakes/fake_open_round_store.dart';
+import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 import 'street_fixtures.dart';
+
+/// The undo of [streets], by Paul at three: not the Léa at two who made
+/// the changes undone.
+UndoLastChange paulUndoing(FakeStreetRepository streets, RoundVisits rounds) =>
+    UndoLastChange(streets, FakeClock(threePm), FakeIdentity(paul), rounds);
 
 void main() {
   late FakeStreetRepository streets;
@@ -23,7 +30,7 @@ void main() {
 
   setUp(() {
     streets = repositoryWithLilas();
-    undo = UndoLastChange(streets, noRoundOn());
+    undo = paulUndoing(streets, noRoundOn());
   });
 
   test('should put the exact previous house back after a tap', () async {
@@ -55,6 +62,7 @@ void main() {
           position: townHallDoor,
         ),
         house: five,
+        stamp: paulAtThree,
       ),
     );
     expect(streets.saved.last.$2, change);
@@ -81,6 +89,7 @@ void main() {
 
     expect(houseOf(streets[lilasId]!, '8'), eight);
     expect(change, isA<DwellingReverted>());
+    expect((change as DwellingReverted).stamp, paulAtThree);
   });
 
   test('should bring a removed number back with its marks', () async {
@@ -126,7 +135,7 @@ void main() {
         leaOnThePhone(),
         visitsTo(rounds),
       );
-      undo = UndoLastChange(streets, visitsTo(rounds));
+      undo = paulUndoing(streets, visitsTo(rounds));
     });
 
     test('should not count a ✓ undone', () async {

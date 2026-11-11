@@ -1,6 +1,8 @@
 // Street.undo: every change the screens offer to cancel (« Annuler » of the
 // snackbar) puts back exactly what was there before (PLAN §7).
 import 'package:test/test.dart';
+import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
+import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
@@ -16,6 +18,11 @@ import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 
 final _lilas = StreetId('rue-des-lilas');
+
+/// Who undoes, and when: Manu at four, unlike every stamp of the houses.
+final _manu = MemberId('manu');
+final _fourPm = DateTime.utc(2026, 11, 2, 16);
+final _manuAtFour = ChangeStamp(by: _manu, at: _fourPm);
 
 /// Number 5: « repasser » with a hint, Paul's last change and a position.
 /// Number 7: to do. Number 8: a building RdC 01 02, door 01 done.
@@ -57,7 +64,7 @@ House _house(Street street, String label) =>
   Result<(Street, C), F> Function(Street) command,
 ) {
   final (changed, change) = valueOf(command(street));
-  return valueOf(changed.undo(change));
+  return valueOf(changed.undo(change, by: _manu, at: _fourPm));
 }
 
 void main() {
@@ -80,6 +87,7 @@ void main() {
             position: townHallDoor,
           ),
           house: _five,
+          stamp: _manuAtFour,
         ),
       );
     });
@@ -102,7 +110,7 @@ void main() {
         marked.markHouse(n('7'), VisitStatus.done, by: paul, at: threePm),
       );
 
-      final (street, _) = valueOf(both.undo(change));
+      final (street, _) = valueOf(both.undo(change, by: _manu, at: _fourPm));
 
       expect(_house(street, '5'), _five);
       expect(_house(street, '7').status, VisitStatus.done);
@@ -117,7 +125,9 @@ void main() {
         marked.markHouse(n('5'), VisitStatus.nobodyHome, by: paul, at: threePm),
       );
 
-      final (street, _) = valueOf(markedAgain.undo(change));
+      final (street, _) = valueOf(
+        markedAgain.undo(change, by: _manu, at: _fourPm),
+      );
 
       expect(_house(street, '5'), _five);
     });
@@ -130,7 +140,10 @@ void main() {
         marked.removeNumber(n('5'), by: paul, at: threePm),
       );
 
-      expect(failureOf(removed.undo(change)), UndoFailure.gone);
+      expect(
+        failureOf(removed.undo(change, by: _manu, at: _fourPm)),
+        UndoFailure.gone,
+      );
     });
 
     test('should refuse when the change is about another street', () {
@@ -146,7 +159,10 @@ void main() {
         ),
       );
 
-      expect(failureOf(other.undo(change)), UndoFailure.otherStreet);
+      expect(
+        failureOf(other.undo(change, by: _manu, at: _fourPm)),
+        UndoFailure.otherStreet,
+      );
     });
   });
 
@@ -210,6 +226,7 @@ void main() {
             lastChange: leaAtTwo,
           ),
           dwelling: _doorOne,
+          stamp: _manuAtFour,
         ),
       );
     });
@@ -290,7 +307,10 @@ void main() {
         marked.removeDoor(n('8'), _rdc('02'), by: paul, at: threePm),
       );
 
-      expect(failureOf(removed.undo(change)), UndoFailure.gone);
+      expect(
+        failureOf(removed.undo(change, by: _manu, at: _fourPm)),
+        UndoFailure.gone,
+      );
     });
 
     test('should refuse when the building became a house since', () {
@@ -307,7 +327,10 @@ void main() {
         marked.removeBuilding(n('8'), by: paul, at: threePm),
       );
 
-      expect(failureOf(single.undo(change)), UndoFailure.gone);
+      expect(
+        failureOf(single.undo(change, by: _manu, at: _fourPm)),
+        UndoFailure.gone,
+      );
     });
 
     test('should refuse when the building was removed since', () {
@@ -324,7 +347,10 @@ void main() {
         marked.removeNumber(n('8'), by: paul, at: threePm),
       );
 
-      expect(failureOf(removed.undo(change)), UndoFailure.gone);
+      expect(
+        failureOf(removed.undo(change, by: _manu, at: _fourPm)),
+        UndoFailure.gone,
+      );
     });
 
     test('should put the undone door back again when the undo is undone', () {
@@ -337,9 +363,11 @@ void main() {
           at: twoPm,
         ),
       );
-      final (undone, undo) = valueOf(marked.undo(change));
+      final (undone, undo) = valueOf(
+        marked.undo(change, by: _manu, at: _fourPm),
+      );
 
-      final (street, redo) = valueOf(undone.undo(undo));
+      final (street, redo) = valueOf(undone.undo(undo, by: _manu, at: _fourPm));
 
       expect(_house(street, '8'), _house(marked, '8'));
       expect(redo, isA<DwellingReverted>());
@@ -372,7 +400,10 @@ void main() {
       );
       final (added, _) = valueOf(renamed.addNumbers([n('5')]));
 
-      expect(failureOf(added.undo(change)), UndoFailure.numberTaken);
+      expect(
+        failureOf(added.undo(change, by: _manu, at: _fourPm)),
+        UndoFailure.numberTaken,
+      );
     });
 
     test('should refuse to rename back when the old number is removed', () {
@@ -384,7 +415,10 @@ void main() {
         added.removeNumber(n('5'), by: paul, at: threePm),
       );
 
-      expect(failureOf(removed.undo(change)), UndoFailure.numberTaken);
+      expect(
+        failureOf(removed.undo(change, by: _manu, at: _fourPm)),
+        UndoFailure.numberTaken,
+      );
     });
 
     test('should refuse to rename back when the new number is gone', () {
@@ -395,16 +429,21 @@ void main() {
         renamed.removeNumber(n('5bis'), by: paul, at: threePm),
       );
 
-      expect(failureOf(removed.undo(change)), UndoFailure.gone);
+      expect(
+        failureOf(removed.undo(change, by: _manu, at: _fourPm)),
+        UndoFailure.gone,
+      );
     });
 
     test('should rename again when the undone renaming is undone', () {
       final (renamed, change) = valueOf(
         _street.renameNumber(n('5'), n('5bis'), by: lea, at: twoPm),
       );
-      final (undone, undo) = valueOf(renamed.undo(change));
+      final (undone, undo) = valueOf(
+        renamed.undo(change, by: _manu, at: _fourPm),
+      );
 
-      final (street, _) = valueOf(undone.undo(undo));
+      final (street, _) = valueOf(undone.undo(undo, by: _manu, at: _fourPm));
 
       expect(street.houses, renamed.houses);
     });
@@ -413,10 +452,15 @@ void main() {
       final (renamed, change) = valueOf(
         _street.renameNumber(n('5'), n('5bis'), by: lea, at: twoPm),
       );
-      final (undone, undo) = valueOf(renamed.undo(change));
+      final (undone, undo) = valueOf(
+        renamed.undo(change, by: _manu, at: _fourPm),
+      );
       final (added, _) = valueOf(undone.addNumbers([n('5bis')]));
 
-      expect(failureOf(added.undo(undo)), UndoFailure.numberTaken);
+      expect(
+        failureOf(added.undo(undo, by: _manu, at: _fourPm)),
+        UndoFailure.numberTaken,
+      );
     });
 
     test('should bring a removed number back with its marks', () {
@@ -444,7 +488,10 @@ void main() {
         );
         final (restored, _) = valueOf(removed.restoreNumber(n('5')));
 
-        expect(failureOf(restored.undo(change)), UndoFailure.gone);
+        expect(
+          failureOf(restored.undo(change, by: _manu, at: _fourPm)),
+          UndoFailure.gone,
+        );
       },
     );
 
@@ -475,13 +522,19 @@ void main() {
         restored.renameNumber(n('5'), n('5A'), by: paul, at: threePm),
       );
 
-      expect(failureOf(renamed.undo(change)), UndoFailure.gone);
+      expect(
+        failureOf(renamed.undo(change, by: _manu, at: _fourPm)),
+        UndoFailure.gone,
+      );
     });
 
     test('should refuse to undo added numbers', () {
       final (added, change) = valueOf(_street.addNumbers([n('9')]));
 
-      expect(failureOf(added.undo(change)), UndoFailure.notUndoable);
+      expect(
+        failureOf(added.undo(change, by: _manu, at: _fourPm)),
+        UndoFailure.notUndoable,
+      );
     });
   });
 
@@ -491,7 +544,9 @@ void main() {
         valueOf(StreetName.create('Rue des Roses')),
       );
 
-      final (street, undo) = valueOf(renamed.undo(change));
+      final (street, undo) = valueOf(
+        renamed.undo(change, by: _manu, at: _fourPm),
+      );
 
       expect(street.name.text, 'Rue des Lilas');
       expect(
@@ -508,7 +563,9 @@ void main() {
     test('should bring a deleted street back', () {
       final (deleted, change) = _street.delete(by: lea, at: twoPm);
 
-      final (street, undo) = valueOf(deleted.undo(change));
+      final (street, undo) = valueOf(
+        deleted.undo(change, by: _manu, at: _fourPm),
+      );
 
       expect(street.isDeleted, isFalse);
       expect(undo, StreetRestored(streetId: _lilas));
@@ -518,7 +575,10 @@ void main() {
       final (deleted, _) = _street.delete(by: lea, at: twoPm);
       final (restored, change) = deleted.restore();
 
-      expect(failureOf(restored.undo(change)), UndoFailure.notUndoable);
+      expect(
+        failureOf(restored.undo(change, by: _manu, at: _fourPm)),
+        UndoFailure.notUndoable,
+      );
     });
   });
 }

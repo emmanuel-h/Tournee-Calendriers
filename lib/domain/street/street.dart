@@ -1167,27 +1167,42 @@ final class Street {
   ///   back there with its old removal, a renamed street gets its old name,
   ///   a deleted street comes back.
   ///
+  /// The house or door put back is to be stored with [by] and [at], who
+  /// undoes and when ([HouseReverted.stamp]); the street itself keeps its
+  /// old last change.
+  ///
   /// Refused with an [UndoFailure] when the change is not this street's,
   /// when what it touched is gone, when the old number is taken again, or
   /// for changes the screens never undo.
-  Result<(Street, StreetChange), UndoFailure> undo(StreetChange change) {
+  Result<(Street, StreetChange), UndoFailure> undo(
+    StreetChange change, {
+    required MemberId by,
+    required DateTime at,
+  }) {
     if (change.streetId != id) return const Err(UndoFailure.otherStreet);
+    final stamp = ChangeStamp(by: by, at: at);
     return switch (change) {
       // Before the general house case: a renamed house is now under its
       // new number. A `switch` takes the first case that matches.
       NumberRenamed(:final newNumber, :final before) => _revertHouse(
         newNumber,
         before,
+        stamp,
       ),
-      HouseChange(:final number, :final before) => _revertHouse(number, before),
+      HouseChange(:final number, :final before) => _revertHouse(
+        number,
+        before,
+        stamp,
+      ),
       HouseReverted(:final house, :final replaced) => _revertHouse(
         house.number,
         replaced,
+        stamp,
       ),
       DwellingChange(:final number, :final key, :final before) =>
-        _revertDwelling(number, key, before),
+        _revertDwelling(number, key, before, stamp),
       DwellingReverted(:final number, :final key, :final replaced) =>
-        _revertDwelling(number, key, replaced),
+        _revertDwelling(number, key, replaced, stamp),
       NumberRemoved(:final number) => restoreNumber(
         number,
       ).mapFailure((_) => UndoFailure.gone),
@@ -1220,6 +1235,7 @@ final class Street {
   Result<(Street, StreetChange), UndoFailure> _revertHouse(
     HouseNumber now,
     House back,
+    ChangeStamp stamp,
   ) {
     final index = _indexOf(now);
     if (index < 0) return const Err(UndoFailure.gone);
@@ -1234,7 +1250,12 @@ final class Street {
         removedHouses: removedHouses,
         deletion: deletion,
       ),
-      HouseReverted(streetId: id, replaced: houses[index], house: back),
+      HouseReverted(
+        streetId: id,
+        replaced: houses[index],
+        house: back,
+        stamp: stamp,
+      ),
     ));
   }
 
@@ -1244,6 +1265,7 @@ final class Street {
     HouseNumber number,
     DwellingKey key,
     Dwelling back,
+    ChangeStamp stamp,
   ) => switch (_dwellingAt(number, key)) {
     Err() => const Err(UndoFailure.gone),
     Ok(value: (final index, final now)) => Ok((
@@ -1255,6 +1277,7 @@ final class Street {
         level: key.level,
         replaced: now,
         dwelling: back,
+        stamp: stamp,
       ),
     )),
   };

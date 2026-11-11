@@ -135,8 +135,8 @@ Future<List<Override>> bindAdapters({
   final random = Random.secure();
   // The streets of the open tournée's current campaign in Firestore, null
   // while none is open. A provider of its own, made here because it needs
-  // the database and the identity above, so that the street repository and
-  // the pending sync share one adapter, hence one listener.
+  // the database and the phone storage above, so that the street repository
+  // and the pending sync share one adapter, hence one listener.
   //
   // Built again each time another tournée (or none) is opened, which
   // builds again every use case, and every screen, that watches it. The
@@ -156,8 +156,6 @@ Future<List<Override>> bindAdapters({
       db,
       sector: sector,
       campaign: campaign,
-      identity: identity,
-      clock: clock,
       unfinished: LocalUnfinishedStreets(
         Directory(
           [
