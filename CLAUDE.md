@@ -88,6 +88,10 @@ typo (`StreetName.typosFrom`, also in « Zone ») (#134); the title opens Secteu
 geo.api.gouv.fr fails; « Pas de réseau » only for a real lack of network (`meansNoNetwork`), otherwise « Impossible
 de … pour l'instant. Réessayez plus tard. » (#137). The map keeps the drawn zone, or the latest ✓, clear of the sheet
 (`keepInView`, `cameraReveal`, moving as little as possible); the ✓ sits on the road under the finger (#132).
+M10 planned (2026-11-11, #138–#142, PLAN §5.15, from #133): a street split between secteurs. A part per side
+(all / none / a range) stored on the street, numbers outside never stored; « Partie de la rue » with two marks on
+the map snapping between house dots, opened when adding and from edit mode; a shared `streetParts/{banId}` index
+(get only) shows other secteurs' stretches, warning on overlap, never blocking; the map draws only the held stretch.
 
 ## Commands
 

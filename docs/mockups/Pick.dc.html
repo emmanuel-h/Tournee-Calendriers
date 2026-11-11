@@ -68,6 +68,8 @@ a{color:#B3261E}a:hover{color:#8C1D18}
        already in the secteur cannot be ticked: « Rue des Lilas est déjà dans le secteur ».
        « Ajouter 2 rues » stays on this screen (#134): « 2 rues ajoutées au secteur » here, the
        streets added leave the selection and show as the secteur's; ✕ or back leaves.
+       #133: « Toute la rue › » under each row opens « Partie de la rue » (StreetPart) before
+       adding; once a part is chosen the link names it (« Pairs 2–8 › ») and the count follows.
        The ✓ sits on the road tapped, at its point nearest the finger (#132). As the sheet grows,
        the map slides just enough to keep the latest ✓ above it, until a finger touches the map. -->
   <div style="position: absolute; left: 0; right: 0; bottom: 0; background: #FFFFFF; border-radius: 24px 24px 0 0; box-shadow: 0 -4px 20px rgba(27, 31, 36, 0.14); padding: 10px 20px 20px 20px; display: flex; flex-direction: column; gap: 8px">
@@ -77,8 +79,8 @@ a{color:#B3261E}a:hover{color:#8C1D18}
       <button style="height: 48px; border: 0; background: none; font: 700 14px 'Atkinson Hyperlegible', sans-serif; color: #4A5058; text-decoration: underline">Tout décocher</button>
     </div>
     <div style="border-top: 1px solid #E2DED5">
-      <div class="sel"><span style="flex: 1; display: flex; flex-direction: column"><span style="font-weight: 700">Rue Pierre Morin</span><span style="font-size: 14px; color: #4A5058">Villefranche-sur-Saône · 19 numéros</span></span><button class="ib" aria-label="Retirer rue Pierre Morin"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
-      <div class="sel"><span style="flex: 1; display: flex; flex-direction: column"><span style="font-weight: 700">Impasse des Tilleuls</span><span style="font-size: 14px; color: #4A5058">Villefranche-sur-Saône · 8 numéros</span></span><button class="ib" aria-label="Retirer impasse des Tilleuls"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      <div class="sel"><span style="flex: 1; display: flex; flex-direction: column"><span style="font-weight: 700">Rue Pierre Morin</span><span style="font-size: 14px; color: #4A5058">Villefranche-sur-Saône · 19 numéros</span><a href="StreetPart.dc.html" style="min-height: 32px; display: flex; align-items: center; font-size: 14px; font-weight: 700">Toute la rue ›</a></span><button class="ib" aria-label="Retirer rue Pierre Morin"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
+      <div class="sel"><span style="flex: 1; display: flex; flex-direction: column"><span style="font-weight: 700">Impasse des Tilleuls</span><span style="font-size: 14px; color: #4A5058">Villefranche-sur-Saône · 5 numéros sur 8</span><a href="StreetPart.dc.html" style="min-height: 32px; display: flex; align-items: center; font-size: 14px; font-weight: 700">Pairs 2–8 ›</a></span><button class="ib" aria-label="Retirer impasse des Tilleuls"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>
     </div>
     <a href="Pick.dc.html" style="margin-top: 4px; height: 56px; border-radius: 28px; background: #B3261E; color: #FFFFFF; font-weight: 700; font-size: 17px; display: flex; align-items: center; justify-content: center; text-decoration: none">Ajouter 2 rues</a>
     <a href="Manual.dc.html" style="font-weight: 700; font-size: 15px; text-align: center; padding: 8px 0">Rue absente de la carte ? Saisir à la main</a>

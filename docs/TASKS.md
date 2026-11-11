@@ -153,3 +153,15 @@ later screen could be checked with real streets (decided with you on 2026-10-04)
 | [#123](https://github.com/emmanuel-h/Tournee-Calendriers/issues/123) | T9.4 « En tournée » band on top |  |
 | [#124](https://github.com/emmanuel-h/Tournee-Calendriers/issues/124) | T9.5 Ajouter des rues: tick several roads, add them at once |  |
 | [#125](https://github.com/emmanuel-h/Tournee-Calendriers/issues/125) | T9.6 Ajouter des rues: select a zone |  |
+
+## M10 Streets split between secteurs
+
+Planned 2026-11-11 from [#133](https://github.com/emmanuel-h/Tournee-Calendriers/issues/133) (PLAN §5.15, mockup StreetPart).
+
+| Issue | Task | Labels |
+|---|---|---|
+| [#138](https://github.com/emmanuel-h/Tournee-Calendriers/issues/138) | T10.1 StreetPart: a part per side, stored on the street, changed with the Corbeille |  |
+| [#139](https://github.com/emmanuel-h/Tournee-Calendriers/issues/139) | T10.2 « Partie de la rue » screen: marks on the map, opened from edit mode |  |
+| [#140](https://github.com/emmanuel-h/Tournee-Calendriers/issues/140) | T10.3 Choose the part when adding streets |  |
+| [#141](https://github.com/emmanuel-h/Tournee-Calendriers/issues/141) | T10.4 Shared index of the secteurs' parts, with overlap warning |  |
+| [#142](https://github.com/emmanuel-h/Tournee-Calendriers/issues/142) | T10.5 Map: draw only the held stretch of a street |  |

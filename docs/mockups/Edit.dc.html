@@ -30,6 +30,13 @@ a{color:#B3261E}a:hover{color:#8C1D18}
     <label for="nm" style="font-size: 14px; font-weight: 700">Nom de la rue</label>
     <input id="nm" value="Rue des Lilas" style="height: 52px; box-sizing: border-box; width: 100%; border: 1.5px solid #1B1F24; border-radius: 12px; background: #FFFFFF; padding: 0 14px; font: 700 20px 'Barlow Condensed', sans-serif; color: #1B1F24">
   </div>
+  <!-- #133: the part of the street this secteur covers; opens « Partie de la rue » (StreetPart, network). « Toute la rue › » when the whole street is held. Shrinking sends the numbers left out to the Corbeille (confirmation when some have marks); widening brings numbers back from the Corbeille or reads them from the BAN. -->
+  <div style="padding: 10px 16px 0 16px">
+    <a href="StreetPart.dc.html" style="min-height: 52px; box-sizing: border-box; border: 1.5px solid #CFC9BD; border-radius: 12px; background: #FFFFFF; padding: 6px 8px 6px 14px; display: flex; align-items: center; gap: 8px; text-decoration: none; color: #1B1F24">
+      <span style="flex: 1; display: flex; flex-direction: column"><span style="font-size: 13px; color: #4A5058">Partie de la rue</span><span style="font-weight: 700">Impairs 1–57 · pairs 2–30</span></span>
+      <span aria-hidden="true" style="font-size: 22px; color: #4A5058">›</span>
+    </a>
+  </div>
   <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 14px 16px 6px 16px; font-size: 13px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: #4A5058">
     <div>Côté impair</div>
     <div>Côté pair</div>

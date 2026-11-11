@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Partie de la rue</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.ib{width:48px;height:48px;border:0;background:transparent;color:#1B1F24;border-radius:24px;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;text-decoration:none;flex-shrink:0}
+.ib svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.seg{flex:1;border:0;font:700 16px 'Atkinson Hyperlegible',sans-serif;background:#FFFFFF;color:#1B1F24}
+.seg[aria-checked="true"]{background:#1B1F24;color:#FFFFFF}
+.quick{flex:1;height:48px;border-radius:24px;border:1.5px solid #CFC9BD;background:#FFFFFF;font:700 15px 'Atkinson Hyperlegible',sans-serif;color:#1B1F24}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F3F1EC; color: #1B1F24; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; display: flex; flex-direction: column; position: relative; overflow: hidden">
+  <!-- Opened from a row of the selection sheet (« Toute la rue › », Pick) before the street is added, or from « Partie de la rue » in edit mode (Edit). Needs the network: the numbers and their positions come from the BAN, the other secteurs' parts from streetParts/{banId}. ✕ and back leave with nothing changed. -->
+  <div style="display: flex; align-items: center; gap: 4px; padding: 8px 8px 0 8px">
+    <a class="ib" href="Pick.dc.html" aria-label="Fermer"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></a>
+    <div style="flex: 1; display: flex; flex-direction: column">
+      <h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 28px; line-height: 1.1">Partie de la rue</h1>
+      <span style="font-size: 14px; color: #4A5058">Rue Nationale · n° 1 à 41</span>
+    </div>
+  </div>
+  <!-- « Les deux »: the two marks cut both sides at once. « Impairs » / « Pairs »: only that side's dots, with its own two marks; the other side greyed. -->
+  <div role="radiogroup" aria-label="Côté" style="margin: 10px 16px 10px 16px; display: flex; border: 1.5px solid #CFC9BD; border-radius: 24px; overflow: hidden; height: 48px">
+    <button class="seg" role="radio" aria-checked="false">Les deux</button>
+    <button class="seg" role="radio" aria-checked="true">Impairs</button>
+    <button class="seg" role="radio" aria-checked="false">Pairs</button>
+  </div>
+  <div style="position: relative; flex: 1">
+    <svg viewBox="0 0 390 420" style="position: absolute; inset: 0; width: 390px; height: 420px" role="img" aria-label="Carte de la rue : impairs gardés du 7 au 21 ; le secteur 12 a les impairs du 19 au 41">
+      <rect width="390" height="420" fill="#F2EFE9"/>
+      <rect x="0" y="0" width="390" height="150" fill="#E4DFD5"/>
+      <rect x="0" y="252" width="390" height="168" fill="#E4DFD5"/>
+      <path d="M0 201H390" stroke="#FFFFFF" stroke-width="22"/>
+      <path d="M120 0V150M270 252V420" stroke="#FFFFFF" stroke-width="12"/>
+      <!-- the secteur 12's stretch on the odd side, hatched -->
+      <defs><pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="8" height="8" fill="#FFFFFF" opacity="0.7"/><path d="M0 0V8" stroke="#4A5058" stroke-width="3"/></pattern></defs>
+      <rect x="243" y="158" width="147" height="30" fill="url(#hatch)" stroke="#4A5058" stroke-width="1.5"/>
+      <text x="300" y="150" font-family="Atkinson Hyperlegible, sans-serif" font-size="12" font-weight="700" fill="#1B1F24">Secteur 12</text>
+      <!-- the road: whole in grey, the kept stretch as the selected road -->
+      <path d="M8 201H382" stroke="#CFC9BD" stroke-width="6" stroke-linecap="round"/>
+      <path d="M88 201H292" stroke="#1B1F24" stroke-width="14" stroke-linecap="round"/>
+      <path d="M88 201H292" stroke="#FFFFFF" stroke-width="5" stroke-linecap="round"/>
+      <!-- even dots: greyed while « Impairs » is chosen -->
+      <g fill="#E2DED5" stroke="#CFC9BD" stroke-width="1.5">
+        <circle cx="22" cy="224" r="6"/><circle cx="48" cy="224" r="6"/><circle cx="74" cy="224" r="6"/><circle cx="100" cy="224" r="6"/><circle cx="126" cy="224" r="6"/><circle cx="152" cy="224" r="6"/><circle cx="178" cy="224" r="6"/><circle cx="204" cy="224" r="6"/><circle cx="230" cy="224" r="6"/><circle cx="256" cy="224" r="6"/><circle cx="282" cy="224" r="6"/><circle cx="308" cy="224" r="6"/><circle cx="334" cy="224" r="6"/><circle cx="360" cy="224" r="6"/>
+      </g>
+      <!-- odd dots: kept (ink) between the marks, left out (hollow) outside; the two shared with secteur 12 in amber -->
+      <g stroke-width="2">
+        <circle cx="22" cy="178" r="7" fill="#FFFFFF" stroke="#4A5058"/><circle cx="48" cy="178" r="7" fill="#FFFFFF" stroke="#4A5058"/><circle cx="74" cy="178" r="7" fill="#FFFFFF" stroke="#4A5058"/>
+        <circle cx="100" cy="178" r="7" fill="#1B1F24" stroke="#1B1F24"/><circle cx="126" cy="178" r="7" fill="#1B1F24" stroke="#1B1F24"/><circle cx="152" cy="178" r="7" fill="#1B1F24" stroke="#1B1F24"/><circle cx="178" cy="178" r="7" fill="#1B1F24" stroke="#1B1F24"/><circle cx="204" cy="178" r="7" fill="#1B1F24" stroke="#1B1F24"/>
+        <circle cx="230" cy="178" r="7" fill="#1B1F24" stroke="#1B1F24"/><circle cx="256" cy="178" r="7" fill="#F2B33D" stroke="#1B1F24"/><circle cx="282" cy="178" r="7" fill="#F2B33D" stroke="#1B1F24"/>
+        <circle cx="308" cy="178" r="7" fill="#FFFFFF" stroke="#4A5058"/><circle cx="334" cy="178" r="7" fill="#FFFFFF" stroke="#4A5058"/><circle cx="360" cy="178" r="7" fill="#FFFFFF" stroke="#4A5058"/>
+      </g>
+      <!-- the two marks: they slide along the road and snap between two dots of the side shown -->
+      <g>
+        <path d="M87 120V214" stroke="#1B1F24" stroke-width="2.5"/>
+        <circle cx="87" cy="214" r="16" fill="#FFFFFF" stroke="#1B1F24" stroke-width="3"/><path d="M82 208V220M92 208V220" stroke="#1B1F24" stroke-width="2.5" stroke-linecap="round"/>
+        <rect x="30" y="98" width="114" height="26" rx="13" fill="#1B1F24"/>
+        <text x="87" y="116" text-anchor="middle" font-family="Atkinson Hyperlegible, sans-serif" font-size="13" font-weight="700" fill="#FFFFFF">entre 5 et 7</text>
+      </g>
+      <g>
+        <path d="M295 120V214" stroke="#1B1F24" stroke-width="2.5"/>
+        <circle cx="295" cy="214" r="16" fill="#FFFFFF" stroke="#1B1F24" stroke-width="3"/><path d="M290 208V220M300 208V220" stroke="#1B1F24" stroke-width="2.5" stroke-linecap="round"/>
+        <rect x="238" y="98" width="114" height="26" rx="13" fill="#1B1F24"/>
+        <text x="295" y="116" text-anchor="middle" font-family="Atkinson Hyperlegible, sans-serif" font-size="13" font-weight="700" fill="#FFFFFF">entre 21 et 23</text>
+      </g>
+      <text x="16" y="270" font-family="Atkinson Hyperlegible, sans-serif" font-size="12" font-weight="700" fill="#1B1F24">Rue Nationale</text>
+    </svg>
+  </div>
+  <!-- The result, worked out per side from the marks: what is stored, shown on the street, in edit mode and in streetParts/{banId}. Numbers without a position (typed by hand) are kept or left out by their number. -->
+  <div style="position: absolute; left: 0; right: 0; bottom: 0; background: #FFFFFF; border-radius: 24px 24px 0 0; box-shadow: 0 -4px 20px rgba(27, 31, 36, 0.14); padding: 10px 20px 20px 20px; display: flex; flex-direction: column; gap: 10px">
+    <div style="width: 40px; height: 4px; border-radius: 2px; background: #CFC9BD; align-self: center"></div>
+    <div>
+      <h2 style="margin: 0; font: 700 24px 'Barlow Condensed', sans-serif">Impairs 7–21 · pairs 2–30</h2>
+      <span style="font-size: 14px; color: #4A5058">23 numéros gardés sur 41</span>
+    </div>
+    <div style="display: flex; gap: 8px">
+      <button class="quick">Tous les impairs</button>
+      <button class="quick">Aucun impair</button>
+    </div>
+    <!-- Warning only: the index may be out of date and the centre may want two secteurs on the same numbers. -->
+    <div role="status" style="display: flex; gap: 10px; align-items: flex-start; background: #FDF3DC; border: 1.5px solid #D99A22; border-radius: 12px; padding: 10px 12px; font-size: 15px; line-height: 1.35">
+      <span aria-hidden="true" style="font-weight: 700">⚠</span>
+      <span>Le 19 et le 21 sont aussi dans le secteur 12 (CS Villefranche).</span>
+    </div>
+    <button style="margin-top: 2px; height: 56px; border: 0; border-radius: 28px; background: #B3261E; color: #FFFFFF; font: 700 17px 'Atkinson Hyperlegible', sans-serif">Valider</button>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

@@ -287,6 +287,13 @@
       "w": 390,
       "h": 844,
       "title": "5.6 Rue sans tournée : rien à marquer"
+    },
+    "StreetPart.dc.html": {
+      "x": 3290,
+      "y": 1264,
+      "w": 390,
+      "h": 844,
+      "title": "5.15 Partie de la rue (#133)"
     }
   },
   "createdOnFiles": {
@@ -394,7 +401,8 @@
     "RunTeam.dc.html",
     "Cash.dc.html",
     "RunDons.dc.html",
-    "StreetIdle.dc.html"
+    "StreetIdle.dc.html",
+    "StreetPart.dc.html"
   ],
   "pages": [],
   "title": "Tournée Calendriers screens"

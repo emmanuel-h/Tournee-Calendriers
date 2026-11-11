@@ -1887,6 +1887,87 @@ removes are marked « (removed, 5.14) » there.
     map names no road within 30 m it stays where the finger was, and a street picked in the
     search keeps the BAN's point.
 
+### 5.15 Partie de la rue: a street split between secteurs (#133, to build)
+
+Agreed 2026-11-11 (ASCII in the terminal, then mockups StreetPart, Pick, Edit). A street is
+not always covered whole by one secteur: it may be cut in the middle, by side (odd / even), or
+both (« impairs 1–57 + pairs 2–30 »), shared by 2, 3 or more secteurs, and parts of it may
+belong to no secteur at all (a valid state, not an error). This section overrides 5.3, 5.4,
+5.5 and 5.14 wherever they disagree.
+
+```
+  Partie de la rue (StreetPart)     selection sheet (Pick)            edit mode (Edit)
+┌────────────────────────────┐   ┌────────────────────────────┐   ┌────────────────────────────┐
+│ ✕ Partie de la rue         │   │ 2 rues sélectionnées       │   │ ✕ Modifier la rue     [OK] │
+│   Rue Nationale · n° 1 à 41│   │ Rue Pierre Morin         ✕ │   │ Nom [ Rue des Lilas      ] │
+│ (Les deux)[Impairs](Pairs) │   │ Villefranche · 19 numéros  │   │ ┌────────────────────────┐ │
+│ ░░ entre 5 et 7  entre 21… │   │ Toute la rue ›             │   │ │Partie de la rue        │ │
+│ ░○ ○ ○ ●┃● ● ● ● ●┃▒▒▒▒▒ ░ │   │ Impasse des Tilleuls     ✕ │   │ │Impairs 1–57 · pairs 2–30›│
+│ ░━━━━━━◆━━━━━━━━━━◆━━━━━ ░ │   │ Villefranche · 5 n° sur 8  │   │ └────────────────────────┘ │
+│ ░· · · · · · · · · · ·  ░ │   │ Pairs 2–8 ›                │   │ CÔTÉ IMPAIR │ CÔTÉ PAIR    │
+├────────────────────────────┤   │ [     Ajouter 2 rues     ] │   │ [ 1   ✕]    │ [ 2   ✕]     │
+│ Impairs 7–21 · pairs 2–30  │   └────────────────────────────┘   └────────────────────────────┘
+│ 23 numéros gardés sur 41   │
+│ [Tous les impairs][Aucun…] │
+│ ⚠ Le 19 et le 21 sont aussi│
+│   dans le secteur 12 (CS …)│
+│ [         Valider        ] │
+└────────────────────────────┘
+```
+
+- **What a part is** (`StreetPart`, domain): for each side, odd and even, either every number,
+  none, or a range « du n° a au n° b » (bounds on the numeric part, so 3bis goes with 3). The
+  part is stored on the street and is the one thing every screen, the index and the add
+  flows read. The numbers outside it are **never stored** (not added, not kept in the
+  Corbeille once the part is chosen at adding), so « Rues · n/m », the street's « 31/42 » and
+  every progress figure count only the numbers held, with no change. « Toute la rue » is the
+  part with both sides whole, and the default.
+- **« Partie de la rue »** (StreetPart, full screen, needs the network: the numbers and their
+  positions come from the BAN, the other secteurs' parts from the index): « ✕ Partie de la
+  rue » over « Rue Nationale · n° 1 à 41 »; « Les deux | Impairs | Pairs » (radio group
+  « Côté », 48 dp); the map on the street, its road grey with the kept stretch drawn as the
+  selected road (ink casing, white core), the dots of the side shown (kept: ink; left out:
+  hollow), the other side greyed. **Two marks** (round 32 dp handles on a stem, a dark label
+  « entre 5 et 7 ») slide along the road and **snap between two consecutive dots of the side
+  shown**, so a finger is always exact. On « Les deux » the two marks cut both sides at once;
+  on « Impairs » or « Pairs » that side has its own two marks. The sheet under the map gives
+  the result, « Impairs 7–21 · pairs 2–30 » over « 23 numéros gardés sur 41 », two quick
+  buttons for the side shown (« Tous les impairs », « Aucun impair »; « Toute la rue » and
+  « Rien » on « Les deux »), then « Valider » (red). ✕ and back leave with nothing changed.
+  Numbers without a position (typed by hand) are kept or left out by their number. A street
+  with no position at all (a manual street) opens the same sheet without the map: the side
+  switch and « Du n° / Au n° » fields per side.
+- **Other secteurs** (shared index, §6.2 `streetParts/{banId}`): the stretches other secteurs
+  hold show hatched on the side they hold, labelled « Secteur 12 ». Numbers both in this part
+  and in another secteur's are amber dots, and an amber block above « Valider » names them:
+  « Le 19 et le 21 sont aussi dans le secteur 12 (CS Villefranche). » (« Le 19 est aussi… »;
+  more than five: « 8 numéros sont aussi dans le secteur 12 »). **A warning only**: « Valider »
+  still works (the index may be stale, and a centre may want two secteurs on the same
+  numbers). The centre's name is said only when it is not this secteur's. Offline or the index
+  unreadable: no hatching, no warning, nothing else changes.
+- **When the part is chosen:**
+  - **When adding** (Pick, PickZone, Liste): each row of the selection sheet, of the zone's
+    list and of « Liste » shows its part as a red link, « Toute la rue › » by default, which
+    opens « Partie de la rue » before the street is added; once chosen the link names the part
+    (« Pairs 2–8 › ») and the row's count follows (« 5 numéros sur 8 »). « Ajouter N rues »
+    then stores only the numbers of each part. A street another secteur already holds in part
+    says so on its row (« Secteur 12 : impairs 19–41 ») so the part can be chosen before adding.
+  - **Afterwards, in edit mode** (Edit): a « Partie de la rue » row under the name (52 dp,
+    the part in bold, ›) opens the same screen. Shrinking the part sends the numbers left out
+    to the Corbeille (5.11), asking first when some have marks (« 3 numéros ont des marques.
+    Ils partent avec elles à la Corbeille. »); widening it brings numbers back from the
+    Corbeille with their marks, and reads the others from the BAN.
+  - « + numéros » in edit mode may add a number outside the part (the user knows the street):
+    it is added, and the part is not changed.
+- **The BAN's later additions**: the app never reads a street's numbers again once added
+  (5.4), so nothing arrives by itself; a widening in edit mode is the only new read.
+- **Map** (Accueil, 5.3, and « Ajouter des rues »): a street held in part draws only **the
+  stretch between its first and last held number** (their positions brought onto the road,
+  `StreetShape.nearestPointTo`); the rest of the road is not drawn. A part by side alone draws
+  the whole stretch (one line cannot show a side). The house dots show only the numbers held,
+  as today. « Ajouter des rues » draws another secteur's street as the map does, unticked: a
+  tap on a street this secteur holds in part still says « … est déjà dans le secteur ».
+
 ---
 
 ## 6. Data model
@@ -2628,6 +2709,8 @@ final class Street {                       // aggregate root
   final Commune commune;
   final BanStreetId? banId;                // null when entered by hand
   final StreetShape shape;                 // map (T3.1): none when entered by hand
+  final StreetPart part;                   // #133: what this secteur holds, per side;
+                                           //   StreetPart.whole by default
   final List<House> houses;                // always sorted by HouseNumber, numbers unique
   final List<RemovedHouse> removedHouses;  // numbers in the Corbeille, with their marks (T1.4)
   final ChangeStamp? deletion;             // set = in the Corbeille
@@ -2740,6 +2823,12 @@ sectorKeys/{centreKey}_{number}                   ← "villefranche_49": guarant
 joinCodes/{code}                                  ← "K7P2QX": readable only by exact code (get, not list)
     sectorId, number, centreName, campaign       ← what the join preview shows; nothing else
 
+streetParts/{banId}                               ← #133 (5.15): who holds which part of a BAN
+    parts: { "<sectorId>": { number: 12,             street; readable only by exact id (get,
+               centreName: "CS Villefranche",      not list); each secteur writes only its own
+               odd: "all" | "none" | [19, 41],     entry; none for a street typed by hand
+               even: … } }
+
 sectors/{sectorId}
     number: 49, centreKey, centreName, joinCode, createdBy, createdAt,
     currentCampaign: 2026,
@@ -2763,6 +2852,9 @@ sectors/{sectorId}
                                                     [] for none; written once, with the street
                                                     or later while still [] (#92), never replaced
       deletedAt, deletedBy                        ← set = in the Corbeille (5.11); null otherwise
+      part: { odd: "all" | "none" | [1, 57],      ← #133 (5.15): the numbers this secteur holds,
+              even: "all" | "none" | [2, 30] }      per side, bounds on the numeric part; absent
+                                                    = the whole street
       houses: {                                   ← a map inside the street document
         "12":  { n: 12, sfx: null, lat, lon, status: "DONE", comeBack: null,
                                           ← key = the number's label ("3bis", "3A"), n + sfx
@@ -3004,6 +3096,12 @@ photo of the QR) is even more likely. So **knowing a code must not be enough**:
   Delete an active member: the creator, or the member themself (*Quitter*). Update
   `displayName` only: the member themself, active, a name as `MemberName` cleans it (≤ 30).
 - `joinCodes/{code}`: `get` for signed-in users, `list` denied; holds only the preview fields.
+- `streetParts/{banId}` (#133, 5.15): `get` for signed-in users, `list` denied. An active
+  member of a secteur may create the document or update it changing only the key of their
+  own secteur (`diff().affectedKeys() == [sectorId]` on `parts`), with `number` and
+  `centreName` equal to the secteur's and sides in the shape above; deleting that key is the
+  same write. The document itself is never deleted. Written when a street is added, its part
+  changed, deleted, restored or purged, and when the secteur is deleted (each of its entries).
 - `sectorKeys/{key}`: `get` allowed (creation must know the pair is taken); create only if
   absent; never updated; deleted only with the secteur.
 - `rescueCentres`: readable by signed-in users (station names only), create-only.
@@ -3266,6 +3364,10 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
   reset with the statuses at the next campaign. `PRIVACY.md` and the Confidentialité page (#79)
   say so in « Données enregistrées », « Hébergement » and « Suppression » (#112): the text was
   drafted on 2026-11-02 and awaits the user's review on the phone.
+- **Streets held by other secteurs (#133):** `streetParts/{banId}` tells any signed-in phone
+  which secteurs (number and centre) hold which numbers of a street, read by the street's BAN
+  id. BAN ids are public, so this is public in practice: no marks, no members, no money, only
+  which secteur covers which addresses. `PRIVACY.md` says so in « Données enregistrées ».
 - **Location:** the phone's position is used only on screen ("locate me"), never stored or
   sent. Permission is asked when the button is first tapped.
 - Firestore region: `europe-west` (EU).
