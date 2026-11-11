@@ -22,7 +22,7 @@ final class FakeServerConnection implements ServerConnection {
     _changes.add(offline);
   }
 
-  /// It can no longer be told (the member left the tournée).
+  /// It can no longer be told (the member left the secteur).
   void fail(Object error) => _changes.addError(error);
 
   /// Whether offline now, then each change, like the real adapter.

@@ -80,7 +80,7 @@ void main() {
         clockProvider.overrideWithValue(FakeClock(twoPm)),
         identityProvider.overrideWithValue(FakeIdentity(lea)),
         openRoundStoreProvider.overrideWithValue(FakeOpenRoundStore()),
-        // No tournée open: the phone names nobody but its own member.
+        // No secteur open: the phone names nobody but its own member.
         mySectorsStoreProvider.overrideWithValue(FakeMySectorsStore()),
       ],
     );

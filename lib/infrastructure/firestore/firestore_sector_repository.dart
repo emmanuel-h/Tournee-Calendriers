@@ -17,12 +17,12 @@ import 'package:tournee_calendriers/infrastructure/firestore/mappers/sector_docu
 
 /// The [SectorRepository] over Firestore (PLAN §6.2): `sectors/{id}` and
 /// its `members`, with the `joinCodes`, `sectorKeys` and `rescueCentres`
-/// documents that make a tournée findable.
+/// documents that make a secteur findable.
 ///
 /// - **Creating** and **a new code** run in a transaction: it needs the
 ///   server (it fails at once offline instead of waiting in a queue) and
 ///   reads before it writes, so a number already taken, or a code another
-///   tournée holds, is seen even when someone else writes it at the same
+///   secteur holds, is seen even when someone else writes it at the same
 ///   second (Firestore runs the transaction again when a document it read
 ///   changed meanwhile). A code already taken is replaced by a new one
 ///   drawn from [random], up to [maxCodeDraws] times: with 887 million
@@ -33,12 +33,12 @@ import 'package:tournee_calendriers/infrastructure/firestore/mappers/sector_docu
 ///   network allows ([sendInBackground]). The name a member refused,
 ///   removed or leaving held goes with their document, in one batch.
 /// - **Renaming** and **an admin joining** (PLAN §5.9, §5.12) hold a name
-///   in the tournée (#148, `names/{key}`, the name's `MemberName.key`): a
+///   in the secteur (#148, `names/{key}`, the name's `MemberName.key`): a
 ///   transaction reads the name's entry and writes the member with it, so
 ///   it fails at once offline, and a name another member holds is refused
 ///   (by this read, or by the security rules for one taken at the same
 ///   second).
-/// - **Reading** follows the tournée document and its members with two
+/// - **Reading** follows the secteur document and its members with two
 ///   listeners, served from the phone's copy first.
 final class FirestoreSectorRepository implements SectorRepository {
   /// [random] draws the replacement of a join code already taken:
@@ -145,7 +145,7 @@ final class FirestoreSectorRepository implements SectorRepository {
         final centreKnown = (await transaction.get(centre)).exists;
 
         final sectorDoc = FirestoreLayout.sector(_db, stored.id);
-        // `!`: a tournée just created holds its creator (`createdBy`).
+        // `!`: a secteur just created holds its creator (`createdBy`).
         final creator = stored.memberOf(stored.createdBy)!;
         transaction
           ..set(key, sectorKeyDocument(stored))
@@ -158,7 +158,7 @@ final class FirestoreSectorRepository implements SectorRepository {
             ).doc(stored.createdBy.value),
             memberToDocument(creator),
           )
-          // The creator's name, held in the tournée from the start (#148).
+          // The creator's name, held in the secteur from the start (#148).
           ..set(
             FirestoreLayout.nameIn(_db, stored.id, creator.name),
             nameEntryDocument(creator.id),
@@ -198,7 +198,7 @@ final class FirestoreSectorRepository implements SectorRepository {
         return Ok(sector);
       case MemberRenamed(:final member):
         // A refusal means another member took the name at the same second
-        // (the security rules), or the member is no longer in the tournée.
+        // (the security rules), or the member is no longer in the secteur.
         return _holdingName(
           sector,
           member,
@@ -230,7 +230,7 @@ final class FirestoreSectorRepository implements SectorRepository {
           MemberRemoved(:final member) ||
           MemberLeft(:final member):
         // The name goes with the member, in one batch: it is free again in
-        // the tournée (#148).
+        // the secteur (#148).
         sendInBackground(
           '$change',
           (_db.batch()
@@ -241,7 +241,7 @@ final class FirestoreSectorRepository implements SectorRepository {
         return Ok(sector);
       case AdminJoined(:final member):
         // A refusal means the phone is no longer an admin's: an admin may
-        // read every name of the tournée, so a taken one is seen by the
+        // read every name of the secteur, so a taken one is seen by the
         // read and never reaches the rules.
         return _holdingName(
           sector,
@@ -295,7 +295,7 @@ final class FirestoreSectorRepository implements SectorRepository {
     }
   }
 
-  /// Deletes the tournée and everything in it (PLAN §8.3). Needs the
+  /// Deletes the secteur and everything in it (PLAN §8.3). Needs the
   /// server: the lists are read from it, so nothing only the server knows
   /// is left behind.
   ///
@@ -305,8 +305,8 @@ final class FirestoreSectorRepository implements SectorRepository {
   /// campaigns, their streets and their validated tournées, in batches,
   /// listed again for what a teammate wrote meanwhile. The members
   /// still in it (there may be none: everyone may leave, the creator too)
-  /// go last, with the tournée, its code and its reservation in one batch:
-  /// a member's phone, which learns it lost the tournée when its own
+  /// go last, with the secteur, its code and its reservation in one batch:
+  /// a member's phone, which learns it lost the secteur when its own
   /// member document goes, finds the reservation gone at the same instant
   /// and says « supprimée », not « retiré » (`watchMembership`). Only the
   /// documents that exist are deleted: the security rules refuse deleting
@@ -334,7 +334,7 @@ final class FirestoreSectorRepository implements SectorRepository {
   /// Deletes what [sector] holds, then [sectorDoc] with its code, its
   /// reservation and its members (see [delete]). A phone no longer an
   /// admin's is refused at the first batch, before anything goes: a
-  /// member may read the tournée but not delete its campaigns.
+  /// member may read the secteur but not delete its campaigns.
   ///
   /// A teammate may write while it runs (a street added, a request to
   /// join): what they wrote after a list was read would stay, unreachable.
@@ -503,7 +503,7 @@ final class FirestoreSectorRepository implements SectorRepository {
   DocumentReference<Map<String, dynamic>> _joinCode(JoinCode code) =>
       _db.collection(FirestoreLayout.joinCodes).doc(code.value);
 
-  /// [first] when no tournée holds it, otherwise a new code drawn from
+  /// [first] when no secteur holds it, otherwise a new code drawn from
   /// [_random] that none holds and that is not [old].
   Future<JoinCode> _freeCode(
     Transaction transaction,

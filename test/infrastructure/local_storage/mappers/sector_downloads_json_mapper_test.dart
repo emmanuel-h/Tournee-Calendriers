@@ -1,4 +1,4 @@
-// The tournées downloaded on this phone (PLAN §6.3) ⇄ the JSON of
+// The secteurs downloaded on this phone (PLAN §6.3) ⇄ the JSON of
 // `tournee_downloads.json`.
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/sector_downloads.dart';
@@ -39,7 +39,7 @@ const _t12Json = {
 };
 
 void main() {
-  test('should write every download, sorted by tournée', () {
+  test('should write every download, sorted by secteur', () {
     expect(sectorDownloadsToJson({_t49.sector: _t49, _t12.sector: _t12}), {
       'version': 1,
       'downloads': [_t12Json, _t49Json],

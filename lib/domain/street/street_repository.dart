@@ -10,7 +10,7 @@ import 'package:tournee_calendriers/domain/street/street_id.dart';
 /// It takes and returns [Street] aggregates and [StreetChange]s, never a
 /// storage type. Everything here works without the network once the streets
 /// are on the phone (PLAN §7): reads come from the phone, writes are applied
-/// on the phone at once and, for a tournée, sent when the network is back.
+/// on the phone at once and, for a secteur, sent when the network is back.
 ///
 /// A storage failure (a full disk) is not something the user can act on in
 /// the street, so it is thrown as an exception, not returned as a failure.
@@ -48,7 +48,7 @@ abstract interface class StreetRepository {
   /// removed from the other streets are in their `removedHouses`.
   Stream<List<Street>> watchDeleted();
 
-  /// Stores [street], new to the tournée (imported from the BAN, typed in by
+  /// Stores [street], new to the secteur (imported from the BAN, typed in by
   /// hand). It replaces nothing: the street id is new.
   Future<void> add(Street street);
 

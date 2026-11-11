@@ -20,7 +20,7 @@ import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_sector_directory.dart';
 import '../../support/results.dart';
 
-/// Tournée [number] of [centre] (a station of Villefranche) in [year].
+/// Secteur [number] of [centre] (a station of Villefranche) in [year].
 SectorOverview overview(
   String id,
   int number, {
@@ -70,7 +70,7 @@ void main() {
     expect(open().read(allSectorsProvider), const AllSectorsLoading());
   });
 
-  test('should group the tournées by station, stations by name, tournées '
+  test('should group the secteurs by station, stations by name, secteurs '
       'by number then year', () async {
     directory.overviews = [
       overview('t50', 50, mine: true, members: 1),
@@ -122,7 +122,7 @@ void main() {
     expect(state.groups.last.rows.first.waitingRequests, 2);
   });
 
-  test('should show an empty list when the app has no tournée', () async {
+  test('should show an empty list when the app has no secteur', () async {
     final container = open();
     await pumpEventQueue();
 
@@ -171,7 +171,7 @@ void main() {
     expect(directory.allAsked, [samId]);
   });
 
-  test('should open a tournée the admin is not in as visited', () async {
+  test('should open a secteur the admin is not in as visited', () async {
     directory.overviews = [overview('t12', 12)];
     final container = open();
     await pumpEventQueue();
@@ -184,7 +184,7 @@ void main() {
     );
   });
 
-  test('should open nothing for a tournée the list does not hold', () async {
+  test('should open nothing for a secteur the list does not hold', () async {
     final container = open();
     await pumpEventQueue();
 

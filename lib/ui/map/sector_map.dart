@@ -69,11 +69,11 @@ final class SectorMap extends StatefulWidget {
   final List<PickedRoad> pickedRoads;
 
   /// The area to show: the map fits it when it opens, and again each time
-  /// it changes (another tournée opened, a street found by the search).
+  /// it changes (another secteur opened, a street found by the search).
   /// Null leaves the camera where the user put it.
   final GeoBounds? area;
 
-  /// A tap on one of the tournée's streets, or on one of its house dots.
+  /// A tap on one of the secteur's streets, or on one of its house dots.
   final ValueChanged<StreetId>? onStreetTapped;
 
   /// A tap on a ticked road, or on its ✓ disc: its BAN street.

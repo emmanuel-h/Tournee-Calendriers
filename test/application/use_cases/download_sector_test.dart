@@ -1,4 +1,4 @@
-// Downloading a tournée for a day offline (PLAN §7): every street read from
+// Downloading a secteur for a day offline (PLAN §7): every street read from
 // the server, then the map of its area, then the date and size kept.
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/offline_map_store.dart';
@@ -204,7 +204,7 @@ void main() {
       expect(downloads.downloads, {t49: downloadOf(t49, area49)});
     });
 
-    test('should delete every old region of the tournée and only '
+    test('should delete every old region of the secteur and only '
         'its', () async {
       final half = regionOf(41, t49, area49.expandedBy(1));
       final other = regionOf(50, t12, area12);

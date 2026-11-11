@@ -1,4 +1,4 @@
-// The streets of the open tournée without a line on the map get their road
+// The streets of the open secteur without a line on the map get their road
 // in the background, gently (PLAN §5.3, #92): once a session each, one at
 // a time, and a pause after a failure.
 import 'package:test/test.dart';

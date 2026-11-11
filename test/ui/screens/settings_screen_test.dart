@@ -71,7 +71,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('should show the name, the open tournée, the theme and the '
+  testWidgets('should show the name, the open secteur, the theme and the '
       'credits', (tester) async {
     await pumpSettings(tester);
 

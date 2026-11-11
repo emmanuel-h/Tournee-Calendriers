@@ -72,7 +72,7 @@ void main() {
   late ProviderContainer container;
 
   /// A container whose phone holds [street] (none when null), with Léa
-  /// changing houses at [twoPm]; no tournée is open unless [open] is, its
+  /// changing houses at [twoPm]; no secteur is open unless [open] is, its
   /// team kept in [sectors].
   void phoneWith(
     Street? street, {
@@ -145,7 +145,7 @@ void main() {
       ),
     );
 
-    test('should name a member of the open tournée', () async {
+    test('should name a member of the open secteur', () async {
       phoneWith(
         changedBy(crew.manuId),
         open: sector49,
@@ -184,7 +184,7 @@ void main() {
       expect((await shown('3')).lastChange, ChangedEarlier(_yesterday));
     });
 
-    test('should name nobody but the phone when no tournée is open', () async {
+    test('should name nobody but the phone when no secteur is open', () async {
       phoneWith(changedBy(crew.manuId));
       open('3');
 

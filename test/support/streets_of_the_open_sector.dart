@@ -1,6 +1,6 @@
 // Binds the street storage the way the composition root does
 // (bootstrap/bindings.dart): none while no secteur is open, the open
-// secteur's otherwise. Presentation tests use it to switch tournée
+// secteur's otherwise. Presentation tests use it to switch secteur
 // under a screen and check that it follows.
 // `Override` (the type of a container's overrides) lives in misc.dart.
 import 'package:flutter_riverpod/misc.dart';

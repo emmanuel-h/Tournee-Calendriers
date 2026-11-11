@@ -46,7 +46,7 @@ void main() {
     expect(preview(), isNot(preview(campaign: 2027)));
   });
 
-  test('should name the tournée when printed', () {
+  test('should name the secteur when printed', () {
     expect(
       '${preview()}',
       'JoinPreview(K7P-2QX, t49, 49, CS Villefranche, 2026)',
@@ -72,7 +72,7 @@ void main() {
       callerIsActive: callerIsActive,
     );
 
-    test('should keep what « Tous les secteurs » shows of a tournée', () {
+    test('should keep what « Tous les secteurs » shows of a secteur', () {
       final made = overview();
 
       expect(made.id, SectorId('t12'));
@@ -99,7 +99,7 @@ void main() {
       expect(overview(), isNot(overview(callerIsActive: false)));
     });
 
-    test('should name the tournée and its team when printed', () {
+    test('should name the secteur and its team when printed', () {
       expect(
         '${overview()}',
         'SectorOverview(t12, 12, CS Villefranche, 2026, 3 active, '

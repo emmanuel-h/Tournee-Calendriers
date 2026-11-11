@@ -1,5 +1,5 @@
 // What the street card of « Ajouter des rues » shows (PLAN §5.4): the BAN
-// street under a tap, or chosen in the search, and whether the tournée has
+// street under a tap, or chosen in the search, and whether the secteur has
 // it already.
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
@@ -42,7 +42,7 @@ final _morinNumbers = StreetNumbers(
   duplicateNumbers: 0,
 );
 
-/// The match of the Rue des Lilas, which the tournée has.
+/// The match of the Rue des Lilas, which the secteur has.
 final _lilasMatch = StreetMatch(
   id: lilas.banId!,
   name: streetName('Rue des Lilas'),
@@ -77,7 +77,7 @@ void main() {
 
   group('a tap on the map', () {
     test('should give the street under the tap with its numbers when the '
-        'tournée does not have it', () async {
+        'secteur does not have it', () async {
       final directory = FakeAddressDirectory(
         places: {_tap: Ok(_morin)},
         streets: {_morinId: Ok(_morinNumbers)},
@@ -95,7 +95,7 @@ void main() {
       expect(directory.streetsAsked, [_morinId]);
     });
 
-    test('should give the street of the tournée when it has it, without '
+    test('should give the street of the secteur when it has it, without '
         'asking its numbers', () async {
       final directory = FakeAddressDirectory(places: {_tap: Ok(_lilasMatch)});
 
@@ -510,7 +510,7 @@ void main() {
       expect(directory.pointsAsked, isEmpty);
     });
 
-    test('should give the street of the tournée when it has it', () async {
+    test('should give the street of the secteur when it has it', () async {
       final directory = FakeAddressDirectory();
 
       final found = valueOf(await lookUp(directory)(FoundStreet(_lilasMatch)));

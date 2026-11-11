@@ -4,12 +4,12 @@ import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 
 /// The search box of « Ajouter des rues » (PLAN §5.4): the streets whose
-/// name looks like the text typed, in the communes of the tournée. Needs
+/// name looks like the text typed, in the communes of the secteur. Needs
 /// the network.
 ///
-/// A tournée may cover several communes (#78): each is asked in turn, and
+/// A secteur may cover several communes (#78): each is asked in turn, and
 /// the results follow the order of the communes, each commune's best
-/// first. Until the tournée stores its communes, the caller passes them.
+/// first. Until the secteur stores its communes, the caller passes them.
 final class SearchStreet {
   const SearchStreet(this._directory);
 

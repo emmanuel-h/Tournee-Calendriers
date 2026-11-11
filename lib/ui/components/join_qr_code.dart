@@ -6,8 +6,8 @@ import 'package:share_plus/share_plus.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 
-/// A tournée's join code as a QR code (PLAN §5.2): Équipe and « Nouvelle
-/// tournée » show it for a newcomer to scan.
+/// A secteur's join code as a QR code (PLAN §5.2): Équipe and « Nouveau
+/// secteur » show it for a newcomer to scan.
 ///
 /// [data] is what the QR code holds, the code alone (`K7P2QX`); [code] is
 /// the code as shown (`K7P-2QX`), which screen readers say instead of the
@@ -54,7 +54,7 @@ final class JoinQrCode extends StatelessWidget {
   }
 }
 
-/// « Partager »: the phone's share sheet with « Tournée 49 · CS
+/// « Partager »: the phone's share sheet with « Secteur 49 · CS
 /// Villefranche » and the [code] to join it.
 void shareJoinCode(
   AppLocalizations l10n, {

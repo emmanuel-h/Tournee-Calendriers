@@ -1,4 +1,4 @@
-// The members of a tournée (PLAN §8.1, §8.2): a newcomer's request, what a
+// The members of a secteur (PLAN §8.1, §8.2): a newcomer's request, what a
 // pending member may read, accepting, renaming oneself, refusing, removing,
 // leaving.
 import { after, before, beforeEach, describe, it } from 'node:test';
@@ -87,7 +87,7 @@ describe('a request to join', () => {
     await assertFails(setDoc(doc(phoneOf(env, null), memberPath(zoe)), requestDoc('Zoé')));
   });
 
-  it('should refuse a request to a tournée that does not exist', async () => {
+  it('should refuse a request to a secteur that does not exist', async () => {
     await assertFails(
       setDoc(doc(phoneOf(env, zoe), `sectors/t50/members/${zoe}`), requestDoc('Zoé')),
     );
@@ -130,7 +130,7 @@ describe('what a pending member reads', () => {
     await assertSucceeds(getDoc(memberOf(zoe, zoe)));
   });
 
-  it('should refuse them the tournée, the members, the campaign', async () => {
+  it('should refuse them the secteur, the members, the campaign', async () => {
     const phone = phoneOf(env, paul);
     await assertFails(getDoc(doc(phone, sectorPath)));
     await assertFails(getDoc(memberOf(paul, manu)));
@@ -138,19 +138,19 @@ describe('what a pending member reads', () => {
     await assertFails(getDoc(doc(phone, campaignPath)));
   });
 
-  it('should let an active member read the tournée and list the members', async () => {
+  it('should let an active member read the secteur and list the members', async () => {
     const phone = phoneOf(env, lea);
     await assertSucceeds(getDoc(doc(phone, sectorPath)));
     await assertSucceeds(getDocs(collection(phone, `${sectorPath}/members`)));
     await assertSucceeds(getDoc(doc(phone, campaignPath)));
   });
 
-  it('should refuse someone outside the tournée', async () => {
+  it('should refuse someone outside the secteur', async () => {
     await assertFails(getDoc(doc(phoneOf(env, zoe), sectorPath)));
     await assertFails(getDoc(memberOf(zoe, manu)));
   });
 
-  it('should refuse listing the tournées', async () => {
+  it('should refuse listing the secteurs', async () => {
     await assertFails(getDocs(collection(phoneOf(env, lea), 'sectors')));
   });
 });
@@ -285,7 +285,7 @@ describe('refusing, cancelling, removing, leaving', () => {
     await assertFails(deleteDoc(memberOf(paul, lea)));
   });
 
-  it('should let the creator leave, the tournée going on', async () => {
+  it('should let the creator leave, the secteur going on', async () => {
     // The creator has no power of their own any more (PLAN §5.12).
     await assertSucceeds(deleteDoc(memberOf(manu, manu)));
   });

@@ -7,7 +7,7 @@ import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'sector_fixtures.dart';
 
 void main() {
-  // Each member change, built for a tournée and a member.
+  // Each member change, built for a secteur and a member.
   final memberChanges = <String, MemberChange Function(SectorId, Member)>{
     'MemberAccepted': (id, member) =>
         MemberAccepted(sectorId: id, member: member),
@@ -23,14 +23,14 @@ void main() {
 
   for (final MapEntry(key: kind, value: make) in memberChanges.entries) {
     group(kind, () {
-      test('should keep the tournée and the member when built', () {
+      test('should keep the secteur and the member when built', () {
         final change = make(sectorId, julie);
 
         expect(change.sectorId, sectorId);
         expect(change.member, julie);
       });
 
-      test('should be equal when the tournée and the member are equal', () {
+      test('should be equal when the secteur and the member are equal', () {
         expect(make(sectorId, julie), make(SectorId('t49'), julie));
         expect(
           make(sectorId, julie).hashCode,
@@ -38,7 +38,7 @@ void main() {
         );
       });
 
-      test('should differ when the tournée differs', () {
+      test('should differ when the secteur differs', () {
         expect(make(sectorId, julie), isNot(make(SectorId('t12'), julie)));
       });
 
@@ -46,7 +46,7 @@ void main() {
         expect(make(sectorId, julie), isNot(make(sectorId, lea)));
       });
 
-      test('should show its kind, tournée and member when printed', () {
+      test('should show its kind, secteur and member when printed', () {
         expect(
           make(sectorId, julie).toString(),
           '$kind(t49, Member(uid-julie, Julie, pending))',
@@ -70,7 +70,7 @@ void main() {
     );
   });
 
-  // Each commune change, built for a tournée and a commune.
+  // Each commune change, built for a secteur and a commune.
   final communeChanges =
       <String, CommuneChange Function(SectorId, SectorCommune)>{
         'CommuneAdded': (id, commune) =>
@@ -81,14 +81,14 @@ void main() {
 
   for (final MapEntry(key: kind, value: make) in communeChanges.entries) {
     group(kind, () {
-      test('should keep the tournée and the commune when built', () {
+      test('should keep the secteur and the commune when built', () {
         final change = make(sectorId, gleizeCommune);
 
         expect(change.sectorId, sectorId);
         expect(change.commune, gleizeCommune);
       });
 
-      test('should be equal when the tournée and the commune are equal', () {
+      test('should be equal when the secteur and the commune are equal', () {
         expect(
           make(sectorId, gleizeCommune),
           make(SectorId('t49'), gleizeCommune),
@@ -99,7 +99,7 @@ void main() {
         );
       });
 
-      test('should differ when the tournée differs', () {
+      test('should differ when the secteur differs', () {
         expect(
           make(sectorId, gleizeCommune),
           isNot(make(SectorId('t12'), gleizeCommune)),
@@ -113,7 +113,7 @@ void main() {
         );
       });
 
-      test('should show its kind, tournée and commune when printed', () {
+      test('should show its kind, secteur and commune when printed', () {
         expect(
           make(sectorId, gleizeCommune).toString(),
           '$kind(t49, SectorCommune(69092, Gleizé, GeoPoint(45.9915, 4.6883)))',
@@ -153,7 +153,7 @@ void main() {
       expect(regenerated().hashCode, regenerated().hashCode);
     });
 
-    test('should differ when the tournée differs', () {
+    test('should differ when the secteur differs', () {
       expect(regenerated(), isNot(regenerated(id: 't12')));
     });
 
@@ -174,13 +174,13 @@ void main() {
   });
 
   group('SectorDeleted', () {
-    test('should keep the tournée as it was when built', () {
+    test('should keep the secteur as it was when built', () {
       final sector = team();
 
       expect(SectorDeleted(sector).sector, same(sector));
     });
 
-    test('should show the tournée id when printed', () {
+    test('should show the secteur id when printed', () {
       expect(SectorDeleted(team()).toString(), 'SectorDeleted(t49)');
     });
   });

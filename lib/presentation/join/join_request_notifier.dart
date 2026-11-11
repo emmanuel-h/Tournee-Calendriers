@@ -9,7 +9,7 @@ import 'package:tournee_calendriers/presentation/launch/launch_place.dart';
 import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
 import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_state.dart';
 
-/// « Demande envoyée » for one request (`family`: one per tournée;
+/// « Demande envoyée » for one request (`family`: one per secteur;
 /// `autoDispose`: it stops with the screen).
 final joinRequestProvider = NotifierProvider.autoDispose
     .family<JoinRequestNotifier, JoinRequestState, SectorId>(
@@ -17,7 +17,7 @@ final joinRequestProvider = NotifierProvider.autoDispose
     );
 
 /// Follows the member's request to join [sector] until it is answered
-/// (PLAN §5.2): accepted, the tournée is opened and the start screen shows
+/// (PLAN §5.2): accepted, the secteur is opened and the start screen shows
 /// it; refused or cancelled, the app goes back to « Bienvenue » or to its
 /// start screen.
 ///
@@ -87,7 +87,7 @@ final class JoinRequestNotifier extends Notifier<JoinRequestState> {
           centre: centre,
           canLeave: _canLeave,
         );
-        // Another tournée opened, streets moved…: a way out may have come.
+        // Another secteur opened, streets moved…: a way out may have come.
         unawaited(_findWayOut());
       // Acted on after this turn: opening saves « Mes secteurs » again,
       // which must not happen while the store is still telling its last
@@ -102,7 +102,7 @@ final class JoinRequestNotifier extends Notifier<JoinRequestState> {
     }
   }
 
-  /// Accepted: opens the tournée, which the start screen then shows.
+  /// Accepted: opens the secteur, which the start screen then shows.
   Future<void> _open() async {
     if (!ref.mounted) return;
     await ref.read(openSectorProvider)(sector);

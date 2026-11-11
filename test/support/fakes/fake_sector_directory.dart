@@ -1,11 +1,11 @@
 // A SectorDirectory in memory, for « Mes secteurs », « Nouveau secteur »
 // and « Rejoindre ». A test plays the server: it adds to the stream of a
-// request ([answer]), says which codes show a tournée ([previews]), which
+// request ([answer]), says which codes show a secteur ([previews]), which
 // numbers are taken ([taken]) and which centres are known ([centres]), or
 // cuts the network ([offline]). It records the requests sent and cancelled.
-// It also plays the server telling a member they lost a tournée ([lose])
-// and the name it holds for them in a tournée ([hearName]), and lists every
-// tournée of the app for an admin ([overviews]), or refuses it to a phone
+// It also plays the server telling a member they lost a secteur ([lose])
+// and the name it holds for them in a secteur ([hearName]), and lists every
+// secteur of the app for an admin ([overviews]), or refuses it to a phone
 // no longer an admin's ([notAdmin]).
 import 'dart:async';
 
@@ -23,12 +23,12 @@ import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 
 final class FakeSectorDirectory implements SectorDirectory {
-  /// Every (tournée, member) whose request was watched, in order.
+  /// Every (secteur, member) whose request was watched, in order.
   final watched = <(SectorId, MemberId)>[];
 
   final _requests = <SectorId, StreamController<MemberStatus?>>{};
 
-  /// The tournée each code shows; any other code is unknown.
+  /// The secteur each code shows; any other code is unknown.
   final previews = <JoinCode, JoinPreview>{};
 
   /// The numbers taken, by the key of their centre: the same station
@@ -53,7 +53,7 @@ final class FakeSectorDirectory implements SectorDirectory {
   /// Every request sent, in order.
   final sent = <JoinRequest>[];
 
-  /// Every (tournée, member) whose request was cancelled, in order.
+  /// Every (secteur, member) whose request was cancelled, in order.
   final cancelled = <(SectorId, MemberId)>[];
 
   /// Answers held back, one per call of [preview] / [isTaken] in order
@@ -62,7 +62,7 @@ final class FakeSectorDirectory implements SectorDirectory {
   final previewGates = <Completer<void>>[];
   final takenGates = <Completer<void>>[];
 
-  /// The stream of the request to join [sector]; one per tournée.
+  /// The stream of the request to join [sector]; one per secteur.
   StreamController<MemberStatus?> _request(SectorId sector) =>
       _requests.putIfAbsent(sector, StreamController.broadcast);
 
@@ -78,7 +78,7 @@ final class FakeSectorDirectory implements SectorDirectory {
   /// Whether someone still listens to the request to join [sector].
   bool isWatching(SectorId sector) => _request(sector).hasListener;
 
-  /// Every (tournée, member) whose membership was watched, in order.
+  /// Every (secteur, member) whose membership was watched, in order.
   final memberships = <(SectorSummary, MemberId)>[];
 
   final _losses = <SectorId, StreamController<SectorLoss>>{};
@@ -102,7 +102,7 @@ final class FakeSectorDirectory implements SectorDirectory {
     return _loss(sector.id).stream;
   }
 
-  /// Every (tournée, member) whose own name was watched, in order.
+  /// Every (secteur, member) whose own name was watched, in order.
   final ownNames = <(SectorId, MemberId)>[];
 
   final _names = <SectorId, StreamController<MemberName>>{};
@@ -143,7 +143,7 @@ final class FakeSectorDirectory implements SectorDirectory {
     };
   }
 
-  /// The names the members hold on the server, by tournée and
+  /// The names the members hold on the server, by secteur and
   /// `MemberName.key`: a request under one fails with `nameTaken`.
   final takenNames = <(SectorId, String)>{};
 
@@ -189,7 +189,7 @@ final class FakeSectorDirectory implements SectorDirectory {
     return Ok(taken.contains((centre.key, number)));
   }
 
-  /// Every tournée of the app, as « Tous les secteurs » lists them.
+  /// Every secteur of the app, as « Tous les secteurs » lists them.
   List<SectorOverview> overviews = const [];
 
   /// Every admin [allSectors] was asked for, in order.

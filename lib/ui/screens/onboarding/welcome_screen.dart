@@ -15,8 +15,8 @@ import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
 /// « Bienvenue » (PLAN §5.1, Welcome mockup): where a phone the app knows
-/// nothing of opens. The member's first name, then « Rejoindre une
-/// tournée » (and « Créer un secteur » above it for an admin, PLAN
+/// nothing of opens. The member's first name, then « Rejoindre un
+/// secteur » (and « Créer un secteur » above it for an admin, PLAN
 /// §5.12), disabled until the name is valid. The name is kept on the phone
 /// before either opens. At the bottom, « Identifiant de l'appareil » with
 /// its copy button, once the phone has its account: the screen signs in
@@ -55,7 +55,7 @@ final class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     final colors = AppColors.of(context);
     final state = ref.watch(welcomeProvider);
     final goOn = state.canGoOn;
-    // Only an admin creates a tournée; nothing hints at it otherwise.
+    // Only an admin creates a secteur; nothing hints at it otherwise.
     final isAdmin = ref.watch(adminProvider);
     // Watching it signs the phone in (`accountProvider`).
     final deviceId = ref.watch(deviceIdProvider);

@@ -45,7 +45,7 @@ import 'fake_map_view.dart';
 /// [preferences], [mySectors] (none by default), [settings] and
 /// [sectorDirectory], [sectors] (none by default), [pending] (nothing
 /// waiting to be sent by default), [connection] (online by default), [downloads] (no
-/// tournée downloaded by default), [rounds] (no tournée on by default)
+/// secteur downloaded by default), [rounds] (no tournée on by default)
 /// and [ledger] (no tournée validated by default);
 /// [member] (Léa by
 /// default) uses the phone and marks the houses at [now] (two o'clock by

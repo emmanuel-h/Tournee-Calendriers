@@ -175,14 +175,14 @@ void main() {
   tearDownAll(() => FirebaseAuth.instance.signOut());
 
   testWidgets(
-    'should let an admin create a tournée, visit and join another one, and '
+    'should let an admin create a secteur, visit and join another one, and '
     'say « Vous n\'êtes plus administrateur. » once admins/{uid} is removed',
     (tester) async {
       final storage = await Directory.systemTemp.createTemp('admin_flow');
       addTearDown(() => storage.delete(recursive: true));
 
-      // geo.api.gouv.fr played by a fake: the commune of « Nouvelle
-      // tournée » needs no network outside the emulators.
+      // geo.api.gouv.fr played by a fake: the commune of « Nouveau
+      // secteur » needs no network outside the emulators.
       await bootstrap(
         storage: storage,
         communeSearch: FakeCommuneSearch(
@@ -247,7 +247,7 @@ void main() {
       await tester.tap(find.byTooltip('Fermer'));
       await tester.pumpAndSettle();
       expect(addStreets, findsOneWidget);
-      // The commune went with the tournée, through the rules (#78).
+      // The commune went with the secteur, through the rules (#78).
       await tester.scrollUntilVisible(
         find.byKey(const ValueKey('team.commune.69264')),
         200,
@@ -268,7 +268,7 @@ void main() {
       await _tap(tester, const Key('home.adminJoin'));
       expect(find.byKey(const Key('home.adminBanner')), findsNothing);
 
-      // A new tournée is started, then the console removes admins/{uid}
+      // A new secteur is started, then the console removes admins/{uid}
       // before « Créer »: the server refuses, the screen says why.
       await _tap(tester, const Key('home.sector'));
       await _tap(tester, const Key('team.changeSector'));

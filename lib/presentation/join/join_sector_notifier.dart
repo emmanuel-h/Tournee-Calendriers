@@ -18,7 +18,7 @@ final joinSectorProvider =
     );
 
 /// « Rejoindre un secteur » (PLAN §5.2): the code typed in two boxes of
-/// three characters or scanned, the tournée it shows, then « Demander à
+/// three characters or scanned, the secteur it shows, then « Demander à
 /// rejoindre », which sends the request and leaves the screen to « Demande
 /// envoyée ».
 ///
@@ -34,7 +34,7 @@ final class JoinSectorNotifier extends Notifier<JoinSectorState> {
   /// The complete, valid code typed; null otherwise.
   JoinCode? _code;
 
-  /// The tournée [_code] shows, once the server said so.
+  /// The secteur [_code] shows, once the server said so.
   JoinPreview? _preview;
 
   /// Raised by each code typed: an answer about an older code is dropped.
@@ -73,7 +73,7 @@ final class JoinSectorNotifier extends Notifier<JoinSectorState> {
   /// The second box changed to [text].
   void typeSecondHalf(String text) => _typed(state.first, _cut(_cleaned(text)));
 
-  /// The camera read [text] from a QR code: a tournée's holds its code
+  /// The camera read [text] from a QR code: a secteur's holds its code
   /// alone (PLAN §5.2); anything else is refused.
   void scanned(String text) {
     switch (JoinCode.parse(text)) {

@@ -97,7 +97,7 @@ GoRouter buildAppRouter({
       path: AppRoutes.join,
       builder: (context, state) => const JoinSectorScreen(),
     ),
-    // `/rejoindre/attente?id=…`; without a tournée, the start screen.
+    // `/rejoindre/attente?id=…`; without a secteur, the start screen.
     GoRoute(
       path: AppRoutes.joinPending,
       redirect: (context, state) =>
@@ -165,7 +165,7 @@ StreetId? _streetIdOf(GoRouterState state) =>
       _ => null,
     };
 
-/// The tournée named by the link's `id`, or null when it names none.
+/// The secteur named by the link's `id`, or null when it names none.
 SectorId? _sectorIdOf(GoRouterState state) =>
     switch (state.uri.queryParameters['id']) {
       final String id when id.trim().isNotEmpty => SectorId(id),

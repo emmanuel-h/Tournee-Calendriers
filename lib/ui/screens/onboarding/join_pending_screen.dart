@@ -18,7 +18,7 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 /// « Demande envoyée » (PLAN §5.2, JoinPending mockup): the member waits
 /// for an active member of [sector] to accept them. The screen follows
 /// the request by itself: accepted, it opens the start screen on the
-/// tournée; refused, it says « Demande refusée » and goes back to
+/// secteur; refused, it says « Demande refusée » and goes back to
 /// « Bienvenue » (or to the start screen, when the phone has one).
 /// « Annuler la demande » withdraws it, offline too.
 ///

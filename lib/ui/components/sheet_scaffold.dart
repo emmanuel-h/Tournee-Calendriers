@@ -4,7 +4,7 @@ import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
 /// Opens [builder]'s content as a modal bottom sheet over a dimmed screen
-/// (Fiche maison, Mes tournées, Ajouter des numéros…).
+/// (Fiche maison, Mes secteurs, Ajouter des numéros…).
 ///
 /// `isScrollControlled` lets a tall sheet grow past half the screen, and
 /// `useSafeArea` keeps it below the status bar. Returns what the sheet passes

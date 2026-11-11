@@ -8,7 +8,7 @@ import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 
 // The administrators of the app (PLAN §5.12): whether the phone is one,
-// whether a member is, every tournée of the app, and opening one of them.
+// whether a member is, every secteur of the app, and opening one of them.
 // The screens show what an admin may do only once `AdminStatus` says so;
 // the security rules check the same `admins/{uid}` document.
 
@@ -32,7 +32,7 @@ final class IsMemberAdmin {
   Future<bool> call(MemberId member) => _admins.isAdmin(member);
 }
 
-/// Every tournée of the app (« Tous les secteurs »), as the admin on the
+/// Every secteur of the app (« Tous les secteurs »), as the admin on the
 /// phone sees it: signs in first when the phone has no account yet. Needs
 /// the network: fails with [DirectoryFailure.noNetwork] otherwise.
 final class ListAllSectors {
@@ -51,8 +51,8 @@ final class ListAllSectors {
   }
 }
 
-/// Opens a tournée of « Tous les secteurs » (PLAN §5.12): kept in « Mes
-/// tournées » as the admin's own when they are an active member of it,
+/// Opens a secteur of « Tous les secteurs » (PLAN §5.12): kept in « Mes
+/// secteurs » as the admin's own when they are an active member of it,
 /// otherwise as visited (« · administrateur »), with what the server says
 /// of it now, and opened. Returns it as kept. Works with what the list
 /// gave: nothing more is asked of the server.

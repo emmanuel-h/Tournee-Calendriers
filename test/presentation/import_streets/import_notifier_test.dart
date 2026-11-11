@@ -702,7 +702,7 @@ void main() {
     );
   });
 
-  group('with a tournée open', () {
+  group('with a secteur open', () {
     late FakeSectorRepository sectors;
     late ProviderContainer phone;
 
@@ -738,7 +738,7 @@ void main() {
       await _settle();
     }
 
-    test('should offer the tournée\'s communes and list the first one\'s '
+    test('should offer the secteur\'s communes and list the first one\'s '
         'streets', () async {
       await openTab([villefrancheCommune, gleizeCommune]);
 
@@ -794,7 +794,7 @@ void main() {
       expect(tab().visibleStreets.single.name, 'Rue du Bourg');
     });
 
-    test('should search the commune of a tournée created before the '
+    test('should search the commune of a secteur created before the '
         'communes', () async {
       await openTab([]);
 

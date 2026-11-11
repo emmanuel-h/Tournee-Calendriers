@@ -39,7 +39,7 @@ final paix = placedStreet('Paix', 45.9860);
 /// The area kept for [nationale] and [paix].
 final area49 = sectorArea([nationale, paix])!;
 
-/// Another tournée's area, far from [area49].
+/// Another secteur's area, far from [area49].
 final area12 = GeoBounds.around([at(45.9700, 4.7000), at(45.9710, 4.7010)])!;
 
 final morning = DateTime.utc(2026, 11, 2, 8, 12);

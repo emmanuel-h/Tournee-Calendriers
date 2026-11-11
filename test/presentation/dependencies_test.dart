@@ -524,21 +524,21 @@ void main() {
       expect(await told, MemberId('uid-lea'));
     });
 
-    test('should read the tournées of the bound store', () {
+    test('should read the secteurs of the bound store', () {
       expect(container.read(readMySectorsProvider)().sectors, [
         sector49,
         sector7,
       ]);
     });
 
-    test('should observe the tournées of the bound store', () async {
+    test('should observe the secteurs of the bound store', () async {
       final next = container.read(observeMySectorsProvider)().first;
       await mySectors.save(MySectors.none);
 
       expect(await next, MySectors.none);
     });
 
-    test('should open a tournée of the bound store', () async {
+    test('should open a secteur of the bound store', () async {
       valueOf(await container.read(openSectorProvider)(sector49.id));
 
       expect(mySectors.mySectors.current, sector49);
@@ -580,7 +580,7 @@ void main() {
       expect(sectorDirectory.ownNames, [(sector49.id, MemberId('uid-kept'))]);
     });
 
-    test('should forget a lost tournée in the bound store', () async {
+    test('should forget a lost secteur in the bound store', () async {
       await container.read(forgetLostSectorProvider)(
         sector49.id,
         SectorLoss.removed,
@@ -594,14 +594,14 @@ void main() {
     });
 
     test('should change the name in the bound settings and in the bound '
-        'tournées, as the bound member', () async {
+        'secteurs, as the bound member', () async {
       await asManu().read(changeMemberNameProvider)('Emmanuel');
 
       expect(settings.names, [nameOf('Emmanuel')]);
       expect(sectors[sectorId]!.memberOf(manuId)!.name, nameOf('Emmanuel'));
     });
 
-    test('should give a name in one of the bound tournées, as the bound '
+    test('should give a name in one of the bound secteurs, as the bound '
         'member', () async {
       await mySectors.save(MySectors.none.remember(sector49));
 
@@ -614,7 +614,7 @@ void main() {
     });
 
     test('should catch up the name of the bound settings in the bound '
-        'tournées, as the bound member', () async {
+        'secteurs, as the bound member', () async {
       await mySectors.save(MySectors.none.remember(sector49));
       // Léa is in the 49: a name of hers would be taken there.
       settings.memberName = nameOf('Emmanuel');
@@ -741,7 +741,7 @@ void main() {
       expect(sectors[sectorId]!.joinCode, codeOf('234567'));
     });
 
-    test('should leave the tournée and forget it in the bound store', () async {
+    test('should leave the secteur and forget it in the bound store', () async {
       await mySectors.save(MySectors.none.remember(sector49));
       final phone = ProviderContainer(overrides: overridesAs(leaId));
       addTearDown(phone.dispose);
@@ -784,7 +784,7 @@ void main() {
       );
     });
 
-    test('should forget a visited tournée in the bound store', () async {
+    test('should forget a visited secteur in the bound store', () async {
       await container.read(forgetVisitedSectorProvider)(sector49.id);
 
       expect(mySectors.mySectors.find(sector49.id), isNull);
@@ -799,14 +799,14 @@ void main() {
       expect(admins.asked, [manuId]);
     });
 
-    test('should list every tournée from the bound directory as the bound '
+    test('should list every secteur from the bound directory as the bound '
         'account', () async {
       valueOf(await container.read(listAllSectorsProvider)());
 
       expect(sectorDirectory.allAsked, [MemberId('uid-lea')]);
     });
 
-    test('should open a tournée as an admin in the bound store', () async {
+    test('should open a secteur as an admin in the bound store', () async {
       await container.read(openAsAdminProvider)(
         SectorOverview(
           id: sector12.id,
@@ -823,7 +823,7 @@ void main() {
     });
 
     test(
-      'should delete the tournée and forget it in the bound store',
+      'should delete the secteur and forget it in the bound store',
       () async {
         valueOf(await asManu().read(deleteSectorProvider)(sectorId));
 

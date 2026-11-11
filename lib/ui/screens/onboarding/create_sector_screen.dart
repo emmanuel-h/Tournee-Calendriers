@@ -26,7 +26,7 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 /// centre de secours picked from the known ones (or added), the number,
 /// checked as it is typed, and the year; « Créer », then the code and its
 /// QR code to show the team on the same screen, and « Continuer » to the
-/// start screen, where the new tournée is open.
+/// start screen, where the new secteur is open.
 final class CreateSectorScreen extends ConsumerStatefulWidget {
   const CreateSectorScreen({super.key});
 
@@ -82,7 +82,7 @@ final class _CreateSectorScreenState extends ConsumerState<CreateSectorScreen> {
     final showCentres =
         _centreFocus.hasFocus &&
         (state.suggestions.isNotEmpty || state.newCentre != null);
-    // Once created, going back opens the start screen on the new tournée:
+    // Once created, going back opens the start screen on the new secteur:
     // the screen it came from (« Bienvenue ») has nothing more to offer.
     return PopScope(
       canPop: created == null,
@@ -468,7 +468,7 @@ final class _TakenAlert extends StatelessWidget {
       AlertBox(key: const Key('create.taken'), title: title, body: body);
 }
 
-/// The tournée just created: « Tournée 49 · CS Villefranche est prête… »,
+/// The secteur just created: « Secteur 49 · CS Villefranche est prêt… »,
 /// its QR code, its code with its copy button, and « Partager ».
 final class _CodeCard extends StatelessWidget {
   const _CodeCard({required this.created});

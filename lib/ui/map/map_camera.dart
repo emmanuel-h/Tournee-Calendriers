@@ -12,12 +12,12 @@ import 'package:tournee_calendriers/domain/shared/result.dart';
 /// house dots show (PLAN §5.3).
 const locateZoom = 17.0;
 
-/// The zoom the map opens at on a tournée, before it fits the tournée's
+/// The zoom the map opens at on a secteur, before it fits the secteur's
 /// area exactly.
 const _sectorZoom = 14.0;
 
 /// The whole of mainland France: where the map opens when it has no
-/// tournée area to show yet.
+/// secteur area to show yet.
 const _france = CameraPosition(target: LatLng(46.6, 2.5), zoom: 5);
 
 LatLng latLngOf(GeoPoint point) => LatLng(point.latitude, point.longitude);

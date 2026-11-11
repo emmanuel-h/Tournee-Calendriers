@@ -159,7 +159,7 @@ enum UndoFailure {
   notUndoable,
 }
 
-/// A street of the tournée and its houses: the aggregate root that guards
+/// A street of the secteur and its houses: the aggregate root that guards
 /// every change to them (PLAN §6.1).
 ///
 /// Invariants, true of every `Street`:

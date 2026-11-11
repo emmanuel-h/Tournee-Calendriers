@@ -47,13 +47,13 @@ void main() {
     expect(definition.includeIdeographs, isFalse);
   });
 
-  test('should name the tournée in the metadata', () {
+  test('should name the secteur in the metadata', () {
     expect(regionMetadata(SectorId('t49')), {'tournee': 't49'});
   });
 
   // The map library rounds a longitude on its way (`4.70827` comes back
   // as `4.708269999999999`): far below the 1e-7° that tells regions apart.
-  test('should read a region made for a tournée', () {
+  test('should read a region made for a secteur', () {
     final region = offlineMapRegionOf(_region({'tournee': 't49'}))!;
 
     expect(region.id, 7);

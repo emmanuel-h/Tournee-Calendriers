@@ -110,7 +110,7 @@ void main() {
   });
 
   testWidgets('should keep « Créer » off until a commune is picked, then '
-      'create the tournée on the communes picked', (tester) async {
+      'create the secteur on the communes picked', (tester) async {
     await open(tester);
     await tester.enterText(find.byKey(const Key('create.centre')), 'villef');
     await tester.pumpAndSettle();
@@ -169,7 +169,7 @@ void main() {
   );
 
   testWidgets(
-    'should say the tournée exists, refuse « Créer » and offer to join '
+    'should say the secteur exists, refuse « Créer » and offer to join '
     'when the number is taken in the centre',
     (tester) async {
       directory.taken.add((csVillefranche.key, number49));
@@ -241,7 +241,7 @@ void main() {
 
   testWidgets(
     'should show the code and its QR code once created, then open the '
-    'start screen on the new tournée',
+    'start screen on the new secteur',
     (tester) async {
       await open(tester);
       await fillIn(tester);
@@ -292,7 +292,7 @@ void main() {
     expect(find.text('Code copié'), findsOneWidget);
   });
 
-  testWidgets('should say the number is no tournée number', (tester) async {
+  testWidgets('should say the number is no secteur number', (tester) async {
     await open(tester);
 
     await tester.enterText(find.byKey(const Key('create.number')), '0');

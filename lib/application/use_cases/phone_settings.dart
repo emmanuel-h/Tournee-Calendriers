@@ -114,17 +114,17 @@ final class NameChanged {
 /// says why it cannot be a name.
 ///
 /// The name is kept on the phone (PLAN §6.3) and given to the member in
-/// each tournée of « Mes secteurs » they are active in, so Équipe shows it
+/// each secteur of « Mes secteurs » they are active in, so Équipe shows it
 /// to the team, except where another member holds it (names are unique
 /// within a secteur, #148, PLAN §5.16): the member keeps their old name
 /// there, and the result says where ([NameChanged.kept]).
 ///
 /// Only the server tells whether a name is free. With the member active in
-/// some tournée, a phone that reaches none of them changes nothing and
-/// fails with [RenameProblem.noNetwork]. A tournée it could not reach while
+/// some secteur, a phone that reaches none of them changes nothing and
+/// fails with [RenameProblem.noNetwork]. A secteur it could not reach while
 /// it reached others takes the name later ([CatchUpMemberName]), as does a
-/// pending request once accepted. Without any active tournée the name is
-/// only the phone's, offline too. A tournée the phone cannot read
+/// pending request once accepted. Without any active secteur the name is
+/// only the phone's, offline too. A secteur the phone cannot read
 /// (removed, never opened) or that refuses the rename (the member left
 /// meanwhile) is skipped.
 final class ChangeMemberName {
@@ -186,14 +186,14 @@ final class ChangeMemberName {
 }
 
 /// « Votre nom dans le secteur 49 » (PLAN §5.16): the member goes by the
-/// typed name in the tournée [SectorId] only; the phone's prénom and the
-/// other tournées stay as they are. Needs the server, which alone tells
+/// typed name in the secteur [SectorId] only; the phone's prénom and the
+/// other secteurs stay as they are. Needs the server, which alone tells
 /// whether the name is free there.
 ///
 /// Fails with [NameRefused] for a text that cannot be a name,
 /// [RenameProblem.nameTaken] when another member holds it there,
 /// [RenameProblem.noNetwork] offline and [RenameProblem.sectorGone] when
-/// the member is no longer active in that tournée.
+/// the member is no longer active in that secteur.
 final class ChangeSectorName {
   const ChangeSectorName(this._sectors, this._identity, this._mySectors);
 
@@ -236,20 +236,20 @@ final class ChangeSectorName {
   }
 }
 
-/// Catches up the member's name in [SectorId], one of their tournées,
+/// Catches up the member's name in [SectorId], one of their secteurs,
 /// when the server holds another one than the phone's (`WatchOwnName`):
 /// sends the name the member goes by there (`SectorSummary.memberName`,
 /// the prénom when none) with the same rename as « Prénom ».
 ///
 /// Covers what [ChangeMemberName] could not reach: a rename made while
 /// the request to join waited (PLAN §8.2: a pending member cannot rename
-/// themself), sent once accepted, and a tournée the phone could not reach
+/// themself), sent once accepted, and a secteur the phone could not reach
 /// at the rename, sent once the server is heard again. Where the name
 /// turns out to be taken, the member keeps the name the server holds,
-/// which the phone then remembers for that tournée (#148).
+/// which the phone then remembers for that secteur (#148).
 ///
 /// Equal names send nothing: the rename the server then echoes back stops
-/// there. A phone without a name yet, a tournée it does not know as one
+/// there. A phone without a name yet, a secteur it does not know as one
 /// the member is active in, cannot read or that refuses the rename (the
 /// member left meanwhile), or a server out of reach, send and keep
 /// nothing.
@@ -288,7 +288,7 @@ final class CatchUpMemberName {
   }
 }
 
-/// Keeps on the phone that the member goes by [name] in the tournée [id],
+/// Keeps on the phone that the member goes by [name] in the secteur [id],
 /// when « Mes secteurs » still holds it (read again: it may have changed
 /// while the server answered).
 Future<void> _remember(MySectorsStore store, SectorId id, MemberName name) {
@@ -301,7 +301,7 @@ Future<void> _remember(MySectorsStore store, SectorId id, MemberName name) {
   };
 }
 
-/// What became of a rename in one tournée.
+/// What became of a rename in one secteur.
 enum _Outcome {
   /// Done, or the member already went by that name there.
   renamed,
@@ -312,15 +312,15 @@ enum _Outcome {
   /// The server could not be reached.
   offline,
 
-  /// The tournée cannot be read, or the member is no longer in it.
+  /// The secteur cannot be read, or the member is no longer in it.
   skipped,
 }
 
 /// The [outcome] of a rename, with the name the member [held] in the
-/// tournée before it (null when not in it).
+/// secteur before it (null when not in it).
 typedef _Renamed = ({_Outcome outcome, MemberName? held});
 
-/// Renames [by] to [name] in the tournée [id] and tells how it went.
+/// Renames [by] to [name] in the secteur [id] and tells how it went.
 Future<_Renamed> _renameIn(
   SectorRepository sectors,
   SectorId id,

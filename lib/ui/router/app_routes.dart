@@ -4,7 +4,7 @@ import 'package:tournee_calendriers/domain/street/street_id.dart';
 
 /// The paths of every screen of PLAN §5, so no path string is typed twice.
 ///
-/// Sheets (Fiche maison, Immeuble, Mes tournées, Ajouter des numéros…) are
+/// Sheets (Fiche maison, Immeuble, Mes secteurs, Ajouter des numéros…) are
 /// not routes: they open over the screen that owns them.
 abstract final class AppRoutes {
   /// Where the app starts: Accueil (§5.3) while a secteur is open,

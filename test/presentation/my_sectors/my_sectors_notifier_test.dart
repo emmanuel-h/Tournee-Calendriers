@@ -48,7 +48,7 @@ void main() {
     return container;
   }
 
-  test('should reopen the tournée the phone kept open at launch', () {
+  test('should reopen the secteur the phone kept open at launch', () {
     final container = containerWith(_manusPhone(open: sector12.id));
 
     final state = container.read(mySectorsProvider);
@@ -57,7 +57,7 @@ void main() {
     expect(container.read(currentSectorProvider), sector12);
   });
 
-  test('should list the tournées in the phone order, each with its '
+  test('should list the secteurs in the phone order, each with its '
       'number, year, centre and status', () {
     final container = containerWith(_manusPhone(open: sector12.id));
 
@@ -74,7 +74,7 @@ void main() {
     expect(rows.first.centre, 'CS Villefranche');
   });
 
-  test('should show no tournée when the phone knows none', () {
+  test('should show no secteur when the phone knows none', () {
     final container = containerWith(MySectors.none);
 
     final state = container.read(mySectorsProvider);
@@ -84,7 +84,7 @@ void main() {
     expect(container.read(currentSectorProvider), isNull);
   });
 
-  test('should switch the observed tournée and keep it for the next '
+  test('should switch the observed secteur and keep it for the next '
       'launch', () async {
     final container = containerWith(_manusPhone(open: sector49.id));
     final observed = <Object?>[];
@@ -103,7 +103,7 @@ void main() {
     expect(store.saves.single.currentId, sector12.id);
   });
 
-  test('should keep the open tournée when the one asked cannot be '
+  test('should keep the open secteur when the one asked cannot be '
       'opened', () async {
     final container = containerWith(_manusPhone(open: sector49.id));
 
@@ -131,7 +131,7 @@ void main() {
       expect(directory.watched, [(sector7.id, manuId)]);
     });
 
-    test('should make an accepted request one of the tournées, not '
+    test('should make an accepted request one of the secteurs, not '
         'opened, and stop watching it', () async {
       final container = containerWith(_manusPhone(open: sector49.id));
       container.read(mySectorsProvider);
@@ -205,14 +205,14 @@ void main() {
     });
   });
 
-  group('requests waiting in another tournée', () {
+  group('requests waiting in another secteur', () {
     int waitingIn(ProviderContainer container, SectorId id) => container
         .read(mySectorsProvider)
         .rows
         .firstWhere((row) => row.id == id)
         .waitingRequests;
 
-    test('should count the requests waiting in a tournée not open', () async {
+    test('should count the requests waiting in a secteur not open', () async {
       final container = containerWith(_manusPhone(open: sector12.id));
       container.read(mySectorsProvider);
       await pumpEventQueue();
@@ -221,7 +221,7 @@ void main() {
       expect(waitingIn(container, sector12.id), 0);
     });
 
-    test('should follow only the tournées not open, not the requests', () {
+    test('should follow only the secteurs not open, not the requests', () {
       final container = containerWith(_manusPhone(open: sector12.id));
 
       container.read(mySectorsProvider);
@@ -240,7 +240,7 @@ void main() {
       expect(waitingIn(container, sector49.id), 0);
     });
 
-    test('should count none in a tournée it cannot read', () async {
+    test('should count none in a secteur it cannot read', () async {
       final container = containerWith(_manusPhone(open: sector49.id));
       container.read(mySectorsProvider);
       await pumpEventQueue();
@@ -257,7 +257,7 @@ void main() {
       expect(waitingIn(container, sector49.id), 0);
     });
 
-    test('should stop following a tournée once it is opened, and follow '
+    test('should stop following a secteur once it is opened, and follow '
         'the one left', () async {
       final container = containerWith(_manusPhone(open: sector12.id));
       container.read(mySectorsProvider);

@@ -16,7 +16,7 @@ rules_version = '2';
 // - In a batch or a transaction, `get` / `exists` see the database before
 //   the batch, `getAfter` / `existsAfter` as it would be after it. That is
 //   how a rule checks that the other documents of the batch go with it
-//   (a new tournée comes with its code, its reservation and its creator).
+//   (a new secteur comes with its code, its reservation and its creator).
 // - The rules language has no loops. A write that changes one house, one
 //   door or one field is checked field by field. Houses written in bulk (a
 //   new street, « numéros en plus ») come in writes of at most
@@ -73,7 +73,7 @@ service cloud.firestore {
     }
 
     // An accepted member: a pending one reads and writes nothing of the
-    // tournée (PLAN §8.1), only their own member document.
+    // secteur (PLAN §8.1), only their own member document.
     function isActiveMember(sector) {
       return signedIn()
         && exists(memberPath(sector, uid()))
@@ -82,13 +82,13 @@ service cloud.firestore {
 
     // An administrator of the app (PLAN §5.12): an `admins/{uid}` document,
     // added by hand in the console. Admins are global: they manage every
-    // tournée, member of it or not. The creator has no power of their own.
+    // secteur, member of it or not. The creator has no power of their own.
     function isAdmin() {
       return signedIn()
         && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
-    // An active member or an admin: who reads a tournée and works on its
+    // An active member or an admin: who reads a secteur and works on its
     // streets.
     function isMemberOrAdmin(sector) {
       return isActiveMember(sector) || isAdmin();
@@ -177,7 +177,7 @@ service cloud.firestore {
     // ----------------------------------------------------- the directory
 
     // `sectorKeys/{centreKey}_{number}`: its existence reserves the number
-    // in the station. Written by the creator, an admin, for the tournée's
+    // in the station. Written by the creator, an admin, for the secteur's
     // own pair.
     function isReservation(key, data) {
       return isAdmin()
@@ -189,8 +189,8 @@ service cloud.firestore {
     }
 
     // `joinCodes/{code}`: what « Rejoindre » shows before the request, and
-    // nothing else (PLAN §8.2). Written by an admin with the tournée or a
-    // new code, and it must say what the tournée says.
+    // nothing else (PLAN §8.2). Written by an admin with the secteur or a
+    // new code, and it must say what the secteur says.
     function isPreview(code, data) {
       return isAdmin()
         && hasExactly(data, ['sectorId', 'number', 'centreName', 'campaign'])
@@ -201,7 +201,7 @@ service cloud.firestore {
         && data.campaign == getAfter(sectorPath(data.sectorId)).data.currentCampaign;
     }
 
-    // A code or a reservation goes when its tournée goes, or (a code) when
+    // A code or a reservation goes when its secteur goes, or (a code) when
     // an admin draws a new one.
     function isFreedByAdmin(sectorId) {
       return isAdmin() && !existsAfter(sectorPath(sectorId));
@@ -222,7 +222,7 @@ service cloud.firestore {
 
     match /rescueCentres/{centreKey} {
       // Listed by « Créer » (station names only); the first name stays.
-      // Only admins create tournées, hence stations (PLAN §5.12).
+      // Only admins create secteurs, hence stations (PLAN §5.12).
       allow read: if signedIn();
       allow create: if isAdmin()
         && isCentreKey(centreKey)
@@ -242,25 +242,25 @@ service cloud.firestore {
     match /joinCodes/{code} {
       // `get` only, never `list`: knowing a code is the only way to it.
       // Create only: a set over an existing code is an update, refused,
-      // so no one replaces another tournée's preview.
+      // so no one replaces another secteur's preview.
       allow get: if signedIn();
       allow create: if signedIn() && isJoinCode(code) && isPreview(code, request.resource.data);
       allow delete: if isCodeFreed(code, resource.data);
     }
 
-    // ------------------------------------------------------- the tournée
+    // ------------------------------------------------------- the secteur
 
     function sectorFields() {
       return ['number', 'centreKey', 'centreName', 'joinCode', 'createdBy',
         'createdAt', 'currentCampaign', 'communes'];
     }
 
-    // The most communes a tournée covers (Sector.maxCommunes).
+    // The most communes a secteur covers (Sector.maxCommunes).
     function maxCommunes() {
       return 50;
     }
 
-    // One entry of a tournée's `communes` (#78, SectorCommune): an INSEE
+    // One entry of a secteur's `communes` (#78, SectorCommune): an INSEE
     // code, the name as geo.api.gouv.fr gives it (trimmed, not blank), and
     // its centre or nothing.
     function isCommuneEntry(entry) {
@@ -271,7 +271,7 @@ service cloud.firestore {
         && isPosition(entry.lat, entry.lon);
     }
 
-    // The communes of a new tournée: 1 to maxCommunes(). No loops: the
+    // The communes of a new secteur: 1 to maxCommunes(). No loops: the
     // first entry is checked whole, the others are only counted (PLAN
     // §8.2).
     function isCommuneList(communes) {
@@ -283,7 +283,7 @@ service cloud.firestore {
     // Any active member or admin adds or removes one commune (Équipe,
     // `arrayUnion` / `arrayRemove` of one entry): only `communes` changes,
     // by one entry, an added one checked whole; the list never empties.
-    // A tournée stored before the communes has no list: it counts as
+    // A secteur stored before the communes has no list: it counts as
     // empty, so its first commune can be added.
     function isCommunesChange(sector, before, after) {
       let old = before.get('communes', []);
@@ -329,7 +329,7 @@ service cloud.firestore {
     }
 
     // Deleting (admins only, member or not) is the last batch: the code
-    // and the reservation go with the tournée, after its campaigns and
+    // and the reservation go with the secteur, after its campaigns and
     // streets, with whichever member documents remain (there may be none:
     // everyone may leave, PLAN §8.2). The rules cannot list the members,
     // so they do not check that every one goes.
@@ -391,7 +391,7 @@ service cloud.firestore {
     }
 
     // A newcomer's request: pending, with the code they used, which must
-    // be the tournée's current code (they cannot read the tournée).
+    // be the secteur's current code (they cannot read the secteur).
     function isJoinRequest(sector, data) {
       return hasExactly(data, memberFields().concat(['joinCode']))
         && isName(data.displayName, 30)
@@ -404,8 +404,8 @@ service cloud.firestore {
     }
 
     // An admin's own document, active at once and accepted by themself,
-    // without a code: the creator's, written with the tournée, or an admin
-    // joining a tournée they are not in (« Rejoindre », PLAN §5.12). Its
+    // without a code: the creator's, written with the secteur, or an admin
+    // joining a secteur they are not in (« Rejoindre », PLAN §5.12). Its
     // name is held for them in the same write (#148).
     function isAdminMembership(sector, data) {
       return isAdmin()
@@ -582,7 +582,7 @@ service cloud.firestore {
 
     // The same for a number, and one more case: the undo of « Restaurer »
     // puts back the removal it undoes, which may be a teammate's (PLAN
-    // §6.2). Then it must name an active member of the tournée, or an
+    // §6.2). Then it must name an active member of the secteur, or an
     // admin, who may have removed it without being in the team.
     function isNumberRemoval(sector, house) {
       return isRemovalStamp(house)
@@ -770,7 +770,7 @@ service cloud.firestore {
     // rules count every name, value, operator and call. Checking one house
     // whole costs about 200 of them (300 for the costliest: a building
     // with a suffix, tries and a « repasser » time, marked and removed by
-    // the caller), on top of about 300 for the membership, the tournée and
+    // the caller), on top of about 300 for the membership, the secteur and
     // the street. Measured in the emulator (#70): two of the costliest
     // houses in a new street leave about 90 to spare, three do not fit.
     // The tests write full writes of the costliest houses, so a change
@@ -909,10 +909,10 @@ service cloud.firestore {
     }
 
     match /sectors/{sector} {
-      // A member reaches a tournée by its id, from its code; only admins
-      // list them all (« Toutes les tournées », PLAN §5.12). A tournée that
+      // A member reaches a secteur by its id, from its code; only admins
+      // list them all (« Tous les secteurs », PLAN §5.12). A secteur that
       // is not there may be asked by anyone signed in (`resource == null`):
-      // a member whose own document went learns whether the tournée was
+      // a member whose own document went learns whether the secteur was
       // deleted (not there) or they were removed (refused), #147. It tells
       // nothing of one that exists.
       allow get: if isMemberOrAdmin(sector) || (signedIn() && resource == null);
@@ -964,7 +964,7 @@ service cloud.firestore {
       match /campaigns/{year} {
         allow read: if isMemberOrAdmin(sector);
         // The first campaign, written by the creator (an admin) with the
-        // tournée. A new campaign (v1.1) extends this rule when it is
+        // secteur. A new campaign (v1.1) extends this rule when it is
         // written.
         allow create: if isAdmin()
           && hasExactly(request.resource.data, ['startedAt', 'previousYear'])
@@ -986,7 +986,7 @@ service cloud.firestore {
               || isShapeFill(resource.data, request.resource.data)
               || isPartChange(resource.data, request.resource.data));
           // A street goes to the Corbeille by an update. Hard deletion goes
-          // with the tournée (an admin), or is the 30-day purge, which any
+          // with the secteur (an admin), or is the 30-day purge, which any
           // active member's or admin's app makes (no server, PLAN §5.11).
           allow delete: if isAdmin()
             || (isMemberOrAdmin(sector)

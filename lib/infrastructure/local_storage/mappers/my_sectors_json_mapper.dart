@@ -4,17 +4,17 @@
 // The schema, version 1:
 //
 //   { version: 1,
-//     open: sectorId | null,                    ← the tournée the app shows
+//     open: sectorId | null,                    ← the secteur the app shows
 //     tournees: [ { id, number: 49, centre: "CS Villefranche",
 //                   campaign: 2026,
 //                   status: "active" | "pending" | "visiting",
 //                   name?: "Léa B." }, … ] }
 //
-// `name` (#148) is the name the member goes by in that tournée; absent
+// `name` (#148) is the name the member goes by in that secteur; absent
 // when the phone does not know it (kept before #148, an admin's visit). An
 // app older than #148 ignores it.
 //
-// "visiting" (PLAN §5.12, #75) is a tournée an admin opened without being
+// "visiting" (PLAN §5.12, #75) is a secteur an admin opened without being
 // in its team. An app older than #75 cannot read a file holding one, and
 // starts with none: only an admin's phone ever writes it.
 //
@@ -65,7 +65,7 @@ Map<String, Object?> mySectorsToJson(MySectors mine) => {
 
 /// « Mes secteurs » read from [json] as `jsonDecode` gives it. Throws a
 /// [FormatException] when it is not a version 1 file, or when a value
-/// breaks the domain's rules (the open tournée must be an active one of the
+/// breaks the domain's rules (the open secteur must be an active one of the
 /// list).
 MySectors mySectorsFromJson(Object? json) {
   // A map pattern: matches only a map with these entries of these types.
@@ -118,7 +118,7 @@ SectorSummary _sectorFromJson(Object? json) {
       },
     );
   }
-  throw FormatException('Not a tournée: $json');
+  throw FormatException('Not a secteur: $json');
 }
 
 /// The value of [result], or a [FormatException] naming [json].

@@ -43,8 +43,8 @@ final class CorbeilleNotifier extends Notifier<CorbeilleState> {
   CorbeilleState build() {
     final read = ref.watch(corbeilleItemsProvider);
     // `.value`: the items once read, null before (or should the storage
-    // fail). While another tournée's streets load, `.value` still holds
-    // the old tournée's items (`isLoading` is true then): not shown.
+    // fail). While another secteur's streets load, `.value` still holds
+    // the old secteur's items (`isLoading` is true then): not shown.
     final items = read.value;
     if (items == null || read.isLoading) return CorbeilleState.waiting;
     final team = ref.watch(teamProvider);

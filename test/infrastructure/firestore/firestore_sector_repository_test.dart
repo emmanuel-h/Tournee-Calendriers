@@ -1,4 +1,4 @@
-// The tournées in Firestore, against an in-memory Firestore
+// The secteurs in Firestore, against an in-memory Firestore
 // (fake_cloud_firestore, PLAN §11).
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
@@ -96,7 +96,7 @@ void main() {
   setUp(() => db = FakeFirebaseFirestore());
 
   group('add', () {
-    test('should store the tournée with all that makes it findable', () async {
+    test('should store the secteur with all that makes it findable', () async {
       final result = await repository().add(created);
 
       expect(valueOf(result), same(created));
@@ -229,7 +229,7 @@ void main() {
       }
     }
 
-    test('should find the tournée with every member', () async {
+    test('should find the secteur with every member', () async {
       await storeTeam();
 
       final found = (await repository().find(sectorId))!;
@@ -239,7 +239,7 @@ void main() {
       expect(found.members, [manu, lea, julie]);
     });
 
-    test('should find nothing when there is no such tournée', () async {
+    test('should find nothing when there is no such secteur', () async {
       expect(await repository().find(SectorId('nope')), isNull);
     });
 
@@ -278,7 +278,7 @@ void main() {
       ]);
     });
 
-    test('should give null once the tournée is deleted', () async {
+    test('should give null once the secteur is deleted', () async {
       await storeTeam();
       final seen = <Sector?>[];
       final subscription = repository().watch(sectorId).listen(seen.add);
@@ -292,7 +292,7 @@ void main() {
       expect(seen.last, isNull);
     });
 
-    test('should pass on a tournée it cannot read', () async {
+    test('should pass on a secteur it cannot read', () async {
       await db.doc('sectors/t49').set({'number': 49});
       await db.doc('sectors/t49/members/uid-manu').set(memberToDocument(manu));
 
@@ -578,7 +578,7 @@ void main() {
 
       final saved = valueOf(await repository(draws).save(renewed, change));
 
-      // The tournée as stored, with the code the server took.
+      // The secteur as stored, with the code the server took.
       expect(saved.joinCode, codeOf('765432'));
       expect(saved.id, sectorId);
       expect(saved.members, renewed.members);
@@ -726,7 +726,7 @@ void main() {
   });
 
   group('delete', () {
-    test('should delete the tournée and all it holds, nothing else', () async {
+    test('should delete the secteur and all it holds, nothing else', () async {
       await repository().add(created);
       await db.doc('sectors/t49/members/uid-lea').set(memberToDocument(lea));
       await db.doc('sectors/t49/campaigns/2026/streets/lilas').set({
@@ -806,7 +806,7 @@ void main() {
       );
     });
 
-    test('should delete the other members only with the tournée, so they '
+    test('should delete the other members only with the secteur, so they '
         'learn it was deleted, not that they were removed', () async {
       await repository().add(created);
       await db.doc('sectors/t49/members/uid-lea').set(memberToDocument(lea));
@@ -826,7 +826,7 @@ void main() {
       expect(seen, [SectorLoss.deleted]);
     });
 
-    test('should delete a tournée its creator left, with the members '
+    test('should delete a secteur its creator left, with the members '
         'left in it', () async {
       await repository().add(created);
       await db.doc('sectors/t49/members/uid-manu').delete();
@@ -842,7 +842,7 @@ void main() {
       expect(await stored('sectors/t49/members/uid-manu'), isNull);
     });
 
-    test('should delete a tournée nobody is in any more', () async {
+    test('should delete a secteur nobody is in any more', () async {
       await repository().add(created);
       await db.doc('sectors/t49/members/uid-manu').delete();
 
@@ -904,7 +904,7 @@ void main() {
 
     test('should tell and delete nothing when the server refuses a member '
         'no longer an admin what only an admin deletes', () async {
-      // A member may read the tournée, not delete its streets: the first
+      // A member may read the secteur, not delete its streets: the first
       // deletion is refused, before anything goes.
       await repository().add(created);
       whenCalling(Invocation.method(#delete, null))

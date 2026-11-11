@@ -32,7 +32,7 @@ enum CommuneSearchFailure {
 
 /// A commune the [CommuneSearch] found, with its postcodes so two communes
 /// of the same name can be told apart (« Villefranche-sur-Saône (69400) »),
-/// and its centre, where the map of a tournée covering it starts.
+/// and its centre, where the map of a secteur covering it starts.
 final class CommuneMatch {
   /// [postcodes] is copied, so changing the list given here afterwards does
   /// not change this value.

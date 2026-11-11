@@ -18,16 +18,16 @@ import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/shared/same_items.dart';
 
-// Équipe (PLAN §5.8, §5.12): who is in the open tournée, the requests to
-// answer, the join code, its communes, and leaving or deleting the tournée. The member
+// Équipe (PLAN §5.8, §5.12): who is in the open secteur, the requests to
+// answer, the join code, its communes, and leaving or deleting the secteur. The member
 // acting is the one on the phone (`IdentityProvider`), with whether they
-// are an admin (`AdminStatus`): the tournée's root checks they may do it.
+// are an admin (`AdminStatus`): the secteur's root checks they may do it.
 // Accepting, refusing, removing, leaving and changing the communes work
 // offline (queued by storage); a new code, an admin joining and deleting
 // need the server.
 
 /// Why a command of Équipe was not done: one of the [TeamProblem]s, or
-/// [TeamCommandRefused] with the tournée's reason.
+/// [TeamCommandRefused] with the secteur's reason.
 ///
 /// `sealed`: these are the only cases, so the screen's `switch` handles
 /// each one. An enum may implement a sealed class of its own library, so
@@ -36,7 +36,7 @@ sealed class TeamFailure {}
 
 /// The failures of Équipe that carry no data.
 enum TeamProblem implements TeamFailure {
-  /// The tournée cannot be read any more: deleted, or the member was
+  /// The secteur cannot be read any more: deleted, or the member was
   /// removed from it.
   sectorGone,
 
@@ -49,18 +49,18 @@ enum TeamProblem implements TeamFailure {
   noName,
 
   /// The server refused an admin's command (« Nouveau code », « Supprimer
-  /// la tournée », « Rejoindre » as an admin): the member on the phone is
+  /// le secteur », « Rejoindre » as an admin): the member on the phone is
   /// no longer an admin, though the phone still believed it. Nothing was
   /// changed.
   notAdmin,
 
-  /// The server says a member of the tournée holds the phone's first name,
+  /// The server says a member of the secteur holds the phone's first name,
   /// case and accents ignored (« Rejoindre » as an admin, #148): names are
   /// unique within a secteur. Nothing was changed.
   nameTaken,
 }
 
-/// The tournée refused the command for [reason]: the team changed in the
+/// The secteur refused the command for [reason]: the team changed in the
 /// meantime (the request was already answered, the member already left),
 /// since the screen offers each command only to whom may run it.
 final class TeamCommandRefused implements TeamFailure {
@@ -103,8 +103,8 @@ Future<Actor> _actorOf(IdentityProvider identity, AdminStatus admins) async {
   return Actor(member: identity.currentMember, isAdmin: isAdmin);
 }
 
-/// The steps every command of Équipe shares: load the tournée [id], run
-/// [command] on it, store the change it made, and return the tournée as
+/// The steps every command of Équipe shares: load the secteur [id], run
+/// [command] on it, store the change it made, and return the secteur as
 /// stored with the change.
 ///
 /// [command] is a function the use case passes in (`(sector) =>
@@ -127,7 +127,7 @@ Future<Result<(Sector, C), TeamFailure>> _runOnSector<C extends SectorChange>(
   }
 }
 
-/// The tournée [SectorId] now, then again after each change to it or to
+/// The secteur [SectorId] now, then again after each change to it or to
 /// its team (a request arrives, a teammate accepts it); null while it
 /// cannot be read (deleted, the member removed, or never seen offline).
 final class ObserveTeam {
@@ -138,9 +138,9 @@ final class ObserveTeam {
   Stream<Sector?> call(SectorId id) => _sectors.watch(id);
 }
 
-/// The communes of the tournée [SectorId] now, then again each time they
+/// The communes of the secteur [SectorId] now, then again each time they
 /// change (« Ajouter des rues » lists their streets, its map is centred on
-/// them, PLAN §5.4); none while the tournée cannot be read, or when it
+/// them, PLAN §5.4); none while the secteur cannot be read, or when it
 /// was created before the communes. Works offline, from the phone's copy.
 ///
 /// A change of the team alone (a request, an acceptance) is not told: the
@@ -211,7 +211,7 @@ final class RefuseMember {
 }
 
 /// « Retirer » a member (admins only): their access is cut at once, their
-/// marks stay, and the name they held in the tournée is free again (#148).
+/// marks stay, and the name they held in the secteur is free again (#148).
 ///
 /// With « Changer aussi le code » ticked ([renewCode], #148, PLAN §5.16:
 /// the member removed knows the code) it first does « Nouveau code »,
@@ -235,7 +235,7 @@ final class RemoveMember {
   }) async {
     final by = await _actorOf(_identity, _admins);
     if (renewCode) {
-      // Asked of the tournée first, without storing anything: no new code
+      // Asked of the secteur first, without storing anything: no new code
       // for a removal it would refuse (the member left meanwhile).
       final current = await _sectors.find(sector);
       if (current == null) return const Err(TeamProblem.sectorGone);
@@ -257,7 +257,7 @@ final class RemoveMember {
   }
 }
 
-/// « + Ajouter une commune » (Équipe): the tournée covers [SectorCommune]
+/// « + Ajouter une commune » (Équipe): the secteur covers [SectorCommune]
 /// too. Any active member or admin may. Works offline (sent later); the
 /// commune itself was found online (geo.api.gouv.fr).
 final class AddCommune {
@@ -280,7 +280,7 @@ final class AddCommune {
   }
 }
 
-/// ✕ on a commune (Équipe): the tournée no longer covers it; the streets
+/// ✕ on a commune (Équipe): the secteur no longer covers it; the streets
 /// added from it stay. Never the last one. Works offline.
 final class RemoveCommune {
   const RemoveCommune(this._sectors, this._identity, this._admins);
@@ -303,7 +303,7 @@ final class RemoveCommune {
 }
 
 /// « Quitter le secteur »: the member on the phone leaves the team, and the
-/// phone forgets the tournée (« Mes secteurs »), its streets leaving the
+/// phone forgets the secteur (« Mes secteurs »), its streets leaving the
 /// phone's copy at the next start ([PhoneCacheReset]). Works offline; every
 /// member may leave, admins and the creator included, even the last one.
 final class LeaveSector {
@@ -338,7 +338,7 @@ final class LeaveSector {
 
 /// « Nouveau code » (admins only): the old code stops working, the members
 /// stay. Returns the code as stored. Needs the server, which makes sure no
-/// other tournée holds the new one.
+/// other secteur holds the new one.
 final class RegenerateJoinCode {
   /// [random] draws the code: `Random.secure()` in the app (PLAN §5.2), a
   /// scripted one in tests.
@@ -364,7 +364,7 @@ final class RegenerateJoinCode {
   }
 }
 
-/// « Supprimer le secteur » (admins only): the tournée and all it holds
+/// « Supprimer le secteur » (admins only): the secteur and all it holds
 /// are deleted for the whole team, and the phone forgets it (its copy of
 /// the streets too, at the next start: [PhoneCacheReset]). Needs the
 /// server.
@@ -403,9 +403,9 @@ final class DeleteSector {
 }
 
 /// « Rejoindre » on the banner « Administrateur · pas membre » (PLAN
-/// §5.12): the admin on the phone, who only visited the tournée, becomes
+/// §5.12): the admin on the phone, who only visited the secteur, becomes
 /// an active member at once under the phone's first name (no code, no
-/// approval), and the tournée becomes one of theirs on the phone. Needs
+/// approval), and the secteur becomes one of theirs on the phone. Needs
 /// the server: offline nothing changes. Refused, changing nothing, when a
 /// member holds that name there (#148).
 final class JoinAsAdmin {
@@ -451,7 +451,7 @@ final class JoinAsAdmin {
 }
 
 /// « Retirer de Mes secteurs » (PLAN §5.12): an admin who only visited the
-/// tournée forgets it on the phone. Nothing is written: they were never in
+/// secteur forgets it on the phone. Nothing is written: they were never in
 /// its team. Works offline.
 final class ForgetVisitedSector {
   const ForgetVisitedSector(this._mySectors);

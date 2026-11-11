@@ -4,9 +4,9 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tournee_calendriers/presentation/offline/offline_auto_download.dart';
 
-/// Keeps the open tournée downloaded for offline use while the app runs,
+/// Keeps the open secteur downloaded for offline use while the app runs,
 /// unseen (PLAN §7): it keeps `offlineAutoDownloadProvider` alive (which
-/// checks at start-up and when a tournée opens) and asks it to check again
+/// checks at start-up and when a secteur opens) and asks it to check again
 /// each time the app comes back to the foreground, when the network may be
 /// back. Shows nothing but [child].
 final class OfflineUpkeep extends ConsumerStatefulWidget {
@@ -26,7 +26,7 @@ final class _OfflineUpkeepState extends ConsumerState<OfflineUpkeep> {
   void initState() {
     super.initState();
     _lifecycle = AppLifecycleListener(
-      // `ref.read`: the download of the tournée open now, once.
+      // `ref.read`: the download of the secteur open now, once.
       onResume: () => unawaited(ref.read(offlineAutoDownloadProvider).check()),
     );
   }
@@ -40,7 +40,7 @@ final class _OfflineUpkeepState extends ConsumerState<OfflineUpkeep> {
   @override
   Widget build(BuildContext context) {
     // `ref.listen` keeps the provider alive (and built again when another
-    // tournée opens) without building this widget again.
+    // secteur opens) without building this widget again.
     ref.listen(offlineAutoDownloadProvider, (_, _) {});
     return widget.child;
   }

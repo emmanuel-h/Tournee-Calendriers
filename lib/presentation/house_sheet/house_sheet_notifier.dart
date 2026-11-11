@@ -94,7 +94,7 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState>
   /// The last change asked; the next one starts when it ends.
   Future<void> _pending = Future.value();
 
-  /// The open tournée as last read, for the name of who made the last
+  /// The open secteur as last read, for the name of who made the last
   /// change; null while none is open or it cannot be read.
   Sector? _team;
 
@@ -138,11 +138,11 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState>
     _roundOn = ref.read(roundProvider) is RoundOn;
   }
 
-  /// Follows the open tournée's team (`ObserveTeam`, from the phone's copy
+  /// Follows the open secteur's team (`ObserveTeam`, from the phone's copy
   /// offline), which names who made the last change. Nothing to follow
   /// while no secteur is open: there is no street then.
   void _followTeam() {
-    // Riverpod keeps the notifier when it builds again (another tournée
+    // Riverpod keeps the notifier when it builds again (another secteur
     // opened): the old team must not name anyone.
     _team = null;
     final sector = ref.watch(currentSectorProvider);
@@ -160,7 +160,7 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState>
   }
 
   /// Who made the change stamped [stamp], as the sheet names them: the
-  /// member on the phone, a member of the open tournée, or nobody known.
+  /// member on the phone, a member of the open secteur, or nobody known.
   ChangeAuthor? _authorOf(ChangeStamp stamp) {
     if (stamp.by == ref.read(readCurrentMemberProvider)()) {
       return const ChangedByMe();

@@ -227,9 +227,9 @@ void main() {
   IntegrationTestWidgetsFlutterBinding.ensureInitialized();
 
   // Firestore offline for the whole suite (the sign-in keeps the network):
-  // the tournées the tests leave on the phone do not exist on the real
-  // server, which would rightly make the app forget them (« La tournée 12
-  // a été supprimée. »). Offline, the phone keeps them: what an offline
+  // the secteurs the tests leave on the phone do not exist on the real
+  // server, which would rightly make the app forget them (« Le secteur 12
+  // a été supprimé. »). Offline, the phone keeps them: what an offline
   // start must do (PLAN §7). The settings come first, as in the app.
   setUpAll(() async {
     await startFirebase();
@@ -719,7 +719,7 @@ void main() {
   );
 
   testWidgets(
-    'should reopen the last tournée at launch, count a tournée\'s don and '
+    'should reopen the last secteur at launch, count a tournée\'s don and '
     'validate it, and switch secteur from Secteur',
     (tester) async {
       final storage = await _freshStorage('sectors_flow');
@@ -728,7 +728,7 @@ void main() {
       // must not show in the next one.
       final t49 = 't49-${storage.path.split('/').last}';
       // What « Créer » and « Rejoindre » will leave on the phone: two
-      // tournées of the CS Villefranche, the 49 open. Nothing of it needs
+      // secteurs of the CS Villefranche, the 49 open. Nothing of it needs
       // the network.
       Map<String, Object?> sector(String id, int number) => {
         'id': id,
@@ -775,7 +775,7 @@ void main() {
       expect(find.text('Secteur 49 · 2026'), findsOneWidget);
       expect(find.text('CS Villefranche'), findsOneWidget);
 
-      // Accueil (#30), offline: the map of the tournée under the legend,
+      // Accueil (#30), offline: the map of the secteur under the legend,
       // and the « Rues » panel. The secteur was never read, so it has
       // no street; a tap on the handle shows the whole list, another
       // brings the map back.
@@ -905,7 +905,7 @@ void main() {
       await tester.tap(find.byKey(const Key('addStreets.untickAll')));
       await tester.pump(const Duration(seconds: 1));
 
-      // The list still searches a commune: the tournée has none.
+      // The list still searches a commune: the secteur has none.
       await tester.tap(find.byKey(const Key('addStreets.tab.list')));
       await tester.pumpAndSettle();
       expect(find.byKey(const Key('import.commune')), findsOneWidget);
@@ -1126,7 +1126,7 @@ void main() {
       await tester.pumpAndSettle();
       expect(find.text('Secteur 12 · 2026'), findsOneWidget);
 
-      // A restart opens the tournée chosen last.
+      // A restart opens the secteur chosen last.
       runApp(const SizedBox.shrink());
       await tester.pumpAndSettle();
       await bootstrap(storage: storage);

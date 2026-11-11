@@ -28,7 +28,7 @@ import 'package:tournee_calendriers/ui/theme/app_theme.dart';
 /// takes to tell.
 ///
 /// It also tells, over whatever screen is shown, that the member lost one
-/// of their tournées (`sectorLossProvider`, PLAN §5.3): the open one
+/// of their secteurs (`sectorLossProvider`, PLAN §5.3): the open one
 /// lost, it goes back to the start screen, with none open; and, once at
 /// start-up, that the phone's tournées could not be read
 /// (`roundsUnreadableNoticeProvider`, #143).
@@ -82,7 +82,7 @@ final class _TourneeAppState extends ConsumerState<TourneeApp> {
   );
 
   /// « Vous avez été retiré du secteur 49. », « Le secteur 49 a été
-  /// supprimé. » or « Vous n'êtes plus administrateur… » (a tournée only
+  /// supprimé. » or « Vous n'êtes plus administrateur… » (a secteur only
   /// visited, PLAN §5.12), as « Demande refusée » is told: a message over the next
   /// screen. Nothing is shown before the app has its first screen.
   void _tell(SectorLossNotice notice) {
@@ -98,7 +98,7 @@ final class _TourneeAppState extends ConsumerState<TourneeApp> {
         SectorLoss.adminRevoked => l10n.sectorAdminRevoked('${notice.number}'),
       },
     );
-    // Its screens (Équipe, its streets) show a tournée the phone forgot.
+    // Its screens (Équipe, its streets) show a secteur the phone forgot.
     if (notice.wasOpen) router.go(AppRoutes.home);
   }
 
@@ -120,12 +120,12 @@ final class _TourneeAppState extends ConsumerState<TourneeApp> {
     // while the app runs (#143); `ref.listen` keeps the sender alive.
     ref.listen(unsentRoundsSenderProvider, (_, _) {});
     // The 30-day purge of the Corbeille, on the streets bound now and on
-    // those of each tournée opened later (PLAN §5.11). `ref.listen` starts
+    // those of each secteur opened later (PLAN §5.11). `ref.listen` starts
     // it and keeps it alive without redrawing the app when it ends; there
     // is nothing to show of it.
     ref.listen(corbeillePurgeProvider, (_, _) {});
     // `ref.listen` runs the function at each new notice, without redrawing
-    // the app; listening also starts following the member's tournées.
+    // the app; listening also starts following the member's secteurs.
     ref.listen(sectorLossProvider, (_, notice) {
       if (notice != null) _tell(notice);
     });

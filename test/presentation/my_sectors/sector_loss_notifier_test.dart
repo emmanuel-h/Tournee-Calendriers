@@ -92,7 +92,7 @@ void main() {
     return container;
   }
 
-  test('should follow each tournée the member is in, as the signed-in '
+  test('should follow each secteur the member is in, as the signed-in '
       'member, and not their requests', () {
     final container = containerWith(_manusPhone());
 
@@ -101,7 +101,7 @@ void main() {
     expect(directory.memberships, [(sector49, manuId), (sector12, manuId)]);
   });
 
-  test('should follow a tournée an admin visits, and forget it once they '
+  test('should follow a secteur an admin visits, and forget it once they '
       'are no longer an admin', () async {
     final container = containerWith(
       valueOf(
@@ -130,9 +130,9 @@ void main() {
     expect(store.mySectors.currentId, isNull);
   });
 
-  test('should still forget a visited tournée once the admin is revoked '
+  test('should still forget a visited secteur once the admin is revoked '
       'after its listener failed', () async {
-    // Revoked, the admin may no longer read the tournée: its listener
+    // Revoked, the admin may no longer read the secteur: its listener
     // fails (permission-denied) before their own `admins/{uid}` listener
     // tells the revocation. The failure shows nothing; the revocation is
     // told as usual.
@@ -161,7 +161,7 @@ void main() {
     expect(store.mySectors.sectors, isEmpty);
   });
 
-  test('should follow a visited tournée as a member once the admin has '
+  test('should follow a visited secteur as a member once the admin has '
       'joined it', () async {
     final container = containerWith(MySectors.none.remember(sector12Visited));
     container.read(sectorLossProvider);
@@ -173,18 +173,18 @@ void main() {
       (sector12Visited, manuId),
       (sector12, manuId),
     ]);
-    // The visit is no longer followed: a revoked admin keeps a tournée
+    // The visit is no longer followed: a revoked admin keeps a secteur
     // they are in.
     expect(directory.isFollowing(sector12.id), isTrue);
   });
 
-  test('should tell nothing while no tournée is lost', () {
+  test('should tell nothing while no secteur is lost', () {
     final container = containerWith(_manusPhone());
 
     expect(container.read(sectorLossProvider), isNull);
   });
 
-  test('should forget the open tournée the member was removed from, open '
+  test('should forget the open secteur the member was removed from, open '
       'none, and tell it', () async {
     final container = containerWith(_manusPhone());
     container.read(sectorLossProvider);
@@ -206,7 +206,7 @@ void main() {
     expect(directory.isFollowing(sector49.id), isFalse);
   });
 
-  test('should forget another tournée deleted, keep the open one, and tell '
+  test('should forget another secteur deleted, keep the open one, and tell '
       'it', () async {
     final container = containerWith(_manusPhone());
     container.read(sectorLossProvider);
@@ -227,7 +227,7 @@ void main() {
     expect(store.saves.single.current, sector49);
   });
 
-  test('should keep every tournée while offline: the server says '
+  test('should keep every secteur while offline: the server says '
       'nothing', () async {
     final container = containerWith(_manusPhone());
     container.read(sectorLossProvider);
@@ -239,7 +239,7 @@ void main() {
     expect(directory.isFollowing(sector49.id), isTrue);
   });
 
-  test('should keep the tournée when its listener fails', () async {
+  test('should keep the secteur when its listener fails', () async {
     final container = containerWith(_manusPhone());
     container.read(sectorLossProvider);
 
@@ -250,7 +250,7 @@ void main() {
     expect(store.saves, isEmpty);
   });
 
-  test('should tell nothing for a tournée the phone forgot meanwhile '
+  test('should tell nothing for a secteur the phone forgot meanwhile '
       '(left, deleted from this phone)', () async {
     final container = containerWith(_manusPhone());
     container.read(sectorLossProvider);
@@ -264,7 +264,7 @@ void main() {
     expect(store.saves, isEmpty);
   });
 
-  test('should follow a tournée the member is accepted in later', () async {
+  test('should follow a secteur the member is accepted in later', () async {
     final container = containerWith(MySectors.none.remember(sector7));
     container.read(sectorLossProvider);
     expect(directory.memberships, isEmpty);
@@ -274,7 +274,7 @@ void main() {
     expect(directory.memberships, [(sector7.accepted(), manuId)]);
   });
 
-  test('should follow a tournée once however often the list changes', () async {
+  test('should follow a secteur once however often the list changes', () async {
     final container = containerWith(_manusPhone());
     container.read(sectorLossProvider);
 
@@ -284,7 +284,7 @@ void main() {
   });
 
   group('the member\'s name', () {
-    test('should listen to the name the server holds in each tournée the '
+    test('should listen to the name the server holds in each secteur the '
         'member is in, and not in their requests', () {
       final container = containerWith(_manusPhone());
 
@@ -296,7 +296,7 @@ void main() {
       ]);
     });
 
-    test('should send the new name to a tournée once the request made '
+    test('should send the new name to a secteur once the request made '
         'before the rename is accepted', () async {
       final container = containerWith(MySectors.none.remember(sector7));
       container.read(sectorLossProvider);
@@ -342,7 +342,7 @@ void main() {
       expect(directory.isHearingName(sector49.id), isTrue);
     });
 
-    test('should stop listening to the name in a tournée lost', () async {
+    test('should stop listening to the name in a secteur lost', () async {
       final container = containerWith(_manusPhone());
       container.read(sectorLossProvider);
 
@@ -397,7 +397,7 @@ void main() {
       expect(directory.memberships, isEmpty);
     });
 
-    test('should follow the member\'s tournées once a sign-in succeeds '
+    test('should follow the member\'s secteurs once a sign-in succeeds '
         'after launch', () async {
       final container = neverSignedIn();
       container.read(sectorLossProvider);
@@ -411,7 +411,7 @@ void main() {
       expect(directory.isFollowing(sector7.id), isFalse);
     });
 
-    test('should forget a tournée lost after the sign-in, and tell '
+    test('should forget a secteur lost after the sign-in, and tell '
         'it', () async {
       final container = neverSignedIn();
       container.read(sectorLossProvider);
@@ -433,7 +433,7 @@ void main() {
       expect(store.saves.single.sectors, [sector49, sector7]);
     });
 
-    test('should follow the tournées the phone keeps at the sign-in, not '
+    test('should follow the secteurs the phone keeps at the sign-in, not '
         'those of launch', () async {
       final container = neverSignedIn();
       container.read(sectorLossProvider);
@@ -483,7 +483,7 @@ void main() {
   test('should tell nothing once the app has gone away', () async {
     final container = containerWith(_manusPhone());
     container.read(sectorLossProvider);
-    // The app goes away while the phone forgets the tournée.
+    // The app goes away while the phone forgets the secteur.
     store.changes.listen((_) => container.dispose());
 
     directory.lose(sector49.id, SectorLoss.removed);
@@ -518,7 +518,7 @@ void main() {
       }
     });
 
-    test('should name the tournée and the loss', () {
+    test('should name the secteur and the loss', () {
       expect('${notice()}', 'SectorLossNotice(t49, 49, removed, open)');
       expect(
         '${notice(wasOpen: false)}',

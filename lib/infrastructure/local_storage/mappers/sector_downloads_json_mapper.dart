@@ -1,8 +1,8 @@
-// Translation between the tournées downloaded on this phone (PLAN §6.3,
+// Translation between the secteurs downloaded on this phone (PLAN §6.3,
 // §7) and the JSON the phone keeps for them. Pure functions: no file here,
 // so they are tested alone.
 //
-// The schema, version 1 (downloads sorted by tournée):
+// The schema, version 1 (downloads sorted by secteur):
 //
 //   { version: 1, downloads: [{
 //       tournee: "t49",
@@ -44,7 +44,7 @@ Map<String, Object?> sectorDownloadsToJson(
   ],
 };
 
-/// The downloads read from [json] as `jsonDecode` gives it, by tournée.
+/// The downloads read from [json] as `jsonDecode` gives it, by secteur.
 /// Throws a [FormatException] when it is not a version 1 file.
 Map<SectorId, SectorDownload> sectorDownloadsFromJson(Object? json) {
   if (json case {
@@ -56,7 +56,7 @@ Map<SectorId, SectorDownload> sectorDownloadsFromJson(Object? json) {
         download.sector: download,
     };
   }
-  throw FormatException('Not the tournées downloaded: $json');
+  throw FormatException('Not the secteurs downloaded: $json');
 }
 
 SectorDownload _download(Object? json) {
@@ -77,7 +77,7 @@ SectorDownload _download(Object? json) {
       area: area == null ? null : _area(area),
     );
   }
-  throw FormatException('Not a tournée downloaded: $json');
+  throw FormatException('Not a secteur downloaded: $json');
 }
 
 GeoBounds _area(Object json) {

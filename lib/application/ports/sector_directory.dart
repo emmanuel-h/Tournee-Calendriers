@@ -11,9 +11,9 @@ import 'package:tournee_calendriers/domain/sector/sector_summary.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 
-/// What the join screen shows before the newcomer asks to join (« Tournée
+/// What the join screen shows before the newcomer asks to join (« Secteur
 /// 49 · CS Villefranche · Campagne 2026 », PLAN §5.2), read with the exact
-/// [code] typed or scanned. Nothing else about the tournée is readable
+/// [code] typed or scanned. Nothing else about the secteur is readable
 /// before an active member accepts the request (PLAN §8.1).
 final class JoinPreview {
   const JoinPreview({
@@ -24,8 +24,8 @@ final class JoinPreview {
     required this.campaign,
   });
 
-  /// The code that found the tournée; the request carries it, so the
-  /// server can check it is still the tournée's code.
+  /// The code that found the secteur; the request carries it, so the
+  /// server can check it is still the secteur's code.
   final JoinCode code;
 
   final SectorId sectorId;
@@ -53,8 +53,8 @@ final class JoinPreview {
       '${centre.name}, ${campaign.value})';
 }
 
-/// One tournée of the app as « Tous les secteurs » lists it for an admin
-/// (PLAN §5.12): « Tournée 12 · 2026 » under its centre, « 3 membres · 1
+/// One secteur of the app as « Tous les secteurs » lists it for an admin
+/// (PLAN §5.12): « Secteur 12 · 2026 » under its centre, « 3 membres · 1
 /// demande en attente », « · vous en êtes membre ».
 final class SectorOverview {
   const SectorOverview({
@@ -112,9 +112,9 @@ final class SectorOverview {
       'caller ${callerIsActive ? 'in' : 'out'})';
 }
 
-/// Why a join code shows no tournée (« Rejoindre », PLAN §5.2).
+/// Why a join code shows no secteur (« Rejoindre », PLAN §5.2).
 enum JoinFailure {
-  /// No tournée has this code: mistyped, or replaced by a new one (« Nouveau
+  /// No secteur has this code: mistyped, or replaced by a new one (« Nouveau
   /// code »).
   unknownCode,
 
@@ -126,34 +126,34 @@ enum JoinFailure {
 /// Why a request to join was not sent (« Demander à rejoindre », PLAN
 /// §5.2, §5.16).
 enum JoinRequestFailure {
-  /// A member of the tournée, pending or active, holds the name the
+  /// A member of the secteur, pending or active, holds the name the
   /// request carries, case and accents ignored (`MemberName.key`): names
   /// are unique within a secteur (#148). Ask again under another name.
   nameTaken,
 
-  /// The tournée's code changed since it was shown (« Nouveau code »), or
-  /// the tournée was deleted: the server refused the request.
+  /// The secteur's code changed since it was shown (« Nouveau code »), or
+  /// the secteur was deleted: the server refused the request.
   unknownCode,
 
   /// The phone could not reach the server, which alone tells whether the
-  /// name is free in the tournée.
+  /// name is free in the secteur.
   noNetwork,
 }
 
 /// Why the directory could not answer.
 enum DirectoryFailure {
-  /// The phone could not reach the server: creating a tournée needs the
+  /// The phone could not reach the server: creating a secteur needs the
   /// network (PLAN §7).
   noNetwork,
 
-  /// The server refused: only an admin lists every tournée
+  /// The server refused: only an admin lists every secteur
   /// ([SectorDirectory.allSectors]), and the member on the phone is no
   /// longer one (PLAN §5.12).
   notAdmin,
 }
 
-/// What someone outside a tournée needs from the server: the newcomer who
-/// joins with a code, the admin who creates a tournée or looks at all of
+/// What someone outside a secteur needs from the server: the newcomer who
+/// joins with a code, the admin who creates a secteur or looks at all of
 /// them (PLAN Q20, §8.1, §5.12).
 ///
 /// An application port: the use cases own this interface, an adapter in
@@ -162,27 +162,27 @@ enum DirectoryFailure {
 /// join with rate limiting (a Cloud Function, PLAN Q20) would be another
 /// adapter of this same port, with no change to the use cases.
 ///
-/// `SectorRepository` is for the members of a tournée; a pending newcomer
+/// `SectorRepository` is for the members of a secteur; a pending newcomer
 /// cannot read it (PLAN §8.2), hence this separate port.
 ///
 /// Failures the user can act on are returned; a storage failure they
 /// cannot act on is thrown.
 abstract interface class SectorDirectory {
-  /// The tournée whose join code is [code], from the server.
+  /// The secteur whose join code is [code], from the server.
   ///
-  /// Fails with [JoinFailure.unknownCode] when no tournée has it and with
+  /// Fails with [JoinFailure.unknownCode] when no secteur has it and with
   /// [JoinFailure.noNetwork] offline.
   Future<Result<JoinPreview, JoinFailure>> preview(JoinCode code);
 
-  /// Asks to join a tournée (« Rejoindre »): stores [request], whose
+  /// Asks to join a secteur (« Rejoindre »): stores [request], whose
   /// pending member any active member then accepts or refuses (PLAN §5.8),
-  /// with its name held in the tournée (#148). [watchRequest] tells what
+  /// with its name held in the secteur (#148). [watchRequest] tells what
   /// became of it.
   ///
   /// Needs the server, which alone tells whether the name is free there:
   /// fails with [JoinRequestFailure.nameTaken] when a member holds it,
   /// [JoinRequestFailure.unknownCode] when the code no longer opens the
-  /// tournée, [JoinRequestFailure.noNetwork] offline. Nothing is stored
+  /// secteur, [JoinRequestFailure.noNetwork] offline. Nothing is stored
   /// then.
   Future<Result<void, JoinRequestFailure>> requestToJoin(JoinRequest request);
 
@@ -204,17 +204,17 @@ abstract interface class SectorDirectory {
   );
 
   /// Tells once the server says [member] is no longer in [sector], one of
-  /// their tournées (PLAN §5.3): [SectorLoss.removed] while the tournée
+  /// their secteurs (PLAN §5.3): [SectorLoss.removed] while the secteur
   /// goes on without them, [SectorLoss.deleted] once it is gone.
   ///
-  /// For a tournée the member only visits as an admin (PLAN §5.12, its
+  /// For a secteur the member only visits as an admin (PLAN §5.12, its
   /// status `visiting`), whether they may still see it:
   /// [SectorLoss.deleted] once it is gone, [SectorLoss.adminRevoked]
   /// once they are no longer an admin.
   ///
   /// Only the server's answer counts: the phone's copy alone (offline, or
-  /// a tournée never read on this phone) never says a tournée is lost, so
-  /// an offline phone keeps all its tournées (PLAN §7). Neither does a
+  /// a secteur never read on this phone) never says a secteur is lost, so
+  /// an offline phone keeps all its secteurs (PLAN §7). Neither does a
   /// change made on this phone (leaving, deleting), which the use cases
   /// settle themselves. Emits nothing while the member is in.
   Stream<SectorLoss> watchMembership(SectorSummary sector, MemberId member);
@@ -229,9 +229,9 @@ abstract interface class SectorDirectory {
   /// sees another one.
   Stream<MemberName> watchOwnName(SectorId sector, MemberId member);
 
-  /// Whether a tournée [number] already exists in [centre] (the same
+  /// Whether a secteur [number] already exists in [centre] (the same
   /// station, however written: `RescueCentre.isSameStationAs`), asked
-  /// while the creator types (« La tournée 49 du CS Villefranche existe
+  /// while the creator types (« Le secteur 49 du CS Villefranche existe
   /// déjà », PLAN §5.2). Fails with [DirectoryFailure.noNetwork] offline.
   Future<Result<bool, DirectoryFailure>> isTaken(
     RescueCentre centre,
@@ -243,10 +243,10 @@ abstract interface class SectorDirectory {
   /// [DirectoryFailure.noNetwork] offline.
   Future<Result<List<RescueCentre>, DirectoryFailure>> rescueCentres();
 
-  /// Every tournée of the app, for an admin (« Tous les secteurs », PLAN
+  /// Every secteur of the app, for an admin (« Tous les secteurs », PLAN
   /// §5.12), in no particular order; [caller] is the admin asking, to tell
-  /// the tournées they are an active member of. Asked of the server, never
-  /// answered from the phone's copy, which may miss tournées: fails with
+  /// the secteurs they are an active member of. Asked of the server, never
+  /// answered from the phone's copy, which may miss secteurs: fails with
   /// [DirectoryFailure.noNetwork] offline, and with
   /// [DirectoryFailure.notAdmin] when the server says [caller] is not an
   /// admin.

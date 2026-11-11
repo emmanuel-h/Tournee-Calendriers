@@ -5,7 +5,7 @@ import 'package:tournee_calendriers/domain/sector/sector_commune.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 
 /// What one command of a [Sector] changed, returned next to the new
-/// tournée.
+/// secteur.
 ///
 /// Storage writes only what a change names (PLAN §6.2): accepting Julie
 /// updates her document `sectors/{id}/members/{uid}`, never the whole
@@ -18,7 +18,7 @@ import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 sealed class SectorChange {
   const SectorChange({required this.sectorId});
 
-  /// The tournée that changed.
+  /// The secteur that changed.
   final SectorId sectorId;
 }
 
@@ -28,7 +28,7 @@ sealed class MemberChange extends SectorChange {
 
   /// For [MemberAccepted], [MemberRenamed] and [AdminJoined], the member as
   /// they are now; otherwise the member as they were before leaving the
-  /// tournée.
+  /// secteur.
   final Member member;
 
   /// Equal when of the same kind and about the same member: the
@@ -72,7 +72,7 @@ final class MemberRemoved extends MemberChange {
   String toString() => 'MemberRemoved(${sectorId.value}, $member)';
 }
 
-/// [member] left the tournée (« Quitter le secteur »), or cancelled their
+/// [member] left the secteur (« Quitter le secteur »), or cancelled their
 /// own pending request (« Annuler la demande »).
 final class MemberLeft extends MemberChange {
   const MemberLeft({required super.sectorId, required super.member});
@@ -90,7 +90,7 @@ final class MemberRenamed extends MemberChange {
   String toString() => 'MemberRenamed(${sectorId.value}, $member)';
 }
 
-/// An admin who was not in the tournée joined it at once (« Rejoindre »,
+/// An admin who was not in the secteur joined it at once (« Rejoindre »,
 /// PLAN §5.12): [member] is active, accepted by themself, with no code and
 /// no request. Storage creates their member document, already active.
 final class AdminJoined extends MemberChange {
@@ -103,7 +103,7 @@ final class AdminJoined extends MemberChange {
 /// An admin replaced the join code [before] by [code] (« Nouveau
 /// code »): the old code stops working, the members stay.
 ///
-/// Storage writes the tournée's `joinCode`, removes `joinCodes/{before}`
+/// Storage writes the secteur's `joinCode`, removes `joinCodes/{before}`
 /// and creates `joinCodes/{code}` with the preview the join screen shows.
 final class JoinCodeRegenerated extends SectorChange {
   const JoinCodeRegenerated({
@@ -131,9 +131,9 @@ final class JoinCodeRegenerated extends SectorChange {
       '${code.display})';
 }
 
-/// A change of the communes the tournée covers (Équipe, PLAN §5.8).
+/// A change of the communes the secteur covers (Équipe, PLAN §5.8).
 ///
-/// Storage adds or removes only [commune] in the tournée's list
+/// Storage adds or removes only [commune] in the secteur's list
 /// (`arrayUnion` / `arrayRemove`), never the whole list, so two members
 /// adding two communes at once both stay.
 sealed class CommuneChange extends SectorChange {
@@ -173,10 +173,10 @@ final class CommuneRemoved extends CommuneChange {
 
 /// An admin deleted [sector] (« Supprimer le secteur »): every member,
 /// campaign and street goes, with the join code and the number + centre
-/// reservation (PLAN §8.3: deleting the tournée deletes its data).
+/// reservation (PLAN §8.3: deleting the secteur deletes its data).
 ///
 /// Not a [SectorChange]: nothing is left to change afterwards. It carries
-/// the whole tournée as it was, because storage needs its join code, its
+/// the whole secteur as it was, because storage needs its join code, its
 /// centre and its number to free them.
 final class SectorDeleted {
   const SectorDeleted(this.sector);

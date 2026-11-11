@@ -14,7 +14,7 @@ final pendingSyncIndicatorProvider =
 final class PendingSyncNotifier extends Notifier<PendingSyncState> {
   @override
   PendingSyncState build() {
-    // `ref.watch` on the use case: when another tournée is opened (or
+    // `ref.watch` on the use case: when another secteur is opened (or
     // none), the composition root binds another pending sync, so this
     // notifier is built again and follows the new one; the old
     // subscription is cancelled first (`onDispose`).
@@ -24,7 +24,7 @@ final class PendingSyncNotifier extends Notifier<PendingSyncState> {
           (streets) =>
               state = streets == 0 ? const AllSent() : ChangesWaiting(streets),
           // The streets can no longer be read (the member left the
-          // tournée): nothing this phone can still send there.
+          // secteur): nothing this phone can still send there.
           onError: (Object _) => state = const AllSent(),
         );
     ref.onDispose(subscription.cancel);

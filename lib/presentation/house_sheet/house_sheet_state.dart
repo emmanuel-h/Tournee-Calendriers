@@ -31,7 +31,7 @@ final class ChangedByMe extends ChangeAuthor {
   String toString() => 'ChangedByMe';
 }
 
-/// A member of the open tournée, by their first name: « Modifié par Léa ».
+/// A member of the open secteur, by their first name: « Modifié par Léa ».
 final class ChangedByMember extends ChangeAuthor {
   const ChangedByMember(this.name);
 

@@ -26,7 +26,7 @@ void main() {
 
   tearDown(() => folder.delete(recursive: true));
 
-  test('should know no tournée when the file does not exist', () async {
+  test('should know no secteur when the file does not exist', () async {
     final store = await LocalMySectors.load(file);
 
     expect(store.mySectors, MySectors.none);
@@ -47,7 +47,7 @@ void main() {
     expect(jsonDecode(file.readAsStringSync()), mySectorsToJson(twoSectors));
   });
 
-  test('should open the last tournée again at the next launch', () async {
+  test('should open the last secteur again at the next launch', () async {
     final first = await LocalMySectors.load(file);
     await first.save(twoSectors);
     await first.save(valueOf(twoSectors.open(sector12.id)));
@@ -59,7 +59,7 @@ void main() {
   });
 
   test(
-    'should know no tournée and leave the file when it is not ours',
+    'should know no secteur and leave the file when it is not ours',
     () async {
       await file.parent.create(recursive: true);
       file.writeAsStringSync('{"version": 9}');
@@ -71,7 +71,7 @@ void main() {
     },
   );
 
-  test('should know no tournée when the file is not JSON', () async {
+  test('should know no secteur when the file is not JSON', () async {
     await file.parent.create(recursive: true);
     file.writeAsBytesSync([0xff, 0xfe, 0x00]);
 

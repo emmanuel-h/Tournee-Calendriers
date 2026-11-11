@@ -41,12 +41,12 @@ void main() {
   });
 
   group('PreviewJoin', () {
-    test('should show the tournée of the code', () async {
+    test('should show the secteur of the code', () async {
       expect(valueOf(await PreviewJoin(directory)(firstCode)), preview);
       expect(directory.previewed, [firstCode]);
     });
 
-    test('should fail when no tournée has the code', () async {
+    test('should fail when no secteur has the code', () async {
       expect(
         failureOf(await PreviewJoin(directory)(codeOf('234567'))),
         JoinFailure.unknownCode,
@@ -73,7 +73,7 @@ void main() {
       expect(directory.sent, [julieRequest]);
     });
 
-    test('should keep the tournée as a request after the others', () async {
+    test('should keep the secteur as a request after the others', () async {
       final sent = await requestToJoin()(preview, nameOf('Julie'));
 
       expect(valueOf(sent), pending49);
@@ -138,7 +138,7 @@ void main() {
     }
 
     test(
-      'should send nothing when the tournée is already one of the member\'s',
+      'should send nothing when the secteur is already one of the member\'s',
       () async {
         store = FakeMySectorsStore(MySectors.none.remember(pending49));
 

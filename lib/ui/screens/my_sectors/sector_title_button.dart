@@ -98,9 +98,9 @@ final class SectorTitleButton extends ConsumerWidget {
   }
 }
 
-/// The app's name as the title of the start screen while no tournée is
+/// The app's name as the title of the start screen while no secteur is
 /// open (« Tournée des calendriers ▾ »): a button that opens « Mes
-/// tournées » too, so a phone with streets of its own reaches « Créer » and
+/// secteurs » too, so a phone with streets of its own reaches « Créer » and
 /// « Rejoindre » from there.
 final class AppTitleButton extends StatelessWidget {
   const AppTitleButton({super.key, required this.onPressed});
@@ -144,7 +144,7 @@ final class AppTitleButton extends StatelessWidget {
   }
 }
 
-/// « Tournée 49 · 2026 »: how a tournée is named everywhere but on the
+/// « Secteur 49 · 2026 »: how a secteur is named everywhere but on the
 /// join screens (PLAN §5.2).
 String sectorTitle(AppLocalizations l10n, SectorSummary sector) =>
     l10n.sectorTitle('${sector.number.value}', '${sector.campaign.value}');

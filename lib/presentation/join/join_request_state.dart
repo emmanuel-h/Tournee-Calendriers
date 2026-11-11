@@ -11,7 +11,7 @@ final class RequestUnknown extends JoinRequestState {
   const RequestUnknown();
 }
 
-/// The request waits for an active member: « Tournée 49 · CS
+/// The request waits for an active member: « Secteur 49 · CS
 /// Villefranche ».
 final class RequestWaiting extends JoinRequestState {
   const RequestWaiting({
@@ -23,7 +23,7 @@ final class RequestWaiting extends JoinRequestState {
   final int number;
   final String centre;
 
-  /// The phone has its start screen to go back to (a tournée open, streets
+  /// The phone has its start screen to go back to (a secteur open, streets
   /// of its own): a back arrow leads there. Otherwise this screen is the
   /// app until the request is answered.
   final bool canLeave;
@@ -45,7 +45,7 @@ final class RequestWaiting extends JoinRequestState {
   String toString() => 'RequestWaiting($number, $centre, $canLeave)';
 }
 
-/// Accepted: the tournée is open; the start screen shows it.
+/// Accepted: the secteur is open; the start screen shows it.
 final class RequestAccepted extends JoinRequestState {
   const RequestAccepted();
 }

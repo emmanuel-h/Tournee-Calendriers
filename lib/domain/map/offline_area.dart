@@ -2,7 +2,7 @@ import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/map/sector_area.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 
-// The map kept on the phone so a tournée works a whole day offline (PLAN
+// The map kept on the phone so a secteur works a whole day offline (PLAN
 // §7): what to download, and when the download no longer covers the
 // streets. The area itself is `sectorArea`: the streets plus 300 m.
 
@@ -46,7 +46,7 @@ GeoBounds offlineRegionBounds(GeoBounds area, Iterable<GeoBounds> taken) {
 
 /// Whether the map kept for [area] (null: no map was kept) still covers
 /// every place of the [streets] on the map, margin aside: false once a
-/// teammate added a street beyond it, so the tournée is downloaded again.
+/// teammate added a street beyond it, so the secteur is downloaded again.
 /// Streets with no place on the map (typed in by hand) need no map.
 bool coversStreets(GeoBounds? area, Iterable<Street> streets) {
   final places = streetsBounds(streets);

@@ -1,5 +1,5 @@
 // The 30-day purge runs by itself on the streets bound: at start, and again
-// for each tournée opened (PLAN §5.11: the first member's app online purges).
+// for each secteur opened (PLAN §5.11: the first member's app online purges).
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
@@ -64,7 +64,7 @@ void main() {
         ),
         mySectorsStoreProvider.overrideWithValue(store),
         clockProvider.overrideWithValue(FakeClock(_now)),
-        // « Mes secteurs » follows the teams of the tournées not open.
+        // « Mes secteurs » follows the teams of the secteurs not open.
         sectorRepositoryProvider.overrideWithValue(FakeSectorRepository()),
       ],
     );
@@ -72,7 +72,7 @@ void main() {
     return container;
   }
 
-  test('should purge the Corbeille of the open tournée', () async {
+  test('should purge the Corbeille of the open secteur', () async {
     final container = leasPhone();
 
     final purged = await container.read(corbeillePurgeProvider.future);
@@ -83,7 +83,7 @@ void main() {
     expect(streets12.purged, isEmpty);
   });
 
-  test('should purge the Corbeille of each tournée opened', () async {
+  test('should purge the Corbeille of each secteur opened', () async {
     final container = leasPhone();
     container.listen(corbeillePurgeProvider, (_, _) {});
     await container.read(corbeillePurgeProvider.future);

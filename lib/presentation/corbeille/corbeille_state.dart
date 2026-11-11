@@ -42,7 +42,7 @@ final class CorbeilleRow {
   final CorbeilleItem item;
 
   /// The first name of who deleted it; null when they are no longer in the
-  /// team (or no tournée is open), which the screen words neutrally.
+  /// team (or no secteur is open), which the screen words neutrally.
   final String? removedBy;
   final RecentTime removedAt;
 

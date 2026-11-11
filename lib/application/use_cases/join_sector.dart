@@ -12,9 +12,9 @@ import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 
 // « Rejoindre un secteur » and « Demande envoyée » (PLAN §5.2): the
-// tournée a code shows, the request to join it, and its cancellation.
+// secteur a code shows, the request to join it, and its cancellation.
 
-/// The tournée whose join code is [JoinCode], from the server (« Tournée
+/// The secteur whose join code is [JoinCode], from the server (« Secteur
 /// 49 · CS Villefranche · Campagne 2026 »). Fails with
 /// [JoinFailure.unknownCode] or [JoinFailure.noNetwork].
 final class PreviewJoin {
@@ -28,31 +28,31 @@ final class PreviewJoin {
 
 /// Why « Demander à rejoindre » sent no request.
 enum RequestToJoinFailure {
-  /// The tournée is already one of the member's, joined or asked for.
+  /// The secteur is already one of the member's, joined or asked for.
   alreadyJoined,
 
   /// The phone could not reach the server, for its first sign-in or for
   /// the request.
   noNetwork,
 
-  /// A member of the tournée holds the name, case and accents ignored
-  /// (#148, PLAN §5.16): ask again under another name for this tournée.
+  /// A member of the secteur holds the name, case and accents ignored
+  /// (#148, PLAN §5.16): ask again under another name for this secteur.
   nameTaken,
 
-  /// The code no longer opens the tournée (a new code was drawn, or it
+  /// The code no longer opens the secteur (a new code was drawn, or it
   /// was deleted, since it was shown).
   unknownCode,
 }
 
 /// « Demander à rejoindre »: signs in when the phone has no account yet,
 /// sends the request as [MemberName] (the phone's prénom, or the name
-/// chosen for this tournée when the prénom was taken there, PLAN §5.16),
-/// and keeps the tournée on the phone as a pending request (« Mes
+/// chosen for this secteur when the prénom was taken there, PLAN §5.16),
+/// and keeps the secteur on the phone as a pending request (« Mes
 /// secteurs », PLAN §5.3) with that name, which the app follows until it
-/// is answered. Returns that pending tournée.
+/// is answered. Returns that pending secteur.
 ///
 /// Needs the server, which alone tells whether the name is free in the
-/// tournée: nothing is kept on the phone when it refuses or cannot be
+/// secteur: nothing is kept on the phone when it refuses or cannot be
 /// reached.
 final class RequestToJoin {
   const RequestToJoin(
@@ -102,7 +102,7 @@ final class RequestToJoin {
         JoinRequestFailure.noNetwork => RequestToJoinFailure.noNetwork,
       });
     }
-    // What the preview showed: a pending newcomer cannot read the tournée.
+    // What the preview showed: a pending newcomer cannot read the secteur.
     final request = SectorSummary(
       id: preview.sectorId,
       number: preview.number,

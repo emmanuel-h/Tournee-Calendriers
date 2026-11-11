@@ -131,7 +131,7 @@ void main() {
     });
   });
 
-  group('a street the tournée has already', () {
+  group('a street the secteur has already', () {
     final lilasNumbers = StreetNumbers(
       id: lilas.banId!,
       name: streetName('Rue des Lilas'),

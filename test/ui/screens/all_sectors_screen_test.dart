@@ -1,4 +1,4 @@
-// « Tous les secteurs » and the admin who opens a tournée they are not in
+// « Tous les secteurs » and the admin who opens a secteur they are not in
 // (PLAN §5.12, AllSectors and HomeAdmin mockups).
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -28,7 +28,7 @@ import '../support/app_overrides.dart';
 import '../support/large_text.dart';
 import '../support/navigation.dart';
 
-/// Tournée [number] of [centre] (a station of Villefranche).
+/// Secteur [number] of [centre] (a station of Villefranche).
 SectorOverview overview(
   String id,
   int number, {
@@ -91,7 +91,7 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  testWidgets('should list every tournée under its station with its team', (
+  testWidgets('should list every secteur under its station with its team', (
     tester,
   ) async {
     await pumpAll(
@@ -121,7 +121,7 @@ void main() {
     );
   });
 
-  testWidgets('should say so when the app has no tournée', (tester) async {
+  testWidgets('should say so when the app has no secteur', (tester) async {
     await pumpAll(tester);
 
     expect(find.byKey(const Key('allSectors.empty')), findsOneWidget);
@@ -156,7 +156,7 @@ void main() {
     expect(find.byKey(const Key('allSectors.retry')), findsNothing);
   });
 
-  testWidgets('should open a tournée the admin is not in on Accueil, under '
+  testWidgets('should open a secteur the admin is not in on Accueil, under '
       'the banner, with « Rues »', (tester) async {
     await pumpAll(tester, all: [overview('t49', 49)]);
 

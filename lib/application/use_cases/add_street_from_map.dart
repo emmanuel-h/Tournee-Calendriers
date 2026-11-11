@@ -11,7 +11,7 @@ import 'package:tournee_calendriers/domain/street/street_shape.dart';
 /// Why [AddStreetFromMap] added nothing. Each case is phrased in French by
 /// the card.
 enum AddStreetFailure {
-  /// The tournée has the street already, out of the Corbeille (a teammate
+  /// The secteur has the street already, out of the Corbeille (a teammate
   /// added it meanwhile, or a second tap): the card shows it instead.
   alreadyInSector,
 
@@ -40,7 +40,7 @@ final class AddStreetFromMap {
   final StreetRepository _streets;
   final IdGenerator _ids;
 
-  /// Adds the street of [numbers] to the tournée and returns it as stored.
+  /// Adds the street of [numbers] to the secteur and returns it as stored.
   ///
   /// [shape] is the road the card found already (`LookUpStreetShape`,
   /// simplified), stored as it is; none while the card has not found it.

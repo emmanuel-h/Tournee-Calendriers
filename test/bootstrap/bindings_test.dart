@@ -270,7 +270,7 @@ void main() {
     expect(container.read(identityProvider).currentMember, member);
   });
 
-  test('should reopen the last tournée across starts', () async {
+  test('should reopen the last secteur across starts', () async {
     final opened = valueOf(
       MySectors.none.remember(sector49).remember(sector12).open(sector12.id),
     );
@@ -316,8 +316,8 @@ void main() {
     setUp(() => db = FakeFirebaseFirestore());
 
     /// The phone of [uid] (Léa by default, signed in before) knowing the
-    /// 49 and the 12, the 49 open; with [noSector], knowing no tournée
-    /// (one that knows tournées follows them in Firestore, open or not).
+    /// 49 and the 12, the 49 open; with [noSector], knowing no secteur
+    /// (one that knows secteurs follows them in Firestore, open or not).
     Future<ProviderContainer> leasPhone({
       bool noSector = false,
       Directory? folder,
@@ -465,7 +465,7 @@ void main() {
       expect(firestoreAsked, 0);
     });
 
-    test('should be the open tournée\'s campaign in Firestore', () async {
+    test('should be the open secteur\'s campaign in Firestore', () async {
       final container = await leasPhone();
 
       final streets = container.read(streetRepositoryProvider);
@@ -482,7 +482,7 @@ void main() {
     });
 
     test(
-      'should follow the tournée opened and stop following the one left',
+      'should follow the secteur opened and stop following the one left',
       () async {
         final container = await leasPhone();
         final streets49 = container.read(streetRepositoryProvider);
@@ -527,7 +527,7 @@ void main() {
     });
 
     test(
-      'should keep the storage when the open tournée is saved again',
+      'should keep the storage when the open secteur is saved again',
       () async {
         final container = await leasPhone();
         final streets = container.read(streetRepositoryProvider);
@@ -539,7 +539,7 @@ void main() {
       },
     );
 
-    test('should have nothing to send while no tournée is open', () async {
+    test('should have nothing to send while no secteur is open', () async {
       final container = await leasPhone(noSector: true);
 
       final unsent = await container
@@ -552,7 +552,7 @@ void main() {
     });
 
     test(
-      'should count the unsent streets with the storage of the open tournée',
+      'should count the unsent streets with the storage of the open secteur',
       () async {
         final container = await leasPhone();
         final streets49 = container.read(streetRepositoryProvider);
@@ -575,7 +575,7 @@ void main() {
       },
     );
 
-    test('should have nothing to send once no tournée is open', () async {
+    test('should have nothing to send once no secteur is open', () async {
       final container = await leasPhone();
       container.read(pendingSyncProvider);
 
@@ -587,7 +587,7 @@ void main() {
       expect(await pending.watchUnsentStreets().first, 0);
     });
 
-    test('should tell offline from the storage of the open tournée', () async {
+    test('should tell offline from the storage of the open secteur', () async {
       final container = await leasPhone();
       final pending49 = container.read(pendingSyncProvider);
 
@@ -604,7 +604,7 @@ void main() {
       expect(container.read(serverConnectionProvider), isNot(same(pending49)));
     });
 
-    test('should say online while no tournée is open', () async {
+    test('should say online while no secteur is open', () async {
       final container = await leasPhone(noSector: true);
 
       final offline = await container
@@ -617,7 +617,7 @@ void main() {
     });
 
     test('should keep the unreadable streets with the storage of the open '
-        'tournée', () async {
+        'secteur', () async {
       final container = await leasPhone();
       final pending49 = container.read(pendingSyncProvider);
 
@@ -625,7 +625,7 @@ void main() {
       expect(container.read(unreadableStreetsProvider), same(pending49));
     });
 
-    test('should have no unreadable street while no tournée is open', () async {
+    test('should have no unreadable street while no secteur is open', () async {
       final container = await leasPhone(noSector: true);
       final unreadable = container.read(unreadableStreetsProvider);
 

@@ -149,7 +149,7 @@ void main() {
     expect(find.text('Nom limité à 150 caractères.'), findsOneWidget);
   });
 
-  testWidgets('should offer the communes of the streets for a tournée '
+  testWidgets('should offer the communes of the streets for a secteur '
       'without commune', (tester) async {
     await pumpManual(
       tester,
@@ -168,7 +168,7 @@ void main() {
     expect(find.byKey(const Key('communes.field')), findsNothing);
   });
 
-  testWidgets('should search the commune of a tournée without commune nor '
+  testWidgets('should search the commune of a secteur without commune nor '
       'street', (tester) async {
     await pumpManual(tester);
     expect(

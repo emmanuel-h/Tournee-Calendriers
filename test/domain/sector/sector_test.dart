@@ -173,17 +173,17 @@ void main() {
       );
     });
 
-    test('should keep a tournée whose creator left', () {
+    test('should keep a secteur whose creator left', () {
       // The creator has no power of their own any more (PLAN §5.12): they
-      // may leave like anyone, and the tournée goes on.
+      // may leave like anyone, and the secteur goes on.
       final sector = valueOf(_restore([lea, julie]));
 
       expect(sector.createdBy, manuId);
       expect(sector.members, [lea, julie]);
     });
 
-    test('should keep a tournée with no member left', () {
-      // Even the last member may leave: admins manage the empty tournée.
+    test('should keep a secteur with no member left', () {
+      // Even the last member may leave: admins manage the empty secteur.
       expect(valueOf(_restore([])).members, isEmpty);
     });
 
@@ -218,7 +218,7 @@ void main() {
       expect(team().memberOf(leaId), lea);
     });
 
-    test('should find nobody when the id is not in the tournée', () {
+    test('should find nobody when the id is not in the secteur', () {
       expect(team().memberOf(paulId), isNull);
     });
   });
@@ -244,7 +244,7 @@ void main() {
       expect(change.member, accepted);
     });
 
-    test('should keep the rest of the tournée when a request is accepted', () {
+    test('should keep the rest of the secteur when a request is accepted', () {
       final (sector, _) = valueOf(
         team().accept(julieId, by: manuAsAdmin, at: at),
       );
@@ -252,7 +252,7 @@ void main() {
       _expectSameIdentity(sector, team());
     });
 
-    test('should stamp the admin who is not in the tournée when they '
+    test('should stamp the admin who is not in the secteur when they '
         'accept a request', () {
       final (_, change) = valueOf(
         team().accept(julieId, by: samAsAdmin, at: at),
@@ -421,7 +421,7 @@ void main() {
       expect(change.member.name, nameOf('LÉA'));
     });
 
-    test('should say first that the one renaming is not in the tournée', () {
+    test('should say first that the one renaming is not in the secteur', () {
       expect(
         failureOf(team().rename(nameOf('Léa'), by: paulId)),
         SectorCommandFailure.notAMember,
@@ -485,7 +485,7 @@ void main() {
   });
 
   group('delete', () {
-    test('should hand the whole tournée to storage when an admin deletes '
+    test('should hand the whole secteur to storage when an admin deletes '
         'it', () {
       final sector = team();
 
@@ -525,7 +525,7 @@ void main() {
       );
     });
 
-    test('should say first that the admin is already in the tournée', () {
+    test('should say first that the admin is already in the secteur', () {
       expect(
         failureOf(
           team().joinAsAdmin(by: manuAsAdmin, name: nameOf('Manu'), at: at),
@@ -549,7 +549,7 @@ void main() {
       _expectSameIdentity(sector, before);
     });
 
-    test('should give a tournée without commune its first one', () {
+    test('should give a secteur without commune its first one', () {
       final (sector, _) = valueOf(
         team().addCommune(villefrancheCommune, by: leaActing),
       );
@@ -557,7 +557,7 @@ void main() {
       expect(sector.communes, [villefrancheCommune]);
     });
 
-    test('should refuse a commune of a code the tournée already has', () {
+    test('should refuse a commune of a code the secteur already has', () {
       final otherCentre = SectorCommune(commune: villefrancheCommune.commune);
       final sector = team(communes: [villefrancheCommune]);
 
@@ -604,7 +604,7 @@ void main() {
       _expectSameIdentity(sector, before);
     });
 
-    test('should refuse a commune the tournée does not have', () {
+    test('should refuse a commune the secteur does not have', () {
       final sector = team(communes: [villefrancheCommune, gleizeCommune]);
 
       expect(
@@ -639,7 +639,7 @@ void main() {
   group('permissions', () {
     // Who may run each command (PLAN §5.12, §6.1, §8.2): `null` means the
     // command is allowed, otherwise the failure it returns. Manu created
-    // the tournée and is an admin, Léa is active, Julie is pending, Paul is
+    // the secteur and is an admin, Léa is active, Julie is pending, Paul is
     // not in it; Sam is an admin who is not in it, and Julie is tried once
     // more as an admin whose own request still waits.
     final at = DateTime.utc(2026, 11, 2, 9);
@@ -650,7 +650,7 @@ void main() {
       'leave': (t, by) => t.leave(by: by.member),
       'regenerate the code': (t, by) =>
           t.regenerateCode(by: by, random: ScriptedRandom([0, 0, 0, 0, 0, 0])),
-      'delete the tournée': (t, by) => t.delete(by: by),
+      'delete the secteur': (t, by) => t.delete(by: by),
       'rename themself': (t, by) => t.rename(nameOf('Zoé'), by: by.member),
       'join as an admin': (t, by) =>
           t.joinAsAdmin(by: by, name: nameOf('Zoé'), at: at),
@@ -671,7 +671,7 @@ void main() {
       'remove Léa': [ok, notAdmin, pending, outsider, ok, ok],
       'leave': [ok, ok, ok, outsider, outsider, ok],
       'regenerate the code': [ok, notAdmin, pending, outsider, ok, ok],
-      'delete the tournée': [ok, notAdmin, pending, outsider, ok, ok],
+      'delete the secteur': [ok, notAdmin, pending, outsider, ok, ok],
       'rename themself': [ok, ok, pending, outsider, outsider, pending],
       'join as an admin': [inIt, notAdmin, notAdmin, notAdmin, ok, inIt],
       'add a commune': [ok, ok, pending, outsider, ok, ok],
@@ -742,7 +742,7 @@ List<SectorCommune> _communes(int count) => [
     ),
 ];
 
-/// Checks that a command on members left the rest of the tournée as it was.
+/// Checks that a command on members left the rest of the secteur as it was.
 void _expectSameIdentity(Sector actual, Sector expected) {
   expect(actual.id, expected.id);
   expect(actual.number, expected.number);

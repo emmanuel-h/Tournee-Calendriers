@@ -1,6 +1,6 @@
 import 'package:tournee_calendriers/domain/shared/identifier.dart';
 
-/// Who made a change: a member of the tournée.
+/// Who made a change: a member of the secteur.
 ///
 /// Opaque on purpose: it holds the member's Firebase uid, or, before the
 /// phone's first sign-in, an id the phone generated for itself. The domain only

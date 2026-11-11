@@ -41,7 +41,7 @@ final class GeoCommuneSearch implements CommuneSearch {
   ) =>
       // `boost=population` puts the large towns first, so « Villefranche »
       // suggests the one most people mean; five fit on the screen above the
-      // keyboard. `centre` is where the map of a tournée covering the
+      // keyboard. `centre` is where the map of a secteur covering the
       // commune starts (PLAN §5.4).
       getCommunes(
         _client,

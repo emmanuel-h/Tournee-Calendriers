@@ -215,7 +215,7 @@ final class AppColors extends ThemeExtension<AppColors> {
   final Color disabled;
   final Color onDisabled;
 
-  /// The pale red behind a warning framed in [accent] (« La tournée 49 du
+  /// The pale red behind a warning framed in [accent] (« Le secteur 49 du
   /// CS Villefranche existe déjà », CreateTaken mockup).
   final Color alert;
 
@@ -231,7 +231,7 @@ final class AppColors extends ThemeExtension<AppColors> {
   final Color doneBorder;
 
   /// The done green as text or a mark on [surface] or [ground]: a finished
-  /// street's count, the open tournée's ring and ✓, progress bars. The
+  /// street's count, the open secteur's ring and ✓, progress bars. The
   /// same as [done] in light; lighter in dark, where white text needs the
   /// tiles' [done] to stay dark.
   final Color doneInk;
@@ -259,7 +259,7 @@ final class AppColors extends ThemeExtension<AppColors> {
   /// the tiles read as « being edited », not as a status.
   final Color editTileBorder;
 
-  /// The text of a tournée « Mes secteurs » cannot open offline (Switcher
+  /// The text of a secteur « Mes secteurs » cannot open offline (Switcher
   /// mockup): greyed further than [muted], with its ring in
   /// [unavailableMark]. Never alone: « Disponible avec réseau » says it.
   final Color unavailable;

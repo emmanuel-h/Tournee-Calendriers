@@ -22,9 +22,9 @@ import 'package:tournee_calendriers/infrastructure/firestore/mappers/sector_docu
 /// Q20): a join code is read with an exact `get` of `joinCodes/{code}`
 /// (listing them is refused by the rules), the request is the newcomer's
 /// own pending member document. A member follows their own member
-/// document too, to learn they were removed or the tournée deleted; an
-/// admin who only visits a tournée follows the tournée and their own
-/// `admins/{uid}` instead (PLAN §5.12). An admin lists every tournée.
+/// document too, to learn they were removed or the secteur deleted; an
+/// admin who only visits a secteur follows the secteur and their own
+/// `admins/{uid}` instead (PLAN §5.12). An admin lists every secteur.
 ///
 /// What must be true *now* (a code, a number taken) is asked of the server
 /// (`Source.server`): an answer from the phone's copy could be stale. The
@@ -140,18 +140,18 @@ final class FirestoreSectorDirectory implements SectorDirectory {
   }
 
   /// Follows the member's own document, which the rules let them read
-  /// whatever happens to the tournée (PLAN §8.2). Once the server says it
-  /// is gone, a read of the tournée itself tells why (#147,
+  /// whatever happens to the secteur (PLAN §8.2). Once the server says it
+  /// is gone, a read of the secteur itself tells why (#147,
   /// `lossFromSectorRead`): refused (it is there, without them) or there,
   /// they were removed; not there, it was deleted. The reservation of its
   /// number told it before, but only admins may read it now: it names the
-  /// tournée's id.
+  /// secteur's id.
   ///
   /// A `permission-denied` on the member's own document is not taken as a
   /// loss: the member may always read it, so it can only mean something
   /// else (App Check refusing the app, a rules change), which must not
-  /// make the phone forget a tournée. It is passed on as an error. On the
-  /// read of the tournée it is the answer: the server, which just said the
+  /// make the phone forget a secteur. It is passed on as an error. On the
+  /// read of the secteur it is the answer: the server, which just said the
   /// document is gone, is reachable and accepts the app.
   @override
   Stream<SectorLoss> watchMembership(SectorSummary sector, MemberId member) =>
@@ -180,8 +180,8 @@ final class FirestoreSectorDirectory implements SectorDirectory {
               }
             });
 
-  /// A tournée the admin [member] only visits (PLAN §5.12): they have no
-  /// member document to follow. The tournée tells it was deleted once the
+  /// A secteur the admin [member] only visits (PLAN §5.12): they have no
+  /// member document to follow. The secteur tells it was deleted once the
   /// server has it no more; their own `admins/{uid}`, which the rules let
   /// any signed-in phone read, tells they are no longer an admin once the
   /// server has it no more. Both listeners run at once, in one stream.
@@ -276,8 +276,8 @@ final class FirestoreSectorDirectory implements SectorDirectory {
     }
   }
 
-  /// Reads every tournée from the server, then the members of each (at the
-  /// same time), as the security rules let only an admin do. A tournée
+  /// Reads every secteur from the server, then the members of each (at the
+  /// same time), as the security rules let only an admin do. A secteur
   /// that cannot be read is left out, not fatal: it is only a list.
   @override
   Future<Result<List<SectorOverview>, DirectoryFailure>> allSectors(
@@ -299,13 +299,13 @@ final class FirestoreSectorDirectory implements SectorDirectory {
           });
           overviews.add(overviewOf(sector, caller));
         } on FormatException catch (error) {
-          debugPrint('Unreadable tournée ${doc.id}: $error');
+          debugPrint('Unreadable secteur ${doc.id}: $error');
         }
       }
       return Ok(List.unmodifiable(overviews));
     } on FirebaseException catch (error) {
       if (isNoNetwork(error)) return const Err(DirectoryFailure.noNetwork);
-      // Only an admin may list the tournées: the phone is no longer one.
+      // Only an admin may list the secteurs: the phone is no longer one.
       if (isRefused(error)) return const Err(DirectoryFailure.notAdmin);
       rethrow;
     }

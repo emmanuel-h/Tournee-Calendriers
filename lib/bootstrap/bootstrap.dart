@@ -71,7 +71,7 @@ Future<void> bootstrap({
   runApp(
     ProviderScope(
       overrides: overrides,
-      // The open tournée downloads itself for offline use, unseen.
+      // The open secteur downloads itself for offline use, unseen.
       child: OfflineUpkeep(child: TourneeApp(navigatorKey: navigatorKey)),
     ),
   );

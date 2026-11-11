@@ -2,11 +2,11 @@
 // the map library's offline regions. Pure functions: no platform call
 // here, so they are tested alone.
 //
-// A region's metadata names the tournée it was made for:
+// A region's metadata names the secteur it was made for:
 //
 //   { tournee: "t49" }
 //
-// so the regions of one tournée can be found among those of the phone.
+// so the regions of one secteur can be found among those of the phone.
 // `hide Error`: the map library has a class `Error` (a failed download)
 // that would hide Dart's own here.
 import 'package:maplibre_gl/maplibre_gl.dart' hide Error;
@@ -40,7 +40,7 @@ Map<String, dynamic> regionMetadata(SectorId sector) => {
 };
 
 /// The region of the app [region] is; null when it was not made for a
-/// tournée (no or another metadata) or its bounds are not a place (the
+/// secteur (no or another metadata) or its bounds are not a place (the
 /// map library hands bounds over the antimeridian west of east).
 OfflineMapRegion? offlineMapRegionOf(OfflineRegion region) {
   final sector = region.metadata[sectorMetadataKey];

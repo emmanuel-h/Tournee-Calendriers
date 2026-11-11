@@ -64,7 +64,7 @@ final class ManualStreetNotifier extends Notifier<ManualStreetState> {
               _sectorCommunes = communes;
               _show();
             },
-            // The tournée can no longer be read (the member was removed):
+            // The secteur can no longer be read (the member was removed):
             // the communes last read stay.
             onError: (Object _) {},
           );
@@ -85,7 +85,7 @@ final class ManualStreetNotifier extends Notifier<ManualStreetState> {
     _show();
   }
 
-  /// A commune found by the search (a tournée with no commune known).
+  /// A commune found by the search (a secteur with no commune known).
   void pickCommune(Commune commune) {
     _chosen = commune;
     _show();
@@ -140,7 +140,7 @@ final class ManualStreetNotifier extends Notifier<ManualStreetState> {
     return street.name.text;
   }
 
-  /// The tournée's communes, else those of its streets, each once.
+  /// The secteur's communes, else those of its streets, each once.
   List<Commune> _communes() => _sectorCommunes.isNotEmpty
       ? [for (final commune in _sectorCommunes) commune.commune]
       : {

@@ -2,7 +2,7 @@ import 'package:tournee_calendriers/domain/shared/member_id.dart';
 
 /// Who is an administrator of the app (PLAN §5.12): an `admins/{uid}`
 /// document added by hand in the Firebase console, never from the app.
-/// Admins are global: they create tournées and manage every one, member of
+/// Admins are global: they create secteurs and manage every one, member of
 /// it or not.
 ///
 /// An application port: the use cases own it, a Firestore adapter of

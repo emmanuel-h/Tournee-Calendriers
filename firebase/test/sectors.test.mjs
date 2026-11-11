@@ -1,6 +1,6 @@
-// Creating, re-coding and deleting a tournée as FirestoreSectorRepository
+// Creating, re-coding and deleting a secteur as FirestoreSectorRepository
 // does it (PLAN §8.2 « What the adapters write »), and the directory
-// documents that make a tournée findable: join codes, reservations,
+// documents that make a secteur findable: join codes, reservations,
 // stations.
 import { after, before, beforeEach, describe, it } from 'node:test';
 import { assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
@@ -62,10 +62,10 @@ beforeEach(async () => {
 });
 
 /**
- * Sam, an admin (only admins create a tournée, PLAN §5.12), creates
- * Tournée 12 of CS Villefranche, in one transaction as the adapter does:
+ * Sam, an admin (only admins create a secteur, PLAN §5.12), creates
+ * Secteur 12 of CS Villefranche, in one transaction as the adapter does:
  * it reads the reservation, the code and the station, then writes them
- * with the tournée, his member document and the first campaign. [change]
+ * with the secteur, his member document and the first campaign. [change]
  * edits the documents before they are written; a document set to `null`
  * is left out of the transaction.
  */
@@ -79,7 +79,7 @@ function createSector(change = (docs) => docs, uid = sam) {
     keyDoc: { sectorId: 't12' },
     preview: { sectorId: 't12', number: 12, centreName: sector.centreName, campaign: 2026 },
     member: activeMemberDoc('Sam', uid, { acceptedAt: twoPm }),
-    // The creator's name, held in the tournée (#148): [key, data].
+    // The creator's name, held in the secteur (#148): [key, data].
     name: ['sam', { member: uid }],
     year: '2026',
     campaign: campaignDoc(),
@@ -122,7 +122,7 @@ async function restart() {
   await seed(env, `admins/${sam}`, {});
 }
 
-/** The tournée [docs] with [fields] changed in it, the preview following. */
+/** The secteur [docs] with [fields] changed in it, the preview following. */
 function withSector(docs, fields) {
   const sector = { ...docs.sector, ...fields };
   return {
@@ -139,12 +139,12 @@ function withSector(docs, fields) {
   };
 }
 
-describe('creating a tournée', () => {
-  it('should accept the tournée with its code, reservation, creator and campaign', async () => {
+describe('creating a secteur', () => {
+  it('should accept the secteur with its code, reservation, creator and campaign', async () => {
     await assertSucceeds(createSector());
   });
 
-  it('should refuse a tournée created by someone who is not an admin', async () => {
+  it('should refuse a secteur created by someone who is not an admin', async () => {
     await assertFails(
       createSector(
         (docs) => ({ ...docs, member: activeMemberDoc('Zoé', zoe, { acceptedAt: twoPm }) }),
@@ -159,7 +159,7 @@ describe('creating a tournée', () => {
     );
   });
 
-  it('should accept a new station, written once with the tournée', async () => {
+  it('should accept a new station, written once with the secteur', async () => {
     await assertSucceeds(
       createSector((docs) => ({
         ...withSector(docs, { centreKey: 'villefranche-nord', centreName: 'CS Villefranche Nord' }),
@@ -172,11 +172,11 @@ describe('creating a tournée', () => {
     await assertFails(createSector((docs) => withSector(docs, { number: 49 })));
   });
 
-  it('should refuse a code another tournée holds', async () => {
+  it('should refuse a code another secteur holds', async () => {
     await assertFails(createSector((docs) => withSector(docs, { joinCode: code })));
   });
 
-  it('should refuse a tournée without its reservation, code, creator or campaign', async () => {
+  it('should refuse a secteur without its reservation, code, creator or campaign', async () => {
     await assertFails(createSector((docs) => ({ ...docs, key: null })));
     await assertFails(createSector((docs) => ({ ...docs, preview: null })));
     await assertFails(createSector((docs) => ({ ...docs, member: null })));
@@ -221,7 +221,7 @@ describe('creating a tournée', () => {
     await assertFails(createSector((docs) => withSector(docs, { createdAt: 'today' })));
   });
 
-  it('should refuse a creator whose name is not held in the tournée', async () => {
+  it('should refuse a creator whose name is not held in the secteur', async () => {
     await assertFails(createSector((docs) => ({ ...docs, name: null })));
     await restart();
     await assertFails(createSector((docs) => ({ ...docs, name: ['samuel', docs.name[1]] })));
@@ -233,15 +233,15 @@ describe('creating a tournée', () => {
     );
   });
 
-  it('should refuse a tournée created in someone else’s name', async () => {
+  it('should refuse a secteur created in someone else’s name', async () => {
     await assertFails(createSector((docs) => withSector(docs, { createdBy: lea })));
   });
 
-  it('should refuse a reservation that does not name the tournée’s pair', async () => {
+  it('should refuse a reservation that does not name the secteur’s pair', async () => {
     await assertFails(createSector((docs) => ({ ...docs, key: 'villefranche_13' })));
   });
 
-  it('should refuse a preview that does not say what the tournée says', async () => {
+  it('should refuse a preview that does not say what the secteur says', async () => {
     await assertFails(
       createSector((docs) => ({
         ...docs,
@@ -259,14 +259,14 @@ describe('creating a tournée', () => {
     );
   });
 
-  it('should refuse a preview under a code the tournée does not have', async () => {
+  it('should refuse a preview under a code the secteur does not have', async () => {
     await assertFails(
       createSector((docs) => ({ ...docs, extra: [['joinCodes/M4N8RU', docs.preview]] })),
     );
   });
 
   it('should refuse a preview written by someone who is not an admin', async () => {
-    // Even for the tournée's own code, were its document missing.
+    // Even for the secteur's own code, were its document missing.
     await env.withSecurityRulesDisabled((context) =>
       deleteDoc(doc(context.firestore(), `joinCodes/${code}`)),
     );
@@ -322,7 +322,7 @@ describe('creating a tournée', () => {
     }
   });
 
-  it('should refuse a field the tournée document does not have', async () => {
+  it('should refuse a field the secteur document does not have', async () => {
     await assertFails(createSector((docs) => withSector(docs, { note: 'Secteur nord' })));
   });
 
@@ -336,7 +336,7 @@ describe('creating a tournée', () => {
     );
   });
 
-  it('should refuse a tournée without commune, or more than 50', async () => {
+  it('should refuse a secteur without commune, or more than 50', async () => {
     await assertFails(
       createSector((docs) => {
         // An app of before the communes writes none.
@@ -377,13 +377,13 @@ describe('creating a tournée', () => {
     }
   });
 
-  it('should refuse an active member document added to an existing tournée by a non-admin', async () => {
+  it('should refuse an active member document added to an existing secteur by a non-admin', async () => {
     await assertFails(
       setDoc(doc(phoneOf(env, zoe), memberPath(zoe)), activeMemberDoc('Zoé', zoe)),
     );
   });
 
-  it('should refuse a reservation or a campaign written without their tournée', async () => {
+  it('should refuse a reservation or a campaign written without their secteur', async () => {
     const db = phoneOf(env, manu);
     await assertFails(setDoc(doc(db, 'sectorKeys/villefranche_50'), { sectorId: 't49' }));
     await assertFails(setDoc(doc(db, `${sectorPath}/campaigns/2027`), campaignDoc()));
@@ -391,7 +391,7 @@ describe('creating a tournée', () => {
 });
 
 describe('the communes', () => {
-  /** [uid] adds [entry] to the tournée's communes, as the adapter does. */
+  /** [uid] adds [entry] to the secteur's communes, as the adapter does. */
   const add = (uid, entry) =>
     updateDoc(doc(phoneOf(env, uid), sectorPath), { communes: arrayUnion(entry) });
 
@@ -421,7 +421,7 @@ describe('the communes', () => {
     }
   });
 
-  it('should give a tournée stored before the communes its first one', async () => {
+  it('should give a secteur stored before the communes its first one', async () => {
     const { communes, ...older } = sectorDoc();
     await seed(env, sectorPath, older);
 
@@ -470,13 +470,13 @@ describe('the directory', () => {
     await assertFails(getDoc(doc(phoneOf(env, null), `joinCodes/${code}`)));
   });
 
-  it('should refuse listing the codes, even searching one tournée', async () => {
+  it('should refuse listing the codes, even searching one secteur', async () => {
     const db = phoneOf(env, zoe);
     await assertFails(getDocs(collection(db, 'joinCodes')));
     await assertFails(getDocs(query(collection(db, 'joinCodes'), where('number', '==', 49))));
   });
 
-  it('should refuse replacing another tournée’s preview', async () => {
+  it('should refuse replacing another secteur’s preview', async () => {
     await assertFails(
       setDoc(doc(phoneOf(env, zoe), `joinCodes/${code}`), previewDoc({ sectorId: 't12' })),
     );
@@ -567,7 +567,7 @@ describe('a new code', () => {
     await assertFails(newCode(manu, { next: 'R2D2XI' }));
   });
 
-  it('should refuse any other change of the tournée', async () => {
+  it('should refuse any other change of the secteur', async () => {
     await assertFails(newCode(manu, { update: { joinCode: 'R2D2XY', currentCampaign: 2027 } }));
     await assertFails(
       newCode(manu, {
@@ -578,15 +578,15 @@ describe('a new code', () => {
     await assertFails(updateDoc(doc(phoneOf(env, manu), sectorPath), { number: 50 }));
   });
 
-  it('should refuse deleting the code while the tournée keeps it', async () => {
+  it('should refuse deleting the code while the secteur keeps it', async () => {
     await assertFails(deleteDoc(doc(phoneOf(env, manu), `joinCodes/${code}`)));
   });
 });
 
-describe('deleting a tournée', () => {
+describe('deleting a secteur', () => {
   /**
    * The adapter's order: the contents first, then the last batch, where
-   * the members go with the tournée and its reservation, so a member's
+   * the members go with the secteur and its reservation, so a member's
    * phone sees them go together (« supprimée », not « retiré »).
    */
   async function deleteContents(uid) {
@@ -612,7 +612,7 @@ describe('deleting a tournée', () => {
     return batch.commit();
   }
 
-  it('should let an admin, here the creator, delete everything, the members with the tournée', async () => {
+  it('should let an admin, here the creator, delete everything, the members with the secteur', async () => {
     await assertSucceeds(deleteContents(manu));
     await assertSucceeds(lastBatch(manu));
   });
@@ -634,7 +634,7 @@ describe('deleting a tournée', () => {
     await assertFails(lastBatch(lea));
   });
 
-  it('should refuse a tournée deleted without its code or reservation', async () => {
+  it('should refuse a secteur deleted without its code or reservation', async () => {
     // The members are no longer checked: the creator may have left, and
     // the batch deletes whichever member documents remain (PLAN §8.2).
     await assertFails(lastBatch(manu, { keepCode: true }));
@@ -645,7 +645,7 @@ describe('deleting a tournée', () => {
     await assertFails(deleteDoc(doc(phoneOf(env, lea), campaignPath)));
   });
 
-  it('should refuse freeing the reservation while the tournée stays', async () => {
+  it('should refuse freeing the reservation while the secteur stays', async () => {
     await assertFails(deleteDoc(doc(phoneOf(env, manu), 'sectorKeys/villefranche_49')));
   });
 });

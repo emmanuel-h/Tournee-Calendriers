@@ -12,22 +12,22 @@ import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 
-/// Downloads a tournée so it works a whole day offline (PLAN §7), cold
+/// Downloads a secteur so it works a whole day offline (PLAN §7), cold
 /// start included. The app runs it by itself, unseen by the member, when
-/// the open tournée is not downloaded yet or its streets now reach beyond
+/// the open secteur is not downloaded yet or its streets now reach beyond
 /// the map kept (`OfflineAutoDownload`); run again, it updates the
 /// download.
 ///
 /// 1. Every street is read once from the server: Firestore's cache, with
 ///    no size limit, then holds all of them.
 /// 2. The map of the streets' area (`sectorArea`: the streets plus 300 m)
-///    is downloaded as a new region, zooms 12 to 17. The tournée's older
+///    is downloaded as a new region, zooms 12 to 17. The secteur's older
 ///    regions are deleted only once it is complete, so a cut download
 ///    keeps the old map ([offlineRegionBounds] keeps the map library from
 ///    replacing an old region of the same bounds first).
 /// 3. The date, the map's size and its area are kept on the phone.
 ///
-/// Nothing is kept when a step fails: the tournée stays as downloaded as
+/// Nothing is kept when a step fails: the secteur stays as downloaded as
 /// it was. Cancelling the stream stops the download the same way.
 final class DownloadSector {
   const DownloadSector(
@@ -207,7 +207,7 @@ final class DownloadingMap extends DownloadProgress {
   String toString() => 'DownloadingMap($fraction, $bytes)';
 }
 
-/// The tournée is downloaded, as [download] says; it is kept on the phone.
+/// The secteur is downloaded, as [download] says; it is kept on the phone.
 final class Downloaded extends DownloadProgress {
   const Downloaded(this.download);
 

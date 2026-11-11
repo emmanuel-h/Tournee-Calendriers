@@ -29,7 +29,7 @@ import 'package:tournee_calendriers/infrastructure/map_tiles/mappers/vector_tile
 /// the tiles (read from the TileJSON once, forgotten when a tile cannot be
 /// read, since a new version of the map may have replaced it) and the
 /// roads of the last [tilesKept] tiles read, since the streets of a
-/// tournée share a few tiles.
+/// secteur share a few tiles.
 final class OpenFreeMapStreetShapes implements StreetShapes {
   /// [client] is given so tests can pass a `MockClient` and the composition
   /// root shares one client across services.

@@ -1,4 +1,4 @@
-// Reading every street of a tournée from the server, for its download
+// Reading every street of a secteur from the server, for its download
 // (PLAN §7), against an in-memory Firestore.
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';

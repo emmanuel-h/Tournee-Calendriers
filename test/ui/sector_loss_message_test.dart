@@ -1,6 +1,6 @@
 // The message the app shows over the next screen when the member lost one
-// of their tournées (PLAN §5.3): removed by an admin, the tournée deleted,
-// or (a tournée only visited) the phone no longer an admin (PLAN §5.12).
+// of their secteurs (PLAN §5.3): removed by an admin, the secteur deleted,
+// or (a secteur only visited) the phone no longer an admin (PLAN §5.12).
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -41,7 +41,7 @@ void main() {
   }
 
   testWidgets(
-    'should say the member was removed from the open tournée and go back '
+    'should say the member was removed from the open secteur and go back '
     'to the start screen with none open',
     (tester) async {
       await pumpApp(tester);
@@ -60,7 +60,7 @@ void main() {
   );
 
   testWidgets(
-    'should say another tournée was deleted and stay on the open one',
+    'should say another secteur was deleted and stay on the open one',
     (tester) async {
       await pumpApp(tester);
 
@@ -73,7 +73,7 @@ void main() {
   );
 
   testWidgets(
-    'should say the phone is no longer an admin when a visited tournée is '
+    'should say the phone is no longer an admin when a visited secteur is '
     'forgotten',
     (tester) async {
       await pumpApp(tester);

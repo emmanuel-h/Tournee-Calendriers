@@ -5,8 +5,8 @@ import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_state.dart';
 
-/// Which tournées of « Mes secteurs » can open now (PLAN §5.3, §7):
-/// offline, a tournée never downloaded on this phone has nothing to show,
+/// Which secteurs of « Mes secteurs » can open now (PLAN §5.3, §7):
+/// offline, a secteur never downloaded on this phone has nothing to show,
 /// so the sheet greys it (« Disponible avec réseau ») and it cannot be
 /// tapped. Immutable: the notifier replaces it as a whole.
 final class OfflineAccess {
@@ -16,11 +16,11 @@ final class OfflineAccess {
   /// Whether the phone cannot reach the server now.
   final bool offline;
 
-  /// The tournées downloaded on this phone, which open offline too.
+  /// The secteurs downloaded on this phone, which open offline too.
   final Set<SectorId> downloaded;
 
-  /// Whether [row] cannot open now: offline, another tournée of the member
-  /// not downloaded here. The open tournée is already shown, and a pending
+  /// Whether [row] cannot open now: offline, another secteur of the member
+  /// not downloaded here. The open secteur is already shown, and a pending
   /// request cannot open anyway (it keeps its own look).
   bool isUnavailable(SectorRow row) =>
       offline &&
@@ -55,22 +55,22 @@ final offlineAccessProvider =
     );
 
 /// Follows whether the phone is offline (`ObserveOffline`) and which
-/// tournées it downloaded (`ObserveSectorDownloads`).
+/// secteurs it downloaded (`ObserveSectorDownloads`).
 ///
 /// A provider of its own rather than a part of `mySectorsProvider`: the
-/// offline signal comes from the open tournée's streets, which follow
+/// offline signal comes from the open secteur's streets, which follow
 /// `mySectorsProvider`, so that one watching it would go round in a
 /// circle.
 final class OfflineAccessNotifier extends Notifier<OfflineAccess> {
   @override
   OfflineAccess build() {
-    // `ref.watch` on the use case: another tournée opened binds another
-    // connection (the new tournée's listener), and this is built again.
+    // `ref.watch` on the use case: another secteur opened binds another
+    // connection (the new secteur's listener), and this is built again.
     final offline = ref
         .watch(observeOfflineProvider)()
         .listen(
           (offline) => state = state._withOffline(offline),
-          // Nothing can tell any more (the member left the tournée): the
+          // Nothing can tell any more (the member left the secteur): the
           // rows stay as they are online rather than greyed for nothing.
           onError: (Object _) => state = state._withOffline(false),
         );

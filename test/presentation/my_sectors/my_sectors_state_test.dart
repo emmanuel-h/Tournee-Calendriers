@@ -41,7 +41,7 @@ void main() {
     }
   });
 
-  test('should compare states by their rows and open tournée', () {
+  test('should compare states by their rows and open secteur', () {
     final mine = MySectors.none.remember(sector49).remember(sector12);
     final opened = valueOf(mine.open(sector49.id));
 
@@ -77,7 +77,7 @@ void main() {
     ]);
   });
 
-  test('should show the requests waiting in each tournée', () {
+  test('should show the requests waiting in each secteur', () {
     final mine = MySectors.none.remember(sector49).remember(sector12);
 
     final state = MySectorsState.of(mine, waiting: {sector12.id: 2});
@@ -85,7 +85,7 @@ void main() {
     expect(state.rows.map((row) => row.waitingRequests), [0, 2]);
   });
 
-  test('should mark the tournées an admin visits, open or not', () {
+  test('should mark the secteurs an admin visits, open or not', () {
     final mine = valueOf(
       MySectors.none
           .remember(sector49)
@@ -99,7 +99,7 @@ void main() {
     expect(rows.last.status, SectorRowStatus.open);
   });
 
-  test('should show a visited tournée not open as one to open', () {
+  test('should show a visited secteur not open as one to open', () {
     final mine = MySectors.none.remember(sector12Visited);
 
     final row = MySectorsState.of(mine).rows.single;

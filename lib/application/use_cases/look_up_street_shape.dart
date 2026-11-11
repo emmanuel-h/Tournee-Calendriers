@@ -4,7 +4,7 @@ import 'package:tournee_calendriers/domain/map/sector_area.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 
-/// The road of a street the tournée does not have yet, to highlight it on
+/// The road of a street the secteur does not have yet, to highlight it on
 /// the map of « Ajouter des rues » while its card shows (PLAN §5.4).
 /// Changes nothing. Needs the network.
 ///

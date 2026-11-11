@@ -60,7 +60,7 @@ final class StreetShape {
   bool get isEmpty => lines.isEmpty;
 
   /// Every point of every line, line after line: what the street adds to
-  /// the area of its tournée.
+  /// the area of its secteur.
   Iterable<GeoPoint> get points => lines.expand((line) => line);
 
   /// How far [point] is from the nearest point of any line, in metres

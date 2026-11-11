@@ -19,7 +19,7 @@ void main() {
   late ProviderContainer container;
 
   /// Opens « Bienvenue » on a phone whose name is [name] and that knows no
-  /// tournée yet.
+  /// secteur yet.
   void open({MemberName? name}) {
     settings = FakePhoneSettings(memberName: name);
     container = ProviderContainer(

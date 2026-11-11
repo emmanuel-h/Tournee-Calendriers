@@ -3,46 +3,46 @@ import 'package:tournee_calendriers/domain/sector/sector_summary.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/shared/same_items.dart';
 
-/// Why a tournée of « Mes secteurs » cannot be opened.
+/// Why a secteur of « Mes secteurs » cannot be opened.
 enum OpenSectorFailure {
-  /// The phone does not know this tournée (left, refused, never joined).
+  /// The phone does not know this secteur (left, refused, never joined).
   unknownSector,
 
   /// The member's request has not been accepted yet: nothing of the
-  /// tournée can be read (PLAN §8.2).
+  /// secteur can be read (PLAN §8.2).
   requestPending,
 }
 
-/// The tournées of the member on this phone (« Mes secteurs », PLAN §5.3,
+/// The secteurs of the member on this phone (« Mes secteurs », PLAN §5.3,
 /// Q4) and the one the app shows, which it opens again at the next launch
 /// (PLAN §4, §6.3). Kept on the phone only, never shared with the team.
 ///
 /// Invariants, true of every `MySectors`:
-/// - each tournée appears once, in the order the phone met them;
-/// - the open tournée ([currentId]), when there is one, is in the list and
+/// - each secteur appears once, in the order the phone met them;
+/// - the open secteur ([currentId]), when there is one, is in the list and
 ///   not a pending request.
 ///
 /// Immutable: each change returns a new value.
 final class MySectors {
   const MySectors._(this.sectors, this.currentId);
 
-  /// A phone that knows no tournée yet: the first launch.
+  /// A phone that knows no secteur yet: the first launch.
   static const none = MySectors._([], null);
 
-  /// The member's tournées, open one included, pending requests too. The
+  /// The member's secteurs, open one included, pending requests too. The
   /// list cannot be modified (it throws an `UnsupportedError`).
   final List<SectorSummary> sectors;
 
-  /// The tournée the app shows; null when none is open.
+  /// The secteur the app shows; null when none is open.
   final SectorId? currentId;
 
-  /// The tournée the app shows; null when none is open.
+  /// The secteur the app shows; null when none is open.
   SectorSummary? get current => switch (currentId) {
     final id? => find(id),
     null => null,
   };
 
-  /// The tournée [id], or null when the phone does not know it.
+  /// The secteur [id], or null when the phone does not know it.
   SectorSummary? find(SectorId id) {
     for (final sector in sectors) {
       if (sector.id == id) return sector;
@@ -52,10 +52,10 @@ final class MySectors {
 
   /// Keeps [sector]: a new one goes after the others, a known one is
   /// replaced in its place (its request accepted, a new campaign…). It does
-  /// not open it: after « Créer » or « Rejoindre » the open tournée stays
+  /// not open it: after « Créer » or « Rejoindre » the open secteur stays
   /// until the new one is ready (PLAN §5.3).
   ///
-  /// Should the open tournée come back as a pending request, none is open
+  /// Should the open secteur come back as a pending request, none is open
   /// any more.
   MySectors remember(SectorSummary sector) {
     final known = find(sector.id) != null;
@@ -66,8 +66,8 @@ final class MySectors {
     return MySectors._(List.unmodifiable(kept), stillOpen ? currentId : null);
   }
 
-  /// Makes the tournée [id] the one the app shows (tap in « Mes
-  /// tournées »), one the member is in or one an admin visits. Fails when
+  /// Makes the secteur [id] the one the app shows (tap in « Mes
+  /// secteurs »), one the member is in or one an admin visits. Fails when
   /// the phone does not know it or the member's request is still pending.
   Result<MySectors, OpenSectorFailure> open(SectorId id) {
     final sector = find(id);
@@ -76,8 +76,8 @@ final class MySectors {
     return Ok(MySectors._(sectors, id));
   }
 
-  /// Drops the tournée [id] (left, removed, request refused). When it was
-  /// the open one, none is open any more: which tournée to show next is
+  /// Drops the secteur [id] (left, removed, request refused). When it was
+  /// the open one, none is open any more: which secteur to show next is
   /// for the member to choose.
   MySectors forget(SectorId id) => MySectors._(
     List.unmodifiable(sectors.where((sector) => sector.id != id)),

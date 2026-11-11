@@ -68,8 +68,8 @@ final class ScreenMessage extends StatelessWidget {
   }
 }
 
-/// The tournée to confirm or waited for, as the join mockup draws it: its
-/// number in a red square, « Tournée 49 · CS Villefranche » over
+/// The secteur to confirm or waited for, as the join mockup draws it: its
+/// number in a red square, « Secteur 49 · CS Villefranche » over
 /// « Campagne 2026 ».
 final class SectorPreviewCard extends StatelessWidget {
   const SectorPreviewCard({

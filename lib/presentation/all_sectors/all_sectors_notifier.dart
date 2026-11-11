@@ -14,10 +14,10 @@ final allSectorsProvider =
       AllSectorsNotifier.new,
     );
 
-/// Lists every tournée of the app for an admin and opens the one tapped
-/// (PLAN §5.12). Needs the network: the phone's copy may miss tournées.
+/// Lists every secteur of the app for an admin and opens the one tapped
+/// (PLAN §5.12). Needs the network: the phone's copy may miss secteurs.
 final class AllSectorsNotifier extends Notifier<AllSectorsState> {
-  /// The tournées last listed, by id, for [open].
+  /// The secteurs last listed, by id, for [open].
   final _overviews = <SectorId, SectorOverview>{};
 
   @override
@@ -34,7 +34,7 @@ final class AllSectorsNotifier extends Notifier<AllSectorsState> {
     await _load();
   }
 
-  /// Opens the tournée [id] of the list: the app shows it on its normal
+  /// Opens the secteur [id] of the list: the app shows it on its normal
   /// screens, as the admin's own or as visited.
   Future<void> open(SectorId id) async {
     final overview = _overviews[id];

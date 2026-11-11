@@ -95,7 +95,7 @@ void main() {
   }
 
   group('state', () {
-    test('should have no team when no tournée is open', () {
+    test('should have no team when no secteur is open', () {
       final container = phoneOf(
         manuId,
         mine: MySectors.none.remember(sector49),
@@ -107,7 +107,7 @@ void main() {
       expect(state.waitingRequests, 0);
     });
 
-    test('should be loading until the tournée is read', () {
+    test('should be loading until the secteur is read', () {
       final container = phoneOf(manuId);
 
       final state = container.read(teamProvider);
@@ -116,7 +116,7 @@ void main() {
       expect(state.waitingRequests, 0);
     });
 
-    test('should show the tournée, its code, the requests and the members '
+    test('should show the secteur, its code, the requests and the members '
         'as an admin in the team sees them', () async {
       final team = await shown(phoneOf(manuId));
 
@@ -228,7 +228,7 @@ void main() {
       expect(state.waitingRequests, 0);
     });
 
-    test('should be unavailable once the tournée cannot be read', () async {
+    test('should be unavailable once the secteur cannot be read', () async {
       final container = phoneOf(manuId);
       await shown(container);
 
@@ -239,7 +239,7 @@ void main() {
       expect(container.read(teamProvider).waitingRequests, 0);
     });
 
-    test('should be unavailable when the tournée cannot be followed', () async {
+    test('should be unavailable when the secteur cannot be followed', () async {
       final container = phoneOf(manuId);
       sectors.watchError = StateError('no access');
       container.listen(teamProvider, (_, _) {});
@@ -248,7 +248,7 @@ void main() {
       expect(container.read(teamProvider), isA<TeamUnavailable>());
     });
 
-    test('should follow another tournée when it is opened', () async {
+    test('should follow another secteur when it is opened', () async {
       final container = phoneOf(manuId);
       await shown(container);
 
@@ -292,7 +292,7 @@ void main() {
       expect(shownTeam.communes.single.removable, isFalse);
     });
 
-    test('should list none for a tournée created before the communes, and '
+    test('should list none for a secteur created before the communes, and '
         'still let one be added', () async {
       final shownTeam = await shown(phoneOf(leaId));
 
@@ -342,7 +342,7 @@ void main() {
       ]);
     });
 
-    test('should tell a commune is already in the tournée', () async {
+    test('should tell a commune is already in the secteur', () async {
       final container = phoneOf(leaId);
       sectors.put(team(communes: [gleizeCommune]));
       await shown(container);
@@ -353,7 +353,7 @@ void main() {
       );
     });
 
-    test('should tell the tournée covers as many communes as it may', () async {
+    test('should tell the secteur covers as many communes as it may', () async {
       final container = phoneOf(leaId);
       sectors.put(
         team(
@@ -622,9 +622,9 @@ void main() {
     });
 
     test('should tell the phone is no longer an admin\'s when it learnt it '
-        'before the tournée refused the command', () async {
+        'before the secteur refused the command', () async {
       // The admin status already says no, the screen still shows « Retirer »:
-      // the tournée refuses it with `notAdmin`, not as a team change.
+      // the secteur refuses it with `notAdmin`, not as a team change.
       final container = phoneOf(manuId, admin: false);
       await shown(container);
 
@@ -636,7 +636,7 @@ void main() {
       expect(sectors.saved, isEmpty);
     });
 
-    test('should leave the tournée, which the phone forgets', () async {
+    test('should leave the secteur, which the phone forgets', () async {
       final container = phoneOf(leaId);
       await shown(container);
 
@@ -648,7 +648,7 @@ void main() {
       expect(container.read(teamProvider), isA<NoTeam>());
     });
 
-    test('should delete the tournée, which the phone forgets', () async {
+    test('should delete the secteur, which the phone forgets', () async {
       final container = phoneOf(manuId);
       await shown(container);
 
@@ -689,7 +689,7 @@ void main() {
       expect(store.mySectors.find(sectorId), isNotNull);
     });
 
-    test('should tell the team changed when the tournée cannot be read any '
+    test('should tell the team changed when the secteur cannot be read any '
         'more', () async {
       final container = phoneOf(leaId);
       await shown(container);
@@ -700,7 +700,7 @@ void main() {
       expect(failure, TeamActionFailure.teamChanged);
     });
 
-    test('should tell the team changed when no tournée is open', () async {
+    test('should tell the team changed when no secteur is open', () async {
       final container = phoneOf(
         manuId,
         mine: MySectors.none.remember(sector49),
@@ -819,7 +819,7 @@ void main() {
         expect(failure, TeamActionFailure.noName);
       });
 
-      test('should forget the tournée on the phone only', () async {
+      test('should forget the secteur on the phone only', () async {
         final container = phoneOf(samId, mine: visiting());
         await shown(container);
 

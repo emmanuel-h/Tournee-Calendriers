@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:tournee_calendriers/ui/components/copy_code_button.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 
-/// A tournée's join code and its ⧉ (PLAN §5.2, §5.8), in Équipe and on
+/// A secteur's join code and its ⧉ (PLAN §5.2, §5.8), in Équipe and on
 /// « Nouveau secteur ». The code shrinks rather than overflow when the
 /// screen is narrow or the phone's text is set large, so the copy button
 /// always stays beside it.

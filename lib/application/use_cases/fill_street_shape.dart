@@ -20,7 +20,7 @@ enum ShapeFillOutcome {
   notNeeded,
 }
 
-/// Gives a street of the tournée without a line on the map the road the
+/// Gives a street of the secteur without a line on the map the road the
 /// map draws for it (PLAN §5.3): a street imported from a list, or added
 /// from the map before its road was known. Needs the network, unless
 /// [call] is given the road already.

@@ -1,5 +1,5 @@
 // The round shown on the Play Store screenshots
-// (`store_screenshots_test.dart`): the tournée 12 of the CS Villefranche,
+// (`store_screenshots_test.dart`): the secteur 12 of the CS Villefranche,
 // seventeen real streets of the centre of Villefranche-sur-Saône (INSEE
 // 69264, the only real place the repository may name) and a team of five.
 // Everything here is made up but the streets and their shapes, which come
@@ -49,7 +49,7 @@ final _number = valueOf(SectorNumber.create(12));
 final _centre = valueOf(RescueCentre.create('CS Villefranche'));
 final _campaign = valueOf(CampaignYear.create(2026));
 
-/// The tournée 12 as « Mes secteurs » keeps it on Léa's phone.
+/// The secteur 12 as « Mes secteurs » keeps it on Léa's phone.
 final storeSectorSummary = SectorSummary(
   id: _sectorId,
   number: _number,
@@ -58,7 +58,7 @@ final storeSectorSummary = SectorSummary(
   status: MemberStatus.active,
 );
 
-/// A member of the team, accepted by Hugo, who created the tournée.
+/// A member of the team, accepted by Hugo, who created the secteur.
 Member _member(MemberId id, String name, DateTime at) => Member(
   id: id,
   name: nameOf(name),
@@ -66,7 +66,7 @@ Member _member(MemberId id, String name, DateTime at) => Member(
   acceptance: ChangeStamp(by: hugo, at: at),
 );
 
-/// The tournée 12 of Hugo, Léa, Camille, Thomas and Julie, over
+/// The secteur 12 of Hugo, Léa, Camille, Thomas and Julie, over
 /// Villefranche-sur-Saône. Its join code is made up.
 final storeSector = valueOf(
   Sector.create(

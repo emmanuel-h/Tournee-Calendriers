@@ -83,7 +83,7 @@ describe('reading streets', () => {
     await assertFails(getDocs(collection(phoneOf(env, paul), streetsPath)));
   });
 
-  it('should refuse someone outside the tournée and someone not signed in', async () => {
+  it('should refuse someone outside the secteur and someone not signed in', async () => {
     await assertFails(getDoc(nationale(zoe)));
     await assertFails(getDoc(nationale(null)));
   });
@@ -698,12 +698,12 @@ describe('marking a house', () => {
     await assertFails(updateFields(nationale(), mark('2', 'DONE', null)));
   });
 
-  it('should refuse a pending member and someone outside the tournée', async () => {
+  it('should refuse a pending member and someone outside the secteur', async () => {
     await assertFails(updateFields(nationale(paul), mark('4bis', 'DONE', null, paul)));
     await assertFails(updateFields(nationale(zoe), mark('4bis', 'DONE', null, zoe)));
   });
 
-  it('should refuse a member removed from the tournée', async () => {
+  it('should refuse a member removed from the secteur', async () => {
     await env.withSecurityRulesDisabled((context) =>
       deleteDoc(doc(context.firestore(), `${sectorPath}/members/${lea}`)),
     );
@@ -1279,7 +1279,7 @@ describe('numbers', () => {
     );
   });
 
-  it('should refuse a removal naming someone not active in the tournée', async () => {
+  it('should refuse a removal naming someone not active in the secteur', async () => {
     for (const someone of [paul, zoe]) {
       await assertFails(
         updateFields(nationale(lea), [
@@ -1459,7 +1459,7 @@ describe('the 30-day purge of the Corbeille', () => {
     );
   });
 
-  it('should refuse a pending member and someone outside the tournée', async () => {
+  it('should refuse a pending member and someone outside the secteur', async () => {
     await seedRemoved(ago(31 * day));
     await assertFails(dropFourteen(paul));
     await assertFails(dropFourteen(zoe));

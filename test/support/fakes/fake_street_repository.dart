@@ -38,7 +38,7 @@ final class FakeStreetRepository implements StreetRepository {
 
   /// When set, every stream fails with it instead of giving the streets,
   /// as Firestore's listener does once the member may no longer read the
-  /// tournée.
+  /// secteur.
   Object? watchError;
 
   /// When set, every stream gives nothing until it completes: the phone

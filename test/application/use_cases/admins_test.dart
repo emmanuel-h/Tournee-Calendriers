@@ -62,7 +62,7 @@ void main() {
     });
 
     test(
-      'should list every tournée of the app for the admin signed in',
+      'should list every secteur of the app for the admin signed in',
       () async {
         final account = FakeMemberAccount(signedInMember: samId);
 
@@ -128,7 +128,7 @@ void main() {
       );
     });
 
-    test('should keep a tournée the admin is not in as visited, and open '
+    test('should keep a secteur the admin is not in as visited, and open '
         'it', () async {
       final opened = await OpenAsAdmin(store)(overview12());
 
@@ -140,7 +140,7 @@ void main() {
     });
 
     test(
-      'should keep a tournée the admin is in as theirs, and open it',
+      'should keep a secteur the admin is in as theirs, and open it',
       () async {
         final opened = await OpenAsAdmin(store)(
           overview12(callerIsActive: true),
@@ -151,7 +151,7 @@ void main() {
       },
     );
 
-    test('should replace what the phone kept of the tournée', () async {
+    test('should replace what the phone kept of the secteur', () async {
       store.mySectors = MySectors.none.remember(
         summaryOf('t12', 12, status: MemberStatus.pending),
       );

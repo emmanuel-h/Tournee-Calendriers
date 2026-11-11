@@ -3,7 +3,7 @@ import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 
-/// Reads every street of a tournée from the server, so the phone keeps all
+/// Reads every street of a secteur from the server, so the phone keeps all
 /// of them for a day offline (PLAN §7): Firestore's cache, with no size
 /// limit, then answers every read without the network.
 ///

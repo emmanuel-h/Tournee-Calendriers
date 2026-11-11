@@ -12,13 +12,13 @@ enum RescueCentreFailure {
   tooLong,
 }
 
-/// The fire station a tournée belongs to (« CS Villefranche », PLAN §2,
+/// The fire station a secteur belongs to (« CS Villefranche », PLAN §2,
 /// §5.2): its [name] as people wrote it, and the [key] that tells whether
 /// two names are the same station.
 ///
-/// A tournée is identified by its number *and* its centre de secours, so
+/// A secteur is identified by its number *and* its centre de secours, so
 /// « CS Villefranche » and « CIS villefranche » must not become two
-/// stations with a tournée 49 each: they share a key.
+/// stations with a secteur 49 each: they share a key.
 final class RescueCentre {
   const RescueCentre._(this.name, this.key);
 
@@ -71,7 +71,7 @@ final class RescueCentre {
 /// `villefranche-sur-saone`: two names with the same key are one station.
 ///
 /// It is the station's identity in storage (`rescueCentres/villefranche`,
-/// and with the tournée number `sectorKeys/villefranche_49`, PLAN §6.2),
+/// and with the secteur number `sectorKeys/villefranche_49`, PLAN §6.2),
 /// so it holds only `a`–`z`, `0`–`9` and single dashes between words: safe
 /// in a document path.
 final class RescueCentreKey {

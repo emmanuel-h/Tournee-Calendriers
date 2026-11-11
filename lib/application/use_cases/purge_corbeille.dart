@@ -12,7 +12,7 @@ typedef CorbeillePurged = ({int streets, int numbers});
 /// time, with their marks.
 ///
 /// There is no server to do it: each member's app runs it when it opens
-/// the tournée's streets, and the first one online gets it done. The
+/// the secteur's streets, and the first one online gets it done. The
 /// others' purges of the same items change nothing, and the security rules
 /// refuse any hard delete of an item removed 30 days ago or less, should a
 /// phone's copy be out of date (a teammate restored it in the meantime).

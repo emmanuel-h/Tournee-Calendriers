@@ -61,7 +61,7 @@ void main() {
   final request49 = summaryOf('t49', 49, status: MemberStatus.pending);
 
   testWidgets(
-    'should show the tournée of the code typed, then wait for the answer '
+    'should show the secteur of the code typed, then wait for the answer '
     'once the request is sent',
     (tester) async {
       await launch(tester, MySectors.none.remember(sector12));
@@ -230,7 +230,7 @@ void main() {
   );
 
   group('« Demande envoyée »', () {
-    testWidgets('should open the start screen on the tournée once accepted', (
+    testWidgets('should open the start screen on the secteur once accepted', (
       tester,
     ) async {
       await launch(tester, MySectors.none.remember(request49));

@@ -165,7 +165,7 @@ void main() {
     expect(admins.asked.where((id) => id == samId), [samId]);
   });
 
-  test('should name nobody when no tournée is open', () async {
+  test('should name nobody when no secteur is open', () async {
     final container = phone([gambettaDeleted(by: leaId)], noSector: true);
     await pumpEventQueue();
 

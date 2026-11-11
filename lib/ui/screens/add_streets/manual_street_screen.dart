@@ -294,7 +294,7 @@ final class _NumberField extends StatelessWidget {
   );
 }
 
-/// A tournée with neither commune nor street: the commune is searched
+/// A secteur with neither commune nor street: the commune is searched
 /// (network), as on the « Liste » tab; the one found shows under it.
 final class _CommuneSearch extends StatelessWidget {
   const _CommuneSearch({required this.state, required this.form});

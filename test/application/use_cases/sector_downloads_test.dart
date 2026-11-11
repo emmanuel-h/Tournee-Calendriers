@@ -1,5 +1,5 @@
-// Which tournées are downloaded on this phone (PLAN §6.3), and forgetting
-// the download of a tournée the phone forgot.
+// Which secteurs are downloaded on this phone (PLAN §6.3), and forgetting
+// the download of a secteur the phone forgot.
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/use_cases/sector_downloads.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
@@ -51,7 +51,7 @@ void main() {
 
   group('DeleteSectorDownload', () {
     test('should forget the download and delete every region of the '
-        'tournée', () async {
+        'secteur', () async {
       await DeleteSectorDownload(maps, downloads)(t49);
 
       expect(downloads.downloads, {t12: downloadOf(t12, area12)});
@@ -68,15 +68,15 @@ void main() {
       downloads,
     );
 
-    test('should delete the download of a tournée no longer in « Mes '
-        'tournées »', () async {
+    test('should delete the download of a secteur no longer in « Mes '
+        'secteurs »', () async {
       await prune(MySectors.none.remember(sector12))();
 
       expect(downloads.downloads, {t12: downloadOf(t12, area12)});
       expect(maps.current, [regionOf(50, t12, area12)]);
     });
 
-    test('should keep the downloads of the tournées still known', () async {
+    test('should keep the downloads of the secteurs still known', () async {
       await prune(MySectors.none.remember(sector49).remember(sector12))();
 
       expect(downloads.downloads.keys, {t49, t12});
@@ -84,7 +84,7 @@ void main() {
     });
 
     // A download killed before its end leaves a region and no record.
-    test('should delete the regions of a forgotten tournée with no '
+    test('should delete the regions of a forgotten secteur with no '
         'download kept', () async {
       downloads = FakeSectorDownloads();
 
@@ -93,7 +93,7 @@ void main() {
       expect(maps.current, [regionOf(50, t12, area12)]);
     });
 
-    test('should keep the regions of a known tournée with no download '
+    test('should keep the regions of a known secteur with no download '
         'kept', () async {
       downloads = FakeSectorDownloads();
 

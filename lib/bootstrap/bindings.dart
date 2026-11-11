@@ -83,10 +83,10 @@ final httpClientProvider = Provider<http.Client>((ref) {
 ///   once a secteur is forgotten (`startCacheReset`, run before this).
 /// - [auth]: Firebase anonymous sign-in. Its uid is the member; until the
 ///   first sign-in succeeds, the phone's own id stands in for the marks,
-///   and creating or joining a tournée signs in again (`MemberAccount`).
+///   and creating or joining a secteur signs in again (`MemberAccount`).
 /// - [firestore]: gives the Firestore database, asked once, only when a
 ///   screen first needs it (following a request to join, the open
-///   tournée's team and streets, whether the phone is an admin, a
+///   secteur's team and streets, whether the phone is an admin, a
 ///   validated tournée), so a phone that shows none of them never touches
 ///   it. It serves the phone's copy first, so an offline cold start works.
 /// - [addressDirectory]: replaces the BAN, so the instrumented suite can
@@ -102,7 +102,7 @@ final httpClientProvider = Provider<http.Client>((ref) {
 /// phone is offline, from the same listener.
 ///
 /// Async because the member id, the street view preferences, « Mes
-/// tournées », the settings and the tournée on are read from the phone before the first
+/// secteurs », the settings and the tournée on are read from the phone before the first
 /// screen, so reading them later never waits.
 Future<List<Override>> bindAdapters({
   required Directory storage,
@@ -121,7 +121,7 @@ Future<List<Override>> bindAdapters({
   );
   final identity = FirebaseIdentity(auth, beforeSignIn: phoneIdentity);
   // Not awaited: the first screen must not wait for the network. After an
-  // offline first start, creating or joining a tournée tries again.
+  // offline first start, creating or joining a secteur tries again.
   unawaited(identity.signInIfNeeded());
   File fileOf(String name) =>
       File('${storage.path}${Platform.pathSeparator}$name');
@@ -142,17 +142,17 @@ Future<List<Override>> bindAdapters({
   // The operating system's secure source: a join code drawn from the
   // plain `Random()` could be predicted (PLAN §5.2).
   final random = Random.secure();
-  // The streets of the open tournée's current campaign in Firestore, null
+  // The streets of the open secteur's current campaign in Firestore, null
   // while none is open. A provider of its own, made here because it needs
   // the database and the phone storage above, so that the street repository
   // and the pending sync share one adapter, hence one listener.
   //
-  // Built again each time another tournée (or none) is opened, which
+  // Built again each time another secteur (or none) is opened, which
   // builds again every use case, and every screen, that watches it. The
-  // old tournée's listener stops (`onDispose`, which Riverpod runs before
+  // old secteur's listener stops (`onDispose`, which Riverpod runs before
   // building again).
   final sectorStreets = Provider<FirestoreStreetRepository?>((ref) {
-    // `select`: only the tournée and its campaign name the streets; the
+    // `select`: only the secteur and its campaign name the streets; the
     // summary changing otherwise (a new centre name) keeps them.
     final open = ref.watch(
       currentSectorProvider.select(
@@ -235,7 +235,7 @@ Future<List<Override>> bindAdapters({
     ),
     // The same adapter again: whether its listener answers from the
     // phone's copy says whether the phone is offline (PLAN §5.3). With no
-    // tournée open no listener runs, so nothing says offline.
+    // secteur open no listener runs, so nothing says offline.
     serverConnectionProvider.overrideWith(
       (ref) => ref.watch(sectorStreets) ?? const _NothingToTell(),
     ),

@@ -1,4 +1,4 @@
-// The composition root keeps the open tournée downloaded while the app
+// The composition root keeps the open secteur downloaded while the app
 // runs, and checks again when the app comes back to the foreground
 // (PLAN §7). Nothing shows.
 import 'package:flutter/widgets.dart';
@@ -53,7 +53,7 @@ void main() {
     ),
   );
 
-  testWidgets('should show the app and download the open tournée', (
+  testWidgets('should show the app and download the open secteur', (
     tester,
   ) async {
     await pumpApp(tester);

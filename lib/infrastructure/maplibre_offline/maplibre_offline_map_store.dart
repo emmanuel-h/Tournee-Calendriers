@@ -125,7 +125,7 @@ final class MapLibreOfflineMapStore implements OfflineMapStore {
 
   /// Deletes the region [id]; one already gone is not a failure, and a
   /// region the library could not delete is left for the next prune or
-  /// download of its tournée.
+  /// download of its secteur.
   Future<void> _deleteQuietly(int id) async {
     try {
       await maplibre.deleteOfflineRegion(id);

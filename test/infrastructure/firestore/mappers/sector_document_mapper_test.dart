@@ -1,4 +1,4 @@
-// The documents of a tournée in Firestore (PLAN §6.2): the tournée and its
+// The documents of a secteur in Firestore (PLAN §6.2): the secteur and its
 // members, the join code's preview, the number + centre reservation and
 // the shared list of centres de secours.
 import 'package:cloud_firestore/cloud_firestore.dart' show Timestamp;
@@ -51,8 +51,8 @@ final preview = JoinPreview(
 );
 
 void main() {
-  group('tournée', () {
-    test('should write the tournée fields under their stored names', () {
+  group('secteur', () {
+    test('should write the secteur fields under their stored names', () {
       expect(sectorToDocument(team()), {
         'number': 49,
         'centreKey': 'villefranche',
@@ -65,7 +65,7 @@ void main() {
       });
     });
 
-    test('should give back the same tournée when read again', () {
+    test('should give back the same secteur when read again', () {
       final back = read();
       final original = team();
 
@@ -80,7 +80,7 @@ void main() {
       expect(back.members, original.members);
     });
 
-    test('should refuse a tournée without its number', () {
+    test('should refuse a secteur without its number', () {
       expect(
         () => read(sector: (data) => data.remove('number')),
         throwsFormatException,
@@ -122,7 +122,7 @@ void main() {
       );
     });
 
-    test('should read a tournée whose creator left', () {
+    test('should read a secteur whose creator left', () {
       // From #75 everyone may leave, the creator too (PLAN §5.12).
       final sector = read(members: (members) => members.remove('uid-manu'));
 
@@ -175,7 +175,7 @@ void main() {
       expect(back.communes, [villefrancheCommune, gleizeCommune]);
     });
 
-    test('should read a tournée stored before the communes with none', () {
+    test('should read a secteur stored before the communes with none', () {
       expect(read(sector: (data) => data.remove('communes')).communes, isEmpty);
     });
 
@@ -223,7 +223,7 @@ void main() {
       );
     });
 
-    test('should keep no more communes than a tournée may cover', () {
+    test('should keep no more communes than a secteur may cover', () {
       final entries = [
         for (var i = 1; i <= Sector.maxCommunes + 1; i++)
           {
@@ -488,7 +488,7 @@ void main() {
       expect(overviewOf(team(), samId).callerIsActive, isFalse);
     });
 
-    test('should count nobody in a tournée everyone left', () {
+    test('should count nobody in a secteur everyone left', () {
       final empty = overviewOf(team(members: []), samId);
 
       expect(empty.activeMembers, 0);
@@ -572,7 +572,7 @@ void main() {
       );
     });
 
-    test('should refuse a preview without its tournée', () {
+    test('should refuse a preview without its secteur', () {
       expect(
         () => joinPreviewFromDocument(
           firstCode,
@@ -601,11 +601,11 @@ void main() {
       expect(sectorKeyId(centre, number), 'villefranche-sur-saone_7');
     });
 
-    test('should write which tournée holds the reservation', () {
+    test('should write which secteur holds the reservation', () {
       expect(sectorKeyDocument(team()), {'sectorId': 't49'});
     });
 
-    test('should start the first campaign when the tournée is created', () {
+    test('should start the first campaign when the secteur is created', () {
       expect(firstCampaignDocument(team()), {
         'startedAt': at(createdAt),
         'previousYear': null,

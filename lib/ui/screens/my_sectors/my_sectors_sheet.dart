@@ -22,8 +22,8 @@ import 'package:tournee_calendriers/ui/theme/status_look.dart';
 
 /// Opens « Mes secteurs » (« Changer de secteur » in Secteur, the app's
 /// name with no secteur open, or Paramètres → Mes secteurs, PLAN §5.3,
-/// Switcher mockup), then « Nouveau secteur », « Rejoindre une
-/// tournée » or « Tous les secteurs » when the sheet's buttons chose one.
+/// Switcher mockup), then « Nouveau secteur », « Rejoindre un
+/// secteur » or « Tous les secteurs » when the sheet's buttons chose one.
 Future<void> showMySectorsSheet(BuildContext context) async {
   // The sheet closes with the screen to open, if any.
   final location = await showAppBottomSheet<String>(
@@ -55,9 +55,9 @@ Future<bool> ensureMemberName(BuildContext context) async {
   return context.mounted && container.read(settingsProvider).name != null;
 }
 
-/// The member's tournées: the open one (● and ✓), the others (a tap opens
+/// The member's secteurs: the open one (● and ✓), the others (a tap opens
 /// one at once, and the app reopens it next time), and their requests not
-/// accepted yet, which cannot be opened. Offline, a tournée never
+/// accepted yet, which cannot be opened. Offline, a secteur never
 /// downloaded on this phone is greyed and cannot be opened either
 /// (« Disponible avec réseau »). Then « Créer un secteur » (an
 /// admin only, PLAN §5.12) and « Rejoindre un secteur », and for an admin
@@ -102,10 +102,10 @@ final class MySectorsSheet extends ConsumerWidget {
               SectorRowStatus.pending => null,
             },
           ),
-        // The current tournée stays open until the new one is ready (or
+        // The current secteur stays open until the new one is ready (or
         // accepted, PLAN §5.3).
         const SizedBox(height: 10),
-        // Only admins create a tournée; nothing hints at it otherwise.
+        // Only admins create a secteur; nothing hints at it otherwise.
         if (isAdmin)
           PrimaryButton(
             key: const Key('mySectors.create'),
@@ -143,11 +143,11 @@ final class MySectorsSheet extends ConsumerWidget {
   }
 }
 
-/// One tournée: its mark, « Tournée 12 · 2026 » over its centre, and ✓
+/// One secteur: its mark, « Secteur 12 · 2026 » over its centre, and ✓
 /// when it is the open one. Never told by colour alone: the open one has
 /// ✓ and a filled mark, a request a dashed mark and its own words, and the
-/// red dot of a request waiting in another tournée comes with « · 1
-/// demande en attente ». A tournée greyed offline says « Disponible avec
+/// red dot of a request waiting in another secteur comes with « · 1
+/// demande en attente ». A secteur greyed offline says « Disponible avec
 /// réseau », and screen readers hear it disabled.
 final class _SectorRowTile extends StatelessWidget {
   const _SectorRowTile({
@@ -162,7 +162,7 @@ final class _SectorRowTile extends StatelessWidget {
   /// Offline and not downloaded on this phone: greyed, cannot open.
   final bool unavailable;
 
-  /// Null for a request, or a tournée [unavailable]: the row cannot be
+  /// Null for a request, or a secteur [unavailable]: the row cannot be
   /// tapped.
   final VoidCallback? onTap;
 
@@ -173,7 +173,7 @@ final class _SectorRowTile extends StatelessWidget {
     final title = l10n.sectorTitle('${row.number}', '${row.campaign}');
     final (subtitle, label) = switch (row.status) {
       // Before the requests waiting and the shield: none of it matters
-      // while the tournée cannot open.
+      // while the secteur cannot open.
       SectorRowStatus.closed when unavailable => (
         l10n.mySectorsUnavailable(row.centre),
         l10n.mySectorsUnavailableSemantics(title, row.centre),
@@ -209,7 +209,7 @@ final class _SectorRowTile extends StatelessWidget {
         ? colors.muted
         : colors.ink;
     return Semantics(
-      // A greyed tournée is still a button, a disabled one: TalkBack says
+      // A greyed secteur is still a button, a disabled one: TalkBack says
       // « désactivé », so the member knows a tap will not open it.
       button: onTap != null || unavailable,
       enabled: unavailable ? false : null,
@@ -293,7 +293,7 @@ final class _SectorRowTile extends StatelessWidget {
   }
 }
 
-/// ● for the open tournée, ○ for another (paler when it cannot open
+/// ● for the open secteur, ○ for another (paler when it cannot open
 /// offline), a dashed ○ for a request.
 final class _SectorMark extends StatelessWidget {
   const _SectorMark({required this.status, required this.unavailable});

@@ -27,7 +27,7 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 /// l'appareil », PLAN §5.12) and the data credits. Works offline; the
 /// screen signs the phone in when it opens, so the uid shows once online.
 ///
-/// No « Hors-ligne » section: the tournée downloads itself for offline use,
+/// No « Hors-ligne » section: the secteur downloads itself for offline use,
 /// unseen (PLAN §7), so one line under « Mes secteurs » says only that the
 /// app works without network.
 final class SettingsScreen extends ConsumerWidget {

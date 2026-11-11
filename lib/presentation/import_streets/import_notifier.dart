@@ -74,7 +74,7 @@ final class ImportNotifier extends Notifier<ImportState> {
     _numbers = {};
     _others = {};
     _askedOthers = {};
-    // `ref.watch`: opening another tournée builds the list again.
+    // `ref.watch`: opening another secteur builds the list again.
     final sector = ref.watch(currentSectorProvider);
     _centre = sector?.centre;
     if (sector == null) return const ImportState();
@@ -85,7 +85,7 @@ final class ImportNotifier extends Notifier<ImportState> {
     return const ImportState();
   }
 
-  /// The tournée's communes are [communes]: chips for them, and the streets
+  /// The secteur's communes are [communes]: chips for them, and the streets
   /// of the first while the one chosen is not among them.
   void _showCommunes(List<SectorCommune> communes) {
     final options = List<CommuneOption>.unmodifiable([

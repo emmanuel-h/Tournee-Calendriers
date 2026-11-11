@@ -109,7 +109,7 @@ void main() {
       expect(directory.previewed, isEmpty);
     });
 
-    test('should show the tournée of a complete code', () async {
+    test('should show the secteur of a complete code', () async {
       await typeCode();
 
       expect(directory.previewed, [firstCode]);
@@ -169,7 +169,7 @@ void main() {
       expect(state().invalidCharacter, isFalse);
     });
 
-    test('should say no tournée has an unknown code', () async {
+    test('should say no secteur has an unknown code', () async {
       join().typeFirstHalf('234567');
       await _settle();
 
@@ -177,7 +177,7 @@ void main() {
       expect(state().canRequest, isFalse);
     });
 
-    test('should forget the tournée shown when the code changes', () async {
+    test('should forget the secteur shown when the code changes', () async {
       await typeCode();
 
       join().typeSecondHalf('2Q');
@@ -212,7 +212,7 @@ void main() {
 
   group('offline', () {
     test(
-      'should say offline and show the tournée after « Réessayer »',
+      'should say offline and show the secteur after « Réessayer »',
       () async {
         directory.offline = true;
         await open(name: nameOf('Julie'));
@@ -273,7 +273,7 @@ void main() {
   group('scanning', () {
     setUp(() => open(name: nameOf('Julie')));
 
-    test('should fill the boxes and show the tournée of a QR code', () async {
+    test('should fill the boxes and show the secteur of a QR code', () async {
       join().scanned('K7P2QX');
       await _settle();
 
@@ -282,7 +282,7 @@ void main() {
       expect(state().lookup, found49);
     });
 
-    test('should refuse a QR code that is not a tournée\'s', () {
+    test('should refuse a QR code that is not a secteur\'s', () {
       join().typeFirstHalf('K7P');
 
       join().scanned('https://example.org');
@@ -327,7 +327,7 @@ void main() {
       await sending;
     });
 
-    test('should say the tournée is already one of the member\'s', () async {
+    test('should say the secteur is already one of the member\'s', () async {
       store = FakeMySectorsStore(
         MySectors.none.remember(
           SectorSummary(
@@ -373,7 +373,7 @@ void main() {
       expect(directory.sent, isEmpty);
     });
 
-    test('should send nothing before a tournée is shown', () async {
+    test('should send nothing before a secteur is shown', () async {
       await open(name: nameOf('Julie'));
       join().typeFirstHalf('234567');
       await _settle();
@@ -384,7 +384,7 @@ void main() {
     });
 
     test('should say the code no longer works when it changed since it '
-        'showed the tournée', () async {
+        'showed the secteur', () async {
       await open(name: nameOf('Julie'));
       await typeCode();
       directory.codeChanged = true;

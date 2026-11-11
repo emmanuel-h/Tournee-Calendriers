@@ -7,7 +7,7 @@ import 'package:tournee_calendriers/presentation/dependencies.dart';
 ///
 /// A `FutureProvider` runs its function once and keeps the result. It
 /// `ref.watch`es the use case, which watches the street storage: when
-/// another tournée is opened, the composition root binds other streets, so
+/// another secteur is opened, the composition root binds other streets, so
 /// this provider is built again and purges those too. The app listens to
 /// it from the start (`TourneeApp`), which is what starts it; nothing is
 /// shown of it.
@@ -15,7 +15,7 @@ import 'package:tournee_calendriers/presentation/dependencies.dart';
 /// A failure (the streets cannot be read: this member was removed) only
 /// settles it in error. `retry` returning null turns off Riverpod's own
 /// retries, which could not help: the purge is tried again at the next
-/// start, or when a tournée is opened.
+/// start, or when a secteur is opened.
 final corbeillePurgeProvider = FutureProvider<CorbeillePurged>(
   (ref) => ref.watch(purgeCorbeilleProvider)(),
   retry: (_, _) => null,

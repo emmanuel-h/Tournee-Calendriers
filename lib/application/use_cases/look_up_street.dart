@@ -36,7 +36,7 @@ sealed class LookedUpStreet {
   final StreetMatch match;
 }
 
-/// The tournée does not have the street (or only in its Corbeille): the
+/// The secteur does not have the street (or only in its Corbeille): the
 /// card offers « Ajouter et me l'attribuer » and « Ajouter sans
 /// m'attribuer », which give [numbers] to `AddStreetFromMap`.
 final class StreetToAdd extends LookedUpStreet {

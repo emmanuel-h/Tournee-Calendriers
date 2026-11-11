@@ -9,8 +9,8 @@ import 'package:tournee_calendriers/presentation/dependencies.dart';
 /// The one [MissingShapes] of the app. A plain `Provider`, not
 /// `autoDispose`: it lives as long as the app, so what it tried is
 /// remembered for the session, whichever screen shows. It is built again,
-/// with nothing tried, when another tournée opens (its use case follows
-/// the open tournée's streets).
+/// with nothing tried, when another secteur opens (its use case follows
+/// the open secteur's streets).
 final missingShapesProvider = Provider<MissingShapes>(
   (ref) => MissingShapes(
     ref.watch(fillStreetShapeProvider),
@@ -18,7 +18,7 @@ final missingShapesProvider = Provider<MissingShapes>(
   ),
 );
 
-/// Gives the open tournée's streets without a line on the map the road the
+/// Gives the open secteur's streets without a line on the map the road the
 /// map draws for them (PLAN §5.3, #92): Accueil hands it the streets each
 /// time they change, and it asks for the shapes in the background.
 ///

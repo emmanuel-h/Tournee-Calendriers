@@ -43,7 +43,7 @@ enum ImportProblem {
 }
 
 /// A commune suggested under the field (« Villefranche-sur-Saône (69400) »),
-/// or one of the open tournée's communes (its chips).
+/// or one of the open secteur's communes (its chips).
 final class CommuneOption {
   CommuneOption({
     required this.commune,
@@ -58,7 +58,7 @@ final class CommuneOption {
     centre: match.centre,
   );
 
-  /// The option of one of the tournée's communes: their postcodes are not
+  /// The option of one of the secteur's communes: their postcodes are not
   /// kept, the chips show the name alone.
   factory CommuneOption.ofSector(SectorCommune commune) => CommuneOption(
     commune: commune.commune,
@@ -79,7 +79,7 @@ final class CommuneOption {
   /// Which commune: the import asks the BAN for it.
   InseeCode get inseeCode => commune.inseeCode;
 
-  /// The commune as a tournée keeps it (« Nouveau secteur », Équipe).
+  /// The commune as a secteur keeps it (« Nouveau secteur », Équipe).
   SectorCommune get sectorCommune =>
       SectorCommune(commune: commune, centre: centre);
 

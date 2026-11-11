@@ -22,7 +22,7 @@ final class StartAppBar extends StatelessWidget implements PreferredSizeWidget {
     required this.showGallery,
   });
 
-  /// The tournée open, or null.
+  /// The secteur open, or null.
   final SectorSummary? sector;
 
   /// Debug builds: an action opens the component gallery.

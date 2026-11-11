@@ -13,7 +13,7 @@ final class LocalSectorDownloads implements SectorDownloads {
   LocalSectorDownloads._(this._file, this._downloads);
 
   /// Reads the downloads kept in [file]. A missing or unreadable file
-  /// means none: the open tournée is then downloaded again, and the next
+  /// means none: the open secteur is then downloaded again, and the next
   /// download writes the file again.
   static Future<LocalSectorDownloads> load(File file) async {
     final stored = JsonFile(file);

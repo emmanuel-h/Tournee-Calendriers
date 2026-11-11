@@ -9,7 +9,7 @@ import 'package:tournee_calendriers/domain/street/house_number.dart';
 ///
 /// A typo such as `1-99999` must not create 100 000 houses: a street lives
 /// in one stored document (PLAN §6.2), and 500 is more than the longest
-/// street side of a tournée. Ranges are counted before they are expanded.
+/// street side of a secteur. Ranges are counted before they are expanded.
 const maxNumbersAtOnce = 500;
 
 /// Which sides of the street a range of the manual form covers

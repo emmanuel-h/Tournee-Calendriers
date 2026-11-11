@@ -75,7 +75,7 @@ void main() {
   });
 
   group('communes', () {
-    test('should offer the tournée\'s communes, the first chosen', () async {
+    test('should offer the secteur\'s communes, the first chosen', () async {
       final container = phone();
       await pumpEventQueue();
 
@@ -94,7 +94,7 @@ void main() {
       expect(stateOf(container).commune, _gleize);
     });
 
-    test('should offer the communes of the streets for a tournée without '
+    test('should offer the communes of the streets for a secteur without '
         'commune', () async {
       sectors.put(team());
       streets = FakeStreetRepository([
@@ -128,7 +128,7 @@ void main() {
     });
 
     test('should know no commune while the streets cannot be read, with no '
-        'tournée open', () async {
+        'secteur open', () async {
       streets.watchError = StateError('removed');
       final container = phone(open: false);
       await pumpEventQueue();
@@ -138,7 +138,7 @@ void main() {
     });
   });
 
-  test('should offer the communes of the streets when the tournée can no '
+  test('should offer the communes of the streets when the secteur can no '
       'longer be read', () async {
     sectors.watchError = StateError('removed');
     final container = phone();

@@ -71,7 +71,7 @@ void main() {
   });
 
   test(
-    'should write nothing when forgetting a tournée not downloaded',
+    'should write nothing when forgetting a secteur not downloaded',
     () async {
       final downloads = await LocalSectorDownloads.load(file);
 

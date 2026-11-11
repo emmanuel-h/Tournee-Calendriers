@@ -16,7 +16,7 @@ enum SignInFailure {
 ///
 /// `IdentityProvider` stamps the marks and never waits: before the first
 /// sign-in it stands in with the phone's own id. Creating or joining a
-/// tournée cannot do that: the server only lets in the account's uid
+/// secteur cannot do that: the server only lets in the account's uid
 /// (PLAN §8.2), so they ask this port, which waits for the account or
 /// tells there is none yet (« hors ligne »).
 abstract interface class MemberAccount {
@@ -26,7 +26,7 @@ abstract interface class MemberAccount {
 
   /// The member, each time a sign-in gives the phone its account: at most
   /// once per launch, and never when the phone had one at launch. Lets
-  /// what needs the account (following the member's tournées) start as
+  /// what needs the account (following the member's secteurs) start as
   /// soon as a sign-in after launch succeeds, without restarting the app.
   /// A broadcast stream: any number may listen, from when they start.
   Stream<MemberId> get signIns;

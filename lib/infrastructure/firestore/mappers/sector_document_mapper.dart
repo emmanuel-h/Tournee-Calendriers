@@ -18,15 +18,15 @@
 //   rescueCentres/{key}      { name }           ← "villefranche"
 //
 // A newcomer's request carries the code it was made with, so the security
-// rules can check it is still the tournée's code (PLAN §8.2): the newcomer
-// cannot read the tournée to prove it otherwise.
+// rules can check it is still the secteur's code (PLAN §8.2): the newcomer
+// cannot read the secteur to prove it otherwise.
 //
 // Reading goes back through the domain's checks (Sector.create,
 // MemberName.create…); anything they refuse is a FormatException. The
-// communes are the exception: a tournée written before them has none, and
+// communes are the exception: a secteur written before them has none, and
 // one entry the domain refuses (or a second entry of the same code, which
 // the security rules cannot rule out) is left out, so the team still
-// reads its tournée.
+// reads its secteur.
 import 'package:cloud_firestore/cloud_firestore.dart' show Timestamp;
 import 'package:tournee_calendriers/application/ports/sector_directory.dart';
 import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
@@ -61,7 +61,7 @@ Map<String, Object?> sectorToDocument(Sector sector) => {
   'communes': [for (final commune in sector.communes) communeEntry(commune)],
 };
 
-/// The entry of [commune] in the tournée's `communes` list. Adding or
+/// The entry of [commune] in the secteur's `communes` list. Adding or
 /// removing one names the whole entry (`arrayUnion` / `arrayRemove`
 /// compare entries by value), so it is always written the same way.
 Map<String, Object?> communeEntry(SectorCommune commune) => {
@@ -117,7 +117,7 @@ MemberId? nameHolderOf(Map<String, Object?>? data) => switch (data?['member']) {
   _ => null,
 };
 
-/// The tournée stored in `sectors/[id]` as [data], with its [members]
+/// The secteur stored in `sectors/[id]` as [data], with its [members]
 /// (each document's data by uid).
 ///
 /// Throws a [FormatException] when a document is not what this code writes
@@ -140,7 +140,7 @@ Sector sectorFromDocuments(
     return valid(
       Sector.create(
         id: identifier(id, SectorId.new),
-        number: valid(SectorNumber.create(number), 'tournée number'),
+        number: valid(SectorNumber.create(number), 'secteur number'),
         centre: valid(RescueCentre.create(centreName), 'centre de secours'),
         joinCode: valid(JoinCode.parse(joinCode), 'join code'),
         createdBy: identifier(createdBy, MemberId.new),
@@ -152,14 +152,14 @@ Sector sectorFromDocuments(
         ],
         communes: communesFrom(data['communes']),
       ),
-      'tournée',
+      'secteur',
     );
   }
-  throw const FormatException('Not a tournée document');
+  throw const FormatException('Not a secteur document');
 }
 
-/// The communes of a tournée's stored `communes` list, in their order:
-/// none when there is no list (a tournée written before them). An entry
+/// The communes of a secteur's stored `communes` list, in their order:
+/// none when there is no list (a secteur written before them). An entry
 /// that cannot be read, or whose code an earlier entry has, is left out;
 /// beyond [Sector.maxCommunes] the rest is ignored.
 List<SectorCommune> communesFrom(Object? json) {
@@ -250,7 +250,7 @@ List<MemberStatus?> requestStatusesIn(
 };
 
 /// The name one snapshot of the member's own document `members/[uid]`
-/// holds on the server, once they are active in the tournée, cleaned as
+/// holds on the server, once they are active in the secteur, cleaned as
 /// `MemberName` cleans it; nothing otherwise. A list rather than a
 /// nullable name, as [requestStatusesIn].
 ///
@@ -271,7 +271,7 @@ List<MemberName> confirmedNamesIn(
 }
 
 /// Whether a snapshot of a document the phone follows says it is gone:
-/// the member's own document (no longer in the tournée), the tournée an
+/// the member's own document (no longer in the secteur), the secteur an
 /// admin visits (deleted), the phone's `admins/{uid}` (no longer an
 /// admin). Only the server's word, without the document, counts. The
 /// phone's copy without it ([fromCache]: offline, or never read) tells
@@ -284,8 +284,8 @@ bool isGoneOnServer({
   required bool hasPendingWrites,
 }) => !exists && !fromCache && !hasPendingWrites;
 
-/// How the member lost a tournée once their member document is gone, from
-/// a read of the tournée itself from the server (#147). The rules refuse
+/// How the member lost a secteur once their member document is gone, from
+/// a read of the secteur itself from the server (#147). The rules refuse
 /// it to someone outside while it exists ([refused]), and let anyone
 /// signed in learn it is not there: refused, or still there (an admin may
 /// read any), the member was removed; not there, it was deleted (its
@@ -326,7 +326,7 @@ JoinPreview joinPreviewFromDocument(JoinCode code, Map<String, Object?> data) {
     return JoinPreview(
       code: code,
       sectorId: identifier(sectorId, SectorId.new),
-      number: valid(SectorNumber.create(number), 'tournée number'),
+      number: valid(SectorNumber.create(number), 'secteur number'),
       centre: valid(RescueCentre.create(centreName), 'centre de secours'),
       campaign: valid(CampaignYear.create(campaign), 'year'),
     );
@@ -365,5 +365,5 @@ RescueCentre rescueCentreFromDocument(Map<String, Object?> data) {
 }
 
 /// A member is pending or active; only the phone's own summary of a
-/// tournée is ever « visiting » (PLAN §5.12), never a member document.
+/// secteur is ever « visiting » (PLAN §5.12), never a member document.
 String _statusName(Member member) => member.isActive ? 'active' : 'pending';

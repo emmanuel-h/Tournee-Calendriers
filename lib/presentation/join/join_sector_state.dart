@@ -18,7 +18,7 @@ final class LookingUp extends JoinLookup {
   const LookingUp();
 }
 
-/// The tournée of the code, to confirm before asking to join: « Tournée 49
+/// The secteur of the code, to confirm before asking to join: « Secteur 49
 /// · CS Villefranche » over « Campagne 2026 » (PLAN §5.2). Its member
 /// count is not shown: the join code's document does not hold it.
 final class SectorFound extends JoinLookup {
@@ -52,7 +52,7 @@ final class SectorFound extends JoinLookup {
   String toString() => 'SectorFound($number, $centre, $campaign)';
 }
 
-/// No tournée has the code: mistyped, or replaced by a new one.
+/// No secteur has the code: mistyped, or replaced by a new one.
 final class CodeUnknown extends JoinLookup {
   const CodeUnknown();
 }
@@ -83,7 +83,7 @@ final class JoinOffline extends JoinRun {
   const JoinOffline();
 }
 
-/// The tournée is already in « Mes secteurs »: nothing was sent.
+/// The secteur is already in « Mes secteurs »: nothing was sent.
 final class JoinAlreadyJoined extends JoinRun {
   const JoinAlreadyJoined();
 }
@@ -169,7 +169,7 @@ final class JoinSectorState {
   /// What is typed holds a character no code has (0, O, 1, I, L…).
   final bool invalidCharacter;
 
-  /// The QR code scanned is not a tournée's.
+  /// The QR code scanned is not a secteur's.
   final bool scanRefused;
   final JoinLookup lookup;
   final JoinRun run;

@@ -45,7 +45,7 @@ Map<String, Object?> _stored() => {
   ],
 };
 
-/// [_stored] with [change] made to its first tournée.
+/// [_stored] with [change] made to its first secteur.
 Map<String, Object?> _withFirst(void Function(Map<String, Object?>) change) {
   final stored = _stored();
   change((stored['tournees']! as List<Object?>).first! as Map<String, Object?>);
@@ -54,11 +54,11 @@ Map<String, Object?> _withFirst(void Function(Map<String, Object?>) change) {
 
 void main() {
   group('mySectorsToJson', () {
-    test('should write each tournée in order and the open one', () {
+    test('should write each secteur in order and the open one', () {
       expect(mySectorsToJson(_manusPhone()), _stored());
     });
 
-    test('should write no open tournée as null', () {
+    test('should write no open secteur as null', () {
       expect(mySectorsToJson(MySectors.none), {
         'version': 1,
         'open': null,
@@ -67,7 +67,7 @@ void main() {
     });
   });
 
-  group('a visited tournée', () {
+  group('a visited secteur', () {
     // The 12 that an admin opened without being in its team (PLAN §5.12).
     final visited = valueOf(
       MySectors.none.remember(sector12Visited).open(sector12Visited.id),
@@ -104,7 +104,7 @@ void main() {
       );
     });
 
-    test('should read the year and the status of each tournée', () {
+    test('should read the year and the status of each secteur', () {
       final read = mySectorsFromJson(
         _withFirst((first) => first['campaign'] = 2027),
       );
@@ -130,7 +130,7 @@ void main() {
       }
     });
 
-    test('should refuse a tournée it cannot read', () {
+    test('should refuse a secteur it cannot read', () {
       for (final change in <void Function(Map<String, Object?>)>[
         (first) => first['id'] = ' ',
         (first) => first['id'] = 49,
@@ -152,7 +152,7 @@ void main() {
       }
     });
 
-    test('should refuse an open tournée that is not an active one of the '
+    test('should refuse an open secteur that is not an active one of the '
         'list', () {
       for (final open in ['t99', 't7']) {
         expect(
@@ -164,7 +164,7 @@ void main() {
     });
   });
 
-  group('the name the member goes by in a tournée', () {
+  group('the name the member goes by in a secteur', () {
     // Léa B. in the 49, where « Léa » was taken (#148).
     final named = MySectors.none.remember(
       summaryOf('t49', 49, memberName: nameOf('Léa B.')),
@@ -184,7 +184,7 @@ void main() {
       ],
     };
 
-    test('should write it next to the tournée', () {
+    test('should write it next to the secteur', () {
       expect(mySectorsToJson(named), stored);
     });
 
@@ -195,7 +195,7 @@ void main() {
       );
     });
 
-    test('should read a tournée kept without one as having none', () {
+    test('should read a secteur kept without one as having none', () {
       expect(
         mySectorsFromJson(_stored()).find(SectorId('t49'))!.memberName,
         isNull,

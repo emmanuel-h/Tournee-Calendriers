@@ -46,7 +46,7 @@ void main() {
         memberAccountProvider.overrideWithValue(account),
         sectorDirectoryProvider.overrideWithValue(directory),
         mySectorsStoreProvider.overrideWithValue(store),
-        // « Mes secteurs » follows the teams of the tournées not open.
+        // « Mes secteurs » follows the teams of the secteurs not open.
         sectorRepositoryProvider.overrideWithValue(FakeSectorRepository()),
       ],
     );
@@ -65,14 +65,14 @@ void main() {
   });
 
   group('while the request waits', () {
-    test('should show the tournée asked for, with no way out', () async {
+    test('should show the secteur asked for, with no way out', () async {
       await open(MySectors.none.remember(request49));
 
       expect(state(), waiting49);
       expect(directory.watched, [(t49, julieId)]);
     });
 
-    test('should offer a way back when a tournée is open', () async {
+    test('should offer a way back when a secteur is open', () async {
       await open(
         valueOf(
           MySectors.none
@@ -86,7 +86,7 @@ void main() {
     });
 
     test(
-      'should offer a way back once another tournée is opened meanwhile',
+      'should offer a way back once another secteur is opened meanwhile',
       () async {
         await open(MySectors.none.remember(sector12).remember(request49));
         expect(state(), waiting49);
@@ -131,7 +131,7 @@ void main() {
   });
 
   group('accepted', () {
-    test('should open the tournée and show the start screen', () async {
+    test('should open the secteur and show the start screen', () async {
       await open(MySectors.none.remember(sector12).remember(request49));
 
       directory.answer(t49, MemberStatus.active);
@@ -143,7 +143,7 @@ void main() {
     });
 
     test(
-      'should open the tournée when it was accepted before the screen opened',
+      'should open the secteur when it was accepted before the screen opened',
       () async {
         await open(MySectors.none.remember(request49.accepted()));
 

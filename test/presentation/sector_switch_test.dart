@@ -1,6 +1,6 @@
-// The screens built on the street storage follow a switch of tournée
+// The screens built on the street storage follow a switch of secteur
 // (PLAN §5.3: « map, panel and listeners follow it »): the composition root
-// binds the storage to the open tournée, and nothing of the tournée left
+// binds the storage to the open secteur, and nothing of the secteur left
 // may show, or be undone, in the one opened.
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
@@ -120,7 +120,7 @@ void main() {
   });
 
   group('the street screen', () {
-    test('should not undo in the tournée opened a change made in the one '
+    test('should not undo in the secteur opened a change made in the one '
         'left', () async {
       final container = leasPhone();
       container.listen(streetProvider(lilasId), (_, _) {});
@@ -161,7 +161,7 @@ void main() {
   });
 
   group('the Corbeille', () {
-    test('should show nothing of the tournée left', () async {
+    test('should show nothing of the secteur left', () async {
       final container = leasPhone();
       container.listen(corbeilleProvider, (_, _) {});
       await pumpEventQueue();

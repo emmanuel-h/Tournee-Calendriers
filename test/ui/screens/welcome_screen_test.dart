@@ -83,7 +83,7 @@ void main() {
       },
     );
 
-    testWidgets('should open the start screen on a phone with a tournée open', (
+    testWidgets('should open the start screen on a phone with a secteur open', (
       tester,
     ) async {
       await launch(

@@ -13,9 +13,9 @@ import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
 /// The banner under the title of Accueil while an admin visits the open
-/// tournée without being in its team (PLAN §5.12, HomeAdmin mockup): a
+/// secteur without being in its team (PLAN §5.12, HomeAdmin mockup): a
 /// shield, « Administrateur · pas membre » over « Vous n'êtes pas dans
-/// l'équipe de cette tournée. », and « Rejoindre », which makes them a
+/// l'équipe de ce secteur. », and « Rejoindre », which makes them a
 /// member at once. In the « repasser » blue. Nothing for anyone else.
 final class AdminVisitBanner extends ConsumerWidget {
   const AdminVisitBanner({super.key});

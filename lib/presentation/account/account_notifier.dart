@@ -6,7 +6,7 @@ import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/presentation/account/account_state.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 
-/// The account of the phone, as the screens that create or join a tournée
+/// The account of the phone, as the screens that create or join a secteur
 /// show it. `autoDispose`: built again each time such a screen opens, so
 /// opening it is already a new try when the first start was offline.
 final accountProvider =

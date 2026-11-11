@@ -2,7 +2,7 @@ import 'package:tournee_calendriers/application/ports/member_account.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 
-// The member's account on the server, which creating or joining a tournée
+// The member's account on the server, which creating or joining a secteur
 // needs (PLAN §8.3). Two use cases: one reads what the phone already knows,
 // for a screen to show at once, the other asks the server when it must.
 

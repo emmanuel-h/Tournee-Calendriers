@@ -1,4 +1,4 @@
-// What a newcomer and a creator ask of Firestore from outside a tournée,
+// What a newcomer and a creator ask of Firestore from outside a secteur,
 // against an in-memory Firestore (fake_cloud_firestore, PLAN §11).
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
@@ -55,13 +55,13 @@ void main() {
   }
 
   group('preview', () {
-    test('should show the tournée of an exact code', () async {
+    test('should show the secteur of an exact code', () async {
       await db.doc('joinCodes/K7P2QX').set(joinCodeDocument(team()));
 
       expect(valueOf(await directory.preview(firstCode)), preview);
     });
 
-    test('should find nothing for a code no tournée has', () async {
+    test('should find nothing for a code no secteur has', () async {
       await db.doc('joinCodes/K7P2QX').set(joinCodeDocument(team()));
 
       final result = await directory.preview(codeOf('234567'));
@@ -210,7 +210,7 @@ void main() {
     });
 
     test('should tell the name is taken when the server refuses while the '
-        'code still opens the tournée', () async {
+        'code still opens the secteur', () async {
       // The rules refuse a newcomer the entry of a name another member
       // holds.
       await db.doc('joinCodes/K7P2QX').set(joinCodeDocument(team()));
@@ -231,7 +231,7 @@ void main() {
     });
 
     test('should tell the code no longer works when the server refuses and '
-        'the code opens another tournée', () async {
+        'the code opens another secteur', () async {
       await db.doc('joinCodes/K7P2QX').set({
         ...joinCodeDocument(team()),
         'sectorId': 't12',
@@ -288,7 +288,7 @@ void main() {
     });
 
     test('should tell removed once the member document goes and the '
-        'server refuses the tournée (#147)', () async {
+        'server refuses the secteur (#147)', () async {
       whenCalling(Invocation.method(#get, null))
           .on(db.doc('sectors/t49'))
           .thenThrow(firestoreError('permission-denied'));
@@ -301,7 +301,7 @@ void main() {
     });
 
     test('should tell removed once the member document goes and the '
-        'tournée stays readable (an admin)', () async {
+        'secteur stays readable (an admin)', () async {
       final seen = await lossesWhile(
         () => db.doc('sectors/t49/members/uid-lea').delete(),
       );
@@ -310,9 +310,9 @@ void main() {
     });
 
     test('should tell deleted once the member document goes with the '
-        'tournée', () async {
+        'secteur', () async {
       // One batch, as the deletion makes it. Firestore applies a batch
-      // at once; the fake applies it in order, so the tournée goes first.
+      // at once; the fake applies it in order, so the secteur goes first.
       final seen = await lossesWhile(
         () async =>
             (db.batch()
@@ -325,7 +325,7 @@ void main() {
     });
 
     test('should ask the server, not the phone\'s copy, whether the '
-        'tournée still exists', () async {
+        'secteur still exists', () async {
       offline(db.doc('sectors/t49'));
       final errors = <Object>[];
       final subscription = directory
@@ -363,7 +363,7 @@ void main() {
       await db.doc('sectors/t49').set(sectorToDocument(team()));
     });
 
-    test('should tell nothing while the tournée stays and the phone is an '
+    test('should tell nothing while the secteur stays and the phone is an '
         'admin', () async {
       final seen = await lossesWhile(() async {});
 
@@ -380,7 +380,7 @@ void main() {
       expect(seen, isEmpty);
     });
 
-    test('should tell deleted once the tournée goes', () async {
+    test('should tell deleted once the secteur goes', () async {
       final seen = await lossesWhile(() => db.doc('sectors/t49').delete());
 
       expect(seen, [SectorLoss.deleted]);
@@ -395,7 +395,7 @@ void main() {
   });
 
   group('allSectors', () {
-    test('should list every tournée with its team counted for the '
+    test('should list every secteur with its team counted for the '
         'caller', () async {
       await db.doc('sectors/t49').set(sectorToDocument(team()));
       for (final member in [manu, lea, julie]) {
@@ -430,7 +430,7 @@ void main() {
       ]);
     });
 
-    test('should leave out a tournée it cannot read', () async {
+    test('should leave out a secteur it cannot read', () async {
       await db.doc('sectors/t49').set(sectorToDocument(team()));
       await db.doc('sectors/broken').set({'number': 'quarante'});
 
@@ -439,7 +439,7 @@ void main() {
       expect(all.map((sector) => sector.id), [sectorId]);
     });
 
-    test('should list nothing when the app has no tournée', () async {
+    test('should list nothing when the app has no secteur', () async {
       expect(valueOf(await directory.allSectors(samId)), isEmpty);
     });
 

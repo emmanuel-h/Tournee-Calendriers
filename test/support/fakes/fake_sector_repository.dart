@@ -1,6 +1,6 @@
 // An in-memory SectorRepository for the use-case, presentation and widget
 // tests: no Firestore, every call answers at once. It records what the use
-// cases stored so tests can assert the exact tournée and change.
+// cases stored so tests can assert the exact secteur and change.
 import 'dart:async';
 
 import 'package:tournee_calendriers/domain/sector/join_code.dart';
@@ -24,7 +24,7 @@ final class FakeSectorRepository implements SectorRepository {
   /// itself, so a test sees the new value without waiting a turn.
   final _changed = StreamController<void>.broadcast(sync: true);
 
-  /// Every (tournée, change) given to [save], in order.
+  /// Every (secteur, change) given to [save], in order.
   final saved = <(Sector, SectorChange)>[];
 
   /// Every deletion given to [delete], in order.
@@ -42,7 +42,7 @@ final class FakeSectorRepository implements SectorRepository {
   var notAdmin = false;
 
   /// The names other members hold on the server but not in the phone's
-  /// copy, by tournée and `MemberName.key`: a rename or an admin joining
+  /// copy, by secteur and `MemberName.key`: a rename or an admin joining
   /// under one fails with `nameTaken` and stores nothing.
   final takenNames = <(SectorId, String)>{};
 
@@ -50,37 +50,37 @@ final class FakeSectorRepository implements SectorRepository {
   /// refusing it for a reason the use case does not expect.
   SectorWriteFailure? renameRefused;
 
-  /// The tournées the phone cannot reach (the network dropped while it
+  /// The secteurs the phone cannot reach (the network dropped while it
   /// went through them): a rename there fails with `noNetwork`, as
   /// everything [offline] fails.
   final unreachable = <SectorId>{};
 
   /// When set, a new code is stored as this one instead of the code drawn,
-  /// as the server does when another tournée holds the drawn one.
+  /// as the server does when another secteur holds the drawn one.
   JoinCode? codeTaken;
 
-  /// When set, [watch] fails with it instead of giving the tournée.
+  /// When set, [watch] fails with it instead of giving the secteur.
   Object? watchError;
 
   /// When true, [watch] gives nothing at all, as Firestore before its
   /// first answer: what follows it stays loading.
   bool watchSilent = false;
 
-  /// When set, [find] fails with it instead of giving the tournée.
+  /// When set, [find] fails with it instead of giving the secteur.
   Error? findError;
 
   /// When set, [add] stores nothing and fails with it, as the server does
   /// for a number taken or a phone without network.
   AddSectorFailure? addFailure;
 
-  /// When set, [add] stores the tournée with this code instead of the one
-  /// drawn, as the server does when another tournée holds the drawn one.
+  /// When set, [add] stores the secteur with this code instead of the one
+  /// drawn, as the server does when another secteur holds the drawn one.
   JoinCode? addCodeTaken;
 
-  /// Every tournée given to [add], in order.
+  /// Every secteur given to [add], in order.
   final added = <Sector>[];
 
-  /// The tournée [id] as stored now.
+  /// The secteur [id] as stored now.
   Sector? operator [](SectorId id) => _sectors[id];
 
   /// Stores [sector] as a teammate's phone would (a request arrives, a
@@ -90,7 +90,7 @@ final class FakeSectorRepository implements SectorRepository {
     _changed.add(null);
   }
 
-  /// The tournée [id] can no longer be read (this member was removed).
+  /// The secteur [id] can no longer be read (this member was removed).
   void lose(SectorId id) {
     _sectors.remove(id);
     _changed.add(null);
@@ -102,13 +102,13 @@ final class FakeSectorRepository implements SectorRepository {
     return _sectors[id];
   }
 
-  /// Every tournée [watch] was asked for, in order.
+  /// Every secteur [watch] was asked for, in order.
   final watched = <SectorId>[];
 
-  /// How many listen to each tournée now.
+  /// How many listen to each secteur now.
   final _listeners = <SectorId, int>{};
 
-  /// Whether someone still listens to the tournée [id].
+  /// Whether someone still listens to the secteur [id].
   bool isWatching(SectorId id) => (_listeners[id] ?? 0) > 0;
 
   @override

@@ -9,7 +9,7 @@ enum CampaignYearFailure {
   outOfRange,
 }
 
-/// The year of a campaign (« Campagne 2026 », PLAN §2): a tournée holds
+/// The year of a campaign (« Campagne 2026 », PLAN §2): a secteur holds
 /// one campaign per year, and the statuses belong to it.
 ///
 /// Chosen by the creator, pre-filled with the current year: calendars sold

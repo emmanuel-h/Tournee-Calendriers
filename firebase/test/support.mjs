@@ -1,5 +1,5 @@
 // What every rules test file shares: the emulator environment, the team of
-// Tournée 49 of CS Villefranche, and documents shaped exactly as the Dart
+// Secteur 49 of CS Villefranche, and documents shaped exactly as the Dart
 // mappers write them (lib/infrastructure/firestore/mappers/, PLAN §6.2).
 // When a mapper changes, the documents here change with it.
 import { readFileSync } from 'node:fs';
@@ -61,9 +61,9 @@ export const at = (iso) => Timestamp.fromDate(new Date(iso));
 export const twoPm = at('2026-11-02T14:00:00Z');
 export const threePm = at('2026-11-02T15:00:00Z');
 
-// The team: Manu created the tournée, Léa was accepted, Paul is waiting
-// for an answer, Zoé is in no tournée. Manu is an administrator of the app
-// (`admins/manu`, PLAN §5.12), and so is Sam, who is in no tournée.
+// The team: Manu created the secteur, Léa was accepted, Paul is waiting
+// for an answer, Zoé is in no secteur. Manu is an administrator of the app
+// (`admins/manu`, PLAN §5.12), and so is Sam, who is in no secteur.
 export const manu = 'manu';
 export const lea = 'lea';
 export const paul = 'paul';
@@ -301,7 +301,7 @@ export const roundDoc = (overrides = {}) => ({
 });
 
 /**
- * Stores the team of Tournée 49 as the adapters leave it after creating
+ * Stores the team of Secteur 49 as the adapters leave it after creating
  * it, accepting Léa and receiving Paul's request (each name held, #148),
  * with Rue Nationale and a validated tournée in the campaign 2026; and the
  * two administrators, added by hand in the console (no fields).

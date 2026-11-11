@@ -91,7 +91,7 @@ void main() {
       ),
     );
 
-    // 1. Accueil: the map of the tournée, the panel folded down to its
+    // 1. Accueil: the map of the secteur, the panel folded down to its
     // totals (a flick down from rest). Folded at once, before the map's
     // style has loaded: the map fits the streets into the room the panel
     // leaves it when the style is ready, and only then.

@@ -180,7 +180,7 @@ void main() {
 
   group('first start offline, then the network back', () {
     test(
-      'should create the tournée after « Réessayer », without restart',
+      'should create the secteur after « Réessayer », without restart',
       () async {
         // No account, and no network for the sign-in.
         account = FakeMemberAccount();
@@ -322,7 +322,7 @@ void main() {
       expect(state().communes, [gleizeOption]);
     });
 
-    test('should add up to the most communes a tournée covers, no more', () {
+    test('should add up to the most communes a secteur covers, no more', () {
       final options = [
         for (var i = 1; i <= Sector.maxCommunes + 1; i++)
           CommuneOption(
@@ -347,7 +347,7 @@ void main() {
       expect(state().communes, hasLength(Sector.maxCommunes));
     });
 
-    test('should add no commune once the tournée is created', () async {
+    test('should add no commune once the secteur is created', () async {
       await fill();
       await form().create();
 
@@ -507,7 +507,7 @@ void main() {
   });
 
   group('« Créer »', () {
-    test('should create the tournée and show its code', () async {
+    test('should create the secteur and show its code', () async {
       await open(name: nameOf('Manu'));
       await fill();
 
@@ -653,7 +653,7 @@ void main() {
   });
 
   group('values', () {
-    test('should equal created tournées with the same values only', () {
+    test('should equal created secteurs with the same values only', () {
       const created = SectorCreated(
         number: 49,
         centre: 'CS Villefranche',

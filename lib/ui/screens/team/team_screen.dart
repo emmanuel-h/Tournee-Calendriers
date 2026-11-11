@@ -37,7 +37,7 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 /// Every member sees the code and answers requests; « Nouveau code »,
 /// « Retirer » and « Supprimer le secteur » are the admins' (PLAN §5.12),
 /// member or not; every member may « Quitter », and an admin who only
-/// visits the tournée « Retirer de Mes secteurs ». The team is followed
+/// visits the secteur « Retirer de Mes secteurs ». The team is followed
 /// live; it opens offline from the phone's copy, where a new code and
 /// deleting say they need the network.
 ///
@@ -88,7 +88,7 @@ final class TeamScreen extends ConsumerWidget {
   }
 }
 
-/// « Tournée 49 » over « CS Villefranche · campagne 2026 ».
+/// « Secteur 49 » over « CS Villefranche · campagne 2026 ».
 final class _Title extends StatelessWidget {
   const _Title({required this.title, required this.subtitle});
 
@@ -259,9 +259,9 @@ final class _Team extends ConsumerWidget {
 }
 
 /// At the bottom: « Quitter le secteur » for a member (« Retirer de Mes
-/// tournées » for an admin who only visits it), and beside it « Supprimer
-/// la tournée » for an admin (Team and TeamMember mockups). Each one then
-/// goes back to the start screen with no tournée open.
+/// secteurs » for an admin who only visits it), and beside it « Supprimer
+/// le secteur » for an admin (Team and TeamMember mockups). Each one then
+/// goes back to the start screen with no secteur open.
 final class _BottomActions extends ConsumerWidget {
   const _BottomActions({required this.state, required this.run});
 

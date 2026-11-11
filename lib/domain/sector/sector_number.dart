@@ -9,9 +9,9 @@ enum SectorNumberFailure {
   outOfRange,
 }
 
-/// The number of a tournée within its centre de secours (« Tournée 49 »,
-/// PLAN §2, §5.2). With the `RescueCentre` it identifies the tournée across
-/// the app: only one tournée 49 per station.
+/// The number of a secteur within its centre de secours (« Secteur 49 »,
+/// PLAN §2, §5.2). With the `RescueCentre` it identifies the secteur across
+/// the app: only one secteur 49 per station.
 ///
 /// It is displayed, never used to join: that takes the join code.
 final class SectorNumber {
@@ -23,7 +23,7 @@ final class SectorNumber {
 
   static final _digits = RegExp(r'^\d+$');
 
-  /// The tournée number [number], or [SectorNumberFailure.outOfRange].
+  /// The secteur number [number], or [SectorNumberFailure.outOfRange].
   static Result<SectorNumber, SectorNumberFailure> create(int number) {
     if (number < 1 || number > max) {
       return const Err(SectorNumberFailure.outOfRange);

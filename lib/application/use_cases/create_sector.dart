@@ -21,7 +21,7 @@ import 'package:tournee_calendriers/domain/shared/result.dart';
 
 // « Nouveau secteur » (PLAN §5.2): the centres de secours to pick from,
 // the check that number + centre is free, and the creation itself. All of
-// it needs the network: only the server knows the other tournées.
+// it needs the network: only the server knows the other secteurs.
 
 /// The centres de secours already known to the app, by name, for the
 /// creator to pick from. Fails with [DirectoryFailure.noNetwork] offline.
@@ -34,8 +34,8 @@ final class ListRescueCentres {
       _directory.rescueCentres();
 }
 
-/// Whether the tournée [SectorNumber] of [RescueCentre] already exists,
-/// asked while the creator types (« La tournée 49 du CS Villefranche
+/// Whether the secteur [SectorNumber] of [RescueCentre] already exists,
+/// asked while the creator types (« Le secteur 49 du CS Villefranche
 /// existe déjà »). Fails with [DirectoryFailure.noNetwork] offline.
 final class CheckSectorTaken {
   const CheckSectorTaken(this._directory);
@@ -48,7 +48,7 @@ final class CheckSectorTaken {
   ) => _directory.isTaken(centre, number);
 }
 
-/// Why « Créer » made no tournée.
+/// Why « Créer » made no secteur.
 enum CreateSectorFailure {
   /// The number is already taken in that centre de secours, perhaps by
   /// someone who created it at the same second: ask its creator for the
@@ -65,11 +65,11 @@ enum CreateSectorFailure {
 }
 
 /// « Créer »: signs in when the phone has no account yet, then stores a new
-/// tournée whose only member is the creator, covering the communes
+/// secteur whose only member is the creator, covering the communes
 /// picked, with a join code drawn from the secure source, and opens it on
 /// the phone (« Mes secteurs », PLAN
-/// §5.3). Returns the tournée as stored: the server may have replaced a
-/// code another tournée held.
+/// §5.3). Returns the secteur as stored: the server may have replaced a
+/// code another secteur held.
 final class CreateSector {
   const CreateSector(
     this._sectors,
@@ -142,7 +142,7 @@ final class CreateSector {
         centre: sector.centre,
         campaign: sector.currentCampaign,
         status: MemberStatus.active,
-        // The creator goes by the name the tournée was created with.
+        // The creator goes by the name the secteur was created with.
         memberName: sector.memberOf(sector.createdBy)?.name,
       ),
     );

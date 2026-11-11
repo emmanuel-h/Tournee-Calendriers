@@ -1,6 +1,6 @@
 // The silent map refresh (PLAN §7): the map's tiles change every week, and
 // a region downloaded before a change can no longer be reached offline once
-// the app has been online. So each downloaded tournée's map is downloaded
+// the app has been online. So each downloaded secteur's map is downloaded
 // again whenever the app is online: a new region first, the old one deleted
 // only after it is complete.
 import 'package:test/test.dart';
@@ -76,7 +76,7 @@ void main() {
     expect(downloads.downloads, {t49: downloadOf(t49, area49)});
   });
 
-  test('should refresh every downloaded tournée, each deleting only its '
+  test('should refresh every downloaded secteur, each deleting only its '
       'own old regions', () async {
     final old12 = regionOf(50, t12, area12);
     maps = FakeOfflineMapStore([old49, old12]);
@@ -109,7 +109,7 @@ void main() {
     expect(maps.log, ['create 1 t49']);
   });
 
-  test('should skip a tournée downloaded with no map', () async {
+  test('should skip a secteur downloaded with no map', () async {
     maps = FakeOfflineMapStore();
     downloads = FakeSectorDownloads([downloadOf(t49, null)]);
 
@@ -127,7 +127,7 @@ void main() {
     expect(maps.current, [regionOf(1, t49, area49)]);
   });
 
-  test('should leave the regions of a tournée not downloaded', () async {
+  test('should leave the regions of a secteur not downloaded', () async {
     final half = regionOf(60, t12, area12);
     maps = FakeOfflineMapStore([half]);
     downloads = FakeSectorDownloads();
@@ -138,7 +138,7 @@ void main() {
     expect(maps.current, [half]);
   });
 
-  test('should leave the map of the tournée just downloaded', () async {
+  test('should leave the map of the secteur just downloaded', () async {
     final old12 = regionOf(50, t12, area12);
     maps = FakeOfflineMapStore([old49, old12]);
     downloads = FakeSectorDownloads([

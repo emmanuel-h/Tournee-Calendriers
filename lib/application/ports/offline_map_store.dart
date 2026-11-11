@@ -2,7 +2,7 @@ import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 
 /// The map kept on the phone for offline use: one region of map tiles per
-/// downloaded tournée (PLAN §6.3, §7), so the map shows after an offline
+/// downloaded secteur (PLAN §6.3, §7), so the map shows after an offline
 /// cold start.
 ///
 /// An outbound port: an adapter in `infrastructure/maplibre_offline/`
@@ -11,7 +11,7 @@ import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 /// Nothing here throws on a failure the member could act on: a download
 /// that cannot finish ends with [MapDownloadFailed].
 abstract interface class OfflineMapStore {
-  /// Every region on the phone made for a tournée, complete or not (a
+  /// Every region on the phone made for a secteur, complete or not (a
   /// download cut by the app being killed leaves its region behind).
   Future<List<OfflineMapRegion>> regions();
 

@@ -14,7 +14,7 @@ import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
 /// « Tous les secteurs » (PLAN §5.12, AllSectors mockup), for admins:
-/// every tournée of the app under its centre de secours, with its members,
+/// every secteur of the app under its centre de secours, with its members,
 /// its waiting requests (a red dot) and « vous en êtes membre ». A tap opens
 /// it on the normal screens. Needs the network: offline it says so and
 /// offers « Réessayer ».
@@ -162,7 +162,7 @@ final class _Problem extends StatelessWidget {
   }
 }
 
-/// « Tournée 12 · 2026 › » over « 3 membres · 1 demande en attente », the
+/// « Secteur 12 · 2026 › » over « 3 membres · 1 demande en attente », the
 /// red dot then said by screen readers; « Aucun membre » in red, with its
 /// own words so not by colour alone.
 final class _OverviewTile extends StatelessWidget {

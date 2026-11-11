@@ -25,8 +25,8 @@ final class ManualStreetState {
            preview is NumbersPreviewed &&
            !adding;
 
-  /// The communes the street may be in: the tournée's, else those of its
-  /// streets. Empty for a tournée with neither: the commune is then
+  /// The communes the street may be in: the secteur's, else those of its
+  /// streets. Empty for a secteur with neither: the commune is then
   /// searched (network), as on the « Liste » tab. Read-only.
   final List<Commune> communes;
 

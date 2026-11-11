@@ -5,7 +5,7 @@ import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 
 /// A rectangle on the map, between two latitudes and two longitudes (WGS 84
 /// degrees): the area to download for offline use, or to show when the map
-/// opens on a tournée.
+/// opens on a secteur.
 ///
 /// It never crosses the antimeridian: [west] ≤ [east]. France is far from
 /// it.

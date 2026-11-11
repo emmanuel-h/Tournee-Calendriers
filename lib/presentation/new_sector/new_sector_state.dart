@@ -37,16 +37,16 @@ final class CentresUnavailable extends KnownCentres {
   const CentresUnavailable();
 }
 
-/// What the server said of the number in the chosen centre (« La tournée
+/// What the server said of the number in the chosen centre (« Le secteur
 /// 49 du CS Villefranche existe déjà »).
 enum DuplicateCheck {
   /// Not asked yet, on its way, or the server could not be reached.
   unknown,
 
-  /// No tournée has this number in this centre.
+  /// No secteur has this number in this centre.
   free,
 
-  /// The tournée exists: ask its creator for the code.
+  /// The secteur exists: ask its creator for the code.
   taken,
 }
 
@@ -60,7 +60,7 @@ final class CreateIdle extends CreateRun {
   const CreateIdle();
 }
 
-/// The tournée is being created on the server.
+/// The secteur is being created on the server.
 final class CreateInProgress extends CreateRun {
   const CreateInProgress();
 }
@@ -77,7 +77,7 @@ final class CreateNotAdmin extends CreateRun {
   const CreateNotAdmin();
 }
 
-/// The tournée exists and is open on the phone: its code and QR code to
+/// The secteur exists and is open on the phone: its code and QR code to
 /// show the team (Create mockup).
 final class SectorCreated extends CreateRun {
   const SectorCreated({
@@ -201,7 +201,7 @@ final class NewSectorState {
   final List<CommuneOption> communes;
 
   /// « Ajouter une commune… » shows: the form is not done with, and the
-  /// tournée may cover one more commune.
+  /// secteur may cover one more commune.
   bool get canAddCommune =>
       communes.length < Sector.maxCommunes && run is! SectorCreated;
 
@@ -256,7 +256,7 @@ final class NewSectorState {
       duplicate != DuplicateCheck.taken &&
       (run is CreateIdle || run is CreateOffline);
 
-  /// The tournée exists: the form is done with.
+  /// The secteur exists: the form is done with.
   bool get isCreated => run is SectorCreated;
 
   /// A copy with the given fields replaced. [centre] is a function so it

@@ -12,7 +12,7 @@ final class AccountSigningIn extends AccountState {
   const AccountSigningIn();
 }
 
-/// The phone has its account: [member] can create or join a tournée.
+/// The phone has its account: [member] can create or join a secteur.
 final class AccountSignedIn extends AccountState {
   const AccountSignedIn(this.member);
 

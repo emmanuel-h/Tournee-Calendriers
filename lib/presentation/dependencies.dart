@@ -90,17 +90,17 @@ final streetRepositoryProvider = Provider<StreetRepository>(
   (ref) => _unbound('StreetRepository'),
 );
 
-/// What the open tournée's streets still have to send to the server. The
+/// What the open secteur's streets still have to send to the server. The
 /// composition root binds it to the same adapter as
 /// [streetRepositoryProvider], so one listener serves both; with no
-/// tournée open there is nothing to send.
+/// secteur open there is nothing to send.
 final pendingSyncProvider = Provider<PendingSync>(
   (ref) => _unbound('PendingSync'),
 );
 
 /// Whether the phone reaches the server. The composition root binds it to
-/// the same adapter as [streetRepositoryProvider] too: the open tournée's
-/// listener tells it; with no tournée open, nothing does.
+/// the same adapter as [streetRepositoryProvider] too: the open secteur's
+/// listener tells it; with no secteur open, nothing does.
 final serverConnectionProvider = Provider<ServerConnection>(
   (ref) => _unbound('ServerConnection'),
 );
@@ -157,7 +157,7 @@ final adminStatusProvider = Provider<AdminStatus>(
   (ref) => _unbound('AdminStatus'),
 );
 
-/// The streets of a tournée as the server has them, for its download
+/// The streets of a secteur as the server has them, for its download
 /// (PLAN §7).
 final streetsDownloadProvider = Provider<StreetsDownload>(
   (ref) => _unbound('StreetsDownload'),
@@ -168,7 +168,7 @@ final offlineMapStoreProvider = Provider<OfflineMapStore>(
   (ref) => _unbound('OfflineMapStore'),
 );
 
-/// The tournées downloaded on this phone, when, and how much.
+/// The secteurs downloaded on this phone, when, and how much.
 final sectorDownloadsProvider = Provider<SectorDownloads>(
   (ref) => _unbound('SectorDownloads'),
 );

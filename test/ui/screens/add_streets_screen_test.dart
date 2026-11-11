@@ -106,7 +106,7 @@ void main() {
   }
 
   testWidgets('should open « Ajouter des rues » on the list of the '
-      'tournée\'s first commune, a chip per commune', (tester) async {
+      'secteur\'s first commune, a chip per commune', (tester) async {
     await pumpStart(tester, [villefrancheCommune, gleizeCommune]);
 
     // From Secteur, as the member would (PLAN §5.14).
@@ -137,7 +137,7 @@ void main() {
   });
 
   testWidgets('should show no chip for a single commune, and add the streets '
-      'ticked to the tournée', (tester) async {
+      'ticked to the secteur', (tester) async {
     await pumpStart(tester, [villefrancheCommune]);
     // From Secteur, as the member would (PLAN §5.14).
     await openAddStreets(tester);
@@ -157,7 +157,7 @@ void main() {
     expect(await streets.findByBanId(_bordelan), isNotNull);
   });
 
-  testWidgets('should search the commune of a tournée without commune', (
+  testWidgets('should search the commune of a secteur without commune', (
     tester,
   ) async {
     await pumpStart(tester, []);

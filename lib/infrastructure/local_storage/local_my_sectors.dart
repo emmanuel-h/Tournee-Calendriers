@@ -8,7 +8,7 @@ import 'package:tournee_calendriers/infrastructure/local_storage/mappers/my_sect
 
 /// The [MySectorsStore] of the phone: `my_tournees.json` in the storage
 /// folder (PLAN §6.3), read once at start-up and then answered from
-/// memory. No network, ever: the last tournée reopens after an offline cold
+/// memory. No network, ever: the last secteur reopens after an offline cold
 /// start.
 final class LocalMySectors implements MySectorsStore {
   LocalMySectors._(this._file, this.mySectors);
@@ -32,7 +32,7 @@ final class LocalMySectors implements MySectorsStore {
   final JsonFile _file;
 
   // `broadcast`: several screens may listen at once (the title, the
-  // sheet, the streets of the open tournée).
+  // sheet, the streets of the open secteur).
   final _changes = StreamController<MySectors>.broadcast();
 
   @override

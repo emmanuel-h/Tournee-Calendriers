@@ -13,11 +13,11 @@ enum JoinCodeFailure {
   wrongLength,
 }
 
-/// The secret that lets someone ask to join a tournée (PLAN §5.2, §8.1):
+/// The secret that lets someone ask to join a secteur (PLAN §5.2, §8.1):
 /// six characters such as `K7P2QX`, shown as `K7P-2QX` and in a QR code.
 ///
 /// Knowing it is not enough to get in: it only sends a request that an
-/// accepted member must approve. The tournée's number and centre de
+/// accepted member must approve. The secteur's number and centre de
 /// secours are shown, never used to join.
 final class JoinCode {
   const JoinCode._(this.value);

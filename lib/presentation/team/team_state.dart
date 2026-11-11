@@ -9,23 +9,23 @@ enum TeamActionFailure {
   /// first, the member was removed): the screen already shows it as it is.
   teamChanged,
 
-  /// A new code, joining as an admin and deleting the tournée need the
+  /// A new code, joining as an admin and deleting the secteur need the
   /// network.
   offline,
 
   /// Joining as an admin needs a first name, and the phone has none.
   noName,
 
-  /// A command of an admin (« Nouveau code », « Retirer », « Supprimer la
-  /// tournée », « Rejoindre ») from a phone no longer an admin's: the
+  /// A command of an admin (« Nouveau code », « Retirer », « Supprimer le
+  /// secteur », « Rejoindre ») from a phone no longer an admin's: the
   /// server refused it, or the phone learnt it just before (« Vous n'êtes
   /// plus administrateur. »).
   notAdmin,
 
-  /// The commune picked is already one of the tournée's.
+  /// The commune picked is already one of the secteur's.
   communeAlreadyIn,
 
-  /// The tournée covers as many communes as it may.
+  /// The secteur covers as many communes as it may.
   tooManyCommunes,
 
   /// « Rejoindre » as an admin under a first name a member already holds
@@ -48,18 +48,18 @@ final class NoTeam extends TeamState {
   const NoTeam();
 }
 
-/// The tournée is being read (from the phone's copy first).
+/// The secteur is being read (from the phone's copy first).
 final class TeamLoading extends TeamState {
   const TeamLoading();
 }
 
-/// The tournée cannot be read: deleted, the member removed, or never read
+/// The secteur cannot be read: deleted, the member removed, or never read
 /// on this phone while it is offline.
 final class TeamUnavailable extends TeamState {
   const TeamUnavailable();
 }
 
-/// The open tournée as the member on the phone sees it.
+/// The open secteur as the member on the phone sees it.
 final class TeamShown extends TeamState {
   TeamShown({
     required this.number,
@@ -149,12 +149,12 @@ final class TeamShown extends TeamState {
 
   /// Whether the phone is an admin's (PLAN §5.12): « Nouveau code »,
   /// « Retirer » and « Supprimer le secteur » are theirs, member of the
-  /// tournée or not.
+  /// secteur or not.
   final bool iAmAdmin;
 
   /// Whether the member on the phone is in the team: they may « Quitter »
   /// it. Otherwise they are an admin visiting it, who « Retirer de Mes
-  /// tournées » instead and is not listed in « Membres ».
+  /// secteurs » instead and is not listed in « Membres ».
   final bool iAmIn;
 
   /// « En attente »: the requests, oldest first. Any member or admin may
@@ -170,8 +170,8 @@ final class TeamShown extends TeamState {
   /// communes have their ✕.
   final bool canPrepare;
 
-  /// « Communes »: the tournée's, in the order they were added; none for a
-  /// tournée created before them.
+  /// « Communes »: the secteur's, in the order they were added; none for a
+  /// secteur created before them.
   final List<CommuneRow> communes;
 
   @override

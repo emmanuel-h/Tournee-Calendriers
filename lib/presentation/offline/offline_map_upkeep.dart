@@ -10,8 +10,8 @@ import 'package:tournee_calendriers/presentation/dependencies.dart';
 /// The one [OfflineMapUpkeep] of the app. A plain `Provider`, not
 /// `autoDispose`, watching only ports that never change: it lives as long
 /// as the app, so the time of the last refresh outlives a switch of
-/// tournée. It prunes once when built, then after each change of « Mes
-/// tournées ».
+/// secteur. It prunes once when built, then after each change of « Mes
+/// secteurs ».
 final offlineMapUpkeepProvider = Provider<OfflineMapUpkeep>((ref) {
   final upkeep = OfflineMapUpkeep(
     ref.watch(refreshOfflineMapsProvider),
@@ -28,11 +28,11 @@ final offlineMapUpkeepProvider = Provider<OfflineMapUpkeep>((ref) {
 
 /// Keeps the maps downloaded on this phone usable offline, unseen by the
 /// member (PLAN §7):
-/// - [refreshIfDue] downloads every downloaded tournée's map again
+/// - [refreshIfDue] downloads every downloaded secteur's map again
 ///   (`RefreshOfflineMaps`), at most once every [refreshInterval] after it
 ///   worked, one refresh at a time; [refreshAllBut] does it at once, after
-///   a tournée was downloaded;
-/// - [prune] deletes the downloads of the tournées the phone forgot
+///   a secteur was downloaded;
+/// - [prune] deletes the downloads of the secteurs the phone forgot
 ///   (`PruneSectorDownloads`), whatever forgot them.
 final class OfflineMapUpkeep {
   OfflineMapUpkeep(this._refresh, this._prune, this._clock);
@@ -65,7 +65,7 @@ final class OfflineMapUpkeep {
     return running;
   }
 
-  /// Refreshes the maps of the tournées other than [sector], which was
+  /// Refreshes the maps of the secteurs other than [sector], which was
   /// downloaded a moment ago, whenever the last refresh was: the download
   /// made the map's description name this week's tiles, for every region.
   /// Waits for a refresh going first.
@@ -85,7 +85,7 @@ final class OfflineMapUpkeep {
     }
   }
 
-  /// Deletes the downloads of the tournées no longer in « Mes secteurs ».
+  /// Deletes the downloads of the secteurs no longer in « Mes secteurs ».
   /// A call made while one goes runs once more after it, so the last list
   /// is the one pruned.
   Future<void> prune() {

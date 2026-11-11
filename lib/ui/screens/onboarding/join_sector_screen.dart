@@ -19,7 +19,7 @@ import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
 /// « Rejoindre un secteur » (PLAN §5.2, Join mockup): « Scanner le QR
-/// code » or the code typed in two boxes of three characters, the tournée
+/// code » or the code typed in two boxes of three characters, the secteur
 /// it shows to confirm, then « Demander à rejoindre », which leaves for
 /// « Demande envoyée ».
 final class JoinSectorScreen extends ConsumerStatefulWidget {
@@ -423,7 +423,7 @@ final class _CodeBox extends StatelessWidget {
   }
 }
 
-/// What the code shows: the tournée to confirm, or why there is none.
+/// What the code shows: the secteur to confirm, or why there is none.
 final class _Lookup extends StatelessWidget {
   const _Lookup({required this.lookup, required this.onRetry});
 

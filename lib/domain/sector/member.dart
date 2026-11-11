@@ -2,23 +2,23 @@ import 'package:tournee_calendriers/domain/sector/member_name.dart';
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 
-/// Where a member of a tournée stands (PLAN §5.2, §8.1).
+/// Where a member of a secteur stands (PLAN §5.2, §8.1).
 enum MemberStatus {
   /// « En attente »: asked to join with the code, can read and write
   /// nothing until an active member accepts.
   pending,
 
-  /// Accepted (or the creator): sees and marks the whole tournée.
+  /// Accepted (or the creator): sees and marks the whole secteur.
   active,
 
-  /// Not in the tournée at all, but an admin who opened it (« Toutes les
-  /// tournées », PLAN §5.12): sees and marks it as a member does. Only a
+  /// Not in the secteur at all, but an admin who opened it (« Tous les
+  /// secteurs », PLAN §5.12): sees and marks it as a member does. Only a
   /// `SectorSummary` of the phone is ever visiting; a [Member] is pending
   /// or active.
   visiting,
 }
 
-/// A firefighter in a tournée, or someone asking to join it (PLAN §2): an
+/// A firefighter in a secteur, or someone asking to join it (PLAN §2): an
 /// entity of the `Sector` aggregate, changed only through its root.
 ///
 /// Its [status] follows from [acceptance], so a member can never be active
@@ -27,7 +27,7 @@ final class Member {
   /// A member as it is stored: pending while [acceptance] is null.
   ///
   /// A newcomer's request is made by `JoinRequest`, the one place outside
-  /// the tournée's root that builds a member; the root accepts it.
+  /// the secteur's root that builds a member; the root accepts it.
   const Member({
     required this.id,
     required this.name,
@@ -42,11 +42,11 @@ final class Member {
   final MemberName name;
 
   /// When they asked to join (« il y a 2 min » in Équipe); for the creator,
-  /// when the tournée was created.
+  /// when the secteur was created.
   final DateTime requestedAt;
 
   /// Who accepted them and when; the creator accepted themself when
-  /// creating the tournée. Null while the request is pending.
+  /// creating the secteur. Null while the request is pending.
   final ChangeStamp? acceptance;
 
   MemberStatus get status =>

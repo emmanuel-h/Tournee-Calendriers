@@ -16,7 +16,7 @@ final settingsProvider = NotifierProvider<SettingsNotifier, SettingsState>(
 
 /// Shows and changes the settings of Paramètres (PLAN §5.9, §5.16): the
 /// member's first name, which also reaches the team of each of the
-/// member's tournées where it is free, the name they go by in each, and
+/// member's secteurs where it is free, the name they go by in each, and
 /// the theme. The theme works offline; a name needs the network once the
 /// member is in a secteur.
 final class SettingsNotifier extends Notifier<SettingsState> {
@@ -29,7 +29,7 @@ final class SettingsNotifier extends Notifier<SettingsState> {
     // returns.
     final (:name, :theme) = ref.watch(readPhoneSettingsProvider)();
     _mine = ref.watch(readMySectorsProvider)();
-    // `listen` on the stream, not `watch`: a new list of tournées redraws
+    // `listen` on the stream, not `watch`: a new list of secteurs redraws
     // the names, without reading the settings again.
     final changes = ref.watch(observeMySectorsProvider)().listen((mine) {
       _mine = mine;
@@ -40,7 +40,7 @@ final class SettingsNotifier extends Notifier<SettingsState> {
   }
 
   /// « Prénom »: keeps [text] as the member's name once cleaned, and gives
-  /// it to them in their tournées where it is free. Says how it went.
+  /// it to them in their secteurs where it is free. Says how it went.
   Future<NameOutcome> rename(String text) async {
     switch (await ref.read(changeMemberNameProvider)(text)) {
       case Ok(:final value):
@@ -56,7 +56,7 @@ final class SettingsNotifier extends Notifier<SettingsState> {
   }
 
   /// « Votre nom dans le secteur 49 »: the member goes by [text] in the
-  /// tournée [sector] only (#148).
+  /// secteur [sector] only (#148).
   Future<NameOutcome> renameIn(SectorId sector, String text) async =>
       switch (await ref.read(changeSectorNameProvider)(sector, text)) {
         Ok() => const NameSaved(),

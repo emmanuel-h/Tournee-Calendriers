@@ -3,12 +3,12 @@ import 'package:tournee_calendriers/domain/sector/sector_commune.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 
-/// The margin around a tournée's streets, in metres: the map downloaded for
+/// The margin around a secteur's streets, in metres: the map downloaded for
 /// offline use reaches that far beyond them (PLAN §7), so a team member
 /// walking a little past the last house still sees where they are.
 const sectorMarginMetres = 300.0;
 
-/// The area of a tournée on the map: every point of its streets' shapes
+/// The area of a secteur on the map: every point of its streets' shapes
 /// and every house position, plus [sectorMarginMetres] on each side. Null
 /// when none of the [streets] has a place on the map (all typed in by
 /// hand, or no street yet).
@@ -37,13 +37,13 @@ const communeMarginMetres = 2000.0;
 
 /// The area around the [communes]' centres, plus [communeMarginMetres] on
 /// each side; null when none has a centre (none given by the service, or
-/// a tournée created before the communes).
+/// a secteur created before the communes).
 GeoBounds? communesArea(Iterable<SectorCommune> communes) =>
     GeoBounds.around([for (final commune in communes) ?commune.centre])
         ?.expandedBy(communeMarginMetres);
 
 /// Where the map of « Ajouter des rues » starts (PLAN §5.4): on the
-/// tournée's [communes], where the streets to add are; on its [streets]
+/// secteur's [communes], where the streets to add are; on its [streets]
 /// when no commune has a centre; null (all of France) when neither has a
 /// place on the map.
 GeoBounds? addStreetsArea(
@@ -51,7 +51,7 @@ GeoBounds? addStreetsArea(
   Iterable<Street> streets,
 ) => communesArea(communes) ?? sectorArea(streets);
 
-/// Where Accueil's map starts (PLAN §5.3): on the tournée's [streets],
+/// Where Accueil's map starts (PLAN §5.3): on the secteur's [streets],
 /// where the team walks; on its [communes] while no street has a place on
 /// the map (none added yet, or all typed in by hand); null (all of France)
 /// when neither has one.

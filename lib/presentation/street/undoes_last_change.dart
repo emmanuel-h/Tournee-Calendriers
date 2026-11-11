@@ -20,7 +20,7 @@ mixin UndoesLastChange<S> on Notifier<S> {
 
   /// The `ref` of the build the change was made in. Riverpod keeps the
   /// notifier when it builds again, which happens when the street storage
-  /// is replaced (another tournée opened), and gives that build a new
+  /// is replaced (another secteur opened), and gives that build a new
   /// `ref`: the old one is then no longer `mounted`.
   Ref? _keptIn;
 
@@ -44,7 +44,7 @@ mixin UndoesLastChange<S> on Notifier<S> {
   /// Puts back what the last change replaced, and takes its don out of
   /// the tournée, once. Should that be impossible (what it touched was
   /// removed since), nothing happens: the screen shows the street as it
-  /// is. A change made in another tournée than the open one is not undone:
+  /// is. A change made in another secteur than the open one is not undone:
   /// the same street (moved from the phone, same id) may be in both.
   ///
   /// The don is named by its place in the tournée: the snackbar goes as

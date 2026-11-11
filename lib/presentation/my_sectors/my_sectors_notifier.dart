@@ -10,36 +10,36 @@ import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_state.dart';
 
 /// « Mes secteurs » for the whole app. Not `autoDispose`: the open
-/// tournée is needed by every screen, and the member's requests are
+/// secteur is needed by every screen, and the member's requests are
 /// followed as long as the app runs, not only while the sheet is shown.
 final mySectorsProvider = NotifierProvider<MySectorsNotifier, MySectorsState>(
   MySectorsNotifier.new,
 );
 
-/// The tournée the app shows, null when none is open: what the screens of
-/// a tournée (the team, its streets) follow. `select` rebuilds the screens
-/// that watch it only when the open tournée changes, not when a request
+/// The secteur the app shows, null when none is open: what the screens of
+/// a secteur (the team, its streets) follow. `select` rebuilds the screens
+/// that watch it only when the open secteur changes, not when a request
 /// elsewhere is answered.
 final currentSectorProvider = Provider<SectorSummary?>(
   (ref) => ref.watch(mySectorsProvider.select((state) => state.current)),
 );
 
-/// Shows the member's tournées and opens the one they tap; follows each of
+/// Shows the member's secteurs and opens the one they tap; follows each of
 /// their requests to join until it is answered, and the requests waiting
-/// in their tournées not open (PLAN §5.3).
+/// in their secteurs not open (PLAN §5.3).
 ///
 /// The list is on the phone, read before the first frame: the open
-/// tournée shows at once at launch, offline too. Only following a request
+/// secteur shows at once at launch, offline too. Only following a request
 /// needs the network, and it simply waits for it; the teams are read from
 /// the phone's copy first.
 final class MySectorsNotifier extends Notifier<MySectorsState> {
-  /// The listener of each pending request, by tournée.
+  /// The listener of each pending request, by secteur.
   final _requests = <SectorId, StreamSubscription<MemberStatus?>>{};
 
-  /// The listener of the team of each tournée not open, by tournée.
+  /// The listener of the team of each secteur not open, by secteur.
   final _teams = <SectorId, StreamSubscription<Sector?>>{};
 
-  /// The requests waiting in each tournée followed in [_teams].
+  /// The requests waiting in each secteur followed in [_teams].
   final _waiting = <SectorId, int>{};
 
   /// The list last shown, which a team's change shows again.
@@ -65,8 +65,8 @@ final class MySectorsNotifier extends Notifier<MySectorsState> {
     return MySectorsState.of(_mine, waiting: _waiting);
   }
 
-  /// Opens the tournée [id] (a tap in the sheet). The new list reaches
-  /// [state] through the store's changes. A tournée that cannot be opened
+  /// Opens the secteur [id] (a tap in the sheet). The new list reaches
+  /// [state] through the store's changes. A secteur that cannot be opened
   /// (its request still pending, or forgotten meanwhile) leaves the open
   /// one as it is: the sheet only offers the others.
   Future<void> open(SectorId id) async {
@@ -80,7 +80,7 @@ final class MySectorsNotifier extends Notifier<MySectorsState> {
     state = MySectorsState.of(mine, waiting: _waiting);
   }
 
-  /// Follows the team of each tournée of [mine] that the member is in and
+  /// Follows the team of each secteur of [mine] that the member is in and
   /// that is not open, for the dot of a request waiting there; the open
   /// one's requests show on Accueil's title (`teamProvider`).
   void _followTeams(MySectors mine) {

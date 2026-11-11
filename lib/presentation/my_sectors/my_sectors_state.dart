@@ -3,12 +3,12 @@ import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/sector/sector_summary.dart';
 import 'package:tournee_calendriers/domain/shared/same_items.dart';
 
-/// Where a tournée of « Mes secteurs » stands for the member.
+/// Where a secteur of « Mes secteurs » stands for the member.
 enum SectorRowStatus {
-  /// The tournée the app shows (● and ✓ in the sheet).
+  /// The secteur the app shows (● and ✓ in the sheet).
   open,
 
-  /// One of the member's tournées, not shown now: a tap opens it.
+  /// One of the member's secteurs, not shown now: a tap opens it.
   closed,
 
   /// The member's request waits for an answer (« votre demande est en
@@ -16,7 +16,7 @@ enum SectorRowStatus {
   pending,
 }
 
-/// One row of « Mes secteurs » (« Tournée 49 · 2026 », « CS
+/// One row of « Mes secteurs » (« Secteur 49 · 2026 », « CS
 /// Villefranche »).
 final class SectorRow {
   const SectorRow({
@@ -29,7 +29,7 @@ final class SectorRow {
     this.visited = false,
   });
 
-  /// Which tournée the row opens.
+  /// Which secteur the row opens.
   final SectorId id;
   final int number;
 
@@ -40,9 +40,9 @@ final class SectorRow {
   final String centre;
   final SectorRowStatus status;
 
-  /// The join requests waiting in the tournée for an answer from its
+  /// The join requests waiting in the secteur for an answer from its
   /// members (« · 1 demande en attente » and a dot, Switcher mockup).
-  /// Followed only for the tournées not open: the open one's show on
+  /// Followed only for the secteurs not open: the open one's show on
   /// Accueil's title.
   final int waitingRequests;
 
@@ -79,9 +79,9 @@ final class MySectorsState {
   MySectorsState({required List<SectorRow> rows, required this.current})
     : rows = List.unmodifiable(rows);
 
-  /// The rows of [mine], in the order the phone met the tournées: opening
+  /// The rows of [mine], in the order the phone met the secteurs: opening
   /// another one does not move them under the finger. [waiting] counts the
-  /// requests waiting in some of them, by tournée; none for the others.
+  /// requests waiting in some of them, by secteur; none for the others.
   factory MySectorsState.of(
     MySectors mine, {
     Map<SectorId, int> waiting = const {},
@@ -105,10 +105,10 @@ final class MySectorsState {
     current: mine.current,
   );
 
-  /// Every tournée of the member, open one and pending requests included.
+  /// Every secteur of the member, open one and pending requests included.
   final List<SectorRow> rows;
 
-  /// The tournée the app shows, null when none is open: the start screen
+  /// The secteur the app shows, null when none is open: the start screen
   /// then keeps the app's name as its title.
   final SectorSummary? current;
 

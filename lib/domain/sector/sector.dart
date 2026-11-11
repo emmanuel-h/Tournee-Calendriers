@@ -31,7 +31,7 @@ enum NewSectorFailure {
 /// command to whom may run it (PLAN §5.8, §5.12), so most of these mean the
 /// team changed in the meantime (« vous avez été retiré »).
 enum SectorCommandFailure {
-  /// The one acting is not in the tournée (never joined, removed, or left)
+  /// The one acting is not in the secteur (never joined, removed, or left)
   /// and is not an admin.
   notAMember,
 
@@ -40,10 +40,10 @@ enum SectorCommandFailure {
   requestPending,
 
   /// Only an admin removes members, regenerates the code, deletes the
-  /// tournée and joins it without a code.
+  /// secteur and joins it without a code.
   notAdmin,
 
-  /// The member acted on is not in the tournée (any more).
+  /// The member acted on is not in the secteur (any more).
   unknownMember,
 
   /// The request to accept or refuse has already been accepted.
@@ -52,29 +52,29 @@ enum SectorCommandFailure {
   /// The member to remove is a pending request: refuse it instead.
   memberPending,
 
-  /// The admin who asks to join is already in the tournée.
+  /// The admin who asks to join is already in the secteur.
   alreadyMember,
 
-  /// Another member of the tournée, pending or active, goes by the same
+  /// Another member of the secteur, pending or active, goes by the same
   /// name, case and accents ignored ([MemberName.key]): names are unique
   /// within a secteur (#148, PLAN §5.16).
   nameTaken,
 
-  /// The commune to add is already one of the tournée's.
+  /// The commune to add is already one of the secteur's.
   communeAlreadyIn,
 
-  /// The tournée has [Sector.maxCommunes] communes already.
+  /// The secteur has [Sector.maxCommunes] communes already.
   tooManyCommunes,
 
-  /// The commune to remove is not one of the tournée's (any more).
+  /// The commune to remove is not one of the secteur's (any more).
   unknownCommune,
 
-  /// The commune to remove is the tournée's last one: a tournée keeps at
+  /// The commune to remove is the secteur's last one: a secteur keeps at
   /// least one, which « Ajouter des rues » starts on.
   lastCommune,
 }
 
-/// A team's round (« Tournée 49 · CS Villefranche », PLAN §2): the
+/// A team's secteur (« Secteur 49 · CS Villefranche », PLAN §2): the
 /// aggregate root that guards who is in the team and who may do what
 /// (PLAN §6.1, §8).
 ///
@@ -85,12 +85,12 @@ enum SectorCommandFailure {
 ///   this copy may not have seen yet (#148);
 /// - [members] are sorted by request time, then by id;
 /// - no two [communes] share an INSEE code, and there are at most
-///   [Sector.maxCommunes]. A tournée created from #78 on has at least
+///   [Sector.maxCommunes]. A secteur created from #78 on has at least
 ///   one, and [removeCommune] never takes the last; one created before may
 ///   have none.
 ///
 /// The creator ([createdBy]) has no power of their own (PLAN §5.12): the
-/// app's admins run the tournée, member of it or not, and anyone may
+/// app's admins run the secteur, member of it or not, and anyone may
 /// leave, the creator and the last member included. Who acts comes as an
 /// [Actor]: their id and whether they are an admin.
 ///
@@ -106,7 +106,7 @@ enum SectorCommandFailure {
 /// | [rename] (themself)        | if active  | yes    | no           | no       |
 /// | [addCommune], [removeCommune] | yes     | yes    | no           | no       |
 ///
-/// A `Sector` is immutable. Each command returns a new tournée together
+/// A `Sector` is immutable. Each command returns a new secteur together
 /// with the [SectorChange] it made, as a Dart record `(Sector, Change)`;
 /// storage writes only that change.
 final class Sector {
@@ -123,16 +123,16 @@ final class Sector {
   }) : members = List.unmodifiable(members.toList()..sort(_byRequest)),
        communes = List.unmodifiable(communes);
 
-  /// The most communes a tournée may cover: far more than a team walks,
+  /// The most communes a secteur may cover: far more than a team walks,
   /// and a bound the security rules check (PLAN §8.2).
   static const maxCommunes = 50;
 
-  /// A new tournée, created by [creator] at [at] (« Créer », PLAN §5.2):
+  /// A new secteur, created by [creator] at [at] (« Créer », PLAN §5.2):
   /// they are its only member, active, accepted by themself. It covers
   /// [communes], in the order picked.
   ///
   /// Whether number + centre is free is for storage to tell, as only it
-  /// knows the other tournées. « Nouveau secteur » lets « Créer » be
+  /// knows the other secteurs. « Nouveau secteur » lets « Créer » be
   /// pressed only with one to [maxCommunes] different communes, so other
   /// [communes] are a bug: they throw an [ArgumentError].
   factory Sector.createdBy({
@@ -172,9 +172,9 @@ final class Sector {
     );
   }
 
-  /// Rebuilds a stored tournée with its [members], given in any order,
+  /// Rebuilds a stored secteur with its [members], given in any order,
   /// and its [communes], in their stored order. The creator may be gone,
-  /// and the team empty: everyone may leave. A tournée created before #78
+  /// and the team empty: everyone may leave. A secteur created before #78
   /// has no commune.
   ///
   /// Fails with [NewSectorFailure.duplicateMember] when two members share
@@ -215,7 +215,7 @@ final class Sector {
     );
   }
 
-  /// What is wrong with [communes] for a tournée, or null when nothing is.
+  /// What is wrong with [communes] for a secteur, or null when nothing is.
   static NewSectorFailure? _communesFailure(List<SectorCommune> communes) {
     if (communes.length > maxCommunes) {
       return NewSectorFailure.tooManyCommunes;
@@ -233,7 +233,7 @@ final class Sector {
   /// The secret to ask to join; changed by [regenerateCode].
   final JoinCode joinCode;
 
-  /// The member who created the tournée (an admin at the time). Kept as
+  /// The member who created the secteur (an admin at the time). Kept as
   /// information only: they may have left, and have no power of their own.
   final MemberId createdBy;
 
@@ -242,14 +242,14 @@ final class Sector {
   /// The year whose streets and statuses everyone works on (PLAN §5.10).
   final CampaignYear currentCampaign;
 
-  /// Everyone in the tournée, pending requests included, by request time.
+  /// Everyone in the secteur, pending requests included, by request time.
   /// The list cannot be modified (it throws an `UnsupportedError`): members
   /// change only through the commands below.
   final List<Member> members;
 
-  /// The communes the tournée covers, in the order they were added: the
+  /// The communes the secteur covers, in the order they were added: the
   /// map of « Ajouter des rues » is centred on them and its list shows
-  /// their streets (PLAN §5.4). Possibly none for a tournée created before
+  /// their streets (PLAN §5.4). Possibly none for a secteur created before
   /// they existed. The list cannot be modified: they change only through
   /// [addCommune] and [removeCommune].
   final List<SectorCommune> communes;
@@ -262,7 +262,7 @@ final class Sector {
   List<Member> get activeMembers =>
       List.unmodifiable(members.where((member) => member.isActive));
 
-  /// The member [id], pending or active; null when not in the tournée.
+  /// The member [id], pending or active; null when not in the secteur.
   Member? memberOf(MemberId id) {
     for (final member in members) {
       if (member.id == id) return member;
@@ -309,7 +309,7 @@ final class Sector {
     return Ok((_without(member), MemberRefused(sectorId: id, member: request)));
   }
 
-  /// Takes the active [member] out of the tournée, as [by] (« Retirer »).
+  /// Takes the active [member] out of the secteur, as [by] (« Retirer »).
   /// Only an admin may, on any active member, admins and the creator
   /// included; combined with [regenerateCode] when the code has leaked
   /// (PLAN §5.8).
@@ -326,9 +326,9 @@ final class Sector {
     return Ok((_without(member), MemberRemoved(sectorId: id, member: removed)));
   }
 
-  /// Takes [by] out of the tournée (« Quitter le secteur »), or cancels
+  /// Takes [by] out of the secteur (« Quitter le secteur »), or cancels
   /// their request when still pending (« Annuler la demande »). Any member
-  /// may, the creator and the last one included: an empty tournée stays,
+  /// may, the creator and the last one included: an empty secteur stays,
   /// for the admins to manage (PLAN §5.12).
   Result<(Sector, MemberLeft), SectorCommandFailure> leave({
     required MemberId by,
@@ -338,7 +338,7 @@ final class Sector {
     return Ok((_without(by), MemberLeft(sectorId: id, member: leaving)));
   }
 
-  /// Gives [by] the first name [name] in this tournée (« Prénom » in
+  /// Gives [by] the first name [name] in this secteur (« Prénom » in
   /// Paramètres, PLAN §5.9), so the team sees the new name. Any active
   /// member may, for themself only: there is no member parameter, so
   /// renaming someone else cannot even be asked. Refused when another
@@ -389,15 +389,15 @@ final class Sector {
     ));
   }
 
-  /// This tournée holding [code] as its join code, everything else kept.
+  /// This secteur holding [code] as its join code, everything else kept.
   ///
-  /// Not a command: it is the tournée as storage keeps it when the code
-  /// drawn on the phone turned out to be another tournée's, and the server
-  /// gave it another one (a code is unique across tournées, which only the
+  /// Not a command: it is the secteur as storage keeps it when the code
+  /// drawn on the phone turned out to be another secteur's, and the server
+  /// gave it another one (a code is unique across secteurs, which only the
   /// server can tell, `SectorRepository.add` and `save`).
   Sector withJoinCode(JoinCode code) => _copy(joinCode: code);
 
-  /// Deletes the tournée, as [by] (« Supprimer le secteur »). Only an
+  /// Deletes the secteur, as [by] (« Supprimer le secteur »). Only an
   /// admin may, member or not. Nothing is left to return but the deletion
   /// itself.
   Result<SectorDeleted, SectorCommandFailure> delete({required Actor by}) {
@@ -405,7 +405,7 @@ final class Sector {
     return Ok(SectorDeleted(this));
   }
 
-  /// Makes the admin [by], who is not in the tournée, an active member at
+  /// Makes the admin [by], who is not in the secteur, an active member at
   /// once under [name] (« Rejoindre » of the banner « Administrateur · pas
   /// membre », PLAN §5.12): no code, no request to answer, accepted by
   /// themself at [at], as the creator was. Refused when a member holds
@@ -434,9 +434,9 @@ final class Sector {
     ));
   }
 
-  /// Adds [commune] after the tournée's others, as [by] (« + Ajouter une
+  /// Adds [commune] after the secteur's others, as [by] (« + Ajouter une
   /// commune » in Équipe, PLAN §5.8). Any active member or admin may.
-  /// Refused when the tournée already covers that commune (same INSEE
+  /// Refused when the secteur already covers that commune (same INSEE
   /// code) or has [maxCommunes].
   Result<(Sector, CommuneAdded), SectorCommandFailure> addCommune(
     SectorCommune commune, {
@@ -455,7 +455,7 @@ final class Sector {
     ));
   }
 
-  /// Takes the commune [code] out of the tournée, as [by] (✕ in Équipe).
+  /// Takes the commune [code] out of the secteur, as [by] (✕ in Équipe).
   /// Any active member or admin may; the streets already added from it
   /// stay. Never the last commune: « Ajouter des rues » needs one.
   Result<(Sector, CommuneRemoved), SectorCommandFailure> removeCommune(
@@ -476,7 +476,7 @@ final class Sector {
     ));
   }
 
-  /// The tournée's commune [code], or null when it has none of that code.
+  /// The secteur's commune [code], or null when it has none of that code.
   SectorCommune? _communeOf(InseeCode code) {
     for (final commune in communes) {
       if (commune.inseeCode == code) return commune;
@@ -505,7 +505,7 @@ final class Sector {
 
   /// Why [by] may not run an admin's command, or null when they are an
   /// admin. A non-admin hears first what keeps them from acting at all
-  /// (not in the tournée, still pending), as before.
+  /// (not in the secteur, still pending), as before.
   SectorCommandFailure? _adminActor(Actor by) => by.isAdmin
       ? null
       : _activeActor(by.member) ?? SectorCommandFailure.notAdmin;
@@ -516,7 +516,7 @@ final class Sector {
   Sector _withMembers(Iterable<Member> newMembers) =>
       _copy(members: newMembers);
 
-  /// This tournée with the given parts replaced, the others kept.
+  /// This secteur with the given parts replaced, the others kept.
   Sector _copy({
     JoinCode? joinCode,
     Iterable<Member>? members,

@@ -55,7 +55,7 @@ const _appCheckDebugToken = String.fromEnvironment('APP_CHECK_DEBUG_TOKEN');
 /// before anything asks it anything (Firestore refuses settings once it has
 /// started): the phone keeps everything it has read or written
 /// (`persistenceEnabled`), with no size limit, so nothing of a downloaded
-/// tournée is ever evicted (`CACHE_SIZE_UNLIMITED`).
+/// secteur is ever evicted (`CACHE_SIZE_UNLIMITED`).
 ///
 /// Call it only after [startFirebase]. The settings are applied once per
 /// process: a top-level `final` is computed the first time it is read, and

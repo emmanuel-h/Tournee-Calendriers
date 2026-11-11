@@ -157,7 +157,7 @@ final class NewSectorNotifier extends Notifier<NewSectorState> {
     );
   }
 
-  /// « Créer »: creates the tournée and opens it on the phone; the screen
+  /// « Créer »: creates the secteur and opens it on the phone; the screen
   /// then shows its code. A number taken meanwhile shows as taken.
   Future<void> create() async {
     final name = ref.read(readPhoneSettingsProvider)().name;

@@ -1,4 +1,4 @@
-// A street of the tournée without a line on the map gets the road the map
+// A street of the secteur without a line on the map gets the road the map
 // draws for it, once (PLAN §5.3, #92).
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/street_shapes.dart';

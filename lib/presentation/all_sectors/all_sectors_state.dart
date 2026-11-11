@@ -25,15 +25,15 @@ final class AllSectorsNotAdmin extends AllSectorsState {
   const AllSectorsNotAdmin();
 }
 
-/// Every tournée of the app, grouped under its centre de secours.
+/// Every secteur of the app, grouped under its centre de secours.
 final class AllSectorsShown extends AllSectorsState {
   AllSectorsShown(List<CentreGroup> groups)
     : groups = List.unmodifiable(groups);
 
   /// [overviews] grouped by station (the same station however written:
   /// `RescueCentreKey`), the stations in the order of their key (the name
-  /// without « CS » / « CIS », French order), the tournées by number then
-  /// year. A group is named as its first tournée names it.
+  /// without « CS » / « CIS », French order), the secteurs by number then
+  /// year. A group is named as its first secteur names it.
   factory AllSectorsShown.of(List<SectorOverview> overviews) {
     final sorted = [...overviews]
       ..sort((a, b) {
@@ -80,7 +80,7 @@ final class AllSectorsShown extends AllSectorsState {
   int get hashCode => Object.hashAll(groups);
 }
 
-/// One centre de secours and its tournées (« CS GLEIZÉ »).
+/// One centre de secours and its secteurs (« CS GLEIZÉ »).
 final class CentreGroup {
   CentreGroup({required this.centre, required List<OverviewRow> rows})
     : rows = List.unmodifiable(rows);
@@ -99,7 +99,7 @@ final class CentreGroup {
   int get hashCode => Object.hash(centre, Object.hashAll(rows));
 }
 
-/// One tournée: « Tournée 12 · 2026 » over « 3 membres · 1 demande en
+/// One secteur: « Secteur 12 · 2026 » over « 3 membres · 1 demande en
 /// attente » or « · vous en êtes membre ».
 final class OverviewRow {
   const OverviewRow({
@@ -111,7 +111,7 @@ final class OverviewRow {
     required this.iAmIn,
   });
 
-  /// Which tournée a tap opens.
+  /// Which secteur a tap opens.
   final SectorId id;
   final int number;
 

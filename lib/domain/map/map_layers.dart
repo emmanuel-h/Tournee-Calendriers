@@ -9,7 +9,7 @@ import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
-/// What the map draws over its background for a tournée (PLAN §5.3), as
+/// What the map draws over its background for a secteur (PLAN §5.3), as
 /// plain data: a line per street coloured by its [ProgressLevel], a dot per
 /// house glyphed by its status. `ui/map/` only turns it into MapLibre
 /// sources and layers; every choice of what is shown is made here.

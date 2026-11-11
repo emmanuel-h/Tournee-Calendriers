@@ -21,7 +21,7 @@ final teamProvider = NotifierProvider<TeamNotifier, TeamState>(
   TeamNotifier.new,
 );
 
-/// Shows the open tournée's team live and sends the commands of Secteur
+/// Shows the open secteur's team live and sends the commands of Secteur
 /// (PLAN §5.8, §5.12). Reading works offline from the phone's copy;
 /// answering a request, removing and leaving too (sent later); a new code,
 /// joining as an admin and deleting need the network.
@@ -31,23 +31,23 @@ final teamProvider = NotifierProvider<TeamNotifier, TeamState>(
 /// which gives or takes away the admin's commands at once.
 final class TeamNotifier extends Notifier<TeamState> {
   /// What each member asked about turned out to be: admin or not. Kept
-  /// across tournées: an admin is one everywhere.
+  /// across secteurs: an admin is one everywhere.
   final _admins = <MemberId, bool>{};
 
-  /// The tournée last read, shown again when an answer about an admin
+  /// The secteur last read, shown again when an answer about an admin
   /// arrives or the phone's own status changes.
   Sector? _sector;
 
   @override
   TeamState build() {
     _sector = null;
-    // `ref.watch`: when another tournée is opened (or none), Riverpod runs
+    // `ref.watch`: when another secteur is opened (or none), Riverpod runs
     // `build` again, which stops following the old one (`onDispose`) and
     // follows the new one.
     final sector = ref.watch(currentSectorProvider);
     if (sector == null) return const NoTeam();
     // `ref.listen`, not `ref.watch`: a change of the phone's admin status
-    // redraws the team as it is, without following the tournée again.
+    // redraws the team as it is, without following the secteur again.
     ref.listen(adminProvider, (_, _) => _showLast());
     final listening = ref
         .watch(observeTeamProvider)(sector.id)
@@ -129,40 +129,40 @@ final class TeamNotifier extends Notifier<TeamState> {
   Future<TeamActionFailure?> regenerateCode() =>
       _run(ref.read(regenerateJoinCodeProvider).call);
 
-  /// « + Ajouter une commune »: the tournée covers [commune] too. Works
+  /// « + Ajouter une commune »: the secteur covers [commune] too. Works
   /// offline (sent later).
   Future<TeamActionFailure?> addCommune(CommuneOption commune) => _run(
     (sector) => ref.read(addCommuneProvider)(sector, commune.sectorCommune),
   );
 
-  /// ✕ on the commune [code]: the tournée no longer covers it.
+  /// ✕ on the commune [code]: the secteur no longer covers it.
   Future<TeamActionFailure?> removeCommune(InseeCode code) =>
       _run((sector) => ref.read(removeCommuneProvider)(sector, code));
 
-  /// « Quitter le secteur »: the phone forgets it, so no tournée is open
+  /// « Quitter le secteur »: the phone forgets it, so no secteur is open
   /// any more.
   Future<TeamActionFailure?> leave() =>
       _run(ref.read(leaveSectorProvider).call);
 
   /// « Supprimer le secteur » (admins only); needs the network. The phone
-  /// forgets it, so no tournée is open any more.
+  /// forgets it, so no secteur is open any more.
   Future<TeamActionFailure?> deleteSector() =>
       _run(ref.read(deleteSectorProvider).call);
 
-  /// « Rejoindre » on the banner of a tournée the admin only visits (PLAN
+  /// « Rejoindre » on the banner of a secteur the admin only visits (PLAN
   /// §5.12): they are in the team at once. Needs the network.
   Future<TeamActionFailure?> joinAsAdmin() =>
       _run(ref.read(joinAsAdminProvider).call);
 
   /// « Retirer de Mes secteurs »: the admin who only visits the open
-  /// tournée forgets it on the phone, so no tournée is open any more.
+  /// secteur forgets it on the phone, so no secteur is open any more.
   Future<void> forgetVisit() async {
     final sector = ref.read(currentSectorProvider);
     if (sector == null) return;
     await ref.read(forgetVisitedSectorProvider)(sector.id);
   }
 
-  /// Runs [command] on the open tournée and words its failure for the
+  /// Runs [command] on the open secteur and words its failure for the
   /// screen.
   Future<TeamActionFailure?> _run(
     Future<Result<Object, TeamFailure>> Function(SectorId sector) command,
@@ -172,7 +172,7 @@ final class TeamNotifier extends Notifier<TeamState> {
     return switch (await command(sector.id)) {
       Ok() => null,
       // The admin status changed since the screen offered the command: the
-      // tournée refused it as it would refuse any non-admin.
+      // secteur refused it as it would refuse any non-admin.
       Err(failure: TeamProblem.notAdmin) ||
       Err(
         failure: TeamCommandRefused(reason: SectorCommandFailure.notAdmin),

@@ -12,7 +12,7 @@ import '../../support/fakes/fake_server_connection.dart';
 final _t12 = SectorId('t12');
 final _t23 = SectorId('t23');
 
-/// The tournée [id], downloaded on the phone.
+/// The secteur [id], downloaded on the phone.
 SectorDownload _downloaded(SectorId id) => SectorDownload(
   sector: id,
   downloadedAt: DateTime.utc(2026, 11, 2, 8, 12),
@@ -34,24 +34,24 @@ void main() {
   group('OfflineAccess', () {
     final offline = OfflineAccess(offline: true, downloaded: {_t12});
 
-    test('should say a tournée not downloaded cannot open when offline', () {
+    test('should say a secteur not downloaded cannot open when offline', () {
       expect(offline.isUnavailable(_row(_t23, SectorRowStatus.closed)), isTrue);
     });
 
-    test('should let a downloaded tournée open when offline', () {
+    test('should let a downloaded secteur open when offline', () {
       expect(
         offline.isUnavailable(_row(_t12, SectorRowStatus.closed)),
         isFalse,
       );
     });
 
-    test('should let any tournée open when online', () {
+    test('should let any secteur open when online', () {
       final online = OfflineAccess(offline: false, downloaded: {_t12});
 
       expect(online.isUnavailable(_row(_t23, SectorRowStatus.closed)), isFalse);
     });
 
-    test('should never grey the open tournée', () {
+    test('should never grey the open secteur', () {
       expect(offline.isUnavailable(_row(_t23, SectorRowStatus.open)), isFalse);
     });
 
@@ -62,7 +62,7 @@ void main() {
       );
     });
 
-    test('should compare by offline and downloaded tournées', () {
+    test('should compare by offline and downloaded secteurs', () {
       expect(OfflineAccess(offline: true, downloaded: {_t12}), offline);
       expect(
         OfflineAccess(offline: true, downloaded: {_t12}).hashCode,
@@ -83,7 +83,7 @@ void main() {
       expect('$offline', 'OfflineAccess(offline: true, {SectorId(t12)})');
     });
 
-    test('should keep its downloaded tournées from being changed', () {
+    test('should keep its downloaded secteurs from being changed', () {
       expect(() => offline.downloaded.add(_t23), throwsUnsupportedError);
     });
   });
@@ -114,7 +114,7 @@ void main() {
     tearDown(() => container.dispose());
 
     test(
-      'should know the downloaded tournées at once and say online until told',
+      'should know the downloaded secteurs at once and say online until told',
       () {
         expect(first, OfflineAccess(offline: false, downloaded: {_t12}));
       },
@@ -130,7 +130,7 @@ void main() {
       expect(container.read(offlineAccessProvider).offline, isFalse);
     });
 
-    test('should follow a tournée downloaded meanwhile', () async {
+    test('should follow a secteur downloaded meanwhile', () async {
       await pumpEventQueue();
       await downloads.save(_downloaded(_t23));
       await pumpEventQueue();

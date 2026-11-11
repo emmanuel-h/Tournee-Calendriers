@@ -1,7 +1,7 @@
 import 'package:tournee_calendriers/domain/shared/identifier.dart';
 
-/// The identity of a [Street] in its tournée, made by the app (a generated
-/// id, also the Firestore document id in a tournée).
+/// The identity of a [Street] in its secteur, made by the app (a generated
+/// id, also the Firestore document id in a secteur).
 ///
 /// A class of its own rather than a `String`, so a street id cannot be
 /// passed where a BAN id or a member id is expected.

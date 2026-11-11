@@ -92,7 +92,7 @@ void main() {
       expect(settings.names, [nameOf('Jean Paul')]);
     });
 
-    test('should rename the member in each tournée they are active in '
+    test('should rename the member in each secteur they are active in '
         'when the name is kept', () async {
       await changeName()('Emmanuel');
 
@@ -117,7 +117,7 @@ void main() {
       expect(sectors[sectorId]!.memberOf(leaId), lea);
     });
 
-    test('should remember the name in each of the member\'s tournées, '
+    test('should remember the name in each of the member\'s secteurs, '
         'requests included', () async {
       await changeName()('Emmanuel');
 
@@ -130,7 +130,7 @@ void main() {
     });
 
     test(
-      'should not ask for a tournée where the request still waits',
+      'should not ask for a secteur where the request still waits',
       () async {
         // The 7 is stored with Manu active, as if accepted since: the phone
         // does not know it yet, so it is left alone.
@@ -197,7 +197,7 @@ void main() {
       ]);
     });
 
-    test('should keep the name the member went by in a tournée where the new '
+    test('should keep the name the member went by in a secteur where the new '
         'one is taken', () async {
       store = FakeMySectorsStore(
         MySectors.none.remember(sector49.withMemberName(nameOf('Manu D.'))),
@@ -216,7 +216,7 @@ void main() {
       expect(store.saves, isEmpty);
     });
 
-    test('should change nothing and tell when no tournée can be '
+    test('should change nothing and tell when no secteur can be '
         'reached', () async {
       sectors.offline = true;
 
@@ -228,7 +228,7 @@ void main() {
       expect(sectors.saved, isEmpty);
     });
 
-    test('should keep the name and leave a tournée out of reach to catch '
+    test('should keep the name and leave a secteur out of reach to catch '
         'up later', () async {
       sectors.unreachable.add(SectorId('t12'));
 
@@ -244,7 +244,7 @@ void main() {
     });
 
     test('should keep the name offline when the member is active in no '
-        'tournée', () async {
+        'secteur', () async {
       store = FakeMySectorsStore(MySectors.none.remember(sector7));
       sectors.offline = true;
 
@@ -267,7 +267,7 @@ void main() {
     });
 
     test(
-      'should leave a tournée the admin only visits without a name',
+      'should leave a secteur the admin only visits without a name',
       () async {
         store = FakeMySectorsStore(MySectors.none.remember(sector12Visited));
 
@@ -279,7 +279,7 @@ void main() {
       },
     );
 
-    test('should skip a tournée that cannot be read any more', () async {
+    test('should skip a secteur that cannot be read any more', () async {
       sectors.lose(SectorId('t12'));
 
       final changed = await changeName()('Emmanuel');
@@ -288,7 +288,7 @@ void main() {
       expect(sectors.saved.map((saved) => saved.$2.sectorId), [sectorId]);
     });
 
-    test('should skip a tournée that refuses the rename', () async {
+    test('should skip a secteur that refuses the rename', () async {
       // Manu was removed from the 12 by Léa while the phone still lists it.
       sectors.put(
         valueOf(
@@ -311,7 +311,7 @@ void main() {
       expect(sectors.saved.map((saved) => saved.$2.sectorId), [sectorId]);
     });
 
-    test('should skip a tournée whose server refuses the rename for another '
+    test('should skip a secteur whose server refuses the rename for another '
         'reason', () async {
       sectors.renameRefused = SectorWriteFailure.notAdmin;
 
@@ -322,7 +322,7 @@ void main() {
       expect(store.mySectors.find(sectorId)!.memberName, nameOf('Emmanuel'));
     });
 
-    test('should rename in no tournée when the phone knows none', () async {
+    test('should rename in no secteur when the phone knows none', () async {
       store = FakeMySectorsStore();
 
       await changeName()('Emmanuel');
@@ -417,7 +417,7 @@ void main() {
       String text,
     ) => ChangeSectorName(sectors, FakeIdentity(manuId), store)(id, text);
 
-    test('should give the member the name in that tournée only', () async {
+    test('should give the member the name in that secteur only', () async {
       final renamed = await rename(sectorId, ' Manu   D. ');
 
       expect(valueOf(renamed), nameOf('Manu D.'));
@@ -455,7 +455,7 @@ void main() {
       expect(store.saves, isEmpty);
     });
 
-    test('should tell when the member is no longer in the tournée', () async {
+    test('should tell when the member is no longer in the secteur', () async {
       sectors.lose(sectorId);
 
       expect(
@@ -464,7 +464,7 @@ void main() {
       );
     });
 
-    test('should tell when the tournée is not one the member is active '
+    test('should tell when the secteur is not one the member is active '
         'in', () async {
       for (final id in [sector7.id, SectorId('t99')]) {
         expect(
@@ -502,7 +502,7 @@ void main() {
     CatchUpMemberName catchUp() =>
         CatchUpMemberName(settings, sectors, FakeIdentity(manuId), store);
 
-    test('should send the phone\'s name to a tournée where the team sees '
+    test('should send the phone\'s name to a secteur where the team sees '
         'another one', () async {
       // Renamed while the request to the 12 waited: the 12 still has
       // « Manu ».
@@ -525,7 +525,7 @@ void main() {
       );
     });
 
-    test('should send the name the member goes by in that tournée rather '
+    test('should send the name the member goes by in that secteur rather '
         'than the prénom', () async {
       store = FakeMySectorsStore(
         MySectors.none.remember(sector12.withMemberName(nameOf('Manu D.'))),
@@ -573,7 +573,7 @@ void main() {
       expect(sectors.saved, isEmpty);
     });
 
-    test('should send nothing to a tournée the member is not active in on '
+    test('should send nothing to a secteur the member is not active in on '
         'the phone', () async {
       for (final id in [sector7.id, SectorId('t99')]) {
         await catchUp()(id, nameOf('Manu'));
@@ -584,7 +584,7 @@ void main() {
       expect(sectors.saved, isEmpty);
     });
 
-    test('should skip a tournée that cannot be read', () async {
+    test('should skip a secteur that cannot be read', () async {
       sectors.lose(SectorId('t12'));
 
       await catchUp()(SectorId('t12'), nameOf('Manu'));
@@ -593,7 +593,7 @@ void main() {
       expect(store.saves, isEmpty);
     });
 
-    test('should skip a tournée that refuses the rename', () async {
+    test('should skip a secteur that refuses the rename', () async {
       // Removed from the 12 meanwhile.
       sectors.put(
         valueOf(

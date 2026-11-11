@@ -1,9 +1,9 @@
 /// Whether this phone reaches the server now: what « Mes secteurs » needs
-/// to grey, offline, a tournée never downloaded here (« Disponible avec
+/// to grey, offline, a secteur never downloaded here (« Disponible avec
 /// réseau », PLAN §5.3).
 ///
 /// An application port: the use cases own it, the Firestore street adapter
-/// of the open tournée implements it from the metadata of its snapshots
+/// of the open secteur implements it from the metadata of its snapshots
 /// (`isFromCache`), so no connectivity plugin is needed. That listener
 /// already runs for the marking path; it says « from the phone's copy »
 /// as soon as Firestore stops reaching the server, and « from the server »

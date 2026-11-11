@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:tournee_calendriers/ui/components/copy_button.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 
-/// The ⧉ right of a tournée's join code (PLAN §5.2, §5.8): puts [code] on
+/// The ⧉ right of a secteur's join code (PLAN §5.2, §5.8): puts [code] on
 /// the phone's clipboard, as shown (`K7P-2QX`), so it can be pasted in a
 /// chat, then says « Code copié ». « Rejoindre » accepts it with or
 /// without the dash. TalkBack says « Copier le code ».

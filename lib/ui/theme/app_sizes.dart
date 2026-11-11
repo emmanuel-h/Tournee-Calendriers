@@ -197,15 +197,15 @@ abstract final class AppSizes {
   /// A row of Paramètres (« Prénom    Manu › »).
   static const settingRowHeight = 56.0;
 
-  /// A tournée of « Mes secteurs »: its name over its centre.
+  /// A secteur of « Mes secteurs »: its name over its centre.
   static const sectorRowHeight = 68.0;
 
-  /// The round mark before a tournée of « Mes secteurs » (● open, ○ another,
+  /// The round mark before a secteur of « Mes secteurs » (● open, ○ another,
   /// dashed while the request waits), and the dot inside it.
   static const sectorMark = 22.0;
   static const sectorMarkDot = 10.0;
 
-  /// The ▾ after the open tournée's name in the title.
+  /// The ▾ after the open secteur's name in the title.
   static const titleChevron = 22.0;
 
   /// The red dot on Accueil's title while a join request waits (Home
@@ -261,7 +261,7 @@ abstract final class AppSizes {
   /// A box of the join code.
   static const codeBoxHeight = 64.0;
 
-  /// The card of the tournée a code shows, and the number square in it.
+  /// The card of the secteur a code shows, and the number square in it.
   static const previewCardRadius = 16.0;
   static const previewBadge = 52.0;
   static const previewBadgeRadius = 14.0;
@@ -271,7 +271,7 @@ abstract final class AppSizes {
   static const pendingBadge = 72.0;
   static const pendingIcon = 34.0;
 
-  /// The QR code of a tournée just created (Create mockup).
+  /// The QR code of a secteur just created (Create mockup).
   static const createdQrCode = 176.0;
 
   /// A warning framed in red (« … existe déjà »), and its ⚠.

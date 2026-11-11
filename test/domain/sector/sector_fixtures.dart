@@ -1,8 +1,8 @@
-// Shared values for the tournée tests: the team of the tournée 49 of the
+// Shared values for the secteur tests: the team of the secteur 49 of the
 // CS Villefranche (PLAN §5.8), with Manu who created it, Léa who was
 // accepted, and Julie whose request is pending. Paul never asked to join.
 // Manu and Sam are administrators of the app (PLAN §5.12); Sam is in no
-// tournée.
+// secteur.
 import 'package:tournee_calendriers/domain/sector/actor.dart';
 import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
 import 'package:tournee_calendriers/domain/sector/join_code.dart';
@@ -45,7 +45,7 @@ final leaActing = Actor(member: leaId, isAdmin: false);
 final julieActing = Actor(member: julieId, isAdmin: false);
 final paulActing = Actor(member: paulId, isAdmin: false);
 
-/// Sam, an administrator who is not in the tournée.
+/// Sam, an administrator who is not in the secteur.
 final samAsAdmin = Actor(member: samId, isAdmin: true);
 
 final createdAt = DateTime.utc(2026, 10, 1, 18);
@@ -53,7 +53,7 @@ final leaAskedAt = DateTime.utc(2026, 10, 2, 9);
 final leaAcceptedAt = DateTime.utc(2026, 10, 2, 9, 5);
 final julieAskedAt = DateTime.utc(2026, 11, 2, 8, 12);
 
-/// Manu, the creator: active since the tournée was created, accepted by
+/// Manu, the creator: active since the secteur was created, accepted by
 /// himself.
 final manu = Member(
   id: manuId,
@@ -77,7 +77,7 @@ final julie = Member(
   requestedAt: julieAskedAt,
 );
 
-/// Julie's request to join the tournée 49 with its first code: [julie]
+/// Julie's request to join the secteur 49 with its first code: [julie]
 /// once sent.
 final julieRequest = JoinRequest(
   sector: sectorId,
@@ -101,8 +101,8 @@ final gleizeCommune = SectorCommune(
   centre: valueOf(GeoPoint.create(latitude: 45.9915, longitude: 4.6883)),
 );
 
-/// The tournée with Manu, Léa and Julie, as storage gives it back. No
-/// commune by default: a tournée created before they existed.
+/// The secteur with Manu, Léa and Julie, as storage gives it back. No
+/// commune by default: a secteur created before they existed.
 Sector team({
   JoinCode? joinCode,
   Iterable<Member>? members,

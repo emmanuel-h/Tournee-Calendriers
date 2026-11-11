@@ -98,7 +98,7 @@ final class StreetMemory {
   }
 
   /// Takes the failure of the listener (this member may no longer read the
-  /// tournée): every read and every observer gets it.
+  /// secteur): every read and every observer gets it.
   void fail(Object error, StackTrace trace) {
     _failure = error;
     _failureTrace = trace;

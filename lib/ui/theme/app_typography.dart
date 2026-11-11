@@ -228,7 +228,7 @@ abstract final class AppTextStyles {
     height: 1,
   );
 
-  /// The open tournée as the title of the start screen (« Tournée 49 ·
+  /// The open secteur as the title of the start screen (« Secteur 49 ·
   /// 2026 », Home mockup): larger than a screen title, as it names the
   /// whole app's content.
   static const sectorTitle = TextStyle(
@@ -238,7 +238,7 @@ abstract final class AppTextStyles {
     height: 1.05,
   );
 
-  /// A tournée in « Mes secteurs » (« Tournée 12 · 2026 »), and a street
+  /// A secteur in « Mes secteurs » (« Secteur 12 · 2026 »), and a street
   /// or number of the Corbeille (« 14ter Rue des Lilas »).
   static const sectorRowTitle = TextStyle(
     fontFamily: AppFonts.display,
@@ -282,7 +282,7 @@ abstract final class AppTextStyles {
     height: 1,
   );
 
-  /// The tournée under it (« Tournée 49 · CS Villefranche »).
+  /// The secteur under it (« Secteur 49 · CS Villefranche »).
   static const pendingSector = TextStyle(
     fontFamily: AppFonts.display,
     fontWeight: FontWeight.w600,
@@ -290,7 +290,7 @@ abstract final class AppTextStyles {
     height: 1.1,
   );
 
-  /// The tournée a join code shows (« Tournée 49 · CS Villefranche », Join
+  /// The secteur a join code shows (« Secteur 49 · CS Villefranche », Join
   /// mockup).
   static const previewTitle = TextStyle(
     fontFamily: AppFonts.display,
@@ -317,7 +317,7 @@ abstract final class AppTextStyles {
     height: 1.1,
   );
 
-  /// The code of a tournée just created (« K7P-2QX », Create mockup).
+  /// The code of a secteur just created (« K7P-2QX », Create mockup).
   static const createdCode = TextStyle(
     fontFamily: AppFonts.display,
     fontWeight: FontWeight.w700,

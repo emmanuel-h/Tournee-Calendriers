@@ -5,7 +5,7 @@ import '../../support/results.dart';
 
 void main() {
   group('create', () {
-    test('should keep the number when it is a tournée number', () {
+    test('should keep the number when it is a secteur number', () {
       expect(valueOf(SectorNumber.create(49)).value, 49);
     });
 

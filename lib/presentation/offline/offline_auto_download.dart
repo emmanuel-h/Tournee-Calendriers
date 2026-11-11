@@ -13,13 +13,13 @@ import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
 import 'package:tournee_calendriers/presentation/offline/offline_map_upkeep.dart';
 
-/// The [OfflineAutoDownload] of the open tournée. Built again when another
-/// tournée (or none) opens: the old one is disposed first, which stops its
-/// download, so a switch never waits for the tournée left. The composition
+/// The [OfflineAutoDownload] of the open secteur. Built again when another
+/// secteur (or none) opens: the old one is disposed first, which stops its
+/// download, so a switch never waits for the secteur left. The composition
 /// root keeps it alive and calls [OfflineAutoDownload.check] when the app
 /// comes back to the foreground.
 final offlineAutoDownloadProvider = Provider<OfflineAutoDownload>((ref) {
-  // `select`: only the tournée and its campaign matter; a pending request
+  // `select`: only the secteur and its campaign matter; a pending request
   // cannot read its streets (PLAN §8.2), so it counts as none.
   final open = ref.watch(
     currentSectorProvider.select(
@@ -37,7 +37,7 @@ final offlineAutoDownloadProvider = Provider<OfflineAutoDownload>((ref) {
   );
   ref.onDispose(auto.dispose);
   if (open != null) {
-    // The streets the phone has of the open tournée (its cache first), to
+    // The streets the phone has of the open secteur (its cache first), to
     // see a teammate's new street reach beyond the map kept.
     final streets = ref
         .watch(observeStreetsProvider)()
@@ -52,20 +52,20 @@ final offlineAutoDownloadProvider = Provider<OfflineAutoDownload>((ref) {
 /// tests, which call the callback themselves.
 typedef Schedule = Timer Function(Duration delay, void Function() callback);
 
-/// Downloads the open tournée for offline use by itself, unseen by the
+/// Downloads the open secteur for offline use by itself, unseen by the
 /// member (PLAN §7): there is no button, no banner, no progress.
 ///
 /// Each [check]:
-/// 1. when the open tournée is not downloaded on this phone, or its
+/// 1. when the open secteur is not downloaded on this phone, or its
 ///    streets now reach beyond the map kept (`coversStreets`) →
-///    `DownloadSector`, then the maps of the other downloaded tournées
+///    `DownloadSector`, then the maps of the other downloaded secteurs
 ///    are refreshed at once (`OfflineMapUpkeep.refreshAllBut`): the
 ///    download made the map's description name this week's tiles;
-/// 2. otherwise → the silent map refresh of every downloaded tournée when
+/// 2. otherwise → the silent map refresh of every downloaded secteur when
 ///    due (`OfflineMapUpkeep.refreshIfDue`), which keeps their maps
 ///    reachable offline when the map's tiles change every week.
 ///
-/// [check] runs when it is built (start-up, a tournée opened), when the
+/// [check] runs when it is built (start-up, a secteur opened), when the
 /// streets change, when the app comes back to the foreground, and
 /// [retryDelay] after a failure: offline, it fails and waits, then tries
 /// again, until the network is back. One run at a time: a check asked
@@ -92,7 +92,7 @@ final class OfflineAutoDownload {
   final Clock _clock;
   final Schedule _schedule;
 
-  /// The open tournée's streets last given; null until the first.
+  /// The open secteur's streets last given; null until the first.
   List<Street>? _streets;
 
   var _running = false;
@@ -107,14 +107,14 @@ final class OfflineAutoDownload {
   StreamSubscription<DownloadProgress>? _downloading;
   Completer<bool>? _downloadDone;
 
-  /// The open tournée's streets changed (a teammate added one, a house was
+  /// The open secteur's streets changed (a teammate added one, a house was
   /// marked): checks whether the map kept still covers them.
   void streetsChanged(List<Street> streets) {
     _streets = streets;
     unawaited(check());
   }
 
-  /// Downloads the open tournée when it needs it, else refreshes the maps
+  /// Downloads the open secteur when it needs it, else refreshes the maps
   /// when due (see the class). Returns once the run is over; a call made
   /// while one goes returns at once, and the run goes round once more.
   Future<void> check() async {

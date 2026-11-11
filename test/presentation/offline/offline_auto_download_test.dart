@@ -1,4 +1,4 @@
-// The open tournée is downloaded for offline use by the app itself, unseen
+// The open secteur is downloaded for offline use by the app itself, unseen
 // (PLAN §7): when it is not yet, when its streets reach beyond the map
 // kept, and the maps are refreshed otherwise; a failure waits two minutes.
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -73,7 +73,7 @@ void main() {
     expect(OfflineAutoDownload.retryDelay, const Duration(minutes: 2));
   });
 
-  test('should download the open tournée when it is not yet', () async {
+  test('should download the open secteur when it is not yet', () async {
     await auto().check();
 
     expect(streets.asked, [(t49, campaign2026)]);
@@ -98,7 +98,7 @@ void main() {
     expect(maps.log, ['create 1 t49', 'create 2 t12', 'delete 50']);
   });
 
-  test('should only refresh the maps when the open tournée is downloaded '
+  test('should only refresh the maps when the open secteur is downloaded '
       'and covers its streets', () async {
     downloads = FakeSectorDownloads([downloadOf(t49, area49)]);
     maps = FakeOfflineMapStore([regionOf(40, t49, area49)]);
@@ -110,7 +110,7 @@ void main() {
     expect(downloads.downloads, {t49: downloadOf(t49, area49)});
   });
 
-  test('should download the tournée again when a street reaches beyond the '
+  test('should download the secteur again when a street reaches beyond the '
       'map kept', () async {
     downloads = FakeSectorDownloads([downloadOf(t49, area49)]);
     maps = FakeOfflineMapStore([regionOf(40, t49, area49)]);
@@ -129,7 +129,7 @@ void main() {
     );
   });
 
-  test('should only refresh the maps when no tournée is open', () async {
+  test('should only refresh the maps when no secteur is open', () async {
     downloads = FakeSectorDownloads([downloadOf(t12, area12)]);
     maps = FakeOfflineMapStore([regionOf(50, t12, area12)]);
 
@@ -320,7 +320,7 @@ void main() {
           mySectorsStoreProvider.overrideWithValue(mySectors),
           clockProvider.overrideWithValue(clock),
           streetRepositoryProvider.overrideWithValue(streets49),
-          // « Mes secteurs » follows the team of each tournée not open.
+          // « Mes secteurs » follows the team of each secteur not open.
           sectorRepositoryProvider.overrideWithValue(FakeSectorRepository()),
         ],
       );
@@ -330,7 +330,7 @@ void main() {
     /// Keeps the provider alive, as the composition root does.
     void follow() => container.listen(offlineAutoDownloadProvider, (_, _) {});
 
-    test('should download the open tournée when built', () async {
+    test('should download the open secteur when built', () async {
       follow();
       await _pumpUntil(() => downloads.downloads.isNotEmpty);
 
@@ -338,7 +338,7 @@ void main() {
       expect(downloads.downloads.keys, [t49]);
     });
 
-    test('should stop the download of a tournée left and download the one '
+    test('should stop the download of a secteur left and download the one '
         'opened', () async {
       maps.scripts.add(null);
       follow();
@@ -353,7 +353,7 @@ void main() {
       expect(streets.asked, [(t49, campaign2026), (t12, campaign2026)]);
     });
 
-    test('should download the tournée again when a teammate adds a street '
+    test('should download the secteur again when a teammate adds a street '
         'beyond the map', () async {
       follow();
       await _pumpUntil(() => downloads.downloads.isNotEmpty);
@@ -369,7 +369,7 @@ void main() {
       );
     });
 
-    test('should not download a tournée whose request waits', () async {
+    test('should not download a secteur whose request waits', () async {
       mySectors.mySectors = MySectors.none.remember(
         summaryOf('t7', 7, status: MemberStatus.pending),
       );

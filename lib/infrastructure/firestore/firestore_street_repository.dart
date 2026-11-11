@@ -22,9 +22,9 @@ import 'package:tournee_calendriers/infrastructure/firestore/street_memory.dart'
 import 'package:tournee_calendriers/infrastructure/firestore/unfinished_streets.dart';
 
 /// The [StreetRepository] of M2: the streets of one campaign of one
-/// tournée, `sectors/{id}/campaigns/{year}/streets` (PLAN §6.2), shared by
+/// secteur, `sectors/{id}/campaigns/{year}/streets` (PLAN §6.2), shared by
 /// the whole team. Also the [PendingSync] of those streets, and the
-/// [ServerConnection] of the phone while the tournée is open, and its
+/// [ServerConnection] of the phone while the secteur is open, and its
 /// [UnreadableStreets]: a document that does not read is kept apart, not
 /// dropped (#149).
 ///
@@ -226,7 +226,7 @@ final class FirestoreStreetRepository
   /// (#104): for each one kept, sends what the phone's copy of its document
   /// is missing ([catchUpWrites]). The copy is the document's first
   /// snapshot, which Firestore serves from the phone at once, offline too.
-  /// A failure (the storage unreadable, the tournée no longer readable) is
+  /// A failure (the storage unreadable, the secteur no longer readable) is
   /// only logged: the user can still add the missing numbers by hand.
   Future<void> _catchUp(StreetMemory memory) async {
     for (final street in await _unfinished.load()) {
@@ -297,7 +297,7 @@ final class FirestoreStreetRepository
     ]);
   }
 
-  /// Stops listening: the composition root calls it when the tournée or
+  /// Stops listening: the composition root calls it when the secteur or
   /// the campaign changes.
   Future<void> close() async {
     await _listener?.cancel();
@@ -346,7 +346,7 @@ final class FirestoreStreetRepository
   }
 
   /// The street in [doc], or what can be told of it when it cannot be read
-  /// (#149): kept apart rather than stopping the whole tournée, shown on
+  /// (#149): kept apart rather than stopping the whole secteur, shown on
   /// Accueil, and kept in Firestore until an admin deletes it.
   Result<Street, UnreadableStreet> _read(
     DocumentSnapshot<Map<String, dynamic>> doc,

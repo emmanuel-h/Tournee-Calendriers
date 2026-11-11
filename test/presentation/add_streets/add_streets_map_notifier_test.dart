@@ -41,10 +41,10 @@ final _me = streets_fixtures.lea;
 final _morinId = BanStreetId('69264_1460');
 final _nationaleId = BanStreetId('69264_1781');
 
-/// Where the finger taps on Rue Pierre Morin, not yet in the tournée.
+/// Where the finger taps on Rue Pierre Morin, not yet in the secteur.
 final _onMorin = at(45.98850, 4.72500);
 
-/// Where the finger taps on Rue Nationale, in the tournée.
+/// Where the finger taps on Rue Nationale, in the secteur.
 final _onNationale = at(45.98915, 4.71862);
 
 /// Where the finger taps where the BAN knows no street.
@@ -103,7 +103,7 @@ final _nationaleRoad = StreetShape([
   [at(45.98915, 4.71862), at(45.99210, 4.71705)],
 ]);
 
-/// Rue Nationale, in the tournée, nobody's.
+/// Rue Nationale, in the secteur, nobody's.
 final _nationale = valueOf(
   Street.create(
     id: StreetId('nationale'),
@@ -253,7 +253,7 @@ void main() {
       expect(stateOf(container).layers.lines.single.level, ProgressLevel.toDo);
     });
 
-    test('should open on the streets for a tournée without commune', () async {
+    test('should open on the streets for a secteur without commune', () async {
       sectors.put(team());
       final container = phone();
       await pumpEventQueue();
@@ -271,7 +271,7 @@ void main() {
       expect(stateOf(container).area, communesArea([gleizeCommune]));
     });
 
-    test('should open on the streets with no tournée open', () async {
+    test('should open on the streets with no secteur open', () async {
       final container = phone(open: false);
       await pumpEventQueue();
 

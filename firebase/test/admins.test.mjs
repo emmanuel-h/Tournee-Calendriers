@@ -1,7 +1,7 @@
 // The administrators of the app (PLAN §5.12, the « Admins » block of
 // §8.2): an `admins/{uid}` document added by hand in the console makes a
-// phone an admin of every tournée, member of it or not. Sam is an admin
-// in no tournée; Manu, who created Tournée 49, is one too; Léa is a
+// phone an admin of every secteur, member of it or not. Sam is an admin
+// in no secteur; Manu, who created Secteur 49, is one too; Léa is a
 // member who is not.
 import { after, before, beforeEach, describe, it } from 'node:test';
 import { assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
@@ -83,7 +83,7 @@ describe('the admin documents', () => {
 });
 
 describe('what an admin outside the team reads', () => {
-  it('should let them read the tournée, its members, campaign and streets', async () => {
+  it('should let them read the secteur, its members, campaign and streets', async () => {
     const phone = phoneOf(env, sam);
     await assertSucceeds(getDoc(doc(phone, sectorPath)));
     await assertSucceeds(getDocs(collection(phone, `${sectorPath}/members`)));
@@ -92,7 +92,7 @@ describe('what an admin outside the team reads', () => {
     await assertSucceeds(getDocs(collection(phone, streetsPath)));
   });
 
-  it('should let only an admin list the tournées', async () => {
+  it('should let only an admin list the secteurs', async () => {
     await assertSucceeds(getDocs(collection(phoneOf(env, sam), 'sectors')));
     await assertFails(getDocs(collection(phoneOf(env, lea), 'sectors')));
     await assertFails(getDocs(collection(phoneOf(env, zoe), 'sectors')));
@@ -251,7 +251,7 @@ describe('an admin joining (« Rejoindre » of the banner)', () => {
   });
 });
 
-describe('what an admin outside the team does to the tournée', () => {
+describe('what an admin outside the team does to the secteur', () => {
   /** [uid] replaces K7P2QX by R2D2XY, as the adapter's transaction does. */
   function newCode(uid) {
     const db = phoneOf(env, uid);
@@ -289,11 +289,11 @@ describe('what an admin outside the team does to the tournée', () => {
     await assertFails(newCode(lea));
   });
 
-  it('should let them delete the tournée and everything in it', async () => {
+  it('should let them delete the secteur and everything in it', async () => {
     await assertSucceeds(deleteAll(sam));
   });
 
-  it('should let them delete a tournée whose members all left', async () => {
+  it('should let them delete a secteur whose members all left', async () => {
     await env.withSecurityRulesDisabled(async (context) => {
       for (const member of [manu, lea, paul]) {
         await deleteDoc(doc(context.firestore(), memberPath(member)));
@@ -303,7 +303,7 @@ describe('what an admin outside the team does to the tournée', () => {
     await assertSucceeds(deleteAll(sam, []));
   });
 
-  it('should refuse someone who is not an admin deleting the tournée', async () => {
+  it('should refuse someone who is not an admin deleting the secteur', async () => {
     await assertFails(deleteAll(lea));
   });
 });

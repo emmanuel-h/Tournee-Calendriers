@@ -74,7 +74,7 @@ const partHatchImage = 'tc-part-hatch';
 const pickedMarkImage = 'tc-picked-mark';
 
 /// The street a tap on a feature of [layerId] names, or null when the layer
-/// is not one of the tournée's streets (a layer of the style, or the road
+/// is not one of the secteur's streets (a layer of the style, or the road
 /// picked on « Ajouter des rues »). Every street feature carries its
 /// street's id as its own (see `map_geojson.dart`).
 StreetId? tappedStreet(String layerId, String featureId) => switch (layerId) {
@@ -142,7 +142,7 @@ List<MapLayerSpec> sectorMapLayers(AppColors colors) => [
     source: MapIds.selectedSource,
     properties: _casing(colors),
     belowLabels: false,
-    // Not a street of the tournée: a tap on it goes on to the map, which
+    // Not a street of the secteur: a tap on it goes on to the map, which
     // looks up the road under the finger again.
     interactive: false,
   ),

@@ -3,10 +3,10 @@ import 'package:tournee_calendriers/application/ports/offline_map_store.dart';
 import 'package:tournee_calendriers/application/ports/sector_downloads.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 
-// The tournées downloaded on this phone for offline use (PLAN §6.3, §7).
+// The secteurs downloaded on this phone for offline use (PLAN §6.3, §7).
 // The download itself is `DownloadSector`, run by the app unseen.
 
-/// The tournées downloaded on this phone, by id. Synchronous: read once at
+/// The secteurs downloaded on this phone, by id. Synchronous: read once at
 /// start-up, so it answers after an offline cold start.
 final class ReadSectorDownloads {
   const ReadSectorDownloads(this._downloads);
@@ -16,7 +16,7 @@ final class ReadSectorDownloads {
   Map<SectorId, SectorDownload> call() => _downloads.downloads;
 }
 
-/// The tournées downloaded on this phone now, then after each change.
+/// The secteurs downloaded on this phone now, then after each change.
 final class ObserveSectorDownloads {
   const ObserveSectorDownloads(this._downloads);
 
@@ -28,8 +28,8 @@ final class ObserveSectorDownloads {
   }
 }
 
-/// Deletes what this phone downloaded of a tournée: the date and size
-/// kept first, so the tournée no longer counts as downloaded even if the
+/// Deletes what this phone downloaded of a secteur: the date and size
+/// kept first, so the secteur no longer counts as downloaded even if the
 /// app is killed meanwhile, then every map region made for it. Offline
 /// too.
 final class DeleteSectorDownload {
@@ -46,10 +46,10 @@ final class DeleteSectorDownload {
   }
 }
 
-/// Deletes the downloads of the tournées the phone forgot (left, removed
+/// Deletes the downloads of the secteurs the phone forgot (left, removed
 /// from, deleted, a request refused): whatever forgot them, their map does
 /// not stay on the phone. Also the regions a download killed before its
-/// end left behind for such a tournée.
+/// end left behind for such a secteur.
 final class PruneSectorDownloads {
   const PruneSectorDownloads(
     this._mySectors,

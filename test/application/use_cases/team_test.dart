@@ -76,7 +76,7 @@ void main() {
   });
 
   group('ObserveTeam', () {
-    test('should give the tournée then each change of the team', () async {
+    test('should give the secteur then each change of the team', () async {
       final seen = <Sector?>[];
       final listening = ObserveTeam(sectors)(sectorId).listen(seen.add);
       addTearDown(listening.cancel);
@@ -110,7 +110,7 @@ void main() {
       ]);
     });
 
-    test('should give none when the tournée cannot be read', () async {
+    test('should give none when the secteur cannot be read', () async {
       sectors.put(team(communes: [villefrancheCommune]));
       final seen = <List<SectorCommune>>[];
       final listening = ObserveSectorCommunes(sectors)(sectorId)
@@ -155,7 +155,7 @@ void main() {
       expect(change.commune, gleizeCommune);
     });
 
-    test('should be refused when the tournée already covers it', () async {
+    test('should be refused when the secteur already covers it', () async {
       sectors.put(team(communes: [gleizeCommune]));
 
       final failure = failureOf(
@@ -172,7 +172,7 @@ void main() {
       expect(sectors.saved, isEmpty);
     });
 
-    test('should fail when the tournée is gone', () async {
+    test('should fail when the secteur is gone', () async {
       sectors.lose(sectorId);
 
       final failure = failureOf(
@@ -331,7 +331,7 @@ void main() {
       expect(change.member.acceptance, ChangeStamp(by: leaId, at: acceptedAt));
     });
 
-    test('should tell when the tournée cannot be read any more', () async {
+    test('should tell when the secteur cannot be read any more', () async {
       final accept = AcceptMember(
         sectors,
         FakeClock(acceptedAt),
@@ -453,7 +453,7 @@ void main() {
       expect(sectors.saved, isEmpty);
     });
 
-    test('should tell when the tournée cannot be read any more', () async {
+    test('should tell when the secteur cannot be read any more', () async {
       final failure = failureOf(
         await removeAs(samId, admin)(SectorId('gone'), leaId, renewCode: true),
       );
@@ -474,7 +474,7 @@ void main() {
   });
 
   group('LeaveSector', () {
-    test('should take the member out and forget the tournée on the '
+    test('should take the member out and forget the secteur on the '
         'phone', () async {
       final change = valueOf(
         await LeaveSector(sectors, FakeIdentity(leaId), store, cache)(sectorId),
@@ -498,7 +498,7 @@ void main() {
       expect(store.mySectors.sectors, [sector12]);
     });
 
-    test('should keep the tournée on the phone when the member is not in '
+    test('should keep the secteur on the phone when the member is not in '
         'it', () async {
       final failure = failureOf(
         await LeaveSector(sectors, FakeIdentity(samId), store, cache)(sectorId),
@@ -613,7 +613,7 @@ void main() {
   });
 
   group('DeleteSector', () {
-    test('should delete the tournée and forget it on the phone', () async {
+    test('should delete the secteur and forget it on the phone', () async {
       final deletion = valueOf(
         await DeleteSector(sectors, FakeIdentity(manuId), admin, store, cache)(
           sectorId,
@@ -681,7 +681,7 @@ void main() {
       expect(store.saves, isEmpty);
     });
 
-    test('should tell when the tournée cannot be read any more', () async {
+    test('should tell when the secteur cannot be read any more', () async {
       final failure = failureOf(
         await DeleteSector(sectors, FakeIdentity(manuId), admin, store, cache)(
           SectorId('gone'),
@@ -717,7 +717,7 @@ void main() {
         );
 
     test('should make the admin an active member, accepted by themself, '
-        'and the tournée theirs on the phone', () async {
+        'and the secteur theirs on the phone', () async {
       final change = valueOf(await joinAs(admin)(sectorId));
 
       final sam = Member(
@@ -798,7 +798,7 @@ void main() {
       expect(sectors.saved, isEmpty);
     });
 
-    test('should tell when the tournée cannot be read any more', () async {
+    test('should tell when the secteur cannot be read any more', () async {
       final failure = failureOf(await joinAs(admin)(SectorId('gone')));
 
       expect(failure, TeamProblem.sectorGone);
@@ -806,7 +806,7 @@ void main() {
     });
 
     test('should save nothing on the phone when it no longer knows the '
-        'tournée', () async {
+        'secteur', () async {
       store.mySectors = MySectors.none;
 
       valueOf(await joinAs(admin)(sectorId));
@@ -816,7 +816,7 @@ void main() {
   });
 
   group('ForgetVisitedSector', () {
-    test('should forget the tournée on the phone and write nothing', () async {
+    test('should forget the secteur on the phone and write nothing', () async {
       await ForgetVisitedSector(store)(sectorId);
 
       expect(store.mySectors.sectors, [sector12]);

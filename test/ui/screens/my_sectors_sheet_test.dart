@@ -97,7 +97,7 @@ void main() {
   }
 
   testWidgets(
-    'should show the open tournée and its centre as the title when the '
+    'should show the open secteur and its centre as the title when the '
     'app starts',
     (tester) async {
       await pumpApp(tester, _manusPhone());
@@ -113,7 +113,7 @@ void main() {
   );
 
   testWidgets(
-    'should list the open tournée, the others and the pending request '
+    'should list the open secteur, the others and the pending request '
     'when « Changer de secteur » is tapped',
     (tester) async {
       await pumpApp(tester, _manusPhone());
@@ -146,7 +146,7 @@ void main() {
   );
 
   testWidgets(
-    'should show a dot and the count on another tournée where a request '
+    'should show a dot and the count on another secteur where a request '
     'waits',
     (tester) async {
       // The 49, with Julie's request waiting, is not the open one.
@@ -174,7 +174,7 @@ void main() {
   );
 
   testWidgets(
-    'should switch to the tournée tapped and keep it for the next launch',
+    'should switch to the secteur tapped and keep it for the next launch',
     (tester) async {
       await pumpApp(tester, _manusPhone());
       await openSheet(tester);
@@ -190,7 +190,7 @@ void main() {
     },
   );
 
-  testWidgets('should close and keep the tournée when the open one is tapped', (
+  testWidgets('should close and keep the secteur when the open one is tapped', (
     tester,
   ) async {
     await pumpApp(tester, _manusPhone());
@@ -205,7 +205,7 @@ void main() {
     expect(find.text('Secteur 49 · 2026'), findsOneWidget);
   });
 
-  testWidgets('should not open a tournée whose request is pending', (
+  testWidgets('should not open a secteur whose request is pending', (
     tester,
   ) async {
     await pumpApp(tester, _manusPhone());
@@ -222,7 +222,7 @@ void main() {
     const unavailable12 =
         'Secteur 12 · 2026, CS Villefranche, disponible avec réseau';
 
-    testWidgets('should leave a tournée not downloaded as it is when online', (
+    testWidgets('should leave a secteur not downloaded as it is when online', (
       tester,
     ) async {
       await pumpApp(tester, _manusPhone());
@@ -240,7 +240,7 @@ void main() {
       expect(store.saves.single.current, sector12);
     });
 
-    testWidgets('should still open a downloaded tournée when offline', (
+    testWidgets('should still open a downloaded secteur when offline', (
       tester,
     ) async {
       await pumpApp(
@@ -261,7 +261,7 @@ void main() {
     });
 
     testWidgets(
-      'should grey a tournée not downloaded and not open it when offline',
+      'should grey a secteur not downloaded and not open it when offline',
       (tester) async {
         final semantics = tester.ensureSemantics();
         await pumpApp(tester, _manusPhone(), offline: true);
@@ -293,7 +293,7 @@ void main() {
     );
 
     testWidgets(
-      'should grey a tournée where a request waits without its dot when '
+      'should grey a secteur where a request waits without its dot when '
       'offline',
       (tester) async {
         await pumpApp(
@@ -315,7 +315,7 @@ void main() {
     );
 
     testWidgets(
-      'should never grey the open tournée nor a pending request when offline',
+      'should never grey the open secteur nor a pending request when offline',
       (tester) async {
         await pumpApp(tester, _manusPhone(), offline: true);
         await openSheet(tester);
@@ -342,7 +342,7 @@ void main() {
 
   testWidgets(
     'should keep the app name as the title and still offer Paramètres '
-    'when no tournée is open',
+    'when no secteur is open',
     (tester) async {
       await pumpApp(tester, MySectors.none);
 
@@ -362,7 +362,7 @@ void main() {
     },
   );
 
-  testWidgets('should say there is no tournée yet when the phone knows none', (
+  testWidgets('should say there is no secteur yet when the phone knows none', (
     tester,
   ) async {
     await pumpApp(tester, MySectors.none);
@@ -376,7 +376,7 @@ void main() {
   });
 
   testWidgets(
-    'should open the sheet from the app\'s name when no tournée is open',
+    'should open the sheet from the app\'s name when no secteur is open',
     (tester) async {
       await pumpApp(tester, MySectors.none);
 
@@ -392,7 +392,7 @@ void main() {
   );
 
   testWidgets(
-    'should open « Nouveau secteur » from the sheet, the open tournée kept',
+    'should open « Nouveau secteur » from the sheet, the open secteur kept',
     (tester) async {
       await pumpApp(tester, _manusPhone(), name: nameOf('Manu'), admin: true);
       await openSheet(tester);
@@ -463,7 +463,7 @@ void main() {
       expect(find.byType(AllSectorsScreen), findsOneWidget);
     });
 
-    testWidgets('should show a visited tournée with a shield and '
+    testWidgets('should show a visited secteur with a shield and '
         '« administrateur »', (tester) async {
       await pumpApp(
         tester,
@@ -493,7 +493,7 @@ void main() {
     });
 
     testWidgets(
-      'should grey a visited tournée and its shield when offline and not '
+      'should grey a visited secteur and its shield when offline and not '
       'downloaded',
       (tester) async {
         await pumpApp(
@@ -520,7 +520,7 @@ void main() {
       },
     );
 
-    testWidgets('should say an open visited tournée is open', (tester) async {
+    testWidgets('should say an open visited secteur is open', (tester) async {
       await pumpApp(
         tester,
         valueOf(

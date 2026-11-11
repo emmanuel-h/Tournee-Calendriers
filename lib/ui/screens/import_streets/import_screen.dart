@@ -97,7 +97,7 @@ final class _ImportListState extends ConsumerState<ImportList> {
   }
 }
 
-/// A chip per commune of the tournée, the chosen one in ink (AddList
+/// A chip per commune of the secteur, the chosen one in ink (AddList
 /// mockup); screen readers hear radio buttons named « Commune ».
 final class _CommuneChoice extends ConsumerWidget {
   const _CommuneChoice({required this.state});

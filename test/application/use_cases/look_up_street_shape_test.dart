@@ -1,5 +1,5 @@
 // The road highlighted on « Ajouter des rues » (PLAN §5.4): the shape of a
-// street the tournée does not have yet, asked of the map while its card
+// street the secteur does not have yet, asked of the map while its card
 // shows.
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';

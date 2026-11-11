@@ -12,7 +12,7 @@ import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_docu
 /// collection of a campaign (PLAN §6.2), asked of the server
 /// (`Source.server`). Every document read lands in Firestore's cache on
 /// the phone, which has no size limit (`offlineFirestore`), so the
-/// tournée's listener answers from it after an offline cold start
+/// secteur's listener answers from it after an offline cold start
 /// (PLAN §7).
 final class FirestoreStreetsDownload implements StreetsDownload {
   const FirestoreStreetsDownload(this._db);
@@ -42,7 +42,7 @@ final class FirestoreStreetsDownload implements StreetsDownload {
 
   /// The street in [doc], or null when it cannot be read: it is left out
   /// of the map's area rather than stopping the download. Its document is
-  /// in the phone's cache all the same, so the tournée's listener lists it
+  /// in the phone's cache all the same, so the secteur's listener lists it
   /// on Accueil as unreadable, offline too (#149).
   Street? _read(QueryDocumentSnapshot<Map<String, dynamic>> doc) {
     try {

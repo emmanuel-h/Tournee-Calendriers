@@ -7,7 +7,7 @@ import 'package:tournee_calendriers/presentation/pending_sync/pending_sync_state
 import '../../support/fakes/fake_pending_sync.dart';
 
 /// The pending sync bound to the port, as the composition root does when
-/// another tournée is opened: [open] replaces it.
+/// another secteur is opened: [open] replaces it.
 final class _BoundPendingSync extends Notifier<FakePendingSync> {
   _BoundPendingSync(this._first);
 
@@ -91,14 +91,14 @@ void main() {
       const ChangesWaiting(2),
     );
 
-    pending.fail(StateError('tournée gone'));
+    pending.fail(StateError('secteur gone'));
     await pumpEventQueue();
 
     expect(container.read(pendingSyncIndicatorProvider), const AllSent());
   });
 
   test(
-    'should follow the tournée opened and stop following the one left',
+    'should follow the secteur opened and stop following the one left',
     () async {
       pending.unsent(2);
       final other = FakePendingSync(1);

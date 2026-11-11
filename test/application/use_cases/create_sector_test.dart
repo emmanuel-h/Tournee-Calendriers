@@ -94,7 +94,7 @@ void main() {
     Future<Sector> create() async =>
         valueOf(await _create(sectors, account, store, now));
 
-    test('should store the tournée with Manu as its only member', () async {
+    test('should store the secteur with Manu as its only member', () async {
       final created = await create();
 
       expect(sectors.added, [created]);
@@ -117,7 +117,7 @@ void main() {
     });
 
     test(
-      'should keep the tournée among Manu\'s and open it when it is created',
+      'should keep the secteur among Manu\'s and open it when it is created',
       () async {
         store = FakeMySectorsStore(MySectors.none.remember(sector12));
 

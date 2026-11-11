@@ -31,7 +31,7 @@ mixin FollowsStreet<S> on Notifier<S> {
 
   /// Starts following the street [id]; `build` then returns [render].
   void followStreet(StreetId id) {
-    // Riverpod keeps the notifier when it builds again (another tournée
+    // Riverpod keeps the notifier when it builds again (another secteur
     // opened): what was read of the old street storage must not show.
     _street = null;
     _read = false;
@@ -42,7 +42,7 @@ mixin FollowsStreet<S> on Notifier<S> {
         .listen(
           _show,
           // The street can no longer be read (the member left the
-          // tournée): the screen shows it as gone.
+          // secteur): the screen shows it as gone.
           onError: (Object _) => _show(null),
         );
     // The subscription lives as long as the notifier; Riverpod calls this

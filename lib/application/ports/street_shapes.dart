@@ -5,7 +5,7 @@ import 'package:tournee_calendriers/domain/street/street_shape.dart';
 
 /// Where a street runs, as OpenStreetMap draws it on the map: the line of
 /// the street, asked for a street to add on « Ajouter des rues », and for a
-/// street of the tournée that has none yet (PLAN §5.3, §5.4, §9).
+/// street of the secteur that has none yet (PLAN §5.3, §5.4, §9).
 ///
 /// An outbound port: an adapter in `infrastructure/map_tiles/` implements
 /// it over HTTP, tests use a fake. A call may need the network; a failure

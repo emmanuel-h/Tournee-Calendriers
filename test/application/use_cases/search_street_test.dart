@@ -1,5 +1,5 @@
 // The search box of « Ajouter des rues » (PLAN §5.4): a street found by
-// name in every commune of the tournée.
+// name in every commune of the secteur.
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/use_cases/search_street.dart';
@@ -35,7 +35,7 @@ FakeAddressDirectory _perCommune(
 ) => FakeAddressDirectory(searchesByCommune: answers);
 
 void main() {
-  test('should search each commune of the tournée, in order', () async {
+  test('should search each commune of the secteur, in order', () async {
     final directory = _perCommune({
       '69264': Ok([_morin, _pierre]),
       '69999': Ok([_otherPierre]),
@@ -52,7 +52,7 @@ void main() {
     expect(directory.searchesAsked, [('pierre', '69264'), ('pierre', '69999')]);
   });
 
-  test('should search the one commune of the tournée', () async {
+  test('should search the one commune of the secteur', () async {
     final directory = _perCommune({
       '69264': Ok([_morin]),
     });

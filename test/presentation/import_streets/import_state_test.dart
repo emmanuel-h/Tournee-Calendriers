@@ -492,7 +492,7 @@ void main() {
       expect(made.centre, at(45.9837, 4.726));
     });
 
-    test('should take the commune and centre of a tournée, no postcode', () {
+    test('should take the commune and centre of a secteur, no postcode', () {
       final made = CommuneOption.ofSector(
         SectorCommune(commune: gleize, centre: at(45.9915, 4.6883)),
       );
@@ -502,7 +502,7 @@ void main() {
       expect(made.centre, at(45.9915, 4.6883));
     });
 
-    test('should give the commune as a tournée keeps it', () {
+    test('should give the commune as a secteur keeps it', () {
       expect(
         option().sectorCommune,
         SectorCommune(commune: villefranche, centre: at(45.9837, 4.726)),

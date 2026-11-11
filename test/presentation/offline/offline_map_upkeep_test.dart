@@ -1,5 +1,5 @@
 // Keeping the downloaded maps usable offline, unseen (PLAN §7): the silent
-// refresh, at most twice a day, and the downloads of forgotten tournées
+// refresh, at most twice a day, and the downloads of forgotten secteurs
 // deleted.
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
@@ -135,7 +135,7 @@ void main() {
   });
 
   group('prune', () {
-    test('should delete the downloads of forgotten tournées', () async {
+    test('should delete the downloads of forgotten secteurs', () async {
       mySectors.mySectors = MySectors.none;
 
       await upkeep.prune();
@@ -180,7 +180,7 @@ void main() {
       expect(downloads.downloads, isEmpty);
     });
 
-    test('should prune when the phone forgets a tournée', () async {
+    test('should prune when the phone forgets a secteur', () async {
       container.read(offlineMapUpkeepProvider);
       await pumpEventQueue();
       expect(downloads.downloads.keys, [t49]);

@@ -79,7 +79,7 @@ final class RemovedNumber extends CorbeilleItem {
   String toString() => 'RemovedNumber(${streetId.value}, ${number.label})';
 }
 
-/// What the Corbeille holds among [streets] (every street of the tournée,
+/// What the Corbeille holds among [streets] (every street of the secteur,
 /// deleted or not): each deleted street, and each removed number of the
 /// streets not deleted, the latest removal first.
 ///

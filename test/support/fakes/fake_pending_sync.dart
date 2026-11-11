@@ -21,7 +21,7 @@ final class FakePendingSync implements PendingSync {
     _changes.add(streets);
   }
 
-  /// The count can no longer be read (the member left the tournée).
+  /// The count can no longer be read (the member left the secteur).
   void fail(Object error) => _changes.addError(error);
 
   /// The count now, then each new one, like the real adapter.

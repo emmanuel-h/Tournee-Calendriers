@@ -33,7 +33,7 @@ void main() {
   });
 
   group('ReadMySectors', () {
-    test('should give the tournées the phone keeps', () {
+    test('should give the secteurs the phone keeps', () {
       expect(ReadMySectors(store)(), _manusPhone());
     });
   });
@@ -50,7 +50,7 @@ void main() {
   });
 
   group('OpenSector', () {
-    test('should open the tournée and keep it for the next launch', () async {
+    test('should open the secteur and keep it for the next launch', () async {
       final opened = await OpenSector(store)(sector12.id);
 
       expect(valueOf(opened), sector12);
@@ -58,7 +58,7 @@ void main() {
       expect(store.saves.single.sectors, [sector49, sector12, sector7]);
     });
 
-    test('should save nothing when the tournée is already open', () async {
+    test('should save nothing when the secteur is already open', () async {
       final opened = await OpenSector(store)(sector49.id);
 
       expect(valueOf(opened), sector49);
@@ -76,7 +76,7 @@ void main() {
     );
 
     test(
-      'should refuse and save nothing when the tournée is unknown',
+      'should refuse and save nothing when the secteur is unknown',
       () async {
         final opened = await OpenSector(store)(SectorId('t99'));
 
@@ -112,7 +112,7 @@ void main() {
 
   group('SettleJoinRequest', () {
     test(
-      'should make the tournée a member one when accepted, closed',
+      'should make the secteur a member one when accepted, closed',
       () async {
         await SettleJoinRequest(store)(sector7.id, MemberStatus.active);
 
@@ -125,7 +125,7 @@ void main() {
       },
     );
 
-    test('should forget the tournée when the request is gone', () async {
+    test('should forget the secteur when the request is gone', () async {
       await SettleJoinRequest(store)(sector7.id, null);
 
       expect(store.saves.single.sectors, [sector49, sector12]);
@@ -139,7 +139,7 @@ void main() {
     });
 
     test(
-      'should save nothing when the tournée is no longer a request',
+      'should save nothing when the secteur is no longer a request',
       () async {
         await SettleJoinRequest(store)(sector12.id, null);
         await SettleJoinRequest(store)(sector12.id, MemberStatus.active);
@@ -219,7 +219,7 @@ void main() {
   });
 
   group('ForgetLostSector', () {
-    test('should forget the open tournée lost, none open any more, and say '
+    test('should forget the open secteur lost, none open any more, and say '
         'which it was', () async {
       final lost = await ForgetLostSector(store, cache)(
         sector49.id,
@@ -235,7 +235,7 @@ void main() {
       expect(cache.scheduled, 1);
     });
 
-    test('should forget another tournée lost and keep the open one', () async {
+    test('should forget another secteur lost and keep the open one', () async {
       final lost = await ForgetLostSector(store, cache)(
         sector12.id,
         SectorLoss.removed,
@@ -250,7 +250,7 @@ void main() {
       expect(cache.scheduled, 1);
     });
 
-    test('should forget nothing and tell nothing when the tournée is gone '
+    test('should forget nothing and tell nothing when the secteur is gone '
         'already (left, deleted from this phone)', () async {
       final lost = await ForgetLostSector(store, cache)(
         SectorId('t99'),
@@ -281,7 +281,7 @@ void main() {
       bool wasOpen = true,
     }) => LostSector(sector: sector ?? sector49, loss: loss, wasOpen: wasOpen);
 
-    test('should equal another with the same tournée, loss and place', () {
+    test('should equal another with the same secteur, loss and place', () {
       expect(lostOf(), lostOf());
       expect(lostOf().hashCode, lostOf().hashCode);
     });

@@ -7,7 +7,7 @@ import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 
 /// How a [RefreshOfflineMaps] went.
 enum MapRefreshOutcome {
-  /// Every downloaded tournée's map is fresh (or there was none).
+  /// Every downloaded secteur's map is fresh (or there was none).
   refreshed,
 
   /// A map could not be downloaded again (offline, the service down): it
@@ -15,7 +15,7 @@ enum MapRefreshOutcome {
   failed,
 }
 
-/// Downloads again the map of every tournée downloaded on this phone,
+/// Downloads again the map of every secteur downloaded on this phone,
 /// silently (PLAN §7).
 ///
 /// The map's tiles get a new version every week, and the map library keeps
@@ -27,11 +27,11 @@ enum MapRefreshOutcome {
 ///
 /// Each map comes as a **new region** of the area kept with the download
 /// ([offlineRegionBounds]: 1 m wider when a region holds the area), and the
-/// tournée's older regions are deleted only once it is complete: a failure
+/// secteur's older regions are deleted only once it is complete: a failure
 /// leaves the old map in place. The first failure stops the refresh. The
 /// downloads kept (date, size) do not change.
 ///
-/// Also run right after a tournée is downloaded, for the others: the map's
+/// Also run right after a secteur is downloaded, for the others: the map's
 /// description is one for all regions, and the download just made it name
 /// this week's tiles.
 final class RefreshOfflineMaps {
@@ -47,7 +47,7 @@ final class RefreshOfflineMaps {
   /// How long a map download may tell nothing before it fails.
   final Duration stallLimit;
 
-  /// Refreshes every downloaded tournée's map, but the map of [except]
+  /// Refreshes every downloaded secteur's map, but the map of [except]
   /// (downloaded a moment ago) when given.
   Future<MapRefreshOutcome> call({SectorId? except}) async {
     for (final download in _downloads.downloads.values) {

@@ -153,7 +153,7 @@ void main() {
     expect(find.byKey(const Key('team.forgetVisit')), findsOneWidget);
   });
 
-  testWidgets('should forget a visited tournée on the phone, writing '
+  testWidgets('should forget a visited secteur on the phone, writing '
       'nothing, and go back to the start screen', (tester) async {
     await pumpTeam(tester, samId);
 
@@ -343,7 +343,7 @@ void main() {
     expect(find.text('K7P-2QX'), findsOneWidget);
   });
 
-  testWidgets('should go back to the start screen with no tournée open once '
+  testWidgets('should go back to the start screen with no secteur open once '
       'an admin deletes it', (tester) async {
     await pumpTeam(tester, manuId);
 
@@ -359,7 +359,7 @@ void main() {
     expect(find.byKey(const Key('home.sector')), findsNothing);
   });
 
-  testWidgets('should keep the tournée when deleting is cancelled', (
+  testWidgets('should keep the secteur when deleting is cancelled', (
     tester,
   ) async {
     await pumpTeam(tester, manuId);
@@ -416,7 +416,7 @@ void main() {
   });
 
   testWidgets('should add the commune picked in the sheet of « Ajouter une '
-      'commune », even to a tournée without any', (tester) async {
+      'commune », even to a secteur without any', (tester) async {
     await pumpTeam(
       tester,
       leaId,
@@ -556,7 +556,7 @@ void main() {
     });
   });
 
-  testWidgets('should say so when the tournée cannot be read', (tester) async {
+  testWidgets('should say so when the secteur cannot be read', (tester) async {
     await pumpTeam(tester, leaId);
 
     sectors.lose(sectorId);

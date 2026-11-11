@@ -8,7 +8,7 @@ import 'package:tournee_calendriers/infrastructure/firebase_auth/anonymous_auth.
 
 /// The [IdentityProvider] of M2: the member is the uid of the phone's
 /// anonymous Firebase account (PLAN §8.3). Also the [MemberAccount] that
-/// creating or joining a tournée waits for.
+/// creating or joining a secteur waits for.
 ///
 /// Firebase keeps the account on the phone, so after the first sign-in the
 /// uid is known at every start, offline included, and stays the same until
@@ -42,7 +42,7 @@ final class FirebaseIdentity implements IdentityProvider, MemberAccount {
   /// Signs in anonymously unless the phone already has an account. The
   /// composition root starts it at launch without waiting for it (an
   /// offline start must not hang on the network); creating or joining a
-  /// tournée calls it again, which waits for that one or tries again.
+  /// secteur calls it again, which waits for that one or tries again.
   @override
   Future<Result<MemberId, SignInFailure>> signInIfNeeded() async {
     if (_auth.currentUid == null) await (_signingIn ??= _signIn());

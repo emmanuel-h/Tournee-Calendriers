@@ -50,7 +50,7 @@ void main() {
     });
   });
 
-  test('should tell requests apart by their tournée', () {
+  test('should tell requests apart by their secteur', () {
     expect(LaunchOnRequest(SectorId('t7')), LaunchOnRequest(SectorId('t7')));
     expect(
       LaunchOnRequest(SectorId('t7')),

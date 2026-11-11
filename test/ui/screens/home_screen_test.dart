@@ -131,7 +131,7 @@ void main() {
     ) async {
       await pumpHome(tester);
 
-      // The tournée downloads itself, unseen: no banner, no button.
+      // The secteur downloads itself, unseen: no banner, no button.
       expect(find.textContaining('élécharg'), findsNothing);
       expect(find.textContaining('hors ligne'), findsNothing);
       expect(find.textContaining('réseau'), findsNothing);
