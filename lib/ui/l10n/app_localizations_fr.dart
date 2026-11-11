@@ -1176,6 +1176,22 @@ class AppLocalizationsFr extends AppLocalizations {
   String get release010First => 'Première version de test.';
 
   @override
+  String get release0140Part =>
+      '« Partie de la rue » : un secteur peut ne couvrir qu\'une partie d\'une rue, un côté ou entre deux numéros.';
+
+  @override
+  String get release0140Choose =>
+      'La partie se choisit en ajoutant des rues, ou plus tard en modifiant la rue.';
+
+  @override
+  String get release0140Others =>
+      'Les numéros déjà couverts par un autre secteur sont signalés, sans bloquer.';
+
+  @override
+  String get release0140Map =>
+      'La carte ne trace que la portion de rue couverte par le secteur.';
+
+  @override
   String get release0130Names =>
       'Une rue mal orthographiée sur la carte se coche quand même.';
 

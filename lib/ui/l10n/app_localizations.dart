@@ -1696,6 +1696,30 @@ abstract class AppLocalizations {
   /// **'Première version de test.'**
   String get release010First;
 
+  /// Line of « Nouveautés » for 0.14.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'« Partie de la rue » : un secteur peut ne couvrir qu\'une partie d\'une rue, un côté ou entre deux numéros.'**
+  String get release0140Part;
+
+  /// Line of « Nouveautés » for 0.14.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'La partie se choisit en ajoutant des rues, ou plus tard en modifiant la rue.'**
+  String get release0140Choose;
+
+  /// Line of « Nouveautés » for 0.14.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'Les numéros déjà couverts par un autre secteur sont signalés, sans bloquer.'**
+  String get release0140Others;
+
+  /// Line of « Nouveautés » for 0.14.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'La carte ne trace que la portion de rue couverte par le secteur.'**
+  String get release0140Map;
+
   /// Line of « Nouveautés » for 0.13.0.
   ///
   /// In fr, this message translates to:
