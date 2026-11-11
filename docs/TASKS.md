@@ -165,3 +165,27 @@ Planned 2026-11-11 from [#133](https://github.com/emmanuel-h/Tournee-Calendriers
 | [#140](https://github.com/emmanuel-h/Tournee-Calendriers/issues/140) | T10.3 Choose the part when adding streets |  |
 | [#141](https://github.com/emmanuel-h/Tournee-Calendriers/issues/141) | T10.4 Shared index of the secteurs' parts, with overlap warning |  |
 | [#142](https://github.com/emmanuel-h/Tournee-Calendriers/issues/142) | T10.5 Map: draw only the held stretch of a street |  |
+
+## M11 Audit follow-ups
+
+Planned 2026-11-11 from the security, reliability and DDD audit of that day. The severity is a label of its own (`severity: medium`, `low`, `info`).
+
+| Issue | Task | Labels |
+|---|---|---|
+| [#143](https://github.com/emmanuel-h/Tournee-Calendriers/issues/143) | T11.1 Keep a validated tournée on the phone until the server has it | severity: medium |
+| [#144](https://github.com/emmanuel-h/Tournee-Calendriers/issues/144) | T11.2 Privacy text: campaign erasure not implemented, Android backup, cache of a lost secteur | severity: medium |
+| [#145](https://github.com/emmanuel-h/Tournee-Calendriers/issues/145) | T11.3 Collecte: any member can add unattributed tournée summaries | severity: medium |
+| [#146](https://github.com/emmanuel-h/Tournee-Calendriers/issues/146) | T11.4 Confirm App Check enforcement and the Spark quota margin | severity: low |
+| [#147](https://github.com/emmanuel-h/Tournee-Calendriers/issues/147) | T11.5 Directory documents tell more than needed (sectorKeys, streetParts) | severity: low |
+| [#148](https://github.com/emmanuel-h/Tournee-Calendriers/issues/148) | T11.6 Join requests: cheap to flood, easy to impersonate, code kept after a removal | severity: low |
+| [#149](https://github.com/emmanuel-h/Tournee-Calendriers/issues/149) | T11.7 Show an unreadable street instead of leaving it out | severity: low |
+| [#150](https://github.com/emmanuel-h/Tournee-Calendriers/issues/150) | T11.8 Deleting a secteur can leave documents and index entries behind | severity: low |
+| [#151](https://github.com/emmanuel-h/Tournee-Calendriers/issues/151) | T11.9 Map tiles: guard the parser, the tile address and the sizes | severity: low |
+| [#152](https://github.com/emmanuel-h/Tournee-Calendriers/issues/152) | T11.10 OrderedWrites: a write never shown stalls its street's queue | severity: low |
+| [#153](https://github.com/emmanuel-h/Tournee-Calendriers/issues/153) | T11.11 CI: pin actions by commit and set the token's permissions | severity: info |
+| [#154](https://github.com/emmanuel-h/Tournee-Calendriers/issues/154) | T11.12 « tournée » still names the secteur in comments and messages | severity: low |
+| [#155](https://github.com/emmanuel-h/Tournee-Calendriers/issues/155) | T11.13 Round: model « validated, not yet sent » and stop hiding the second write's failure | severity: low |
+| [#156](https://github.com/emmanuel-h/Tournee-Calendriers/issues/156) | T11.14 Undo stamp is decided in the Firestore adapter | severity: info |
+| [#157](https://github.com/emmanuel-h/Tournee-Calendriers/issues/157) | T11.15 Join request builds a Member outside the Sector root | severity: info |
+| [#158](https://github.com/emmanuel-h/Tournee-Calendriers/issues/158) | T11.16 IndexedStreetRepository: a change handler written as a repository | severity: info |
+| [#159](https://github.com/emmanuel-h/Tournee-Calendriers/issues/159) | T11.17 Map read models live in the domain | severity: info |

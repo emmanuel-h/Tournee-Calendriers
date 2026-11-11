@@ -93,6 +93,10 @@ M10 done, validated by the user, milestone closed (2026-11-11, #138–#142, PLAN
 the map snapping between house dots, opened when adding and from edit mode; a shared `streetParts/{banId}` index
 (get only) shows other secteurs' stretches, warning on overlap, never blocking; the map draws only the held stretch.
 Rules with `part` and `streetParts/{banId}` deployed 2026-11-11 (identical to `firestore.rules`).
+M11 planned (2026-11-11, #143–#159): follow-ups of the security, reliability and DDD audit of that day, each with a
+`severity: medium | low | info` label. Medium: a validated tournée kept on the phone until the server has it (#143);
+the privacy text against what the app does (campaign erasure, Android backup, #144); unattributed tournée summaries
+(#145). #143 needs a screen decision and #145 a risk decision before any code.
 
 ## Commands
 
