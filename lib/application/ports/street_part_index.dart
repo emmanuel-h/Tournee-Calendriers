@@ -11,21 +11,23 @@ import 'package:tournee_calendriers/domain/street/street_part.dart';
 /// the app, a fake in tests. The open secteur only ever writes its own
 /// entry.
 ///
-/// It never stands in the user's way: a write is handed over at once and
-/// sent when the network allows, like any street write, and a read that
-/// fails (offline, refused) gives nothing, so nothing is shown and
-/// nothing is blocked. Nothing on the marking path uses it.
+/// It never stands in the user's way: a write is queued at once and sent
+/// when the network allows, like any street write, and a read that fails
+/// (offline, refused) gives nothing, so nothing is shown and nothing is
+/// blocked. Nothing on the marking path uses it.
 abstract interface class StreetPartIndex {
   /// Says the open secteur holds [part] of the BAN street [street]: a
   /// street added, its part changed, or restored from the Corbeille.
   ///
-  /// The returned `Future` ends once the write is in the index's hands
-  /// (queued on the phone), not when the server has it.
+  /// The write is queued on the phone as soon as this is called. The
+  /// returned `Future` ends when the server has it, which offline can
+  /// take hours, and fails when the server refuses it: a caller does not
+  /// wait for it but hands it to a reporter (`IndexedStreetRepository`).
   Future<void> hold(BanStreetId street, StreetPart part);
 
   /// Says the open secteur no longer holds any of the BAN street
   /// [street]: sent to the Corbeille, or purged. Nothing changes when it
-  /// held none. Handed over as [hold].
+  /// held none. Queued, ended and failed as [hold].
   Future<void> release(BanStreetId street);
 
   /// What the other secteurs hold of the BAN street [street], the open

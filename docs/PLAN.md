@@ -2012,9 +2012,13 @@ belong to no secteur at all (a valid state, not an error). This section override
   sent to the Corbeille or purged, its entry goes (a street typed by hand has none). Every use
   case writes through it, the undo of « Supprimer la rue » included; a street added before #141
   gets its entry at its next such write (single user, nothing migrated). The writes are a `set`
-  merging the secteur's own entry, not awaited, queued offline like the street writes; deleting
-  the secteur removes its entry from the index of each of its streets first (never stopping the
-  deletion). Port `StreetPartIndex`, adapter `FirestoreStreetPartIndex`. The reads
+  merging the secteur's own entry, not awaited, queued offline like the street writes; the
+  decorator is the one place reacting to street changes, and hands each index write to the
+  background-write reporter, so a refused one is logged and never fails the street's (#158).
+  Deleting the secteur removes its entry from the index of each of its streets first and waits
+  for it: one that fails fails the deletion (« Pas de réseau » or not an admin) while its streets
+  are still there to retry; the contents and the members are then listed again for what a
+  teammate wrote meanwhile, a bounded number of times (#150). Port `StreetPartIndex`, adapter `FirestoreStreetPartIndex`. The reads
   (`ReadOtherSectorParts`, by secteur number) run in the background and never delay anything:
   « Partie de la rue » reads them for a street with a BAN id (`StreetPartRequest.banId`), then
   draws each other secteur's stretch of each side it holds, from its first dot to its last

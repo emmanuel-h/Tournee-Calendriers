@@ -42,6 +42,13 @@ final class FirestoreSectorRepository implements SectorRepository {
   /// The most codes drawn before giving up with a [StateError].
   static const maxCodeDraws = 10;
 
+  /// How many times deleting a secteur lists what it holds and deletes
+  /// it, at most: once, then again for what a teammate wrote meanwhile.
+  /// Bounded, so a phone that never stops writing cannot keep the
+  /// deletion going; what it writes after the last pass stays (a
+  /// server-side recursive delete would be the full answer, on Blaze).
+  static const maxDeletePasses = 3;
+
   final FirebaseFirestore _db;
   final Random _random;
 
@@ -250,8 +257,11 @@ final class FirestoreSectorRepository implements SectorRepository {
   /// server: the lists are read from it, so nothing only the server knows
   /// is left behind.
   ///
-  /// The campaigns, their streets and their validated tournées go first,
-  /// in batches. The members
+  /// The secteur's entries in the shared index go first, and are waited
+  /// for: one that fails fails the deletion as a batch would (no network,
+  /// not an admin), before its streets go, so a new try finds them. Then the
+  /// campaigns, their streets and their validated tournées, in batches,
+  /// listed again for what a teammate wrote meanwhile. The members
   /// still in it (there may be none: everyone may leave, the creator too)
   /// go last, with the tournée, its code and its reservation in one batch:
   /// a member's phone, which learns it lost the tournée when its own
@@ -284,46 +294,23 @@ final class FirestoreSectorRepository implements SectorRepository {
   /// admin's is refused at the first batch, before anything goes: a
   /// member may read the tournée but not delete its campaigns.
   ///
-  /// The secteur's entry in the shared index of each of its streets from
-  /// the BAN goes first (PLAN §5.15): sent without waiting, ahead of the
-  /// batches, and refused or not, it never stops the deletion.
+  /// A teammate may write while it runs (a street added, a request to
+  /// join): what they wrote after a list was read would stay, unreachable.
+  /// So the contents are listed and deleted again until a list comes back
+  /// empty, and the members once more after the secteur went, each at
+  /// most [maxDeletePasses] times.
   Future<void> _deleteAll(
     Sector sector,
     DocumentReference<Map<String, dynamic>> sectorDoc,
   ) async {
     const server = GetOptions(source: Source.server);
-    final contents = <DocumentReference<Map<String, dynamic>>>[];
-    final banIds = <String>{};
-    final campaigns = await sectorDoc
-        .collection(FirestoreLayout.campaigns)
-        .get(server);
-    for (final campaign in campaigns.docs) {
-      // Its streets and its validated tournées (#63): a sub-collection is
-      // not deleted with its document, it would stay, unreachable.
-      for (final name in [FirestoreLayout.streets, FirestoreLayout.rounds]) {
-        final docs = await campaign.reference.collection(name).get(server);
-        contents.addAll([for (final doc in docs.docs) doc.reference]);
-        if (name == FirestoreLayout.streets) {
-          banIds.addAll([
-            for (final doc in docs.docs)
-              if (doc.data()['banId'] case final String banId) banId,
-          ]);
-        }
-      }
-      contents.add(campaign.reference);
-    }
-    for (final banId in banIds) {
-      releaseStreetPart(_db, sector.id, BanStreetId(banId));
-    }
-    final members = await FirestoreLayout.membersOf(_db, sector.id).get(server);
-    // A batch holds at most 500 writes.
-    for (var start = 0; start < contents.length; start += 500) {
-      final batch = _db.batch();
-      for (final doc in contents.skip(start).take(500)) {
-        batch.delete(doc);
-      }
-      await batch.commit();
-    }
+    final members = FirestoreLayout.membersOf(_db, sector.id);
+    // The id of every campaign seen, kept across passes: a street written
+    // under a campaign whose document is already deleted is not found by
+    // listing the campaigns (Firestore lists only documents that exist).
+    final campaigns = <String>{};
+    await _deleteUntilNone(() => _contentsOf(sector, sectorDoc, campaigns));
+    final team = await members.get(server);
     final last = _db.batch()
       ..delete(_joinCode(sector.joinCode))
       ..delete(
@@ -332,10 +319,79 @@ final class FirestoreSectorRepository implements SectorRepository {
             .doc(sectorKeyId(sector.centre, sector.number)),
       )
       ..delete(sectorDoc);
-    for (final member in members.docs) {
+    for (final member in team.docs) {
       last.delete(member.reference);
     }
     await last.commit();
+    // A request to join sent between the list and the batch. None can
+    // come later: the rules check it against the secteur, now gone.
+    await _deleteUntilNone(
+      () async => [
+        for (final doc in (await members.get(server)).docs) doc.reference,
+      ],
+    );
+  }
+
+  /// What [sector] holds, listed from the server: its campaigns, with
+  /// their streets and validated tournées (#63) — a sub-collection is not
+  /// deleted with its document, it would stay, unreachable. [campaigns]
+  /// gathers the id of every campaign seen.
+  ///
+  /// Before it answers, the secteur's entry in the shared index of each
+  /// listed street from the BAN is released (PLAN §5.15), and awaited:
+  /// refused or offline, it fails the deletion while the streets are
+  /// still there to find it again, instead of leaving a deleted secteur
+  /// in other secteurs' overlap warnings.
+  Future<List<DocumentReference<Map<String, dynamic>>>> _contentsOf(
+    Sector sector,
+    DocumentReference<Map<String, dynamic>> sectorDoc,
+    Set<String> campaigns,
+  ) async {
+    const server = GetOptions(source: Source.server);
+    final campaignsOf = sectorDoc.collection(FirestoreLayout.campaigns);
+    final listed = await campaignsOf.get(server);
+    final contents = [for (final campaign in listed.docs) campaign.reference];
+    final banIds = <String>{};
+    campaigns.addAll([for (final campaign in listed.docs) campaign.id]);
+    for (final campaign in campaigns) {
+      for (final name in [FirestoreLayout.streets, FirestoreLayout.rounds]) {
+        final docs = await campaignsOf
+            .doc(campaign)
+            .collection(name)
+            .get(server);
+        contents.addAll([for (final doc in docs.docs) doc.reference]);
+        if (name == FirestoreLayout.streets) {
+          banIds.addAll([
+            for (final doc in docs.docs)
+              if (doc.data()['banId'] case final String banId) banId,
+          ]);
+        }
+      }
+    }
+    await Future.wait([
+      for (final banId in banIds)
+        releaseStreetPart(_db, sector.id, BanStreetId(banId)),
+    ]);
+    return contents;
+  }
+
+  /// Deletes what [listed] gives, in batches, and lists again, until it
+  /// gives nothing or [maxDeletePasses] lists were deleted.
+  Future<void> _deleteUntilNone(
+    Future<List<DocumentReference<Map<String, dynamic>>>> Function() listed,
+  ) async {
+    for (var pass = 0; pass < maxDeletePasses; pass++) {
+      final docs = await listed();
+      if (docs.isEmpty) return;
+      // A batch holds at most 500 writes.
+      for (var start = 0; start < docs.length; start += 500) {
+        final batch = _db.batch();
+        for (final doc in docs.skip(start).take(500)) {
+          batch.delete(doc);
+        }
+        await batch.commit();
+      }
+    }
   }
 
   /// What [error] of a write that needs the server tells the use case: no

@@ -7,6 +7,12 @@ import 'package:tournee_calendriers/domain/street/street_repository.dart';
 /// The open secteur's streets, keeping the shared index of who holds which
 /// part of a street up to date (PLAN §5.15, §6.2 `streetParts/{banId}`).
 ///
+/// **The one place in the app that reacts to a street's changes.** Every
+/// [StreetChange] a use case saves passes through [save], whose exhaustive
+/// `switch` says what each kind of change means for the index; nothing
+/// else listens to changes (no event bus: at this size a decorator is
+/// enough). A new reaction to a change belongs here.
+///
 /// A decorator: it is a [StreetRepository] itself, hands every call to
 /// the [StreetRepository] it wraps, and after the writes that change what
 /// the secteur holds of a street from the BAN, tells the [StreetPartIndex]:
@@ -22,13 +28,25 @@ import 'package:tournee_calendriers/domain/street/street_repository.dart';
 /// the index existed gets its entry at its next such write (single user,
 /// nothing migrated).
 ///
-/// The street is written first, the index after: the index never delays a
-/// street, and its writes are queued like the street's, offline too.
+/// The street is written first, the index after. The two writes are not
+/// atomic: the index write is not awaited (it ends only when the server
+/// has it, hours later offline) but handed to [_report], which the app
+/// binds to the reporter of every background write (`sendInBackground`).
+/// A refused index write therefore never fails the street's, and is
+/// still seen: logged as « index hold 69264_0420 » or « index release … »,
+/// the index left behind until the street's next such write.
 final class IndexedStreetRepository implements StreetRepository {
-  const IndexedStreetRepository(this._streets, this._index);
+  /// [report] receives each index write, labelled, and watches how it
+  /// ends; it must not throw.
+  const IndexedStreetRepository(
+    this._streets,
+    this._index, {
+    required this._report,
+  });
 
   final StreetRepository _streets;
   final StreetPartIndex _index;
+  final void Function(String what, Future<void> write) _report;
 
   @override
   Future<Street?> find(StreetId id) => _streets.find(id);
@@ -48,7 +66,7 @@ final class IndexedStreetRepository implements StreetRepository {
   @override
   Future<void> add(Street street) async {
     await _streets.add(street);
-    if (street.banId case final banId?) await _index.hold(banId, street.part);
+    if (street.banId case final banId?) _hold(banId, street);
   }
 
   @override
@@ -75,9 +93,9 @@ final class IndexedStreetRepository implements StreetRepository {
     };
     switch (holds) {
       case true:
-        await _index.hold(banId, street.part);
+        _hold(banId, street);
       case false:
-        await _index.release(banId);
+        _release(banId);
       case null:
     }
   }
@@ -90,6 +108,12 @@ final class IndexedStreetRepository implements StreetRepository {
   Future<void> purge(StreetId id) async {
     final banId = (await _streets.find(id))?.banId;
     await _streets.purge(id);
-    if (banId != null) await _index.release(banId);
+    if (banId != null) _release(banId);
   }
+
+  void _hold(BanStreetId banId, Street street) =>
+      _report('index hold ${banId.value}', _index.hold(banId, street.part));
+
+  void _release(BanStreetId banId) =>
+      _report('index release ${banId.value}', _index.release(banId));
 }

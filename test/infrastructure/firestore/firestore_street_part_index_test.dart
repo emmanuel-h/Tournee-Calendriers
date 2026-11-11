@@ -44,6 +44,12 @@ void main() {
   Future<Map<String, dynamic>?> stored() async =>
       (await db.doc(_path).get()).data();
 
+  void refuseWrites() => whenCalling(Invocation.method(#set, null))
+      .on(db.doc(_path))
+      .thenThrow(
+        FirebaseException(plugin: 'cloud_firestore', code: 'permission-denied'),
+      );
+
   group('hold', () {
     test(
       'should create the street\'s document with the secteur\'s entry',
@@ -96,18 +102,14 @@ void main() {
       },
     );
 
-    test('should not throw when Firestore refuses the write', () async {
-      whenCalling(Invocation.method(#set, null))
-          .on(db.doc(_path))
-          .thenThrow(
-            FirebaseException(
-              plugin: 'cloud_firestore',
-              code: 'permission-denied',
-            ),
-          );
+    test('should fail, for its caller to report it, when Firestore '
+        'refuses the write', () async {
+      refuseWrites();
 
-      await t49.hold(_nationale, StreetPart.whole);
-      await pumpEventQueue();
+      await expectLater(
+        t49.hold(_nationale, StreetPart.whole),
+        throwsA(isA<FirebaseException>()),
+      );
 
       expect(await stored(), isNull);
     });
@@ -135,10 +137,26 @@ void main() {
 
     test('should release the entry of the secteur it is given', () async {
       await t12.hold(_nationale, StreetPart.whole);
-      releaseStreetPart(db, SectorId('t12'), _nationale);
-      await pumpEventQueue();
+      await releaseStreetPart(db, SectorId('t12'), _nationale);
 
       expect((await stored())!['parts'], isEmpty);
+    });
+
+    test('should fail, for its caller to report it, when Firestore '
+        'refuses the write', () async {
+      await t49.hold(_nationale, StreetPart.whole);
+      refuseWrites();
+
+      await expectLater(
+        t49.release(_nationale),
+        throwsA(isA<FirebaseException>()),
+      );
+      await expectLater(
+        releaseStreetPart(db, SectorId('t49'), _nationale),
+        throwsA(isA<FirebaseException>()),
+      );
+
+      expect((await stored())!['parts'], contains('t49'));
     });
   });
 

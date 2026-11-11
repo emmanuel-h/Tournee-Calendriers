@@ -24,6 +24,7 @@ import 'package:tournee_calendriers/infrastructure/ban/ban_address_directory.dar
 import 'package:tournee_calendriers/infrastructure/firebase_auth/anonymous_auth.dart';
 import 'package:tournee_calendriers/infrastructure/firebase_auth/firebase_identity.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_admin_status.dart';
+import 'package:tournee_calendriers/infrastructure/firestore/firestore_layout.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_round_ledger.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_sector_directory.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_sector_repository.dart';
@@ -198,7 +199,13 @@ Future<List<Override>> bindAdapters({
       final index = ref.watch(sectorPartIndex);
       return streets == null || index == null
           ? const _NoStreets()
-          : IndexedStreetRepository(streets, index);
+          : IndexedStreetRepository(
+              streets,
+              index,
+              // A refused index write is logged like every write sent in
+              // the background, never failing the street's.
+              report: sendInBackground,
+            );
     }),
     streetPartIndexProvider.overrideWith(
       (ref) => ref.watch(sectorPartIndex) ?? const _NoIndex(),

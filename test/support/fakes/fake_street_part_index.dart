@@ -62,13 +62,26 @@ final class FakeStreetPartIndex implements StreetPartIndex {
   /// When set, [othersOf] waits for it before answering: a slow network.
   Completer<void>? holdReads;
 
-  @override
-  Future<void> hold(BanStreetId street, StreetPart part) async =>
-      writes.add(Held(street, part));
+  /// When set, a hold or a release is recorded at once but its `Future`
+  /// ends only once this completes: a write the server has not had yet.
+  Completer<void>? holdWrites;
+
+  /// When set, a hold or a release is recorded, then fails with it: a
+  /// write the server refused.
+  Error? writeError;
 
   @override
-  Future<void> release(BanStreetId street) async =>
-      writes.add(Released(street));
+  Future<void> hold(BanStreetId street, StreetPart part) =>
+      _written(Held(street, part));
+
+  @override
+  Future<void> release(BanStreetId street) => _written(Released(street));
+
+  Future<void> _written(IndexWrite write) async {
+    writes.add(write);
+    await holdWrites?.future;
+    if (writeError case final error?) throw error;
+  }
 
   @override
   Future<List<SectorPart>> othersOf(BanStreetId street) async {

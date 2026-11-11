@@ -43,6 +43,47 @@ final draws234567 = [
 FirebaseException firestoreError(String code) =>
     FirebaseException(plugin: 'cloud_firestore', code: code);
 
+/// An in-memory Firestore where a teammate writes while a secteur is
+/// being deleted: [beforeCommit] and [afterCommit] run around the commit
+/// of each write batch, given its number (the first is 0).
+final class TeammateWriting extends FakeFirebaseFirestore {
+  /// How many batches were committed.
+  var commits = 0;
+
+  Future<void> Function(int batch)? beforeCommit;
+  Future<void> Function(int batch)? afterCommit;
+
+  @override
+  WriteBatch batch() => _WatchedBatch(super.batch(), this);
+}
+
+final class _WatchedBatch implements WriteBatch {
+  _WatchedBatch(this._batch, this._db);
+
+  final WriteBatch _batch;
+  final TeammateWriting _db;
+
+  @override
+  void delete(DocumentReference document) => _batch.delete(document);
+
+  @override
+  void set<T>(DocumentReference<T> document, T data, [SetOptions? options]) =>
+      _batch.set(document, data, options);
+
+  @override
+  void update<T>(DocumentReference<T> document, T data) =>
+      _batch.update(document, data);
+
+  @override
+  Future<void> commit() async {
+    final batch = _db.commits;
+    await _db.beforeCommit?.call(batch);
+    await _batch.commit();
+    _db.commits++;
+    await _db.afterCommit?.call(batch);
+  }
+}
+
 void main() {
   late FakeFirebaseFirestore db;
 
@@ -739,6 +780,126 @@ void main() {
 
       expect(failureOf(deleted), SectorWriteFailure.notAdmin);
       expect(await stored('sectors/t49'), isNotNull);
+    });
+
+    group('while a teammate writes', () {
+      late TeammateWriting teammate;
+
+      setUp(() async {
+        db = teammate = TeammateWriting();
+        await repository().add(created);
+        await db.doc('sectors/t49/campaigns/2026/streets/lilas').set({
+          'name': 'Rue des Lilas',
+        });
+      });
+
+      test('should delete a street written once the first batch went, its '
+          'campaign already gone', () async {
+        teammate.afterCommit = (batch) async {
+          if (batch == 0) {
+            await db.doc('sectors/t49/campaigns/2026/streets/roses').set({
+              'name': 'Allée des Roses',
+            });
+          }
+        };
+
+        final deleted = await repository().delete(
+          valueOf(team().delete(by: manuAsAdmin)),
+        );
+
+        expect(deleted, isA<Ok<SectorDeleted, SectorWriteFailure>>());
+        expect(
+          await stored('sectors/t49/campaigns/2026/streets/roses'),
+          isNull,
+        );
+        expect(
+          await stored('sectors/t49/campaigns/2026/streets/lilas'),
+          isNull,
+        );
+        expect(await stored('sectors/t49'), isNull);
+      });
+
+      test('should delete a request to join sent as the secteur itself '
+          'goes', () async {
+        // Batch 0 holds the campaign and its street, batch 1 the secteur
+        // with the members listed just before it.
+        teammate.beforeCommit = (batch) async {
+          if (batch == 1) {
+            await db.doc('sectors/t49/members/uid-sam').set({
+              'status': 'pending',
+            });
+          }
+        };
+
+        await repository().delete(valueOf(team().delete(by: manuAsAdmin)));
+
+        expect(await stored('sectors/t49/members/uid-sam'), isNull);
+        expect(await stored('sectors/t49/members/uid-manu'), isNull);
+        expect(await stored('sectors/t49'), isNull);
+      });
+
+      test('should give up listing again after a few rounds when the '
+          'teammate never stops, the secteur deleted', () async {
+        teammate.afterCommit = (batch) async {
+          await db.doc('sectors/t49/campaigns/2026/streets/s$batch').set({
+            'n': batch,
+          });
+        };
+
+        final deleted = await repository().delete(
+          valueOf(team().delete(by: manuAsAdmin)),
+        );
+
+        expect(deleted, isA<Ok<SectorDeleted, SectorWriteFailure>>());
+        expect(await stored('sectors/t49'), isNull);
+        // The contents deleted [maxDeletePasses] times, then the secteur
+        // once, and no member listed after it.
+        expect(teammate.commits, FirestoreSectorRepository.maxDeletePasses + 1);
+      });
+    });
+
+    group('releasing its entries in the index', () {
+      setUp(() async {
+        await repository().add(created);
+        await db.doc('sectors/t49/campaigns/2026/streets/lilas').set({
+          'name': 'Rue des Lilas',
+          'banId': '69264_0420',
+        });
+      });
+
+      for (final (code, failure) in [
+        ('unavailable', SectorWriteFailure.noNetwork),
+        ('permission-denied', SectorWriteFailure.notAdmin),
+      ]) {
+        test('should tell $failure and keep the secteur and its streets when '
+            'the index answers $code', () async {
+          whenCalling(Invocation.method(#set, null))
+              .on(db.doc('streetParts/69264_0420'))
+              .thenThrow(firestoreError(code));
+
+          final deleted = await repository().delete(
+            valueOf(team().delete(by: manuAsAdmin)),
+          );
+
+          expect(failureOf(deleted), failure);
+          expect(await stored('sectors/t49'), isNotNull);
+          expect(
+            await stored('sectors/t49/campaigns/2026/streets/lilas'),
+            isNotNull,
+          );
+        });
+      }
+
+      test('should throw any other failure of the index', () async {
+        whenCalling(Invocation.method(#set, null))
+            .on(db.doc('streetParts/69264_0420'))
+            .thenThrow(firestoreError('internal'));
+
+        await expectLater(
+          repository().delete(valueOf(team().delete(by: manuAsAdmin))),
+          throwsA(isA<FirebaseException>()),
+        );
+      });
     });
 
     test('should throw any other failure of the server', () async {

@@ -34,10 +34,33 @@ void main() {
   late FakeStreetPartIndex index;
   late IndexedStreetRepository streets;
 
+  /// The label of each index write handed to the reporter, in order.
+  late List<String> reported;
+
+  /// Each reported write that failed: its label and its error.
+  late List<(String, Object)> failed;
+
+  // The app's reporter (`sendInBackground`) logs a failure; this one keeps
+  // it for the test to look at.
+  void report(String what, Future<void> write) {
+    reported.add(what);
+    unawaited(
+      write.then<void>(
+        (_) {},
+        onError: (Object error) => failed.add((what, error)),
+      ),
+    );
+  }
+
+  IndexedStreetRepository indexed(FakeStreetRepository inner) =>
+      IndexedStreetRepository(inner, index, report: report);
+
   setUp(() {
+    reported = [];
+    failed = [];
     inner = repositoryWithLilas();
     index = FakeStreetPartIndex();
-    streets = IndexedStreetRepository(inner, index);
+    streets = indexed(inner);
   });
 
   group('add', () {
@@ -61,7 +84,7 @@ void main() {
 
     test('should tell the index only once the street is stored', () async {
       inner = FakeStreetRepository();
-      streets = IndexedStreetRepository(inner, index);
+      streets = indexed(inner);
       inner.holdAdds = Completer<void>();
 
       final adding = streets.add(lilas);
@@ -199,7 +222,7 @@ void main() {
       'should release nothing for a street typed by hand, or one gone',
       () async {
         inner = FakeStreetRepository([_manual]);
-        streets = IndexedStreetRepository(inner, index);
+        streets = indexed(inner);
 
         await streets.purge(_manual.id);
         await streets.purge(StreetId('gone'));
@@ -208,6 +231,66 @@ void main() {
         expect(index.writes, isEmpty);
       },
     );
+  });
+
+  group('reporting', () {
+    test('should hand the hold of an added street to the reporter, named '
+        'after its BAN id', () async {
+      inner = FakeStreetRepository();
+      streets = indexed(inner);
+
+      await streets.add(_manual);
+      await streets.add(lilas);
+
+      expect(reported, ['index hold 69264_0420']);
+    });
+
+    test('should hand a hold and a release to the reporter, named after '
+        'the street\'s BAN id', () async {
+      final (cut, cutting) = valueOf(
+        lilas.changePart(_oddSide, by: lea, at: twoPm),
+      );
+      final (deleted, deleting) = cut.delete(by: lea, at: twoPm);
+
+      await streets.save(cut, cutting);
+      await streets.save(deleted, deleting);
+
+      expect(reported, ['index hold 69264_0420', 'index release 69264_0420']);
+    });
+
+    test(
+      'should hand the release of a purged street to the reporter',
+      () async {
+        await streets.purge(lilasId);
+
+        expect(reported, ['index release 69264_0420']);
+      },
+    );
+
+    test('should end the street write without waiting for the index write '
+        'to reach the server', () async {
+      index.holdWrites = Completer<void>();
+      final (deleted, change) = lilas.delete(by: lea, at: twoPm);
+
+      await streets.save(deleted, change);
+
+      expect(inner.saved, [(deleted, change)]);
+      expect(index.writes, [Released(_lilasBan)]);
+      index.holdWrites!.complete();
+    });
+
+    test('should report a refused index write, the street write still '
+        'done', () async {
+      final refusal = StateError('refused');
+      index.writeError = refusal;
+      final (deleted, change) = lilas.delete(by: lea, at: twoPm);
+
+      await streets.save(deleted, change);
+      await pumpEventQueue();
+
+      expect(inner.saved, [(deleted, change)]);
+      expect(failed, [('index release 69264_0420', refusal)]);
+    });
   });
 
   group('reads', () {

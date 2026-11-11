@@ -15,9 +15,12 @@ import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_part
 ///
 /// - **Writes** merge the secteur's own entry into the document (a `set`
 ///   with `merge`), so two secteurs writing the same street at once keep
-///   both entries, and the document is created by the first. They are not
-///   awaited ([sendInBackground]): Firestore queues them on the phone,
-///   offline and across restarts, like the street writes.
+///   both entries, and the document is created by the first. Firestore
+///   queues them on the phone, offline and across restarts, like the
+///   street writes. Their `Future` is Firestore's own: it ends when the
+///   server has the write and fails when the server refuses it, for the
+///   caller to report (`IndexedStreetRepository`) or to wait for (a
+///   secteur being deleted).
 /// - **Reads** ask for one document by its id (the security rules allow
 ///   `get`, never `list`): from the server when it answers, else from the
 ///   phone's copy. Offline with no copy, or refused, it is none: the index
@@ -38,18 +41,14 @@ final class FirestoreStreetPartIndex implements StreetPartIndex {
   final RescueCentre _centre;
 
   @override
-  Future<void> hold(BanStreetId street, StreetPart part) async {
-    sendInBackground(
-      'index ${street.value}',
+  Future<void> hold(BanStreetId street, StreetPart part) =>
       FirestoreLayout.streetPart(_db, street).set(
         heldPartWrite(_sector, number: _number, centre: _centre, part: part),
         SetOptions(merge: true),
-      ),
-    );
-  }
+      );
 
   @override
-  Future<void> release(BanStreetId street) async =>
+  Future<void> release(BanStreetId street) =>
       releaseStreetPart(_db, _sector, street);
 
   @override
@@ -63,19 +62,16 @@ final class FirestoreStreetPartIndex implements StreetPartIndex {
   }
 }
 
-/// Removes the entry of [sector] for the BAN street [street], without
-/// waiting for the server: when the secteur no longer holds the street,
-/// and for each of its streets when the secteur is deleted (by an admin,
-/// who may not be in it). The document stays, with the other secteurs'
-/// entries.
-void releaseStreetPart(
+/// Removes the entry of [sector] for the BAN street [street]: when the
+/// secteur no longer holds the street, and for each of its streets when
+/// the secteur is deleted (by an admin, who may not be in it). The
+/// document stays, with the other secteurs' entries. The `Future` ends
+/// and fails as [FirestoreStreetPartIndex.hold]'s.
+Future<void> releaseStreetPart(
   FirebaseFirestore db,
   SectorId sector,
   BanStreetId street,
-) => sendInBackground(
-  'index release ${street.value}',
-  FirestoreLayout.streetPart(db, street).set(
-    releasedPartWrite(sector, FieldValue.delete()),
-    SetOptions(merge: true),
-  ),
-);
+) => FirestoreLayout.streetPart(
+  db,
+  street,
+).set(releasedPartWrite(sector, FieldValue.delete()), SetOptions(merge: true));
