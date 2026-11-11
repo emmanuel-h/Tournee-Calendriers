@@ -3547,7 +3547,11 @@ lib/
 - **Adapters translate**: Firestore maps ⇄ aggregates, `StreetChange` → field-path updates,
   geopf / BAN JSON, vector tiles → value objects. Translation code is pure functions, tested alone.
 - The map is split the same way: the domain computes *what* to draw; `ui/map/` only turns that
-  into MapLibre GeoJSON sources and layers, and taps into coordinates.
+  into MapLibre GeoJSON sources and layers, and taps into coordinates. The map's read models
+  (`domain/map/`: `MapLayers`, `HouseDotStatus`, `PartDrawing`, `PartDotLook`) are projections
+  of the aggregates with display words (« dot », « look »); they stay in the domain on purpose,
+  pure Dart and tested there, since what the map shows is a domain decision (decided 2026-11-11,
+  #159).
 
 ### 10.2 Stack
 
