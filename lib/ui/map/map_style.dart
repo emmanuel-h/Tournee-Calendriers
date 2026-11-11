@@ -37,6 +37,7 @@ abstract final class MapIds {
   static const partRoadSource = 'tc-part-road';
   static const partKeptSource = 'tc-part-kept';
   static const partDotsSource = 'tc-part-dots';
+  static const partOthersSource = 'tc-part-others';
 
   static const streetLines = 'tc-street-lines';
   static const selectedCasing = 'tc-selected-casing';
@@ -56,11 +57,17 @@ abstract final class MapIds {
   static const partKeptCore = 'tc-part-kept-core';
   static const partDots = 'tc-part-dot-circles';
   static const partNumbers = 'tc-part-numbers';
+  static const partOthersBand = 'tc-part-others-band';
+  static const partOthersLabels = 'tc-part-others-labels';
 }
 
 /// The name of the picture of a house dot with [status], added to the map
 /// by `addImage` (see `house_dot_image.dart`).
 String houseDotImage(HouseDotStatus status) => 'tc-house-${status.name}';
+
+/// The name of the hatching of another secteur's stretch on « Partie de la
+/// rue », added to the map by `addImage` (see `house_dot_image.dart`).
+const partHatchImage = 'tc-part-hatch';
 
 /// The name of the ✓ disc of a road ticked on « Ajouter des rues », added
 /// to the map by `addImage` (see `house_dot_image.dart`).
@@ -291,11 +298,14 @@ List<MapLayerSpec> sectorMapLayers(AppColors colors) => [
 
 /// Every layer the map of « Partie de la rue » adds (PLAN §5.15,
 /// StreetPart mockup), bottom to top: the whole road in grey, under the
-/// style's labels; the stretch kept as the selected road (dark casing,
-/// white core); the house dots, circles every renderer draws (kept: dark;
-/// left out: hollow; the other side: greyed); and the numbers of the side
-/// shown under its dots. Nothing answers taps: the marks are dragged, the
-/// map does not move.
+/// style's labels; the other secteurs' stretches beside it, on their side
+/// (hatched: the picture [partHatchImage] repeated along them); the
+/// stretch kept as the selected road (dark
+/// casing, white core); the house dots, circles every renderer draws
+/// (kept: dark; left out: hollow; the other side: greyed; shared with
+/// another secteur: amber); the numbers of the side shown under its dots;
+/// and the labels of the other secteurs' stretches (« Secteur 12 »).
+/// Nothing answers taps: the marks are dragged, the map does not move.
 List<MapLayerSpec> streetPartMapLayers(AppColors colors) => [
   MapLayerSpec(
     id: MapIds.partRoad,
@@ -307,6 +317,18 @@ List<MapLayerSpec> streetPartMapLayers(AppColors colors) => [
       lineJoin: 'round',
     ),
     belowLabels: true,
+    interactive: false,
+  ),
+  MapLayerSpec(
+    id: MapIds.partOthersBand,
+    source: MapIds.partOthersSource,
+    properties: const LineLayerProperties(
+      linePattern: partHatchImage,
+      lineWidth: AppSizes.partOtherBand,
+      lineOffset: _besideRoad,
+    ),
+    filter: _otherPart(OtherStretchPart.band),
+    belowLabels: false,
     interactive: false,
   ),
   MapLayerSpec(
@@ -331,11 +353,13 @@ List<MapLayerSpec> streetPartMapLayers(AppColors colors) => [
         PartDotLook.kept: colors.mapSelectedCasing,
         PartDotLook.leftOut: colors.mapSelectedCore,
         PartDotLook.otherSide: colors.mapPartOtherSide,
+        PartDotLook.shared: colors.mapPartShared,
       }),
       circleStrokeColor: _byLook({
         PartDotLook.kept: colors.mapSelectedCasing,
         PartDotLook.leftOut: colors.mapPartLeftOutBorder,
         PartDotLook.otherSide: colors.mapPartOtherSideBorder,
+        PartDotLook.shared: colors.mapSelectedCasing,
       }),
       circleRadius: _byZoom(const {15: 4, 18: 7}),
       circleStrokeWidth: AppSizes.partDotBorder,
@@ -366,6 +390,40 @@ List<MapLayerSpec> streetPartMapLayers(AppColors colors) => [
     belowLabels: false,
     interactive: false,
   ),
+  MapLayerSpec(
+    id: MapIds.partOthersLabels,
+    source: MapIds.partOthersSource,
+    properties: SymbolLayerProperties(
+      textField: ['get', labelProperty],
+      textFont: const ['Noto Sans Bold'],
+      textSize: 12,
+      // Above the road, clear of the numbers under the dots.
+      textAnchor: 'bottom',
+      textOffset: const [0, -1.2],
+      textColor: colors.mapSelectedCasing.toHexStringRGB(),
+      textHaloColor: colors.mapSelectedCore.toHexStringRGB(),
+      textHaloWidth: 1.5,
+      textAllowOverlap: true,
+    ),
+    filter: _otherPart(OtherStretchPart.label),
+    belowLabels: false,
+    interactive: false,
+  ),
+];
+
+/// A stretch's offset beside the road: [AppSizes.partOtherOffset] to its
+/// side ([sideProperty]).
+const _besideRoad = [
+  '*',
+  ['get', sideProperty],
+  AppSizes.partOtherOffset,
+];
+
+/// The filter keeping the features of the other secteurs' [part].
+List<Object> _otherPart(OtherStretchPart part) => [
+  '==',
+  ['get', otherPartProperty],
+  part.name,
 ];
 
 /// A colour from a dot's look: [colours] holds one per look.

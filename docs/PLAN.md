@@ -1887,7 +1887,7 @@ removes are marked « (removed, 5.14) » there.
     map names no road within 30 m it stays where the finger was, and a street picked in the
     search keeps the BAN's point.
 
-### 5.15 Partie de la rue: a street split between secteurs (#133, to build)
+### 5.15 Partie de la rue: a street split between secteurs (#133, #138–#141 built)
 
 Agreed 2026-11-11 (ASCII in the terminal, then mockups StreetPart, Pick, Edit). A street is
 not always covered whole by one secteur: it may be cut in the middle, by side (odd / even), or
@@ -2006,6 +2006,28 @@ belong to no secteur at all (a valid state, not an error). This section override
   of the Corbeille has no link: it comes back as it went, its own part included
   (`StreetToAdd.fromCorbeille`, `ZoneStreetToAdd.fromCorbeille`); its part is changed afterwards
   in edit mode.
+- **Delivered in #141** (the shared index): `streetParts/{banId}` holds an entry per secteur,
+  written by `IndexedStreetRepository` (application), which wraps the open secteur's streets:
+  a street from the BAN added, its part changed or restored from the Corbeille holds its part;
+  sent to the Corbeille or purged, its entry goes (a street typed by hand has none). Every use
+  case writes through it, the undo of « Supprimer la rue » included; a street added before #141
+  gets its entry at its next such write (single user, nothing migrated). The writes are a `set`
+  merging the secteur's own entry, not awaited, queued offline like the street writes; deleting
+  the secteur removes its entry from the index of each of its streets first (never stopping the
+  deletion). Port `StreetPartIndex`, adapter `FirestoreStreetPartIndex`. The reads
+  (`ReadOtherSectorParts`, by secteur number) run in the background and never delay anything:
+  « Partie de la rue » reads them for a street with a BAN id (`StreetPartRequest.banId`), then
+  draws each other secteur's stretch of each side it holds, from its first dot to its last
+  (3 m beyond), beside the road on the side most of its houses stand (`LineTrack.hasOnLeft`), as
+  a pale band crossed by dark diagonal bars (a picture repeated along it, `line-pattern`, set
+  beside the road with `line-offset`) labelled
+  « Secteur 12 » above the road; the dots kept that another secteur holds are amber
+  (`PartDotLook.shared`), and an amber block above « Valider » has one line per secteur
+  (`StreetPartChoice.overlaps`). The rows of the selection sheet, of the zone's list (every
+  street to add, ticked or not) and of « Liste » (once ticked) ask once per street and show
+  one line per other secteur, « Secteur 12 : impairs 19–41 », the centre named, as in the
+  warning, only when it is not this secteur's (« Secteur 3 (CS Arnas) : toute la rue »).
+  Offline, refused or unreadable: nothing shown.
 - **The BAN's later additions**: the app never reads a street's numbers again once added
   (5.4), so nothing arrives by itself; a widening in edit mode is the only new read.
 - **Map** (Accueil, 5.3, and « Ajouter des rues »): a street held in part draws only **the
@@ -2872,10 +2894,13 @@ joinCodes/{code}                                  ← "K7P2QX": readable only by
     sectorId, number, centreName, campaign       ← what the join preview shows; nothing else
 
 streetParts/{banId}                               ← #133 (5.15): who holds which part of a BAN
-    parts: { "<sectorId>": { number: 12,             street; readable only by exact id (get,
-               centreName: "CS Villefranche",      not list); each secteur writes only its own
-               odd: "all" | "none" | [19, 41],     entry; none for a street typed by hand
-               even: … } }
+    sector: "<sectorId>",                            street; readable only by exact id (get,
+    parts: { "<sectorId>": { number: 12,             not list); each secteur writes only its own
+               centreName: "CS Villefranche",      entry; none for a street typed by hand.
+               odd: "all" | "none" | [19, 41],     `sector` names the entry the last write
+               even: … } }                          changed (the rules need it, #141); `parts`
+                                                    may be missing (an entry removed from a
+                                                    street no secteur held)
 
 sectors/{sectorId}
     number: 49, centreKey, centreName, joinCode, createdBy, createdAt,
@@ -3151,11 +3176,15 @@ photo of the QR) is even more likely. So **knowing a code must not be enough**:
   part comes with **one** house in its first write instead of 2: checking the part costs more
   than two of the costliest houses leave of the 1 000 expressions (measured in the emulator).
 - `streetParts/{banId}` (#133, 5.15): `get` for signed-in users, `list` denied. An active
-  member of a secteur may create the document or update it changing only the key of their
-  own secteur (`diff().affectedKeys() == [sectorId]` on `parts`), with `number` and
-  `centreName` equal to the secteur's and sides in the shape above; deleting that key is the
-  same write. The document itself is never deleted. Written when a street is added, its part
-  changed, deleted, restored or purged, and when the secteur is deleted (each of its entries).
+  member of a secteur, or an admin (who deletes secteurs, member or not), may create the
+  document or update it changing only the key of that secteur (`diff().affectedKeys()` within
+  `[sector]` on `parts`), with `number` and `centreName` equal to the secteur's and sides in
+  the shape above; deleting that key is the same write. The rules cannot tell which key of a
+  map a write changed, so the write names its secteur in `sector` (#141): exactly `sector` and
+  maybe `parts`, nothing else. The document itself is never deleted. Written when a street is
+  added, its part changed, deleted, restored or purged, and when the secteur is deleted (each
+  of its entries). A separate request from the street writes, so it costs nothing of their
+  1 000 expressions. Tests: `firebase/test/street_parts.test.mjs`.
 - `sectorKeys/{key}`: `get` allowed (creation must know the pair is taken); create only if
   absent; never updated; deleted only with the secteur.
 - `rescueCentres`: readable by signed-in users (station names only), create-only.
@@ -3421,7 +3450,8 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
 - **Streets held by other secteurs (#133):** `streetParts/{banId}` tells any signed-in phone
   which secteurs (number and centre) hold which numbers of a street, read by the street's BAN
   id. BAN ids are public, so this is public in practice: no marks, no members, no money, only
-  which secteur covers which addresses. `PRIVACY.md` says so in « Données enregistrées ».
+  which secteur covers which addresses. `PRIVACY.md` and the Confidentialité page say so in
+  « Données enregistrées » (#141).
 - **Location:** the phone's position is used only on screen ("locate me"), never stored or
   sent. Permission is asked when the button is first tapped.
 - Firestore region: `europe-west` (EU).

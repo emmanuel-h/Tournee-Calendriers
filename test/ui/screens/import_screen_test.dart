@@ -4,8 +4,11 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
+import 'package:tournee_calendriers/domain/sector/rescue_centre.dart';
+import 'package:tournee_calendriers/domain/sector/sector_number.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
+import 'package:tournee_calendriers/domain/street/sector_part.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
@@ -22,6 +25,7 @@ import '../../support/fakes/fake_address_directory.dart';
 import '../../support/fakes/fake_commune_search.dart';
 import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_sector_repository.dart';
+import '../../support/fakes/fake_street_part_index.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
@@ -56,6 +60,7 @@ StreetNumbers _numbers(BanStreetId id, String name) => StreetNumbers(
 void main() {
   late FakeStreetRepository streets;
   late FakeAddressDirectory directory;
+  var index = FakeStreetPartIndex();
 
   Finder street(BanStreetId id) =>
       find.byKey(ValueKey('import.street.${id.value}'));
@@ -77,6 +82,7 @@ void main() {
             valueOf(MySectors.none.remember(sector49).open(sectorId)),
           ),
           directory: directory,
+          index: index,
           communes: FakeCommuneSearch(
             answers: {
               'Villef': Ok([
@@ -102,6 +108,7 @@ void main() {
   }
 
   setUp(() {
+    index = FakeStreetPartIndex();
     streets = FakeStreetRepository();
     directory = FakeAddressDirectory(
       communes: {
@@ -122,6 +129,29 @@ void main() {
         _bonnet: const Err(AddressDirectoryFailure.noNetwork),
         _bordelan: Ok(_numbers(_bordelan, 'Petit Chemin de Bordelan')),
       },
+    );
+  });
+
+  testWidgets('should say under a street ticked which part another secteur '
+      'holds', (tester) async {
+    index.others[_morin] = [
+      SectorPart(
+        sector: valueOf(SectorNumber.create(3)),
+        centre: valueOf(RescueCentre.create('CS Arnas')),
+        part: StreetPart.whole,
+      ),
+    ];
+    await openVillefranche(tester);
+
+    await tester.tap(street(_morin));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.descendant(
+        of: find.byKey(ValueKey('import.others.${_morin.value}')),
+        matching: find.text('Secteur 3 (CS Arnas)\u00a0: toute la rue'),
+      ),
+      findsOneWidget,
     );
   });
 

@@ -7,6 +7,7 @@ import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/presentation/import_streets/import_state.dart';
+import 'package:tournee_calendriers/presentation/street_part/other_sectors.dart';
 
 import '../../support/geo_fixtures.dart';
 import '../../support/results.dart';
@@ -214,6 +215,58 @@ void main() {
         ]);
 
         expect(state.parts, {BanStreetId('a'): evens});
+      });
+    });
+
+    group('other secteurs (PLAN §5.15)', () {
+      final twelve = [
+        OtherSectorLine(
+          sector: 12,
+          part: part(odd: range(19, 41), even: SidePart.none),
+        ),
+      ];
+      final numbers = StreetNumbers(
+        id: BanStreetId('a'),
+        name: streetName('Rue A'),
+        commune: villefranche,
+        numbers: [DirectoryNumber(number: n('2'))],
+        invalidNumbers: 0,
+        duplicateNumbers: 0,
+      );
+
+      test('should know none by default', () {
+        expect(_choice('a', 'A').others, isEmpty);
+      });
+
+      test('should keep them through a tick, a part, an untick', () {
+        final street = _choice('a', 'A').copyWith(others: twelve);
+
+        expect(street.copyWith(checked: true).others, twelve);
+        expect(
+          street
+              .copyWith(checked: true)
+              .withPart(StreetPart.whole, numbers)
+              .others,
+          twelve,
+        );
+        expect(street.copyWith(checked: true).unticked().others, twelve);
+      });
+
+      test('should be equal only when they are, and print them', () {
+        final street = _choice('a', 'Rue A').copyWith(others: twelve);
+
+        expect(street, _choice('a', 'Rue A').copyWith(others: [...twelve]));
+        expect(
+          street.hashCode,
+          _choice('a', 'Rue A').copyWith(others: [...twelve]).hashCode,
+        );
+        expect(street, isNot(_choice('a', 'Rue A')));
+        expect(
+          '$street',
+          'StreetChoice(a, Rue A, 19, alreadyImported: false, '
+              'inCorbeille: false, checked: false, others: '
+              '[OtherSectorLine(12, null, StreetPart(odd: 19–41, even: none))])',
+        );
       });
     });
 
@@ -462,6 +515,58 @@ void main() {
       expect(option(), isNot(option(postcodes: ['69401'])));
       expect(option(), isNot(option(commune: gleize)));
       expect(option(), isNot(option(centre: at(45.9915, 4.6883))));
+    });
+
+    group('other secteurs (PLAN §5.15)', () {
+      final twelve = [
+        OtherSectorLine(
+          sector: 12,
+          part: part(odd: range(19, 41), even: SidePart.none),
+        ),
+      ];
+      final numbers = StreetNumbers(
+        id: BanStreetId('a'),
+        name: streetName('Rue A'),
+        commune: villefranche,
+        numbers: [DirectoryNumber(number: n('2'))],
+        invalidNumbers: 0,
+        duplicateNumbers: 0,
+      );
+
+      test('should know none by default', () {
+        expect(_choice('a', 'A').others, isEmpty);
+      });
+
+      test('should keep them through a tick, a part, an untick', () {
+        final street = _choice('a', 'A').copyWith(others: twelve);
+
+        expect(street.copyWith(checked: true).others, twelve);
+        expect(
+          street
+              .copyWith(checked: true)
+              .withPart(StreetPart.whole, numbers)
+              .others,
+          twelve,
+        );
+        expect(street.copyWith(checked: true).unticked().others, twelve);
+      });
+
+      test('should be equal only when they are, and print them', () {
+        final street = _choice('a', 'Rue A').copyWith(others: twelve);
+
+        expect(street, _choice('a', 'Rue A').copyWith(others: [...twelve]));
+        expect(
+          street.hashCode,
+          _choice('a', 'Rue A').copyWith(others: [...twelve]).hashCode,
+        );
+        expect(street, isNot(_choice('a', 'Rue A')));
+        expect(
+          '$street',
+          'StreetChoice(a, Rue A, 19, alreadyImported: false, '
+              'inCorbeille: false, checked: false, others: '
+              '[OtherSectorLine(12, null, StreetPart(odd: 19–41, even: none))])',
+        );
+      });
     });
 
     test('should name its fields when printed', () {

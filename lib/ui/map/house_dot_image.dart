@@ -167,3 +167,57 @@ Future<Uint8List> houseDotPng(HouseDotLook look, double pixelRatio) async {
   image.dispose();
   return png!.buffer.asUint8List();
 }
+
+/// Another secteur's stretch on « Partie de la rue » (#141, StreetPart
+/// mockup), as a square [AppSizes.partOtherBand] dp wide that MapLibre
+/// repeats along the stretch (`line-pattern`): [AppColors.mapSelectedCore]
+/// at [AppSizes.partOtherBandOpacity], crossed by diagonal bars of
+/// [AppColors.mapPartHatch]. The bars meet from one square to the next,
+/// so the hatching runs on unbroken.
+///
+/// A picture rather than a dashed line: dashes are drawn through a texture
+/// some renderers (the emulator's) leave blank.
+Future<Uint8List> partHatchPng(AppColors colors, double pixelRatio) async {
+  const side = AppSizes.partOtherBand;
+  final pixels = (side * pixelRatio).ceil();
+  final recorder = ui.PictureRecorder();
+  final canvas = Canvas(recorder)..scale(pixels / side);
+  paintPartHatch(canvas, colors);
+  final picture = recorder.endRecording();
+  final image = await picture.toImage(pixels, pixels);
+  picture.dispose();
+  final png = await image.toByteData(format: ui.ImageByteFormat.png);
+  image.dispose();
+  return png!.buffer.asUint8List();
+}
+
+/// Paints the hatching of [partHatchPng] in a square of
+/// [AppSizes.partOtherBand].
+void paintPartHatch(Canvas canvas, AppColors colors) {
+  const side = AppSizes.partOtherBand;
+  const square = Rect.fromLTWH(0, 0, side, side);
+  // Two bars per square, along x − y = k · side / 2: a square later, the
+  // same lines again, so the squares join.
+  const period = side / 2;
+  canvas
+    ..save()
+    ..clipRect(square)
+    ..drawRect(
+      square,
+      Paint()
+        ..color = colors.mapSelectedCore.withValues(
+          alpha: AppSizes.partOtherBandOpacity,
+        ),
+    );
+  final bar = Paint()
+    ..color = colors.mapPartHatch
+    ..strokeWidth = AppSizes.partOtherHatch;
+  for (var k = -2; k <= 2; k++) {
+    canvas.drawLine(
+      Offset(k * period, 0),
+      Offset(k * period + side, side),
+      bar,
+    );
+  }
+  canvas.restore();
+}

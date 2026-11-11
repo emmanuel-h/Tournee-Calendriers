@@ -11,10 +11,14 @@ import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
 import 'package:tournee_calendriers/application/ports/pending_sync.dart';
 import 'package:tournee_calendriers/application/ports/server_connection.dart';
+import 'package:tournee_calendriers/application/ports/street_part_index.dart';
 import 'package:tournee_calendriers/application/ports/street_shapes.dart';
+import 'package:tournee_calendriers/application/services/indexed_street_repository.dart';
+import 'package:tournee_calendriers/domain/street/sector_part.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/domain/street/street_repository.dart';
 import 'package:tournee_calendriers/infrastructure/ban/ban_address_directory.dart';
 import 'package:tournee_calendriers/infrastructure/firebase_auth/anonymous_auth.dart';
@@ -23,6 +27,7 @@ import 'package:tournee_calendriers/infrastructure/firestore/firestore_admin_sta
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_round_ledger.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_sector_directory.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_sector_repository.dart';
+import 'package:tournee_calendriers/infrastructure/firestore/firestore_street_part_index.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_street_repository.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_streets_download.dart';
 import 'package:tournee_calendriers/infrastructure/geo_api/fallback_commune_search.dart';
@@ -168,9 +173,37 @@ Future<List<Override>> bindAdapters({
     ref.onDispose(() => unawaited(streets.close()));
     return streets;
   });
+  // The shared index of who holds which part of a street (PLAN §5.15),
+  // as the open secteur writes and reads it: built again for another
+  // secteur, null while none is open.
+  final sectorPartIndex = Provider<FirestoreStreetPartIndex?>((ref) {
+    final open = ref.watch(
+      currentSectorProvider.select(
+        (sector) =>
+            sector == null ? null : (sector.id, sector.number, sector.centre),
+      ),
+    );
+    if (open == null) return null;
+    final (sector, number, centre) = open;
+    return FirestoreStreetPartIndex(
+      db,
+      sector: sector,
+      number: number,
+      centre: centre,
+    );
+  });
   return [
-    streetRepositoryProvider.overrideWith(
-      (ref) => ref.watch(sectorStreets) ?? const _NoStreets(),
+    // The open secteur's streets, wrapped so that each write changing what
+    // the secteur holds of a street also tells the shared index.
+    streetRepositoryProvider.overrideWith((ref) {
+      final streets = ref.watch(sectorStreets);
+      final index = ref.watch(sectorPartIndex);
+      return streets == null || index == null
+          ? const _NoStreets()
+          : IndexedStreetRepository(streets, index);
+    }),
+    streetPartIndexProvider.overrideWith(
+      (ref) => ref.watch(sectorPartIndex) ?? const _NoIndex(),
     ),
     // The same adapter as the streets: its one listener on the secteur
     // also tells which streets still have writes waiting.
@@ -292,4 +325,20 @@ final class _NoStreets implements StreetRepository {
   static Future<void> _nowhere() => Future.error(
     StateError('No secteur is open: a street has nowhere to go.'),
   );
+}
+
+/// The shared index while no secteur is open: no screen reads or writes it
+/// then, and it would have no secteur to write for. It tells nothing and
+/// keeps nothing.
+final class _NoIndex implements StreetPartIndex {
+  const _NoIndex();
+
+  @override
+  Future<void> hold(BanStreetId street, StreetPart part) async {}
+
+  @override
+  Future<void> release(BanStreetId street) async {}
+
+  @override
+  Future<List<SectorPart>> othersOf(BanStreetId street) async => const [];
 }

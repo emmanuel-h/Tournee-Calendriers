@@ -3,12 +3,14 @@ import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/map/map_layers.dart';
 import 'package:tournee_calendriers/domain/map/part_drawing.dart';
 import 'package:tournee_calendriers/domain/map/picked_road.dart';
+import 'package:tournee_calendriers/domain/sector/sector_number.dart';
 import 'package:tournee_calendriers/domain/street/progress_level.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/ui/map/map_geojson.dart';
 
 import '../../support/geo_fixtures.dart';
+import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 
 final _nationale = StreetId('rue-nationale');
@@ -418,6 +420,82 @@ void main() {
           ],
         },
       );
+    });
+  });
+
+  group('partOthersGeoJson', () {
+    test('should write each stretch as a line with its side, and its label '
+        'as a point', () {
+      expect(
+        partOthersGeoJson([
+          OtherStretch(
+            sector: valueOf(SectorNumber.create(12)),
+            line: [at(45.98, 4.7200), at(45.98, 4.7203)],
+            onLeft: true,
+            labelAt: at(45.98, 4.72015),
+          ),
+          OtherStretch(
+            sector: valueOf(SectorNumber.create(3)),
+            line: [at(45.98, 4.7210), at(45.98, 4.7211)],
+            onLeft: false,
+            labelAt: at(45.98, 4.72105),
+          ),
+        ], (sector) => 'Secteur $sector'),
+        {
+          'type': 'FeatureCollection',
+          'features': [
+            {
+              'type': 'Feature',
+              'id': 'other-0',
+              'properties': {'other': 'band', 'side': -1},
+              'geometry': {
+                'type': 'LineString',
+                'coordinates': [
+                  [4.7200, 45.98],
+                  [4.7203, 45.98],
+                ],
+              },
+            },
+            {
+              'type': 'Feature',
+              'id': 'other-0-label',
+              'properties': {'other': 'label', 'label': 'Secteur 12'},
+              'geometry': {
+                'type': 'Point',
+                'coordinates': [4.72015, 45.98],
+              },
+            },
+            {
+              'type': 'Feature',
+              'id': 'other-1',
+              'properties': {'other': 'band', 'side': 1},
+              'geometry': {
+                'type': 'LineString',
+                'coordinates': [
+                  [4.7210, 45.98],
+                  [4.7211, 45.98],
+                ],
+              },
+            },
+            {
+              'type': 'Feature',
+              'id': 'other-1-label',
+              'properties': {'other': 'label', 'label': 'Secteur 3'},
+              'geometry': {
+                'type': 'Point',
+                'coordinates': [4.72105, 45.98],
+              },
+            },
+          ],
+        },
+      );
+    });
+
+    test('should write none when no other secteur holds the street', () {
+      expect(partOthersGeoJson(const [], (sector) => '$sector'), {
+        'type': 'FeatureCollection',
+        'features': <Object>[],
+      });
     });
   });
 }

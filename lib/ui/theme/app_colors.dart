@@ -58,6 +58,8 @@ final class AppColors extends ThemeExtension<AppColors> {
     required this.mapPartLeftOutBorder,
     required this.mapPartOtherSide,
     required this.mapPartOtherSideBorder,
+    required this.mapPartShared,
+    required this.mapPartHatch,
   });
 
   /// The approved palette (mockups README). Values the README leaves implicit
@@ -111,6 +113,8 @@ final class AppColors extends ThemeExtension<AppColors> {
     mapPartLeftOutBorder: Color(0xFF4A5058),
     mapPartOtherSide: Color(0xFFE2DED5),
     mapPartOtherSideBorder: Color(0xFFCFC9BD),
+    mapPartShared: Color(0xFFF2B33D),
+    mapPartHatch: Color(0xFF4A5058),
   );
 
   /// The dark palette, reviewed in T5.1: the light palette's hues on a dark
@@ -174,6 +178,8 @@ final class AppColors extends ThemeExtension<AppColors> {
     mapPartLeftOutBorder: Color(0xFF4A5058),
     mapPartOtherSide: Color(0xFFE2DED5),
     mapPartOtherSideBorder: Color(0xFFCFC9BD),
+    mapPartShared: Color(0xFFF2B33D),
+    mapPartHatch: Color(0xFF4A5058),
   );
 
   /// The palette of the nearest `Theme`. Every `ThemeData` of the app is
@@ -278,6 +284,12 @@ final class AppColors extends ThemeExtension<AppColors> {
   final Color mapPartLeftOutBorder;
   final Color mapPartOtherSide;
   final Color mapPartOtherSideBorder;
+
+  // Another secteur on « Partie de la rue » (#141): a house kept that it
+  // holds too is amber (in a Selected casing border), its stretch hatched
+  // in this grey on Selected core.
+  final Color mapPartShared;
+  final Color mapPartHatch;
 
   // `copyWith` and `lerp` are required by ThemeExtension. The app never
   // animates between palettes, so `lerp` switches at the half-way point

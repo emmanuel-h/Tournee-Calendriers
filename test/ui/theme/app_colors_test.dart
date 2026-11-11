@@ -184,6 +184,8 @@ void main() {
     expect(dark.mapPartLeftOutBorder, light.mapPartLeftOutBorder);
     expect(dark.mapPartOtherSide, light.mapPartOtherSide);
     expect(dark.mapPartOtherSideBorder, light.mapPartOtherSideBorder);
+    expect(dark.mapPartShared, light.mapPartShared);
+    expect(dark.mapPartHatch, light.mapPartHatch);
   });
 
   test('should draw « Partie de la rue » in the StreetPart mockup\'s '
@@ -193,5 +195,7 @@ void main() {
     expect(colors.mapPartLeftOutBorder, const Color(0xFF4A5058));
     expect(colors.mapPartOtherSide, const Color(0xFFE2DED5));
     expect(colors.mapPartOtherSideBorder, const Color(0xFFCFC9BD));
+    expect(colors.mapPartShared, const Color(0xFFF2B33D));
+    expect(colors.mapPartHatch, const Color(0xFF4A5058));
   });
 }

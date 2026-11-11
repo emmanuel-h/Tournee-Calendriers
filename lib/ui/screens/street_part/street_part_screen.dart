@@ -380,10 +380,70 @@ final class _ResultSheet extends StatelessWidget {
                   ),
                 ],
               ),
+              if (view.overlaps.isNotEmpty) _OverlapWarning(view: view),
               PrimaryButton(
                 key: const Key('part.validate'),
                 label: l10n.streetPartValidate,
                 onPressed: onValidate,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// The amber block above « Valider » (PLAN §5.15 « Other secteurs »): the
+/// numbers kept that other secteurs hold too, one line per secteur. A
+/// warning only: « Valider » stays, since the index may be out of date and
+/// a centre may want two secteurs on the same numbers.
+final class _OverlapWarning extends StatelessWidget {
+  const _OverlapWarning({required this.view});
+
+  final StreetPartView view;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = AppColors.of(context);
+    final style = AppTextStyles.body.copyWith(color: colors.ink, height: 1.35);
+    // `liveRegion`: TalkBack says it when it appears or changes, as a mark
+    // moves onto a number another secteur holds.
+    return Semantics(
+      liveRegion: true,
+      container: true,
+      child: DecoratedBox(
+        key: const Key('part.overlaps'),
+        decoration: BoxDecoration(
+          color: colors.nobodyHomePale,
+          border: Border.all(
+            color: colors.nobodyHomeBorder,
+            width: AppSizes.partWarningBorder,
+          ),
+          borderRadius: BorderRadius.circular(AppSizes.tileRadius),
+        ),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            spacing: 10,
+            children: [
+              ExcludeSemantics(
+                child: Text(
+                  '⚠',
+                  style: style.copyWith(fontWeight: FontWeight.w700),
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  spacing: 4,
+                  children: [
+                    for (final line in view.overlaps)
+                      Text(overlapText(l10n, line), style: style),
+                  ],
+                ),
               ),
             ],
           ),

@@ -11,6 +11,7 @@ import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
 import 'package:tournee_calendriers/ui/components/add_progress.dart';
 import 'package:tournee_calendriers/ui/components/app_buttons.dart';
 import 'package:tournee_calendriers/ui/components/filter_field.dart';
+import 'package:tournee_calendriers/ui/components/other_sector_lines.dart';
 import 'package:tournee_calendriers/ui/components/part_link.dart';
 import 'package:tournee_calendriers/ui/components/section_header.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
@@ -567,6 +568,16 @@ final class _ChoiceRow extends StatelessWidget {
               style: AppTextStyles.small.copyWith(color: colors.muted),
             ),
           ),
+          if (street.others.isNotEmpty)
+            Padding(
+              padding: const EdgeInsetsDirectional.only(
+                start: AppSizes.minTapTarget + 12,
+              ),
+              child: OtherSectorLines(
+                key: ValueKey('import.others.${street.id.value}'),
+                lines: street.others,
+              ),
+            ),
           if (street.partChoosable)
             Padding(
               // Under the name: past the checkbox (the minimum tap target)

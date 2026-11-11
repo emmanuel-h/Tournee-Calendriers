@@ -1,7 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tournee_calendriers/domain/street/house_numbers_input.dart';
+import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/domain/street/street_part_choice.dart';
+import 'package:tournee_calendriers/presentation/dependencies.dart';
+import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
+import 'package:tournee_calendriers/presentation/street_part/other_sectors.dart';
 import 'package:tournee_calendriers/presentation/street_part/street_part_state.dart';
 
 /// The state of one opening of « Partie de la rue » (`family`: one per
@@ -17,6 +23,12 @@ final streetPartProvider = NotifierProvider.autoDispose
 /// chosen ([StreetPartChoice]); « Valider » gives back [chosen]. Nothing is
 /// stored here, and nothing needs the network: the numbers came with the
 /// request.
+///
+/// For a street from the BAN, what the other secteurs hold is read from
+/// the shared index in the background (`ReadOtherSectorParts`, PLAN §5.15
+/// « Other secteurs »): once it comes, their stretches are hatched, the
+/// numbers shared drawn amber and named above « Valider ». Until then,
+/// and when it cannot be read, nothing of it shows and nothing waits.
 final class StreetPartNotifier extends Notifier<StreetPartView> {
   StreetPartNotifier(this.request);
 
@@ -27,7 +39,14 @@ final class StreetPartNotifier extends Notifier<StreetPartView> {
   @override
   StreetPartView build() {
     _choice = request.choice;
+    if (request.banId case final banId?) unawaited(_readOthers(banId));
     return _view();
+  }
+
+  Future<void> _readOthers(BanStreetId banId) async {
+    final others = await ref.read(readOtherSectorPartsProvider)(banId);
+    if (!ref.mounted || others.isEmpty) return;
+    _show(_choice.withOthers(others));
   }
 
   /// The part chosen, for « Valider ».
@@ -55,7 +74,19 @@ final class StreetPartNotifier extends Notifier<StreetPartView> {
     state = _view();
   }
 
-  StreetPartView _view() => StreetPartView.of(request.streetName, _choice);
+  StreetPartView _view() => StreetPartView.of(
+    request.streetName,
+    _choice,
+    // `ref.read`: the open secteur's centre, read when the view is made;
+    // the screen does not outlive a switch of secteur.
+    overlaps: switch (_choice.overlaps) {
+      [] => const [],
+      final overlaps => OverlapLine.of(
+        overlaps,
+        ref.read(currentSectorProvider)?.centre,
+      ),
+    },
+  );
 
   /// The number typed in [text]; null when blank or not a number.
   static int? _numberIn(String text) => int.tryParse(text.trim());

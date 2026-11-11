@@ -6,6 +6,7 @@ import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/phone_settings.dart';
+import 'package:tournee_calendriers/application/services/indexed_street_repository.dart';
 import 'package:tournee_calendriers/application/use_cases/mark.dart';
 import 'package:tournee_calendriers/bootstrap/bindings.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
@@ -14,6 +15,7 @@ import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/infrastructure/ban/ban_address_directory.dart';
 import 'package:tournee_calendriers/infrastructure/firebase_auth/firebase_identity.dart';
@@ -347,6 +349,48 @@ void main() {
       ),
     );
 
+    test('should write the open secteur\'s entry in the shared index when '
+        'a street is added, and read the others\'', () async {
+      final container = await leasPhone();
+      await db.doc('streetParts/69264_1460').set({
+        'sector': 't12',
+        'parts': {
+          't12': {
+            'number': 12,
+            'centreName': 'CS Villefranche',
+            'odd': [19, 41],
+            'even': 'none',
+          },
+        },
+      });
+
+      await container.read(streetRepositoryProvider).add(morin);
+      await pumpEventQueue();
+      final others = await container
+          .read(streetPartIndexProvider)
+          .othersOf(morin.banId!);
+
+      final stored = await db.doc('streetParts/69264_1460').get();
+      expect((stored.data()!['parts'] as Map)['t49'], {
+        'number': 49,
+        'centreName': 'CS Villefranche',
+        'odd': 'all',
+        'even': 'all',
+      });
+      expect(others.map((other) => other.sector.value), [12]);
+    });
+
+    test('should have no index while no secteur is open', () async {
+      final container = await leasPhone(noSector: true);
+      final index = container.read(streetPartIndexProvider);
+
+      await index.hold(morin.banId!, StreetPart.whole);
+      await index.release(morin.banId!);
+
+      expect(await index.othersOf(morin.banId!), isEmpty);
+      expect(firestoreAsked, 0);
+    });
+
     test('should hold no street while no secteur is open', () async {
       final container = await leasPhone(noSector: true);
 
@@ -381,7 +425,7 @@ void main() {
       await streets.add(morin);
       await pumpEventQueue();
 
-      expect(streets, isA<FirestoreStreetRepository>());
+      expect(streets, isA<IndexedStreetRepository>());
       final stored = await db
           .doc('sectors/t49/campaigns/2026/streets/morin')
           .get();
@@ -412,7 +456,7 @@ void main() {
         await pumpEventQueue();
 
         expect(streets12, isNot(same(streets49)));
-        expect(streets12, isA<FirestoreStreetRepository>());
+        expect(streets12, isA<IndexedStreetRepository>());
         expect(
           (await db.doc('sectors/t12/campaigns/2026/streets/morin').get())
               .exists,
@@ -465,16 +509,22 @@ void main() {
       () async {
         final container = await leasPhone();
         final streets49 = container.read(streetRepositoryProvider);
+        final pending49 = container.read(pendingSyncProvider);
 
-        // The same adapter, so one Firestore listener serves both.
-        expect(container.read(pendingSyncProvider), same(streets49));
-        expect(streets49, isA<FirestoreStreetRepository>());
+        // The adapter the streets wrap, so one Firestore listener serves
+        // both.
+        expect(pending49, isA<FirestoreStreetRepository>());
+        expect(streets49, isA<IndexedStreetRepository>());
 
         await openSector(container, sector12.id);
 
         final streets12 = container.read(streetRepositoryProvider);
         expect(streets12, isNot(same(streets49)));
-        expect(container.read(pendingSyncProvider), same(streets12));
+        expect(container.read(pendingSyncProvider), isNot(same(pending49)));
+        expect(
+          container.read(pendingSyncProvider),
+          isA<FirestoreStreetRepository>(),
+        );
       },
     );
 
@@ -492,17 +542,19 @@ void main() {
 
     test('should tell offline from the storage of the open tournée', () async {
       final container = await leasPhone();
-      final streets49 = container.read(streetRepositoryProvider);
+      final pending49 = container.read(pendingSyncProvider);
 
-      // The same adapter, so its one Firestore listener also says it.
-      expect(container.read(serverConnectionProvider), same(streets49));
+      // The same adapter as the pending sync, the one the streets wrap, so
+      // its one Firestore listener also says it.
+      expect(container.read(serverConnectionProvider), same(pending49));
 
       await openSector(container, sector12.id);
 
       expect(
         container.read(serverConnectionProvider),
-        same(container.read(streetRepositoryProvider)),
+        same(container.read(pendingSyncProvider)),
       );
+      expect(container.read(serverConnectionProvider), isNot(same(pending49)));
     });
 
     test('should say online while no tournée is open', () async {

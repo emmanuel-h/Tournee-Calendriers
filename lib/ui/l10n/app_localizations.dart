@@ -2047,7 +2047,7 @@ abstract class AppLocalizations {
   /// Privacy page: what is stored (PLAN §8.3): its section of PRIVACY.md, word for word.
   ///
   /// In fr, this message translates to:
-  /// **'Pour chaque rue du secteur : les numéros, leur place sur la carte, ce qui s\'est passé à chaque porte (fait, refusé, personne, à repasser), le jour et l\'heure où repasser, combien de calendriers la maison a pris, et le prénom de qui l\'a noté. Pour chaque tournée validée : son début et sa fin, le nombre de maisons visitées, le nombre et le total des dons par moyen de paiement, et les calendriers offerts, sans le prénom de qui l\'a faite. Un don n\'est jamais lié à une maison : la liste des dons reste sur le téléphone jusqu\'à la validation de la tournée, puis elle est effacée. Rien d\'autre : pas de nom d\'habitant, pas de note.'**
+  /// **'Pour chaque rue du secteur : les numéros, leur place sur la carte, ce qui s\'est passé à chaque porte (fait, refusé, personne, à repasser), le jour et l\'heure où repasser, combien de calendriers la maison a pris, et le prénom de qui l\'a noté. Pour chaque tournée validée : son début et sa fin, le nombre de maisons visitées, le nombre et le total des dons par moyen de paiement, et les calendriers offerts, sans le prénom de qui l\'a faite. Un don n\'est jamais lié à une maison : la liste des dons reste sur le téléphone jusqu\'à la validation de la tournée, puis elle est effacée. Quels numéros de chaque rue un secteur couvre, avec le numéro du secteur et son centre de secours, est visible de toute personne qui utilise l\'appli : cela évite que deux secteurs passent aux mêmes portes. Rien d\'autre : pas de nom d\'habitant, pas de note.'**
   String get privacyDataBody;
 
   /// Privacy page: section about the phone's position.
@@ -4119,6 +4119,59 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Impossible de lire les numéros de la rue pour l\'instant. Réessayez plus tard.'**
   String get streetPartUnavailable;
+
+  /// Amber warning above « Valider » on « Partie de la rue » (PLAN §5.15): one number of the part is also in another secteur's. Never blocks.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le {number} est aussi dans le secteur {sector}{centre}.'**
+  String streetPartSharedOne(String number, int sector, String centre);
+
+  /// Amber warning on « Partie de la rue »: two to five numbers of the part are also in another secteur's (« Le 19 et le 21 sont aussi dans le secteur 12 (CS Villefranche). »).
+  ///
+  /// In fr, this message translates to:
+  /// **'{numbers} et le {last} sont aussi dans le secteur {sector}{centre}.'**
+  String streetPartSharedSome(
+    String numbers,
+    String last,
+    int sector,
+    String centre,
+  );
+
+  /// Amber warning on « Partie de la rue »: more than five numbers of the part are also in another secteur's.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count} numéros sont aussi dans le secteur {sector}{centre}.'**
+  String streetPartSharedMany(int count, int sector, String centre);
+
+  /// The first number named by the amber warning of « Partie de la rue » (« Le 19 »).
+  ///
+  /// In fr, this message translates to:
+  /// **'Le {number}'**
+  String streetPartSharedFirst(String number);
+
+  /// A number between the first and the last named by the amber warning (« Le 19, le 21 et le 23 »).
+  ///
+  /// In fr, this message translates to:
+  /// **', le {number}'**
+  String streetPartSharedNext(String number);
+
+  /// After « secteur 12 »: the other secteur's centre, said only when it is not this secteur's.
+  ///
+  /// In fr, this message translates to:
+  /// **' ({centre})'**
+  String streetPartSharedCentre(String centre);
+
+  /// Label of another secteur's stretch, hatched on the map of « Partie de la rue ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Secteur {sector}'**
+  String otherSectorLabel(int sector);
+
+  /// Line under a street to add that another secteur holds (PLAN §5.15): « Secteur 12 : impairs 19–41 ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Secteur {sector}{centre} : {part}'**
+  String otherSectorPart(int sector, String centre, String part);
 }
 
 class _AppLocalizationsDelegate

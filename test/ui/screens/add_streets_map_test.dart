@@ -11,9 +11,12 @@ import 'package:tournee_calendriers/application/ports/street_shapes.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/map/picked_road.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
+import 'package:tournee_calendriers/domain/sector/rescue_centre.dart';
+import 'package:tournee_calendriers/domain/sector/sector_number.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
+import 'package:tournee_calendriers/domain/street/sector_part.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_part.dart';
@@ -31,6 +34,7 @@ import '../../domain/sector/sector_fixtures.dart';
 import '../../support/fakes/fake_address_directory.dart';
 import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_sector_repository.dart';
+import '../../support/fakes/fake_street_part_index.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/fakes/fake_street_shapes.dart';
 import '../../support/geo_fixtures.dart';
@@ -122,11 +126,16 @@ void main() {
   late FakeStreetRepository streets;
   late FakeAddressDirectory directory;
   late FakeStreetShapes shapes;
+  var index = FakeStreetPartIndex();
 
   /// « Ajouter des rues » on Léa's phone, the size of the mockups'; the
   /// 49 is open, with Manu, Léa and Julie. Rue Pierre Morin is free, Rue
   /// des Lilas Léa's and Manu's, Rue Carnot Manu's.
-  Future<void> pumpMap(WidgetTester tester) async {
+  Future<void> pumpMap(
+    WidgetTester tester, {
+    FakeStreetPartIndex? parts,
+  }) async {
+    index = parts ?? FakeStreetPartIndex();
     tester.view
       ..physicalSize = const Size(1170, 2532)
       ..devicePixelRatio = 3;
@@ -194,6 +203,7 @@ void main() {
           shapes: shapes = FakeStreetShapes()
             ..answers['Petit Chemin de Bordelan'] = Ok(_road),
           member: leaId,
+          index: index,
           sectors: FakeSectorRepository([
             team(communes: [villefrancheCommune]),
           ]),
@@ -241,6 +251,32 @@ void main() {
     expect(find.byKey(const Key('addStreets.add')), findsNothing);
     expect(find.byType(OutlinedButton), findsNothing);
     expect(shownMap(tester).pickedRoads, isEmpty);
+  });
+
+  testWidgets('should say under a street ticked which part another secteur '
+      'holds', (tester) async {
+    await pumpMap(
+      tester,
+      parts: FakeStreetPartIndex({
+        _bordelanId: [
+          SectorPart(
+            sector: valueOf(SectorNumber.create(12)),
+            centre: valueOf(RescueCentre.create('CS Villefranche')),
+            part: part(odd: range(19, 41), even: SidePart.none),
+          ),
+        ],
+      }),
+    );
+
+    await tapRoad(tester, _onBordelan);
+
+    expect(
+      find.descendant(
+        of: row(_bordelanId),
+        matching: find.text('Secteur 12\u00a0: impairs 19–41'),
+      ),
+      findsOneWidget,
+    );
   });
 
   testWidgets('should tick the road tapped, on the map and in the '

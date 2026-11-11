@@ -1,14 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
+import 'package:tournee_calendriers/domain/sector/rescue_centre.dart';
+import 'package:tournee_calendriers/domain/sector/sector_number.dart';
+import 'package:tournee_calendriers/domain/street/sector_part.dart';
+import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/domain/street/street_part_choice.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
+import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/street_part/street_part_state.dart';
 import 'package:tournee_calendriers/ui/map/map_view.dart';
 import 'package:tournee_calendriers/ui/screens/street_part/street_part_screen.dart';
 
+import '../../domain/sector/my_sectors_fixtures.dart';
+import '../../support/fakes/fake_my_sectors_store.dart';
+import '../../support/fakes/fake_street_part_index.dart';
 import '../../support/geo_fixtures.dart';
+import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 import '../support/fake_map_view.dart';
 import '../support/test_app.dart';
@@ -42,6 +52,15 @@ StreetPartChoice _choice({StreetShape? road, bool positions = true}) =>
 
 Finder _key(String key) => find.byKey(Key(key));
 
+final _nationale = BanStreetId('69264_0001');
+
+/// The secteur 12 of the CS Villefranche holds the odd numbers 5 to 9.
+SectorPart _twelve() => SectorPart(
+  sector: valueOf(SectorNumber.create(12)),
+  centre: valueOf(RescueCentre.create('CS Villefranche')),
+  part: part(odd: range(5, 9), even: SidePart.none),
+);
+
 String _text(WidgetTester tester, String key) =>
     tester.widget<Text>(_key(key)).data!;
 
@@ -53,7 +72,11 @@ void main() {
 
   /// Opens « Partie de la rue » on [choice] from a button, as the edit
   /// mode does.
-  Future<void> open(WidgetTester tester, StreetPartChoice choice) async {
+  Future<void> open(
+    WidgetTester tester,
+    StreetPartChoice choice, {
+    FakeStreetPartIndex? index,
+  }) async {
     tester.view
       ..physicalSize = const Size(390 * 3, 844 * 3)
       ..devicePixelRatio = 3;
@@ -63,11 +86,20 @@ void main() {
     final request = StreetPartRequest(
       streetName: 'Rue Nationale',
       choice: choice,
+      banId: index == null ? null : _nationale,
     );
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           streetPartMapViewProvider.overrideWithValue(FakePartMapView.new),
+          if (index != null) ...[
+            streetPartIndexProvider.overrideWithValue(index),
+            mySectorsStoreProvider.overrideWithValue(
+              FakeMySectorsStore(
+                valueOf(MySectors.none.remember(sector49).open(sector49.id)),
+              ),
+            ),
+          ],
         ],
         child: testApp(
           Builder(
@@ -262,5 +294,54 @@ void main() {
       expect(_text(tester, 'part.subtitle'), 'Rue Nationale');
       expect(_text(tester, 'part.count'), 'Aucun numéro gardé sur 0');
     });
+  });
+
+  testWidgets('should warn of the numbers another secteur holds too, hatch '
+      'its stretch, and still validate', (tester) async {
+    await open(
+      tester,
+      _choice(),
+      index: FakeStreetPartIndex({
+        _nationale: [_twelve()],
+      }),
+    );
+
+    expect(_key('part.overlaps'), findsOneWidget);
+    expect(
+      find.text('Le 5, le 7 et le 9 sont aussi dans le secteur 12.'),
+      findsOneWidget,
+    );
+    expect(shownPartMap(tester).drawing.others, hasLength(1));
+    await tester.tap(_key('part.validate'));
+    await tester.pumpAndSettle();
+    expect(closed, isTrue);
+    expect(chosen, StreetPart.whole);
+  });
+
+  testWidgets('should show no warning once the part keeps none of their '
+      'numbers', (tester) async {
+    await open(
+      tester,
+      _choice(),
+      index: FakeStreetPartIndex({
+        _nationale: [_twelve()],
+      }),
+    );
+
+    await tester.tap(_key('part.sides.odd'));
+    await tester.pumpAndSettle();
+    await tester.tap(_key('part.nothing'));
+    await tester.pumpAndSettle();
+
+    expect(_key('part.overlaps'), findsNothing);
+  });
+
+  testWidgets('should show no warning when the index tells nothing', (
+    tester,
+  ) async {
+    await open(tester, _choice(), index: FakeStreetPartIndex());
+
+    expect(_key('part.overlaps'), findsNothing);
+    expect(shownPartMap(tester).drawing.others, isEmpty);
   });
 }

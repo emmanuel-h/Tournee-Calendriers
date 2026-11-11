@@ -29,6 +29,7 @@ import 'package:tournee_calendriers/application/ports/round_ledger.dart';
 import 'package:tournee_calendriers/application/ports/sector_directory.dart';
 import 'package:tournee_calendriers/application/ports/sector_downloads.dart';
 import 'package:tournee_calendriers/application/ports/server_connection.dart';
+import 'package:tournee_calendriers/application/ports/street_part_index.dart';
 import 'package:tournee_calendriers/application/ports/street_shapes.dart';
 import 'package:tournee_calendriers/application/ports/street_view_preferences.dart';
 import 'package:tournee_calendriers/application/ports/streets_download.dart';
@@ -60,6 +61,7 @@ import 'package:tournee_calendriers/application/use_cases/observe_street.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_streets.dart';
 import 'package:tournee_calendriers/application/use_cases/phone_settings.dart';
 import 'package:tournee_calendriers/application/use_cases/purge_corbeille.dart';
+import 'package:tournee_calendriers/application/use_cases/read_other_sector_parts.dart';
 import 'package:tournee_calendriers/application/use_cases/read_street_numbers.dart';
 import 'package:tournee_calendriers/application/use_cases/read_street_part_choice.dart';
 import 'package:tournee_calendriers/application/use_cases/refresh_offline_maps.dart';
@@ -98,6 +100,14 @@ final pendingSyncProvider = Provider<PendingSync>(
 /// listener tells it; with no tournée open, nothing does.
 final serverConnectionProvider = Provider<ServerConnection>(
   (ref) => _unbound('ServerConnection'),
+);
+
+/// Which secteur holds which part of a BAN street (PLAN §5.15): the open
+/// secteur's own entries are written through [streetRepositoryProvider],
+/// which the composition root wraps with it; the screens read the other
+/// secteurs' through `ReadOtherSectorParts`.
+final streetPartIndexProvider = Provider<StreetPartIndex>(
+  (ref) => _unbound('StreetPartIndex'),
 );
 final addressDirectoryProvider = Provider<AddressDirectory>(
   (ref) => _unbound('AddressDirectory'),
@@ -279,6 +289,9 @@ final undoLastChangeProvider = Provider(
     ref.watch(streetRepositoryProvider),
     ref.watch(roundVisitsProvider),
   ),
+);
+final readOtherSectorPartsProvider = Provider(
+  (ref) => ReadOtherSectorParts(ref.watch(streetPartIndexProvider)),
 );
 final readStreetNumbersProvider = Provider(
   (ref) => ReadStreetNumbers(ref.watch(addressDirectoryProvider)),

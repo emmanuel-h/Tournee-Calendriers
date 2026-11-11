@@ -5,6 +5,7 @@ import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/use_cases/find_imported_streets.dart';
 import 'package:tournee_calendriers/application/use_cases/import_reference_area.dart';
 import 'package:tournee_calendriers/application/use_cases/search_communes.dart';
+import 'package:tournee_calendriers/domain/sector/rescue_centre.dart';
 import 'package:tournee_calendriers/domain/sector/sector_commune.dart';
 import 'package:tournee_calendriers/domain/shared/french_text.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
@@ -15,6 +16,7 @@ import 'package:tournee_calendriers/presentation/add_streets/part_opening.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/import_streets/import_state.dart';
 import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
+import 'package:tournee_calendriers/presentation/street_part/other_sectors.dart';
 import 'package:tournee_calendriers/presentation/street_part/street_part_state.dart';
 
 /// How long the « Commune » field waits after the last key before
@@ -38,6 +40,11 @@ final importProvider =
 /// The commune is one of the secteur's (the first at once, another by its
 /// chip), followed live and offline from the phone's copy; a secteur
 /// without commune searches one in a field.
+///
+/// What other secteurs hold of a street ticked is read from the shared
+/// index in the background, once per street, and said under its row
+/// (« Secteur 12 : impairs 19–41 », PLAN §5.15); nothing when it cannot be
+/// read, and nothing waits for it.
 final class ImportNotifier extends Notifier<ImportState> {
   /// Raised by each key typed and each commune chosen. A search remembers
   /// the value it started with and gives up when it has changed since:
@@ -53,11 +60,23 @@ final class ImportNotifier extends Notifier<ImportState> {
   /// is counted among them, and opening it again needs no network.
   var _numbers = <BanStreetId, StreetNumbers>{};
 
+  /// What the index said of each street asked about: its rows' lines.
+  var _others = <BanStreetId, List<OtherSectorLine>>{};
+
+  /// The streets the index was asked about, answered or not: each once.
+  var _askedOthers = <BanStreetId>{};
+
+  /// The open secteur's centre, which the rows do not name.
+  RescueCentre? _centre;
+
   @override
   ImportState build() {
     _numbers = {};
+    _others = {};
+    _askedOthers = {};
     // `ref.watch`: opening another tournée builds the list again.
     final sector = ref.watch(currentSectorProvider);
+    _centre = sector?.centre;
     if (sector == null) return const ImportState();
     final listening = ref
         .watch(observeSectorCommunesProvider)(sector.id)
@@ -168,6 +187,7 @@ final class ImportNotifier extends Notifier<ImportState> {
                 inCorbeille:
                     imported[street.id] == ImportedStreetState.inCorbeille,
                 checked: imported[street.id] == ImportedStreetState.active,
+                others: _others[street.id] ?? const [],
               ),
           ]..sort(_byName),
         ),
@@ -185,11 +205,16 @@ final class ImportNotifier extends Notifier<ImportState> {
 
   /// Ticks or unticks the street [id]; a street already imported stays as
   /// it is. Unticked, it loses its part.
-  void toggle(BanStreetId id) => _update(
-    (street) => street.id == id && street.selectable
-        ? (street.checked ? street.unticked() : street.copyWith(checked: true))
-        : street,
-  );
+  void toggle(BanStreetId id) {
+    _update(
+      (street) => street.id == id && street.selectable
+          ? (street.checked
+                ? street.unticked()
+                : street.copyWith(checked: true))
+          : street,
+    );
+    _askOthersOfTicked();
+  }
 
   /// « Tout cocher » / « Tout décocher »: ticks (or unticks) every street
   /// the filter shows, so « Filtrer » then « Tout cocher » takes all the
@@ -203,7 +228,33 @@ final class ImportNotifier extends Notifier<ImportState> {
           ? street.copyWith(checked: true)
           : street.unticked(),
     );
+    _askOthersOfTicked();
   }
+
+  /// Asks the shared index about each street ticked to be added, once.
+  void _askOthersOfTicked() {
+    for (final street in _listed()) {
+      if (street.toImport && _askedOthers.add(street.id)) {
+        unawaited(_readOthers(street.id));
+      }
+    }
+  }
+
+  Future<void> _readOthers(BanStreetId id) async {
+    final others = await ref.read(readOtherSectorPartsProvider)(id);
+    if (!ref.mounted || others.isEmpty) return;
+    final lines = OtherSectorLine.of(others, _centre);
+    _others = {..._others, id: lines};
+    _update(
+      (street) => street.id == id ? street.copyWith(others: lines) : street,
+    );
+  }
+
+  /// The streets listed; none while no commune's are.
+  List<StreetChoice> _listed() => switch (state.streets) {
+    StreetsLoaded(:final streets) => streets,
+    NoCommuneChosen() || LoadingStreets() || StreetsFailed() => const [],
+  };
 
   /// « Toute la rue › » under the street [id] ticked: what « Partie de la
   /// rue » opens on, the street's numbers read first (network), once.
@@ -247,6 +298,7 @@ final class ImportNotifier extends Notifier<ImportState> {
       StreetPartRequest(
         streetName: now.name,
         choice: numbers.partChoice(part: now.part),
+        banId: id,
       ),
     );
   }
@@ -270,11 +322,8 @@ final class ImportNotifier extends Notifier<ImportState> {
   );
 
   /// The row of the street [id]; null when the list has none.
-  StreetChoice? _choiceOf(BanStreetId id) => switch (state.streets) {
-    StreetsLoaded(:final streets) =>
-      streets.where((street) => street.id == id).firstOrNull,
-    NoCommuneChosen() || LoadingStreets() || StreetsFailed() => null,
-  };
+  StreetChoice? _choiceOf(BanStreetId id) =>
+      _listed().where((street) => street.id == id).firstOrNull;
 
   void _update(StreetChoice Function(StreetChoice street) change) =>
       state = state.copyWith(streets: _changed(change));

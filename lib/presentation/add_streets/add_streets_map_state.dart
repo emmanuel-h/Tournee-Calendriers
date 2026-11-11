@@ -5,6 +5,7 @@ import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/shared/same_items.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_part.dart';
+import 'package:tournee_calendriers/presentation/street_part/other_sectors.dart';
 
 /// What the « Carte » tab of « Ajouter des rues » shows (PLAN §5.14, Pick
 /// and PickZone mockups): the secteur's streets and houses, the area the
@@ -85,6 +86,7 @@ final class PickedStreetRow {
     this.keptCount,
     this.readingPart = false,
     this.fromCorbeille = false,
+    this.others = const [],
   });
 
   /// The street ✕ unticks.
@@ -110,6 +112,11 @@ final class PickedStreetRow {
   /// own part included, so it has no part to choose.
   final bool fromCorbeille;
 
+  /// What other secteurs hold of the street (« Secteur 12 : impairs
+  /// 19–41 »), once the shared index told it; none until then, and when it
+  /// cannot be read.
+  final List<OtherSectorLine> others;
+
   @override
   bool operator ==(Object other) =>
       other is PickedStreetRow &&
@@ -120,7 +127,8 @@ final class PickedStreetRow {
       other.part == part &&
       other.keptCount == keptCount &&
       other.readingPart == readingPart &&
-      other.fromCorbeille == fromCorbeille;
+      other.fromCorbeille == fromCorbeille &&
+      sameItems(other.others, others);
 
   @override
   int get hashCode => Object.hash(
@@ -132,12 +140,13 @@ final class PickedStreetRow {
     keptCount,
     readingPart,
     fromCorbeille,
+    Object.hashAll(others),
   );
 
   @override
   String toString() =>
       'PickedStreetRow(${id.value}, $name, $numberCount'
-      '${_partFacts(part, keptCount, readingPart, fromCorbeille)})';
+      '${_partFacts(part, keptCount, readingPart, fromCorbeille, others)})';
 }
 
 /// Why a street could not be looked up, or searched; the screen says so
@@ -306,6 +315,7 @@ final class ZoneStreetRow {
     this.keptCount,
     this.readingPart = false,
     this.fromCorbeille = false,
+    this.others = const [],
   });
 
   final ZoneRowKind kind;
@@ -334,6 +344,10 @@ final class ZoneStreetRow {
   /// [PickedStreetRow.fromCorbeille]).
   final bool fromCorbeille;
 
+  /// What other secteurs hold of a street to add (see
+  /// [PickedStreetRow.others]).
+  final List<OtherSectorLine> others;
+
   @override
   bool operator ==(Object other) =>
       other is ZoneStreetRow &&
@@ -345,7 +359,8 @@ final class ZoneStreetRow {
       other.part == part &&
       other.keptCount == keptCount &&
       other.readingPart == readingPart &&
-      other.fromCorbeille == fromCorbeille;
+      other.fromCorbeille == fromCorbeille &&
+      sameItems(other.others, others);
 
   @override
   int get hashCode => Object.hash(
@@ -358,12 +373,13 @@ final class ZoneStreetRow {
     keptCount,
     readingPart,
     fromCorbeille,
+    Object.hashAll(others),
   );
 
   @override
   String toString() =>
       'ZoneStreetRow(${kind.name}, $name, ${id?.value}, $numberCount, '
-      '$ticked${_partFacts(part, keptCount, readingPart, fromCorbeille)})';
+      '$ticked${_partFacts(part, keptCount, readingPart, fromCorbeille, others)})';
 }
 
 /// What a row says of its part when printed, after its other values;
@@ -373,10 +389,12 @@ String _partFacts(
   int? keptCount,
   bool readingPart,
   bool fromCorbeille,
+  List<OtherSectorLine> others,
 ) => [
   if (!part.isWhole) ', $part, kept: $keptCount',
   if (readingPart) ', reading',
   if (fromCorbeille) ', from the Corbeille',
+  if (others.isNotEmpty) ', others: $others',
 ].join();
 
 /// How adding the ticked streets goes. `sealed`: the sheet shows each case.

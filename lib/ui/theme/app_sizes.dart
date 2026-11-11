@@ -398,6 +398,17 @@ abstract final class AppSizes {
   /// house dot; a mark, a round 32 dp handle on a stem under its label,
   /// answering a finger over 48 dp.
   static const partDotBorder = 2.0;
+
+  /// Another secteur's stretch on « Partie de la rue » (#141): a band this
+  /// wide, this far beside the road on its side, its diagonal bars this
+  /// thick, on a pale ground of this opacity (StreetPart mockup).
+  static const partOtherBand = 14.0;
+  static const partOtherOffset = 14.0;
+  static const partOtherHatch = 2.0;
+  static const partOtherBandOpacity = 0.7;
+
+  /// The border of the amber warning above « Valider ».
+  static const partWarningBorder = 1.5;
   static const partMarkHandle = 32.0;
   static const partMarkBorder = 3.0;
   static const partMarkStem = 2.5;

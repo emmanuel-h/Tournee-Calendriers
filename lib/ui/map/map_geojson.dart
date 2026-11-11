@@ -98,8 +98,8 @@ Map<String, Object> pickedMarksGeoJson(Iterable<PickedRoad> picked) =>
     ]);
 
 /// The property holding a dot's [PartDot.look] on « Partie de la rue », by
-/// name (`kept`, `leftOut`, `otherSide`): the style colours the dot from
-/// it.
+/// name (`kept`, `leftOut`, `otherSide`, `shared`): the style colours the
+/// dot from it.
 const lookProperty = 'look';
 
 /// The whole road on « Partie de la rue » (PLAN §5.15), drawn grey: one
@@ -122,6 +122,57 @@ Map<String, Object> partDotsGeoJson(Iterable<PartDot> dots) => _collection([
       },
       geometry: {'type': 'Point', 'coordinates': _position(dot.position)},
     ),
+]);
+
+/// The property telling a feature of the other secteurs' stretches on
+/// « Partie de la rue » (PLAN §5.15): [OtherStretchPart.name].
+const otherPartProperty = 'other';
+
+/// The property holding which side of its line a stretch is drawn: -1 on
+/// the left, 1 on the right (MapLibre's `line-offset` counts to the right
+/// of the line's direction).
+const sideProperty = 'side';
+
+/// The property holding the words of a stretch's label (« Secteur 12 »).
+const labelProperty = 'label';
+
+/// The features of another secteur's stretch.
+enum OtherStretchPart {
+  /// The stretch, a `LineString` drawn hatched beside the road.
+  band,
+
+  /// Where its label goes, a `Point`.
+  label,
+}
+
+/// The other secteurs' stretches of « Partie de la rue »: for each, its
+/// line with the side it is drawn ([sideProperty]), and its label point
+/// with [labelOf] its secteur number as [labelProperty].
+Map<String, Object> partOthersGeoJson(
+  Iterable<OtherStretch> others,
+  String Function(int sector) labelOf,
+) => _collection([
+  for (final (index, stretch) in others.indexed) ...[
+    _feature(
+      id: 'other-$index',
+      properties: {
+        otherPartProperty: OtherStretchPart.band.name,
+        sideProperty: stretch.onLeft ? -1 : 1,
+      },
+      geometry: {
+        'type': 'LineString',
+        'coordinates': [for (final point in stretch.line) _position(point)],
+      },
+    ),
+    _feature(
+      id: 'other-$index-label',
+      properties: {
+        otherPartProperty: OtherStretchPart.label.name,
+        labelProperty: labelOf(stretch.sector.value),
+      },
+      geometry: {'type': 'Point', 'coordinates': _position(stretch.labelAt)},
+    ),
+  ],
 ]);
 
 /// The property telling which part of the zone a feature draws:

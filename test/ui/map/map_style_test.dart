@@ -406,23 +406,29 @@ void main() {
         'numbers', () {
       expect(layers.map((l) => l.id), [
         MapIds.partRoad,
+        MapIds.partOthersBand,
         MapIds.partKeptCasing,
         MapIds.partKeptCore,
         MapIds.partDots,
         MapIds.partNumbers,
+        MapIds.partOthersLabels,
       ]);
       expect(layers.map((l) => l.source), [
         MapIds.partRoadSource,
+        MapIds.partOthersSource,
         MapIds.partKeptSource,
         MapIds.partKeptSource,
         MapIds.partDotsSource,
         MapIds.partDotsSource,
+        MapIds.partOthersSource,
       ]);
     });
 
     test('should draw only the road under the labels, and answer no tap', () {
       expect(layers.map((l) => l.belowLabels), [
         true,
+        false,
+        false,
         false,
         false,
         false,
@@ -474,6 +480,8 @@ void main() {
           '#ffffff',
           'otherSide',
           '#e2ded5',
+          'shared',
+          '#f2b33d',
           '#1b1f24',
         ],
         'circle-stroke-width': 2.0,
@@ -486,6 +494,8 @@ void main() {
           '#4a5058',
           'otherSide',
           '#cfc9bd',
+          'shared',
+          '#1b1f24',
           '#1b1f24',
         ],
       });
@@ -508,6 +518,43 @@ void main() {
         'text-halo-color': '#ffffff',
         'text-halo-width': 1.5,
         'text-optional': true,
+      });
+    });
+
+    test('should hatch the other secteurs\' stretches beside the road, on '
+        'their side', () {
+      expect(layer(MapIds.partOthersBand).filter, [
+        '==',
+        ['get', 'other'],
+        'band',
+      ]);
+      expect(json(MapIds.partOthersBand), {
+        'line-pattern': 'tc-part-hatch',
+        'line-width': 14.0,
+        'line-offset': [
+          '*',
+          ['get', 'side'],
+          14.0,
+        ],
+      });
+    });
+
+    test('should label the other secteurs\' stretches above the road', () {
+      expect(layer(MapIds.partOthersLabels).filter, [
+        '==',
+        ['get', 'other'],
+        'label',
+      ]);
+      expect(json(MapIds.partOthersLabels), {
+        'text-field': ['get', 'label'],
+        'text-font': ['Noto Sans Bold'],
+        'text-size': 12,
+        'text-anchor': 'bottom',
+        'text-offset': [0, -1.2],
+        'text-color': '#1b1f24',
+        'text-halo-color': '#ffffff',
+        'text-halo-width': 1.5,
+        'text-allow-overlap': true,
       });
     });
   });

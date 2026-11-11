@@ -151,4 +151,30 @@ void main() {
       expect(stretch, [west, corner]);
     });
   });
+
+  group('hasOnLeft', () {
+    // East along the parallel, then north: looking along the track, north
+    // of its first stretch is on the left, west of its second on the left.
+    final track = LineTrack.through([
+      [west, corner, north],
+    ])!;
+
+    test('should say a point north of a road running east is on its left', () {
+      expect(track.hasOnLeft(at(45.98005, 4.7201)), isTrue);
+    });
+
+    test('should say a point south of a road running east is on its right', () {
+      expect(track.hasOnLeft(at(45.97995, 4.7201)), isFalse);
+    });
+
+    test('should measure against the nearest piece of the track: west of '
+        'a road running north is on its left', () {
+      expect(track.hasOnLeft(at(45.98008, 4.72018)), isTrue);
+      expect(track.hasOnLeft(at(45.98008, 4.72022)), isFalse);
+    });
+
+    test('should say a point on the track is not on its left', () {
+      expect(track.hasOnLeft(middle), isFalse);
+    });
+  });
 }

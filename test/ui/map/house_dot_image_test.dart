@@ -220,4 +220,42 @@ void main() {
       expect(onRing, lessThan(60));
     });
   });
+
+  group('partHatchPng', () {
+    Future<_Picture> hatch(WidgetTester tester, double ratio) async =>
+        (await tester.runAsync(() async {
+          final png = await partHatchPng(_colors, ratio);
+          final codec = await ui.instantiateImageCodec(png);
+          final image = (await codec.getNextFrame()).image;
+          final rgba = await image.toByteData();
+          return _Picture(image.width, image.height, rgba!);
+        }))!;
+
+    testWidgets('should draw a square of 14 dp at the pixel ratio', (
+      tester,
+    ) async {
+      final picture = await hatch(tester, 2.625);
+
+      // 36.75 pixels, rounded up.
+      expect((picture.width, picture.height), (37, 37));
+    });
+
+    testWidgets('should cross a pale ground with dark diagonal bars that '
+        'meet from one square to the next', (tester) async {
+      final picture = await hatch(tester, 4);
+      // 56 pixels: the bars run along x − y = 0 and ± 28.
+      final onBar = picture.at(20, 20);
+      final between = picture.at(14, 0);
+
+      expect(onBar.a, closeTo(1, 0.01));
+      expect(onBar.r, closeTo(_colors.mapPartHatch.r, 0.03));
+      // White at 0.7, read premultiplied: each channel 0.7.
+      expect(between.r, closeTo(0.7, 0.03));
+      expect(between.b, closeTo(0.7, 0.03));
+      expect(between.a, closeTo(0.7, 0.03));
+      // The bar leaving the right edge comes back on the left edge.
+      expect(picture.at(55, 27).r, closeTo(_colors.mapPartHatch.r, 0.03));
+      expect(picture.at(0, 28).r, closeTo(_colors.mapPartHatch.r, 0.03));
+    });
+  });
 }

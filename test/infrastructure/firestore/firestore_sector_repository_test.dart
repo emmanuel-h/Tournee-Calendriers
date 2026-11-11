@@ -593,6 +593,41 @@ void main() {
       expect(await stored('rescueCentres/villefranche'), isNotNull);
     });
 
+    test('should remove the secteur\'s entry from the index of each of its '
+        'streets from the BAN, keeping the other secteurs\' entries', () async {
+      await repository().add(created);
+      await db.doc('sectors/t49/campaigns/2026/streets/lilas').set({
+        'name': 'Rue des Lilas',
+        'banId': '69264_0420',
+      });
+      await db.doc('sectors/t49/campaigns/2026/streets/chemin').set({
+        'name': 'Chemin à la main',
+        'banId': null,
+      });
+      Map<String, Object> entry(int number) => {
+        'number': number,
+        'centreName': 'CS Villefranche',
+        'odd': 'all',
+        'even': 'all',
+      };
+      await db.doc('streetParts/69264_0420').set({
+        'sector': 't12',
+        'parts': {'t49': entry(49), 't12': entry(12)},
+      });
+
+      await repository().delete(valueOf(team().delete(by: manuAsAdmin)));
+      await pumpEventQueue();
+
+      expect(await stored('streetParts/69264_0420'), {
+        'sector': 't49',
+        'parts': {'t12': entry(12)},
+      });
+      expect(
+        (await db.collection('streetParts').get()).docs.map((doc) => doc.id),
+        ['69264_0420'],
+      );
+    });
+
     test('should delete the other members only with the tournée, so they '
         'learn it was deleted, not that they were removed', () async {
       await repository().add(created);

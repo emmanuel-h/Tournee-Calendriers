@@ -1406,7 +1406,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get privacyDataBody =>
-      'Pour chaque rue du secteur : les numéros, leur place sur la carte, ce qui s\'est passé à chaque porte (fait, refusé, personne, à repasser), le jour et l\'heure où repasser, combien de calendriers la maison a pris, et le prénom de qui l\'a noté. Pour chaque tournée validée : son début et sa fin, le nombre de maisons visitées, le nombre et le total des dons par moyen de paiement, et les calendriers offerts, sans le prénom de qui l\'a faite. Un don n\'est jamais lié à une maison : la liste des dons reste sur le téléphone jusqu\'à la validation de la tournée, puis elle est effacée. Rien d\'autre : pas de nom d\'habitant, pas de note.';
+      'Pour chaque rue du secteur : les numéros, leur place sur la carte, ce qui s\'est passé à chaque porte (fait, refusé, personne, à repasser), le jour et l\'heure où repasser, combien de calendriers la maison a pris, et le prénom de qui l\'a noté. Pour chaque tournée validée : son début et sa fin, le nombre de maisons visitées, le nombre et le total des dons par moyen de paiement, et les calendriers offerts, sans le prénom de qui l\'a faite. Un don n\'est jamais lié à une maison : la liste des dons reste sur le téléphone jusqu\'à la validation de la tournée, puis elle est effacée. Quels numéros de chaque rue un secteur couvre, avec le numéro du secteur et son centre de secours, est visible de toute personne qui utilise l\'appli : cela évite que deux secteurs passent aux mêmes portes. Rien d\'autre : pas de nom d\'habitant, pas de note.';
 
   @override
   String get privacyLocationTitle => 'Position';
@@ -2936,4 +2936,49 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String get streetPartUnavailable =>
       'Impossible de lire les numéros de la rue pour l\'instant. Réessayez plus tard.';
+
+  @override
+  String streetPartSharedOne(String number, int sector, String centre) {
+    return 'Le $number est aussi dans le secteur $sector$centre.';
+  }
+
+  @override
+  String streetPartSharedSome(
+    String numbers,
+    String last,
+    int sector,
+    String centre,
+  ) {
+    return '$numbers et le $last sont aussi dans le secteur $sector$centre.';
+  }
+
+  @override
+  String streetPartSharedMany(int count, int sector, String centre) {
+    return '$count numéros sont aussi dans le secteur $sector$centre.';
+  }
+
+  @override
+  String streetPartSharedFirst(String number) {
+    return 'Le $number';
+  }
+
+  @override
+  String streetPartSharedNext(String number) {
+    return ', le $number';
+  }
+
+  @override
+  String streetPartSharedCentre(String centre) {
+    return ' ($centre)';
+  }
+
+  @override
+  String otherSectorLabel(int sector) {
+    return 'Secteur $sector';
+  }
+
+  @override
+  String otherSectorPart(int sector, String centre, String part) {
+    return 'Secteur $sector$centre : $part';
+  }
 }

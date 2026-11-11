@@ -43,7 +43,10 @@ Start screen:
   map), and the sheet at the bottom lists the streets ticked and adds them all at once
   (« Ajouter 3 rues »), staying open to add more. Under each street ticked (sheet, zone,
   « Liste »), « Toute la rue › » opens « Partie de la rue » to keep only some of its numbers
-  (« Pairs 2–8 › », « 4 numéros sur 8 »): only those are added; « Rue
+  (« Pairs 2–8 › », « 4 numéros sur 8 »): only those are added. A street another secteur
+  holds in part says so under its row (« Secteur 12 : impairs 19–41 »), and « Partie de la
+  rue » hatches that secteur's stretch and warns of the numbers both hold, never blocking;
+  « Rue
   absente de la carte ? Saisir à la main » adds a street the map lacks, offline
   (« Connexion nécessaire pour ajouter une rue. » otherwise).
 - Top bar: the open secteur (« Secteur 49 · 2026 » over its centre de secours) opens

@@ -29,6 +29,7 @@ import '../../support/fakes/fake_sector_directory.dart';
 import '../../support/fakes/fake_sector_downloads.dart';
 import '../../support/fakes/fake_sector_repository.dart';
 import '../../support/fakes/fake_server_connection.dart';
+import '../../support/fakes/fake_street_part_index.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/fakes/fake_street_shapes.dart';
 import '../../support/fakes/fake_street_view_preferences.dart';
@@ -48,7 +49,8 @@ import 'fake_map_view.dart';
 /// default) uses the phone and marks the houses at [now] (two o'clock by
 /// default), or on [clock], which a test may move; [account] is the phone's account (none by default, and no
 /// network to get one); [admins] says whether the phone, and which
-/// members, are admins of the app (none by default). The commune search and the duplicate check of
+/// members, are admins of the app (none by default); [index] says what
+/// other secteurs hold of a street (none by default). The commune search and the duplicate check of
 /// « Nouveau secteur » answer without waiting for a pause in the typing;
 /// a new join code is `234567`. Maps are [FakeMapView]s: a native map
 /// cannot run in a widget test. With [nativeMap], they are the real
@@ -78,6 +80,7 @@ List<Override> fakePhone({
   FakeClock? clock,
   FakeMemberAccount? account,
   FakeAdminStatus? admins,
+  FakeStreetPartIndex? index,
   bool chooseLaunch = false,
   bool nativeMap = false,
 }) => [
@@ -115,6 +118,7 @@ List<Override> fakePhone({
   memberAccountProvider.overrideWithValue(account ?? FakeMemberAccount()),
   sectorRepositoryProvider.overrideWithValue(sectors ?? FakeSectorRepository()),
   adminStatusProvider.overrideWithValue(admins ?? FakeAdminStatus()),
+  streetPartIndexProvider.overrideWithValue(index ?? FakeStreetPartIndex()),
   // The indexes of `2`…`7` in the code alphabet: the code `234567`.
   randomProvider.overrideWithValue(ScriptedRandom([23, 24, 25, 26, 27, 28])),
 ];

@@ -8,6 +8,7 @@ import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/house_numbers_input.dart';
+import 'package:tournee_calendriers/domain/street/sector_part.dart';
 import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 
@@ -67,6 +68,7 @@ final class StreetPartChoice {
     required this.side,
     required this.first,
     required this.last,
+    required this.others,
   });
 
   /// The choice over [numbers] (in any order; a number given twice is kept
@@ -98,6 +100,7 @@ final class StreetPartChoice {
       side: Sides.both,
       first: 0,
       last: 0,
+      others: const [],
     )._marked();
   }
 
@@ -118,6 +121,11 @@ final class StreetPartChoice {
   final int first;
   final int last;
 
+  /// What the other secteurs hold of the street, as the shared index told
+  /// it (PLAN §5.15 « Other secteurs »); none until told, and none when
+  /// it could not be read. Read-only.
+  final List<SectorPart> others;
+
   final LineTrack? _track;
 
   /// The numbers with a dot, along the road (by number where two are at the
@@ -126,6 +134,10 @@ final class StreetPartChoice {
 
   /// From the first dot, a mark at an end stands this far beyond it.
   static const _endMetres = 8.0;
+
+  /// Another secteur's stretch goes this far beyond its first and last
+  /// dots, so a single dot still has one.
+  static const _stretchMetres = 3.0;
 
   /// The map shows this much of the road beyond the first and last dots.
   static const _aroundMetres = 20.0;
@@ -156,6 +168,28 @@ final class StreetPartChoice {
     );
   }
 
+  /// The numbers both this part and another secteur hold, one overlap per
+  /// secteur sharing some, in the order of [others]: the warning above
+  /// « Valider », which never blocks it.
+  List<PartOverlap> get overlaps => [
+    for (final other in others)
+      if (_sharedWith(other) case final shared when shared.isNotEmpty)
+        PartOverlap(other: other, numbers: shared),
+  ];
+
+  /// The same choice, knowing what the [others] secteurs hold.
+  StreetPartChoice withOthers(List<SectorPart> others) => StreetPartChoice._(
+    _track,
+    _stops,
+    numbers: numbers,
+    road: road,
+    part: part,
+    side: side,
+    first: first,
+    last: last,
+    others: List.unmodifiable(others),
+  );
+
   /// The same part, the [side] shown, with its marks where the part puts
   /// them.
   StreetPartChoice withSide(Sides side) => _with(side: side);
@@ -185,6 +219,7 @@ final class StreetPartChoice {
       side: side,
       first: newFirst,
       last: newLast,
+      others: others,
     );
   }
 
@@ -247,8 +282,49 @@ final class StreetPartChoice {
         ),
         for (final dot in dots) dot.position,
       ])!,
+      others: [
+        for (final other in others)
+          for (final isOdd in const [true, false])
+            ?_stretchOf(track, other, isOdd: isOdd),
+      ],
     );
   }
+
+  /// The stretch of the odd side ([isOdd]) or the even one that [other]
+  /// holds: from its first dot to its last along the road, on the side
+  /// most of them stand (the left when as many); null when it holds no
+  /// dot of that side.
+  OtherStretch? _stretchOf(
+    LineTrack track,
+    SectorPart other, {
+    required bool isOdd,
+  }) {
+    final held = [
+      for (final number in numbers)
+        if (number.position case final position?
+            when number.number.isOdd == isOdd &&
+                other.part.holds(number.number))
+          position,
+    ];
+    if (held.isEmpty) return null;
+    final alongs = held.map(track.alongOf);
+    final from = alongs.reduce(math.min) - _stretchMetres;
+    final to = alongs.reduce(math.max) + _stretchMetres;
+    final onLeft = held.where(track.hasOnLeft).length;
+    return OtherStretch(
+      sector: other.sector,
+      line: track.between(from, to),
+      onLeft: 2 * onLeft >= held.length,
+      labelAt: track.pointAt((from + to) / 2),
+    );
+  }
+
+  /// The numbers of the street this part and [other] both hold.
+  List<HouseNumber> _sharedWith(SectorPart other) => [
+    for (final number in numbers)
+      if (part.holds(number.number) && other.part.holds(number.number))
+        number.number,
+  ];
 
   /// The dots of the side shown, along the road.
   List<_Stop> get _shown => switch (side) {
@@ -285,6 +361,7 @@ final class StreetPartChoice {
     side: side ?? this.side,
     first: first,
     last: last,
+    others: others,
   )._marked();
 
   /// This choice with its marks around the dots of the side shown that the
@@ -309,6 +386,7 @@ final class StreetPartChoice {
       side: side,
       first: math.max(newFirst, 0),
       last: newLast,
+      others: others,
     );
   }
 
@@ -379,7 +457,10 @@ final class StreetPartChoice {
   PartDotLook _lookOf(PartNumber number) {
     final isOdd = number.number.isOdd;
     if (!_sidesShown.contains(isOdd)) return PartDotLook.otherSide;
-    return part.holds(number.number) ? PartDotLook.kept : PartDotLook.leftOut;
+    if (!part.holds(number.number)) return PartDotLook.leftOut;
+    return others.any((other) => other.part.holds(number.number))
+        ? PartDotLook.shared
+        : PartDotLook.kept;
   }
 
   /// The line the marks slide along: the [road], or the straight line

@@ -114,6 +114,9 @@ void main() {
   ) async {
     final browser = await pumpPrivacy(tester);
 
+    // The policy is longer than the test screen: scroll to the row.
+    await tester.ensureVisible(find.byKey(const Key('privacy.online')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('privacy.online')));
     await tester.pumpAndSettle();
 
@@ -126,6 +129,9 @@ void main() {
   ) async {
     final browser = await pumpPrivacy(tester, opens: false);
 
+    // The policy is longer than the test screen: scroll to the row.
+    await tester.ensureVisible(find.byKey(const Key('privacy.online')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('privacy.online')));
     await tester.pumpAndSettle();
 
@@ -144,6 +150,9 @@ void main() {
   ) async {
     await pumpPrivacy(tester, fails: true);
 
+    // The policy is longer than the test screen: scroll to the row.
+    await tester.ensureVisible(find.byKey(const Key('privacy.online')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('privacy.online')));
     await tester.pumpAndSettle();
 

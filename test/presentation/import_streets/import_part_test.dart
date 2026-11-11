@@ -2,12 +2,17 @@
 // adding »): « Toute la rue › » reads the street's numbers and opens
 // « Partie de la rue », the part goes with the tick, and « Ajouter N rues »
 // stores only its numbers.
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
+import 'package:tournee_calendriers/domain/sector/rescue_centre.dart';
+import 'package:tournee_calendriers/domain/sector/sector_number.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
+import 'package:tournee_calendriers/domain/street/sector_part.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_part.dart';
@@ -17,6 +22,7 @@ import 'package:tournee_calendriers/presentation/add_streets/part_opening.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/import_streets/import_notifier.dart';
 import 'package:tournee_calendriers/presentation/import_streets/import_state.dart';
+import 'package:tournee_calendriers/presentation/street_part/other_sectors.dart';
 
 import '../../domain/sector/my_sectors_fixtures.dart';
 import '../../domain/sector/sector_fixtures.dart'
@@ -25,6 +31,7 @@ import '../../support/fakes/fake_address_directory.dart';
 import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_sector_repository.dart';
+import '../../support/fakes/fake_street_part_index.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
@@ -60,6 +67,8 @@ final _pasteurNumbers = StreetNumbers(
 final _odds = part(odd: SidePart.all, even: SidePart.none);
 
 void main() {
+  var index = FakeStreetPartIndex();
+  setUp(() => index = FakeStreetPartIndex());
   late FakeAddressDirectory directory;
   late FakeStreetRepository streets;
   late ProviderContainer container;
@@ -78,6 +87,7 @@ void main() {
     container = ProviderContainer(
       overrides: [
         addressDirectoryProvider.overrideWithValue(directory),
+        streetPartIndexProvider.overrideWithValue(index),
         streetRepositoryProvider.overrideWithValue(streets),
         idGeneratorProvider.overrideWithValue(FakeIdGenerator('street')),
         mySectorsStoreProvider.overrideWithValue(
@@ -357,5 +367,84 @@ void main() {
     await importing;
 
     expect(streets.added.single.part, StreetPart.whole);
+  });
+
+  group('other secteurs (PLAN §5.15)', () {
+    final oddFrom19 = part(odd: range(19, 41), even: SidePart.none);
+    SectorPart other(int sector, String centre) => SectorPart(
+      sector: valueOf(SectorNumber.create(sector)),
+      centre: valueOf(RescueCentre.create(centre)),
+      part: oddFrom19,
+    );
+
+    setUp(() {
+      index.others[_morin] = [
+        other(12, 'CS Villefranche'),
+        other(3, 'CS Arnas'),
+      ];
+    });
+
+    test('should say under a street ticked what other secteurs hold of it, '
+        'the centre only when not the secteur\'s', () async {
+      notifier().toggle(_morin);
+      await pumpEventQueue();
+
+      expect(index.asked, [_morin]);
+      expect(choice(_morin).others, [
+        OtherSectorLine(sector: 3, centre: 'CS Arnas', part: oddFrom19),
+        OtherSectorLine(sector: 12, part: oddFrom19),
+      ]);
+      expect(choice(_pasteur).others, isEmpty);
+    });
+
+    test('should ask only about the streets ticked, each once', () async {
+      notifier().toggle(_morin);
+      notifier().toggle(_morin);
+      notifier().checkAllVisible(checked: true);
+      notifier().checkAllVisible(checked: false);
+      await pumpEventQueue();
+
+      expect(index.asked, [_morin, _pasteur]);
+      expect(choice(_morin).checked, isFalse);
+      expect(choice(_morin).others, hasLength(2));
+    });
+
+    test('should keep what it learnt when the commune\'s streets are listed '
+        'again', () async {
+      notifier().toggle(_morin);
+      await pumpEventQueue();
+
+      await notifier().retryStreets();
+
+      expect(choice(_morin).others, hasLength(2));
+      expect(index.asked, [_morin]);
+    });
+
+    test('should say nothing of a street no other secteur holds', () async {
+      notifier().toggle(_pasteur);
+      await pumpEventQueue();
+
+      expect(index.asked, [_pasteur]);
+      expect(choice(_pasteur).others, isEmpty);
+    });
+
+    test('should drop an answer coming once the screen is gone', () async {
+      index.holdReads = Completer<void>();
+      notifier().toggle(_morin);
+      container.dispose();
+
+      index.holdReads!.complete();
+      await pumpEventQueue();
+
+      expect(index.asked, [_morin]);
+    });
+
+    test('should name the BAN street to « Partie de la rue »', () async {
+      notifier().toggle(_morin);
+
+      final opening = await notifier().openPart(_morin);
+
+      expect((opening as PartToChoose).request.banId, _morin);
+    });
   });
 }

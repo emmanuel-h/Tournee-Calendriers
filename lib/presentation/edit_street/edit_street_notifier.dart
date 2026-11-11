@@ -136,7 +136,11 @@ final class EditStreetNotifier extends Notifier<EditStreetState>
     final read = await ref.read(readStreetPartChoiceProvider)(streetId);
     return switch (read) {
       Ok(value: final choice) => PartReadable(
-        StreetPartRequest(streetName: street?.name.text ?? '', choice: choice),
+        StreetPartRequest(
+          streetName: street?.name.text ?? '',
+          choice: choice,
+          banId: street?.banId,
+        ),
       ),
       Err(failure: PartChoiceOfUnknownStreet()) => const PartReadRefused(
         PartProblem.gone,

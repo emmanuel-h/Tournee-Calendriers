@@ -4,6 +4,7 @@ import 'package:tournee_calendriers/domain/map/map_layers.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/presentation/add_streets/add_streets_map_state.dart';
+import 'package:tournee_calendriers/presentation/street_part/other_sectors.dart';
 
 import '../../support/street_fixtures.dart' show part, range;
 
@@ -112,6 +113,32 @@ void main() {
       expect(plain.keptCount, isNull);
       expect(plain.readingPart, isFalse);
       expect(plain.fromCorbeille, isFalse);
+      expect(plain.others, isEmpty);
+    });
+
+    test('should tell the rows apart by the other secteurs holding the '
+        'street, and print them', () {
+      final twelve = OtherSectorLine(sector: 12, part: evens);
+      PickedStreetRow held(List<OtherSectorLine> others) => PickedStreetRow(
+        id: BanStreetId('69264_1460'),
+        name: 'Impasse des Tilleuls',
+        commune: 'Villefranche-sur-Saône',
+        numberCount: 8,
+        others: others,
+      );
+
+      expect(held([twelve]), held([OtherSectorLine(sector: 12, part: evens)]));
+      expect(held([twelve]).hashCode, held([twelve]).hashCode);
+      expect(held([twelve]), isNot(row()));
+      expect(
+        held([twelve]),
+        isNot(held([OtherSectorLine(sector: 3, part: evens)])),
+      );
+      expect(
+        held([twelve]).toString(),
+        'PickedStreetRow(69264_1460, Impasse des Tilleuls, 8, others: '
+        '[OtherSectorLine(12, null, StreetPart(odd: none, even: 2–8))])',
+      );
     });
 
     test('should tell the rows apart by their part', () {
@@ -329,6 +356,28 @@ void main() {
       );
       expect(parted(readingPart: true), isNot(parted()));
       expect(parted(fromCorbeille: true), isNot(parted()));
+      final twelve = [OtherSectorLine(sector: 12, part: evens)];
+      final held = ZoneStreetRow(
+        kind: ZoneRowKind.toAdd,
+        name: 'Impasse des Tilleuls',
+        id: BanStreetId('69264_1460'),
+        numberCount: 8,
+        ticked: true,
+        others: twelve,
+      );
+      expect(held, isNot(parted()));
+      expect(
+        held.hashCode,
+        ZoneStreetRow(
+          kind: ZoneRowKind.toAdd,
+          name: 'Impasse des Tilleuls',
+          id: BanStreetId('69264_1460'),
+          numberCount: 8,
+          ticked: true,
+          others: [OtherSectorLine(sector: 12, part: evens)],
+        ).hashCode,
+      );
+      expect(held.toString(), contains(', others: [OtherSectorLine(12'));
       expect(
         parted(part: evens, keptCount: 4, readingPart: true).toString(),
         'ZoneStreetRow(toAdd, Impasse des Tilleuls, 69264_1460, 8, true, '
@@ -346,6 +395,7 @@ void main() {
       expect(row.keptCount, isNull);
       expect(row.readingPart, isFalse);
       expect(row.fromCorbeille, isFalse);
+      expect(row.others, isEmpty);
     });
 
     test('should be off with no zone by default', () {

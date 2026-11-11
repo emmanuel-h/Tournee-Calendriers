@@ -1,13 +1,18 @@
 import 'package:test/test.dart';
+import 'package:tournee_calendriers/domain/geometry/geo_distance.dart';
 import 'package:tournee_calendriers/domain/map/part_drawing.dart';
+import 'package:tournee_calendriers/domain/sector/rescue_centre.dart';
+import 'package:tournee_calendriers/domain/sector/sector_number.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/house_numbers_input.dart';
+import 'package:tournee_calendriers/domain/street/sector_part.dart';
 import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/domain/street/street_part_choice.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 
 import '../../support/geo_fixtures.dart';
+import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 
 // A street of Villefranche-sur-Saône running east along the 45.98°
@@ -655,6 +660,278 @@ void main() {
           const MarkAfter(3),
         ].map((place) => place.toString()),
         ['MarkBefore(1)', 'MarkBetween(1, 3)', 'MarkAfter(3)'],
+      );
+    });
+  });
+
+  group('other secteurs', () {
+    final centre = valueOf(RescueCentre.create('CS Villefranche'));
+    SectorPart other(int sector, StreetPart held) => SectorPart(
+      sector: valueOf(SectorNumber.create(sector)),
+      centre: centre,
+      part: held,
+    );
+    final twelve = other(12, part(odd: range(7, 13), even: SidePart.none));
+
+    test('should know no other secteur until told', () {
+      final choice = _choice();
+
+      expect(choice.others, isEmpty);
+      expect(choice.overlaps, isEmpty);
+      expect(choice.drawing!.others, isEmpty);
+    });
+
+    test('should name the numbers both this part and another secteur hold, '
+        'in street order, those without a position included', () {
+      final choice = _choice().withOthers([twelve]);
+
+      expect(choice.others, [twelve]);
+      expect(choice.overlaps, [
+        PartOverlap(other: twelve, numbers: [n('7'), n('9'), n('11'), n('13')]),
+      ]);
+    });
+
+    test('should leave out the numbers this part does not hold', () {
+      final choice = _choice(
+        part: part(odd: range(1, 7), even: SidePart.all),
+      ).withOthers([twelve]);
+
+      expect(choice.overlaps.single.numbers, [n('7')]);
+    });
+
+    test('should leave out a secteur holding none of the part\'s numbers', () {
+      final choice = _choice(
+        part: part(odd: range(1, 5), even: SidePart.all),
+      ).withOthers([twelve]);
+
+      expect(choice.overlaps, isEmpty);
+    });
+
+    test('should follow the part as it changes', () {
+      final choice = _choice().withOthers([twelve]).holdingNothing();
+
+      expect(choice.others, [twelve]);
+      expect(choice.overlaps, isEmpty);
+    });
+
+    test('should keep the others through a side shown, a mark moved and '
+        'bounds typed', () {
+      final choice = _choice()
+          .withOthers([twelve])
+          .withSide(Sides.odd)
+          .withMark(PartMark.first, 1)
+          .withBounds(from: 1, to: 9);
+
+      expect(choice.others, [twelve]);
+    });
+
+    test('should keep the part, the side and the marks when told the '
+        'others', () {
+      final before = _odd(
+        part: part(odd: range(3, 7), even: SidePart.all),
+      );
+      final choice = before.withOthers([twelve]);
+
+      expect(choice.part, before.part);
+      expect(choice.side, Sides.odd);
+      expect(choice.first, before.first);
+      expect(choice.last, before.last);
+    });
+
+    test('should give one overlap per secteur sharing numbers, in the '
+        'order told', () {
+      final eight = other(8, part(odd: SidePart.none, even: range(2, 2)));
+      final choice = _choice().withOthers([twelve, eight]);
+
+      expect(choice.overlaps.map((overlap) => overlap.other.sector.value), [
+        12,
+        8,
+      ]);
+      expect(choice.overlaps.last.numbers, [n('2')]);
+    });
+
+    test('should draw amber the dots kept that another secteur holds too, '
+        'and only those', () {
+      final drawing = _choice(
+        part: part(odd: range(1, 9), even: SidePart.all),
+      ).withOthers([twelve]).drawing!;
+
+      expect(
+        _labels(drawing.dots.where((dot) => dot.look == PartDotLook.shared)),
+        ['7', '9'],
+      );
+      // 11 is the other secteur's, not this part's: left out.
+      expect(drawing.dots[11].look, PartDotLook.leftOut);
+      // 5 is only this part's.
+      expect(drawing.dots[5].look, PartDotLook.kept);
+    });
+
+    test('should keep greyed the other side\'s dots another secteur holds', () {
+      final both = other(12, StreetPart.whole);
+      final drawing = _odd().withOthers([both]).drawing!;
+
+      expect(drawing.dots[1].look, PartDotLook.otherSide);
+      expect(drawing.dots[0].look, PartDotLook.shared);
+    });
+
+    test('should draw another secteur\'s stretch of the odd side from its '
+        'first dot to its last, a little beyond, on the left of a road '
+        'running east', () {
+      final drawing = _choice().withOthers([twelve]).drawing!;
+      final stretch = drawing.others.single;
+
+      expect(stretch.sector, valueOf(SectorNumber.create(12)));
+      expect(stretch.onLeft, isTrue);
+      // 7 to 11 on the road, 3 m beyond each: 13 has no dot.
+      expect(stretch.line.first.latitude, closeTo(45.98, 1e-9));
+      expect(
+        metresBetween(stretch.line.first, at(45.98, _lon(3))),
+        closeTo(3, 0.01),
+      );
+      expect(stretch.line.first.longitude, lessThan(_lon(3)));
+      expect(
+        metresBetween(stretch.line.last, at(45.98, _lon(5))),
+        closeTo(3, 0.01),
+      );
+      expect(stretch.line.last.longitude, greaterThan(_lon(5)));
+      expect(stretch.labelAt.latitude, closeTo(45.98, 1e-9));
+      expect(stretch.labelAt.longitude, closeTo(_lon(4), 1e-9));
+    });
+
+    test('should draw an even stretch on the right of a road running east', () {
+      final even = other(8, part(odd: SidePart.none, even: range(4, 6)));
+      final stretch = _choice().withOthers([even]).drawing!.others.single;
+
+      expect(stretch.onLeft, isFalse);
+      expect(stretch.sector, valueOf(SectorNumber.create(8)));
+    });
+
+    test('should draw a stretch per side held, the odd one first, for each '
+        'secteur in turn', () {
+      final eight = other(8, StreetPart.whole);
+      final drawing = _choice().withOthers([twelve, eight]).drawing!;
+
+      expect(
+        [
+          for (final stretch in drawing.others)
+            (stretch.sector.value, stretch.onLeft),
+        ],
+        [(12, true), (8, true), (8, false)],
+      );
+    });
+
+    test('should draw a single dot\'s stretch around it', () {
+      final one = other(8, part(odd: range(5, 5), even: SidePart.none));
+      final stretch = _choice().withOthers([one]).drawing!.others.single;
+
+      expect(
+        metresBetween(stretch.line.first, stretch.line.last),
+        closeTo(6, 0.01),
+      );
+    });
+
+    test('should draw no stretch for numbers without a dot', () {
+      final thirteen = other(8, part(odd: range(13, 13), even: SidePart.none));
+
+      expect(_choice().withOthers([thirteen]).drawing!.others, isEmpty);
+    });
+
+    test('should put a stretch on the side most of its houses stand', () {
+      // 1 and 3 north of the road, 5 south: two of three on the left.
+      final numbers = [
+        PartNumber(n('1'), position: _oddDoor(0)),
+        PartNumber(n('3'), position: _oddDoor(1)),
+        PartNumber(n('5'), position: _evenDoor(2)),
+      ];
+      final odd = other(8, part(odd: SidePart.all, even: SidePart.none));
+      final mostlyLeft = _choice(numbers: numbers).withOthers([odd]);
+      final mostlyRight = _choice(
+        numbers: [
+          PartNumber(n('1'), position: _evenDoor(0)),
+          PartNumber(n('3'), position: _evenDoor(1)),
+          PartNumber(n('5'), position: _oddDoor(2)),
+        ],
+      ).withOthers([odd]);
+
+      expect(mostlyLeft.drawing!.others.single.onLeft, isTrue);
+      expect(mostlyRight.drawing!.others.single.onLeft, isFalse);
+    });
+
+    test('should put a stretch on the left when its houses are as many on '
+        'each side', () {
+      final odd = other(8, part(odd: SidePart.all, even: SidePart.none));
+      final choice = _choice(
+        numbers: [
+          PartNumber(n('1'), position: _oddDoor(0)),
+          PartNumber(n('3'), position: _evenDoor(1)),
+        ],
+      ).withOthers([odd]);
+
+      expect(choice.drawing!.others.single.onLeft, isTrue);
+    });
+
+    test('should compare overlaps and secteur parts by value', () {
+      final same = other(12, part(odd: range(7, 13), even: SidePart.none));
+      final overlap = PartOverlap(other: twelve, numbers: [n('7')]);
+
+      expect(same, twelve);
+      expect(same.hashCode, twelve.hashCode);
+      expect(twelve, isNot(other(13, twelve.part)));
+      expect(twelve, isNot(other(12, StreetPart.whole)));
+      expect(
+        twelve,
+        isNot(
+          SectorPart(
+            sector: twelve.sector,
+            centre: valueOf(RescueCentre.create('CS Arnas')),
+            part: twelve.part,
+          ),
+        ),
+      );
+      expect(twelve.toString(), 'SectorPart(12, CS Villefranche, 7–13, none)');
+      expect(overlap, PartOverlap(other: same, numbers: [n('7')]));
+      expect(
+        overlap.hashCode,
+        PartOverlap(other: same, numbers: [n('7')]).hashCode,
+      );
+      expect(overlap, isNot(PartOverlap(other: twelve, numbers: [n('9')])));
+      expect(
+        overlap,
+        isNot(PartOverlap(other: other(8, twelve.part), numbers: [n('7')])),
+      );
+      expect(
+        PartOverlap(other: twelve, numbers: [n('7'), n('9')]).toString(),
+        'PartOverlap(12, 7, 9)',
+      );
+    });
+
+    test('should compare the stretches by value', () {
+      final stretch = _choice().withOthers([twelve]).drawing!.others.single;
+      final again = _choice().withOthers([twelve]).drawing!.others.single;
+      OtherStretch changed({
+        int? sector,
+        List<GeoPoint>? line,
+        bool? onLeft,
+        GeoPoint? labelAt,
+      }) => OtherStretch(
+        sector: sector == null
+            ? stretch.sector
+            : valueOf(SectorNumber.create(sector)),
+        line: line ?? stretch.line,
+        onLeft: onLeft ?? stretch.onLeft,
+        labelAt: labelAt ?? stretch.labelAt,
+      );
+
+      expect(again, stretch);
+      expect(again.hashCode, stretch.hashCode);
+      expect(changed(sector: 8), isNot(stretch));
+      expect(changed(line: stretch.line.reversed.toList()), isNot(stretch));
+      expect(changed(onLeft: false), isNot(stretch));
+      expect(changed(labelAt: _oddDoor(0)), isNot(stretch));
+      expect(stretch.toString(), 'OtherStretch(12, 2 points, left)');
+      expect(
+        changed(onLeft: false).toString(),
+        'OtherStretch(12, 2 points, right)',
       );
     });
   });

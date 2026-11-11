@@ -66,6 +66,7 @@ import '../support/fakes/fake_sector_directory.dart';
 import '../support/fakes/fake_sector_downloads.dart';
 import '../support/fakes/fake_sector_repository.dart';
 import '../support/fakes/fake_server_connection.dart';
+import '../support/fakes/fake_street_part_index.dart';
 import '../support/fakes/fake_street_repository.dart';
 import '../support/fakes/fake_street_shapes.dart';
 import '../support/fakes/fake_street_view_preferences.dart';
@@ -90,6 +91,7 @@ void main() {
   late FakeAdminStatus admins;
   late FakeOpenRoundStore rounds;
   late FakeRoundLedger ledger;
+  late FakeStreetPartIndex index;
   late ProviderContainer container;
 
   /// Every port bound to the fakes, the member on the phone being
@@ -115,6 +117,7 @@ void main() {
     adminStatusProvider.overrideWithValue(admins),
     openRoundStoreProvider.overrideWithValue(rounds),
     roundLedgerProvider.overrideWithValue(ledger),
+    streetPartIndexProvider.overrideWithValue(index),
     // The indexes of `2`…`7` in the alphabet: the code `234567`.
     randomProvider.overrideWithValue(ScriptedRandom([23, 24, 25, 26, 27, 28])),
   ];
@@ -160,6 +163,7 @@ void main() {
     admins = FakeAdminStatus(phoneIsAdmin: true, admins: [manuId]);
     rounds = FakeOpenRoundStore();
     ledger = FakeRoundLedger();
+    index = FakeStreetPartIndex();
     // A ProviderContainer is what a ProviderScope holds, without widgets:
     // the overrides bind the ports to the fakes.
     container = ProviderContainer(overrides: overridesAs(lea));
@@ -191,6 +195,7 @@ void main() {
       'ServerConnection': serverConnectionProvider,
       'OpenRoundStore': openRoundStoreProvider,
       'RoundLedger': roundLedgerProvider,
+      'StreetPartIndex': streetPartIndexProvider,
     };
     ports.forEach((name, port) {
       test('should name $name when nobody bound it', () {
@@ -419,6 +424,14 @@ void main() {
       await container.read(readStreetNumbersProvider)(street);
 
       expect(directory.streetsAsked, [street]);
+    });
+
+    test('should read the other secteurs\' parts from the index', () async {
+      final street = BanStreetId('69264_1460');
+
+      await container.read(readOtherSectorPartsProvider)(street);
+
+      expect(index.asked, [street]);
     });
 
     test('should list the streets of a commune from the directory', () async {

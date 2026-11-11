@@ -20,6 +20,7 @@ import '../../support/fakes/fake_commune_search.dart';
 import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_sector_repository.dart';
+import '../../support/fakes/fake_street_part_index.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
@@ -76,6 +77,8 @@ Future<void> _settle() async {
 }
 
 void main() {
+  var index = FakeStreetPartIndex();
+  setUp(() => index = FakeStreetPartIndex());
   late FakeCommuneSearch communes;
   late FakeAddressDirectory directory;
   late FakeStreetRepository streets;
@@ -111,6 +114,7 @@ void main() {
       overrides: [
         communeSearchProvider.overrideWithValue(communes),
         addressDirectoryProvider.overrideWithValue(directory),
+        streetPartIndexProvider.overrideWithValue(index),
         streetRepositoryProvider.overrideWithValue(streets),
         idGeneratorProvider.overrideWithValue(FakeIdGenerator('street')),
         // Zero, so the debounce is a single turn of the event loop.
@@ -718,6 +722,7 @@ void main() {
         overrides: [
           communeSearchProvider.overrideWithValue(communes),
           addressDirectoryProvider.overrideWithValue(directory),
+          streetPartIndexProvider.overrideWithValue(index),
           streetRepositoryProvider.overrideWithValue(streets),
           sectorRepositoryProvider.overrideWithValue(sectors),
           mySectorsStoreProvider.overrideWithValue(

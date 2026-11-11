@@ -8,6 +8,7 @@ import 'package:tournee_calendriers/domain/shared/insee_code.dart';
 import 'package:tournee_calendriers/domain/shared/same_items.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_part.dart';
+import 'package:tournee_calendriers/presentation/street_part/other_sectors.dart';
 
 // The view state of the « Liste » tab of « Ajouter des rues » (PLAN
 // §5.4), made of small
@@ -164,6 +165,7 @@ final class StreetChoice {
     this.part = StreetPart.whole,
     this.keptCount,
     this.readingPart = false,
+    this.others = const [],
   });
 
   final BanStreetId id;
@@ -196,6 +198,11 @@ final class StreetChoice {
   /// waits.
   final bool readingPart;
 
+  /// What other secteurs hold of the street (« Secteur 12 : impairs
+  /// 19–41 », PLAN §5.15), once the shared index told it; none until then,
+  /// and when it cannot be read. It stays when the street is unticked.
+  final List<OtherSectorLine> others;
+
   /// Whether the user can tick or untick it.
   bool get selectable => !alreadyImported;
 
@@ -211,6 +218,7 @@ final class StreetChoice {
     bool? alreadyImported,
     bool? inCorbeille,
     bool? readingPart,
+    List<OtherSectorLine>? others,
   }) => StreetChoice(
     id: id,
     name: name,
@@ -221,6 +229,7 @@ final class StreetChoice {
     part: part,
     keptCount: keptCount,
     readingPart: readingPart ?? this.readingPart,
+    others: others ?? this.others,
   );
 
   /// The street holding [part] of its [numbers], read from the BAN.
@@ -234,6 +243,7 @@ final class StreetChoice {
     part: part,
     keptCount: part.isWhole ? null : numbers.heldBy(part).length,
     readingPart: readingPart,
+    others: others,
   );
 
   /// The street unticked: its part goes with the tick.
@@ -245,6 +255,7 @@ final class StreetChoice {
     inCorbeille: inCorbeille,
     checked: false,
     readingPart: readingPart,
+    others: others,
   );
 
   @override
@@ -258,7 +269,8 @@ final class StreetChoice {
       other.checked == checked &&
       other.part == part &&
       other.keptCount == keptCount &&
-      other.readingPart == readingPart;
+      other.readingPart == readingPart &&
+      sameItems(other.others, others);
 
   @override
   int get hashCode => Object.hash(
@@ -271,6 +283,7 @@ final class StreetChoice {
     part,
     keptCount,
     readingPart,
+    Object.hashAll(others),
   );
 
   @override
@@ -279,7 +292,8 @@ final class StreetChoice {
       'alreadyImported: $alreadyImported, inCorbeille: $inCorbeille, '
       'checked: $checked'
       '${part.isWhole ? '' : ', $part, kept: $keptCount'}'
-      '${readingPart ? ', reading' : ''})';
+      '${readingPart ? ', reading' : ''}'
+      '${others.isEmpty ? '' : ', others: $others'})';
 }
 
 /// Where the import itself stands.

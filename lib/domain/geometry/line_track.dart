@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:tournee_calendriers/domain/geometry/geo_distance.dart';
 import 'package:tournee_calendriers/domain/geometry/join_lines.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
@@ -68,6 +70,34 @@ final class LineTrack {
       }
     }
     return along;
+  }
+
+  /// Whether [point] is on the left of the track, looking along it from its
+  /// start, against its nearest piece: which side of a road a house stands
+  /// (« Partie de la rue » draws another secteur's stretch on the side it
+  /// holds, PLAN §5.15). A point on the track is not on its left.
+  bool hasOnLeft(GeoPoint point) {
+    var nearest = double.infinity;
+    var piece = 1;
+    for (var i = 1; i < points.length; i++) {
+      final metres = metresFromSegment(point, points[i - 1], points[i]);
+      if (metres < nearest) {
+        nearest = metres;
+        piece = i;
+      }
+    }
+    final start = points[piece - 1];
+    final end = points[piece];
+    // Degrees of longitude shrink towards the poles: scaled by the cosine
+    // of the latitude, both axes measure about the same on the ground.
+    final scale = math.cos(start.latitude * math.pi / 180);
+    final roadEast = (end.longitude - start.longitude) * scale;
+    final roadNorth = end.latitude - start.latitude;
+    final pointEast = (point.longitude - start.longitude) * scale;
+    final pointNorth = point.latitude - start.latitude;
+    // The cross product of the road's direction and the point's: positive
+    // when the point is turned anticlockwise from the road, on its left.
+    return roadEast * pointNorth - roadNorth * pointEast > 0;
   }
 
   /// The point [along] metres from the start, kept within the track: the

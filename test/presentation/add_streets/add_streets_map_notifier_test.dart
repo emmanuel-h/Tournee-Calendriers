@@ -26,6 +26,7 @@ import '../../support/fakes/fake_address_directory.dart';
 import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_sector_repository.dart';
+import '../../support/fakes/fake_street_part_index.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/fakes/fake_street_shapes.dart';
 import '../../support/geo_fixtures.dart';
@@ -127,6 +128,7 @@ void main() {
   late FakeSectorRepository sectors;
   late FakeAddressDirectory directory;
   late FakeStreetShapes shapes;
+  var index = FakeStreetPartIndex();
 
   /// Léa's phone with the 49 open, or none when [open] is false.
   ProviderContainer phone({bool open = true}) {
@@ -136,6 +138,7 @@ void main() {
         sectorRepositoryProvider.overrideWithValue(sectors),
         addressDirectoryProvider.overrideWithValue(directory),
         streetShapesProvider.overrideWithValue(shapes),
+        streetPartIndexProvider.overrideWithValue(index),
         identityProvider.overrideWithValue(FakeIdentity(_me)),
         idGeneratorProvider.overrideWithValue(FakeIdGenerator('street')),
         mySectorsStoreProvider.overrideWithValue(
@@ -161,6 +164,7 @@ void main() {
       container.read(addStreetsMapProvider.notifier);
 
   setUp(() {
+    index = FakeStreetPartIndex();
     streets = FakeStreetRepository([_nationale, _emile]);
     sectors = FakeSectorRepository([
       team(communes: [villefrancheCommune, gleizeCommune]),

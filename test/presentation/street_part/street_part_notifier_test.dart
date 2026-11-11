@@ -1,14 +1,27 @@
+import 'dart:async';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/map/part_drawing.dart';
+import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
+import 'package:tournee_calendriers/domain/sector/rescue_centre.dart';
+import 'package:tournee_calendriers/domain/sector/sector_number.dart';
 import 'package:tournee_calendriers/domain/street/house_numbers_input.dart';
+import 'package:tournee_calendriers/domain/street/sector_part.dart';
+import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/domain/street/street_part_choice.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
+import 'package:tournee_calendriers/presentation/dependencies.dart';
+import 'package:tournee_calendriers/presentation/street_part/other_sectors.dart';
 import 'package:tournee_calendriers/presentation/street_part/street_part_notifier.dart';
 import 'package:tournee_calendriers/presentation/street_part/street_part_state.dart';
 
+import '../../domain/sector/my_sectors_fixtures.dart';
+import '../../support/fakes/fake_my_sectors_store.dart';
+import '../../support/fakes/fake_street_part_index.dart';
 import '../../support/geo_fixtures.dart';
+import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 
 // The Rue Nationale of Villefranche-sur-Saône, as on the StreetPart mockup
@@ -133,5 +146,134 @@ void main() {
 
     notifier().typeBounds(from: '3', to: '99999999999999999999999');
     expect(view().part, part(odd: range(3, 7), even: SidePart.all));
+  });
+
+  group('other secteurs', () {
+    final nationale = BanStreetId('69264_0001');
+    SectorPart other(int sector, String centre, StreetPart held) => SectorPart(
+      sector: valueOf(SectorNumber.create(sector)),
+      centre: valueOf(RescueCentre.create(centre)),
+      part: held,
+    );
+    late FakeStreetPartIndex index;
+
+    /// Opens the screen on [choice] of the BAN street [banId], the 49 of
+    /// the CS Villefranche open.
+    void openFromBan(StreetPartChoice choice, {BanStreetId? banId}) {
+      container = ProviderContainer(
+        overrides: [
+          streetPartIndexProvider.overrideWithValue(index),
+          mySectorsStoreProvider.overrideWithValue(
+            FakeMySectorsStore(
+              valueOf(MySectors.none.remember(sector49).open(sector49.id)),
+            ),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      request = StreetPartRequest(
+        streetName: 'Rue Nationale',
+        choice: choice,
+        banId: banId,
+      );
+      container.listen(streetPartProvider(request), (_, _) {});
+    }
+
+    setUp(() {
+      index = FakeStreetPartIndex({
+        nationale: [
+          other(
+            12,
+            'CS Villefranche',
+            part(odd: range(5, 7), even: SidePart.none),
+          ),
+          other(3, 'CS Arnas', part(odd: SidePart.none, even: range(2, 2))),
+        ],
+      });
+    });
+
+    test('should show nothing of the others until the index answers, then '
+        'name the numbers they share, the centre only when not ours', () async {
+      index.holdReads = Completer<void>();
+      openFromBan(_choice(), banId: nationale);
+
+      expect(view().overlaps, isEmpty);
+      expect(view().drawing!.others, isEmpty);
+      index.holdReads!.complete();
+      await pumpEventQueue();
+
+      expect(index.asked, [nationale]);
+      expect(view().overlaps, [
+        OverlapLine(sector: 3, centre: 'CS Arnas', numbers: ['2']),
+        OverlapLine(sector: 12, numbers: ['5', '7']),
+      ]);
+      expect(view().drawing!.others.map((stretch) => stretch.sector.value), [
+        3,
+        12,
+      ]);
+      expect(
+        view().drawing!.dots.where((dot) => dot.look == PartDotLook.shared),
+        hasLength(3),
+      );
+    });
+
+    test('should follow the part chosen, keeping the others', () async {
+      openFromBan(_choice(), banId: nationale);
+      await pumpEventQueue();
+
+      notifier().chooseSide(Sides.odd);
+      notifier().holdNothing();
+
+      expect(view().overlaps, [
+        OverlapLine(sector: 3, centre: 'CS Arnas', numbers: ['2']),
+      ]);
+      notifier().chooseSide(Sides.even);
+      notifier().holdNothing();
+      expect(view().overlaps, isEmpty);
+      expect(view().drawing!.others, hasLength(2));
+    });
+
+    test(
+      'should still give back the part chosen: a warning never blocks',
+      () async {
+        openFromBan(_choice(), banId: nationale);
+        await pumpEventQueue();
+
+        expect(view().overlaps, isNotEmpty);
+        expect(notifier().chosen, StreetPart.whole);
+      },
+    );
+
+    test(
+      'should change nothing when no other secteur holds the street',
+      () async {
+        index = FakeStreetPartIndex();
+        openFromBan(_choice(), banId: nationale);
+        final before = view();
+        await pumpEventQueue();
+
+        expect(index.asked, [nationale]);
+        expect(view(), same(before));
+      },
+    );
+
+    test('should not ask the index for a street typed by hand', () async {
+      openFromBan(_choice());
+      await pumpEventQueue();
+
+      expect(index.asked, isEmpty);
+      expect(view().overlaps, isEmpty);
+    });
+
+    test('should drop an answer coming once the screen is gone', () async {
+      index.holdReads = Completer<void>();
+      openFromBan(_choice(), banId: nationale);
+      container.dispose();
+
+      index.holdReads!.complete();
+      await pumpEventQueue();
+
+      expect(index.asked, [nationale]);
+    });
   });
 }

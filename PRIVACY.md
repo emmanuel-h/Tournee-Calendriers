@@ -1,7 +1,7 @@
 # Politique de confidentialité — Tournée Calendriers
 
 Application Android `fr.mandarine.tourneecalendriers`, pour la tournée des calendriers des
-sapeurs-pompiers. Mise à jour le 2 novembre 2026.
+sapeurs-pompiers. Mise à jour le 11 novembre 2026.
 
 ## Compte
 
@@ -9,7 +9,7 @@ L'appli ne demande ni adresse e-mail ni numéro de téléphone. Au premier lance
 
 ## Données enregistrées
 
-Pour chaque rue du secteur : les numéros, leur place sur la carte, ce qui s'est passé à chaque porte (fait, refusé, personne, à repasser), le jour et l'heure où repasser, combien de calendriers la maison a pris, et le prénom de qui l'a noté. Pour chaque tournée validée : son début et sa fin, le nombre de maisons visitées, le nombre et le total des dons par moyen de paiement, et les calendriers offerts, sans le prénom de qui l'a faite. Un don n'est jamais lié à une maison : la liste des dons reste sur le téléphone jusqu'à la validation de la tournée, puis elle est effacée. Rien d'autre : pas de nom d'habitant, pas de note.
+Pour chaque rue du secteur : les numéros, leur place sur la carte, ce qui s'est passé à chaque porte (fait, refusé, personne, à repasser), le jour et l'heure où repasser, combien de calendriers la maison a pris, et le prénom de qui l'a noté. Pour chaque tournée validée : son début et sa fin, le nombre de maisons visitées, le nombre et le total des dons par moyen de paiement, et les calendriers offerts, sans le prénom de qui l'a faite. Un don n'est jamais lié à une maison : la liste des dons reste sur le téléphone jusqu'à la validation de la tournée, puis elle est effacée. Quels numéros de chaque rue un secteur couvre, avec le numéro du secteur et son centre de secours, est visible de toute personne qui utilise l'appli : cela évite que deux secteurs passent aux mêmes portes. Rien d'autre : pas de nom d'habitant, pas de note.
 
 ## Position
 

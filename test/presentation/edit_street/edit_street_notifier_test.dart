@@ -480,6 +480,22 @@ void main() {
       expect(reading.request.streetName, 'Rue des Lilas');
       expect(reading.request.choice.numberCount, 7);
       expect(reading.request.choice.part, StreetPart.whole);
+      expect(reading.request.banId, isNull);
+    });
+
+    test('should name the BAN street, whose other secteurs the screen '
+        'reads', () async {
+      phoneWith(
+        _street(banId: ban),
+        directory: FakeAddressDirectory(
+          streets: {ban: const Err(AddressDirectoryFailure.notFound)},
+        ),
+      );
+      await shown();
+
+      final reading = await edit().readPart();
+
+      expect((reading as PartReadable).request.banId, ban);
     });
 
     test('should not open « Partie de la rue » offline', () async {

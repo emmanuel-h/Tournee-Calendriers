@@ -10,6 +10,7 @@ import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/street/street_part_choice.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
+import 'package:tournee_calendriers/ui/map/house_dot_image.dart';
 import 'package:tournee_calendriers/ui/map/map_camera.dart';
 import 'package:tournee_calendriers/ui/map/map_geojson.dart';
 import 'package:tournee_calendriers/ui/map/map_style.dart';
@@ -19,8 +20,9 @@ import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 
 /// The map of « Partie de la rue » (PLAN §5.15, StreetPart mockup): the
 /// street on the OpenFreeMap background, its road grey with the stretch
-/// kept as the selected road, its house dots, and the two marks
-/// ([PartMarks]) the finger drags along the road.
+/// kept as the selected road, the other secteurs' stretches hatched, its
+/// house dots, and the two marks ([PartMarks]) the finger drags along the
+/// road.
 ///
 /// The map stays where it opens, fitted to the street: a drag on it moves
 /// a mark, never the map, so the places the marks snap to are measured on
@@ -52,6 +54,7 @@ final class _StreetPartMapState extends State<StreetPartMap> {
   StreetShape? _shownRoad;
   StreetShape? _shownKept;
   List<PartDot>? _shownDots;
+  List<OtherStretch>? _shownOthers;
 
   /// The places of the marks on screen, in logical pixels, and the places
   /// they were measured for.
@@ -83,7 +86,13 @@ final class _StreetPartMapState extends State<StreetPartMap> {
     if (!mounted) return;
     final controller = _controller!;
     final colors = AppColors.of(context);
+    final pixelRatio = MediaQuery.devicePixelRatioOf(context);
     final drawing = widget.drawing;
+    await controller.addImage(
+      partHatchImage,
+      await partHatchPng(colors, pixelRatio),
+    );
+    if (!mounted) return;
     _shownRoad = drawing.road;
     _shownKept = drawing.kept;
     _shownDots = drawing.dots;
@@ -98,6 +107,11 @@ final class _StreetPartMapState extends State<StreetPartMap> {
     await controller.addGeoJsonSource(
       MapIds.partDotsSource,
       partDotsGeoJson(drawing.dots),
+    );
+    _shownOthers = drawing.others;
+    await controller.addGeoJsonSource(
+      MapIds.partOthersSource,
+      _othersGeoJson(drawing.others),
     );
     final below = lineLayersBelow(await controller.getLayerIds());
     for (final layer in streetPartMapLayers(colors)) {
@@ -153,8 +167,19 @@ final class _StreetPartMapState extends State<StreetPartMap> {
         partDotsGeoJson(drawing.dots),
       );
     }
+    if (!listEquals(_shownOthers, drawing.others)) {
+      _shownOthers = drawing.others;
+      await controller.setGeoJsonSource(
+        MapIds.partOthersSource,
+        _othersGeoJson(drawing.others),
+      );
+    }
     if (!listEquals(_placesFor, drawing.gaps)) await _measure();
   }
+
+  /// The other secteurs' stretches, labelled « Secteur 12 ».
+  Map<String, Object> _othersGeoJson(List<OtherStretch> others) =>
+      partOthersGeoJson(others, AppLocalizations.of(context).otherSectorLabel);
 
   /// Measures where the places of the marks are on screen.
   Future<void> _measure() async {

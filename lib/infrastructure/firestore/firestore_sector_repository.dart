@@ -8,7 +8,9 @@ import 'package:tournee_calendriers/domain/sector/sector_change.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/sector/sector_repository.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
+import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_layout.dart';
+import 'package:tournee_calendriers/infrastructure/firestore/firestore_street_part_index.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/sector_document_mapper.dart';
 
 /// The [SectorRepository] over Firestore (PLAN §6.2): `sectors/{id}` and
@@ -281,12 +283,17 @@ final class FirestoreSectorRepository implements SectorRepository {
   /// reservation and its members (see [delete]). A phone no longer an
   /// admin's is refused at the first batch, before anything goes: a
   /// member may read the tournée but not delete its campaigns.
+  ///
+  /// The secteur's entry in the shared index of each of its streets from
+  /// the BAN goes first (PLAN §5.15): sent without waiting, ahead of the
+  /// batches, and refused or not, it never stops the deletion.
   Future<void> _deleteAll(
     Sector sector,
     DocumentReference<Map<String, dynamic>> sectorDoc,
   ) async {
     const server = GetOptions(source: Source.server);
     final contents = <DocumentReference<Map<String, dynamic>>>[];
+    final banIds = <String>{};
     final campaigns = await sectorDoc
         .collection(FirestoreLayout.campaigns)
         .get(server);
@@ -296,8 +303,17 @@ final class FirestoreSectorRepository implements SectorRepository {
       for (final name in [FirestoreLayout.streets, FirestoreLayout.rounds]) {
         final docs = await campaign.reference.collection(name).get(server);
         contents.addAll([for (final doc in docs.docs) doc.reference]);
+        if (name == FirestoreLayout.streets) {
+          banIds.addAll([
+            for (final doc in docs.docs)
+              if (doc.data()['banId'] case final String banId) banId,
+          ]);
+        }
       }
       contents.add(campaign.reference);
+    }
+    for (final banId in banIds) {
+      releaseStreetPart(_db, sector.id, BanStreetId(banId));
     }
     final members = await FirestoreLayout.membersOf(_db, sector.id).get(server);
     // A batch holds at most 500 writes.

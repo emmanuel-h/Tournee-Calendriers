@@ -14,9 +14,16 @@ import 'package:tournee_calendriers/domain/street/street_part.dart';
 
 /// The stored form of [part]; null for the whole street, which is stored
 /// as no field at all.
-Map<String, Object?>? storedPart(StreetPart part) => part.isWhole
-    ? null
-    : {'odd': _storedSide(part.odd), 'even': _storedSide(part.even)};
+Map<String, Object?>? storedPart(StreetPart part) =>
+    part.isWhole ? null : storedSides(part);
+
+/// Both sides of [part] in their stored form, the whole street included
+/// (`{ odd: "all", even: "all" }`): an entry of the shared index of the
+/// secteurs' parts always says both (PLAN §6.2 `streetParts/{banId}`).
+Map<String, Object?> storedSides(StreetPart part) => {
+  'odd': _storedSide(part.odd),
+  'even': _storedSide(part.even),
+};
 
 Object _storedSide(SidePart side) => switch (side) {
   AllNumbers() => 'all',

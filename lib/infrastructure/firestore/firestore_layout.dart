@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
+import 'package:tournee_calendriers/domain/street/street_id.dart';
 
 /// Where each document lives (PLAN §6.2), in one place for the Firestore
 /// adapters.
@@ -18,12 +19,20 @@ abstract final class FirestoreLayout {
   static const sectorKeys = 'sectorKeys';
   static const rescueCentres = 'rescueCentres';
   static const admins = 'admins';
+  static const streetParts = 'streetParts';
 
   /// `admins/{member}`: there when [member] is an admin (PLAN §5.12).
   static DocumentReference<Map<String, dynamic>> admin(
     FirebaseFirestore db,
     MemberId member,
   ) => db.collection(admins).doc(member.value);
+
+  /// `streetParts/{banId}`: which secteur holds which part of the BAN
+  /// street [street] (PLAN §5.15).
+  static DocumentReference<Map<String, dynamic>> streetPart(
+    FirebaseFirestore db,
+    BanStreetId street,
+  ) => db.collection(streetParts).doc(street.value);
 
   /// `sectors/{sector}`.
   static DocumentReference<Map<String, dynamic>> sector(

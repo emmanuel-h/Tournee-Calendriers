@@ -30,6 +30,16 @@ void main() {
     });
   });
 
+  group('storedSides', () {
+    test('should store both sides, the whole street too', () {
+      expect(storedSides(StreetPart.whole), {'odd': 'all', 'even': 'all'});
+      expect(storedSides(part(odd: range(19, 41), even: SidePart.none)), {
+        'odd': [19, 41],
+        'even': 'none',
+      });
+    });
+  });
+
   group('partFrom', () {
     test('should read a missing part as the whole street', () {
       expect(partFrom(null), StreetPart.whole);

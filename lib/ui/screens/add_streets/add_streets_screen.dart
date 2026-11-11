@@ -11,6 +11,7 @@ import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
 import 'package:tournee_calendriers/ui/components/add_progress.dart';
 import 'package:tournee_calendriers/ui/components/app_buttons.dart';
 import 'package:tournee_calendriers/ui/components/close_icon_button.dart';
+import 'package:tournee_calendriers/ui/components/other_sector_lines.dart';
 import 'package:tournee_calendriers/ui/components/part_link.dart';
 import 'package:tournee_calendriers/ui/components/segmented_choice.dart';
 import 'package:tournee_calendriers/ui/components/size_reporter.dart';
@@ -894,6 +895,7 @@ final class _ZoneRow extends StatelessWidget {
                                 color: colors.muted,
                               ),
                             ),
+                            OtherSectorLines(lines: row.others),
                           ],
                         ),
                       ),
@@ -977,6 +979,10 @@ final class _PickedRow extends StatelessWidget {
                   l10n.addStreetsPickedFacts(street.commune, numbers),
                   key: ValueKey('addStreets.facts.${street.id.value}'),
                   style: AppTextStyles.small.copyWith(color: colors.muted),
+                ),
+                OtherSectorLines(
+                  key: ValueKey('addStreets.others.${street.id.value}'),
+                  lines: street.others,
                 ),
                 if (!street.fromCorbeille)
                   PartLink(

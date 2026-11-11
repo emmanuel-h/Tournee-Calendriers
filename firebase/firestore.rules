@@ -782,6 +782,47 @@ service cloud.firestore {
         && isMethodTotal(data.card);
     }
 
+    // ------------------------------------------- the secteurs' parts
+
+    // An entry of `streetParts/{banId}` (#133, PLAN §5.15, §6.2): what the
+    // secteur [sector] holds of the street, with the secteur's own number
+    // and centre (so no one passes for another secteur), and both sides in
+    // the shape of a street's `part` (isSidePart).
+    function isSectorPartEntry(sector, entry) {
+      return entry is map
+        && entry.keys().toSet() == ['number', 'centreName', 'odd', 'even'].toSet()
+        && entry.number == get(sectorPath(sector)).data.number
+        && entry.centreName == get(sectorPath(sector)).data.centreName
+        && isSidePart(entry.odd, 1) && isSidePart(entry.even, 0);
+    }
+
+    // A write of the index (FirestoreStreetPartIndex): one entry changes,
+    // the one of the secteur `sector` names, set or removed, by an active
+    // member of that secteur or an admin (an admin deleting a secteur,
+    // member or not, removes its entries). The rules cannot tell which key
+    // of a map a write changed, so the write names it in `sector`; any
+    // other key changing is refused. [before] is the `parts` stored ({}
+    // for a new document). `parts` may be missing: removing an entry from
+    // a street no secteur held yet makes a document without it.
+    function isStreetPartsWrite(before, data) {
+      return hasFields(data, ['sector'], ['parts'])
+        && isId(data.sector)
+        && data.get('parts', {}) is map
+        && data.get('parts', {}).diff(before).affectedKeys().hasOnly([data.sector])
+        && isMemberOrAdmin(data.sector)
+        && (!(data.sector in data.get('parts', {}))
+          || isSectorPartEntry(data.sector, data.parts[data.sector]));
+    }
+
+    match /streetParts/{banId} {
+      // `get` only: a phone reads the street it shows, by its BAN id; no one
+      // lists which secteur covers what. Never deleted: a secteur removes
+      // its own entry.
+      allow get: if signedIn();
+      allow create: if isStreetPartsWrite({}, request.resource.data);
+      allow update: if isStreetPartsWrite(resource.data.get('parts', {}), request.resource.data);
+    }
+
     match /sectors/{sector} {
       // A member reaches a tournée by its id, from its code; only admins
       // list them all (« Toutes les tournées », PLAN §5.12).

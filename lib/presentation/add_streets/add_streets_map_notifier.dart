@@ -10,10 +10,12 @@ import 'package:tournee_calendriers/domain/geometry/geo_distance.dart';
 import 'package:tournee_calendriers/domain/map/map_layers.dart';
 import 'package:tournee_calendriers/domain/map/picked_road.dart';
 import 'package:tournee_calendriers/domain/map/sector_area.dart';
+import 'package:tournee_calendriers/domain/sector/rescue_centre.dart';
 import 'package:tournee_calendriers/domain/sector/sector_commune.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/shared/insee_code.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
+import 'package:tournee_calendriers/domain/street/sector_part.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_part.dart';
@@ -22,6 +24,7 @@ import 'package:tournee_calendriers/presentation/add_streets/add_streets_map_sta
 import 'package:tournee_calendriers/presentation/add_streets/part_opening.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
+import 'package:tournee_calendriers/presentation/street_part/other_sectors.dart';
 import 'package:tournee_calendriers/presentation/street_part/street_part_state.dart';
 
 export 'package:tournee_calendriers/presentation/add_streets/add_streets_map_state.dart';
@@ -56,6 +59,10 @@ final addStreetsMapProvider =
 ///   rue » (PLAN §5.15): a street of a zone has its numbers read first,
 ///   then kept for adding. The part chosen goes with the tick, and adding
 ///   stores only its numbers.
+/// - **Other secteurs**: what they hold of a street ticked, or listed in a
+///   zone, is read from the shared index in the background, once per
+///   street, and said under its row (« Secteur 12 : impairs 19–41 »);
+///   nothing when it cannot be read, and nothing waits for it.
 ///
 /// Answers come back in any order: each one ticks what it found, except
 /// once « Tout décocher » was pressed after its tap, or while the streets
@@ -107,6 +114,16 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
   /// The streets found in [_zone]; null while they are looked for.
   List<ZoneStreet>? _zoneStreets;
 
+  /// What the other secteurs hold of each street asked about, by street,
+  /// once the index told it (PLAN §5.15).
+  var _others = <BanStreetId, List<SectorPart>>{};
+
+  /// The streets the index was asked about, answered or not: each once.
+  var _askedOthers = <BanStreetId>{};
+
+  /// The open secteur's centre, which the rows do not name.
+  RescueCentre? _centre;
+
   /// Raised by each zone drawn and by « Zone » turned on or off: only the
   /// answer for the zone still shown is listed.
   var _zones = 0;
@@ -126,6 +143,9 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
     _zone = null;
     _zoneStreets = null;
     _readingParts = const {};
+    _others = {};
+    _askedOthers = {};
+    _centre = null;
     final streets = ref
         .watch(observeStreetsProvider)()
         .listen(
@@ -136,6 +156,7 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
     ref.onDispose(streets.cancel);
     // `ref.watch`: another secteur opened follows its communes.
     if (ref.watch(currentSectorProvider) case final sector?) {
+      _centre = sector.centre;
       final communes = ref
           .watch(observeSectorCommunesProvider)(sector.id)
           .listen(
@@ -382,6 +403,7 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
       StreetPartRequest(
         streetName: pick.match.name.text,
         choice: pick.numbers!.partChoice(road: pick.road, part: pick.part),
+        banId: id,
       ),
     );
   }
@@ -471,6 +493,9 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
         answer = const LookUpFailed(LookUpProblem.serviceError);
       case Ok(value: final streets):
         _zoneStreets = streets;
+        for (final street in streets) {
+          if (street is ZoneStreetToAdd) _askOthers(street.match.id);
+        }
         final ticked = [
           for (final street in streets)
             if (street is ZoneStreetToAdd && _pickOf(street.match.id) == null)
@@ -581,7 +606,26 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
     _latest = pick;
     _run = const AddIdle();
     unawaited(_findRoad(pick));
+    _askOthers(id);
   }
+
+  /// Asks the shared index what the other secteurs hold of the street
+  /// [id], once; its row says it when the answer comes (PLAN §5.15).
+  void _askOthers(BanStreetId id) {
+    if (!_askedOthers.add(id)) return;
+    unawaited(_readOthers(id));
+  }
+
+  Future<void> _readOthers(BanStreetId id) async {
+    final others = await ref.read(readOtherSectorPartsProvider)(id);
+    if (!ref.mounted || others.isEmpty) return;
+    _others = {..._others, id: others};
+    _show();
+  }
+
+  /// The lines under the row of the street [id].
+  List<OtherSectorLine> _linesOf(BanStreetId id) =>
+      OtherSectorLine.of(_others[id] ?? const [], _centre);
 
   /// Draws the road of [pick] once the map tells it, if the street is still
   /// ticked by that tap. A failure, or no road, leaves the ✓ alone.
@@ -636,6 +680,7 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
           keptCount: pick.keptCount,
           readingPart: _readingParts.contains(pick.id),
           fromCorbeille: pick.fromCorbeille,
+          others: _linesOf(pick.id),
         ),
     ],
     pickedRoads: [
@@ -678,6 +723,7 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
           id: match.id,
           numberCount: numberCount,
           fromCorbeille: fromCorbeille,
+          others: _linesOf(match.id),
         ),
         final pick => ZoneStreetRow(
           kind: ZoneRowKind.toAdd,
@@ -691,6 +737,7 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
           keptCount: pick.keptCount,
           readingPart: _readingParts.contains(match.id),
           fromCorbeille: fromCorbeille,
+          others: _linesOf(match.id),
         ),
       },
     ZoneStreetInSector(:final match) => ZoneStreetRow(

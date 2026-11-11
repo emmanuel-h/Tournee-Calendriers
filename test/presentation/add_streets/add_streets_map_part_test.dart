@@ -9,8 +9,11 @@ import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/street_shapes.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
+import 'package:tournee_calendriers/domain/sector/rescue_centre.dart';
+import 'package:tournee_calendriers/domain/sector/sector_number.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
+import 'package:tournee_calendriers/domain/street/sector_part.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_part.dart';
@@ -18,6 +21,7 @@ import 'package:tournee_calendriers/domain/street/street_part_choice.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/presentation/add_streets/add_streets_map_notifier.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
+import 'package:tournee_calendriers/presentation/street_part/other_sectors.dart';
 
 import '../../domain/sector/my_sectors_fixtures.dart';
 import '../../domain/sector/sector_fixtures.dart';
@@ -25,6 +29,7 @@ import '../../support/fakes/fake_address_directory.dart';
 import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_sector_repository.dart';
+import '../../support/fakes/fake_street_part_index.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/fakes/fake_street_shapes.dart';
 import '../../support/geo_fixtures.dart';
@@ -74,6 +79,7 @@ void main() {
   late FakeStreetRepository streets;
   late FakeAddressDirectory directory;
   late FakeStreetShapes shapes;
+  var index = FakeStreetPartIndex();
 
   ProviderContainer phone() {
     final container = ProviderContainer(
@@ -86,6 +92,7 @@ void main() {
         ),
         addressDirectoryProvider.overrideWithValue(directory),
         streetShapesProvider.overrideWithValue(shapes),
+        streetPartIndexProvider.overrideWithValue(index),
         identityProvider.overrideWithValue(FakeIdentity(streets_fixtures.lea)),
         idGeneratorProvider.overrideWithValue(FakeIdGenerator('street')),
         mySectorsStoreProvider.overrideWithValue(
@@ -112,6 +119,7 @@ void main() {
       (opening as PartToChoose).request.choice;
 
   setUp(() {
+    index = FakeStreetPartIndex();
     streets = FakeStreetRepository();
     directory = FakeAddressDirectory(
       places: {_onTilleuls: Ok(_tilleulsMatch)},
@@ -586,6 +594,126 @@ void main() {
 
       expect(await opening, const PartNotOpened());
       await adding;
+    });
+  });
+
+  group('other secteurs (PLAN §5.15)', () {
+    final oddFrom19 = part(odd: range(19, 41), even: SidePart.none);
+    SectorPart other(int sector, String centre) => SectorPart(
+      sector: valueOf(SectorNumber.create(sector)),
+      centre: valueOf(RescueCentre.create(centre)),
+      part: oddFrom19,
+    );
+
+    setUp(() {
+      index.others[_tilleulsId] = [
+        other(12, 'CS Villefranche'),
+        other(3, 'CS Arnas'),
+      ];
+    });
+
+    test('should say under a street ticked what other secteurs hold of it, '
+        'the centre only when not the secteur\'s', () async {
+      final container = await tapped();
+
+      expect(index.asked, [_tilleulsId]);
+      expect(stateOf(container).picked.single.others, [
+        OtherSectorLine(sector: 3, centre: 'CS Arnas', part: oddFrom19),
+        OtherSectorLine(sector: 12, part: oddFrom19),
+      ]);
+    });
+
+    test(
+      'should say nothing until the index answers, and tick at once',
+      () async {
+        index.holdReads = Completer<void>();
+        final container = await tapped();
+
+        expect(stateOf(container).picked.single.others, isEmpty);
+        index.holdReads!.complete();
+        await pumpEventQueue();
+        expect(stateOf(container).picked.single.others, hasLength(2));
+      },
+    );
+
+    test('should ask the index once per street, ticked again or not', () async {
+      final container = await tapped();
+      notifierOf(container).untick(_tilleulsId);
+      await notifierOf(container).tapMap(_onTilleuls);
+      await pumpEventQueue();
+
+      expect(index.asked, [_tilleulsId]);
+      expect(stateOf(container).picked.single.others, hasLength(2));
+    });
+
+    test('should say nothing of a street no other secteur holds', () async {
+      index.others.clear();
+      final container = await tapped();
+
+      expect(index.asked, [_tilleulsId]);
+      expect(stateOf(container).picked.single.others, isEmpty);
+    });
+
+    test('should drop an answer coming once the screen is gone', () async {
+      index.holdReads = Completer<void>();
+      final container = await tapped();
+      container.dispose();
+
+      index.holdReads!.complete();
+      await pumpEventQueue();
+
+      expect(index.asked, [_tilleulsId]);
+    });
+
+    test('should name the BAN street to « Partie de la rue », which reads '
+        'the others itself', () async {
+      final container = await tapped();
+
+      final opening = await notifierOf(container).openPart(_tilleulsId);
+
+      expect((opening as PartToChoose).request.banId, _tilleulsId);
+    });
+
+    test('should say it on the zone\'s rows of streets to add, ticked or '
+        'not', () async {
+      directory = FakeAddressDirectory(
+        communes: {
+          '69264': Ok(
+            CommuneStreets(
+              commune: villefranche,
+              streets: [
+                DirectoryStreet(
+                  id: _tilleulsId,
+                  name: streetName('Impasse des Tilleuls'),
+                  numberCount: 5,
+                ),
+              ],
+              skippedStreets: 0,
+            ),
+          ),
+        },
+      );
+      shapes.roads = Ok([
+        NamedRoad(name: 'Impasse des Tilleuls', shape: _tilleulsRoad),
+      ]);
+      final container = phone();
+      await pumpEventQueue();
+      final notifier = notifierOf(container)..toggleZone();
+      await notifier.drawZone(_zone);
+      await pumpEventQueue();
+      ZoneStreetRow row() =>
+          (stateOf(container).zone as ZoneStreetsFound).rows.single;
+
+      expect(index.asked, [_tilleulsId]);
+      expect(row().ticked, isTrue);
+      expect(row().others, hasLength(2));
+      expect(stateOf(container).picked.single.others, hasLength(2));
+      notifier.toggleZoneStreet(_tilleulsId);
+      expect(row().ticked, isFalse);
+      expect(row().others, [
+        OtherSectorLine(sector: 3, centre: 'CS Arnas', part: oddFrom19),
+        OtherSectorLine(sector: 12, part: oddFrom19),
+      ]);
     });
   });
 }
