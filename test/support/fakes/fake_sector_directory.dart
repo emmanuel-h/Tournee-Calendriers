@@ -143,14 +143,39 @@ final class FakeSectorDirectory implements SectorDirectory {
     };
   }
 
-  @override
-  Future<void> requestToJoin(JoinRequest request) async {
-    sent.add(request);
-  }
+  /// The names the members hold on the server, by tournée and
+  /// `MemberName.key`: a request under one fails with `nameTaken`.
+  final takenNames = <(SectorId, String)>{};
+
+  /// Plays a code changed since it was shown: a request fails with
+  /// `unknownCode`.
+  var codeChanged = false;
 
   @override
-  Future<void> cancelRequest(SectorId sector, MemberId member) async {
+  Future<Result<void, JoinRequestFailure>> requestToJoin(
+    JoinRequest request,
+  ) async {
+    if (offline) return const Err(JoinRequestFailure.noNetwork);
+    if (codeChanged) return const Err(JoinRequestFailure.unknownCode);
+    if (takenNames.contains((request.sector, request.member.name.key))) {
+      return const Err(JoinRequestFailure.nameTaken);
+    }
+    sent.add(request);
+    return const Ok(null);
+  }
+
+  /// The name freed with each request cancelled, in the order of
+  /// [cancelled].
+  final cancelledNames = <MemberName?>[];
+
+  @override
+  Future<void> cancelRequest(
+    SectorId sector,
+    MemberId member,
+    MemberName? name,
+  ) async {
     cancelled.add((sector, member));
+    cancelledNames.add(name);
   }
 
   @override

@@ -636,4 +636,26 @@ void main() {
       expect(() => rescueCentreFromDocument({}), throwsFormatException);
     });
   });
+
+  group('a name held in a secteur', () {
+    test('should name the member who holds it', () {
+      expect(nameEntryDocument(leaId), {'member': 'uid-lea'});
+    });
+
+    test('should give back the member who holds it', () {
+      expect(nameHolderOf({'member': 'uid-lea'}), leaId);
+    });
+
+    test('should give no member for an entry that is not there or not '
+        'one this code writes', () {
+      for (final data in <Map<String, Object?>?>[
+        null,
+        {},
+        {'member': 7},
+        {'member': ' '},
+      ]) {
+        expect(nameHolderOf(data), isNull, reason: '$data');
+      }
+    });
+  });
 }

@@ -28,6 +28,7 @@ void main() {
     centre: csVillefranche,
     campaign: campaign2026,
     status: MemberStatus.pending,
+    memberName: nameOf('Julie'),
   );
   late FakeSectorDirectory directory;
   late FakeMemberAccount account;
@@ -100,6 +101,42 @@ void main() {
       expect(store.saves, isEmpty);
     });
 
+    test('should keep the name the request was sent under', () async {
+      final sent = await requestToJoin()(preview, nameOf('Julie B.'));
+
+      expect(valueOf(sent).memberName, nameOf('Julie B.'));
+      expect(directory.sent.single.member.name, nameOf('Julie B.'));
+    });
+
+    for (final (problem, configure, failure) in [
+      (
+        'a member holds the name',
+        (FakeSectorDirectory directory) =>
+            directory.takenNames.add((sectorId, 'julie')),
+        RequestToJoinFailure.nameTaken,
+      ),
+      (
+        'the code changed',
+        (FakeSectorDirectory directory) => directory.codeChanged = true,
+        RequestToJoinFailure.unknownCode,
+      ),
+      (
+        'the server cannot be reached',
+        (FakeSectorDirectory directory) => directory.offline = true,
+        RequestToJoinFailure.noNetwork,
+      ),
+    ]) {
+      test('should keep nothing on the phone when $problem', () async {
+        configure(directory);
+
+        final sent = await requestToJoin()(preview, nameOf('JULIE'));
+
+        expect(failureOf(sent), failure);
+        expect(directory.sent, isEmpty);
+        expect(store.saves, isEmpty);
+      });
+    }
+
     test(
       'should send nothing when the tournée is already one of the member\'s',
       () async {
@@ -126,7 +163,20 @@ void main() {
       await CancelJoinRequest(directory, account, store)(sectorId);
 
       expect(directory.cancelled, [(sectorId, julieId)]);
+      expect(directory.cancelledNames, [nameOf('Julie')]);
       expect(store.saves, [MySectors.none.remember(sector12)]);
+    });
+
+    test('should free no name when the phone does not know it', () async {
+      store = FakeMySectorsStore(
+        MySectors.none
+            .remember(sector12)
+            .remember(summaryOf('t49', 49, status: MemberStatus.pending)),
+      );
+
+      await CancelJoinRequest(directory, account, store)(sectorId);
+
+      expect(directory.cancelledNames, [null]);
     });
 
     test('should only forget it when the phone never signed in', () async {

@@ -8,6 +8,7 @@ import 'package:tournee_calendriers/domain/sector/sector_change.dart';
 import 'package:tournee_calendriers/domain/sector/sector_commune.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
+import 'package:tournee_calendriers/domain/shared/member_id.dart';
 
 import '../../domain/sector/my_sectors_fixtures.dart';
 import '../../domain/sector/sector_fixtures.dart';
@@ -389,27 +390,82 @@ void main() {
   });
 
   group('RemoveMember', () {
+    RemoveMember removeAs(MemberId id, FakeAdminStatus admins) => RemoveMember(
+      sectors,
+      FakeIdentity(id),
+      admins,
+      ScriptedRandom(draws234567),
+    );
+
     test('should take the member out when an admin asks', () async {
       final change = valueOf(
-        await RemoveMember(sectors, FakeIdentity(samId), admin)(
-          sectorId,
-          leaId,
-        ),
+        await removeAs(samId, admin)(sectorId, leaId, renewCode: false),
       );
 
       expect(change, MemberRemoved(sectorId: sectorId, member: lea));
       expect(sectors.saved.single.$2, change);
       expect(sectors[sectorId]!.memberOf(leaId), isNull);
+      expect(sectors[sectorId]!.joinCode, firstCode);
+    });
+
+    test('should renew the code first, then take the member out, when '
+        'asked to', () async {
+      final change = valueOf(
+        await removeAs(samId, admin)(sectorId, leaId, renewCode: true),
+      );
+
+      expect(change, MemberRemoved(sectorId: sectorId, member: lea));
+      expect(sectors.saved.map((saved) => saved.$2), [
+        JoinCodeRegenerated(
+          sectorId: sectorId,
+          before: firstCode,
+          code: codeOf('234567'),
+        ),
+        change,
+      ]);
+      expect(sectors[sectorId]!.joinCode, codeOf('234567'));
+      expect(sectors[sectorId]!.memberOf(leaId), isNull);
+    });
+
+    test('should take no one out when the new code cannot be '
+        'stored', () async {
+      sectors.offline = true;
+
+      final failure = failureOf(
+        await removeAs(samId, admin)(sectorId, leaId, renewCode: true),
+      );
+
+      expect(failure, TeamProblem.offline);
+      expect(sectors.saved, isEmpty);
+      expect(sectors[sectorId]!.memberOf(leaId), lea);
+    });
+
+    test('should renew no code when the member cannot be taken out', () async {
+      // Julie still waits: refuse her request instead.
+      final failure = failureOf(
+        await removeAs(samId, admin)(sectorId, julieId, renewCode: true),
+      );
+
+      expect(
+        failure,
+        const TeamCommandRefused(SectorCommandFailure.memberPending),
+      );
+      expect(sectors.saved, isEmpty);
+    });
+
+    test('should tell when the tournée cannot be read any more', () async {
+      final failure = failureOf(
+        await removeAs(samId, admin)(SectorId('gone'), leaId, renewCode: true),
+      );
+
+      expect(failure, TeamProblem.sectorGone);
     });
 
     test('should be refused to a member who is not an admin, the creator '
         'too', () async {
       // Manu created the 49, but here his phone is not an admin.
       final failure = failureOf(
-        await RemoveMember(sectors, FakeIdentity(manuId), member)(
-          sectorId,
-          leaId,
-        ),
+        await removeAs(manuId, member)(sectorId, leaId, renewCode: false),
       );
 
       expect(failure, const TeamCommandRefused(SectorCommandFailure.notAdmin));
@@ -673,8 +729,35 @@ void main() {
       expect(change, AdminJoined(sectorId: sectorId, member: sam));
       expect(sectors.saved.single.$2, change);
       expect(sectors[sectorId]!.activeMembers, [manu, lea, sam]);
-      expect(store.mySectors.sectors, [sector49, sector12]);
+      expect(store.mySectors.sectors, [
+        sector49.withMemberName(nameOf('Sam')),
+        sector12,
+      ]);
       expect(store.mySectors.currentId, sectorId);
+    });
+
+    test('should change nothing when a member holds the name', () async {
+      final failure = failureOf(
+        await joinAs(
+          admin,
+          settings: FakePhoneSettings(memberName: nameOf('LÉA')),
+        )(sectorId),
+      );
+
+      expect(failure, const TeamCommandRefused(SectorCommandFailure.nameTaken));
+      expect(sectors.saved, isEmpty);
+      expect(store.saves, isEmpty);
+    });
+
+    test('should change nothing when the server says the name is '
+        'taken', () async {
+      sectors.takenNames.add((sectorId, 'sam'));
+
+      final failure = failureOf(await joinAs(admin)(sectorId));
+
+      expect(failure, TeamProblem.nameTaken);
+      expect(sectors[sectorId]!.memberOf(samId), isNull);
+      expect(store.saves, isEmpty);
     });
 
     test('should be refused to someone who is no longer an admin', () async {

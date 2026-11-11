@@ -142,6 +142,8 @@ final class CreateSector {
         centre: sector.centre,
         campaign: sector.currentCampaign,
         status: MemberStatus.active,
+        // The creator goes by the name the tournée was created with.
+        memberName: sector.memberOf(sector.createdBy)?.name,
       ),
     );
     // Always opens: the creator is an active member of what they created.

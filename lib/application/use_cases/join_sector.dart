@@ -31,17 +31,29 @@ enum RequestToJoinFailure {
   /// The tournée is already one of the member's, joined or asked for.
   alreadyJoined,
 
-  /// The phone could not reach the server for its first sign-in.
+  /// The phone could not reach the server, for its first sign-in or for
+  /// the request.
   noNetwork,
+
+  /// A member of the tournée holds the name, case and accents ignored
+  /// (#148, PLAN §5.16): ask again under another name for this tournée.
+  nameTaken,
+
+  /// The code no longer opens the tournée (a new code was drawn, or it
+  /// was deleted, since it was shown).
+  unknownCode,
 }
 
 /// « Demander à rejoindre »: signs in when the phone has no account yet,
-/// sends the request as [MemberName], and keeps the tournée on the phone as
-/// a pending request (« Mes secteurs », PLAN §5.3), which the app follows
-/// until it is answered. Returns that pending tournée.
+/// sends the request as [MemberName] (the phone's prénom, or the name
+/// chosen for this tournée when the prénom was taken there, PLAN §5.16),
+/// and keeps the tournée on the phone as a pending request (« Mes
+/// secteurs », PLAN §5.3) with that name, which the app follows until it
+/// is answered. Returns that pending tournée.
 ///
-/// The request itself is queued like any write: once signed in, it is kept
-/// on the phone at once and sent when the network allows.
+/// Needs the server, which alone tells whether the name is free in the
+/// tournée: nothing is kept on the phone when it refuses or cannot be
+/// reached.
 final class RequestToJoin {
   const RequestToJoin(
     this._directory,
@@ -74,7 +86,7 @@ final class RequestToJoin {
     }
     // Built by the domain, not here: the newcomer cannot read the secteur,
     // so no `Sector` root can make this member (PLAN §10.1).
-    await _directory.requestToJoin(
+    final sent = await _directory.requestToJoin(
       JoinRequest(
         sector: preview.sectorId,
         code: preview.code,
@@ -83,6 +95,13 @@ final class RequestToJoin {
         at: _clock.now(),
       ),
     );
+    if (sent case Err(:final failure)) {
+      return Err(switch (failure) {
+        JoinRequestFailure.nameTaken => RequestToJoinFailure.nameTaken,
+        JoinRequestFailure.unknownCode => RequestToJoinFailure.unknownCode,
+        JoinRequestFailure.noNetwork => RequestToJoinFailure.noNetwork,
+      });
+    }
     // What the preview showed: a pending newcomer cannot read the tournée.
     final request = SectorSummary(
       id: preview.sectorId,
@@ -90,6 +109,7 @@ final class RequestToJoin {
       centre: preview.centre,
       campaign: preview.campaign,
       status: MemberStatus.pending,
+      memberName: name,
     );
     await _mySectors.save(_mySectors.mySectors.remember(request));
     return Ok(request);
@@ -97,8 +117,9 @@ final class RequestToJoin {
 }
 
 /// « Annuler la demande »: withdraws the member's request to join
-/// [SectorId] and forgets it on the phone. Works offline: the withdrawal
-/// is sent when the network allows.
+/// [SectorId], freeing the name it held there (#148), and forgets it on
+/// the phone. Works offline: the withdrawal is sent when the network
+/// allows.
 final class CancelJoinRequest {
   const CancelJoinRequest(this._directory, this._account, this._mySectors);
 
@@ -109,7 +130,8 @@ final class CancelJoinRequest {
   Future<void> call(SectorId sector) async {
     // A phone that never signed in sent no request: only forget it.
     if (_account.signedInMember case final member?) {
-      await _directory.cancelRequest(sector, member);
+      final name = _mySectors.mySectors.find(sector)?.memberName;
+      await _directory.cancelRequest(sector, member, name);
     }
     await _mySectors.save(_mySectors.mySectors.forget(sector));
   }

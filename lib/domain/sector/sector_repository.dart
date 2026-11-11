@@ -21,16 +21,23 @@ enum AddSectorFailure {
 }
 
 /// Why a change to a stored tournée that needs the server was not made
-/// (« Nouveau code », « Supprimer le secteur », PLAN §5.8).
+/// (« Nouveau code », « Supprimer le secteur », a rename, an admin joining,
+/// PLAN §5.8, §5.16).
 enum SectorWriteFailure {
   /// The phone could not reach the server. A new code must be checked
-  /// against every other tournée's, and deleting reads what the tournée
-  /// holds from the server: neither can wait in a queue (PLAN §7).
+  /// against every other tournée's, a name against every member's (#148),
+  /// and deleting reads what the tournée holds from the server: none can
+  /// wait in a queue (PLAN §7).
   noNetwork,
 
   /// The server refused: a new code, an admin joining and deleting are an
   /// admin's, and the member on the phone is no longer one (PLAN §5.12).
   notAdmin,
+
+  /// Another member of the tournée holds the name, case and accents
+  /// ignored (`MemberName.key`), which the phone's copy did not show yet
+  /// (#148). Nothing was changed.
+  nameTaken,
 }
 
 /// Where the tournées the member belongs to are kept: Firestore
@@ -44,9 +51,8 @@ enum SectorWriteFailure {
 /// the request), not through this one.
 ///
 /// Reads come from the phone's copy once the tournée has been seen, so the
-/// team screen opens offline; accepting, refusing, removing, leaving and
-/// renaming oneself are applied on the phone at once and sent when the
-/// network is back. A storage failure the user cannot act on is thrown as an exception;
+/// team screen opens offline; accepting, refusing, removing and leaving
+/// are applied on the phone at once and sent when the network is back. A storage failure the user cannot act on is thrown as an exception;
 /// [add], [save] and [delete] return the failures they can act on.
 abstract interface class SectorRepository {
   /// The tournée [id] as it is now; null when there is none, or when this
@@ -61,7 +67,8 @@ abstract interface class SectorRepository {
 
   /// Stores [sector], just created with `Sector.createdBy`, with what
   /// makes it findable: its join code and the reservation of its number in
-  /// its centre de secours, all or nothing.
+  /// its centre de secours, and its creator's name held in it (#148), all
+  /// or nothing.
   ///
   /// Fails with [AddSectorFailure.alreadyExists] when the number is taken
   /// in that centre, even by someone creating it at the same second
@@ -77,20 +84,25 @@ abstract interface class SectorRepository {
   /// member's document, the join code) and still finds what it needs
   /// around it (the preview fields of a new join code).
   ///
-  /// A member accepted, refused, removed, leaving or renamed is kept on the
-  /// phone at once and sent when the network is back: it never fails. A
-  /// new join code needs the server, which checks no other tournée holds
-  /// it: one that does is replaced by another (the stored tournée then has that
-  /// one), and offline it fails with [SectorWriteFailure.noNetwork]. A new
-  /// code or an admin joining fails with [SectorWriteFailure.notAdmin] when
-  /// the server says the member is not an admin.
+  /// A member accepted, refused, removed or leaving is kept on the phone
+  /// at once and sent when the network is back: it never fails; the name
+  /// a member refused, removed or leaving held is freed with them (#148).
+  /// A new join code needs the server, which checks no other tournée holds
+  /// it: one that does is replaced by another (the stored tournée then has
+  /// that one). A member renamed or an admin joining needs the server too,
+  /// which checks no other member holds the name: one that does fails with
+  /// [SectorWriteFailure.nameTaken], the old name then kept. Offline these
+  /// fail with [SectorWriteFailure.noNetwork]. A new code or an admin
+  /// joining fails with [SectorWriteFailure.notAdmin] when the server says
+  /// the member is not an admin.
   Future<Result<Sector, SectorWriteFailure>> save(
     Sector sector,
     SectorChange change,
   );
 
-  /// Deletes the tournée of [deletion] and everything in it: members,
-  /// campaigns, streets, its join code and its number reservation. Returns
+  /// Deletes the tournée of [deletion] and everything in it: members and
+  /// their names, campaigns, streets, its join code and its number
+  /// reservation. Returns
   /// [deletion] once done.
   ///
   /// Needs the server, which alone knows everything the tournée holds:

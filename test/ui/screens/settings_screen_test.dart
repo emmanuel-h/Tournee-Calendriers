@@ -20,6 +20,7 @@ import '../../support/fakes/fake_admin_status.dart';
 import '../../support/fakes/fake_member_account.dart';
 import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_phone_settings.dart';
+import '../../support/fakes/fake_sector_repository.dart';
 import '../../support/results.dart';
 import '../support/app_overrides.dart';
 import '../support/clipboard.dart';
@@ -28,6 +29,7 @@ import '../support/navigation.dart';
 
 void main() {
   late FakePhoneSettings settings;
+  late FakeSectorRepository sectors;
 
   /// Paramètres over the start screen, on a phone where Manu has the 49
   /// open.
@@ -41,11 +43,15 @@ void main() {
     bool admin = false,
   }) async {
     settings = FakePhoneSettings(memberName: nameOf('Manu'));
+    // The 49 of Manu, Léa and Julie, Manu on the phone.
+    sectors = FakeSectorRepository([team()]);
     await tester.pumpWidget(
       ProviderScope(
         overrides: [
           ...fakePhone(
             settings: settings,
+            sectors: sectors,
+            member: manuId,
             account: account,
             admins: FakeAdminStatus(phoneIsAdmin: admin),
             mySectors: FakeMySectorsStore(
@@ -128,6 +134,162 @@ void main() {
     expect(find.byKey(const Key('name.field')), findsNothing);
     expect(find.bySemanticsLabel('Prénom, Emmanuel'), findsOneWidget);
     expect(settings.names, [nameOf('Emmanuel')]);
+  });
+
+  group('a name per secteur', () {
+    /// Opens « Prénom », types [name] and saves it.
+    Future<void> rename(WidgetTester tester, String name) async {
+      await tester.tap(find.byKey(const Key('settings.name')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('name.field')), name);
+      await tester.tap(find.byKey(const Key('name.save')));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('should list no names per secteur while each secteur knows '
+        'the prénom', (tester) async {
+      await pumpSettings(tester);
+
+      expect(find.text('VOS NOMS PAR SECTEUR'), findsNothing);
+    });
+
+    testWidgets('should keep the old name where the new one is taken, say so, '
+        'then give the name typed for that secteur', (tester) async {
+      await pumpSettings(tester);
+
+      // Léa is in the 49.
+      await rename(tester, 'LÉA');
+
+      expect(
+        find.text(
+          '«\u00a0LÉA\u00a0» est déjà pris dans le secteur 49\u00a0: vous y '
+          'gardez «\u00a0Manu\u00a0». Il est enregistré partout ailleurs.',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Votre nom dans le secteur 49'), findsOneWidget);
+      final field = find.byKey(const ValueKey('name.sector.t49'));
+      expect(tester.widget<TextField>(field).controller!.text, 'Manu');
+      expect(settings.names, [nameOf('LÉA')]);
+
+      await tester.enterText(field, 'Manu D.');
+      await tester.tap(find.byKey(const Key('name.save')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('name.field')), findsNothing);
+      expect(sectors[sectorId]!.memberOf(manuId)!.name, nameOf('Manu D.'));
+      expect(find.text('VOS NOMS PAR SECTEUR'), findsOneWidget);
+      expect(
+        find.bySemanticsLabel('Secteur 49 · CS Villefranche, Manu D.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('should say when the name typed for the secteur is taken '
+        'too, until the next edit', (tester) async {
+      await pumpSettings(tester);
+      await rename(tester, 'LÉA');
+      final field = find.byKey(const ValueKey('name.sector.t49'));
+
+      await tester.enterText(field, 'julie');
+      await tester.tap(find.byKey(const Key('name.save')));
+      await tester.pumpAndSettle();
+
+      const taken = '«\u00a0julie\u00a0» est déjà pris dans le secteur 49.';
+      expect(find.text(taken), findsOneWidget);
+      expect(field, findsOneWidget);
+
+      await tester.enterText(field, 'Manu D.');
+      await tester.pumpAndSettle();
+
+      expect(find.text(taken), findsNothing);
+    });
+
+    testWidgets('should close when the secteur\'s name is left as it '
+        'was', (tester) async {
+      await pumpSettings(tester);
+      await rename(tester, 'LÉA');
+
+      await tester.tap(find.byKey(const Key('name.save')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('name.field')), findsNothing);
+      expect(sectors[sectorId]!.memberOf(manuId)!.name, nameOf('Manu'));
+    });
+
+    testWidgets('should say a name for the secteur that cannot be one, and '
+        'give the prénom again when it is changed', (tester) async {
+      await pumpSettings(tester);
+      await rename(tester, 'LÉA');
+
+      await tester.enterText(
+        find.byKey(const ValueKey('name.sector.t49')),
+        '  ',
+      );
+      await tester.tap(find.byKey(const Key('name.save')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Écrivez votre prénom.'), findsOneWidget);
+
+      await tester.enterText(find.byKey(const Key('name.field')), 'Emmanuel');
+      await tester.tap(find.byKey(const Key('name.save')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('name.field')), findsNothing);
+      expect(sectors[sectorId]!.memberOf(manuId)!.name, nameOf('Emmanuel'));
+    });
+
+    testWidgets('should say offline and keep the sheet when no secteur can '
+        'be reached', (tester) async {
+      await pumpSettings(tester);
+      sectors.offline = true;
+
+      await rename(tester, 'Emmanuel');
+
+      expect(
+        find.text('Pas de réseau. Réessayez une fois connecté.'),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('name.field')), findsOneWidget);
+      expect(settings.names, isEmpty);
+    });
+
+    testWidgets('should say offline under the secteur\'s field', (
+      tester,
+    ) async {
+      await pumpSettings(tester);
+      await rename(tester, 'LÉA');
+      sectors.offline = true;
+
+      await tester.enterText(
+        find.byKey(const ValueKey('name.sector.t49')),
+        'Manu D.',
+      );
+      await tester.tap(find.byKey(const Key('name.save')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text('Pas de réseau. Réessayez une fois connecté.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('should close once the member left the secteur', (
+      tester,
+    ) async {
+      await pumpSettings(tester);
+      await rename(tester, 'LÉA');
+      sectors.lose(sectorId);
+
+      await tester.enterText(
+        find.byKey(const ValueKey('name.sector.t49')),
+        'Manu D.',
+      );
+      await tester.tap(find.byKey(const Key('name.save')));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('name.field')), findsNothing);
+    });
   });
 
   testWidgets('should say why and keep the sheet when the name is blank', (

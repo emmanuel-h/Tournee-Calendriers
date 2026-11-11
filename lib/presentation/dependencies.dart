@@ -397,6 +397,14 @@ final catchUpMemberNameProvider = Provider(
     ref.watch(phoneSettingsProvider),
     ref.watch(sectorRepositoryProvider),
     ref.watch(identityProvider),
+    ref.watch(mySectorsStoreProvider),
+  ),
+);
+final changeSectorNameProvider = Provider(
+  (ref) => ChangeSectorName(
+    ref.watch(sectorRepositoryProvider),
+    ref.watch(identityProvider),
+    ref.watch(mySectorsStoreProvider),
   ),
 );
 final chooseThemeProvider = Provider(
@@ -466,6 +474,7 @@ final removeMemberProvider = Provider(
     ref.watch(sectorRepositoryProvider),
     ref.watch(identityProvider),
     ref.watch(adminStatusProvider),
+    ref.watch(randomProvider),
   ),
 );
 final leaveSectorProvider = Provider(

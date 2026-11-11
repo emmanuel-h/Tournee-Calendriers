@@ -52,15 +52,49 @@ final class FirestoreSectorDirectory implements SectorDirectory {
     }
   }
 
+  /// A transaction: the name's entry in the secteur is read first, then the
+  /// request and the entry are written together (#148). The rules let a
+  /// newcomer read an entry only while it is free or theirs, so a refused
+  /// read means another member holds the name; a refused write too, unless
+  /// the code stopped working meanwhile, which a read of the code tells.
   @override
-  Future<void> requestToJoin(JoinRequest request) async {
-    sendInBackground(
-      'request to join ${request.sector.value}',
-      _member(
-        request.sector,
-        request.member.id,
-      ).set(joinRequestDocument(request)),
-    );
+  Future<Result<void, JoinRequestFailure>> requestToJoin(
+    JoinRequest request,
+  ) async {
+    final member = request.member;
+    final entry = FirestoreLayout.nameIn(_db, request.sector, member.name);
+    try {
+      return await _db.runTransaction<Result<void, JoinRequestFailure>>((
+        transaction,
+      ) async {
+        final holder = nameHolderOf((await transaction.get(entry)).data());
+        if (holder != null && holder != member.id) {
+          return const Err(JoinRequestFailure.nameTaken);
+        }
+        if (holder == null) {
+          transaction.set(entry, nameEntryDocument(member.id));
+        }
+        transaction.set(
+          _member(request.sector, member.id),
+          joinRequestDocument(request),
+        );
+        return const Ok(null);
+      });
+    } on FirebaseException catch (error) {
+      if (isNoNetwork(error)) return const Err(JoinRequestFailure.noNetwork);
+      if (!isRefused(error)) rethrow;
+      return switch (await preview(request.code)) {
+        Ok(:final value) when value.sectorId == request.sector => const Err(
+          JoinRequestFailure.nameTaken,
+        ),
+        Ok() || Err(failure: JoinFailure.unknownCode) => const Err(
+          JoinRequestFailure.unknownCode,
+        ),
+        Err(failure: JoinFailure.noNetwork) => const Err(
+          JoinRequestFailure.noNetwork,
+        ),
+      };
+    }
   }
 
   @override
@@ -89,11 +123,19 @@ final class FirestoreSectorDirectory implements SectorDirectory {
             ),
           );
 
+  /// The request and the name it held go in one batch, queued like any
+  /// write.
   @override
-  Future<void> cancelRequest(SectorId sector, MemberId member) async {
+  Future<void> cancelRequest(
+    SectorId sector,
+    MemberId member,
+    MemberName? name,
+  ) async {
+    final batch = _db.batch()..delete(_member(sector, member));
+    if (name != null) batch.delete(FirestoreLayout.nameIn(_db, sector, name));
     sendInBackground(
       'cancel the request to join ${sector.value}',
-      _member(sector, member).delete(),
+      batch.commit(),
     );
   }
 

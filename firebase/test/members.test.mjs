@@ -24,6 +24,7 @@ import {
   seedTeam,
   threePm,
   sectorPath,
+  writeWithName,
   zoe,
 } from './support.mjs';
 
@@ -47,10 +48,18 @@ const memberOf = (uid, member) => doc(phoneOf(env, uid), memberPath(member));
 const acceptance = (by) => ({ status: 'active', acceptedBy: by, acceptedAt: threePm });
 
 describe('a request to join', () => {
+  /** The request alone, without the name it holds (#148). */
   const request = (uid, data) => setDoc(memberOf(uid, uid), data);
 
-  it('should accept a pending request made with the current code', async () => {
-    await assertSucceeds(request(zoe, requestDoc('Zoé')));
+  it('should accept a pending request made with the current code, holding '
+    + 'its name', async () => {
+    await assertSucceeds(
+      writeWithName(phoneOf(env, zoe), zoe, requestDoc('Zoé'), 'zoe'),
+    );
+  });
+
+  it('should refuse a request that does not hold its name', async () => {
+    await assertFails(request(zoe, requestDoc('Zoé')));
   });
 
   it('should refuse a request made with another code', async () => {
@@ -85,10 +94,15 @@ describe('a request to join', () => {
   });
 
   it('should accept a name of 30 characters and refuse 31', async () => {
-    await assertSucceeds(request(zoe, requestDoc('🚒'.repeat(30))));
+    const phone = phoneOf(env, zoe);
+    await assertSucceeds(
+      writeWithName(phone, zoe, requestDoc('🚒'.repeat(30)), '🚒'.repeat(30)),
+    );
     await env.clearFirestore();
     await seedTeam(env);
-    await assertFails(request(zoe, requestDoc('🚒'.repeat(31))));
+    await assertFails(
+      writeWithName(phone, zoe, requestDoc('🚒'.repeat(31)), '🚒'.repeat(31)),
+    );
   });
 
   it('should refuse a name that is blank or not cleaned', async () => {
@@ -184,16 +198,26 @@ describe('accepting', () => {
 });
 
 describe('renaming oneself', () => {
-  /** What renaming writes (displayNameFields). */
+  /** What renaming writes (displayNameFields), without the name's entry. */
   const rename = (uid, member, name) =>
     updateDoc(memberOf(uid, member), { displayName: name });
 
+  /** The rename of [uid] to [name] holding it under [key] (#148). */
+  const renameHolding = (uid, name, key) =>
+    writeWithName(phoneOf(env, uid), uid, { displayName: name }, key, {
+      update: true,
+    });
+
   it('should let an active member rename themself', async () => {
-    await assertSucceeds(rename(lea, lea, 'Léa B.'));
+    await assertSucceeds(renameHolding(lea, 'Léa B.', 'lea b'));
   });
 
   it('should let the creator rename themself', async () => {
-    await assertSucceeds(rename(manu, manu, 'Emmanuel'));
+    await assertSucceeds(renameHolding(manu, 'Emmanuel', 'emmanuel'));
+  });
+
+  it('should refuse a rename that does not hold the new name', async () => {
+    await assertFails(rename(lea, lea, 'Léa B.'));
   });
 
   it('should refuse renaming someone else, even as the creator', async () => {
@@ -210,8 +234,8 @@ describe('renaming oneself', () => {
   });
 
   it('should accept a name of 30 characters and refuse 31', async () => {
-    await assertSucceeds(rename(lea, lea, '🚒'.repeat(30)));
-    await assertFails(rename(lea, lea, '🚒'.repeat(31)));
+    await assertSucceeds(renameHolding(lea, '🚒'.repeat(30), '🚒'.repeat(30)));
+    await assertFails(renameHolding(lea, '🚒'.repeat(31), '🚒'.repeat(31)));
   });
 
   it('should refuse a name that is blank or not cleaned', async () => {

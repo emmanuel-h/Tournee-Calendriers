@@ -1,8 +1,10 @@
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
+import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/mappers/my_sectors_json_mapper.dart';
 
 import '../../../domain/sector/my_sectors_fixtures.dart';
+import '../../../domain/sector/sector_fixtures.dart';
 import '../../../support/results.dart';
 
 /// The 49 (open), the 12 and the pending 7.
@@ -138,6 +140,8 @@ void main() {
         (first) => first['campaign'] = 1999,
         (first) => first['status'] = 'ACTIVE',
         (first) => first.remove('status'),
+        (first) => first['name'] = ' ',
+        (first) => first['name'] = 7,
       ]) {
         final json = _withFirst(change);
         expect(
@@ -157,6 +161,45 @@ void main() {
           reason: open,
         );
       }
+    });
+  });
+
+  group('the name the member goes by in a tournée', () {
+    // Léa B. in the 49, where « Léa » was taken (#148).
+    final named = MySectors.none.remember(
+      summaryOf('t49', 49, memberName: nameOf('Léa B.')),
+    );
+    final stored = {
+      'version': 1,
+      'open': null,
+      'tournees': [
+        {
+          'id': 't49',
+          'number': 49,
+          'centre': 'CS Villefranche',
+          'campaign': 2026,
+          'status': 'active',
+          'name': 'Léa B.',
+        },
+      ],
+    };
+
+    test('should write it next to the tournée', () {
+      expect(mySectorsToJson(named), stored);
+    });
+
+    test('should read it back', () {
+      expect(
+        mySectorsFromJson(stored).find(SectorId('t49'))!.memberName,
+        nameOf('Léa B.'),
+      );
+    });
+
+    test('should read a tournée kept without one as having none', () {
+      expect(
+        mySectorsFromJson(_stored()).find(SectorId('t49'))!.memberName,
+        isNull,
+      );
     });
   });
 }

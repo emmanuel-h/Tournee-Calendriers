@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
+import 'package:tournee_calendriers/domain/sector/member_name.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
@@ -12,6 +13,7 @@ import 'package:tournee_calendriers/domain/street/street_id.dart';
 abstract final class FirestoreLayout {
   static const sectors = 'sectors';
   static const members = 'members';
+  static const names = 'names';
   static const campaigns = 'campaigns';
   static const streets = 'streets';
   static const rounds = 'rounds';
@@ -53,6 +55,21 @@ abstract final class FirestoreLayout {
     FirebaseFirestore db,
     SectorId sector,
   ) => FirestoreLayout.sector(db, sector).collection(members);
+
+  /// `sectors/{sector}/names`: the names the members hold there (#148).
+  static CollectionReference<Map<String, dynamic>> namesOf(
+    FirebaseFirestore db,
+    SectorId sector,
+  ) => FirestoreLayout.sector(db, sector).collection(names);
+
+  /// `sectors/{sector}/names/{key}`: the entry that holds [name] in
+  /// [sector], under its `MemberName.key`, so « Léa » and « LEA » are one
+  /// entry.
+  static DocumentReference<Map<String, dynamic>> nameIn(
+    FirebaseFirestore db,
+    SectorId sector,
+    MemberName name,
+  ) => namesOf(db, sector).doc(name.key);
 
   /// `sectors/{sector}/campaigns/{year}/streets`.
   static CollectionReference<Map<String, dynamic>> streetsOf(

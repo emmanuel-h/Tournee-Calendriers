@@ -68,6 +68,10 @@ service cloud.firestore {
       return /databases/$(database)/documents/openSectors/$(account);
     }
 
+    function namePath(sector, key) {
+      return /databases/$(database)/documents/sectors/$(sector)/names/$(key);
+    }
+
     // An accepted member: a pending one reads and writes nothing of the
     // tournée (PLAN §8.1), only their own member document.
     function isActiveMember(sector) {
@@ -335,6 +339,51 @@ service cloud.firestore {
         && !existsAfter(sectorKeyPath(data.centreKey + '_' + string(data.number)));
     }
 
+    // --------------------------------------------------------- the names
+
+    // The key a member's name is unique under in a secteur (#148,
+    // `MemberName.key`, `nameKey` of lib/domain/shared/french_text.dart):
+    // the French accents dropped in both cases (a combining mark too), œ
+    // and æ spelled out, A to Z lowered, dashes, apostrophes, dots,
+    // underscores and slashes read as spaces, single spaces, trimmed.
+    // « Léa », « LÉA » and « lea » share `lea`; « Léa B. » is `lea b`.
+    // `lower()` lowers A to Z only: the app's key leaves every other
+    // letter as it is too. The name is already cleaned (isName): one space
+    // between words.
+    function nameKey(name) {
+      return name
+        .replace('[\\x{0300}-\\x{036F}]', '')
+        .replace('[àâäáãåÀÂÄÁÃÅ]', 'a')
+        .replace('[çÇ]', 'c')
+        .replace('[éèêëÉÈÊË]', 'e')
+        .replace('[îïíìÎÏÍÌ]', 'i')
+        .replace('[ôöóòõÔÖÓÒÕ]', 'o')
+        .replace('[ùûüúÙÛÜÚ]', 'u')
+        .replace('[ÿýŸÝ]', 'y')
+        .replace('[ñÑ]', 'n')
+        .replace('[œŒ]', 'oe')
+        .replace('[æÆ]', 'ae')
+        .replace("[-'’./_]", ' ')
+        .replace(' +', ' ')
+        .trim()
+        .lower();
+    }
+
+    // Whether [member]'s document, as the write leaves it, holds a name of
+    // [key].
+    function holdsName(sector, member, key) {
+      return existsAfter(memberPath(sector, member))
+        && nameKey(getAfter(memberPath(sector, member)).data.displayName) == key;
+    }
+
+    // Whether [name] is held for the caller in [sector] once the write is
+    // done: its entry names them. An entry can only be created, never
+    // replaced, so a name another member holds cannot be taken (#148:
+    // names are unique within a secteur).
+    function hasNameEntry(sector, name) {
+      return getAfter(namePath(sector, nameKey(name))).data.member == uid();
+    }
+
     // ------------------------------------------------------- the members
 
     function memberFields() {
@@ -350,20 +399,23 @@ service cloud.firestore {
         && data.requestedAt is timestamp
         && data.acceptedBy == null
         && data.acceptedAt == null
-        && data.joinCode == get(sectorPath(sector)).data.joinCode;
+        && data.joinCode == get(sectorPath(sector)).data.joinCode
+        && hasNameEntry(sector, data.displayName);
     }
 
     // An admin's own document, active at once and accepted by themself,
     // without a code: the creator's, written with the tournée, or an admin
-    // joining a tournée they are not in (« Rejoindre », PLAN §5.12).
-    function isAdminMembership(data) {
+    // joining a tournée they are not in (« Rejoindre », PLAN §5.12). Its
+    // name is held for them in the same write (#148).
+    function isAdminMembership(sector, data) {
       return isAdmin()
         && hasExactly(data, memberFields())
         && isName(data.displayName, 30)
         && data.status == 'active'
         && data.requestedAt is timestamp
         && data.acceptedBy == uid()
-        && data.acceptedAt is timestamp;
+        && data.acceptedAt is timestamp
+        && hasNameEntry(sector, data.displayName);
     }
 
     // Any active member or admin accepts a pending one: status, who and
@@ -378,12 +430,15 @@ service cloud.firestore {
     }
 
     // An active member renames themself (« Prénom », PLAN §5.9): their own
-    // document, the name only, cleaned as MemberName cleans it.
+    // document, the name only, cleaned as MemberName cleans it, and held
+    // for them (#148). The old name's entry may go in the same write: the
+    // `names` rules let it once no member holds that name.
     function isRename(sector, member, before, after) {
       return member == uid()
         && isActiveMember(sector)
         && after.diff(before).affectedKeys().hasOnly(['displayName'])
-        && isName(after.displayName, 30);
+        && isName(after.displayName, 30)
+        && hasNameEntry(sector, after.displayName);
     }
 
     // Refuse or cancel a request; remove (an admin, any member, admins
@@ -874,10 +929,36 @@ service cloud.firestore {
         allow list: if isMemberOrAdmin(sector);
         allow create: if signedIn() && member == uid()
           && (isJoinRequest(sector, request.resource.data)
-            || isAdminMembership(request.resource.data));
+            || isAdminMembership(sector, request.resource.data));
         allow update: if isAcceptance(sector, resource.data, request.resource.data)
           || isRename(sector, member, resource.data, request.resource.data);
         allow delete: if isMemberDeletion(sector, member, resource.data);
+      }
+
+      // `names/{key}` (#148, PLAN §5.16): the name a member goes by in the
+      // secteur, under its key (nameKey), naming that member. Created with
+      // the member document that holds the name (a request, an admin's
+      // membership, the creator's, a rename), never updated: a second
+      // member cannot create a name already there.
+      match /names/{key} {
+        // The team and the admins read them. Anyone else signed in may ask
+        // for one name that is free, or theirs: a newcomer's phone learns
+        // its name is taken from the refusal, and nothing of who holds it.
+        allow get: if isMemberOrAdmin(sector)
+          || (signedIn() && (resource == null || resource.data.member == uid()));
+        allow list: if isMemberOrAdmin(sector);
+        allow create: if signedIn()
+          && hasExactly(request.resource.data, ['member'])
+          && request.resource.data.member == uid()
+          && holdsName(sector, uid(), key);
+        // Freed with a request refused or cancelled, a member removed or
+        // leaving, a rename, or the secteur (an admin): an entry whose
+        // member no longer holds that name. Deleting one that is not there
+        // is harmless (a member of before #148 held none).
+        allow delete: if signedIn()
+          && (resource == null
+            || isAdmin()
+            || !holdsName(sector, resource.data.member, key));
       }
 
       match /campaigns/{year} {

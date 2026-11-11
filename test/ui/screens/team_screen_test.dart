@@ -234,11 +234,76 @@ void main() {
     await tester.tap(find.byKey(const Key('team.member.remove')));
     await tester.pumpAndSettle();
     expect(find.text('Retirer Léa ?'), findsOneWidget);
+    // Ticked by default: Léa knows the code (#148).
+    expect(
+      tester
+          .widget<Checkbox>(
+            find.descendant(
+              of: find.byKey(const Key('team.confirmRemove.renewCode')),
+              matching: find.byType(Checkbox),
+            ),
+          )
+          .value,
+      isTrue,
+    );
+    expect(find.text('Léa connaît le code actuel.'), findsOneWidget);
+    await tester.tap(find.byKey(const ValueKey('team.confirmRemove.ok')));
+    await tester.pumpAndSettle();
+
+    expect(sectors.saved.map((saved) => saved.$2.runtimeType), [
+      JoinCodeRegenerated,
+      MemberRemoved,
+    ]);
+    expect(find.text('Léa'), findsNothing);
+    expect(find.text('234-567'), findsOneWidget);
+  });
+
+  testWidgets('should keep the code when « Changer aussi le code » is '
+      'unticked', (tester) async {
+    await pumpTeam(tester, manuId);
+
+    await tester.tap(find.byTooltip('Options pour Léa'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('team.member.remove')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('team.confirmRemove.renewCode')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const ValueKey('team.confirmRemove.ok')));
     await tester.pumpAndSettle();
 
     expect(sectors.saved.single.$2, isA<MemberRemoved>());
-    expect(find.text('Léa'), findsNothing);
+    expect(find.text('K7P-2QX'), findsOneWidget);
+  });
+
+  testWidgets('should untick the box from the box itself too', (tester) async {
+    await pumpTeam(tester, manuId);
+
+    await tester.tap(find.byTooltip('Options pour Léa'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('team.member.remove')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byType(Checkbox));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const ValueKey('team.confirmRemove.ok')));
+    await tester.pumpAndSettle();
+
+    expect(sectors.saved.single.$2, isA<MemberRemoved>());
+  });
+
+  testWidgets('should remove no one when the removal is cancelled', (
+    tester,
+  ) async {
+    await pumpTeam(tester, manuId);
+
+    await tester.tap(find.byTooltip('Options pour Léa'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('team.member.remove')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('team.confirmRemove.cancel')));
+    await tester.pumpAndSettle();
+
+    expect(sectors.saved, isEmpty);
+    expect(find.text('Léa'), findsOneWidget);
   });
 
   testWidgets('should show the new code when « Nouveau code » is tapped', (

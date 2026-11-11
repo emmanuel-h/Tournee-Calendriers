@@ -4334,6 +4334,84 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Administrateurs seulement'**
   String get unreadableStreetAdminsOnly;
+
+  /// Check box of « Retirer Léa ? », ticked by default: removing also draws a new join code (#148, PLAN §5.16).
+  ///
+  /// In fr, this message translates to:
+  /// **'Changer aussi le code'**
+  String get teamRemoveRenewCode;
+
+  /// Line under « Changer aussi le code » in « Retirer Léa ? ».
+  ///
+  /// In fr, this message translates to:
+  /// **'{name} connaît le code actuel.'**
+  String teamRemoveRenewCodeHint(String name);
+
+  /// Snackbar when an admin's « Rejoindre » is refused: a member holds the same name there, case and accents ignored (#148).
+  ///
+  /// In fr, this message translates to:
+  /// **'Ce prénom est déjà pris dans ce secteur. Changez-le dans Paramètres pour rejoindre.'**
+  String get teamNameTaken;
+
+  /// Alert of « Rejoindre un secteur » when the name is held by a member of the sector (#148, JoinNameTaken mockup).
+  ///
+  /// In fr, this message translates to:
+  /// **'« {name} » est déjà pris dans ce secteur. Choisissez le nom que l\'équipe verra ici.'**
+  String joinNameTaken(String name);
+
+  /// Label of the field for the name to go by in the sector joined, once the prénom was taken there (#148).
+  ///
+  /// In fr, this message translates to:
+  /// **'Votre nom dans ce secteur'**
+  String get joinSectorNameLabel;
+
+  /// Line under « Votre nom dans ce secteur »: the prénom stays elsewhere (#148).
+  ///
+  /// In fr, this message translates to:
+  /// **'Vos autres secteurs gardent « {name} ».'**
+  String joinOtherSectorsKeep(String name);
+
+  /// Subtitle of the sector card once its name was taken (JoinNameTaken mockup).
+  ///
+  /// In fr, this message translates to:
+  /// **'Code {code}'**
+  String joinPreviewCode(String code);
+
+  /// Section header of Paramètres listing the name the member goes by in each sector, shown when one differs from the prénom (#148, PLAN §5.16).
+  ///
+  /// In fr, this message translates to:
+  /// **'Vos noms par secteur'**
+  String get settingsSectorNames;
+
+  /// Alert of « Votre prénom » for each sector where the new prénom is taken (#148, SettingsNameTaken mockup).
+  ///
+  /// In fr, this message translates to:
+  /// **'« {name} » est déjà pris dans le secteur {number} : vous y gardez « {kept} ».'**
+  String nameKeptIn(String name, String number, String kept);
+
+  /// Last sentence of the alert of « Votre prénom » when the new prénom is taken in some sectors (#148).
+  ///
+  /// In fr, this message translates to:
+  /// **'Il est enregistré partout ailleurs.'**
+  String get nameKeptElsewhere;
+
+  /// Label of the field for the name kept in one sector, under the alert of « Votre prénom » (#148).
+  ///
+  /// In fr, this message translates to:
+  /// **'Votre nom dans le secteur {number}'**
+  String nameSectorFieldLabel(String number);
+
+  /// Under « Votre nom dans le secteur 49 » when the name typed is taken there too (#148).
+  ///
+  /// In fr, this message translates to:
+  /// **'« {name} » est déjà pris dans le secteur {number}.'**
+  String nameTakenThere(String name, String number);
+
+  /// Under « Votre prénom » when the name cannot be checked in the sectors for lack of network (#148).
+  ///
+  /// In fr, this message translates to:
+  /// **'Pas de réseau. Réessayez une fois connecté.'**
+  String get nameOffline;
 }
 
 class _AppLocalizationsDelegate

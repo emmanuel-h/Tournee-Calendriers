@@ -5,6 +5,7 @@
 // (PLAN §5.12).
 import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
 import 'package:tournee_calendriers/domain/sector/member.dart';
+import 'package:tournee_calendriers/domain/sector/member_name.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/sector/sector_number.dart';
 import 'package:tournee_calendriers/domain/sector/sector_summary.dart';
@@ -20,12 +21,14 @@ SectorSummary summaryOf(
   int number, {
   MemberStatus status = MemberStatus.active,
   CampaignYear? campaign,
+  MemberName? memberName,
 }) => SectorSummary(
   id: SectorId(id),
   number: valueOf(SectorNumber.create(number)),
   centre: csVillefranche,
   campaign: campaign ?? campaign2026,
   status: status,
+  memberName: memberName,
 );
 
 final sector49 = summaryOf('t49', 49);

@@ -53,6 +53,11 @@ enum TeamProblem implements TeamFailure {
   /// no longer an admin, though the phone still believed it. Nothing was
   /// changed.
   notAdmin,
+
+  /// The server says a member of the tournée holds the phone's first name,
+  /// case and accents ignored (« Rejoindre » as an admin, #148): names are
+  /// unique within a secteur. Nothing was changed.
+  nameTaken,
 }
 
 /// The tournée refused the command for [reason]: the team changed in the
@@ -78,6 +83,7 @@ final class TeamCommandRefused implements TeamFailure {
 TeamFailure _teamFailureOf(SectorWriteFailure failure) => switch (failure) {
   SectorWriteFailure.noNetwork => TeamProblem.offline,
   SectorWriteFailure.notAdmin => TeamProblem.notAdmin,
+  SectorWriteFailure.nameTaken => TeamProblem.nameTaken,
 };
 
 /// Who acts on the phone: the member, and whether they are an admin as
@@ -205,19 +211,44 @@ final class RefuseMember {
 }
 
 /// « Retirer » a member (admins only): their access is cut at once, their
-/// marks stay. Works offline.
+/// marks stay, and the name they held in the tournée is free again (#148).
+///
+/// With « Changer aussi le code » ticked ([renewCode], #148, PLAN §5.16:
+/// the member removed knows the code) it first does « Nouveau code »,
+/// which needs the server: offline, or refused, nobody is taken out, so
+/// the admin never believes the code changed when it did not. Without it,
+/// it works offline.
 final class RemoveMember {
-  const RemoveMember(this._sectors, this._identity, this._admins);
+  /// [random] draws the new code: `Random.secure()` in the app, a scripted
+  /// one in tests.
+  const RemoveMember(this._sectors, this._identity, this._admins, this._random);
 
   final SectorRepository _sectors;
   final IdentityProvider _identity;
   final AdminStatus _admins;
+  final Random _random;
 
   Future<Result<MemberRemoved, TeamFailure>> call(
     SectorId sector,
-    MemberId member,
-  ) async {
+    MemberId member, {
+    required bool renewCode,
+  }) async {
     final by = await _actorOf(_identity, _admins);
+    if (renewCode) {
+      // Asked of the tournée first, without storing anything: no new code
+      // for a removal it would refuse (the member left meanwhile).
+      final current = await _sectors.find(sector);
+      if (current == null) return const Err(TeamProblem.sectorGone);
+      if (current.remove(member, by: by) case Err(:final failure)) {
+        return Err(TeamCommandRefused(failure));
+      }
+      final renewed = await _runOnSector(
+        _sectors,
+        sector,
+        (sector) => sector.regenerateCode(by: by, random: _random),
+      );
+      if (renewed case Err(:final failure)) return Err(failure);
+    }
     return (await _runOnSector(
       _sectors,
       sector,
@@ -375,7 +406,8 @@ final class DeleteSector {
 /// §5.12): the admin on the phone, who only visited the tournée, becomes
 /// an active member at once under the phone's first name (no code, no
 /// approval), and the tournée becomes one of theirs on the phone. Needs
-/// the server: offline nothing changes.
+/// the server: offline nothing changes. Refused, changing nothing, when a
+/// member holds that name there (#148).
 final class JoinAsAdmin {
   const JoinAsAdmin(
     this._sectors,
@@ -407,7 +439,9 @@ final class JoinAsAdmin {
         final mine = _mySectors.mySectors;
         // Forgotten meanwhile (another screen removed it): nothing to keep.
         if (mine.find(id) case final visited?) {
-          await _mySectors.save(mine.remember(visited.accepted()));
+          await _mySectors.save(
+            mine.remember(visited.accepted().withMemberName(name)),
+          );
         }
         return Ok(change);
       case Err(:final failure):

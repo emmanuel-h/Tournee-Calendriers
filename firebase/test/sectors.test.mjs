@@ -30,6 +30,7 @@ import {
   lea,
   manu,
   memberPath,
+  namePath,
   paul,
   phoneOf,
   previewDoc,
@@ -78,6 +79,8 @@ function createSector(change = (docs) => docs, uid = sam) {
     keyDoc: { sectorId: 't12' },
     preview: { sectorId: 't12', number: 12, centreName: sector.centreName, campaign: 2026 },
     member: activeMemberDoc('Sam', uid, { acceptedAt: twoPm }),
+    // The creator's name, held in the tournée (#148): [key, data].
+    name: ['sam', { member: uid }],
     year: '2026',
     campaign: campaignDoc(),
     centre: null,
@@ -98,6 +101,10 @@ function createSector(change = (docs) => docs, uid = sam) {
     transaction.set(doc(db, 'sectors', docs.id), docs.sector);
     if (docs.member !== null) {
       transaction.set(doc(db, `sectors/${docs.id}/members/${uid}`), docs.member);
+    }
+    if (docs.name !== null) {
+      const [key, data] = docs.name;
+      transaction.set(doc(db, `sectors/${docs.id}/names/${key}`), data);
     }
     if (docs.campaign !== null) {
       transaction.set(doc(db, `sectors/${docs.id}/campaigns/${docs.year}`), docs.campaign);
@@ -212,6 +219,12 @@ describe('creating a tournée', () => {
 
   it('should refuse a creation time that is not a timestamp', async () => {
     await assertFails(createSector((docs) => withSector(docs, { createdAt: 'today' })));
+  });
+
+  it('should refuse a creator whose name is not held in the tournée', async () => {
+    await assertFails(createSector((docs) => ({ ...docs, name: null })));
+    await restart();
+    await assertFails(createSector((docs) => ({ ...docs, name: ['samuel', docs.name[1]] })));
   });
 
   it('should refuse a creator who is not active', async () => {
@@ -594,6 +607,8 @@ describe('deleting a tournée', () => {
     batch.delete(doc(db, memberPath(lea)));
     batch.delete(doc(db, memberPath(paul)));
     batch.delete(doc(db, memberPath(manu)));
+    // The names they held (#148).
+    for (const key of ['lea', 'paul', 'manu']) batch.delete(doc(db, namePath(key)));
     return batch.commit();
   }
 

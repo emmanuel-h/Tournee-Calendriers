@@ -41,6 +41,20 @@ final class FakeSectorRepository implements SectorRepository {
   /// nothing.
   var notAdmin = false;
 
+  /// The names other members hold on the server but not in the phone's
+  /// copy, by tournée and `MemberName.key`: a rename or an admin joining
+  /// under one fails with `nameTaken` and stores nothing.
+  final takenNames = <(SectorId, String)>{};
+
+  /// When set, every rename fails with it and stores nothing: a server
+  /// refusing it for a reason the use case does not expect.
+  SectorWriteFailure? renameRefused;
+
+  /// The tournées the phone cannot reach (the network dropped while it
+  /// went through them): a rename there fails with `noNetwork`, as
+  /// everything [offline] fails.
+  final unreachable = <SectorId>{};
+
   /// When set, a new code is stored as this one instead of the code drawn,
   /// as the server does when another tournée holds the drawn one.
   JoinCode? codeTaken;
@@ -158,9 +172,22 @@ final class FakeSectorRepository implements SectorRepository {
     SectorChange change,
   ) async {
     var stored = sector;
-    if (change is AdminJoined || change is JoinCodeRegenerated) {
-      if (offline) return const Err(SectorWriteFailure.noNetwork);
-      if (notAdmin) return const Err(SectorWriteFailure.notAdmin);
+    if (change is AdminJoined ||
+        change is JoinCodeRegenerated ||
+        change is MemberRenamed) {
+      if (offline || unreachable.contains(change.sectorId)) {
+        return const Err(SectorWriteFailure.noNetwork);
+      }
+      if (notAdmin && change is! MemberRenamed) {
+        return const Err(SectorWriteFailure.notAdmin);
+      }
+    }
+    if (renameRefused case final failure? when change is MemberRenamed) {
+      return Err(failure);
+    }
+    if (change case AdminJoined(:final member) || MemberRenamed(:final member)
+        when takenNames.contains((change.sectorId, member.name.key))) {
+      return const Err(SectorWriteFailure.nameTaken);
     }
     if (change is JoinCodeRegenerated) {
       if (codeTaken case final code?) stored = _withCode(sector, code);

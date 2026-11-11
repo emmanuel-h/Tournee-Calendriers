@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tournee_calendriers/application/ports/sector_directory.dart';
 import 'package:tournee_calendriers/application/use_cases/join_sector.dart';
 import 'package:tournee_calendriers/domain/sector/join_code.dart';
+import 'package:tournee_calendriers/domain/sector/member_name.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/presentation/account/account_notifier.dart';
 import 'package:tournee_calendriers/presentation/account/account_state.dart';
@@ -44,7 +45,7 @@ final class JoinSectorNotifier extends Notifier<JoinSectorState> {
     ref.listen(accountProvider, (_, account) => _follow(account));
     return JoinSectorState(
       signedIn: ref.read(accountProvider) is AccountSignedIn,
-      hasName: ref.read(readPhoneSettingsProvider)().name != null,
+      defaultName: ref.read(readPhoneSettingsProvider)().name?.text,
       first: '',
       second: '',
       invalidCharacter: false,
@@ -118,6 +119,8 @@ final class JoinSectorNotifier extends Notifier<JoinSectorState> {
       scanRefused: false,
       lookup: const NoLookup(),
       run: const JoinIdle(),
+      // Another secteur: the prénom may be free there.
+      keepNameTaken: false,
     );
     if (_code case final code? when state.signedIn) unawaited(_lookUp(code));
   }
@@ -140,24 +143,65 @@ final class JoinSectorNotifier extends Notifier<JoinSectorState> {
     );
   }
 
-  /// « Demander à rejoindre »: sends the request; once sent, the screen
-  /// leaves for « Demande envoyée ».
+  /// « Votre nom dans ce secteur » changed to [text] (#148).
+  void typeSectorName(String text) {
+    if (state.nameTaken case final taken?) {
+      state = state.copyWith(
+        nameTaken: JoinNameTaken(taken: taken.taken, typed: text),
+      );
+    }
+  }
+
+  /// « Demander à rejoindre »: sends the request under the phone's prénom,
+  /// or under the name typed for this secteur once the prénom was taken
+  /// there (#148); once sent, the screen leaves for « Demande envoyée ».
   Future<void> request() async {
-    final (preview, name) = (
-      _preview,
-      ref.read(readPhoneSettingsProvider)().name,
-    );
-    if (!state.canRequest || preview == null || name == null) return;
+    final preview = _preview;
+    final prenom = ref.read(readPhoneSettingsProvider)().name;
+    if (!state.canRequest || preview == null || prenom == null) return;
+    var name = prenom;
+    if (state.nameTaken case final taken?) {
+      switch (MemberName.create(taken.typed)) {
+        case Ok(:final value):
+          name = value;
+        case Err(:final failure):
+          state = state.copyWith(
+            nameTaken: JoinNameTaken(
+              taken: taken.taken,
+              typed: taken.typed,
+              problem: failure,
+            ),
+          );
+          return;
+      }
+    }
     state = state.copyWith(run: const JoinSending());
     final sent = await ref.read(requestToJoinProvider)(preview, name);
     if (!ref.mounted) return;
-    state = state.copyWith(
-      run: switch (sent) {
-        Ok(:final value) => JoinSent(value.id),
-        Err(failure: RequestToJoinFailure.alreadyJoined) =>
-          const JoinAlreadyJoined(),
-        Err(failure: RequestToJoinFailure.noNetwork) => const JoinOffline(),
-      },
-    );
+    switch (sent) {
+      case Ok(:final value):
+        state = state.copyWith(run: JoinSent(value.id));
+      case Err(failure: RequestToJoinFailure.alreadyJoined):
+        state = state.copyWith(run: const JoinAlreadyJoined());
+      case Err(failure: RequestToJoinFailure.noNetwork):
+        state = state.copyWith(run: const JoinOffline());
+      case Err(failure: RequestToJoinFailure.nameTaken):
+        state = state.copyWith(
+          run: const JoinIdle(),
+          nameTaken: JoinNameTaken(
+            taken: name.text,
+            typed: state.nameTaken?.typed ?? name.text,
+          ),
+        );
+      case Err(failure: RequestToJoinFailure.unknownCode):
+        // The code stopped working since it showed the secteur: said as
+        // for a code that never did.
+        _preview = null;
+        state = state.copyWith(
+          run: const JoinIdle(),
+          lookup: const CodeUnknown(),
+          keepNameTaken: false,
+        );
+    }
   }
 }

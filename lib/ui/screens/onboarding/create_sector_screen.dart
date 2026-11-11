@@ -8,6 +8,7 @@ import 'package:tournee_calendriers/domain/sector/rescue_centre.dart';
 import 'package:tournee_calendriers/domain/sector/sector_number.dart';
 import 'package:tournee_calendriers/presentation/new_sector/new_sector_notifier.dart';
 import 'package:tournee_calendriers/presentation/new_sector/new_sector_state.dart';
+import 'package:tournee_calendriers/ui/components/alert_box.dart';
 import 'package:tournee_calendriers/ui/components/app_buttons.dart';
 import 'package:tournee_calendriers/ui/components/join_code_text.dart';
 import 'package:tournee_calendriers/ui/components/join_qr_code.dart';
@@ -463,51 +464,8 @@ final class _TakenAlert extends StatelessWidget {
   final String body;
 
   @override
-  Widget build(BuildContext context) {
-    final colors = AppColors.of(context);
-    final text = AppTextStyles.body.copyWith(color: colors.ink, height: 1.4);
-    return Semantics(
-      key: const Key('create.taken'),
-      liveRegion: true,
-      container: true,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 14),
-        decoration: BoxDecoration(
-          color: colors.alert,
-          border: Border.all(color: colors.accent, width: AppSizes.borderWidth),
-          borderRadius: BorderRadius.circular(AppSizes.alertRadius),
-        ),
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          spacing: 12,
-          children: [
-            // ⚠ drawn as an icon in the accent red: the text glyph shows
-            // as a yellow emoji on Android. The words say it all.
-            ExcludeSemantics(
-              child: Icon(
-                Icons.warning_amber_rounded,
-                size: AppSizes.alertGlyph,
-                color: colors.accent,
-              ),
-            ),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                spacing: 4,
-                children: [
-                  Text(
-                    title,
-                    style: text.copyWith(fontWeight: FontWeight.w700),
-                  ),
-                  Text(body, style: text),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+  Widget build(BuildContext context) =>
+      AlertBox(key: const Key('create.taken'), title: title, body: body);
 }
 
 /// The tournée just created: « Tournée 49 · CS Villefranche est prête… »,

@@ -3,8 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tournee_calendriers/domain/sector/member_name.dart';
 import 'package:tournee_calendriers/presentation/join/join_sector_notifier.dart';
 import 'package:tournee_calendriers/presentation/join/join_sector_state.dart';
+import 'package:tournee_calendriers/ui/components/alert_box.dart';
 import 'package:tournee_calendriers/ui/components/app_buttons.dart';
 import 'package:tournee_calendriers/ui/components/dashed_outline.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
@@ -33,11 +35,15 @@ final class _JoinSectorScreenState extends ConsumerState<JoinSectorScreen> {
   final _second = TextEditingController();
   final _secondFocus = FocusNode();
 
+  /// « Votre nom dans ce secteur », once the prénom was taken there.
+  final _sectorName = TextEditingController();
+
   @override
   void dispose() {
     _first.dispose();
     _second.dispose();
     _secondFocus.dispose();
+    _sectorName.dispose();
     super.dispose();
   }
 
@@ -76,6 +82,67 @@ final class _JoinSectorScreenState extends ConsumerState<JoinSectorScreen> {
     }
   }
 
+  /// What replaces the code once the prénom was taken in the secteur (#148,
+  /// JoinNameTaken mockup): the secteur with its code, « ⚠ « Léa » est déjà
+  /// pris dans ce secteur… », the field « Votre nom dans ce secteur » and
+  /// « Vos autres secteurs gardent « Léa ». ».
+  List<Widget> _nameTakenParts(
+    AppLocalizations l10n,
+    JoinSectorState state,
+    JoinNameTaken taken,
+    JoinSectorNotifier notifier,
+  ) {
+    final colors = AppColors.of(context);
+    final problem = switch (taken.problem) {
+      null => null,
+      MemberNameFailure.blank => l10n.nameBlank,
+      MemberNameFailure.tooLong => l10n.nameTooLong(MemberName.maxLength),
+    };
+    return [
+      if (state.lookup case SectorFound(:final number, :final centre))
+        SectorPreviewCard(
+          key: const Key('join.preview'),
+          number: number,
+          title: l10n.joinPreviewTitle('$number', centre),
+          subtitle: l10n.joinPreviewCode('${state.first}-${state.second}'),
+        ),
+      const SizedBox(height: 18),
+      AlertBox(
+        key: const Key('join.nameTaken'),
+        body: l10n.joinNameTaken(taken.taken),
+      ),
+      const SizedBox(height: 18),
+      // `MergeSemantics`: TalkBack names the field « Votre nom dans ce
+      // secteur ».
+      MergeSemantics(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          spacing: 6,
+          children: [
+            FieldLabel(l10n.joinSectorNameLabel),
+            TextField(
+              key: const Key('join.name'),
+              controller: _sectorName,
+              textCapitalization: TextCapitalization.words,
+              style: AppTextStyles.bodyLarge.copyWith(color: colors.ink),
+              onChanged: notifier.typeSectorName,
+            ),
+          ],
+        ),
+      ),
+      const SizedBox(height: 6),
+      if (problem != null) ...[
+        FieldProblem(problem),
+        const SizedBox(height: 6),
+      ],
+      Text(
+        l10n.joinOtherSectorsKeep(state.defaultName ?? ''),
+        key: const Key('join.otherSectors'),
+        style: AppTextStyles.small.copyWith(color: colors.muted),
+      ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
@@ -98,7 +165,12 @@ final class _JoinSectorScreenState extends ConsumerState<JoinSectorScreen> {
       if (next.run case JoinSent(:final sector)) {
         context.go(AppRoutes.joinPendingOf(sector));
       }
+      // The field starts from the name refused, for the member to change.
+      if (next.nameTaken case final taken? when previous?.nameTaken == null) {
+        _show(_sectorName, taken.typed);
+      }
     });
+    final nameTaken = state.nameTaken;
     return Scaffold(
       appBar: AppBar(title: Text(l10n.screenJoin), titleSpacing: 4),
       body: SafeArea(
@@ -108,61 +180,67 @@ final class _JoinSectorScreenState extends ConsumerState<JoinSectorScreen> {
               padding: const EdgeInsets.fromLTRB(24, 8, 24, 0),
               sliver: SliverList.list(
                 children: [
-                  const AccountLine(),
-                  const SizedBox(height: 12),
-                  _ScanButton(onPressed: () => unawaited(_scan())),
-                  const SizedBox(height: 20),
-                  _OrTypeIt(text: l10n.joinOrType),
-                  const SizedBox(height: 20),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    spacing: 10,
-                    children: [
-                      Expanded(
-                        child: _CodeBox(
-                          fieldKey: const Key('join.first'),
-                          label: l10n.teamCodeLabel,
-                          controller: _first,
-                          onChanged: (text) =>
-                              _typed(notifier.typeFirstHalf, text),
+                  if (nameTaken != null)
+                    // The JoinNameTaken mockup: the secteur, why the
+                    // prénom cannot be used there, and the name to go by.
+                    ..._nameTakenParts(l10n, state, nameTaken, notifier)
+                  else ...[
+                    const AccountLine(),
+                    const SizedBox(height: 12),
+                    _ScanButton(onPressed: () => unawaited(_scan())),
+                    const SizedBox(height: 20),
+                    _OrTypeIt(text: l10n.joinOrType),
+                    const SizedBox(height: 20),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      spacing: 10,
+                      children: [
+                        Expanded(
+                          child: _CodeBox(
+                            fieldKey: const Key('join.first'),
+                            label: l10n.teamCodeLabel,
+                            controller: _first,
+                            onChanged: (text) =>
+                                _typed(notifier.typeFirstHalf, text),
+                          ),
                         ),
-                      ),
-                      // The dash of `K7P-2QX`, drawn: never typed.
-                      ExcludeSemantics(
-                        child: Padding(
-                          padding: const EdgeInsets.only(bottom: 12),
-                          child: Text(
-                            '-',
-                            style: AppTextStyles.codeBox.copyWith(
-                              color: colors.ink,
+                        // The dash of `K7P-2QX`, drawn: never typed.
+                        ExcludeSemantics(
+                          child: Padding(
+                            padding: const EdgeInsets.only(bottom: 12),
+                            child: Text(
+                              '-',
+                              style: AppTextStyles.codeBox.copyWith(
+                                color: colors.ink,
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                      Expanded(
-                        child: _CodeBox(
-                          fieldKey: const Key('join.second'),
-                          semanticsLabel: l10n.joinCodeSecondSemantics,
-                          controller: _second,
-                          focusNode: _secondFocus,
-                          onChanged: (text) =>
-                              _typed(notifier.typeSecondHalf, text),
+                        Expanded(
+                          child: _CodeBox(
+                            fieldKey: const Key('join.second'),
+                            semanticsLabel: l10n.joinCodeSecondSemantics,
+                            controller: _second,
+                            focusNode: _secondFocus,
+                            onChanged: (text) =>
+                                _typed(notifier.typeSecondHalf, text),
+                          ),
                         ),
-                      ),
+                      ],
+                    ),
+                    if (state.invalidCharacter) ...[
+                      const SizedBox(height: 8),
+                      FieldProblem(l10n.joinInvalidCharacter),
+                    ] else if (state.scanRefused) ...[
+                      const SizedBox(height: 8),
+                      FieldProblem(l10n.joinScanRefused),
                     ],
-                  ),
-                  if (state.invalidCharacter) ...[
-                    const SizedBox(height: 8),
-                    FieldProblem(l10n.joinInvalidCharacter),
-                  ] else if (state.scanRefused) ...[
-                    const SizedBox(height: 8),
-                    FieldProblem(l10n.joinScanRefused),
+                    const SizedBox(height: 20),
+                    _Lookup(
+                      lookup: state.lookup,
+                      onRetry: () => unawaited(notifier.retryLookup()),
+                    ),
                   ],
-                  const SizedBox(height: 20),
-                  _Lookup(
-                    lookup: state.lookup,
-                    onRetry: () => unawaited(notifier.retryLookup()),
-                  ),
                   ...switch (state.run) {
                     JoinOffline() => [
                       const SizedBox(height: 12),

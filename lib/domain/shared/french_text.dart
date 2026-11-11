@@ -43,6 +43,50 @@ String searchKey(String text) {
   return key.toString().trim().replaceAll(_spaces, ' ');
 }
 
+/// The capital accented letters and the plain letters they stand for, as
+/// [_plainLetters] has them in lower case.
+const _plainCapitals = {
+  'À': 'a', 'Â': 'a', 'Ä': 'a', 'Á': 'a', 'Ã': 'a', 'Å': 'a', //
+  'Ç': 'c',
+  'É': 'e', 'È': 'e', 'Ê': 'e', 'Ë': 'e',
+  'Î': 'i', 'Ï': 'i', 'Í': 'i', 'Ì': 'i',
+  'Ô': 'o', 'Ö': 'o', 'Ó': 'o', 'Ò': 'o', 'Õ': 'o',
+  'Ù': 'u', 'Û': 'u', 'Ü': 'u', 'Ú': 'u',
+  'Ÿ': 'y', 'Ý': 'y',
+  'Ñ': 'n',
+  'Œ': 'oe', 'Æ': 'ae',
+  // Read as spaces too in a name: « Léa B. » is « Léa B ».
+  '.': ' ', '_': ' ', '/': ' ',
+};
+
+final _capitalAToZ = RegExp('[A-Z]');
+
+/// The form under which a person's name is unique in a secteur (#148,
+/// `MemberName.key`): [searchKey]'s, as far as the server's security rules
+/// can work it out too, since they check it (`nameKey` in
+/// `firebase/firestore.rules`).
+///
+/// The accents of [_plainLetters] go in both cases, dots, underscores and
+/// slashes are spaces too, and only A to Z are lowered: the rules' `lower`
+/// leaves every other letter as it is, so « Ø » and « ø » stay two
+/// letters here as well. Single spaces, trimmed.
+String nameKey(String text) {
+  final key = StringBuffer();
+  for (final rune in text.runes) {
+    if (_isCombiningMark(rune)) continue;
+    final letter = String.fromCharCode(rune);
+    key.write(
+      _plainLetters[letter] ??
+          _plainCapitals[letter] ??
+          letter.replaceAllMapped(
+            _capitalAToZ,
+            (capital) => capital[0]!.toLowerCase(),
+          ),
+    );
+  }
+  return key.toString().replaceAll(_spaces, ' ').trim();
+}
+
 /// Orders [a] and [b] the way a French reader expects, ignoring case and
 /// accents. Two names that differ only by them compare equal: the caller
 /// decides what comes first then (an id, for a stable order).

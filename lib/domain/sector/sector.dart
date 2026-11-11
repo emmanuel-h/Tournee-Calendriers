@@ -55,6 +55,11 @@ enum SectorCommandFailure {
   /// The admin who asks to join is already in the tournée.
   alreadyMember,
 
+  /// Another member of the tournée, pending or active, goes by the same
+  /// name, case and accents ignored ([MemberName.key]): names are unique
+  /// within a secteur (#148, PLAN §5.16).
+  nameTaken,
+
   /// The commune to add is already one of the tournée's.
   communeAlreadyIn,
 
@@ -75,6 +80,9 @@ enum SectorCommandFailure {
 ///
 /// Invariants, true of every `Sector`:
 /// - each member appears once, pending or active ([Member.status]);
+/// - no command gives a member a name another member holds
+///   ([MemberName.key]); the server checks it too, against the members
+///   this copy may not have seen yet (#148);
 /// - [members] are sorted by request time, then by id;
 /// - no two [communes] share an INSEE code, and there are at most
 ///   [Sector.maxCommunes]. A tournée created from #78 on has at least
@@ -333,12 +341,16 @@ final class Sector {
   /// Gives [by] the first name [name] in this tournée (« Prénom » in
   /// Paramètres, PLAN §5.9), so the team sees the new name. Any active
   /// member may, for themself only: there is no member parameter, so
-  /// renaming someone else cannot even be asked.
+  /// renaming someone else cannot even be asked. Refused when another
+  /// member holds the name ([SectorCommandFailure.nameTaken]).
   Result<(Sector, MemberRenamed), SectorCommandFailure> rename(
     MemberName name, {
     required MemberId by,
   }) {
     if (_activeActor(by) case final failure?) return Err(failure);
+    if (_isHeldByAnother(name, by)) {
+      return const Err(SectorCommandFailure.nameTaken);
+    }
     // `!`: `_activeActor` just found [by] among the members.
     final before = memberOf(by)!;
     final renamed = Member(
@@ -396,7 +408,8 @@ final class Sector {
   /// Makes the admin [by], who is not in the tournée, an active member at
   /// once under [name] (« Rejoindre » of the banner « Administrateur · pas
   /// membre », PLAN §5.12): no code, no request to answer, accepted by
-  /// themself at [at], as the creator was.
+  /// themself at [at], as the creator was. Refused when a member holds
+  /// [name] already ([SectorCommandFailure.nameTaken]).
   Result<(Sector, AdminJoined), SectorCommandFailure> joinAsAdmin({
     required Actor by,
     required MemberName name,
@@ -405,6 +418,9 @@ final class Sector {
     if (!by.isAdmin) return const Err(SectorCommandFailure.notAdmin);
     if (memberOf(by.member) != null) {
       return const Err(SectorCommandFailure.alreadyMember);
+    }
+    if (_isHeldByAnother(name, by.member)) {
+      return const Err(SectorCommandFailure.nameTaken);
     }
     final joined = Member(
       id: by.member,
@@ -467,6 +483,11 @@ final class Sector {
     }
     return null;
   }
+
+  /// Whether a member other than [member] goes by [name] here, case and
+  /// accents ignored.
+  bool _isHeldByAnother(MemberName name, MemberId member) =>
+      members.any((other) => other.id != member && other.name.key == name.key);
 
   /// Why [by] may not act for the team as a member, or null when they are
   /// an active one.

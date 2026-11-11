@@ -20,6 +20,8 @@ Onboarding:
 - « Rejoindre un secteur »: scan the QR code or type the code in two boxes, check the
   secteur shown, « Demander à rejoindre »; « Demande envoyée » waits, offline too, and opens
   the secteur once a member accepts (« Demande refusée » otherwise, « Annuler la demande »).
+  Names are unique within a secteur, case and accents ignored, checked by the server: a name
+  taken there asks for another one for that secteur only (« Vos autres secteurs gardent … »).
 
 Start screen:
 
@@ -53,11 +55,11 @@ Start screen:
   Secteur, with a dot while a join request waits; the app's name, when none is open, opens
   « Mes secteurs » (also « Changer de secteur » in Secteur), to switch secteur (the app
   reopens the last one at launch, offline too) or create or join one, with a dot on another
-  secteur where a join request waits; ⚙ opens Paramètres: first name (the team sees the new one), « Mes secteurs », theme (Système,
+  secteur where a join request waits; ⚙ opens Paramètres: first name (the team sees the new one where it is free; « Vos noms par secteur » and a name of its own for a secteur where it is taken), « Mes secteurs », theme (Système,
   Clair, Sombre), confidentialité, version (opens « Nouveautés », what each version brings), licences, data credits.
 - Secteur (Accueil's title, once called Équipe): « Changer de secteur », the join code (copy button: « Code copié ») and its QR code, « Partager »,
   « Nouveau code » (admins), the requests to join with « Accepter » / « Refuser » (any
-  member or admin), the members (« · admin ») and « Retirer » (admins), « RUES (n) » with
+  member or admin), the members (« · admin ») and « Retirer » (admins; « Changer aussi le code » ticked), « RUES (n) » with
   « + Ajouter des rues » and the Corbeille (not for a pending member), the secteur's
   communes (« + Ajouter une commune », ✕ but on the last one), and pinned at the bottom
   « Quitter le secteur » (every member) and « Supprimer le secteur » (admins).

@@ -114,9 +114,16 @@ final class TeamNotifier extends Notifier<TeamState> {
   Future<TeamActionFailure?> refuse(MemberId member) =>
       _run((sector) => ref.read(refuseMemberProvider)(sector, member));
 
-  /// « Retirer » [member] (admins only).
-  Future<TeamActionFailure?> remove(MemberId member) =>
-      _run((sector) => ref.read(removeMemberProvider)(sector, member));
+  /// « Retirer » [member] (admins only); with « Changer aussi le code »
+  /// ticked ([renewCode], #148), « Nouveau code » first, which needs the
+  /// network.
+  Future<TeamActionFailure?> remove(
+    MemberId member, {
+    required bool renewCode,
+  }) => _run(
+    (sector) =>
+        ref.read(removeMemberProvider)(sector, member, renewCode: renewCode),
+  );
 
   /// « Nouveau code » (admins only); needs the network.
   Future<TeamActionFailure?> regenerateCode() =>
@@ -182,6 +189,10 @@ final class TeamNotifier extends Notifier<TeamState> {
         ),
       ) =>
         TeamActionFailure.tooManyCommunes,
+      Err(failure: TeamProblem.nameTaken) ||
+      Err(
+        failure: TeamCommandRefused(reason: SectorCommandFailure.nameTaken),
+      ) => TeamActionFailure.nameTaken,
       Err(failure: TeamProblem.sectorGone || TeamCommandRefused()) =>
         TeamActionFailure.teamChanged,
       Err(failure: TeamProblem.offline) => TeamActionFailure.offline,

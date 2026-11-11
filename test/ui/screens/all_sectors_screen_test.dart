@@ -187,7 +187,7 @@ void main() {
     final (_, change) = sectors.saved.single;
     expect((change as AdminJoined).member.id, samId);
     expect(change.member.name, nameOf('Sam'));
-    expect(store.mySectors.current, sector49);
+    expect(store.mySectors.current, sector49.withMemberName(nameOf('Sam')));
     expect(find.byKey(const Key('home.adminBanner')), findsNothing);
   });
 

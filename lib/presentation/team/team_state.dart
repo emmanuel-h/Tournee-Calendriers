@@ -27,6 +27,11 @@ enum TeamActionFailure {
 
   /// The tournée covers as many communes as it may.
   tooManyCommunes,
+
+  /// « Rejoindre » as an admin under a first name a member already holds
+  /// there, case and accents ignored (#148): names are unique within a
+  /// secteur.
+  nameTaken,
 }
 
 /// What Secteur (PLAN §5.8, §5.14) and the title of Accueil show

@@ -42,6 +42,65 @@ void main() {
     });
   });
 
+  group('key', () {
+    String keyOf(String text) => valueOf(MemberName.create(text)).key;
+
+    test('should ignore case and accents when names are compared', () {
+      expect(keyOf('Léa'), 'lea');
+      expect(keyOf('LÉA'), 'lea');
+      expect(keyOf('Lea'), 'lea');
+      expect(keyOf('Zoë Œillet'), 'zoe oeillet');
+    });
+
+    test('should drop the accents typed as a separate mark', () {
+      // « e » followed by U+0301, the combining acute accent.
+      expect(keyOf('Le\u0301a'), 'lea');
+    });
+
+    test('should read dashes, apostrophes, dots, underscores and slashes as '
+        'spaces', () {
+      expect(keyOf('Jean-Paul'), 'jean paul');
+      expect(keyOf("N'Golo"), 'n golo');
+      expect(keyOf('Léa B.'), 'lea b');
+      expect(keyOf('__Léa__'), 'lea');
+      expect(keyOf('Léa/B'), 'lea b');
+    });
+
+    test('should keep the case of letters the server cannot lower', () {
+      // The security rules lower A to Z only: « Ø » and « ø » stay apart.
+      expect(keyOf('ZØ'), 'zØ');
+      expect(keyOf('ΣΑΜ'), 'ΣΑΜ');
+      expect(keyOf('ÇA ÑANDÚ ŸVES ÆLLE'), 'ca nandu yves aelle');
+      // The same as the rules' tests (firebase/test/names.test.mjs).
+      expect(keyOf('ÀÂÄÁÃÅ ÉÈÊË ÎÏÍÌ'), 'aaaaaa eeee iiii');
+      expect(keyOf('ÔÖÓÒÕ ÙÛÜÚ ŸÝ'), 'ooooo uuuu yy');
+      expect(keyOf('Œdipe Ærø'), 'oedipe aerø');
+      expect(keyOf('Zoé_B/2'), 'zoe b 2');
+      expect(keyOf('N’Golo'), 'n golo');
+    });
+
+    test('should keep apart names that differ by more than case and '
+        'accents', () {
+      expect(keyOf('Léa B.'), isNot(keyOf('Léa')));
+      expect(keyOf('🚒 Léa'), '🚒 lea');
+    });
+
+    test('should refuse a name with nothing but separators', () {
+      // Its key would be empty: no name could be held under it.
+      for (final text in ['-', '...', "' _ /", '.']) {
+        expect(
+          failureOf(MemberName.create(text)),
+          MemberNameFailure.blank,
+          reason: text,
+        );
+      }
+    });
+
+    test('should accept a name of one letter among separators', () {
+      expect(keyOf('-a-'), 'a');
+    });
+  });
+
   group('equality', () {
     test('should be equal when the cleaned names are equal', () {
       final a = valueOf(MemberName.create('Léa'));

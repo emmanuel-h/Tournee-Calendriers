@@ -93,6 +93,8 @@ void main() {
       expect(state().run, const JoinIdle());
       expect(state().signedIn, isTrue);
       expect(state().hasName, isTrue);
+      expect(state().defaultName, 'Julie');
+      expect(state().nameTaken, isNull);
       expect(state().canRequest, isFalse);
     });
 
@@ -379,6 +381,127 @@ void main() {
       await join().request();
 
       expect(directory.sent, isEmpty);
+    });
+
+    test('should say the code no longer works when it changed since it '
+        'showed the tournée', () async {
+      await open(name: nameOf('Julie'));
+      await typeCode();
+      directory.codeChanged = true;
+
+      await join().request();
+
+      expect(state().lookup, const CodeUnknown());
+      expect(state().run, const JoinIdle());
+      expect(state().canRequest, isFalse);
+    });
+  });
+
+  group('a name taken in the secteur', () {
+    setUp(() async {
+      directory.takenNames.add((sectorId, 'julie'));
+      await open(name: nameOf('Julie'));
+      await typeCode();
+      await join().request();
+    });
+
+    test('should ask for another name for this secteur, starting from the '
+        'one taken', () {
+      expect(
+        state().nameTaken,
+        const JoinNameTaken(taken: 'Julie', typed: 'Julie'),
+      );
+      expect(state().run, const JoinIdle());
+      expect(state().canRequest, isTrue);
+      expect(store.saves, isEmpty);
+    });
+
+    test('should send the request under the name typed', () async {
+      join().typeSectorName('Julie B.');
+
+      await join().request();
+
+      expect(state().run, JoinSent(sectorId));
+      expect(directory.sent.single.member.name, nameOf('Julie B.'));
+      expect(store.mySectors.find(sectorId)!.memberName, nameOf('Julie B.'));
+    });
+
+    test('should say again when the name typed is taken too', () async {
+      directory.takenNames.add((sectorId, 'julie b'));
+      join().typeSectorName('JULIE B');
+
+      await join().request();
+
+      expect(
+        state().nameTaken,
+        const JoinNameTaken(taken: 'JULIE B', typed: 'JULIE B'),
+      );
+      expect(directory.sent, isEmpty);
+    });
+
+    test('should refuse a name typed that cannot be one, until the next '
+        'edit', () async {
+      join().typeSectorName('  ');
+
+      await join().request();
+
+      expect(
+        state().nameTaken,
+        const JoinNameTaken(
+          taken: 'Julie',
+          typed: '  ',
+          problem: MemberNameFailure.blank,
+        ),
+      );
+      expect(directory.sent, isEmpty);
+
+      join().typeSectorName('Julie B.');
+
+      expect(state().nameTaken!.problem, isNull);
+    });
+
+    test('should drop the question once another code is typed', () async {
+      join().typeSecondHalf('2Q');
+
+      expect(state().nameTaken, isNull);
+    });
+
+    test('should be equal when every field is', () {
+      const taken = JoinNameTaken(taken: 'Julie', typed: 'Julie B.');
+
+      expect(taken, const JoinNameTaken(taken: 'Julie', typed: 'Julie B.'));
+      expect(
+        taken.hashCode,
+        const JoinNameTaken(taken: 'Julie', typed: 'Julie B.').hashCode,
+      );
+      expect(
+        taken == const JoinNameTaken(taken: 'Léa', typed: 'Julie B.'),
+        isFalse,
+      );
+      expect(
+        taken == const JoinNameTaken(taken: 'Julie', typed: 'Julie'),
+        isFalse,
+      );
+      expect(
+        taken ==
+            const JoinNameTaken(
+              taken: 'Julie',
+              typed: 'Julie B.',
+              problem: MemberNameFailure.tooLong,
+            ),
+        isFalse,
+      );
+      expect(taken.toString(), 'JoinNameTaken(Julie, Julie B., null)');
+    });
+  });
+
+  group('typing a name without a name taken', () {
+    test('should change nothing', () async {
+      await open(name: nameOf('Julie'));
+
+      join().typeSectorName('Julie B.');
+
+      expect(state().nameTaken, isNull);
     });
   });
 

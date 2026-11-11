@@ -11,6 +11,7 @@
 //                              requestedAt: time, acceptedBy: uid | null,
 //                              acceptedAt: time | null,
 //                              joinCode (only on a request, see below) }
+//     names/{key}            { member: uid }   ← "lea", a name held (#148)
 //     campaigns/{year}       { startedAt: time, previousYear: null }
 //   joinCodes/{code}         { sectorId, number, centreName, campaign }
 //   sectorKeys/{key}_{n}    { sectorId }      ← "villefranche_49"
@@ -100,6 +101,20 @@ Map<String, Object?> acceptanceFields(Member member) => {
 /// teammate's acceptance written at the same time is not overwritten.
 Map<String, Object?> displayNameFields(Member member) => {
   'displayName': member.name.text,
+};
+
+/// The document `names/{key}` that holds a name in a secteur for [member]
+/// (#148): its id is the name's `MemberName.key`, so a second member
+/// cannot create it again.
+Map<String, Object?> nameEntryDocument(MemberId member) => {
+  'member': member.value,
+};
+
+/// Who holds the name of the entry [data]; null when there is no entry, or
+/// one this code does not write.
+MemberId? nameHolderOf(Map<String, Object?>? data) => switch (data?['member']) {
+  final String member when member.trim().isNotEmpty => MemberId(member),
+  _ => null,
 };
 
 /// The tournée stored in `sectors/[id]` as [data], with its [members]

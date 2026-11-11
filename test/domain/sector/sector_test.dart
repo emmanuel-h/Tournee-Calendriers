@@ -398,6 +398,35 @@ void main() {
       expect(change.member.name, nameOf('Emmanuel'));
       expect(sector.members.skip(1), [lea, julie]);
     });
+
+    test('should refuse a name another member holds, case and accents '
+        'ignored', () {
+      expect(
+        failureOf(team().rename(nameOf('LEA'), by: manuId)),
+        SectorCommandFailure.nameTaken,
+      );
+    });
+
+    test('should refuse the name of a pending request too', () {
+      expect(
+        failureOf(team().rename(nameOf('julie'), by: leaId)),
+        SectorCommandFailure.nameTaken,
+      );
+    });
+
+    test('should let a member write their own name another way', () {
+      final (sector, change) = valueOf(team().rename(nameOf('LÉA'), by: leaId));
+
+      expect(sector.memberOf(leaId)!.name, nameOf('LÉA'));
+      expect(change.member.name, nameOf('LÉA'));
+    });
+
+    test('should say first that the one renaming is not in the tournée', () {
+      expect(
+        failureOf(team().rename(nameOf('Léa'), by: paulId)),
+        SectorCommandFailure.notAMember,
+      );
+    });
   });
 
   group('regenerateCode', () {
@@ -485,6 +514,24 @@ void main() {
       expect(change.sectorId, sectorId);
       expect(change.member, sam);
       _expectSameIdentity(sector, team());
+    });
+
+    test('should refuse a name a member holds, case and accents ignored', () {
+      expect(
+        failureOf(
+          team().joinAsAdmin(by: samAsAdmin, name: nameOf('lea'), at: at),
+        ),
+        SectorCommandFailure.nameTaken,
+      );
+    });
+
+    test('should say first that the admin is already in the tournée', () {
+      expect(
+        failureOf(
+          team().joinAsAdmin(by: manuAsAdmin, name: nameOf('Manu'), at: at),
+        ),
+        SectorCommandFailure.alreadyMember,
+      );
     });
   });
 

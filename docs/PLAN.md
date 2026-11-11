@@ -2124,6 +2124,40 @@ SettingsNameTaken, StreetUnreadable, StreetUnreadableSheet). Overrides 5.2, 5.8,
   SECTEUR » when one differs; a rename in « Votre prénom » applies where the name is free and keeps
   the old one elsewhere, saying so (« « Paul » est déjà pris dans le secteur 49 : vous y gardez
   « Paul D. ». Il est enregistré partout ailleurs. »), with a field for that secteur's name.
+- Delivered in #148 (TeamRemove, JoinNameTaken, SettingsNameTaken mockups):
+  - « Retirer Léa ? » is its own dialog (`team_screen.dart`, `_RemoveDialog`): the box
+    « Changer aussi le code » with « Léa connaît le code actuel. » under it, ticked; the whole
+    row toggles it. Ticked, `RemoveMember(…, renewCode: true)` first asks the secteur whether
+    the removal holds, then does « Nouveau code » (needs the network) and only then removes:
+    offline, or refused, nobody is removed and the snackbar says why.
+  - The name's key is `MemberName.key` (`nameKey` of `french_text.dart`): the French accents
+    of `searchKey` in both cases, œ / æ spelled out, dashes, apostrophes, dots, underscores
+    and slashes as spaces, A–Z lowered, single spaces, trimmed (« LÉA » = « lea » = `lea`,
+    « Léa B. » = `lea b`). Only A–Z are lowered because the rules' `lower()` lowers nothing
+    else (measured in the emulator): « Ø » and « ø » stay two names. A name made only of
+    separators (« - », « ... ») is refused as blank: its key would be empty.
+  - Joining, renaming and an admin's « Rejoindre » need the network now (a transaction that
+    reads the name's entry); offline they say « Pas de réseau. Réessayez une fois connecté. »
+    as the other network-only commands. Accepting, refusing, removing and leaving still work
+    offline, the name freed in the same batch.
+  - The join screen, on a taken name, keeps the secteur's card (subtitle « Code K7P-2QX »)
+    and replaces the scan and the code boxes with the alert, « Votre nom dans ce secteur »
+    (filled with the name refused) and « Vos autres secteurs gardent « Léa ». »; a name typed
+    that is taken too updates the alert. A code that stopped working meanwhile says « Aucun
+    secteur n'a ce code… ».
+  - Paramètres: « VOS NOMS PAR SECTEUR » under the offline line, before « Application », one
+    row per secteur of the phone (requests included, admins' visits left out), not tappable,
+    shown only when one name differs from the prénom. « Votre prénom »: the prénom is kept
+    whenever one secteur took it or the member is in none; where it was taken, one alert for
+    all such secteurs (one sentence each, then « Il est enregistré partout ailleurs. ») and
+    one field « Votre nom dans le secteur 49 » each, filled with the name kept; « Enregistrer »
+    then gives each changed field to its secteur alone (`ChangeSectorName`), or the prénom
+    again if it was changed. Offline with the member active somewhere, nothing changes and
+    the sheet says « Pas de réseau. Réessayez une fois connecté. ».
+  - An admin's « Rejoindre » under a name a member holds: snackbar « Ce prénom est déjà pris
+    dans ce secteur. Changez-le dans Paramètres pour rejoindre. ».
+  - The members of before #148 hold no entry (no migration, single user): they are not
+    protected until they rename, and the test secteurs are best created again.
 - **Unreadable street** (#149): a street whose document cannot be read is a row of Accueil's list,
   « ⚠ Rue Pasteur » over « Illisible » (red; « Rue illisible » when the name cannot be read either),
   not on the map nor in the totals. A tap opens a sheet: the name, « Cette rue ne peut pas être
@@ -2153,7 +2187,7 @@ inside an aggregate changes only through its root, which enforces the invariants
 
 | Aggregate (root) | Contains | Invariants it guards |
 |---|---|---|
-| `Sector` | `Member`s, `JoinCode`, `RescueCentre`, current campaign year, `SectorCommune`s (#78) | one creator; members are pending or active; only active members accept others; only the creator removes members, regenerates the code, starts a campaign; communes unique by INSEE code, 1–50 from creation, never the last one removed |
+| `Sector` | `Member`s, `JoinCode`, `RescueCentre`, current campaign year, `SectorCommune`s (#78) | one creator; members are pending or active; only active members accept others; only the creator removes members, regenerates the code, starts a campaign; communes unique by INSEE code, 1–50 from creation, never the last one removed; no two members share a name, case and accents ignored (`MemberName.key`, #148: `rename` and `joinAsAdmin` refuse with `nameTaken`, the server checks the members the phone has not seen) |
 | `Street` (one per campaign) | `House` entities, each with an optional `Building` → `Staircase` → `Floor` → `Dwelling` | numbers unique in the street; a building's status is derived, never set; deleting is soft (Corbeille) |
 
 Value objects (immutable, validated at construction, equal by value): `JoinCode` (6 chars from
@@ -2557,7 +2591,12 @@ Secteur rules fixed in T2.2 (`lib/domain/sector/`):
 - **`SectorSummary`** (value): what the phone keeps of one of the member's secteurs — id,
   number, centre, campaign, `MemberStatus` (pending while the request waits; for a request,
   what the join preview showed, since a pending newcomer cannot read the secteur).
-  `accepted()` gives it active.
+  `accepted()` gives it active. Since #148 it keeps `memberName`, the name the member goes
+  by there (the prénom unless it was taken; null for a summary kept before, or an admin's
+  visit, read as the prénom), changed with `withMemberName`. `ChangeMemberName` gives the
+  prénom to every active secteur where it is free and returns where the old name is kept
+  (`NameChanged.kept`); `ChangeSectorName` renames in one secteur; `CatchUpMemberName` sends
+  the summary's name (or the prénom) and, where it turns out taken, keeps the server's.
 - **`MySectors`** (value): the summaries in the order the phone met them, each id once, and
   `currentId`, the open one, always an active one of the list. `none`; `remember(summary)`
   adds at the end or replaces in place, never opens (the open one stays while « Créer » /
@@ -3041,6 +3080,13 @@ sectors/{sectorId}
   members/{uid}
     displayName: "Manu", status: "pending" | "active", requestedAt, acceptedBy, acceptedAt,
     joinCode                                      ← only on a newcomer's request: the code used
+  names/{key}                                     ← #148: "lea", the name's `MemberName.key`;
+    member: uid                                      create-only, written with the member
+                                                    document that holds the name (request,
+                                                    creator, admin joining, rename); deleted
+                                                    with it (refuse, cancel, remove, leave,
+                                                    rename, the secteur); a free name or one's
+                                                    own may be asked by anyone signed in
   campaigns/{year}                                ← one per year: 2026, 2027…
       startedAt, previousYear: null | 2026
     streets/{streetId}
@@ -3167,7 +3213,8 @@ can never drift.
   means nothing hidden.
 - `my_tournees.json` in the same folder (port `MySectorsStore`, T2.7): « Mes secteurs » and
   the open one, `{ version: 1, open: id | null, tournees: [{ id, number, centre, campaign,
-  status: "active" | "pending" | "visiting" }] }` (`visiting` from #75; an older app reads
+  status: "active" | "pending" | "visiting", name? }] }` (`name`, #148: the member's name in
+  that secteur, absent when unknown; `visiting` from #75; an older app reads
   such a file as unreadable, so as none), read once at start-up, so the last secteur reopens after
   an offline cold start. `settings.json` (port `PhoneSettings`): `{ version: 1, name: "Manu" |
   null, theme: "system" | "light" | "dark" }`. Same writing as the streets (`.tmp` then
@@ -3353,6 +3400,23 @@ photo of the QR) is even more likely. So **knowing a code must not be enough**:
   (refused); it tells nothing of a secteur that exists. Nothing on the marking path reads
   either: offline, the index is read from the phone's copy or not at all, as before.
 - `rescueCentres`: readable by signed-in users (station names only), create-only.
+- **A name per secteur, unique in it** (#148, decided 2026-11-11, 5.16). `sectors/{id}/names/
+  {key}` holds each member's name under its key: `nameKey(name)` in the rules works out
+  `MemberName.key` (`replace` of the accented letters in both cases and of the separators,
+  then `trim()` and `lower()`, which lowers A–Z only). Create only, exactly `{ member }` =
+  the caller, and only while the caller's member document, as the write leaves it
+  (`getAfter`), has a name of that key; never updated, so a name another member holds
+  cannot be taken. Every member document written with a name requires its entry naming the
+  caller after the write (`hasNameEntry`): a request (`isJoinRequest`), an admin's own
+  document, the creator's included (`isAdminMembership`), a rename (`isRename`). Delete: an
+  admin, or anyone signed in once the entry's member no longer holds that name (their
+  document gone or renamed in the same write), or an entry that is not there (a member of
+  before #148). `get`: the team and the admins, and anyone signed in for a free name or
+  their own, so a newcomer learns from the refusal that a name is taken and nothing of who
+  holds it; `list`: the team and the admins. The member rules do not require the entry to go
+  with a deleted member (a member of before #148 has none): the adapters delete it in the
+  same batch. A few `replace` calls per name write, far from the 1 000 expressions. Tests:
+  `firebase/test/names.test.mjs`.
 - Street and house writes: field-path updates only on `status`, `comeBack`, `tries`, `by`, `at`,
   `deletedAt/By`, numbers and dwellings; `status` in the enum; `comeBack` a time
   as the app writes it (#81, `isComeBackTime`: "", a day "2026-10-24" of the years 2000–2999,
@@ -3399,18 +3463,28 @@ What the adapters write (T2.3), which the rules must allow:
 - **Create** (one transaction): reads `sectorKeys/{key}`, `joinCodes/{code}` (more than one
   if a code is taken) and `rescueCentres/{key}`; writes `sectorKeys/{key}`,
   `joinCodes/{code}`, `sectors/{id}`, `members/{creator}` **already `active`** (accepted by
-  themself), `campaigns/{year}`, and `rescueCentres/{key}` only when absent.
+  themself), `names/{key}` of the creator's name (#148), `campaigns/{year}`, and
+  `rescueCentres/{key}` only when absent.
 - **Join:** the request is `members/{uid}` with `status: "pending"` and the `joinCode` used
   (the rule compares it with the secteur's). The newcomer **reads their own member document**
-  while pending (« Demande envoyée » follows it) and deletes it to cancel.
+  while pending (« Demande envoyée » follows it) and deletes it to cancel. Since #148 the
+  request is a transaction: it reads `names/{key}` (refused or another's: the name is taken;
+  a refused write is taken too unless a read of `joinCodes/{code}` says the code changed),
+  then writes the request and the entry (unless already the newcomer's). Cancelling deletes
+  both, queued like any write.
 - **Accept:** updates `status`, `acceptedBy` (the caller), `acceptedAt` only. Refuse, remove,
-  leave: delete the member document. **Rename** (« Prénom »): updates the caller's own
-  `displayName` only.
+  leave: delete the member document and `names/{key}` of their name in one batch, queued.
+  **Rename** (« Prénom », « Votre nom dans le secteur 49 »): a transaction that reads the new
+  name's entry (another's: refused, `nameTaken`), the caller's member document (gone: nothing
+  written) and the old name's entry when the key changes; then updates `displayName` only,
+  creates the new entry when absent and deletes the old one when it is the caller's. **An
+  admin joining** (« Rejoindre »): the same transaction, the member document `set` whole.
 - **New code** (one transaction): reads `joinCodes/{new}`, updates `sectors/{id}.joinCode`,
   deletes `joinCodes/{old}`, creates `joinCodes/{new}`.
 - **Delete:** lists `campaigns`, their `streets` and `rounds` (#110) and `members` from the
   server, deletes the campaigns, streets and rounds in batches of ≤ 500, then one batch: `joinCodes/{code}`,
-  `sectorKeys/{key}`, `sectors/{id}`, the other members' documents and the creator's own.
+  `sectorKeys/{key}`, `sectors/{id}`, the other members' documents and the creator's own,
+  and the `names` they hold (#148); members and names listed again after it.
 - **Streets:** the writes of the table in §6.2. Whole entries (a number added or renamed, a
   layout, an undo) carry door entries with the `by` / `at` they already had, possibly a
   teammate's: only the entries that change carry the caller's uid. The undo of « Restaurer »

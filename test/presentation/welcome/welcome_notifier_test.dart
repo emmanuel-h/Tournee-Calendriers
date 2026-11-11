@@ -1,11 +1,13 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/sector/member_name.dart';
+import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/settings/settings_notifier.dart';
 import 'package:tournee_calendriers/presentation/welcome/welcome_notifier.dart';
 import 'package:tournee_calendriers/presentation/welcome/welcome_state.dart';
 
+import '../../domain/sector/my_sectors_fixtures.dart';
 import '../../domain/sector/sector_fixtures.dart';
 import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_phone_settings.dart';
@@ -99,6 +101,49 @@ void main() {
 
     expect(settings.names, [nameOf('Léa')]);
     expect(container.read(settingsProvider).name, 'Léa');
+  });
+
+  group('on a phone already in a secteur', () {
+    late FakeSectorRepository sectors;
+
+    /// « Bienvenue » with no name kept, Manu in the 49 (a phone of before
+    /// the names, say).
+    void openIn49() {
+      settings = FakePhoneSettings();
+      sectors = FakeSectorRepository([team()]);
+      container = ProviderContainer(
+        overrides: [
+          phoneSettingsProvider.overrideWithValue(settings),
+          sectorRepositoryProvider.overrideWithValue(sectors),
+          identityProvider.overrideWithValue(FakeIdentity(manuId)),
+          mySectorsStoreProvider.overrideWithValue(
+            FakeMySectorsStore(MySectors.none.remember(sector49)),
+          ),
+        ],
+      );
+      addTearDown(container.dispose);
+      container.listen(welcomeProvider, (_, _) {});
+    }
+
+    test('should go on with the name kept, even where a secteur keeps '
+        'another one', () async {
+      openIn49();
+      notifier().type('Léa');
+
+      expect(await notifier().confirm(), isTrue);
+
+      expect(settings.names, [nameOf('Léa')]);
+    });
+
+    test('should not go on when no secteur can be reached', () async {
+      openIn49();
+      sectors.offline = true;
+      notifier().type('Emmanuel');
+
+      expect(await notifier().confirm(), isFalse);
+
+      expect(settings.names, isEmpty);
+    });
   });
 
   test('should keep nothing when the name is not valid', () async {

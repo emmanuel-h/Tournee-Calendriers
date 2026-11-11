@@ -17,4 +17,5 @@ String teamActionMessage(AppLocalizations l10n, TeamActionFailure failure) =>
       TeamActionFailure.tooManyCommunes => l10n.teamTooManyCommunes(
         Sector.maxCommunes,
       ),
+      TeamActionFailure.nameTaken => l10n.teamNameTaken,
     };

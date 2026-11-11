@@ -89,9 +89,84 @@ void main() {
       expect(find.text('Demande envoyée'), findsOneWidget);
       expect(find.bySemanticsLabel('Demande en attente'), findsOneWidget);
       expect(directory.sent.single.member.id, julieId);
-      expect(store.mySectors.find(sectorId), request49);
+      expect(
+        store.mySectors.find(sectorId),
+        request49.withMemberName(nameOf('Julie')),
+      );
     },
   );
+
+  testWidgets('should ask for another name for the secteur when the prénom '
+      'is taken there, then send the request under it', (tester) async {
+    directory.takenNames.add((sectorId, 'julie'));
+    await launch(tester, MySectors.none.remember(sector12));
+    unawaitedPush(
+      GoRouter.of(tester.element(find.byType(StartOrHome))),
+      AppRoutes.join,
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('join.first')), 'k7p');
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('join.second')), '2qx');
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('join.request')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text(
+        '« Julie » est déjà pris dans ce secteur. Choisissez le nom '
+        "que l'équipe verra ici.",
+      ),
+      findsOneWidget,
+    );
+    expect(find.text('Code K7P-2QX'), findsOneWidget);
+    expect(find.text('Votre nom dans ce secteur'), findsOneWidget);
+    expect(find.text('Vos autres secteurs gardent « Julie ».'), findsOneWidget);
+    // The code is no longer asked: only the name.
+    expect(find.byKey(const Key('join.first')), findsNothing);
+    final field = find.byKey(const Key('join.name'));
+    expect(tester.widget<TextField>(field).controller!.text, 'Julie');
+
+    await tester.enterText(field, ' ');
+    await tester.tap(find.byKey(const Key('join.request')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Écrivez votre prénom.'), findsOneWidget);
+
+    await tester.enterText(field, 'Julie B.');
+    await tester.tap(find.byKey(const Key('join.request')));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(JoinPendingScreen), findsOneWidget);
+    expect(directory.sent.single.member.name, nameOf('Julie B.'));
+  });
+
+  testWidgets('should say offline under the name for the secteur', (
+    tester,
+  ) async {
+    directory.takenNames.add((sectorId, 'julie'));
+    await launch(tester, MySectors.none.remember(sector12));
+    unawaitedPush(
+      GoRouter.of(tester.element(find.byType(StartOrHome))),
+      AppRoutes.join,
+    );
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('join.first')), 'k7p2qx');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('join.request')));
+    await tester.pumpAndSettle();
+    directory.offline = true;
+
+    await tester.enterText(find.byKey(const Key('join.name')), 'Julie B.');
+    await tester.tap(find.byKey(const Key('join.request')));
+    await tester.pumpAndSettle();
+
+    expect(
+      find.text('Pas de réseau. Réessayez une fois connecté.'),
+      findsOneWidget,
+    );
+  });
 
   testWidgets('should say a character no code has is typed', (tester) async {
     await launch(tester, MySectors.none.remember(sector12));

@@ -7,7 +7,12 @@
 //     open: sectorId | null,                    ← the tournée the app shows
 //     tournees: [ { id, number: 49, centre: "CS Villefranche",
 //                   campaign: 2026,
-//                   status: "active" | "pending" | "visiting" }, … ] }
+//                   status: "active" | "pending" | "visiting",
+//                   name?: "Léa B." }, … ] }
+//
+// `name` (#148) is the name the member goes by in that tournée; absent
+// when the phone does not know it (kept before #148, an admin's visit). An
+// app older than #148 ignores it.
 //
 // "visiting" (PLAN §5.12, #75) is a tournée an admin opened without being
 // in its team. An app older than #75 cannot read a file holding one, and
@@ -22,6 +27,7 @@
 // is on the phone. Every value goes through the domain's checks.
 import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
 import 'package:tournee_calendriers/domain/sector/member.dart';
+import 'package:tournee_calendriers/domain/sector/member_name.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
 import 'package:tournee_calendriers/domain/sector/rescue_centre.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
@@ -52,6 +58,7 @@ Map<String, Object?> mySectorsToJson(MySectors mine) => {
           MemberStatus.pending => _pending,
           MemberStatus.visiting => _visiting,
         },
+        if (sector.memberName case final name?) 'name': name.text,
       },
   ],
 };
@@ -103,6 +110,11 @@ SectorSummary _sectorFromJson(Object? json) {
         _pending => MemberStatus.pending,
         _visiting => MemberStatus.visiting,
         _ => throw FormatException('Not a status: $status'),
+      },
+      memberName: switch (json['name']) {
+        null => null,
+        final String name => _valid(MemberName.create(name), json),
+        final other => throw FormatException('Not a name: $other'),
       },
     );
   }

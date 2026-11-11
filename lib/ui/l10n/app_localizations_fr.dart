@@ -3086,4 +3086,58 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get unreadableStreetAdminsOnly => 'Administrateurs seulement';
+
+  @override
+  String get teamRemoveRenewCode => 'Changer aussi le code';
+
+  @override
+  String teamRemoveRenewCodeHint(String name) {
+    return '$name connaît le code actuel.';
+  }
+
+  @override
+  String get teamNameTaken =>
+      'Ce prénom est déjà pris dans ce secteur. Changez-le dans Paramètres pour rejoindre.';
+
+  @override
+  String joinNameTaken(String name) {
+    return '« $name » est déjà pris dans ce secteur. Choisissez le nom que l\'équipe verra ici.';
+  }
+
+  @override
+  String get joinSectorNameLabel => 'Votre nom dans ce secteur';
+
+  @override
+  String joinOtherSectorsKeep(String name) {
+    return 'Vos autres secteurs gardent « $name ».';
+  }
+
+  @override
+  String joinPreviewCode(String code) {
+    return 'Code $code';
+  }
+
+  @override
+  String get settingsSectorNames => 'Vos noms par secteur';
+
+  @override
+  String nameKeptIn(String name, String number, String kept) {
+    return '« $name » est déjà pris dans le secteur $number : vous y gardez « $kept ».';
+  }
+
+  @override
+  String get nameKeptElsewhere => 'Il est enregistré partout ailleurs.';
+
+  @override
+  String nameSectorFieldLabel(String number) {
+    return 'Votre nom dans le secteur $number';
+  }
+
+  @override
+  String nameTakenThere(String name, String number) {
+    return '« $name » est déjà pris dans le secteur $number.';
+  }
+
+  @override
+  String get nameOffline => 'Pas de réseau. Réessayez une fois connecté.';
 }

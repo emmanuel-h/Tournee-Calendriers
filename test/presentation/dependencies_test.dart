@@ -601,11 +601,26 @@ void main() {
       expect(sectors[sectorId]!.memberOf(manuId)!.name, nameOf('Emmanuel'));
     });
 
+    test('should give a name in one of the bound tournées, as the bound '
+        'member', () async {
+      await mySectors.save(MySectors.none.remember(sector49));
+
+      valueOf(
+        await asManu().read(changeSectorNameProvider)(sectorId, 'Manu D.'),
+      );
+
+      expect(sectors[sectorId]!.memberOf(manuId)!.name, nameOf('Manu D.'));
+      expect(mySectors.mySectors.find(sectorId)!.memberName, nameOf('Manu D.'));
+    });
+
     test('should catch up the name of the bound settings in the bound '
         'tournées, as the bound member', () async {
+      await mySectors.save(MySectors.none.remember(sector49));
+      // Léa is in the 49: a name of hers would be taken there.
+      settings.memberName = nameOf('Emmanuel');
       await asManu().read(catchUpMemberNameProvider)(sectorId, nameOf('Manu'));
 
-      expect(sectors[sectorId]!.memberOf(manuId)!.name, nameOf('Léa'));
+      expect(sectors[sectorId]!.memberOf(manuId)!.name, nameOf('Emmanuel'));
     });
 
     test('should choose the theme in the bound settings', () async {
@@ -712,12 +727,18 @@ void main() {
       expect(change, isA<MemberRefused>());
     });
 
-    test('should remove a member as the bound member', () async {
+    test('should remove a member as the bound member, with a code drawn '
+        'from the bound random source', () async {
       final change = valueOf(
-        await asManu().read(removeMemberProvider)(sectorId, leaId),
+        await asManu().read(removeMemberProvider)(
+          sectorId,
+          leaId,
+          renewCode: true,
+        ),
       );
 
       expect(change, isA<MemberRemoved>());
+      expect(sectors[sectorId]!.joinCode, codeOf('234567'));
     });
 
     test('should leave the tournée and forget it in the bound store', () async {
@@ -748,13 +769,19 @@ void main() {
         ),
       );
 
+      // Léa is in the 49: her name would be taken there.
+      settings.memberName = nameOf('Sam');
+
       final change = valueOf(
         await samsPhone.read(joinAsAdminProvider)(sectorId),
       );
 
-      expect(change.member.name, nameOf('Léa'));
+      expect(change.member.name, nameOf('Sam'));
       expect(change.member.requestedAt, twoPm);
-      expect(mySectors.mySectors.find(sectorId), sector49);
+      expect(
+        mySectors.mySectors.find(sectorId),
+        sector49.withMemberName(nameOf('Sam')),
+      );
     });
 
     test('should forget a visited tournée in the bound store', () async {

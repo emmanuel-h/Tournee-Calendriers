@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/presentation/account/device_id_state.dart';
 import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
 import 'package:tournee_calendriers/presentation/settings/settings_notifier.dart';
+import 'package:tournee_calendriers/presentation/settings/settings_state.dart';
 import 'package:tournee_calendriers/ui/components/copy_button.dart';
 import 'package:tournee_calendriers/ui/components/section_header.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
@@ -19,7 +20,9 @@ import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
 /// Paramètres (⚙, PLAN §5.9, Settings mockup): the member's first name and
-/// « Mes secteurs », then the theme, the privacy page, the version (a tap
+/// « Mes secteurs », « VOS NOMS PAR SECTEUR » when a secteur knows the
+/// member under another name (#148, SettingsNameTaken mockup), then the
+/// theme, the privacy page, the version (a tap
 /// opens « Nouveautés »), the licences, the phone's uid (« Identifiant de
 /// l'appareil », PLAN §5.12) and the data credits. Works offline; the
 /// screen signs the phone in when it opens, so the uid shows once online.
@@ -81,6 +84,18 @@ final class SettingsScreen extends ConsumerWidget {
                 ),
               ),
             ),
+            if (settings.showsSectorNames) ...[
+              SectionHeader(l10n.settingsSectorNames),
+              _RowGroup(
+                children: [
+                  for (final line in settings.sectorNames)
+                    _SectorNameRow(
+                      key: ValueKey('settings.sectorName.${line.id.value}'),
+                      line: line,
+                    ),
+                ],
+              ),
+            ],
             SectionHeader(l10n.settingsApplication),
             _RowGroup(
               children: [
@@ -200,6 +215,56 @@ final class _DeviceIdRow extends StatelessWidget {
           if (deviceId case DeviceIdShown(:final id))
             DeviceIdCopyButton(key: const Key('settings.copyDeviceId'), id: id),
         ],
+      ),
+    );
+  }
+}
+
+/// « Secteur 49 · CS Villefranche    Paul D. » (SettingsNameTaken mockup):
+/// the name the member goes by in one secteur. Not a button: a name changes
+/// through « Prénom ».
+final class _SectorNameRow extends StatelessWidget {
+  const _SectorNameRow({super.key, required this.line});
+
+  final SectorNameLine line;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = AppColors.of(context);
+    final label = l10n.joinPreviewTitle('${line.number}', line.centre);
+    final name = line.name ?? '';
+    return Semantics(
+      container: true,
+      label: l10n.settingsRowSemantics(label, name),
+      excludeSemantics: true,
+      child: Container(
+        constraints: const BoxConstraints(minHeight: AppSizes.settingRowHeight),
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        decoration: BoxDecoration(
+          color: colors.surface,
+          border: Border(bottom: BorderSide(color: colors.divider)),
+        ),
+        child: Row(
+          spacing: 12,
+          children: [
+            Expanded(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppTextStyles.bodyLarge.copyWith(color: colors.ink),
+              ),
+            ),
+            Text(
+              name,
+              style: AppTextStyles.bodyLarge.copyWith(
+                color: colors.ink,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

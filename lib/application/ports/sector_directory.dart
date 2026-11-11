@@ -123,6 +123,23 @@ enum JoinFailure {
   noNetwork,
 }
 
+/// Why a request to join was not sent (« Demander à rejoindre », PLAN
+/// §5.2, §5.16).
+enum JoinRequestFailure {
+  /// A member of the tournée, pending or active, holds the name the
+  /// request carries, case and accents ignored (`MemberName.key`): names
+  /// are unique within a secteur (#148). Ask again under another name.
+  nameTaken,
+
+  /// The tournée's code changed since it was shown (« Nouveau code »), or
+  /// the tournée was deleted: the server refused the request.
+  unknownCode,
+
+  /// The phone could not reach the server, which alone tells whether the
+  /// name is free in the tournée.
+  noNetwork,
+}
+
 /// Why the directory could not answer.
 enum DirectoryFailure {
   /// The phone could not reach the server: creating a tournée needs the
@@ -158,10 +175,16 @@ abstract interface class SectorDirectory {
   Future<Result<JoinPreview, JoinFailure>> preview(JoinCode code);
 
   /// Asks to join a tournée (« Rejoindre »): stores [request], whose
-  /// pending member any active member then accepts or refuses (PLAN §5.8).
-  /// Returns once the request is on the phone; it reaches the server as
-  /// soon as the network allows. [watchRequest] tells what became of it.
-  Future<void> requestToJoin(JoinRequest request);
+  /// pending member any active member then accepts or refuses (PLAN §5.8),
+  /// with its name held in the tournée (#148). [watchRequest] tells what
+  /// became of it.
+  ///
+  /// Needs the server, which alone tells whether the name is free there:
+  /// fails with [JoinRequestFailure.nameTaken] when a member holds it,
+  /// [JoinRequestFailure.unknownCode] when the code no longer opens the
+  /// tournée, [JoinRequestFailure.noNetwork] offline. Nothing is stored
+  /// then.
+  Future<Result<void, JoinRequestFailure>> requestToJoin(JoinRequest request);
 
   /// Where the request of [member] to join [sector] stands, now and after
   /// each change: pending, then active once accepted (« Demande envoyée »
@@ -171,8 +194,14 @@ abstract interface class SectorDirectory {
   Stream<MemberStatus?> watchRequest(SectorId sector, MemberId member);
 
   /// Cancels the pending request of [member] to join [sector] (« Annuler
-  /// la demande »). Applied on the phone at once, sent with the network.
-  Future<void> cancelRequest(SectorId sector, MemberId member);
+  /// la demande »), freeing the [name] it held there (#148; null when the
+  /// phone does not know it: a request sent before #148, which held none).
+  /// Applied on the phone at once, sent with the network.
+  Future<void> cancelRequest(
+    SectorId sector,
+    MemberId member,
+    MemberName? name,
+  );
 
   /// Tells once the server says [member] is no longer in [sector], one of
   /// their tournées (PLAN §5.3): [SectorLoss.removed] while the tournée

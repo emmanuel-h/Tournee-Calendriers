@@ -1,4 +1,5 @@
 import 'package:tournee_calendriers/application/ports/sector_directory.dart';
+import 'package:tournee_calendriers/domain/sector/member_name.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 
 /// What the code typed or scanned shows. `sealed`: the screen handles each
@@ -103,25 +104,61 @@ final class JoinSent extends JoinRun {
   String toString() => 'JoinSent(${sector.value})';
 }
 
+/// The name the request carried is taken in the secteur (#148, PLAN §5.16,
+/// JoinNameTaken mockup): « ⚠ « Léa » est déjà pris dans ce secteur… »
+/// over the field « Votre nom dans ce secteur », whose name the next
+/// request carries, for this secteur only.
+final class JoinNameTaken {
+  const JoinNameTaken({required this.taken, required this.typed, this.problem});
+
+  /// The name refused: « Léa ».
+  final String taken;
+
+  /// What the field holds.
+  final String typed;
+
+  /// Why [typed] cannot be a name, once « Demander à rejoindre » was
+  /// pressed with it; null otherwise.
+  final MemberNameFailure? problem;
+
+  @override
+  bool operator ==(Object other) =>
+      other is JoinNameTaken &&
+      other.taken == taken &&
+      other.typed == typed &&
+      other.problem == problem;
+
+  @override
+  int get hashCode => Object.hash(taken, typed, problem);
+
+  @override
+  String toString() => 'JoinNameTaken($taken, $typed, $problem)';
+}
+
 /// What « Rejoindre un secteur » shows (PLAN §5.2, Join mockup).
 /// Immutable: the notifier replaces it with [copyWith].
 final class JoinSectorState {
   const JoinSectorState({
     required this.signedIn,
-    required this.hasName,
+    required this.defaultName,
     required this.first,
     required this.second,
     required this.invalidCharacter,
     required this.scanRefused,
     required this.lookup,
     required this.run,
+    this.nameTaken,
   });
 
   /// The phone has its account: the server can be asked.
   final bool signedIn;
 
+  /// The phone's prénom, which the request carries unless it was taken in
+  /// the secteur ([nameTaken]); null until the member gives one.
+  final String? defaultName;
+
   /// The member gave their first name, which the request carries.
-  final bool hasName;
+  bool get hasName => defaultName != null;
 
   /// The first three characters of the code, upper case, without dash.
   final String first;
@@ -136,6 +173,10 @@ final class JoinSectorState {
   final bool scanRefused;
   final JoinLookup lookup;
   final JoinRun run;
+
+  /// The prénom was taken in the secteur: the screen asks for another name
+  /// there. Null otherwise, and again once another code is typed.
+  final JoinNameTaken? nameTaken;
 
   /// « Demander à rejoindre » can be pressed.
   bool get canRequest =>
@@ -153,14 +194,18 @@ final class JoinSectorState {
     bool? scanRefused,
     JoinLookup? lookup,
     JoinRun? run,
+    JoinNameTaken? nameTaken,
+    bool keepNameTaken = true,
   }) => JoinSectorState(
     signedIn: signedIn ?? this.signedIn,
-    hasName: hasName,
+    defaultName: defaultName,
     first: first ?? this.first,
     second: second ?? this.second,
     invalidCharacter: invalidCharacter ?? this.invalidCharacter,
     scanRefused: scanRefused ?? this.scanRefused,
     lookup: lookup ?? this.lookup,
     run: run ?? this.run,
+    // `keepNameTaken: false` drops it; a value given replaces it.
+    nameTaken: nameTaken ?? (keepNameTaken ? this.nameTaken : null),
   );
 }

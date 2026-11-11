@@ -25,9 +25,11 @@ import {
   lea,
   manu,
   memberPath,
+  namePath,
   newStreetDoc,
   paul,
   phoneOf,
+  writeWithName,
   previewDoc,
   roundsPath,
   rulesEnvironment,
@@ -215,8 +217,20 @@ describe('an admin joining (« Rejoindre » of the banner)', () => {
   /** Sam's own document, already active, accepted by himself. */
   const joining = (overrides = {}) => activeMemberDoc('Sam', sam, overrides);
 
-  it('should let an admin create their own document, active, without a code', async () => {
-    await assertSucceeds(setDoc(memberOf(sam, sam), joining()));
+  it('should let an admin create their own document, active, without a code, '
+    + 'holding their name', async () => {
+    await assertSucceeds(writeWithName(phoneOf(env, sam), sam, joining(), 'sam'));
+  });
+
+  it('should refuse it without holding the name', async () => {
+    await assertFails(setDoc(memberOf(sam, sam), joining()));
+  });
+
+  it('should refuse it under a name a member holds', async () => {
+    // « LÉA » is Léa's name, case and accents ignored.
+    await assertFails(
+      writeWithName(phoneOf(env, sam), sam, joining({ displayName: 'LÉA' }), 'lea'),
+    );
   });
 
   it('should refuse it accepted by someone else', async () => {
@@ -262,6 +276,8 @@ describe('what an admin outside the team does to the tournée', () => {
     last.delete(doc(db, 'sectorKeys/villefranche_49'));
     last.delete(doc(db, sectorPath));
     for (const member of members) last.delete(doc(db, memberPath(member)));
+    // The names they held (#148): an admin frees them whoever held them.
+    for (const key of ['manu', 'lea', 'paul']) last.delete(doc(db, namePath(key)));
     return last.commit();
   }
 

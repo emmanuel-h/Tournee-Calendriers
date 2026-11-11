@@ -12,6 +12,7 @@ import 'package:tournee_calendriers/domain/sector/sector.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/sector/sector_loss.dart';
 import 'package:tournee_calendriers/domain/sector/sector_number.dart';
+import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_sector_directory.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/sector_document_mapper.dart';
 
@@ -147,10 +148,118 @@ void main() {
       await directory.requestToJoin(julieRequest);
       await pumpEventQueue();
 
-      await directory.cancelRequest(sectorId, julieId);
+      await directory.cancelRequest(sectorId, julieId, null);
       await pumpEventQueue();
 
       expect(await stored('sectors/t49/members/uid-julie'), isNull);
+      // A request of before #148 held no name: nothing else is deleted.
+      expect(await stored('sectors/t49/names/julie'), {'member': 'uid-julie'});
+    });
+
+    test('should free the name with the request cancelled', () async {
+      await directory.requestToJoin(julieRequest);
+
+      await directory.cancelRequest(sectorId, julieId, nameOf('JULIE'));
+      await pumpEventQueue();
+
+      expect(await stored('sectors/t49/members/uid-julie'), isNull);
+      expect(await stored('sectors/t49/names/julie'), isNull);
+    });
+  });
+
+  group('a request holding its name', () {
+    test('should hold the name under its key with the request', () async {
+      final sent = await directory.requestToJoin(julieRequest);
+
+      expect(sent, isA<Ok<void, JoinRequestFailure>>());
+      expect(await stored('sectors/t49/names/julie'), {'member': 'uid-julie'});
+    });
+
+    test('should send nothing when a member holds the name', () async {
+      await db.doc('sectors/t49/names/julie').set({'member': 'uid-lea'});
+
+      final sent = await directory.requestToJoin(julieRequest);
+
+      expect(failureOf(sent), JoinRequestFailure.nameTaken);
+      expect(await stored('sectors/t49/members/uid-julie'), isNull);
+      expect(await stored('sectors/t49/names/julie'), {'member': 'uid-lea'});
+    });
+
+    test('should send the request when the name is already the '
+        'newcomer\'s', () async {
+      await db.doc('sectors/t49/names/julie').set({'member': 'uid-julie'});
+
+      expect(
+        await directory.requestToJoin(julieRequest),
+        isA<Ok<void, JoinRequestFailure>>(),
+      );
+
+      expect(
+        await stored('sectors/t49/members/uid-julie'),
+        joinRequestDocument(julieRequest),
+      );
+    });
+
+    test('should tell when the server cannot be reached', () async {
+      offline(db.doc('sectors/t49/names/julie'));
+
+      final sent = await directory.requestToJoin(julieRequest);
+
+      expect(failureOf(sent), JoinRequestFailure.noNetwork);
+      expect(await stored('sectors/t49/members/uid-julie'), isNull);
+    });
+
+    test('should tell the name is taken when the server refuses while the '
+        'code still opens the tournée', () async {
+      // The rules refuse a newcomer the entry of a name another member
+      // holds.
+      await db.doc('joinCodes/K7P2QX').set(joinCodeDocument(team()));
+      offline(db.doc('sectors/t49/names/julie'), 'permission-denied');
+
+      final sent = await directory.requestToJoin(julieRequest);
+
+      expect(failureOf(sent), JoinRequestFailure.nameTaken);
+    });
+
+    test('should tell the code no longer works when the server refuses and '
+        'the code opens nothing', () async {
+      offline(db.doc('sectors/t49/names/julie'), 'permission-denied');
+
+      final sent = await directory.requestToJoin(julieRequest);
+
+      expect(failureOf(sent), JoinRequestFailure.unknownCode);
+    });
+
+    test('should tell the code no longer works when the server refuses and '
+        'the code opens another tournée', () async {
+      await db.doc('joinCodes/K7P2QX').set({
+        ...joinCodeDocument(team()),
+        'sectorId': 't12',
+      });
+      offline(db.doc('sectors/t49/names/julie'), 'permission-denied');
+
+      final sent = await directory.requestToJoin(julieRequest);
+
+      expect(failureOf(sent), JoinRequestFailure.unknownCode);
+    });
+
+    test('should tell when the server refuses and cannot be reached '
+        'again', () async {
+      offline(db.doc('sectors/t49/names/julie'), 'permission-denied');
+      offline(db.doc('joinCodes/K7P2QX'));
+
+      final sent = await directory.requestToJoin(julieRequest);
+
+      expect(failureOf(sent), JoinRequestFailure.noNetwork);
+    });
+
+    test('should throw any other failure of the server', () async {
+      offline(db.doc('sectors/t49/names/julie'), 'internal');
+
+      await expectLater(
+        directory.requestToJoin(julieRequest),
+        throwsA(isA<FirebaseException>()),
+      );
     });
   });
 

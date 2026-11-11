@@ -114,6 +114,7 @@ void main() {
       expect(await stored('rescueCentres/villefranche'), {
         'name': 'CS Villefranche',
       });
+      expect(await stored('sectors/t49/names/manu'), {'member': 'uid-manu'});
     });
 
     test('should refuse a number already taken in the same station', () async {
@@ -385,6 +386,123 @@ void main() {
       );
     });
 
+    group('a member renamed holding the new name', () {
+      late Sector renamed;
+      late SectorChange change;
+
+      setUp(() async {
+        await repository().add(created);
+        await db.doc('sectors/t49/members/uid-lea').set(memberToDocument(lea));
+        await db.doc('sectors/t49/names/lea').set({'member': 'uid-lea'});
+        (renamed, change) = valueOf(team().rename(nameOf('Léa B.'), by: leaId));
+      });
+
+      test('should hold the new name and free the old one', () async {
+        valueOf(await repository().save(renamed, change));
+
+        expect(await stored('sectors/t49/names/lea b'), {'member': 'uid-lea'});
+        expect(await stored('sectors/t49/names/lea'), isNull);
+        expect(await stored('sectors/t49/names/manu'), {'member': 'uid-manu'});
+      });
+
+      test('should keep an old name another member holds', () async {
+        // A team of before #148: Léa's name was never held for her.
+        await db.doc('sectors/t49/names/lea').set({'member': 'uid-julie'});
+
+        valueOf(await repository().save(renamed, change));
+
+        expect(await stored('sectors/t49/names/lea'), {'member': 'uid-julie'});
+        expect(await stored('sectors/t49/names/lea b'), {'member': 'uid-lea'});
+      });
+
+      test('should keep the name held when only its case or accents '
+          'change', () async {
+        final (again, sameName) = valueOf(
+          team().rename(nameOf('LEA'), by: leaId),
+        );
+
+        valueOf(await repository().save(again, sameName));
+
+        expect(await stored('sectors/t49/names/lea'), {'member': 'uid-lea'});
+        expect(
+          (await stored('sectors/t49/members/uid-lea'))!['displayName'],
+          'LEA',
+        );
+      });
+
+      test(
+        'should keep the new name when it is already the member\'s',
+        () async {
+          await db.doc('sectors/t49/names/lea b').set({'member': 'uid-lea'});
+
+          valueOf(await repository().save(renamed, change));
+
+          expect(await stored('sectors/t49/names/lea b'), {
+            'member': 'uid-lea',
+          });
+          expect(
+            (await stored('sectors/t49/members/uid-lea'))!['displayName'],
+            'Léa B.',
+          );
+        },
+      );
+
+      test('should change nothing when another member holds the new '
+          'name', () async {
+        await db.doc('sectors/t49/names/lea b').set({'member': 'uid-julie'});
+
+        final saved = await repository().save(renamed, change);
+
+        expect(failureOf(saved), SectorWriteFailure.nameTaken);
+        expect(
+          await stored('sectors/t49/members/uid-lea'),
+          memberToDocument(lea),
+        );
+        expect(await stored('sectors/t49/names/lea'), {'member': 'uid-lea'});
+      });
+
+      test('should write nothing when the member is gone', () async {
+        await db.doc('sectors/t49/members/uid-lea').delete();
+
+        expect(
+          valueOf(await repository().save(renamed, change)),
+          same(renamed),
+        );
+        expect(await stored('sectors/t49/members/uid-lea'), isNull);
+        expect(await stored('sectors/t49/names/lea b'), isNull);
+      });
+
+      for (final (code, failure) in [
+        ('unavailable', SectorWriteFailure.noNetwork),
+        ('permission-denied', SectorWriteFailure.nameTaken),
+      ]) {
+        test('should change nothing when the server answers $code', () async {
+          whenCalling(Invocation.method(#get, null))
+              .on(db.doc('sectors/t49/names/lea b'))
+              .thenThrow(firestoreError(code));
+
+          final saved = await repository().save(renamed, change);
+
+          expect(failureOf(saved), failure);
+          expect(
+            await stored('sectors/t49/members/uid-lea'),
+            memberToDocument(lea),
+          );
+        });
+      }
+
+      test('should throw any other failure of the server', () async {
+        whenCalling(Invocation.method(#get, null))
+            .on(db.doc('sectors/t49/names/lea b'))
+            .thenThrow(firestoreError('internal'));
+
+        await expectLater(
+          repository().save(renamed, change),
+          throwsA(isA<FirebaseException>()),
+        );
+      });
+    });
+
     for (final (name, act)
         in <
           (
@@ -399,22 +517,28 @@ void main() {
           ('leaving', (t) => t.leave(by: leaId)),
           ('cancelling', (t) => t.leave(by: julieId)),
         ]) {
-      test('should delete the member document of a member $name', () async {
+      test('should delete the member document of a member $name, and the '
+          'name they held', () async {
         await repository().add(created);
         for (final member in [lea, julie]) {
           await db
               .doc('sectors/t49/members/${member.id.value}')
               .set(memberToDocument(member));
+          await db
+              .doc('sectors/t49/names/${member.name.key}')
+              .set(nameEntryDocument(member.id));
         }
         final (after, change) = valueOf(act(team()));
-        final gone = (change as MemberChange).member.id.value;
+        final gone = (change as MemberChange).member;
 
         final saved = await repository().save(after, change);
         await pumpEventQueue();
 
         expect(valueOf(saved), same(after));
-        expect(await stored('sectors/t49/members/$gone'), isNull);
+        expect(await stored('sectors/t49/members/${gone.id.value}'), isNull);
+        expect(await stored('sectors/t49/names/${gone.name.key}'), isNull);
         expect(await stored('sectors/t49/members/uid-manu'), isNotNull);
+        expect(await stored('sectors/t49/names/manu'), isNotNull);
       });
     }
 
@@ -488,14 +612,26 @@ void main() {
         'acceptedBy': 'uid-sam',
         'acceptedAt': Timestamp.fromDate(joinedAt),
       });
+      expect(await stored('sectors/t49/names/sam'), {'member': 'uid-sam'});
+    });
+
+    test('should write nothing when a member holds the name', () async {
+      await repository().add(created);
+      await db.doc('sectors/t49/names/sam').set({'member': 'uid-lea'});
+      final (joined, change) = samJoins();
+
+      final saved = await repository().save(joined, change);
+
+      expect(failureOf(saved), SectorWriteFailure.nameTaken);
+      expect(await stored('sectors/t49/members/uid-sam'), isNull);
     });
 
     test('should tell and write nothing when the server cannot be '
         'reached', () async {
       await repository().add(created);
       final (joined, change) = samJoins();
-      whenCalling(Invocation.method(#get, [isA<GetOptions>()]))
-          .on(db.doc('sectors/t49'))
+      whenCalling(Invocation.method(#get, null))
+          .on(db.doc('sectors/t49/names/sam'))
           .thenThrow(firestoreError('unavailable'));
 
       final saved = await repository().save(joined, change);
@@ -509,8 +645,8 @@ void main() {
         'not an admin\'s', () async {
       await repository().add(created);
       final (joined, change) = samJoins();
-      whenCalling(Invocation.method(#get, [isA<GetOptions>()]))
-          .on(db.doc('sectors/t49'))
+      whenCalling(Invocation.method(#get, null))
+          .on(db.doc('sectors/t49/names/sam'))
           .thenThrow(firestoreError('permission-denied'));
 
       final saved = await repository().save(joined, change);
@@ -523,8 +659,8 @@ void main() {
     test('should throw any other failure of the server', () async {
       await repository().add(created);
       final (joined, change) = samJoins();
-      whenCalling(Invocation.method(#get, [isA<GetOptions>()]))
-          .on(db.doc('sectors/t49'))
+      whenCalling(Invocation.method(#get, null))
+          .on(db.doc('sectors/t49/names/sam'))
           .thenThrow(firestoreError('internal'));
 
       await expectLater(
@@ -618,6 +754,7 @@ void main() {
         'sectors/t49/campaigns/2026',
         'sectors/t49/campaigns/2026/streets/lilas',
         'sectors/t49/campaigns/2026/rounds/round-1',
+        'sectors/t49/names/manu',
         'joinCodes/K7P2QX',
         'sectorKeys/villefranche_49',
       ]) {
@@ -828,12 +965,14 @@ void main() {
             await db.doc('sectors/t49/members/uid-sam').set({
               'status': 'pending',
             });
+            await db.doc('sectors/t49/names/sam').set({'member': 'uid-sam'});
           }
         };
 
         await repository().delete(valueOf(team().delete(by: manuAsAdmin)));
 
         expect(await stored('sectors/t49/members/uid-sam'), isNull);
+        expect(await stored('sectors/t49/names/sam'), isNull);
         expect(await stored('sectors/t49/members/uid-manu'), isNull);
         expect(await stored('sectors/t49'), isNull);
       });

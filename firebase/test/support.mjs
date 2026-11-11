@@ -10,6 +10,7 @@ import {
   doc,
   setDoc,
   updateDoc,
+  writeBatch,
 } from 'firebase/firestore';
 
 /**
@@ -76,6 +77,29 @@ export const campaignPath = `${sectorPath}/campaigns/2026`;
 export const streetsPath = `${campaignPath}/streets`;
 export const roundsPath = `${campaignPath}/rounds`;
 export const memberPath = (uid) => `${sectorPath}/members/${uid}`;
+
+/** Where the name of key [key] is held (#148): `lea`, `jean paul`. */
+export const namePath = (key) => `${sectorPath}/names/${key}`;
+
+/** nameEntryDocument: the member who holds the name. */
+export const nameDoc = (uid) => ({ member: uid });
+
+/**
+ * Writes the member document [data] of [uid] on [db] (`set`, or `update`
+ * when [update]) with the entry holding its name under [key], in one
+ * batch, as the adapters do (#148).
+ */
+export function writeWithName(db, uid, data, key, { update = false } = {}) {
+  const batch = writeBatch(db);
+  const member = doc(db, memberPath(uid));
+  if (update) {
+    batch.update(member, data);
+  } else {
+    batch.set(member, data);
+  }
+  batch.set(doc(db, namePath(key)), nameDoc(uid));
+  return batch.commit();
+}
 
 /** communeEntry of Villefranche-sur-Saône, with its centre. */
 export const villefrancheEntry = {
@@ -278,9 +302,9 @@ export const roundDoc = (overrides = {}) => ({
 
 /**
  * Stores the team of Tournée 49 as the adapters leave it after creating
- * it, accepting Léa and receiving Paul's request, with Rue Nationale and
- * a validated tournée in the campaign 2026; and the two administrators,
- * added by hand in the console (no fields).
+ * it, accepting Léa and receiving Paul's request (each name held, #148),
+ * with Rue Nationale and a validated tournée in the campaign 2026; and the
+ * two administrators, added by hand in the console (no fields).
  */
 export async function seedTeam(env) {
   await seed(env, `admins/${manu}`, {});
@@ -292,6 +316,10 @@ export async function seedTeam(env) {
     joinCode: code,
   });
   await seed(env, memberPath(paul), requestDoc('Paul'));
+  // The names they hold in it (#148).
+  await seed(env, namePath('manu'), nameDoc(manu));
+  await seed(env, namePath('lea'), nameDoc(lea));
+  await seed(env, namePath('paul'), nameDoc(paul));
   await seed(env, campaignPath, campaignDoc());
   await seed(env, `joinCodes/${code}`, previewDoc());
   await seed(env, 'sectorKeys/villefranche_49', { sectorId });

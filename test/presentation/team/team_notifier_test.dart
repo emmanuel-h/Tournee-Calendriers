@@ -542,10 +542,43 @@ void main() {
       final container = phoneOf(manuId);
       await shown(container);
 
-      final failure = await container.read(teamProvider.notifier).remove(leaId);
+      final failure = await container
+          .read(teamProvider.notifier)
+          .remove(leaId, renewCode: false);
 
       expect(failure, isNull);
       expect(sectors.saved.single.$2, isA<MemberRemoved>());
+    });
+
+    test('should renew the code, then remove the member, when asked '
+        'to', () async {
+      final container = phoneOf(manuId);
+      await shown(container);
+
+      final failure = await container
+          .read(teamProvider.notifier)
+          .remove(leaId, renewCode: true);
+      await pumpEventQueue();
+
+      expect(failure, isNull);
+      expect(sectors.saved.map((saved) => saved.$2.runtimeType), [
+        JoinCodeRegenerated,
+        MemberRemoved,
+      ]);
+      expect((container.read(teamProvider) as TeamShown).code, '234-567');
+    });
+
+    test('should tell removing with a new code needs the network', () async {
+      final container = phoneOf(manuId);
+      await shown(container);
+      sectors.offline = true;
+
+      final failure = await container
+          .read(teamProvider.notifier)
+          .remove(leaId, renewCode: true);
+
+      expect(failure, TeamActionFailure.offline);
+      expect(sectors.saved, isEmpty);
     });
 
     test('should show the new code once drawn', () async {
@@ -595,7 +628,9 @@ void main() {
       final container = phoneOf(manuId, admin: false);
       await shown(container);
 
-      final failure = await container.read(teamProvider.notifier).remove(leaId);
+      final failure = await container
+          .read(teamProvider.notifier)
+          .remove(leaId, renewCode: true);
 
       expect(failure, TeamActionFailure.notAdmin);
       expect(sectors.saved, isEmpty);
@@ -675,7 +710,10 @@ void main() {
 
       expect(await notifier.accept(julieId), TeamActionFailure.teamChanged);
       expect(await notifier.refuse(julieId), TeamActionFailure.teamChanged);
-      expect(await notifier.remove(leaId), TeamActionFailure.teamChanged);
+      expect(
+        await notifier.remove(leaId, renewCode: false),
+        TeamActionFailure.teamChanged,
+      );
       expect(await notifier.regenerateCode(), TeamActionFailure.teamChanged);
       expect(await notifier.leave(), TeamActionFailure.teamChanged);
       expect(await notifier.deleteSector(), TeamActionFailure.teamChanged);
@@ -704,7 +742,7 @@ void main() {
 
         expect(failure, isNull);
         expect(sectors.saved.single.$2, isA<AdminJoined>());
-        expect(store.mySectors.current, sector49);
+        expect(store.mySectors.current, sector49.withMemberName(nameOf('Sam')));
         final state = container.read(teamProvider) as TeamShown;
         expect(state.iAmIn, isTrue);
       });
@@ -733,6 +771,37 @@ void main() {
 
         expect(failure, TeamActionFailure.notAdmin);
         expect(store.mySectors.current!.isVisiting, isTrue);
+      });
+
+      test('should tell when a member of the phone\'s copy holds the '
+          'name', () async {
+        final container = phoneOf(
+          samId,
+          mine: visiting(),
+          settings: FakePhoneSettings(memberName: nameOf('LÉA')),
+        );
+        await shown(container);
+
+        final failure = await container
+            .read(teamProvider.notifier)
+            .joinAsAdmin();
+
+        expect(failure, TeamActionFailure.nameTaken);
+        expect(sectors.saved, isEmpty);
+      });
+
+      test('should tell when the server says a member holds the '
+          'name', () async {
+        final container = phoneOf(samId, mine: visiting());
+        await shown(container);
+        sectors.takenNames.add((sectorId, 'sam'));
+
+        final failure = await container
+            .read(teamProvider.notifier)
+            .joinAsAdmin();
+
+        expect(failure, TeamActionFailure.nameTaken);
+        expect(sectors.saved, isEmpty);
       });
 
       test('should tell joining needs a first name', () async {

@@ -213,16 +213,17 @@ final class _Team extends ConsumerWidget {
                             key: ValueKey('team.member.${member.id.value}'),
                             member: member,
                             onRemove: () async {
-                              final confirmed = await showConfirmDialog(
+                              final renewCode = await _confirmRemove(
                                 context,
-                                name: 'team.confirmRemove',
-                                title: l10n.teamRemoveTitle(member.name),
-                                body: l10n.teamRemoveBody(member.name),
-                                confirmLabel: l10n.teamRemove,
-                                destructive: true,
+                                member.name,
                               );
-                              if (confirmed) {
-                                await run(() => notifier.remove(member.id));
+                              if (renewCode != null) {
+                                await run(
+                                  () => notifier.remove(
+                                    member.id,
+                                    renewCode: renewCode,
+                                  ),
+                                );
                               }
                             },
                           ),
@@ -1000,3 +1001,103 @@ final class _Communes extends ConsumerWidget {
 
 /// What the ⋮ of a member offers.
 enum _MemberAction { remove }
+
+/// « Retirer Léa ? » (TeamRemove mockup, PLAN §5.16): the member [name]
+/// loses access, with « Changer aussi le code », ticked by default, since
+/// they know the code. Gives whether to renew the code, or null when
+/// cancelled.
+Future<bool?> _confirmRemove(BuildContext context, String name) =>
+    showDialog<bool>(
+      context: context,
+      builder: (_) => _RemoveDialog(name: name),
+    );
+
+/// The dialog of [_confirmRemove]. A `StatefulWidget`: it keeps whether
+/// the box is ticked while it is open.
+final class _RemoveDialog extends StatefulWidget {
+  const _RemoveDialog({required this.name});
+
+  final String name;
+
+  @override
+  State<_RemoveDialog> createState() => _RemoveDialogState();
+}
+
+final class _RemoveDialogState extends State<_RemoveDialog> {
+  var _renewCode = true;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = AppColors.of(context);
+    return AlertDialog(
+      title: Text(l10n.teamRemoveTitle(widget.name)),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: 12,
+        children: [
+          Text(l10n.teamRemoveBody(widget.name)),
+          // `MergeSemantics`: TalkBack reads the box, its label and the
+          // line under it as one checkbox.
+          MergeSemantics(
+            child: InkWell(
+              key: const Key('team.confirmRemove.renewCode'),
+              onTap: () => setState(() => _renewCode = !_renewCode),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(
+                  minHeight: AppSizes.minTapTarget + 8,
+                ),
+                child: Row(
+                  spacing: 14,
+                  children: [
+                    Checkbox(
+                      value: _renewCode,
+                      activeColor: colors.accent,
+                      onChanged: (ticked) =>
+                          setState(() => _renewCode = ticked ?? false),
+                    ),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.teamRemoveRenewCode,
+                            style: AppTextStyles.body.copyWith(
+                              color: colors.ink,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                          Text(
+                            l10n.teamRemoveRenewCodeHint(widget.name),
+                            style: AppTextStyles.small.copyWith(
+                              color: colors.muted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          key: const Key('team.confirmRemove.cancel'),
+          style: TextButton.styleFrom(foregroundColor: colors.ink),
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l10n.cancel),
+        ),
+        TextButton(
+          key: const Key('team.confirmRemove.ok'),
+          style: TextButton.styleFrom(foregroundColor: colors.accent),
+          onPressed: () => Navigator.of(context).pop(_renewCode),
+          child: Text(l10n.teamRemove),
+        ),
+      ],
+    );
+  }
+}

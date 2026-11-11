@@ -3,6 +3,8 @@ import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:tournee_calendriers/domain/sector/join_code.dart';
+import 'package:tournee_calendriers/domain/sector/member.dart';
+import 'package:tournee_calendriers/domain/sector/member_name.dart';
 import 'package:tournee_calendriers/domain/sector/sector.dart';
 import 'package:tournee_calendriers/domain/sector/sector_change.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
@@ -26,12 +28,16 @@ import 'package:tournee_calendriers/infrastructure/firestore/mappers/sector_docu
 ///   drawn from [random], up to [maxCodeDraws] times: with 887 million
 ///   codes it does not happen in practice, and the user would have nothing
 ///   to do about it.
-/// - **Accepting, refusing, removing, leaving, renaming**, and **adding or
-///   removing a commune** are applied on the phone at once and sent when
-///   the network allows ([sendInBackground]).
-/// - **An admin joining** (PLAN §5.12) first asks the server for the
-///   tournée, so offline it fails at once; then their member document is
-///   sent like the other member writes.
+/// - **Accepting, refusing, removing, leaving**, and **adding or removing
+///   a commune** are applied on the phone at once and sent when the
+///   network allows ([sendInBackground]). The name a member refused,
+///   removed or leaving held goes with their document, in one batch.
+/// - **Renaming** and **an admin joining** (PLAN §5.9, §5.12) hold a name
+///   in the tournée (#148, `names/{key}`, the name's `MemberName.key`): a
+///   transaction reads the name's entry and writes the member with it, so
+///   it fails at once offline, and a name another member holds is refused
+///   (by this read, or by the security rules for one taken at the same
+///   second).
 /// - **Reading** follows the tournée document and its members with two
 ///   listeners, served from the phone's copy first.
 final class FirestoreSectorRepository implements SectorRepository {
@@ -139,6 +145,8 @@ final class FirestoreSectorRepository implements SectorRepository {
         final centreKnown = (await transaction.get(centre)).exists;
 
         final sectorDoc = FirestoreLayout.sector(_db, stored.id);
+        // `!`: a tournée just created holds its creator (`createdBy`).
+        final creator = stored.memberOf(stored.createdBy)!;
         transaction
           ..set(key, sectorKeyDocument(stored))
           ..set(_joinCode(code), joinCodeDocument(stored))
@@ -148,8 +156,12 @@ final class FirestoreSectorRepository implements SectorRepository {
               _db,
               stored.id,
             ).doc(stored.createdBy.value),
-            // `!`: a tournée just created holds its creator (`createdBy`).
-            memberToDocument(stored.memberOf(stored.createdBy)!),
+            memberToDocument(creator),
+          )
+          // The creator's name, held in the tournée from the start (#148).
+          ..set(
+            FirestoreLayout.nameIn(_db, stored.id, creator.name),
+            nameEntryDocument(creator.id),
           )
           ..set(
             sectorDoc
@@ -185,34 +197,64 @@ final class FirestoreSectorRepository implements SectorRepository {
         );
         return Ok(sector);
       case MemberRenamed(:final member):
-        sendInBackground(
-          '$change',
-          members.doc(member.id.value).update(displayNameFields(member)),
+        // A refusal means another member took the name at the same second
+        // (the security rules), or the member is no longer in the tournée.
+        return _holdingName(
+          sector,
+          member,
+          refused: SectorWriteFailure.nameTaken,
+          (transaction) async {
+            final doc = members.doc(member.id.value);
+            final stored = (await transaction.get(doc)).data();
+            // Gone meanwhile (removed, left): nothing to rename, and the
+            // phone hears of the loss from its own listener.
+            if (stored == null) return false;
+            // The name held until now is freed when the rename changes its
+            // key (« Léa » to « LÉA » keeps it), and only when it is the
+            // member's. Read before any write, as a transaction requires.
+            if (stored['displayName'] case final String text) {
+              if (MemberName.create(text) case Ok(:final value)
+                  when value.key != member.name.key) {
+                final old = FirestoreLayout.nameIn(_db, sector.id, value);
+                final holder = nameHolderOf(
+                  (await transaction.get(old)).data(),
+                );
+                if (holder == member.id) transaction.delete(old);
+              }
+            }
+            transaction.update(doc, displayNameFields(member));
+            return true;
+          },
         );
-        return Ok(sector);
       case MemberRefused(:final member) ||
           MemberRemoved(:final member) ||
           MemberLeft(:final member):
-        sendInBackground('$change', members.doc(member.id.value).delete());
-        return Ok(sector);
-      case AdminJoined(:final member):
-        try {
-          // Asked of the server first: offline the admin is told at once
-          // (« Pas de réseau », PLAN §5.12) instead of believing they
-          // joined while the write waits on the phone.
-          await FirestoreLayout.sector(
-            _db,
-            sector.id,
-          ).get(const GetOptions(source: Source.server));
-        } on FirebaseException catch (error) {
-          if (_writeFailureOf(error) case final failure?) return Err(failure);
-          rethrow;
-        }
+        // The name goes with the member, in one batch: it is free again in
+        // the tournée (#148).
         sendInBackground(
           '$change',
-          members.doc(member.id.value).set(memberToDocument(member)),
+          (_db.batch()
+                ..delete(members.doc(member.id.value))
+                ..delete(FirestoreLayout.nameIn(_db, sector.id, member.name)))
+              .commit(),
         );
         return Ok(sector);
+      case AdminJoined(:final member):
+        // A refusal means the phone is no longer an admin's: an admin may
+        // read every name of the tournée, so a taken one is seen by the
+        // read and never reaches the rules.
+        return _holdingName(
+          sector,
+          member,
+          refused: SectorWriteFailure.notAdmin,
+          (transaction) async {
+            transaction.set(
+              members.doc(member.id.value),
+              memberToDocument(member),
+            );
+            return true;
+          },
+        );
       case CommuneAdded(:final commune):
         // `arrayUnion`: only this entry is added to the stored list, so a
         // teammate's commune added at the same time stays.
@@ -303,14 +345,17 @@ final class FirestoreSectorRepository implements SectorRepository {
     Sector sector,
     DocumentReference<Map<String, dynamic>> sectorDoc,
   ) async {
-    const server = GetOptions(source: Source.server);
-    final members = FirestoreLayout.membersOf(_db, sector.id);
     // The id of every campaign seen, kept across passes: a street written
     // under a campaign whose document is already deleted is not found by
     // listing the campaigns (Firestore lists only documents that exist).
     final campaigns = <String>{};
     await _deleteUntilNone(() => _contentsOf(sector, sectorDoc, campaigns));
-    final team = await members.get(server);
+    // The team's collections, named once: each list below reads them again.
+    final team = [
+      FirestoreLayout.membersOf(_db, sector.id),
+      FirestoreLayout.namesOf(_db, sector.id),
+    ];
+    final listed = await _listed(team);
     final last = _db.batch()
       ..delete(_joinCode(sector.joinCode))
       ..delete(
@@ -319,17 +364,29 @@ final class FirestoreSectorRepository implements SectorRepository {
             .doc(sectorKeyId(sector.centre, sector.number)),
       )
       ..delete(sectorDoc);
-    for (final member in team.docs) {
-      last.delete(member.reference);
+    for (final doc in listed) {
+      last.delete(doc);
     }
     await last.commit();
-    // A request to join sent between the list and the batch. None can
-    // come later: the rules check it against the secteur, now gone.
-    await _deleteUntilNone(
-      () async => [
-        for (final doc in (await members.get(server)).docs) doc.reference,
-      ],
-    );
+    // A request to join, with its name, sent between the list and the
+    // batch. None can come later: the rules check it against the secteur,
+    // now gone.
+    await _deleteUntilNone(() => _listed(team));
+  }
+
+  /// The documents of [collections] (the members and the names they hold,
+  /// #148), listed from the server.
+  Future<List<DocumentReference<Map<String, dynamic>>>> _listed(
+    List<CollectionReference<Map<String, dynamic>>> collections,
+  ) async {
+    const server = GetOptions(source: Source.server);
+    final lists = await Future.wait([
+      for (final collection in collections) collection.get(server),
+    ]);
+    return [
+      for (final list in lists)
+        for (final doc in list.docs) doc.reference,
+    ];
   }
 
   /// What [sector] holds, listed from the server: its campaigns, with
@@ -391,6 +448,46 @@ final class FirestoreSectorRepository implements SectorRepository {
         }
         await batch.commit();
       }
+    }
+  }
+
+  /// Holds the name of [member] in [sector] (#148) and runs [write] in the
+  /// same transaction, so the member and the name are written together or
+  /// not at all.
+  ///
+  /// The name's entry is read first: held by another member, nothing is
+  /// written and it fails with [SectorWriteFailure.nameTaken]; free, it is
+  /// created for [member]; already theirs, it stays. [write] reads what it
+  /// needs, writes the member, and returns false when there is nothing to
+  /// write after all: then the name is not held either.
+  ///
+  /// A transaction needs the server: offline it fails at once with
+  /// [SectorWriteFailure.noNetwork]. A refusal of the security rules fails
+  /// with [refused], which only the caller can word.
+  Future<Result<Sector, SectorWriteFailure>> _holdingName(
+    Sector sector,
+    Member member,
+    Future<bool> Function(Transaction transaction) write, {
+    required SectorWriteFailure refused,
+  }) async {
+    final entry = FirestoreLayout.nameIn(_db, sector.id, member.name);
+    try {
+      return await _db.runTransaction<Result<Sector, SectorWriteFailure>>((
+        transaction,
+      ) async {
+        final holder = nameHolderOf((await transaction.get(entry)).data());
+        if (holder != null && holder != member.id) {
+          return const Err(SectorWriteFailure.nameTaken);
+        }
+        if (await write(transaction) && holder == null) {
+          transaction.set(entry, nameEntryDocument(member.id));
+        }
+        return Ok(sector);
+      });
+    } on FirebaseException catch (error) {
+      if (isNoNetwork(error)) return const Err(SectorWriteFailure.noNetwork);
+      if (isRefused(error)) return Err(refused);
+      rethrow;
     }
   }
 

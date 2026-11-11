@@ -17,6 +17,24 @@ void main() {
     expect(summary.centre, csVillefranche);
     expect(summary.campaign, campaign2027);
     expect(summary.status, MemberStatus.active);
+    expect(summary.memberName, isNull);
+  });
+
+  test('should keep the name the member goes by in it', () {
+    final summary = summaryOf('t49', 49, memberName: nameOf('Léa B.'));
+
+    expect(summary.memberName, nameOf('Léa B.'));
+  });
+
+  test('should hold another name, all else kept', () {
+    final named = sector7.withMemberName(nameOf('Léa B.'));
+
+    expect(named.memberName, nameOf('Léa B.'));
+    expect(named.id, sector7.id);
+    expect(named.number, sector7.number);
+    expect(named.centre, sector7.centre);
+    expect(named.campaign, sector7.campaign);
+    expect(named.status, MemberStatus.pending);
   });
 
   test('should be pending when the request is not accepted yet', () {
@@ -42,7 +60,9 @@ void main() {
   });
 
   test('should be active, all else kept, once the request is accepted', () {
-    final accepted = sector7.accepted();
+    final accepted = sector7.withMemberName(nameOf('Léa B.')).accepted();
+
+    expect(accepted.memberName, nameOf('Léa B.'));
 
     expect(accepted.status, MemberStatus.active);
     expect(accepted.id, sector7.id);
@@ -64,6 +84,14 @@ void main() {
       summaryOf('t49', 49) ==
           summaryOf('t49', 49, status: MemberStatus.pending),
       isFalse,
+    );
+    expect(
+      summaryOf('t49', 49) == summaryOf('t49', 49, memberName: nameOf('Manu')),
+      isFalse,
+    );
+    expect(
+      summaryOf('t49', 49, memberName: nameOf('Manu')).hashCode,
+      summaryOf('t49', 49, memberName: nameOf('Manu')).hashCode,
     );
     expect(
       sector49 ==

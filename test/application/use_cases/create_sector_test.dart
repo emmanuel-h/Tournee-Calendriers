@@ -129,6 +129,7 @@ void main() {
           centre: csVillefranche,
           campaign: campaign2026,
           status: MemberStatus.active,
+          memberName: nameOf('Manu'),
         );
         expect(store.saves, [
           valueOf(
