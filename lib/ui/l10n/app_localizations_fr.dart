@@ -2798,4 +2798,125 @@ class AppLocalizationsFr extends AppLocalizations {
   String streetPartBothSides(String odd, String even) {
     return '$odd · $even';
   }
+
+  @override
+  String get streetPartTitle => 'Partie de la rue';
+
+  @override
+  String get streetPartClose => 'Fermer';
+
+  @override
+  String streetPartSubtitle(String name, int lowest, int highest) {
+    return '$name · n° $lowest à $highest';
+  }
+
+  @override
+  String get streetPartSides => 'Côté';
+
+  @override
+  String get streetPartSideBoth => 'Les deux';
+
+  @override
+  String get streetPartSideOdd => 'Impairs';
+
+  @override
+  String get streetPartSideEven => 'Pairs';
+
+  @override
+  String streetPartKept(int kept, int total) {
+    String _temp0 = intl.Intl.pluralLogic(
+      kept,
+      locale: localeName,
+      other: '$kept numéros gardés sur $total',
+      one: '1 numéro gardé sur $total',
+      zero: 'Aucun numéro gardé sur $total',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get streetPartWholeAction => 'Toute la rue';
+
+  @override
+  String get streetPartNothingAction => 'Rien';
+
+  @override
+  String get streetPartAllOdd => 'Tous les impairs';
+
+  @override
+  String get streetPartNoOdd => 'Aucun impair';
+
+  @override
+  String get streetPartAllEven => 'Tous les pairs';
+
+  @override
+  String get streetPartNoEven => 'Aucun pair';
+
+  @override
+  String get streetPartValidate => 'Valider';
+
+  @override
+  String streetPartBetween(int before, int after) {
+    return 'entre $before et $after';
+  }
+
+  @override
+  String streetPartBefore(int number) {
+    return 'avant le $number';
+  }
+
+  @override
+  String streetPartAfter(int number) {
+    return 'après le $number';
+  }
+
+  @override
+  String streetPartFirstMark(String place) {
+    return 'Première marque, $place';
+  }
+
+  @override
+  String streetPartLastMark(String place) {
+    return 'Dernière marque, $place';
+  }
+
+  @override
+  String get streetPartMap => 'Carte de la rue';
+
+  @override
+  String get streetPartFrom => 'Du n°';
+
+  @override
+  String get streetPartTo => 'Au n°';
+
+  @override
+  String streetPartRowSemantics(String part) {
+    return 'Partie de la rue : $part';
+  }
+
+  @override
+  String get streetPartConfirmTitle => 'Changer la partie de la rue ?';
+
+  @override
+  String streetPartConfirmBody(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other:
+          '$count numéros ont des marques. Ils partent avec elles à la Corbeille.',
+      one: '1 numéro a des marques. Il part avec elles à la Corbeille.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get streetPartConfirmOk => 'Changer';
+
+  @override
+  String get streetPartNoNetwork =>
+      'Connexion nécessaire pour lire les numéros de la rue.';
+
+  @override
+  String get streetPartUnavailable =>
+      'Impossible de lire les numéros de la rue pour l\'instant. Réessayez plus tard.';
 }

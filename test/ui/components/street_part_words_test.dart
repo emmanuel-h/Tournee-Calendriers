@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:tournee_calendriers/domain/map/part_drawing.dart';
 import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/ui/components/street_part_words.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
@@ -31,6 +32,16 @@ void main() {
   ]) {
     test('should say « $text »', () {
       expect(streetPartText(l10n, held), text);
+    });
+  }
+
+  for (final (place, text) in [
+    (const MarkBefore(1), 'avant le 1'),
+    (const MarkBetween(5, 7), 'entre 5 et 7'),
+    (const MarkAfter(41), 'après le 41'),
+  ]) {
+    test('should place a mark « $text »', () {
+      expect(markPlaceText(l10n, place), text);
     });
   }
 }

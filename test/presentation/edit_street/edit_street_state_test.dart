@@ -1,6 +1,7 @@
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
+import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/presentation/edit_street/edit_street_state.dart';
 import 'package:tournee_calendriers/presentation/street/street_view_state.dart';
 
@@ -42,6 +43,7 @@ void main() {
   group('EditStreetShown.tileOf', () {
     final state = EditStreetShown(
       name: 'Rue des Lilas',
+      part: StreetPart.whole,
       columns: StreetColumns.both,
       odd: [EditTile(number: n('1'), isBuilding: false)],
       even: [EditTile(number: n('8'), isBuilding: true)],
@@ -87,6 +89,35 @@ void main() {
       );
       expect(RenumberTaken(n('5')).toString(), 'RenumberTaken(5)');
       expect(RenumberInCorbeille(n('7')).toString(), 'RenumberInCorbeille(7)');
+    });
+  });
+
+  group('part outcomes', () {
+    test('should compare a refused reading by its problem', () {
+      const offline = PartReadRefused(PartProblem.offline);
+
+      expect(offline, const PartReadRefused(PartProblem.offline));
+      expect(offline.hashCode, PartProblem.offline.hashCode);
+      expect(offline, isNot(const PartReadRefused(PartProblem.gone)));
+      expect(offline.toString(), 'PartReadRefused(PartProblem.offline)');
+    });
+
+    test('should compare a confirmation by its count', () {
+      const three = PartNeedsConfirmation(3);
+
+      expect(three, const PartNeedsConfirmation(3));
+      expect(three.hashCode, 3.hashCode);
+      expect(three, isNot(const PartNeedsConfirmation(2)));
+      expect(three.toString(), 'PartNeedsConfirmation(3)');
+    });
+
+    test('should compare a refusal by its problem', () {
+      const gone = PartRefused(PartProblem.gone);
+
+      expect(gone, const PartRefused(PartProblem.gone));
+      expect(gone.hashCode, PartProblem.gone.hashCode);
+      expect(gone, isNot(const PartRefused(PartProblem.unavailable)));
+      expect(gone.toString(), 'PartRefused(PartProblem.gone)');
     });
   });
 }

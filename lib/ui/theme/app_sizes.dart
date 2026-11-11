@@ -389,4 +389,16 @@ abstract final class AppSizes {
   static const collecteDetailLineHeight = 44.0;
   static const collecteDetailIndent = 36.0;
   static const collecteChevronWidth = 18.0;
+
+  /// « Partie de la rue » (PLAN §5.15, StreetPart mockup): the border of a
+  /// house dot; a mark, a round 32 dp handle on a stem under its label,
+  /// answering a finger over 48 dp.
+  static const partDotBorder = 2.0;
+  static const partMarkHandle = 32.0;
+  static const partMarkBorder = 3.0;
+  static const partMarkStem = 2.5;
+  static const partMarkStemHeight = 56.0;
+  static const partMarkLabelHeight = 26.0;
+  static const partMarkLabelWidth = 160.0;
+  static const partMarkGrip = 18.0;
 }

@@ -1,6 +1,8 @@
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
+import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/presentation/street/street_view_state.dart';
+import 'package:tournee_calendriers/presentation/street_part/street_part_state.dart';
 
 // The view state of the edit mode of a street (PLAN §5.5, mockup Edit), and
 // what its commands answer, so the screen knows whether to ask first, show
@@ -53,6 +55,7 @@ final class EditStreetGone extends EditStreetState {
 final class EditStreetShown extends EditStreetState {
   EditStreetShown({
     required this.name,
+    required this.part,
     required this.columns,
     required List<EditTile> odd,
     required List<EditTile> even,
@@ -61,6 +64,10 @@ final class EditStreetShown extends EditStreetState {
 
   /// The name as stored; the name field starts from it.
   final String name;
+
+  /// The part of the street the secteur holds (PLAN §5.15), on the
+  /// « Partie de la rue » row.
+  final StreetPart part;
 
   /// One column when the street has numbers on one side only, as on the
   /// street screen.
@@ -184,4 +191,93 @@ final class RenumberInCorbeille extends RenumberOutcome {
 /// The house or the street is no longer there: nothing stored.
 final class RenumberFailed extends RenumberOutcome {
   const RenumberFailed();
+}
+
+/// Why « Partie de la rue » could not open, or its part could not be
+/// stored.
+enum PartProblem {
+  /// The street's numbers are read from the BAN, and the phone is offline.
+  offline,
+
+  /// The BAN did not answer as it should: maybe later.
+  unavailable,
+
+  /// The street is no longer there.
+  gone,
+}
+
+/// What the « Partie de la rue » row found. `sealed`: the screen handles
+/// each case.
+sealed class PartReading {
+  const PartReading();
+}
+
+/// The screen can open on [request].
+final class PartReadable extends PartReading {
+  const PartReadable(this.request);
+
+  final StreetPartRequest request;
+}
+
+/// The screen cannot open, for [problem].
+final class PartReadRefused extends PartReading {
+  const PartReadRefused(this.problem);
+
+  final PartProblem problem;
+
+  @override
+  bool operator ==(Object other) =>
+      other is PartReadRefused && other.problem == problem;
+
+  @override
+  int get hashCode => problem.hashCode;
+
+  @override
+  String toString() => 'PartReadRefused($problem)';
+}
+
+/// What « Valider » on « Partie de la rue » did. `sealed`: the screen
+/// handles each case.
+sealed class PartOutcome {
+  const PartOutcome();
+}
+
+/// The street has the part chosen (or had it already).
+final class PartChanged extends PartOutcome {
+  const PartChanged();
+}
+
+/// Nothing was stored: [count] numbers with marks would go to the
+/// Corbeille. The screen asks, then tries again, confirmed.
+final class PartNeedsConfirmation extends PartOutcome {
+  const PartNeedsConfirmation(this.count);
+
+  final int count;
+
+  @override
+  bool operator ==(Object other) =>
+      other is PartNeedsConfirmation && other.count == count;
+
+  @override
+  int get hashCode => count.hashCode;
+
+  @override
+  String toString() => 'PartNeedsConfirmation($count)';
+}
+
+/// Nothing was stored, for [problem].
+final class PartRefused extends PartOutcome {
+  const PartRefused(this.problem);
+
+  final PartProblem problem;
+
+  @override
+  bool operator ==(Object other) =>
+      other is PartRefused && other.problem == problem;
+
+  @override
+  int get hashCode => problem.hashCode;
+
+  @override
+  String toString() => 'PartRefused($problem)';
 }

@@ -60,6 +60,7 @@ import 'package:tournee_calendriers/application/use_cases/observe_street.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_streets.dart';
 import 'package:tournee_calendriers/application/use_cases/phone_settings.dart';
 import 'package:tournee_calendriers/application/use_cases/purge_corbeille.dart';
+import 'package:tournee_calendriers/application/use_cases/read_street_part_choice.dart';
 import 'package:tournee_calendriers/application/use_cases/refresh_offline_maps.dart';
 import 'package:tournee_calendriers/application/use_cases/round_visits.dart';
 import 'package:tournee_calendriers/application/use_cases/rounds.dart';
@@ -226,6 +227,12 @@ final changeStreetPartProvider = Provider(
     ref.watch(addressDirectoryProvider),
     ref.watch(clockProvider),
     ref.watch(identityProvider),
+  ),
+);
+final readStreetPartChoiceProvider = Provider(
+  (ref) => ReadStreetPartChoice(
+    ref.watch(streetRepositoryProvider),
+    ref.watch(addressDirectoryProvider),
   ),
 );
 final lookUpStreetProvider = Provider(

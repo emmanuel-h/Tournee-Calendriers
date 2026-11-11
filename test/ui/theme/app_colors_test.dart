@@ -180,5 +180,18 @@ void main() {
     expect(dark.mapStreetToDo, light.mapStreetToDo);
     expect(dark.mapSelectedCasing, light.mapSelectedCasing);
     expect(dark.mapSelectedCore, light.mapSelectedCore);
+    expect(dark.mapPartRoad, light.mapPartRoad);
+    expect(dark.mapPartLeftOutBorder, light.mapPartLeftOutBorder);
+    expect(dark.mapPartOtherSide, light.mapPartOtherSide);
+    expect(dark.mapPartOtherSideBorder, light.mapPartOtherSideBorder);
+  });
+
+  test('should draw « Partie de la rue » in the StreetPart mockup\'s '
+      'colours', () {
+    const colors = AppColors.light;
+    expect(colors.mapPartRoad, const Color(0xFFCFC9BD));
+    expect(colors.mapPartLeftOutBorder, const Color(0xFF4A5058));
+    expect(colors.mapPartOtherSide, const Color(0xFFE2DED5));
+    expect(colors.mapPartOtherSideBorder, const Color(0xFFCFC9BD));
   });
 }

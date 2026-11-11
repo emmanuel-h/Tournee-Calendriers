@@ -3933,6 +3933,180 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'{odd} · {even}'**
   String streetPartBothSides(String odd, String even);
+
+  /// Title of the screen choosing the part of a street a secteur holds (PLAN §5.15), and label of its row in edit mode.
+  ///
+  /// In fr, this message translates to:
+  /// **'Partie de la rue'**
+  String get streetPartTitle;
+
+  /// Tooltip of ✕ on « Partie de la rue »: leaves with nothing changed.
+  ///
+  /// In fr, this message translates to:
+  /// **'Fermer'**
+  String get streetPartClose;
+
+  /// Under « Partie de la rue »: the street and its lowest and highest numbers.
+  ///
+  /// In fr, this message translates to:
+  /// **'{name} · n° {lowest} à {highest}'**
+  String streetPartSubtitle(String name, int lowest, int highest);
+
+  /// Screen-reader name of « Les deux | Impairs | Pairs » on « Partie de la rue ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Côté'**
+  String get streetPartSides;
+
+  /// Side choice of « Partie de la rue »: both sides, the two marks cutting both at once.
+  ///
+  /// In fr, this message translates to:
+  /// **'Les deux'**
+  String get streetPartSideBoth;
+
+  /// Side choice of « Partie de la rue »: the odd side, with its own two marks.
+  ///
+  /// In fr, this message translates to:
+  /// **'Impairs'**
+  String get streetPartSideOdd;
+
+  /// Side choice of « Partie de la rue »: the even side, with its own two marks.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pairs'**
+  String get streetPartSideEven;
+
+  /// Under the part on « Partie de la rue »: how many numbers of the street it keeps.
+  ///
+  /// In fr, this message translates to:
+  /// **'{kept, plural, =0{Aucun numéro gardé sur {total}} =1{1 numéro gardé sur {total}} other{{kept} numéros gardés sur {total}}}'**
+  String streetPartKept(int kept, int total);
+
+  /// Quick button of « Partie de la rue » on « Les deux »: keep every number.
+  ///
+  /// In fr, this message translates to:
+  /// **'Toute la rue'**
+  String get streetPartWholeAction;
+
+  /// Quick button of « Partie de la rue » on « Les deux »: keep no number.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rien'**
+  String get streetPartNothingAction;
+
+  /// Quick button of « Partie de la rue » on « Impairs »: keep every odd number.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tous les impairs'**
+  String get streetPartAllOdd;
+
+  /// Quick button of « Partie de la rue » on « Impairs »: keep no odd number.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun impair'**
+  String get streetPartNoOdd;
+
+  /// Quick button of « Partie de la rue » on « Pairs »: keep every even number.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tous les pairs'**
+  String get streetPartAllEven;
+
+  /// Quick button of « Partie de la rue » on « Pairs »: keep no even number.
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun pair'**
+  String get streetPartNoEven;
+
+  /// Button of « Partie de la rue »: gives back the part chosen.
+  ///
+  /// In fr, this message translates to:
+  /// **'Valider'**
+  String get streetPartValidate;
+
+  /// Label of a mark of « Partie de la rue » between two house dots.
+  ///
+  /// In fr, this message translates to:
+  /// **'entre {before} et {after}'**
+  String streetPartBetween(int before, int after);
+
+  /// Label of a mark of « Partie de la rue » before the first house dot along the road.
+  ///
+  /// In fr, this message translates to:
+  /// **'avant le {number}'**
+  String streetPartBefore(int number);
+
+  /// Label of a mark of « Partie de la rue » after the last house dot along the road.
+  ///
+  /// In fr, this message translates to:
+  /// **'après le {number}'**
+  String streetPartAfter(int number);
+
+  /// Screen-reader name of the first mark of « Partie de la rue »; swiping up or down moves it.
+  ///
+  /// In fr, this message translates to:
+  /// **'Première marque, {place}'**
+  String streetPartFirstMark(String place);
+
+  /// Screen-reader name of the last mark of « Partie de la rue »; swiping up or down moves it.
+  ///
+  /// In fr, this message translates to:
+  /// **'Dernière marque, {place}'**
+  String streetPartLastMark(String place);
+
+  /// Screen-reader name of the map of « Partie de la rue ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Carte de la rue'**
+  String get streetPartMap;
+
+  /// Label of the first bound of « Partie de la rue » for a street without positions.
+  ///
+  /// In fr, this message translates to:
+  /// **'Du n°'**
+  String get streetPartFrom;
+
+  /// Label of the last bound of « Partie de la rue » for a street without positions.
+  ///
+  /// In fr, this message translates to:
+  /// **'Au n°'**
+  String get streetPartTo;
+
+  /// Screen-reader name of the « Partie de la rue » row in edit mode.
+  ///
+  /// In fr, this message translates to:
+  /// **'Partie de la rue : {part}'**
+  String streetPartRowSemantics(String part);
+
+  /// Title of the question before a new part sends numbers with marks to the Corbeille.
+  ///
+  /// In fr, this message translates to:
+  /// **'Changer la partie de la rue ?'**
+  String get streetPartConfirmTitle;
+
+  /// Body of the question before a new part sends numbers with marks to the Corbeille.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, =1{1 numéro a des marques. Il part avec elles à la Corbeille.} other{{count} numéros ont des marques. Ils partent avec elles à la Corbeille.}}'**
+  String streetPartConfirmBody(int count);
+
+  /// Confirm button of the question before a new part sends numbers with marks to the Corbeille.
+  ///
+  /// In fr, this message translates to:
+  /// **'Changer'**
+  String get streetPartConfirmOk;
+
+  /// Snackbar in edit mode when « Partie de la rue » needs the street's numbers from the BAN and the phone is offline.
+  ///
+  /// In fr, this message translates to:
+  /// **'Connexion nécessaire pour lire les numéros de la rue.'**
+  String get streetPartNoNetwork;
+
+  /// Snackbar in edit mode when the BAN did not give the street's numbers for « Partie de la rue ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Impossible de lire les numéros de la rue pour l\'instant. Réessayez plus tard.'**
+  String get streetPartUnavailable;
 }
 
 class _AppLocalizationsDelegate

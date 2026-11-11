@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
+import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/presentation/edit_street/edit_street_notifier.dart';
 import 'package:tournee_calendriers/presentation/edit_street/edit_street_state.dart';
 import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
@@ -14,6 +15,8 @@ import 'package:tournee_calendriers/ui/components/close_icon_button.dart';
 import 'package:tournee_calendriers/ui/components/confirm_dialog.dart';
 import 'package:tournee_calendriers/ui/components/keep_focus.dart';
 import 'package:tournee_calendriers/ui/components/ok_button.dart';
+import 'package:tournee_calendriers/ui/components/open_chevron.dart';
+import 'package:tournee_calendriers/ui/components/street_part_words.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/screens/building/building_grid_sheet.dart';
@@ -21,14 +24,16 @@ import 'package:tournee_calendriers/ui/screens/building/building_setup_sheet.dar
 import 'package:tournee_calendriers/ui/screens/edit_street/add_numbers_sheet.dart';
 import 'package:tournee_calendriers/ui/screens/edit_street/edit_tiles.dart';
 import 'package:tournee_calendriers/ui/screens/edit_street/number_sheet.dart';
+import 'package:tournee_calendriers/ui/screens/street_part/street_part_screen.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
 /// « Modifier la rue », the edit mode of a street (PLAN §5.5,
 /// `docs/mockups/Edit.dc.html`), opened by ✏ on the street screen: the
-/// name, the numbers of each side with ✕, « + numéros », « Ne plus la
-/// faire » and « Supprimer la rue ». Works offline.
+/// name, « Partie de la rue » (PLAN §5.15), the numbers of each side with
+/// ✕, « + numéros » and « Supprimer la rue ». Works offline, but for
+/// « Partie de la rue » of a street from the BAN, which reads its numbers.
 ///
 /// Each change to the numbers is stored at once, with « Annuler » for 4 s.
 /// The name is stored when the screen is left (« OK », ✕ or back), the
@@ -76,6 +81,9 @@ final class _EditScreenState extends ConsumerState<_EditScreen>
 
   /// Tells when the app goes to the background, as the house sheet does.
   late final AppLifecycleListener _lifecycle;
+
+  /// « Partie de la rue » is reading the street's numbers: its row waits.
+  var _readingPart = false;
 
   EditStreetNotifier get _notifier =>
       ref.read(editStreetProvider(widget.streetId).notifier);
@@ -153,6 +161,11 @@ final class _EditScreenState extends ConsumerState<_EditScreen>
                     }
                   },
                   onSubmitted: () => unawaited(_submitName()),
+                ),
+                _PartRow(
+                  part: state.part,
+                  reading: _readingPart,
+                  onTap: () => unawaited(_openPart()),
                 ),
                 Expanded(
                   child: EditColumns(
@@ -288,6 +301,63 @@ final class _EditScreenState extends ConsumerState<_EditScreen>
     return showAddNumbers(context, widget.streetId);
   }
 
+  /// The « Partie de la rue » row: reads what the part is chosen among,
+  /// opens the screen, then gives the street the part chosen.
+  Future<void> _openPart() async {
+    if (_readingPart) return;
+    final notifier = _notifier;
+    hideUndo();
+    setState(() => _readingPart = true);
+    final reading = await notifier.readPart();
+    if (!mounted) return;
+    setState(() => _readingPart = false);
+    switch (reading) {
+      case PartReadRefused(:final problem):
+        _sayPartProblem(problem);
+      case PartReadable(:final request):
+        final chosen = await showStreetPart(context, request);
+        if (chosen != null && mounted) await _changePart(chosen);
+    }
+  }
+
+  /// « Valider » on « Partie de la rue »: stores [part], asking first when
+  /// numbers with marks would go to the Corbeille.
+  Future<void> _changePart(StreetPart part) async {
+    final l10n = AppLocalizations.of(context);
+    final notifier = _notifier;
+    var outcome = await notifier.changePart(part);
+    if (outcome case PartNeedsConfirmation(:final count)) {
+      if (!mounted) return;
+      final confirmed = await showConfirmDialog(
+        context,
+        name: 'edit.confirmPart',
+        title: l10n.streetPartConfirmTitle,
+        body: l10n.streetPartConfirmBody(count),
+        confirmLabel: l10n.streetPartConfirmOk,
+        destructive: true,
+      );
+      if (!confirmed) return;
+      outcome = await notifier.changePart(part, confirmed: true);
+    }
+    if (outcome case PartRefused(:final problem) when mounted) {
+      _sayPartProblem(problem);
+    }
+  }
+
+  /// Why « Partie de la rue » did not open or store its part. A street gone
+  /// says so in place of the screen already.
+  void _sayPartProblem(PartProblem problem) {
+    final l10n = AppLocalizations.of(context);
+    switch (problem) {
+      case PartProblem.offline:
+        showMessage(l10n.streetPartNoNetwork);
+      case PartProblem.unavailable:
+        showMessage(l10n.streetPartUnavailable);
+      case PartProblem.gone:
+        break;
+    }
+  }
+
   /// « Supprimer la rue », after a confirmation: the street goes to the
   /// Corbeille, and the app goes back to Accueil, where it no longer
   /// shows.
@@ -396,6 +466,107 @@ final class _NameField extends StatelessWidget {
               ),
             ),
         ],
+      ),
+    );
+  }
+}
+
+/// « Partie de la rue » and the part held (« Impairs 1–57 · pairs 2–30 »)
+/// under the name, with ›: opens « Partie de la rue » (Edit mockup). While
+/// the street's numbers are read, a spinner takes the place of ›.
+final class _PartRow extends StatelessWidget {
+  const _PartRow({
+    required this.part,
+    required this.reading,
+    required this.onTap,
+  });
+
+  final StreetPart part;
+  final bool reading;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = AppColors.of(context);
+    final text = streetPartText(l10n, part);
+    const radius = BorderRadius.all(Radius.circular(AppSizes.fieldRadius));
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(
+        AppSizes.gutter,
+        10,
+        AppSizes.gutter,
+        0,
+      ),
+      child: Semantics(
+        button: true,
+        label: l10n.streetPartRowSemantics(text),
+        excludeSemantics: true,
+        child: Material(
+          color: colors.surface,
+          shape: RoundedRectangleBorder(
+            borderRadius: radius,
+            side: BorderSide(color: colors.line, width: AppSizes.borderWidth),
+          ),
+          child: InkWell(
+            key: const Key('edit.part'),
+            customBorder: const RoundedRectangleBorder(borderRadius: radius),
+            onTap: reading ? null : onTap,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                minHeight: AppSizes.fieldHeight,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(
+                  AppSizes.fieldPadding,
+                  6,
+                  12,
+                  6,
+                ),
+                child: Row(
+                  spacing: 8,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            l10n.streetPartTitle,
+                            style: AppTextStyles.small.copyWith(
+                              color: colors.muted,
+                            ),
+                          ),
+                          Text(
+                            text,
+                            key: const Key('edit.partText'),
+                            style: AppTextStyles.body.copyWith(
+                              color: colors.ink,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (reading)
+                      SizedBox.square(
+                        dimension: AppSizes.smallIcon,
+                        child: CircularProgressIndicator(
+                          key: const Key('edit.partReading'),
+                          strokeWidth: 2,
+                          color: colors.muted,
+                        ),
+                      )
+                    else
+                      OpenChevron(
+                        height: AppSizes.titleChevron,
+                        color: colors.muted,
+                      ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ),
       ),
     );
   }

@@ -40,6 +40,7 @@ the colours, type, spacing and status treatments below are the design tokens.
 | Map: street en partie | `#E0A21B` line | same | |
 | Map: street à faire | `#2F5DA8` line | same | |
 | Map: selected road | `#1B1F24` casing, white core | same | |
+| Map: Partie de la rue | road `#CFC9BD`; dot kept `#1B1F24`, left out `#FFFFFF` in `#4A5058`, other side `#E2DED5` in `#CFC9BD`; marks `#1B1F24` / `#FFFFFF` | same | `StreetPart.dc.html` (#139) |
 | Fonts | Atkinson Hyperlegible (text), Barlow Condensed (numbers, titles) | same | |
 
 No screen shows a free note: it was removed for privacy (PLAN §8.3, Q23, T1.20). The house,

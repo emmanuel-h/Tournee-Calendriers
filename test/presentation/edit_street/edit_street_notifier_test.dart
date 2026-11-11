@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
+import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
+import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
@@ -9,6 +11,7 @@ import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
+import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/edit_street/edit_street_notifier.dart';
@@ -16,6 +19,7 @@ import 'package:tournee_calendriers/presentation/edit_street/edit_street_state.d
 import 'package:tournee_calendriers/presentation/street/street_view_state.dart';
 
 import '../../support/building_fixtures.dart';
+import '../../support/fakes/fake_address_directory.dart';
 import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_open_round_store.dart';
 import '../../support/fakes/fake_ports.dart';
@@ -50,11 +54,13 @@ Street _street({
   List<House>? houses,
   List<RemovedHouse> removed = const [],
   ChangeStamp? deletion,
+  BanStreetId? banId,
 }) => valueOf(
   Street.create(
     id: _id,
     name: 'Rue des Lilas',
     commune: villefranche,
+    banId: banId,
     houses: houses ?? _houses,
     removedHouses: removed,
     deletion: deletion,
@@ -69,10 +75,13 @@ void main() {
   late ProviderContainer container;
 
   /// A container whose phone holds [street] (none when null).
-  void phoneWith(Street? street) {
+  void phoneWith(Street? street, {FakeAddressDirectory? directory}) {
     streets = FakeStreetRepository([?street]);
     container = ProviderContainer(
       overrides: [
+        addressDirectoryProvider.overrideWithValue(
+          directory ?? FakeAddressDirectory(),
+        ),
         streetRepositoryProvider.overrideWithValue(streets),
         clockProvider.overrideWithValue(FakeClock(twoPm)),
         identityProvider.overrideWithValue(FakeIdentity(lea)),
@@ -449,6 +458,147 @@ void main() {
 
       expect(await edit().deleteStreet(), isFalse);
       expect(streets.saved, isEmpty);
+    });
+  });
+
+  group('part', () {
+    final ban = BanStreetId('69264_0420');
+    final oddSide = part(odd: SidePart.all, even: SidePart.none);
+
+    test('should show the part the street holds', () async {
+      phoneWith(_street());
+
+      expect((await shown()).part, StreetPart.whole);
+    });
+
+    test('should open « Partie de la rue » on the street\'s numbers', () async {
+      phoneWith(_street());
+      await shown();
+
+      final reading = await edit().readPart() as PartReadable;
+
+      expect(reading.request.streetName, 'Rue des Lilas');
+      expect(reading.request.choice.numberCount, 7);
+      expect(reading.request.choice.part, StreetPart.whole);
+    });
+
+    test('should not open « Partie de la rue » offline', () async {
+      phoneWith(
+        _street(banId: ban),
+        directory: FakeAddressDirectory(
+          streets: {ban: const Err(AddressDirectoryFailure.noNetwork)},
+        ),
+      );
+      await shown();
+
+      expect(
+        await edit().readPart(),
+        const PartReadRefused(PartProblem.offline),
+      );
+    });
+
+    test('should not open « Partie de la rue » when the BAN fails', () async {
+      phoneWith(
+        _street(banId: ban),
+        directory: FakeAddressDirectory(
+          streets: {ban: const Err(AddressDirectoryFailure.serviceError)},
+        ),
+      );
+      await shown();
+
+      expect(
+        await edit().readPart(),
+        const PartReadRefused(PartProblem.unavailable),
+      );
+    });
+
+    test(
+      'should not open « Partie de la rue » once the street is gone',
+      () async {
+        phoneWith(null);
+
+        expect(
+          await edit().readPart(),
+          const PartReadRefused(PartProblem.gone),
+        );
+      },
+    );
+
+    test('should give the street the part chosen', () async {
+      phoneWith(
+        _street(
+          houses: [
+            House(number: n('1')),
+            House(number: n('2')),
+          ],
+        ),
+      );
+      await shown();
+
+      expect(await edit().changePart(oddSide), isA<PartChanged>());
+      expect(stored().part, oddSide);
+      expect(storedNumbers(), ['1']);
+    });
+
+    test('should say nothing changed when the part is the street\'s', () async {
+      phoneWith(_street());
+      await shown();
+
+      expect(await edit().changePart(StreetPart.whole), isA<PartChanged>());
+      expect(streets.saved, isEmpty);
+    });
+
+    test('should ask first when numbers with marks would leave', () async {
+      phoneWith(_street());
+      await shown();
+
+      // 3 is done, 8 a building, 10 a building with a door done: 10 has
+      // marks.
+      expect(await edit().changePart(oddSide), const PartNeedsConfirmation(1));
+      expect(streets.saved, isEmpty);
+
+      expect(
+        await edit().changePart(oddSide, confirmed: true),
+        isA<PartChanged>(),
+      );
+      expect(stored().part, oddSide);
+    });
+
+    test(
+      'should say the numbers cannot be read when widening offline',
+      () async {
+        final evens = part(odd: SidePart.none, even: SidePart.all);
+        phoneWith(
+          valueOf(
+            Street.create(
+              id: _id,
+              name: 'Rue des Lilas',
+              commune: villefranche,
+              banId: ban,
+              part: evens,
+              houses: [House(number: n('2'))],
+            ),
+          ),
+          directory: FakeAddressDirectory(
+            streets: {ban: const Err(AddressDirectoryFailure.noNetwork)},
+          ),
+        );
+        await shown();
+
+        expect(
+          await edit().changePart(StreetPart.whole),
+          const PartRefused(PartProblem.offline),
+        );
+      },
+    );
+
+    test('should say the street is gone when changing its part', () async {
+      phoneWith(null);
+
+      expect(
+        await edit().changePart(oddSide),
+        const PartRefused(PartProblem.gone),
+      );
     });
   });
 }

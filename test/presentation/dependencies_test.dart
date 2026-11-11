@@ -282,6 +282,20 @@ void main() {
       expect(streets[lilasId]!.removedHouses.first.removal, leaAtTwo);
     });
 
+    test('should read what the part of a street is chosen among', () async {
+      // The directory of this container knows no Rue des Lilas: its own
+      // numbers are all there is.
+      final choice = valueOf(
+        await container.read(readStreetPartChoiceProvider)(lilasId),
+      );
+
+      expect(choice.numbers.map((number) => number.number.label), [
+        '5',
+        '7',
+        '8',
+      ]);
+    });
+
     test('should undo a change', () async {
       final change = valueOf(
         await container.read(setHouseDetailsProvider)(

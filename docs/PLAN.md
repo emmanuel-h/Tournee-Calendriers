@@ -1969,6 +1969,28 @@ belong to no secteur at all (a valid state, not an error). This section override
   only gets numbers back from the Corbeille. The words (« Impairs 7–21 · pairs 2–30 »,
   « Tous les impairs », « Impair 7 », « Aucun numéro ») are `streetPartText` in
   `ui/components/street_part_words.dart`.
+- **Delivered in #139** (screen, edit mode): `StreetPartChoice` (domain) holds the street's
+  numbers with their positions, the road, the side shown and the part; the marks stand at
+  places along the road (`LineTrack`: the road's pieces joined end to end, or the straight
+  line between the two dots farthest apart when the road is not known), before the first dot
+  of the side shown, between each two consecutive dots (3 and 3bis are one), after the last;
+  on « Les deux » the dots of both sides in road order. The part is worked out from the dots
+  between the marks, side by side: none kept is « aucun », both end dots kept is « tous »,
+  otherwise from the lowest kept number to the highest, a mark at an end taking the numbers
+  without position beyond it. A mark at an end reads « avant le 1 » / « après le 41 »; two
+  marks together part again towards where the finger goes; TalkBack moves a mark one place
+  with a swipe up or down. The map does not move (it opens fitted to the dots), so a drag
+  only moves a mark. No position at all, or a single place: « Du n° / Au n° » for the side
+  shown (both sides on « Les deux »), bounds brought onto the side, blank meaning the side's
+  first or last number. The screen takes a `StreetPartRequest` (street name + choice) and
+  returns the part (`showStreetPart`); in edit mode `ReadStreetPartChoice` reads the BAN's
+  numbers (merged with the street's own, shown or in the Corbeille, their positions first;
+  a street typed by hand or unknown to the BAN uses its own, offline), the row shows a
+  spinner meanwhile, offline says « Connexion nécessaire pour lire les numéros de la rue. »
+  (« Impossible de lire les numéros de la rue pour l'instant. Réessayez plus tard. »), and
+  « Valider » runs `ChangeStreetPart`, asking « Changer la partie de la rue ? — 3 numéros ont
+  des marques. Ils partent avec elles à la Corbeille. [Annuler] [Changer] » first. The sheet
+  sits under the map rather than over it.
 - **The BAN's later additions**: the app never reads a street's numbers again once added
   (5.4), so nothing arrives by itself; a widening in edit mode is the only new read.
 - **Map** (Accueil, 5.3, and « Ajouter des rues »): a street held in part draws only **the

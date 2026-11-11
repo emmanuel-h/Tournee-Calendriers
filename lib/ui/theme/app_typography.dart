@@ -389,4 +389,19 @@ abstract final class AppTextStyles {
     fontWeight: FontWeight.w700,
     fontSize: 19,
   );
+
+  /// The label of a mark of « Partie de la rue » (« entre 5 et 7 »).
+  static const partMarkLabel = TextStyle(
+    fontFamily: AppFonts.text,
+    fontWeight: FontWeight.w700,
+    fontSize: 13,
+  );
+
+  /// The part on « Partie de la rue » (« Impairs 7–21 · pairs 2–30 »).
+  static const partResult = TextStyle(
+    fontFamily: AppFonts.display,
+    fontWeight: FontWeight.w700,
+    fontSize: 24,
+    height: 1.1,
+  );
 }

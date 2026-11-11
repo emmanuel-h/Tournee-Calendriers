@@ -85,6 +85,8 @@ List<Override> fakePhone({
     launchPlaceProvider.overrideWithValue(const AsyncData(LaunchOnStreets())),
   duplicateCheckDelayProvider.overrideWithValue(Duration.zero),
   if (!nativeMap) sectorMapViewProvider.overrideWithValue(FakeMapView.new),
+  if (!nativeMap)
+    streetPartMapViewProvider.overrideWithValue(FakePartMapView.new),
   streetRepositoryProvider.overrideWithValue(streets ?? FakeStreetRepository()),
   pendingSyncProvider.overrideWithValue(pending ?? FakePendingSync()),
   serverConnectionProvider.overrideWithValue(

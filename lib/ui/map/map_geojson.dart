@@ -1,5 +1,6 @@
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/map/map_layers.dart';
+import 'package:tournee_calendriers/domain/map/part_drawing.dart';
 import 'package:tournee_calendriers/domain/map/picked_road.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
@@ -95,6 +96,33 @@ Map<String, Object> pickedMarksGeoJson(Iterable<PickedRoad> picked) =>
           geometry: {'type': 'Point', 'coordinates': _position(pick.mark)},
         ),
     ]);
+
+/// The property holding a dot's [PartDot.look] on « Partie de la rue », by
+/// name (`kept`, `leftOut`, `otherSide`): the style colours the dot from
+/// it.
+const lookProperty = 'look';
+
+/// The whole road on « Partie de la rue » (PLAN §5.15), drawn grey: one
+/// `MultiLineString`; an empty collection when [shape] has no line.
+Map<String, Object> partRoadGeoJson(StreetShape shape) => _collection([
+  if (!shape.isEmpty)
+    _feature(id: 'part-road', properties: {}, geometry: _multiLine(shape)),
+]);
+
+/// The house dots of « Partie de la rue »: one `Point` per dot, named by
+/// its number, with its look as [lookProperty] and its number as
+/// [numberProperty].
+Map<String, Object> partDotsGeoJson(Iterable<PartDot> dots) => _collection([
+  for (final dot in dots)
+    _feature(
+      id: dot.number.label,
+      properties: {
+        lookProperty: dot.look.name,
+        numberProperty: dot.number.label,
+      },
+      geometry: {'type': 'Point', 'coordinates': _position(dot.position)},
+    ),
+]);
 
 /// The property telling which part of the zone a feature draws:
 /// [ZonePart.name], so each layer of the zone keeps its own.

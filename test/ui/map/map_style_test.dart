@@ -396,4 +396,119 @@ void main() {
       expect(layer(MapIds.houseDots).properties, isA<SymbolLayerProperties>());
     });
   });
+
+  group('streetPartMapLayers', () {
+    final layers = streetPartMapLayers(AppColors.light);
+    MapLayerSpec layer(String id) => layers.singleWhere((l) => l.id == id);
+    Map<String, dynamic> json(String id) => layer(id).properties.toJson();
+
+    test('should stack the road, the stretch kept, the dots and their '
+        'numbers', () {
+      expect(layers.map((l) => l.id), [
+        MapIds.partRoad,
+        MapIds.partKeptCasing,
+        MapIds.partKeptCore,
+        MapIds.partDots,
+        MapIds.partNumbers,
+      ]);
+      expect(layers.map((l) => l.source), [
+        MapIds.partRoadSource,
+        MapIds.partKeptSource,
+        MapIds.partKeptSource,
+        MapIds.partDotsSource,
+        MapIds.partDotsSource,
+      ]);
+    });
+
+    test('should draw only the road under the labels, and answer no tap', () {
+      expect(layers.map((l) => l.belowLabels), [
+        true,
+        false,
+        false,
+        false,
+        false,
+      ]);
+      expect(layers.map((l) => l.interactive), everyElement(isFalse));
+    });
+
+    test('should draw the road grey, as wide as a street line', () {
+      expect(json(MapIds.partRoad), {
+        ...json(MapIds.partRoad),
+        'line-color': '#cfc9bd',
+      });
+      expect(
+        json(MapIds.partRoad)['line-width'],
+        sectorMapLayers(AppColors.light)
+            .singleWhere((l) => l.id == MapIds.streetLines)
+            .properties
+            .toJson()['line-width'],
+      );
+    });
+
+    test('should draw the stretch kept as the selected road', () {
+      final street = sectorMapLayers(AppColors.light);
+      Map<String, dynamic> of(String id) =>
+          street.singleWhere((l) => l.id == id).properties.toJson();
+
+      expect(json(MapIds.partKeptCasing), of(MapIds.selectedCasing));
+      expect(json(MapIds.partKeptCore), of(MapIds.selectedCore));
+    });
+
+    test('should colour each dot by its look', () {
+      expect(json(MapIds.partDots), {
+        'circle-radius': [
+          'interpolate',
+          ['linear'],
+          ['zoom'],
+          15,
+          4,
+          18,
+          7,
+        ],
+        'circle-color': [
+          'match',
+          ['get', 'look'],
+          'kept',
+          '#1b1f24',
+          'leftOut',
+          '#ffffff',
+          'otherSide',
+          '#e2ded5',
+          '#1b1f24',
+        ],
+        'circle-stroke-width': 2.0,
+        'circle-stroke-color': [
+          'match',
+          ['get', 'look'],
+          'kept',
+          '#1b1f24',
+          'leftOut',
+          '#4a5058',
+          'otherSide',
+          '#cfc9bd',
+          '#1b1f24',
+        ],
+      });
+      expect(layer(MapIds.partDots).properties, isA<CircleLayerProperties>());
+    });
+
+    test('should write the numbers of the side shown only', () {
+      expect(layer(MapIds.partNumbers).filter, [
+        '!=',
+        ['get', 'look'],
+        'otherSide',
+      ]);
+      expect(json(MapIds.partNumbers), {
+        'text-field': ['get', 'number'],
+        'text-font': ['Noto Sans Bold'],
+        'text-size': 12,
+        'text-anchor': 'top',
+        'text-offset': [0, 0.9],
+        'text-color': '#1b1f24',
+        'text-halo-color': '#ffffff',
+        'text-halo-width': 1.5,
+        'text-optional': true,
+      });
+    });
+  });
 }

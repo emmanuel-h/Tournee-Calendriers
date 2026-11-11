@@ -1,3 +1,4 @@
+import 'package:tournee_calendriers/domain/map/part_drawing.dart';
 import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 
@@ -46,4 +47,15 @@ String? _sideText(
   NoNumbers() => null,
   NumberRange(:final from, :final to) when from == to => one(from),
   NumberRange(:final from, :final to) => range(from, to),
+};
+
+/// Where a mark of « Partie de la rue » stands, in words: « entre 5 et 7 »,
+/// « avant le 1 », « après le 41 ».
+String markPlaceText(AppLocalizations l10n, MarkPlace place) => switch (place) {
+  MarkBefore(:final number) => l10n.streetPartBefore(number),
+  MarkBetween(:final before, :final after) => l10n.streetPartBetween(
+    before,
+    after,
+  ),
+  MarkAfter(:final number) => l10n.streetPartAfter(number),
 };

@@ -1,6 +1,7 @@
 import 'package:flutter/painting.dart';
 import 'package:maplibre_gl/maplibre_gl.dart';
 import 'package:tournee_calendriers/domain/map/map_layers.dart';
+import 'package:tournee_calendriers/domain/map/part_drawing.dart';
 import 'package:tournee_calendriers/domain/street/progress_level.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/ui/map/map_geojson.dart';
@@ -33,6 +34,9 @@ abstract final class MapIds {
   static const pickedSource = 'tc-picked';
   static const pickedMarksSource = 'tc-picked-marks';
   static const zoneSource = 'tc-zone';
+  static const partRoadSource = 'tc-part-road';
+  static const partKeptSource = 'tc-part-kept';
+  static const partDotsSource = 'tc-part-dots';
 
   static const streetLines = 'tc-street-lines';
   static const selectedCasing = 'tc-selected-casing';
@@ -47,6 +51,11 @@ abstract final class MapIds {
   static const zoneShade = 'tc-zone-shade';
   static const zoneEdge = 'tc-zone-edge';
   static const zoneHandle = 'tc-zone-handle';
+  static const partRoad = 'tc-part-road-line';
+  static const partKeptCasing = 'tc-part-kept-casing';
+  static const partKeptCore = 'tc-part-kept-core';
+  static const partDots = 'tc-part-dot-circles';
+  static const partNumbers = 'tc-part-numbers';
 }
 
 /// The name of the picture of a house dot with [status], added to the map
@@ -278,6 +287,97 @@ List<MapLayerSpec> sectorMapLayers(AppColors colors) => [
     // A drag from it resizes the zone (`ZoneDrawing`), not a tap.
     interactive: false,
   ),
+];
+
+/// Every layer the map of « Partie de la rue » adds (PLAN §5.15,
+/// StreetPart mockup), bottom to top: the whole road in grey, under the
+/// style's labels; the stretch kept as the selected road (dark casing,
+/// white core); the house dots, circles every renderer draws (kept: dark;
+/// left out: hollow; the other side: greyed); and the numbers of the side
+/// shown under its dots. Nothing answers taps: the marks are dragged, the
+/// map does not move.
+List<MapLayerSpec> streetPartMapLayers(AppColors colors) => [
+  MapLayerSpec(
+    id: MapIds.partRoad,
+    source: MapIds.partRoadSource,
+    properties: LineLayerProperties(
+      lineColor: colors.mapPartRoad.toHexStringRGB(),
+      lineWidth: _streetWidth,
+      lineCap: 'round',
+      lineJoin: 'round',
+    ),
+    belowLabels: true,
+    interactive: false,
+  ),
+  MapLayerSpec(
+    id: MapIds.partKeptCasing,
+    source: MapIds.partKeptSource,
+    properties: _casing(colors),
+    belowLabels: false,
+    interactive: false,
+  ),
+  MapLayerSpec(
+    id: MapIds.partKeptCore,
+    source: MapIds.partKeptSource,
+    properties: _core(colors),
+    belowLabels: false,
+    interactive: false,
+  ),
+  MapLayerSpec(
+    id: MapIds.partDots,
+    source: MapIds.partDotsSource,
+    properties: CircleLayerProperties(
+      circleColor: _byLook({
+        PartDotLook.kept: colors.mapSelectedCasing,
+        PartDotLook.leftOut: colors.mapSelectedCore,
+        PartDotLook.otherSide: colors.mapPartOtherSide,
+      }),
+      circleStrokeColor: _byLook({
+        PartDotLook.kept: colors.mapSelectedCasing,
+        PartDotLook.leftOut: colors.mapPartLeftOutBorder,
+        PartDotLook.otherSide: colors.mapPartOtherSideBorder,
+      }),
+      circleRadius: _byZoom(const {15: 4, 18: 7}),
+      circleStrokeWidth: AppSizes.partDotBorder,
+    ),
+    belowLabels: false,
+    interactive: false,
+  ),
+  MapLayerSpec(
+    id: MapIds.partNumbers,
+    source: MapIds.partDotsSource,
+    properties: SymbolLayerProperties(
+      textField: ['get', numberProperty],
+      textFont: const ['Noto Sans Bold'],
+      textSize: 12,
+      textAnchor: 'top',
+      textOffset: const [0, 0.9],
+      textColor: colors.mapSelectedCasing.toHexStringRGB(),
+      textHaloColor: colors.mapSelectedCore.toHexStringRGB(),
+      textHaloWidth: 1.5,
+      textOptional: true,
+    ),
+    // The other side's numbers would only crowd the side being cut.
+    filter: [
+      '!=',
+      ['get', lookProperty],
+      PartDotLook.otherSide.name,
+    ],
+    belowLabels: false,
+    interactive: false,
+  ),
+];
+
+/// A colour from a dot's look: [colours] holds one per look.
+List<Object> _byLook(Map<PartDotLook, Color> colours) => [
+  'match',
+  ['get', lookProperty],
+  for (final look in PartDotLook.values) ...[
+    look.name,
+    colours[look]!.toHexStringRGB(),
+  ],
+  // `match` needs a fallback, never used: every dot has a look.
+  colours[PartDotLook.kept]!.toHexStringRGB(),
 ];
 
 /// The filter keeping the features of the zone's [part].

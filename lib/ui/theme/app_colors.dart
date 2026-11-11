@@ -54,6 +54,10 @@ final class AppColors extends ThemeExtension<AppColors> {
     required this.mapStreetToDo,
     required this.mapSelectedCasing,
     required this.mapSelectedCore,
+    required this.mapPartRoad,
+    required this.mapPartLeftOutBorder,
+    required this.mapPartOtherSide,
+    required this.mapPartOtherSideBorder,
   });
 
   /// The approved palette (mockups README). Values the README leaves implicit
@@ -103,6 +107,10 @@ final class AppColors extends ThemeExtension<AppColors> {
     mapStreetToDo: Color(0xFF2F5DA8),
     mapSelectedCasing: Color(0xFF1B1F24),
     mapSelectedCore: Color(0xFFFFFFFF),
+    mapPartRoad: Color(0xFFCFC9BD),
+    mapPartLeftOutBorder: Color(0xFF4A5058),
+    mapPartOtherSide: Color(0xFFE2DED5),
+    mapPartOtherSideBorder: Color(0xFFCFC9BD),
   );
 
   /// The dark palette, reviewed in T5.1: the light palette's hues on a dark
@@ -162,6 +170,10 @@ final class AppColors extends ThemeExtension<AppColors> {
     mapStreetToDo: Color(0xFF2F5DA8),
     mapSelectedCasing: Color(0xFF1B1F24),
     mapSelectedCore: Color(0xFFFFFFFF),
+    mapPartRoad: Color(0xFFCFC9BD),
+    mapPartLeftOutBorder: Color(0xFF4A5058),
+    mapPartOtherSide: Color(0xFFE2DED5),
+    mapPartOtherSideBorder: Color(0xFFCFC9BD),
   );
 
   /// The palette of the nearest `Theme`. Every `ThemeData` of the app is
@@ -258,6 +270,14 @@ final class AppColors extends ThemeExtension<AppColors> {
   final Color mapStreetToDo;
   final Color mapSelectedCasing;
   final Color mapSelectedCore;
+
+  // « Partie de la rue » (PLAN §5.15, StreetPart mockup): the road in grey,
+  // a house left out hollow (Selected core inside this border), a house of
+  // the other side greyed. A kept house is Selected casing.
+  final Color mapPartRoad;
+  final Color mapPartLeftOutBorder;
+  final Color mapPartOtherSide;
+  final Color mapPartOtherSideBorder;
 
   // `copyWith` and `lerp` are required by ThemeExtension. The app never
   // animates between palettes, so `lerp` switches at the half-way point

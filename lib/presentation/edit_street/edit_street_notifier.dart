@@ -1,18 +1,23 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tournee_calendriers/application/ports/address_directory.dart';
+import 'package:tournee_calendriers/application/use_cases/change_street_part.dart';
 import 'package:tournee_calendriers/application/use_cases/command_failure.dart';
 import 'package:tournee_calendriers/application/use_cases/describe_building.dart';
 import 'package:tournee_calendriers/application/use_cases/edit_street_numbers.dart';
+import 'package:tournee_calendriers/application/use_cases/read_street_part_choice.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
+import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/edit_street/edit_street_state.dart';
 import 'package:tournee_calendriers/presentation/street/follows_street.dart';
 import 'package:tournee_calendriers/presentation/street/street_view_state.dart';
 import 'package:tournee_calendriers/presentation/street/undoes_last_change.dart';
+import 'package:tournee_calendriers/presentation/street_part/street_part_state.dart';
 
 /// The state of the edit mode of one street (`family`: one per street id;
 /// `autoDispose`: it stops following the street, and forgets its last
@@ -124,6 +129,58 @@ final class EditStreetNotifier extends Notifier<EditStreetState>
     Err() => false,
   };
 
+  /// The « Partie de la rue » row: what the part is chosen among
+  /// (`ReadStreetPartChoice`; the BAN's numbers, so the network for a
+  /// street from the BAN).
+  Future<PartReading> readPart() async {
+    final read = await ref.read(readStreetPartChoiceProvider)(streetId);
+    return switch (read) {
+      Ok(value: final choice) => PartReadable(
+        StreetPartRequest(streetName: street?.name.text ?? '', choice: choice),
+      ),
+      Err(failure: PartChoiceOfUnknownStreet()) => const PartReadRefused(
+        PartProblem.gone,
+      ),
+      Err(failure: PartChoiceUnreadable(:final reason)) => PartReadRefused(
+        _problemOf(reason),
+      ),
+    };
+  }
+
+  /// « Valider » on « Partie de la rue »: gives the street [part]
+  /// (`ChangeStreetPart`). When numbers with marks would leave, nothing
+  /// happens unless [confirmed]: the screen asks first. Not undone with
+  /// « Annuler »: the part is chosen again on its screen.
+  Future<PartOutcome> changePart(
+    StreetPart part, {
+    bool confirmed = false,
+  }) async {
+    final changed = await ref.read(changeStreetPartProvider)(
+      streetId,
+      part,
+      marksConfirmed: confirmed,
+    );
+    return switch (changed) {
+      Ok() || Err(failure: SamePart()) => const PartChanged(),
+      Err(failure: MarkedNumbersLeaving(:final count)) => PartNeedsConfirmation(
+        count,
+      ),
+      Err(failure: NumbersUnreadable(:final reason)) => PartRefused(
+        _problemOf(reason),
+      ),
+      Err(failure: PartOfUnknownStreet()) => const PartRefused(
+        PartProblem.gone,
+      ),
+    };
+  }
+
+  static PartProblem _problemOf(AddressDirectoryFailure reason) =>
+      switch (reason) {
+        AddressDirectoryFailure.noNetwork => PartProblem.offline,
+        AddressDirectoryFailure.notFound ||
+        AddressDirectoryFailure.serviceError => PartProblem.unavailable,
+      };
+
   Renumbered _renumbered(StreetChange change, HouseNumber newNumber) {
     keepForUndo(change);
     return Renumbered(newNumber);
@@ -149,6 +206,7 @@ final class EditStreetNotifier extends Notifier<EditStreetState>
     final even = street.evenHouses;
     return EditStreetShown(
       name: street.name.text,
+      part: street.part,
       columns: StreetColumns.of(odd: odd.length, even: even.length),
       odd: [for (final house in odd) EditTile.of(house)],
       even: [for (final house in even) EditTile.of(house)],

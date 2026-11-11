@@ -1,6 +1,7 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/map/map_layers.dart';
+import 'package:tournee_calendriers/domain/map/part_drawing.dart';
 import 'package:tournee_calendriers/domain/map/picked_road.dart';
 import 'package:tournee_calendriers/domain/street/progress_level.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
@@ -338,6 +339,85 @@ void main() {
         'edge',
         'handle',
       ]);
+    });
+  });
+
+  group('partRoadGeoJson', () {
+    test('should write the road as one MultiLineString', () {
+      expect(partRoadGeoJson(_twoPieces), {
+        'type': 'FeatureCollection',
+        'features': [
+          {
+            'type': 'Feature',
+            'id': 'part-road',
+            'properties': <String, Object>{},
+            'geometry': {
+              'type': 'MultiLineString',
+              'coordinates': [
+                [
+                  [4.71862, 45.98915],
+                  [4.71705, 45.99210],
+                ],
+                [
+                  [4.71705, 45.99210],
+                  [4.71650, 45.99300],
+                  [4.71600, 45.99400],
+                ],
+              ],
+            },
+          },
+        ],
+      });
+    });
+
+    test('should write an empty collection without a road', () {
+      expect(partRoadGeoJson(StreetShape.none), {
+        'type': 'FeatureCollection',
+        'features': <Object>[],
+      });
+    });
+  });
+
+  group('partDotsGeoJson', () {
+    test('should write one Point per dot named by its number, with its look '
+        'and number', () {
+      expect(
+        partDotsGeoJson([
+          PartDot(
+            number: n('3bis'),
+            position: at(45.98915, 4.71862),
+            look: PartDotLook.leftOut,
+          ),
+          PartDot(
+            number: n('4'),
+            position: at(45.99210, 4.71705),
+            look: PartDotLook.otherSide,
+          ),
+        ]),
+        {
+          'type': 'FeatureCollection',
+          'features': [
+            {
+              'type': 'Feature',
+              'id': '3bis',
+              'properties': {'look': 'leftOut', 'number': '3bis'},
+              'geometry': {
+                'type': 'Point',
+                'coordinates': [4.71862, 45.98915],
+              },
+            },
+            {
+              'type': 'Feature',
+              'id': '4',
+              'properties': {'look': 'otherSide', 'number': '4'},
+              'geometry': {
+                'type': 'Point',
+                'coordinates': [4.71705, 45.99210],
+              },
+            },
+          ],
+        },
+      );
     });
   });
 }
