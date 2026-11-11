@@ -69,7 +69,7 @@ their old names) and the outing is `Round` (#116, #115); status picker instead o
 M9 planned (2026-11-03, #120–#125, PLAN §5.14): preparing the secteur and being on a tournée on separate
 screens; no attribution (the secteur covers all its streets); « Ajouter des rues » in Secteur (🗺) with several
 roads and a zone; houses marked only during a tournée; « En tournée » band on top (white, red edge).
-M9 built; #120–#125, #135, #136 validated and closed (2026-11-10): no attribution (#120); the Secteur button
+M9 done, validated by the user, milestone closed (2026-11-11, #120–#125, #132, #134–#137): no attribution (#120); the Secteur button
 (🗺, `Icons.map_outlined`) and « RUES (n) » with « + Ajouter des rues » and the Corbeille in Secteur,
 no « Ajouter des rues » on Accueil (#121); houses marked only during a tournée (#122: with none on, a tap
 on a house, a door or a building's « Repasser » says « Commencez une tournée… » with « Commencer », or
@@ -83,7 +83,7 @@ streets (#125: `StreetShapes.roadsIn`, `FindZoneStreets` matching the tiles' roa
 Rules without `assignees` deployed 2026-11-10 (identical to `firestore.rules`).
 From the 0.11.0 phone test: « Ajouter des rues » stays open after adding, zone at any zoom, two fingers pan in
 « Zone », a tap names the road under the finger from the tiles and the BAN street of that name, tolerating a map
-typo (`StreetName.typosFrom`, also in « Zone ») (#134, open); the title opens Secteur, « Changer de secteur » in it
+typo (`StreetName.typosFrom`, also in « Zone ») (#134); the title opens Secteur, « Changer de secteur » in it
 (#135); « Abandonner la tournée » in the Bilan (#136). The commune search falls back to the Géoplateforme when
 geo.api.gouv.fr fails; « Pas de réseau » only for a real lack of network (`meansNoNetwork`), otherwise « Impossible
 de … pour l'instant. Réessayez plus tard. » (#137). The map keeps the drawn zone, or the latest ✓, clear of the sheet
