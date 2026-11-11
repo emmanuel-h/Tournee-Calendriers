@@ -25,9 +25,17 @@ import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_docu
 /// that both say the same.
 const housesPerWrite = 2;
 
+/// The most houses the first write of the new [street] holds, beside its
+/// document: [housesPerWrite], or one when the street is held in part
+/// (#138). The security rules check the part in that write too, and a part
+/// costs more than two of the costliest houses leave (`isNewPart` in
+/// `firebase/firestore.rules`).
+int housesInFirstWrite(Street street) =>
+    street.part.isWhole ? housesPerWrite : 1;
+
 /// The writes storing the new [street], in the order they are sent: its
-/// [document] (for a `set`) with its first [housesPerWrite] houses, then
-/// the [updates] adding the next ones, [housesPerWrite] at most each.
+/// [document] (for a `set`) with its first houses ([housesInFirstWrite]),
+/// then the [updates] adding the next ones, [housesPerWrite] at most each.
 ///
 /// The houses come in the order of [streetToDocument]: those shown, in
 /// the street's order, then those in the Corbeille.
@@ -35,12 +43,10 @@ const housesPerWrite = 2;
 newStreetWrites(Street street) {
   final whole = streetToDocument(street);
   final houses = (whole['houses']! as Map<String, Object?>).entries;
+  final inFirst = housesInFirstWrite(street);
   return (
-    document: {
-      ...whole,
-      'houses': Map.fromEntries(houses.take(housesPerWrite)),
-    },
-    updates: addedHouseUpdates(Map.fromEntries(houses.skip(housesPerWrite))),
+    document: {...whole, 'houses': Map.fromEntries(houses.take(inFirst))},
+    updates: addedHouseUpdates(Map.fromEntries(houses.skip(inFirst))),
   );
 }
 

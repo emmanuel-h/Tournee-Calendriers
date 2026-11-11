@@ -13,6 +13,7 @@ import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/removed_house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
@@ -162,6 +163,22 @@ final richStreet = valueOf(
   ),
 );
 
+/// [richStreet] holding only the odd side and the evens 8 to 12 (#133):
+/// every house it has is in that part.
+final partStreet = valueOf(
+  Street.create(
+    id: richStreet.id,
+    name: richStreet.name.text,
+    commune: richStreet.commune,
+    banId: richStreet.banId,
+    shape: richStreet.shape,
+    part: part(odd: SidePart.all, even: range(8, 12)),
+    houses: richStreet.houses,
+    removedHouses: richStreet.removedHouses,
+    deletion: richStreet.deletion,
+  ),
+);
+
 /// A street typed in by hand: no BAN id, no position, no shape, not
 /// deleted.
 final manualStreet = valueOf(
@@ -181,6 +198,7 @@ void expectSameStreet(Street actual, Street expected) {
   expect(actual.commune, expected.commune);
   expect(actual.banId, expected.banId);
   expect(actual.shape, expected.shape);
+  expect(actual.part, expected.part);
   expect(actual.houses, expected.houses);
   expect(actual.removedHouses, expected.removedHouses);
   expect(actual.deletion, expected.deletion);

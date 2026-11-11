@@ -13,11 +13,21 @@ import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/nobody_home_tries.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
+import 'package:tournee_calendriers/domain/street/street_part.dart';
 
 import 'results.dart';
 
 /// A house number the test knows is valid: `n('12bis')`.
 HouseNumber n(String text) => valueOf(HouseNumber.parse(text));
+
+/// The numbers « du n° [from] au n° [to] » of one side, the test knowing
+/// the range is valid: `range(7, 21)`.
+SidePart range(int from, int to) => valueOf(SidePart.range(from, to));
+
+/// The part holding [odd] and [even], the test knowing it is valid:
+/// `part(odd: range(7, 21), even: SidePart.none)`.
+StreetPart part({required SidePart odd, required SidePart even}) =>
+    valueOf(StreetPart.create(odd: odd, even: even));
 
 /// A calendar day the test knows is valid: `day('2026-11-07')`.
 CalendarDay day(String iso) {

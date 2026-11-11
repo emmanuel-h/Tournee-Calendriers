@@ -3879,6 +3879,60 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Zone trop grande : {max} rues au plus.'**
   String addStreetsZoneTooLarge(int max);
+
+  /// The part of a street held whole (PLAN §5.15): on « Partie de la rue », the selection rows and edit mode.
+  ///
+  /// In fr, this message translates to:
+  /// **'Toute la rue'**
+  String get streetPartWhole;
+
+  /// The part of a street holding no number at all (« Rien » on « Partie de la rue »).
+  ///
+  /// In fr, this message translates to:
+  /// **'Aucun numéro'**
+  String get streetPartNothing;
+
+  /// One side of a part: every odd number. Lowercase: the first letter of the whole text is capitalised in code (« Tous les impairs · pairs 2–30 »).
+  ///
+  /// In fr, this message translates to:
+  /// **'tous les impairs'**
+  String get streetPartOddAll;
+
+  /// One side of a part: every even number (« Impairs 7–21 · tous les pairs »).
+  ///
+  /// In fr, this message translates to:
+  /// **'tous les pairs'**
+  String get streetPartEvenAll;
+
+  /// One side of a part: the odd numbers from one to another (« Impairs 7–21 »).
+  ///
+  /// In fr, this message translates to:
+  /// **'impairs {from}–{to}'**
+  String streetPartOddRange(int from, int to);
+
+  /// One side of a part: the even numbers from one to another (« pairs 2–30 »).
+  ///
+  /// In fr, this message translates to:
+  /// **'pairs {from}–{to}'**
+  String streetPartEvenRange(int from, int to);
+
+  /// One side of a part holding a single odd number (« Impair 7 »).
+  ///
+  /// In fr, this message translates to:
+  /// **'impair {number}'**
+  String streetPartOddOne(int number);
+
+  /// One side of a part holding a single even number (« Impairs 7–21 · pair 8 »).
+  ///
+  /// In fr, this message translates to:
+  /// **'pair {number}'**
+  String streetPartEvenOne(int number);
+
+  /// A part holding some of each side: the odd side, then the even one (« Impairs 7–21 · pairs 2–30 »).
+  ///
+  /// In fr, this message translates to:
+  /// **'{odd} · {even}'**
+  String streetPartBothSides(String odd, String even);
 }
 
 class _AppLocalizationsDelegate

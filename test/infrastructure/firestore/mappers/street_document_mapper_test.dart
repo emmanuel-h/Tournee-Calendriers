@@ -9,6 +9,7 @@ import 'package:tournee_calendriers/domain/street/come_back.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_document_mapper.dart';
@@ -79,6 +80,15 @@ void main() {
       expectSameStreet(back, manualStreet);
     });
 
+    test('should give back the part of a street held in part', () {
+      final back = streetFromDocument(
+        partStreet.id.value,
+        asRead(streetToDocument(partStreet)),
+      );
+
+      expectSameStreet(back, partStreet);
+    });
+
     test('should take the street id from the document id', () {
       final back = streetFromDocument(
         'other-id',
@@ -108,6 +118,13 @@ void main() {
         'deletedBy',
         'shape',
         'houses',
+      });
+    });
+
+    test('should write the part of a street held in part', () {
+      expect(streetToDocument(partStreet)['part'], {
+        'odd': 'all',
+        'even': [8, 12],
       });
     });
 
@@ -440,6 +457,13 @@ void main() {
       expect(read(data).shape, StreetShape.none);
     });
 
+    // Streets written before #133 have no part: they are held whole.
+    test('should read the whole street when the document has no part', () {
+      final data = asRead(streetToDocument(partStreet))..remove('part');
+
+      expect(read(data).part, StreetPart.whole);
+    });
+
     // PLAN §5.14: who covered a street is gone; documents written before
     // keep the field, whatever it holds, and read as the same street.
     test('should read a document that still has its old assignees', () {
@@ -580,6 +604,10 @@ void main() {
 
     test('should refuse a shape that is not a list', () {
       expectUnreadable((data) => data['shape'] = 'abc');
+    });
+
+    test('should refuse a part that is not a stored part', () {
+      expectUnreadable((data) => data['part'] = {'odd': 'some', 'even': 'all'});
     });
 
     test('should refuse a line of the shape that is not text', () {

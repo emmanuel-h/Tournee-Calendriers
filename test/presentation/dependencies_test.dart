@@ -28,6 +28,7 @@ import 'package:tournee_calendriers/domain/street/corbeille.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 
@@ -264,6 +265,21 @@ void main() {
       );
 
       expect(streets[lilasId]!.deletion, leaAtTwo);
+    });
+
+    test('should change the part of a street', () async {
+      final evens = part(odd: SidePart.none, even: SidePart.all);
+
+      valueOf(
+        await container.read(changeStreetPartProvider)(
+          lilasId,
+          evens,
+          marksConfirmed: true,
+        ),
+      );
+
+      expect(streets[lilasId]!.part, evens);
+      expect(streets[lilasId]!.removedHouses.first.removal, leaAtTwo);
     });
 
     test('should undo a change', () async {

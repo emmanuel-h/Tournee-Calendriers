@@ -560,15 +560,52 @@ service cloud.firestore {
         && after.shape[0] is string;
     }
 
+    // What the secteur holds of a street (#133, PLAN §5.15,
+    // street_part_fields.dart): per side "all", "none", or the range
+    // [from, to] on the integer part, both bounds house numbers of that
+    // side ([parity] 1 for the odd side, 0 for the even one). Absent: the
+    // whole street, which the app never writes as a field.
+    function isSidePart(side, parity) {
+      return side == 'all' || side == 'none'
+        || (side is list && side.size() == 2
+          && side[0] is int && side[1] is int
+          && 0 <= side[0] && side[0] <= side[1] && side[1] <= 99999
+          && side[0] % 2 == parity && side[1] % 2 == parity);
+    }
+
+    function isPart(part) {
+      return part is map && part.keys().toSet() == ['odd', 'even'].toSet()
+        && isSidePart(part.odd, 1) && isSidePart(part.even, 0);
+    }
+
+    // A new street held in part comes with one house in its first write,
+    // not housesPerWrite(): checking a part costs more than two of the
+    // costliest houses leave (the 1 000 expressions, measured in the
+    // emulator, #138). The adapter sends the others two per update as for
+    // any new street (`housesInFirstWrite`, street_writes.dart).
+    function isNewPart(data) {
+      return !('part' in data) || (data.houses.size() <= 1 && isPart(data.part));
+    }
+
+    // A new part (« Partie de la rue », #133): the `part` field alone, set
+    // or removed (back to the whole street). The numbers it moves come in
+    // the next writes, each checked as a removal, a restore or new houses.
+    function isPartChange(before, after) {
+      return after.diff(before).affectedKeys().hasOnly(['part'])
+        && (!('part' in after) || isPart(after.part));
+    }
+
     // A new street (imported from the BAN, typed in, or moved from the
-    // phone, PLAN §6.2): out of the Corbeille. It comes with its first
-    // houses, at most housesPerWrite(), each checked whole; the adapter
-    // sends the others in updates of as many (isHousesChange), so a
-    // teammate may see it partly filled for a moment.
+    // phone, PLAN §6.2): out of the Corbeille, held whole or in part. It
+    // comes with its first houses, at most housesPerWrite(), each checked
+    // whole; the adapter sends the others in updates of as many
+    // (isHousesChange), so a teammate may see it partly filled for a
+    // moment.
     function isNewStreet(data) {
       return data.keys().hasAll(streetFields())
-        && data.keys().hasOnly(streetFields().concat(mapFields()))
+        && data.keys().hasOnly(streetFields().concat(mapFields()).concat(['part']))
         && (!('shape' in data) || isShape(data.shape))
+        && isNewPart(data)
         && isName(data.name, 150)
         && hasAtMost(data.communeName, 150) && isTrimmed(data.communeName) && data.communeName != ''
         && data.communeCode is string && data.communeCode.matches('([0-9]{2}|2A|2B)[0-9]{3}')
@@ -790,7 +827,8 @@ service cloud.firestore {
           allow update: if isMemberOrAdmin(sector)
             && year == string(get(sectorPath(sector)).data.currentCampaign)
             && (isStreetChange(sector, resource.data, request.resource.data)
-              || isShapeFill(resource.data, request.resource.data));
+              || isShapeFill(resource.data, request.resource.data)
+              || isPartChange(resource.data, request.resource.data));
           // A street goes to the Corbeille by an update. Hard deletion goes
           // with the tournée (an admin), or is the 30-day purge, which any
           // active member's or admin's app makes (no server, PLAN §5.11).

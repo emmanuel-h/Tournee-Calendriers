@@ -249,6 +249,16 @@ describe('a new street written in chunks (#70)', () => {
     await assertSucceeds(writeInChunks(nextStreet(), newStreetDoc({ houses })));
   });
 
+  it('should accept full writes of the costliest houses in a street held in part', async () => {
+    // Both sides a range, the dearest part to check: the first write then
+    // holds one house (#138).
+    const houses = {};
+    for (let n = 1; n <= 1 + housesPerWrite; n += 1) houses[`${n}quinquies`] = costliest(n);
+    const part = { odd: [1, 57], even: [2, 30] };
+
+    await assertSucceeds(writeInChunks(nextStreet(), newStreetDoc({ houses, part })));
+  });
+
   it('should accept the next houses of a street of 1 500, the cost not growing with it', async () => {
     const houses = {};
     for (let n = 1; n <= 1500; n += 1) houses[n] = houseEntry(n);
@@ -377,6 +387,123 @@ describe('the old assignees of a street', () => {
 
 // The shape of a street that had none, found later (#92): set once, by
 // `StreetShapeFilled`, which writes the `shape` field alone.
+describe('the part of a street (#133)', () => {
+  let count = 0;
+  const newStreet = (data) =>
+    setDoc(doc(phoneOf(env, lea), `${streetsPath}/part${(count += 1)}`), data);
+
+  /** A new street held in [part], with its first house. */
+  const newStreetHeldIn = (part) => newStreetDoc({ houses: { 4: houseEntry(4) }, part });
+
+  /** A new part of Rue Nationale, or none (undefined: the field removed). */
+  const changePart = (part, uid = lea) =>
+    updateFields(nationale(uid), [[['part'], part === undefined ? deleteField() : part]]);
+
+  /** Parts the rules must refuse, each with why. */
+  const wrongParts = [
+    ['a text', 'all'],
+    ['a list', ['all', 'all']],
+    ['a part without its even side', { odd: 'all' }],
+    ['a part with a side more', { odd: 'all', even: 'all', both: 'all' }],
+    ['a side of another word', { odd: 'some', even: 'all' }],
+    ['a range of one bound', { odd: [7], even: 'all' }],
+    ['a range of three bounds', { odd: [7, 9, 11], even: 'all' }],
+    ['a range of texts', { odd: ['7', '21'], even: 'all' }],
+    ['a range of decimals', { odd: [7.5, 21], even: 'all' }],
+    ['a reversed range', { odd: [21, 7], even: 'all' }],
+    ['a range below 0', { odd: 'all', even: [-2, 8] }],
+    ['a range past 99 999', { odd: [1, 100001], even: 'all' }],
+    ['an even bound on the odd side', { odd: [6, 21], even: 'all' }],
+    ['an odd bound on the odd side’s end', { odd: [7, 22], even: 'all' }],
+    ['an odd bound on the even side', { odd: 'all', even: [1, 30] }],
+    ['an odd end on the even side', { odd: 'all', even: [2, 31] }],
+  ];
+
+  it('should accept a new street held in part, by side or by range', async () => {
+    for (const part of [
+      { odd: [1, 57], even: [2, 30] },
+      { odd: 'all', even: 'none' },
+      { odd: 'none', even: [0, 8] },
+      { odd: [7, 7], even: 'all' },
+      { odd: [1, 99999], even: [0, 99998] },
+      { odd: 'all', even: 'all' },
+    ]) {
+      await assertSucceeds(newStreet(newStreetHeldIn(part)));
+    }
+  });
+
+  it('should accept a new street held in part with no house, and refuse it with two', async () => {
+    const part = { odd: 'all', even: 'none' };
+
+    await assertSucceeds(newStreet(newStreetDoc({ houses: {}, part })));
+    await assertFails(newStreet(newStreetDoc({ part })));
+  });
+
+  for (const [what, part] of wrongParts) {
+    it(`should refuse a new street with ${what}`, async () => {
+      await assertFails(newStreet(newStreetHeldIn(part)));
+    });
+  }
+
+  it('should let a member give a street a part, and take it back to the whole street', async () => {
+    await assertSucceeds(changePart({ odd: [7, 21], even: 'none' }));
+    await assertSucceeds(changePart({ odd: 'all', even: [2, 30] }));
+    await assertSucceeds(changePart(undefined));
+    const stored = await getDoc(nationale());
+    assert.equal('part' in stored.data(), false);
+  });
+
+  for (const [what, part] of wrongParts) {
+    it(`should refuse to change the part to ${what}`, async () => {
+      await assertFails(changePart(part));
+    });
+  }
+
+  it('should refuse anything else in the same write', async () => {
+    await assertFails(
+      updateFields(nationale(), [
+        [['part'], { odd: 'all', even: 'none' }],
+        [['name'], 'Rue de la Paix'],
+      ]),
+    );
+    await assertFails(
+      updateFields(nationale(), [
+        [['part'], { odd: 'all', even: 'none' }],
+        [['houses', '4', 'deletedAt'], threePm],
+        [['houses', '4', 'deletedBy'], lea],
+      ]),
+    );
+  });
+
+  it('should accept the numbers it moves, one write each', async () => {
+    await assertSucceeds(changePart({ odd: 'all', even: 'none' }));
+
+    await assertSucceeds(
+      updateFields(nationale(), [
+        [['houses', '4', 'deletedAt'], threePm],
+        [['houses', '4', 'deletedBy'], lea],
+      ]),
+    );
+    await assertSucceeds(
+      updateFields(nationale(), [
+        [['houses', '4bis', 'deletedAt'], threePm],
+        [['houses', '4bis', 'deletedBy'], lea],
+      ]),
+    );
+  });
+
+  it('should refuse a pending member and an outsider', async () => {
+    await assertFails(changePart({ odd: 'all', even: 'none' }, paul));
+    await assertFails(changePart({ odd: 'all', even: 'none' }, zoe));
+  });
+
+  it('should refuse a part in a previous campaign', async () => {
+    await seed(env, sectorPath, sectorDoc({ currentCampaign: 2027 }));
+
+    await assertFails(changePart({ odd: 'all', even: 'none' }));
+  });
+});
+
 describe('filling the shape', () => {
   const road = ['eguwGkrx[mQxH', 'qguwG_sx[gEoB'];
 

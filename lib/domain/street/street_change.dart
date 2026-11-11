@@ -11,6 +11,7 @@ import 'package:tournee_calendriers/domain/street/nobody_home_tries.dart';
 import 'package:tournee_calendriers/domain/street/removed_house.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
+import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
@@ -686,6 +687,81 @@ final class NumbersPurged extends StreetChange {
   String toString() =>
       'NumbersPurged(${streetId.value}, '
       '[${numbers.map((number) => number.label).join(', ')}])';
+}
+
+/// The street was given the part [part] in place of [before] (« Partie de
+/// la rue » in edit mode, PLAN §5.15), and the numbers whose place changed
+/// moved with it, each with its marks:
+///
+/// - [removed]: the houses the new part leaves out, sent to the Corbeille
+///   as ✕ sends them;
+/// - [restored]: numbers of the Corbeille the new part brings back, as they
+///   were there;
+/// - [added]: numbers read from the BAN that the street did not have, to
+///   do.
+///
+/// Storage writes the street's `part` alone, then each number as
+/// [NumberRemoved], [NumberRestored] and [NumbersAdded] write theirs: the
+/// security rules check one house per write, or a few new ones. It cannot
+/// be undone with « Annuler »: the part is chosen again on its screen.
+final class StreetPartChanged extends StreetChange {
+  StreetPartChanged({
+    required super.streetId,
+    required this.before,
+    required this.part,
+    required Iterable<RemovedHouse> removed,
+    required Iterable<RemovedHouse> restored,
+    required Iterable<House> added,
+  }) : removed = List.unmodifiable(removed),
+       restored = List.unmodifiable(restored),
+       added = List.unmodifiable(added);
+
+  /// The part before the change.
+  final StreetPart before;
+
+  /// The part after the change.
+  final StreetPart part;
+
+  /// The houses sent to the Corbeille, in street order, each with its
+  /// removal.
+  final List<RemovedHouse> removed;
+
+  /// The houses brought back from the Corbeille, in street order, each with
+  /// the removal it had.
+  final List<RemovedHouse> restored;
+
+  /// The new houses, in street order.
+  final List<House> added;
+
+  @override
+  bool operator ==(Object other) =>
+      other is StreetPartChanged &&
+      other.streetId == streetId &&
+      other.before == before &&
+      other.part == part &&
+      sameItems(other.removed, removed) &&
+      sameItems(other.restored, restored) &&
+      sameItems(other.added, added);
+
+  @override
+  int get hashCode => Object.hash(
+    streetId,
+    before,
+    part,
+    Object.hashAll(removed),
+    Object.hashAll(restored),
+    Object.hashAll(added),
+  );
+
+  @override
+  String toString() {
+    String labels(Iterable<HouseNumber> numbers) =>
+        '[${numbers.map((number) => number.label).join(', ')}]';
+    return 'StreetPartChanged(${streetId.value}, $before → $part, '
+        'removed: ${labels(removed.map((house) => house.number))}, '
+        'restored: ${labels(restored.map((house) => house.number))}, '
+        'added: ${labels(added.map((house) => house.number))})';
+  }
 }
 
 /// The street was renamed from [before] to [name] (the name field of the

@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_document_mapper.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_writes.dart';
 
@@ -97,6 +98,45 @@ void main() {
           ),
         },
       ]);
+    });
+
+    test('should write one house in the document of a street held in part, '
+        'then the next ones as many per update as one write holds', () {
+      // The rules check the part in the first write too, which leaves room
+      // for one house only (#138).
+      final street = valueOf(
+        Street.create(
+          id: StreetId('paix'),
+          name: 'Rue de la Paix',
+          commune: villefranche,
+          part: part(odd: SidePart.all, even: SidePart.none),
+          houses: [
+            for (final i in [1, 3, 5, 7]) House(number: n('$i')),
+          ],
+        ),
+      );
+
+      final writes = newStreetWrites(street);
+
+      expect(housesInFirstWrite(street), 1);
+      expect(writes.document['houses'], {'1': entryOf(street, '1')});
+      expect(writes.document['part'], {'odd': 'all', 'even': 'none'});
+      expect(writes.updates, [
+        {house('3'): entryOf(street, '3'), house('5'): entryOf(street, '5')},
+        {house('7'): entryOf(street, '7')},
+      ]);
+    });
+
+    test('should hold as many houses in the first write as one write holds '
+        'for a whole street', () {
+      expect(housesInFirstWrite(paixOf(5)), housesPerWrite);
+    });
+
+    test('should say in the rules that a street held in part comes with one '
+        'house', () {
+      final rules = File('firebase/firestore.rules').readAsStringSync();
+
+      expect(rules, contains('data.houses.size() <= 1 && isPart(data.part)'));
     });
 
     test('should keep every other field of the document as it is', () {

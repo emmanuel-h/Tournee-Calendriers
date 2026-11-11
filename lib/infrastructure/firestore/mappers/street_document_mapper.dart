@@ -7,6 +7,7 @@
 //   { name, communeName, communeCode, banId | null,
 //     deletedAt: time | null, deletedBy: uid | null,      ← street in the Corbeille
 //     shape: ["<encoded polyline>", …],                   ← one per line, [] for none
+//     part: { odd: side, even: side },                    ← absent: the whole street
 //     houses: { "<label>": house } }                       ← "12", "3bis", "3A"
 //   house    = { n: 3, sfx: "bis" | null, lat | null, lon | null,
 //                status, comeBack: when | null, by: uid | null, at: time | null,
@@ -32,6 +33,10 @@
 //
 // `shape` came with the map (T3.3): a street written before has none, and
 // reads as having no shape.
+//
+// `part` (#133, what the secteur holds of the street, see
+// street_part_fields.dart) is written only when the street is not held
+// whole: a street written before has none, and reads as whole.
 //
 // `assignees` (who covered the street, T3.3) went with PLAN §5.14: every
 // member covers the whole secteur. A document written before keeps the
@@ -90,6 +95,7 @@ import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/stored_values.dart';
 import 'package:tournee_calendriers/infrastructure/shared/mappers/come_back_text.dart';
+import 'package:tournee_calendriers/infrastructure/shared/mappers/street_part_fields.dart';
 
 /// The document of [street], for a `set` when the street is new.
 Map<String, Object?> streetToDocument(Street street) => {
@@ -99,6 +105,9 @@ Map<String, Object?> streetToDocument(Street street) => {
   'banId': street.banId?.value,
   ...stampFields(street.deletion, by: 'deletedBy', at: 'deletedAt'),
   'shape': street.shape.encode(),
+  // `?` before a map value: the entry is left out when the value is null
+  // (the whole street).
+  'part': ?storedPart(street.part),
   'houses': {
     for (final house in street.houses) house.number.label: houseEntry(house),
     for (final removed in street.removedHouses)
@@ -241,6 +250,7 @@ Street streetFromDocument(String id, Map<String, Object?> data) {
         ),
         banId: banId == null ? null : identifier(banId, BanStreetId.new),
         shape: _shapeFrom(data['shape']),
+        part: partFrom(data['part']),
         houses: shown,
         removedHouses: removed,
         deletion: stampOrNull(deletedBy, deletedAt),

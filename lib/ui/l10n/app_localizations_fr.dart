@@ -2761,4 +2761,41 @@ class AppLocalizationsFr extends AppLocalizations {
   String addStreetsZoneTooLarge(int max) {
     return 'Zone trop grande : $max rues au plus.';
   }
+
+  @override
+  String get streetPartWhole => 'Toute la rue';
+
+  @override
+  String get streetPartNothing => 'Aucun numéro';
+
+  @override
+  String get streetPartOddAll => 'tous les impairs';
+
+  @override
+  String get streetPartEvenAll => 'tous les pairs';
+
+  @override
+  String streetPartOddRange(int from, int to) {
+    return 'impairs $from–$to';
+  }
+
+  @override
+  String streetPartEvenRange(int from, int to) {
+    return 'pairs $from–$to';
+  }
+
+  @override
+  String streetPartOddOne(int number) {
+    return 'impair $number';
+  }
+
+  @override
+  String streetPartEvenOne(int number) {
+    return 'pair $number';
+  }
+
+  @override
+  String streetPartBothSides(String odd, String even) {
+    return '$odd · $even';
+  }
 }

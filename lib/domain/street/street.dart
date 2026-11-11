@@ -21,6 +21,7 @@ import 'package:tournee_calendriers/domain/street/removed_house.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
+import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
@@ -133,6 +134,12 @@ enum ShapeFillFailure {
   noLine,
 }
 
+/// Why the part of a street could not be changed ([Street.changePart]).
+enum PartChangeFailure {
+  /// The part given is the street's already: nothing would change.
+  samePart,
+}
+
 /// Why a change could not be undone (« Annuler » of the snackbar).
 enum UndoFailure {
   /// The change was made on another street.
@@ -148,7 +155,7 @@ enum UndoFailure {
 
   /// The screens offer no undo for this change: added numbers are removed
   /// with ✕, a street brought back from the Corbeille is deleted again, a
-  /// line found for the map stays.
+  /// line found for the map stays, a part is chosen again on its screen.
   notUndoable,
 }
 
@@ -181,6 +188,7 @@ final class Street {
     required this.commune,
     required this.banId,
     required this.shape,
+    required this.part,
     required this.houses,
     required this.removedHouses,
     required this.deletion,
@@ -188,7 +196,8 @@ final class Street {
 
   /// Builds a street from its identity and its [houses], given in any order
   /// (from the BAN, or from storage with its [removedHouses]), with its
-  /// [shape] on the map when it has one.
+  /// [shape] on the map when it has one, and the [part] of it the secteur
+  /// holds.
   ///
   /// The [name] is cleaned like a typed [StreetName]. Fails with
   /// [NewStreetFailure.invalidName] when it is not one, and with
@@ -201,6 +210,7 @@ final class Street {
     required Commune commune,
     BanStreetId? banId,
     StreetShape shape = StreetShape.none,
+    StreetPart part = StreetPart.whole,
     Iterable<House> houses = const [],
     Iterable<RemovedHouse> removedHouses = const [],
     ChangeStamp? deletion,
@@ -231,6 +241,7 @@ final class Street {
         commune: commune,
         banId: banId,
         shape: shape,
+        part: part,
         houses: _sortedHouses(houses),
         removedHouses: _sortedRemoved(removedHouses),
         deletion: deletion,
@@ -254,6 +265,7 @@ final class Street {
     commune: commune,
     banId: null,
     shape: StreetShape.none,
+    part: StreetPart.whole,
     houses: _sortedHouses([
       for (final number in numbers.toSet()) House(number: number),
     ]),
@@ -277,6 +289,15 @@ final class Street {
   /// not been found yet. Only [fillShape] changes it, and only while it is
   /// none.
   final StreetShape shape;
+
+  /// What the secteur holds of the street, side by side (PLAN §5.15):
+  /// [StreetPart.whole] unless it was cut. Only [changePart] changes it.
+  ///
+  /// The houses are the numbers held: those outside the part were never
+  /// stored, or went to the Corbeille when the part shrank. A number
+  /// « + numéros » added outside it is kept all the same (the user knows
+  /// the street), and the part stays as it is.
+  final StreetPart part;
 
   /// Every house, sorted by number. The list cannot be modified (it throws
   /// an `UnsupportedError`): houses change only through the commands below.
@@ -974,11 +995,100 @@ final class Street {
         commune: commune,
         banId: banId,
         shape: shape,
+        part: part,
         houses: houses,
         removedHouses: removedHouses,
         deletion: deletion,
       ),
       StreetShapeFilled(streetId: id, shape: shape),
+    ));
+  }
+
+  /// The houses shown that changing the part to [part] would send to the
+  /// Corbeille: those the street's part holds and [part] does not, in
+  /// street order. The screen asks first when one of them has marks
+  /// (`House.hasMarks`, PLAN §5.15).
+  List<House> housesLeftOutBy(StreetPart part) => List.unmodifiable(
+    houses.where(
+      (house) => this.part.holds(house.number) && !part.holds(house.number),
+    ),
+  );
+
+  /// Gives the street the part [part], as [by] at [at] (« Partie de la
+  /// rue » in edit mode, PLAN §5.15). Only the numbers whose place changes
+  /// move, each with its marks:
+  ///
+  /// - **Left out**: each house shown that the old part held and [part]
+  ///   does not goes to the Corbeille, as ✕ would send it
+  ///   ([removeNumber]); see [housesLeftOutBy].
+  /// - **Brought in**: each number of the Corbeille the old part did not
+  ///   hold and [part] does comes back as it was there ([restoreNumber]);
+  ///   each of [fromDirectory] (the street's numbers read from the BAN)
+  ///   that the old part did not hold and [part] does, and the street has
+  ///   neither shown nor in the Corbeille, is added, to do.
+  ///
+  /// A number « + numéros » added outside the old part is left alone, and
+  /// so is a number of the old part removed with ✕: the user chose those
+  /// one by one. Refused with [PartChangeFailure.samePart] when [part] is
+  /// the street's already.
+  Result<(Street, StreetPartChanged), PartChangeFailure> changePart(
+    StreetPart part, {
+    Iterable<House> fromDirectory = const [],
+    required MemberId by,
+    required DateTime at,
+  }) {
+    if (part == this.part) return const Err(PartChangeFailure.samePart);
+    bool comesIn(HouseNumber number) =>
+        !this.part.holds(number) && part.holds(number);
+    final stamp = ChangeStamp(by: by, at: at);
+    final leaving = housesLeftOutBy(part);
+    final removed = [
+      for (final house in leaving) RemovedHouse(house: house, removal: stamp),
+    ];
+    final restored = [
+      for (final back in removedHouses)
+        if (comesIn(back.number)) back,
+    ];
+    final known = {
+      for (final house in houses) house.number,
+      for (final back in removedHouses) back.number,
+    };
+    final added = <House>[];
+    for (final house in fromDirectory) {
+      // `add` on a set says whether the number was new, so a number the
+      // directory gives twice is added once.
+      if (comesIn(house.number) && known.add(house.number)) {
+        added.add(House(number: house.number, position: house.position));
+      }
+    }
+    final changed = Street._(
+      id: id,
+      name: name,
+      commune: commune,
+      banId: banId,
+      shape: shape,
+      part: part,
+      houses: _sortedHouses([
+        ...houses.where((house) => !leaving.contains(house)),
+        for (final back in restored) back.house,
+        ...added,
+      ]),
+      removedHouses: _sortedRemoved([
+        ...removedHouses.where((back) => !restored.contains(back)),
+        ...removed,
+      ]),
+      deletion: deletion,
+    );
+    return Ok((
+      changed,
+      StreetPartChanged(
+        streetId: id,
+        before: this.part,
+        part: part,
+        removed: removed,
+        restored: restored,
+        added: _sortedHouses(added),
+      ),
     ));
   }
 
@@ -1099,7 +1209,8 @@ final class Street {
       NumbersAdded() ||
       StreetRestored() ||
       NumbersPurged() ||
-      StreetShapeFilled() => const Err(UndoFailure.notUndoable),
+      StreetShapeFilled() ||
+      StreetPartChanged() => const Err(UndoFailure.notUndoable),
     };
   }
 
@@ -1279,7 +1390,7 @@ final class Street {
     );
   }
 
-  /// This street, same id, commune, BAN id and shape, with the
+  /// This street, same id, commune, BAN id, shape and part, with the
   /// other fields given.
   /// They are all required so no call can forget one (null is a real value
   /// of [deletion]: not in the Corbeille). The lists must already be sorted
@@ -1295,6 +1406,7 @@ final class Street {
     commune: commune,
     banId: banId,
     shape: shape,
+    part: part,
     houses: houses,
     removedHouses: removedHouses,
     deletion: deletion,

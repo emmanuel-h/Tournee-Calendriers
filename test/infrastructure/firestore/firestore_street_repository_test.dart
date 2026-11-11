@@ -12,6 +12,7 @@ import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_street_repository.dart';
@@ -479,6 +480,36 @@ void main() {
       final stored = (await db.doc('$streetsPath/lilas').get()).data()!;
       expect(stored['shape'], shape.encode());
       expect((await phone('paul').find(lilas.id))!.shape, shape);
+    });
+
+    test('should store a new part, then the whole street again without '
+        'the field', () async {
+      await phone().add(lilas);
+      await pumpEventQueue();
+      final streets = phone();
+      final odds = part(odd: SidePart.all, even: SidePart.none);
+      final (shrunk, shrinking) = valueOf(
+        (await streets.find(lilas.id))!
+            .changePart(odds, by: MemberId('lea'), at: twoPm),
+      );
+      await streets.save(shrunk, shrinking);
+      await pumpEventQueue();
+
+      final stored = (await db.doc('$streetsPath/lilas').get()).data()!;
+      expect(stored['part'], {'odd': 'all', 'even': 'none'});
+      final seenByPaul = (await phone('paul').find(lilas.id))!;
+      expect(seenByPaul.part, odds);
+      expect(seenByPaul.removedHouses.single.number, n('2'));
+
+      final (whole, widening) = valueOf(
+        shrunk.changePart(StreetPart.whole, by: MemberId('lea'), at: twoPm),
+      );
+      await streets.save(whole, widening);
+      await pumpEventQueue();
+
+      final after = (await db.doc('$streetsPath/lilas').get()).data()!;
+      expect(after.containsKey('part'), isFalse);
+      expect((await phone('sam').find(lilas.id))!.houses, hasLength(2));
     });
 
     test('should write only the fields the change names', () async {

@@ -10,6 +10,7 @@ import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
+import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_document_mapper.dart';
@@ -658,6 +659,74 @@ void main() {
         FieldPath(const ['deletedAt']): null,
         FieldPath(const ['deletedBy']): null,
       });
+    });
+  });
+
+  group('part', () {
+    final evens = part(odd: SidePart.none, even: range(4, 8));
+
+    test('should write the part alone, then who removed each number left '
+        'out', () {
+      final updates = updatesOf(
+        lilas,
+        (s) => s.changePart(evens, by: paul, at: threePm),
+      );
+
+      expect(updates, [
+        {
+          FieldPath(const ['part']): {
+            'odd': 'none',
+            'even': [4, 8],
+          },
+        },
+        {
+          house('10', ['deletedAt']): at(threePm),
+          house('10', ['deletedBy']): 'paul',
+        },
+      ]);
+    });
+
+    test('should remove the part back to the whole street, then clear each '
+        'number restored and write the new ones a few per update', () {
+      final shrunk = valueOf(lilas.changePart(evens, by: paul, at: threePm)).$1;
+
+      final updates = updatesOf(
+        shrunk,
+        (s) => s.changePart(
+          StreetPart.whole,
+          fromDirectory: [
+            House(number: n('16')),
+            House(number: n('1'), position: townHallDoor),
+            House(number: n('6')),
+            House(number: n('3')),
+            House(number: n('12')),
+          ],
+          by: lea,
+          at: twoPm,
+        ),
+      );
+
+      expect(updates, [
+        {
+          FieldPath(const ['part']): removed,
+        },
+        {
+          house('10', ['deletedAt']): null,
+          house('10', ['deletedBy']): null,
+        },
+        {
+          house('14ter', ['deletedAt']): null,
+          house('14ter', ['deletedBy']): null,
+        },
+        {
+          house('1'): houseEntry(House(number: n('1'), position: townHallDoor)),
+          house('3'): houseEntry(House(number: n('3'))),
+        },
+        {
+          house('12'): houseEntry(House(number: n('12'))),
+          house('16'): houseEntry(House(number: n('16'))),
+        },
+      ]);
     });
   });
 

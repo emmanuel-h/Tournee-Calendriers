@@ -11,6 +11,7 @@ import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/removed_house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/mappers/street_json_mapper.dart';
@@ -86,6 +87,10 @@ void main() {
       expectSameStreet(throughText(manualStreet), manualStreet);
     });
 
+    test('should read back the part of a street held in part', () {
+      expectSameStreet(throughText(partStreet), partStreet);
+    });
+
     test('should read back the map it wrote without text in between', () {
       expectSameStreet(streetFromJson(streetToJson(richStreet)), richStreet);
     });
@@ -107,6 +112,7 @@ void main() {
           shape: StreetShape([
             [townHallDoor, northDoor],
           ]),
+          part: part(odd: SidePart.all, even: range(2, 12)),
           houses: [
             House(
               number: n('3bis'),
@@ -129,6 +135,10 @@ void main() {
         'banId': '69264_0420',
         'deletion': {'by': 'paul', 'at': '2026-11-02T15:00:00.000Z'},
         'shape': ['eguwGkrx[mQxH'],
+        'part': {
+          'odd': 'all',
+          'even': [2, 12],
+        },
         'houses': [
           {
             'number': '3bis',
@@ -169,6 +179,11 @@ void main() {
         ],
         'removedHouses': <Object?>[],
       });
+    });
+
+    test('should write a null part for the whole street', () {
+      expect(streetToJson(manualStreet).containsKey('part'), isTrue);
+      expect(streetToJson(manualStreet)['part'], isNull);
     });
 
     test('should write no line for a street typed in by hand', () {
@@ -476,6 +491,13 @@ void main() {
       expect(streetFromJson(json).shape, StreetShape.none);
     });
 
+    // Files written before #133 have no part: the street is held whole.
+    test('should read the whole street when the file has no part', () {
+      final json = storedRichStreet((json) => json.remove('part'));
+
+      expect(streetFromJson(json).part, StreetPart.whole);
+    });
+
     // PLAN §5.14: who covered a street is gone; a file written before
     // keeps the field, whatever it holds, and reads as the same street.
     test('should read a file that still has its old assignees', () {
@@ -577,6 +599,7 @@ void main() {
   group('unreadable data', () {
     final cases = <String, void Function(Map<String, Object?> json)>{
       'the version is missing': (json) => json.remove('version'),
+      'the part is not a stored part': (json) => json['part'] = 'odd',
       'the version is newer': (json) => json['version'] = 4,
       'the version is older': (json) => json['version'] = 0,
       'the version is text': (json) => json['version'] = '2',

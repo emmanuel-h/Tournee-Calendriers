@@ -242,14 +242,16 @@ export const newStreetDoc = (overrides = {}) =>
 
 /**
  * Writes the street [data] at [ref] as the adapter writes a new street:
- * the document with its first houses, then the others in updates of
- * housesPerWrite, in order. Rejects at the first write refused.
+ * the document with its first houses (one when it is held in part, #138),
+ * then the others in updates of housesPerWrite, in order. Rejects at the
+ * first write refused.
  */
 export async function writeInChunks(ref, data) {
   const entries = Object.entries(data.houses);
-  const first = Object.fromEntries(entries.slice(0, housesPerWrite));
+  const inFirst = 'part' in data ? 1 : housesPerWrite;
+  const first = Object.fromEntries(entries.slice(0, inFirst));
   await setDoc(ref, { ...data, houses: first });
-  for (let start = housesPerWrite; start < entries.length; start += housesPerWrite) {
+  for (let start = inFirst; start < entries.length; start += housesPerWrite) {
     await updateFields(
       ref,
       entries

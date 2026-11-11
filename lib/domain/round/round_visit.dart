@@ -57,6 +57,7 @@ enum RoundVisit {
     StreetDeleted() ||
     StreetRestored() ||
     StreetShapeFilled() ||
+    StreetPartChanged() ||
     NumbersAdded() ||
     NumberRemoved() ||
     NumberRestored() ||

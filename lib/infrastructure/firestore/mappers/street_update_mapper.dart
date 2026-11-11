@@ -32,6 +32,7 @@ import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_document_mapper.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_writes.dart';
+import 'package:tournee_calendriers/infrastructure/shared/mappers/street_part_fields.dart';
 
 /// The updates storing [change], which made [street], in the order they
 /// are sent: each field path with its new value, ready for
@@ -39,7 +40,9 @@ import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_writ
 ///
 /// One update per change, except « numéros en plus »: the new houses go
 /// [housesPerWrite] per update, and each number restored from the
-/// Corbeille in an update of its own; and the purge, one update per number.
+/// Corbeille in an update of its own; the purge, one update per number;
+/// and a new part, its field, then one update per number it moves (the new
+/// ones [housesPerWrite] per update).
 /// The security rules check field by field a write that changes one house
 /// already there, and each house of a write that adds at most
 /// [housesPerWrite]; they refuse a write that changes several houses
@@ -140,6 +143,28 @@ List<Map<FieldPath, Object?>> streetUpdates(
         _path(['shape']): shape.encode(),
       },
     ],
+    // The part alone first (the security rules accept it only on its
+    // own), then each number as ✕, « Restaurer » and « + numéros » write
+    // theirs, so the rules check each house. The whole street is no field
+    // at all.
+    StreetPartChanged(
+      :final part,
+      :final removed,
+      :final restored,
+      :final added,
+    ) =>
+      [
+        {
+          _path(['part']): storedPart(part) ?? removal,
+        },
+        for (final gone in removed)
+          _stampUpdate([_houses, gone.number.label], gone.removal, 'deleted'),
+        for (final back in restored)
+          _stampUpdate([_houses, back.number.label], null, 'deleted'),
+        ...addedHouseUpdates({
+          for (final house in added) house.number.label: houseEntry(house),
+        }),
+      ],
     // Before the general undo of a house: a `switch` takes the first case
     // that matches, and this one needs the key moved.
     HouseReverted(renumbers: true, :final replaced, :final house) => [

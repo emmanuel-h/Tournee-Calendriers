@@ -1959,6 +1959,16 @@ belong to no secteur at all (a valid state, not an error). This section override
     Corbeille with their marks, and reads the others from the BAN.
   - « + numéros » in edit mode may add a number outside the part (the user knows the street):
     it is added, and the part is not changed.
+- **Delivered in #138** (domain, storage, rules; no screen): `StreetPart` (`odd` / `even`, each
+  `SidePart.all`, `.none` or a `NumberRange`, bounds of their side), `Street.part`,
+  `Street.changePart` and `ChangeStreetPart`. Only the numbers whose place changes move: a
+  number « + numéros » added outside the old part, or one removed with ✕ inside it, is left
+  alone. `ChangeStreetPart` first answers `MarkedNumbersLeaving` (changing nothing) when numbers
+  with marks would leave; the screen asks, then calls again with `marksConfirmed: true`. A
+  widening reads the BAN (offline: `NumbersUnreadable`, nothing changed); a street typed by hand
+  only gets numbers back from the Corbeille. The words (« Impairs 7–21 · pairs 2–30 »,
+  « Tous les impairs », « Impair 7 », « Aucun numéro ») are `streetPartText` in
+  `ui/components/street_part_words.dart`.
 - **The BAN's later additions**: the app never reads a street's numbers again once added
   (5.4), so nothing arrives by itself; a widening in edit mode is the only new read.
 - **Map** (Accueil, 5.3, and « Ajouter des rues »): a street held in part draws only **the
@@ -2726,6 +2736,7 @@ final class Street {                       // aggregate root
   // edit mode (T1.4): Street.manual, addNumbers, removeNumber (soft), restoreNumber,
   //                   renameNumber, renameStreet
   // undo (T1.6): undo(change) → (Street, HouseReverted | DwellingReverted | …)
+  // part (#138): housesLeftOutBy(part), changePart(part, fromDirectory:) → StreetPartChanged
   Progress get progress;
 }
 
@@ -2745,7 +2756,7 @@ sealed class StreetChange { /* HouseMarked, ComeBackSet, BuildingLaidOut,
                                HouseNobodyHomeAgain, DwellingNobodyHomeAgain (#80),
                                StreetDeleted, StreetRestored, StreetShapeFilled (#92),
                                NumbersAdded, NumberRemoved, NumberRestored,
-                               NumberRenamed, StreetRenamed,
+                               NumberRenamed, StreetRenamed, StreetPartChanged (#138),
                                HouseReverted, DwellingReverted (undo, T1.6) */ }
 ```
 
@@ -2915,6 +2926,7 @@ writes:
 | number removed / restored | `deletedAt`, `deletedBy` (set / null) |
 | number renamed | `houses.<old>` deleted, `houses.<new>` whole |
 | street renamed, deleted, restored | `name`; `deletedAt`, `deletedBy` (top level) |
+| part changed (`StreetPartChanged`, #138) | `part` (top level) alone, the map, or deleted for « Toute la rue »; then each number left out as a removal, each brought back from the Corbeille as a restore, each new one whole, 2 per update (as « numbers added ») |
 | shape found later (`StreetShapeFilled`, #92) | `shape` (top level), the whole list, only while the stored one is absent or `[]` |
 | undo of a house (`HouseReverted`) | as a layout change, or `houses.<old>` deleted and `houses.<n>` whole when it renumbers back; `by` / `at` = who undoes, now |
 | undo of a door (`DwellingReverted`) | `dwellings.<key>` whole, `by` / `at` = who undoes, now |
@@ -3096,6 +3108,11 @@ photo of the QR) is even more likely. So **knowing a code must not be enough**:
   Delete an active member: the creator, or the member themself (*Quitter*). Update
   `displayName` only: the member themself, active, a name as `MemberName` cleans it (≤ 30).
 - `joinCodes/{code}`: `get` for signed-in users, `list` denied; holds only the preview fields.
+- `part` of a street (#138, §6.2): optional on a new street, then written alone (set, or
+  deleted for the whole street); each side `"all"`, `"none"` or `[from, to]`, integers
+  0–99999, `from ≤ to`, both odd on the odd side and even on the even one. A new street held in
+  part comes with **one** house in its first write instead of 2: checking the part costs more
+  than two of the costliest houses leave of the 1 000 expressions (measured in the emulator).
 - `streetParts/{banId}` (#133, 5.15): `get` for signed-in users, `list` denied. An active
   member of a secteur may create the document or update it changing only the key of their
   own secteur (`diff().affectedKeys() == [sectorId]` on `parts`), with `number` and

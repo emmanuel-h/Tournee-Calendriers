@@ -8,6 +8,7 @@
 //
 //   { version: 3, id, name, commune: { inseeCode, name }, banId | null,
 //     deletion: stamp | null, shape: ["<encoded polyline>", …],
+//     part: { odd, even } | null,                ← null: the whole street
 //     houses: [house], removedHouses: [{ house, removal: stamp }] }
 //   house    = { number: "3bis", status, comeBack: when | null,
 //                lastChange: stamp | null, tries: 1–99,   ← only from the first try
@@ -47,7 +48,9 @@
 // `shape` (one encoded polyline per line, see `StreetShape.encode`) came
 // with the map (T3.3) without a new version: it only adds to version 3, so
 // a file written before reads as a street without shape, and nothing in it
-// needs rewriting. `assignees` (who covered the street, T3.3) went with
+// needs rewriting. `part` (#133, what the secteur holds of the street,
+// see street_part_fields.dart) came the same way: a file without it reads
+// as the whole street. `assignees` (who covered the street, T3.3) went with
 // PLAN §5.14: a file that still has it is read without it. `tries`
 // (the tries with nobody home, #80) came the same way: written only from
 // the first try, a missing one reads as none (and a « personne » without
@@ -88,6 +91,7 @@ import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/infrastructure/shared/mappers/come_back_text.dart';
+import 'package:tournee_calendriers/infrastructure/shared/mappers/street_part_fields.dart';
 
 /// The schema version this code writes. It reads it and versions 1 and 2
 /// (see the top of this file); a file of any other version is refused
@@ -121,6 +125,7 @@ Map<String, Object?> streetToJson(Street street) => {
   'banId': street.banId?.value,
   'deletion': _stampToJson(street.deletion),
   'shape': street.shape.encode(),
+  'part': storedPart(street.part),
   'houses': [for (final house in street.houses) _houseToJson(house)],
   'removedHouses': [
     for (final removed in street.removedHouses)
@@ -162,9 +167,10 @@ Street streetFromJson(Object? json) {
           'commune',
         ),
         banId: banId == null ? null : _identifier(banId, BanStreetId.new),
-        // Read apart: a map pattern requires its keys, and files written
-        // before the map have none.
+        // Both read apart: a map pattern requires its keys, and files
+        // written before the map (or before #133) have none.
         shape: _shapeFromJson(json['shape']),
+        part: partFrom(json['part']),
         houses: [for (final house in houses) _houseFromJson(house, version)],
         removedHouses: [
           for (final removed in removedHouses)
