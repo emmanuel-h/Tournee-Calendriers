@@ -19,6 +19,7 @@ import '../../domain/sector/my_sectors_fixtures.dart';
 import '../../domain/sector/sector_fixtures.dart';
 import '../../support/fakes/fake_admin_status.dart';
 import '../../support/fakes/fake_my_sectors_store.dart';
+import '../../support/fakes/fake_phone_cache_reset.dart';
 import '../../support/fakes/fake_phone_settings.dart';
 import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_sector_repository.dart';
@@ -72,6 +73,7 @@ void main() {
       overrides: [
         sectorRepositoryProvider.overrideWithValue(sectors),
         mySectorsStoreProvider.overrideWithValue(store),
+        phoneCacheResetProvider.overrideWithValue(FakePhoneCacheReset()),
         identityProvider.overrideWithValue(FakeIdentity(member)),
         clockProvider.overrideWithValue(FakeClock(twoMinutesLater)),
         randomProvider.overrideWithValue(ScriptedRandom(draws234567)),

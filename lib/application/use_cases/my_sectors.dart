@@ -1,5 +1,6 @@
 import 'package:tournee_calendriers/application/ports/member_account.dart';
 import 'package:tournee_calendriers/application/ports/my_sectors_store.dart';
+import 'package:tournee_calendriers/application/ports/phone_cache_reset.dart';
 import 'package:tournee_calendriers/application/ports/sector_directory.dart';
 import 'package:tournee_calendriers/domain/sector/member.dart';
 import 'package:tournee_calendriers/domain/sector/member_name.dart';
@@ -174,22 +175,25 @@ final class LostSector {
 
 /// Forgets the tournée [SectorId] the member lost ([SectorLoss]): it
 /// leaves « Mes secteurs » and, when it was open, none is open any more.
-/// Returns what was forgotten, for the app to say it.
+/// Returns what was forgotten, for the app to say it. Its streets leave the
+/// phone's copy at the next start ([PhoneCacheReset]).
 ///
 /// Returns null and changes nothing when the phone no longer knows the
 /// tournée (it was left or deleted from this phone in the meantime: nothing
 /// to tell) or knows it only as a request, which `SettleJoinRequest`
 /// follows.
 final class ForgetLostSector {
-  const ForgetLostSector(this._store);
+  const ForgetLostSector(this._store, this._cache);
 
   final MySectorsStore _store;
+  final PhoneCacheReset _cache;
 
   Future<LostSector?> call(SectorId id, SectorLoss loss) async {
     final mine = _store.mySectors;
     final sector = mine.find(id);
     if (sector == null || sector.isPending) return null;
     await _store.save(mine.forget(id));
+    _cache.scheduleAtNextStart();
     return LostSector(
       sector: sector,
       loss: loss,

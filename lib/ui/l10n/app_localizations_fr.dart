@@ -1443,7 +1443,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get privacyDeletionBody =>
-      'Supprimer le secteur efface tout ce qu\'il contient. Quand une campagne commence, celle d\'il y a deux ans est effacée. Désinstaller l\'appli efface ce qui est sur le téléphone, y compris les dons d\'une tournée pas encore validée ; ce qui est partagé avec l\'équipe reste jusqu\'à la suppression du secteur.';
+      'Supprimer le secteur efface tout ce qu\'il contient. Les campagnes passées ne sont pas encore effacées d\'elles-mêmes : elles restent jusqu\'à la suppression du secteur. Quitter un secteur, en être retiré ou le supprimer efface ses rues du téléphone à un prochain démarrage de l\'appli avec du réseau. Désinstaller l\'appli efface ce qui est sur le téléphone, y compris les dons d\'une tournée pas encore validée, et rien n\'en est copié dans la sauvegarde Android ; ce qui est partagé avec l\'équipe reste jusqu\'à la suppression du secteur.';
 
   @override
   String get privacyOnline => 'Politique complète en ligne';

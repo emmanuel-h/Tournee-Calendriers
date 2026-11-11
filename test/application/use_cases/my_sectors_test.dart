@@ -10,6 +10,7 @@ import '../../domain/sector/my_sectors_fixtures.dart';
 import '../../domain/sector/sector_fixtures.dart';
 import '../../support/fakes/fake_member_account.dart';
 import '../../support/fakes/fake_my_sectors_store.dart';
+import '../../support/fakes/fake_phone_cache_reset.dart';
 import '../../support/fakes/fake_sector_directory.dart';
 import '../../support/results.dart';
 
@@ -24,8 +25,12 @@ MySectors _manusPhone() => valueOf(
 
 void main() {
   late FakeMySectorsStore store;
+  late FakePhoneCacheReset cache;
 
-  setUp(() => store = FakeMySectorsStore(_manusPhone()));
+  setUp(() {
+    store = FakeMySectorsStore(_manusPhone());
+    cache = FakePhoneCacheReset();
+  });
 
   group('ReadMySectors', () {
     test('should give the tournées the phone keeps', () {
@@ -216,7 +221,7 @@ void main() {
   group('ForgetLostSector', () {
     test('should forget the open tournée lost, none open any more, and say '
         'which it was', () async {
-      final lost = await ForgetLostSector(store)(
+      final lost = await ForgetLostSector(store, cache)(
         sector49.id,
         SectorLoss.deleted,
       );
@@ -227,10 +232,11 @@ void main() {
       );
       expect(store.saves.single.sectors, [sector12, sector7]);
       expect(store.saves.single.current, isNull);
+      expect(cache.scheduled, 1);
     });
 
     test('should forget another tournée lost and keep the open one', () async {
-      final lost = await ForgetLostSector(store)(
+      final lost = await ForgetLostSector(store, cache)(
         sector12.id,
         SectorLoss.removed,
       );
@@ -241,27 +247,30 @@ void main() {
       );
       expect(store.saves.single.sectors, [sector49, sector7]);
       expect(store.saves.single.current, sector49);
+      expect(cache.scheduled, 1);
     });
 
     test('should forget nothing and tell nothing when the tournée is gone '
         'already (left, deleted from this phone)', () async {
-      final lost = await ForgetLostSector(store)(
+      final lost = await ForgetLostSector(store, cache)(
         SectorId('t99'),
         SectorLoss.removed,
       );
 
       expect(lost, isNull);
       expect(store.saves, isEmpty);
+      expect(cache.scheduled, 0);
     });
 
     test('should leave a pending request to its own answer', () async {
-      final lost = await ForgetLostSector(store)(
+      final lost = await ForgetLostSector(store, cache)(
         sector7.id,
         SectorLoss.removed,
       );
 
       expect(lost, isNull);
       expect(store.saves, isEmpty);
+      expect(cache.scheduled, 0);
     });
   });
 

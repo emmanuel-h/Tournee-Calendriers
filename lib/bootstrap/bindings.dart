@@ -10,10 +10,12 @@ import 'package:http/http.dart' as http;
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
 import 'package:tournee_calendriers/application/ports/pending_sync.dart';
+import 'package:tournee_calendriers/application/ports/phone_cache_reset.dart';
 import 'package:tournee_calendriers/application/ports/server_connection.dart';
 import 'package:tournee_calendriers/application/ports/street_part_index.dart';
 import 'package:tournee_calendriers/application/ports/street_shapes.dart';
 import 'package:tournee_calendriers/application/services/indexed_street_repository.dart';
+import 'package:tournee_calendriers/bootstrap/cache_reset.dart';
 import 'package:tournee_calendriers/domain/sector/member.dart';
 import 'package:tournee_calendriers/domain/street/sector_part.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
@@ -75,6 +77,8 @@ final httpClientProvider = Provider<http.Client>((ref) {
 ///   stay, so an updated phone keeps its data. What older versions kept
 ///   and nothing reads any more (the streets of a phone with no secteur
 ///   open, #119) is deleted first.
+/// - [cacheReset]: empties Firestore's copy on the phone at a next start
+///   once a secteur is forgotten (`startCacheReset`, run before this).
 /// - [auth]: Firebase anonymous sign-in. Its uid is the member; until the
 ///   first sign-in succeeds, the phone's own id stands in for the marks,
 ///   and creating or joining a tournée signs in again (`MemberAccount`).
@@ -100,6 +104,7 @@ final httpClientProvider = Provider<http.Client>((ref) {
 /// screen, so reading them later never waits.
 Future<List<Override>> bindAdapters({
   required Directory storage,
+  required PhoneCacheReset cacheReset,
   required AnonymousAuth auth,
   required FirebaseFirestore Function() firestore,
   AddressDirectory? addressDirectory,
@@ -124,7 +129,7 @@ Future<List<Override>> bindAdapters({
   final mySectors = await LocalMySectors.load(fileOf('my_tournees.json'));
   final settings = await LocalPhoneSettings.load(fileOf('settings.json'));
   final sectorDownloads = await LocalSectorDownloads.load(
-    fileOf('tournee_downloads.json'),
+    fileOf(sectorDownloadsFile),
   );
   final openRound = await LocalOpenRound.load(fileOf('open_round.json'));
   const clock = SystemClock();
@@ -258,6 +263,7 @@ Future<List<Override>> bindAdapters({
     memberAccountProvider.overrideWithValue(identity),
     streetViewPreferencesProvider.overrideWithValue(streetView),
     mySectorsStoreProvider.overrideWithValue(mySectors),
+    phoneCacheResetProvider.overrideWithValue(cacheReset),
     phoneSettingsProvider.overrideWithValue(settings),
     // The tournée on and its dons stay on the phone (PLAN §6.3); once
     // validated, only its summary goes to the secteur, in Firestore

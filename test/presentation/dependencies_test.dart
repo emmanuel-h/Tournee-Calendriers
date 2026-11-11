@@ -60,6 +60,7 @@ import '../support/fakes/fake_my_sectors_store.dart';
 import '../support/fakes/fake_offline_map_store.dart';
 import '../support/fakes/fake_open_round_store.dart';
 import '../support/fakes/fake_pending_sync.dart';
+import '../support/fakes/fake_phone_cache_reset.dart';
 import '../support/fakes/fake_phone_settings.dart';
 import '../support/fakes/fake_ports.dart';
 import '../support/fakes/fake_round_ledger.dart';
@@ -112,6 +113,7 @@ void main() {
     streetViewPreferencesProvider.overrideWithValue(preferences),
     memberAccountProvider.overrideWithValue(account),
     mySectorsStoreProvider.overrideWithValue(mySectors),
+    phoneCacheResetProvider.overrideWithValue(FakePhoneCacheReset()),
     phoneSettingsProvider.overrideWithValue(settings),
     sectorDirectoryProvider.overrideWithValue(sectorDirectory),
     sectorRepositoryProvider.overrideWithValue(sectors),
@@ -197,6 +199,7 @@ void main() {
       'OpenRoundStore': openRoundStoreProvider,
       'RoundLedger': roundLedgerProvider,
       'StreetPartIndex': streetPartIndexProvider,
+      'PhoneCacheReset': phoneCacheResetProvider,
     };
     ports.forEach((name, port) {
       test('should name $name when nobody bound it', () {

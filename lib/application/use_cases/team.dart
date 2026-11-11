@@ -4,6 +4,7 @@ import 'package:tournee_calendriers/application/ports/admin_status.dart';
 import 'package:tournee_calendriers/application/ports/clock.dart';
 import 'package:tournee_calendriers/application/ports/identity_provider.dart';
 import 'package:tournee_calendriers/application/ports/my_sectors_store.dart';
+import 'package:tournee_calendriers/application/ports/phone_cache_reset.dart';
 import 'package:tournee_calendriers/application/ports/phone_settings.dart';
 import 'package:tournee_calendriers/domain/sector/actor.dart';
 import 'package:tournee_calendriers/domain/sector/join_code.dart';
@@ -271,14 +272,21 @@ final class RemoveCommune {
 }
 
 /// « Quitter le secteur »: the member on the phone leaves the team, and the
-/// phone forgets the tournée (« Mes secteurs »). Works offline; every
+/// phone forgets the tournée (« Mes secteurs »), its streets leaving the
+/// phone's copy at the next start ([PhoneCacheReset]). Works offline; every
 /// member may leave, admins and the creator included, even the last one.
 final class LeaveSector {
-  const LeaveSector(this._sectors, this._identity, this._mySectors);
+  const LeaveSector(
+    this._sectors,
+    this._identity,
+    this._mySectors,
+    this._cache,
+  );
 
   final SectorRepository _sectors;
   final IdentityProvider _identity;
   final MySectorsStore _mySectors;
+  final PhoneCacheReset _cache;
 
   Future<Result<MemberLeft, TeamFailure>> call(SectorId sector) async {
     final by = _identity.currentMember;
@@ -289,6 +297,7 @@ final class LeaveSector {
     )) {
       case Ok(value: (_, final change)):
         await _mySectors.save(_mySectors.mySectors.forget(sector));
+        _cache.scheduleAtNextStart();
         return Ok(change);
       case Err(:final failure):
         return Err(failure);
@@ -325,7 +334,8 @@ final class RegenerateJoinCode {
 }
 
 /// « Supprimer le secteur » (admins only): the tournée and all it holds
-/// are deleted for the whole team, and the phone forgets it. Needs the
+/// are deleted for the whole team, and the phone forgets it (its copy of
+/// the streets too, at the next start: [PhoneCacheReset]). Needs the
 /// server.
 final class DeleteSector {
   const DeleteSector(
@@ -333,12 +343,14 @@ final class DeleteSector {
     this._identity,
     this._admins,
     this._mySectors,
+    this._cache,
   );
 
   final SectorRepository _sectors;
   final IdentityProvider _identity;
   final AdminStatus _admins;
   final MySectorsStore _mySectors;
+  final PhoneCacheReset _cache;
 
   Future<Result<SectorDeleted, TeamFailure>> call(SectorId id) async {
     final sector = await _sectors.find(id);
@@ -352,6 +364,7 @@ final class DeleteSector {
             return Err(_teamFailureOf(failure));
           case Ok():
             await _mySectors.save(_mySectors.mySectors.forget(id));
+            _cache.scheduleAtNextStart();
             return Ok(deletion);
         }
     }

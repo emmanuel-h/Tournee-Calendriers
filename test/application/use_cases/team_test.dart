@@ -13,6 +13,7 @@ import '../../domain/sector/my_sectors_fixtures.dart';
 import '../../domain/sector/sector_fixtures.dart';
 import '../../support/fakes/fake_admin_status.dart';
 import '../../support/fakes/fake_my_sectors_store.dart';
+import '../../support/fakes/fake_phone_cache_reset.dart';
 import '../../support/fakes/fake_phone_settings.dart';
 import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_sector_repository.dart';
@@ -31,6 +32,7 @@ final draws234567 = [
 void main() {
   late FakeSectorRepository sectors;
   late FakeMySectorsStore store;
+  late FakePhoneCacheReset cache;
 
   /// The phone of a member who is not an admin, and of one who is.
   final member = FakeAdminStatus();
@@ -40,6 +42,7 @@ void main() {
   // the 12.
   setUp(() {
     sectors = FakeSectorRepository([team()]);
+    cache = FakePhoneCacheReset();
     store = FakeMySectorsStore(
       valueOf(
         MySectors.none.remember(sector49).remember(sector12).open(sector49.id),
@@ -418,18 +421,21 @@ void main() {
     test('should take the member out and forget the tournée on the '
         'phone', () async {
       final change = valueOf(
-        await LeaveSector(sectors, FakeIdentity(leaId), store)(sectorId),
+        await LeaveSector(sectors, FakeIdentity(leaId), store, cache)(sectorId),
       );
 
       expect(change, MemberLeft(sectorId: sectorId, member: lea));
       expect(sectors.saved.single.$2, change);
       expect(store.mySectors.sectors, [sector12]);
       expect(store.mySectors.currentId, isNull);
+      expect(cache.scheduled, 1);
     });
 
     test('should let the creator leave too', () async {
       final change = valueOf(
-        await LeaveSector(sectors, FakeIdentity(manuId), store)(sectorId),
+        await LeaveSector(sectors, FakeIdentity(manuId), store, cache)(
+          sectorId,
+        ),
       );
 
       expect(change, MemberLeft(sectorId: sectorId, member: manu));
@@ -439,7 +445,7 @@ void main() {
     test('should keep the tournée on the phone when the member is not in '
         'it', () async {
       final failure = failureOf(
-        await LeaveSector(sectors, FakeIdentity(samId), store)(sectorId),
+        await LeaveSector(sectors, FakeIdentity(samId), store, cache)(sectorId),
       );
 
       expect(
@@ -447,6 +453,7 @@ void main() {
         const TeamCommandRefused(SectorCommandFailure.notAMember),
       );
       expect(store.saves, isEmpty);
+      expect(cache.scheduled, 0);
     });
   });
 
@@ -552,7 +559,7 @@ void main() {
   group('DeleteSector', () {
     test('should delete the tournée and forget it on the phone', () async {
       final deletion = valueOf(
-        await DeleteSector(sectors, FakeIdentity(manuId), admin, store)(
+        await DeleteSector(sectors, FakeIdentity(manuId), admin, store, cache)(
           sectorId,
         ),
       );
@@ -562,11 +569,12 @@ void main() {
       expect(sectors.deleted, [deletion]);
       expect(store.mySectors.sectors, [sector12]);
       expect(store.mySectors.currentId, isNull);
+      expect(cache.scheduled, 1);
     });
 
     test('should let an admin who is not in the team delete it', () async {
       final deletion = valueOf(
-        await DeleteSector(sectors, FakeIdentity(samId), admin, store)(
+        await DeleteSector(sectors, FakeIdentity(samId), admin, store, cache)(
           sectorId,
         ),
       );
@@ -576,7 +584,7 @@ void main() {
 
     test('should be refused to a member who is not an admin', () async {
       final failure = failureOf(
-        await DeleteSector(sectors, FakeIdentity(leaId), member, store)(
+        await DeleteSector(sectors, FakeIdentity(leaId), member, store, cache)(
           sectorId,
         ),
       );
@@ -584,13 +592,14 @@ void main() {
       expect(failure, const TeamCommandRefused(SectorCommandFailure.notAdmin));
       expect(sectors.deleted, isEmpty);
       expect(store.saves, isEmpty);
+      expect(cache.scheduled, 0);
     });
 
     test('should keep everything when the server cannot be reached', () async {
       sectors.offline = true;
 
       final failure = failureOf(
-        await DeleteSector(sectors, FakeIdentity(manuId), admin, store)(
+        await DeleteSector(sectors, FakeIdentity(manuId), admin, store, cache)(
           sectorId,
         ),
       );
@@ -598,6 +607,7 @@ void main() {
       expect(failure, TeamProblem.offline);
       expect(sectors[sectorId], isNotNull);
       expect(store.saves, isEmpty);
+      expect(cache.scheduled, 0);
     });
 
     test('should keep everything when the server says the phone is no '
@@ -605,7 +615,7 @@ void main() {
       sectors.notAdmin = true;
 
       final failure = failureOf(
-        await DeleteSector(sectors, FakeIdentity(manuId), admin, store)(
+        await DeleteSector(sectors, FakeIdentity(manuId), admin, store, cache)(
           sectorId,
         ),
       );
@@ -617,7 +627,7 @@ void main() {
 
     test('should tell when the tournée cannot be read any more', () async {
       final failure = failureOf(
-        await DeleteSector(sectors, FakeIdentity(manuId), admin, store)(
+        await DeleteSector(sectors, FakeIdentity(manuId), admin, store, cache)(
           SectorId('gone'),
         ),
       );

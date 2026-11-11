@@ -12,6 +12,7 @@ import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
 import 'package:tournee_calendriers/application/ports/street_shapes.dart';
 import 'package:tournee_calendriers/bootstrap/bindings.dart';
+import 'package:tournee_calendriers/bootstrap/cache_reset.dart';
 import 'package:tournee_calendriers/bootstrap/firebase.dart';
 import 'package:tournee_calendriers/bootstrap/offline_upkeep.dart';
 import 'package:tournee_calendriers/bootstrap/uncaught_errors.dart';
@@ -48,9 +49,17 @@ Future<void> bootstrap({
   final saveFailed = SaveFailedAlert(navigatorKey);
   WidgetsBinding.instance.platformDispatcher.onError = (error, _) =>
       handleUncaughtError(error, onSaveFailed: saveFailed.show);
+  final folder = storage ?? await getApplicationSupportDirectory();
+  final auth = await startFirebase();
   final overrides = await bindAdapters(
-    storage: storage ?? await getApplicationSupportDirectory(),
-    auth: await startFirebase(),
+    storage: folder,
+    // Before anything asks Firestore anything: its copy on the phone can
+    // only be emptied before it starts.
+    cacheReset: await startCacheReset(
+      storage: folder,
+      firestore: offlineFirestore,
+    ),
+    auth: auth,
     // A function, not the instance: `startFirebase` has connected the
     // project, but nothing asks Firestore anything until a screen needs it,
     // and its offline settings come first (`offlineFirestore`).

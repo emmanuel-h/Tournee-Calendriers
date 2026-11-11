@@ -24,6 +24,7 @@ import 'package:tournee_calendriers/application/ports/my_sectors_store.dart';
 import 'package:tournee_calendriers/application/ports/offline_map_store.dart';
 import 'package:tournee_calendriers/application/ports/open_round_store.dart';
 import 'package:tournee_calendriers/application/ports/pending_sync.dart';
+import 'package:tournee_calendriers/application/ports/phone_cache_reset.dart';
 import 'package:tournee_calendriers/application/ports/phone_settings.dart';
 import 'package:tournee_calendriers/application/ports/round_ledger.dart';
 import 'package:tournee_calendriers/application/ports/sector_directory.dart';
@@ -171,6 +172,12 @@ final openRoundStoreProvider = Provider<OpenRoundStore>(
 /// Where the summaries of the validated tournées go (« Collecte »).
 final roundLedgerProvider = Provider<RoundLedger>(
   (ref) => _unbound('RoundLedger'),
+);
+
+/// Empties the phone's copy of the server's data at the next start, once
+/// a secteur is forgotten (PLAN §8.3).
+final phoneCacheResetProvider = Provider<PhoneCacheReset>(
+  (ref) => _unbound('PhoneCacheReset'),
 );
 
 /// The source join codes are drawn from: `Random.secure()` in the app
@@ -360,7 +367,10 @@ final watchOwnNameProvider = Provider(
   ),
 );
 final forgetLostSectorProvider = Provider(
-  (ref) => ForgetLostSector(ref.watch(mySectorsStoreProvider)),
+  (ref) => ForgetLostSector(
+    ref.watch(mySectorsStoreProvider),
+    ref.watch(phoneCacheResetProvider),
+  ),
 );
 final readPhoneSettingsProvider = Provider(
   (ref) => ReadPhoneSettings(ref.watch(phoneSettingsProvider)),
@@ -448,6 +458,7 @@ final leaveSectorProvider = Provider(
     ref.watch(sectorRepositoryProvider),
     ref.watch(identityProvider),
     ref.watch(mySectorsStoreProvider),
+    ref.watch(phoneCacheResetProvider),
   ),
 );
 final regenerateJoinCodeProvider = Provider(
@@ -464,6 +475,7 @@ final deleteSectorProvider = Provider(
     ref.watch(identityProvider),
     ref.watch(adminStatusProvider),
     ref.watch(mySectorsStoreProvider),
+    ref.watch(phoneCacheResetProvider),
   ),
 );
 final joinAsAdminProvider = Provider(

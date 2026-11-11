@@ -46,12 +46,14 @@ import '../domain/sector/sector_fixtures.dart' show nameOf;
 import '../support/fakes/fake_address_directory.dart';
 import '../support/fakes/fake_anonymous_auth.dart';
 import '../support/fakes/fake_commune_search.dart';
+import '../support/fakes/fake_phone_cache_reset.dart';
 import '../support/results.dart';
 import '../support/street_fixtures.dart' show lea, n, twoPm, villefranche;
 
 void main() {
   late Directory storage;
   var firestoreAsked = 0;
+  final cacheReset = FakePhoneCacheReset();
 
   setUp(() async {
     storage = await Directory.systemTemp.createTemp('bindings_test');
@@ -70,6 +72,7 @@ void main() {
     final container = ProviderContainer(
       overrides: await bindAdapters(
         storage: folder ?? storage,
+        cacheReset: cacheReset,
         // By default a phone that never signed in and is offline.
         auth: auth ?? FakeAnonymousAuth(),
         firestore: () {
@@ -111,6 +114,7 @@ void main() {
     expect(container.read(mySectorsStoreProvider), isA<LocalMySectors>());
     expect(container.read(phoneSettingsProvider), isA<LocalPhoneSettings>());
     expect(container.read(openRoundStoreProvider), isA<LocalOpenRound>());
+    expect(container.read(phoneCacheResetProvider), same(cacheReset));
     expect(firestoreAsked, 0);
     expect(
       container.read(sectorDirectoryProvider),

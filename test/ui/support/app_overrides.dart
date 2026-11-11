@@ -22,6 +22,7 @@ import '../../support/fakes/fake_member_account.dart';
 import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_open_round_store.dart';
 import '../../support/fakes/fake_pending_sync.dart';
+import '../../support/fakes/fake_phone_cache_reset.dart';
 import '../../support/fakes/fake_phone_settings.dart';
 import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_round_ledger.dart';
@@ -109,6 +110,7 @@ List<Override> fakePhone({
   ),
   communeSearchDelayProvider.overrideWithValue(Duration.zero),
   mySectorsStoreProvider.overrideWithValue(mySectors ?? FakeMySectorsStore()),
+  phoneCacheResetProvider.overrideWithValue(FakePhoneCacheReset()),
   phoneSettingsProvider.overrideWithValue(settings ?? FakePhoneSettings()),
   openRoundStoreProvider.overrideWithValue(rounds ?? FakeOpenRoundStore()),
   roundLedgerProvider.overrideWithValue(ledger ?? FakeRoundLedger()),

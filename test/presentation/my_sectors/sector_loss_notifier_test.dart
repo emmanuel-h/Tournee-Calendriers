@@ -15,6 +15,7 @@ import '../../domain/sector/my_sectors_fixtures.dart';
 import '../../domain/sector/sector_fixtures.dart';
 import '../../support/fakes/fake_member_account.dart';
 import '../../support/fakes/fake_my_sectors_store.dart';
+import '../../support/fakes/fake_phone_cache_reset.dart';
 import '../../support/fakes/fake_phone_settings.dart';
 import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_sector_directory.dart';
@@ -79,6 +80,7 @@ void main() {
     final container = ProviderContainer(
       overrides: [
         mySectorsStoreProvider.overrideWithValue(store),
+        phoneCacheResetProvider.overrideWithValue(FakePhoneCacheReset()),
         sectorDirectoryProvider.overrideWithValue(directory),
         memberAccountProvider.overrideWithValue(account),
         phoneSettingsProvider.overrideWithValue(settings),

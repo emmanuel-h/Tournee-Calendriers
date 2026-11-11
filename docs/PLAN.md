@@ -3158,6 +3158,21 @@ can never drift.
   (`infrastructure/maplibre_offline/`): one per downloaded secteur (two for a moment while
   one is replaced), in the map library's database (`files/mbgl-offline.db`). Each region's
   metadata is `{ tournee: id }`, so the regions of a secteur are found among the phone's.
+- `cache_reset.json` (port `PhoneCacheReset`, `FirestoreCacheReset`, #144): `{ version: 1,
+  reset: "none" | "waiting" | "due" }`. A secteur forgotten (left, removed, deleted, an admin's
+  visit revoked) asks for Firestore's copy on the phone to be emptied, so its streets leave
+  the phone: `waiting` at once, `due` once `waitForPendingWrites` says the server has every
+  change made on this phone; each time the app is hidden (where Android may kill it) a reset
+  asked goes back to `waiting` until the server has the changes made since. At a start, before
+  anything asks Firestore anything, a `due` reset with the network (Firestore's host name looked
+  up, ≤ 2 s) runs `clearPersistence`, deletes `tournee_downloads.json` (the open secteur is then
+  downloaded again by itself, the others when opened) and goes back to `none`; offline, or still
+  `waiting`, the copy stays (nothing queued is lost, the day without network keeps its data). A
+  clear refused (Firestore already started) is tried at the next start. Known gap: a change made
+  in the foreground and the app crashing before it is hidden, then a start with the network.
+- **Android backup** (#144): `android:allowBackup="false"` and data extraction rules excluding
+  every domain (cloud backup and device transfer, Android 12+): nothing of the app is copied to
+  a Google backup or a new phone, so uninstalling removes all it kept.
 - The names on the phone that say « tournee » (`my_tournees.json`, `tournee_downloads.json`,
   their keys `tournees` and `tournee`, the regions' metadata key) date from before the code
   said `Sector` (#116) and stay as they are, so an updated phone keeps its secteurs, the open
@@ -3212,7 +3227,8 @@ versions.
   as the street shapes do (#92); no connectivity plugin.
 - **Forgetting a secteur** (left, removed, deleted, a request refused): its download record and
   map regions are deleted (`PruneSectorDownloads`, run at start-up and after each change of
-  « Mes secteurs »), whatever flow forgot it.
+  « Mes secteurs »), whatever flow forgot it. Its streets leave Firestore's copy at a later
+  start with the network (`cache_reset.json`, §6.3).
 - What the member sees of all this (T4.2, #33): nothing on Accueil; one line in Paramètres
   (§5.9); offline, « Mes secteurs » greys a secteur not downloaded on this phone (« Disponible
   avec réseau », §5.3). « Offline » there comes from the snapshot metadata `isFromCache` of
@@ -3569,7 +3585,8 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
 - Attribution shown on the map and in Paramètres: © OpenStreetMap contributors (ODbL),
   OpenFreeMap, Base Adresse Nationale (Licence Ouverte).
 - Play Store: needs a privacy policy (Firebase + network + location). Data can be deleted by
-  deleting the secteur; the previous-but-one campaign is deleted at each roll-over. The
+  deleting the secteur; the previous-but-one campaign is to be deleted at each roll-over once
+  M6 exists (until then the text says past campaigns stay until the secteur is deleted, #144). The
   policy is `PRIVACY.md` at the root of the repository (with a contact address); the
   Confidentialité page (5.9) shows its five sections word for word and links to it.
 
