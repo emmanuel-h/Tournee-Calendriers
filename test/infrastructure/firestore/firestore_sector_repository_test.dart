@@ -219,7 +219,7 @@ void main() {
 
       await db
           .doc('sectors/t49/members/uid-julie')
-          .set(joinRequestDocument(julie, firstCode));
+          .set(joinRequestDocument(julieRequest));
       await pumpEventQueue();
       final (accepted, change) = valueOf(
         team(members: [manu, julie])
@@ -305,7 +305,7 @@ void main() {
       await repository().add(created);
       await db
           .doc('sectors/t49/members/uid-julie')
-          .set(joinRequestDocument(julie, firstCode));
+          .set(joinRequestDocument(julieRequest));
       final (accepted, change) = valueOf(
         team(members: [manu, julie])
             .accept(julieId, by: manuAsAdmin, at: leaAcceptedAt),
@@ -316,7 +316,7 @@ void main() {
 
       expect(valueOf(saved), same(accepted));
       expect(await stored('sectors/t49/members/uid-julie'), {
-        ...joinRequestDocument(julie, firstCode),
+        ...joinRequestDocument(julieRequest),
         'status': 'active',
         'acceptedBy': 'uid-manu',
         'acceptedAt': Timestamp.fromDate(leaAcceptedAt),

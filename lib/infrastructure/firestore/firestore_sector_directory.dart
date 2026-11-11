@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:tournee_calendriers/application/ports/sector_directory.dart';
 import 'package:tournee_calendriers/domain/sector/join_code.dart';
+import 'package:tournee_calendriers/domain/sector/join_request.dart';
 import 'package:tournee_calendriers/domain/sector/member.dart';
 import 'package:tournee_calendriers/domain/sector/member_name.dart';
 import 'package:tournee_calendriers/domain/sector/rescue_centre.dart';
@@ -52,16 +53,13 @@ final class FirestoreSectorDirectory implements SectorDirectory {
   }
 
   @override
-  Future<void> requestToJoin(JoinPreview preview, Member request) async {
-    if (request.isActive) {
-      throw ArgumentError.value(request, 'request', 'must be pending');
-    }
+  Future<void> requestToJoin(JoinRequest request) async {
     sendInBackground(
-      'request to join ${preview.sectorId.value}',
+      'request to join ${request.sector.value}',
       _member(
-        preview.sectorId,
-        request.id,
-      ).set(joinRequestDocument(request, preview.code)),
+        request.sector,
+        request.member.id,
+      ).set(joinRequestDocument(request)),
     );
   }
 

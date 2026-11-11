@@ -89,17 +89,13 @@ void main() {
 
   group('request', () {
     test('should store a pending member with the code it used', () async {
-      await directory.requestToJoin(preview, julie);
+      await directory.requestToJoin(julieRequest);
       await pumpEventQueue();
 
       expect(
         await stored('sectors/t49/members/uid-julie'),
-        joinRequestDocument(julie, firstCode),
+        joinRequestDocument(julieRequest),
       );
-    });
-
-    test('should refuse to send a member already accepted', () {
-      expect(() => directory.requestToJoin(preview, lea), throwsArgumentError);
     });
 
     test('should follow the request until it is accepted', () async {
@@ -109,7 +105,7 @@ void main() {
           .listen(seen.add);
       await pumpEventQueue();
 
-      await directory.requestToJoin(preview, julie);
+      await directory.requestToJoin(julieRequest);
       await pumpEventQueue();
       await db.doc('sectors/t49/members/uid-julie').update({
         'status': 'active',
@@ -123,7 +119,7 @@ void main() {
     });
 
     test('should give null once the request is refused', () async {
-      await directory.requestToJoin(preview, julie);
+      await directory.requestToJoin(julieRequest);
       await pumpEventQueue();
       final seen = <MemberStatus?>[];
       final subscription = directory
@@ -148,7 +144,7 @@ void main() {
     });
 
     test('should delete the request when it is cancelled', () async {
-      await directory.requestToJoin(preview, julie);
+      await directory.requestToJoin(julieRequest);
       await pumpEventQueue();
 
       await directory.cancelRequest(sectorId, julieId);
@@ -375,7 +371,7 @@ void main() {
 
     test('should tell the name once the request is accepted, then each '
         'new one', () async {
-      await directory.requestToJoin(preview, julie);
+      await directory.requestToJoin(julieRequest);
       await pumpEventQueue();
 
       final seen = await namesWhile(() async {

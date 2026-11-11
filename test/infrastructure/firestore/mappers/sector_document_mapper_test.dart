@@ -268,7 +268,7 @@ void main() {
     });
 
     test('should write a request with the code it was made with', () {
-      expect(joinRequestDocument(julie, firstCode), {
+      expect(joinRequestDocument(julieRequest), {
         ...memberToDocument(julie),
         'joinCode': 'K7P2QX',
       });
@@ -295,7 +295,7 @@ void main() {
 
     test('should read a pending member back', () {
       final back = memberFromDocument('uid-julie', {
-        ...joinRequestDocument(julie, firstCode),
+        ...joinRequestDocument(julieRequest),
       });
 
       expect(back, julie);
@@ -361,9 +361,7 @@ void main() {
   });
 
   group('request snapshot', () {
-    final pendingData = <String, dynamic>{
-      ...joinRequestDocument(julie, firstCode),
-    };
+    final pendingData = <String, dynamic>{...joinRequestDocument(julieRequest)};
     final activeData = <String, dynamic>{...memberToDocument(lea)};
 
     test('should tell a pending request from the server', () {
@@ -401,9 +399,7 @@ void main() {
       ...memberToDocument(lea),
       'displayName': '  Léa   Marie ',
     };
-    final pendingData = <String, dynamic>{
-      ...joinRequestDocument(julie, firstCode),
-    };
+    final pendingData = <String, dynamic>{...joinRequestDocument(julieRequest)};
 
     test('should give the cleaned name of an active member the server '
         'holds', () {

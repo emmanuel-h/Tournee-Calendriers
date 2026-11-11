@@ -3540,6 +3540,10 @@ lib/
   `AddManualStreet`, `EditStreetNumbers`, `DescribeBuilding`, `CreateSector`,
   `RequestToJoin`, `AcceptMember`, `DownloadSector`, `StartCampaign`, … A use case loads the
   aggregate through its port, calls the root, saves the `StreetChange` through the port.
+- **One exception to « aggregates change only through their root »:** a request to join
+  (`RequestToJoin`) adds a pending member without the `Sector` root, since the newcomer cannot
+  read the secteur; the domain value `JoinRequest` builds it (pending, no acceptance, the code
+  used) and the security rules check the same on the server (§8.2, #157).
 - **Adapters translate**: Firestore maps ⇄ aggregates, `StreetChange` → field-path updates,
   geopf / BAN JSON, vector tiles → value objects. Translation code is pure functions, tested alone.
 - The map is split the same way: the domain computes *what* to draw; `ui/map/` only turns that

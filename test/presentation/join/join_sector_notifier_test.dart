@@ -307,7 +307,7 @@ void main() {
 
       expect(state().run, JoinSent(sectorId));
       expect(state().canRequest, isFalse);
-      expect(directory.sent, [(preview49, julie)]);
+      expect(directory.sent, [julieRequest]);
       expect(store.mySectors.find(sectorId)?.status, MemberStatus.pending);
     });
 

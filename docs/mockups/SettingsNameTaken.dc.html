@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Paramètres — prénom pris dans un secteur (#148)</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B3261E}
+.ib{width:48px;height:48px;border:0;background:transparent;color:#1B1F24;border-radius:24px;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0}
+.ib svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.hd{padding:18px 20px 8px 20px;font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#4A5058}
+.line{display:flex;align-items:center;min-height:48px;padding:0 20px;gap:8px;border-bottom:1px solid #E2DED5}
+.m{flex:1;font-weight:700;font-size:16px}
+.c{width:80px;text-align:right;font-size:15px;color:#4A5058}
+.a{width:76px;text-align:right;font:700 22px 'Barlow Condensed',sans-serif}
+.run{display:flex;align-items:center;gap:10px;min-height:60px;padding:0 12px 0 20px;border-bottom:1px solid #E2DED5;background:#FFFFFF}
+.row{display:flex;align-items:center;gap:12px;min-height:60px;border-bottom:1px solid #E2DED5;text-decoration:none;color:#1B1F24}
+.mem{display:flex;align-items:center;gap:12px;min-height:56px;padding:0 4px 0 16px;border-bottom:1px solid #E2DED5;background:#FFFFFF}
+.av{width:36px;height:36px;border-radius:18px;background:#E2DED5;display:flex;align-items:center;justify-content:center;font:700 16px 'Barlow Condensed',sans-serif;flex-shrink:0}
+.scrim{position:absolute;inset:0;background:rgba(27,31,36,0.45);z-index:5}
+.dlg{position:absolute;left:24px;right:24px;top:270px;background:#FFFFFF;border-radius:24px;padding:24px;z-index:6;box-shadow:0 8px 32px rgba(0,0,0,.25)}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:#FFFFFF;border-radius:24px 24px 0 0;padding:10px 20px 28px 20px;z-index:6;box-shadow:0 -4px 20px rgba(27,31,36,.18)}
+.grab{width:40px;height:4px;border-radius:2px;background:#CFC9BD;margin:0 auto 16px auto}
+.btn{height:52px;border-radius:26px;background:#B3261E;color:#FFFFFF;font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:center}
+.btno{height:52px;border-radius:26px;border:1.5px solid #1B1F24;color:#1B1F24;font-weight:700;font-size:16px;display:flex;align-items:center;justify-content:center}
+.field{height:56px;border:2px solid #1B1F24;border-radius:12px;background:#FFFFFF;display:flex;align-items:center;padding:0 16px;font-size:18px}
+.alert{background:#FBE9E7;border:1px solid #B3261E;border-radius:12px;padding:12px 14px;display:flex;gap:10px;font-size:15px}
+.snack{position:absolute;left:12px;right:12px;bottom:16px;background:#1B1F24;color:#FFFFFF;border-radius:8px;padding:14px 16px;font-size:15px;z-index:7;display:flex;gap:12px;align-items:center}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F3F1EC; color: #1B1F24; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; display: flex; flex-direction: column; position: relative; overflow: hidden">
+  <div style="display: flex; align-items: center; gap: 4px; padding: 8px"><span class="ib" aria-label="Retour"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></span><div style="display: flex; flex-direction: column"><h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 28px; line-height: 1.05">Paramètres</h1></div></div>
+  <div class="hd">Vous</div>
+  <div style="background: #FFFFFF; border-top: 1px solid #E2DED5">
+    <div class="line" style="min-height: 56px"><span class="m">Prénom</span><span style="color: #4A5058">Paul</span><span style="color: #4A5058">›</span></div>
+  </div>
+  <div class="hd">Vos noms par secteur</div>
+  <div style="background: #FFFFFF; border-top: 1px solid #E2DED5">
+    <div class="line" style="min-height: 56px"><span class="m" style="font-weight: 400">Secteur 49 · CS Villefranche</span><span style="font-weight: 700">Paul D.</span></div>
+    <div class="line" style="min-height: 56px"><span class="m" style="font-weight: 400">Secteur 12 · CS Gleizé</span><span style="font-weight: 700">Paul</span></div>
+  </div>
+  <div style="flex: 1"></div>
+  <div class="scrim"></div>
+  <div class="sheet">
+    <div class="grab"></div>
+    <div style="font: 700 24px 'Barlow Condensed', sans-serif; margin-bottom: 14px">Votre prénom</div>
+    <div class="field">Paul</div>
+    <div class="alert" style="margin-top: 14px"><span aria-hidden="true" style="color: #B3261E; font-weight: 700">⚠</span><span>« Paul » est déjà pris dans le secteur 49 : vous y gardez « Paul D. ». Il est enregistré partout ailleurs.</span></div>
+    <div style="display: flex; flex-direction: column; gap: 6px; margin-top: 14px">
+      <label style="font-size: 13px; font-weight: 700; color: #4A5058">Votre nom dans le secteur 49</label>
+      <div class="field" style="border-color: #CFC9BD">Paul D.</div>
+    </div>
+    <div class="btn" style="margin-top: 18px">Enregistrer</div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

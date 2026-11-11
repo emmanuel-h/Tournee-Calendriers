@@ -26,8 +26,8 @@ enum MemberStatus {
 final class Member {
   /// A member as it is stored: pending while [acceptance] is null.
   ///
-  /// A newcomer's request is `Member(id: uid, name: …, requestedAt: now)`;
-  /// the tournée's root accepts it.
+  /// A newcomer's request is made by `JoinRequest`, the one place outside
+  /// the tournée's root that builds a member; the root accepts it.
   const Member({
     required this.id,
     required this.name,

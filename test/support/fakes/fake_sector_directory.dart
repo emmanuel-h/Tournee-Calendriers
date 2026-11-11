@@ -11,6 +11,7 @@ import 'dart:async';
 
 import 'package:tournee_calendriers/application/ports/sector_directory.dart';
 import 'package:tournee_calendriers/domain/sector/join_code.dart';
+import 'package:tournee_calendriers/domain/sector/join_request.dart';
 import 'package:tournee_calendriers/domain/sector/member.dart';
 import 'package:tournee_calendriers/domain/sector/member_name.dart';
 import 'package:tournee_calendriers/domain/sector/rescue_centre.dart';
@@ -50,7 +51,7 @@ final class FakeSectorDirectory implements SectorDirectory {
   var centresAsked = 0;
 
   /// Every request sent, in order.
-  final sent = <(JoinPreview, Member)>[];
+  final sent = <JoinRequest>[];
 
   /// Every (tournée, member) whose request was cancelled, in order.
   final cancelled = <(SectorId, MemberId)>[];
@@ -143,8 +144,8 @@ final class FakeSectorDirectory implements SectorDirectory {
   }
 
   @override
-  Future<void> requestToJoin(JoinPreview preview, Member request) async {
-    sent.add((preview, request));
+  Future<void> requestToJoin(JoinRequest request) async {
+    sent.add(request);
   }
 
   @override

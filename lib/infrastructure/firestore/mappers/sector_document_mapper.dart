@@ -30,6 +30,7 @@ import 'package:cloud_firestore/cloud_firestore.dart' show Timestamp;
 import 'package:tournee_calendriers/application/ports/sector_directory.dart';
 import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
 import 'package:tournee_calendriers/domain/sector/join_code.dart';
+import 'package:tournee_calendriers/domain/sector/join_request.dart';
 import 'package:tournee_calendriers/domain/sector/member.dart';
 import 'package:tournee_calendriers/domain/sector/member_name.dart';
 import 'package:tournee_calendriers/domain/sector/rescue_centre.dart';
@@ -77,10 +78,11 @@ Map<String, Object?> memberToDocument(Member member) => {
   ...acceptanceFields(member),
 };
 
-/// The document of a newcomer's [request], made with [code].
-Map<String, Object?> joinRequestDocument(Member request, JoinCode code) => {
-  ...memberToDocument(request),
-  'joinCode': code.value,
+/// The document of a newcomer's [request]: its pending member and the code
+/// it was made with, which the rules check is still the secteur's.
+Map<String, Object?> joinRequestDocument(JoinRequest request) => {
+  ...memberToDocument(request.member),
+  'joinCode': request.code.value,
 };
 
 /// The fields an acceptance changes on [member]'s document: its status,

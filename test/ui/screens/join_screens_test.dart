@@ -88,7 +88,7 @@ void main() {
       expect(find.byType(JoinPendingScreen), findsOneWidget);
       expect(find.text('Demande envoyée'), findsOneWidget);
       expect(find.bySemanticsLabel('Demande en attente'), findsOneWidget);
-      expect(directory.sent.single.$2.id, julieId);
+      expect(directory.sent.single.member.id, julieId);
       expect(store.mySectors.find(sectorId), request49);
     },
   );

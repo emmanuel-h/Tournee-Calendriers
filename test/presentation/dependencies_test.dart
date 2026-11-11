@@ -17,6 +17,7 @@ import 'package:tournee_calendriers/application/use_cases/import_reference_area.
 import 'package:tournee_calendriers/application/use_cases/look_up_street.dart';
 import 'package:tournee_calendriers/application/use_cases/mark.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
+import 'package:tournee_calendriers/domain/sector/join_request.dart';
 import 'package:tournee_calendriers/domain/sector/member.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
 import 'package:tournee_calendriers/domain/sector/sector_change.dart';
@@ -842,9 +843,16 @@ void main() {
         await container.read(requestToJoinProvider)(preview, nameOf('Léa')),
       );
 
-      final (_, request) = sectorDirectory.sent.single;
-      expect(request.id, MemberId('uid-lea'));
-      expect(request.requestedAt, twoPm);
+      expect(
+        sectorDirectory.sent.single,
+        JoinRequest(
+          sector: SectorId('t12'),
+          code: codeOf('234567'),
+          by: MemberId('uid-lea'),
+          name: nameOf('Léa'),
+          at: twoPm,
+        ),
+      );
       expect(mySectors.mySectors.find(SectorId('t12'))?.isPending, isTrue);
     });
 

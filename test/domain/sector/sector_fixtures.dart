@@ -6,6 +6,7 @@
 import 'package:tournee_calendriers/domain/sector/actor.dart';
 import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
 import 'package:tournee_calendriers/domain/sector/join_code.dart';
+import 'package:tournee_calendriers/domain/sector/join_request.dart';
 import 'package:tournee_calendriers/domain/sector/member.dart';
 import 'package:tournee_calendriers/domain/sector/member_name.dart';
 import 'package:tournee_calendriers/domain/sector/rescue_centre.dart';
@@ -74,6 +75,16 @@ final julie = Member(
   id: julieId,
   name: nameOf('Julie'),
   requestedAt: julieAskedAt,
+);
+
+/// Julie's request to join the tournée 49 with its first code: [julie]
+/// once sent.
+final julieRequest = JoinRequest(
+  sector: sectorId,
+  code: firstCode,
+  by: julieId,
+  name: nameOf('Julie'),
+  at: julieAskedAt,
 );
 
 /// Villefranche-sur-Saône with its centre, as geo.api.gouv.fr gives it.

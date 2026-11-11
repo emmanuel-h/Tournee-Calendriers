@@ -3,6 +3,7 @@ import 'package:tournee_calendriers/application/ports/member_account.dart';
 import 'package:tournee_calendriers/application/ports/my_sectors_store.dart';
 import 'package:tournee_calendriers/application/ports/sector_directory.dart';
 import 'package:tournee_calendriers/domain/sector/join_code.dart';
+import 'package:tournee_calendriers/domain/sector/join_request.dart';
 import 'package:tournee_calendriers/domain/sector/member.dart';
 import 'package:tournee_calendriers/domain/sector/member_name.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
@@ -71,9 +72,16 @@ final class RequestToJoin {
           SignInFailure.noNetwork => RequestToJoinFailure.noNetwork,
         });
     }
+    // Built by the domain, not here: the newcomer cannot read the secteur,
+    // so no `Sector` root can make this member (PLAN §10.1).
     await _directory.requestToJoin(
-      preview,
-      Member(id: member, name: name, requestedAt: _clock.now()),
+      JoinRequest(
+        sector: preview.sectorId,
+        code: preview.code,
+        by: member,
+        name: name,
+        at: _clock.now(),
+      ),
     );
     // What the preview showed: a pending newcomer cannot read the tournée.
     final request = SectorSummary(

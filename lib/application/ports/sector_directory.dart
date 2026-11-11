@@ -1,5 +1,6 @@
 import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
 import 'package:tournee_calendriers/domain/sector/join_code.dart';
+import 'package:tournee_calendriers/domain/sector/join_request.dart';
 import 'package:tournee_calendriers/domain/sector/member.dart';
 import 'package:tournee_calendriers/domain/sector/member_name.dart';
 import 'package:tournee_calendriers/domain/sector/rescue_centre.dart';
@@ -156,15 +157,11 @@ abstract interface class SectorDirectory {
   /// [JoinFailure.noNetwork] offline.
   Future<Result<JoinPreview, JoinFailure>> preview(JoinCode code);
 
-  /// Asks to join the tournée of [preview] (« Rejoindre »): stores
-  /// [request], a pending member made by the newcomer, which any active
-  /// member then accepts or refuses (PLAN §5.8). Returns once the request
-  /// is on the phone; it reaches the server as soon as the network allows.
-  /// [watchRequest] tells what became of it.
-  ///
-  /// Throws an [ArgumentError] when [request] is already accepted: only a
-  /// pending request can be sent.
-  Future<void> requestToJoin(JoinPreview preview, Member request);
+  /// Asks to join a tournée (« Rejoindre »): stores [request], whose
+  /// pending member any active member then accepts or refuses (PLAN §5.8).
+  /// Returns once the request is on the phone; it reaches the server as
+  /// soon as the network allows. [watchRequest] tells what became of it.
+  Future<void> requestToJoin(JoinRequest request);
 
   /// Where the request of [member] to join [sector] stands, now and after
   /// each change: pending, then active once accepted (« Demande envoyée »

@@ -69,7 +69,7 @@ void main() {
     test('should send Julie\'s pending request with the time', () async {
       await requestToJoin()(preview, nameOf('Julie'));
 
-      expect(directory.sent, [(preview, julie)]);
+      expect(directory.sent, [julieRequest]);
     });
 
     test('should keep the tournée as a request after the others', () async {
@@ -87,7 +87,7 @@ void main() {
       await requestToJoin()(preview, nameOf('Julie'));
 
       expect(account.signInCalls, 1);
-      expect(directory.sent.single.$2.id, julieId);
+      expect(directory.sent.single.member.id, julieId);
     });
 
     test('should send nothing when the sign-in finds no network', () async {
