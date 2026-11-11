@@ -1,3 +1,4 @@
+import 'package:tournee_calendriers/domain/map/held_stretch.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/street/building/building_status.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
@@ -17,18 +18,22 @@ final class MapLayers {
 
   /// The layers of [streets].
   ///
-  /// Streets in the Corbeille are left out. A street without shape (typed
-  /// in by hand, unknown to OpenStreetMap) has no line, and a house without
-  /// position (typed in by hand) no dot: they appear only in the lists.
+  /// Streets in the Corbeille are left out; a street held in part draws
+  /// only the stretch it holds (`heldStretchOf`). A street without shape
+  /// (typed in by hand, unknown to OpenStreetMap) has no line, and a house
+  /// without position (typed in by hand) no dot: they appear only in the
+  /// lists.
   factory MapLayers.of(Iterable<Street> streets) {
     final shown = streets.where((street) => !street.isDeleted);
     return MapLayers._(
       List.unmodifiable([
         for (final street in shown)
-          if (!street.shape.isEmpty)
+          // A street held in part draws only the stretch it holds
+          // (PLAN §5.15), worked out here once per change of the streets.
+          if (heldStretchOf(street) case final shape when !shape.isEmpty)
             StreetLine(
               street: street.id,
-              shape: street.shape,
+              shape: shape,
               level: ProgressLevel.of(street.progress),
             ),
       ]),

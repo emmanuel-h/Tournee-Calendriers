@@ -29,6 +29,11 @@ final homeProvider = NotifierProvider.autoDispose<HomeNotifier, HomeState>(
 final class HomeNotifier extends Notifier<HomeState> {
   /// The last streets read, null until the first arrive.
   List<Street>? _streets;
+
+  /// What the map draws of [_streets]: worked out when they change only,
+  /// not when a street is tapped (the stretches of the streets held in
+  /// part are cut along their roads, PLAN §5.15).
+  var _layers = MapLayers.of(const []);
   var _communes = const <SectorCommune>[];
 
   /// Where the map opens, kept once decided (see [HomeState.area]).
@@ -40,6 +45,7 @@ final class HomeNotifier extends Notifier<HomeState> {
     // Riverpod keeps the notifier when it builds again (another secteur
     // opened): nothing of the secteur left may stay.
     _streets = null;
+    _layers = MapLayers.of(const []);
     _communes = const [];
     _area = null;
     _selected = null;
@@ -75,6 +81,7 @@ final class HomeNotifier extends Notifier<HomeState> {
 
   void _showStreets(List<Street> streets) {
     _streets = streets;
+    _layers = MapLayers.of(streets);
     _show();
     // `unawaited`: the shapes come in the background, and the map follows
     // them through the streets; Accueil never waits for the network.
@@ -118,7 +125,7 @@ final class HomeNotifier extends Notifier<HomeState> {
       done: rows.fold(0, (sum, row) => sum + row.done),
       total: rows.fold(0, (sum, row) => sum + row.total),
       streets: rows,
-      layers: MapLayers.of(streets),
+      layers: _layers,
       area: _area,
       // None tapped, or the street went to the Corbeille: no card, no line
       // lit up.
@@ -126,7 +133,14 @@ final class HomeNotifier extends Notifier<HomeState> {
         final street? => StreetCardInSector.of(street),
         null => null,
       },
-      selectedRoad: selected?.shape ?? StreetShape.none,
+      // The line the map draws for it: only the stretch held of a street
+      // held in part.
+      selectedRoad:
+          _layers.lines
+              .where((line) => line.street == selected?.id)
+              .firstOrNull
+              ?.shape ??
+          StreetShape.none,
     );
   }
 }

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
+import 'package:tournee_calendriers/domain/map/held_stretch.dart';
 import 'package:tournee_calendriers/domain/map/map_layers.dart';
 import 'package:tournee_calendriers/domain/map/sector_area.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
@@ -12,6 +13,7 @@ import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/progress_level.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
@@ -113,6 +115,24 @@ final _morin = valueOf(
 final _morinRoad = StreetShape([
   [at(46.0095, 4.7300), at(46.0105, 4.7300)],
 ]);
+
+/// Rue des Lilas, held « impairs 5–7 » only: the map draws the stretch
+/// around its houses 5 and 7, not the whole road.
+final _lilas = valueOf(
+  Street.create(
+    id: StreetId('lilas'),
+    name: 'Rue des Lilas',
+    commune: villefranche,
+    shape: StreetShape([
+      [at(45.98, 4.7200), at(45.98, 4.7210)],
+    ]),
+    part: part(odd: range(5, 7), even: SidePart.none),
+    houses: [
+      House(number: n('5'), position: at(45.98002, 4.7204)),
+      House(number: n('7'), position: at(45.98002, 4.7206)),
+    ],
+  ),
+);
 
 final _nationaleRow = StreetRow(
   id: StreetId('nationale'),
@@ -321,6 +341,31 @@ void main() {
     });
 
     test(
+      'should draw only the stretch held of a street held in part',
+      () async {
+        streets = FakeStreetRepository([_lilas]);
+        final container = phone();
+        await pumpEventQueue();
+
+        final line = container.read(homeProvider).layers.lines.single;
+
+        expect(line.shape, heldStretchOf(_lilas));
+        expect(line.shape, isNot(_lilas.shape));
+      },
+    );
+
+    test('should keep the layers when a street is tapped, the streets being '
+        'the same', () async {
+      final container = phone();
+      await pumpEventQueue();
+      final before = container.read(homeProvider).layers;
+
+      container.read(homeProvider.notifier).select(StreetId('nationale'));
+
+      expect(container.read(homeProvider).layers, same(before));
+    });
+
+    test(
       'should open on the streets when one has a place on the map',
       () async {
         final container = phone();
@@ -445,6 +490,22 @@ void main() {
       expect(state.selectedRoad, _nationaleShape);
       expect(state.area, sectorArea([_nationale]));
     });
+
+    test(
+      'should light up only the stretch held of a street held in part',
+      () async {
+        streets = FakeStreetRepository([_lilas]);
+        final container = phone();
+        await pumpEventQueue();
+
+        container.read(homeProvider.notifier).select(StreetId('lilas'));
+
+        expect(
+          container.read(homeProvider).selectedRoad,
+          heldStretchOf(_lilas),
+        );
+      },
+    );
 
     test('should light up no line before a street is tapped', () async {
       final container = phone();

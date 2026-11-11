@@ -1,10 +1,12 @@
 import 'package:test/test.dart';
+import 'package:tournee_calendriers/domain/map/held_stretch.dart';
 import 'package:tournee_calendriers/domain/map/map_layers.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/progress_level.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
@@ -90,6 +92,34 @@ void main() {
 
       expect(layers.lines.map((line) => line.street), [_paix]);
       expect(layers.dots.map((dot) => dot.street), [_paix]);
+    });
+
+    test('should draw only the stretch held of a street held in part', () {
+      // Odd numbers 1 to 1 only: the stretch around the house 1, not the
+      // whole Rue Nationale.
+      final held = valueOf(
+        Street.create(
+          id: _nationale,
+          name: 'Rue Nationale',
+          commune: villefranche,
+          shape: _nationaleShape,
+          part: part(odd: range(1, 1), even: SidePart.none),
+          houses: [
+            House(number: n('1'), status: VisitStatus.done, position: _door1),
+          ],
+        ),
+      );
+
+      final layers = MapLayers.of([held]);
+
+      expect(layers.lines, [
+        StreetLine(
+          street: _nationale,
+          shape: heldStretchOf(held),
+          level: ProgressLevel.done,
+        ),
+      ]);
+      expect(heldStretchOf(held), isNot(_nationaleShape));
     });
   });
 

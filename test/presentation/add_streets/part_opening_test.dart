@@ -33,6 +33,14 @@ void main() {
     expect(offline.toString(), 'PartUnreadable(noNetwork)');
   });
 
+  test('should hold the problem it is made with', () {
+    // Not `const`: built while the test runs, as coverage counts it.
+    // ignore: prefer_const_constructors
+    final unavailable = PartUnreadable(PartReadProblem.unavailable);
+
+    expect(unavailable.problem, PartReadProblem.unavailable);
+  });
+
   test('should tell the streets added meanwhile apart by their name', () {
     const lilas = PartOfStreetInSector('Rue des Lilas');
 

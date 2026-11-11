@@ -1887,7 +1887,7 @@ removes are marked « (removed, 5.14) » there.
     map names no road within 30 m it stays where the finger was, and a street picked in the
     search keeps the BAN's point.
 
-### 5.15 Partie de la rue: a street split between secteurs (#133, #138–#141 built)
+### 5.15 Partie de la rue: a street split between secteurs (#133, #138–#142 built)
 
 Agreed 2026-11-11 (ASCII in the terminal, then mockups StreetPart, Pick, Edit). A street is
 not always covered whole by one secteur: it may be cut in the middle, by side (odd / even), or
@@ -2036,6 +2036,15 @@ belong to no secteur at all (a valid state, not an error). This section override
   the whole stretch (one line cannot show a side). The house dots show only the numbers held,
   as today. « Ajouter des rues » draws another secteur's street as the map does, unticked: a
   tap on a street this secteur holds in part still says « … est déjà dans le secteur ».
+- **Delivered in #142** (the map): `heldStretchOf(street)` (domain/map) gives what `MapLayers`
+  draws and Accueil lights up when the street is tapped: the whole road when no side is a range
+  or a side is held whole (« Toute la rue », « Impairs », « impairs + pairs 2–30 »), otherwise
+  `StreetShape.stretchOver` the positions of the numbers the part holds, 3 m beyond the first
+  and the last (a single house still has a line to tap). The numbers « + numéros » added
+  outside the part and those without a position do not stretch it; with no number held placed,
+  the whole road is drawn. `stretchOver` measures the road's pieces as one (`LineTrack`) and
+  leaves out the gaps the track crosses between pieces that do not meet. The layers are worked
+  out when the streets change, not when a street is tapped or another street ticked.
 
 ---
 

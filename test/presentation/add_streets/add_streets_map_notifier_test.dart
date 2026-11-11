@@ -6,6 +6,7 @@ import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/street_shapes.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_distance.dart';
+import 'package:tournee_calendriers/domain/map/held_stretch.dart';
 import 'package:tournee_calendriers/domain/map/picked_road.dart';
 import 'package:tournee_calendriers/domain/map/sector_area.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
@@ -16,6 +17,7 @@ import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/progress_level.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/presentation/add_streets/add_streets_map_notifier.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
@@ -123,6 +125,24 @@ final _emile = valueOf(
   ),
 );
 
+/// Rue des Lilas, held « impairs 5–7 » only: the map draws the stretch
+/// around its houses 5 and 7, not the whole road.
+final _lilas = valueOf(
+  Street.create(
+    id: StreetId('lilas'),
+    name: 'Rue des Lilas',
+    commune: villefranche,
+    shape: StreetShape([
+      [at(45.98, 4.7200), at(45.98, 4.7210)],
+    ]),
+    part: part(odd: range(5, 7), even: SidePart.none),
+    houses: [
+      House(number: n('5'), position: at(45.98002, 4.7204)),
+      House(number: n('7'), position: at(45.98002, 4.7206)),
+    ],
+  ),
+);
+
 void main() {
   late FakeStreetRepository streets;
   late FakeSectorRepository sectors;
@@ -199,6 +219,31 @@ void main() {
       expect(state.lookingAt, isNull);
       expect(state.search, const NoStreetSearch());
       expect(state.run, const AddIdle());
+    });
+
+    test(
+      'should draw only the stretch held of a street held in part',
+      () async {
+        streets = FakeStreetRepository([_lilas]);
+        final container = phone();
+        await pumpEventQueue();
+
+        final line = stateOf(container).layers.lines.single;
+
+        expect(line.street, StreetId('lilas'));
+        expect(line.shape, heldStretchOf(_lilas));
+        expect(line.shape, isNot(_lilas.shape));
+      },
+    );
+
+    test('should keep the layers while the streets stay the same', () async {
+      final container = phone();
+      await pumpEventQueue();
+      final before = stateOf(container).layers;
+
+      notifierOf(container).clearSearch();
+
+      expect(stateOf(container).layers, same(before));
     });
 
     test('should draw « à faire » a street with nothing visited', () async {
@@ -605,6 +650,20 @@ void main() {
       expect(stateOf(container).picked, isEmpty);
       expect(directory.pointsAsked, isEmpty);
     });
+
+    test(
+      'should say it of a street held in part, its stretch tapped',
+      () async {
+        streets = FakeStreetRepository([_lilas]);
+        final container = phone();
+        await pumpEventQueue();
+
+        final answer = notifierOf(container).tapStreet(StreetId('lilas'));
+
+        expect(answer, const AlreadyInSector('Rue des Lilas'));
+        expect(stateOf(container).picked, isEmpty);
+      },
+    );
 
     test('should say nothing for a street no longer on the phone', () async {
       final container = phone();

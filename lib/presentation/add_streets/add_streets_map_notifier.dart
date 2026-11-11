@@ -73,6 +73,11 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
   static const foundStreetMarginMetres = 200.0;
 
   var _streets = const <Street>[];
+
+  /// What the map draws of [_streets]: worked out when they change only,
+  /// not at each tick or search (the stretches of the streets held in part
+  /// are cut along their roads, PLAN §5.15).
+  var _layers = MapLayers.of(const []);
   var _communes = const <SectorCommune>[];
 
   /// The area around the street picked in the search, null before.
@@ -131,6 +136,7 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
   @override
   AddStreetsMapState build() {
     _streets = const [];
+    _layers = MapLayers.of(const []);
     _communes = const [];
     _focus = null;
     _picks = const [];
@@ -175,6 +181,7 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
 
   void _showStreets(List<Street> streets) {
     _streets = streets;
+    _layers = MapLayers.of(streets);
     _show();
   }
 
@@ -667,7 +674,7 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
   void _show() => state = _render();
 
   AddStreetsMapState _render() => AddStreetsMapState(
-    layers: MapLayers.of(_streets),
+    layers: _layers,
     area: _focus ?? addStreetsArea(_communes, _streets),
     picked: [
       for (final pick in _picks)
