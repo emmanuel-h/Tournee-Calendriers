@@ -40,7 +40,12 @@ sealed class LookedUpStreet {
 /// card offers « Ajouter et me l'attribuer » and « Ajouter sans
 /// m'attribuer », which give [numbers] to `AddStreetFromMap`.
 final class StreetToAdd extends LookedUpStreet {
-  const StreetToAdd(super.match, this.numbers, {this.mark});
+  const StreetToAdd(
+    super.match,
+    this.numbers, {
+    this.mark,
+    this.fromCorbeille = false,
+  });
 
   /// The numbers of the street, each with its position when the BAN has
   /// one.
@@ -51,6 +56,11 @@ final class StreetToAdd extends LookedUpStreet {
   /// rather than beside it. Null when the map has no named road within
   /// reach of the tap, and for a street found by the search.
   final GeoPoint? mark;
+
+  /// The secteur has the street in its Corbeille: adding it brings it back
+  /// as it went, its own part included (PLAN §5.15), so no part is chosen
+  /// for it.
+  final bool fromCorbeille;
 
   /// « 19 numéros » on the card.
   int get numberCount => numbers.numbers.length;
@@ -124,8 +134,10 @@ final class LookUpStreet {
     if (known != null && !known.isDeleted) {
       return Ok(StreetOfTheSector(match, known));
     }
-    return (await _directory.numbersOf(match.id))
-        .map((numbers) => StreetToAdd(match, numbers, mark: mark));
+    return (await _directory.numbersOf(match.id)).map(
+      (numbers) =>
+          StreetToAdd(match, numbers, mark: mark, fromCorbeille: known != null),
+    );
   }
 
   /// The BAN street of the road [road] under the finger, given the

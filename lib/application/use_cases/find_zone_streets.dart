@@ -37,6 +37,7 @@ final class ZoneStreetToAdd extends ZoneStreet {
     required this.numberCount,
     required super.road,
     required super.mark,
+    this.fromCorbeille = false,
   });
 
   /// The BAN street, its position at [mark].
@@ -44,6 +45,10 @@ final class ZoneStreetToAdd extends ZoneStreet {
 
   /// « 19 numéros »: what the BAN lists for the street.
   final int numberCount;
+
+  /// The secteur has the street in its Corbeille: adding it brings it back
+  /// as it went, so no part is chosen for it (PLAN §5.15).
+  final bool fromCorbeille;
 
   @override
   String get name => match.name.text;
@@ -54,10 +59,12 @@ final class ZoneStreetToAdd extends ZoneStreet {
       other.match == match &&
       other.numberCount == numberCount &&
       other.road == road &&
-      other.mark == mark;
+      other.mark == mark &&
+      other.fromCorbeille == fromCorbeille;
 
   @override
-  int get hashCode => Object.hash(match, numberCount, road, mark);
+  int get hashCode =>
+      Object.hash(match, numberCount, road, mark, fromCorbeille);
 
   @override
   String toString() => 'ZoneStreetToAdd(${match.id.value}, $name)';
@@ -285,6 +292,7 @@ final class FindZoneStreets {
       numberCount: numberCount,
       road: road,
       mark: match.position,
+      fromCorbeille: known != null,
     );
   }
 

@@ -10,9 +10,12 @@ import 'package:tournee_calendriers/domain/shared/french_text.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/shared/text_length.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_part.dart';
+import 'package:tournee_calendriers/presentation/add_streets/part_opening.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/import_streets/import_state.dart';
 import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
+import 'package:tournee_calendriers/presentation/street_part/street_part_state.dart';
 
 /// How long the « Commune » field waits after the last key before
 /// searching, so typing « Villefranche » sends one request, not twelve.
@@ -29,8 +32,8 @@ final importProvider =
     );
 
 /// The « Liste » tab of « Ajouter des rues » (PLAN §5.4): choose a
-/// commune, tick its streets, add them to the open secteur. Each method is
-/// an intent of the screen.
+/// commune, tick its streets, choose the part of each (PLAN §5.15), add
+/// them to the open secteur. Each method is an intent of the screen.
 ///
 /// The commune is one of the secteur's (the first at once, another by its
 /// chip), followed live and offline from the phone's copy; a secteur
@@ -46,8 +49,13 @@ final class ImportNotifier extends Notifier<ImportState> {
   /// The same for listing the streets of a commune.
   var _listing = 0;
 
+  /// The numbers read for « Partie de la rue », by street: the part chosen
+  /// is counted among them, and opening it again needs no network.
+  var _numbers = <BanStreetId, StreetNumbers>{};
+
   @override
   ImportState build() {
+    _numbers = {};
     // `ref.watch`: opening another tournée builds the list again.
     final sector = ref.watch(currentSectorProvider);
     if (sector == null) return const ImportState();
@@ -176,10 +184,10 @@ final class ImportNotifier extends Notifier<ImportState> {
   void filter(String text) => state = state.copyWith(filter: text);
 
   /// Ticks or unticks the street [id]; a street already imported stays as
-  /// it is.
+  /// it is. Unticked, it loses its part.
   void toggle(BanStreetId id) => _update(
     (street) => street.id == id && street.selectable
-        ? street.copyWith(checked: !street.checked)
+        ? (street.checked ? street.unticked() : street.copyWith(checked: true))
         : street,
   );
 
@@ -189,11 +197,84 @@ final class ImportNotifier extends Notifier<ImportState> {
   void checkAllVisible({required bool checked}) {
     final visible = {for (final street in state.visibleStreets) street.id};
     _update(
-      (street) => visible.contains(street.id) && street.selectable
-          ? street.copyWith(checked: checked)
+      (street) => !visible.contains(street.id) || !street.selectable
+          ? street
+          : checked
+          ? street.copyWith(checked: true)
+          : street.unticked(),
+    );
+  }
+
+  /// « Toute la rue › » under the street [id] ticked: what « Partie de la
+  /// rue » opens on, the street's numbers read first (network), once.
+  ///
+  /// Nothing opens for a street not ticked, one of the Corbeille (it comes
+  /// back as it went), one whose numbers are being read, or while the
+  /// streets are being added.
+  Future<PartOpening> openPart(BanStreetId id) async {
+    final street = _choiceOf(id);
+    if (street == null ||
+        !street.partChoosable ||
+        street.readingPart ||
+        state.importing) {
+      return const PartNotOpened();
+    }
+    var numbers = _numbers[id];
+    if (numbers == null) {
+      _setReading(id, reading: true);
+      final read = await ref.read(readStreetNumbersProvider)(id);
+      if (!ref.mounted) return const PartNotOpened();
+      _setReading(id, reading: false);
+      switch (read) {
+        case Err(failure: AddressDirectoryFailure.noNetwork):
+          return const PartUnreadable(PartReadProblem.noNetwork);
+        case Err(
+          failure: AddressDirectoryFailure.serviceError ||
+              AddressDirectoryFailure.notFound,
+        ):
+          return const PartUnreadable(PartReadProblem.unavailable);
+        case Ok(:final value):
+          numbers = _numbers[id] = value;
+      }
+    }
+    // As it is now: unticked meanwhile, or the streets being added, it is
+    // too late.
+    final now = _choiceOf(id);
+    if (now == null || !now.partChoosable || state.importing) {
+      return const PartNotOpened();
+    }
+    return PartToChoose(
+      StreetPartRequest(
+        streetName: now.name,
+        choice: numbers.partChoice(part: now.part),
+      ),
+    );
+  }
+
+  /// « Valider » on « Partie de la rue » opened from the street [id]: it
+  /// holds [part] while it stays ticked. Ignored once unticked, or while
+  /// the streets are being added.
+  void choosePart(BanStreetId id, StreetPart part) {
+    final numbers = _numbers[id];
+    if (numbers == null || state.importing) return;
+    _update(
+      (street) => street.id == id && street.partChoosable
+          ? street.withPart(part, numbers)
           : street,
     );
   }
+
+  void _setReading(BanStreetId id, {required bool reading}) => _update(
+    (street) =>
+        street.id == id ? street.copyWith(readingPart: reading) : street,
+  );
+
+  /// The row of the street [id]; null when the list has none.
+  StreetChoice? _choiceOf(BanStreetId id) => switch (state.streets) {
+    StreetsLoaded(:final streets) =>
+      streets.where((street) => street.id == id).firstOrNull,
+    NoCommuneChosen() || LoadingStreets() || StreetsFailed() => null,
+  };
 
   void _update(StreetChoice Function(StreetChoice street) change) =>
       state = state.copyWith(streets: _changed(change));
@@ -221,6 +302,7 @@ final class ImportNotifier extends Notifier<ImportState> {
     final result = await ref.read(importReferenceAreaProvider)(
       commune.inseeCode,
       only: chosen,
+      parts: state.parts,
       onProgress: (done, total) {
         // The screen may have gone (the app closed) while a street loaded.
         if (ref.mounted) {

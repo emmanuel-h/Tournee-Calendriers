@@ -9,9 +9,11 @@ import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
+import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/screens/add_streets/add_streets_screen.dart';
+import 'package:tournee_calendriers/ui/screens/street_part/street_part_screen.dart';
 import 'package:tournee_calendriers/ui/screens/team/team_screen.dart';
 
 import '../../domain/sector/my_sectors_fixtures.dart';
@@ -320,5 +322,125 @@ void main() {
     await openVillefranche(tester);
 
     await expectAccessibleControls(tester);
+  });
+
+  group('the part of a street (PLAN §5.15)', () {
+    Finder partLink(BanStreetId id) =>
+        find.byKey(ValueKey('import.part.${id.value}'));
+    Finder count(BanStreetId id) =>
+        find.byKey(ValueKey('import.count.${id.value}'));
+
+    /// A tap on the part link of [id], scrolled into view first.
+    Future<void> openPart(WidgetTester tester, BanStreetId id) async {
+      await tester.ensureVisible(partLink(id));
+      await tester.pumpAndSettle();
+      await tester.tap(partLink(id));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('should offer the whole street under a street ticked '
+        'only', (tester) async {
+      await openVillefranche(tester);
+      expect(partLink(_morin), findsNothing);
+
+      await tester.tap(street(_morin));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.descendant(
+          of: partLink(_morin),
+          matching: find.text('Toute la rue'),
+        ),
+        findsOneWidget,
+      );
+      expect(tester.widget<Text>(count(_morin)).data, '19 n°');
+    });
+
+    testWidgets('should read the numbers, choose the part, then show it and '
+        'add only its numbers', (tester) async {
+      await openVillefranche(tester);
+      await tester.tap(street(_morin));
+      await tester.pumpAndSettle();
+
+      await openPart(tester, _morin);
+      expect(find.byType(StreetPartScreen), findsOneWidget);
+      // « Impairs », « Aucun impair », « Valider »: the evens only.
+      await tester.tap(find.byKey(const Key('part.sides.odd')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('part.nothing')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('part.validate')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.descendant(
+          of: partLink(_morin),
+          matching: find.text('Tous les pairs'),
+        ),
+        findsOneWidget,
+      );
+      expect(tester.widget<Text>(count(_morin)).data, '1 n° sur 3');
+      await tester.tap(find.byKey(const Key('import.button')));
+      await tester.pumpAndSettle();
+      final added = streets.added.single;
+      expect(added.part, part(odd: SidePart.none, even: SidePart.all));
+      expect(added.houses.map((house) => house.number), [n('2')]);
+    });
+
+    testWidgets('should say a connection is needed to read the numbers', (
+      tester,
+    ) async {
+      await openVillefranche(tester);
+      await tester.tap(street(_bonnet));
+      await tester.pumpAndSettle();
+
+      await openPart(tester, _bonnet);
+
+      expect(find.byType(StreetPartScreen), findsNothing);
+      expect(
+        find.text('Connexion nécessaire pour lire les numéros de la rue.'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('should say the numbers cannot be read for now', (
+      tester,
+    ) async {
+      directory.streets[_morin] = const Err(
+        AddressDirectoryFailure.serviceError,
+      );
+      await openVillefranche(tester);
+      await tester.tap(street(_morin));
+      await tester.pumpAndSettle();
+
+      await openPart(tester, _morin);
+
+      expect(
+        find.text(
+          'Impossible de lire les numéros de la rue pour l\'instant. '
+          'Réessayez plus tard.',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('should change nothing when « Partie de la rue » is left '
+        'with ✕', (tester) async {
+      await openVillefranche(tester);
+      await tester.tap(street(_morin));
+      await tester.pumpAndSettle();
+      await openPart(tester, _morin);
+
+      await tester.tap(find.byKey(const Key('part.close')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.descendant(
+          of: partLink(_morin),
+          matching: find.text('Toute la rue'),
+        ),
+        findsOneWidget,
+      );
+    });
   });
 }

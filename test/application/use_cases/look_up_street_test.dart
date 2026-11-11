@@ -90,6 +90,7 @@ void main() {
       expect(found.match, _morin);
       expect(found.numbers, same(_morinNumbers));
       expect(found.numberCount, 2);
+      expect(found.fromCorbeille, isFalse);
       expect(directory.pointsAsked, [_tap]);
       expect(directory.streetsAsked, [_morinId]);
     });
@@ -118,6 +119,7 @@ void main() {
       final found = valueOf(await lookUp(directory)(StreetAtPoint(_tap)));
 
       expect(found, isA<StreetToAdd>());
+      expect((found as StreetToAdd).fromCorbeille, isTrue);
       expect(directory.streetsAsked, [lilas.banId]);
     });
 

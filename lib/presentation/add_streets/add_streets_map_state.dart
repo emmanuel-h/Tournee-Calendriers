@@ -4,6 +4,7 @@ import 'package:tournee_calendriers/domain/map/picked_road.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/shared/same_items.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_part.dart';
 
 /// What the « Carte » tab of « Ajouter des rues » shows (PLAN §5.14, Pick
 /// and PickZone mockups): the secteur's streets and houses, the area the
@@ -72,13 +73,18 @@ final class AddStreetsMapState {
 }
 
 /// A street ticked, as its row of the selection sheet shows it: « Rue
-/// Pierre Morin » over « Villefranche-sur-Saône · 19 numéros », and its ✕.
+/// Pierre Morin » over « Villefranche-sur-Saône · 19 numéros », the part
+/// to add (« Toute la rue › », PLAN §5.15), and its ✕.
 final class PickedStreetRow {
   const PickedStreetRow({
     required this.id,
     required this.name,
     required this.commune,
     required this.numberCount,
+    this.part = StreetPart.whole,
+    this.keptCount,
+    this.readingPart = false,
+    this.fromCorbeille = false,
   });
 
   /// The street ✕ unticks.
@@ -86,8 +92,23 @@ final class PickedStreetRow {
   final String name;
   final String commune;
 
-  /// How many numbers the street brings.
+  /// How many numbers the street has.
   final int numberCount;
+
+  /// The part of the street to add: the whole street until one is chosen.
+  final StreetPart part;
+
+  /// How many numbers [part] keeps (« 5 numéros sur 8 »); null for the
+  /// whole street, which keeps [numberCount].
+  final int? keptCount;
+
+  /// Its numbers are being read to open « Partie de la rue »: the link
+  /// waits.
+  final bool readingPart;
+
+  /// The street is in the Corbeille: added, it comes back as it went, its
+  /// own part included, so it has no part to choose.
+  final bool fromCorbeille;
 
   @override
   bool operator ==(Object other) =>
@@ -95,13 +116,28 @@ final class PickedStreetRow {
       other.id == id &&
       other.name == name &&
       other.commune == commune &&
-      other.numberCount == numberCount;
+      other.numberCount == numberCount &&
+      other.part == part &&
+      other.keptCount == keptCount &&
+      other.readingPart == readingPart &&
+      other.fromCorbeille == fromCorbeille;
 
   @override
-  int get hashCode => Object.hash(id, name, commune, numberCount);
+  int get hashCode => Object.hash(
+    id,
+    name,
+    commune,
+    numberCount,
+    part,
+    keptCount,
+    readingPart,
+    fromCorbeille,
+  );
 
   @override
-  String toString() => 'PickedStreetRow(${id.value}, $name, $numberCount)';
+  String toString() =>
+      'PickedStreetRow(${id.value}, $name, $numberCount'
+      '${_partFacts(part, keptCount, readingPart, fromCorbeille)})';
 }
 
 /// Why a street could not be looked up, or searched; the screen says so
@@ -257,7 +293,8 @@ enum ZoneRowKind {
   noAddress,
 }
 
-/// A row of the zone's list: « ☑ Rue Pierre Morin · 19 numéros ».
+/// A row of the zone's list: « ☑ Rue Pierre Morin · 19 numéros », and the
+/// part to add under a street ticked (« Toute la rue › », PLAN §5.15).
 final class ZoneStreetRow {
   const ZoneStreetRow({
     required this.kind,
@@ -265,6 +302,10 @@ final class ZoneStreetRow {
     this.id,
     this.numberCount = 0,
     this.ticked = false,
+    this.part = StreetPart.whole,
+    this.keptCount,
+    this.readingPart = false,
+    this.fromCorbeille = false,
   });
 
   final ZoneRowKind kind;
@@ -279,6 +320,20 @@ final class ZoneStreetRow {
   /// Whether the street is ticked, here or by a tap on the map.
   final bool ticked;
 
+  /// The part of a street ticked: the whole street until one is chosen.
+  final StreetPart part;
+
+  /// How many numbers [part] keeps (« 5 numéros sur 8 »); null for the
+  /// whole street.
+  final int? keptCount;
+
+  /// Its numbers are being read to open « Partie de la rue ».
+  final bool readingPart;
+
+  /// The street is in the Corbeille: it has no part to choose (see
+  /// [PickedStreetRow.fromCorbeille]).
+  final bool fromCorbeille;
+
   @override
   bool operator ==(Object other) =>
       other is ZoneStreetRow &&
@@ -286,16 +341,43 @@ final class ZoneStreetRow {
       other.name == name &&
       other.id == id &&
       other.numberCount == numberCount &&
-      other.ticked == ticked;
+      other.ticked == ticked &&
+      other.part == part &&
+      other.keptCount == keptCount &&
+      other.readingPart == readingPart &&
+      other.fromCorbeille == fromCorbeille;
 
   @override
-  int get hashCode => Object.hash(kind, name, id, numberCount, ticked);
+  int get hashCode => Object.hash(
+    kind,
+    name,
+    id,
+    numberCount,
+    ticked,
+    part,
+    keptCount,
+    readingPart,
+    fromCorbeille,
+  );
 
   @override
   String toString() =>
       'ZoneStreetRow(${kind.name}, $name, ${id?.value}, $numberCount, '
-      '$ticked)';
+      '$ticked${_partFacts(part, keptCount, readingPart, fromCorbeille)})';
 }
+
+/// What a row says of its part when printed, after its other values;
+/// nothing for the whole street, which most rows add.
+String _partFacts(
+  StreetPart part,
+  int? keptCount,
+  bool readingPart,
+  bool fromCorbeille,
+) => [
+  if (!part.isWhole) ', $part, kept: $keptCount',
+  if (readingPart) ', reading',
+  if (fromCorbeille) ', from the Corbeille',
+].join();
 
 /// How adding the ticked streets goes. `sealed`: the sheet shows each case.
 sealed class AddRun {

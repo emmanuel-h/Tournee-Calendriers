@@ -16,12 +16,16 @@ import 'package:tournee_calendriers/domain/shared/insee_code.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/presentation/add_streets/add_streets_map_state.dart';
+import 'package:tournee_calendriers/presentation/add_streets/part_opening.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
+import 'package:tournee_calendriers/presentation/street_part/street_part_state.dart';
 
 export 'package:tournee_calendriers/presentation/add_streets/add_streets_map_state.dart';
+export 'package:tournee_calendriers/presentation/add_streets/part_opening.dart';
 
 /// The state of the « Carte » tab. `autoDispose`: it follows the streets
 /// and communes, and keeps the ticks, only while the screen is open.
@@ -48,6 +52,10 @@ final addStreetsMapProvider =
 ///   (`FindZoneStreets`) and ticks those to add; their numbers are read
 ///   only when they are added. Ticks from taps and zones add up; « Zone »
 ///   off drops the zone and keeps the ticks.
+/// - **« Toute la rue › »** under a street ticked opens « Partie de la
+///   rue » (PLAN §5.15): a street of a zone has its numbers read first,
+///   then kept for adding. The part chosen goes with the tick, and adding
+///   stores only its numbers.
 ///
 /// Answers come back in any order: each one ticks what it found, except
 /// once « Tout décocher » was pressed after its tap, or while the streets
@@ -93,6 +101,9 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
   /// The zone drawn, null when none.
   GeoBounds? _zone;
 
+  /// The streets whose numbers are being read for « Partie de la rue ».
+  var _readingParts = const <BanStreetId>{};
+
   /// The streets found in [_zone]; null while they are looked for.
   List<ZoneStreet>? _zoneStreets;
 
@@ -114,6 +125,7 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
     _zoneMode = false;
     _zone = null;
     _zoneStreets = null;
+    _readingParts = const {};
     final streets = ref
         .watch(observeStreetsProvider)()
         .listen(
@@ -309,7 +321,7 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
     AddStreetFromMap addStreet,
     LookUpStreet lookUp,
   ) async {
-    var numbers = pick.found?.numbers;
+    var numbers = pick.numbers;
     if (numbers == null) {
       switch (await lookUp(FoundStreet(pick.match))) {
         case Ok(value: StreetToAdd(numbers: final read)):
@@ -326,11 +338,96 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
           return AddProblem.serviceError;
       }
     }
-    return switch (await addStreet(numbers, shape: pick.storedRoad)) {
+    return switch (await addStreet(
+      numbers,
+      shape: pick.storedRoad,
+      part: pick.part,
+    )) {
       // A teammate added it meanwhile: it is in the secteur all the same.
       Ok() || Err(failure: AddStreetFailure.alreadyInSector) => null,
       Err(failure: AddStreetFailure.serviceError) => AddProblem.badNumbers,
     };
+  }
+
+  /// « Toute la rue › » under the street [id] ticked: what « Partie de la
+  /// rue » opens on, its numbers read first when the street was ticked in
+  /// a zone (network), then kept for adding.
+  ///
+  /// Nothing opens for a street no longer ticked, one whose numbers are
+  /// being read, one of the Corbeille (it comes back as it went), or while
+  /// the streets are being added.
+  Future<PartOpening> openPart(BanStreetId id) async {
+    final ticked = _pickOf(id);
+    if (ticked == null ||
+        _run is AddRunning ||
+        _readingParts.contains(id) ||
+        ticked.fromCorbeille) {
+      return const PartNotOpened();
+    }
+    if (ticked.numbers == null) {
+      _readingParts = {..._readingParts, id};
+      _show();
+      final read = await ref.read(lookUpStreetProvider)(
+        FoundStreet(ticked.match),
+      );
+      if (!ref.mounted) return const PartNotOpened();
+      _readingParts = {..._readingParts}..remove(id);
+      final refused = _keepNumbers(id, read);
+      _show();
+      if (refused != null) return refused;
+    }
+    // The tick as it is now: its numbers read, its road found meanwhile.
+    final pick = _pickOf(id)!;
+    return PartToChoose(
+      StreetPartRequest(
+        streetName: pick.match.name.text,
+        choice: pick.numbers!.partChoice(road: pick.road, part: pick.part),
+      ),
+    );
+  }
+
+  /// Keeps the numbers [read] for the street [id] with its tick; returns
+  /// what to say instead of opening when they could not be read, or when
+  /// the street is no longer to add.
+  PartOpening? _keepNumbers(
+    BanStreetId id,
+    Result<LookedUpStreet, AddressDirectoryFailure> read,
+  ) {
+    switch (read) {
+      case Err(failure: AddressDirectoryFailure.noNetwork):
+        return const PartUnreadable(PartReadProblem.noNetwork);
+      case Err(
+        failure: AddressDirectoryFailure.serviceError ||
+            AddressDirectoryFailure.notFound,
+      ):
+        return const PartUnreadable(PartReadProblem.unavailable);
+      case Ok(value: StreetOfTheSector(:final street)):
+        return PartOfStreetInSector(street.name.text);
+      case Ok(value: StreetToAdd(:final numbers)):
+        final pick = _pickOf(id);
+        // Unticked meanwhile, or the streets are being added: too late.
+        if (pick == null || _run is AddRunning) return const PartNotOpened();
+        _replace(pick, pick.withNumbers(numbers));
+        return null;
+    }
+  }
+
+  /// « Valider » on « Partie de la rue » opened from the street [id]: it
+  /// holds [part] while it stays ticked. Ignored once unticked, or while
+  /// the streets are being added.
+  void choosePart(BanStreetId id, StreetPart part) {
+    final pick = _pickOf(id);
+    if (pick == null || pick.numbers == null || _run is AddRunning) return;
+    _replace(pick, pick.withPart(part));
+    _show();
+  }
+
+  /// [pick] gives way to [changed], the same tick.
+  void _replace(_Pick pick, _Pick changed) {
+    _picks = [
+      for (final each in _picks) identical(each, pick) ? changed : each,
+    ];
+    if (_latest?.isTick(pick) ?? false) _latest = changed;
   }
 
   /// « Zone » turned on, or off: off, the zone and its list go, the ticks
@@ -491,14 +588,11 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
   Future<void> _findRoad(_Pick pick) async {
     final road = await ref.read(lookUpStreetShapeProvider)(pick.found!);
     if (!ref.mounted) return;
-    if (road case Ok(:final value)) {
-      // `identical`: unticked then ticked again is another tick, which
-      // asked for its own road.
-      final drawn = pick.withRoad(value);
-      _picks = [
-        for (final each in _picks) identical(each, pick) ? drawn : each,
-      ];
-      if (identical(_latest, pick)) _latest = drawn;
+    // The same tick, its part maybe chosen since; unticked then ticked
+    // again is another tick, which asked for its own road.
+    final current = _picks.where((each) => each.isTick(pick)).firstOrNull;
+    if ((road, current) case (Ok(:final value), final current?)) {
+      _replace(current, current.withRoad(value));
       _show();
     }
   }
@@ -537,7 +631,11 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
           id: pick.id,
           name: pick.match.name.text,
           commune: pick.match.commune.name,
-          numberCount: pick.numberCount,
+          numberCount: pick.total,
+          part: pick.part,
+          keptCount: pick.keptCount,
+          readingPart: _readingParts.contains(pick.id),
+          fromCorbeille: pick.fromCorbeille,
         ),
     ],
     pickedRoads: [
@@ -547,8 +645,8 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
     lookingAt: _lookingAt,
     keepInView: switch ((_zone, _latest)) {
       (final zone?, _) => zone,
-      // `identical`: the same tick, not the street ticked again since.
-      (null, final latest?) when _picks.any((p) => identical(p, latest)) =>
+      // The same tick, not the street ticked again since.
+      (null, final latest?) when _picks.any((p) => p.isTick(latest)) =>
         GeoBounds.around([latest.mark]),
       _ => null,
     },
@@ -572,13 +670,29 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
       name: street.name,
       id: match.id,
     ),
-    ZoneStreetToAdd(:final match, :final numberCount) => ZoneStreetRow(
-      kind: ZoneRowKind.toAdd,
-      name: street.name,
-      id: match.id,
-      numberCount: numberCount,
-      ticked: _pickOf(match.id) != null,
-    ),
+    ZoneStreetToAdd(:final match, :final numberCount, :final fromCorbeille) =>
+      switch (_pickOf(match.id)) {
+        null => ZoneStreetRow(
+          kind: ZoneRowKind.toAdd,
+          name: street.name,
+          id: match.id,
+          numberCount: numberCount,
+          fromCorbeille: fromCorbeille,
+        ),
+        final pick => ZoneStreetRow(
+          kind: ZoneRowKind.toAdd,
+          name: street.name,
+          id: match.id,
+          // « 19 numéros » as the zone listed it, until a part is chosen:
+          // then « 5 numéros sur 8 », both from the numbers read.
+          numberCount: pick.keptCount == null ? numberCount : pick.total,
+          ticked: true,
+          part: pick.part,
+          keptCount: pick.keptCount,
+          readingPart: _readingParts.contains(match.id),
+          fromCorbeille: fromCorbeille,
+        ),
+      },
     ZoneStreetInSector(:final match) => ZoneStreetRow(
       kind: ZoneRowKind.inSector,
       name: street.name,
@@ -592,51 +706,104 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
 }
 
 /// A street ticked: the BAN street, how many numbers it brings, where its
-/// ✓ sits, and its road once the map told it.
+/// ✓ sits, its road once the map told it, and the part of it to add.
 ///
 /// Ticked by a tap or the search, it comes with its numbers ([found]) and
 /// its road is asked of the map (`LookUpStreetShape`), whole: it is stored
 /// with the street. Ticked in a zone, its road is the map's in the zone's
 /// tiles, drawn only (it may be cut where they end), and its numbers are
-/// read when it is added.
+/// read when its part is chosen, or when it is added.
+///
+/// Immutable: each change (its road, its numbers, its part) is a copy that
+/// keeps the [tick].
 final class _Pick {
   _Pick.tapped(StreetToAdd this.found, {required this.mark})
-    : match = found.match,
+    : tick = Object(),
+      match = found.match,
       numberCount = found.numberCount,
-      road = StreetShape.none;
+      road = StreetShape.none,
+      numbers = found.numbers,
+      fromCorbeille = found.fromCorbeille,
+      part = StreetPart.whole;
 
   _Pick.inZone(ZoneStreetToAdd street)
-    : found = null,
+    : tick = Object(),
+      found = null,
       match = street.match,
       numberCount = street.numberCount,
       mark = street.mark,
-      road = street.road;
+      road = street.road,
+      numbers = null,
+      fromCorbeille = street.fromCorbeille,
+      part = StreetPart.whole;
 
   const _Pick._(
+    this.tick,
     this.found, {
     required this.match,
     required this.numberCount,
     required this.mark,
     required this.road,
+    required this.numbers,
+    required this.fromCorbeille,
+    required this.part,
   });
+
+  /// Which tick this is: kept by each copy, new when the street is ticked
+  /// again (an answer for the tick before then changes nothing).
+  final Object tick;
 
   final StreetToAdd? found;
   final StreetMatch match;
+
+  /// How many numbers the BAN listed for the street.
   final int numberCount;
   final GeoPoint mark;
   final StreetShape road;
 
+  /// The street's numbers: [found]'s, or read for « Partie de la rue »;
+  /// null until then for a street of a zone.
+  final StreetNumbers? numbers;
+
+  /// The street is in the Corbeille: it comes back as it went, with no
+  /// part to choose.
+  final bool fromCorbeille;
+
+  /// The part of the street to add (PLAN §5.15).
+  final StreetPart part;
+
   BanStreetId get id => match.id;
+
+  /// Whether [other] is this tick, maybe changed since.
+  bool isTick(_Pick other) => identical(tick, other.tick);
+
+  /// How many numbers the street has: those read once they are.
+  int get total => numbers?.numbers.length ?? numberCount;
+
+  /// How many numbers [part] keeps; null for the whole street. A part is
+  /// chosen only once the numbers are known.
+  int? get keptCount => part.isWhole ? null : numbers!.heldBy(part).length;
 
   /// The road stored with the street: none for a zone's, which Accueil
   /// fills from the street's houses (PLAN §5.3).
   StreetShape get storedRoad => found == null ? StreetShape.none : road;
 
-  _Pick withRoad(StreetShape road) => _Pick._(
-    found,
-    match: match,
-    numberCount: numberCount,
-    mark: mark,
-    road: road,
-  );
+  _Pick withRoad(StreetShape road) => _copy(road: road);
+
+  _Pick withNumbers(StreetNumbers numbers) => _copy(numbers: numbers);
+
+  _Pick withPart(StreetPart part) => _copy(part: part);
+
+  _Pick _copy({StreetShape? road, StreetNumbers? numbers, StreetPart? part}) =>
+      _Pick._(
+        tick,
+        found,
+        match: match,
+        numberCount: numberCount,
+        mark: mark,
+        road: road ?? this.road,
+        numbers: numbers ?? this.numbers,
+        fromCorbeille: fromCorbeille,
+        part: part ?? this.part,
+      );
 }

@@ -7,6 +7,7 @@ import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
+import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
 import '../../support/fakes/fake_address_directory.dart';
@@ -167,6 +168,35 @@ void main() {
       expect(imported.streetId, StreetId('street-1'));
       expect(imported.numberCount, 2);
       expect(imported.skippedNumbers, 3);
+    });
+
+    test('should hold the whole street when no part is chosen', () async {
+      await importWith(_directory())(insee('69264'), only: [_nationale]);
+
+      expect(streets.added.single.part, StreetPart.whole);
+    });
+
+    // PLAN §5.15: the numbers outside the part are never stored.
+    test('should hold only the numbers of the part chosen for it, with '
+        'the part, and the others whole', () async {
+      final evens = part(odd: SidePart.none, even: SidePart.all);
+
+      final report = valueOf(
+        await importWith(_directory())(
+          insee('69264'),
+          only: [_nationale, _roses],
+          parts: {_nationale: evens},
+        ),
+      );
+
+      final nationale = streets.added.first;
+      expect(nationale.part, evens);
+      expect(nationale.houses, [House(number: n('2'), position: northDoor)]);
+      expect(nationale.removedHouses, isEmpty);
+      expect((report.streets.first as StreetImported).numberCount, 1);
+      final roses = streets.added.last;
+      expect(roses.part, StreetPart.whole);
+      expect(roses.houses, [House(number: n('4'))]);
     });
 
     test('should import a chosen street even without numbers', () async {

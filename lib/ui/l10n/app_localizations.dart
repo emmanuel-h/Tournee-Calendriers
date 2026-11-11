@@ -1414,6 +1414,12 @@ abstract class AppLocalizations {
   /// **'{count} n°'**
   String streetNumberCount(int count);
 
+  /// How many house numbers the part chosen for a ticked street of « Liste » keeps, of all its numbers (PLAN §5.15).
+  ///
+  /// In fr, this message translates to:
+  /// **'{kept} n° sur {total}'**
+  String streetNumberCountOf(int kept, int total);
+
   /// A street of the import checklist imported before and now in the Corbeille: ticking it brings it back with its marks.
   ///
   /// In fr, this message translates to:
@@ -3748,6 +3754,12 @@ abstract class AppLocalizations {
   /// **'{count, plural, =0{aucun numéro} =1{1 numéro} other{{count} numéros}}'**
   String addStreetsNumbers(int count);
 
+  /// How many numbers the part chosen for a ticked street keeps, of all its numbers (PLAN §5.15): « 5 numéros sur 8 », in the selection sheet and the zone's list.
+  ///
+  /// In fr, this message translates to:
+  /// **'{kept, plural, =0{aucun numéro} =1{1 numéro} other{{kept} numéros}} sur {total}'**
+  String addStreetsNumbersOf(int kept, int total);
+
   /// Screen-reader name and tooltip of the ✕ of a ticked street: unticks it.
   ///
   /// In fr, this message translates to:
@@ -4072,7 +4084,7 @@ abstract class AppLocalizations {
   /// **'Au n°'**
   String get streetPartTo;
 
-  /// Screen-reader name of the « Partie de la rue » row in edit mode.
+  /// Screen-reader name of the « Partie de la rue » row in edit mode, and of the part link under a ticked street of « Ajouter des rues ».
   ///
   /// In fr, this message translates to:
   /// **'Partie de la rue : {part}'**
@@ -4096,13 +4108,13 @@ abstract class AppLocalizations {
   /// **'Changer'**
   String get streetPartConfirmOk;
 
-  /// Snackbar in edit mode when « Partie de la rue » needs the street's numbers from the BAN and the phone is offline.
+  /// Snackbar in edit mode, or on « Ajouter des rues », when « Partie de la rue » needs the street's numbers from the BAN and the phone is offline.
   ///
   /// In fr, this message translates to:
   /// **'Connexion nécessaire pour lire les numéros de la rue.'**
   String get streetPartNoNetwork;
 
-  /// Snackbar in edit mode when the BAN did not give the street's numbers for « Partie de la rue ».
+  /// Snackbar in edit mode, or on « Ajouter des rues », when the BAN did not give the street's numbers for « Partie de la rue ».
   ///
   /// In fr, this message translates to:
   /// **'Impossible de lire les numéros de la rue pour l\'instant. Réessayez plus tard.'**

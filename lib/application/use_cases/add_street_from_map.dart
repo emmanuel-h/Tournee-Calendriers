@@ -4,6 +4,7 @@ import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/domain/street/street_repository.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 
@@ -27,8 +28,12 @@ enum AddStreetFailure {
 ///   (`LookUpStreetShape`): adding never waits for the map. Without it,
 ///   the street is added without shape, shows as its house dots, and gets
 ///   its line later (`FillStreetShape`, PLAN §5.3).
+/// - **The part** chosen on « Partie de la rue » (PLAN §5.15) is stored
+///   with the street, and only the numbers it holds: the others are never
+///   stored.
 /// - **A street of the Corbeille** comes back with its marks, as importing
-///   it again would (PLAN §6.1).
+///   it again would (PLAN §6.1), and with its own part: its row offers
+///   none to choose, it is changed afterwards in edit mode.
 final class AddStreetFromMap {
   const AddStreetFromMap(this._streets, this._ids);
 
@@ -39,9 +44,12 @@ final class AddStreetFromMap {
   ///
   /// [shape] is the road the card found already (`LookUpStreetShape`,
   /// simplified), stored as it is; none while the card has not found it.
+  /// [part] is the part of the street the secteur holds, the whole street
+  /// by default.
   Future<Result<Street, AddStreetFailure>> call(
     StreetNumbers numbers, {
     StreetShape shape = StreetShape.none,
+    StreetPart part = StreetPart.whole,
   }) async {
     final known = await _streets.findByBanId(numbers.id);
     if (known != null) {
@@ -55,8 +63,9 @@ final class AddStreetFromMap {
       commune: numbers.commune,
       banId: numbers.id,
       shape: shape,
+      part: part,
       houses: [
-        for (final number in numbers.numbers)
+        for (final number in numbers.heldBy(part))
           House(number: number.number, position: number.position),
       ],
     )) {

@@ -5,6 +5,7 @@ import 'package:tournee_calendriers/domain/sector/sector_commune.dart';
 import 'package:tournee_calendriers/domain/shared/commune.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/presentation/import_streets/import_state.dart';
 
 import '../../support/geo_fixtures.dart';
@@ -85,6 +86,135 @@ void main() {
       expect(street, isNot(_choice('a', 'A', alreadyImported: true)));
       expect(street, isNot(_choice('a', 'A', inCorbeille: true)));
       expect(street, isNot(_choice('a', 'A', checked: true)));
+    });
+
+    group('its part (PLAN §5.15)', () {
+      final evens = part(odd: SidePart.none, even: SidePart.all);
+      final numbers = StreetNumbers(
+        id: BanStreetId('a'),
+        name: streetName('Rue A'),
+        commune: villefranche,
+        numbers: [
+          DirectoryNumber(number: n('1')),
+          DirectoryNumber(number: n('2')),
+          DirectoryNumber(number: n('3')),
+        ],
+        invalidNumbers: 0,
+        duplicateNumbers: 0,
+      );
+
+      test('should hold the whole street, not being read, by default', () {
+        final street = _choice('a', 'Rue A');
+
+        expect(street.part, StreetPart.whole);
+        expect(street.keptCount, isNull);
+        expect(street.readingPart, isFalse);
+      });
+
+      test('should hold a part, counting what it keeps among the numbers '
+          'read', () {
+        final street = _choice(
+          'a',
+          'Rue A',
+          checked: true,
+          numberCount: 7,
+        ).copyWith(readingPart: true).withPart(evens, numbers);
+
+        expect(street.part, evens);
+        expect(street.keptCount, 1);
+        expect(street.numberCount, 3);
+        expect(street.checked, isTrue);
+        expect(street.readingPart, isTrue);
+        expect(street.id, BanStreetId('a'));
+        expect(street.name, 'Rue A');
+      });
+
+      test('should count nothing kept for the whole street', () {
+        final street = _choice(
+          'a',
+          'Rue A',
+          checked: true,
+        ).withPart(StreetPart.whole, numbers);
+
+        expect(street.keptCount, isNull);
+        expect(street.numberCount, 3);
+      });
+
+      test('should keep its part through copyWith', () {
+        final street = _choice(
+          'a',
+          'Rue A',
+          checked: true,
+        ).withPart(evens, numbers).copyWith(readingPart: true);
+
+        expect(street.part, evens);
+        expect(street.keptCount, 1);
+        expect(street.readingPart, isTrue);
+      });
+
+      test('should lose its part with its tick', () {
+        final street = _choice(
+          'a',
+          'Rue A',
+          checked: true,
+        ).withPart(evens, numbers).copyWith(readingPart: true).unticked();
+
+        expect(street.checked, isFalse);
+        expect(street.part, StreetPart.whole);
+        expect(street.keptCount, isNull);
+        expect(street.numberCount, 3);
+        expect(street.readingPart, isTrue);
+      });
+
+      test('should offer a part only when ticked to be added, out of the '
+          'Corbeille', () {
+        expect(_choice('a', 'A', checked: true).partChoosable, isTrue);
+        expect(_choice('a', 'A').partChoosable, isFalse);
+        expect(
+          _choice('a', 'A', checked: true, inCorbeille: true).partChoosable,
+          isFalse,
+        );
+        expect(
+          _choice('a', 'A', checked: true, alreadyImported: true).partChoosable,
+          isFalse,
+        );
+      });
+
+      test('should be equal only when its part is', () {
+        final street = _choice('a', 'A', checked: true);
+        final parted = street.withPart(evens, numbers);
+
+        expect(parted, street.withPart(evens, numbers));
+        expect(parted.hashCode, street.withPart(evens, numbers).hashCode);
+        expect(parted, isNot(street.withPart(StreetPart.whole, numbers)));
+        expect(street.copyWith(readingPart: true), isNot(street));
+      });
+
+      test('should print its part and its reading', () {
+        expect(
+          '${_choice('a', 'Rue A', checked: true).withPart(evens, numbers).copyWith(readingPart: true)}',
+          'StreetChoice(a, Rue A, 3, alreadyImported: false, '
+              'inCorbeille: false, checked: true, '
+              'StreetPart(odd: none, even: all), kept: 1, reading)',
+        );
+      });
+
+      test('should give the parts of the streets to import, not held '
+          'whole', () {
+        final state = _loaded([
+          _choice('a', 'A', checked: true).withPart(evens, numbers),
+          _choice('b', 'B', checked: true),
+          _choice('c', 'C').withPart(evens, numbers),
+          _choice(
+            'd',
+            'D',
+            checked: true,
+            alreadyImported: true,
+          ).withPart(evens, numbers),
+        ]);
+
+        expect(state.parts, {BanStreetId('a'): evens});
+      });
     });
 
     test('should name its fields when printed', () {

@@ -141,7 +141,9 @@ void main() {
     await streets.save(deleted, change);
     shapes.roads = Ok([_road('Rue des Lilas', 45.985)]);
 
-    expect((await found()).single, isA<ZoneStreetToAdd>());
+    final street = (await found()).single;
+    expect(street, isA<ZoneStreetToAdd>());
+    expect((street as ZoneStreetToAdd).fromCorbeille, isTrue);
   });
 
   test('should grey a road no BAN street is named after', () async {
@@ -467,17 +469,23 @@ void main() {
     );
 
     test('should tell streets to add apart by each field', () {
-      ZoneStreetToAdd make({int count = 19, double latitude = 45.985}) =>
-          ZoneStreetToAdd(
-            match: match,
-            numberCount: count,
-            road: _roadAt(latitude),
-            mark: at(latitude, 4.714),
-          );
+      ZoneStreetToAdd make({
+        int count = 19,
+        double latitude = 45.985,
+        bool fromCorbeille = false,
+      }) => ZoneStreetToAdd(
+        match: match,
+        numberCount: count,
+        road: _roadAt(latitude),
+        mark: at(latitude, 4.714),
+        fromCorbeille: fromCorbeille,
+      );
 
       expect(make(), make());
       expect(make().hashCode, make().hashCode);
       expect(make(count: 20), isNot(make()));
+      expect(make(fromCorbeille: true), isNot(make()));
+      expect(make(fromCorbeille: true).fromCorbeille, isTrue);
       expect(make(latitude: 45.986), isNot(make()));
       expect(
         make().toString(),

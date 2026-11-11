@@ -41,7 +41,9 @@ Start screen:
   rectangle with a finger and lists its streets (those to add ticked, those of the secteur
   and roads without address greyed; at any zoom, 50 streets at most; two fingers move the
   map), and the sheet at the bottom lists the streets ticked and adds them all at once
-  (« Ajouter 3 rues »), staying open to add more; « Rue
+  (« Ajouter 3 rues »), staying open to add more. Under each street ticked (sheet, zone,
+  « Liste »), « Toute la rue › » opens « Partie de la rue » to keep only some of its numbers
+  (« Pairs 2–8 › », « 4 numéros sur 8 »): only those are added; « Rue
   absente de la carte ? Saisir à la main » adds a street the map lacks, offline
   (« Connexion nécessaire pour ajouter une rue. » otherwise).
 - Top bar: the open secteur (« Secteur 49 · 2026 » over its centre de secours) opens

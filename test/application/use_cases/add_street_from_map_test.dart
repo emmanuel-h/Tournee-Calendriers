@@ -8,6 +8,7 @@ import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
@@ -81,6 +82,35 @@ void main() {
       expect(streets.added, hasLength(1));
     });
 
+    test('should store the whole street by default', () async {
+      final street = valueOf(await add(_morinNumbers));
+
+      expect(street.part, StreetPart.whole);
+    });
+
+    // PLAN §5.15: the numbers outside the part are never stored.
+    test('should store only the numbers of the part chosen, with the '
+        'part', () async {
+      final odds = part(odd: range(1, 1), even: SidePart.none);
+
+      final street = valueOf(await add(_morinNumbers, part: odds));
+
+      expect(street.part, odds);
+      expect(street.houses, [House(number: n('1'), position: northDoor)]);
+      expect(street.removedHouses, isEmpty);
+      expect(streets.added, [same(street)]);
+    });
+
+    test('should store a street holding no number when the part holds '
+        'none', () async {
+      final nothing = part(odd: SidePart.none, even: SidePart.none);
+
+      final street = valueOf(await add(_morinNumbers, part: nothing));
+
+      expect(street.part, nothing);
+      expect(street.houses, isEmpty);
+    });
+
     test('should refuse numbers the BAN gave twice', () async {
       final twice = StreetNumbers(
         id: _morinId,
@@ -131,6 +161,21 @@ void main() {
         await streets.save(deleted, deletion);
         marked = done;
         streets.saved.clear();
+      });
+
+      // Its row offers no part (PLAN §5.15 « When adding »): it comes back
+      // as it went, its part changed afterwards in edit mode.
+      test('should bring it back as it was, whatever the part '
+          'given', () async {
+        final street = valueOf(
+          await add(
+            lilasNumbers,
+            part: part(odd: SidePart.none, even: SidePart.all),
+          ),
+        );
+
+        expect(street.part, StreetPart.whole);
+        expect(street.houses, marked.houses);
       });
 
       test('should bring it back with its marks', () async {

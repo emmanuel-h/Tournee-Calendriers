@@ -60,6 +60,7 @@ import 'package:tournee_calendriers/application/use_cases/observe_street.dart';
 import 'package:tournee_calendriers/application/use_cases/observe_streets.dart';
 import 'package:tournee_calendriers/application/use_cases/phone_settings.dart';
 import 'package:tournee_calendriers/application/use_cases/purge_corbeille.dart';
+import 'package:tournee_calendriers/application/use_cases/read_street_numbers.dart';
 import 'package:tournee_calendriers/application/use_cases/read_street_part_choice.dart';
 import 'package:tournee_calendriers/application/use_cases/refresh_offline_maps.dart';
 import 'package:tournee_calendriers/application/use_cases/round_visits.dart';
@@ -278,6 +279,9 @@ final undoLastChangeProvider = Provider(
     ref.watch(streetRepositoryProvider),
     ref.watch(roundVisitsProvider),
   ),
+);
+final readStreetNumbersProvider = Provider(
+  (ref) => ReadStreetNumbers(ref.watch(addressDirectoryProvider)),
 );
 final listCommuneStreetsProvider = Provider(
   (ref) => ListCommuneStreets(ref.watch(addressDirectoryProvider)),

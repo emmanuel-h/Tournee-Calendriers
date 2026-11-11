@@ -5,8 +5,12 @@ import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
+import 'package:tournee_calendriers/domain/street/street_part.dart';
+import 'package:tournee_calendriers/domain/street/street_part_choice.dart';
+import 'package:tournee_calendriers/domain/street/street_shape.dart';
 
 import '../../support/results.dart';
+import '../../support/street_fixtures.dart' show part, range;
 
 void main() {
   final villefranche = valueOf(
@@ -221,6 +225,80 @@ void main() {
             numbers.numbers.add(DirectoryNumber(number: HouseNumber.plain(1))),
         throwsUnsupportedError,
       );
+    });
+    group('held by a part (« Partie de la rue », PLAN §5.15)', () {
+      final numbers = StreetNumbers(
+        id: BanStreetId('69264_1460'),
+        name: pierreMorin,
+        commune: villefranche,
+        numbers: [
+          DirectoryNumber(number: HouseNumber.plain(1), position: entrance),
+          DirectoryNumber(number: HouseNumber.plain(2)),
+          DirectoryNumber(number: valueOf(HouseNumber.parse('3bis'))),
+          DirectoryNumber(
+            number: HouseNumber.plain(4),
+            position: otherEntrance,
+          ),
+          DirectoryNumber(number: HouseNumber.plain(5)),
+        ],
+        invalidNumbers: 0,
+        duplicateNumbers: 0,
+      );
+
+      test('should keep every number for the whole street', () {
+        expect(numbers.heldBy(StreetPart.whole), numbers.numbers);
+      });
+
+      test('should keep only the numbers of the part, in their '
+          'order', () {
+        final held = numbers.heldBy(part(odd: range(3, 5), even: range(4, 4)));
+
+        expect(held, [
+          DirectoryNumber(number: valueOf(HouseNumber.parse('3bis'))),
+          DirectoryNumber(
+            number: HouseNumber.plain(4),
+            position: otherEntrance,
+          ),
+          DirectoryNumber(number: HouseNumber.plain(5)),
+        ]);
+      });
+
+      test('should keep none for a part holding nothing', () {
+        expect(
+          numbers.heldBy(part(odd: SidePart.none, even: SidePart.none)),
+          isEmpty,
+        );
+      });
+
+      test('should start « Partie de la rue » on every number with its '
+          'position, the road and the part', () {
+        final road = StreetShape([
+          [entrance, otherEntrance],
+        ]);
+        final evens = part(odd: SidePart.none, even: SidePart.all);
+
+        final choice = numbers.partChoice(road: road, part: evens);
+
+        expect(choice.numbers, [
+          PartNumber(HouseNumber.plain(1), position: entrance),
+          PartNumber(HouseNumber.plain(2)),
+          PartNumber(valueOf(HouseNumber.parse('3bis'))),
+          PartNumber(HouseNumber.plain(4), position: otherEntrance),
+          PartNumber(HouseNumber.plain(5)),
+        ]);
+        expect(choice.road, road);
+        expect(choice.part, evens);
+        expect(choice.keptCount, 2);
+      });
+
+      test('should start on the whole street without road by '
+          'default', () {
+        final choice = numbers.partChoice();
+
+        expect(choice.road, StreetShape.none);
+        expect(choice.part, StreetPart.whole);
+        expect(choice.keptCount, 5);
+      });
     });
   });
 

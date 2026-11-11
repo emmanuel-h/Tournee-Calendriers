@@ -893,6 +893,11 @@
     "description": "How many house numbers the address base lists for a street.",
     "placeholders": { "count": { "type": "int", "example": "403" } }
   },
+  "streetNumberCountOf": "{kept} n° sur {total}",
+  "@streetNumberCountOf": {
+    "description": "How many house numbers the part chosen for a ticked street of « Liste » keeps, of all its numbers (PLAN §5.15).",
+    "placeholders": { "kept": { "type": "int", "example": "5" }, "total": { "type": "int", "example": "8" } }
+  },
   "inCorbeille": "dans la Corbeille",
   "@inCorbeille": { "description": "A street of the import checklist imported before and now in the Corbeille: ticking it brings it back with its marks." },
   "importRestored": "{count, plural, =1{1 rue restaurée} other{{count} rues restaurées}}",
@@ -2037,6 +2042,8 @@
   "@addStreetsPickedFacts": {"description": "Under the name of a ticked street in the selection sheet: « Villefranche-sur-Saône · 19 numéros ».", "placeholders": {"commune": {"type": "String", "example": "Villefranche-sur-Saône"}, "numbers": {"type": "String", "example": "19 numéros"}}},
   "addStreetsNumbers": "{count, plural, =0{aucun numéro} =1{1 numéro} other{{count} numéros}}",
   "@addStreetsNumbers": {"description": "How many numbers a ticked street brings, after its commune.", "placeholders": {"count": {"type": "int", "example": "19"}}},
+  "addStreetsNumbersOf": "{kept, plural, =0{aucun numéro} =1{1 numéro} other{{kept} numéros}} sur {total}",
+  "@addStreetsNumbersOf": {"description": "How many numbers the part chosen for a ticked street keeps, of all its numbers (PLAN §5.15): « 5 numéros sur 8 », in the selection sheet and the zone's list.", "placeholders": {"kept": {"type": "int", "example": "5"}, "total": {"type": "int", "example": "8"}}},
   "addStreetsUntick": "Retirer {name}",
   "@addStreetsUntick": {"description": "Screen-reader name and tooltip of the ✕ of a ticked street: unticks it.", "placeholders": {"name": {"type": "String", "example": "Rue Pierre Morin"}}},
   "addStreetsFold": "Réduire la sélection",
@@ -2146,7 +2153,7 @@
   "streetPartTo": "Au n°",
   "@streetPartTo": {"description": "Label of the last bound of « Partie de la rue » for a street without positions."},
   "streetPartRowSemantics": "Partie de la rue : {part}",
-  "@streetPartRowSemantics": {"description": "Screen-reader name of the « Partie de la rue » row in edit mode.", "placeholders": {"part": {"type": "String", "example": "Impairs 1–57 · pairs 2–30"}}},
+  "@streetPartRowSemantics": {"description": "Screen-reader name of the « Partie de la rue » row in edit mode, and of the part link under a ticked street of « Ajouter des rues ».", "placeholders": {"part": {"type": "String", "example": "Impairs 1–57 · pairs 2–30"}}},
   "streetPartConfirmTitle": "Changer la partie de la rue ?",
   "@streetPartConfirmTitle": {"description": "Title of the question before a new part sends numbers with marks to the Corbeille."},
   "streetPartConfirmBody": "{count, plural, =1{1 numéro a des marques. Il part avec elles à la Corbeille.} other{{count} numéros ont des marques. Ils partent avec elles à la Corbeille.}}",
@@ -2154,7 +2161,7 @@
   "streetPartConfirmOk": "Changer",
   "@streetPartConfirmOk": {"description": "Confirm button of the question before a new part sends numbers with marks to the Corbeille."},
   "streetPartNoNetwork": "Connexion nécessaire pour lire les numéros de la rue.",
-  "@streetPartNoNetwork": {"description": "Snackbar in edit mode when « Partie de la rue » needs the street's numbers from the BAN and the phone is offline."},
+  "@streetPartNoNetwork": {"description": "Snackbar in edit mode, or on « Ajouter des rues », when « Partie de la rue » needs the street's numbers from the BAN and the phone is offline."},
   "streetPartUnavailable": "Impossible de lire les numéros de la rue pour l'instant. Réessayez plus tard.",
-  "@streetPartUnavailable": {"description": "Snackbar in edit mode when the BAN did not give the street's numbers for « Partie de la rue »."}
+  "@streetPartUnavailable": {"description": "Snackbar in edit mode, or on « Ajouter des rues », when the BAN did not give the street's numbers for « Partie de la rue »."}
 }

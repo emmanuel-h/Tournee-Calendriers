@@ -4,14 +4,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/presentation/add_streets/part_opening.dart';
 import 'package:tournee_calendriers/presentation/import_streets/import_notifier.dart';
 import 'package:tournee_calendriers/presentation/import_streets/import_state.dart';
+import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
 import 'package:tournee_calendriers/ui/components/add_progress.dart';
 import 'package:tournee_calendriers/ui/components/app_buttons.dart';
 import 'package:tournee_calendriers/ui/components/filter_field.dart';
+import 'package:tournee_calendriers/ui/components/part_link.dart';
 import 'package:tournee_calendriers/ui/components/section_header.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/screens/import_streets/import_messages.dart';
+import 'package:tournee_calendriers/ui/screens/street_part/street_part_screen.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
@@ -416,6 +420,8 @@ final class _Checklist extends ConsumerWidget {
                     street: visible[index],
                     enabled: !state.importing,
                     onToggle: notifier.toggle,
+                    onOpenPart: (street) =>
+                        unawaited(_openPart(context, ref, street)),
                   ),
                 ),
         ),
@@ -452,6 +458,34 @@ final class _Checklist extends ConsumerWidget {
     );
   }
 
+  /// « Toute la rue › » under the street [id]: reads its numbers, opens
+  /// « Partie de la rue », and the part chosen goes with its tick. ✕ or
+  /// back there changes nothing.
+  static Future<void> _openPart(
+    BuildContext context,
+    WidgetRef ref,
+    BanStreetId id,
+  ) async {
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final notifier = ref.read(importProvider.notifier);
+    final opening = await notifier.openPart(id);
+    if (!context.mounted) return;
+    switch (opening) {
+      case PartToChoose(:final request):
+        final part = await showStreetPart(context, request);
+        if (part != null && context.mounted) notifier.choosePart(id, part);
+      case PartUnreadable(problem: PartReadProblem.noNetwork):
+        showMessageSnackBar(messenger, message: l10n.streetPartNoNetwork);
+      case PartUnreadable(problem: PartReadProblem.unavailable):
+        showMessageSnackBar(messenger, message: l10n.streetPartUnavailable);
+      // A street of « Liste » is never another's meanwhile: « Ajouter N
+      // rues » tells it after.
+      case PartOfStreetInSector() || PartNotOpened():
+        break;
+    }
+  }
+
   /// What went wrong with the last import, if anything.
   List<Widget> _outcome(AppLocalizations l10n, AppColors colors) {
     final message = switch (state.run) {
@@ -473,17 +507,21 @@ final class _Checklist extends ConsumerWidget {
 }
 
 /// One street of the checklist: « ☑ Rue Nationale  403 n° », greyed and
-/// « déjà dans le secteur », or « dans la Corbeille ».
+/// « déjà dans le secteur », or « dans la Corbeille ». A street ticked to be
+/// added has its part under its name (« Toute la rue › », PLAN §5.15) and
+/// « 5 n° sur 8 » once one is chosen.
 final class _ChoiceRow extends StatelessWidget {
   const _ChoiceRow({
     required this.street,
     required this.enabled,
     required this.onToggle,
+    required this.onOpenPart,
   });
 
   final StreetChoice street;
   final bool enabled;
   final ValueChanged<BanStreetId> onToggle;
+  final ValueChanged<BanStreetId> onOpenPart;
 
   @override
   Widget build(BuildContext context) {
@@ -494,29 +532,59 @@ final class _ChoiceRow extends StatelessWidget {
       decoration: BoxDecoration(
         border: Border(bottom: BorderSide(color: colors.divider)),
       ),
-      // A `CheckboxListTile` is one tap target of 56 dp at least, and tells
-      // screen readers « case cochée / non cochée » with the title.
-      child: CheckboxListTile(
-        key: ValueKey('import.street.${street.id.value}'),
-        value: street.checked,
-        onChanged: enabled && street.selectable
-            ? (_) => onToggle(street.id)
-            : null,
-        controlAffinity: ListTileControlAffinity.leading,
-        contentPadding: EdgeInsets.zero,
-        horizontalTitleGap: 12,
-        title: Text(
-          street.name,
-          style: AppTextStyles.bodyLarge.copyWith(color: textColor),
-        ),
-        secondary: Text(
-          street.alreadyImported
-              ? l10n.alreadyInSector
-              : street.inCorbeille
-              ? l10n.inCorbeille
-              : l10n.streetNumberCount(street.numberCount),
-          style: AppTextStyles.small.copyWith(color: colors.muted),
-        ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // A `CheckboxListTile` is one tap target of 56 dp at least, and
+          // tells screen readers « case cochée / non cochée » with the
+          // title.
+          CheckboxListTile(
+            key: ValueKey('import.street.${street.id.value}'),
+            value: street.checked,
+            onChanged: enabled && street.selectable
+                ? (_) => onToggle(street.id)
+                : null,
+            controlAffinity: ListTileControlAffinity.leading,
+            contentPadding: EdgeInsets.zero,
+            horizontalTitleGap: 12,
+            title: Text(
+              street.name,
+              style: AppTextStyles.bodyLarge.copyWith(color: textColor),
+            ),
+            secondary: Text(
+              street.alreadyImported
+                  ? l10n.alreadyInSector
+                  : street.inCorbeille
+                  ? l10n.inCorbeille
+                  : switch (street.keptCount) {
+                      null => l10n.streetNumberCount(street.numberCount),
+                      final kept => l10n.streetNumberCountOf(
+                        kept,
+                        street.numberCount,
+                      ),
+                    },
+              key: ValueKey('import.count.${street.id.value}'),
+              style: AppTextStyles.small.copyWith(color: colors.muted),
+            ),
+          ),
+          if (street.partChoosable)
+            Padding(
+              // Under the name: past the checkbox (the minimum tap target)
+              // and the gap after it.
+              padding: const EdgeInsetsDirectional.only(
+                start: AppSizes.minTapTarget + 12,
+              ),
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: PartLink(
+                  key: ValueKey('import.part.${street.id.value}'),
+                  part: street.part,
+                  reading: street.readingPart,
+                  onTap: enabled ? () => onOpenPart(street.id) : null,
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

@@ -5,6 +5,9 @@ import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
+import 'package:tournee_calendriers/domain/street/street_part.dart';
+import 'package:tournee_calendriers/domain/street/street_part_choice.dart';
+import 'package:tournee_calendriers/domain/street/street_shape.dart';
 
 /// The national address base (BAN), as the app needs it: the streets of a
 /// commune, the numbers of a street with where each entrance is, the street
@@ -184,6 +187,28 @@ final class StreetNumbers {
   /// has the same number (the BAN sometimes lists a number twice, with two
   /// positions): the first one is kept.
   final int duplicateNumbers;
+
+  /// The numbers [part] holds, in their order: what a street added held in
+  /// part stores. The others are never stored (PLAN §5.15).
+  List<DirectoryNumber> heldBy(StreetPart part) => [
+    for (final number in numbers)
+      if (part.holds(number.number)) number,
+  ];
+
+  /// « Partie de la rue » before the street is added (PLAN §5.15): every
+  /// number with its position, along [road] (the road the map found, none
+  /// while it is not known), starting from [part].
+  StreetPartChoice partChoice({
+    StreetShape road = StreetShape.none,
+    StreetPart part = StreetPart.whole,
+  }) => StreetPartChoice.start(
+    numbers: [
+      for (final DirectoryNumber(:number, :position) in numbers)
+        PartNumber(number, position: position),
+    ],
+    road: road,
+    part: part,
+  );
 }
 
 /// A street the [AddressDirectory] found at a point or by its name, before

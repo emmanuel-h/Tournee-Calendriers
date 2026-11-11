@@ -1991,6 +1991,21 @@ belong to no secteur at all (a valid state, not an error). This section override
   « Valider » runs `ChangeStreetPart`, asking « Changer la partie de la rue ? — 3 numéros ont
   des marques. Ils partent avec elles à la Corbeille. [Annuler] [Changer] » first. The sheet
   sits under the map rather than over it.
+- **Delivered in #140** (when adding): under each street ticked, in the selection sheet, the
+  zone's list (ticked rows) and « Liste » (ticked rows), the red link `PartLink` (« Toute la
+  rue › », 48 dp high where the mockup draws 32) opens « Partie de la rue »; a street ticked by a
+  tap or the search has its numbers already, one of a zone or of « Liste » has them read first
+  (`LookUpStreet`, `ReadStreetNumbers`; the link spins meanwhile, offline « Connexion nécessaire
+  pour lire les numéros de la rue. »), then kept for adding. The road given is the one the map
+  found (none for « Liste »: the line between the farthest dots). The row then names the part
+  and says « 5 numéros sur 8 » (« 5 n° sur 8 » in « Liste »); the zone's list keeps the count it
+  listed until a part is chosen. The part goes with the tick: unticked (✕, « Tout décocher », a
+  second tap) it is the whole street again; a street that failed to be added keeps it.
+  « Ajouter N rues » stores only the numbers of each part, with the part (`AddStreetFromMap`,
+  `ImportReferenceArea(parts:)`, `StreetNumbers.heldBy`), in the same ordered writes. A street
+  of the Corbeille has no link: it comes back as it went, its own part included
+  (`StreetToAdd.fromCorbeille`, `ZoneStreetToAdd.fromCorbeille`); its part is changed afterwards
+  in edit mode.
 - **The BAN's later additions**: the app never reads a street's numbers again once added
   (5.4), so nothing arrives by itself; a widening in edit mode is the only new read.
 - **Map** (Accueil, 5.3, and « Ajouter des rues »): a street held in part draws only **the

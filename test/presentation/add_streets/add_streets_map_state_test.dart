@@ -2,7 +2,10 @@ import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/map/map_layers.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/presentation/add_streets/add_streets_map_state.dart';
+
+import '../../support/street_fixtures.dart' show part, range;
 
 final _morin = FoundStreetRow(
   id: BanStreetId('69264_1460'),
@@ -75,6 +78,65 @@ void main() {
       row().toString(),
       'PickedStreetRow(69264_1460, Rue Pierre Morin, 19)',
     );
+  });
+
+  group('the part of a picked street (PLAN §5.15)', () {
+    final evens = part(odd: SidePart.none, even: range(2, 8));
+
+    PickedStreetRow row({
+      StreetPart part = StreetPart.whole,
+      int? keptCount,
+      bool readingPart = false,
+      bool fromCorbeille = false,
+    }) => PickedStreetRow(
+      id: BanStreetId('69264_1460'),
+      name: 'Impasse des Tilleuls',
+      commune: 'Villefranche-sur-Saône',
+      numberCount: 8,
+      part: part,
+      keptCount: keptCount,
+      readingPart: readingPart,
+      fromCorbeille: fromCorbeille,
+    );
+
+    test('should hold the whole street, being read and from the Corbeille '
+        'by no default', () {
+      final plain = PickedStreetRow(
+        id: BanStreetId('69264_1460'),
+        name: 'Impasse des Tilleuls',
+        commune: 'Villefranche-sur-Saône',
+        numberCount: 8,
+      );
+
+      expect(plain.part, StreetPart.whole);
+      expect(plain.keptCount, isNull);
+      expect(plain.readingPart, isFalse);
+      expect(plain.fromCorbeille, isFalse);
+    });
+
+    test('should tell the rows apart by their part', () {
+      final chosen = row(part: evens, keptCount: 4);
+
+      expect(chosen, row(part: evens, keptCount: 4));
+      expect(chosen.hashCode, row(part: evens, keptCount: 4).hashCode);
+      expect(chosen, isNot(row(keptCount: 4)));
+      expect(chosen, isNot(row(part: evens, keptCount: 5)));
+      expect(row(readingPart: true), isNot(row()));
+      expect(row(fromCorbeille: true), isNot(row()));
+    });
+
+    test('should print what it says of its part', () {
+      expect(
+        row(part: evens, keptCount: 4).toString(),
+        'PickedStreetRow(69264_1460, Impasse des Tilleuls, 8, '
+        'StreetPart(odd: none, even: 2–8), kept: 4)',
+      );
+      expect(
+        row(readingPart: true, fromCorbeille: true).toString(),
+        'PickedStreetRow(69264_1460, Impasse des Tilleuls, 8, reading, '
+        'from the Corbeille)',
+      );
+    });
   });
 
   test('should tell the answers to a tap apart by their values', () {
@@ -233,12 +295,57 @@ void main() {
       );
     });
 
+    test('should tell the rows apart by their part', () {
+      final evens = part(odd: SidePart.none, even: range(2, 8));
+      ZoneStreetRow parted({
+        StreetPart part = StreetPart.whole,
+        int? keptCount,
+        bool readingPart = false,
+        bool fromCorbeille = false,
+      }) => ZoneStreetRow(
+        kind: ZoneRowKind.toAdd,
+        name: 'Impasse des Tilleuls',
+        id: BanStreetId('69264_1460'),
+        numberCount: 8,
+        ticked: true,
+        part: part,
+        keptCount: keptCount,
+        readingPart: readingPart,
+        fromCorbeille: fromCorbeille,
+      );
+
+      expect(
+        parted(part: evens, keptCount: 4),
+        parted(part: evens, keptCount: 4),
+      );
+      expect(
+        parted(part: evens, keptCount: 4).hashCode,
+        parted(part: evens, keptCount: 4).hashCode,
+      );
+      expect(parted(part: evens, keptCount: 4), isNot(parted(keptCount: 4)));
+      expect(
+        parted(part: evens, keptCount: 4),
+        isNot(parted(part: evens, keptCount: 3)),
+      );
+      expect(parted(readingPart: true), isNot(parted()));
+      expect(parted(fromCorbeille: true), isNot(parted()));
+      expect(
+        parted(part: evens, keptCount: 4, readingPart: true).toString(),
+        'ZoneStreetRow(toAdd, Impasse des Tilleuls, 69264_1460, 8, true, '
+        'StreetPart(odd: none, even: 2–8), kept: 4, reading)',
+      );
+    });
+
     test('should have a row with no id, no number and no tick by default', () {
       const row = ZoneStreetRow(kind: ZoneRowKind.noAddress, name: 'Chemin');
 
       expect(row.id, isNull);
       expect(row.numberCount, 0);
       expect(row.ticked, isFalse);
+      expect(row.part, StreetPart.whole);
+      expect(row.keptCount, isNull);
+      expect(row.readingPart, isFalse);
+      expect(row.fromCorbeille, isFalse);
     });
 
     test('should be off with no zone by default', () {

@@ -321,6 +321,10 @@ abstract final class AppSizes {
   /// mockup): its name over its commune, and its ✕.
   static const pickedRowHeight = 52.0;
 
+  /// The › after the part of a street to add (« Toute la rue › », Pick
+  /// mockup, PLAN §5.15).
+  static const partLinkChevron = 14.0;
+
   /// The selection sheet shows this many rows of streets ticked, then
   /// scrolls (PLAN §5.14)...
   static const pickedRowsShown = 4;

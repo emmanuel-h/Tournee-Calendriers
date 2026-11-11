@@ -974,6 +974,11 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String streetNumberCountOf(int kept, int total) {
+    return '$kept n° sur $total';
+  }
+
+  @override
   String get inCorbeille => 'dans la Corbeille';
 
   @override
@@ -2649,6 +2654,18 @@ class AppLocalizationsFr extends AppLocalizations {
       zero: 'aucun numéro',
     );
     return '$_temp0';
+  }
+
+  @override
+  String addStreetsNumbersOf(int kept, int total) {
+    String _temp0 = intl.Intl.pluralLogic(
+      kept,
+      locale: localeName,
+      other: '$kept numéros',
+      one: '1 numéro',
+      zero: 'aucun numéro',
+    );
+    return '$_temp0 sur $total';
   }
 
   @override

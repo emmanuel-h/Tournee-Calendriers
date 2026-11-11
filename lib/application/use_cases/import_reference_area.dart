@@ -6,6 +6,7 @@ import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/domain/street/street_repository.dart';
 
 /// What became of one street of the import, for the import screen's
@@ -121,11 +122,17 @@ final class ImportReferenceArea {
   /// done out of how many (the streets already on the phone count as done),
   /// for a progress bar.
   ///
+  /// [parts] gives the part of a street chosen on « Partie de la rue »
+  /// (PLAN §5.15): only the numbers it holds are stored, with the part. A
+  /// street without one is held whole; one already on the phone keeps its
+  /// own.
+  ///
   /// Fails as a whole only when the commune itself cannot be listed and
   /// none of the chosen streets is on the phone.
   Future<Result<ImportReport, AddressDirectoryFailure>> call(
     InseeCode inseeCode, {
     Iterable<BanStreetId>? only,
+    Map<BanStreetId, StreetPart> parts = const {},
     void Function(int done, int total)? onProgress,
   }) async {
     final chosen = only?.toSet();
@@ -173,7 +180,11 @@ final class ImportReferenceArea {
     final total = outcomes.length + toImport.length;
     var offline = false;
     for (final street in toImport) {
-      final outcome = await _importOne(street, offline: offline);
+      final outcome = await _importOne(
+        street,
+        part: parts[street.id] ?? StreetPart.whole,
+        offline: offline,
+      );
       if (outcome case StreetImportFailed(
         failure: AddressDirectoryFailure.noNetwork,
       )) {
@@ -221,10 +232,11 @@ final class ImportReferenceArea {
     return StreetRestoredFromCorbeille(banId, streetId: stored.id);
   }
 
-  /// Imports [street] unless it is on the phone already; when [offline],
-  /// does not ask the BAN.
+  /// Imports [street], held as [part], unless it is on the phone already;
+  /// when [offline], does not ask the BAN.
   Future<StreetImport> _importOne(
     DirectoryStreet street, {
+    required StreetPart part,
     required bool offline,
   }) async {
     final existing = await _streets.findByBanId(street.id);
@@ -244,8 +256,9 @@ final class ImportReferenceArea {
       name: numbers.name.text,
       commune: numbers.commune,
       banId: numbers.id,
+      part: part,
       houses: [
-        for (final number in numbers.numbers)
+        for (final number in numbers.heldBy(part))
           House(number: number.number, position: number.position),
       ],
     )) {

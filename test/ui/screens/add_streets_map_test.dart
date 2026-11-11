@@ -16,12 +16,14 @@ import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/components/app_buttons.dart';
 import 'package:tournee_calendriers/ui/screens/add_streets/add_streets_screen.dart';
 import 'package:tournee_calendriers/ui/screens/add_streets/manual_street_screen.dart';
+import 'package:tournee_calendriers/ui/screens/street_part/street_part_screen.dart';
 import 'package:tournee_calendriers/ui/screens/team/team_screen.dart';
 
 import '../../domain/sector/my_sectors_fixtures.dart';
@@ -837,6 +839,195 @@ void main() {
 
       expect(find.text('3 rues dans la zone'), findsOneWidget);
       expect(tester.takeException(), isNull);
+    });
+  });
+
+  group('the part of a street (PLAN §5.15)', () {
+    Finder partLink(BanStreetId id) =>
+        find.byKey(ValueKey('addStreets.part.${id.value}'));
+
+    /// « Les pairs » on « Partie de la rue »: « Impairs », « Aucun impair »,
+    /// « Valider ».
+    Future<void> keepTheEvens(WidgetTester tester) async {
+      await tester.tap(find.byKey(const Key('part.sides.odd')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('part.nothing')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('part.validate')));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('should offer the whole street under a street ticked', (
+      tester,
+    ) async {
+      await pumpMap(tester);
+
+      await tapRoad(tester, _onGare);
+
+      expect(
+        find.descendant(
+          of: partLink(_gareId),
+          matching: find.text('Toute la rue'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.bySemanticsLabel('Partie de la rue\u00a0: Toute la rue'),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('should choose the part on « Partie de la rue », then show '
+        'it and add only its numbers', (tester) async {
+      await pumpMap(tester);
+      await tapRoad(tester, _onGare);
+
+      await tester.tap(partLink(_gareId));
+      await tester.pumpAndSettle();
+      expect(find.byType(StreetPartScreen), findsOneWidget);
+      await keepTheEvens(tester);
+
+      expect(find.byType(StreetPartScreen), findsNothing);
+      expect(
+        find.descendant(
+          of: partLink(_gareId),
+          matching: find.text('Tous les pairs'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text('Villefranche-sur-Saône · 1 numéro sur 3'),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const Key('addStreets.add')));
+      await tester.pumpAndSettle();
+      final added = streets.added.single;
+      expect(added.part, part(odd: SidePart.none, even: SidePart.all));
+      expect(added.houses.map((house) => house.number), [n('2')]);
+    });
+
+    testWidgets('should change nothing when « Partie de la rue » is left '
+        'with ✕', (tester) async {
+      await pumpMap(tester);
+      await tapRoad(tester, _onGare);
+      await tester.tap(partLink(_gareId));
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.byKey(const Key('part.nothing')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('part.close')));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.descendant(
+          of: partLink(_gareId),
+          matching: find.text('Toute la rue'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('Villefranche-sur-Saône · 3 numéros'), findsOneWidget);
+    });
+
+    group('in a zone', () {
+      final zone = GeoBounds.of(
+        south: 45.98,
+        west: 4.71,
+        north: 45.99,
+        east: 4.73,
+      )!;
+      Finder zonePart(BanStreetId id) =>
+          find.byKey(ValueKey('addStreets.zonePart.${id.value}'));
+
+      /// « Zone » on, then a zone drawn with Rue de la Gare in it.
+      Future<void> drawZone(WidgetTester tester) async {
+        shapes.roads = Ok([
+          NamedRoad(
+            name: 'Rue de la Gare',
+            shape: StreetShape([
+              [at(45.985, 4.712), at(45.985, 4.716)],
+            ]),
+          ),
+        ]);
+        await tester.tap(find.byKey(const Key('addStreets.zone')));
+        await tester.pumpAndSettle();
+        shownMap(tester).onZoneDrawn!(zone);
+        await tester.pumpAndSettle();
+      }
+
+      testWidgets('should read the numbers of a street of the zone, then '
+          'show its part in the zone\'s list', (tester) async {
+        await pumpMap(tester);
+        await drawZone(tester);
+
+        await tester.tap(zonePart(_gareId));
+        await tester.pumpAndSettle();
+        await keepTheEvens(tester);
+
+        expect(directory.streetsAsked, contains(_gareId));
+        expect(
+          find.descendant(
+            of: zonePart(_gareId),
+            matching: find.text('Tous les pairs'),
+          ),
+          findsOneWidget,
+        );
+        expect(find.text('1 numéro sur 3'), findsOneWidget);
+      });
+
+      testWidgets('should say a connection is needed to read the numbers', (
+        tester,
+      ) async {
+        await pumpMap(tester);
+        await drawZone(tester);
+        directory.streets[_gareId] = const Err(
+          AddressDirectoryFailure.noNetwork,
+        );
+
+        await tester.tap(zonePart(_gareId));
+        await tester.pumpAndSettle();
+
+        expect(find.byType(StreetPartScreen), findsNothing);
+        expect(
+          find.text('Connexion nécessaire pour lire les numéros de la rue.'),
+          findsOneWidget,
+        );
+      });
+
+      testWidgets('should say the numbers cannot be read for now', (
+        tester,
+      ) async {
+        await pumpMap(tester);
+        await drawZone(tester);
+        directory.streets[_gareId] = const Err(
+          AddressDirectoryFailure.serviceError,
+        );
+
+        await tester.tap(zonePart(_gareId));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text(
+            'Impossible de lire les numéros de la rue pour l\'instant. '
+            'Réessayez plus tard.',
+          ),
+          findsOneWidget,
+        );
+      });
+
+      testWidgets('should say a street a teammate added meanwhile is in the '
+          'secteur', (tester) async {
+        await pumpMap(tester);
+        await drawZone(tester);
+        await streets.add(_street('gare', 'Rue de la Gare', banId: _gareId));
+
+        await tester.tap(zonePart(_gareId));
+        await tester.pumpAndSettle();
+
+        expect(
+          find.text('Rue de la Gare est déjà dans le secteur.'),
+          findsOneWidget,
+        );
+      });
     });
   });
 }

@@ -413,6 +413,14 @@ void main() {
       expect(directory.searchesAsked, [('morin', '69264')]);
     });
 
+    test('should read the numbers of a street from the directory', () async {
+      final street = BanStreetId('69264_1460');
+
+      await container.read(readStreetNumbersProvider)(street);
+
+      expect(directory.streetsAsked, [street]);
+    });
+
     test('should list the streets of a commune from the directory', () async {
       valueOf(await container.read(listCommuneStreetsProvider)(insee('69264')));
 

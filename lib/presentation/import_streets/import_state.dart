@@ -7,6 +7,7 @@ import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/shared/insee_code.dart';
 import 'package:tournee_calendriers/domain/shared/same_items.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_part.dart';
 
 // The view state of the « Liste » tab of « Ajouter des rues » (PLAN
 // §5.4), made of small
@@ -150,7 +151,8 @@ final class StreetsLoaded extends StreetChoices {
   final List<StreetChoice> streets;
 }
 
-/// One row of the checklist: « Rue Nationale · 403 n° ».
+/// One row of the checklist: « Rue Nationale · 403 n° », and under a street
+/// ticked, the part to add (« Toute la rue › », PLAN §5.15).
 final class StreetChoice {
   const StreetChoice({
     required this.id,
@@ -159,12 +161,16 @@ final class StreetChoice {
     required this.alreadyImported,
     required this.checked,
     this.inCorbeille = false,
+    this.part = StreetPart.whole,
+    this.keptCount,
+    this.readingPart = false,
   });
 
   final BanStreetId id;
   final String name;
 
-  /// How many numbers the BAN lists for it.
+  /// How many numbers the BAN lists for it: its numbers once read for
+  /// « Partie de la rue ».
   final int numberCount;
 
   /// In the secteur already: shown ticked and greyed, « déjà importée », and
@@ -172,11 +178,23 @@ final class StreetChoice {
   final bool alreadyImported;
 
   /// Imported before and now in the Corbeille: « dans la Corbeille », free
-  /// to tick; importing it brings it back with its marks.
+  /// to tick; importing it brings it back with its marks, as it went, so
+  /// it has no part to choose.
   final bool inCorbeille;
 
   /// Ticked by the user (always true when [alreadyImported]).
   final bool checked;
+
+  /// The part of the street to add: the whole street until one is chosen.
+  final StreetPart part;
+
+  /// How many numbers [part] keeps (« 5 n° sur 8 »); null for the whole
+  /// street.
+  final int? keptCount;
+
+  /// Its numbers are being read to open « Partie de la rue »: the link
+  /// waits.
+  final bool readingPart;
 
   /// Whether the user can tick or untick it.
   bool get selectable => !alreadyImported;
@@ -184,10 +202,15 @@ final class StreetChoice {
   /// Ticked and to be imported by « Importer N rues ».
   bool get toImport => checked && !alreadyImported;
 
+  /// Whether its row offers « Partie de la rue »: ticked to be added, and
+  /// not coming back from the Corbeille.
+  bool get partChoosable => toImport && !inCorbeille;
+
   StreetChoice copyWith({
     bool? checked,
     bool? alreadyImported,
     bool? inCorbeille,
+    bool? readingPart,
   }) => StreetChoice(
     id: id,
     name: name,
@@ -195,6 +218,33 @@ final class StreetChoice {
     alreadyImported: alreadyImported ?? this.alreadyImported,
     inCorbeille: inCorbeille ?? this.inCorbeille,
     checked: checked ?? this.checked,
+    part: part,
+    keptCount: keptCount,
+    readingPart: readingPart ?? this.readingPart,
+  );
+
+  /// The street holding [part] of its [numbers], read from the BAN.
+  StreetChoice withPart(StreetPart part, StreetNumbers numbers) => StreetChoice(
+    id: id,
+    name: name,
+    numberCount: numbers.numbers.length,
+    alreadyImported: alreadyImported,
+    inCorbeille: inCorbeille,
+    checked: checked,
+    part: part,
+    keptCount: part.isWhole ? null : numbers.heldBy(part).length,
+    readingPart: readingPart,
+  );
+
+  /// The street unticked: its part goes with the tick.
+  StreetChoice unticked() => StreetChoice(
+    id: id,
+    name: name,
+    numberCount: numberCount,
+    alreadyImported: alreadyImported,
+    inCorbeille: inCorbeille,
+    checked: false,
+    readingPart: readingPart,
   );
 
   @override
@@ -205,17 +255,31 @@ final class StreetChoice {
       other.numberCount == numberCount &&
       other.alreadyImported == alreadyImported &&
       other.inCorbeille == inCorbeille &&
-      other.checked == checked;
+      other.checked == checked &&
+      other.part == part &&
+      other.keptCount == keptCount &&
+      other.readingPart == readingPart;
 
   @override
-  int get hashCode =>
-      Object.hash(id, name, numberCount, alreadyImported, inCorbeille, checked);
+  int get hashCode => Object.hash(
+    id,
+    name,
+    numberCount,
+    alreadyImported,
+    inCorbeille,
+    checked,
+    part,
+    keptCount,
+    readingPart,
+  );
 
   @override
   String toString() =>
       'StreetChoice(${id.value}, $name, $numberCount, '
       'alreadyImported: $alreadyImported, inCorbeille: $inCorbeille, '
-      'checked: $checked)';
+      'checked: $checked'
+      '${part.isWhole ? '' : ', $part, kept: $keptCount'}'
+      '${readingPart ? ', reading' : ''})';
 }
 
 /// Where the import itself stands.
@@ -333,6 +397,12 @@ final class ImportState {
     for (final street in _all)
       if (street.toImport) street.id,
   ];
+
+  /// The part chosen for each street to import that is not held whole.
+  Map<BanStreetId, StreetPart> get parts => {
+    for (final street in _all)
+      if (street.toImport && !street.part.isWhole) street.id: street.part,
+  };
 
   /// « 1 cochée », and the N of « Importer N rues ».
   int get checkedCount => toImport.length;

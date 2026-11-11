@@ -11,6 +11,7 @@ import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
 import 'package:tournee_calendriers/ui/components/add_progress.dart';
 import 'package:tournee_calendriers/ui/components/app_buttons.dart';
 import 'package:tournee_calendriers/ui/components/close_icon_button.dart';
+import 'package:tournee_calendriers/ui/components/part_link.dart';
 import 'package:tournee_calendriers/ui/components/segmented_choice.dart';
 import 'package:tournee_calendriers/ui/components/size_reporter.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
@@ -18,6 +19,7 @@ import 'package:tournee_calendriers/ui/map/map_view.dart';
 import 'package:tournee_calendriers/ui/map/sector_map.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/screens/import_streets/import_screen.dart';
+import 'package:tournee_calendriers/ui/screens/street_part/street_part_screen.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
@@ -248,12 +250,16 @@ final class _MapTabState extends ConsumerState<_MapTab> {
                             maxListHeight: maxListHeight,
                             onFold: (folded) =>
                                 setState(() => _folded = folded),
+                            onOpenPart: (street) =>
+                                unawaited(_openPart(street)),
                             onAdd: () => unawaited(_add()),
                           ),
                           final ZoneView zone => _ZoneSheet(
                             state: state,
                             zone: zone,
                             maxListHeight: maxListHeight,
+                            onOpenPart: (street) =>
+                                unawaited(_openPart(street)),
                             onAdd: () => unawaited(_add()),
                           ),
                         },
@@ -304,6 +310,30 @@ final class _MapTabState extends ConsumerState<_MapTab> {
     }
   }
 
+  /// « Toute la rue › » under the street [id]: « Partie de la rue » once
+  /// its numbers are known (read first for a street of a zone), then the
+  /// part chosen goes with its tick. ✕ or back there changes nothing.
+  Future<void> _openPart(BanStreetId id) async {
+    final opening = await ref.read(addStreetsMapProvider.notifier).openPart(id);
+    if (!mounted) return;
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    switch (opening) {
+      case PartToChoose(:final request):
+        final part = await showStreetPart(context, request);
+        if (part == null || !mounted) return;
+        ref.read(addStreetsMapProvider.notifier).choosePart(id, part);
+      case PartUnreadable(problem: PartReadProblem.noNetwork):
+        showMessageSnackBar(messenger, message: l10n.streetPartNoNetwork);
+      case PartUnreadable(problem: PartReadProblem.unavailable):
+        showMessageSnackBar(messenger, message: l10n.streetPartUnavailable);
+      case PartOfStreetInSector(:final name):
+        showMessageSnackBar(messenger, message: l10n.addStreetsAlreadyIn(name));
+      case PartNotOpened():
+        break;
+    }
+  }
+
   /// « Ajouter N rues »: once every street ticked is in the secteur, « 3
   /// rues ajoutées au secteur », and the screen stays to add more (#134).
   /// Otherwise the sheet says why and keeps the ones that failed.
@@ -331,6 +361,7 @@ final class _SelectionSheet extends ConsumerWidget {
     required this.folded,
     required this.maxListHeight,
     required this.onFold,
+    required this.onOpenPart,
     required this.onAdd,
   });
 
@@ -341,6 +372,9 @@ final class _SelectionSheet extends ConsumerWidget {
   final double maxListHeight;
 
   final ValueChanged<bool> onFold;
+
+  /// « Toute la rue › » under a row.
+  final ValueChanged<BanStreetId> onOpenPart;
   final VoidCallback onAdd;
 
   @override
@@ -489,6 +523,9 @@ final class _SelectionSheet extends ConsumerWidget {
                                 onUntick: state.adding
                                     ? null
                                     : () => map.untick(street.id),
+                                onOpenPart: state.adding
+                                    ? null
+                                    : () => onOpenPart(street.id),
                               ),
                           ],
                         ),
@@ -658,12 +695,16 @@ final class _ZoneSheet extends ConsumerWidget {
     required this.state,
     required this.zone,
     required this.maxListHeight,
+    required this.onOpenPart,
     required this.onAdd,
   });
 
   final AddStreetsMapState state;
   final ZoneView zone;
   final double maxListHeight;
+
+  /// « Toute la rue › » under a street ticked.
+  final ValueChanged<BanStreetId> onOpenPart;
   final VoidCallback onAdd;
 
   @override
@@ -724,6 +765,9 @@ final class _ZoneSheet extends ConsumerWidget {
                                   row.kind == ZoneRowKind.toAdd && !state.adding
                                   ? () => map.toggleZoneStreet(row.id!)
                                   : null,
+                              onOpenPart: state.adding
+                                  ? null
+                                  : () => onOpenPart(row.id!),
                             ),
                         ],
                       ),
@@ -759,14 +803,23 @@ final class _ZoneSheet extends ConsumerWidget {
 }
 
 /// A street of the zone: its checkbox, its name over « 19 numéros »;
-/// greyed with « Déjà dans le secteur » or « Aucune adresse connue ».
+/// greyed with « Déjà dans le secteur » or « Aucune adresse connue ». A
+/// street ticked has its part under it (« Toute la rue › »), but one of the
+/// Corbeille, which comes back as it went.
 final class _ZoneRow extends StatelessWidget {
-  const _ZoneRow({required this.row, required this.onToggle});
+  const _ZoneRow({
+    required this.row,
+    required this.onToggle,
+    required this.onOpenPart,
+  });
 
   final ZoneStreetRow row;
 
   /// Null for a greyed row, and while the streets are being added.
   final VoidCallback? onToggle;
+
+  /// Null while the streets are being added.
+  final VoidCallback? onOpenPart;
 
   @override
   Widget build(BuildContext context) {
@@ -774,89 +827,131 @@ final class _ZoneRow extends StatelessWidget {
     final colors = AppColors.of(context);
     final toAdd = row.kind == ZoneRowKind.toAdd;
     final facts = switch (row.kind) {
-      ZoneRowKind.toAdd => l10n.addStreetsNumbers(row.numberCount),
+      ZoneRowKind.toAdd => switch (row.keptCount) {
+        null => l10n.addStreetsNumbers(row.numberCount),
+        final kept => l10n.addStreetsNumbersOf(kept, row.numberCount),
+      },
       ZoneRowKind.inSector => l10n.addStreetsZoneInSector,
       ZoneRowKind.noAddress => l10n.addStreetsZoneNoAddress,
     };
-    // One node for screen readers: « Rue Pierre Morin, 19 numéros »,
-    // a checkbox, ticked or not, greyed rows disabled.
-    return MergeSemantics(
-      child: Semantics(
-        checked: row.ticked,
-        enabled: toAdd,
-        child: InkWell(
-          key: ValueKey('addStreets.zoneRow.${row.id?.value ?? row.name}'),
-          onTap: onToggle,
-          child: Container(
-            constraints: const BoxConstraints(
-              minHeight: AppSizes.pickedRowHeight,
-            ),
-            decoration: BoxDecoration(
-              border: Border(bottom: BorderSide(color: colors.divider)),
-            ),
-            child: Row(
-              spacing: 10,
-              children: [
-                Container(
-                  width: AppSizes.zoneCheckBox,
-                  height: AppSizes.zoneCheckBox,
-                  decoration: BoxDecoration(
-                    color: row.ticked ? colors.ink : null,
-                    border: row.ticked
-                        ? null
-                        : Border.all(color: colors.line, width: 2),
-                    borderRadius: BorderRadius.circular(
-                      AppSizes.zoneCheckRadius,
-                    ),
-                  ),
-                  child: row.ticked
-                      ? Icon(Icons.check, size: 18, color: colors.surface)
-                      : null,
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        border: Border(bottom: BorderSide(color: colors.divider)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // One node for screen readers: « Rue Pierre Morin, 19 numéros »,
+          // a checkbox, ticked or not, greyed rows disabled. The part link
+          // stays out of it: a button of its own.
+          MergeSemantics(
+            child: Semantics(
+              checked: row.ticked,
+              enabled: toAdd,
+              child: InkWell(
+                key: ValueKey(
+                  'addStreets.zoneRow.${row.id?.value ?? row.name}',
                 ),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
+                onTap: onToggle,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(
+                    minHeight: AppSizes.pickedRowHeight,
+                  ),
+                  child: Row(
+                    spacing: 10,
                     children: [
-                      Text(
-                        row.name,
-                        style: AppTextStyles.bodyLarge.copyWith(
-                          color: toAdd ? colors.ink : colors.muted,
-                          fontWeight: FontWeight.w700,
+                      Container(
+                        width: AppSizes.zoneCheckBox,
+                        height: AppSizes.zoneCheckBox,
+                        decoration: BoxDecoration(
+                          color: row.ticked ? colors.ink : null,
+                          border: row.ticked
+                              ? null
+                              : Border.all(color: colors.line, width: 2),
+                          borderRadius: BorderRadius.circular(
+                            AppSizes.zoneCheckRadius,
+                          ),
                         ),
+                        child: row.ticked
+                            ? Icon(Icons.check, size: 18, color: colors.surface)
+                            : null,
                       ),
-                      Text(
-                        facts,
-                        style: AppTextStyles.small.copyWith(
-                          color: colors.muted,
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              row.name,
+                              style: AppTextStyles.bodyLarge.copyWith(
+                                color: toAdd ? colors.ink : colors.muted,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            Text(
+                              facts,
+                              style: AppTextStyles.small.copyWith(
+                                color: colors.muted,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ],
                   ),
                 ),
-              ],
+              ),
             ),
           ),
-        ),
+          if (toAdd && row.ticked && !row.fromCorbeille)
+            Padding(
+              // Under the name, past the checkbox and the room after it.
+              padding: const EdgeInsetsDirectional.only(
+                start: AppSizes.zoneCheckBox + 10,
+              ),
+              child: Align(
+                alignment: AlignmentDirectional.centerStart,
+                child: PartLink(
+                  key: ValueKey('addStreets.zonePart.${row.id!.value}'),
+                  part: row.part,
+                  reading: row.readingPart,
+                  onTap: onOpenPart,
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }
 }
 
 /// A street ticked: « Rue Pierre Morin » over « Villefranche-sur-Saône ·
-/// 19 numéros », and the ✕ that unticks it (« Retirer Rue Pierre Morin »).
+/// 19 numéros » (« 5 numéros sur 8 » with a part), its part (« Toute la
+/// rue › », but for a street of the Corbeille), and the ✕ that unticks it
+/// (« Retirer Rue Pierre Morin »).
 final class _PickedRow extends StatelessWidget {
-  const _PickedRow({required this.street, required this.onUntick});
+  const _PickedRow({
+    required this.street,
+    required this.onUntick,
+    required this.onOpenPart,
+  });
 
   final PickedStreetRow street;
 
   /// Null while the streets are being added.
   final VoidCallback? onUntick;
 
+  /// Null while the streets are being added.
+  final VoidCallback? onOpenPart;
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     final colors = AppColors.of(context);
+    final numbers = switch (street.keptCount) {
+      null => l10n.addStreetsNumbers(street.numberCount),
+      final kept => l10n.addStreetsNumbersOf(kept, street.numberCount),
+    };
     return Container(
       key: ValueKey('addStreets.row.${street.id.value}'),
       constraints: const BoxConstraints(minHeight: AppSizes.pickedRowHeight),
@@ -879,12 +974,17 @@ final class _PickedRow extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  l10n.addStreetsPickedFacts(
-                    street.commune,
-                    l10n.addStreetsNumbers(street.numberCount),
-                  ),
+                  l10n.addStreetsPickedFacts(street.commune, numbers),
+                  key: ValueKey('addStreets.facts.${street.id.value}'),
                   style: AppTextStyles.small.copyWith(color: colors.muted),
                 ),
+                if (!street.fromCorbeille)
+                  PartLink(
+                    key: ValueKey('addStreets.part.${street.id.value}'),
+                    part: street.part,
+                    reading: street.readingPart,
+                    onTap: onOpenPart,
+                  ),
               ],
             ),
           ),
