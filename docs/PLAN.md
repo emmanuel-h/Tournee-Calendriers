@@ -2048,6 +2048,69 @@ belong to no secteur at all (a valid state, not an error). This section override
 
 ---
 
+### 5.16 Audit follow-ups: unsent tournées, names per secteur, unreadable streets (M11, to build)
+
+Agreed 2026-11-11 (ASCII in the terminal, then mockups CashUnsent, TeamRemove, JoinNameTaken,
+SettingsNameTaken, StreetUnreadable, StreetUnreadableSheet). Overrides 5.2, 5.8, 5.9, 5.13 and
+5.14 where they disagree.
+
+```
+  Collecte 2026 (#143)              Retirer Léa ? (#148)             Rejoindre, nom pris (#148)
+┌────────────────────────────┐    ┌────────────────────────────┐   ┌────────────────────────────┐
+│ ← Collecte 2026            │    │ Retirer Léa ?              │   │ ← Rejoindre un secteur     │
+│ TOTAL DES 4 TOURNÉES  …    │    │ Léa n'aura plus accès au   │   │ [49] Secteur 49 · CS Ville…│
+│ Sans les tournées pas      │    │ secteur. Ses marques       │   │ ⚠ « Léa » est déjà pris    │
+│ encore envoyées.           │    │ restent dans les rues.     │   │ dans ce secteur. Choisissez│
+│ PAS ENCORE ENVOYÉES (2)    │    │ ☑ Changer aussi le code    │   │ le nom que l'équipe verra… │
+│ Lun. 26 oct. … 160 € ▸     │    │   Léa connaît le code      │   │ Votre nom dans ce secteur  │
+│ ⏳ En attente d'envoi       │    │   actuel.                  │   │ [ Léa B.               ]   │
+│ Dim. 25 oct. …  70 € ▸     │    │        [Annuler][Retirer]  │   │ Vos autres secteurs gardent│
+│ ⚠ Refusée par le serveur   │    └────────────────────────────┘   │ « Léa ».                   │
+│ [Réessayer]  Effacer       │                                     │ [ Demander à rejoindre ]   │
+│ TOURNÉES …                 │                                     └────────────────────────────┘
+└────────────────────────────┘
+  Paramètres › Prénom (#148)        Accueil, rue illisible (#149)    Its sheet (#149)
+┌────────────────────────────┐    ┌────────────────────────────┐   ┌────────────────────────────┐
+│ VOUS  Prénom       Paul ›  │    │ Rues · 31/50               │   │ Rue Pasteur                │
+│ VOS NOMS PAR SECTEUR       │    │ [ ▶ Commencer une tournée ]│   │ ⚠ Cette rue ne peut pas    │
+│ Secteur 49 · CS V.  Paul D.│    │ Rue des Lilas ▓▓▓░ 31/42 › │   │ être lue : ses données sont│
+│ Secteur 12 · CS G.  Paul   │    │ ⚠ Rue Pasteur              │   │ abîmées. Elle n'apparaît ni│
+│ ┌ Votre prénom ──────────┐ │    │   Illisible              › │   │ sur la carte ni dans les   │
+│ │ [ Paul ]               │ │    │ Allée des Pins ░░░░  0/8 › │   │ totaux.                    │
+│ │ ⚠ « Paul » est déjà pris│ │    └────────────────────────────┘   │ Un administrateur peut la  │
+│ │ dans le secteur 49 : vous│ │                                     │ supprimer, puis l'ajouter… │
+│ │ y gardez « Paul D. ».   │ │                                     │ [ Supprimer la rue ]       │
+│ │ Votre nom dans le s. 49 │ │                                     │   Administrateurs seulement│
+│ │ [ Paul D. ] [Enregistrer]│ │                                     └────────────────────────────┘
+└────────────────────────────┘
+```
+
+- **Unsent tournées, in Collecte only** (#143, #155). « Valider la tournée » keeps the summary on
+  the phone, as a round « validated, not yet sent » (domain state), until the server confirms its
+  create. Collecte lists them under « PAS ENCORE ENVOYÉES (n) », between the totals and
+  « TOURNÉES », with « ⏳ En attente d'envoi » (queued, offline or not yet confirmed) or « ⚠ Refusée
+  par le serveur » with « Réessayer » and « Effacer » (red text; asks first, the figures are lost).
+  The totals leave them out (« Sans les tournées pas encore envoyées. », shown only when some are
+  waiting). Nothing on Accueil. Accepted limit: a member removed from the secteur no longer reaches
+  Collecte. An unreadable `open_round.json` is told rather than dropped silently.
+- **Retirer** (#148): the confirmation gets « Changer aussi le code » (« Léa connaît le code
+  actuel. » under it), ticked by default; « Retirer » then also does « Nouveau code ».
+- **A name per secteur, unique in it** (#148). The phone's prénom (5.1, 5.9) is the default name;
+  each secteur may hold another one for the member. Names are unique within a secteur, case and
+  accents ignored, checked by the server (an index `sectors/{id}/names/{normalized}`, create-only,
+  freed on refuse, leave and remove). At the join, a taken name shows « ⚠ « Léa » est déjà pris
+  dans ce secteur. Choisissez le nom que l'équipe verra ici. », the field « Votre nom dans ce
+  secteur » and « Vos autres secteurs gardent « Léa ». ». Paramètres lists « VOS NOMS PAR
+  SECTEUR » when one differs; a rename in « Votre prénom » applies where the name is free and keeps
+  the old one elsewhere, saying so (« « Paul » est déjà pris dans le secteur 49 : vous y gardez
+  « Paul D. ». Il est enregistré partout ailleurs. »), with a field for that secteur's name.
+- **Unreadable street** (#149): a street whose document cannot be read is a row of Accueil's list,
+  « ⚠ Rue Pasteur » over « Illisible » (red; « Rue illisible » when the name cannot be read either),
+  not on the map nor in the totals. A tap opens a sheet: the name, « Cette rue ne peut pas être
+  lue : ses données sont abîmées. Elle n'apparaît ni sur la carte ni dans les totaux. », « Un
+  administrateur peut la supprimer, puis l'ajouter de nouveau. » and, for admins, « Supprimer la
+  rue » (outlined red).
+
 ## 6. Data model
 
 ### 6.1 Domain model (pure Dart: no Flutter, no Firebase, no MapLibre)

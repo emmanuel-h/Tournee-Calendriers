@@ -294,6 +294,48 @@
       "w": 390,
       "h": 844,
       "title": "5.15 Partie de la rue (#133)"
+    },
+    "CashUnsent.dc.html": {
+      "x": 0,
+      "y": 8848,
+      "w": 390,
+      "h": 844,
+      "title": "5.16 Collecte — tournées pas encore envoyées"
+    },
+    "TeamRemove.dc.html": {
+      "x": 470,
+      "y": 8848,
+      "w": 390,
+      "h": 844,
+      "title": "5.16 Retirer Léa ? et changer le code"
+    },
+    "JoinNameTaken.dc.html": {
+      "x": 940,
+      "y": 8848,
+      "w": 390,
+      "h": 844,
+      "title": "5.16 Rejoindre — nom déjà pris"
+    },
+    "SettingsNameTaken.dc.html": {
+      "x": 1410,
+      "y": 8848,
+      "w": 390,
+      "h": 844,
+      "title": "5.16 Paramètres — prénom pris dans un secteur"
+    },
+    "StreetUnreadable.dc.html": {
+      "x": 1880,
+      "y": 8848,
+      "w": 390,
+      "h": 844,
+      "title": "5.16 Accueil — rue illisible"
+    },
+    "StreetUnreadableSheet.dc.html": {
+      "x": 2350,
+      "y": 8848,
+      "w": 390,
+      "h": 844,
+      "title": "5.16 Accueil — feuille de la rue illisible"
     }
   },
   "createdOnFiles": {
