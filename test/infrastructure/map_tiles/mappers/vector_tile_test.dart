@@ -344,6 +344,64 @@ void main() {
     );
   });
 
+  group('size of a tile', () {
+    final plain = tile([
+      layer(
+        _roads,
+        names: ['Rue Nationale'],
+        features: [
+          TestFeature.road(0, [
+            [(1, 1), (2, 2)],
+          ]),
+        ],
+      ),
+    ]);
+    final gzipped = gzip.encode(plain);
+
+    test('should read a gzipped tile exactly as large as allowed', () {
+      expect(
+        namedLinesOf(gzipped, _roads, maxBytes: plain.length).roads.single.name,
+        'Rue Nationale',
+      );
+    });
+
+    test('should refuse a gzipped tile larger than allowed once '
+        'uncompressed', () {
+      expect(
+        () => namedLinesOf(gzipped, _roads, maxBytes: plain.length - 1),
+        throwsFormatException,
+      );
+    });
+
+    test('should stop uncompressing a tile far larger than allowed', () {
+      // 16 MB of zeros gzip into about 16 kB: a « zip bomb » in small.
+      final bomb = gzip.encode(List.filled(16 << 20, 0));
+
+      expect(
+        () => namedLinesOf(bomb, _roads, maxBytes: 1 << 20),
+        throwsFormatException,
+      );
+    });
+
+    test('should read a plain tile exactly as large as allowed', () {
+      expect(
+        namedLinesOf(plain, _roads, maxBytes: plain.length).roads.single.name,
+        'Rue Nationale',
+      );
+    });
+
+    test('should refuse a plain tile larger than allowed', () {
+      expect(
+        () => namedLinesOf(plain, _roads, maxBytes: plain.length - 1),
+        throwsFormatException,
+      );
+    });
+
+    test('should allow a few megabytes by default', () {
+      expect(maxTileBytes, 4 << 20);
+    });
+  });
+
   group('damaged tiles', () {
     test('should refuse a tile cut short', () {
       final bytes = tile([
@@ -371,6 +429,22 @@ void main() {
           names: ['Rue Nationale'],
           features: [
             TestFeature.road(1, [
+              [(1, 1), (2, 2)],
+            ]),
+          ],
+        ),
+      ]);
+
+      expect(() => namedLinesOf(bytes, _roads), throwsFormatException);
+    });
+
+    test('should refuse a tag pointing before the values', () {
+      final bytes = tile([
+        layer(
+          _roads,
+          names: ['Rue Nationale'],
+          features: [
+            TestFeature.road(-1, [
               [(1, 1), (2, 2)],
             ]),
           ],

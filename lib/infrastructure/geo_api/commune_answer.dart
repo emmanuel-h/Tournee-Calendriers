@@ -6,6 +6,7 @@ import 'package:http/http.dart' as http;
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/infrastructure/http/app_user_agent.dart';
+import 'package:tournee_calendriers/infrastructure/http/capped_get.dart';
 import 'package:tournee_calendriers/infrastructure/http/no_network.dart';
 
 /// GETs [url] with [client] and reads the answer with [read], turning every
@@ -14,21 +15,24 @@ import 'package:tournee_calendriers/infrastructure/http/no_network.dart';
 /// their URL and their JSON.
 ///
 /// [read] throws a [FormatException] when the document is not what it
-/// expects.
+/// expects. An answer longer than [maxBytes] is a service error.
 Future<Result<List<CommuneMatch>, CommuneSearchFailure>> getCommunes(
   http.Client client,
   Uri url, {
   required Duration timeout,
+  required int maxBytes,
   required List<CommuneMatch> Function(Object? json) read,
 }) async {
   final http.Response response;
   try {
-    response = await client
-        .get(
-          url,
-          headers: {'User-Agent': appUserAgent, 'Accept': 'application/json'},
-        )
-        .timeout(timeout);
+    response = await cappedGet(
+      client,
+      url,
+      headers: {'User-Agent': appUserAgent, 'Accept': 'application/json'},
+      maxBytes: maxBytes,
+    ).timeout(timeout);
+  } on ResponseTooLarge {
+    return const Err(CommuneSearchFailure.serviceError);
   } on TimeoutException {
     return const Err(CommuneSearchFailure.noNetwork);
   } on http.ClientException catch (error) {

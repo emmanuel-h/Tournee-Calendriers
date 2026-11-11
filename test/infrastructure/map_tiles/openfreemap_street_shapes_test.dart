@@ -11,6 +11,7 @@ import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/infrastructure/http/app_user_agent.dart';
 import 'package:tournee_calendriers/infrastructure/map_tiles/mappers/tile_grid.dart';
+import 'package:tournee_calendriers/infrastructure/map_tiles/mappers/vector_tile.dart';
 import 'package:tournee_calendriers/infrastructure/map_tiles/openfreemap_street_shapes.dart';
 
 import '../../support/results.dart';
@@ -72,18 +73,21 @@ void main() {
     };
   });
 
-  OpenFreeMapStreetShapes shapes({int tilesKept = 64}) =>
-      OpenFreeMapStreetShapes(
-        MockClient((request) {
-          requests.add(request);
-          final answer = answers[request.url];
-          return answer == null
-              ? Future.value(http.Response.bytes(tile([]), 200))
-              : answer();
-        }),
-        timeout: const Duration(milliseconds: 50),
-        tilesKept: tilesKept,
-      );
+  OpenFreeMapStreetShapes shapes({
+    int tilesKept = 64,
+    int maxAnswerBytes = maxTileBytes,
+  }) => OpenFreeMapStreetShapes(
+    MockClient((request) {
+      requests.add(request);
+      final answer = answers[request.url];
+      return answer == null
+          ? Future.value(http.Response.bytes(tile([]), 200))
+          : answer();
+    }),
+    timeout: const Duration(milliseconds: 50),
+    tilesKept: tilesKept,
+    maxAnswerBytes: maxAnswerBytes,
+  );
 
   List<Uri> asked() => [for (final request in requests) request.url];
 
@@ -313,6 +317,98 @@ void main() {
       ]);
     });
 
+    test('should be a service error when the tiles are on another host, '
+        'asking it nothing', () async {
+      answers[OpenFreeMapStreetShapes.tileJsonUrl] = () async => http.Response(
+        jsonEncode({
+          'tiles': ['https://elsewhere.example/{z}/{x}/{y}.pbf'],
+        }),
+        200,
+      );
+
+      expect(await failureFor(shapes()), StreetShapesFailure.serviceError);
+      expect(asked(), [OpenFreeMapStreetShapes.tileJsonUrl]);
+    });
+
+    test('should be a service error when the tiles are not on https', () async {
+      answers[OpenFreeMapStreetShapes.tileJsonUrl] = () async => http.Response(
+        jsonEncode({
+          'tiles': [_template.replaceFirst('https', 'http')],
+        }),
+        200,
+      );
+
+      expect(await failureFor(shapes()), StreetShapesFailure.serviceError);
+      expect(asked(), [OpenFreeMapStreetShapes.tileJsonUrl]);
+    });
+
+    test('should be a service error when the TileJSON is longer than '
+        'allowed', () async {
+      final tileJson = utf8.encode(
+        jsonEncode({
+          'tiles': [_template],
+        }),
+      );
+      answers[OpenFreeMapStreetShapes.tileJsonUrl] = () async =>
+          http.Response.bytes(tileJson, 200);
+
+      expect(
+        await failureFor(shapes(maxAnswerBytes: tileJson.length - 1)),
+        StreetShapesFailure.serviceError,
+      );
+    });
+
+    test('should read a tile exactly as long as allowed', () async {
+      final tileJson = utf8.encode(
+        jsonEncode({
+          'tiles': [_template],
+        }),
+      );
+      final roads = gzip.encode(_nationaleTile());
+      answers[_urlOf(_west)] = () async => http.Response.bytes(roads, 200);
+      // The longest of the three: the TileJSON, the tile, the tile
+      // uncompressed.
+      final longest = [
+        tileJson.length,
+        roads.length,
+        _nationaleTile().length,
+      ].reduce((a, b) => a > b ? a : b);
+
+      final shape = await shapes(maxAnswerBytes: longest)
+          .shapeOf(name: streetName('Rue Nationale'), area: _inside(_west));
+
+      expect(valueOf(shape), _nationaleInWest);
+    });
+
+    test('should be a service error when a tile is longer than '
+        'allowed', () async {
+      final tileJson = utf8.encode(
+        jsonEncode({
+          'tiles': [_template],
+        }),
+      );
+      answers[_urlOf(_west)] = () async =>
+          http.Response.bytes(List.filled(tileJson.length + 1, 0), 200);
+
+      expect(
+        await failureFor(shapes(maxAnswerBytes: tileJson.length)),
+        StreetShapesFailure.serviceError,
+      );
+    });
+
+    test('should be a service error when a gzipped tile is longer than '
+        'allowed once uncompressed', () async {
+      // Zeros gzip into a few bytes: the answer fits, the tile does not.
+      const allowed = 4096;
+      answers[_urlOf(_west)] = () async =>
+          http.Response.bytes(gzip.encode(List.filled(allowed + 1, 0)), 200);
+
+      expect(
+        await failureFor(shapes(maxAnswerBytes: allowed)),
+        StreetShapesFailure.serviceError,
+      );
+    });
+
     test('should be a service error when a tile is unreadable', () async {
       answers[_urlOf(_west)] = () async => http.Response.bytes([0xff], 200);
 
@@ -359,5 +455,10 @@ void main() {
     expect(OpenFreeMapStreetShapes.roadsLayer, 'transportation_name');
     expect(OpenFreeMapStreetShapes.defaultTimeout, const Duration(seconds: 10));
     expect(OpenFreeMapStreetShapes.defaultTilesKept, 64);
+    expect(
+      OpenFreeMapStreetShapes(MockClient((_) async => http.Response('', 200)))
+          .maxAnswerBytes,
+      maxTileBytes,
+    );
   });
 }

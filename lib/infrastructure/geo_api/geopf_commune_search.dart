@@ -15,16 +15,26 @@ import 'package:tournee_calendriers/infrastructure/geo_api/mappers/commune_searc
 final class GeopfCommuneSearch implements CommuneSearch {
   /// [client] is given so tests can pass a `MockClient` and the composition
   /// root shares one client across services.
-  GeopfCommuneSearch(http.Client client, {this.timeout = defaultTimeout})
-    : _client = client;
+  GeopfCommuneSearch(
+    http.Client client, {
+    this.timeout = defaultTimeout,
+    this.maxAnswerBytes = defaultMaxAnswerBytes,
+  }) : _client = client;
 
   /// As long as `GeoCommuneSearch`: the answer is a few kilobytes.
   static const defaultTimeout = Duration(seconds: 10);
+
+  /// The longest answer read: as for `GeoCommuneSearch`, so far
+  /// beyond is not a list of communes.
+  static const defaultMaxAnswerBytes = 1 << 20;
 
   final http.Client _client;
 
   /// How long a search waits for its answer before giving up.
   final Duration timeout;
+
+  /// How many bytes of an answer a search reads at most.
+  final int maxAnswerBytes;
 
   @override
   Future<Result<List<CommuneMatch>, CommuneSearchFailure>> search(
@@ -37,6 +47,7 @@ final class GeopfCommuneSearch implements CommuneSearch {
       'limit': '5',
     }),
     timeout: timeout,
+    maxBytes: maxAnswerBytes,
     read: communeMatchesFromGeocoderJson,
   );
 }

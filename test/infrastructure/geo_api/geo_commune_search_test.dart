@@ -26,12 +26,14 @@ void main() {
     Future<http.Response> Function() answer, {
     List<http.Request>? requests,
     Duration timeout = const Duration(seconds: 10),
+    int maxAnswerBytes = GeoCommuneSearch.defaultMaxAnswerBytes,
   }) => GeoCommuneSearch(
     MockClient((request) {
       requests?.add(request);
       return answer();
     }),
     timeout: timeout,
+    maxAnswerBytes: maxAnswerBytes,
   );
 
   test('should ask geo.api.gouv.fr for five communes by name', () async {
@@ -158,6 +160,36 @@ void main() {
     expect(
       GeoCommuneSearch(MockClient((_) async => bytes('[]', 200))).timeout,
       const Duration(seconds: 10),
+    );
+  });
+
+  test('should read an answer exactly as long as allowed', () async {
+    final search = searchAnswering(
+      () async => bytes('[]', 200),
+      maxAnswerBytes: 2,
+    );
+
+    expect(valueOf(await search.search('Villefranche')), isEmpty);
+  });
+
+  test('should fail with a service error when the answer is longer than '
+      'allowed', () async {
+    final search = searchAnswering(
+      () async => bytes('[] ', 200),
+      maxAnswerBytes: 2,
+    );
+
+    expect(
+      failureOf(await search.search('Villefranche')),
+      CommuneSearchFailure.serviceError,
+    );
+  });
+
+  test('should read answers of up to 1 MB by default', () {
+    expect(
+      GeoCommuneSearch(MockClient((_) async => bytes('[]', 200)))
+          .maxAnswerBytes,
+      1 << 20,
     );
   });
 }

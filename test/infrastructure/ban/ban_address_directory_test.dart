@@ -37,12 +37,14 @@ void main() {
     Future<http.Response> Function() answer, {
     List<http.Request>? requests,
     Duration timeout = const Duration(seconds: 10),
+    int maxAnswerBytes = BanAddressDirectory.defaultMaxAnswerBytes,
   }) => BanAddressDirectory(
     MockClient((request) {
       requests?.add(request);
       return answer();
     }),
     timeout: timeout,
+    maxAnswerBytes: maxAnswerBytes,
   );
 
   group('streetsOf', () {
@@ -94,6 +96,18 @@ void main() {
         ),
       );
       expect(streets.skippedStreets, 0);
+    });
+
+    test('should read an answer exactly as long as allowed', () async {
+      final answer = fixtureResponse('lookup_69264.json', 200);
+      final directory = directoryAnswering(
+        () async => answer,
+        maxAnswerBytes: answer.bodyBytes.length,
+      );
+
+      final streets = valueOf(await directory.streetsOf(insee('69264')));
+
+      expect(streets.streets, hasLength(6));
     });
 
     test(
@@ -517,6 +531,19 @@ void main() {
         },
       );
 
+      test('should fail with a service error when the answer is longer than '
+          'allowed', () async {
+        final directory = directoryAnswering(
+          () async => http.Response('[]  ', 200),
+          maxAnswerBytes: 3,
+        );
+
+        expect(
+          await failureFrom(directory),
+          AddressDirectoryFailure.serviceError,
+        );
+      });
+
       test(
         'should fail with a service error when the body is not UTF-8',
         () async {
@@ -627,5 +654,13 @@ void main() {
     );
 
     expect(directory.timeout, const Duration(seconds: 15));
+  });
+
+  test('should read answers of up to 8 MB when not told otherwise', () {
+    final directory = BanAddressDirectory(
+      MockClient((request) async => http.Response('{}', 200)),
+    );
+
+    expect(directory.maxAnswerBytes, 8 << 20);
   });
 }

@@ -18,6 +18,7 @@
 // the tile, x to the east, y to the south; a road may reach a little beyond
 // (the tile's buffer, which its neighbour shows too).
 import 'dart:io' show gzip;
+import 'dart:typed_data';
 
 import 'package:tournee_calendriers/infrastructure/map_tiles/mappers/protobuf_reader.dart';
 
@@ -71,14 +72,24 @@ const _moveTo = 1;
 const _lineTo = 2;
 const _closePath = 7;
 
+/// The largest tile read, uncompressed. A zoom-14 tile of a dense town
+/// is a few hundred kB; beyond a few MB the bytes are not a tile, or are a
+/// small gzip that would fill the phone's memory once uncompressed.
+const maxTileBytes = 4 << 20;
+
 /// The named lines of the layer [layerName] of the tile [bytes] (gzipped
 /// or not: a server may send them as stored). [TileLayer.empty] when the
 /// tile has no such layer.
 ///
 /// Features that are not lines, or have no text `name`, are left out.
-/// Throws a [FormatException] when the bytes are not a vector tile.
-TileLayer namedLinesOf(List<int> bytes, String layerName) {
-  final tile = ProtobufReader(_gunzipped(bytes));
+/// Throws a [FormatException] when the bytes are not a vector tile, or are
+/// more than [maxBytes] once uncompressed.
+TileLayer namedLinesOf(
+  List<int> bytes,
+  String layerName, {
+  int maxBytes = maxTileBytes,
+}) {
+  final tile = ProtobufReader(_gunzipped(bytes, maxBytes));
   while (!tile.isAtEnd) {
     final key = tile.readKey();
     if (key.field == _tileLayersField &&
@@ -95,10 +106,45 @@ TileLayer namedLinesOf(List<int> bytes, String layerName) {
 /// [bytes] uncompressed when they are gzipped: they start with the two
 /// bytes 1f 8b. The `http` client uncompresses what the server says is
 /// gzipped; this covers a tile stored gzipped and sent as it is.
-List<int> _gunzipped(List<int> bytes) =>
-    bytes.length >= 2 && bytes[0] == 0x1f && bytes[1] == 0x8b
-    ? gzip.decode(bytes)
-    : bytes;
+///
+/// Throws a [FormatException] past [maxBytes], without uncompressing the
+/// rest.
+List<int> _gunzipped(List<int> bytes, int maxBytes) {
+  final isGzipped = bytes.length >= 2 && bytes[0] == 0x1f && bytes[1] == 0x8b;
+  if (!isGzipped) {
+    if (bytes.length > maxBytes) throw _tooLarge;
+    return bytes;
+  }
+  // `gzip.decode` would build the whole result before its size is known.
+  // A « chunked conversion » hands the uncompressed bytes to a sink piece
+  // by piece instead, so the sink can stop at the limit.
+  final sink = _CappedBytes(maxBytes);
+  gzip.decoder.startChunkedConversion(sink)
+    ..add(bytes)
+    ..close();
+  return sink.bytes;
+}
+
+const _tooLarge = FormatException('Tile too large');
+
+/// Collects bytes, and throws a [FormatException] past [maxBytes].
+final class _CappedBytes implements Sink<List<int>> {
+  _CappedBytes(this.maxBytes);
+
+  final int maxBytes;
+  final _builder = BytesBuilder(copy: false);
+
+  Uint8List get bytes => _builder.toBytes();
+
+  @override
+  void add(List<int> chunk) {
+    if (_builder.length + chunk.length > maxBytes) throw _tooLarge;
+    _builder.add(chunk);
+  }
+
+  @override
+  void close() {}
+}
 
 /// The layer [layer] when it is named [wanted], null otherwise. Its
 /// features are read only once the whole layer is: the keys and values
@@ -175,8 +221,10 @@ TileRoad? _readRoad(ProtobufReader feature, int nameKey, List<String?> values) {
   for (var i = 0; i + 1 < tags.length; i += 2) {
     if (tags[i] != nameKey) continue;
     final value = tags[i + 1];
-    if (value >= values.length) {
-      throw const FormatException('Tag pointing past the values');
+    // A varint of 64 bits reads as a negative int: refused like an index
+    // past the end, rather than a RangeError the callers do not expect.
+    if (value < 0 || value >= values.length) {
+      throw const FormatException('Tag pointing outside the values');
     }
     name = values[value];
   }

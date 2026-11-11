@@ -9,6 +9,7 @@ import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/infrastructure/http/app_user_agent.dart';
+import 'package:tournee_calendriers/infrastructure/http/capped_get.dart';
 import 'package:tournee_calendriers/infrastructure/http/no_network.dart';
 import 'package:tournee_calendriers/infrastructure/map_tiles/mappers/street_lines.dart';
 import 'package:tournee_calendriers/infrastructure/map_tiles/mappers/tile_grid.dart';
@@ -36,6 +37,7 @@ final class OpenFreeMapStreetShapes implements StreetShapes {
     http.Client client, {
     this.timeout = defaultTimeout,
     this.tilesKept = defaultTilesKept,
+    this.maxAnswerBytes = maxTileBytes,
   }) : _client = client;
 
   /// A tile or the TileJSON is small: beyond this, the signal is too weak.
@@ -72,6 +74,11 @@ final class OpenFreeMapStreetShapes implements StreetShapes {
 
   /// How many tiles' roads are kept in memory.
   final int tilesKept;
+
+  /// How many bytes of an answer are read at most, and of a tile once
+  /// uncompressed: a few MB by default ([maxTileBytes]), so a damaged or
+  /// hostile server cannot fill the phone's memory.
+  final int maxAnswerBytes;
 
   String? _template;
 
@@ -148,7 +155,11 @@ final class OpenFreeMapStreetShapes implements StreetShapes {
       return const Err(StreetShapesFailure.serviceError);
     } else {
       try {
-        roads = namedLinesOf(response.bodyBytes, roadsLayer);
+        roads = namedLinesOf(
+          response.bodyBytes,
+          roadsLayer,
+          maxBytes: maxAnswerBytes,
+        );
       } on FormatException {
         return const Err(StreetShapesFailure.serviceError);
       }
@@ -159,6 +170,8 @@ final class OpenFreeMapStreetShapes implements StreetShapes {
   }
 
   /// The address template of the tiles, from memory or from the TileJSON.
+  /// The template is checked when read (an `https` address on the
+  /// TileJSON's own host), so a tile's address made from it cannot fail.
   Future<Result<String, StreetShapesFailure>> _tileTemplate() async {
     if (_template case final template?) return Ok(template);
     switch (await _get(tileJsonUrl)) {
@@ -171,6 +184,7 @@ final class OpenFreeMapStreetShapes implements StreetShapes {
         try {
           final template = tileTemplateFromJson(
             jsonDecode(utf8.decode(response.bodyBytes)),
+            host: tileJsonUrl.host,
           );
           _template = template;
           return Ok(template);
@@ -183,14 +197,19 @@ final class OpenFreeMapStreetShapes implements StreetShapes {
   /// The answer to a GET of [url], or [StreetShapesFailure.noNetwork] when
   /// none came in time or the phone found no way out
   /// ([StreetShapesFailure.serviceError] when the connection was refused or
-  /// cut, #137).
+  /// cut, #137, or the answer was longer than [maxAnswerBytes]).
   Future<Result<http.Response, StreetShapesFailure>> _get(Uri url) async {
     try {
       return Ok(
-        await _client
-            .get(url, headers: {'User-Agent': appUserAgent})
-            .timeout(timeout),
+        await cappedGet(
+          _client,
+          url,
+          headers: {'User-Agent': appUserAgent},
+          maxBytes: maxAnswerBytes,
+        ).timeout(timeout),
       );
+    } on ResponseTooLarge {
+      return const Err(StreetShapesFailure.serviceError);
     } on TimeoutException {
       return const Err(StreetShapesFailure.noNetwork);
     } on http.ClientException catch (error) {

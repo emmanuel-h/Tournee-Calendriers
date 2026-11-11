@@ -8,12 +8,15 @@ import 'dart:convert';
 final class ProtobufWriter {
   final bytes = <int>[];
 
-  /// A varint of a number ≥ 0.
+  /// A varint of [value]; a negative one is written as its 64 bits, in ten
+  /// bytes, as protobuf does.
   void varint(int value) {
     var rest = value;
-    while (rest >= 0x80) {
+    // `>>>` shifts in zeros from the left, so a negative number becomes
+    // positive after one step instead of staying negative forever.
+    while (rest < 0 || rest >= 0x80) {
       bytes.add((rest & 0x7f) | 0x80);
-      rest >>= 7;
+      rest >>>= 7;
     }
     bytes.add(rest);
   }

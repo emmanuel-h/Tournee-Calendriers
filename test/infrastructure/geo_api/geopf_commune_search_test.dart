@@ -14,6 +14,9 @@ import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 import '../ban/ban_fixtures.dart';
 
+/// An answer finding no commune, in ASCII: as many bytes as characters.
+const _noFeature = '{"features":[]}';
+
 void main() {
   // A response carrying [text] as UTF-8 bytes, like the real service.
   http.Response bytes(String text, int status) => http.Response.bytes(
@@ -26,12 +29,14 @@ void main() {
     Future<http.Response> Function() answer, {
     List<http.Request>? requests,
     Duration timeout = const Duration(seconds: 10),
+    int maxAnswerBytes = GeopfCommuneSearch.defaultMaxAnswerBytes,
   }) => GeopfCommuneSearch(
     MockClient((request) {
       requests?.add(request);
       return answer();
     }),
     timeout: timeout,
+    maxAnswerBytes: maxAnswerBytes,
   );
 
   test('should ask the Géoplateforme geocoder for five communes', () async {
@@ -134,6 +139,36 @@ void main() {
     expect(
       GeopfCommuneSearch(MockClient((_) async => bytes('{}', 200))).timeout,
       const Duration(seconds: 10),
+    );
+  });
+
+  test('should read an answer exactly as long as allowed', () async {
+    final search = searchAnswering(
+      () async => bytes(_noFeature, 200),
+      maxAnswerBytes: _noFeature.length,
+    );
+
+    expect(valueOf(await search.search('Villefranche')), isEmpty);
+  });
+
+  test('should fail with a service error when the answer is longer than '
+      'allowed', () async {
+    final search = searchAnswering(
+      () async => bytes('$_noFeature ', 200),
+      maxAnswerBytes: _noFeature.length,
+    );
+
+    expect(
+      failureOf(await search.search('Villefranche')),
+      CommuneSearchFailure.serviceError,
+    );
+  });
+
+  test('should read answers of up to 1 MB by default', () {
+    expect(
+      GeopfCommuneSearch(MockClient((_) async => bytes('{}', 200)))
+          .maxAnswerBytes,
+      1 << 20,
     );
   });
 }

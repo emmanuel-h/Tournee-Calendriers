@@ -11,6 +11,7 @@ import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/infrastructure/ban/mappers/ban_lookup_mapper.dart';
 import 'package:tournee_calendriers/infrastructure/ban/mappers/geopf_geocoding_mapper.dart';
 import 'package:tournee_calendriers/infrastructure/http/app_user_agent.dart';
+import 'package:tournee_calendriers/infrastructure/http/capped_get.dart';
 import 'package:tournee_calendriers/infrastructure/http/no_network.dart';
 
 /// The [AddressDirectory] backed by the BAN (PLAN §9): its `lookup` API on
@@ -24,13 +25,21 @@ import 'package:tournee_calendriers/infrastructure/http/no_network.dart';
 final class BanAddressDirectory implements AddressDirectory {
   /// [client] is given rather than created here so tests can pass a
   /// `MockClient`, and so the composition root decides when it is closed.
-  BanAddressDirectory(http.Client client, {this.timeout = defaultTimeout})
-    : _client = client;
+  BanAddressDirectory(
+    http.Client client, {
+    this.timeout = defaultTimeout,
+    this.maxAnswerBytes = defaultMaxAnswerBytes,
+  }) : _client = client;
 
   /// How long to wait for a whole answer. A large commune's list is about
   /// 70 kB, a long street's numbers 200 kB: a few seconds on a weak mobile
   /// signal. Beyond this, the user is better told there is no network.
   static const defaultTimeout = Duration(seconds: 15);
+
+  /// The longest answer read. The streets of the largest communes are
+  /// about a megabyte; far beyond, the service is not sending a list of
+  /// streets, and reading it could fill the phone's memory.
+  static const defaultMaxAnswerBytes = 8 << 20;
 
   /// Sent with every request (see [appUserAgent]).
   static const userAgent = appUserAgent;
@@ -55,6 +64,9 @@ final class BanAddressDirectory implements AddressDirectory {
 
   /// How long this directory waits for an answer before giving up.
   final Duration timeout;
+
+  /// How many bytes of an answer this directory reads at most.
+  final int maxAnswerBytes;
 
   @override
   Future<Result<CommuneStreets, AddressDirectoryFailure>> streetsOf(
@@ -127,12 +139,14 @@ final class BanAddressDirectory implements AddressDirectory {
   ) async {
     final http.Response response;
     try {
-      response = await _client
-          .get(
-            url,
-            headers: {'User-Agent': userAgent, 'Accept': 'application/json'},
-          )
-          .timeout(timeout);
+      response = await cappedGet(
+        _client,
+        url,
+        headers: {'User-Agent': userAgent, 'Accept': 'application/json'},
+        maxBytes: maxAnswerBytes,
+      ).timeout(timeout);
+    } on ResponseTooLarge {
+      return const Err(AddressDirectoryFailure.serviceError);
     } on TimeoutException {
       return const Err(AddressDirectoryFailure.noNetwork);
     } on http.ClientException catch (error) {
