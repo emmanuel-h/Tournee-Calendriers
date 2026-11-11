@@ -97,6 +97,10 @@ M11 planned (2026-11-11, #143–#159): follow-ups of the security, reliability a
 `severity: medium | low | info` label. Medium: a validated tournée kept on the phone until the server has it (#143);
 the privacy text against what the app does (campaign erasure, Android backup, #144); unattributed tournée summaries
 (#145). #143 needs a screen decision and #145 a risk decision before any code.
+M11 delivered (2026-11-11, PLAN §5.16), waiting for the user's phone test: all of #143–#159 except #146 (App Check and
+quota, checked by the user in the console). Rules changed (#145, #147 `openSectors/{uid}`, #148 `names/{key}`) and
+**not yet deployed**: deploy before installing a build from this point. Test secteurs must be created again (#148).
+#160: the user reviews every string in `lib/ui/l10n/app_fr.arb`.
 
 ## Commands
 
