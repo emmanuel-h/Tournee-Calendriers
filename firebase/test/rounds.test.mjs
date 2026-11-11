@@ -15,6 +15,7 @@ import {
 } from 'firebase/firestore';
 import {
   at,
+  campaignDoc,
   lea,
   manu,
   memberPath,
@@ -23,8 +24,10 @@ import {
   roundDoc,
   roundsPath,
   rulesEnvironment,
+  sectorDoc,
   sam,
   sectorPath,
+  seed,
   seedTeam,
   zoe,
 } from './support.mjs';
@@ -92,6 +95,25 @@ describe('recording a validated tournée', () => {
     await assertFails(
       setDoc(doc(phoneOf(env, lea), `${sectorPath}/campaigns/2027/rounds/Ab12`), roundDoc()),
     );
+  });
+
+  it('should refuse a campaign that exists but is not the secteur\'s current one (#145)', async () => {
+    // A past campaign, still stored: its tournées are over.
+    await seed(env, `${sectorPath}/campaigns/2025`, campaignDoc());
+
+    await assertFails(
+      setDoc(doc(phoneOf(env, lea), `${sectorPath}/campaigns/2025/rounds/Ab12`), roundDoc()),
+    );
+  });
+
+  it('should accept the current campaign once the secteur moved on to it (#145)', async () => {
+    await seed(env, `${sectorPath}/campaigns/2027`, campaignDoc());
+    await seed(env, sectorPath, sectorDoc({ currentCampaign: 2027 }));
+
+    await assertSucceeds(
+      setDoc(doc(phoneOf(env, lea), `${sectorPath}/campaigns/2027/rounds/Ab12`), roundDoc()),
+    );
+    await assertFails(record(lea));
   });
 
   it('should refuse an id the app does not make', async () => {

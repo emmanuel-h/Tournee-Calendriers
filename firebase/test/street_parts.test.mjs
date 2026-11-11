@@ -1,8 +1,8 @@
 // The shared index of the secteurs' parts (#133, PLAN §5.15, §6.2
 // `streetParts/{banId}`, §8.2): FirestoreStreetPartIndex merges the open
 // secteur's entry into the street's document (a `set` with `merge`),
-// naming the secteur in `sector`; any signed-in phone reads one street by
-// its BAN id.
+// naming the secteur in `sector`; an active member of some secteur (named
+// in `openSectors/{uid}`, #147) or an admin reads one street by its BAN id.
 import { after, before, beforeEach, describe, it } from 'node:test';
 import { assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
 import {
@@ -16,6 +16,7 @@ import {
   updateDoc,
 } from 'firebase/firestore';
 import {
+  activeMemberDoc,
   lea,
   manu,
   paul,
@@ -87,17 +88,98 @@ const release = (uid, sector = sectorId, path = partsPath) =>
     { merge: true },
   );
 
-describe('reading the index', () => {
-  it('should let any signed-in phone read a street by its id', async () => {
-    await assertSucceeds(getDoc(parts(zoe)));
-    await assertSucceeds(getDoc(parts(paul)));
+/** `openSectors/{uid}` of [uid], naming [sector] (openSectorDocument). */
+const openSector = (uid, sector = sectorId) =>
+  setDoc(doc(phoneOf(env, uid), `openSectors/${uid}`), { sectorId: sector });
+
+describe('reading the index (#147)', () => {
+  it('should let an active member read a street once their open secteur is told', async () => {
+    await seed(env, `openSectors/${lea}`, { sectorId });
+
+    await assertSucceeds(getDoc(parts(lea)));
     await assertSucceeds(getDoc(parts(lea, 'streetParts/69264_9999')));
   });
 
+  it('should let an admin read a street, in no secteur and with none told', async () => {
+    await assertSucceeds(getDoc(parts(sam)));
+  });
+
+  it('should refuse a member who told no open secteur', async () => {
+    await assertFails(getDoc(parts(lea)));
+  });
+
+  it('should refuse an open secteur the caller is not active in', async () => {
+    await seed(env, `openSectors/${lea}`, { sectorId: 't12' });
+    await seed(env, `openSectors/${paul}`, { sectorId });
+    await seed(env, `openSectors/${zoe}`, { sectorId });
+
+    await assertFails(getDoc(parts(lea)));
+    await assertFails(getDoc(parts(paul)));
+    await assertFails(getDoc(parts(zoe)));
+  });
+
+  it('should refuse a member removed since they told it', async () => {
+    await seed(env, `openSectors/${lea}`, { sectorId });
+    await env.withSecurityRulesDisabled((context) =>
+      deleteDoc(doc(context.firestore(), `${sectorPath}/members/${lea}`)),
+    );
+
+    await assertFails(getDoc(parts(lea)));
+  });
+
   it('should refuse no sign-in, and listing to anyone', async () => {
+    await seed(env, `openSectors/${lea}`, { sectorId });
     await assertFails(getDoc(parts(null)));
     await assertFails(getDocs(collection(phoneOf(env, lea), 'streetParts')));
-    await assertFails(getDocs(collection(phoneOf(env, manu), 'streetParts')));
+    await assertFails(getDocs(collection(phoneOf(env, sam), 'streetParts')));
+  });
+});
+
+describe('telling the open secteur (#147)', () => {
+  it('should let an active member name a secteur they are active in', async () => {
+    await assertSucceeds(openSector(lea));
+    await assertSucceeds(openSector(manu));
+  });
+
+  it('should let them name it again, and another one they are active in', async () => {
+    await seed(env, `sectors/t12/members/${lea}`, activeMemberDoc('Léa', manu));
+    await assertSucceeds(openSector(lea));
+    await assertSucceeds(openSector(lea));
+    await assertSucceeds(openSector(lea, 't12'));
+  });
+
+  it('should refuse a secteur the caller is pending in, or not in', async () => {
+    await assertFails(openSector(paul));
+    await assertFails(openSector(zoe));
+    await assertFails(openSector(lea, 't12'));
+    await assertFails(openSector(sam));
+  });
+
+  it('should refuse naming it for someone else, and no sign-in', async () => {
+    await assertFails(
+      setDoc(doc(phoneOf(env, lea), `openSectors/${manu}`), { sectorId }),
+    );
+    await assertFails(
+      setDoc(doc(phoneOf(env, null), `openSectors/${lea}`), { sectorId }),
+    );
+  });
+
+  it('should refuse another field, or a secteur id the app does not make', async () => {
+    await assertFails(
+      setDoc(doc(phoneOf(env, lea), `openSectors/${lea}`), { sectorId, at: 1 }),
+    );
+    await assertFails(setDoc(doc(phoneOf(env, lea), `openSectors/${lea}`), {}));
+    await assertFails(openSector(lea, 't-49'));
+  });
+
+  it('should let nobody read it, and only its account delete it', async () => {
+    await seed(env, `openSectors/${lea}`, { sectorId });
+
+    await assertFails(getDoc(doc(phoneOf(env, lea), `openSectors/${lea}`)));
+    await assertFails(getDoc(doc(phoneOf(env, sam), `openSectors/${lea}`)));
+    await assertFails(getDocs(collection(phoneOf(env, sam), 'openSectors')));
+    await assertFails(deleteDoc(doc(phoneOf(env, sam), `openSectors/${lea}`)));
+    await assertSucceeds(deleteDoc(doc(phoneOf(env, lea), `openSectors/${lea}`)));
   });
 });
 

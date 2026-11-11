@@ -269,19 +269,14 @@ bool isGoneOnServer({
   required bool hasPendingWrites,
 }) => !exists && !fromCache && !hasPendingWrites;
 
-/// How the member lost [sector] once their member document is gone, from
-/// the reservation of its number (`sectorKeys/{key}` read from the
-/// server, null when there is none): it still names the tournée while the
-/// tournée exists, so the member was removed; it goes with the tournée
-/// (in the same batch, PLAN §8.2), so without it the tournée was deleted.
-SectorLoss lossFromReservation(
-  SectorId sector,
-  Map<String, Object?>? reservation,
-) => switch (reservation) {
-  final data? when sectorIdFromKeyDocument(data) == sector =>
-    SectorLoss.removed,
-  _ => SectorLoss.deleted,
-};
+/// How the member lost a tournée once their member document is gone, from
+/// a read of the tournée itself from the server (#147). The rules refuse
+/// it to someone outside while it exists ([refused]), and let anyone
+/// signed in learn it is not there: refused, or still there (an admin may
+/// read any), the member was removed; not there, it was deleted (its
+/// member documents go in the same batch, PLAN §8.2).
+SectorLoss lossFromSectorRead({required bool refused, required bool exists}) =>
+    refused || exists ? SectorLoss.removed : SectorLoss.deleted;
 
 /// What « Tous les secteurs » shows of [sector] to the admin [caller]
 /// (PLAN §5.12): its members and requests counted, and whether [caller] is
@@ -334,14 +329,6 @@ String sectorKeyId(RescueCentre centre, SectorNumber number) =>
 Map<String, Object?> sectorKeyDocument(Sector sector) => {
   'sectorId': sector.id.value,
 };
-
-/// The tournée holding the reservation stored as [data].
-SectorId sectorIdFromKeyDocument(Map<String, Object?> data) {
-  if (data case {'sectorId': final String id}) {
-    return identifier(id, SectorId.new);
-  }
-  throw const FormatException('Not a tournée key document');
-}
 
 /// The document `campaigns/{year}` of the campaign [sector] starts with.
 Map<String, Object?> firstCampaignDocument(Sector sector) => {

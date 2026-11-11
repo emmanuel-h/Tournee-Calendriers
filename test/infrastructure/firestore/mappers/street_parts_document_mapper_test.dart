@@ -22,6 +22,12 @@ Map<String, Object?> _entry(
 }) => {'number': number, 'centreName': centre, 'odd': odd, 'even': even};
 
 void main() {
+  group('openSectorDocument', () {
+    test('should name the secteur the phone has open, and nothing else', () {
+      expect(openSectorDocument(_t49), {'sectorId': 't49'});
+    });
+  });
+
   group('heldPartWrite', () {
     test(
       'should write the secteur\'s entry, both sides, naming the secteur',

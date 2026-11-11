@@ -8,7 +8,6 @@ import 'package:tournee_calendriers/domain/sector/member.dart';
 import 'package:tournee_calendriers/domain/sector/rescue_centre.dart';
 import 'package:tournee_calendriers/domain/sector/sector.dart';
 import 'package:tournee_calendriers/domain/sector/sector_commune.dart';
-import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/sector/sector_loss.dart';
 import 'package:tournee_calendriers/domain/sector/sector_number.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
@@ -532,22 +531,25 @@ void main() {
       );
     });
 
-    test('should say removed while the reservation still names the '
-        'tournée', () {
+    test('should say removed when the server refuses the secteur: it is '
+        'there and the member is not in it', () {
       expect(
-        lossFromReservation(sectorId, {'sectorId': 't49'}),
+        lossFromSectorRead(refused: true, exists: false),
         SectorLoss.removed,
       );
     });
 
-    test('should say deleted once the reservation is gone', () {
-      expect(lossFromReservation(sectorId, null), SectorLoss.deleted);
+    test('should say removed when the secteur is still there (an admin, '
+        'who may read any)', () {
+      expect(
+        lossFromSectorRead(refused: false, exists: true),
+        SectorLoss.removed,
+      );
     });
 
-    test('should say deleted when the number now belongs to another '
-        'tournée', () {
+    test('should say deleted once the server has the secteur no more', () {
       expect(
-        lossFromReservation(sectorId, {'sectorId': 't50'}),
+        lossFromSectorRead(refused: false, exists: false),
         SectorLoss.deleted,
       );
     });
@@ -601,17 +603,6 @@ void main() {
 
     test('should write which tournée holds the reservation', () {
       expect(sectorKeyDocument(team()), {'sectorId': 't49'});
-    });
-
-    test('should read the tournée of a reservation', () {
-      expect(sectorIdFromKeyDocument({'sectorId': 't49'}), SectorId('t49'));
-    });
-
-    test('should refuse a reservation without its tournée', () {
-      expect(
-        () => sectorIdFromKeyDocument({'sectorId': null}),
-        throwsFormatException,
-      );
     });
 
     test('should start the first campaign when the tournée is created', () {

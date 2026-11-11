@@ -14,6 +14,7 @@ import 'package:tournee_calendriers/application/ports/server_connection.dart';
 import 'package:tournee_calendriers/application/ports/street_part_index.dart';
 import 'package:tournee_calendriers/application/ports/street_shapes.dart';
 import 'package:tournee_calendriers/application/services/indexed_street_repository.dart';
+import 'package:tournee_calendriers/domain/sector/member.dart';
 import 'package:tournee_calendriers/domain/street/sector_part.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
@@ -178,18 +179,28 @@ Future<List<Override>> bindAdapters({
   final sectorPartIndex = Provider<FirestoreStreetPartIndex?>((ref) {
     final open = ref.watch(
       currentSectorProvider.select(
-        (sector) =>
-            sector == null ? null : (sector.id, sector.number, sector.centre),
+        (sector) => sector == null
+            ? null
+            : (sector.id, sector.number, sector.centre, sector.status),
       ),
     );
     if (open == null) return null;
-    final (sector, number, centre) = open;
-    return FirestoreStreetPartIndex(
+    final (sector, number, centre, status) = open;
+    final index = FirestoreStreetPartIndex(
       db,
       sector: sector,
       number: number,
       centre: centre,
     );
+    // The rules let a member read the index only once their phone named
+    // the secteur it has open (#147). An admin who visits needs no name,
+    // and a phone without an account yet has no uid to name it for.
+    if (status == MemberStatus.active) {
+      if (identity.signedInMember case final member?) {
+        index.declareReader(member);
+      }
+    }
+    return index;
   });
   return [
     // The open secteur's streets, wrapped so that each write changing what

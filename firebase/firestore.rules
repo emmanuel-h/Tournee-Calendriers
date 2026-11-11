@@ -64,6 +64,10 @@ service cloud.firestore {
       return /databases/$(database)/documents/sectorKeys/$(key);
     }
 
+    function openSectorPath(account) {
+      return /databases/$(database)/documents/openSectors/$(account);
+    }
+
     // An accepted member: a pending one reads and writes nothing of the
     // tournée (PLAN §8.1), only their own member document.
     function isActiveMember(sector) {
@@ -84,6 +88,17 @@ service cloud.firestore {
     // streets.
     function isMemberOrAdmin(sector) {
       return isActiveMember(sector) || isAdmin();
+    }
+
+    // An active member of some secteur (#147). The rules cannot search
+    // every secteur for the caller's member document, so the phone names
+    // the secteur it has open in `openSectors/{uid}`, and the rule checks
+    // the caller is active in it: a name that is wrong, stale (removed
+    // since, the secteur deleted) or missing gives nothing.
+    function isActiveSomewhere() {
+      return signedIn()
+        && exists(openSectorPath(uid()))
+        && isActiveMember(get(openSectorPath(uid())).data.sectorId);
     }
 
     // ------------------------------------------------------------ values
@@ -212,8 +227,10 @@ service cloud.firestore {
     }
 
     match /sectorKeys/{key} {
-      // `get` only: « Créer » asks whether one pair is taken.
-      allow get: if signedIn();
+      // `get` only, by an admin: « Créer » (admins only) asks whether one
+      // pair is taken. Nobody else: the reservation names the secteur's id,
+      // the target of a join request (#147).
+      allow get: if isAdmin();
       allow create: if signedIn() && isReservation(key, request.resource.data);
       allow delete: if isFreedByAdmin(resource.data.sectorId);
     }
@@ -815,18 +832,35 @@ service cloud.firestore {
     }
 
     match /streetParts/{banId} {
-      // `get` only: a phone reads the street it shows, by its BAN id; no one
-      // lists which secteur covers what. Never deleted: a secteur removes
-      // its own entry.
-      allow get: if signedIn();
+      // `get` only, by an active member of some secteur or an admin (#147):
+      // a phone reads the street it shows, by its BAN id; no one lists
+      // which secteur covers what, and an account in no secteur reads
+      // nothing. Never deleted: a secteur removes its own entry.
+      allow get: if isAdmin() || isActiveSomewhere();
       allow create: if isStreetPartsWrite({}, request.resource.data);
       allow update: if isStreetPartsWrite(resource.data.get('parts', {}), request.resource.data);
     }
 
+    // `openSectors/{uid}`: the secteur the phone of [account] has open, so
+    // that isActiveSomewhere() knows where to look (#147). Written by that
+    // account alone, naming a secteur it is active in; read by no one but
+    // the rules.
+    match /openSectors/{account} {
+      allow create, update: if signedIn() && account == uid()
+        && hasExactly(request.resource.data, ['sectorId'])
+        && isId(request.resource.data.sectorId)
+        && isActiveMember(request.resource.data.sectorId);
+      allow delete: if signedIn() && account == uid();
+    }
+
     match /sectors/{sector} {
       // A member reaches a tournée by its id, from its code; only admins
-      // list them all (« Toutes les tournées », PLAN §5.12).
-      allow get: if isMemberOrAdmin(sector);
+      // list them all (« Toutes les tournées », PLAN §5.12). A tournée that
+      // is not there may be asked by anyone signed in (`resource == null`):
+      // a member whose own document went learns whether the tournée was
+      // deleted (not there) or they were removed (refused), #147. It tells
+      // nothing of one that exists.
+      allow get: if isMemberOrAdmin(sector) || (signedIn() && resource == null);
       allow list: if isAdmin();
       allow create: if isNewSector(sector, request.resource.data);
       allow update: if isNewCode(sector, resource.data, request.resource.data)
@@ -880,8 +914,8 @@ service cloud.firestore {
         }
 
         // A validated tournée: created once by an active member at the
-        // time of the write (an admin visiting runs none), in a campaign
-        // that exists, then never changed. Sending it again (a second
+        // time of the write (an admin visiting runs none), in the
+        // secteur's current campaign (#145), then never changed. Sending it again (a second
         // `set` of the same id) is an update, refused: the first stays.
         // It goes only with its secteur (or its campaign), which only an
         // admin deletes.
@@ -889,6 +923,7 @@ service cloud.firestore {
           allow read: if isMemberOrAdmin(sector);
           allow create: if isActiveMember(sector)
             && isId(round)
+            && year == string(get(sectorPath(sector)).data.currentCampaign)
             && exists(campaignPath(sector, year))
             && isRoundSummary(request.resource.data);
           allow delete: if isAdmin();

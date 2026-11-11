@@ -20,6 +20,7 @@ abstract final class FirestoreLayout {
   static const rescueCentres = 'rescueCentres';
   static const admins = 'admins';
   static const streetParts = 'streetParts';
+  static const openSectors = 'openSectors';
 
   /// `admins/{member}`: there when [member] is an admin (PLAN §5.12).
   static DocumentReference<Map<String, dynamic>> admin(
@@ -33,6 +34,13 @@ abstract final class FirestoreLayout {
     FirebaseFirestore db,
     BanStreetId street,
   ) => db.collection(streetParts).doc(street.value);
+
+  /// `openSectors/{member}`: the secteur [member]'s phone has open, which
+  /// the security rules read to let them read `streetParts` (#147).
+  static DocumentReference<Map<String, dynamic>> openSector(
+    FirebaseFirestore db,
+    MemberId member,
+  ) => db.collection(openSectors).doc(member.value);
 
   /// `sectors/{sector}`.
   static DocumentReference<Map<String, dynamic>> sector(

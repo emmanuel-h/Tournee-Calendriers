@@ -380,6 +380,49 @@ void main() {
       expect(others.map((other) => other.sector.value), [12]);
     });
 
+    Future<Map<String, dynamic>?> openSectorOf(String uid) async =>
+        (await db.doc('openSectors/$uid').get()).data();
+
+    test('should tell the rules which secteur the member reads the index '
+        'as, and follow the one opened (#147)', () async {
+      final container = await leasPhone();
+
+      container.read(streetPartIndexProvider);
+      await pumpEventQueue();
+      expect(await openSectorOf('uid-lea'), {'sectorId': 't49'});
+
+      await openSector(container, sector12.id);
+      container.read(streetPartIndexProvider);
+      await pumpEventQueue();
+      expect(await openSectorOf('uid-lea'), {'sectorId': 't12'});
+    });
+
+    test('should tell no secteur for an admin who only visits it', () async {
+      final container = await leasPhone(uid: 'uid-sam');
+      final store = container.read(mySectorsStoreProvider);
+      await store.save(
+        valueOf(MySectors.none.remember(sector12Visited).open(sector12.id)),
+      );
+
+      container.read(streetPartIndexProvider);
+      await pumpEventQueue();
+
+      expect(await openSectorOf('uid-sam'), isNull);
+    });
+
+    test('should tell no secteur before the phone has an account', () async {
+      final container = await containerWith(db: db);
+      final store = container.read(mySectorsStoreProvider);
+      await store.save(
+        valueOf(MySectors.none.remember(sector49).open(sector49.id)),
+      );
+
+      container.read(streetPartIndexProvider);
+      await pumpEventQueue();
+
+      expect((await db.collection('openSectors').get()).docs, isEmpty);
+    });
+
     test('should have no index while no secteur is open', () async {
       final container = await leasPhone(noSector: true);
       final index = container.read(streetPartIndexProvider);

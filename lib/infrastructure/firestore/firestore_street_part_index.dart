@@ -3,6 +3,7 @@ import 'package:tournee_calendriers/application/ports/street_part_index.dart';
 import 'package:tournee_calendriers/domain/sector/rescue_centre.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/sector/sector_number.dart';
+import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/sector_part.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_part.dart';
@@ -24,7 +25,9 @@ import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_part
 /// - **Reads** ask for one document by its id (the security rules allow
 ///   `get`, never `list`): from the server when it answers, else from the
 ///   phone's copy. Offline with no copy, or refused, it is none: the index
-///   is only a hint.
+///   is only a hint. The rules let only an admin, or an active member of
+///   the secteur named in their `openSectors/{uid}`, read it (#147):
+///   [declareReader] names it.
 final class FirestoreStreetPartIndex implements StreetPartIndex {
   FirestoreStreetPartIndex(
     this._db, {
@@ -50,6 +53,20 @@ final class FirestoreStreetPartIndex implements StreetPartIndex {
   @override
   Future<void> release(BanStreetId street) =>
       releaseStreetPart(_db, _sector, street);
+
+  /// Names this secteur as the one [reader]'s phone has open, in
+  /// `openSectors/{uid}`: the security rules cannot search every secteur
+  /// for the caller's member document, so they read the one named there
+  /// before letting [reader] read the index (#147, PLAN §8.2). Sent once
+  /// the secteur is opened, without waiting: queued offline like any
+  /// write, and long received by the time « Partie de la rue » or
+  /// « Ajouter des rues » reads the index. Not for an admin who only
+  /// visits: an admin reads the index anyway, and the rules refuse to
+  /// name a secteur one is not active in.
+  void declareReader(MemberId reader) => sendInBackground(
+    'open secteur ${_sector.value}',
+    FirestoreLayout.openSector(_db, reader).set(openSectorDocument(_sector)),
+  );
 
   @override
   Future<List<SectorPart>> othersOf(BanStreetId street) async {

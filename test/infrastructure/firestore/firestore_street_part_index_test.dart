@@ -7,6 +7,7 @@ import 'package:mock_exceptions/mock_exceptions.dart';
 import 'package:tournee_calendriers/domain/sector/rescue_centre.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/sector/sector_number.dart';
+import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/sector_part.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_part.dart';
@@ -191,6 +192,28 @@ void main() {
           );
 
       expect(await t49.othersOf(_nationale), isEmpty);
+    });
+  });
+
+  group('declareReader', () {
+    test('should name the open secteur in the account\'s openSectors '
+        'document, which the rules read (#147)', () async {
+      t49.declareReader(MemberId('uid-lea'));
+      await pumpEventQueue();
+
+      expect((await db.doc('openSectors/uid-lea').get()).data(), {
+        'sectorId': 't49',
+      });
+    });
+
+    test('should replace the secteur named before', () async {
+      t49.declareReader(MemberId('uid-lea'));
+      t12.declareReader(MemberId('uid-lea'));
+      await pumpEventQueue();
+
+      expect((await db.doc('openSectors/uid-lea').get()).data(), {
+        'sectorId': 't12',
+      });
     });
   });
 }

@@ -2815,12 +2815,14 @@ Firestore adapters fixed in T2.3 (`lib/infrastructure/firestore/`, `lib/applicat
   member)` stores the newcomer's pending member document; `watchRequest(sector, member)` →
   pending, active, or null once refused or cancelled; `cancelRequest`; `watchMembership(summary,
   member)` (T2.6c: the member's own document, which the rules always let them read; once the
-  server has it no more — not `isFromCache`, not `hasPendingWrites` — the reservation
-  `sectorKeys/{key}` read from the server tells `removed` while it still names the secteur,
-  `deleted` otherwise; a `permission-denied` is passed on as an error, never taken as a
-  loss); `watchOwnName(sector, member)` (T2.7c, the same document); `isTaken(centre,
+  server has it no more — not `isFromCache`, not `hasPendingWrites` — the secteur
+  `sectors/{id}` read from the server tells why (#147, `lossFromSectorRead`): refused (it is
+  there, without them) or there (an admin) is `removed`, not there is `deleted`; a
+  `permission-denied` on the member's own document is passed on as an error, never taken as
+  a loss; until #147 the reservation `sectorKeys/{key}` told it, which only admins read now);
+  `watchOwnName(sector, member)` (T2.7c, the same document); `isTaken(centre,
   number)` and `rescueCentres()` (sorted by name) for « Créer », failing with
-  `DirectoryFailure.noNetwork`. The code, the number and the centres are asked of the server,
+  `DirectoryFailure.noNetwork` (`isTaken` also with `notAdmin` once refused, #147). The code, the number and the centres are asked of the server,
   never answered from the phone's copy.
 - **Port `PendingSync`** (application): `watchUnsentStreets()`, the number of streets holding
   changes the server has not received yet (`hasPendingWrites` of each street document). Streets,
@@ -2965,8 +2967,11 @@ rules know only the new names.
 admins/{uid}                                      ← no fields; added by hand in the console (#75)
 rescueCentres/{centreKey}                         ← "villefranche"; the CS picker lists these
     name: "CS Villefranche"
-sectorKeys/{centreKey}_{number}                   ← "villefranche_49": guarantees number + CS is unique
-    sectorId
+sectorKeys/{centreKey}_{number}                   ← "villefranche_49": guarantees number + CS is unique;
+    sectorId                                         read by admins only (#147)
+openSectors/{uid}                                 ← #147: the secteur this account's phone has open,
+    sectorId                                         written by that account alone, read by no one
+                                                    but the rules (who may read `streetParts`)
 joinCodes/{code}                                  ← "K7P2QX": readable only by exact code (get, not list)
     sectorId, number, centreName, campaign       ← what the join preview shows; nothing else
 
@@ -3252,7 +3257,8 @@ photo of the QR) is even more likely. So **knowing a code must not be enough**:
   0–99999, `from ≤ to`, both odd on the odd side and even on the even one. A new street held in
   part comes with **one** house in its first write instead of 2: checking the part costs more
   than two of the costliest houses leave of the 1 000 expressions (measured in the emulator).
-- `streetParts/{banId}` (#133, 5.15): `get` for signed-in users, `list` denied. An active
+- `streetParts/{banId}` (#133, 5.15): `get` for an admin or an active member of some secteur
+  (#147, below), `list` denied. An active
   member of a secteur, or an admin (who deletes secteurs, member or not), may create the
   document or update it changing only the key of that secteur (`diff().affectedKeys()` within
   `[sector]` on `parts`), with `number` and `centreName` equal to the secteur's and sides in
@@ -3262,8 +3268,23 @@ photo of the QR) is even more likely. So **knowing a code must not be enough**:
   added, its part changed, deleted, restored or purged, and when the secteur is deleted (each
   of its entries). A separate request from the street writes, so it costs nothing of their
   1 000 expressions. Tests: `firebase/test/street_parts.test.mjs`.
-- `sectorKeys/{key}`: `get` allowed (creation must know the pair is taken); create only if
+- `sectorKeys/{key}`: `get` for admins only (« Créer », admins only, must know the pair is
+  taken; #147: it names the secteur's id, the target of a join request); create only if
   absent; never updated; deleted only with the secteur.
+- **Directory documents tell no more than needed** (#147, decided 2026-11-11). The rules
+  cannot search every secteur for the caller's member document, so « an active member of
+  some secteur » is checked through `openSectors/{uid}`: the phone names there the secteur it
+  has open (`FirestoreStreetPartIndex.declareReader`, sent without waiting when an active
+  member's secteur opens; never for an admin who visits, nor before the phone has an
+  account), and `isActiveSomewhere()` checks the caller is `active` in the secteur named.
+  It is only a pointer: a wrong, stale (removed since, secteur deleted) or missing name gives
+  nothing, so it needs no upkeep on leave, removal or deletion. Written by its own account
+  only, exactly `{ sectorId }`, an id the app makes, of a secteur the caller is active in;
+  deleted by its account; read by no one. `sectors/{id}`: `get` also allowed to any signed-in
+  account when the secteur does not exist (`resource == null`), so a member whose own
+  document went learns whether the secteur was deleted (not there) or they were removed
+  (refused); it tells nothing of a secteur that exists. Nothing on the marking path reads
+  either: offline, the index is read from the phone's copy or not at all, as before.
 - `rescueCentres`: readable by signed-in users (station names only), create-only.
 - Street and house writes: field-path updates only on `status`, `comeBack`, `tries`, `by`, `at`,
   `deletedAt/By`, numbers and dwellings; `status` in the enum; `comeBack` a time
@@ -3333,7 +3354,8 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
 
 - **Reading.** A secteur, its members, campaigns and streets: active members only. A pending
   newcomer reads their own member document and nothing else; someone outside reads nothing.
-  `joinCodes` and `sectorKeys`: `get` when signed in, never `list`. `rescueCentres`: `get`
+  `joinCodes`: `get` when signed in, `sectorKeys`: `get` by admins (#147), never `list`.
+  `rescueCentres`: `get`
   and `list` when signed in. Anything not described is refused.
 - **Values.** Every document holds exactly its fields (no more, no fewer) with the domain's
   limits: secteur number 1–9999, campaign 2000–2099, join code 6 characters of the alphabet,
@@ -3492,13 +3514,20 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
   and admins; **create only**, by an active member (checked at write time, not stored; an
   admin visiting runs no tournée), exactly the fields of §6.2, `startedAt < endedAt` (both
   timestamps), `housesVisited` and `free` 0–9 999, each `count` 0–9 999 and `cents`
-  0–100 000 000, each total exactly `{ count, cents }`; the id one the app makes (`isId`), in a
-  campaign that exists (not only the current one: a tournée belongs to the campaign it started
-  in); **no update, no delete** (they go with the secteur or the campaign: `delete` for admins,
+  0–100 000 000, each total exactly `{ count, cents }`; the id one the app makes (`isId`), in
+  the secteur's **current campaign** (#145, decided 2026-11-11: `year == currentCampaign`, and
+  that campaign exists), so no summary lands in a past campaign; once a new campaign (v1.1)
+  starts, a tournée of the old one validated after the switch is refused (accepted: a
+  campaign changes once a year, out of season); **no update, no delete** (they go with the secteur or the campaign: `delete` for admins,
   as the streets). `FirestoreRoundLedger.record` is a `set` not awaited: recording the same
   tournée again reaches the server as an update, refused, so the first summary stays. The
   domain does not cap at these bounds: a tournée is one outing, far below 9 999 houses or dons
-  and 1 000 000 €.
+  and 1 000 000 €. **Accepted risk** (#145, decided 2026-11-11, as the backdated purge): any
+  active member may create any number of summaries with any figures within those bounds, and
+  nothing tells who did, since a summary carries no member by design (§8.3); only an admin
+  can delete one (no screen offers it). The team is trusted and the code is the secret;
+  storing the author, even in an admins-only document, would break « who ran it is never
+  stored ».
 - **Statuses and calendars** (#63): `status` also takes `REFUSED` (#113, accepted by the
   rules: like any status but `COME_BACK` it has no time; the app removes its tries); a house or door
   holds an optional `calendars` 1–99, only while its status is `done` (absent reads as 1 on a
@@ -3529,10 +3558,10 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
   reset with the statuses at the next campaign. `PRIVACY.md` and the Confidentialité page (#79)
   say so in « Données enregistrées », « Hébergement » and « Suppression » (#112): the text was
   drafted on 2026-11-02 and awaits the user's review on the phone.
-- **Streets held by other secteurs (#133):** `streetParts/{banId}` tells any signed-in phone
-  which secteurs (number and centre) hold which numbers of a street, read by the street's BAN
-  id. BAN ids are public, so this is public in practice: no marks, no members, no money, only
-  which secteur covers which addresses. `PRIVACY.md` and the Confidentialité page say so in
+- **Streets held by other secteurs (#133):** `streetParts/{banId}` tells an active member of
+  any secteur, or an admin (#147), which secteurs (number and centre) hold which numbers of a
+  street, read by the street's BAN id: no marks, no members, no money, only which secteur
+  covers which addresses. An account in no secteur reads nothing of it. `PRIVACY.md` and the Confidentialité page say so in
   « Données enregistrées » (#141).
 - **Location:** the phone's position is used only on screen ("locate me"), never stored or
   sent. Permission is asked when the button is first tapped.

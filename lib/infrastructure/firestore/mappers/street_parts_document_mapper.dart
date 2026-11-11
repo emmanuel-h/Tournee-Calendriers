@@ -20,6 +20,13 @@ import 'package:tournee_calendriers/domain/street/sector_part.dart';
 import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/infrastructure/shared/mappers/street_part_fields.dart';
 
+/// The document `openSectors/{uid}`: the secteur the phone has open,
+/// which the security rules read to let its account read the index only
+/// while it is an active member there (#147, PLAN §8.2).
+Map<String, Object?> openSectorDocument(SectorId sector) => {
+  'sectorId': sector.value,
+};
+
 /// The write saying [sector], numbered [number] of the centre [centre],
 /// holds [part] of the street: merged into the document.
 Map<String, Object?> heldPartWrite(

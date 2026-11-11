@@ -99,13 +99,18 @@ final class FirestoreSectorDirectory implements SectorDirectory {
 
   /// Follows the member's own document, which the rules let them read
   /// whatever happens to the tournée (PLAN §8.2). Once the server says it
-  /// is gone, the reservation of the tournée's number tells why: it stays
-  /// while the tournée does, and goes with it (`lossFromReservation`).
+  /// is gone, a read of the tournée itself tells why (#147,
+  /// `lossFromSectorRead`): refused (it is there, without them) or there,
+  /// they were removed; not there, it was deleted. The reservation of its
+  /// number told it before, but only admins may read it now: it names the
+  /// tournée's id.
   ///
-  /// A `permission-denied` here is not taken as a loss: the member may
-  /// always read their own document, so it can only mean something else
-  /// (App Check refusing the app, a rules change), which must not make
-  /// the phone forget a tournée. It is passed on as an error.
+  /// A `permission-denied` on the member's own document is not taken as a
+  /// loss: the member may always read it, so it can only mean something
+  /// else (App Check refusing the app, a rules change), which must not
+  /// make the phone forget a tournée. It is passed on as an error. On the
+  /// read of the tournée it is the answer: the server, which just said the
+  /// document is gone, is reachable and accepts the app.
   @override
   Stream<SectorLoss> watchMembership(SectorSummary sector, MemberId member) =>
       sector.isVisiting
@@ -121,11 +126,16 @@ final class FirestoreSectorDirectory implements SectorDirectory {
             )
             // `asyncMap`: one read of the server per snapshot, in order.
             .asyncMap((_) async {
-              final reservation = await _db
-                  .collection(FirestoreLayout.sectorKeys)
-                  .doc(sectorKeyId(sector.centre, sector.number))
-                  .get(_server);
-              return lossFromReservation(sector.id, reservation.data());
+              try {
+                final doc = await FirestoreLayout.sector(
+                  _db,
+                  sector.id,
+                ).get(_server);
+                return lossFromSectorRead(refused: false, exists: doc.exists);
+              } on FirebaseException catch (error) {
+                if (!isRefused(error)) rethrow;
+                return lossFromSectorRead(refused: true, exists: true);
+              }
             });
 
   /// A tournée the admin [member] only visits (PLAN §5.12): they have no
@@ -193,6 +203,9 @@ final class FirestoreSectorDirectory implements SectorDirectory {
       return Ok(doc.exists);
     } on FirebaseException catch (error) {
       if (isNoNetwork(error)) return const Err(DirectoryFailure.noNetwork);
+      // Only an admin may read a reservation (#147): the phone is no
+      // longer one.
+      if (isRefused(error)) return const Err(DirectoryFailure.notAdmin);
       rethrow;
     }
   }

@@ -168,7 +168,7 @@ void main() {
     }
 
     setUp(() async {
-      await db.doc('sectorKeys/villefranche_49').set({'sectorId': 't49'});
+      await db.doc('sectors/t49').set(sectorToDocument(team()));
       await db.doc('sectors/t49/members/uid-lea').set(memberToDocument(lea));
     });
 
@@ -179,7 +179,20 @@ void main() {
     });
 
     test('should tell removed once the member document goes and the '
-        'tournée stays', () async {
+        'server refuses the tournée (#147)', () async {
+      whenCalling(Invocation.method(#get, null))
+          .on(db.doc('sectors/t49'))
+          .thenThrow(firestoreError('permission-denied'));
+
+      final seen = await lossesWhile(
+        () => db.doc('sectors/t49/members/uid-lea').delete(),
+      );
+
+      expect(seen, [SectorLoss.removed]);
+    });
+
+    test('should tell removed once the member document goes and the '
+        'tournée stays readable (an admin)', () async {
       final seen = await lossesWhile(
         () => db.doc('sectors/t49/members/uid-lea').delete(),
       );
@@ -188,14 +201,13 @@ void main() {
     });
 
     test('should tell deleted once the member document goes with the '
-        'reservation of the number', () async {
+        'tournée', () async {
       // One batch, as the deletion makes it. Firestore applies a batch
-      // at once; the fake applies it in order, so the reservation goes
-      // first.
+      // at once; the fake applies it in order, so the tournée goes first.
       final seen = await lossesWhile(
         () async =>
             (db.batch()
-                  ..delete(db.doc('sectorKeys/villefranche_49'))
+                  ..delete(db.doc('sectors/t49'))
                   ..delete(db.doc('sectors/t49/members/uid-lea')))
                 .commit(),
       );
@@ -205,7 +217,7 @@ void main() {
 
     test('should ask the server, not the phone\'s copy, whether the '
         'tournée still exists', () async {
-      offline(db.doc('sectorKeys/villefranche_49'));
+      offline(db.doc('sectors/t49'));
       final errors = <Object>[];
       final subscription = directory
           .watchMembership(sector49, leaId)
@@ -440,11 +452,20 @@ void main() {
 
       expect(failureOf(taken), DirectoryFailure.noNetwork);
     });
+
+    test('should tell when the server refuses: only an admin may ask '
+        '(#147)', () async {
+      offline(db.doc('sectorKeys/villefranche_49'), 'permission-denied');
+
+      final taken = await directory.isTaken(csVillefranche, number49);
+
+      expect(failureOf(taken), DirectoryFailure.notAdmin);
+    });
   });
 
   group('other failures', () {
     test('should throw any other failure when checking a number', () async {
-      offline(db.doc('sectorKeys/villefranche_49'), 'permission-denied');
+      offline(db.doc('sectorKeys/villefranche_49'), 'internal');
 
       await expectLater(
         directory.isTaken(csVillefranche, number49),

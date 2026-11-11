@@ -472,12 +472,30 @@ describe('the directory', () => {
     );
   });
 
-  it('should let a signed-in user get a reservation, not list or change them', async () => {
-    const db = phoneOf(env, zoe);
+  it('should let an admin get a reservation, taken or free, and nobody list or change them', async () => {
+    const db = phoneOf(env, sam);
     await assertSucceeds(getDoc(doc(db, 'sectorKeys/villefranche_49')));
+    await assertSucceeds(getDoc(doc(db, 'sectorKeys/villefranche_50')));
     await assertFails(getDocs(collection(db, 'sectorKeys')));
     await assertFails(setDoc(doc(db, 'sectorKeys/villefranche_49'), { sectorId: 't12' }));
+  });
+
+  it('should refuse a reservation to anyone but an admin, its members included (#147)', async () => {
+    await assertFails(getDoc(doc(phoneOf(env, zoe), 'sectorKeys/villefranche_49')));
+    await assertFails(getDoc(doc(phoneOf(env, zoe), 'sectorKeys/villefranche_50')));
+    await assertFails(getDoc(doc(phoneOf(env, lea), 'sectorKeys/villefranche_49')));
+    await assertFails(getDoc(doc(phoneOf(env, paul), 'sectorKeys/villefranche_49')));
     await assertFails(getDoc(doc(phoneOf(env, null), 'sectorKeys/villefranche_49')));
+  });
+
+  it('should tell a signed-in user a secteur is gone, and nothing of one that is there (#147)', async () => {
+    // watchMembership: once the member's own document is gone, a removed
+    // member is refused the secteur, the member of a deleted one is told
+    // it is not there.
+    await assertSucceeds(getDoc(doc(phoneOf(env, zoe), 'sectors/t50')));
+    await assertFails(getDoc(doc(phoneOf(env, zoe), sectorPath)));
+    await assertFails(getDoc(doc(phoneOf(env, null), 'sectors/t50')));
+    await assertFails(getDocs(collection(phoneOf(env, zoe), 'sectors')));
   });
 
   it('should let a signed-in user list the stations', async () => {
