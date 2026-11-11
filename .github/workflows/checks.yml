@@ -12,6 +12,14 @@ on:
     branches: [main]
   pull_request:
 
+# The token only reads the repository: no job writes back to GitHub.
+permissions:
+  contents: read
+
+# Actions are pinned by commit, not by tag: a tag can be moved to new code,
+# a commit cannot. The version in the comment is what Dependabot reads to
+# propose updates (it rewrites both).
+
 # A newer push to the same branch cancels the run still in progress.
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
@@ -26,8 +34,8 @@ jobs:
     name: analyze and format
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: subosito/flutter-action@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
@@ -35,7 +43,8 @@ jobs:
       # The Firebase settings are gitignored (the repository is public):
       # written from the secrets FIREBASE_OPTIONS_DART and
       # GOOGLE_SERVICES_JSON, each the base64 of its file. Dependabot's runs
-      # read Dependabot secrets, so both are set there too.
+      # read Dependabot secrets, so both are set there too. Accepted: both
+      # values ship inside every APK anyway (#153).
       - name: Write Firebase settings
         env:
           FIREBASE_OPTIONS_DART: ${{ secrets.FIREBASE_OPTIONS_DART }}
@@ -51,8 +60,8 @@ jobs:
     name: tests and coverage gate
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: subosito/flutter-action@v2
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
@@ -62,7 +71,7 @@ jobs:
       - run: bash tool/check_coverage.sh
       - name: Upload coverage report
         if: failure()
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: coverage
           path: coverage/lcov.info
@@ -75,24 +84,25 @@ jobs:
     name: android release build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-java@v6
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: temurin
           # maplibre_gl compiles with -source 21.
           java-version: "21"
-      - uses: subosito/flutter-action@v2
+      - uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2.23.0
         with:
           flutter-version: ${{ env.FLUTTER_VERSION }}
           channel: stable
           cache: true
-      - uses: gradle/actions/setup-gradle@v6
+      - uses: gradle/actions/setup-gradle@8da46b539cd8fe6ab27ca75128919a18d757604c # v6.4.1
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
       # The Firebase settings are gitignored (the repository is public):
       # written from the secrets FIREBASE_OPTIONS_DART and
       # GOOGLE_SERVICES_JSON, each the base64 of its file. Dependabot's runs
-      # read Dependabot secrets, so both are set there too.
+      # read Dependabot secrets, so both are set there too. Accepted: both
+      # values ship inside every APK anyway (#153).
       - name: Write Firebase settings
         env:
           FIREBASE_OPTIONS_DART: ${{ secrets.FIREBASE_OPTIONS_DART }}
@@ -112,18 +122,18 @@ jobs:
       run:
         working-directory: firebase
     steps:
-      - uses: actions/checkout@v7
-      - uses: actions/setup-node@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version: "22"
           cache: npm
           cache-dependency-path: firebase/package-lock.json
-      - uses: actions/setup-java@v6
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v6.1.0
         with:
           distribution: temurin
           java-version: "21"
       # The emulator's jar, downloaded by firebase-tools on first use.
-      - uses: actions/cache@v6
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.cache/firebase/emulators
           key: firebase-emulators-${{ hashFiles('firebase/package-lock.json') }}
