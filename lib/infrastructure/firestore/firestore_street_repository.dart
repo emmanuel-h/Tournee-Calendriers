@@ -4,12 +4,15 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:tournee_calendriers/application/ports/pending_sync.dart';
 import 'package:tournee_calendriers/application/ports/server_connection.dart';
+import 'package:tournee_calendriers/application/ports/unreadable_streets.dart';
 import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
+import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_repository.dart';
+import 'package:tournee_calendriers/domain/street/unreadable_street.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_layout.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_document_mapper.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_update_mapper.dart';
@@ -21,7 +24,9 @@ import 'package:tournee_calendriers/infrastructure/firestore/unfinished_streets.
 /// The [StreetRepository] of M2: the streets of one campaign of one
 /// tournée, `sectors/{id}/campaigns/{year}/streets` (PLAN §6.2), shared by
 /// the whole team. Also the [PendingSync] of those streets, and the
-/// [ServerConnection] of the phone while the tournée is open.
+/// [ServerConnection] of the phone while the tournée is open, and its
+/// [UnreadableStreets]: a document that does not read is kept apart, not
+/// dropped (#149).
 ///
 /// - **One listener** on the whole collection (≈ 60 streets), started at the
 ///   first call: Firestore serves it from the phone's cache at once (an
@@ -43,7 +48,11 @@ import 'package:tournee_calendriers/infrastructure/firestore/unfinished_streets.
 ///   writes are in Firestore's hands; at the next start, the houses missing
 ///   from the phone's copy are sent again (#104).
 final class FirestoreStreetRepository
-    implements StreetRepository, PendingSync, ServerConnection {
+    implements
+        StreetRepository,
+        PendingSync,
+        ServerConnection,
+        UnreadableStreets {
   FirestoreStreetRepository(
     FirebaseFirestore db, {
     required SectorId sector,
@@ -273,6 +282,21 @@ final class FirestoreStreetRepository
     ]);
   }
 
+  @override
+  Stream<List<UnreadableStreet>> watchUnreadable() => _ready.watchUnreadable();
+
+  /// Deletes the document as it stands, memory first, as [purge] does. The
+  /// security rules let an admin delete any street of the secteur; refused
+  /// (not an admin), Firestore puts it back on this phone at the next
+  /// snapshot.
+  @override
+  Future<void> delete(StreetId id) async {
+    _ready.remove(id);
+    _writes.send(id.value, 'delete unreadable ${id.value}', [
+      OrderedWrite(() => _streets.doc(id.value).delete()),
+    ]);
+  }
+
   /// Stops listening: the composition root calls it when the tournée or
   /// the campaign changes.
   Future<void> close() async {
@@ -285,26 +309,34 @@ final class FirestoreStreetRepository
     // `hasPendingWrites` changes (the server received a write), which is
     // what the pending count needs, or `isFromCache` (the network went or
     // came back), which is what « offline » needs.
-    _listener = _streets
-        .snapshots(includeMetadataChanges: true)
-        .listen(
-          (snapshot) => memory.receive(
-            {
-              for (final change in snapshot.docChanges)
-                StreetId(
-                  change.doc.id,
-                ): change.type == DocumentChangeType.removed
-                    ? null
-                    : _read(change.doc),
-            },
-            {
-              for (final doc in snapshot.docs)
-                if (doc.metadata.hasPendingWrites) StreetId(doc.id),
-            },
-            fromCache: snapshot.metadata.isFromCache,
-          ),
-          onError: memory.fail,
-        );
+    _listener = _streets.snapshots(includeMetadataChanges: true).listen((
+      snapshot,
+    ) {
+      final changed = <StreetId, Street?>{};
+      final unreadable = <StreetId, UnreadableStreet>{};
+      for (final change in snapshot.docChanges) {
+        final id = StreetId(change.doc.id);
+        if (change.type == DocumentChangeType.removed) {
+          changed[id] = null;
+          continue;
+        }
+        switch (_read(change.doc)) {
+          case Ok(:final value):
+            changed[id] = value;
+          case Err(:final failure):
+            unreadable[id] = failure;
+        }
+      }
+      memory.receive(
+        changed,
+        {
+          for (final doc in snapshot.docs)
+            if (doc.metadata.hasPendingWrites) StreetId(doc.id),
+        },
+        fromCache: snapshot.metadata.isFromCache,
+        unreadable: unreadable,
+      );
+    }, onError: memory.fail);
     unawaited(
       _catchUp(memory).catchError(
         (Object error) => debugPrint('Streets not caught up: $error'),
@@ -313,18 +345,23 @@ final class FirestoreStreetRepository
     return memory;
   }
 
-  /// The street in [doc], or null when it cannot be read: it is left out
-  /// rather than stopping the whole tournée, and kept in Firestore.
-  Street? _read(DocumentSnapshot<Map<String, dynamic>> doc) {
+  /// The street in [doc], or what can be told of it when it cannot be read
+  /// (#149): kept apart rather than stopping the whole tournée, shown on
+  /// Accueil, and kept in Firestore until an admin deletes it.
+  Result<Street, UnreadableStreet> _read(
+    DocumentSnapshot<Map<String, dynamic>> doc,
+  ) {
     final stored = doc.data()!;
     try {
-      return streetFromDocument(doc.id, switch (_whole[doc.id]) {
-        final whole? => withHousesOf(stored, whole),
-        null => stored,
-      });
+      return Ok(
+        streetFromDocument(doc.id, switch (_whole[doc.id]) {
+          final whole? => withHousesOf(stored, whole),
+          null => stored,
+        }),
+      );
     } on FormatException catch (error) {
       debugPrint('Unreadable street ${doc.id}: $error');
-      return null;
+      return Err(unreadableStreetOf(doc.id, stored));
     }
   }
 }

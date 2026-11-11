@@ -2997,4 +2997,26 @@ class AppLocalizationsFr extends AppLocalizations {
   String otherSectorPart(int sector, String centre, String part) {
     return 'Secteur $sector$centre : $part';
   }
+
+  @override
+  String get unreadableStreetLabel => 'Illisible';
+
+  @override
+  String get unreadableStreetNoName => 'Rue illisible';
+
+  @override
+  String unreadableStreetSemantics(String name) {
+    return '$name, illisible';
+  }
+
+  @override
+  String get unreadableStreetBody =>
+      'Cette rue ne peut pas être lue : ses données sont abîmées. Elle n\'apparaît ni sur la carte ni dans les totaux.';
+
+  @override
+  String get unreadableStreetAdminHint =>
+      'Un administrateur peut la supprimer, puis l\'ajouter de nouveau.';
+
+  @override
+  String get unreadableStreetAdminsOnly => 'Administrateurs seulement';
 }

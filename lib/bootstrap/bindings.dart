@@ -14,6 +14,7 @@ import 'package:tournee_calendriers/application/ports/phone_cache_reset.dart';
 import 'package:tournee_calendriers/application/ports/server_connection.dart';
 import 'package:tournee_calendriers/application/ports/street_part_index.dart';
 import 'package:tournee_calendriers/application/ports/street_shapes.dart';
+import 'package:tournee_calendriers/application/ports/unreadable_streets.dart';
 import 'package:tournee_calendriers/application/services/indexed_street_repository.dart';
 import 'package:tournee_calendriers/bootstrap/cache_reset.dart';
 import 'package:tournee_calendriers/domain/sector/member.dart';
@@ -23,6 +24,7 @@ import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/domain/street/street_repository.dart';
+import 'package:tournee_calendriers/domain/street/unreadable_street.dart';
 import 'package:tournee_calendriers/infrastructure/ban/ban_address_directory.dart';
 import 'package:tournee_calendriers/infrastructure/firebase_auth/anonymous_auth.dart';
 import 'package:tournee_calendriers/infrastructure/firebase_auth/firebase_identity.dart';
@@ -237,6 +239,11 @@ Future<List<Override>> bindAdapters({
     serverConnectionProvider.overrideWith(
       (ref) => ref.watch(sectorStreets) ?? const _NothingToTell(),
     ),
+    // The same adapter again: its listener keeps apart the streets it
+    // cannot read (#149).
+    unreadableStreetsProvider.overrideWith(
+      (ref) => ref.watch(sectorStreets) ?? const _NoneUnreadable(),
+    ),
     addressDirectoryProvider.overrideWith(
       (ref) =>
           addressDirectory ??
@@ -308,6 +315,18 @@ final class _NothingToTell implements ServerConnection {
 
   @override
   Stream<bool> watchOffline() => Stream.value(false);
+}
+
+/// The unreadable streets while no secteur is open: there is no street,
+/// so none is unreadable, and no screen offers to delete one.
+final class _NoneUnreadable implements UnreadableStreets {
+  const _NoneUnreadable();
+
+  @override
+  Stream<List<UnreadableStreet>> watchUnreadable() => Stream.value(const []);
+
+  @override
+  Future<void> delete(StreetId id) async {}
 }
 
 /// The streets while no secteur is open (PLAN §5.0): none. Streets only

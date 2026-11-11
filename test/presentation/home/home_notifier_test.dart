@@ -13,8 +13,10 @@ import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/progress_level.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_name.dart';
 import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
+import 'package:tournee_calendriers/domain/street/unreadable_street.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/home/home_notifier.dart';
@@ -37,6 +39,7 @@ import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_sector_repository.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/fakes/fake_street_shapes.dart';
+import '../../support/fakes/fake_unreadable_streets.dart';
 import '../../support/geo_fixtures.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart' hide lea;
@@ -163,6 +166,7 @@ void main() {
   late FakeStreetRepository streets;
   late FakeSectorRepository sectors;
   late FakeStreetShapes shapes;
+  late FakeUnreadableStreets unreadable;
 
   /// Léa's phone with [open] open (the 49 by default), or none.
   ProviderContainer phone({SectorSummary? open}) {
@@ -172,6 +176,7 @@ void main() {
         streetRepositoryProvider.overrideWithValue(streets),
         sectorRepositoryProvider.overrideWithValue(sectors),
         streetShapesProvider.overrideWithValue(shapes),
+        unreadableStreetsProvider.overrideWithValue(unreadable),
         clockProvider.overrideWithValue(FakeClock(createdAt)),
         identityProvider.overrideWithValue(FakeIdentity(_lea)),
         mySectorsStoreProvider.overrideWithValue(
@@ -191,6 +196,7 @@ void main() {
   setUp(() {
     streets = FakeStreetRepository([_nationale, _emile, _paix, _hugo]);
     shapes = FakeStreetShapes(Ok(_morinRoad));
+    unreadable = FakeUnreadableStreets();
     sectors = FakeSectorRepository([
       team(
         communes: [villefrancheCommune, gleizeCommune],
@@ -320,6 +326,120 @@ void main() {
       expect(state.hasNoStreet, isTrue);
       expect(state.done, 0);
       expect(state.total, 0);
+    });
+  });
+
+  group('unreadable streets (#149)', () {
+    /// Rue Pasteur, which cannot be read; its name can.
+    final pasteur = UnreadableStreet(
+      id: StreetId('pasteur'),
+      name: valueOf(StreetName.create('Rue Pasteur')),
+    );
+    final pasteurRow = UnreadableStreetRow(
+      id: StreetId('pasteur'),
+      name: 'Rue Pasteur',
+    );
+
+    test('should list an unreadable street among the others by its name, '
+        'those without a name last', () async {
+      unreadable = FakeUnreadableStreets([
+        UnreadableStreet(id: StreetId('b9')),
+        pasteur,
+        UnreadableStreet(id: StreetId('a1')),
+      ]);
+      final container = phone();
+      await pumpEventQueue();
+
+      expect(container.read(homeProvider).streets, [
+        _emileRow,
+        _paixRow,
+        _nationaleRow,
+        pasteurRow,
+        _hugoRow,
+        UnreadableStreetRow(id: StreetId('a1')),
+        UnreadableStreetRow(id: StreetId('b9')),
+      ]);
+    });
+
+    test('should order two streets of the same name by id', () async {
+      unreadable = FakeUnreadableStreets([
+        UnreadableStreet(
+          id: StreetId('nationale2'),
+          name: valueOf(StreetName.create('Rue Nationale')),
+        ),
+      ]);
+      final container = phone();
+      await pumpEventQueue();
+
+      expect(container.read(homeProvider).streets.sublist(2, 4), [
+        _nationaleRow,
+        UnreadableStreetRow(id: StreetId('nationale2'), name: 'Rue Nationale'),
+      ]);
+    });
+
+    test('should leave an unreadable street out of the totals and the '
+        'map', () async {
+      unreadable = FakeUnreadableStreets([pasteur]);
+      final container = phone();
+      await pumpEventQueue();
+
+      final state = container.read(homeProvider);
+      expect(state.done, 3);
+      expect(state.total, 10);
+      expect(
+        state.layers.lines.map((line) => line.street),
+        isNot(contains(pasteur.id)),
+      );
+    });
+
+    test('should have a street to list when the only one is '
+        'unreadable', () async {
+      streets = FakeStreetRepository();
+      unreadable = FakeUnreadableStreets([pasteur]);
+      final container = phone();
+      await pumpEventQueue();
+
+      final state = container.read(homeProvider);
+      expect(state.hasNoStreet, isFalse);
+      expect(state.streets, [pasteurRow]);
+    });
+
+    test('should follow the streets turning unreadable', () async {
+      final container = phone();
+      await pumpEventQueue();
+
+      unreadable.add(pasteur);
+      await pumpEventQueue();
+
+      expect(container.read(homeProvider).streets, contains(pasteurRow));
+    });
+
+    test('should list none once they cannot be followed', () async {
+      unreadable = FakeUnreadableStreets([pasteur]);
+      final container = phone();
+      await pumpEventQueue();
+
+      unreadable.fail(StateError('removed'));
+      await pumpEventQueue();
+
+      expect(container.read(homeProvider).streets, [
+        _emileRow,
+        _paixRow,
+        _nationaleRow,
+        _hugoRow,
+      ]);
+    });
+
+    test('should delete an unreadable street and drop its row', () async {
+      unreadable = FakeUnreadableStreets([pasteur]);
+      final container = phone();
+      await pumpEventQueue();
+
+      await container.read(homeProvider.notifier).deleteUnreadable(pasteur.id);
+      await pumpEventQueue();
+
+      expect(unreadable.deleted, [pasteur.id]);
+      expect(container.read(homeProvider).streets, isNot(contains(pasteurRow)));
     });
   });
 

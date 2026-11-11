@@ -7,7 +7,9 @@ import 'package:tournee_calendriers/domain/sector/sector_summary.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_name.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
+import 'package:tournee_calendriers/domain/street/unreadable_street.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/components/status_glyph.dart';
@@ -18,10 +20,12 @@ import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 
 import '../../domain/sector/my_sectors_fixtures.dart';
 import '../../domain/sector/sector_fixtures.dart' show team;
+import '../../support/fakes/fake_admin_status.dart';
 import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_pending_sync.dart';
 import '../../support/fakes/fake_sector_repository.dart';
 import '../../support/fakes/fake_street_repository.dart';
+import '../../support/fakes/fake_unreadable_streets.dart';
 import '../../support/geo_fixtures.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
@@ -75,6 +79,8 @@ void main() {
     WidgetTester tester, {
     List<Street>? streets,
     SectorSummary? open,
+    FakeUnreadableStreets? unreadable,
+    FakeAdminStatus? admins,
   }) async {
     tester.view
       ..physicalSize = const Size(1170, 2532)
@@ -91,6 +97,8 @@ void main() {
             valueOf(MySectors.none.remember(opened).open(opened.id)),
           ),
           pending: pending,
+          unreadable: unreadable,
+          admins: admins,
         ),
         child: const TourneeApp(showGallery: false),
       ),
@@ -321,6 +329,143 @@ void main() {
       pending.unsent(0);
       await tester.pumpAndSettle();
       expect(line, findsNothing);
+    });
+  });
+
+  group('unreadable street (#149, PLAN §5.16)', () {
+    final hugo = UnreadableStreet(
+      id: StreetId('hugo'),
+      name: valueOf(StreetName.create('Rue Victor Hugo')),
+    );
+    Finder unreadableRow(String id) =>
+        find.byKey(ValueKey('home.unreadable.$id'));
+
+    /// Accueil with Rue Victor Hugo unreadable, and a street whose name
+    /// cannot be read either; the phone's member an admin when [admin].
+    Future<FakeUnreadableStreets> pumpUnreadable(
+      WidgetTester tester, {
+      bool admin = false,
+    }) async {
+      final unreadable = FakeUnreadableStreets([
+        hugo,
+        UnreadableStreet(id: StreetId('x7')),
+      ]);
+      await pumpHome(
+        tester,
+        unreadable: unreadable,
+        admins: FakeAdminStatus(phoneIsAdmin: admin),
+      );
+      await tester.drag(
+        find.byKey(const Key('home.panel.handle')),
+        const Offset(0, -300),
+      );
+      await tester.pumpAndSettle();
+      return unreadable;
+    }
+
+    testWidgets('should list it with ⚠ and « Illisible », out of the '
+        'totals', (tester) async {
+      await pumpUnreadable(tester);
+
+      expect(find.text('Rues · 43/100'), findsOneWidget);
+      expect(
+        find.descendant(
+          of: unreadableRow('hugo'),
+          matching: find.text('Illisible'),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: unreadableRow('hugo'),
+          matching: find.byIcon(Icons.warning_amber_rounded),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.bySemanticsLabel('Rue Victor Hugo, illisible'),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: unreadableRow('x7'),
+          matching: find.text('Rue illisible'),
+        ),
+        findsOneWidget,
+      );
+      expect(find.bySemanticsLabel('Rue illisible'), findsOneWidget);
+      expect(
+        tester.getSize(unreadableRow('hugo')).height,
+        greaterThanOrEqualTo(AppSizes.streetRowHeight),
+      );
+    });
+
+    testWidgets('should open its sheet on a tap, without « Supprimer la '
+        'rue » for a member', (tester) async {
+      await pumpUnreadable(tester);
+
+      await tester.tap(unreadableRow('hugo'));
+      await tester.pumpAndSettle();
+
+      final sheet = find.byKey(const Key('unreadable.sheet'));
+      expect(sheet, findsOneWidget);
+      expect(
+        find.descendant(of: sheet, matching: find.text('Rue Victor Hugo')),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          'Cette rue ne peut pas être lue\u00a0: ses données sont abîmées. '
+          "Elle n'apparaît ni sur la carte ni dans les totaux.",
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.text(
+          "Un administrateur peut la supprimer, puis l'ajouter de nouveau.",
+        ),
+        findsOneWidget,
+      );
+      expect(find.byKey(const Key('unreadable.delete')), findsNothing);
+      expect(find.text('Administrateurs seulement'), findsNothing);
+      expect(find.byType(StreetScreen), findsNothing);
+    });
+
+    testWidgets('should title the sheet « Rue illisible » when the name '
+        'cannot be read', (tester) async {
+      await pumpUnreadable(tester);
+
+      await tester.tap(unreadableRow('x7'));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.descendant(
+          of: find.byKey(const Key('unreadable.sheet')),
+          matching: find.text('Rue illisible'),
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('should let an admin delete it, closing the sheet', (
+      tester,
+    ) async {
+      final unreadable = await pumpUnreadable(tester, admin: true);
+      await tester.tap(unreadableRow('hugo'));
+      await tester.pumpAndSettle();
+      expect(find.text('Administrateurs seulement'), findsOneWidget);
+      expect(
+        tester.getSize(find.byKey(const Key('unreadable.delete'))).height,
+        greaterThanOrEqualTo(48),
+      );
+
+      await tester.tap(find.byKey(const Key('unreadable.delete')));
+      await tester.pumpAndSettle();
+
+      expect(unreadable.deleted, [StreetId('hugo')]);
+      expect(find.byKey(const Key('unreadable.sheet')), findsNothing);
+      expect(unreadableRow('hugo'), findsNothing);
+      expect(unreadableRow('x7'), findsOneWidget);
     });
   });
 

@@ -4196,6 +4196,42 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Secteur {sector}{centre} : {part}'**
   String otherSectorPart(int sector, String centre, String part);
+
+  /// Red line under the name of a street of Accueil's list whose data cannot be read (PLAN §5.16, #149).
+  ///
+  /// In fr, this message translates to:
+  /// **'Illisible'**
+  String get unreadableStreetLabel;
+
+  /// Accueil's row, and the title of its sheet, for a street whose data cannot be read, its name neither (#149).
+  ///
+  /// In fr, this message translates to:
+  /// **'Rue illisible'**
+  String get unreadableStreetNoName;
+
+  /// What screen readers say for the row of an unreadable street whose name reads (#149).
+  ///
+  /// In fr, this message translates to:
+  /// **'{name}, illisible'**
+  String unreadableStreetSemantics(String name);
+
+  /// Sheet of an unreadable street (PLAN §5.16, StreetUnreadableSheet mockup): why it shows so.
+  ///
+  /// In fr, this message translates to:
+  /// **'Cette rue ne peut pas être lue : ses données sont abîmées. Elle n\'apparaît ni sur la carte ni dans les totaux.'**
+  String get unreadableStreetBody;
+
+  /// Sheet of an unreadable street: what can be done about it.
+  ///
+  /// In fr, this message translates to:
+  /// **'Un administrateur peut la supprimer, puis l\'ajouter de nouveau.'**
+  String get unreadableStreetAdminHint;
+
+  /// Under « Supprimer la rue » in the sheet of an unreadable street, which only admins see.
+  ///
+  /// In fr, this message translates to:
+  /// **'Administrateurs seulement'**
+  String get unreadableStreetAdminsOnly;
 }
 
 class _AppLocalizationsDelegate

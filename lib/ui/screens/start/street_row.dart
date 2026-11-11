@@ -97,3 +97,93 @@ final class StreetRowTile extends StatelessWidget {
     );
   }
 }
+
+/// A street of Accueil's list whose data cannot be read (PLAN §5.16,
+/// StreetUnreadable mockup): a round ⚠ badge, the name over « Illisible »
+/// in red (only « Rue illisible » when the name cannot be read either),
+/// and a chevron. Never told by the colour alone: the ⚠ and the word say
+/// it. Tapping it opens its sheet.
+final class UnreadableStreetRowTile extends StatelessWidget {
+  const UnreadableStreetRowTile({
+    super.key,
+    required this.row,
+    required this.onTap,
+  });
+
+  final UnreadableStreetRow row;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = AppColors.of(context);
+    final name = row.name;
+    return Semantics(
+      button: true,
+      label: name == null
+          ? l10n.unreadableStreetNoName
+          : l10n.unreadableStreetSemantics(name),
+      excludeSemantics: true,
+      child: InkWell(
+        onTap: onTap,
+        child: Container(
+          constraints: const BoxConstraints(
+            minHeight: AppSizes.streetRowHeight,
+          ),
+          decoration: BoxDecoration(
+            border: Border(bottom: BorderSide(color: colors.divider)),
+          ),
+          child: Row(
+            spacing: 12,
+            children: [
+              Container(
+                width: AppSizes.unreadableBadge,
+                height: AppSizes.unreadableBadge,
+                decoration: BoxDecoration(
+                  color: colors.alert,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: colors.accent),
+                ),
+                // ⚠ drawn as an icon: the text glyph shows as a yellow
+                // emoji on Android.
+                child: Icon(
+                  Icons.warning_amber_rounded,
+                  size: AppSizes.doorGlyph,
+                  color: colors.accent,
+                ),
+              ),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  spacing: 2,
+                  children: [
+                    Text(
+                      name ?? l10n.unreadableStreetNoName,
+                      style: AppTextStyles.streetName.copyWith(
+                        color: colors.ink,
+                      ),
+                    ),
+                    if (name != null)
+                      Text(
+                        l10n.unreadableStreetLabel,
+                        style: AppTextStyles.small.copyWith(
+                          color: colors.accent,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                size: AppSizes.smallIcon,
+                color: colors.muted,
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

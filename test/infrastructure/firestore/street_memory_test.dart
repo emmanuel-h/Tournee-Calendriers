@@ -4,6 +4,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/unreadable_street.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/street_memory.dart';
 
@@ -24,6 +25,12 @@ Street street(String id, {bool deleted = false}) {
 
 final lilas = street('lilas');
 final roses = street('roses');
+
+/// Rue Pasteur, whose document cannot be read (#149).
+final pasteur = UnreadableStreet(id: StreetId('pasteur'));
+
+/// Rue des Lilas once its document can no longer be read.
+final lilasUnreadable = UnreadableStreet(id: lilas.id);
 
 /// The ids of [streets], sorted.
 List<String> ids(Iterable<Street> streets) =>
@@ -224,5 +231,124 @@ void main() {
 
       expect(seen, isEmpty);
     });
+  });
+
+  group('unreadable (#149)', () {
+    test('should list a street the listener cannot read apart from the '
+        'streets', () async {
+      memory.receive(
+        {lilas.id: lilas},
+        const {},
+        unreadable: {pasteur.id: pasteur},
+      );
+
+      expect(await memory.watchUnreadable().first, [pasteur]);
+      expect(ids((await memory.streets()).values), ['lilas']);
+    });
+
+    test('should take a street out of the streets once it no longer '
+        'reads', () async {
+      memory.receive({lilas.id: lilas, roses.id: roses}, const {});
+
+      memory.receive(
+        const {},
+        const {},
+        unreadable: {lilas.id: lilasUnreadable},
+      );
+
+      expect(ids((await memory.streets()).values), ['roses']);
+      expect(await memory.watchUnreadable().first, [lilasUnreadable]);
+    });
+
+    test('should forget an unreadable street once it reads again', () async {
+      memory.receive(
+        const {},
+        const {},
+        unreadable: {lilas.id: lilasUnreadable},
+      );
+
+      memory.receive({lilas.id: lilas}, const {});
+
+      expect(await memory.watchUnreadable().first, isEmpty);
+      expect(ids((await memory.streets()).values), ['lilas']);
+    });
+
+    test(
+      'should forget an unreadable street the listener says is gone',
+      () async {
+        memory.receive(const {}, const {}, unreadable: {pasteur.id: pasteur});
+
+        memory.receive({pasteur.id: null}, const {});
+
+        expect(await memory.watchUnreadable().first, isEmpty);
+      },
+    );
+
+    test(
+      'should forget an unreadable street this phone deletes at once',
+      () async {
+        memory.receive(
+          {lilas.id: lilas},
+          const {},
+          unreadable: {pasteur.id: pasteur},
+        );
+
+        memory.remove(pasteur.id);
+
+        expect(await memory.watchUnreadable().first, isEmpty);
+        expect(ids((await memory.streets()).values), ['lilas']);
+      },
+    );
+
+    test(
+      'should tell the observers of a street that it no longer reads',
+      () async {
+        memory.receive({lilas.id: lilas}, const {});
+        final seen = <bool>[];
+        final subscription = memory
+            .observe(
+              (streets) => streets.containsKey(lilas.id),
+              (changed) => changed.contains(lilas.id),
+            )
+            .listen(seen.add);
+        await pumpEventQueue();
+
+        memory.receive(
+          const {},
+          const {},
+          unreadable: {lilas.id: lilasUnreadable},
+        );
+        await pumpEventQueue();
+        await subscription.cancel();
+
+        expect(seen, [true, false]);
+      },
+    );
+
+    test(
+      'should give the unreadable streets again only when they change',
+      () async {
+        memory.receive({lilas.id: lilas}, const {});
+        final seen = <List<UnreadableStreet>>[];
+        final subscription = memory.watchUnreadable().listen(seen.add);
+        await pumpEventQueue();
+
+        memory.receive(const {}, const {}, unreadable: {pasteur.id: pasteur});
+        // A mark on another street: the same unreadable streets.
+        memory.put(
+          valueOf(lilas.markHouse(n('1'), VisitStatus.done, by: lea, at: twoPm))
+              .$1,
+        );
+        memory.remove(pasteur.id);
+        await pumpEventQueue();
+        await subscription.cancel();
+
+        expect(seen, [
+          <UnreadableStreet>[],
+          [pasteur],
+          <UnreadableStreet>[],
+        ]);
+      },
+    );
   });
 }

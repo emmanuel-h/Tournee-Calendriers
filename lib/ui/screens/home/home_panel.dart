@@ -4,6 +4,7 @@ import 'package:tournee_calendriers/presentation/home/home_state.dart';
 import 'package:tournee_calendriers/presentation/home/street_row.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
+import 'package:tournee_calendriers/ui/screens/home/unreadable_street_sheet.dart';
 import 'package:tournee_calendriers/ui/screens/round/round_start_button.dart';
 import 'package:tournee_calendriers/ui/screens/start/pending_sync_line.dart';
 import 'package:tournee_calendriers/ui/screens/start/street_row.dart';
@@ -15,7 +16,8 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 /// mockup): a handle and the totals (« Rues · 31/50 », over every street
 /// of the secteur), then « Commencer une tournée » while none is on
 /// (PLAN §5.13; the « En tournée » band on top shows one), every street of the secteur in one list, then the
-/// pending-sync line. A row opens its street. « Ajouter des rues » is not
+/// pending-sync line. A row opens its street; the row of a street that
+/// cannot be read opens its sheet (#149). « Ajouter des rues » is not
 /// here: it is preparation, in Secteur (§5.14).
 ///
 /// It is as tall as it is told ([height]): Accueil decides, as the handle
@@ -227,12 +229,21 @@ final class _StreetList extends StatelessWidget {
         if (state.hasNoStreet)
           note(l10n.homeNoStreet, const Key('home.noStreet'))
         else
-          for (final street in state.streets)
-            StreetRowTile(
-              key: ValueKey('home.street.${street.id.value}'),
-              row: street,
-              onTap: () => _open(context, street),
-            ),
+          for (final row in state.streets)
+            switch (row) {
+              StreetRow() => StreetRowTile(
+                key: ValueKey('home.street.${row.id.value}'),
+                row: row,
+                onTap: () => _open(context, row),
+              ),
+              // A street that cannot be read (#149): its sheet, not its
+              // screen.
+              UnreadableStreetRow() => UnreadableStreetRowTile(
+                key: ValueKey('home.unreadable.${row.id.value}'),
+                row: row,
+                onTap: () => showUnreadableStreetSheet(context, row),
+              ),
+            },
       ],
     );
   }

@@ -11,6 +11,7 @@ import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
+import 'package:tournee_calendriers/domain/street/unreadable_street.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_document_mapper.dart';
 
@@ -814,6 +815,33 @@ void main() {
       expectUnreadable((data) {
         floorOfEight(data, 1)['floor'] = 1;
       });
+    });
+  });
+
+  group('unreadableStreetOf (#149)', () {
+    UnreadableStreet unreadable(void Function(Map<String, dynamic>) change) =>
+        unreadableStreetOf('pasteur', storedRich(change));
+
+    test('should keep the id and the name when the name reads', () {
+      final street = unreadable((data) {
+        data['name'] = '  Rue   Pasteur ';
+        data['shape'] = 'abc';
+      });
+
+      expect(street.id, StreetId('pasteur'));
+      expect(street.name!.text, 'Rue Pasteur');
+    });
+
+    test('should have no name when the document has none', () {
+      expect(unreadable((data) => data.remove('name')).name, isNull);
+    });
+
+    test('should have no name when the name is not text', () {
+      expect(unreadable((data) => data['name'] = 12).name, isNull);
+    });
+
+    test('should have no name when the domain refuses the name', () {
+      expect(unreadable((data) => data['name'] = '   ').name, isNull);
     });
   });
 }

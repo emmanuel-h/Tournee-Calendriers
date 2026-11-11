@@ -77,6 +77,7 @@ import 'package:cloud_firestore/cloud_firestore.dart' show Timestamp;
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
 import 'package:tournee_calendriers/domain/shared/commune.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
+import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/building/building.dart';
 import 'package:tournee_calendriers/domain/street/building/building_plan.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
@@ -91,7 +92,9 @@ import 'package:tournee_calendriers/domain/street/nobody_home_tries.dart';
 import 'package:tournee_calendriers/domain/street/removed_house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_name.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
+import 'package:tournee_calendriers/domain/street/unreadable_street.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/stored_values.dart';
 import 'package:tournee_calendriers/infrastructure/shared/mappers/come_back_text.dart';
@@ -260,6 +263,21 @@ Street streetFromDocument(String id, Map<String, Object?> data) {
   }
   throw const FormatException('Not a street document');
 }
+
+/// What can still be told of the document [id] that [streetFromDocument]
+/// refused (#149): its id, and its name when the `name` field alone is a
+/// name the domain takes. Accueil lists it so, rather than leaving it out.
+UnreadableStreet unreadableStreetOf(String id, Map<String, Object?> data) =>
+    UnreadableStreet(
+      id: identifier(id, StreetId.new),
+      name: switch (data['name']) {
+        final String text => switch (StreetName.create(text)) {
+          Ok(:final value) => value,
+          Err() => null,
+        },
+        _ => null,
+      },
+    );
 
 /// The shape stored as [json]; none when the field is missing (a street
 /// written before the map).

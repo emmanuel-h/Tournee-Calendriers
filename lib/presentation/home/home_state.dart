@@ -12,7 +12,7 @@ final class HomeState {
     required this.loading,
     required this.done,
     required this.total,
-    required List<StreetRow> streets,
+    required List<HomeRow> streets,
     required this.layers,
     required this.area,
     required this.card,
@@ -28,8 +28,9 @@ final class HomeState {
   final int total;
 
   /// Every street of the secteur, in French order: each member covers them
-  /// all (PLAN §5.14).
-  final List<StreetRow> streets;
+  /// all (PLAN §5.14). The streets that cannot be read are rows too, by
+  /// their name, those without one last (#149).
+  final List<HomeRow> streets;
 
   /// The streets and house dots the map draws.
   final MapLayers layers;

@@ -2114,6 +2114,19 @@ SettingsNameTaken, StreetUnreadable, StreetUnreadableSheet). Overrides 5.2, 5.8,
   lue : ses données sont abîmées. Elle n'apparaît ni sur la carte ni dans les totaux. », « Un
   administrateur peut la supprimer, puis l'ajouter de nouveau. » and, for admins, « Supprimer la
   rue » (outlined red).
+  **Delivered (#149):** the Firestore listener keeps a document `streetFromDocument` refuses
+  apart as an `UnreadableStreet` (domain value: its id, and its name when the `name` field alone
+  is a `StreetName`), behind the `UnreadableStreets` port (`watchUnreadable`, `delete`) that the
+  street adapter implements from the same listener, so it shows offline too.
+  `ObserveUnreadableStreets` / `DeleteUnreadableStreet`; Accueil's rows are a sealed `HomeRow`
+  (`StreetRow` | `UnreadableStreetRow`) in French order by name, nameless ones last. Never in
+  `StreetRepository`, so not on the map, nor in « Rues · n/m », nor in Secteur's « RUES (n) ».
+  Without a name the row is only « Rue illisible » (no « Illisible » under it). « Supprimer la
+  rue » deletes the document at once, without a confirmation (the sheet is that step), memory
+  first and queued offline; the existing rule `allow delete: if isAdmin()` on a street lets an
+  admin do it, no rules change. « Administrateurs seulement » shows under the button, to admins
+  only, as the mockup draws it. The streets download still leaves such a street out of the
+  map's area; its document lands in the cache all the same, so the listener lists it.
 
 ## 6. Data model
 

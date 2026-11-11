@@ -34,6 +34,7 @@ import 'package:tournee_calendriers/application/ports/street_part_index.dart';
 import 'package:tournee_calendriers/application/ports/street_shapes.dart';
 import 'package:tournee_calendriers/application/ports/street_view_preferences.dart';
 import 'package:tournee_calendriers/application/ports/streets_download.dart';
+import 'package:tournee_calendriers/application/ports/unreadable_streets.dart';
 import 'package:tournee_calendriers/application/use_cases/add_manual_street.dart';
 import 'package:tournee_calendriers/application/use_cases/add_street_from_map.dart';
 import 'package:tournee_calendriers/application/use_cases/admins.dart';
@@ -75,6 +76,7 @@ import 'package:tournee_calendriers/application/use_cases/set_house_details.dart
 import 'package:tournee_calendriers/application/use_cases/sign_in.dart';
 import 'package:tournee_calendriers/application/use_cases/team.dart';
 import 'package:tournee_calendriers/application/use_cases/undo_last_change.dart';
+import 'package:tournee_calendriers/application/use_cases/unreadable_streets.dart';
 import 'package:tournee_calendriers/domain/sector/sector_repository.dart';
 import 'package:tournee_calendriers/domain/street/street_repository.dart';
 
@@ -101,6 +103,13 @@ final pendingSyncProvider = Provider<PendingSync>(
 /// listener tells it; with no tournée open, nothing does.
 final serverConnectionProvider = Provider<ServerConnection>(
   (ref) => _unbound('ServerConnection'),
+);
+
+/// The open secteur's streets that cannot be read (#149). The composition
+/// root binds it to the same adapter as [streetRepositoryProvider] too:
+/// one listener reads them all; with no secteur open there are none.
+final unreadableStreetsProvider = Provider<UnreadableStreets>(
+  (ref) => _unbound('UnreadableStreets'),
 );
 
 /// Which secteur holds which part of a BAN street (PLAN §5.15): the open
@@ -404,6 +413,12 @@ final purgeCorbeilleProvider = Provider(
 );
 final observePendingSyncProvider = Provider(
   (ref) => ObservePendingSync(ref.watch(pendingSyncProvider)),
+);
+final observeUnreadableStreetsProvider = Provider(
+  (ref) => ObserveUnreadableStreets(ref.watch(unreadableStreetsProvider)),
+);
+final deleteUnreadableStreetProvider = Provider(
+  (ref) => DeleteUnreadableStreet(ref.watch(unreadableStreetsProvider)),
 );
 final observeOfflineProvider = Provider(
   (ref) => ObserveOffline(ref.watch(serverConnectionProvider)),

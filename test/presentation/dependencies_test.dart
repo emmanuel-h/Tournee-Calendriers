@@ -30,6 +30,7 @@ import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_part.dart';
+import 'package:tournee_calendriers/domain/street/unreadable_street.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 
@@ -73,6 +74,7 @@ import '../support/fakes/fake_street_repository.dart';
 import '../support/fakes/fake_street_shapes.dart';
 import '../support/fakes/fake_street_view_preferences.dart';
 import '../support/fakes/fake_streets_download.dart';
+import '../support/fakes/fake_unreadable_streets.dart';
 import '../support/geo_fixtures.dart';
 import '../support/results.dart';
 import '../support/scripted_random.dart';
@@ -90,6 +92,7 @@ void main() {
   late FakeSectorDirectory sectorDirectory;
   late FakeSectorRepository sectors;
   late FakePendingSync pending;
+  late FakeUnreadableStreets unreadable;
   late FakeAdminStatus admins;
   late FakeOpenRoundStore rounds;
   late FakeRoundLedger ledger;
@@ -101,6 +104,7 @@ void main() {
   List<Override> overridesAs(MemberId member) => [
     streetRepositoryProvider.overrideWithValue(streets),
     pendingSyncProvider.overrideWithValue(pending),
+    unreadableStreetsProvider.overrideWithValue(unreadable),
     serverConnectionProvider.overrideWithValue(
       FakeServerConnection(offline: true),
     ),
@@ -162,6 +166,7 @@ void main() {
     sectorDirectory = FakeSectorDirectory();
     sectors = FakeSectorRepository([team()]);
     pending = FakePendingSync(2);
+    unreadable = FakeUnreadableStreets([UnreadableStreet(id: lilasId)]);
     // The phone is an admin's, and Manu is one.
     admins = FakeAdminStatus(phoneIsAdmin: true, admins: [manuId]);
     rounds = FakeOpenRoundStore();
@@ -190,6 +195,7 @@ void main() {
       'SectorDirectory': sectorDirectoryProvider,
       'SectorRepository': sectorRepositoryProvider,
       'PendingSync': pendingSyncProvider,
+      'UnreadableStreets': unreadableStreetsProvider,
       'Random': randomProvider,
       'AdminStatus': adminStatusProvider,
       'StreetsDownload': streetsDownloadProvider,
@@ -611,6 +617,20 @@ void main() {
       final streets = await container.read(observePendingSyncProvider)().first;
 
       expect(streets, 2);
+    });
+
+    test('should observe the unreadable streets of the bound port', () async {
+      final streets = await container
+          .read(observeUnreadableStreetsProvider)()
+          .first;
+
+      expect(streets, [UnreadableStreet(id: lilasId)]);
+    });
+
+    test('should delete an unreadable street through the bound port', () async {
+      await container.read(deleteUnreadableStreetProvider)(lilasId);
+
+      expect(unreadable.deleted, [lilasId]);
     });
 
     test('should observe whether the bound connection is offline', () async {

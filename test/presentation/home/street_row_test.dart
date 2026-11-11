@@ -41,4 +41,31 @@ void main() {
     expect(row(), isNot(row(done: 30)));
     expect(row(), isNot(row(total: 43)));
   });
+
+  group('unreadable (#149)', () {
+    UnreadableStreetRow unreadable({
+      String id = 'pasteur',
+      String? name = 'Rue Pasteur',
+    }) => UnreadableStreetRow(id: StreetId(id), name: name);
+
+    test('should keep its street and name', () {
+      expect(unreadable().id, StreetId('pasteur'));
+      expect(unreadable().name, 'Rue Pasteur');
+      expect(unreadable(name: null).name, isNull);
+    });
+
+    test('should equal a row of the same street and name', () {
+      expect(unreadable(), unreadable());
+      expect(unreadable().hashCode, unreadable().hashCode);
+    });
+
+    test('should differ from a row with another field', () {
+      expect(unreadable(), isNot(unreadable(id: 'lilas')));
+      expect(unreadable(), isNot(unreadable(name: null)));
+    });
+
+    test('should say its street and name', () {
+      expect('${unreadable()}', 'UnreadableStreetRow(pasteur, Rue Pasteur)');
+    });
+  });
 }

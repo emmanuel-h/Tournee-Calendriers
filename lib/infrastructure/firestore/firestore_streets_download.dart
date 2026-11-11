@@ -41,8 +41,9 @@ final class FirestoreStreetsDownload implements StreetsDownload {
   }
 
   /// The street in [doc], or null when it cannot be read: it is left out
-  /// (its map too) rather than stopping the download, as the tournée's
-  /// listener leaves it out.
+  /// of the map's area rather than stopping the download. Its document is
+  /// in the phone's cache all the same, so the tournée's listener lists it
+  /// on Accueil as unreadable, offline too (#149).
   Street? _read(QueryDocumentSnapshot<Map<String, dynamic>> doc) {
     try {
       return streetFromDocument(doc.id, doc.data());

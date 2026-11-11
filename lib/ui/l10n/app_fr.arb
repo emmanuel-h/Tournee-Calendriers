@@ -2187,5 +2187,17 @@
   "otherSectorLabel": "Secteur {sector}",
   "@otherSectorLabel": {"description": "Label of another secteur's stretch, hatched on the map of « Partie de la rue ».", "placeholders": {"sector": {"type": "int", "example": "12"}}},
   "otherSectorPart": "Secteur {sector}{centre}\u00a0: {part}",
-  "@otherSectorPart": {"description": "Line under a street to add that another secteur holds (PLAN §5.15): « Secteur 12 : impairs 19–41 ».", "placeholders": {"sector": {"type": "int", "example": "12"}, "centre": {"type": "String", "example": " (CS Villefranche)"}, "part": {"type": "String", "example": "impairs 19–41"}}}
+  "@otherSectorPart": {"description": "Line under a street to add that another secteur holds (PLAN §5.15): « Secteur 12 : impairs 19–41 ».", "placeholders": {"sector": {"type": "int", "example": "12"}, "centre": {"type": "String", "example": " (CS Villefranche)"}, "part": {"type": "String", "example": "impairs 19–41"}}},
+  "unreadableStreetLabel": "Illisible",
+  "@unreadableStreetLabel": {"description": "Red line under the name of a street of Accueil's list whose data cannot be read (PLAN §5.16, #149)."},
+  "unreadableStreetNoName": "Rue illisible",
+  "@unreadableStreetNoName": {"description": "Accueil's row, and the title of its sheet, for a street whose data cannot be read, its name neither (#149)."},
+  "unreadableStreetSemantics": "{name}, illisible",
+  "@unreadableStreetSemantics": {"description": "What screen readers say for the row of an unreadable street whose name reads (#149).", "placeholders": {"name": {"type": "String", "example": "Rue Pasteur"}}},
+  "unreadableStreetBody": "Cette rue ne peut pas être lue\u00a0: ses données sont abîmées. Elle n'apparaît ni sur la carte ni dans les totaux.",
+  "@unreadableStreetBody": {"description": "Sheet of an unreadable street (PLAN §5.16, StreetUnreadableSheet mockup): why it shows so."},
+  "unreadableStreetAdminHint": "Un administrateur peut la supprimer, puis l'ajouter de nouveau.",
+  "@unreadableStreetAdminHint": {"description": "Sheet of an unreadable street: what can be done about it."},
+  "unreadableStreetAdminsOnly": "Administrateurs seulement",
+  "@unreadableStreetAdminsOnly": {"description": "Under « Supprimer la rue » in the sheet of an unreadable street, which only admins see."}
 }

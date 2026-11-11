@@ -616,6 +616,24 @@ void main() {
       expect(firestoreAsked, 0);
     });
 
+    test('should keep the unreadable streets with the storage of the open '
+        'tournée', () async {
+      final container = await leasPhone();
+      final pending49 = container.read(pendingSyncProvider);
+
+      // The same adapter as the pending sync: its one listener keeps them.
+      expect(container.read(unreadableStreetsProvider), same(pending49));
+    });
+
+    test('should have no unreadable street while no tournée is open', () async {
+      final container = await leasPhone(noSector: true);
+      final unreadable = container.read(unreadableStreetsProvider);
+
+      expect(await unreadable.watchUnreadable().first, isEmpty);
+      await unreadable.delete(StreetId('pasteur'));
+      expect(firestoreAsked, 0);
+    });
+
     test('should show a teammate the marks of another phone', () async {
       final paulsFolder = await Directory.systemTemp.createTemp('paul');
       addTearDown(() => paulsFolder.delete(recursive: true));

@@ -1,7 +1,9 @@
 import 'dart:async';
 
+import 'package:tournee_calendriers/domain/shared/same_items.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/unreadable_street.dart';
 import 'package:tournee_calendriers/infrastructure/shared/load_then_follow.dart';
 
 /// The streets of one campaign as this phone knows them: what the
@@ -21,6 +23,10 @@ import 'package:tournee_calendriers/infrastructure/shared/load_then_follow.dart'
 /// in that instant reads the older street.
 final class StreetMemory {
   final _streets = <StreetId, Street>{};
+
+  /// The streets whose document cannot be read (#149), apart: a street is
+  /// in [_streets] or here, never in both.
+  final _unreadable = <StreetId, UnreadableStreet>{};
 
   /// The streets whose writes the server has not received yet.
   var _unsent = <StreetId>{};
@@ -54,32 +60,41 @@ final class StreetMemory {
     _changes.add({street.id});
   }
 
-  /// Forgets the street [id], purged on this phone (the 30-day purge of the
-  /// Corbeille).
+  /// Forgets the street [id], deleted on this phone: the 30-day purge of
+  /// the Corbeille, or an unreadable street an admin deletes.
   void remove(StreetId id) {
     _streets.remove(id);
+    _unreadable.remove(id);
     _changes.add({id});
   }
 
   /// Takes what a snapshot of the listener says: each street of [changed]
-  /// as it is now (null when it is gone or unreadable), the [unsent]
-  /// streets, and whether it came [fromCache] (the server out of reach).
+  /// as it is now (null when it is gone), the streets it could not read
+  /// ([unreadable]), the [unsent] streets, and whether it came [fromCache]
+  /// (the server out of reach).
   void receive(
     Map<StreetId, Street?> changed,
     Set<StreetId> unsent, {
     bool fromCache = false,
+    Map<StreetId, UnreadableStreet> unreadable = const {},
   }) {
     for (final MapEntry(:key, :value) in changed.entries) {
+      // Read, or gone: no longer unreadable either way.
+      _unreadable.remove(key);
       if (value == null) {
         _streets.remove(key);
       } else {
         _streets[key] = value;
       }
     }
+    for (final MapEntry(:key, :value) in unreadable.entries) {
+      _streets.remove(key);
+      _unreadable[key] = value;
+    }
     _unsent = unsent;
     _fromCache = fromCache;
     if (!_loaded.isCompleted) _loaded.complete();
-    _changes.add(changed.keys.toSet());
+    _changes.add({...changed.keys, ...unreadable.keys});
   }
 
   /// Takes the failure of the listener (this member may no longer read the
@@ -102,6 +117,13 @@ final class StreetMemory {
     concerns: concerns,
     read: read,
   );
+
+  /// The streets whose document cannot be read, now and each time they
+  /// change; a mark on another street gives nothing.
+  Stream<List<UnreadableStreet>> watchUnreadable() => observe(
+    (_) => List<UnreadableStreet>.unmodifiable(_unreadable.values),
+    (_) => true,
+  ).distinct(sameItems);
 
   /// The number of streets with writes waiting, now and each time it
   /// changes.

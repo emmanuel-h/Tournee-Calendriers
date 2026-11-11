@@ -12,8 +12,10 @@ import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_name.dart';
 import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
+import 'package:tournee_calendriers/domain/street/unreadable_street.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_street_repository.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_document_mapper.dart';
@@ -851,5 +853,73 @@ void main() {
         expect(await streets.watchOffline().first, isFalse);
       },
     );
+  });
+
+  group('unreadable (#149)', () {
+    final pasteurId = StreetId('pasteur');
+
+    test('should list a street it cannot read, with its name, apart from the '
+        'streets', () async {
+      await db.doc('$streetsPath/pasteur').set({'name': 'Rue Pasteur'});
+      await phone().add(lilas);
+      await pumpEventQueue();
+
+      final streets = phone();
+
+      expect(await streets.watchUnreadable().first, [
+        UnreadableStreet(
+          id: pasteurId,
+          name: valueOf(StreetName.create('Rue Pasteur')),
+        ),
+      ]);
+      expect((await streets.watchAll().first).map((street) => street.id), [
+        lilas.id,
+      ]);
+    });
+
+    test('should list it without a name when even its name cannot be '
+        'read', () async {
+      await db.doc('$streetsPath/pasteur').set({'houses': 3});
+
+      expect(await phone().watchUnreadable().first, [
+        UnreadableStreet(id: pasteurId),
+      ]);
+    });
+
+    test('should list it as a street again once a write makes it '
+        'readable', () async {
+      await db.doc('$streetsPath/lilas').set({'name': 'Rue lilas'});
+      final streets = phone();
+      expect(await streets.watchUnreadable().first, hasLength(1));
+
+      await db.doc('$streetsPath/lilas').set(streetToDocument(lilas));
+      await pumpEventQueue();
+
+      expect(await streets.watchUnreadable().first, isEmpty);
+      expect((await streets.find(lilas.id))!.name.text, 'Rue lilas');
+    });
+
+    test('should forget it on this phone as soon as it is deleted', () async {
+      await db.doc('$streetsPath/pasteur').set({'name': 'Rue Pasteur'});
+      final streets = phone();
+      expect(await streets.watchUnreadable().first, hasLength(1));
+
+      await streets.delete(pasteurId);
+
+      expect(await streets.watchUnreadable().first, isEmpty);
+    });
+
+    test('should delete its document for the whole team', () async {
+      await db.doc('$streetsPath/pasteur').set({'name': 'Rue Pasteur'});
+      await phone().add(lilas);
+      await pumpEventQueue();
+
+      await phone().delete(pasteurId);
+      await pumpEventQueue();
+
+      expect((await db.doc('$streetsPath/pasteur').get()).exists, isFalse);
+      expect((await db.doc('$streetsPath/lilas').get()).exists, isTrue);
+      expect(await phone().watchUnreadable().first, isEmpty);
+    });
   });
 }

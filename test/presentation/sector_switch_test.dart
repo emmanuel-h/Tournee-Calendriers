@@ -27,6 +27,7 @@ import '../support/fakes/fake_sector_repository.dart';
 import '../support/fakes/fake_street_repository.dart';
 import '../support/fakes/fake_street_shapes.dart';
 import '../support/fakes/fake_street_view_preferences.dart';
+import '../support/fakes/fake_unreadable_streets.dart';
 import '../support/results.dart';
 import '../support/street_fixtures.dart' show n, villefranche;
 import '../support/streets_of_the_open_sector.dart';
@@ -78,6 +79,7 @@ void main() {
         openRoundStoreProvider.overrideWithValue(FakeOpenRoundStore()),
         adminStatusProvider.overrideWithValue(FakeAdminStatus()),
         streetShapesProvider.overrideWithValue(FakeStreetShapes()),
+        unreadableStreetsProvider.overrideWithValue(FakeUnreadableStreets()),
       ],
     );
     addTearDown(container.dispose);

@@ -278,6 +278,10 @@ abstract final class AppSizes {
   static const alertRadius = 14.0;
   static const alertGlyph = 20.0;
 
+  /// The round ⚠ badge before the name of an unreadable street in
+  /// Accueil's list (StreetUnreadable mockup, #149).
+  static const unreadableBadge = 28.0;
+
   /// A row of the list of centres de secours.
   static const optionRowHeight = 48.0;
 
