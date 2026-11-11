@@ -6,6 +6,7 @@ import 'package:tournee_calendriers/application/ports/round_ledger.dart';
 import 'package:tournee_calendriers/domain/round/donation_totals.dart';
 import 'package:tournee_calendriers/domain/round/round_id.dart';
 import 'package:tournee_calendriers/domain/round/round_summary.dart';
+import 'package:tournee_calendriers/domain/round/unsent_round.dart';
 import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
 import 'package:tournee_calendriers/domain/sector/member.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
@@ -19,6 +20,7 @@ import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.
 import '../../domain/round/round_fixtures.dart';
 import '../../domain/sector/my_sectors_fixtures.dart';
 import '../../support/fakes/fake_my_sectors_store.dart';
+import '../../support/fakes/fake_open_round_store.dart';
 import '../../support/fakes/fake_round_ledger.dart';
 import '../../support/fakes/fake_sector_repository.dart';
 import '../../support/results.dart';
@@ -27,7 +29,11 @@ import '../../support/results.dart';
 /// readable », which the Firestore adapter already turns into none.
 final class _BrokenLedger implements RoundLedger {
   @override
-  Future<void> record(SectorId s, CampaignYear c, RoundSummary r) async {}
+  Future<LedgerAnswer> record(
+    SectorId s,
+    CampaignYear c,
+    RoundSummary r,
+  ) async => LedgerAnswer.kept;
 
   @override
   Stream<List<RoundSummary>> watch(SectorId s, CampaignYear c) =>
@@ -56,18 +62,25 @@ final friday = RoundSummary(
 void main() {
   late FakeRoundLedger ledger;
   late FakeMySectorsStore store;
+  late FakeOpenRoundStore rounds;
   late ProviderContainer container;
 
   /// A phone where [open] is the secteur shown (none when null), with the
   /// ledger [given] (the fake one by default).
-  void phoneWith({SectorSummary? open, RoundLedger? given}) {
+  void phoneWith({
+    SectorSummary? open,
+    RoundLedger? given,
+    List<UnsentRound> unsent = const [],
+  }) {
     ledger = FakeRoundLedger();
+    rounds = FakeOpenRoundStore(null, unsent);
     var mine = MySectors.none.remember(sector12);
     if (open != null) mine = valueOf(mine.remember(open).open(open.id));
     store = FakeMySectorsStore(mine);
     container = ProviderContainer(
       overrides: [
         roundLedgerProvider.overrideWithValue(given ?? ledger),
+        openRoundStoreProvider.overrideWithValue(rounds),
         mySectorsStoreProvider.overrideWithValue(store),
         // « Mes secteurs » follows the requests of the other secteurs.
         sectorRepositoryProvider.overrideWithValue(FakeSectorRepository()),
@@ -200,4 +213,71 @@ void main() {
       expect(await settled(), const CollecteUnavailable());
     },
   );
+
+  group('tournées not yet sent', () {
+    final waiting = UnsentRound(
+      sector: sector49Id,
+      campaign: year2026,
+      summary: saturday,
+    );
+    final refused = UnsentRound(
+      sector: sector49Id,
+      campaign: year2026,
+      summary: friday,
+      state: UnsentState.refused,
+    );
+
+    test('should show them apart, newest first, out of the totals', () async {
+      phoneWith(open: sector49, unsent: [refused, waiting]);
+
+      final view = await settled() as CollecteShown;
+
+      expect(view.unsent, [
+        CollecteUnsentRound(
+          round: CollecteRound(
+            id: RoundId('sat'),
+            startedAt: startedAt.toLocal(),
+            endedAt: endedAt.toLocal(),
+            housesVisited: 23,
+            totals: saturday.totals,
+          ),
+          state: UnsentState.waiting,
+        ),
+        CollecteUnsentRound(
+          round: CollecteRound(
+            id: RoundId('fri'),
+            startedAt: friday.startedAt.toLocal(),
+            endedAt: friday.endedAt.toLocal(),
+            housesVisited: 14,
+            totals: friday.totals,
+          ),
+          state: UnsentState.refused,
+        ),
+      ]);
+      expect(view.rounds, isEmpty);
+      expect(view.totals, DonationTotals.none);
+    });
+
+    test('should make a refused one wait again on « Réessayer »', () async {
+      phoneWith(open: sector49, unsent: [refused]);
+      await settled();
+
+      await container.read(collecteProvider.notifier).retry(RoundId('fri'));
+      final view = await settled() as CollecteShown;
+
+      expect(rounds.unsent, [refused.retried()]);
+      expect(view.unsent.single.state, UnsentState.waiting);
+    });
+
+    test('should forget a refused one on « Effacer »', () async {
+      phoneWith(open: sector49, unsent: [refused, waiting]);
+      await settled();
+
+      await container.read(collecteProvider.notifier).erase(RoundId('fri'));
+      final view = await settled() as CollecteShown;
+
+      expect(rounds.unsent, [waiting]);
+      expect(view.unsent.single.round.id, RoundId('sat'));
+    });
+  });
 }

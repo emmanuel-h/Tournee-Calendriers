@@ -274,7 +274,7 @@ Future<List<Override>> bindAdapters({
     phoneSettingsProvider.overrideWithValue(settings),
     // The tournée on and its dons stay on the phone (PLAN §6.3); once
     // validated, only its summary goes to the secteur, in Firestore
-    // (#110), whose offline queue sends it later.
+    // (#110), kept on the phone until the server has it (#143).
     openRoundStoreProvider.overrideWithValue(openRound),
     roundLedgerProvider.overrideWith((ref) => FirestoreRoundLedger(db)),
     // `overrideWith`: built the first time it is read, not at start-up.

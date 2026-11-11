@@ -17,6 +17,9 @@ import 'package:tournee_calendriers/application/use_cases/import_reference_area.
 import 'package:tournee_calendriers/application/use_cases/look_up_street.dart';
 import 'package:tournee_calendriers/application/use_cases/mark.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
+import 'package:tournee_calendriers/domain/round/donation_totals.dart';
+import 'package:tournee_calendriers/domain/round/round_id.dart';
+import 'package:tournee_calendriers/domain/round/round_summary.dart';
 import 'package:tournee_calendriers/domain/sector/join_request.dart';
 import 'package:tournee_calendriers/domain/sector/member.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
@@ -79,6 +82,15 @@ import '../support/geo_fixtures.dart';
 import '../support/results.dart';
 import '../support/scripted_random.dart';
 import '../support/street_fixtures.dart';
+
+/// A tournée of the 49 the server has, the day after [newRound]'s.
+final nextSummary = RoundSummary(
+  id: RoundId('round-2'),
+  startedAt: DateTime.utc(2026, 10, 25, 12),
+  endedAt: DateTime.utc(2026, 10, 25, 16),
+  housesVisited: 4,
+  totals: DonationTotals.of([cash(500)]),
+);
 
 void main() {
   late FakeStreetRepository streets;
@@ -932,14 +944,50 @@ void main() {
       expect(rounds.openRound!.donations, [cheque(2000)]);
     });
 
-    test('should validate into the bound ledger at the bound time', () async {
+    test('should validate into the bound store at the bound time', () async {
       roundOnInThe49();
 
-      final summary = valueOf(await container.read(validateRoundProvider)());
+      final validated = valueOf(await container.read(validateRoundProvider)());
 
-      expect(summary.endedAt, twoPm);
-      expect(ledger.recorded.single.$3, summary);
+      expect(validated.summary.endedAt, twoPm);
+      expect(rounds.unsent, [validated]);
       expect(rounds.openRound, isNull);
+    });
+
+    test('should send the waiting tournées to the bound ledger', () async {
+      roundOnInThe49();
+      final validated = valueOf(await container.read(validateRoundProvider)());
+
+      final sending = container.read(sendUnsentRoundsProvider)();
+      addTearDown(sending.cancel);
+      await pumpEventQueue();
+
+      expect(ledger.recorded.single.$3, validated.summary);
+      expect(rounds.unsent, isEmpty);
+    });
+
+    test(
+      'should retry and erase a refused tournée of the bound store',
+      () async {
+        roundOnInThe49();
+        final validated = valueOf(
+          await container.read(validateRoundProvider)(),
+        );
+        await rounds.updateUnsent(validated.refused());
+
+        await container.read(retryUnsentRoundProvider)(validated.id);
+        expect(rounds.unsent, [validated]);
+        await rounds.updateUnsent(validated.refused());
+        await container.read(eraseUnsentRoundProvider)(validated.id);
+
+        expect(rounds.unsent, isEmpty);
+      },
+    );
+
+    test('should tell whether the bound store was unreadable', () {
+      rounds.unreadableAtStart = true;
+
+      expect(container.read(roundsUnreadableAtStartProvider)(), isTrue);
     });
 
     test('should abandon the tournée of the bound store', () async {
@@ -951,15 +999,17 @@ void main() {
       expect(rounds.openRound, isNull);
     });
 
-    test('should watch the collecte of the bound ledger', () async {
+    test('should watch the collecte of the bound ledger and store', () async {
       roundOnInThe49();
-      final summary = valueOf(await container.read(validateRoundProvider)());
+      final validated = valueOf(await container.read(validateRoundProvider)());
+      await ledger.record(sector49.id, sector49.campaign, nextSummary);
 
       final collecte = await container
           .read(watchCollecteProvider)(sector49.id, sector49.campaign)
           .first;
 
-      expect(collecte.rounds, [summary]);
+      expect(collecte.rounds, [nextSummary]);
+      expect(collecte.unsent, [validated]);
     });
 
     test(

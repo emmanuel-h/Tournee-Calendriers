@@ -108,8 +108,9 @@ final class _RoundRecapScreenState extends ConsumerState<RoundRecapScreen> {
       destructive: true,
     );
     if (!confirmed || !mounted) return;
-    // Kept on the phone in a moment, and queued for the secteur while
-    // offline; Accueil then shows no tournée.
+    // Kept on the phone in a moment, as validated but not yet sent, until
+    // the server has its summary (Collecte tells where it stands); Accueil
+    // then shows no tournée.
     await ref.read(roundProvider.notifier).validate();
     if (mounted) context.go(AppRoutes.home);
   }

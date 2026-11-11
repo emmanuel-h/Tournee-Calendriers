@@ -268,7 +268,8 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState>
   /// (PLAN §5.6, #114): it joins the tournée on, and the house or door
   /// takes one calendar more (`AddDonation`), after the changes asked
   /// before. Returns where the don went and the calendar's change, for the
-  /// snackbar and its « Annuler »; null when no tournée is on any more.
+  /// snackbar and its « Annuler », or that the house took no calendar
+  /// (#155); null when no tournée is on any more.
   Future<GivenDonation?> addDonation(Donation donation) {
     // Read now: the sheet closes as the don is given.
     final add = ref.read(addDonationProvider);
@@ -286,11 +287,19 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState>
     Result<AddedDonation, NoRoundOn> added,
     Donation donation,
   ) => switch (added) {
-    Ok(value: AddedDonation(:final round, :final calendar)) => GivenDonation(
-      index: round.donations.length - 1,
-      donation: donation,
-      calendar: calendar,
-    ),
+    Ok(
+      value: AddedDonation(
+        :final round,
+        :final calendar,
+        :final calendarRefused,
+      ),
+    ) =>
+      GivenDonation(
+        index: round.donations.length - 1,
+        donation: donation,
+        calendar: calendar,
+        calendarRefused: calendarRefused != null,
+      ),
     Err() => null,
   };
 

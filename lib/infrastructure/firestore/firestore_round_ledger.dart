@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/foundation.dart';
 import 'package:tournee_calendriers/application/ports/round_ledger.dart';
 import 'package:tournee_calendriers/domain/round/round_summary.dart';
 import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
@@ -12,36 +13,52 @@ import 'package:tournee_calendriers/infrastructure/firestore/mappers/round_docum
 /// `sectors/{id}/campaigns/{year}/rounds/{roundId}` (PLAN §6.2), seen by
 /// the whole secteur in « Collecte ».
 ///
-/// Nothing of it is kept in a file of its own: Firestore's offline
-/// persistence keeps a summary recorded offline in its queue, across
-/// restarts, until the server has it, and its copy of the documents read
-/// answers [watch] after an offline cold start.
+/// The phone keeps a validated summary itself until [record] says the
+/// server has it (`OpenRoundStore`, #143), so a refusal is never lost; the
+/// Firestore copy of the documents read answers [watch] after an offline
+/// cold start.
 final class FirestoreRoundLedger implements RoundLedger {
   const FirestoreRoundLedger(this._db);
 
   final FirebaseFirestore _db;
 
-  /// Writes the summary under its round's id, without waiting for the
-  /// server (`sendInBackground`): the phone's copy has it at once.
+  /// Asks the server first, then creates the document only when it has
+  /// none, and waits for the server's answer (offline, for as long as it
+  /// takes).
   ///
-  /// A `set`, which the security rules accept only as the document's
-  /// creation. Recording the same tournée again (validated twice after a
-  /// kill) reaches the server as an update, which they refuse: Firestore
-  /// then puts the phone's copy back to the first summary, which stays.
+  /// Why not a plain `set`: the security rules take a summary only as the
+  /// document's creation. After a kill, an earlier `set` of this summary
+  /// may still be in Firestore's own queue, or already on the server; a
+  /// second `set` would then reach it as an update and be refused, though
+  /// the server has the summary. So the server's word comes first: a
+  /// listener's first snapshot that is neither from the phone's copy nor
+  /// waiting on a write of this phone ([isServerWord]), which, after a
+  /// kill, is the earlier write kept or refused. The document there means
+  /// kept; none means never written, or refused, and it is created now.
+  ///
+  /// Any error of Firestore (the member removed cannot even read) is a
+  /// refusal: « Réessayer » asks again.
   @override
-  Future<void> record(
+  Future<LedgerAnswer> record(
     SectorId sector,
     CampaignYear campaign,
     RoundSummary summary,
   ) async {
-    sendInBackground(
-      'round ${summary.id.value}',
-      FirestoreLayout.roundsOf(
-        _db,
-        sector,
-        campaign,
-      ).doc(summary.id.value).set(roundToDocument(summary)),
-    );
+    final document = FirestoreLayout.roundsOf(
+      _db,
+      sector,
+      campaign,
+    ).doc(summary.id.value);
+    try {
+      final known = await document
+          .snapshots(includeMetadataChanges: true)
+          .firstWhere((snapshot) => isServerWord(snapshot.metadata));
+      if (!known.exists) await document.set(roundToDocument(summary));
+      return LedgerAnswer.kept;
+    } on FirebaseException catch (error) {
+      debugPrint('Round ${summary.id.value} refused: $error');
+      return LedgerAnswer.refused;
+    }
   }
 
   /// Follows `rounds/` with a listener, served from the phone's copy
@@ -68,3 +85,8 @@ final class FirestoreRoundLedger implements RoundLedger {
             ),
           );
 }
+
+/// Whether a snapshot of [metadata] is the server's word on a document:
+/// read from the server, with no write of this phone waiting on it.
+bool isServerWord(SnapshotMetadata metadata) =>
+    !metadata.isFromCache && !metadata.hasPendingWrites;

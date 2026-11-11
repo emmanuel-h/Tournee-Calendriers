@@ -398,6 +398,10 @@ abstract final class AppSizes {
   static const collecteDetailIndent = 36.0;
   static const collecteChevronWidth = 18.0;
 
+  /// The rounded badge of a tournée not yet sent (« ⏳ En attente
+  /// d'envoi », CashUnsent mockup).
+  static const badgeRadius = 12.0;
+
   /// « Partie de la rue » (PLAN §5.15, StreetPart mockup): the border of a
   /// house dot; a mark, a round 32 dp handle on a stem under its label,
   /// answering a finger over 48 dp.

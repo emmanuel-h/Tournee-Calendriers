@@ -194,15 +194,17 @@ final class _MarkingScreenState extends ConsumerState<_MarkingScreen>
   }
 
   /// Shows the don given to the house [number] already done (« N° 9 · 5 €
-  /// en chèque ajouté »), with « Annuler », which takes it back.
+  /// en chèque ajouté »), with « Annuler », which takes it back. When the
+  /// house took no calendar with it (changed meanwhile, #155), it says
+  /// « calendrier non compté ».
   void _tellDonation(HouseNumber number, GivenDonation added) {
     final l10n = AppLocalizations.of(context);
     final notifier = _notifier;
+    final words = donationWords(l10n, added.donation);
     showUndo(
-      message: l10n.houseDonationAdded(
-        number.label,
-        donationWords(l10n, added.donation),
-      ),
+      message: added.calendarRefused
+          ? l10n.houseDonationAddedNoCalendar(number.label, words)
+          : l10n.houseDonationAdded(number.label, words),
       undoLabel: l10n.undo,
       onUndo: () => unawaited(notifier.undo()),
     );

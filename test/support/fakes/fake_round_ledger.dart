@@ -10,6 +10,17 @@ final class FakeRoundLedger implements RoundLedger {
   /// Every summary recorded, with its secteur and campaign.
   final recorded = <(SectorId, CampaignYear, RoundSummary)>[];
 
+  /// Every summary handed to [record], kept or not, in order.
+  final asked = <RoundSummary>[];
+
+  /// What [record] answers; [LedgerAnswer.kept] by default. A refused
+  /// summary is not [recorded].
+  var answer = LedgerAnswer.kept;
+
+  /// When set, [record] waits for it before answering: the server not
+  /// heard yet (offline).
+  Completer<void>? server;
+
   /// Called inside [record], before it ends: lets a test look at the
   /// phone at that moment.
   void Function()? onRecord;
@@ -17,14 +28,20 @@ final class FakeRoundLedger implements RoundLedger {
   final _changes = StreamController<void>.broadcast(sync: true);
 
   @override
-  Future<void> record(
+  Future<LedgerAnswer> record(
     SectorId sector,
     CampaignYear campaign,
     RoundSummary summary,
   ) async {
+    asked.add(summary);
     onRecord?.call();
-    recorded.add((sector, campaign, summary));
-    _changes.add(null);
+    await server?.future;
+    final answer = this.answer;
+    if (answer == LedgerAnswer.kept) {
+      recorded.add((sector, campaign, summary));
+      _changes.add(null);
+    }
+    return answer;
   }
 
   /// The summaries recorded for [sector] and [campaign], now and after

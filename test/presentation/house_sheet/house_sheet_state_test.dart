@@ -398,6 +398,28 @@ void main() {
       );
     });
 
+    test('should differ when only one says the calendar was refused', () {
+      final refused = GivenDonation(
+        index: 2,
+        donation: cheque(2000),
+        calendarRefused: true,
+      );
+
+      expect(refused, isNot(given));
+      expect(
+        refused.hashCode,
+        GivenDonation(
+          index: 2,
+          donation: cheque(2000),
+          calendarRefused: true,
+        ).hashCode,
+      );
+      expect(
+        refused.toString(),
+        'GivenDonation(2, PaidDonation(cheque, 2000), calendar refused)',
+      );
+    });
+
     test('should name its calendar too when printed', () {
       expect(
         GivenDonation(

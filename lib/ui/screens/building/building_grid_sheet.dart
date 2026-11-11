@@ -233,11 +233,12 @@ final class _BuildingGridSheetState extends ConsumerState<BuildingGridSheet>
     }
     if (added case final added?) {
       final l10n = AppLocalizations.of(context);
+      final words = donationWords(l10n, added.donation);
       showUndo(
-        message: l10n.doorDonationAdded(
-          door.label.text,
-          donationWords(l10n, added.donation),
-        ),
+        // « calendrier non compté » when the door took none (#155).
+        message: added.calendarRefused
+            ? l10n.doorDonationAddedNoCalendar(door.label.text, words)
+            : l10n.doorDonationAdded(door.label.text, words),
         undoLabel: l10n.undo,
         onUndo: () => unawaited(notifier.undo()),
       );

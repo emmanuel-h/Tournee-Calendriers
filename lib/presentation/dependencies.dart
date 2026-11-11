@@ -633,12 +633,36 @@ final changeDonationProvider = Provider(
 final removeDonationProvider = Provider(
   (ref) => RemoveDonation(ref.watch(openRoundStoreProvider)),
 );
+
+/// « Valider la tournée »: only the phone's store; the summary is sent by
+/// [sendUnsentRoundsProvider] (#143).
 final validateRoundProvider = Provider(
   (ref) => ValidateRound(
     ref.watch(openRoundStoreProvider),
-    ref.watch(roundLedgerProvider),
     ref.watch(clockProvider),
   ),
+);
+
+/// Sends the validated tournées waiting on the phone (#143). One instance
+/// for the app: it remembers which tournées are on their way.
+final sendUnsentRoundsProvider = Provider(
+  (ref) => SendUnsentRounds(
+    ref.watch(openRoundStoreProvider),
+    ref.watch(roundLedgerProvider),
+  ),
+);
+
+/// « Réessayer » and « Effacer » of a tournée refused (PLAN §5.16).
+final retryUnsentRoundProvider = Provider(
+  (ref) => RetryUnsentRound(ref.watch(openRoundStoreProvider)),
+);
+final eraseUnsentRoundProvider = Provider(
+  (ref) => EraseUnsentRound(ref.watch(openRoundStoreProvider)),
+);
+
+/// Whether the phone's tournées could not be read at start-up (#143).
+final roundsUnreadableAtStartProvider = Provider(
+  (ref) => RoundsUnreadableAtStart(ref.watch(openRoundStoreProvider)),
 );
 
 /// « Abandonner la tournée » (#136): only the phone's store, so nothing of
@@ -647,7 +671,11 @@ final abandonRoundProvider = Provider(
   (ref) => AbandonRound(ref.watch(openRoundStoreProvider)),
 );
 
-/// « Collecte 2026 » (#111): the validated tournées from the ledger.
+/// « Collecte 2026 » (#111): the validated tournées from the ledger, and
+/// those of the phone not yet sent (#143).
 final watchCollecteProvider = Provider(
-  (ref) => WatchCollecte(ref.watch(roundLedgerProvider)),
+  (ref) => WatchCollecte(
+    ref.watch(roundLedgerProvider),
+    ref.watch(openRoundStoreProvider),
+  ),
 );

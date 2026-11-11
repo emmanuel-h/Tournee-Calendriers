@@ -3,6 +3,7 @@ import 'package:tournee_calendriers/domain/round/collecte.dart';
 import 'package:tournee_calendriers/domain/round/donation_totals.dart';
 import 'package:tournee_calendriers/domain/round/round_id.dart';
 import 'package:tournee_calendriers/domain/round/round_summary.dart';
+import 'package:tournee_calendriers/domain/round/unsent_round.dart';
 
 import 'round_fixtures.dart';
 
@@ -60,5 +61,43 @@ void main() {
     final collecte = Collecte.of([saturday]);
 
     expect(() => collecte.rounds.add(sunday), throwsUnsupportedError);
+  });
+
+  group('with tournées not yet sent', () {
+    UnsentRound unsent(RoundSummary summary) =>
+        UnsentRound(sector: sector49Id, campaign: year2026, summary: summary);
+
+    test('should list them apart, newest first, out of the totals', () {
+      final collecte = Collecte.of(
+        [saturday],
+        unsent: [unsent(friday), unsent(sunday).refused()],
+      );
+
+      expect(collecte.rounds, [saturday]);
+      expect(collecte.unsent, [unsent(sunday).refused(), unsent(friday)]);
+      expect(collecte.totals, saturday.totals);
+    });
+
+    test('should leave out of the sent ones a tournée still waiting, which '
+        "the phone's copy of the server may already show", () {
+      final collecte = Collecte.of(
+        [saturday, sunday],
+        unsent: [unsent(sunday)],
+      );
+
+      expect(collecte.rounds, [saturday]);
+      expect(collecte.unsent, [unsent(sunday)]);
+      expect(collecte.totals, saturday.totals);
+    });
+
+    test('should have none by default', () {
+      expect(Collecte.of([saturday]).unsent, isEmpty);
+    });
+
+    test('should not let a caller change them', () {
+      final collecte = Collecte.of(const [], unsent: [unsent(friday)]);
+
+      expect(() => collecte.unsent.add(unsent(sunday)), throwsUnsupportedError);
+    });
   });
 }

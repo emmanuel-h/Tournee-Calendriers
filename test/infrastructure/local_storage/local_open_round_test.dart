@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/round/round.dart';
+import 'package:tournee_calendriers/domain/round/unsent_round.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_open_round.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/mappers/open_round_json_mapper.dart';
 
@@ -39,7 +40,10 @@ void main() {
     await saving;
 
     expect(heard, [round]);
-    expect(jsonDecode(file.readAsStringSync()), openRoundToJson(round));
+    expect(
+      jsonDecode(file.readAsStringSync()),
+      roundsToJson((open: round, unsent: const [])),
+    );
   });
 
   test('should find the tournée again after a kill', () async {
@@ -63,22 +67,141 @@ void main() {
     expect(first.openRound, isNull);
     expect(heard, [newRound().add(cash(1000)), null]);
     expect((await LocalOpenRound.load(file)).openRound, isNull);
-    expect(jsonDecode(file.readAsStringSync()), {'version': 1, 'round': null});
+    expect(jsonDecode(file.readAsStringSync()), {
+      'version': 2,
+      'round': null,
+      'unsent': <Object?>[],
+    });
+  });
+
+  test('should have none, say so, and leave the file, when it cannot be '
+      'read', () async {
+    for (final text in ['not json', '{"version": 3, "round": null}']) {
+      file
+        ..parent.createSync(recursive: true)
+        ..writeAsStringSync(text);
+
+      final store = await LocalOpenRound.load(file);
+
+      expect(store.openRound, isNull, reason: text);
+      expect(store.unsent, isEmpty, reason: text);
+      expect(store.unreadableAtStart, isTrue, reason: text);
+      expect(file.readAsStringSync(), text);
+    }
   });
 
   test(
-    'should have none, and leave the file, when it cannot be read',
+    'should not say unreadable when there is no file or it is read',
     () async {
-      for (final text in ['not json', '{"version": 2, "round": null}']) {
-        file
-          ..parent.createSync(recursive: true)
-          ..writeAsStringSync(text);
+      expect((await LocalOpenRound.load(file)).unreadableAtStart, isFalse);
 
-        final store = await LocalOpenRound.load(file);
+      await (await LocalOpenRound.load(file)).save(newRound());
 
-        expect(store.openRound, isNull, reason: text);
-        expect(file.readAsStringSync(), text);
-      }
+      expect((await LocalOpenRound.load(file)).unreadableAtStart, isFalse);
     },
   );
+
+  test('should read the file of an older version', () async {
+    file
+      ..parent.createSync(recursive: true)
+      ..writeAsStringSync('{"version": 1, "round": null}');
+
+    final store = await LocalOpenRound.load(file);
+
+    expect(store.unreadableAtStart, isFalse);
+    expect(store.openRound, isNull);
+  });
+
+  group('validated tournées not yet sent', () {
+    final validated = newRound().add(cash(1000)).validate(endedAt);
+
+    test('should move the tournée on to those waiting, in one write, and '
+        'find it after a kill', () async {
+      final store = await LocalOpenRound.load(file);
+      final heardOn = <Round?>[];
+      final heardUnsent = <List<UnsentRound>>[];
+      store.changes.listen(heardOn.add);
+      store.unsentChanges.listen(heardUnsent.add);
+      await store.save(newRound().add(cash(1000)));
+
+      final keeping = store.keepValidated(validated);
+      expect(store.openRound, isNull);
+      expect(store.unsent, [validated]);
+      await keeping;
+
+      expect(heardOn, [newRound().add(cash(1000)), null]);
+      expect(heardUnsent, [
+        [validated],
+      ]);
+      final next = await LocalOpenRound.load(file);
+      expect(next.openRound, isNull);
+      expect(next.unsent, [validated]);
+    });
+
+    test('should keep a tournée started after, and those waiting', () async {
+      final store = await LocalOpenRound.load(file);
+      await store.save(newRound());
+      await store.keepValidated(validated);
+
+      await store.save(newRound().visited());
+
+      final next = await LocalOpenRound.load(file);
+      expect(next.openRound, newRound().visited());
+      expect(next.unsent, [validated]);
+    });
+
+    test('should replace one validated again under the same id', () async {
+      final store = await LocalOpenRound.load(file);
+      await store.keepValidated(validated.refused());
+
+      await store.keepValidated(validated);
+
+      expect(store.unsent, [validated]);
+    });
+
+    test('should mark one refused, keeping the tournée on as it is', () async {
+      final store = await LocalOpenRound.load(file);
+      await store.keepValidated(validated);
+      await store.save(newRound().visited());
+      final heardOn = <Round?>[];
+      store.changes.listen(heardOn.add);
+
+      await store.updateUnsent(validated.refused());
+      await pumpEventQueue();
+
+      expect(store.unsent, [validated.refused()]);
+      expect(heardOn, isEmpty);
+      final next = await LocalOpenRound.load(file);
+      expect(next.unsent, [validated.refused()]);
+      expect(next.openRound, newRound().visited());
+    });
+
+    test('should forget one sent or erased', () async {
+      final store = await LocalOpenRound.load(file);
+      await store.keepValidated(validated);
+      final heardUnsent = <List<UnsentRound>>[];
+      store.unsentChanges.listen(heardUnsent.add);
+
+      await store.forgetUnsent(validated.id);
+      await pumpEventQueue();
+
+      expect(store.unsent, isEmpty);
+      expect(heardUnsent, [<UnsentRound>[]]);
+      expect((await LocalOpenRound.load(file)).unsent, isEmpty);
+    });
+
+    test('should change nothing for a tournée no longer waiting', () async {
+      final store = await LocalOpenRound.load(file);
+      final heardUnsent = <List<UnsentRound>>[];
+      store.unsentChanges.listen(heardUnsent.add);
+
+      await store.updateUnsent(validated.refused());
+      await store.forgetUnsent(validated.id);
+      await pumpEventQueue();
+
+      expect(store.unsent, isEmpty);
+      expect(heardUnsent, isEmpty);
+      expect(file.existsSync(), isFalse);
+    });
+  });
 }

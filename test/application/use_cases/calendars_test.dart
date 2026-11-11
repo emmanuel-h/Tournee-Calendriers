@@ -68,6 +68,7 @@ void main() {
       );
       expect(added.round.donations, [cheque(500)]);
       expect(added.calendar, change);
+      expect(added.calendarRefused, isNull);
       expect(rounds.saves, [added.round]);
       expect(streets.saved.single.$2, change);
       expect(houseOf(streets[lilasId]!, '9').calendars, calendars(3));
@@ -102,15 +103,43 @@ void main() {
       );
     });
 
-    test('should keep the don when the house is no longer done', () async {
+    test('should keep the don and say why the house took no calendar when '
+        'it is no longer done', () async {
       final added = valueOf(
         await addDonation(cash(1000), calendarFor: _house('7')),
       );
 
       expect(added.round.donations, [cash(1000)]);
       expect(added.calendar, isNull);
+      expect(
+        added.calendarRefused,
+        const CommandRefused(CalendarChangeFailure.notDone),
+      );
       expect(rounds.saves, [added.round]);
       expect(streets.saved, isEmpty);
+    });
+
+    test('should keep the don and say so when the street is gone', () async {
+      streets = FakeStreetRepository([]);
+      addDonation = AddDonation(rounds, streets, clockAtTwo(), leaOnThePhone());
+
+      final added = valueOf(
+        await addDonation(cash(1000), calendarFor: _house('9')),
+      );
+
+      expect(added.round.donations, [cash(1000)]);
+      expect(added.calendar, isNull);
+      expect(
+        added.calendarRefused,
+        const StreetNotFound<CalendarChangeFailure>(),
+      );
+    });
+
+    test('should name no refusal for a don without a house', () async {
+      final added = valueOf(await addDonation(cash(1000)));
+
+      expect(added.calendar, isNull);
+      expect(added.calendarRefused, isNull);
     });
 
     test('should add no calendar with no tournée on', () async {
@@ -156,6 +185,36 @@ void main() {
       expect(
         AddedDonation(round: round),
         isNot(AddedDonation(round: newRound())),
+      );
+    });
+
+    test('should differ when only one says the calendar was refused', () {
+      expect(
+        AddedDonation(
+          round: round,
+          calendarRefused: const CommandRefused(CalendarChangeFailure.notDone),
+        ),
+        isNot(AddedDonation(round: round)),
+      );
+      expect(
+        AddedDonation(
+          round: round,
+          calendarRefused: const CommandRefused(CalendarChangeFailure.notDone),
+        ).hashCode,
+        AddedDonation(
+          round: round,
+          calendarRefused: const CommandRefused(CalendarChangeFailure.notDone),
+        ).hashCode,
+      );
+    });
+
+    test('should show the refusal when printed', () {
+      expect(
+        AddedDonation(
+          round: round,
+          calendarRefused: const CommandRefused(CalendarChangeFailure.tooMany),
+        ).toString(),
+        'AddedDonation($round, CommandRefused(CalendarChangeFailure.tooMany))',
       );
     });
 

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:tournee_calendriers/application/ports/clock.dart';
 import 'package:tournee_calendriers/application/ports/id_generator.dart';
 import 'package:tournee_calendriers/application/ports/identity_provider.dart';
@@ -5,16 +7,19 @@ import 'package:tournee_calendriers/application/ports/my_sectors_store.dart';
 import 'package:tournee_calendriers/application/ports/open_round_store.dart';
 import 'package:tournee_calendriers/application/ports/round_ledger.dart';
 import 'package:tournee_calendriers/application/use_cases/calendars.dart';
+import 'package:tournee_calendriers/application/use_cases/command_failure.dart';
 import 'package:tournee_calendriers/application/use_cases/street_command.dart';
 import 'package:tournee_calendriers/domain/round/collecte.dart';
 import 'package:tournee_calendriers/domain/round/donation.dart';
 import 'package:tournee_calendriers/domain/round/round.dart';
 import 'package:tournee_calendriers/domain/round/round_id.dart';
 import 'package:tournee_calendriers/domain/round/round_summary.dart';
+import 'package:tournee_calendriers/domain/round/unsent_round.dart';
 import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
 import 'package:tournee_calendriers/domain/sector/member.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
+import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_repository.dart';
 
@@ -112,29 +117,40 @@ final class WatchOpenRound {
 }
 
 /// A don [AddDonation] added: the tournée with it (the don last), and the
-/// calendar the house or door took with it, for « Annuler ».
+/// calendar the house or door took with it, for « Annuler », or why it
+/// took none.
 final class AddedDonation {
-  const AddedDonation({required this.round, this.calendar});
+  const AddedDonation({
+    required this.round,
+    this.calendar,
+    this.calendarRefused,
+  });
 
   final Round round;
 
   /// The change giving the house or door one calendar more; null for a don
-  /// given without a house (« Dons de la tournée »), or when the house was
-  /// no longer done (a teammate changed it meanwhile: the money is still
-  /// the tournée's).
+  /// given without a house (« Dons de la tournée »), or when the house took
+  /// none ([calendarRefused]).
   final StreetChange? calendar;
+
+  /// Why the house or door took no calendar (#155): no longer done (a
+  /// teammate changed it meanwhile), too many calendars, the street gone.
+  /// The money is still the tournée's. Null when it took one, or for a don
+  /// without a house.
+  final CommandFailure<CalendarChangeFailure>? calendarRefused;
 
   @override
   bool operator ==(Object other) =>
       other is AddedDonation &&
       other.round == round &&
-      other.calendar == calendar;
+      other.calendar == calendar &&
+      other.calendarRefused == calendarRefused;
 
   @override
-  int get hashCode => Object.hash(round, calendar);
+  int get hashCode => Object.hash(round, calendar, calendarRefused);
 
   @override
-  String toString() => 'AddedDonation($round, $calendar)';
+  String toString() => 'AddedDonation($round, ${calendar ?? calendarRefused})';
 }
 
 /// A don joins the tournée on: « Valider » of « Nouveau don » (no house),
@@ -172,15 +188,13 @@ final class AddDonation {
         at: at,
       ),
     );
-    return Ok(
-      AddedDonation(
+    return Ok(switch (calendar) {
+      Ok(:final value) => AddedDonation(round: changed, calendar: value),
+      Err(:final failure) => AddedDonation(
         round: changed,
-        calendar: switch (calendar) {
-          Ok(:final value) => value,
-          Err() => null,
-        },
+        calendarRefused: failure,
       ),
-    );
+    });
   }
 }
 
@@ -225,28 +239,128 @@ Future<Result<Round, DonationEditFailure>> _editDonation(
   }
 }
 
-/// « Valider la tournée »: its summary goes to the secteur it started in
-/// (queued while offline), then the phone forgets it and its dons. A
-/// validated tournée is never changed. Returns the summary sent.
+/// « Valider la tournée »: the tournée on becomes one « validated, not
+/// yet sent » ([UnsentRound], PLAN §5.16), kept on the phone with its
+/// summary until the server has it ([SendUnsentRounds] sends it), and the
+/// phone forgets its dons. A validated tournée is never changed. Needs no
+/// network. Returns it.
 ///
-/// The summary is handed over before the tournée is forgotten: killed in
-/// between, the tournée is still on at the next start, and validating it
-/// again sends the same summary (same id), which the ledger keeps once.
+/// One write moves it (`OpenRoundStore.keepValidated`): killed at any
+/// moment, the phone has it either on or validated, never both nor none.
 final class ValidateRound {
-  const ValidateRound(this._rounds, this._ledger, this._clock);
+  const ValidateRound(this._rounds, this._clock);
+
+  final OpenRoundStore _rounds;
+  final Clock _clock;
+
+  Future<Result<UnsentRound, NoRoundOn>> call() async {
+    final round = _rounds.openRound;
+    if (round == null) return const Err(NoRoundOn());
+    final validated = round.validate(_clock.now());
+    await _rounds.keepValidated(validated);
+    return Ok(validated);
+  }
+}
+
+/// Sends to their secteur the validated tournées waiting on the phone
+/// (PLAN §5.16, #143): those waiting now, then each that starts waiting
+/// (« Valider la tournée », « Réessayer »). A summary the server keeps is
+/// forgotten by the phone; one it refuses stays, marked refused, until
+/// « Réessayer » or « Effacer ».
+///
+/// Runs while the app does (the composition root starts it). Offline, a
+/// send simply waits for the server (`RoundLedger.record`). After a kill,
+/// the next start sends again what was waiting, which the ledger keeps
+/// once.
+final class SendUnsentRounds {
+  SendUnsentRounds(this._rounds, this._ledger);
 
   final OpenRoundStore _rounds;
   final RoundLedger _ledger;
-  final Clock _clock;
 
-  Future<Result<RoundSummary, NoRoundOn>> call() async {
-    final round = _rounds.openRound;
-    if (round == null) return const Err(NoRoundOn());
-    final summary = round.validate(_clock.now());
-    await _ledger.record(round.sector, round.campaign, summary);
-    await _rounds.clear();
-    return Ok(summary);
+  /// The tournées being sent now, not sent again meanwhile: two sends of
+  /// one summary at once could reach the server as a create and then an
+  /// update, which its rules refuse.
+  final _sending = <RoundId>{};
+
+  /// Starts sending; cancel the subscription to stop following new ones
+  /// (a send under way still ends).
+  StreamSubscription<List<UnsentRound>> call() {
+    _sendWaiting(_rounds.unsent);
+    return _rounds.unsentChanges.listen(_sendWaiting);
   }
+
+  void _sendWaiting(List<UnsentRound> unsent) {
+    for (final round in unsent) {
+      if (round.state == UnsentState.waiting && _sending.add(round.id)) {
+        unawaited(_send(round));
+      }
+    }
+  }
+
+  Future<void> _send(UnsentRound round) async {
+    try {
+      switch (await _ledger.record(
+        round.sector,
+        round.campaign,
+        round.summary,
+      )) {
+        case LedgerAnswer.kept:
+          await _rounds.forgetUnsent(round.id);
+        case LedgerAnswer.refused:
+          // Nothing happens when « Effacer » forgot it meanwhile.
+          await _rounds.updateUnsent(round.refused());
+      }
+    } finally {
+      _sending.remove(round.id);
+    }
+  }
+}
+
+/// « Réessayer » of a tournée the server refused (PLAN §5.16): it waits to
+/// be sent again, which [SendUnsentRounds] does. Nothing happens for a
+/// tournée not refused (waiting already, or gone).
+final class RetryUnsentRound {
+  const RetryUnsentRound(this._rounds);
+
+  final OpenRoundStore _rounds;
+
+  Future<void> call(RoundId id) async {
+    final round = _refused(_rounds, id);
+    if (round != null) await _rounds.updateUnsent(round.retried());
+  }
+}
+
+/// « Effacer » of a tournée the server refused, once confirmed (PLAN
+/// §5.16): the phone forgets it, its figures with it; the secteur never
+/// counts it. Only a refused one: one still waiting may be on its way to
+/// the server.
+final class EraseUnsentRound {
+  const EraseUnsentRound(this._rounds);
+
+  final OpenRoundStore _rounds;
+
+  Future<void> call(RoundId id) async {
+    if (_refused(_rounds, id) != null) await _rounds.forgetUnsent(id);
+  }
+}
+
+/// The tournée [id] of [rounds] the server refused; null for none.
+UnsentRound? _refused(OpenRoundStore rounds, RoundId id) {
+  for (final round in rounds.unsent) {
+    if (round.id == id && round.state == UnsentState.refused) return round;
+  }
+  return null;
+}
+
+/// Whether the phone's tournées could not be read at start-up (#143): the
+/// app started with none, and says so once on Accueil.
+final class RoundsUnreadableAtStart {
+  const RoundsUnreadableAtStart(this._rounds);
+
+  final OpenRoundStore _rounds;
+
+  bool call() => _rounds.unreadableAtStart;
 }
 
 /// « Abandonner » of « Abandonner la tournée ? » (#136), for a tournée
@@ -267,15 +381,58 @@ final class AbandonRound {
   }
 }
 
-/// « Collecte 2026 » (PLAN §5.13): the validated tournées of [campaign] of
-/// [sector] and their totals, now and again at each tournée validated, by
-/// this phone or a teammate's. Read from the phone's copy first, so it
-/// works offline. Never split per member: a summary names none.
+/// « Collecte 2026 » (PLAN §5.13, §5.16): the validated tournées of
+/// [campaign] of [sector] and their totals, with apart those this phone
+/// validated that the server does not have yet, now and again at each
+/// change: a tournée validated by this phone or a teammate's, one sent,
+/// refused or erased. Read from the phone's copy first, so it works
+/// offline. Never split per member: a summary names none.
 final class WatchCollecte {
-  const WatchCollecte(this._ledger);
+  const WatchCollecte(this._ledger, this._rounds);
 
   final RoundLedger _ledger;
+  final OpenRoundStore _rounds;
 
-  Stream<Collecte> call(SectorId sector, CampaignYear campaign) =>
-      _ledger.watch(sector, campaign).map(Collecte.of);
+  Stream<Collecte> call(SectorId sector, CampaignYear campaign) {
+    List<UnsentRound> ours(List<UnsentRound> unsent) => [
+      for (final round in unsent)
+        if (round.sector == sector && round.campaign == campaign) round,
+    ];
+    // Both sources in one stream, as soon as the ledger has answered once:
+    // a controller, which starts listening to them when the screen does
+    // and stops with it.
+    List<RoundSummary>? summaries;
+    var unsent = ours(_rounds.unsent);
+    final subscriptions = <StreamSubscription<Object?>>[];
+    late final StreamController<Collecte> out;
+    void emit() {
+      final known = summaries;
+      if (known != null) out.add(Collecte.of(known, unsent: unsent));
+    }
+
+    out = StreamController(
+      onListen: () {
+        subscriptions
+          ..add(
+            _ledger.watch(sector, campaign).listen((read) {
+              summaries = read;
+              emit();
+            }, onError: out.addError),
+          )
+          ..add(
+            _rounds.unsentChanges.listen((changed) {
+              unsent = ours(changed);
+              emit();
+            }),
+          );
+      },
+      onCancel: () async {
+        for (final subscription in subscriptions) {
+          await subscription.cancel();
+        }
+        await out.close();
+      },
+    );
+    return out.stream;
+  }
 }

@@ -110,9 +110,10 @@ final class RoundNotifier extends Notifier<RoundView> {
   Future<void> removeDonation(int index) =>
       ref.read(removeDonationProvider)(index);
 
-  /// « Valider » of « Valider la tournée ? »: its summary goes to the
-  /// secteur (queued offline) and the phone forgets its dons. Nothing
-  /// happens when it was validated already.
+  /// « Valider » of « Valider la tournée ? »: the tournée is kept as
+  /// validated, not yet sent, until the server has its summary (#143), and
+  /// the phone forgets its dons. Nothing happens when it was validated
+  /// already.
   Future<void> validate() => ref.read(validateRoundProvider)();
 
   /// « Abandonner » of « Abandonner la tournée ? »: the phone forgets the

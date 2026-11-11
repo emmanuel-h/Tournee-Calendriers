@@ -3,6 +3,7 @@ import 'package:tournee_calendriers/domain/round/donation_totals.dart';
 import 'package:tournee_calendriers/domain/round/round.dart';
 import 'package:tournee_calendriers/domain/round/round_id.dart';
 import 'package:tournee_calendriers/domain/round/round_summary.dart';
+import 'package:tournee_calendriers/domain/round/unsent_round.dart';
 import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 
@@ -130,7 +131,7 @@ void main() {
   });
 
   group('validate', () {
-    test('should sum the tournée up, without its dons', () {
+    test('should sum the tournée up, without its dons, waiting to be sent to its secteur', () {
       final round = newRound()
           .add(cash(1000))
           .add(offered)
@@ -138,8 +139,13 @@ void main() {
           .visited()
           .visited();
 
+      final validated = round.validate(endedAt);
+
+      expect(validated.state, UnsentState.waiting);
+      expect(validated.sector, sector49Id);
+      expect(validated.campaign, year2026);
       expect(
-        round.validate(endedAt),
+        validated.summary,
         RoundSummary(
           id: roundId,
           startedAt: startedAt,
@@ -154,14 +160,17 @@ void main() {
       final round = newRound();
       final oneSecondIn = startedAt.add(const Duration(seconds: 1));
 
-      expect(round.validate(startedAt).endedAt, oneSecondIn);
+      expect(round.validate(startedAt).summary.endedAt, oneSecondIn);
       expect(
-        round.validate(startedAt.subtract(const Duration(hours: 1))).endedAt,
+        round
+            .validate(startedAt.subtract(const Duration(hours: 1)))
+            .summary
+            .endedAt,
         oneSecondIn,
       );
-      expect(round.validate(oneSecondIn).endedAt, oneSecondIn);
+      expect(round.validate(oneSecondIn).summary.endedAt, oneSecondIn);
       final twoSecondsIn = startedAt.add(const Duration(seconds: 2));
-      expect(round.validate(twoSecondsIn).endedAt, twoSecondsIn);
+      expect(round.validate(twoSecondsIn).summary.endedAt, twoSecondsIn);
     });
   });
 

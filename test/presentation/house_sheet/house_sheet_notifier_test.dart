@@ -913,6 +913,22 @@ void main() {
       expect((await shown('11')).calendars, 3);
     });
 
+    test('should keep the don and say the house took no calendar when it is '
+        'not done', () async {
+      duringRound();
+      open('7');
+      await shown('7');
+
+      final given = await notifier('7').addDonation(cheque(2000));
+
+      expect(
+        given,
+        GivenDonation(index: 2, donation: cheque(2000), calendarRefused: true),
+      );
+      expect(rounds.openRound!.donations, [cash(500), offered, cheque(2000)]);
+      expect(houseNow('7'), houseBefore('7'));
+    });
+
     test('should add no calendar when no tournée is on', () async {
       phoneWith(_street(), open: sector49);
       open('11');

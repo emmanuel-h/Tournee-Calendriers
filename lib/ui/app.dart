@@ -11,6 +11,8 @@ import 'package:tournee_calendriers/presentation/corbeille/corbeille_purge.dart'
 import 'package:tournee_calendriers/presentation/launch/launch_place.dart';
 import 'package:tournee_calendriers/presentation/my_sectors/sector_loss_notice.dart';
 import 'package:tournee_calendriers/presentation/my_sectors/sector_loss_notifier.dart';
+import 'package:tournee_calendriers/presentation/round/rounds_unreadable_notice.dart';
+import 'package:tournee_calendriers/presentation/round/unsent_rounds_sender.dart';
 import 'package:tournee_calendriers/presentation/settings/settings_notifier.dart';
 import 'package:tournee_calendriers/presentation/settings/settings_state.dart';
 import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
@@ -27,7 +29,9 @@ import 'package:tournee_calendriers/ui/theme/app_theme.dart';
 ///
 /// It also tells, over whatever screen is shown, that the member lost one
 /// of their tournées (`sectorLossProvider`, PLAN §5.3): the open one
-/// lost, it goes back to the start screen, with none open.
+/// lost, it goes back to the start screen, with none open; and, once at
+/// start-up, that the phone's tournées could not be read
+/// (`roundsUnreadableNoticeProvider`, #143).
 ///
 /// It is a `StatefulWidget` only to create the router once and dispose of it
 /// with the app; rebuilding the root (a new theme) must not reset
@@ -60,6 +64,10 @@ final class _TourneeAppState extends ConsumerState<TourneeApp> {
   /// The app's `ScaffoldMessenger`, which shows a message above every
   /// screen and keeps it on screen when the app goes to another one.
   final _messengerKey = GlobalKey<ScaffoldMessengerState>();
+
+  /// Whether « Les tournées gardées sur ce téléphone n'ont pas pu être
+  /// relues… » is already on its way, so two frames never show it twice.
+  var _tellingUnreadable = false;
 
   @override
   void dispose() {
@@ -94,8 +102,23 @@ final class _TourneeAppState extends ConsumerState<TourneeApp> {
     if (notice.wasOpen) router.go(AppRoutes.home);
   }
 
+  /// « Les tournées gardées sur ce téléphone n'ont pas pu être relues :
+  /// leurs dons sont perdus. », once, over the first screen.
+  void _tellUnreadable() {
+    final messenger = _messengerKey.currentState;
+    if (messenger == null) return;
+    ref.read(roundsUnreadableNoticeProvider.notifier).told();
+    showMessageSnackBar(
+      messenger,
+      message: AppLocalizations.of(messenger.context).roundsUnreadable,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    // The validated tournées waiting on the phone go to their secteur
+    // while the app runs (#143); `ref.listen` keeps the sender alive.
+    ref.listen(unsentRoundsSenderProvider, (_, _) {});
     // The 30-day purge of the Corbeille, on the streets bound now and on
     // those of each tournée opened later (PLAN §5.11). `ref.listen` starts
     // it and keeps it alive without redrawing the app when it ends; there
@@ -123,6 +146,17 @@ final class _TourneeAppState extends ConsumerState<TourneeApp> {
       AppTheme.light => ThemeMode.light,
       AppTheme.dark => ThemeMode.dark,
     };
+    // Once the app has its screens (the router), after this frame, when
+    // their messenger exists: a `ScaffoldMessenger` cannot show anything
+    // while the app is being built.
+    final owed = ref.watch(roundsUnreadableNoticeProvider);
+    if (owed && router != null && !_tellingUnreadable) {
+      _tellingUnreadable = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _tellingUnreadable = false;
+        if (mounted) _tellUnreadable();
+      });
+    }
     if (router == null) {
       // The app's ground, nothing else, until it knows where to open.
       return MaterialApp(

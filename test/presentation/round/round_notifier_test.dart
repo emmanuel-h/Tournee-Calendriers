@@ -251,17 +251,17 @@ void main() {
       expect(rounds.openRound!.donations, [cash(1200), offered, cheque(2000)]);
     });
 
-    test('should validate the tournée: its summary recorded, the tournée '
+    test('should validate the tournée: kept as not yet sent, the tournée '
         'gone', () async {
       phoneWith(open: sector49, round: _threeDons());
       await settled();
 
       await notifier().validate();
 
-      final (sector, _, summary) = ledger.recorded.single;
-      expect(sector, sector49Id);
-      expect(summary.endedAt, endedAt);
-      expect(summary.housesVisited, 3);
+      final validated = rounds.unsent.single;
+      expect(validated.sector, sector49Id);
+      expect(validated.summary.endedAt, endedAt);
+      expect(validated.summary.housesVisited, 3);
       expect(rounds.openRound, isNull);
       expect(container.read(roundProvider), const RoundOff(canStart: true));
     });

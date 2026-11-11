@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mock_exceptions/mock_exceptions.dart';
+import 'package:tournee_calendriers/application/ports/round_ledger.dart';
 import 'package:tournee_calendriers/domain/round/donation_totals.dart';
 import 'package:tournee_calendriers/domain/round/round_id.dart';
 import 'package:tournee_calendriers/domain/round/round_summary.dart';
@@ -23,7 +24,8 @@ final summary = newRound()
     .visited()
     .add(cash(1000))
     .add(offered)
-    .validate(endedAt);
+    .validate(endedAt)
+    .summary;
 
 /// Another tournée of the 49, the next day: 1 house, 5 € by card.
 final nextDay = RoundSummary(
@@ -45,11 +47,11 @@ void main() {
 
   group('record', () {
     test('should write the summary under its round id, in its secteur and '
-        'campaign', () async {
-      await ledger.record(sector49Id, year2026, summary);
-      await pumpEventQueue();
+        'campaign, and say the server keeps it', () async {
+      final answer = await ledger.record(sector49Id, year2026, summary);
 
       final stored = await db.doc('$roundsPath/round-1').get();
+      expect(answer, LedgerAnswer.kept);
       expect(stored.data(), roundToDocument(summary));
       expect(
         (await db.collection('sectors/t49/campaigns/2026/streets').get()).docs,
@@ -61,7 +63,6 @@ void main() {
       final year2027 = valueOf(CampaignYear.create(2027));
 
       await ledger.record(SectorId('t12'), year2027, summary);
-      await pumpEventQueue();
 
       expect(
         (await db.doc('sectors/t12/campaigns/2027/rounds/round-1').get())
@@ -71,7 +72,11 @@ void main() {
       expect((await db.collection(roundsPath).get()).docs, isEmpty);
     });
 
-    test('should not throw when Firestore refuses the write', () async {
+    test('should keep, without writing it again, a summary the server '
+        'already has (sent before a kill)', () async {
+      // What the server has: written by the earlier try.
+      final earlier = {...roundToDocument(summary), 'housesVisited': 99};
+      await db.doc('$roundsPath/round-1').set(earlier);
       whenCalling(Invocation.method(#set, null))
           .on(db.doc('$roundsPath/round-1'))
           .thenThrow(
@@ -81,10 +86,48 @@ void main() {
             ),
           );
 
-      await ledger.record(sector49Id, year2026, summary);
-      await pumpEventQueue();
+      final answer = await ledger.record(sector49Id, year2026, summary);
 
+      expect(answer, LedgerAnswer.kept);
+      expect((await db.doc('$roundsPath/round-1').get()).data(), earlier);
+    });
+
+    test('should say refused when Firestore refuses the write', () async {
+      whenCalling(Invocation.method(#set, null))
+          .on(db.doc('$roundsPath/round-1'))
+          .thenThrow(
+            FirebaseException(
+              plugin: 'cloud_firestore',
+              code: 'permission-denied',
+            ),
+          );
+
+      final answer = await ledger.record(sector49Id, year2026, summary);
+
+      expect(answer, LedgerAnswer.refused);
       expect((await db.doc('$roundsPath/round-1').get()).exists, isFalse);
+    });
+  });
+
+  group('isServerWord', () {
+    test('should take only a snapshot from the server with nothing of this '
+        'phone waiting', () {
+      expect(
+        isServerWord(const _Metadata(cache: false, pending: false)),
+        isTrue,
+      );
+      expect(
+        isServerWord(const _Metadata(cache: true, pending: false)),
+        isFalse,
+      );
+      expect(
+        isServerWord(const _Metadata(cache: false, pending: true)),
+        isFalse,
+      );
+      expect(
+        isServerWord(const _Metadata(cache: true, pending: true)),
+        isFalse,
+      );
     });
   });
 
@@ -133,4 +176,18 @@ void main() {
       expect(await ledger.watch(sector49Id, year2026).first, [summary]);
     });
   });
+}
+
+/// Where a snapshot comes from, as Firestore tells it.
+final class _Metadata implements SnapshotMetadata {
+  const _Metadata({required this.cache, required this.pending});
+
+  final bool cache;
+  final bool pending;
+
+  @override
+  bool get isFromCache => cache;
+
+  @override
+  bool get hasPendingWrites => pending;
 }

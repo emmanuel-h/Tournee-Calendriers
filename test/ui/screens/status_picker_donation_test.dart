@@ -354,6 +354,39 @@ void main() {
       expect(stored('3'), _lilas.houses.first);
     });
 
+    testWidgets('should keep the don and say the calendar was not counted '
+        'when a teammate changed the house meanwhile', (tester) async {
+      await openStreet(tester);
+      await tap(tester, _tile('3'));
+      await tap(tester, _key('house.addDonation'));
+      await tap(tester, _key('house.method.cheque'));
+      final (changed, change) = valueOf(
+        streets[_id]!.markHouse(
+          n('3'),
+          VisitStatus.toDo,
+          by: lea,
+          at: startedAt,
+        ),
+      );
+      await streets.save(changed, change);
+
+      await tap(tester, _key('house.give.500'));
+
+      expect(dons(), [cheque(2000), cheque(500)]);
+      expect(stored('3').status, VisitStatus.toDo);
+      expect(
+        findArrowText(
+          'N° 3 · 5$_nbsp€ en chèque ajouté, calendrier non compté',
+        ),
+        findsOneWidget,
+      );
+
+      await tap(tester, find.text('Annuler'));
+
+      expect(dons(), [cheque(2000)]);
+      expect(stored('3').status, VisitStatus.toDo);
+    });
+
     testWidgets('should only close on its ✕, the house still done', (
       tester,
     ) async {

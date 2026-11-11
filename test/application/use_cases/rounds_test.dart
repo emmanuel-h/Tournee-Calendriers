@@ -1,4 +1,7 @@
+import 'dart:async';
+
 import 'package:test/test.dart';
+import 'package:tournee_calendriers/application/ports/round_ledger.dart';
 import 'package:tournee_calendriers/application/use_cases/rounds.dart';
 import 'package:tournee_calendriers/domain/round/collecte.dart';
 import 'package:tournee_calendriers/domain/round/donation.dart';
@@ -6,6 +9,8 @@ import 'package:tournee_calendriers/domain/round/donation_totals.dart';
 import 'package:tournee_calendriers/domain/round/round.dart';
 import 'package:tournee_calendriers/domain/round/round_id.dart';
 import 'package:tournee_calendriers/domain/round/round_summary.dart';
+import 'package:tournee_calendriers/domain/round/unsent_round.dart';
+import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 
@@ -222,56 +227,258 @@ void main() {
   });
 
   group('ValidateRound', () {
-    late FakeRoundLedger ledger;
     late ValidateRound validate;
 
     setUp(() {
-      ledger = FakeRoundLedger();
       clock.time = endedAt;
-      validate = ValidateRound(rounds, ledger, clock);
+      validate = ValidateRound(rounds, clock);
     });
 
-    test('should send the summary to the secteur it started in', () async {
+    test('should keep the tournée as validated, waiting to be sent to the '
+        'secteur it started in', () async {
       // Opened the 12 since: the tournée still belongs to the 49.
       mySectors.mySectors = _with(sector12.id);
       rounds.openRound = newRound().visited().add(cash(1000)).add(offered);
 
-      final summary = valueOf(await validate());
+      final validated = valueOf(await validate());
 
-      final expected = RoundSummary(
-        id: roundId,
-        startedAt: startedAt,
-        endedAt: endedAt,
-        housesVisited: 1,
-        totals: DonationTotals.of([cash(1000), offered]),
+      final expected = UnsentRound(
+        sector: sector49Id,
+        campaign: year2026,
+        summary: RoundSummary(
+          id: roundId,
+          startedAt: startedAt,
+          endedAt: endedAt,
+          housesVisited: 1,
+          totals: DonationTotals.of([cash(1000), offered]),
+        ),
       );
-      expect(summary, expected);
-      expect(ledger.recorded, [(sector49Id, year2026, expected)]);
+      expect(validated, expected);
+      expect(rounds.unsent, [expected]);
     });
 
-    test('should forget the tournée and its dons once sent', () async {
+    test('should forget the tournée on and its dons', () async {
       rounds.openRound = newRound().add(cash(1000));
 
       await validate();
 
       expect(rounds.openRound, isNull);
-      expect(rounds.clears, 1);
     });
 
-    test('should keep the tournée until the summary is handed over', () async {
-      rounds.openRound = newRound();
-      Round? onWhileSending;
-      ledger.onRecord = () => onWhileSending = rounds.openRound;
+    test('should keep the tournées already waiting', () async {
+      final earlier = _unsent('round-0', 23);
+      rounds = FakeOpenRoundStore(newRound(), [earlier]);
+      validate = ValidateRound(rounds, clock);
 
       await validate();
 
-      expect(onWhileSending, newRound());
+      expect(rounds.unsent.map((round) => round.id), [
+        RoundId('round-0'),
+        roundId,
+      ]);
     });
 
     test('should refuse with no tournée on', () async {
       expect(failureOf(await validate()), const NoRoundOn());
-      expect(ledger.recorded, isEmpty);
-      expect(rounds.clears, 0);
+      expect(rounds.unsent, isEmpty);
+    });
+  });
+
+  group('SendUnsentRounds', () {
+    late FakeRoundLedger ledger;
+    late SendUnsentRounds send;
+
+    setUp(() {
+      ledger = FakeRoundLedger();
+      send = SendUnsentRounds(rounds, ledger);
+    });
+
+    test('should send the tournées waiting at start, each to its secteur and '
+        'campaign, and forget each the server keeps', () async {
+      final mine = _unsent('a', 23);
+      final other = UnsentRound(
+        sector: sector12.id,
+        campaign: campaign2027,
+        summary: _unsent('b', 24).summary,
+      );
+      rounds = FakeOpenRoundStore(null, [mine, other]);
+      send = SendUnsentRounds(rounds, ledger);
+
+      final sending = send();
+      addTearDown(sending.cancel);
+      await pumpEventQueue();
+
+      expect(ledger.recorded, [
+        (sector49Id, year2026, mine.summary),
+        (sector12.id, campaign2027, other.summary),
+      ]);
+      expect(rounds.unsent, isEmpty);
+    });
+
+    test('should send a tournée as soon as it is validated', () async {
+      final sending = send();
+      addTearDown(sending.cancel);
+
+      await rounds.keepValidated(_unsent('a', 23));
+      await pumpEventQueue();
+
+      expect(ledger.recorded.single.$3, _unsent('a', 23).summary);
+      expect(rounds.unsent, isEmpty);
+    });
+
+    test('should keep a refused tournée, marked refused', () async {
+      ledger.answer = LedgerAnswer.refused;
+      rounds = FakeOpenRoundStore(null, [_unsent('a', 23)]);
+      send = SendUnsentRounds(rounds, ledger);
+
+      final sending = send();
+      addTearDown(sending.cancel);
+      await pumpEventQueue();
+
+      expect(rounds.unsent, [_unsent('a', 23).refused()]);
+      expect(ledger.asked, [_unsent('a', 23).summary]);
+    });
+
+    test('should not send a refused tournée again by itself', () async {
+      rounds = FakeOpenRoundStore(null, [_unsent('a', 23).refused()]);
+      send = SendUnsentRounds(rounds, ledger);
+
+      final sending = send();
+      addTearDown(sending.cancel);
+      await rounds.keepValidated(_unsent('b', 24));
+      await pumpEventQueue();
+
+      expect(ledger.asked, [_unsent('b', 24).summary]);
+      expect(rounds.unsent, [_unsent('a', 23).refused()]);
+    });
+
+    test('should send a tournée only once while the server has not '
+        'answered', () async {
+      ledger.server = Completer();
+      final sending = send();
+      addTearDown(sending.cancel);
+
+      await rounds.keepValidated(_unsent('a', 23));
+      // Another change while the first send waits.
+      await rounds.keepValidated(_unsent('b', 24));
+      await pumpEventQueue();
+
+      expect(ledger.asked, [
+        _unsent('a', 23).summary,
+        _unsent('b', 24).summary,
+      ]);
+      expect(rounds.unsent, hasLength(2));
+
+      ledger.server!.complete();
+      await pumpEventQueue();
+
+      expect(ledger.asked, hasLength(2));
+      expect(rounds.unsent, isEmpty);
+    });
+
+    test('should send it again once tried again after a refusal', () async {
+      ledger.answer = LedgerAnswer.refused;
+      rounds = FakeOpenRoundStore(null, [_unsent('a', 23)]);
+      send = SendUnsentRounds(rounds, ledger);
+      final sending = send();
+      addTearDown(sending.cancel);
+      await pumpEventQueue();
+
+      ledger.answer = LedgerAnswer.kept;
+      await RetryUnsentRound(rounds)(RoundId('a'));
+      await pumpEventQueue();
+
+      expect(ledger.asked, [
+        _unsent('a', 23).summary,
+        _unsent('a', 23).summary,
+      ]);
+      expect(rounds.unsent, isEmpty);
+    });
+
+    test('should not bring back a tournée erased while the server had not '
+        'answered', () async {
+      ledger
+        ..server = Completer()
+        ..answer = LedgerAnswer.refused;
+      rounds = FakeOpenRoundStore(null, [_unsent('a', 23)]);
+      send = SendUnsentRounds(rounds, ledger);
+      final sending = send();
+      addTearDown(sending.cancel);
+      await pumpEventQueue();
+
+      await rounds.forgetUnsent(RoundId('a'));
+      ledger.server!.complete();
+      await pumpEventQueue();
+
+      expect(rounds.unsent, isEmpty);
+    });
+
+    test('should stop sending new ones once cancelled', () async {
+      final sending = send();
+      await sending.cancel();
+
+      await rounds.keepValidated(_unsent('a', 23));
+      await pumpEventQueue();
+
+      expect(ledger.asked, isEmpty);
+    });
+  });
+
+  group('RetryUnsentRound', () {
+    test('should make a refused tournée wait again', () async {
+      rounds = FakeOpenRoundStore(null, [
+        _unsent('a', 23).refused(),
+        _unsent('b', 24).refused(),
+      ]);
+
+      await RetryUnsentRound(rounds)(RoundId('a'));
+
+      expect(rounds.unsent, [_unsent('a', 23), _unsent('b', 24).refused()]);
+    });
+
+    test('should leave a tournée waiting as it is', () async {
+      rounds = FakeOpenRoundStore(null, [_unsent('a', 23)]);
+      final heard = <List<UnsentRound>>[];
+      rounds.unsentChanges.listen(heard.add);
+
+      await RetryUnsentRound(rounds)(RoundId('a'));
+      await RetryUnsentRound(rounds)(RoundId('z'));
+
+      expect(rounds.unsent, [_unsent('a', 23)]);
+      expect(heard, isEmpty);
+    });
+  });
+
+  group('EraseUnsentRound', () {
+    test('should forget a refused tournée', () async {
+      rounds = FakeOpenRoundStore(null, [
+        _unsent('a', 23).refused(),
+        _unsent('b', 24).refused(),
+      ]);
+
+      await EraseUnsentRound(rounds)(RoundId('a'));
+
+      expect(rounds.unsent, [_unsent('b', 24).refused()]);
+    });
+
+    test('should leave a tournée still waiting: it may be on its way to '
+        'the server', () async {
+      rounds = FakeOpenRoundStore(null, [_unsent('a', 23)]);
+
+      await EraseUnsentRound(rounds)(RoundId('a'));
+      await EraseUnsentRound(rounds)(RoundId('z'));
+
+      expect(rounds.unsent, [_unsent('a', 23)]);
+    });
+  });
+
+  group('RoundsUnreadableAtStart', () {
+    test('should say whether the tournées could not be read', () {
+      expect(RoundsUnreadableAtStart(rounds)(), isFalse);
+
+      rounds.unreadableAtStart = true;
+
+      expect(RoundsUnreadableAtStart(rounds)(), isTrue);
     });
   });
 
@@ -317,7 +524,7 @@ void main() {
 
     setUp(() {
       ledger = FakeRoundLedger();
-      watch = WatchCollecte(ledger);
+      watch = WatchCollecte(ledger, rounds);
     });
 
     test('should give the validated tournées of the secteur and campaign, '
@@ -358,6 +565,71 @@ void main() {
         expect(shown.last.totals.cents, 500);
       },
     );
+
+    test('should give apart the tournées of the secteur and campaign not '
+        'yet sent, out of the totals', () async {
+      final sent = summary('sat', 24, [cash(1000)]);
+      await ledger.record(sector49Id, year2026, sent);
+      final waiting = _unsent('sun', 25);
+      rounds = FakeOpenRoundStore(null, [
+        waiting,
+        // Another secteur's, and another campaign's: not this collecte.
+        UnsentRound(
+          sector: sector12.id,
+          campaign: year2026,
+          summary: _unsent('t12', 26).summary,
+        ),
+        UnsentRound(
+          sector: sector49Id,
+          campaign: campaign2027,
+          summary: _unsent('old', 27).summary,
+        ),
+      ]);
+      watch = WatchCollecte(ledger, rounds);
+
+      final collecte = await watch(sector49Id, year2026).first;
+
+      expect(collecte.rounds, [sent]);
+      expect(collecte.unsent, [waiting]);
+      expect(collecte.totals, DonationTotals.of([cash(1000)]));
+    });
+
+    test('should give the collecte again when a tournée waits, is refused '
+        'or is sent', () async {
+      final shown = <Collecte>[];
+      final listening = watch(sector49Id, year2026).listen(shown.add);
+      addTearDown(listening.cancel);
+      await pumpEventQueue();
+
+      await rounds.keepValidated(_unsent('a', 23));
+      await pumpEventQueue();
+      await rounds.updateUnsent(_unsent('a', 23).refused());
+      await pumpEventQueue();
+      await ledger.record(sector49Id, year2026, _unsent('a', 23).summary);
+      await pumpEventQueue();
+      await rounds.forgetUnsent(RoundId('a'));
+      await pumpEventQueue();
+
+      expect(shown.first.unsent, isEmpty);
+      expect(shown.map((c) => c.unsent.map((u) => u.state).toList()), [
+        <UnsentState>[],
+        [UnsentState.waiting],
+        [UnsentState.refused],
+        // The server has it, the phone not told yet: still apart.
+        [UnsentState.refused],
+        <UnsentState>[],
+      ]);
+      expect(shown.last.rounds, [_unsent('a', 23).summary]);
+    });
+
+    test('should fail when the ledger fails', () async {
+      final failing = WatchCollecte(_FailingLedger(), rounds);
+
+      await expectLater(
+        failing(sector49Id, year2026),
+        emitsError(isA<StateError>()),
+      );
+    });
   });
 
   test('should name the missing tournée', () {
@@ -370,4 +642,31 @@ void main() {
     expect(none, isNot(DonationEditFailure.noRoundOn));
     expect(none.toString(), 'NoRoundOn');
   });
+}
+
+/// A tournée of the 49 validated [day] October, waiting to be sent.
+UnsentRound _unsent(String id, int day) => UnsentRound(
+  sector: sector49Id,
+  campaign: year2026,
+  summary: RoundSummary(
+    id: RoundId(id),
+    startedAt: DateTime.utc(2026, 10, day, 12),
+    endedAt: DateTime.utc(2026, 10, day, 16),
+    housesVisited: day,
+    totals: DonationTotals.of([cash(100 * day)]),
+  ),
+);
+
+/// A ledger whose tournées cannot be read.
+final class _FailingLedger implements RoundLedger {
+  @override
+  Future<LedgerAnswer> record(
+    SectorId sector,
+    CampaignYear campaign,
+    RoundSummary summary,
+  ) async => LedgerAnswer.kept;
+
+  @override
+  Stream<List<RoundSummary>> watch(SectorId sector, CampaignYear campaign) =>
+      Stream.error(StateError('unreadable'));
 }

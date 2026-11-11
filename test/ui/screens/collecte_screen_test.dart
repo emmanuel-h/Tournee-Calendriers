@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -7,6 +9,7 @@ import 'package:tournee_calendriers/domain/round/donation.dart';
 import 'package:tournee_calendriers/domain/round/donation_totals.dart';
 import 'package:tournee_calendriers/domain/round/round_id.dart';
 import 'package:tournee_calendriers/domain/round/round_summary.dart';
+import 'package:tournee_calendriers/domain/round/unsent_round.dart';
 import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
 import 'package:tournee_calendriers/domain/sector/member.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
@@ -20,6 +23,7 @@ import '../../domain/sector/my_sectors_fixtures.dart';
 import '../../domain/sector/sector_fixtures.dart';
 import '../../support/fakes/fake_admin_status.dart';
 import '../../support/fakes/fake_my_sectors_store.dart';
+import '../../support/fakes/fake_open_round_store.dart';
 import '../../support/fakes/fake_round_ledger.dart';
 import '../../support/fakes/fake_sector_repository.dart';
 import '../../support/results.dart';
@@ -32,7 +36,11 @@ const _nbsp = ' ';
 /// A ledger that cannot be read.
 final class _BrokenLedger implements RoundLedger {
   @override
-  Future<void> record(SectorId s, CampaignYear c, RoundSummary r) async {}
+  Future<LedgerAnswer> record(
+    SectorId s,
+    CampaignYear c,
+    RoundSummary r,
+  ) async => LedgerAnswer.kept;
 
   @override
   Stream<List<RoundSummary>> watch(SectorId s, CampaignYear c) =>
@@ -74,14 +82,53 @@ final _friday = _round(
   [card(750)],
 );
 
+/// Monday 26 October, 14:00 → 17:10, validated on this phone, not yet with
+/// the server: 18 houses, 160 € in cash.
+final _monday = UnsentRound(
+  sector: sector49.id,
+  campaign: sector49.campaign,
+  summary: _round(
+    'mon',
+    DateTime(2026, 10, 26, 14),
+    DateTime(2026, 10, 26, 17, 10),
+    18,
+    [cash(16000)],
+  ),
+);
+
+/// Sunday 25 October, 10:00 → 11:30, refused by the server: 8 houses,
+/// 70 € by cheque.
+final _sunday = UnsentRound(
+  sector: sector49.id,
+  campaign: sector49.campaign,
+  summary: _round(
+    'sun',
+    DateTime(2026, 10, 25, 10),
+    DateTime(2026, 10, 25, 11, 30),
+    8,
+    [cheque(7000)],
+  ),
+  state: UnsentState.refused,
+);
+
 void main() {
+  /// The phone's tournées in the last [pumpTeam].
+  late FakeOpenRoundStore rounds;
+
+  /// The ledger of the last [pumpTeam] (the fake one).
+  late FakeRoundLedger fake;
+
   /// Secteur of the 49 over the start screen, on the phone of [member],
-  /// the tournées [validated] in the ledger (or [ledger]).
+  /// the tournées [validated] in the ledger (or [ledger]), and [unsent]
+  /// on the phone. The server never answers the phone's sends unless
+  /// [serverAnswers]: a tournée waiting stays waiting.
   Future<void> pumpTeam(
     WidgetTester tester, {
     MemberId? member,
     List<RoundSummary> validated = const [],
     RoundLedger? ledger,
+    List<UnsentRound> unsent = const [],
+    bool serverAnswers = false,
   }) async {
     // A phone's screen (the mockup's), so the collecte row shows.
     tester.view
@@ -91,10 +138,12 @@ void main() {
     final kept = member == samId
         ? summaryOf('t49', 49, status: MemberStatus.visiting)
         : sector49;
-    final fake = FakeRoundLedger();
+    fake = FakeRoundLedger();
     for (final summary in validated) {
       await fake.record(sector49.id, sector49.campaign, summary);
     }
+    if (!serverAnswers) fake.server = Completer();
+    rounds = FakeOpenRoundStore(null, unsent);
     await tester.pumpWidget(
       ProviderScope(
         overrides: fakePhone(
@@ -103,6 +152,7 @@ void main() {
           ),
           sectors: FakeSectorRepository([team()]),
           ledger: ledger ?? fake,
+          rounds: rounds,
           member: member ?? leaId,
           admins: FakeAdminStatus(
             phoneIsAdmin: member == samId,
@@ -125,8 +175,16 @@ void main() {
     WidgetTester tester, {
     List<RoundSummary> validated = const [],
     RoundLedger? ledger,
+    List<UnsentRound> unsent = const [],
+    bool serverAnswers = false,
   }) async {
-    await pumpTeam(tester, validated: validated, ledger: ledger);
+    await pumpTeam(
+      tester,
+      validated: validated,
+      ledger: ledger,
+      unsent: unsent,
+      serverAnswers: serverAnswers,
+    );
     if (ledger != null) {
       unawaitedPush(
         GoRouter.of(tester.element(find.byType(Scaffold).last)),
@@ -151,6 +209,17 @@ void main() {
     for (final text in tester.widgetList<Text>(
       find.descendant(
         of: find.byKey(ValueKey('collecte.round.$id')),
+        matching: find.byType(Text),
+      ),
+    ))
+      text.data,
+  ].join(' | ');
+
+  /// The texts of the tournée [id]'s row not yet sent, joined by « | ».
+  String unsentText(WidgetTester tester, String id) => [
+    for (final text in tester.widgetList<Text>(
+      find.descendant(
+        of: find.byKey(ValueKey('collecte.unsent.$id')),
         matching: find.byType(Text),
       ),
     ))
@@ -365,6 +434,8 @@ void main() {
         'Total | 0${_nbsp}don | 0$_nbsp€',
       );
       expect(find.byKey(const Key('collecte.round.toggle')), findsNothing);
+      expect(find.byKey(const Key('collecte.unsentLeftOut')), findsNothing);
+      expect(find.textContaining('PAS ENCORE ENVOYÉES'), findsNothing);
     });
 
     testWidgets('should say when the collecte cannot be shown', (tester) async {
@@ -375,6 +446,140 @@ void main() {
         findsOneWidget,
       );
       expect(find.byKey(const Key('collecte.subtitle')), findsNothing);
+    });
+  });
+
+  group('Collecte, tournées not yet sent', () {
+    testWidgets('should list them between the totals and « TOURNÉES », '
+        'with their state, out of the totals', (tester) async {
+      await pumpCollecte(
+        tester,
+        validated: [_saturday],
+        unsent: [_sunday, _monday],
+      );
+
+      expect(find.text('TOTAL DE LA TOURNÉE'), findsOneWidget);
+      expect(
+        lineText(tester, 'collecte.total'),
+        'Total | 3${_nbsp}dons | 35$_nbsp€',
+      );
+      expect(
+        find.text('Sans les tournées pas encore envoyées.'),
+        findsOneWidget,
+      );
+      expect(find.text('PAS ENCORE ENVOYÉES (2)'), findsOneWidget);
+      expect(
+        unsentText(tester, 'mon'),
+        'Lun. 26 oct. · 14:00 → 17:10 | 18${_nbsp}maisons, 1${_nbsp}don | '
+        "⏳ En attente d'envoi | 160$_nbsp€ | ▸",
+      );
+      expect(
+        unsentText(tester, 'sun'),
+        'Dim. 25 oct. · 10:00 → 11:30 | 8${_nbsp}maisons, 1${_nbsp}don | '
+        '⚠ Refusée par le serveur | 70$_nbsp€ | ▸ | Réessayer | Effacer',
+      );
+      double top(String key) => tester.getTopLeft(find.byKey(Key(key))).dy;
+      expect(top('collecte.total'), lessThan(top('collecte.unsentLeftOut')));
+      expect(
+        tester.getTopLeft(find.byKey(const ValueKey('collecte.unsent.mon'))).dy,
+        lessThan(
+          tester
+              .getTopLeft(find.byKey(const ValueKey('collecte.unsent.sun')))
+              .dy,
+        ),
+      );
+      expect(
+        find.bySemanticsLabel(
+          "Lun. 26 oct. · 14:00 → 17:10, 160$_nbsp€, en attente d'envoi, "
+          'afficher le détail',
+        ),
+        findsOneWidget,
+      );
+
+      await tester.scrollUntilVisible(find.text('TOURNÉES'), 100);
+
+      expect(
+        tester.getTopLeft(find.byKey(const ValueKey('collecte.unsent.sun'))).dy,
+        lessThan(tester.getTopLeft(find.text('TOURNÉES')).dy),
+      );
+    });
+
+    testWidgets('should unfold one not yet sent too', (tester) async {
+      await pumpCollecte(tester, unsent: [_sunday]);
+
+      await tester.tap(
+        find.bySemanticsLabel(
+          'Dim. 25 oct. · 10:00 → 11:30, 70$_nbsp€, refusée par le serveur, '
+          'afficher le détail',
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('collecte.round.methods')), findsOneWidget);
+      expect(
+        find.bySemanticsLabel(
+          'Dim. 25 oct. · 10:00 → 11:30, 70$_nbsp€, refusée par le serveur, '
+          'masquer le détail',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('should send a refused one again on « Réessayer », and show '
+        'it among the tournées once the server has it', (tester) async {
+      await pumpCollecte(tester, unsent: [_sunday], serverAnswers: true);
+
+      await tester.tap(
+        find.bySemanticsLabel(
+          "Réessayer d'envoyer la tournée du Dim. 25 oct. · 10:00 → 11:30",
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      expect(fake.asked, [_sunday.summary]);
+      expect(rounds.unsent, isEmpty);
+      expect(find.textContaining('PAS ENCORE ENVOYÉES'), findsNothing);
+      expect(find.byKey(const Key('collecte.unsentLeftOut')), findsNothing);
+      expect(find.byKey(const ValueKey('collecte.round.sun')), findsOneWidget);
+      expect(
+        lineText(tester, 'collecte.total'),
+        'Total | 1${_nbsp}don | 70$_nbsp€',
+      );
+    });
+
+    testWidgets('should erase a refused one only once confirmed', (
+      tester,
+    ) async {
+      await pumpCollecte(tester, unsent: [_sunday]);
+
+      await tester.tap(find.byKey(const Key('collecte.unsent.erase')));
+      await tester.pumpAndSettle();
+      expect(find.text('Effacer la tournée$_nbsp?'), findsOneWidget);
+      expect(
+        find.text(
+          'Ses chiffres seront perdus$_nbsp: la collecte ne la comptera '
+          'jamais.',
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(
+        find.byKey(const ValueKey('collecte.eraseConfirm.cancel')),
+      );
+      await tester.pumpAndSettle();
+      expect(rounds.unsent, [_sunday]);
+
+      await tester.tap(
+        find.bySemanticsLabel(
+          'Effacer la tournée du Dim. 25 oct. · 10:00 → 11:30',
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('collecte.eraseConfirm.ok')));
+      await tester.pumpAndSettle();
+
+      expect(rounds.unsent, isEmpty);
+      expect(find.byKey(const ValueKey('collecte.unsent.sun')), findsNothing);
+      expect(fake.asked, isEmpty);
     });
   });
 }

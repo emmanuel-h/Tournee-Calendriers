@@ -2432,6 +2432,16 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String houseDonationAddedNoCalendar(String number, String donation) {
+    return 'N° $number · $donation ajouté, calendrier non compté';
+  }
+
+  @override
+  String doorDonationAddedNoCalendar(String label, String donation) {
+    return 'Porte $label · $donation ajouté, calendrier non compté';
+  }
+
+  @override
   String get addDonation => 'Ajouter un don';
 
   @override
@@ -2639,6 +2649,63 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get collecteUnavailable => 'La collecte ne peut pas être affichée.';
+
+  @override
+  String get collecteUnsentLeftOut => 'Sans les tournées pas encore envoyées.';
+
+  @override
+  String collecteUnsentHeader(int count) {
+    return 'Pas encore envoyées ($count)';
+  }
+
+  @override
+  String get collecteUnsentWaiting => '⏳ En attente d\'envoi';
+
+  @override
+  String get collecteUnsentRefused => '⚠ Refusée par le serveur';
+
+  @override
+  String collecteUnsentShow(String when, String amount, String state) {
+    return '$when, $amount, $state, afficher le détail';
+  }
+
+  @override
+  String collecteUnsentHide(String when, String amount, String state) {
+    return '$when, $amount, $state, masquer le détail';
+  }
+
+  @override
+  String get collecteUnsentWaitingSpoken => 'en attente d\'envoi';
+
+  @override
+  String get collecteUnsentRefusedSpoken => 'refusée par le serveur';
+
+  @override
+  String collecteRetrySpoken(String when) {
+    return 'Réessayer d\'envoyer la tournée du $when';
+  }
+
+  @override
+  String get collecteErase => 'Effacer';
+
+  @override
+  String collecteEraseSpoken(String when) {
+    return 'Effacer la tournée du $when';
+  }
+
+  @override
+  String get collecteEraseTitle => 'Effacer la tournée ?';
+
+  @override
+  String get collecteEraseBody =>
+      'Ses chiffres seront perdus : la collecte ne la comptera jamais.';
+
+  @override
+  String get collecteEraseOk => 'Effacer';
+
+  @override
+  String get roundsUnreadable =>
+      'Les tournées gardées sur ce téléphone n\'ont pas pu être relues : leurs dons sont perdus.';
 
   @override
   String get addStreetsPickHint =>

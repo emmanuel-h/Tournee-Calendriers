@@ -19,7 +19,8 @@ final summary = newRound()
     .add(card(500))
     .add(offered)
     .add(offered)
-    .validate(endedAt);
+    .validate(endedAt)
+    .summary;
 
 /// The document of [summary].
 Map<String, Object?> document() => {
@@ -53,7 +54,7 @@ void main() {
   });
 
   test('should read a tournée with nothing in it', () {
-    final empty = newRound().validate(endedAt);
+    final empty = newRound().validate(endedAt).summary;
 
     expect(roundFromDocument('round-1', roundToDocument(empty)), empty);
   });
@@ -113,7 +114,7 @@ void main() {
   });
 
   test('should read every summary of the documents, in their order', () {
-    final empty = newRound().validate(endedAt);
+    final empty = newRound().validate(endedAt).summary;
 
     expect(
       roundsFromDocuments({

@@ -2,6 +2,7 @@ import 'package:tournee_calendriers/domain/round/donation.dart';
 import 'package:tournee_calendriers/domain/round/donation_totals.dart';
 import 'package:tournee_calendriers/domain/round/round_id.dart';
 import 'package:tournee_calendriers/domain/round/round_summary.dart';
+import 'package:tournee_calendriers/domain/round/unsent_round.dart';
 import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
@@ -127,19 +128,25 @@ final class Round {
   Round unvisited() =>
       housesVisited == 0 ? this : _with(housesVisited: housesVisited - 1);
 
-  /// The summary of this tournée validated [at]: all that leaves the phone.
+  /// This tournée validated [at] (« Valider la tournée »): a tournée
+  /// « validated, not yet sent » ([UnsentRound]), waiting for the server to
+  /// have its summary, all that leaves the phone.
   ///
   /// It ends after it started, whatever the phone's clock did meanwhile
   /// (set back by hand): at least one second after [startedAt], which the
   /// server's rules require (PLAN §8.2).
-  RoundSummary validate(DateTime at) {
+  UnsentRound validate(DateTime at) {
     final earliest = startedAt.add(const Duration(seconds: 1));
-    return RoundSummary(
-      id: id,
-      startedAt: startedAt,
-      endedAt: at.isBefore(earliest) ? earliest : at,
-      housesVisited: housesVisited,
-      totals: totals,
+    return UnsentRound(
+      sector: sector,
+      campaign: campaign,
+      summary: RoundSummary(
+        id: id,
+        startedAt: startedAt,
+        endedAt: at.isBefore(earliest) ? earliest : at,
+        housesVisited: housesVisited,
+        totals: totals,
+      ),
     );
   }
 

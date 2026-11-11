@@ -1648,6 +1648,9 @@ outing; the team's area is the **secteur** (§2).
   rules let admins read `rounds/`). A tournée reads « Sam. 24 oct. · 14:05 → 18:20 » (the mockup's
   short day); every row starts folded and each unfolds on its own. « TOTAL DE LA TOURNÉE » for one,
   « TOTAL DES TOURNÉES » for none. Unreadable: « La collecte ne peut pas être affichée. ».
+- **Changed by 5.16 (#143, #155):** « Valider » no longer hands the summary to Firestore's queue
+  and forgets it: the tournée is kept on the phone as « validated, not yet sent » until the server
+  has its summary, and Collecte lists those apart, out of the totals.
 
 ### 5.14 Préparer le secteur, partir en tournée (built #120–#125)
 
@@ -2097,6 +2100,19 @@ SettingsNameTaken, StreetUnreadable, StreetUnreadableSheet). Overrides 5.2, 5.8,
   The totals leave them out (« Sans les tournées pas encore envoyées. », shown only when some are
   waiting). Nothing on Accueil. Accepted limit: a member removed from the secteur no longer reaches
   Collecte. An unreadable `open_round.json` is told rather than dropped silently.
+  - Delivered in #143 + #155 (`UnsentRound`, `SendUnsentRounds`, `RetryUnsentRound`,
+    `EraseUnsentRound`, `presentation/round/unsent_rounds_sender.dart`, the Collecte screen): « ⏳ En
+    attente d'envoi » sits in the come-back blue, « ⚠ Refusée par le serveur » in red with a red
+    outline, both as a badge under « 18 maisons, 12 dons »; « Réessayer » (outlined pill) and
+    « Effacer » (red text) sit on a line of their own under the refused tournée's row, which still
+    unfolds its methods like the others. A tournée waiting is sent by itself (no button) as soon as
+    the server can answer, the app running. « Effacer » asks « Effacer la tournée ? — Ses chiffres
+    seront perdus : la collecte ne la comptera jamais. [Annuler] [Effacer] » (« Effacer » red), and is
+    offered on a refused tournée only (one waiting may be on its way). An unreadable
+    `open_round.json` shows once, over the first screen, « Les tournées gardées sur ce téléphone
+    n'ont pas pu être relues : leurs dons sont perdus. ». A don given through « + Ajouter un don »
+    whose house took no calendar (changed meanwhile, #155) says « N° 9 · 5 € en chèque ajouté,
+    calendrier non compté » (« Porte 51 · … » on a door); « Annuler » takes the don back.
 - **Retirer** (#148): the confirmation gets « Changer aussi le code » (« Léa connaît le code
   actuel. » under it), ticked by default; « Retirer » then also does « Nouveau code ».
 - **A name per secteur, unique in it** (#148). The phone's prénom (5.1, 5.9) is the default name;
@@ -2936,15 +2952,22 @@ and return aggregates and `StreetChange`s, never Firestore types.
   `housesVisited` and the list of `Donation`s in the order added; **no member field**: it lives
   on the member's own phone, one at a time (`open_round.json` names none either). `add`,
   `replace(index)`, `remove(index)` (`NoSuchDonation` for an index past the list), `visited()` /
-  `unvisited()` (never below 0), `totals`, `validate(at)` → `RoundSummary`, ending at least one
-  second after the start (the rules want `startedAt < endedAt`, whatever the phone's clock did).
+  `unvisited()` (never below 0), `totals`, `validate(at)` → `UnsentRound` (its `RoundSummary`
+  ending at least one second after the start: the rules want `startedAt < endedAt`, whatever the
+  phone's clock did).
+- **`UnsentRound`** (value, #143, #155): a tournée « validated, not yet sent »: secteur, campaign,
+  `RoundSummary` and an `UnsentState` (`waiting`: offline or not yet answered; `refused`: the
+  server's rules refused it); `refused()` and `retried()`. Kept on the phone until the server has
+  the summary; several may wait, and a new tournée may start meanwhile.
 - **`RoundVisit.of(change)`** (domain service): what a `StreetChange` does to « maisons
   visitées »: a house or door going from not visited to ✓ / ⊘ is `visited`, the other way
   `unvisited`, anything else `none` (✓ → ⊘ stays counted once); `undone` turns it around.
 - **`RoundSummary`** (value): its round's id (the document id, so a second send makes no
   second tournée), start, end, houses visited and the `DonationTotals`; **no member**, nothing
-  else leaves the phone. `Collecte.of(summaries)`: the tournées newest first and their totals
-  summed per method for the secteur (never per member).
+  else leaves the phone. `Collecte.of(summaries, {unsent})`: the tournées newest first and their
+  totals summed per method for the secteur (never per member); this phone's `UnsentRound`s apart,
+  newest first, out of the totals, and a summary whose tournée still waits left out of the sent
+  ones (the phone's copy of the server may show it before the server confirms it).
 - **`VisitStatus.refused`** (⊘): counts as visited in `Progress` and `ProgressLevel` (with done),
   resets the tries, never has a `ComeBack`.
 - **`House.calendars`** / **`Dwelling.calendars`** (`0..99`): 1 when a house becomes ✓, 0 on any
@@ -2956,14 +2979,20 @@ and return aggregates and `StreetChange`s, never Firestore types.
   or door change, `RoundVisit.none`), refused with a `CalendarChangeFailure` (`notDone`,
   `lastCalendar` at 1, `tooMany` at 99, or the house / door not found). `AddDonation(donation,
   {calendarFor})` adds the don first, then the calendar to the `CalendarPlace` (street, number,
-  door?), and returns an `AddedDonation` (the tournée and the calendar's change, null when the
-  house was no longer ✓: the money stays); `RemoveCalendar(place)` never touches a don.
+  door?), and returns an `AddedDonation` (the tournée and the calendar's change; when the house
+  took none, `calendarRefused` says why, a `CommandFailure<CalendarChangeFailure>`, #155: the money
+  stays); `RemoveCalendar(place)` never touches a don.
 - Use cases: `StartRound` (an active member of the open secteur, not a visiting admin, no
   tournée already on), `WatchOpenRound(openSector)` (the tournée on, only when it belongs to the
   secteur shown), `AddDonation` (with or without a house: with one, `calendars + 1` too, #114),
-  `ChangeDonation`, `RemoveDonation`, `ValidateRound` (`OpenRoundStore` port for the phone,
-  `RoundLedger` port for the secteur: the summary is handed over first, then the tournée is
-  forgotten; its `watch(sector, campaign)` gives the validated summaries, #110), `WatchCollecte` (#111), `RemoveCalendar` (#114). The status use cases
+  `ChangeDonation`, `RemoveDonation`, `ValidateRound` (the `OpenRoundStore` port moves the tournée
+  on to its `UnsentRound`s in one write, #143), `SendUnsentRounds` (started with the app: sends each
+  waiting `UnsentRound` through the `RoundLedger` port, once at a time per tournée; the server
+  keeps it → forgotten, refuses it → kept as refused; the port's `record` answers `LedgerAnswer.kept`
+  or `refused` once the server has spoken, waiting offline; its `watch(sector, campaign)` gives the
+  validated summaries, #110), `RetryUnsentRound` and `EraseUnsentRound` (a refused one only),
+  `RoundsUnreadableAtStart`, `WatchCollecte` (#111; the ledger's summaries and the phone's unsent
+  ones of that secteur and campaign), `RemoveCalendar` (#114). The status use cases
   (`SetHouseDetails`, `MarkDwelling`) tell the open tournée about each change through
   `RoundVisits` (`RoundVisit.of(change)`), and `UndoLastChange` tells it the reverse of the
   change undone, so the count is right whatever screen marked it; only on the secteur the
@@ -3157,15 +3186,24 @@ can never drift.
   writes are in Firestore's hands (a second or two); read when the secteur's streets are
   first listened to, to finish a street cut off by a kill (§8.2 « Killed in the middle »).
   Ids percent-encoded; same writing as the streets; an unreadable file is skipped.
-- `open_round.json` (port `OpenRoundStore`, #63): the tournée on, `{ version: 1, round: { id,
-  sector, campaign, startedAt, housesVisited, donations: [{ method, cents } | { free: true }] }
-  | null }`, written at each change (same writing as the others), so a tournée survives a
-  kill; the dons carry no house and no time. Emptied once `ValidateRound` has handed the
-  summary to Firestore (its offline queue sends it later). An unreadable file means none.
-- The validated tournées have no file of their own (#110): their summaries go to
-  `rounds/{roundId}` (§6.2, port `RoundLedger`, `FirestoreRoundLedger`), and Firestore's
-  offline persistence keeps one validated offline in its queue, across restarts, and shows it
-  in its copy at once, which « Collecte » reads offline. (The stand-in of #108, files in
+- `open_round.json` (port `OpenRoundStore`, #63, #143): the tournée on and the validated
+  tournées not yet sent, `{ version: 2, round: { id, sector, campaign, startedAt, housesVisited,
+  donations: [{ method, cents } | { free: true }] } | null, unsent: [{ sector, campaign, refused,
+  summary: { id, startedAt, endedAt, housesVisited, free, cash: { count, cents }, cheque, card }
+  }] }`, written at each change (same writing as the others), so a tournée survives a kill; the
+  dons carry no house and no time. Version 1 (no `unsent`) is still read. `ValidateRound` moves
+  the tournée on to `unsent` in that one write, so a kill leaves it on or validated, never both
+  nor neither; it leaves `unsent` once the server has its summary, or on « Effacer ». An
+  unreadable file means none, and the app says so once at start-up (the file is left as it is
+  until the next change overwrites it).
+- The validated summaries go to `rounds/{roundId}` (§6.2, port `RoundLedger`,
+  `FirestoreRoundLedger`), whose copy « Collecte » reads offline. A send never trusts Firestore's
+  own queue alone: after a kill, an earlier `set` may still be queued or already on the server,
+  and a second `set` would reach the server as an update, which the rules refuse. So `record`
+  first waits for the server's word on the document (a listener's first snapshot neither from the
+  cache nor with a write of this phone pending, which settles an earlier queued write), counts a
+  document already there as kept, and only otherwise creates it and waits for the answer. Any
+  Firestore error is a refusal (« Réessayer » asks again). (The stand-in of #108, files in
   `validated_rounds/`, was removed unreleased; a phone that ran it keeps that folder, unread.)
 - MapLibre offline regions (tiles), behind the `OfflineMapStore` port
   (`infrastructure/maplibre_offline/`): one per downloaded secteur (two for a moment while

@@ -1,6 +1,7 @@
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/round/donation_totals.dart';
 import 'package:tournee_calendriers/domain/round/round_id.dart';
+import 'package:tournee_calendriers/domain/round/unsent_round.dart';
 import 'package:tournee_calendriers/presentation/collecte/collecte_view.dart';
 
 import '../../domain/round/round_fixtures.dart';
@@ -24,11 +25,21 @@ CollecteShown _shown({
   int campaign = 2026,
   List<CollecteRound>? rounds,
   DonationTotals? totals,
+  List<CollecteUnsentRound>? unsent,
 }) => CollecteShown(
   number: number,
   campaign: campaign,
   rounds: rounds ?? [_round()],
   totals: totals ?? DonationTotals.of([cash(1000)]),
+  unsent: unsent ?? [_unsent()],
+);
+
+CollecteUnsentRound _unsent({
+  String id = 'sun',
+  UnsentState state = UnsentState.refused,
+}) => CollecteUnsentRound(
+  round: _round(id: id),
+  state: state,
 );
 
 void main() {
@@ -63,9 +74,30 @@ void main() {
     expect(_shown(campaign: 2027), isNot(_shown()));
     expect(_shown(rounds: []), isNot(_shown()));
     expect(_shown(totals: DonationTotals.none), isNot(_shown()));
+    expect(_shown(unsent: []), isNot(_shown()));
+  });
+
+  test('should compare tournées not yet sent by every field', () {
+    expect(_unsent(), _unsent());
+    expect(_unsent().hashCode, _unsent().hashCode);
+    expect(_unsent(id: 'mon'), isNot(_unsent()));
+    expect(_unsent(state: UnsentState.waiting), isNot(_unsent()));
+  });
+
+  test('should have none waiting unless given', () {
+    expect(
+      CollecteShown(
+        number: 49,
+        campaign: 2026,
+        rounds: const [],
+        totals: DonationTotals.none,
+      ).unsent,
+      isEmpty,
+    );
   });
 
   test('should keep its tournées from being changed', () {
     expect(() => _shown().rounds.add(_round()), throwsUnsupportedError);
+    expect(() => _shown().unsent.add(_unsent()), throwsUnsupportedError);
   });
 }

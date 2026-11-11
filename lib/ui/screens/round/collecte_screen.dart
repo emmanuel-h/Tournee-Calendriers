@@ -1,7 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tournee_calendriers/domain/round/unsent_round.dart';
 import 'package:tournee_calendriers/presentation/collecte/collecte_notifier.dart';
 import 'package:tournee_calendriers/presentation/collecte/collecte_view.dart';
+import 'package:tournee_calendriers/ui/components/app_buttons.dart';
+import 'package:tournee_calendriers/ui/components/confirm_dialog.dart';
 import 'package:tournee_calendriers/ui/components/money_lines.dart';
 import 'package:tournee_calendriers/ui/components/money_words.dart';
 import 'package:tournee_calendriers/ui/components/section_header.dart';
@@ -16,6 +21,12 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 /// « TOURNÉES », each validated tournée newest first, **without its
 /// member**; a tap unfolds its methods. Read from the phone's copy, so it
 /// opens offline; every member sees it.
+///
+/// This phone's tournées the server does not have yet (PLAN §5.16,
+/// `docs/mockups/CashUnsent.dc.html`) sit between the totals and
+/// « TOURNÉES », under « PAS ENCORE ENVOYÉES (2) », each with « ⏳ En
+/// attente d'envoi » or « ⚠ Refusée par le serveur » and its « Réessayer »
+/// and « Effacer »; the totals leave them out and say so.
 final class CollecteScreen extends ConsumerWidget {
   const CollecteScreen({super.key});
 
@@ -94,6 +105,27 @@ final class _Collecte extends StatelessWidget {
             showFree: true,
           ),
         ),
+        if (view.unsent.isNotEmpty) ...[
+          Padding(
+            padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
+            child: Text(
+              l10n.collecteUnsentLeftOut,
+              key: const Key('collecte.unsentLeftOut'),
+              style: AppTextStyles.small.copyWith(color: colors.muted),
+            ),
+          ),
+          SectionHeader(
+            l10n.collecteUnsentHeader(view.unsent.length),
+            padding: headerPadding,
+          ),
+          Divider(height: 1, color: colors.divider),
+          for (final unsent in view.unsent)
+            _RoundRow(
+              key: ValueKey('collecte.unsent.${unsent.round.id.value}'),
+              round: unsent.round,
+              unsent: unsent.state,
+            ),
+        ],
         SectionHeader(l10n.collecteRoundsHeader, padding: headerPadding),
         Divider(height: 1, color: colors.divider),
         for (final round in view.rounds)
@@ -116,20 +148,26 @@ final class _Collecte extends StatelessWidget {
 
 /// A validated tournée: « Sam. 24 oct. · 14:05 → 18:20 » over « 23
 /// maisons, 19 dons », its total and ▸; a tap unfolds its methods (▾).
+/// One not yet sent ([unsent]) has its badge under them, and once refused
+/// « Réessayer » and « Effacer ».
 ///
-/// A `StatefulWidget` holds whether it is open, as a member's row of
-/// Équipe does: only this row needs to know, and the key of the row (the
-/// tournée's id) keeps it with its tournée when another one arrives.
-final class _RoundRow extends StatefulWidget {
-  const _RoundRow({super.key, required this.round});
+/// A `ConsumerStatefulWidget` holds whether it is open, as a member's row
+/// of Équipe does: only this row needs to know, and the key of the row
+/// (the tournée's id) keeps it with its tournée when another one arrives.
+/// `Consumer`: its buttons reach the Collecte notifier.
+final class _RoundRow extends ConsumerStatefulWidget {
+  const _RoundRow({super.key, required this.round, this.unsent});
 
   final CollecteRound round;
 
+  /// Where a tournée not yet sent stands; null for one the secteur has.
+  final UnsentState? unsent;
+
   @override
-  State<_RoundRow> createState() => _RoundRowState();
+  ConsumerState<_RoundRow> createState() => _RoundRowState();
 }
 
-final class _RoundRowState extends State<_RoundRow> {
+final class _RoundRowState extends ConsumerState<_RoundRow> {
   var _open = false;
 
   @override
@@ -140,15 +178,32 @@ final class _RoundRowState extends State<_RoundRow> {
     final totals = round.totals;
     final when = _when(l10n, round);
     final amount = eurosText(l10n, totals.cents);
+    final unsent = widget.unsent;
+    final spokenState = switch (unsent) {
+      null => null,
+      UnsentState.waiting => l10n.collecteUnsentWaitingSpoken,
+      UnsentState.refused => l10n.collecteUnsentRefusedSpoken,
+    };
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Semantics(
           button: true,
           expanded: _open,
-          label: _open
-              ? l10n.collecteRoundHide(when, amount)
-              : l10n.collecteRoundShow(when, amount),
+          label: switch ((_open, spokenState)) {
+            (false, null) => l10n.collecteRoundShow(when, amount),
+            (true, null) => l10n.collecteRoundHide(when, amount),
+            (false, final state?) => l10n.collecteUnsentShow(
+              when,
+              amount,
+              state,
+            ),
+            (true, final state?) => l10n.collecteUnsentHide(
+              when,
+              amount,
+              state,
+            ),
+          },
           // The label says it all: the texts and ▸ are not read again.
           excludeSemantics: true,
           child: Material(
@@ -188,6 +243,7 @@ final class _RoundRowState extends State<_RoundRow> {
                               color: colors.muted,
                             ),
                           ),
+                          if (unsent != null) _UnsentBadge(state: unsent),
                         ],
                       ),
                     ),
@@ -213,6 +269,8 @@ final class _RoundRowState extends State<_RoundRow> {
             ),
           ),
         ),
+        if (unsent == UnsentState.refused)
+          _RefusedActions(round: round, when: when),
         if (_open)
           ColoredBox(
             key: const Key('collecte.round.methods'),
@@ -253,5 +311,119 @@ final class _RoundRowState extends State<_RoundRow> {
       round.endedAt,
     );
     return text[0].toUpperCase() + text.substring(1);
+  }
+}
+
+/// « ⏳ En attente d'envoi » (the come-back blue) or « ⚠ Refusée par le
+/// serveur » (red, outlined): the glyph and the words say it, never the
+/// colour alone.
+final class _UnsentBadge extends StatelessWidget {
+  const _UnsentBadge({required this.state});
+
+  final UnsentState state;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = AppColors.of(context);
+    final (text, ink, fill, border) = switch (state) {
+      UnsentState.waiting => (
+        l10n.collecteUnsentWaiting,
+        colors.onComeBack,
+        colors.comeBack,
+        null,
+      ),
+      UnsentState.refused => (
+        l10n.collecteUnsentRefused,
+        colors.accent,
+        colors.alert,
+        colors.accent,
+      ),
+    };
+    return Padding(
+      padding: const EdgeInsets.only(top: 4),
+      child: Container(
+        key: const Key('collecte.unsent.badge'),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+        decoration: BoxDecoration(
+          color: fill,
+          borderRadius: BorderRadius.circular(AppSizes.badgeRadius),
+          border: border == null ? null : Border.all(color: border),
+        ),
+        child: Text(
+          text,
+          style: AppTextStyles.small.copyWith(
+            color: ink,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// « Réessayer » and « Effacer » (red) under a tournée the server refused.
+/// « Effacer » asks first: its figures are lost.
+final class _RefusedActions extends ConsumerWidget {
+  const _RefusedActions({required this.round, required this.when});
+
+  final CollecteRound round;
+
+  /// « Dim. 25 oct. · 10:00 → 11:30 », for screen readers.
+  final String when;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final colors = AppColors.of(context);
+    final notifier = ref.read(collecteProvider.notifier);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 0, 12, 10),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        border: Border(bottom: BorderSide(color: colors.divider)),
+      ),
+      child: Row(
+        spacing: 10,
+        children: [
+          PillButton(
+            key: const Key('collecte.unsent.retry'),
+            label: l10n.retry,
+            strong: true,
+            semanticsLabel: l10n.collecteRetrySpoken(when),
+            onPressed: () => unawaited(notifier.retry(round.id)),
+          ),
+          Semantics(
+            button: true,
+            label: l10n.collecteEraseSpoken(when),
+            excludeSemantics: true,
+            child: TextButton(
+              key: const Key('collecte.unsent.erase'),
+              style: TextButton.styleFrom(
+                foregroundColor: colors.accent,
+                textStyle: AppTextStyles.pill,
+              ),
+              onPressed: () => unawaited(_erase(context, notifier)),
+              child: Text(l10n.collecteErase),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// « Effacer la tournée ? — Ses chiffres seront perdus… », then the
+  /// phone forgets it.
+  Future<void> _erase(BuildContext context, CollecteNotifier notifier) async {
+    final l10n = AppLocalizations.of(context);
+    final confirmed = await showConfirmDialog(
+      context,
+      name: 'collecte.eraseConfirm',
+      title: l10n.collecteEraseTitle,
+      body: l10n.collecteEraseBody,
+      confirmLabel: l10n.collecteEraseOk,
+      destructive: true,
+    );
+    if (confirmed) await notifier.erase(round.id);
   }
 }

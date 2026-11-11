@@ -21,6 +21,7 @@ import 'package:tournee_calendriers/bootstrap/bootstrap.dart';
 import 'package:tournee_calendriers/bootstrap/firebase.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/round/donation_totals.dart';
+import 'package:tournee_calendriers/domain/round/unsent_round.dart';
 import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/shared/commune.dart';
@@ -1009,19 +1010,18 @@ void main() {
       expect(find.byKey(const Key('round.start')), findsOneWidget);
       expect(find.byKey(const Key('round.band')), findsNothing);
       expect(find.byKey(const Key('home.settings')), findsOneWidget);
-      // The summary is in Firestore's offline queue, and its copy shows it
-      // at once (#110): what « Collecte » reads, offline too.
+      // Offline, the summary waits on the phone as « validated, not yet
+      // sent » until the server has it (#143): Firestore has nothing yet.
       final phone = ProviderScope.containerOf(
         tester.element(find.byType(TourneeApp)),
       );
-      final validated = await phone
-          .read(roundLedgerProvider)
-          .watch(SectorId(t49), _ok(CampaignYear.create(2026)))
-          .first;
-      expect(validated, hasLength(1));
-      expect(validated.single.housesVisited, 1);
+      final waiting = phone.read(openRoundStoreProvider).unsent;
+      expect(waiting, hasLength(1));
+      expect(waiting.single.state, UnsentState.waiting);
+      expect(waiting.single.sector, SectorId(t49));
+      expect(waiting.single.summary.housesVisited, 1);
       expect(
-        validated.single.totals,
+        waiting.single.summary.totals,
         DonationTotals(
           cash: MethodTotal(count: 1, cents: 1000),
           cheque: MethodTotal.none,
@@ -1031,24 +1031,28 @@ void main() {
           free: 1,
         ),
       );
+      final validated = await phone
+          .read(roundLedgerProvider)
+          .watch(SectorId(t49), _ok(CampaignYear.create(2026)))
+          .first;
+      expect(validated, isEmpty);
 
-      // « Collecte 2026 » (#111) reads that copy, offline. Secteur, which
-      // leads there, cannot show the 49 (never read on this phone), so the
-      // screen is opened by its route.
+      // « Collecte 2026 » (#111, #143) lists it apart, out of the totals,
+      // offline. Secteur, which leads there, cannot show the 49 (never read
+      // on this phone), so the screen is opened by its route.
       GoRouter.of(tester.element(find.byType(HomeScreen)))
           .push<void>(AppRoutes.collecte)
           .ignore();
       await tester.pumpAndSettle();
       expect(find.text('Collecte 2026'), findsOneWidget);
       expect(find.text('Secteur 49 · tournées validées'), findsOneWidget);
-      expect(find.text('TOTAL DE LA TOURNÉE'), findsOneWidget);
+      expect(find.text('TOTAL DES TOURNÉES'), findsOneWidget);
       expect(
-        find.descendant(
-          of: find.byKey(const Key('collecte.total')),
-          matching: find.text('10\u00a0€'),
-        ),
+        find.text('Sans les tournées pas encore envoyées.'),
         findsOneWidget,
       );
+      expect(find.text('PAS ENCORE ENVOYÉES (1)'), findsOneWidget);
+      expect(find.text("⏳ En attente d'envoi"), findsOneWidget);
       await tester.tap(find.byTooltip('Retour'));
       await tester.pumpAndSettle();
 
@@ -1079,11 +1083,8 @@ void main() {
       expect(find.byKey(const Key('round.band')), findsNothing);
       expect(find.byKey(const Key('home.settings')), findsOneWidget);
       expect(phone.read(openRoundStoreProvider).openRound, isNull);
-      final stillOne = await phone
-          .read(roundLedgerProvider)
-          .watch(SectorId(t49), _ok(CampaignYear.create(2026)))
-          .first;
-      expect(stillOne, validated);
+      // Nothing more waits to be sent: only the validated one.
+      expect(phone.read(openRoundStoreProvider).unsent, waiting);
       await tester.tap(find.byKey(const Key('home.panel.handle')));
       await tester.pumpAndSettle();
       expect(find.text('Rues · 2/8'), findsOneWidget);

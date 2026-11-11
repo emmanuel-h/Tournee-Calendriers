@@ -1,6 +1,8 @@
 import 'package:tournee_calendriers/domain/round/collecte.dart';
 import 'package:tournee_calendriers/domain/round/donation_totals.dart';
 import 'package:tournee_calendriers/domain/round/round_id.dart';
+import 'package:tournee_calendriers/domain/round/round_summary.dart';
+import 'package:tournee_calendriers/domain/round/unsent_round.dart';
 import 'package:tournee_calendriers/domain/shared/same_items.dart';
 
 // The view state of « Collecte 2026 » (PLAN §5.13, mockups RunTeam and
@@ -44,7 +46,9 @@ final class CollecteShown extends CollecteView {
     required this.campaign,
     required List<CollecteRound> rounds,
     required this.totals,
-  }) : rounds = List.unmodifiable(rounds);
+    List<CollecteUnsentRound> unsent = const [],
+  }) : rounds = List.unmodifiable(rounds),
+       unsent = List.unmodifiable(unsent);
 
   /// [collecte] of the secteur [number] for [campaign], its times at the
   /// phone's time of day.
@@ -55,18 +59,15 @@ final class CollecteShown extends CollecteView {
   }) => CollecteShown(
     number: number,
     campaign: campaign,
-    rounds: [
-      for (final round in collecte.rounds)
-        CollecteRound(
-          id: round.id,
-          // Kept in UTC; « 14:05 → 18:20 » is the time of the phone.
-          startedAt: round.startedAt.toLocal(),
-          endedAt: round.endedAt.toLocal(),
-          housesVisited: round.housesVisited,
-          totals: round.totals,
+    rounds: [for (final round in collecte.rounds) CollecteRound.of(round)],
+    totals: collecte.totals,
+    unsent: [
+      for (final round in collecte.unsent)
+        CollecteUnsentRound(
+          round: CollecteRound.of(round.summary),
+          state: round.state,
         ),
     ],
-    totals: collecte.totals,
   );
 
   /// « Secteur 49 · tournées validées ».
@@ -78,8 +79,13 @@ final class CollecteShown extends CollecteView {
   /// « TOURNÉES », newest first.
   final List<CollecteRound> rounds;
 
-  /// « TOTAL DES 4 TOURNÉES »: every tournée added up.
+  /// « TOTAL DES 4 TOURNÉES »: every tournée of [rounds] added up, none
+  /// of [unsent].
   final DonationTotals totals;
+
+  /// « PAS ENCORE ENVOYÉES (2) », newest first: this phone's tournées the
+  /// server does not have yet (PLAN §5.16). None most of the time.
+  final List<CollecteUnsentRound> unsent;
 
   @override
   bool operator ==(Object other) =>
@@ -87,11 +93,17 @@ final class CollecteShown extends CollecteView {
       other.number == number &&
       other.campaign == campaign &&
       sameItems(other.rounds, rounds) &&
-      other.totals == totals;
+      other.totals == totals &&
+      sameItems(other.unsent, unsent);
 
   @override
-  int get hashCode =>
-      Object.hash(number, campaign, Object.hashAll(rounds), totals);
+  int get hashCode => Object.hash(
+    number,
+    campaign,
+    Object.hashAll(rounds),
+    totals,
+    Object.hashAll(unsent),
+  );
 }
 
 /// One validated tournée of « TOURNÉES »: « Samedi 24 oct. · 14:05 →
@@ -104,6 +116,16 @@ final class CollecteRound {
     required this.housesVisited,
     required this.totals,
   });
+
+  /// [summary] at the phone's time of day.
+  factory CollecteRound.of(RoundSummary summary) => CollecteRound(
+    id: summary.id,
+    // Kept in UTC; « 14:05 → 18:20 » is the time of the phone.
+    startedAt: summary.startedAt.toLocal(),
+    endedAt: summary.endedAt.toLocal(),
+    housesVisited: summary.housesVisited,
+    totals: summary.totals,
+  );
 
   /// Which tournée: the screen keeps a row unfolded by it.
   final RoundId id;
@@ -129,4 +151,23 @@ final class CollecteRound {
   @override
   int get hashCode =>
       Object.hash(id, startedAt, endedAt, housesVisited, totals);
+}
+
+/// One tournée of « PAS ENCORE ENVOYÉES »: the row of a validated tournée,
+/// and where it stands: « ⏳ En attente d'envoi », or « ⚠ Refusée par le
+/// serveur » with « Réessayer » and « Effacer ».
+final class CollecteUnsentRound {
+  const CollecteUnsentRound({required this.round, required this.state});
+
+  final CollecteRound round;
+  final UnsentState state;
+
+  @override
+  bool operator ==(Object other) =>
+      other is CollecteUnsentRound &&
+      other.round == round &&
+      other.state == state;
+
+  @override
+  int get hashCode => Object.hash(round, state);
 }

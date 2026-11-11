@@ -3514,6 +3514,18 @@ abstract class AppLocalizations {
   /// **'Porte {label} · {donation} ajouté'**
   String doorDonationAdded(String label, String donation);
 
+  /// Snackbar once « + Ajouter un don » gave a don, but the house took no calendar (no longer done, changed meanwhile by a teammate; #155): the money is still the tournée's.
+  ///
+  /// In fr, this message translates to:
+  /// **'N° {number} · {donation} ajouté, calendrier non compté'**
+  String houseDonationAddedNoCalendar(String number, String donation);
+
+  /// The same for a door.
+  ///
+  /// In fr, this message translates to:
+  /// **'Porte {label} · {donation} ajouté, calendrier non compté'**
+  String doorDonationAddedNoCalendar(String label, String donation);
+
   /// « + Ajouter un don » of the status picker on a house done during a tournée (RunStreet mockup), and the button of « Dons de la tournée » (RunDons mockup).
   ///
   /// In fr, this message translates to:
@@ -3753,6 +3765,96 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'La collecte ne peut pas être affichée.'**
   String get collecteUnavailable;
+
+  /// Under the totals of the Collecte screen, only while some tournées of this phone wait to reach the server (PLAN §5.16, CashUnsent mockup).
+  ///
+  /// In fr, this message translates to:
+  /// **'Sans les tournées pas encore envoyées.'**
+  String get collecteUnsentLeftOut;
+
+  /// Section header of the Collecte screen over this phone's validated tournées the server does not have yet (shown in capitals): « PAS ENCORE ENVOYÉES (2) ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Pas encore envoyées ({count})'**
+  String collecteUnsentHeader(int count);
+
+  /// Badge of a tournée not yet sent: offline, or the server has not answered yet.
+  ///
+  /// In fr, this message translates to:
+  /// **'⏳ En attente d\'envoi'**
+  String get collecteUnsentWaiting;
+
+  /// Badge of a tournée the server refused (the member removed, or the secteur gone); « Réessayer » and « Effacer » under it.
+  ///
+  /// In fr, this message translates to:
+  /// **'⚠ Refusée par le serveur'**
+  String get collecteUnsentRefused;
+
+  /// What screen readers hear for a folded tournée not yet sent; a tap shows its methods.
+  ///
+  /// In fr, this message translates to:
+  /// **'{when}, {amount}, {state}, afficher le détail'**
+  String collecteUnsentShow(String when, String amount, String state);
+
+  /// What screen readers hear for an unfolded tournée not yet sent; a tap folds it.
+  ///
+  /// In fr, this message translates to:
+  /// **'{when}, {amount}, {state}, masquer le détail'**
+  String collecteUnsentHide(String when, String amount, String state);
+
+  /// The waiting state, as screen readers hear it in the tournée's label (without the ⏳).
+  ///
+  /// In fr, this message translates to:
+  /// **'en attente d\'envoi'**
+  String get collecteUnsentWaitingSpoken;
+
+  /// The refused state, as screen readers hear it in the tournée's label (without the ⚠).
+  ///
+  /// In fr, this message translates to:
+  /// **'refusée par le serveur'**
+  String get collecteUnsentRefusedSpoken;
+
+  /// What screen readers hear for « Réessayer » of a refused tournée.
+  ///
+  /// In fr, this message translates to:
+  /// **'Réessayer d\'envoyer la tournée du {when}'**
+  String collecteRetrySpoken(String when);
+
+  /// Red text button beside « Réessayer » of a refused tournée: asks, then the phone forgets it.
+  ///
+  /// In fr, this message translates to:
+  /// **'Effacer'**
+  String get collecteErase;
+
+  /// What screen readers hear for « Effacer » of a refused tournée.
+  ///
+  /// In fr, this message translates to:
+  /// **'Effacer la tournée du {when}'**
+  String collecteEraseSpoken(String when);
+
+  /// Title of the dialog « Effacer » opens.
+  ///
+  /// In fr, this message translates to:
+  /// **'Effacer la tournée ?'**
+  String get collecteEraseTitle;
+
+  /// Body of that dialog: the phone forgets the tournée's summary, which never reaches the secteur.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ses chiffres seront perdus : la collecte ne la comptera jamais.'**
+  String get collecteEraseBody;
+
+  /// Red button of that dialog that forgets the tournée.
+  ///
+  /// In fr, this message translates to:
+  /// **'Effacer'**
+  String get collecteEraseOk;
+
+  /// Snackbar once at start-up when the phone's file of tournées (the one on, those not yet sent) could not be read (#143).
+  ///
+  /// In fr, this message translates to:
+  /// **'Les tournées gardées sur ce téléphone n\'ont pas pu être relues : leurs dons sont perdus.'**
+  String get roundsUnreadable;
 
   /// Selection sheet of « Ajouter des rues » with nothing ticked (PLAN §5.14, Pick mockup).
   ///
