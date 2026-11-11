@@ -83,6 +83,7 @@ final class FirestoreStreetRepository
         .snapshots(includeMetadataChanges: true)
         .map((snapshot) => snapshot.data()),
     report: sendInBackground,
+    log: debugPrint,
   );
   StreamSubscription<QuerySnapshot<Map<String, dynamic>>>? _listener;
 

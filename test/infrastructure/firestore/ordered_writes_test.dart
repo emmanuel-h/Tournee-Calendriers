@@ -24,6 +24,12 @@ final class _Documents {
   /// The writes' futures, by name, to complete or fail them.
   final _acks = <String, Completer<void>>{};
 
+  /// What [OrderedWrites] logged.
+  final logs = <String>[];
+
+  /// The timers started, oldest first, cancelled ones included.
+  final timers = <_FakeTimer>[];
+
   late final writes = OrderedWrites(
     copyOf: (id) {
       listens[id] = (listens[id] ?? 0) + 1;
@@ -34,7 +40,20 @@ final class _Documents {
       // As `sendInBackground` does: the failure is handled, only told.
       unawaited(write.then<void>((_) {}, onError: (Object _) {}));
     },
+    log: logs.add,
+    patience: const Duration(seconds: 7),
+    startTimer: (duration, callback) {
+      final timer = _FakeTimer(duration, callback);
+      timers.add(timer);
+      return timer;
+    },
   );
+
+  /// The timers still running.
+  List<_FakeTimer> get activeTimers => [
+    for (final timer in timers)
+      if (timer.isActive) timer,
+  ];
 
   StreamController<Map<String, Object?>?> _copyOf(String id) =>
       _copies.putIfAbsent(id, StreamController.broadcast);
@@ -72,6 +91,32 @@ final class _Documents {
     _acks[name]!.completeError(StateError('permission-denied'));
     await pumpEventQueue();
   }
+}
+
+/// A [Timer] that fires only when the test says: no real clock.
+final class _FakeTimer implements Timer {
+  _FakeTimer(this.duration, this._callback);
+
+  final Duration duration;
+  final void Function() _callback;
+  var _active = true;
+
+  /// Time running out: calls back, once, unless cancelled.
+  Future<void> elapse() async {
+    if (!_active) return;
+    _active = false;
+    _callback();
+    await pumpEventQueue();
+  }
+
+  @override
+  void cancel() => _active = false;
+
+  @override
+  bool get isActive => _active;
+
+  @override
+  int get tick => 0;
 }
 
 void main() {
@@ -210,6 +255,202 @@ void main() {
       docs.writes.send('paix', 'save', [docs.write('c', waits: false)]);
 
       expect(docs.sent, ['a', 'b', 'c']);
+    });
+  });
+
+  group('document gone', () {
+    test('should send nothing more once the copy is gone after a write was '
+        'shown, and log it', () async {
+      docs.writes.send('paix', 'add', [
+        docs.write('a'),
+        docs.write('b'),
+        docs.write('c'),
+      ]);
+      await docs.copy('paix', {'a': 1});
+
+      await docs.copy('paix', null);
+      await docs.copy('paix', {'b': 1});
+
+      expect(docs.sent, ['a', 'b']);
+      expect(docs.isFollowed('paix'), isFalse);
+      expect(docs.activeTimers, isEmpty);
+      expect(docs.logs, [
+        'Document paix (add) gone while written: 1 writes not sent',
+      ]);
+    });
+
+    test('should let the next batch go once the copy is gone', () async {
+      docs.writes.send('paix', 'add', [docs.write('a'), docs.write('b')]);
+      docs.writes.send('paix', 'save', [docs.write('c', waits: false)]);
+      await docs.copy('paix', {'a': 1});
+
+      await docs.copy('paix', null);
+
+      expect(docs.sent, ['a', 'b', 'c']);
+    });
+
+    test('should tell the batch over once the copy is gone', () async {
+      var over = false;
+      docs.writes.send('paix', 'add', [
+        docs.write('a'),
+        docs.write('b'),
+        docs.write('c'),
+      ], whenOver: () => over = true);
+      await docs.copy('paix', {'a': 1});
+
+      await docs.copy('paix', null);
+
+      expect(over, isTrue);
+    });
+
+    test('should not take a missing copy before any write was shown for '
+        'a document gone', () async {
+      docs.writes.send('paix', 'add', [docs.write('a'), docs.write('b')]);
+
+      await docs.copy('paix', null);
+      await docs.copy('paix', {'a': 1});
+
+      expect(docs.sent, ['a', 'b']);
+      expect(docs.logs, isEmpty);
+    });
+  });
+
+  group('patience', () {
+    test('should wait 30 seconds by default', () {
+      final timers = <Duration>[];
+      final writes = OrderedWrites(
+        copyOf: (_) => StreamController<Map<String, Object?>?>().stream,
+        report: (_, _) {},
+        log: (_) {},
+        startTimer: (duration, callback) {
+          timers.add(duration);
+          return _FakeTimer(duration, callback);
+        },
+      );
+
+      writes.send('paix', 'add', [docs.write('a')]);
+
+      expect(writes.patience, const Duration(seconds: 30));
+      expect(timers, [const Duration(seconds: 30)]);
+    });
+
+    test('should wait a real timer when none is given', () async {
+      final writes = OrderedWrites(
+        copyOf: (_) => StreamController<Map<String, Object?>?>().stream,
+        report: (_, _) {},
+        log: (_) {},
+        patience: Duration.zero,
+      );
+      var over = false;
+
+      writes.send('paix', 'add', [
+        docs.write('a'),
+        docs.write('b'),
+      ], whenOver: () => over = true);
+      await Future<void>.delayed(Duration.zero);
+      await pumpEventQueue();
+
+      expect(docs.sent, ['a', 'b']);
+      expect(over, isTrue);
+    });
+
+    test('should start no timer for writes that need not wait', () {
+      docs.writes.send('paix', 'save', [
+        docs.write('a', waits: false),
+        docs.write('b', waits: false),
+      ]);
+
+      expect(docs.timers, isEmpty);
+    });
+
+    test('should time the wait for a write with the patience given', () {
+      docs.writes.send('paix', 'add', [docs.write('a'), docs.write('b')]);
+
+      expect(docs.timers.single.duration, const Duration(seconds: 7));
+      expect(docs.timers.single.isActive, isTrue);
+    });
+
+    test('should time each wait afresh once the write before is '
+        'shown', () async {
+      docs.writes.send('paix', 'add', [
+        docs.write('a'),
+        docs.write('b'),
+        docs.write('c'),
+      ]);
+
+      await docs.copy('paix', {'a': 1});
+
+      expect(docs.timers, hasLength(2));
+      expect(docs.timers.first.isActive, isFalse);
+      expect(docs.timers.last.isActive, isTrue);
+    });
+
+    test('should send the rest of the batch at once, in order, and log it '
+        'when a write is not shown in time', () async {
+      var over = false;
+      docs.writes.send('paix', 'add', [
+        docs.write('a'),
+        docs.write('b'),
+        docs.write('c'),
+        docs.write('d', waits: false),
+      ], whenOver: () => over = true);
+      await docs.copy('paix', {'a': 1});
+
+      await docs.timers.last.elapse();
+
+      expect(docs.sent, ['a', 'b', 'c', 'd']);
+      expect(docs.reported, ['add', 'add', 'add', 'add']);
+      expect(docs.isFollowed('paix'), isFalse);
+      expect(over, isTrue);
+      expect(docs.logs, [
+        'Document paix (add): write 2 of 4 not shown after 7 s, the rest '
+            'sent without waiting',
+      ]);
+    });
+
+    test('should send each write once when the copy comes after the time '
+        'ran out', () async {
+      docs.writes.send('paix', 'add', [docs.write('a'), docs.write('b')]);
+      await docs.timers.single.elapse();
+
+      await docs.copy('paix', {'a': 1, 'b': 1});
+
+      expect(docs.sent, ['a', 'b']);
+      expect(docs.timers, hasLength(1));
+    });
+
+    test('should let the next batch go when the time runs out', () async {
+      docs.writes.send('paix', 'add', [docs.write('a')]);
+      docs.writes.send('paix', 'save', [docs.write('b', waits: false)]);
+
+      await docs.timers.single.elapse();
+
+      expect(docs.sent, ['a', 'b']);
+    });
+
+    test('should stop the timer when the last write is shown', () async {
+      docs.writes.send('paix', 'add', [docs.write('a')]);
+
+      await docs.copy('paix', {'a': 1});
+
+      expect(docs.activeTimers, isEmpty);
+      expect(docs.logs, isEmpty);
+    });
+
+    test('should stop the timer when a write is refused', () async {
+      docs.writes.send('paix', 'add', [docs.write('a'), docs.write('b')]);
+
+      await docs.refuse('a');
+
+      expect(docs.activeTimers, isEmpty);
+    });
+
+    test('should stop the timer when the copy fails', () async {
+      docs.writes.send('paix', 'add', [docs.write('a'), docs.write('b')]);
+
+      await docs.copyFails('paix');
+
+      expect(docs.activeTimers, isEmpty);
     });
   });
 

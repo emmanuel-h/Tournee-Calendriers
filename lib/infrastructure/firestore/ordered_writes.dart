@@ -42,20 +42,44 @@ final class OrderedWrite {
 /// moment (a few milliseconds per write).
 ///
 /// A batch stops early, the rest of it never sent, when one of its writes
-/// fails (refused) or the copy can no longer be read: what comes after
-/// would be refused too. A write that is never shown (the document deleted
-/// meanwhile) holds back the rest of its document for as long as the
-/// phone's copy is followed.
+/// fails (refused), the copy can no longer be read, or the copy says the
+/// document is gone after it showed one of the batch's writes (deleted
+/// meanwhile): what comes after would be refused too.
+///
+/// A write never shown (its document deleted before the write was taken)
+/// would hold back the rest of its document, kept only in memory and lost
+/// if the app is killed (#152). So no write is waited for longer than
+/// [patience]: past it, the rest of the batch is sent at once and the wait
+/// is logged.
 final class OrderedWrites {
   // Private named parameters (`this._copyOf`): callers write them without
   // the underscore, `copyOf:`.
-  OrderedWrites({required this._copyOf, required this._report});
+  OrderedWrites({
+    required this._copyOf,
+    required this._report,
+    required this._log,
+    this.patience = const Duration(seconds: 30),
+    Timer Function(Duration, void Function())? startTimer,
+  }) : _startTimer = startTimer ?? Timer.new;
+
+  /// The longest wait for one write to show in the phone's copy. A local
+  /// write shows in a few milliseconds, offline too: this only guards
+  /// against a write that will never show.
+  final Duration patience;
 
   /// The phone's copy of the document [id], now and after each change.
   final Stream<Map<String, Object?>?> Function(String id) _copyOf;
 
   /// Takes each write sent, to tell its failure ([what] says which).
   final void Function(String what, Future<void> write) _report;
+
+  /// Tells a batch that did not end as planned (a debug log).
+  final void Function(String message) _log;
+
+  /// Starts the [patience] timer. `Timer.new` is the `Timer(duration,
+  /// callback)` constructor passed as a function; tests give a timer they
+  /// fire themselves, so no test waits for a real clock.
+  final Timer Function(Duration, void Function()) _startTimer;
 
   /// The last batch of each document still running.
   final _running = <String, Future<void>>{};
@@ -97,39 +121,71 @@ final class OrderedWrites {
   }
 
   /// Sends [writes], each held back until the copy shows the one before
-  /// that asks it; completes once the last is sent (and shown, when it
-  /// asks it), or the batch stops.
+  /// that asks it (for [patience] at most); completes once the last is
+  /// sent (and shown, when it asks it), or the batch stops.
   Future<void> _run(String id, String what, List<OrderedWrite> writes) {
     final done = Completer<void>();
     StreamSubscription<Map<String, Object?>?>? copies;
+    Timer? waiting;
     var next = 0;
+    // Whether the copy has shown a write of this batch: from then on the
+    // document exists, so a copy without it means it was deleted. Before,
+    // a missing copy only means the first write is not shown yet.
+    var shownOnce = false;
     bool Function(Map<String, Object?>?)? awaited;
 
     void finish() {
       if (done.isCompleted) return;
       awaited = null;
+      waiting?.cancel();
       unawaited(copies?.cancel());
       done.complete();
     }
 
+    void sendNext() {
+      final sent = writes[next++].send();
+      _report(what, sent);
+      // A refused write stops the batch. Its error is told by [_report];
+      // this handler only stops, and keeps the error from being reported
+      // twice as « unhandled ».
+      unawaited(sent.then<void>((_) {}, onError: (Object _) => finish()));
+    }
+
+    // Time ran out for the write awaited: the rest goes to the Firestore
+    // SDK now, which keeps it across a restart, rather than wait in memory.
+    void sendTheRest() {
+      _log(
+        'Document $id ($what): write $next of ${writes.length} not shown '
+        'after ${patience.inSeconds} s, the rest sent without waiting',
+      );
+      while (next < writes.length) {
+        sendNext();
+      }
+      finish();
+    }
+
     void sendOn() {
       while (next < writes.length) {
-        final write = writes[next++];
-        final sent = write.send();
-        _report(what, sent);
-        // A refused write stops the batch. Its error is told by [_report];
-        // this handler only stops, and keeps the error from being
-        // reported twice as « unhandled ».
-        unawaited(sent.then<void>((_) {}, onError: (Object _) => finish()));
-        if (write.isShownIn case final isShownIn?) {
+        final isShownIn = writes[next].isShownIn;
+        sendNext();
+        if (isShownIn != null) {
           awaited = isShownIn;
+          waiting = _startTimer(patience, sendTheRest);
           // Listened once per batch, from its first write to wait for:
           // each snapshot after that is checked against the write awaited
           // then.
           copies ??= _copyOf(id).listen(
             (copy) {
-              if (awaited case final shown? when shown(copy)) {
+              if (copy == null && shownOnce) {
+                _log(
+                  'Document $id ($what) gone while written: '
+                  '${writes.length - next} writes not sent',
+                );
+                finish();
+              } else if (awaited case final shown? when shown(copy)) {
                 awaited = null;
+                shownOnce = true;
+                waiting?.cancel();
                 sendOn();
               }
             },

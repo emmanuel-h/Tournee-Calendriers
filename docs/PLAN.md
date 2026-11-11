@@ -3353,7 +3353,12 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
     made while a street is still being written goes after the house it marks. The several
     updates of one change (numbers added, restored, purged) go all at once: they touch
     different houses of a document that exists, so their order does not matter. Once in the
-    SDK, writes keep their order to the server, offline and across restarts.
+    SDK, writes keep their order to the server, offline and across restarts. A write that
+    never shows (the street deleted meanwhile) must not hold the street's later writes in
+    memory, where a kill would lose them (#152): once the copy has shown a write of the
+    batch, a copy saying the document is gone ends the batch (the rest would be refused);
+    and no write is waited for more than 30 s, after which the rest of the batch is sent at
+    once (debug log « Document … not shown after 30 s »).
   - **Killed in the middle** (#104). `add` returns at once (the phone has the street in
     memory) and the writes run in the background; a kill before their end (a street of 300
     numbers takes a second or two) would leave the writes not yet handed to the SDK unsent.
