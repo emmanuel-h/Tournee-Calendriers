@@ -1176,6 +1176,26 @@ class AppLocalizationsFr extends AppLocalizations {
   String get release010First => 'Première version de test.';
 
   @override
+  String get release0150Unsent =>
+      'Une tournée validée reste sur le téléphone jusqu\'à son envoi ; la Collecte montre celles pas encore envoyées.';
+
+  @override
+  String get release0150Names =>
+      'Un prénom par secteur, unique dans le secteur, modifiable dans Paramètres.';
+
+  @override
+  String get release0150Code =>
+      'Retirer un membre peut aussi changer le code du secteur.';
+
+  @override
+  String get release0150Unreadable =>
+      'Une rue illisible apparaît dans l\'accueil au lieu de disparaître.';
+
+  @override
+  String get release0150Phone =>
+      'Les données d\'un secteur quitté sont effacées du téléphone, et l\'app n\'est plus sauvegardée par Android.';
+
+  @override
   String get release0140Part =>
       '« Partie de la rue » : un secteur peut ne couvrir qu\'une partie d\'une rue, un côté ou entre deux numéros.';
 

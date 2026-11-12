@@ -1696,6 +1696,36 @@ abstract class AppLocalizations {
   /// **'Première version de test.'**
   String get release010First;
 
+  /// Line of « Nouveautés » for 0.15.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'Une tournée validée reste sur le téléphone jusqu\'à son envoi ; la Collecte montre celles pas encore envoyées.'**
+  String get release0150Unsent;
+
+  /// Line of « Nouveautés » for 0.15.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'Un prénom par secteur, unique dans le secteur, modifiable dans Paramètres.'**
+  String get release0150Names;
+
+  /// Line of « Nouveautés » for 0.15.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'Retirer un membre peut aussi changer le code du secteur.'**
+  String get release0150Code;
+
+  /// Line of « Nouveautés » for 0.15.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'Une rue illisible apparaît dans l\'accueil au lieu de disparaître.'**
+  String get release0150Unreadable;
+
+  /// Line of « Nouveautés » for 0.15.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'Les données d\'un secteur quitté sont effacées du téléphone, et l\'app n\'est plus sauvegardée par Android.'**
+  String get release0150Phone;
+
   /// Line of « Nouveautés » for 0.14.0.
   ///
   /// In fr, this message translates to:
