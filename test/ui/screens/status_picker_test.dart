@@ -422,7 +422,7 @@ void main() {
         );
         // The title says it: no « Quand repasser ? » above the days.
         expect(find.text('Quand repasser ?'), findsNothing);
-        expect(summary(tester), 'Pas de jour choisi');
+        expect(summary(tester), 'Aucun jour sélectionné');
         // No snackbar under the sheet yet.
         expect(find.text('Annuler'), findsNothing);
 
@@ -495,7 +495,7 @@ void main() {
         expect(summary(tester), 'Le samedi 7 nov.');
         expect(stored('5').comeBack, comeBack('2026-11-07'));
         await tapDay(tester, '2026-11-07');
-        expect(summary(tester), 'Pas de jour choisi');
+        expect(summary(tester), 'Aucun jour sélectionné');
         expect(stored('5').comeBack, ComeBack.withoutTime);
         await tester.tap(find.byKey(const Key('house.validate')));
         await tester.pumpAndSettle();

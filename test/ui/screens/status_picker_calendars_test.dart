@@ -130,7 +130,7 @@ void main() {
         '2 calendriers',
       );
       expect(minus(tester, 'house').onPressed, isNotNull);
-      expect(find.byTooltip('Un calendrier de moins'), findsOneWidget);
+      expect(find.byTooltip('Enlever un calendrier'), findsOneWidget);
 
       await tap(tester, _key('house.removeCalendar'));
 

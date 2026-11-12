@@ -82,8 +82,8 @@ void main() {
     test('should say there is no network when the phone has none', () {
       expect(
         communeSearchFailureMessage(l10n, ImportProblem.noNetwork),
-        'Pas de réseau\u00a0: la recherche de communes en a besoin. '
-        'Réessayez quand le téléphone capte.',
+        'Pas de réseau. Réessayez la recherche de commune quand le '
+        'téléphone capte à nouveau.',
       );
     });
 

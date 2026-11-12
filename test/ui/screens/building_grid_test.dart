@@ -400,7 +400,7 @@ void main() {
       tester
           .widget<Text>(find.byKey(const Key('building.comeBackSummary')))
           .data,
-      'Pas de jour choisi',
+      'Aucun jour sélectionné',
     );
 
     await tester.tap(

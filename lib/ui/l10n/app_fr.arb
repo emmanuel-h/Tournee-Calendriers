@@ -209,7 +209,7 @@
     "description": "How many calendars a house or door done took, in its status picker (#114, RunStreet mockup), and at the end of the screen-reader label of a tile or door with two or more: « Numéro 9, fait, 2 calendriers ».",
     "placeholders": { "count": { "type": "int", "example": "2" } }
   },
-  "removeCalendar": "Un calendrier de moins",
+  "removeCalendar": "Enlever un calendrier",
   "@removeCalendar": { "description": "Screen-reader name and tooltip of the « − » beside « 2 calendriers » in the status picker (#114); disabled at one calendar. Never changes a don." },
   "statusPickerClose": "Fermer",
   "@statusPickerClose": { "description": "Screen-reader name and tooltip of the ✕ of the status picker: closes it, nothing more stored." },
@@ -272,7 +272,7 @@
     "description": "An hour of the list of « Quand repasser ? », 8 to 21.",
     "placeholders": { "hour": { "type": "int", "example": "18" } }
   },
-  "comeBackNoDay": "Pas de jour choisi",
+  "comeBackNoDay": "Aucun jour sélectionné",
   "@comeBackNoDay": { "description": "Summary line of « Quand repasser ? » while no day is chosen." },
   "comeBackOnToday": "Aujourd'hui",
   "@comeBackOnToday": { "description": "Summary line of « Quand repasser ? »: today, without hour." },
@@ -458,7 +458,7 @@
       "last": { "type": "String", "example": "54" }
     }
   },
-  "setupPreviewHint": "Chaque étage pourra ensuite être ajusté (porte en plus ou en moins).",
+  "setupPreviewHint": "Chaque étage pourra être modifié par la suite (porte en plus ou en moins).",
   "@setupPreviewHint": { "description": "Under the preview of the building setup." },
   "setupValidate": "Valider",
   "@setupValidate": { "description": "Lays the building out as described." },
@@ -562,11 +562,11 @@
     "description": "Title of the confirmation before removing a number that has marks.",
     "placeholders": { "number": { "type": "String", "example": "3" } }
   },
-  "confirmRemoveBody": "Ce numéro a des marques (statut, « repasser » ou portes marquées). Elles partent avec lui à la Corbeille.",
+  "confirmRemoveBody": "Ce numéro a déjà été marqué comme fait (statut, « repasser » ou portes marquées). Ces statuts seront supprimés également.",
   "@confirmRemoveBody": { "description": "Body of the confirmation before removing a number that has marks (PLAN §5.5)." },
   "confirmDeleteStreetTitle": "Supprimer la rue ?",
   "@confirmDeleteStreetTitle": { "description": "Title of the confirmation of « Supprimer la rue »." },
-  "confirmDeleteStreetBody": "« {name} » part à la Corbeille avec ses numéros et leurs marques, pour toute l'équipe.",
+  "confirmDeleteStreetBody": "« {name} » part à la Corbeille avec ses numéros et leurs statuts pour toute l'équipe.",
   "@confirmDeleteStreetBody": {
     "description": "Body of the confirmation of « Supprimer la rue ».",
     "placeholders": { "name": { "type": "String", "example": "Rue des Lilas" } }
@@ -646,7 +646,7 @@
     "description": "The number typed is shown by another house.",
     "placeholders": { "number": { "type": "String", "example": "5" } }
   },
-  "renumberInCorbeille": "Le {number} est dans la Corbeille : ajoutez-le avec « + numéros » pour le retrouver avec ses marques, ou choisissez un autre numéro.",
+  "renumberInCorbeille": "Le {number} est dans la Corbeille : ajoutez-le avec « + numéros » pour le récupérer, ou choisissez un autre numéro.",
   "@renumberInCorbeille": {
     "description": "The number typed belongs to a house in the Corbeille.",
     "placeholders": { "number": { "type": "String", "example": "7" } }
@@ -778,7 +778,7 @@
   "@confirmRemoveDoorBody": { "description": "Body of the confirmation before removing a door that has a mark." },
   "keep": "Garder",
   "@keep": { "description": "Closes a confirmation, keeping what it was about to remove." },
-  "lastDoorRefused": "C'est la dernière porte de l'immeuble. Pour en refaire une maison, revenez à l'immeuble : « Gérer l'immeuble », puis « Changer en maison ».",
+  "lastDoorRefused": "C'est la dernière porte de l'immeuble. Pour le transformer en maison, revenez à l'immeuble : « Gérer l'immeuble », puis « Changer en maison ».",
   "@lastDoorRefused": { "description": "✕ on the only door left in a building: a building keeps at least one door." },
   "doorTitle": "Porte {label}",
   "@doorTitle": {
@@ -862,7 +862,7 @@
   },
   "communeNoneFound": "Aucune commune ne porte ce nom.",
   "@communeNoneFound": { "description": "The commune search found nothing." },
-  "communeSearchNoNetwork": "Pas de réseau : la recherche de communes en a besoin. Réessayez quand le téléphone capte.",
+  "communeSearchNoNetwork": "Pas de réseau. Réessayez la recherche de commune quand le téléphone capte à nouveau.",
   "@communeSearchNoNetwork": { "description": "The commune search could not reach the service." },
   "communeSearchServiceError": "Impossible de chercher les communes pour l'instant. Réessayez plus tard.",
   "@communeSearchServiceError": { "description": "Both commune searches (geo.api.gouv.fr, then the Géoplateforme) failed while the phone has a connection: refused, an error or an unreadable answer (#137)." },

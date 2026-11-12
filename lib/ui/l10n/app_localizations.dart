@@ -325,7 +325,7 @@ abstract class AppLocalizations {
   /// Screen-reader name and tooltip of the « − » beside « 2 calendriers » in the status picker (#114); disabled at one calendar. Never changes a don.
   ///
   /// In fr, this message translates to:
-  /// **'Un calendrier de moins'**
+  /// **'Enlever un calendrier'**
   String get removeCalendar;
 
   /// Screen-reader name and tooltip of the ✕ of the status picker: closes it, nothing more stored.
@@ -451,7 +451,7 @@ abstract class AppLocalizations {
   /// Summary line of « Quand repasser ? » while no day is chosen.
   ///
   /// In fr, this message translates to:
-  /// **'Pas de jour choisi'**
+  /// **'Aucun jour sélectionné'**
   String get comeBackNoDay;
 
   /// Summary line of « Quand repasser ? »: today, without hour.
@@ -715,7 +715,7 @@ abstract class AppLocalizations {
   /// Under the preview of the building setup.
   ///
   /// In fr, this message translates to:
-  /// **'Chaque étage pourra ensuite être ajusté (porte en plus ou en moins).'**
+  /// **'Chaque étage pourra être modifié par la suite (porte en plus ou en moins).'**
   String get setupPreviewHint;
 
   /// Lays the building out as described.
@@ -889,7 +889,7 @@ abstract class AppLocalizations {
   /// Body of the confirmation before removing a number that has marks (PLAN §5.5).
   ///
   /// In fr, this message translates to:
-  /// **'Ce numéro a des marques (statut, « repasser » ou portes marquées). Elles partent avec lui à la Corbeille.'**
+  /// **'Ce numéro a déjà été marqué comme fait (statut, « repasser » ou portes marquées). Ces statuts seront supprimés également.'**
   String get confirmRemoveBody;
 
   /// Title of the confirmation of « Supprimer la rue ».
@@ -901,7 +901,7 @@ abstract class AppLocalizations {
   /// Body of the confirmation of « Supprimer la rue ».
   ///
   /// In fr, this message translates to:
-  /// **'« {name} » part à la Corbeille avec ses numéros et leurs marques, pour toute l\'équipe.'**
+  /// **'« {name} » part à la Corbeille avec ses numéros et leurs statuts pour toute l\'équipe.'**
   String confirmDeleteStreetBody(String name);
 
   /// Title of the sheet opened by « + numéros » (PLAN §5.5); also the screen-reader name of that button.
@@ -1015,7 +1015,7 @@ abstract class AppLocalizations {
   /// The number typed belongs to a house in the Corbeille.
   ///
   /// In fr, this message translates to:
-  /// **'Le {number} est dans la Corbeille : ajoutez-le avec « + numéros » pour le retrouver avec ses marques, ou choisissez un autre numéro.'**
+  /// **'Le {number} est dans la Corbeille : ajoutez-le avec « + numéros » pour le récupérer, ou choisissez un autre numéro.'**
   String renumberInCorbeille(String number);
 
   /// Choice of the « Gérer l'immeuble » menu of the building grid: the building becomes a single house again.
@@ -1231,7 +1231,7 @@ abstract class AppLocalizations {
   /// ✕ on the only door left in a building: a building keeps at least one door.
   ///
   /// In fr, this message translates to:
-  /// **'C\'est la dernière porte de l\'immeuble. Pour en refaire une maison, revenez à l\'immeuble : « Gérer l\'immeuble », puis « Changer en maison ».'**
+  /// **'C\'est la dernière porte de l\'immeuble. Pour le transformer en maison, revenez à l\'immeuble : « Gérer l\'immeuble », puis « Changer en maison ».'**
   String get lastDoorRefused;
 
   /// Title of the rename sheet of a door, and what « … · quand repasser ? » is about in its status picker.
@@ -1351,7 +1351,7 @@ abstract class AppLocalizations {
   /// The commune search could not reach the service.
   ///
   /// In fr, this message translates to:
-  /// **'Pas de réseau : la recherche de communes en a besoin. Réessayez quand le téléphone capte.'**
+  /// **'Pas de réseau. Réessayez la recherche de commune quand le téléphone capte à nouveau.'**
   String get communeSearchNoNetwork;
 
   /// Both commune searches (geo.api.gouv.fr, then the Géoplateforme) failed while the phone has a connection: refused, an error or an unreadable answer (#137).

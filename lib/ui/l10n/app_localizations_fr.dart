@@ -166,7 +166,7 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get removeCalendar => 'Un calendrier de moins';
+  String get removeCalendar => 'Enlever un calendrier';
 
   @override
   String get statusPickerClose => 'Fermer';
@@ -252,7 +252,7 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get comeBackNoDay => 'Pas de jour choisi';
+  String get comeBackNoDay => 'Aucun jour sélectionné';
 
   @override
   String get comeBackOnToday => 'Aujourd\'hui';
@@ -471,7 +471,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get setupPreviewHint =>
-      'Chaque étage pourra ensuite être ajusté (porte en plus ou en moins).';
+      'Chaque étage pourra être modifié par la suite (porte en plus ou en moins).';
 
   @override
   String get setupValidate => 'Valider';
@@ -595,14 +595,14 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get confirmRemoveBody =>
-      'Ce numéro a des marques (statut, « repasser » ou portes marquées). Elles partent avec lui à la Corbeille.';
+      'Ce numéro a déjà été marqué comme fait (statut, « repasser » ou portes marquées). Ces statuts seront supprimés également.';
 
   @override
   String get confirmDeleteStreetTitle => 'Supprimer la rue ?';
 
   @override
   String confirmDeleteStreetBody(String name) {
-    return '« $name » part à la Corbeille avec ses numéros et leurs marques, pour toute l\'équipe.';
+    return '« $name » part à la Corbeille avec ses numéros et leurs statuts pour toute l\'équipe.';
   }
 
   @override
@@ -693,7 +693,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String renumberInCorbeille(String number) {
-    return 'Le $number est dans la Corbeille : ajoutez-le avec « + numéros » pour le retrouver avec ses marques, ou choisissez un autre numéro.';
+    return 'Le $number est dans la Corbeille : ajoutez-le avec « + numéros » pour le récupérer, ou choisissez un autre numéro.';
   }
 
   @override
@@ -834,7 +834,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get lastDoorRefused =>
-      'C\'est la dernière porte de l\'immeuble. Pour en refaire une maison, revenez à l\'immeuble : « Gérer l\'immeuble », puis « Changer en maison ».';
+      'C\'est la dernière porte de l\'immeuble. Pour le transformer en maison, revenez à l\'immeuble : « Gérer l\'immeuble », puis « Changer en maison ».';
 
   @override
   String doorTitle(String label) {
@@ -920,7 +920,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get communeSearchNoNetwork =>
-      'Pas de réseau : la recherche de communes en a besoin. Réessayez quand le téléphone capte.';
+      'Pas de réseau. Réessayez la recherche de commune quand le téléphone capte à nouveau.';
 
   @override
   String get communeSearchServiceError =>
