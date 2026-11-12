@@ -1,4 +1,5 @@
 import 'package:tournee_calendriers/domain/shared/change_stamp.dart';
+import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling_label.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
 import 'package:tournee_calendriers/domain/street/calendars.dart';
@@ -110,6 +111,28 @@ final class DwellingKey {
   /// letter is one character, the level only digits, and the first dash
   /// ends it (a label may hold dashes of its own).
   String get id => '${staircase.letter}${level ?? ''}-${label.text}';
+
+  /// The key whose [id] is [id] (`A5-51`, `B-Gauche`), or null when [id]
+  /// is not one: a link to a door (`/rue?…&porte=A5-51`, #82) may come
+  /// from an older notification, so a wrong one is not a bug.
+  static DwellingKey? parse(String id) {
+    // A capital letter, the floor's digits if any (a building has far
+    // fewer than 1000 floors), the first dash, then
+    // the label, which may hold dashes of its own.
+    final match = _idShape.firstMatch(id);
+    if (match == null) return null;
+    final [letter, level, label] = match.groups([1, 2, 3]);
+    return switch (DwellingLabel.parse(label!)) {
+      Ok(:final value) => DwellingKey(
+        StaircaseName(letter!),
+        level!.isEmpty ? null : int.parse(level),
+        value,
+      ),
+      Err() => null,
+    };
+  }
+
+  static final _idShape = RegExp(r'^([A-Z])(\d{0,3})-(.+)$');
 
   @override
   bool operator ==(Object other) =>

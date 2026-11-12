@@ -85,6 +85,14 @@ abstract final class AppTextStyles {
     height: 1.1,
   );
 
+  /// The hour in the come-back-blue square of « À repasser » (« 19 h »).
+  static const comeBackHour = TextStyle(
+    fontFamily: AppFonts.display,
+    fontWeight: FontWeight.w700,
+    fontSize: 22,
+    height: 1.1,
+  );
+
   /// The header of a list (« Rues · 31/50 »).
   static const listHeader = TextStyle(
     fontFamily: AppFonts.display,

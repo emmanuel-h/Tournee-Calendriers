@@ -2,12 +2,17 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tournee_calendriers/domain/come_back/come_back_entry.dart';
+import 'package:tournee_calendriers/domain/come_back/reminder.dart';
+import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/presentation/corbeille/corbeille_purge.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/components/save_failed_alert.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/screens/component_gallery_screen.dart';
 
+import '../support/fakes/fake_reminders.dart';
+import '../support/street_fixtures.dart';
 import 'support/app_overrides.dart';
 
 void main() {
@@ -120,5 +125,66 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(started, 1);
+  });
+
+  group('reminders (#82)', () {
+    final house = OpenComeBackPlace(
+      ComeBackPlace(street: StreetId('nationale'), number: n('12')),
+    );
+
+    testWidgets('should open the street of the reminder that launched the '
+        'app', (tester) async {
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: fakePhone(reminders: FakeReminderScheduler(launch: house)),
+          child: const TourneeApp(showGallery: false),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // No such street on this phone: its screen says so.
+      expect(find.byKey(const Key('street.gone')), findsOneWidget);
+    });
+
+    testWidgets('should open « À repasser » for a reminder tapped, each time', (
+      tester,
+    ) async {
+      final reminders = FakeReminderScheduler();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: fakePhone(reminders: reminders),
+          child: const TourneeApp(showGallery: false),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      reminders.tap(const OpenComeBackList());
+      await tester.pumpAndSettle();
+      expect(find.byKey(const Key('comeBacks.list')), findsOneWidget);
+
+      reminders.tap(const OpenComeBackList());
+      await tester.pumpAndSettle();
+      // Pushed again, over the first.
+      expect(
+        find.byKey(const Key('comeBacks.list'), skipOffstage: false),
+        findsNWidgets(2),
+      );
+    });
+
+    testWidgets('should keep the reminders in step with the streets', (
+      tester,
+    ) async {
+      final reminders = FakeReminderScheduler();
+      await tester.pumpWidget(
+        ProviderScope(
+          overrides: fakePhone(reminders: reminders),
+          child: const TourneeApp(showGallery: false),
+        ),
+      );
+      await tester.pumpAndSettle();
+
+      // No street, so none: whatever an older secteur left is cancelled.
+      expect(reminders.replaced, [<Reminder>[]]);
+    });
   });
 }

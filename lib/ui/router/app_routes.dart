@@ -1,3 +1,4 @@
+import 'package:tournee_calendriers/domain/come_back/come_back_entry.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
@@ -35,6 +36,18 @@ abstract final class AppRoutes {
   /// The street screen of the street [id]: `/rue?id=…`.
   static String streetOf(StreetId id) =>
       Uri(path: street, queryParameters: {'id': id.value}).toString();
+
+  /// The street of [place], scrolled to its house, ringed for a moment
+  /// (PLAN §5.17); with a door, its building's grid opens at that door:
+  /// `/rue?id=…&numero=12` or `/rue?id=…&numero=8&porte=A5-51`.
+  static String streetAt(ComeBackPlace place) => Uri(
+    path: street,
+    queryParameters: {
+      'id': place.street.value,
+      'numero': place.number.label,
+      if (place.door case final door?) 'porte': door.id,
+    },
+  ).toString();
   static const editStreet = '/rue/modifier';
 
   /// The edit mode of the street [id]: `/rue/modifier?id=…`.
@@ -72,6 +85,9 @@ abstract final class AppRoutes {
 
   /// « Collecte 2026 » (§5.13), pushed by Secteur's « COLLECTE 2026 » row.
   static const collecte = '/equipe/collecte';
+
+  /// « À repasser » (§5.17), pushed by its row on Accueil or a reminder.
+  static const comeBacks = '/a-repasser';
 
   /// Debug builds only: every shared component on one screen.
   static const gallery = '/composants';

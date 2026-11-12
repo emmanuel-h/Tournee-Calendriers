@@ -31,6 +31,14 @@ Start screen:
   the whole list, down for the totals): « Rues · 31/50 » over every street of the secteur,
   then every street in one list (each member covers the whole secteur); a row opens the
   street. A street tapped on the map shows its card: progress and « Ouvrir ». Works offline.
+- « ↻ À repasser (5) » on Accueil (« Prochain : aujourd'hui vers 19 h ») while the secteur
+  has houses to come back to: the list by day (« Aujourd'hui », « Demain », … « À tout
+  moment » for no day or a day gone), who set each, a 🔔 on those that ring this phone; a
+  row opens the street at the house, ringed for a moment (a door opens its building's grid
+  at that door). Reminders: a local notification 15 min before the hour of each ↻ the
+  member set, or one at 9 h for those of the day without an hour; a tap opens the house (or
+  the list). Inexact, offline, kept after a restart of the phone; « Rappels » in Paramètres
+  switches them off, and says when Android blocks them (« Réglages »).
 - No secteur open: the map alone and « Aucun secteur ouvert », with « Rejoindre un
   secteur » (and « Créer un secteur » for an admin). Streets only live in a secteur.
 - « Ajouter des rues » (from Secteur; ✕ goes back there): tabs « Carte | Liste ». « Liste » ticks the streets

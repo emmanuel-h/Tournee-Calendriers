@@ -2178,7 +2178,7 @@ SettingsNameTaken, StreetUnreadable, StreetUnreadableSheet). Overrides 5.2, 5.8,
   only, as the mockup draws it. The streets download still leaves such a street out of the
   map's area; its document lands in the cache all the same, so the listener lists it.
 
-### 5.17 À repasser: the list and the reminders (#82, to build)
+### 5.17 À repasser: the list and the reminders (#82, built)
 
 Agreed 2026-11-12 (ASCII in the terminal, then mockups HomeComeBack, ComeBackList,
 ComeBackNotify, StreetRing, SettingsReminders). Reads the structured come-back of #81 (a day,
@@ -2250,6 +2250,28 @@ maybe an hour, §5.7).
   Android » (red) with « Réglages », which opens the app's notification settings.
 - **Privacy** (§8.3): nothing leaves the phone; a notification shows an address and an hour,
   never a person.
+- **Delivered (#82).** Domain (`lib/domain/come_back/`): `ComeBackEntry.allOf(streets)` reads
+  every ↻ (house, door, building's own) with its `ComeBackPlace` and its setter (`setBy`, the
+  last change); `ComeBackAgenda` groups and orders them; `ReminderPlan.of(entries, member:,
+  now:)` is the schedule (`HourReminder` at the hour − 15 min, `DayReminder` at 9 h, each with
+  its `ReminderTarget`: `OpenComeBackPlace` or `OpenComeBackList`); `DwellingKey.parse` reads a
+  door back from its id. Application (`use_cases/reminders.dart`): `ObserveComeBacks`,
+  `PlanReminders`, `ScheduleReminders`, `SwitchReminders`, `AskForRemindersOnce`,
+  `ReadRemindersOn`, `ReadRemindersAllowed`, `OpenReminderSettings`, `FollowReminderTaps`;
+  ports `ReminderScheduler` (adapter `LocalNotificationsScheduler` on
+  `flutter_local_notifications`, `inexactAllowWhileIdle`, the plugin's boot receiver, the
+  payload in `notifications/mappers/reminder_payload.dart`; « Réglages » through a method channel
+  of `MainActivity`) and `ReminderPreferences` (`reminders.json`, §6.3). Presentation:
+  `comeBacksProvider` (the list and the Accueil row), `remindersProvider` (« RAPPELS »),
+  `reminderSyncProvider` (replaces the schedule at each change of the streets, the open secteur
+  or the switch, one replacement at a time, kept alive by the app's root) and
+  `reminderTapProvider` (the tapped reminder until the app opened it). The street opens with
+  `/rue?id=…&numero=12` (`&porte=A5-51` for a door). Choices made while building: the 🔔 of a
+  row follows the switch, not Android's permission (« Bloqués par Android » says that one in
+  Paramètres); « vous recevrez un rappel » shows only when some row has a 🔔; a door opened from
+  the list rings in its grid (staircase chosen, door scrolled into view) with no hint pill; a
+  reminder whose time passes while the schedule is written is skipped; the list shows « Plus
+  aucune maison à repasser. » when the last ↻ goes while it is open.
 
 ## 6. Data model
 
@@ -2288,6 +2310,19 @@ Value-object rules fixed in T1.1 (`lib/domain/street/`):
   (`hourWithoutDay`) and an hour outside 8–21 (`hourOutOfRange`); any day is taken, a past one
   too (the sheet says it is past). Structured so the reminders (#82) can read it, and so no free
   text is kept about a house at all: the free `Note` was removed for privacy (T1.20, §8.3).
+- **À repasser and the reminders** (#82, `lib/domain/come_back/`, §5.17): read models worked
+  out from the streets, never stored. **`ComeBackPlace`** (a street, a house number, maybe a
+  `DwellingKey`) is where a ↻ is and where a tap leads. **`ComeBackEntry`** (place, street
+  name, `ComeBack`, `setBy`: the `ChangeStamp` of the house, door or building) with
+  `allOf(streets)`, `isSetBy(member)` and `byAddress` (street name the French way, number, the
+  building before its doors). **`ComeBackAgenda.of(entries, today:)`**: `days` from today in
+  date order (hours first, by hour, then without; ties by address), `anyTime` (no day, or a
+  day gone), `count`, `next`. **`ReminderPlan.of(entries, member:, now:)`**: only the member's
+  ↻; `HourReminder` at the day's hour − 15 min (`ahead`), one `DayReminder` per day without hour
+  at 9 h (`dayHour`), none for a time already gone or without a day, in time order; `rings(place)`;
+  `none` while the switch is off. Each `Reminder` has its `at` (the phone's local time), its
+  `entries` and its `ReminderTarget` (`OpenComeBackPlace`, or `OpenComeBackList` for a day of
+  several). `DwellingKey.parse(id)` reads `A5-51` back (null when it is not one).
 - **`CalendarDay`** (#81, `lib/domain/shared/`): a date of the calendar, years 2000–2999,
   without time or time zone, so two phones agree on « samedi » whatever their clocks;
   `create(year, month, day)` refuses a date that does not exist (`noSuchDay`); `of(time)` takes
@@ -3341,6 +3376,14 @@ can never drift.
   `waiting`, the copy stays (nothing queued is lost, the day without network keeps its data). A
   clear refused (Firestore already started) is tried at the next start. Known gap: a change made
   in the foreground and the app crashing before it is hidden, then a start with the network.
+- `reminders.json` (port `ReminderPreferences`, `LocalReminderPreferences`, #82): `{ version: 1,
+  on: bool, permissionAsked: bool }`, « Rappels pour repasser » (on by default) and whether
+  Android's notification permission was asked once (at the first ↻ given a day). Same writing
+  as the others; an unreadable file means on, never asked.
+- The scheduled reminders themselves (#82) are kept by `flutter_local_notifications` in its own
+  storage on the phone (for its boot receiver), each with a title, a text (addresses and an
+  hour) and a payload (street id, house number, door id); `ScheduleReminders` replaces them all
+  at each change, so none outlives its ↻, the secteur or the switch.
 - **Android backup** (#144): `android:allowBackup="false"` and data extraction rules excluding
   every domain (cloud backup and device transfer, Android 12+): nothing of the app is copied to
   a Google backup or a new phone, so uninstalling removes all it kept.
@@ -3777,6 +3820,11 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
   street, read by the street's BAN id: no marks, no members, no money, only which secteur
   covers which addresses. An account in no secteur reads nothing of it. `PRIVACY.md` and the Confidentialité page say so in
   « Données enregistrées » (#141).
+- **Reminders (#82):** local notifications, scheduled on the phone from its copy of the
+  streets; nothing is sent anywhere. A notification shows an address and an hour, never a
+  person; only the ↻ the member set ring on their phone. Android asks for the notification
+  permission the first time the member gives a ↻ a day, never at launch; no exact-alarm
+  permission.
 - **Location:** the phone's position is used only on screen ("locate me"), never stored or
   sent. Permission is asked when the button is first tapped.
 - Firestore region: `europe-west` (EU).
@@ -3878,6 +3926,7 @@ lib/
 | QR | `qr_flutter` (draw), `mobile_scanner` (scan; camera permission asked on tap) |
 | Location | `geolocator`, only for "locate me" |
 | Share | `share_plus` |
+| Reminders | `flutter_local_notifications` (+ `timezone`), local and inexact, no push (#82, §5.17); Android needs core-library desugaring and compileSdk 37 for it |
 | Settings | `shared_preferences` |
 | i18n | `flutter_localizations` + ARB, **French only** (`app_fr.arb`) |
 | Fonts | Atkinson Hyperlegible + Barlow Condensed bundled as assets (OFL), so they work offline |

@@ -4442,6 +4442,174 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Pas de réseau. Réessayez une fois connecté.'**
   String get nameOffline;
+
+  /// Title of « À repasser » (#82, ComeBackList mockup) and of its row on Accueil (HomeComeBack mockup): every house, door and building of the secteur to come back to.
+  ///
+  /// In fr, this message translates to:
+  /// **'À repasser ({count})'**
+  String comeBacksTitle(int count);
+
+  /// What a screen reader says for the row « ↻ À repasser (5) › » of Accueil.
+  ///
+  /// In fr, this message translates to:
+  /// **'À repasser, {count, plural, one{1 maison} other{{count} maisons}}'**
+  String comeBacksRowSemantics(int count);
+
+  /// Under « À repasser (5) » on Accueil: the earliest « repasser » with a day from today on, its time in lower case (« Prochain : aujourd'hui vers 19 h »).
+  ///
+  /// In fr, this message translates to:
+  /// **'Prochain : {when}'**
+  String comeBacksNext(String when);
+
+  /// Under the title of « À repasser », after a bell: what the bell on a row means (this phone will ring for it).
+  ///
+  /// In fr, this message translates to:
+  /// **'vous recevrez un rappel'**
+  String get comeBacksRingLegend;
+
+  /// Last group of « À repasser » (shown in capitals): the « repasser » without a day, and those whose day is gone.
+  ///
+  /// In fr, this message translates to:
+  /// **'À tout moment'**
+  String get comeBacksAnyTime;
+
+  /// A group of « À repasser » after tomorrow (shown in capitals, « SAMEDI 24 OCT. »).
+  ///
+  /// In fr, this message translates to:
+  /// **'{day}'**
+  String comeBacksDay(DateTime day);
+
+  /// Under the list of « À repasser ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Touchez une maison pour la voir dans sa rue.'**
+  String get comeBacksFooter;
+
+  /// « À repasser » once every « repasser » of the secteur is gone (marked or cleared while the list showed).
+  ///
+  /// In fr, this message translates to:
+  /// **'Plus aucune maison à repasser.'**
+  String get comeBacksNone;
+
+  /// The address of a house of « À repasser » and of a reminder (« 12 Rue Nationale »).
+  ///
+  /// In fr, this message translates to:
+  /// **'{number} {street}'**
+  String comeBackAddress(String number, String street);
+
+  /// The address of a door of a building in « À repasser » and in a reminder (« Porte 51 · 8 Rue Pasteur »).
+  ///
+  /// In fr, this message translates to:
+  /// **'Porte {door} · {number} {street}'**
+  String comeBackDoorAddress(String door, String number, String street);
+
+  /// Under a row of « À repasser »: the member on this phone set it.
+  ///
+  /// In fr, this message translates to:
+  /// **'par vous'**
+  String get comeBackByMe;
+
+  /// Under a row of « À repasser »: a teammate set it (« par Léa »).
+  ///
+  /// In fr, this message translates to:
+  /// **'par {name}'**
+  String comeBackByMember(String name);
+
+  /// Under a row of « À repasser » with a day but no hour (« par vous · pas d'heure »).
+  ///
+  /// In fr, this message translates to:
+  /// **'pas d\'heure'**
+  String get comeBackNoHourDetail;
+
+  /// Two details of a row of « À repasser » side by side (« par vous · pas d'heure », « C'était hier vers 18 h · par Léa »).
+  ///
+  /// In fr, this message translates to:
+  /// **'{first} · {second}'**
+  String comeBackDetails(String first, String second);
+
+  /// What a screen reader says for a row of « À repasser »: its time and its address (« Aujourd'hui vers 19 h, 12 Rue Nationale »), or its address and its past time (« 5 Rue Pasteur, c'était hier vers 18 h »).
+  ///
+  /// In fr, this message translates to:
+  /// **'{first}, {second}'**
+  String comeBackRowSemantics(String first, String second);
+
+  /// A row of « À repasser » read aloud when this phone will ring for it (the bell).
+  ///
+  /// In fr, this message translates to:
+  /// **'{row}, rappel prévu'**
+  String comeBackRowRings(String row);
+
+  /// The pill at the bottom of the street opened from « À repasser » or a reminder, until the first tap (StreetRing mockup): « N° 12 · repasser aujourd'hui vers 19 h ».
+  ///
+  /// In fr, this message translates to:
+  /// **'N° {number} · repasser {when}'**
+  String comeBackRingHint(String number, String when);
+
+  /// The same pill when the day is gone: « N° 5 · c'était hier vers 18 h ».
+  ///
+  /// In fr, this message translates to:
+  /// **'N° {number} · {when}'**
+  String comeBackRingHintPast(String number, String when);
+
+  /// The same pill when no day was set.
+  ///
+  /// In fr, this message translates to:
+  /// **'N° {number} · à repasser'**
+  String comeBackRingHintAnyTime(String number);
+
+  /// Section of Paramètres (shown in capitals) with the reminders to come back (#82, SettingsReminders mockup).
+  ///
+  /// In fr, this message translates to:
+  /// **'Rappels'**
+  String get settingsReminders;
+
+  /// The switch of « RAPPELS » in Paramètres: local notifications for the « repasser » this member set.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rappels pour repasser'**
+  String get settingsRemindersSwitch;
+
+  /// Under « Rappels pour repasser »: when they ring, and only for the member's own « repasser ».
+  ///
+  /// In fr, this message translates to:
+  /// **'15 min avant l\'heure ; à 9 h quand il n\'y a pas d\'heure. Seulement les vôtres.'**
+  String get settingsRemindersHelp;
+
+  /// Under « Rappels pour repasser », in red, when Android refuses the app's notifications.
+  ///
+  /// In fr, this message translates to:
+  /// **'Bloqués par Android'**
+  String get settingsRemindersBlocked;
+
+  /// Button beside « Bloqués par Android »: opens Android's notification settings of the app.
+  ///
+  /// In fr, this message translates to:
+  /// **'Réglages'**
+  String get settingsRemindersOpenSettings;
+
+  /// The name of the app's notification channel, in Android's notification settings.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rappels pour repasser'**
+  String get reminderChannelName;
+
+  /// The description of the app's notification channel, in Android's notification settings.
+  ///
+  /// In fr, this message translates to:
+  /// **'Les maisons où repasser : 15 min avant l\'heure, ou à 9 h le jour dit.'**
+  String get reminderChannelDescription;
+
+  /// Title of the notification 15 min before the hour of a « repasser » (ComeBackNotify mockup); its text is the address.
+  ///
+  /// In fr, this message translates to:
+  /// **'Repasser vers {hour} h'**
+  String reminderAtHour(int hour);
+
+  /// Title of the notification at 9 h for the « repasser » of the day without an hour (ComeBackNotify mockup); its text is their addresses, one a line.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, one{1 maison à repasser aujourd\'hui} other{{count} maisons à repasser aujourd\'hui}}'**
+  String reminderOfDay(int count);
 }
 
 class _AppLocalizationsDelegate

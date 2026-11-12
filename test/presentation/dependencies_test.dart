@@ -16,6 +16,8 @@ import 'package:tournee_calendriers/application/use_cases/find_imported_streets.
 import 'package:tournee_calendriers/application/use_cases/import_reference_area.dart';
 import 'package:tournee_calendriers/application/use_cases/look_up_street.dart';
 import 'package:tournee_calendriers/application/use_cases/mark.dart';
+import 'package:tournee_calendriers/domain/come_back/come_back_entry.dart';
+import 'package:tournee_calendriers/domain/come_back/reminder.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/round/donation_totals.dart';
 import 'package:tournee_calendriers/domain/round/round_id.dart';
@@ -67,6 +69,7 @@ import '../support/fakes/fake_pending_sync.dart';
 import '../support/fakes/fake_phone_cache_reset.dart';
 import '../support/fakes/fake_phone_settings.dart';
 import '../support/fakes/fake_ports.dart';
+import '../support/fakes/fake_reminders.dart';
 import '../support/fakes/fake_round_ledger.dart';
 import '../support/fakes/fake_sector_directory.dart';
 import '../support/fakes/fake_sector_downloads.dart';
@@ -218,6 +221,8 @@ void main() {
       'RoundLedger': roundLedgerProvider,
       'StreetPartIndex': streetPartIndexProvider,
       'PhoneCacheReset': phoneCacheResetProvider,
+      'ReminderScheduler': reminderSchedulerProvider,
+      'ReminderPreferences': reminderPreferencesProvider,
     };
     ports.forEach((name, port) {
       test('should name $name when nobody bound it', () {
@@ -1102,6 +1107,70 @@ void main() {
       await offline.read(deleteSectorDownloadProvider)(sector49.id);
 
       expect(maps.log, ['delete 40']);
+    });
+  });
+
+  group('reminders', () {
+    late FakeReminderScheduler scheduler;
+    late FakeReminderPreferences reminders;
+    late ProviderContainer phone;
+
+    setUp(() {
+      scheduler = FakeReminderScheduler(allowed: false);
+      reminders = FakeReminderPreferences();
+      phone = ProviderContainer(
+        overrides: [
+          ...overridesAs(lea),
+          reminderSchedulerProvider.overrideWithValue(scheduler),
+          reminderPreferencesProvider.overrideWithValue(reminders),
+        ],
+      );
+      addTearDown(phone.dispose);
+    });
+
+    test('should observe the « repasser » of the bound streets', () async {
+      final entries = await phone.read(observeComeBacksProvider)().first;
+
+      expect(
+        [for (final entry in entries) entry.place],
+        [ComeBackPlace(street: lilasId, number: n('5'))],
+      );
+    });
+
+    test('should schedule through the bound scheduler', () async {
+      await phone.read(scheduleRemindersProvider)(const []);
+
+      expect(scheduler.replaced, [<Reminder>[]]);
+    });
+
+    test('should plan from the bound preferences', () {
+      reminders.on = false;
+
+      expect(phone.read(planRemindersProvider)(const []), ReminderPlan.none);
+    });
+
+    test('should read the switch and the permission', () async {
+      expect(phone.read(readRemindersOnProvider)(), isTrue);
+      expect(await phone.read(readRemindersAllowedProvider)(), isFalse);
+    });
+
+    test('should switch, ask and open through the bound ports', () async {
+      await phone.read(switchRemindersProvider)(on: false);
+      await phone.read(askForRemindersOnceProvider)();
+      await phone.read(openReminderSettingsProvider)();
+
+      expect(reminders.switched, [false]);
+      expect(scheduler.asked, 0);
+      expect(scheduler.settingsOpened, 1);
+    });
+
+    test('should follow the taps of the bound scheduler', () async {
+      scheduler.launch = const OpenComeBackList();
+
+      expect(
+        await phone.read(followReminderTapsProvider)().first,
+        const OpenComeBackList(),
+      );
     });
   });
 }

@@ -12,10 +12,15 @@ plugins {
 
 android {
     namespace = "fr.mandarine.tourneecalendriers"
-    compileSdk = flutter.compileSdkVersion
+    // flutter_local_notifications 23 (#82) is built against Android 17
+    // (API 37), above Flutter's default.
+    compileSdk = 37
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
+        // flutter_local_notifications (#82) schedules with java.time, which
+        // desugaring brings to the Android versions without it.
+        isCoreLibraryDesugaringEnabled = true
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
@@ -73,4 +78,9 @@ kotlin {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // The java.time of the reminders' scheduling on older Android (#82).
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }

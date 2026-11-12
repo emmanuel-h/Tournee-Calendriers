@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 // `Override` (the type of a ProviderScope's overrides) lives in misc.dart.
 import 'package:flutter_riverpod/misc.dart';
@@ -43,17 +44,21 @@ import 'package:tournee_calendriers/infrastructure/local_storage/local_identity.
 import 'package:tournee_calendriers/infrastructure/local_storage/local_my_sectors.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_open_round.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_phone_settings.dart';
+import 'package:tournee_calendriers/infrastructure/local_storage/local_reminder_preferences.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_sector_downloads.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_street_view_preferences.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_unfinished_streets.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/retired_files.dart';
 import 'package:tournee_calendriers/infrastructure/map_tiles/openfreemap_street_shapes.dart';
 import 'package:tournee_calendriers/infrastructure/maplibre_offline/maplibre_offline_map_store.dart';
+import 'package:tournee_calendriers/infrastructure/notifications/local_notifications_scheduler.dart';
 import 'package:tournee_calendriers/infrastructure/system/random_id_generator.dart';
 import 'package:tournee_calendriers/infrastructure/system/system_clock.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
+import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/map/map_style.dart';
+import 'package:tournee_calendriers/ui/screens/come_backs/come_back_words.dart';
 
 /// The one HTTP client of the app, shared by the services that need the
 /// network (the BAN and geo.api.gouv.fr). Riverpod calls `onDispose` when the
@@ -74,7 +79,8 @@ final httpClientProvider = Provider<http.Client>((ref) {
 ///   secteurs downloaded for offline use in `tournee_downloads.json`, the
 ///   new streets of a campaign not yet all handed to Firestore in
 ///   `unfinished_streets/<secteur>/<year>/` (#104), and the tournée on
-///   (one outing, #63) in `open_round.json`. The file names that say
+///   (one outing, #63) in `open_round.json`, the switch « Rappels pour
+///   repasser » in `reminders.json` (#82). The file names that say
 ///   « tournee » date from before the code said « sector » (#116); they
 ///   stay, so an updated phone keeps its data. What older versions kept
 ///   and nothing reads any more (the streets of a phone with no secteur
@@ -134,6 +140,12 @@ Future<List<Override>> bindAdapters({
     fileOf(sectorDownloadsFile),
   );
   final openRound = await LocalOpenRound.load(fileOf('open_round.json'));
+  final reminderPreferences = await LocalReminderPreferences.load(
+    fileOf('reminders.json'),
+  );
+  // The French words of the notifications: the app's translations, read
+  // here because no screen is there when a reminder is scheduled.
+  final l10n = lookupAppLocalizations(const Locale('fr'));
   const clock = SystemClock();
   // `late final` with a value: computed the first time it is read, then
   // kept. So Firestore is asked for once, by whichever adapter needs it
@@ -291,6 +303,16 @@ Future<List<Override>> bindAdapters({
       const MapLibreOfflineMapStore(styleUrl: openFreeMapStyle),
     ),
     sectorDownloadsProvider.overrideWithValue(sectorDownloads),
+    // The reminders to come back (PLAN §5.17): Android's local
+    // notifications, worded in French, and the switch kept on the phone.
+    reminderSchedulerProvider.overrideWithValue(
+      LocalNotificationsScheduler(
+        words: (reminder) => reminderText(l10n, reminder),
+        channelName: l10n.reminderChannelName,
+        channelDescription: l10n.reminderChannelDescription,
+      ),
+    ),
+    reminderPreferencesProvider.overrideWithValue(reminderPreferences),
     // Whether the phone, or a member, is an admin (PLAN §5.12): the
     // phone's own `admins/{uid}` once it has an account.
     adminStatusProvider.overrideWith(

@@ -26,6 +26,8 @@ import 'package:tournee_calendriers/application/ports/open_round_store.dart';
 import 'package:tournee_calendriers/application/ports/pending_sync.dart';
 import 'package:tournee_calendriers/application/ports/phone_cache_reset.dart';
 import 'package:tournee_calendriers/application/ports/phone_settings.dart';
+import 'package:tournee_calendriers/application/ports/reminder_preferences.dart';
+import 'package:tournee_calendriers/application/ports/reminder_scheduler.dart';
 import 'package:tournee_calendriers/application/ports/round_ledger.dart';
 import 'package:tournee_calendriers/application/ports/sector_directory.dart';
 import 'package:tournee_calendriers/application/ports/sector_downloads.dart';
@@ -67,6 +69,7 @@ import 'package:tournee_calendriers/application/use_cases/read_other_sector_part
 import 'package:tournee_calendriers/application/use_cases/read_street_numbers.dart';
 import 'package:tournee_calendriers/application/use_cases/read_street_part_choice.dart';
 import 'package:tournee_calendriers/application/use_cases/refresh_offline_maps.dart';
+import 'package:tournee_calendriers/application/use_cases/reminders.dart';
 import 'package:tournee_calendriers/application/use_cases/round_visits.dart';
 import 'package:tournee_calendriers/application/use_cases/rounds.dart';
 import 'package:tournee_calendriers/application/use_cases/search_communes.dart';
@@ -187,6 +190,18 @@ final roundLedgerProvider = Provider<RoundLedger>(
 /// a secteur is forgotten (PLAN §8.3).
 final phoneCacheResetProvider = Provider<PhoneCacheReset>(
   (ref) => _unbound('PhoneCacheReset'),
+);
+
+/// The phone's notifications, for the reminders to come back (PLAN
+/// §5.17).
+final reminderSchedulerProvider = Provider<ReminderScheduler>(
+  (ref) => _unbound('ReminderScheduler'),
+);
+
+/// « Rappels pour repasser » and whether Android's permission was asked,
+/// on the phone (PLAN §6.3).
+final reminderPreferencesProvider = Provider<ReminderPreferences>(
+  (ref) => _unbound('ReminderPreferences'),
 );
 
 /// The source join codes are drawn from: `Random.secure()` in the app
@@ -687,4 +702,47 @@ final watchCollecteProvider = Provider(
     ref.watch(roundLedgerProvider),
     ref.watch(openRoundStoreProvider),
   ),
+);
+
+// « À repasser » and the reminders (PLAN §5.17): on the phone, offline too.
+
+final observeComeBacksProvider = Provider(
+  (ref) => ObserveComeBacks(ref.watch(streetRepositoryProvider)),
+);
+final planRemindersProvider = Provider(
+  (ref) => PlanReminders(
+    ref.watch(reminderPreferencesProvider),
+    ref.watch(identityProvider),
+    ref.watch(clockProvider),
+  ),
+);
+final scheduleRemindersProvider = Provider(
+  (ref) => ScheduleReminders(
+    ref.watch(planRemindersProvider),
+    ref.watch(reminderSchedulerProvider),
+  ),
+);
+final readRemindersOnProvider = Provider(
+  (ref) => ReadRemindersOn(ref.watch(reminderPreferencesProvider)),
+);
+final readRemindersAllowedProvider = Provider(
+  (ref) => ReadRemindersAllowed(ref.watch(reminderSchedulerProvider)),
+);
+final switchRemindersProvider = Provider(
+  (ref) => SwitchReminders(
+    ref.watch(reminderPreferencesProvider),
+    ref.watch(reminderSchedulerProvider),
+  ),
+);
+final askForRemindersOnceProvider = Provider(
+  (ref) => AskForRemindersOnce(
+    ref.watch(reminderPreferencesProvider),
+    ref.watch(reminderSchedulerProvider),
+  ),
+);
+final openReminderSettingsProvider = Provider(
+  (ref) => OpenReminderSettings(ref.watch(reminderSchedulerProvider)),
+);
+final followReminderTapsProvider = Provider(
+  (ref) => FollowReminderTaps(ref.watch(reminderSchedulerProvider)),
 );

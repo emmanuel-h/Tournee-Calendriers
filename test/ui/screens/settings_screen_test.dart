@@ -20,6 +20,7 @@ import '../../support/fakes/fake_admin_status.dart';
 import '../../support/fakes/fake_member_account.dart';
 import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_phone_settings.dart';
+import '../../support/fakes/fake_reminders.dart';
 import '../../support/fakes/fake_sector_repository.dart';
 import '../../support/results.dart';
 import '../support/app_overrides.dart';
@@ -30,6 +31,8 @@ import '../support/navigation.dart';
 void main() {
   late FakePhoneSettings settings;
   late FakeSectorRepository sectors;
+  late FakeReminderScheduler reminders;
+  late FakeReminderPreferences reminderPreferences;
 
   /// Paramètres over the start screen, on a phone where Manu has the 49
   /// open.
@@ -41,8 +44,11 @@ void main() {
     List<Release>? releases,
     FakeMemberAccount? account,
     bool admin = false,
+    bool notificationsAllowed = true,
   }) async {
     settings = FakePhoneSettings(memberName: nameOf('Manu'));
+    reminders = FakeReminderScheduler(allowed: notificationsAllowed);
+    reminderPreferences = FakeReminderPreferences();
     // The 49 of Manu, Léa and Julie, Manu on the phone.
     sectors = FakeSectorRepository([team()]);
     await tester.pumpWidget(
@@ -54,6 +60,8 @@ void main() {
             member: manuId,
             account: account,
             admins: FakeAdminStatus(phoneIsAdmin: admin),
+            reminders: reminders,
+            reminderPreferences: reminderPreferences,
             mySectors: FakeMySectorsStore(
               valueOf(MySectors.none.remember(sector49).open(sector49.id)),
             ),
@@ -84,6 +92,11 @@ void main() {
     expect(
       find.bySemanticsLabel('Version 0.15.0, voir les nouveautés'),
       findsOneWidget,
+    );
+    // « RAPPELS » (#82) pushed the credits below the screen's edge.
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('settings.credits')),
+      100,
     );
     expect(
       find.text(
@@ -359,6 +372,12 @@ void main() {
 
   testWidgets('should open the licences from their own row', (tester) async {
     await pumpSettings(tester);
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('settings.licences')),
+      100,
+    );
+    await tester.ensureVisible(find.byKey(const Key('settings.licences')));
+    await tester.pumpAndSettle();
 
     expect(find.bySemanticsLabel('Licences'), findsOneWidget);
     await tester.tap(find.byKey(const Key('settings.licences')));
@@ -624,5 +643,92 @@ void main() {
     await pumpSettings(tester);
 
     await expectAccessibleControls(tester);
+  });
+
+  group('RAPPELS', () {
+    Finder reminderRow() => find.byKey(const Key('settings.reminders'));
+
+    Future<void> showReminders(WidgetTester tester) async {
+      await tester.scrollUntilVisible(reminderRow(), 100);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('should show the switch on, and when they ring', (
+      tester,
+    ) async {
+      await pumpSettings(tester);
+      await showReminders(tester);
+
+      expect(find.text('RAPPELS'), findsOneWidget);
+      expect(find.text('Rappels pour repasser'), findsOneWidget);
+      expect(
+        find.text(
+          '15 min avant l\'heure\u00a0; à 9 h quand il n\'y a pas d\'heure. '
+          'Seulement les vôtres.',
+        ),
+        findsOneWidget,
+      );
+      final toggle = tester.widget<Switch>(
+        find.byKey(const Key('settings.reminders.switch')),
+      );
+      expect(toggle.value, isTrue);
+    });
+
+    testWidgets('should turn them off and keep it', (tester) async {
+      await pumpSettings(tester);
+      await showReminders(tester);
+
+      await tester.tap(find.byKey(const Key('settings.reminders.switch')));
+      await tester.pumpAndSettle();
+
+      expect(reminderPreferences.switched, [false]);
+      expect(
+        tester
+            .widget<Switch>(find.byKey(const Key('settings.reminders.switch')))
+            .value,
+        isFalse,
+      );
+      // Nothing rings any more.
+      expect(reminders.scheduled, isEmpty);
+    });
+
+    testWidgets('should say blocked by Android and open its settings', (
+      tester,
+    ) async {
+      await pumpSettings(tester, notificationsAllowed: false);
+      await showReminders(tester);
+
+      expect(find.text('Bloqués par Android'), findsOneWidget);
+      expect(find.byKey(const Key('settings.reminders.switch')), findsNothing);
+
+      await tester.tap(
+        find.byKey(const Key('settings.reminders.openSettings')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(reminders.settingsOpened, 1);
+    });
+
+    testWidgets('should ask Android again back from its settings', (
+      tester,
+    ) async {
+      await pumpSettings(tester, notificationsAllowed: false);
+      await showReminders(tester);
+      reminders.allowed = true;
+
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.paused);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.hidden);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.inactive);
+      tester.binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Bloqués par Android'), findsNothing);
+      expect(
+        find.byKey(const Key('settings.reminders.switch')),
+        findsOneWidget,
+      );
+    });
   });
 }

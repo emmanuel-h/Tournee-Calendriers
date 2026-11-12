@@ -18,6 +18,7 @@ import 'package:tournee_calendriers/ui/components/calendars_badge.dart';
 import 'package:tournee_calendriers/ui/components/close_icon_button.dart';
 import 'package:tournee_calendriers/ui/components/confirm_dialog.dart';
 import 'package:tournee_calendriers/ui/components/money_words.dart';
+import 'package:tournee_calendriers/ui/components/ring_pulse.dart';
 import 'package:tournee_calendriers/ui/components/segmented_choice.dart';
 import 'package:tournee_calendriers/ui/components/sheet_scaffold.dart';
 import 'package:tournee_calendriers/ui/components/status_glyph.dart';
@@ -47,12 +48,17 @@ enum BuildingGridExit {
 /// Opens the Immeuble grid of [building] (tap a building tile, or
 /// « Ouvrir l'immeuble » in edit mode; PLAN §5.7,
 /// `docs/mockups/Building.dc.html`). Returns what to do next, or null.
+///
+/// With [ringed] (a door opened from « À repasser » or a reminder, PLAN
+/// §5.17), the grid opens on that door's staircase, the door ringed for a
+/// moment.
 Future<BuildingGridExit?> showBuildingGrid(
   BuildContext context,
-  BuildingGridKey building,
-) => showAppBottomSheet<BuildingGridExit>(
+  BuildingGridKey building, {
+  DwellingKey? ringed,
+}) => showAppBottomSheet<BuildingGridExit>(
   context: context,
-  builder: (_) => BuildingGridSheet(building: building),
+  builder: (_) => BuildingGridSheet(building: building, ringed: ringed),
 );
 
 /// The floors of one staircase from the top down, four doors a row; during
@@ -68,9 +74,12 @@ Future<BuildingGridExit?> showBuildingGrid(
 /// The sheet has its own `ScaffoldMessenger`, like the street screen: the
 /// snackbar of a door, and its « Annuler », goes away with the grid.
 final class BuildingGridSheet extends ConsumerStatefulWidget {
-  const BuildingGridSheet({super.key, required this.building});
+  const BuildingGridSheet({super.key, required this.building, this.ringed});
 
   final BuildingGridKey building;
+
+  /// The door to show ringed for a moment; null for none.
+  final DwellingKey? ringed;
 
   @override
   ConsumerState<BuildingGridSheet> createState() => _BuildingGridSheetState();
@@ -83,6 +92,39 @@ final class _BuildingGridSheetState extends ConsumerState<BuildingGridSheet>
 
   /// The door whose status picker shows, outlined.
   DwellingKey? _picking;
+
+  /// The ringed door, found on screen once drawn.
+  final _ringedKey = GlobalKey();
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.ringed case final door?) {
+      // After the first frame (a provider cannot change while the sheet is
+      // built): its staircase shows, then the floors scroll to bring it in
+      // view.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        _notifier.selectStaircase(door.staircase);
+        WidgetsBinding.instance.addPostFrameCallback((_) => _revealRinged());
+      });
+    }
+  }
+
+  /// Scrolls the floors so the ringed door sits in the middle, when it is
+  /// drawn (the street may still be read: then it waits a frame more).
+  void _revealRinged() {
+    if (!mounted) return;
+    final door = _ringedKey.currentContext;
+    if (door == null) {
+      if (ref.read(buildingGridProvider(widget.building))
+          is BuildingGridLoading) {
+        WidgetsBinding.instance.addPostFrameCallback((_) => _revealRinged());
+      }
+      return;
+    }
+    unawaited(Scrollable.ensureVisible(door, alignment: 0.5));
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -148,6 +190,8 @@ final class _BuildingGridSheetState extends ConsumerState<BuildingGridSheet>
                               child: _Floors(
                                 state: state,
                                 selected: _picking,
+                                ringed: widget.ringed,
+                                ringedKey: _ringedKey,
                                 onTap: (door) {
                                   if (mayMark()) unawaited(_pick(door, state));
                                 },
@@ -473,12 +517,18 @@ final class _Floors extends StatelessWidget {
     required this.state,
     required this.selected,
     required this.onTap,
+    this.ringed,
+    this.ringedKey,
   });
 
   final BuildingGridShown state;
 
   /// The door whose status picker shows; null when none does.
   final DwellingKey? selected;
+
+  /// The door ringed for a moment, found by [ringedKey]; null for none.
+  final DwellingKey? ringed;
+  final Key? ringedKey;
   final ValueChanged<DwellingKey> onTap;
 
   @override
@@ -530,15 +580,7 @@ final class _Floors extends StatelessWidget {
                     runSpacing: AppSizes.doorGap,
                     children: [
                       for (final door in floor.doors)
-                        SizedBox(
-                          width: width,
-                          child: _DoorButton(
-                            door: door,
-                            namesStaircase: state.showsStaircases,
-                            selected: door.key == selected,
-                            onTap: () => onTap(door.key),
-                          ),
-                        ),
+                        SizedBox(width: width, child: _door(door)),
                     ],
                   );
                 },
@@ -548,6 +590,19 @@ final class _Floors extends StatelessWidget {
         );
       },
     );
+  }
+
+  /// The button of [door], ringed when it is [ringed].
+  Widget _door(DoorTile door) {
+    final button = _DoorButton(
+      door: door,
+      namesStaircase: state.showsStaircases,
+      selected: door.key == selected,
+      onTap: () => onTap(door.key),
+    );
+    return door.key == ringed
+        ? RingPulse(key: ringedKey, child: button)
+        : button;
   }
 }
 

@@ -19,6 +19,7 @@ import '../../support/building_fixtures.dart';
 import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_open_round_store.dart';
 import '../../support/fakes/fake_ports.dart';
+import '../../support/fakes/fake_reminders.dart';
 import '../../support/fakes/fake_sector_repository.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/fakes/fake_street_view_preferences.dart';
@@ -91,6 +92,10 @@ void main() {
         streetViewPreferencesProvider.overrideWithValue(preferences),
         clockProvider.overrideWithValue(FakeClock(twoPm)),
         identityProvider.overrideWithValue(FakeIdentity(lea)),
+        reminderSchedulerProvider.overrideWithValue(FakeReminderScheduler()),
+        reminderPreferencesProvider.overrideWithValue(
+          FakeReminderPreferences(),
+        ),
         openRoundStoreProvider.overrideWithValue(rounds),
         mySectorsStoreProvider.overrideWithValue(
           FakeMySectorsStore(

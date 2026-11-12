@@ -201,6 +201,29 @@ void main() {
       });
     });
 
+    ids.forEach((what, given) {
+      test('should read ${given.$2} back as the key of $what', () {
+        expect(DwellingKey.parse(given.$2), given.$1);
+      });
+    });
+
+    final notIds = <String, String>{
+      'an empty text': '',
+      'no dash': 'A5',
+      'no staircase': '5-51',
+      'a lowercase staircase': 'a5-51',
+      'a floor that is not digits': 'A5b-51',
+      'a floor of more than three digits': 'A1234-5',
+      'no label': 'A5-',
+      'a blank label': 'A5- ',
+      'a label too long': 'A5-1234567890123',
+    };
+    notIds.forEach((what, text) {
+      test('should read no key from $what', () {
+        expect(DwellingKey.parse(text), isNull);
+      });
+    });
+
     test(
       'should give different ids to floor 1 door 11 and floor 11 door 1',
       () {

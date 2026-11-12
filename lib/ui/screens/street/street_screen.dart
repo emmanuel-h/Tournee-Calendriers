@@ -5,8 +5,11 @@ import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tournee_calendriers/domain/come_back/come_back_entry.dart';
+import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/presentation/come_backs/come_backs_notifier.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_state.dart';
 import 'package:tournee_calendriers/presentation/round/given_donation.dart';
 import 'package:tournee_calendriers/presentation/round/marking_access.dart';
@@ -19,6 +22,7 @@ import 'package:tournee_calendriers/ui/components/money_words.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/screens/building/building_grid_sheet.dart';
+import 'package:tournee_calendriers/ui/screens/come_backs/come_back_words.dart';
 import 'package:tournee_calendriers/ui/screens/round/marks_only_in_round.dart';
 import 'package:tournee_calendriers/ui/screens/round/round_band.dart';
 import 'package:tournee_calendriers/ui/screens/street/status_picker_sheet.dart';
@@ -36,8 +40,19 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 /// one, the « En tournée » band sits above the top bar (RunStreet). A tap on
 /// a building opens its Immeuble grid (PLAN §5.7). Works offline:
 /// everything it reads and writes is on the phone.
+///
+/// Opened from « À repasser » or a reminder (PLAN §5.17, StreetRing
+/// mockup), it scrolls to the house [ringAt] and rings it for a moment,
+/// its come-back in the hint pill until the first tap; nothing opens. With
+/// [ringDoor], the building's grid opens at that door, ringed.
 final class StreetScreen extends StatelessWidget {
-  const StreetScreen({super.key, required this.streetId, this.title});
+  const StreetScreen({
+    super.key,
+    required this.streetId,
+    this.title,
+    this.ringAt,
+    this.ringDoor,
+  });
 
   /// Which street; null when the link named none, which shows the same
   /// message as a street that is gone.
@@ -47,18 +62,36 @@ final class StreetScreen extends StatelessWidget {
   /// street is read; « Rue » when not given.
   final String? title;
 
+  /// The house to show ringed; null for none.
+  final HouseNumber? ringAt;
+
+  /// The door of the building [ringAt] to open the grid at; null for none.
+  final DwellingKey? ringDoor;
+
   @override
   Widget build(BuildContext context) => switch (streetId) {
-    final StreetId id => _MarkingScreen(streetId: id, title: title),
+    final StreetId id => _MarkingScreen(
+      streetId: id,
+      title: title,
+      ringAt: ringAt,
+      ringDoor: ringDoor,
+    ),
     null => _GoneScaffold(title: title),
   };
 }
 
 final class _MarkingScreen extends ConsumerStatefulWidget {
-  const _MarkingScreen({required this.streetId, required this.title});
+  const _MarkingScreen({
+    required this.streetId,
+    required this.title,
+    required this.ringAt,
+    required this.ringDoor,
+  });
 
   final StreetId streetId;
   final String? title;
+  final HouseNumber? ringAt;
+  final DwellingKey? ringDoor;
 
   @override
   ConsumerState<_MarkingScreen> createState() => _MarkingScreenState();
@@ -76,12 +109,21 @@ final class _MarkingScreenState extends ConsumerState<_MarkingScreen>
   /// The house whose status picker shows.
   HouseNumber? _picking;
 
+  /// The house opened from « À repasser » or a reminder: ringed, its
+  /// come-back in the hint pill until the first tap; null after it.
+  late HouseNumber? _ringing = widget.ringDoor == null ? widget.ringAt : null;
+
+  /// Whether the grid of [_MarkingScreen.ringDoor] was opened already.
+  var _doorShown = false;
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
     // `ref.watch`: the screen redraws whenever the street or « Masquer
     // faits » changes, on this phone or on a teammate's.
     final state = ref.watch(streetProvider(widget.streetId));
+    if (state is StreetShown) _showRingedDoorOnce();
+    final ringHint = _ringHint(l10n);
     final marking = watchMarkingAccess();
     // `select`: built again when a tournée starts or ends, not for each don.
     final roundOn = ref.watch(
@@ -139,14 +181,23 @@ final class _MarkingScreenState extends ConsumerState<_MarkingScreen>
                         child: StreetTiles(
                           state: state,
                           // « Appuyez sur une maison… » only says the truth
-                          // during a tournée.
+                          // during a tournée; the come-back of the house
+                          // ringed shows in any case.
                           showHint:
-                              !snackBarShown && marking == MarkingAccess.open,
+                              !snackBarShown &&
+                              (ringHint != null ||
+                                  marking == MarkingAccess.open),
+                          hint: ringHint,
+                          ringed: _ringing,
                           selected: _picking,
                           onTap: (number) {
+                            _stopRinging();
                             if (mayMark()) unawaited(_pick(number));
                           },
-                          onOpenBuilding: _openBuilding,
+                          onOpenBuilding: (number) {
+                            _stopRinging();
+                            _openBuilding(number);
+                          },
                         ),
                       ),
                     ],
@@ -158,6 +209,33 @@ final class _MarkingScreenState extends ConsumerState<_MarkingScreen>
         ),
       ),
     );
+  }
+
+  /// « N° 12 · repasser aujourd'hui vers 19 h » for the house ringed,
+  /// while it still is « repasser »; null otherwise.
+  String? _ringHint(AppLocalizations l10n) {
+    final ringing = _ringing;
+    if (ringing == null) return null;
+    final row = ref
+        .watch(comeBacksProvider)
+        .rowAt(ComeBackPlace(street: widget.streetId, number: ringing));
+    return row == null ? null : comeBackRingHint(l10n, row);
+  }
+
+  /// The first tap ends the ring and its hint.
+  void _stopRinging() {
+    if (_ringing != null) setState(() => _ringing = null);
+  }
+
+  /// Opens the grid at the door to ring, once the street is shown.
+  void _showRingedDoorOnce() {
+    final (door, number) = (widget.ringDoor, widget.ringAt);
+    if (_doorShown || door == null || number == null) return;
+    _doorShown = true;
+    // After this frame: a sheet cannot open while the screen is built.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_showGrid(number, ringed: door));
+    });
   }
 
   /// A tap on a house tile: a light haptic tick at once, the tile
@@ -249,13 +327,13 @@ final class _MarkingScreenState extends ConsumerState<_MarkingScreen>
   /// The grid of the building [number]; left by « Changer en maison »
   /// (confirmed there), the building becomes a house here, with « N° 8
   /// changé en maison [Annuler] ».
-  Future<void> _showGrid(HouseNumber number) async {
+  Future<void> _showGrid(HouseNumber number, {DwellingKey? ringed}) async {
     final l10n = AppLocalizations.of(context);
     final notifier = _notifier;
     final exit = await showBuildingGrid(context, (
       street: widget.streetId,
       number: number,
-    ));
+    ), ringed: ringed);
     if (exit != BuildingGridExit.backToHouse || !mounted) return;
     if (await notifier.backToSingleHouse(number) && mounted) {
       showUndo(

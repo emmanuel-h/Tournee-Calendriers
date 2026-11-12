@@ -18,6 +18,7 @@ import '../../support/building_fixtures.dart';
 import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_open_round_store.dart';
 import '../../support/fakes/fake_ports.dart';
+import '../../support/fakes/fake_reminders.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
@@ -79,6 +80,10 @@ void main() {
         streetRepositoryProvider.overrideWithValue(streets),
         clockProvider.overrideWithValue(FakeClock(twoPm)),
         identityProvider.overrideWithValue(FakeIdentity(lea)),
+        reminderSchedulerProvider.overrideWithValue(FakeReminderScheduler()),
+        reminderPreferencesProvider.overrideWithValue(
+          FakeReminderPreferences(),
+        ),
         openRoundStoreProvider.overrideWithValue(FakeOpenRoundStore()),
         // No secteur open: the phone names nobody but its own member.
         mySectorsStoreProvider.overrideWithValue(FakeMySectorsStore()),

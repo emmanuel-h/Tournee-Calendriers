@@ -55,6 +55,20 @@ abstract final class AppSizes {
   /// The ink outline of the tile whose status picker shows (PLAN §5.6).
   static const selectedTileOutline = 3.0;
 
+  /// The pulsing ring of a house opened from « À repasser » (StreetRing
+  /// mockup): its line, and how far its halo spreads at the swell.
+  static const ringWidth = 4.0;
+  static const ringHalo = 12.0;
+
+  /// The come-back-blue square of a row of « À repasser » (« 19 h » or
+  /// ↻), and the smaller one of its row on Accueil (ComeBackList and
+  /// HomeComeBack mockups); the 🔔 of a row that rings.
+  static const comeBackSquareWidth = 52.0;
+  static const comeBackSquareHeight = 44.0;
+  static const comeBackHomeSquare = 40.0;
+  static const comeBackSquareRadius = 10.0;
+  static const comeBackBell = 18.0;
+
   static const tilePadding = 14.0;
 
   /// A building tile's side padding. Smaller than [tilePadding] because its
@@ -196,6 +210,10 @@ abstract final class AppSizes {
 
   /// A row of Paramètres (« Prénom    Manu › »).
   static const settingRowHeight = 56.0;
+
+  /// A row of Paramètres with a line of help under its label (« Rappels
+  /// pour repasser », SettingsReminders mockup).
+  static const settingRowWithHelpHeight = 72.0;
 
   /// A secteur of « Mes secteurs »: its name over its centre.
   static const sectorRowHeight = 68.0;

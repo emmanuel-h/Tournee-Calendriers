@@ -298,7 +298,8 @@ void main() {
   testWidgets(
     'should keep the marks across a restart when a tournée is started from '
     'the street, a house is marked in its picker, undone, marked again and '
-    'another to come back tomorrow at 18 h, then found nobody home twice',
+    'another to come back tomorrow at 18 h, opened again from « À repasser », '
+    'then found nobody home twice',
     (tester) async {
       final semantics = tester.ensureSemantics();
       final storage = await _phoneInSector('mark_flow');
@@ -412,8 +413,17 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('1/3'), findsOneWidget);
-      await tester.tap(find.text('Rue Pierre Morin'));
+      // « À repasser (1) » on Accueil, offline (#82): it lists 34, and a
+      // tap on its row opens the street at 34, its time in the pill.
+      expect(find.text('À repasser (1)'), findsOneWidget);
+      expect(find.text('Prochain\u00a0: demain vers 18 h'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('home.comeBacks')));
       await tester.pumpAndSettle();
+      expect(find.text('34 Rue Pierre Morin'), findsOneWidget);
+      await tester.tap(find.text('34 Rue Pierre Morin'));
+      await tester.pumpAndSettle();
+      expect(find.widgetWithText(AppBar, 'Rue Pierre Morin'), findsOneWidget);
+      expect(find.text('N° 34 · repasser demain vers 18 h'), findsOneWidget);
       expect(
         tester.getSemantics(find.byKey(const ValueKey('street.tile.33'))).label,
         'Numéro 33, fait, changer le statut',

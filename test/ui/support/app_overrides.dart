@@ -25,6 +25,7 @@ import '../../support/fakes/fake_pending_sync.dart';
 import '../../support/fakes/fake_phone_cache_reset.dart';
 import '../../support/fakes/fake_phone_settings.dart';
 import '../../support/fakes/fake_ports.dart';
+import '../../support/fakes/fake_reminders.dart';
 import '../../support/fakes/fake_round_ledger.dart';
 import '../../support/fakes/fake_sector_directory.dart';
 import '../../support/fakes/fake_sector_downloads.dart';
@@ -53,7 +54,9 @@ import 'fake_map_view.dart';
 /// network to get one); [admins] says whether the phone, and which
 /// members, are admins of the app (none by default); [index] says what
 /// other secteurs hold of a street (none by default); [unreadable] which
-/// streets cannot be read (none by default). The commune search and the duplicate check of
+/// streets cannot be read (none by default); [reminders] are the phone's
+/// notifications (none scheduled, allowed, by default) and
+/// [reminderPreferences] its switch (on by default). The commune search and the duplicate check of
 /// « Nouveau secteur » answer without waiting for a pause in the typing;
 /// a new join code is `234567`. Maps are [FakeMapView]s: a native map
 /// cannot run in a widget test. With [nativeMap], they are the real
@@ -85,6 +88,8 @@ List<Override> fakePhone({
   FakeAdminStatus? admins,
   FakeStreetPartIndex? index,
   FakeUnreadableStreets? unreadable,
+  FakeReminderScheduler? reminders,
+  FakeReminderPreferences? reminderPreferences,
   bool chooseLaunch = false,
   bool nativeMap = false,
 }) => [
@@ -126,6 +131,12 @@ List<Override> fakePhone({
   streetPartIndexProvider.overrideWithValue(index ?? FakeStreetPartIndex()),
   unreadableStreetsProvider.overrideWithValue(
     unreadable ?? FakeUnreadableStreets(),
+  ),
+  reminderSchedulerProvider.overrideWithValue(
+    reminders ?? FakeReminderScheduler(),
+  ),
+  reminderPreferencesProvider.overrideWithValue(
+    reminderPreferences ?? FakeReminderPreferences(),
   ),
   // The indexes of `2`…`7` in the code alphabet: the code `234567`.
   randomProvider.overrideWithValue(ScriptedRandom([23, 24, 25, 26, 27, 28])),

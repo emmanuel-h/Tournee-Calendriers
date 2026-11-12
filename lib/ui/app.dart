@@ -2,15 +2,20 @@
 /// states from `presentation/` and send intents back; no business logic.
 library;
 
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tournee_calendriers/domain/come_back/reminder.dart';
 import 'package:tournee_calendriers/domain/sector/sector_loss.dart';
 import 'package:tournee_calendriers/presentation/corbeille/corbeille_purge.dart';
 import 'package:tournee_calendriers/presentation/launch/launch_place.dart';
 import 'package:tournee_calendriers/presentation/my_sectors/sector_loss_notice.dart';
 import 'package:tournee_calendriers/presentation/my_sectors/sector_loss_notifier.dart';
+import 'package:tournee_calendriers/presentation/reminders/reminder_sync.dart';
+import 'package:tournee_calendriers/presentation/reminders/reminder_taps.dart';
 import 'package:tournee_calendriers/presentation/round/rounds_unreadable_notice.dart';
 import 'package:tournee_calendriers/presentation/round/unsent_rounds_sender.dart';
 import 'package:tournee_calendriers/presentation/settings/settings_notifier.dart';
@@ -31,7 +36,9 @@ import 'package:tournee_calendriers/ui/theme/app_theme.dart';
 /// of their secteurs (`sectorLossProvider`, PLAN §5.3): the open one
 /// lost, it goes back to the start screen, with none open; and, once at
 /// start-up, that the phone's tournées could not be read
-/// (`roundsUnreadableNoticeProvider`, #143).
+/// (`roundsUnreadableNoticeProvider`, #143). It keeps the reminders to come
+/// back in step with the streets (`reminderSyncProvider`) and opens where a
+/// reminder tapped leads (`reminderTapProvider`, #82).
 ///
 /// It is a `StatefulWidget` only to create the router once and dispose of it
 /// with the app; rebuilding the root (a new theme) must not reset
@@ -68,6 +75,9 @@ final class _TourneeAppState extends ConsumerState<TourneeApp> {
   /// Whether « Les tournées gardées sur ce téléphone n'ont pas pu être
   /// relues… » is already on its way, so two frames never show it twice.
   var _tellingUnreadable = false;
+
+  /// Whether a reminder tapped is already on its way to its screen.
+  var _openingReminder = false;
 
   @override
   void dispose() {
@@ -114,8 +124,26 @@ final class _TourneeAppState extends ConsumerState<TourneeApp> {
     );
   }
 
+  /// Opens where the reminder tapped leads (PLAN §5.17): « À repasser »,
+  /// or the street at the house (the grid at the door), over the screen
+  /// shown.
+  void _openReminder(ReminderTarget target) {
+    final router = _router;
+    if (router == null) return;
+    ref.read(reminderTapProvider.notifier).opened();
+    unawaited(
+      router.push(switch (target) {
+        OpenComeBackList() => AppRoutes.comeBacks,
+        OpenComeBackPlace(:final place) => AppRoutes.streetAt(place),
+      }),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
+    // The reminders to come back follow the open secteur's streets while
+    // the app runs (#82); `ref.listen` keeps them in step, unseen.
+    ref.listen(reminderSyncProvider, (_, _) {});
     // The validated tournées waiting on the phone go to their secteur
     // while the app runs (#143); `ref.listen` keeps the sender alive.
     ref.listen(unsentRoundsSenderProvider, (_, _) {});
@@ -155,6 +183,16 @@ final class _TourneeAppState extends ConsumerState<TourneeApp> {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _tellingUnreadable = false;
         if (mounted) _tellUnreadable();
+      });
+    }
+    // A reminder tapped (or the one that launched the app), once the app
+    // has its screens, after this frame.
+    final tapped = ref.watch(reminderTapProvider);
+    if (tapped != null && router != null && !_openingReminder) {
+      _openingReminder = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _openingReminder = false;
+        if (mounted) _openReminder(tapped);
       });
     }
     if (router == null) {

@@ -223,13 +223,21 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState>
   /// already chosen; null (the chosen chip tapped again) leaves no time at
   /// all, the hour with it. Nothing happens without a « repasser » (the
   /// block is greyed then).
-  Future<void> chooseComeBackDay(CalendarDay? day) => _change(
-    (marks) => _comeBackMark(
-      marks,
-      (stored) =>
-          ComeBack.create(day: day, hour: day == null ? null : stored.hour),
-    ),
-  );
+  ///
+  /// The first day this member ever gives a « repasser » asks Android for
+  /// the notifications of the reminders (PLAN §5.17), never at launch.
+  Future<void> chooseComeBackDay(CalendarDay? day) async {
+    final change = await _change(
+      (marks) => _comeBackMark(
+        marks,
+        (stored) =>
+            ComeBack.create(day: day, hour: day == null ? null : stored.hour),
+      ),
+    );
+    if (change != null && day != null) {
+      await ref.read(askForRemindersOnceProvider)();
+    }
+  }
 
   /// The hour list of « Quand repasser ? »: [hour], or « Pas d'heure »
   /// (null). Nothing happens without a « repasser », nor before a day is

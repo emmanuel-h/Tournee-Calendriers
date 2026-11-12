@@ -110,22 +110,29 @@ final class ComeBackTimePicker extends StatelessWidget {
 
 /// The line under « Quand repasser ? »: « Le samedi 24 oct. vers 18 h »,
 /// « Aujourd'hui », « Demain vers 9 h », « C'était hier vers 18 h » for a
-/// time gone, « Pas de jour choisi » before a day is chosen.
-String comeBackSummaryText(AppLocalizations l10n, ComeBackTime time) {
-  final chosen = time.chosen;
-  if (chosen == null) return l10n.comeBackNoDay;
-  final day = chosen.day.toDateTime();
-  return switch ((chosen.fromToday, time.hour)) {
-    (DayFromToday.earlier, null) => l10n.comeBackPastDay(day),
-    (DayFromToday.earlier, final hour?) => l10n.comeBackPastDayAt(day, hour),
+/// time gone, « Aucun jour sélectionné » before a day is chosen.
+String comeBackSummaryText(AppLocalizations l10n, ComeBackTime time) =>
+    switch (time.chosen) {
+      final chosen? => comeBackWhenText(l10n, chosen, time.hour),
+      null => l10n.comeBackNoDay,
+    };
+
+/// When to come back on [day], at about [hour] when given, as the sheet
+/// and « À repasser » say it (PLAN §5.7, §5.17): « Aujourd'hui vers 19 h »,
+/// « Le samedi 24 oct. », « C'était hier vers 18 h ».
+String comeBackWhenText(AppLocalizations l10n, ComeBackDay day, int? hour) {
+  final date = day.day.toDateTime();
+  return switch ((day.fromToday, hour)) {
+    (DayFromToday.earlier, null) => l10n.comeBackPastDay(date),
+    (DayFromToday.earlier, final hour?) => l10n.comeBackPastDayAt(date, hour),
     (DayFromToday.yesterday, null) => l10n.comeBackOnYesterday,
     (DayFromToday.yesterday, final hour?) => l10n.comeBackOnYesterdayAt(hour),
     (DayFromToday.today, null) => l10n.comeBackOnToday,
     (DayFromToday.today, final hour?) => l10n.comeBackOnTodayAt(hour),
     (DayFromToday.tomorrow, null) => l10n.comeBackOnTomorrow,
     (DayFromToday.tomorrow, final hour?) => l10n.comeBackOnTomorrowAt(hour),
-    (DayFromToday.later, null) => l10n.comeBackOnDay(day),
-    (DayFromToday.later, final hour?) => l10n.comeBackOnDayAt(day, hour),
+    (DayFromToday.later, null) => l10n.comeBackOnDay(date),
+    (DayFromToday.later, final hour?) => l10n.comeBackOnDayAt(date, hour),
   };
 }
 

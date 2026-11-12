@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
+import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/presentation/building/building_grid_notifier.dart';
@@ -11,6 +12,7 @@ import 'package:tournee_calendriers/ui/screens/add_streets/add_streets_screen.da
 import 'package:tournee_calendriers/ui/screens/add_streets/manual_street_screen.dart';
 import 'package:tournee_calendriers/ui/screens/all_sectors/all_sectors_screen.dart';
 import 'package:tournee_calendriers/ui/screens/building/adjust_doors_screen.dart';
+import 'package:tournee_calendriers/ui/screens/come_backs/come_backs_screen.dart';
 import 'package:tournee_calendriers/ui/screens/component_gallery_screen.dart';
 import 'package:tournee_calendriers/ui/screens/corbeille/corbeille_screen.dart';
 import 'package:tournee_calendriers/ui/screens/edit_street/edit_street_screen.dart';
@@ -61,7 +63,9 @@ GoRouter buildAppRouter({
       builder: (context, state) => const ManualStreetScreen(),
     ),
     // `/rue?id=…`; the start list passes the street's name as `extra`, so
-    // the title shows before the street is read.
+    // the title shows before the street is read. `&numero=12` (and
+    // `&porte=A5-51`) come from « À repasser » or a reminder: the house
+    // (or the door) to show ringed.
     GoRoute(
       path: AppRoutes.street,
       builder: (context, state) => StreetScreen(
@@ -69,6 +73,11 @@ GoRouter buildAppRouter({
         title: switch (state.extra) {
           final String name => name,
           _ => null,
+        },
+        ringAt: _ringedHouseOf(state),
+        ringDoor: switch (state.uri.queryParameters['porte']) {
+          final String id => DwellingKey.parse(id),
+          null => null,
         },
       ),
     ),
@@ -140,6 +149,11 @@ GoRouter buildAppRouter({
       path: AppRoutes.roundRecap,
       builder: (context, state) => const RoundRecapScreen(),
     ),
+    // Pushed by « À repasser » on Accueil, or a reminder of several houses.
+    GoRoute(
+      path: AppRoutes.comeBacks,
+      builder: (context, state) => const ComeBacksScreen(),
+    ),
     // Pushed by « COLLECTE 2026 » of Secteur.
     GoRoute(
       path: AppRoutes.collecte,
@@ -178,6 +192,16 @@ String launchLocation(LaunchPlace place) => switch (place) {
   LaunchOnWelcome() => AppRoutes.welcome,
   LaunchOnRequest(:final sector) => AppRoutes.joinPendingOf(sector),
 };
+
+/// The house of the link's `numero`, or null when it names none.
+HouseNumber? _ringedHouseOf(GoRouterState state) =>
+    switch (state.uri.queryParameters['numero']) {
+      final String text => switch (HouseNumber.parse(text)) {
+        Ok(:final value) => value,
+        Err() => null,
+      },
+      null => null,
+    };
 
 /// The building named by the link's `id` and `numero`, or null when it
 /// names none.

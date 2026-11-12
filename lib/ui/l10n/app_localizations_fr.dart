@@ -3160,4 +3160,138 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get nameOffline => 'Pas de réseau. Réessayez une fois connecté.';
+
+  @override
+  String comeBacksTitle(int count) {
+    return 'À repasser ($count)';
+  }
+
+  @override
+  String comeBacksRowSemantics(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count maisons',
+      one: '1 maison',
+    );
+    return 'À repasser, $_temp0';
+  }
+
+  @override
+  String comeBacksNext(String when) {
+    return 'Prochain : $when';
+  }
+
+  @override
+  String get comeBacksRingLegend => 'vous recevrez un rappel';
+
+  @override
+  String get comeBacksAnyTime => 'À tout moment';
+
+  @override
+  String comeBacksDay(DateTime day) {
+    final intl.DateFormat dayDateFormat = intl.DateFormat(
+      'EEEE d MMM',
+      localeName,
+    );
+    final String dayString = dayDateFormat.format(day);
+
+    return '$dayString';
+  }
+
+  @override
+  String get comeBacksFooter => 'Touchez une maison pour la voir dans sa rue.';
+
+  @override
+  String get comeBacksNone => 'Plus aucune maison à repasser.';
+
+  @override
+  String comeBackAddress(String number, String street) {
+    return '$number $street';
+  }
+
+  @override
+  String comeBackDoorAddress(String door, String number, String street) {
+    return 'Porte $door · $number $street';
+  }
+
+  @override
+  String get comeBackByMe => 'par vous';
+
+  @override
+  String comeBackByMember(String name) {
+    return 'par $name';
+  }
+
+  @override
+  String get comeBackNoHourDetail => 'pas d\'heure';
+
+  @override
+  String comeBackDetails(String first, String second) {
+    return '$first · $second';
+  }
+
+  @override
+  String comeBackRowSemantics(String first, String second) {
+    return '$first, $second';
+  }
+
+  @override
+  String comeBackRowRings(String row) {
+    return '$row, rappel prévu';
+  }
+
+  @override
+  String comeBackRingHint(String number, String when) {
+    return 'N° $number · repasser $when';
+  }
+
+  @override
+  String comeBackRingHintPast(String number, String when) {
+    return 'N° $number · $when';
+  }
+
+  @override
+  String comeBackRingHintAnyTime(String number) {
+    return 'N° $number · à repasser';
+  }
+
+  @override
+  String get settingsReminders => 'Rappels';
+
+  @override
+  String get settingsRemindersSwitch => 'Rappels pour repasser';
+
+  @override
+  String get settingsRemindersHelp =>
+      '15 min avant l\'heure ; à 9 h quand il n\'y a pas d\'heure. Seulement les vôtres.';
+
+  @override
+  String get settingsRemindersBlocked => 'Bloqués par Android';
+
+  @override
+  String get settingsRemindersOpenSettings => 'Réglages';
+
+  @override
+  String get reminderChannelName => 'Rappels pour repasser';
+
+  @override
+  String get reminderChannelDescription =>
+      'Les maisons où repasser : 15 min avant l\'heure, ou à 9 h le jour dit.';
+
+  @override
+  String reminderAtHour(int hour) {
+    return 'Repasser vers $hour h';
+  }
+
+  @override
+  String reminderOfDay(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count maisons à repasser aujourd\'hui',
+      one: '1 maison à repasser aujourd\'hui',
+    );
+    return '$_temp0';
+  }
 }

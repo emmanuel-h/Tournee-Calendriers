@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 // `appBuildName`: the app's version from `pubspec.yaml`, put into the app
 // by the Flutter build itself, so no package is needed to read it.
@@ -6,8 +8,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/presentation/account/device_id_state.dart';
 import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
+import 'package:tournee_calendriers/presentation/reminders/reminders_notifier.dart';
 import 'package:tournee_calendriers/presentation/settings/settings_notifier.dart';
 import 'package:tournee_calendriers/presentation/settings/settings_state.dart';
+import 'package:tournee_calendriers/ui/components/app_buttons.dart';
 import 'package:tournee_calendriers/ui/components/copy_button.dart';
 import 'package:tournee_calendriers/ui/components/section_header.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
@@ -21,8 +25,8 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
 /// Paramètres (⚙, PLAN §5.9, Settings mockup): the member's first name and
 /// « Mes secteurs », « VOS NOMS PAR SECTEUR » when a secteur knows the
-/// member under another name (#148, SettingsNameTaken mockup), then the
-/// theme, the privacy page, the version (a tap
+/// member under another name (#148, SettingsNameTaken mockup),
+/// « RAPPELS » (#82, SettingsReminders mockup), then the theme, the privacy page, the version (a tap
 /// opens « Nouveautés »), the licences, the phone's uid (« Identifiant de
 /// l'appareil », PLAN §5.12) and the data credits. Works offline; the
 /// screen signs the phone in when it opens, so the uid shows once online.
@@ -96,6 +100,9 @@ final class SettingsScreen extends ConsumerWidget {
                 ],
               ),
             ],
+            // « Rappels pour repasser » (#82, PLAN §5.17).
+            SectionHeader(l10n.settingsReminders),
+            const _RowGroup(children: [_RemindersRow()]),
             SectionHeader(l10n.settingsApplication),
             _RowGroup(
               children: [
@@ -265,6 +272,126 @@ final class _SectorNameRow extends StatelessWidget {
             ),
           ],
         ),
+      ),
+    );
+  }
+}
+
+/// « Rappels pour repasser » and its switch, with when they ring under it
+/// (SettingsReminders mockup); « Bloqués par Android » in red and
+/// « Réglages » in place of the switch while Android refuses the
+/// notifications. Asks Android again each time the app comes back to the
+/// foreground: the member may have changed its settings meanwhile.
+final class _RemindersRow extends ConsumerStatefulWidget {
+  const _RemindersRow();
+
+  @override
+  ConsumerState<_RemindersRow> createState() => _RemindersRowState();
+}
+
+final class _RemindersRowState extends ConsumerState<_RemindersRow> {
+  /// Tells when the app comes back from Android's settings.
+  late final AppLifecycleListener _lifecycle;
+
+  @override
+  void initState() {
+    super.initState();
+    _lifecycle = AppLifecycleListener(
+      onResume: () =>
+          unawaited(ref.read(remindersProvider.notifier).checkAllowed()),
+    );
+  }
+
+  @override
+  void dispose() {
+    _lifecycle.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = AppColors.of(context);
+    final reminders = ref.watch(remindersProvider);
+    final notifier = ref.read(remindersProvider.notifier);
+    final title = Text(
+      l10n.settingsRemindersSwitch,
+      style: AppTextStyles.bodyLarge.copyWith(
+        color: colors.ink,
+        fontWeight: FontWeight.w700,
+      ),
+    );
+    return Material(
+      color: colors.surface,
+      child: Container(
+        key: const Key('settings.reminders'),
+        constraints: const BoxConstraints(
+          minHeight: AppSizes.settingRowWithHelpHeight,
+        ),
+        padding: const EdgeInsets.fromLTRB(16, 8, 12, 8),
+        decoration: BoxDecoration(
+          border: Border(bottom: BorderSide(color: colors.divider)),
+        ),
+        child: reminders.blocked
+            ? Row(
+                spacing: 12,
+                children: [
+                  Expanded(
+                    child: MergeSemantics(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: 2,
+                        children: [
+                          title,
+                          Text(
+                            l10n.settingsRemindersBlocked,
+                            key: const Key('settings.reminders.blocked'),
+                            style: AppTextStyles.small.copyWith(
+                              color: colors.accent,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  PillButton(
+                    key: const Key('settings.reminders.openSettings'),
+                    label: l10n.settingsRemindersOpenSettings,
+                    strong: true,
+                    onPressed: () => unawaited(notifier.openSettings()),
+                  ),
+                ],
+              )
+            // One node for screen readers: the label, its help and the
+            // switch's state, toggled by a double tap.
+            : MergeSemantics(
+                child: Row(
+                  spacing: 12,
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        spacing: 2,
+                        children: [
+                          title,
+                          Text(
+                            l10n.settingsRemindersHelp,
+                            style: AppTextStyles.small.copyWith(
+                              color: colors.muted,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Switch(
+                      key: const Key('settings.reminders.switch'),
+                      value: reminders.on,
+                      onChanged: (on) => unawaited(notifier.turn(on: on)),
+                    ),
+                  ],
+                ),
+              ),
       ),
     );
   }

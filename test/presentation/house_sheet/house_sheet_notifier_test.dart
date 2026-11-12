@@ -28,6 +28,7 @@ import '../../support/building_fixtures.dart';
 import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_open_round_store.dart';
 import '../../support/fakes/fake_ports.dart';
+import '../../support/fakes/fake_reminders.dart';
 import '../../support/fakes/fake_sector_repository.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/results.dart';
@@ -69,6 +70,7 @@ void main() {
   late FakeStreetRepository streets;
   late FakeClock clock;
   late FakeOpenRoundStore rounds;
+  late FakeReminderScheduler reminders;
   late ProviderContainer container;
 
   /// A container whose phone holds [street] (none when null), with Léa
@@ -83,9 +85,14 @@ void main() {
     streets = FakeStreetRepository([?street]);
     clock = FakeClock(twoPm);
     rounds = FakeOpenRoundStore(round);
+    reminders = FakeReminderScheduler();
     container = ProviderContainer(
       overrides: [
         streetRepositoryProvider.overrideWithValue(streets),
+        reminderSchedulerProvider.overrideWithValue(reminders),
+        reminderPreferencesProvider.overrideWithValue(
+          FakeReminderPreferences(),
+        ),
         clockProvider.overrideWithValue(clock),
         identityProvider.overrideWithValue(FakeIdentity(lea)),
         openRoundStoreProvider.overrideWithValue(rounds),
@@ -586,6 +593,37 @@ void main() {
         ComeBackDay(day('2026-11-03'), DayFromToday.tomorrow),
       );
       expect(time.hour, 19);
+    });
+
+    test('should ask Android for the reminders the first time', () async {
+      phoneWith(_street());
+      open('5');
+      await settled('5');
+
+      await notifier('5').chooseComeBackDay(day('2026-11-03'));
+      await notifier('5').chooseComeBackDay(day('2026-11-04'));
+
+      expect(reminders.asked, 1);
+    });
+
+    test('should not ask when the day is unchosen', () async {
+      phoneWith(_street());
+      open('5');
+      await settled('5');
+
+      await notifier('5').chooseComeBackDay(null);
+
+      expect(reminders.asked, 0);
+    });
+
+    test('should not ask when nothing was stored', () async {
+      phoneWith(_street());
+      open('7');
+      await settled('7');
+
+      await notifier('7').chooseComeBackDay(day('2026-11-07'));
+
+      expect(reminders.asked, 0);
     });
 
     test('should store a day alone on a « repasser » without time', () async {
