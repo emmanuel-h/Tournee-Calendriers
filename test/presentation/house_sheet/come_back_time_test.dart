@@ -33,19 +33,11 @@ void main() {
   });
 
   group('ComeBackTime.of', () {
-    test('should offer a week from today, in order', () {
+    test('should offer today and tomorrow as chips', () {
       final time = ComeBackTime.of(ComeBack.withoutTime, today: today);
 
-      expect(time.days, [
-        ComeBackDay(today, DayFromToday.today),
-        ComeBackDay(day('2026-10-23'), DayFromToday.tomorrow),
-        ComeBackDay(day('2026-10-24'), DayFromToday.later),
-        ComeBackDay(day('2026-10-25'), DayFromToday.later),
-        ComeBackDay(day('2026-10-26'), DayFromToday.later),
-        ComeBackDay(day('2026-10-27'), DayFromToday.later),
-        ComeBackDay(day('2026-10-28'), DayFromToday.later),
-      ]);
-      expect(ComeBackTime.dayCount, 7);
+      expect(time.today, today);
+      expect(time.tomorrow, day('2026-10-23'));
     });
 
     test('should choose nothing without time', () {
@@ -53,6 +45,7 @@ void main() {
 
       expect(time.chosen, isNull);
       expect(time.hour, isNull);
+      expect(time.otherDay, isNull);
     });
 
     test('should choose nothing when the house is not « repasser »', () {
@@ -60,7 +53,8 @@ void main() {
 
       expect(time.chosen, isNull);
       expect(time.hour, isNull);
-      expect(time.days, hasLength(7));
+      expect(time.otherDay, isNull);
+      expect(time.today, today);
     });
 
     test('should give the chosen day and its hour', () {
@@ -71,7 +65,6 @@ void main() {
 
       expect(time.chosen, ComeBackDay(day('2026-10-24'), DayFromToday.later));
       expect(time.hour, 18);
-      expect(time.days, hasLength(7));
     });
 
     test('should give the chosen day without hour', () {
@@ -81,45 +74,60 @@ void main() {
       expect(time.hour, isNull);
     });
 
-    test('should keep the last day of the week among the chips', () {
-      final time = ComeBackTime.of(comeBack('2026-10-28'), today: today);
+    group('the other day', () {
+      final cases = {
+        '2026-10-20': DayFromToday.earlier,
+        '2026-10-21': DayFromToday.yesterday,
+        '2026-10-24': DayFromToday.later,
+        '2027-01-15': DayFromToday.later,
+      };
+      cases.forEach((iso, standing) {
+        test('should be the chosen day when it is $iso', () {
+          final time = ComeBackTime.of(comeBack(iso), today: today);
 
-      expect(time.days, hasLength(7));
-      expect(time.days.last.day, day('2026-10-28'));
+          expect(time.otherDay, ComeBackDay(day(iso), standing));
+        });
+      });
+
+      for (final iso in ['2026-10-22', '2026-10-23']) {
+        test('should be none when the chosen day is $iso, a chip', () {
+          expect(ComeBackTime.of(comeBack(iso), today: today).otherDay, isNull);
+        });
+      }
     });
 
-    test('should add a chip after the week for a later day', () {
-      final time = ComeBackTime.of(comeBack('2026-10-29'), today: today);
-
-      expect(time.days, hasLength(8));
-      expect(
-        time.days.last,
-        ComeBackDay(day('2026-10-29'), DayFromToday.later),
-      );
-    });
-
-    test('should add a chip before today for a past day', () {
-      final time = ComeBackTime.of(
-        comeBack('2026-10-21', hour: 19),
-        today: today,
-      );
-
-      expect(time.days, hasLength(8));
-      expect(
-        time.days.first,
-        ComeBackDay(day('2026-10-21'), DayFromToday.yesterday),
-      );
-      expect(time.days[1], ComeBackDay(today, DayFromToday.today));
-      expect(
-        time.chosen,
-        ComeBackDay(day('2026-10-21'), DayFromToday.yesterday),
-      );
-    });
-
-    test('should not let its days be changed', () {
+    test('should let the calendar go from today to 60 days ahead', () {
       final time = ComeBackTime.of(null, today: today);
 
-      expect(() => time.days.add(time.days.first), throwsUnsupportedError);
+      expect(ComeBackTime.calendarDays, 60);
+      expect(time.today, today);
+      expect(time.lastCalendarDay, day('2026-12-21'));
+    });
+
+    group('the day the calendar opens on', () {
+      final cases = {
+        // In range, the edges included: the chosen day.
+        '2026-10-22': '2026-10-22',
+        '2026-10-23': '2026-10-23',
+        '2026-11-15': '2026-11-15',
+        '2026-12-21': '2026-12-21',
+        // Out of range: the day after tomorrow.
+        '2026-10-21': '2026-10-24',
+        '2026-12-22': '2026-10-24',
+      };
+      cases.forEach((chosen, expected) {
+        test('should be $expected when $chosen is chosen', () {
+          final time = ComeBackTime.of(comeBack(chosen), today: today);
+
+          expect(time.calendarStart, day(expected));
+        });
+      });
+
+      test('should be the day after tomorrow without a day', () {
+        final time = ComeBackTime.of(ComeBack.withoutTime, today: today);
+
+        expect(time.calendarStart, day('2026-10-24'));
+      });
     });
 
     test('should offer the hours 8 to 21', () {

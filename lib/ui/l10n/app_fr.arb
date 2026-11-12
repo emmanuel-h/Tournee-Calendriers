@@ -247,20 +247,13 @@
   "@comeBackToday": { "description": "Day chip of « Quand repasser ? »: today." },
   "comeBackTomorrow": "Demain",
   "@comeBackTomorrow": { "description": "Day chip of « Quand repasser ? »: tomorrow." },
-  "comeBackYesterday": "Hier",
-  "@comeBackYesterday": { "description": "Day chip of « Quand repasser ? »: yesterday, shown only when that day was chosen before." },
-  "comeBackChipDay": "{day}",
-  "@comeBackChipDay": {
-    "description": "Day chip of « Quand repasser ? » for another day: its short weekday and its date (« sam. 24 »); the screen writes its first letter in capital (« Sam. 24 »).",
+  "comeBackOtherDay": "Autre jour",
+  "@comeBackOtherDay": { "description": "Screen-reader name of the round 📅 button after « Aujourd'hui » and « Demain » in « Quand repasser ? »: it opens the calendar for any other day (#82)." },
+  "comeBackOtherDaySemantics": "Autre jour, {day}",
+  "@comeBackOtherDaySemantics": {
+    "description": "What a screen reader says for the 📅 button of « Quand repasser ? » when the day chosen is neither today nor tomorrow (picked in the calendar, gone, or set by a teammate): « Autre jour, dimanche 15 novembre ».",
     "placeholders": {
-      "day": { "type": "DateTime", "format": "E d", "isCustomDateFormat": "true", "example": "sam. 24" }
-    }
-  },
-  "comeBackChipDaySemantics": "{day}",
-  "@comeBackChipDaySemantics": {
-    "description": "What a screen reader says for a day chip of another day: « samedi 24 octobre ».",
-    "placeholders": {
-      "day": { "type": "DateTime", "format": "MMMMEEEEd", "example": "samedi 24 octobre" }
+      "day": { "type": "DateTime", "format": "MMMMEEEEd", "example": "dimanche 15 novembre" }
     }
   },
   "comeBackHourLabel": "Heure",

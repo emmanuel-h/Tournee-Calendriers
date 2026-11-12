@@ -2,12 +2,13 @@ import 'package:tournee_calendriers/domain/shared/calendar_day.dart';
 import 'package:tournee_calendriers/domain/street/come_back.dart';
 
 // What « Quand repasser ? » shows (PLAN §5.7, mockup HouseComeBack, #81):
-// the day chips, the hour, and the line that says it in words. Plain data,
+// the day chips and the calendar, the hour, and the line that says it in
+// words. Plain data,
 // tested without widgets; the sheet only words it in French.
 
 /// How a day stands from today, which decides its words: « Aujourd'hui »,
-/// « Demain », « Hier », or its date (« Sam. 24 », « Le samedi 24 oct. »,
-/// « C'était le mercredi 14 oct. »).
+/// « Demain », « Hier », or its date (« Le samedi 24 oct. », « C'était le
+/// mercredi 14 oct. »).
 ///
 /// An `enum`: the sheet's `switch` over it must handle every case.
 enum DayFromToday {
@@ -37,8 +38,7 @@ enum DayFromToday {
   bool get isPast => this == earlier || this == yesterday;
 }
 
-/// One day of « Quand repasser ? »: a chip, or the chosen day of the
-/// summary line.
+/// The chosen day of « Quand repasser ? », with how it stands from today.
 final class ComeBackDay {
   const ComeBackDay(this.day, this.fromToday);
 
@@ -56,56 +56,67 @@ final class ComeBackDay {
   String toString() => 'ComeBackDay($day, ${fromToday.name})';
 }
 
-/// « Quand repasser ? » of one sheet: the [days] to choose from, the
-/// [chosen] one, its [hour], and the [hours] offered.
+/// « Quand repasser ? » of one sheet: the two day chips ([today],
+/// [tomorrow]), the calendar for any other day, the [chosen] day, its
+/// [hour], and the [hours] offered (PLAN §5.7, #82).
 final class ComeBackTime {
   const ComeBackTime._({
-    required this.days,
+    required this.today,
     required this.chosen,
     required this.hour,
   });
 
-  /// The chips offered from today: today, tomorrow, then the next days, a
-  /// week in all. Enough for « repassez samedi » or « la semaine
-  /// prochaine », short enough to see at a glance on a street (the row
-  /// scrolls sideways).
-  static const dayCount = 7;
+  /// How far ahead the calendar goes, in days from today: two months
+  /// cover any « repassez début décembre » of a round.
+  static const calendarDays = 60;
 
   /// What the sheet shows for [comeBack] (null: no « repasser », the block
   /// greyed with nothing chosen), seen on [today], the phone's calendar
   /// day.
-  ///
-  /// A chosen day outside the week offered (set for yesterday, or by a
-  /// teammate for later) gets its own chip, in date order, so the choice
-  /// is always visible and can be undone.
-  factory ComeBackTime.of(ComeBack? comeBack, {required CalendarDay today}) {
-    ComeBackDay dayOf(CalendarDay day) =>
-        ComeBackDay(day, DayFromToday.of(day, today: today));
-    final offered = [
-      for (var offset = 0; offset < dayCount; offset++) today.plusDays(offset),
-    ];
-    final chosenDay = comeBack?.day;
-    final days = [
-      if (chosenDay != null && chosenDay.daysSince(today) < 0) chosenDay,
-      ...offered,
-      if (chosenDay != null && chosenDay.daysSince(today) >= dayCount)
-        chosenDay,
-    ];
-    return ComeBackTime._(
-      days: List.unmodifiable(days.map(dayOf)),
-      chosen: chosenDay == null ? null : dayOf(chosenDay),
-      hour: comeBack?.hour,
-    );
-  }
+  factory ComeBackTime.of(ComeBack? comeBack, {required CalendarDay today}) =>
+      ComeBackTime._(
+        today: today,
+        chosen: switch (comeBack?.day) {
+          final day? => ComeBackDay(day, DayFromToday.of(day, today: today)),
+          null => null,
+        },
+        hour: comeBack?.hour,
+      );
 
-  /// The day chips, in date order.
-  final List<ComeBackDay> days;
+  /// The day of the first chip, « Aujourd'hui »; also the first day of the
+  /// calendar.
+  final CalendarDay today;
+
+  /// The day of the second chip, « Demain ».
+  CalendarDay get tomorrow => today.plusDays(1);
 
   /// The day chosen; null when none is (no time set).
   final ComeBackDay? chosen;
 
   /// The hour chosen; null for « Pas d'heure ».
   final int? hour;
+
+  /// The chosen day when no chip shows it (picked in the calendar, gone,
+  /// or set by a teammate further ahead): the 📅 button is then filled and
+  /// names it. Null when no day, today or tomorrow is chosen.
+  ComeBackDay? get otherDay => switch (chosen?.fromToday) {
+    null || DayFromToday.today || DayFromToday.tomorrow => null,
+    DayFromToday.earlier ||
+    DayFromToday.yesterday ||
+    DayFromToday.later => chosen,
+  };
+
+  /// The last day the calendar offers.
+  CalendarDay get lastCalendarDay => today.plusDays(calendarDays);
+
+  /// The day the calendar opens on: the chosen day when the calendar
+  /// offers it, else the day after tomorrow, the first one no chip has.
+  CalendarDay get calendarStart => switch (chosen?.day) {
+    final day?
+        when day.daysSince(today) >= 0 && lastCalendarDay.daysSince(day) >= 0 =>
+      day,
+    _ => today.plusDays(2),
+  };
 
   /// The hours of the list, after « Pas d'heure »: 8 h to 21 h.
   List<int> get hours => ComeBack.hours;

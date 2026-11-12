@@ -7,13 +7,14 @@ import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
 /// « Quand repasser ? » (PLAN §5.7, `docs/mockups/HouseComeBack.dc.html`,
-/// #81): a row of day chips scrolling sideways (« Aujourd'hui », « Demain »,
-/// « Sam. 24 »…), the hour list (« Pas d'heure », 8 h to 21 h) and the line
-/// that says it in words (« Le samedi 24 oct. vers 18 h »).
+/// #81, #82): the day chips « Aujourd'hui » and « Demain », then a round 📅
+/// button opening the calendar for any other day, the hour list (« Pas
+/// d'heure », 8 h to 21 h) and the line that says it in words (« Le samedi
+/// 24 oct. vers 18 h »).
 ///
 /// Each choice is handed at once to [onDay] or [onHour], which store it:
-/// there is nothing to save when the sheet closes. Tapping the chosen day
-/// again unchooses it (no time set). The hour list waits for a day.
+/// there is nothing to save when the sheet closes. Tapping the chosen chip
+/// again unchooses its day (no time set). The hour list waits for a day.
 ///
 /// Drawn in the blue of « Repasser » while [enabled]; greyed, nothing to
 /// tap, otherwise (a house that is not « Repasser » any more). The block
@@ -31,8 +32,9 @@ final class ComeBackTimePicker extends StatelessWidget {
     this.titled = true,
   });
 
-  /// Names the parts for tests: `<name>.comeBackDay.2026-10-24`,
-  /// `<name>.comeBackHour`, `<name>.comeBackSummary`.
+  /// Names the parts for tests: `<name>.comeBackDay.2026-10-24` (a chip),
+  /// `<name>.comeBackOtherDay` (📅), `<name>.comeBackHour`,
+  /// `<name>.comeBackSummary`.
   final String name;
 
   final ComeBackTime time;
@@ -62,21 +64,31 @@ final class ComeBackTimePicker extends StatelessWidget {
           label: l10n.comeBackDayGroup,
           container: true,
           explicitChildNodes: true,
+          // Scrolls sideways only when a large phone font makes the row
+          // wider than the sheet.
           child: SingleChildScrollView(
             key: ValueKey('$name.comeBackDays'),
             scrollDirection: Axis.horizontal,
             child: Row(
               spacing: 8,
               children: [
-                for (final day in time.days)
+                for (final (day, label) in [
+                  (time.today, l10n.comeBackToday),
+                  (time.tomorrow, l10n.comeBackTomorrow),
+                ])
                   _DayChip(
-                    key: ValueKey('$name.comeBackDay.${day.day}'),
-                    day: day,
-                    chosen: day == chosen,
+                    key: ValueKey('$name.comeBackDay.$day'),
+                    label: label,
+                    chosen: day == chosen?.day,
                     onTap: enabled
-                        ? () => onDay(day == chosen ? null : day.day)
+                        ? () => onDay(day == chosen?.day ? null : day)
                         : null,
                   ),
+                _OtherDayButton(
+                  key: ValueKey('$name.comeBackOtherDay'),
+                  otherDay: time.otherDay,
+                  onTap: enabled ? () => _pickDay(context) : null,
+                ),
               ],
             ),
           ),
@@ -105,6 +117,32 @@ final class ComeBackTimePicker extends StatelessWidget {
         ),
       ],
     );
+  }
+
+  /// Opens Material's calendar, in French since the app's locale is, from
+  /// today to [ComeBackTime.calendarDays] ahead, and stores the day picked
+  /// with « OK » as a chip would; « Annuler » (null) changes nothing.
+  Future<void> _pickDay(BuildContext context) async {
+    final colors = AppColors.of(context);
+    final picked = await showDatePicker(
+      context: context,
+      firstDate: time.today.toDateTime(),
+      lastDate: time.lastCalendarDay.toDateTime(),
+      initialDate: time.calendarStart.toDateTime(),
+      // Today from the app's clock (the `Clock` port behind [time]), not
+      // from `DateTime.now()`, so the ring around today matches the chip.
+      currentDate: time.today.toDateTime(),
+      // The dialog reads its colours from the theme above it: the
+      // come-back blue for the chosen day and the buttons, as the chips.
+      builder: (context, child) => Theme(
+        data: Theme.of(context).copyWith(
+          colorScheme: Theme.of(context).colorScheme
+              .copyWith(primary: colors.onComeBack, onPrimary: colors.surface),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked != null) onDay(CalendarDay.of(picked));
   }
 }
 
@@ -136,19 +174,52 @@ String comeBackWhenText(AppLocalizations l10n, ComeBackDay day, int? hour) {
   };
 }
 
-/// One day of the row: « Aujourd'hui », « Demain », « Hier », or the short
-/// weekday and date (« Sam. 24 »), which screen readers hear whole
-/// (« samedi 24 octobre »).
+/// « Aujourd'hui » or « Demain », a radio of the row « Jour ».
 final class _DayChip extends StatelessWidget {
   const _DayChip({
     super.key,
-    required this.day,
+    required this.label,
     required this.chosen,
     required this.onTap,
   });
 
-  final ComeBackDay day;
+  final String label;
   final bool chosen;
+
+  /// Null while the block is greyed.
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) => _DayPill(
+    label: label,
+    chosen: chosen,
+    onTap: onTap,
+    // The chip is drawn 40 dp high as in the mockup; the 4 dp above and
+    // below still answer taps, for a 48 dp target.
+    padding: const EdgeInsets.symmetric(vertical: _pillMargin),
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 12),
+      child: Text(
+        label,
+        style: AppTextStyles.pill.copyWith(
+          color: _DayPill.inkOf(context, onTap, chosen),
+        ),
+      ),
+    ),
+  );
+}
+
+/// The round 📅 after the chips: opens the calendar. Filled, and naming the
+/// day (« Autre jour, dimanche 15 novembre »), when [otherDay] is chosen.
+final class _OtherDayButton extends StatelessWidget {
+  const _OtherDayButton({
+    super.key,
+    required this.otherDay,
+    required this.onTap,
+  });
+
+  /// The chosen day no chip shows; null when there is none.
+  final ComeBackDay? otherDay;
 
   /// Null while the block is greyed.
   final VoidCallback? onTap;
@@ -156,65 +227,101 @@ final class _DayChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final otherDay = this.otherDay;
+    final chosen = otherDay != null;
+    return _DayPill(
+      label: chosen
+          ? l10n.comeBackOtherDaySemantics(otherDay.day.toDateTime())
+          : l10n.comeBackOtherDay,
+      chosen: chosen,
+      onTap: onTap,
+      // A 40 dp circle with 4 dp all round: a 48 dp square target.
+      padding: const EdgeInsets.all(_pillMargin),
+      width: AppSizes.pillHeight,
+      child: Icon(
+        Icons.calendar_today,
+        size: AppSizes.smallIcon,
+        color: _DayPill.inkOf(context, onTap, chosen),
+      ),
+    );
+  }
+}
+
+/// What the 40 dp pill leaves of the 48 dp target on each side.
+const _pillMargin = (AppSizes.minTapTarget - AppSizes.pillHeight) / 2;
+
+/// A pill of the row « Jour »: white outlined in blue, filled blue when
+/// [chosen], grey when there is nothing to tap.
+final class _DayPill extends StatelessWidget {
+  const _DayPill({
+    required this.label,
+    required this.chosen,
+    required this.onTap,
+    required this.padding,
+    required this.child,
+    this.width,
+  });
+
+  /// What a screen reader says for it.
+  final String label;
+  final bool chosen;
+  final VoidCallback? onTap;
+
+  /// Around the pill, inside the tap target.
+  final EdgeInsets padding;
+  final Widget child;
+
+  /// Null: as wide as [child].
+  final double? width;
+
+  /// The colour of the text or icon on the pill.
+  static Color inkOf(BuildContext context, VoidCallback? onTap, bool chosen) {
     final colors = AppColors.of(context);
-    final on = onTap != null;
-    final date = day.day.toDateTime();
-    final (label, spoken) = switch (day.fromToday) {
-      DayFromToday.today => (l10n.comeBackToday, null),
-      DayFromToday.tomorrow => (l10n.comeBackTomorrow, null),
-      DayFromToday.yesterday => (l10n.comeBackYesterday, null),
-      DayFromToday.earlier || DayFromToday.later => (
-        _capitalized(l10n.comeBackChipDay(date)),
-        l10n.comeBackChipDaySemantics(date),
-      ),
+    return switch ((onTap != null, chosen)) {
+      (true, true) => colors.surface,
+      (true, false) => colors.onComeBack,
+      (false, _) => colors.muted,
     };
-    final (background, border, text) = switch ((on, chosen)) {
-      (true, true) => (colors.onComeBack, colors.onComeBack, colors.surface),
-      (true, false) => (
-        colors.surface,
-        colors.comeBackBorder,
-        colors.onComeBack,
-      ),
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final colors = AppColors.of(context);
+    final (background, border) = switch ((onTap != null, chosen)) {
+      (true, true) => (colors.onComeBack, colors.onComeBack),
+      (true, false) => (colors.surface, colors.comeBackBorder),
       // Greyed: no « repasser », hence no day chosen.
-      (false, _) => (colors.surface, colors.line, colors.muted),
+      (false, _) => (colors.surface, colors.line),
     };
     // `checked` in a mutually exclusive group: TalkBack says « case
     // d'option, cochée », like a radio button.
     return Semantics(
-      label: spoken ?? label,
+      label: label,
       checked: chosen,
       inMutuallyExclusiveGroup: true,
-      enabled: on,
+      enabled: onTap != null,
       excludeSemantics: true,
       onTap: onTap,
       child: InkWell(
         onTap: onTap,
         customBorder: const StadiumBorder(),
-        // The chip is drawn 40 dp high as in the mockup; the 4 dp above and
-        // below still answer taps, for a 48 dp target.
         child: Padding(
-          padding: const EdgeInsets.symmetric(
-            vertical: (AppSizes.minTapTarget - AppSizes.pillHeight) / 2,
-          ),
+          padding: padding,
           child: Container(
             height: AppSizes.pillHeight,
-            padding: const EdgeInsets.symmetric(horizontal: 12),
+            width: width,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: background,
               border: Border.all(color: border, width: AppSizes.borderWidth),
               borderRadius: BorderRadius.circular(AppSizes.pillHeight / 2),
             ),
-            child: Text(label, style: AppTextStyles.pill.copyWith(color: text)),
+            child: child,
           ),
         ),
       ),
     );
   }
-
-  /// « sam. 24 » as the mockup writes it: « Sam. 24 ».
-  static String _capitalized(String text) =>
-      text.isEmpty ? text : text[0].toUpperCase() + text.substring(1);
 }
 
 /// « Pas d'heure », then 8 h to 21 h. Null [onHour] greys it out.

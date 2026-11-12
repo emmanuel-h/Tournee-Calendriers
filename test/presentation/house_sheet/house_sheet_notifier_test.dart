@@ -549,10 +549,10 @@ void main() {
       phoneWith(_street());
       open('7');
 
-      final days = (await shown('7')).comeBackTime.days;
+      final time = (await shown('7')).comeBackTime;
 
-      expect(days.first, ComeBackDay(day('2026-11-02'), DayFromToday.today));
-      expect(days, hasLength(ComeBackTime.dayCount));
+      expect(time.today, day('2026-11-02'));
+      expect(time.tomorrow, day('2026-11-03'));
     });
 
     test('should follow the clock when the street is shown again', () async {
@@ -563,10 +563,7 @@ void main() {
 
       await notifier('7').setStatus(VisitStatus.comeBack);
 
-      expect(
-        (await shown('7')).comeBackTime.days.first,
-        ComeBackDay(day('2026-11-04'), DayFromToday.today),
-      );
+      expect((await shown('7')).comeBackTime.today, day('2026-11-04'));
     });
   });
 

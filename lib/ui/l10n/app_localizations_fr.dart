@@ -222,22 +222,14 @@ class AppLocalizationsFr extends AppLocalizations {
   String get comeBackTomorrow => 'Demain';
 
   @override
-  String get comeBackYesterday => 'Hier';
+  String get comeBackOtherDay => 'Autre jour';
 
   @override
-  String comeBackChipDay(DateTime day) {
-    final intl.DateFormat dayDateFormat = intl.DateFormat('E d', localeName);
-    final String dayString = dayDateFormat.format(day);
-
-    return '$dayString';
-  }
-
-  @override
-  String comeBackChipDaySemantics(DateTime day) {
+  String comeBackOtherDaySemantics(DateTime day) {
     final intl.DateFormat dayDateFormat = intl.DateFormat.MMMMEEEEd(localeName);
     final String dayString = dayDateFormat.format(day);
 
-    return '$dayString';
+    return 'Autre jour, $dayString';
   }
 
   @override

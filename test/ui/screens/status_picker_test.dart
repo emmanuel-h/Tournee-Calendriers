@@ -100,6 +100,19 @@ void main() {
   }
 
   Finder dayChip(String iso) => find.byKey(ValueKey('house.comeBackDay.$iso'));
+  final otherDay = find.byKey(const Key('house.comeBackOtherDay'));
+
+  /// Taps [text] in the open calendar: a day (« 15 »), « OK » or
+  /// « Annuler ».
+  Future<void> tapInCalendar(WidgetTester tester, String text) async {
+    await tester.tap(
+      find.descendant(
+        of: find.byType(DatePickerDialog),
+        matching: find.text(text),
+      ),
+    );
+    await tester.pumpAndSettle();
+  }
 
   String? summary(WidgetTester tester) =>
       tester.widget<Text>(find.byKey(const Key('house.comeBackSummary'))).data;
@@ -457,71 +470,152 @@ void main() {
       },
     );
 
+    testWidgets('should open the day of a house already to come back on the 📅 '
+        'button, storing no status', (tester) async {
+      final semantics = tester.ensureSemantics();
+      await pick(tester, '5');
+
+      await choose(tester, VisitStatus.comeBack);
+
+      expect(streets.saved, isEmpty);
+      expect(summary(tester), 'Le samedi 7 nov. vers 19 h');
+      // Monday 2 November 2026 is today (the fake clock): two chips, and
+      // Saturday 7 on the 📅 button.
+      expect(
+        find.descendant(
+          of: dayChip('2026-11-02'),
+          matching: find.text("Aujourd'hui"),
+        ),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(
+          of: dayChip('2026-11-03'),
+          matching: find.text('Demain'),
+        ),
+        findsOneWidget,
+      );
+      expect(dayChip('2026-11-04'), findsNothing);
+      expect(dayChip('2026-11-07'), findsNothing);
+      expect(
+        semanticsOf(tester, otherDay).label,
+        'Autre jour, samedi 7 novembre',
+      );
+      expect(
+        semanticsOf(tester, otherDay).flagsCollection.isChecked,
+        CheckedState.isTrue,
+      );
+
+      await chooseHour(tester, "Pas d'heure");
+      expect(summary(tester), 'Le samedi 7 nov.');
+      expect(stored('5').comeBack, comeBack('2026-11-07'));
+      await tester.tap(find.byKey(const Key('house.validate')));
+      await tester.pumpAndSettle();
+
+      // No status was stored: nothing to undo.
+      expect(find.text('Annuler'), findsNothing);
+      expect(stored('5').status, VisitStatus.comeBack);
+      semantics.dispose();
+    });
+
+    testWidgets('should leave no time when the chosen chip is tapped again', (
+      tester,
+    ) async {
+      await pick(tester, '5');
+      await choose(tester, VisitStatus.comeBack);
+      await tapDay(tester, '2026-11-03');
+      expect(stored('5').comeBack, comeBack('2026-11-03', hour: 19));
+
+      await tapDay(tester, '2026-11-03');
+
+      expect(summary(tester), 'Aucun jour sélectionné');
+      expect(stored('5').comeBack, ComeBack.withoutTime);
+    });
+
     testWidgets(
-      'should open the day of a house already to come back, a week from '
-      'today, storing no status',
+      'should store the day picked in the calendar in one write, keeping '
+      'the hour',
       (tester) async {
         final semantics = tester.ensureSemantics();
         await pick(tester, '5');
-
         await choose(tester, VisitStatus.comeBack);
 
-        expect(streets.saved, isEmpty);
-        expect(summary(tester), 'Le samedi 7 nov. vers 19 h');
-        // Monday 2 November 2026 is today (the fake clock).
-        for (final (iso, label) in [
-          ('2026-11-02', "Aujourd'hui"),
-          ('2026-11-03', 'Demain'),
-          ('2026-11-04', 'Mer. 4'),
-          ('2026-11-08', 'Dim. 8'),
-        ]) {
-          expect(
-            find.descendant(of: dayChip(iso), matching: find.text(label)),
-            findsOneWidget,
-            reason: iso,
-          );
-        }
-        expect(dayChip('2026-11-09'), findsNothing);
-        expect(
-          semanticsOf(tester, dayChip('2026-11-07')).label,
-          'samedi 7 novembre',
-        );
-        expect(
-          semanticsOf(tester, dayChip('2026-11-07')).flagsCollection.isChecked,
-          CheckedState.isTrue,
-        );
-
-        await chooseHour(tester, "Pas d'heure");
-        expect(summary(tester), 'Le samedi 7 nov.');
-        expect(stored('5').comeBack, comeBack('2026-11-07'));
-        await tapDay(tester, '2026-11-07');
-        expect(summary(tester), 'Aucun jour sélectionné');
-        expect(stored('5').comeBack, ComeBack.withoutTime);
-        await tester.tap(find.byKey(const Key('house.validate')));
+        await tester.tap(otherDay);
         await tester.pumpAndSettle();
+        await tapInCalendar(tester, '15');
+        await tapInCalendar(tester, 'OK');
 
-        // No status was stored: nothing to undo.
-        expect(find.text('Annuler'), findsNothing);
-        expect(stored('5').status, VisitStatus.comeBack);
+        expect(streets.saved, hasLength(1));
+        expect(stored('5').comeBack, comeBack('2026-11-15', hour: 19));
+        expect(summary(tester), 'Le dimanche 15 nov. vers 19 h');
+        expect(
+          semanticsOf(tester, otherDay).label,
+          'Autre jour, dimanche 15 novembre',
+        );
         semantics.dispose();
       },
     );
 
-    testWidgets('should say a day gone by is past, with a chip of its own', (
+    testWidgets('should select the chip of tomorrow when it is picked in the '
+        'calendar', (tester) async {
+      final semantics = tester.ensureSemantics();
+      await pick(tester, '5');
+      await choose(tester, VisitStatus.comeBack);
+
+      await tester.tap(otherDay);
+      await tester.pumpAndSettle();
+      await tapInCalendar(tester, '3');
+      await tapInCalendar(tester, 'OK');
+
+      expect(stored('5').comeBack, comeBack('2026-11-03', hour: 19));
+      expect(summary(tester), 'Demain vers 19 h');
+      expect(
+        semanticsOf(tester, dayChip('2026-11-03')).flagsCollection.isChecked,
+        CheckedState.isTrue,
+      );
+      expect(semanticsOf(tester, otherDay).label, 'Autre jour');
+      expect(
+        semanticsOf(tester, otherDay).flagsCollection.isChecked,
+        CheckedState.isFalse,
+      );
+      semantics.dispose();
+    });
+
+    testWidgets('should change nothing when the calendar is cancelled', (
       tester,
     ) async {
+      await pick(tester, '5');
+      await choose(tester, VisitStatus.comeBack);
+
+      await tester.tap(otherDay);
+      await tester.pumpAndSettle();
+      await tapInCalendar(tester, '15');
+      await tapInCalendar(tester, 'Annuler');
+
+      expect(streets.saved, isEmpty);
+      expect(stored('5').comeBack, comeBack('2026-11-07', hour: 19));
+      expect(summary(tester), 'Le samedi 7 nov. vers 19 h');
+    });
+
+    testWidgets('should say a day gone by is past, on the 📅 button', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
       await pick(tester, '11');
       await choose(tester, VisitStatus.comeBack);
 
       expect(summary(tester), "C'était hier vers 19 h");
+      expect(find.text('Hier'), findsNothing);
+      expect(dayChip('2026-11-01'), findsNothing);
       expect(
-        find.descendant(of: dayChip('2026-11-01'), matching: find.text('Hier')),
-        findsOneWidget,
+        semanticsOf(tester, otherDay).label,
+        'Autre jour, dimanche 1 novembre',
       );
       expect(
-        tester.getTopLeft(dayChip('2026-11-01')).dx,
-        lessThan(tester.getTopLeft(dayChip('2026-11-02')).dx),
+        semanticsOf(tester, otherDay).flagsCollection.isChecked,
+        CheckedState.isTrue,
       );
+      semantics.dispose();
     });
   });
 

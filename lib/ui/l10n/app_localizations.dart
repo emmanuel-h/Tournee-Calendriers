@@ -412,23 +412,17 @@ abstract class AppLocalizations {
   /// **'Demain'**
   String get comeBackTomorrow;
 
-  /// Day chip of « Quand repasser ? »: yesterday, shown only when that day was chosen before.
+  /// Screen-reader name of the round 📅 button after « Aujourd'hui » and « Demain » in « Quand repasser ? »: it opens the calendar for any other day (#82).
   ///
   /// In fr, this message translates to:
-  /// **'Hier'**
-  String get comeBackYesterday;
+  /// **'Autre jour'**
+  String get comeBackOtherDay;
 
-  /// Day chip of « Quand repasser ? » for another day: its short weekday and its date (« sam. 24 »); the screen writes its first letter in capital (« Sam. 24 »).
+  /// What a screen reader says for the 📅 button of « Quand repasser ? » when the day chosen is neither today nor tomorrow (picked in the calendar, gone, or set by a teammate): « Autre jour, dimanche 15 novembre ».
   ///
   /// In fr, this message translates to:
-  /// **'{day}'**
-  String comeBackChipDay(DateTime day);
-
-  /// What a screen reader says for a day chip of another day: « samedi 24 octobre ».
-  ///
-  /// In fr, this message translates to:
-  /// **'{day}'**
-  String comeBackChipDaySemantics(DateTime day);
+  /// **'Autre jour, {day}'**
+  String comeBackOtherDaySemantics(DateTime day);
 
   /// Label of the hour list of « Quand repasser ? ».
   ///
