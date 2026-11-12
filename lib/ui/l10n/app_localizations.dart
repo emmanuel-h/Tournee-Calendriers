@@ -1696,6 +1696,24 @@ abstract class AppLocalizations {
   /// **'Première version de test.'**
   String get release010First;
 
+  /// Line of « Nouveautés » for 0.16.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'« À repasser » dans l\'accueil : toutes les maisons à repasser du secteur, jour par jour ; un appui ouvre la rue sur la maison.'**
+  String get release0160ComeBacks;
+
+  /// Line of « Nouveautés » for 0.16.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'Rappels : une notification 15 min avant l\'heure de vos « repasser », ou à 9 h le jour dit quand il n\'y a pas d\'heure. Réglable dans Paramètres.'**
+  String get release0160Reminders;
+
+  /// Line of « Nouveautés » for 0.16.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'Quelques textes reformulés.'**
+  String get release0160Words;
+
   /// Line of « Nouveautés » for 0.15.0.
   ///
   /// In fr, this message translates to:

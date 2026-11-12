@@ -1176,6 +1176,17 @@ class AppLocalizationsFr extends AppLocalizations {
   String get release010First => 'Première version de test.';
 
   @override
+  String get release0160ComeBacks =>
+      '« À repasser » dans l\'accueil : toutes les maisons à repasser du secteur, jour par jour ; un appui ouvre la rue sur la maison.';
+
+  @override
+  String get release0160Reminders =>
+      'Rappels : une notification 15 min avant l\'heure de vos « repasser », ou à 9 h le jour dit quand il n\'y a pas d\'heure. Réglable dans Paramètres.';
+
+  @override
+  String get release0160Words => 'Quelques textes reformulés.';
+
+  @override
   String get release0150Unsent =>
       'Une tournée validée reste sur le téléphone jusqu\'à son envoi ; la Collecte montre celles pas encore envoyées.';
 
