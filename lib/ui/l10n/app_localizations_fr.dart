@@ -1176,6 +1176,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get release010First => 'Première version de test.';
 
   @override
+  String get release0161Stuck =>
+      'Une tournée restée en cours dans un secteur quitté ou supprimé ne bloque plus : « Commencer une tournée » l\'efface et en démarre une nouvelle.';
+
+  @override
   String get release0160ComeBacks =>
       '« À repasser » dans l\'accueil : toutes les maisons à repasser du secteur, jour par jour ; un appui ouvre la rue sur la maison.';
 

@@ -1696,6 +1696,12 @@ abstract class AppLocalizations {
   /// **'Première version de test.'**
   String get release010First;
 
+  /// Line of « Nouveautés » for 0.16.1.
+  ///
+  /// In fr, this message translates to:
+  /// **'Une tournée restée en cours dans un secteur quitté ou supprimé ne bloque plus : « Commencer une tournée » l\'efface et en démarre une nouvelle.'**
+  String get release0161Stuck;
+
   /// Line of « Nouveautés » for 0.16.0.
   ///
   /// In fr, this message translates to:
