@@ -982,7 +982,7 @@ par » to the picker, « Transformer en immeuble… » to edit mode only. The do
 │ [Repassé, toujours personne] │    │ 1er [11○][12✓][13✓][14✗]     │
 │  (yellow on ✗ / ↻, else grey)│    │ RdC [01✓][02○]               │
 │ Quand repasser ? (grey ≠ ↻)  │    │                              │
-│ (Aujourd'hui)(Demain)(📅)    │                              │
+│ (Aujourd'hui)(Demain)(📅)    │    │                              │
 │ Heure [ 18 h            ▾ ]  │    │                              │
 │ Le samedi 24 oct. vers 18 h  │    │                              │
 │ [ Transformer en immeuble… ] │    │                              │
