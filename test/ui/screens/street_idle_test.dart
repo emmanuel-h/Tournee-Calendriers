@@ -4,7 +4,6 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/domain/round/round.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
-import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/sector/sector_summary.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
@@ -61,6 +60,7 @@ void main() {
     WidgetTester tester, {
     SectorSummary? open,
     Round? round,
+    SectorSummary? alsoKnown,
   }) async {
     tester.view
       ..physicalSize = const Size(1080, 2400)
@@ -77,7 +77,13 @@ void main() {
           connection: FakeServerConnection(offline: true),
           sectors: FakeSectorRepository([team()]),
           mySectors: FakeMySectorsStore(
-            valueOf(MySectors.none.remember(opened).open(opened.id)),
+            valueOf(
+              (alsoKnown == null
+                      ? MySectors.none
+                      : MySectors.none.remember(alsoKnown))
+                  .remember(opened)
+                  .open(opened.id),
+            ),
           ),
         ),
         child: const TourneeApp(showGallery: false),
@@ -131,11 +137,12 @@ void main() {
       '« Commencer » is tapped then', (tester) async {
     final elsewhere = Round.start(
       id: roundId,
-      sector: SectorId('t12'),
+      sector: sector12.id,
       campaign: year2026,
       at: startedAt,
     );
-    await openStreet(tester, round: elsewhere);
+    // The phone still has the 12, where the tournée is on (#162).
+    await openStreet(tester, round: elsewhere, alsoKnown: sector12);
     await tap(tester, _tile('7'));
 
     await tap(tester, find.widgetWithText(SnackBarAction, 'Commencer'));

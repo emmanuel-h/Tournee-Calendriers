@@ -103,6 +103,22 @@ void main() {
 
       expect(failureOf(await start()), StartRoundFailure.alreadyOn);
     });
+
+    test('should forget the tournée on and start one when the phone no longer '
+        'has its secteur', () async {
+      // The 49 was left, deleted or lost (#162): its tournée could never
+      // be ended nor validated.
+      mySectors.mySectors = valueOf(
+        MySectors.none.remember(sector12).open(sector12.id),
+      );
+      rounds.openRound = newRound();
+
+      final round = valueOf(await start());
+
+      expect(rounds.clears, 1);
+      expect(round.sector, sector12.id);
+      expect(rounds.saves, [round]);
+    });
   });
 
   group('WatchOpenRound', () {

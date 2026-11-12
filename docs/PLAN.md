@@ -1580,7 +1580,9 @@ outing; the team's area is the **secteur** (§2).
 
 - **Start**: « Commencer une tournée » (outlined, a red ▶) under the totals of Accueil's panel,
   for an active member of the open secteur (not a visiting admin). One tournée at a time on a
-  phone; it belongs to the secteur it started in, and its card shows only there. Offline too.
+  phone; it belongs to the secteur it started in, and its card shows only there. A tournée of a
+  secteur the phone no longer has (left, deleted, removed) can never be ended: « Commencer »
+  forgets it, its dons with it, and starts the new one (#162). Offline too.
 - **While it runs**: on Accueil the card « ● En tournée depuis 1 h 20 », « 19 dons · 280 € »
   (« 1 don · 10 € », « 0 don · 0 € »), « Voir les dons › » and « ■ Terminer » (TalkBack
   « Terminer la tournée »); on the street screen a one-line card « ● En tournée · 19 dons ·

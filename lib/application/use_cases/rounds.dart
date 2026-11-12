@@ -67,7 +67,8 @@ enum DonationEditFailure {
 
 /// « Commencer une tournée »: a tournée of the open secteur's current
 /// campaign starts now, for the member of this phone. Returns it, or why it
-/// cannot start.
+/// cannot start. A tournée still on in a secteur the phone no longer has is
+/// forgotten first, its dons with it (#162).
 final class StartRound {
   const StartRound(this._rounds, this._mySectors, this._clock, this._ids);
 
@@ -87,8 +88,14 @@ final class StartRound {
       case MemberStatus.visiting || MemberStatus.pending:
         return const Err(StartRoundFailure.notInTheTeam);
     }
-    if (_rounds.openRound != null) {
-      return const Err(StartRoundFailure.alreadyOn);
+    if (_rounds.openRound case final on?) {
+      // A tournée of a secteur the phone forgot (left, deleted, removed
+      // from the team) can never be ended nor validated: its band shows
+      // only in its secteur. It would block every tournée to come (#162).
+      if (_mySectors.mySectors.find(on.sector) != null) {
+        return const Err(StartRoundFailure.alreadyOn);
+      }
+      await _rounds.clear();
     }
     final round = Round.start(
       id: RoundId(_ids.newId()),
