@@ -982,7 +982,7 @@ par » to the picker, « Transformer en immeuble… » to edit mode only. The do
 │ [Repassé, toujours personne] │    │ 1er [11○][12✓][13✓][14✗]     │
 │  (yellow on ✗ / ↻, else grey)│    │ RdC [01✓][02○]               │
 │ Quand repasser ? (grey ≠ ↻)  │    │                              │
-│ (Aujourd'hui)(Demain)(Sam. 24)…→   │                              │
+│ (Aujourd'hui)(Demain)(📅)    │                              │
 │ Heure [ 18 h            ▾ ]  │    │                              │
 │ Le samedi 24 oct. vers 18 h  │    │                              │
 │ [ Transformer en immeuble… ] │    │                              │
@@ -1036,18 +1036,22 @@ Fiche maison details fixed in T1.8 (`lib/presentation/house_sheet/`,
   otherwise. Choosing « Repasser » starts without a time; choosing another status drops it
   (§6.1). The line of the last change keeps its place before the first change, so that change
   does not move the sheet either.
-- **Day and hour** (#81, replacing the free hint of ≤ 20 characters; mockup HouseComeBack): the
-  block holds « Quand repasser ? », a row of **day chips** scrolling sideways — « Aujourd'hui »,
-  « Demain », then the next five days as « Sam. 24 » (a week in all, from today on the phone's
-  calendar and clock, `Clock` port) — 40 dp pills in a 48 dp tap target, the chosen one filled
-  in the come-back blue; screen readers hear a radio group « Jour » and the dated chips whole
-  (« samedi 24 octobre »). Then « Heure » and a list « Pas d'heure », « 8 h » … « 21 h », greyed
-  until a day is chosen. Then a summary line: « Pas de jour choisi », « Aujourd'hui »,
+- **Day and hour** (#81, replacing the free hint of ≤ 20 characters; mockup HouseComeBack;
+  day row changed 2026-11-13 from the user's phone test of #82): the block holds « Quand
+  repasser ? », a row of **two day chips**, « Aujourd'hui » and « Demain » (from today on the
+  phone's calendar and clock, `Clock` port), then a round **📅 button** (`Icons.calendar_today`,
+  « Autre jour ») — 40 dp pills in a 48 dp tap target, the chosen one filled in the come-back
+  blue; screen readers hear a radio group « Jour ». 📅 opens Android's date picker in French,
+  from today to 60 days ahead, on the chosen day when it is in that range, else on the day
+  after tomorrow; « OK » stores that day (today or tomorrow picked there select their chip),
+  « Annuler » changes nothing. 📅 is filled blue whenever the day is neither today nor tomorrow
+  (picked there, past, or set by a teammate), said « Autre jour, dimanche 15 novembre »; a tap
+  on it opens the picker again. Then « Heure » and a list « Pas d'heure », « 8 h » … « 21 h »,
+  greyed until a day is chosen. Then a summary line: « Pas de jour choisi », « Aujourd'hui »,
   « Demain vers 18 h », « Le samedi 24 oct. vers 18 h ». A day already gone shows as past:
-  « C'était hier vers 18 h », « C'était le mercredi 14 oct. »; such a day (or one a teammate
-  set past the week) gets a chip of its own, in date order (« Hier » before « Aujourd'hui »).
+  « C'était hier vers 18 h », « C'était le mercredi 14 oct. ».
   Each choice is stored at once (one `ComeBackSet` each, stamped); a new day keeps the hour
-  chosen; tapping the chosen day again leaves no time at all (the hour with it): « ↻ » without
+  chosen; tapping the chosen chip again leaves no time at all (the hour with it): « ↻ » without
   time stays valid. A building's own « Repasser » (ticked) shows the same block.
 - **Last change**: « Modifié par Léa · 14:02 » today, « Modifié par Léa · 3 oct. à 14:02 »
   before, in the phone's time zone; « par vous » for the member on the phone; nothing when the

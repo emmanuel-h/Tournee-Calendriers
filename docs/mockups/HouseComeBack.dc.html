@@ -179,9 +179,11 @@ a{color:#B3261E}a:hover{color:#8C1D18}
           <button class="ib" onClick="{{close}}" aria-label="Fermer"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
         </div>
         <div role="radiogroup" aria-label="Jour" style="display: flex; gap: 8px; overflow-x: auto">
-          <sc-for list="{{days}}" as="d" hint-placeholder-count="5">
+          <sc-for list="{{days}}" as="d" hint-placeholder-count="2">
             <button class="day" role="radio" aria-checked="{{d.on}}" onClick="{{d.pick}}" style="{{d.style}}">{{d.label}}</button>
           </sc-for>
+          <!-- Any other day (#82 follow-up): Android's calendar, today to +60 days; blue once a day other than today and tomorrow is chosen, which the summary below names. -->
+          <button class="day" role="radio" aria-checked="{{otherOn}}" aria-label="{{otherAria}}" onClick="{{pickOther}}" style="width: 44px; padding: 0; display: flex; align-items: center; justify-content: center; {{otherStyle}}"><svg viewBox="0 0 24 24" aria-hidden="true" style="width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></svg></button>
         </div>
         <div style="display: flex; align-items: center; gap: 12px"><label for="hour" style="font-weight: 700; font-size: 15px">Heure</label>
           <select id="hour" style="flex: 1; height: 52px; border: 1.5px solid #A9C8E6; border-radius: 12px; padding: 0 12px; font: 400 17px 'Atkinson Hyperlegible', sans-serif; background: #FFFFFF; color: #1B1F24"><option>Pas d'heure</option><option selected>Vers 18 h</option><option>Vers 19 h</option></select></div>
@@ -293,7 +295,7 @@ class Component extends DCLogic {
     const on = 'background: #1B1F24; color: #FFFFFF';
     const off = 'background: #FFFFFF; color: #1B1F24';
     const m = this.state.method;
-    const dayLabels = ["Aujourd'hui", 'Demain', 'Sam. 24', 'Dim. 25', 'Lun. 26'];
+    const dayLabels = ["Aujourd'hui", 'Demain'];
     const summaries = ["Aujourd'hui vers 18 h", 'Demain vers 18 h', 'Le samedi 24 oct. vers 18 h', 'Le dimanche 25 oct. vers 18 h', 'Le lundi 26 oct. vers 18 h'];
     const again = sel && (cur === 'nobody' || cur === 'back') && sel.t >= 1;
     const last = this.state.last;
@@ -333,6 +335,9 @@ class Component extends DCLogic {
       close: () => this.setState({ step: null, sel: null }),
       days: dayLabels.map((l, i) => ({ label: l, on: i === this.state.day, pick: () => this.setState({ day: i }),
         style: i === this.state.day ? 'border: 1.5px solid #1D4E7A; background: #1D4E7A; color: #FFFFFF' : 'border: 1.5px solid #A9C8E6; background: #FFFFFF; color: #1D4E7A' })),
+      otherOn: this.state.day >= 2, pickOther: () => this.setState({ day: 2 }),
+      otherAria: this.state.day >= 2 ? 'Autre jour, samedi 24 octobre' : 'Autre jour',
+      otherStyle: this.state.day >= 2 ? 'border: 1.5px solid #1D4E7A; background: #1D4E7A; color: #FFFFFF' : 'border: 1.5px solid #A9C8E6; background: #FFFFFF; color: #1D4E7A',
       backSummary: summaries[this.state.day],
       hasLast: !!last, noLast: !last, lastText: last ? last.text : '', undo: () => this.undo()
     };
