@@ -336,6 +336,41 @@
       "w": 390,
       "h": 844,
       "title": "5.16 Accueil — feuille de la rue illisible"
+    },
+    "HomeComeBack.dc.html": {
+      "x": 0,
+      "y": 10112,
+      "w": 390,
+      "h": 844,
+      "title": "À repasser — Accueil (#82)"
+    },
+    "ComeBackList.dc.html": {
+      "x": 470,
+      "y": 10112,
+      "w": 390,
+      "h": 844,
+      "title": "À repasser — la liste (#82)"
+    },
+    "ComeBackNotify.dc.html": {
+      "x": 940,
+      "y": 10112,
+      "w": 390,
+      "h": 844,
+      "title": "À repasser — rappels (#82)"
+    },
+    "StreetRing.dc.html": {
+      "x": 1410,
+      "y": 10112,
+      "w": 390,
+      "h": 844,
+      "title": "À repasser — la maison dans sa rue (#82)"
+    },
+    "SettingsReminders.dc.html": {
+      "x": 1880,
+      "y": 10112,
+      "w": 390,
+      "h": 844,
+      "title": "Paramètres — rappels (#82)"
     }
   },
   "createdOnFiles": {
@@ -444,7 +479,12 @@
     "Cash.dc.html",
     "RunDons.dc.html",
     "StreetIdle.dc.html",
-    "StreetPart.dc.html"
+    "StreetPart.dc.html",
+    "HomeComeBack.dc.html",
+    "ComeBackList.dc.html",
+    "ComeBackNotify.dc.html",
+    "StreetRing.dc.html",
+    "SettingsReminders.dc.html"
   ],
   "pages": [],
   "title": "Tournée Calendriers screens"

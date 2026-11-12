@@ -2178,6 +2178,79 @@ SettingsNameTaken, StreetUnreadable, StreetUnreadableSheet). Overrides 5.2, 5.8,
   only, as the mockup draws it. The streets download still leaves such a street out of the
   map's area; its document lands in the cache all the same, so the listener lists it.
 
+### 5.17 À repasser: the list and the reminders (#82, to build)
+
+Agreed 2026-11-12 (ASCII in the terminal, then mockups HomeComeBack, ComeBackList,
+ComeBackNotify, StreetRing, SettingsReminders). Reads the structured come-back of #81 (a day,
+maybe an hour, §5.7).
+
+```
+  Accueil                          À repasser                       Rue (from a row or a reminder)
+┌────────────────────────────┐   ┌────────────────────────────┐   ┌────────────────────────────┐
+│ Secteur 49 · 2026 ▾     [⚙]│   │ ← À repasser (5)           │   │ ← Rue Nationale        [✎] │
+│ ░░ map ░░░░░░░░░░░░░░░░░░░ │   │ 🔔 vous recevrez un rappel │   │ [9  ✓][11 ○] │ [10 ✗]      │
+├────────────────────────────┤   │ AUJOURD'HUI                │   │              │╔═════════╗  │
+│ Rues · 31/50               │   │ [19 h] 12 Rue Nationale 🔔›│   │ [13 ✗][15 ○] │║ 12    ↻ ║  │ ← ring ~2 s
+│ [ ▶ Commencer une tournée ]│   │        par vous            │   │              │╚═════════╝  │
+│ [↻] À repasser (5)       › │   │ [ ↻ ] 12 Rue des Lilas  🔔›│   │ [17 ○]       │ [14 ○]      │
+│     Prochain : aujourd'hui │   │       par vous · pas d'heure   │ N° 12 · repasser aujourd'hui│
+│     vers 19 h              │   │ DEMAIN                     │   │ vers 19 h                  │
+│ Rue des Lilas ▓▓▓░ 31/42 › │   │ [18 h] 3 Allée des Pins 🔔›│   └────────────────────────────┘
+└────────────────────────────┘   │ À TOUT MOMENT              │
+                                 │ [ ↻ ] 5 Rue Pasteur      › │     Notifications (Android)
+  Paramètres                     │  C'était hier vers 18 h ·  │   ┌────────────────────────────┐
+┌────────────────────────────┐   │  par Léa                   │   │ ↻ Tournée Calendriers 18:45│
+│ RAPPELS                    │   │ [ ↻ ] Porte 51 · 8 Rue     │   │ Repasser vers 19 h         │
+│ Rappels pour repasser [● ] │   │       Pasteur · par Léa  › │   │ 12 Rue Nationale           │
+│ 15 min avant l'heure ; à 9 │   └────────────────────────────┘   ├────────────────────────────┤
+│ h quand il n'y a pas       │                                    │ ↻ Tournée Calendriers 09:00│
+│ d'heure. Seulement les     │                                    │ 1 maison à repasser        │
+│ vôtres.                    │                                    │ aujourd'hui                │
+│ (blocked: Bloqués par      │                                    │ 12 Rue des Lilas           │
+│  Android     [Réglages])   │                                    └────────────────────────────┘
+└────────────────────────────┘
+```
+
+- **The list** is every ↻ of the open secteur: houses, doors and buildings with their own
+  « Repasser », whoever set it, read from the phone's copy (offline too). Accueil shows the
+  row « ↻ À repasser (5) › » under « Commencer une tournée » (during a tournée too, first in
+  the panel under the band) only when there is at least one, with « Prochain : aujourd'hui vers
+  19 h » under it (the earliest ↻ with a day from today on; nothing when none has one).
+- **« À repasser (n) »** groups by day: « AUJOURD'HUI », « DEMAIN », then each later day
+  (« SAMEDI 24 OCT. »), and **« À TOUT MOMENT »** last for a ↻ with no day *and* a ↻ whose
+  day is gone (it reads « C'était hier vers 18 h », as on the sheet, §5.7). Within a day, the
+  hours first in order, then those without an hour; ties by street and number. A row: a
+  come-back-blue square with « 19 h » (or ↻ without an hour), the address (« 12 Rue
+  Nationale », « Porte 51 · 8 Rue Pasteur », a building's own ↻ as its address), then « par
+  vous » / « par Léa » (from the house's last change, the same naming as « Modifié par »,
+  §5.7), « · pas d'heure » for a day without an hour; a 🔔 when this phone will ring for it
+  (said « rappel prévu »). A tap opens the street at that house; a door opens its building's
+  grid at that door.
+- **At the house**: the street scrolls so the tile sits mid-screen and gets a pulsing ring in
+  the come-back blue (`#1D4E7A`) for about 2 s; nothing opens; the hint pill reads « N° 12 ·
+  repasser aujourd'hui vers 19 h » until the first tap. Marking still needs a tournée (5.14).
+- **Reminders** are local notifications scheduled on the phone (`flutter_local_notifications`,
+  no push, no server, offline). Only **the ↻ this member set** (the house's last change is
+  theirs) in **the open secteur** ring this phone; a teammate's shows in the list only.
+  - With an hour: one notification 15 min before (« Repasser vers 19 h », « 12 Rue
+    Nationale »); a tap opens the street at the house.
+  - A day without an hour: one notification at 9 h that day for all of them (« 1 maison à
+    repasser aujourd'hui » / « 3 maisons … », the addresses); a tap opens « À repasser », or
+    the street at the house when there is only one.
+  - A time already gone, or a ↻ with no day, never rings.
+  - Inexact alarms (Android may deliver them a few minutes late): no exact-alarm permission,
+    which Play restricts. Rescheduled after a restart of the phone.
+  - The schedule is worked out again from the streets whenever they change: a teammate who
+    marks the house, changes its time or clears it cancels the reminder; switching secteur
+    replaces them; leaving a secteur or the switch off cancels them all.
+- **Permission**: Android 13+'s notification permission is asked the first time this member
+  gives a ↻ a day (never at launch). Paramètres gets **« RAPPELS »** with the switch
+  « Rappels pour repasser » (on by default) and « 15 min avant l'heure ; à 9 h quand il n'y a
+  pas d'heure. Seulement les vôtres. »; refused by Android, the line reads « Bloqués par
+  Android » (red) with « Réglages », which opens the app's notification settings.
+- **Privacy** (§8.3): nothing leaves the phone; a notification shows an address and an hour,
+  never a person.
+
 ## 6. Data model
 
 ### 6.1 Domain model (pure Dart: no Flutter, no Firebase, no MapLibre)

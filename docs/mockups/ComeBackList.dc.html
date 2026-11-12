@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>À repasser</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B3261E}
+.ib{width:48px;height:48px;border:0;background:transparent;color:#1B1F24;border-radius:24px;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;text-decoration:none}
+.ib svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.hd{padding:18px 20px 8px 20px;font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#4A5058}
+.cb{display:flex;align-items:center;gap:12px;min-height:64px;padding:6px 12px 6px 16px;border-bottom:1px solid #E2DED5;background:#FFFFFF;text-decoration:none;color:#1B1F24;box-sizing:border-box}
+.cb .t{width:52px;flex-shrink:0;text-align:center;font:700 22px 'Barlow Condensed',sans-serif;color:#1D4E7A;background:#D6E6F5;border-radius:10px;height:44px;display:flex;align-items:center;justify-content:center}
+.cb .t.n{font-size:22px}
+.cb .a{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
+.cb .a b{font:700 20px 'Barlow Condensed',sans-serif}
+.cb .a span{font-size:14px;color:#4A5058}
+.cb svg{width:20px;height:20px;fill:none;stroke:#5A6068;stroke-width:2;flex-shrink:0}
+.bell{width:18px;height:18px;fill:none;stroke:#1D4E7A;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F3F1EC; color: #1B1F24; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; display: flex; flex-direction: column; position: relative; overflow: hidden">
+  <div style="display: flex; align-items: center; gap: 4px; padding: 8px"><a class="ib" href="HomeComeBack.dc.html" aria-label="Retour"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a><h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 28px; line-height: 1.05">À repasser (5)</h1></div>
+  <div style="padding: 0 20px 4px 20px; font-size: 14px; color: #4A5058; line-height: 1.4; display: flex; gap: 6px; align-items: center"><svg class="bell" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><span>vous recevrez un rappel</span></div>
+
+  <div class="hd">Aujourd'hui</div>
+  <div style="border-top: 1px solid #E2DED5">
+    <a class="cb" href="StreetRing.dc.html" aria-label="Aujourd'hui vers 19 h, 12 Rue Nationale, rappel prévu">
+      <span class="t">19 h</span>
+      <span class="a"><b>12 Rue Nationale</b><span>par vous</span></span>
+      <svg class="bell" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+    </a>
+    <a class="cb" href="StreetRing.dc.html" aria-label="Aujourd'hui, 12 Rue des Lilas, rappel prévu">
+      <span class="t n">↻</span>
+      <span class="a"><b>12 Rue des Lilas</b><span>par vous · pas d'heure</span></span>
+      <svg class="bell" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+    </a>
+  </div>
+
+  <div class="hd">Demain</div>
+  <div style="border-top: 1px solid #E2DED5">
+    <a class="cb" href="StreetRing.dc.html" aria-label="Demain vers 18 h, 3 Allée des Pins, rappel prévu">
+      <span class="t">18 h</span>
+      <span class="a"><b>3 Allée des Pins</b><span>par vous</span></span>
+      <svg class="bell" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+    </a>
+  </div>
+
+  <div class="hd">À tout moment</div>
+  <div style="border-top: 1px solid #E2DED5">
+    <a class="cb" href="StreetRing.dc.html" aria-label="5 Rue Pasteur, c'était hier vers 18 h">
+      <span class="t n">↻</span>
+      <span class="a"><b>5 Rue Pasteur</b><span>C'était hier vers 18 h · par Léa</span></span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+    </a>
+    <a class="cb" href="Building.dc.html" aria-label="Porte 51, 8 Rue Pasteur">
+      <span class="t n">↻</span>
+      <span class="a"><b>Porte 51 · 8 Rue Pasteur</b><span>par Léa</span></span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+    </a>
+  </div>
+  <div style="padding: 14px 20px; font-size: 14px; color: #4A5058; line-height: 1.4">Touchez une maison pour la voir dans sa rue.</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

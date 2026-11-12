@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Paramètres, rappels</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B3261E}
+.ib{width:48px;height:48px;border:0;background:transparent;color:#1B1F24;border-radius:24px;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0;text-decoration:none}
+.ib svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.hd{padding:18px 20px 8px 20px;font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#4A5058}
+.cb{display:flex;align-items:center;gap:12px;min-height:64px;padding:6px 12px 6px 16px;border-bottom:1px solid #E2DED5;background:#FFFFFF;text-decoration:none;color:#1B1F24;box-sizing:border-box}
+.cb .t{width:52px;flex-shrink:0;text-align:center;font:700 22px 'Barlow Condensed',sans-serif;color:#1D4E7A;background:#D6E6F5;border-radius:10px;height:44px;display:flex;align-items:center;justify-content:center}
+.cb .t.n{font-size:22px}
+.cb .a{flex:1;display:flex;flex-direction:column;gap:2px;min-width:0}
+.cb .a b{font:700 20px 'Barlow Condensed',sans-serif}
+.cb .a span{font-size:14px;color:#4A5058}
+.cb svg{width:20px;height:20px;fill:none;stroke:#5A6068;stroke-width:2;flex-shrink:0}
+.bell{width:18px;height:18px;fill:none;stroke:#1D4E7A;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.tile{height:60px;box-sizing:border-box;border-radius:12px;display:flex;align-items:center;justify-content:space-between;padding:0 14px;font-family:'Atkinson Hyperlegible',sans-serif;width:100%;position:relative}
+.num{font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:28px;line-height:1}
+.gl{font-size:22px;font-weight:700;line-height:1}
+.todo{background:#FFFFFF;border:1.5px solid #CFC9BD;color:#1B1F24}
+.done{background:#1E6B47;color:#FFFFFF}
+.nob{background:#F2B33D;color:#1B1F24}
+.cbk{background:#D6E6F5;color:#1D4E7A}
+.ring{outline:4px solid #1D4E7A;outline-offset:4px;box-shadow:0 0 0 12px rgba(29,78,122,0.18)}
+.nt{background:#FFFFFF;border-radius:20px;padding:14px 16px;display:flex;gap:12px;color:#1B1F24}
+.nt .ic{width:28px;height:28px;border-radius:14px;background:#B3261E;color:#FFFFFF;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:700;flex-shrink:0}
+.sw{width:52px;height:32px;border-radius:16px;background:#1D4E7A;position:relative;flex-shrink:0}
+.sw::after{content:'';position:absolute;right:4px;top:4px;width:24px;height:24px;border-radius:12px;background:#FFFFFF}
+.line{display:flex;align-items:center;min-height:56px;padding:0 20px;gap:8px;border-bottom:1px solid #E2DED5;background:#FFFFFF}
+.m{flex:1;font-weight:700;font-size:16px}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F3F1EC; color: #1B1F24; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; display: flex; flex-direction: column; position: relative; overflow: hidden">
+  <div style="display: flex; align-items: center; gap: 4px; padding: 8px"><span class="ib" aria-label="Retour"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></span><h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 28px; line-height: 1.05">Paramètres</h1></div>
+  <div class="hd">Vous</div>
+  <div style="border-top: 1px solid #E2DED5">
+    <div class="line"><span class="m">Prénom</span><span style="color: #4A5058">Manu ›</span></div>
+    <div class="line"><span class="m">Mes secteurs</span><span style="color: #4A5058">49 · 2026 ›</span></div>
+  </div>
+  <div class="hd">Rappels</div>
+  <div style="border-top: 1px solid #E2DED5">
+    <div class="line" style="min-height: 72px" role="switch" aria-checked="true" aria-label="Rappels pour repasser"><span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span class="m">Rappels pour repasser</span><span style="font-size: 14px; color: #4A5058">15 min avant l'heure ; à 9 h quand il n'y a pas d'heure. Seulement les vôtres.</span></span><span class="sw" aria-hidden="true"></span></div>
+  </div>
+  <div style="padding: 14px 20px 0 20px; font-size: 13px; font-weight: 700; color: #4A5058; letter-spacing: 0.06em; text-transform: uppercase">Si Android les bloque</div>
+  <div style="margin-top: 8px; border-top: 1px solid #E2DED5">
+    <div class="line" style="min-height: 72px"><span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span class="m">Rappels pour repasser</span><span style="font-size: 14px; color: #B3261E; font-weight: 700">Bloqués par Android</span></span><span style="height: 40px; padding: 0 14px; border-radius: 20px; border: 1.5px solid #1B1F24; font-weight: 700; font-size: 15px; display: flex; align-items: center">Réglages</span></div>
+  </div>
+  <div class="hd">Application</div>
+  <div style="border-top: 1px solid #E2DED5">
+    <div class="line"><span class="m">Thème</span><span style="color: #4A5058">Système ›</span></div>
+    <div class="line"><span class="m">Confidentialité</span><span style="color: #4A5058">›</span></div>
+    <div class="line"><span class="m">Version</span><span style="color: #4A5058">›</span></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>
