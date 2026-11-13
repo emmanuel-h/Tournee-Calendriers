@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -10,8 +11,10 @@ import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/ui/app.dart';
+import 'package:tournee_calendriers/ui/components/building_icon.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 
+import '../../support/building_fixtures.dart';
 import '../../support/fakes/fake_address_directory.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/results.dart';
@@ -45,6 +48,32 @@ Finder _remove(String number) => find.descendant(
   matching: find.byKey(const Key('edit.tile.remove')),
 );
 
+/// The grey ✏ after the number of a tile.
+Finder _pen(String number) => find.descendant(
+  of: _tile(number),
+  matching: find.byIcon(Icons.edit_outlined),
+);
+
+Finder _buildingIcon(String number) =>
+    find.descendant(of: _tile(number), matching: find.byType(BuildingIcon));
+
+Finder _numberText(String number) =>
+    find.descendant(of: _tile(number), matching: find.text(number));
+
+/// The Rue des Lilas with 8, a building, on the even side.
+final _withBuilding = valueOf(
+  Street.create(
+    id: _id,
+    name: 'Rue des Lilas',
+    commune: villefranche,
+    houses: [
+      House(number: n('1')),
+      House(number: n('2')),
+      House(number: n('8'), building: building(topFloor: 0, doors: 2)),
+    ],
+  ),
+);
+
 void main() {
   late FakeStreetRepository streets;
 
@@ -52,15 +81,21 @@ void main() {
   /// screen, then its edit mode with ✏, on a tall phone so every row of
   /// the test street is built.
   /// [street] replaces the Rue des Lilas as it is stored.
+  /// [largeText] shows it on a phone with text at 200 % instead.
   Future<void> openEditMode(
     WidgetTester tester, {
     Street? street,
     FakeAddressDirectory? directory,
+    bool largeText = false,
   }) async {
-    tester.view
-      ..physicalSize = const Size(393 * 3, 1100 * 3)
-      ..devicePixelRatio = 3;
-    addTearDown(tester.view.reset);
+    if (largeText) {
+      useLargeText(tester);
+    } else {
+      tester.view
+        ..physicalSize = const Size(393 * 3, 1100 * 3)
+        ..devicePixelRatio = 3;
+      addTearDown(tester.view.reset);
+    }
     streets = FakeStreetRepository([street ?? _lilas]);
     await tester.pumpWidget(
       ProviderScope(
@@ -305,6 +340,119 @@ void main() {
     await expectAccessibleControls(tester);
   });
 
+  group('Numbers', () {
+    testWidgets('should show a ✏ right after each number, before the ✕', (
+      tester,
+    ) async {
+      await openEditMode(tester);
+
+      for (final number in ['1', '3', '3bis', '2']) {
+        expect(_pen(number), findsOneWidget, reason: number);
+        final pen = tester.getRect(_pen(number));
+        expect(pen.width, 20, reason: number);
+        expect(
+          pen.left,
+          greaterThan(tester.getRect(_numberText(number)).right),
+          reason: number,
+        );
+        expect(
+          pen.right,
+          lessThanOrEqualTo(tester.getRect(_remove(number)).left),
+          reason: number,
+        );
+      }
+    });
+
+    testWidgets('should put the ✏ 8 dp after a short number, not at the '
+        'end of the tile', (tester) async {
+      await openEditMode(tester);
+
+      expect(
+        tester.getRect(_pen('1')).left,
+        tester.getRect(_numberText('1')).right + 8,
+      );
+    });
+
+    testWidgets('should show the building icon before a building\'s number '
+        'instead of « 8 · immeuble »', (tester) async {
+      await openEditMode(tester, street: _withBuilding);
+
+      expect(_buildingIcon('8'), findsOneWidget);
+      expect(
+        tester.getRect(_buildingIcon('8')).right,
+        lessThan(tester.getRect(_numberText('8')).left),
+      );
+      expect(_pen('8'), findsOneWidget);
+      expect(find.text('8 · immeuble'), findsNothing);
+      expect(_numberText('8'), findsOneWidget);
+      expect(_buildingIcon('1'), findsNothing);
+      expect(_buildingIcon('2'), findsNothing);
+    });
+
+    testWidgets('should keep the TalkBack names, without the ✏ or the icon', (
+      tester,
+    ) async {
+      final semantics = tester.ensureSemantics();
+      await openEditMode(tester, street: _withBuilding);
+
+      expect(
+        tester.getSemantics(
+          find.descendant(
+            of: _tile('8'),
+            matching: find.byKey(const Key('edit.tile.number')),
+          ),
+        ),
+        matchesSemantics(
+          label: 'Modifier le numéro 8, immeuble',
+          isButton: true,
+          hasTapAction: true,
+        ),
+      );
+      expect(
+        tester.getSemantics(
+          find.descendant(
+            of: _tile('1'),
+            matching: find.byKey(const Key('edit.tile.number')),
+          ),
+        ),
+        matchesSemantics(
+          label: 'Modifier le numéro 1',
+          isButton: true,
+          hasTapAction: true,
+        ),
+      );
+      semantics.dispose();
+    });
+
+    testWidgets('should open the number sheet when the ✏ is tapped', (
+      tester,
+    ) async {
+      await openEditMode(tester);
+
+      await tester.tap(_pen('3bis'));
+      await tester.pumpAndSettle();
+
+      expect(
+        tester
+            .widget<TextField>(find.byKey(const Key('number.field')))
+            .controller!
+            .text,
+        '3bis',
+      );
+    });
+
+    testWidgets('should say to touch ✏ under the numbers', (tester) async {
+      await openEditMode(tester);
+
+      expect(
+        find.text(
+          'Touchez ✏ pour renommer un numéro ou le transformer en immeuble.',
+        ),
+        findsOneWidget,
+      );
+    });
+  });
+
   group('Partie de la rue', () {
     Future<void> openPart(WidgetTester tester) async {
       await tester.tap(find.byKey(const Key('edit.part')));
@@ -523,6 +671,45 @@ void main() {
         );
         expect(partText(tester), 'Tous les impairs');
       });
+    });
+  });
+
+  // Last group of the file: it loads the real fonts (large_text.dart).
+  group('at 200 % text', () {
+    setUpAll(loadAppFonts);
+
+    // The longest numbers there are: 99999 and a 16-letter complement.
+    final longest = valueOf(
+      Street.create(
+        id: _id,
+        name: 'Rue des Lilas',
+        commune: villefranche,
+        houses: [
+          House(number: n('99999abcdefghijklmnop')),
+          House(
+            number: n('99998abcdefghijklmnop'),
+            building: building(topFloor: 0, doors: 2),
+          ),
+        ],
+      ),
+    );
+
+    testWidgets('should cut the number first and keep the ✏ and the ✕ in '
+        'the tile', (tester) async {
+      await openEditMode(tester, street: longest, largeText: true);
+
+      for (final number in ['99999ABCDEFGHIJKLMNOP', '99998ABCDEFGHIJKLMNOP']) {
+        final tile = tester.getRect(_tile(number));
+        final text = tester.renderObject<RenderParagraph>(_numberText(number));
+        expect(text.didExceedMaxLines, isTrue, reason: number);
+        expect(tile.contains(tester.getRect(_pen(number)).center), isTrue);
+        expect(tile.contains(tester.getRect(_remove(number)).center), isTrue);
+        expect(
+          tester.getRect(_pen(number)).right,
+          lessThanOrEqualTo(tester.getRect(_remove(number)).left),
+        );
+      }
+      expect(_buildingIcon('99998ABCDEFGHIJKLMNOP'), findsOneWidget);
     });
   });
 }

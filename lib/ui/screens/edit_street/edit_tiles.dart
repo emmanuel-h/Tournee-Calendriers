@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/presentation/edit_street/edit_street_state.dart';
 import 'package:tournee_calendriers/presentation/street/street_view_state.dart';
+import 'package:tournee_calendriers/ui/components/building_icon.dart';
 import 'package:tournee_calendriers/ui/components/dashed_outline.dart';
 import 'package:tournee_calendriers/ui/components/section_header.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
@@ -143,8 +144,9 @@ final class EditColumns extends StatelessWidget {
   }
 }
 
-/// A number in edit mode: white, a dashed grey outline, the number (or
-/// « 8 · immeuble ») to tap, and a red ✕ on the right.
+/// A number in edit mode: white, a dashed grey outline, the number (after
+/// the building icon for a building) followed by a grey ✏, both one button
+/// opening the number sheet, and a red ✕ apart on the right.
 final class EditNumberTile extends StatelessWidget {
   const EditNumberTile({
     super.key,
@@ -183,21 +185,43 @@ final class EditNumberTile extends StatelessWidget {
                   onTap: onEdit,
                   child: Padding(
                     padding: const EdgeInsets.only(left: AppSizes.tilePadding),
+                    // `Align` fills the tile's height, so the whole tile
+                    // answers the tap (48 dp at least), not just the text.
                     child: Align(
                       alignment: Alignment.centerLeft,
-                      // « 8 · immeuble » shrinks rather than being cut when
-                      // the column is narrow.
-                      child: FittedBox(
-                        fit: BoxFit.scaleDown,
-                        child: Text(
-                          tile.isBuilding
-                              ? l10n.editBuildingTile(label)
-                              : label,
-                          maxLines: 1,
-                          style: AppTextStyles.editTileNumber.copyWith(
-                            color: colors.ink,
+                      child: Row(
+                        children: [
+                          if (tile.isBuilding) ...[
+                            BuildingIcon(
+                              size: AppSizes.smallIcon,
+                              color: colors.ink,
+                            ),
+                            const SizedBox(width: AppSizes.glyphGap),
+                          ],
+                          // `Flexible`, not `Expanded`: the number takes only
+                          // the width it needs, so the ✏ sits right after it;
+                          // when the tile is too narrow (200 % text), only the
+                          // number gives way and ends with « … ».
+                          Flexible(
+                            child: Text(
+                              label,
+                              maxLines: 1,
+                              softWrap: false,
+                              overflow: TextOverflow.ellipsis,
+                              style: AppTextStyles.editTileNumber.copyWith(
+                                color: colors.ink,
+                              ),
+                            ),
                           ),
-                        ),
+                          const SizedBox(width: AppSizes.editPenGap),
+                          // Only a sign that the number can be changed: the
+                          // `Semantics` above already names the button.
+                          Icon(
+                            Icons.edit_outlined,
+                            size: AppSizes.smallIcon,
+                            color: colors.muted,
+                          ),
+                        ],
                       ),
                     ),
                   ),

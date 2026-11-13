@@ -808,12 +808,6 @@ abstract class AppLocalizations {
   /// **'Nom limité à {max} caractères.'**
   String streetNameTooLong(int max);
 
-  /// A building's tile in edit mode.
-  ///
-  /// In fr, this message translates to:
-  /// **'{number} · immeuble'**
-  String editBuildingTile(String number);
-
   /// Screen-reader name of a number in edit mode; a tap opens its sheet.
   ///
   /// In fr, this message translates to:
@@ -838,10 +832,10 @@ abstract class AppLocalizations {
   /// **'+ numéros'**
   String get addNumbersButton;
 
-  /// Under the numbers of the edit mode.
+  /// Under the numbers of the edit mode; ✏ is the grey pen after each number.
   ///
   /// In fr, this message translates to:
-  /// **'Touchez un numéro pour le renommer ou le transformer en immeuble.'**
+  /// **'Touchez ✏ pour renommer un numéro ou le transformer en immeuble.'**
   String get editHint;
 
   /// Bottom button of the edit mode: sends the street to the Corbeille after a confirmation.

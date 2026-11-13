@@ -727,7 +727,7 @@ Edit mode details fixed in T1.10 (`lib/presentation/edit_street/`,
   which the ✏ would cut). Each number is followed by a small grey ✏ (`Icons.edit_outlined`, 20 dp):
   number and ✏ are one button opening the number sheet, ✕ stays apart; the ✏ is only visual,
   TalkBack still says « Modifier le numéro 3 » (from the phone test of 2026-11-13: the tap on a
-  number was hard to find). « + numéros » closes each column (both open the same sheet); under
+  number was hard to find; #165). « + numéros » closes each column (both open the same sheet); under
   them « Touchez ✏ pour renommer un numéro ou le transformer en immeuble. ».
 - **✕** removes at once with « N° 3 supprimé [Annuler] » (4 s, the street screen's snackbar).
   A number with marks (`House.hasMarks`) asks first: « Supprimer le n° 3 ? — Ce numéro a des

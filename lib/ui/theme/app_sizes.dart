@@ -189,6 +189,9 @@ abstract final class AppSizes {
   /// allows for a street tile, so the ✕ fits beside it.
   static const editTileHeight = 56.0;
 
+  /// Between a number of the edit mode and the ✏ after it (Edit mockup).
+  static const editPenGap = 8.0;
+
   /// The dark « OK » pill of the edit mode's top bar; its tap target still
   /// grows to [minTapTarget].
   static const okButtonHeight = 44.0;

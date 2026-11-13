@@ -533,11 +533,6 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String editBuildingTile(String number) {
-    return '$number · immeuble';
-  }
-
-  @override
   String editTileSemantics(String number) {
     return 'Modifier le numéro $number';
   }
@@ -557,7 +552,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get editHint =>
-      'Touchez un numéro pour le renommer ou le transformer en immeuble.';
+      'Touchez ✏ pour renommer un numéro ou le transformer en immeuble.';
 
   @override
   String get deleteStreetAction => 'Supprimer la rue';

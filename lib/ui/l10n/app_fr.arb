@@ -504,11 +504,6 @@
     "description": "Under the name field when the name is too long; the old name is kept.",
     "placeholders": { "max": { "type": "int", "example": "150" } }
   },
-  "editBuildingTile": "{number} · immeuble",
-  "@editBuildingTile": {
-    "description": "A building's tile in edit mode.",
-    "placeholders": { "number": { "type": "String", "example": "8" } }
-  },
   "editTileSemantics": "Modifier le numéro {number}",
   "@editTileSemantics": {
     "description": "Screen-reader name of a number in edit mode; a tap opens its sheet.",
@@ -526,8 +521,8 @@
   },
   "addNumbersButton": "+ numéros",
   "@addNumbersButton": { "description": "Button under each column of the edit mode; opens « Ajouter des numéros »." },
-  "editHint": "Touchez un numéro pour le renommer ou le transformer en immeuble.",
-  "@editHint": { "description": "Under the numbers of the edit mode." },
+  "editHint": "Touchez ✏ pour renommer un numéro ou le transformer en immeuble.",
+  "@editHint": { "description": "Under the numbers of the edit mode; ✏ is the grey pen after each number." },
   "deleteStreetAction": "Supprimer la rue",
   "@deleteStreetAction": { "description": "Bottom button of the edit mode: sends the street to the Corbeille after a confirmation." },
   "numberRemoved": "N° {number} supprimé",
