@@ -1684,6 +1684,12 @@ abstract class AppLocalizations {
   /// **'Première version de test.'**
   String get release010First;
 
+  /// Line of « Nouveautés » for 0.18.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'Modifier la rue : un ✏ sur chaque numéro montre qu\'on peut le toucher pour le renommer ou le transformer en immeuble.'**
+  String get release0180Pen;
+
   /// Line of « Nouveautés » for 0.17.0.
   ///
   /// In fr, this message translates to:

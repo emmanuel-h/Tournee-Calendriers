@@ -1163,6 +1163,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get release010First => 'Première version de test.';
 
   @override
+  String get release0180Pen =>
+      'Modifier la rue : un ✏ sur chaque numéro montre qu\'on peut le toucher pour le renommer ou le transformer en immeuble.';
+
+  @override
   String get release0170Day =>
       '« Quand repasser ? » : « Aujourd\'hui », « Demain » ou un calendrier pour choisir un autre jour, jusqu\'à deux mois.';
 
