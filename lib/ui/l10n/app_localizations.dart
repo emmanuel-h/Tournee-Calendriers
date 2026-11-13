@@ -1690,6 +1690,12 @@ abstract class AppLocalizations {
   /// **'Première version de test.'**
   String get release010First;
 
+  /// Line of « Nouveautés » for 0.17.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'« Quand repasser ? » : « Aujourd\'hui », « Demain » ou un calendrier pour choisir un autre jour, jusqu\'à deux mois.'**
+  String get release0170Day;
+
   /// Line of « Nouveautés » for 0.16.1.
   ///
   /// In fr, this message translates to:

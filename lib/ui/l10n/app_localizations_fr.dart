@@ -1168,6 +1168,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get release010First => 'Première version de test.';
 
   @override
+  String get release0170Day =>
+      '« Quand repasser ? » : « Aujourd\'hui », « Demain » ou un calendrier pour choisir un autre jour, jusqu\'à deux mois.';
+
+  @override
   String get release0161Stuck =>
       'Une tournée restée en cours dans un secteur quitté ou supprimé ne bloque plus : « Commencer une tournée » l\'efface et en démarre une nouvelle.';
 
