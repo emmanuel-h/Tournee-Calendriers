@@ -11,8 +11,9 @@ enum ShapeFillOutcome {
   /// The street got its line on the map.
   filled,
 
-  /// The map has no road of that name around the street's houses: the
-  /// street keeps showing as its house dots.
+  /// Neither IGN BD TOPO (by the street's BAN id) nor the map (by its name,
+  /// around its houses) has its road: the street keeps showing as its house
+  /// dots.
   noRoad,
 
   /// The street needs no shape (it has one, is in the Corbeille, has no
@@ -20,10 +21,11 @@ enum ShapeFillOutcome {
   notNeeded,
 }
 
-/// Gives a street of the secteur without a line on the map the road the
-/// map draws for it (PLAN §5.3): a street imported from a list, or added
-/// from the map before its road was known. Needs the network, unless
-/// [call] is given the road already.
+/// Gives a street of the secteur without a line on the map its road (PLAN
+/// §5.3, §5.18): by its BAN id from IGN BD TOPO, else by its name from the
+/// map. A street imported from a list, or added from the map before its
+/// road was known. Needs the network, unless [call] is given the road
+/// already.
 ///
 /// Through `Street.fillShape`, which sets a shape only while there is
 /// none: a teammate's phone filling it first wins, and this changes
@@ -35,9 +37,9 @@ final class FillStreetShape {
   final StreetRepository _streets;
 
   /// Fills the shape of the street [id], with [road] when the caller knows
-  /// it already (« Ajouter des rues » found it for the card, simplified),
-  /// otherwise with the roads named like the street around its houses
-  /// (`shapeSearchArea`), simplified.
+  /// it already (« Ajouter des rues » found it for the tick, simplified),
+  /// otherwise with the road of its BAN id, else the roads named like the
+  /// street around its houses (`shapeSearchArea`), simplified.
   ///
   /// A [StreetShapesFailure] when the map's service could not answer: the
   /// street can be tried again later.
@@ -52,7 +54,11 @@ final class FillStreetShape {
     final area = shapeSearchArea([
       for (final house in street.houses) ?house.position,
     ])!;
-    switch (await _shapes.shapeOf(name: street.name, area: area)) {
+    switch (await _shapes.shapeOf(
+      banId: street.banId,
+      name: street.name,
+      area: area,
+    )) {
       case Err(:final failure):
         return Err(failure);
       case Ok(:final value):

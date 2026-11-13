@@ -15,11 +15,14 @@ import 'package:tournee_calendriers/infrastructure/map_tiles/mappers/street_line
 import 'package:tournee_calendriers/infrastructure/map_tiles/mappers/tile_grid.dart';
 import 'package:tournee_calendriers/infrastructure/map_tiles/mappers/tile_json.dart';
 import 'package:tournee_calendriers/infrastructure/map_tiles/mappers/vector_tile.dart';
+import 'package:tournee_calendriers/infrastructure/map_tiles/roads_by_name.dart';
 
-/// The [StreetShapes] read from the OpenFreeMap vector tiles (PLAN §9),
-/// the same OpenStreetMap data the map draws: the roads of the
+/// The [RoadsByName] read from the OpenFreeMap vector tiles (PLAN §9), the
+/// same OpenStreetMap data the map draws: the roads of the
 /// `transportation_name` layer of the zoom-14 tiles around the street.
-/// No key; a tile is about 50 kB and comes in a tenth of a second.
+/// No key; a tile is about 50 kB and comes in a tenth of a second. Since
+/// PLAN §5.18 only the fallback of `IgnStreetShapes`, which finds a street
+/// by its BAN id.
 ///
 /// Like `BanAddressDirectory`, this class only does the transport (and
 /// keeps what it read); reading the tiles and drawing the street are the
@@ -30,7 +33,7 @@ import 'package:tournee_calendriers/infrastructure/map_tiles/mappers/vector_tile
 /// read, since a new version of the map may have replaced it) and the
 /// roads of the last [tilesKept] tiles read, since the streets of a
 /// secteur share a few tiles.
-final class OpenFreeMapStreetShapes implements StreetShapes {
+final class OpenFreeMapStreetShapes implements RoadsByName {
   /// [client] is given so tests can pass a `MockClient` and the composition
   /// root shares one client across services.
   OpenFreeMapStreetShapes(

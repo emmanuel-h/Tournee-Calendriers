@@ -4,13 +4,13 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/street_shapes.dart';
+import 'package:tournee_calendriers/application/use_cases/look_up_street.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_distance.dart';
 import 'package:tournee_calendriers/domain/map/held_stretch.dart';
 import 'package:tournee_calendriers/domain/map/picked_road.dart';
 import 'package:tournee_calendriers/domain/map/sector_area.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
-import 'package:tournee_calendriers/domain/sector/sector_commune.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
@@ -338,7 +338,10 @@ void main() {
 
       expect(stateOf(container).lookingAt, _onMorin);
       expect(stateOf(container).picked, isEmpty);
-      expect(directory.pointsAsked, [_onMorin]);
+      // IGN BD TOPO first (PLAN §5.18).
+      expect(shapes.areasAsked, [
+        GeoBounds.around([_onMorin])!.expandedBy(LookUpStreet.tapReachMetres),
+      ]);
     });
 
     test('should tick a street the secteur does not have, with its '
@@ -1279,23 +1282,27 @@ void main() {
       [at(latitude, 4.712), at(latitude, 4.716)],
     ]);
 
-    final morinInZone = NamedRoad(
-      name: 'Rue Pierre Morin',
-      shape: across(45.985),
+    /// A stretch of IGN BD TOPO carrying the BAN street [id] (none for a
+    /// road without address).
+    BanRoad stretch(BanStreetId? id, String name, StreetShape shape) =>
+        BanRoad(banId: id, name: name, commune: insee('69264'), shape: shape);
+
+    final saoneId = BanStreetId('69264_1900');
+    final morinInZone = stretch(_morinId, 'Rue Pierre Morin', across(45.985));
+    final pasteurInZone = stretch(_pasteurId, 'Rue Pasteur', across(45.984));
+    final nationaleInZone = stretch(
+      _nationaleId,
+      'Rue Nationale',
+      across(45.986),
     );
-    final pasteurInZone = NamedRoad(name: 'Rue Pasteur', shape: across(45.984));
-    final nationaleInZone = NamedRoad(
-      name: 'Rue Nationale',
-      shape: across(45.986),
-    );
-    final halage = NamedRoad(name: 'Chemin de Halage', shape: across(45.987));
-    final saoneInSouth = NamedRoad(
-      name: 'Quai de la Saône',
-      shape: StreetShape([
+    final halage = stretch(null, 'Chemin de Halage', across(45.987));
+    final saoneInSouth = stretch(
+      saoneId,
+      'Quai de la Saône',
+      StreetShape([
         [at(45.975, 4.712), at(45.975, 4.716)],
       ]),
     );
-    final saoneId = BanStreetId('69264_1900');
 
     final morinZoneRow = ZoneStreetRow(
       kind: ZoneRowKind.toAdd,
@@ -1327,7 +1334,7 @@ void main() {
         places: {_onMorin: Ok(_morinMatch)},
         streets: {_morinId: Ok(_morinNumbers), _pasteurId: Ok(_pasteurNumbers)},
       );
-      shapes.roads = Ok([morinInZone, nationaleInZone, halage]);
+      shapes.banRoads = Ok([morinInZone, nationaleInZone, halage]);
     });
 
     /// Léa's phone, « Zone » on.
@@ -1396,7 +1403,7 @@ void main() {
     });
 
     test('should keep nothing in view when the zone is too large', () async {
-      shapes.roads = const Err(StreetShapesFailure.tooLarge);
+      shapes.banRoads = const Err(StreetShapesFailure.tooLarge);
       final container = await zoning();
 
       await notifierOf(container).drawZone(zone);
@@ -1441,7 +1448,7 @@ void main() {
           mark: at(45.985, 4.714),
         ),
       ]);
-      expect(shapes.zonesAsked, [zone]);
+      expect(shapes.areasAsked, [zone]);
       // The numbers wait until the street is added.
       expect(directory.streetsAsked, isEmpty);
     });
@@ -1467,7 +1474,7 @@ void main() {
 
       expect(answer, const NothingToSay());
       expect(stateOf(container).zone, const NoZone());
-      expect(shapes.zonesAsked, isEmpty);
+      expect(shapes.areasAsked, isEmpty);
     });
 
     test('should list the streets of a zone drawn however far out the '
@@ -1479,7 +1486,7 @@ void main() {
       final answer = await notifierOf(container).drawZone(zone);
 
       expect(answer, const NothingToSay());
-      expect(shapes.zonesAsked, [zone]);
+      expect(shapes.areasAsked, [zone]);
     });
 
     test('should say the zone is too large when it needs too many tiles, '
@@ -1487,7 +1494,7 @@ void main() {
       final container = await zoning();
       final notifier = notifierOf(container);
       await notifier.drawZone(zone);
-      shapes.roads = const Err(StreetShapesFailure.tooLarge);
+      shapes.banRoads = const Err(StreetShapesFailure.tooLarge);
 
       final answer = await notifier.drawZone(southZone);
 
@@ -1498,9 +1505,13 @@ void main() {
     });
 
     test('should say the zone is too large, listing nothing', () async {
-      shapes.roads = Ok([
+      shapes.banRoads = Ok([
         for (var i = 0; i < 51; i++)
-          NamedRoad(name: 'Chemin $i', shape: across(45.981 + i * 0.0001)),
+          stretch(
+            BanStreetId('69264_${3000 + i}'),
+            'Chemin $i',
+            across(45.981 + i * 0.0001),
+          ),
       ]);
       final container = await zoning();
 
@@ -1512,7 +1523,7 @@ void main() {
     });
 
     test('should say a connection is needed when offline', () async {
-      shapes.roads = const Err(StreetShapesFailure.noNetwork);
+      shapes.banRoads = const Err(StreetShapesFailure.noNetwork);
       final container = await zoning();
 
       final answer = await notifierOf(container).drawZone(zone);
@@ -1522,7 +1533,7 @@ void main() {
     });
 
     test('should say the service failed', () async {
-      shapes.roads = const Err(StreetShapesFailure.serviceError);
+      shapes.banRoads = const Err(StreetShapesFailure.serviceError);
       final container = await zoning();
 
       final answer = await notifierOf(container).drawZone(zone);
@@ -1552,7 +1563,7 @@ void main() {
       final container = await zoning();
       final notifier = notifierOf(container);
       await notifier.drawZone(zone);
-      shapes.roads = Ok([saoneInSouth]);
+      shapes.banRoads = Ok([saoneInSouth]);
 
       await notifier.drawZone(southZone);
 
@@ -1571,11 +1582,11 @@ void main() {
       final notifier = notifierOf(container);
       final first = notifier.drawZone(zone);
       await pumpEventQueue();
-      shapes.roads = Ok([saoneInSouth]);
+      shapes.banRoads = Ok([saoneInSouth]);
 
       await notifier.drawZone(southZone);
       shapes
-        ..roads = Ok([morinInZone])
+        ..banRoads = Ok([morinInZone])
         ..releaseRoads();
 
       expect(await first, const NothingToSay());
@@ -1632,6 +1643,64 @@ void main() {
       expect(stateOf(container).search, const NoStreetSearch());
     });
 
+    group('the whole line of a street ticked', () {
+      test('should draw it once known, looked up by its BAN id around its '
+          'mark', () async {
+        final container = await zoning();
+        await notifierOf(container).drawZone(zone);
+        await pumpEventQueue();
+
+        expect(shapes.idsAsked, [_morinId]);
+        expect(shapes.asked, [
+          ('Rue Pierre Morin', shapeSearchArea([at(45.985, 4.714)])!),
+        ]);
+        expect(stateOf(container).pickedRoads, [
+          PickedRoad(
+            street: _morinId,
+            road: _morinRoad,
+            mark: at(45.985, 4.714),
+          ),
+        ]);
+      });
+
+      test('should keep drawing its stretches in the zone when no line is '
+          'found', () async {
+        shapes.answers.clear();
+        final container = await zoning();
+        await notifierOf(container).drawZone(zone);
+        await pumpEventQueue();
+
+        expect(stateOf(container).pickedRoads.single.road, across(45.985));
+      });
+
+      test('should keep drawing its stretches in the zone when the line '
+          'cannot be looked up', () async {
+        shapes.answers['Rue Pierre Morin'] = const Err(
+          StreetShapesFailure.noNetwork,
+        );
+        final container = await zoning();
+        await notifierOf(container).drawZone(zone);
+        await pumpEventQueue();
+
+        expect(stateOf(container).pickedRoads.single.road, across(45.985));
+      });
+
+      test('should look it up again for a street ticked again by its '
+          'checkbox', () async {
+        final container = await zoning();
+        final notifier = notifierOf(container);
+        await notifier.drawZone(zone);
+        await pumpEventQueue();
+        notifier
+          ..toggleZoneStreet(_morinId)
+          ..toggleZoneStreet(_morinId);
+        await pumpEventQueue();
+
+        expect(shapes.idsAsked, [_morinId, _morinId]);
+        expect(stateOf(container).pickedRoads.single.road, _morinRoad);
+      });
+    });
+
     group('its checkboxes', () {
       test('should untick a street of the zone, then tick it again', () async {
         final container = await zoning();
@@ -1673,8 +1742,33 @@ void main() {
     });
 
     group('adding', () {
+      test('should add a street of the zone with its whole line, looked up '
+          'by its BAN id', () async {
+        final container = await zoning();
+        final notifier = notifierOf(container);
+        await notifier.drawZone(zone);
+        await pumpEventQueue();
+
+        expect(await notifier.add(), 1);
+
+        expect(streets.added.single.shape, _morinRoad);
+      });
+
+      test('should add a street of the zone without road when no line is '
+          'found, its stretches in the zone being drawn only', () async {
+        shapes.answers.clear();
+        final container = await zoning();
+        final notifier = notifierOf(container);
+        await notifier.drawZone(zone);
+        await pumpEventQueue();
+
+        await notifier.add();
+
+        expect(streets.added.single.shape, StreetShape.none);
+      });
+
       test('should read the numbers of a street of the zone and add it '
-          'without its road', () async {
+          'without road when its line has not come yet', () async {
         final container = await zoning();
         final notifier = notifierOf(container);
         await notifier.drawZone(zone);
@@ -1704,7 +1798,7 @@ void main() {
 
       test('should keep the zone when a street failed, the street added '
           'showing as one of the secteur', () async {
-        shapes.roads = Ok([morinInZone, pasteurInZone]);
+        shapes.banRoads = Ok([morinInZone, pasteurInZone]);
         directory = FakeAddressDirectory(
           communes: {
             '69264': Ok(
@@ -1773,7 +1867,7 @@ void main() {
 
       test('should stop offline, keeping the street and those after it '
           'ticked', () async {
-        shapes.roads = Ok([morinInZone, pasteurInZone]);
+        shapes.banRoads = Ok([morinInZone, pasteurInZone]);
         directory = FakeAddressDirectory(
           communes: {
             '69264': Ok(
@@ -1816,7 +1910,7 @@ void main() {
       });
 
       test('should say the service failed, adding the others', () async {
-        shapes.roads = Ok([morinInZone, pasteurInZone]);
+        shapes.banRoads = Ok([morinInZone, pasteurInZone]);
         directory = FakeAddressDirectory(
           communes: {
             '69264': Ok(
@@ -1850,7 +1944,7 @@ void main() {
 
       test('should say the service failed for a street the BAN no longer '
           'knows', () async {
-        shapes.roads = Ok([pasteurInZone]);
+        shapes.banRoads = Ok([pasteurInZone]);
         directory = FakeAddressDirectory(
           communes: {
             '69264': Ok(
@@ -1890,7 +1984,7 @@ void main() {
 
         expect(answer, const NothingToSay());
         // The tap asked for the roads under the finger, not the zone.
-        expect(shapes.zonesAsked, isNot(contains(zone)));
+        expect(shapes.areasAsked, isNot(contains(zone)));
         expect(stateOf(container).zoneMode, isTrue);
         expect(stateOf(container).picked, [morinRow]);
         stored.complete();
@@ -1898,7 +1992,7 @@ void main() {
       });
 
       test('should tick nothing for a zone answered while adding', () async {
-        shapes.roads = Ok([pasteurInZone]);
+        shapes.banRoads = Ok([pasteurInZone]);
         final stored = Completer<void>();
         final container = await zoning();
         final notifier = notifierOf(container);
@@ -1934,7 +2028,7 @@ void main() {
             ),
           },
         );
-        shapes.roads = Ok([pasteurInZone]);
+        shapes.banRoads = Ok([pasteurInZone]);
         final container = await zoning();
         final notifier = notifierOf(container);
         await notifier.drawZone(zone);
@@ -1963,70 +2057,16 @@ void main() {
             ),
           },
         );
-        shapes.roads = Ok([pasteurInZone]);
+        shapes.banRoads = Ok([pasteurInZone]);
         final container = await zoning();
         final notifier = notifierOf(container);
         await notifier.drawZone(zone);
         await notifier.add();
-        shapes.roads = Ok([saoneInSouth]);
+        shapes.banRoads = Ok([saoneInSouth]);
 
         await notifier.drawZone(southZone);
 
         expect(stateOf(container).run, const AddIdle());
-      });
-    });
-
-    group('the communes', () {
-      test('should match the streets in the nearest commune first', () async {
-        // Around the centre of Gleizé, which the BAN fake does not list.
-        final nearGleize = GeoBounds.of(
-          south: 45.99,
-          west: 4.68,
-          north: 45.995,
-          east: 4.69,
-        )!;
-        shapes.roads = Ok([
-          NamedRoad(
-            name: 'Rue Pierre Morin',
-            shape: StreetShape([
-              [at(45.992, 4.682), at(45.992, 4.686)],
-            ]),
-          ),
-        ]);
-        final container = await zoning();
-
-        await notifierOf(container).drawZone(nearGleize);
-
-        expect(directory.communesAsked, ['69092', '69264']);
-      });
-
-      test('should match last a commune without centre', () async {
-        sectors.put(
-          team(
-            communes: [
-              SectorCommune(commune: villefranche),
-              gleizeCommune,
-            ],
-          ),
-        );
-        shapes.roads = Ok([halage]);
-        final container = await zoning();
-        await pumpEventQueue();
-
-        await notifierOf(container).drawZone(zone);
-
-        expect(directory.communesAsked, ['69092', '69264']);
-      });
-
-      test('should match in the communes of the streets for a secteur '
-          'without commune', () async {
-        sectors.put(team());
-        final container = await zoning();
-        await pumpEventQueue();
-
-        await notifierOf(container).drawZone(zone);
-
-        expect(directory.communesAsked, ['69264']);
       });
     });
   });

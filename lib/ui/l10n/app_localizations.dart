@@ -2071,7 +2071,7 @@ abstract class AppLocalizations {
   /// Attribution of the map and address data at the bottom of Paramètres (PLAN §8.3).
   ///
   /// In fr, this message translates to:
-  /// **'Carte © contributeurs OpenStreetMap, OpenFreeMap. Adresses : Base Adresse Nationale.'**
+  /// **'Carte © contributeurs OpenStreetMap, OpenFreeMap. Tracé des rues : IGN (BD TOPO). Adresses : Base Adresse Nationale.'**
   String get settingsCredits;
 
   /// Screen-reader label of a row of Paramètres with a value, e.g. « Thème, Système ».
@@ -2149,7 +2149,7 @@ abstract class AppLocalizations {
   /// Privacy page: where the data is kept (PLAN §8.3): its section of PRIVACY.md, word for word.
   ///
   /// In fr, this message translates to:
-  /// **'Les secteurs sont stockés chez Google Firebase, dans l\'Union européenne. Les cartes viennent d\'OpenFreeMap et les adresses de la Base Adresse Nationale : comme tout site web, ces services voient l\'adresse IP du téléphone quand ils lui envoient des données.'**
+  /// **'Les secteurs sont stockés chez Google Firebase, dans l\'Union européenne. Les cartes viennent d\'OpenFreeMap et de l\'IGN, les adresses de la Base Adresse Nationale : comme tout site web, ces services voient l\'adresse IP du téléphone quand ils lui envoient des données.'**
   String get privacyHostingBody;
 
   /// Privacy page: section about deleting the data.

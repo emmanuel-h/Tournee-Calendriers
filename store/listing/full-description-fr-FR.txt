@@ -8,4 +8,4 @@ Pas de réseau ? L'appli marche quand même et se met à jour dès que le rése
 
 Pas de compte à créer, et rien n'est enregistré sur les habitants.
 
-Cartes : OpenStreetMap, OpenFreeMap. Adresses : Base Adresse Nationale.
+Cartes : OpenStreetMap, OpenFreeMap. Tracé des rues : IGN (BD TOPO). Adresses : Base Adresse Nationale.

@@ -767,11 +767,14 @@ void main() {
         storage: storage,
         communeSearch: communes,
         addressDirectory: _ban(),
-        // The map's roads in the zone drawn below (#125), offline.
+        // IGN BD TOPO's stretches in the zone drawn below (#125, #166),
+        // offline.
         streetShapes: FakeStreetShapes()
-          ..roads = Ok([
-            NamedRoad(
+          ..banRoads = Ok([
+            BanRoad(
+              banId: _morin,
               name: 'Rue Pierre Morin',
+              commune: _villefranche.inseeCode,
               shape: StreetShape([
                 [
                   _ok(GeoPoint.create(latitude: 45.9883, longitude: 4.7245)),
@@ -836,8 +839,9 @@ void main() {
       // and, once known, its road are sent to the map. The tap is handed
       // to the map's callback: a test's tap does not reach the native view
       // (only real touches do, with `shouldPropagateDevicePointerEvents`).
-      // The BAN and the map's roads are fakes, so no network is needed;
-      // the fake map has no road for it. « Tout décocher » empties the
+      // The BAN and the roads are fakes, so no network is needed: the
+      // street is the BD TOPO stretch under the finger (#166), the fake
+      // has no whole line for it. « Tout décocher » empties the
       // sheet again.
       tester.widget<SectorMap>(find.byType(SectorMap).last).onMapTapped!(
         _onMorin,

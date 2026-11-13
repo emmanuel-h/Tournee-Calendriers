@@ -40,6 +40,7 @@ import 'package:tournee_calendriers/infrastructure/firestore/firestore_streets_d
 import 'package:tournee_calendriers/infrastructure/geo_api/fallback_commune_search.dart';
 import 'package:tournee_calendriers/infrastructure/geo_api/geo_commune_search.dart';
 import 'package:tournee_calendriers/infrastructure/geo_api/geopf_commune_search.dart';
+import 'package:tournee_calendriers/infrastructure/geopf/ign_street_shapes.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_identity.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_my_sectors.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_open_round.dart';
@@ -98,8 +99,8 @@ final httpClientProvider = Provider<http.Client>((ref) {
 /// - [addressDirectory]: replaces the BAN, so the instrumented suite can
 ///   import streets without the network.
 /// - [communeSearch]: replaces geo.api.gouv.fr, for the same reason.
-/// - [streetShapes]: replaces the OpenFreeMap tiles' roads, for the same
-///   reason (a zone drawn on « Ajouter des rues »).
+/// - [streetShapes]: replaces IGN BD TOPO and the OpenFreeMap tiles'
+///   roads, for the same reason (a zone drawn on « Ajouter des rues »).
 ///
 /// The streets follow the open secteur: those of its current campaign in
 /// Firestore while one is open, none while none is (streets only live in a
@@ -274,7 +275,12 @@ Future<List<Override>> bindAdapters({
     streetShapesProvider.overrideWith(
       (ref) =>
           streetShapes ??
-          OpenFreeMapStreetShapes(ref.watch(httpClientProvider)),
+          // IGN BD TOPO by BAN id, the map's roads by name when it has
+          // none (PLAN §5.18).
+          IgnStreetShapes(
+            ref.watch(httpClientProvider),
+            byName: OpenFreeMapStreetShapes(ref.watch(httpClientProvider)),
+          ),
     ),
     clockProvider.overrideWithValue(clock),
     idGeneratorProvider.overrideWithValue(ids),

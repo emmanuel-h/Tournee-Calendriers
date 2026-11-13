@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:tournee_calendriers/domain/geometry/road_side.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 
@@ -57,6 +58,29 @@ GeoPoint nearestOnSegment(GeoPoint point, GeoPoint start, GeoPoint end) {
       ? 0.0
       : ((px * ex + py * ey) / lengthSquared).clamp(0.0, 1.0);
   return (fraction: fraction, dx: px - fraction * ex, dy: py - fraction * ey);
+}
+
+/// On which side of the segment [start]–[end], walked from [start] to
+/// [end], [point] lies; null when it lies on the segment's line, or the
+/// segment has no length. On the same tangent plane as
+/// [metresFromSegment]; a point beyond an end has the side of the line
+/// the segment carries on.
+RoadSide? sideOfSegment(GeoPoint point, GeoPoint start, GeoPoint end) {
+  final scale = math.cos(start.latitude * math.pi / 180) * metresPerDegree;
+  final (px, py) = (
+    (point.longitude - start.longitude) * scale,
+    (point.latitude - start.latitude) * metresPerDegree,
+  );
+  final (ex, ey) = (
+    (end.longitude - start.longitude) * scale,
+    (end.latitude - start.latitude) * metresPerDegree,
+  );
+  // The cross product of the segment and the way to the point: positive
+  // when the point is a left turn away (x east, y north).
+  final cross = ex * py - ey * px;
+  if (cross > 0) return RoadSide.left;
+  if (cross < 0) return RoadSide.right;
+  return null;
 }
 
 /// How far apart [a] and [b] are, in metres, on the same tangent plane as

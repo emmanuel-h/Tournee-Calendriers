@@ -1,5 +1,5 @@
-// A street of the secteur without a line on the map gets the road the map
-// draws for it, once (PLAN §5.3, #92).
+// A street of the secteur without a line on the map gets its road, by its
+// BAN id, once (PLAN §5.3, #92, §5.18).
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/street_shapes.dart';
 import 'package:tournee_calendriers/application/use_cases/fill_street_shape.dart';
@@ -18,6 +18,7 @@ import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 
 final _morinId = StreetId('morin');
+final _morinBanId = BanStreetId('69264_1460');
 
 /// A road as the map draws it: the middle point lies on the straight line
 /// from the first to the last, so simplifying drops it.
@@ -33,23 +34,24 @@ final _simplified = StreetShape([
 
 /// Rue Pierre Morin, imported from a list: two houses on the map, one
 /// typed in by hand, no line.
-Street _morin({StreetShape shape = StreetShape.none, bool placed = true}) =>
-    valueOf(
-      Street.create(
-        id: _morinId,
-        name: 'Rue Pierre Morin',
-        commune: villefranche,
-        shape: shape,
-        houses: [
-          House(number: n('1'), position: placed ? _start : null),
-          House(number: n('2')),
-          House(
-            number: n('3'),
-            position: placed ? at(45.98900, 4.72550) : null,
-          ),
-        ],
-      ),
-    );
+Street _morin({
+  StreetShape shape = StreetShape.none,
+  bool placed = true,
+  bool fromBan = true,
+}) => valueOf(
+  Street.create(
+    id: _morinId,
+    name: 'Rue Pierre Morin',
+    commune: villefranche,
+    banId: fromBan ? _morinBanId : null,
+    shape: shape,
+    houses: [
+      House(number: n('1'), position: placed ? _start : null),
+      House(number: n('2')),
+      House(number: n('3'), position: placed ? at(45.98900, 4.72550) : null),
+    ],
+  ),
+);
 
 void main() {
   late FakeStreetRepository streets;
@@ -72,6 +74,23 @@ void main() {
         streets.saved.single.$2,
         StreetShapeFilled(streetId: _morinId, shape: _simplified),
       );
+    });
+
+    test('should look for the street by its BAN id', () async {
+      await fill(_morinId);
+
+      expect(shapes.idsAsked, [_morinBanId]);
+    });
+
+    test('should look for a street without BAN id by its name '
+        'only', () async {
+      streets = FakeStreetRepository([_morin(fromBan: false)]);
+      fill = FillStreetShape(shapes, streets);
+
+      await fill(_morinId);
+
+      expect(shapes.idsAsked, [null]);
+      expect(shapes.askedNames, ['Rue Pierre Morin']);
     });
 
     test('should look for the street\'s name around its houses, 150 m '

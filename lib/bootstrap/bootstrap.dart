@@ -29,8 +29,8 @@ import 'package:tournee_calendriers/ui/theme/font_licenses.dart';
 /// The instrumented suite starts the real app through here, replacing what
 /// it must: [addressDirectory] (a fake BAN, so no network is needed),
 /// [communeSearch] (a fake commune search, for the same reason),
-/// [streetShapes] (the map's roads, for the same reason) and [storage] (a
-/// fresh folder, so each test starts with no street). By default the storage is the app's support folder: private to the app,
+/// [streetShapes] (the roads of IGN and of the map, for the same reason)
+/// and [storage] (a fresh folder, so each test starts with no street). By default the storage is the app's support folder: private to the app,
 /// kept across updates, removed with the app.
 Future<void> bootstrap({
   AddressDirectory? addressDirectory,

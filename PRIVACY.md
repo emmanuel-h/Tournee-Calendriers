@@ -17,7 +17,7 @@ La position du téléphone sert seulement à vous placer sur la carte, quand vou
 
 ## Hébergement
 
-Les secteurs sont stockés chez Google Firebase, dans l'Union européenne. Les cartes viennent d'OpenFreeMap et les adresses de la Base Adresse Nationale : comme tout site web, ces services voient l'adresse IP du téléphone quand ils lui envoient des données.
+Les secteurs sont stockés chez Google Firebase, dans l'Union européenne. Les cartes viennent d'OpenFreeMap et de l'IGN, les adresses de la Base Adresse Nationale : comme tout site web, ces services voient l'adresse IP du téléphone quand ils lui envoient des données.
 
 ## Suppression
 

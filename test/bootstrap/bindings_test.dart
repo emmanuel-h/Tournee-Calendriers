@@ -29,6 +29,7 @@ import 'package:tournee_calendriers/infrastructure/firestore/mappers/street_docu
 import 'package:tournee_calendriers/infrastructure/geo_api/fallback_commune_search.dart';
 import 'package:tournee_calendriers/infrastructure/geo_api/geo_commune_search.dart';
 import 'package:tournee_calendriers/infrastructure/geo_api/geopf_commune_search.dart';
+import 'package:tournee_calendriers/infrastructure/geopf/ign_street_shapes.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_my_sectors.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_open_round.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/local_phone_settings.dart';
@@ -102,7 +103,11 @@ void main() {
     );
     expect(
       container.read(streetShapesProvider),
-      isA<OpenFreeMapStreetShapes>(),
+      isA<IgnStreetShapes>().having(
+        (shapes) => shapes.byName,
+        'byName',
+        isA<OpenFreeMapStreetShapes>(),
+      ),
     );
     expect(container.read(clockProvider), isA<SystemClock>());
     expect(container.read(idGeneratorProvider), isA<RandomIdGenerator>());

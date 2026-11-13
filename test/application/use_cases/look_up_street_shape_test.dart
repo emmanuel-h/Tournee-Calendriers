@@ -1,6 +1,6 @@
-// The road highlighted on « Ajouter des rues » (PLAN §5.4): the shape of a
-// street the secteur does not have yet, asked of the map while its card
-// shows.
+// The road highlighted on « Ajouter des rues » (PLAN §5.4, §5.18): the
+// line of a street the secteur does not have yet, by its BAN id, asked
+// while it is ticked.
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/street_shapes.dart';
@@ -21,13 +21,15 @@ final _morinId = BanStreetId('69264_1460');
 /// The point the BAN gives for the street, south of its numbers.
 final _morinPoint = at(45.98750, 4.72400);
 
+final _morinMatch = StreetMatch(
+  id: _morinId,
+  name: streetName('Rue Pierre Morin'),
+  commune: villefranche,
+  position: _morinPoint,
+);
+
 final _morin = StreetToAdd(
-  StreetMatch(
-    id: _morinId,
-    name: streetName('Rue Pierre Morin'),
-    commune: villefranche,
-    position: _morinPoint,
-  ),
+  _morinMatch,
   StreetNumbers(
     id: _morinId,
     name: streetName('Rue Pierre Morin'),
@@ -59,7 +61,7 @@ void main() {
       ]),
     );
 
-    final shape = await lookUp(_morin);
+    final shape = await lookUp(_morin.match, numbers: _morin.numbers);
 
     expect(
       valueOf(shape),
@@ -69,9 +71,15 @@ void main() {
     );
   });
 
+  test('should look for the street by its BAN id', () async {
+    await lookUp(_morin.match, numbers: _morin.numbers);
+
+    expect(shapes.idsAsked, [_morinId]);
+  });
+
   test('should look for the street\'s name around its numbers and its '
       'point, 150 m beyond', () async {
-    await lookUp(_morin);
+    await lookUp(_morin.match, numbers: _morin.numbers);
 
     expect(shapes.asked, [
       (
@@ -85,8 +93,19 @@ void main() {
     ]);
   });
 
+  test('should look around its point alone when its numbers are not read '
+      'yet', () async {
+    // A street ticked in a zone: its numbers come when it is added.
+    await lookUp(_morinMatch);
+
+    expect(shapes.asked, [
+      ('Rue Pierre Morin', GeoBounds.around([_morinPoint])!.expandedBy(150)),
+    ]);
+    expect(shapes.idsAsked, [_morinId]);
+  });
+
   test('should give no shape when the map does not know the road', () async {
-    final shape = await lookUp(_morin);
+    final shape = await lookUp(_morinMatch);
 
     expect(valueOf(shape), StreetShape.none);
   });
@@ -94,7 +113,7 @@ void main() {
   test('should say why the map could not answer', () async {
     shapes.answer = const Err(StreetShapesFailure.noNetwork);
 
-    final shape = await lookUp(_morin);
+    final shape = await lookUp(_morinMatch);
 
     expect(failureOf(shape), StreetShapesFailure.noNetwork);
   });

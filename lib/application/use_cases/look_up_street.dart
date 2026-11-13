@@ -75,24 +75,31 @@ final class StreetOfTheSector extends LookedUpStreet {
 }
 
 /// Finds the BAN street of a tap on the map or of a search result, and
-/// whether the secteur has it (PLAN §5.4, §5.14). Changes nothing.
+/// whether the secteur has it (PLAN §5.4, §5.14, §5.18). Changes nothing.
 ///
-/// Needs the network: the geocoder and the map's tiles for a tap, the BAN
-/// for the numbers of a street the secteur does not have. A street of the
-/// secteur needs no numbers: they are in the street already.
+/// Needs the network: IGN BD TOPO (else the geocoder and the map's tiles)
+/// for a tap, the BAN for the numbers of a street the secteur does not
+/// have. A street of the secteur needs no numbers: they are in the street
+/// already.
 ///
-/// **A tap names the road under the finger, not the nearest BAN street.**
-/// The geocoder measures the distance to one point of each street (about
-/// its middle), so near a crossing, or on a long road far from its middle,
-/// it answers another street (#134: a ✓ put on a road whose street was
-/// another, drawn elsewhere or not at all). The map's tiles tell which
-/// named road runs under the finger; the BAN street of that name, in the
-/// commune of the geocoder's answer, is the one tapped.
+/// **A tap names the road under the finger, by its BAN id** (#166). IGN BD
+/// TOPO gives each stretch of road the BAN street of each side: the
+/// nearest stretch carrying one within [tapReachMetres] is the street
+/// tapped, the side under the finger when its two sides differ (a hamlet
+/// road along a street of almost its name). Its name, commune and numbers
+/// come from the BAN by that id.
+///
+/// Where BD TOPO has no such stretch (or cannot answer), the older path
+/// stands (#134): the geocoder measures the distance to one point of each
+/// street (about its middle), so near a crossing, or on a long road far
+/// from its middle, it answers another street; the map's tiles tell which
+/// named road runs under the finger, and the BAN street of that name, in
+/// the commune of the geocoder's answer, is the one tapped.
 final class LookUpStreet {
   const LookUpStreet(this._directory, this._streets, this._shapes);
 
-  /// How far from the finger a road of the map may run to be the one
-  /// tapped: about a fingertip at street zoom, a road and its pavements.
+  /// How far from the finger a road may run to be the one tapped: about a
+  /// fingertip at street zoom, a road and its pavements.
   static const tapReachMetres = 30.0;
 
   final AddressDirectory _directory;
@@ -106,28 +113,30 @@ final class LookUpStreet {
   Future<Result<LookedUpStreet, AddressDirectoryFailure>> call(
     StreetLookup lookup,
   ) async {
-    final StreetMatch match;
-    GeoPoint? mark;
     switch (lookup) {
-      case FoundStreet(match: final found):
-        match = found;
+      case FoundStreet(:final match):
+        return _lookedUp(match);
       case StreetAtPoint(:final point):
-        // Both asked at once: a tap waits for the slower one only. A record
-        // of futures has `wait`, which gives back a record of their values.
-        // The road tells which street was tapped, and where on it the ✓
-        // goes.
-        final (nearest, road) = await (
-          _directory.streetAt(point),
-          _roadAt(point),
-        ).wait;
-        switch (await _streetAt(nearest, road?.name)) {
-          case Err(:final failure):
-            return Err(failure);
-          case Ok(:final value):
-            match = value;
-            mark = road?.shape.nearestPointTo(point);
+        if (await _banRoadAt(point) case final road?) {
+          switch (await _byId(road, point)) {
+            // A BAN id the BAN no longer has (BD TOPO lags behind it): as
+            // if BD TOPO had nothing there.
+            case Err(failure: AddressDirectoryFailure.notFound):
+              break;
+            case final byId:
+              return byId;
+          }
         }
+        return _byGeocoder(point);
     }
+  }
+
+  /// The street of [match], with its numbers when the secteur does not
+  /// have it; its ✓ at [mark].
+  Future<Result<LookedUpStreet, AddressDirectoryFailure>> _lookedUp(
+    StreetMatch match, {
+    GeoPoint? mark,
+  }) async {
     final known = await _streets.findByBanId(match.id);
     // A street of the Corbeille is offered to add again: adding it brings
     // it back with its marks (`AddStreetFromMap`).
@@ -138,6 +147,90 @@ final class LookUpStreet {
       (numbers) =>
           StreetToAdd(match, numbers, mark: mark, fromCorbeille: known != null),
     );
+  }
+
+  /// The BAN street of [road], tapped at [point]: its name and commune from
+  /// the secteur's street when it has it, else from the BAN's numbers.
+  /// Its point, and its ✓, on [road] under the finger.
+  Future<Result<LookedUpStreet, AddressDirectoryFailure>> _byId(
+    BanRoad road,
+    GeoPoint point,
+  ) async {
+    final id = road.banId!;
+    final mark = road.shape.nearestPointTo(point)!;
+    final known = await _streets.findByBanId(id);
+    if (known != null && !known.isDeleted) {
+      final match = StreetMatch(
+        id: id,
+        name: known.name,
+        commune: known.commune,
+        position: mark,
+      );
+      return Ok(StreetOfTheSector(match, known));
+    }
+    return (await _directory.numbersOf(id)).map(
+      (numbers) => StreetToAdd(
+        StreetMatch(
+          id: id,
+          name: numbers.name,
+          commune: numbers.commune,
+          position: mark,
+        ),
+        numbers,
+        mark: mark,
+        fromCorbeille: known != null,
+      ),
+    );
+  }
+
+  /// The stretch of BD TOPO with a BAN street nearest to [point], within
+  /// [tapReachMetres]; of a stretch whose two sides differ, the side under
+  /// the finger. Null when there is none, or BD TOPO cannot answer.
+  Future<BanRoad?> _banRoadAt(GeoPoint point) async {
+    final roads = switch (await _shapes.roadsIn(_tapArea(point))) {
+      Ok(:final value) => value,
+      Err() => const <BanRoad>[],
+    };
+    BanRoad? nearestRoad;
+    var nearest = tapReachMetres;
+    var nearestFacing = false;
+    for (final road in roads) {
+      final metres = road.shape.metresFrom(point);
+      if (road.banId == null || metres == null) continue;
+      // The two sides of a stretch are one line, as far from the finger:
+      // the side the finger is on wins.
+      final facing = road.side == null || road.side == road.shape.sideOf(point);
+      final better = nearestRoad == null
+          ? metres <= nearest
+          : metres < nearest || (metres == nearest && facing && !nearestFacing);
+      if (better) {
+        nearestRoad = road;
+        nearest = metres;
+        nearestFacing = facing;
+      }
+    }
+    return nearestRoad;
+  }
+
+  /// The street of a tap at [point] by the geocoder and the map's road
+  /// names (#134): what stands where BD TOPO has no BAN street.
+  Future<Result<LookedUpStreet, AddressDirectoryFailure>> _byGeocoder(
+    GeoPoint point,
+  ) async {
+    // Both asked at once: a tap waits for the slower one only. A record of
+    // futures has `wait`, which gives back a record of their values. The
+    // road tells which street was tapped, and where on it the ✓ goes.
+    final (nearest, road) = await (
+      _directory.streetAt(point),
+      _namedRoadAt(point),
+    ).wait;
+    return switch (await _streetAt(nearest, road?.name)) {
+      Err(:final failure) => Err(failure),
+      Ok(value: final match) => _lookedUp(
+        match,
+        mark: road?.shape.nearestPointTo(point),
+      ),
+    };
   }
 
   /// The BAN street of the road [road] under the finger, given the
@@ -182,9 +275,8 @@ final class LookUpStreet {
   /// [tapReachMetres]; null when there is none, or the map's tiles could
   /// not be read (the geocoder's answer then stands alone, as it did
   /// before #134).
-  Future<NamedRoad?> _roadAt(GeoPoint point) async {
-    final area = GeoBounds.around([point])!.expandedBy(tapReachMetres);
-    final roads = switch (await _shapes.roadsIn(area)) {
+  Future<NamedRoad?> _namedRoadAt(GeoPoint point) async {
+    final roads = switch (await _shapes.namedRoadsIn(_tapArea(point))) {
       Ok(:final value) => value,
       Err() => const <NamedRoad>[],
     };
@@ -199,4 +291,8 @@ final class LookUpStreet {
     }
     return nearestRoad;
   }
+
+  /// Where the roads under a tap at [point] are looked for.
+  static GeoBounds _tapArea(GeoPoint point) =>
+      GeoBounds.around([point])!.expandedBy(tapReachMetres);
 }

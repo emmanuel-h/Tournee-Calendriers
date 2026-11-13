@@ -51,7 +51,10 @@ Start screen:
   rectangle with a finger and lists its streets (those to add ticked, those of the secteur
   and roads without address greyed; at any zoom, 50 streets at most; two fingers move the
   map), and the sheet at the bottom lists the streets ticked and adds them all at once
-  (« Ajouter 3 rues »), staying open to add more. Under each street ticked (sheet, zone,
+  (« Ajouter 3 rues »), staying open to add more. The street under a tap, the streets of
+  a zone and every street's line come from IGN BD TOPO by the street's BAN id (the side of
+  the road under the finger when it carries a street on each side), OpenStreetMap by name
+  only where IGN has nothing. Under each street ticked (sheet, zone,
   « Liste »), « Toute la rue › » opens « Partie de la rue » to keep only some of its numbers
   (« Pairs 2–8 › », « 4 numéros sur 8 »): only those are added. A street another secteur
   holds in part says so under its row (« Secteur 12 : impairs 19–41 »), and « Partie de la

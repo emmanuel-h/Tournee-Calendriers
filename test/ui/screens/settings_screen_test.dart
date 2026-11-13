@@ -101,6 +101,7 @@ void main() {
     expect(
       find.text(
         'Carte © contributeurs OpenStreetMap, OpenFreeMap. '
+        'Tracé des rues : IGN (BD TOPO). '
         'Adresses : Base Adresse Nationale.',
       ),
       findsOneWidget,

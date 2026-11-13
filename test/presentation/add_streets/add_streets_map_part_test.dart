@@ -363,8 +363,13 @@ void main() {
         },
         streets: {_tilleulsId: Ok(_tilleulsNumbers)},
       );
-      shapes.roads = Ok([
-        NamedRoad(name: 'Impasse des Tilleuls', shape: _tilleulsRoad),
+      shapes.banRoads = Ok([
+        BanRoad(
+          banId: _tilleulsId,
+          name: 'Impasse des Tilleuls',
+          commune: insee('69264'),
+          shape: _tilleulsRoad,
+        ),
       ]);
     });
 
@@ -516,7 +521,9 @@ void main() {
         n('2'),
         n('4'),
       ]);
-      expect(streets.added.single.shape, StreetShape.none);
+      // Its whole line, looked up by its BAN id when it was ticked (PLAN
+      // §5.18).
+      expect(streets.added.single.shape, _tilleulsRoad);
     });
 
     test('should open nothing once unticked while its numbers were '
@@ -693,8 +700,13 @@ void main() {
           ),
         },
       );
-      shapes.roads = Ok([
-        NamedRoad(name: 'Impasse des Tilleuls', shape: _tilleulsRoad),
+      shapes.banRoads = Ok([
+        BanRoad(
+          banId: _tilleulsId,
+          name: 'Impasse des Tilleuls',
+          commune: insee('69264'),
+          shape: _tilleulsRoad,
+        ),
       ]);
       final container = phone();
       await pumpEventQueue();

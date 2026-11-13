@@ -6,7 +6,6 @@ import 'package:tournee_calendriers/application/use_cases/add_street_from_map.da
 import 'package:tournee_calendriers/application/use_cases/find_zone_streets.dart';
 import 'package:tournee_calendriers/application/use_cases/look_up_street.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
-import 'package:tournee_calendriers/domain/geometry/geo_distance.dart';
 import 'package:tournee_calendriers/domain/map/map_layers.dart';
 import 'package:tournee_calendriers/domain/map/picked_road.dart';
 import 'package:tournee_calendriers/domain/map/sector_area.dart';
@@ -482,10 +481,7 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
     // map does not go back to an older tick.
     _latest = null;
     _show();
-    final result = await ref.read(findZoneStreetsProvider)(
-      area,
-      communes: _zoneCommunes(area),
-    );
+    final result = await ref.read(findZoneStreetsProvider)(area);
     if (!ref.mounted || ticket != _zones) return const NothingToSay();
     final TapAnswer answer;
     switch (result) {
@@ -512,6 +508,7 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
         if (ticked.isNotEmpty && _run is! AddRunning) {
           _picks = [..._picks, ...ticked];
           _run = const AddIdle();
+          ticked.forEach(_lookUpRoad);
         }
         answer = const NothingToSay();
     }
@@ -531,7 +528,10 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
         .whereType<ZoneStreetToAdd>()
         .where((street) => street.match.id == id)
         .firstOrNull;
-    if (street != null) _setPicks([..._picks, _Pick.inZone(street)]);
+    if (street == null) return;
+    final pick = _Pick.inZone(street);
+    _setPicks([..._picks, pick]);
+    _lookUpRoad(pick);
   }
 
   /// No zone; an answer on its way for the one before is dropped.
@@ -539,25 +539,6 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
     _zones++;
     _zone = null;
     _zoneStreets = null;
-  }
-
-  /// The communes a zone's streets are matched in: the secteur's, the
-  /// nearest to [zone] first (one without a centre last); for a secteur
-  /// without commune, those of its streets.
-  List<InseeCode> _zoneCommunes(GeoBounds zone) {
-    if (_communes.isEmpty) return _searchCommunes();
-    // The middle of a zone on Earth is on Earth: it cannot fail.
-    final middle = (GeoPoint.create(
-      latitude: (zone.south + zone.north) / 2,
-      longitude: (zone.west + zone.east) / 2,
-    ) as Ok<GeoPoint, GeoPointFailure>).value;
-    double distance(SectorCommune commune) => switch (commune.centre) {
-      null => double.infinity,
-      final centre => metresBetween(centre, middle),
-    };
-    final nearest = [..._communes]
-      ..sort((a, b) => distance(a).compareTo(distance(b)));
-    return [for (final commune in nearest) commune.inseeCode];
   }
 
   void _setRun(AddRun run) {
@@ -612,7 +593,7 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
     _picks = [..._picks, pick];
     _latest = pick;
     _run = const AddIdle();
-    unawaited(_findRoad(pick));
+    _lookUpRoad(pick);
     _askOthers(id);
   }
 
@@ -634,15 +615,25 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
   List<OtherSectorLine> _linesOf(BanStreetId id) =>
       OtherSectorLine.of(_others[id] ?? const [], _centre);
 
-  /// Draws the road of [pick] once the map tells it, if the street is still
-  /// ticked by that tap. A failure, or no road, leaves the ✓ alone.
+  /// Asks the whole line of the street of [pick], by its BAN id, without
+  /// waiting for it (PLAN §5.18).
+  void _lookUpRoad(_Pick pick) => unawaited(_findRoad(pick));
+
+  /// Draws the whole line of [pick] once it is known, if the street is
+  /// still ticked by that tap or zone: it is the line stored when the
+  /// street is added. A failure, or no line, leaves the tick as it was (a
+  /// zone's street keeps its stretches in the zone, drawn only).
   Future<void> _findRoad(_Pick pick) async {
-    final road = await ref.read(lookUpStreetShapeProvider)(pick.found!);
+    final road = await ref.read(lookUpStreetShapeProvider)(
+      pick.match,
+      numbers: pick.numbers,
+    );
     if (!ref.mounted) return;
     // The same tick, its part maybe chosen since; unticked then ticked
     // again is another tick, which asked for its own road.
     final current = _picks.where((each) => each.isTick(pick)).firstOrNull;
-    if ((road, current) case (Ok(:final value), final current?)) {
+    if ((road, current) case (Ok(:final value), final current?)
+        when !value.isEmpty) {
       _replace(current, current.withRoad(value));
       _show();
     }
@@ -762,42 +753,44 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
 /// A street ticked: the BAN street, how many numbers it brings, where its
 /// ✓ sits, its road once the map told it, and the part of it to add.
 ///
-/// Ticked by a tap or the search, it comes with its numbers ([found]) and
-/// its road is asked of the map (`LookUpStreetShape`), whole: it is stored
-/// with the street. Ticked in a zone, its road is the map's in the zone's
-/// tiles, drawn only (it may be cut where they end), and its numbers are
-/// read when its part is chosen, or when it is added.
+/// Ticked by a tap or the search, it comes with its numbers.
+/// Ticked in a zone, it shows its stretches in the zone until its whole
+/// line comes, and its numbers are read when its part is chosen, or when
+/// it is added. Either way its whole line is asked by its BAN id
+/// (`LookUpStreetShape`, PLAN §5.18): that is the one stored with the
+/// street.
 ///
 /// Immutable: each change (its road, its numbers, its part) is a copy that
 /// keeps the [tick].
 final class _Pick {
-  _Pick.tapped(StreetToAdd this.found, {required this.mark})
+  _Pick.tapped(StreetToAdd found, {required this.mark})
     : tick = Object(),
       match = found.match,
       numberCount = found.numberCount,
       road = StreetShape.none,
+      wholeRoad = false,
       numbers = found.numbers,
       fromCorbeille = found.fromCorbeille,
       part = StreetPart.whole;
 
   _Pick.inZone(ZoneStreetToAdd street)
     : tick = Object(),
-      found = null,
       match = street.match,
       numberCount = street.numberCount,
       mark = street.mark,
       road = street.road,
+      wholeRoad = false,
       numbers = null,
       fromCorbeille = street.fromCorbeille,
       part = StreetPart.whole;
 
   const _Pick._(
-    this.tick,
-    this.found, {
+    this.tick, {
     required this.match,
     required this.numberCount,
     required this.mark,
     required this.road,
+    required this.wholeRoad,
     required this.numbers,
     required this.fromCorbeille,
     required this.part,
@@ -807,15 +800,21 @@ final class _Pick {
   /// again (an answer for the tick before then changes nothing).
   final Object tick;
 
-  final StreetToAdd? found;
   final StreetMatch match;
 
   /// How many numbers the BAN listed for the street.
   final int numberCount;
   final GeoPoint mark;
+
+  /// What the map draws of the street: its whole line once known, until
+  /// then nothing, or for a zone's street its stretches in the zone.
   final StreetShape road;
 
-  /// The street's numbers: [found]'s, or read for « Partie de la rue »;
+  /// Whether [road] is the whole line, looked up by the street's BAN id.
+  final bool wholeRoad;
+
+  /// The street's numbers: the tap's or the search's, or read for
+  /// « Partie de la rue »;
   /// null until then for a street of a zone.
   final StreetNumbers? numbers;
 
@@ -838,26 +837,31 @@ final class _Pick {
   /// chosen only once the numbers are known.
   int? get keptCount => part.isWhole ? null : numbers!.heldBy(part).length;
 
-  /// The road stored with the street: none for a zone's, which Accueil
-  /// fills from the street's houses (PLAN §5.3).
-  StreetShape get storedRoad => found == null ? StreetShape.none : road;
+  /// The road stored with the street: its whole line, none while it is not
+  /// known (Accueil fills it later, PLAN §5.3).
+  StreetShape get storedRoad => wholeRoad ? road : StreetShape.none;
 
-  _Pick withRoad(StreetShape road) => _copy(road: road);
+  /// With [road], the street's whole line.
+  _Pick withRoad(StreetShape road) => _copy(road: road, wholeRoad: true);
 
   _Pick withNumbers(StreetNumbers numbers) => _copy(numbers: numbers);
 
   _Pick withPart(StreetPart part) => _copy(part: part);
 
-  _Pick _copy({StreetShape? road, StreetNumbers? numbers, StreetPart? part}) =>
-      _Pick._(
-        tick,
-        found,
-        match: match,
-        numberCount: numberCount,
-        mark: mark,
-        road: road ?? this.road,
-        numbers: numbers ?? this.numbers,
-        fromCorbeille: fromCorbeille,
-        part: part ?? this.part,
-      );
+  _Pick _copy({
+    StreetShape? road,
+    bool? wholeRoad,
+    StreetNumbers? numbers,
+    StreetPart? part,
+  }) => _Pick._(
+    tick,
+    match: match,
+    numberCount: numberCount,
+    mark: mark,
+    road: road ?? this.road,
+    wholeRoad: wholeRoad ?? this.wholeRoad,
+    numbers: numbers ?? this.numbers,
+    fromCorbeille: fromCorbeille,
+    part: part ?? this.part,
+  );
 }

@@ -1,6 +1,7 @@
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/geometry/encoded_polyline.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_distance.dart';
+import 'package:tournee_calendriers/domain/geometry/road_side.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 
 import '../../support/geo_fixtures.dart';
@@ -175,6 +176,46 @@ void main() {
 
     test('should give nothing without a line', () {
       expect(StreetShape.none.nearestPointTo(at(45.9905, 4.7170)), isNull);
+    });
+  });
+
+  group('sideOf', () {
+    // Two roads running north, 0.001° apart: walking north, east is on the
+    // right.
+    final shape = StreetShape([
+      [at(45.9900, 4.7170), at(45.9910, 4.7170)],
+      [at(45.9900, 4.7180), at(45.9910, 4.7180)],
+    ]);
+
+    test('should say right when the point is east of the nearest line', () {
+      expect(shape.sideOf(at(45.9905, 4.7172)), RoadSide.right);
+    });
+
+    test('should say left when the point is west of the nearest line', () {
+      expect(shape.sideOf(at(45.9905, 4.7168)), RoadSide.left);
+    });
+
+    test('should read the side of the nearest line, not the first', () {
+      // East of the first line, but west of the second, which is nearer.
+      expect(shape.sideOf(at(45.9905, 4.7178)), RoadSide.left);
+    });
+
+    test('should read the side of the nearest segment of a line', () {
+      // Running north, then east: the point is north of the second
+      // segment, on its left.
+      final bent = StreetShape([
+        [at(45.9900, 4.7170), at(45.9910, 4.7170), at(45.9910, 4.7190)],
+      ]);
+
+      expect(bent.sideOf(at(45.9911, 4.7185)), RoadSide.left);
+    });
+
+    test('should say nothing for a point on the line', () {
+      expect(shape.sideOf(at(45.9905, 4.7170)), isNull);
+    });
+
+    test('should say nothing without a line', () {
+      expect(StreetShape.none.sideOf(at(45.9905, 4.7170)), isNull);
     });
   });
 

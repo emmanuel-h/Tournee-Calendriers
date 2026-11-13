@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:tournee_calendriers/domain/geometry/encoded_polyline.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_distance.dart';
 import 'package:tournee_calendriers/domain/geometry/line_track.dart';
+import 'package:tournee_calendriers/domain/geometry/road_side.dart';
 import 'package:tournee_calendriers/domain/geometry/simplify_line.dart';
 import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
@@ -80,15 +81,31 @@ final class StreetShape {
   /// The point of its lines nearest to [point] (see `nearestOnSegment`);
   /// null when there is no line. Where the ✓ of a road tapped sits on it
   /// (PLAN §5.14).
-  GeoPoint? nearestPointTo(GeoPoint point) {
-    GeoPoint? nearest;
+  GeoPoint? nearestPointTo(GeoPoint point) => switch (_nearestSegment(point)) {
+    (final start, final end) => nearestOnSegment(point, start, end),
+    null => null,
+  };
+
+  /// On which side of its nearest segment [point] lies, walking the line
+  /// the way it runs (see `sideOfSegment`); null on the line, or without a
+  /// line. Tells which of the two BAN streets of a road a finger tapped
+  /// (PLAN §5.18).
+  RoadSide? sideOf(GeoPoint point) => switch (_nearestSegment(point)) {
+    (final start, final end) => sideOfSegment(point, start, end),
+    null => null,
+  };
+
+  /// The segment of its lines nearest to [point] (the first of those as
+  /// near), as its start and end; null without a line.
+  (GeoPoint, GeoPoint)? _nearestSegment(GeoPoint point) {
+    (GeoPoint, GeoPoint)? nearest;
     var shortest = double.infinity;
     for (final line in lines) {
       for (var i = 1; i < line.length; i++) {
         final metres = metresFromSegment(point, line[i - 1], line[i]);
         if (metres < shortest) {
           shortest = metres;
-          nearest = nearestOnSegment(point, line[i - 1], line[i]);
+          nearest = (line[i - 1], line[i]);
         }
       }
     }

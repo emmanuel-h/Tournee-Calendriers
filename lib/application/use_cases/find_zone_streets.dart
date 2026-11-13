@@ -7,19 +7,18 @@ import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/shared/insee_code.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
-import 'package:tournee_calendriers/domain/street/street_name.dart';
 import 'package:tournee_calendriers/domain/street/street_repository.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
 
 /// A street found in a zone drawn on « Ajouter des rues » (PLAN §5.14,
-/// PickZone mockup): its road as the map draws it, and where its ✓ disc
-/// sits, inside the zone. `sealed`: the zone's list shows each case.
+/// §5.18, PickZone mockup): its road as IGN BD TOPO draws it, and where its
+/// ✓ disc sits, inside the zone. `sealed`: the zone's list shows each case.
 sealed class ZoneStreet {
   const ZoneStreet({required this.road, required this.mark});
 
-  /// Its road, whole as far as the map's tiles go: drawn on the map, never
-  /// stored (it may be cut where the tiles end; Accueil fills the street's
-  /// road from its houses, PLAN §5.3).
+  /// Its stretches that run through the zone, each whole: drawn on the
+  /// map. A street ticked has its whole line looked up by its id
+  /// (`LookUpStreetShape`), which is the one stored.
   final StreetShape road;
 
   /// A point of [road] inside the zone (`markInZone`).
@@ -98,8 +97,8 @@ final class ZoneStreetInSector extends ZoneStreet {
   String toString() => 'ZoneStreetInSector(${match.id.value}, $name)';
 }
 
-/// A road of the map that no BAN street of the secteur's communes is named
-/// after (a path, a private road): greyed, « Aucune adresse connue ».
+/// A named road that has no BAN street (a path, a private road), or whose
+/// BAN street the BAN no longer lists: greyed, « Aucune adresse connue ».
 final class ZoneRoadWithoutAddress extends ZoneStreet {
   const ZoneRoadWithoutAddress({
     required this.name,
@@ -107,7 +106,7 @@ final class ZoneRoadWithoutAddress extends ZoneStreet {
     required super.mark,
   });
 
-  /// The name as the map writes it.
+  /// The road's own name, as IGN writes it (« ESP PAUL BERT »).
   @override
   final String name;
 
@@ -127,32 +126,28 @@ final class ZoneRoadWithoutAddress extends ZoneStreet {
 
 /// Why [FindZoneStreets] listed nothing.
 enum FindZoneFailure {
-  /// The map's tiles or the BAN could not be reached.
+  /// IGN BD TOPO or the BAN could not be reached.
   noNetwork,
 
-  /// The map's tiles or the BAN answered with an error.
+  /// IGN BD TOPO or the BAN answered with an error.
   serviceError,
 
-  /// More than [zoneMaxStreets] named roads in the zone, or a zone too
-  /// large to read its roads.
+  /// More than [zoneMaxStreets] BAN streets in the zone, or too many
+  /// stretches of road to read them.
   tooManyStreets,
 }
 
-/// The streets of a zone drawn on « Ajouter des rues » (PLAN §5.14): the
-/// named roads of the map's tiles in it (as #92 reads shapes), each matched
-/// to its BAN street by name in the secteur's communes (the exact name,
-/// else the name the road misspells, `closestNamed`). Changes nothing.
-/// Needs the network.
+/// The streets of a zone drawn on « Ajouter des rues » (PLAN §5.14,
+/// §5.18): the stretches of road of IGN BD TOPO in it, grouped by the BAN
+/// id they carry, one row per BAN street, whatever its name and commune.
+/// Changes nothing. Needs the network.
 ///
-/// Only the commune lists are read (one request per commune), not the
-/// numbers of each street: those come when a street is added.
+/// The BAN street of each row is read in its commune's list (one request
+/// per commune of the zone, by id, not by name): its name as the BAN writes
+/// it, its commune's name and how many numbers it has. Its numbers come
+/// when the street is added.
 final class FindZoneStreets {
   const FindZoneStreets(this._shapes, this._directory, this._streets);
-
-  /// The most communes whose streets are read for one zone. A zone of a
-  /// few streets touches one to three communes; a secteur may have fifty,
-  /// and a road no BAN street is named after must not read them all.
-  static const communesAsked = 3;
 
   final StreetShapes _shapes;
   final AddressDirectory _directory;
@@ -160,53 +155,43 @@ final class FindZoneStreets {
 
   /// The streets of [zone]: those to add first, then those the secteur
   /// has, then the roads without address, each group in French order.
-  ///
-  /// [communes] are the secteur's, the likeliest first (the nearest to the
-  /// zone): a name found in two of them is taken in the first, and only the
-  /// first [communesAsked] are read, each only while a road is still
-  /// unmatched. A commune the BAN does not know has no street.
-  Future<Result<List<ZoneStreet>, FindZoneFailure>> call(
-    GeoBounds zone, {
-    required List<InseeCode> communes,
-  }) async {
-    final List<NamedRoad> roads;
+  Future<Result<List<ZoneStreet>, FindZoneFailure>> call(GeoBounds zone) async {
+    final List<BanRoad> roads;
     switch (await _shapes.roadsIn(zone)) {
       case Err(:final failure):
         return Err(switch (failure) {
           StreetShapesFailure.noNetwork => FindZoneFailure.noNetwork,
           StreetShapesFailure.serviceError => FindZoneFailure.serviceError,
-          // Too many tiles: certainly too many streets, unread.
+          // Too many stretches: certainly too many streets, unread.
           StreetShapesFailure.tooLarge => FindZoneFailure.tooManyStreets,
         });
       case Ok(:final value):
+        // The service gives every stretch touching the zone's box; one
+        // that only grazes a corner has no piece inside.
         roads = [
           for (final road in value)
             if (markInZone(road.shape, zone) != null) road,
         ];
     }
-    if (roads.length > zoneMaxStreets) {
+
+    // The stretches of each BAN street, and of each road without one, by
+    // name. A Dart map keeps the order its keys were added in.
+    final byStreet = <BanStreetId, _Stretches>{};
+    final byName = <String, _Stretches>{};
+    for (final road in roads) {
+      final group = switch (road.banId) {
+        final id? => byStreet[id] ??= _Stretches(road),
+        null => byName[road.name] ??= _Stretches(road),
+      };
+      group.lines.addAll(road.shape.lines);
+    }
+    if (byStreet.length > zoneMaxStreets) {
       return const Err(FindZoneFailure.tooManyStreets);
     }
 
-    // The BAN street of each road, by its index in `roads`.
-    final matches = <int, StreetMatch>{};
-    final numberCounts = <BanStreetId, int>{};
-    void take(int i, CommuneStreets listed, DirectoryStreet street) {
-      final match = StreetMatch(
-        id: street.id,
-        name: street.name,
-        commune: listed.commune,
-        position: markInZone(roads[i].shape, zone)!,
-      );
-      matches[i] = match;
-      numberCounts[match.id] = street.numberCount;
-    }
-
-    // First the names as they are, commune by commune.
-    final read = <CommuneStreets>[];
-    for (final insee in communes.take(communesAsked)) {
-      if (matches.length == roads.length) break;
-      final CommuneStreets listed;
+    // The lists of the communes of the zone's streets, each read once.
+    final listings = <InseeCode, CommuneStreets>{};
+    for (final insee in {for (final group in byStreet.values) ?group.commune}) {
       switch (await _directory.streetsOf(insee)) {
         case Err(failure: AddressDirectoryFailure.notFound):
           continue;
@@ -215,60 +200,41 @@ final class FindZoneStreets {
         case Err(failure: AddressDirectoryFailure.serviceError):
           return const Err(FindZoneFailure.serviceError);
         case Ok(:final value):
-          listed = value;
-      }
-      read.add(listed);
-      for (var i = 0; i < roads.length; i++) {
-        if (matches.containsKey(i)) continue;
-        final street = listed.streets
-            .where((street) => street.name.matches(roads[i].name))
-            .firstOrNull;
-        if (street != null) take(i, listed, street);
-      }
-    }
-    // Then a road still unmatched may be a BAN street misspelt by the map
-    // (« Rue de le Paix », #134): the closest name, in the nearest commune
-    // that has one. Only after every commune read, so that a name exact in
-    // a farther commune wins over a near one in the first.
-    for (var i = 0; i < roads.length; i++) {
-      if (matches.containsKey(i)) continue;
-      for (final listed in read) {
-        final street = closestNamed(
-          roads[i].name,
-          listed.streets,
-          (street) => street.name,
-        );
-        if (street == null) continue;
-        take(i, listed, street);
-        break;
+          listings[insee] = value;
       }
     }
 
-    // Two roads may name one BAN street (« Rue du Musée » and « Rue du
-    // Musee »): one row, with both roads. A Dart map keeps the order its
-    // keys were added in.
-    final byStreet = <BanStreetId, (StreetMatch, List<List<GeoPoint>>)>{};
     final found = <ZoneStreet>[];
-    for (var i = 0; i < roads.length; i++) {
-      final road = roads[i];
-      switch (matches[i]) {
-        case null:
-          found.add(
-            ZoneRoadWithoutAddress(
-              name: road.name,
-              road: road.shape,
-              mark: markInZone(road.shape, zone)!,
-            ),
-          );
-        case final match:
-          final (first, lines) =
-              byStreet[match.id] ?? (match, const <List<GeoPoint>>[]);
-          byStreet[match.id] = (first, [...lines, ...road.shape.lines]);
+    for (final MapEntry(key: id, value: group) in byStreet.entries) {
+      final road = StreetShape(group.lines);
+      final mark = markInZone(road, zone)!;
+      final listing = listings[group.commune];
+      final street = listing?.streets
+          .where((street) => street.id == id)
+          .firstOrNull;
+      if (street == null) {
+        // BD TOPO knows a BAN street the BAN no longer lists.
+        found.add(
+          ZoneRoadWithoutAddress(name: group.name, road: road, mark: mark),
+        );
+        continue;
       }
+      final match = StreetMatch(
+        id: id,
+        name: street.name,
+        commune: listing!.commune,
+        position: mark,
+      );
+      found.add(await _streetOf(match, street.numberCount, road));
     }
-    for (final (match, lines) in byStreet.values) {
+    for (final group in byName.values) {
+      final road = StreetShape(group.lines);
       found.add(
-        await _streetOf(match, numberCounts[match.id]!, StreetShape(lines)),
+        ZoneRoadWithoutAddress(
+          name: group.name,
+          road: road,
+          mark: markInZone(road, zone)!,
+        ),
       );
     }
     found.sort(_listOrder);
@@ -306,4 +272,14 @@ final class FindZoneStreets {
     ZoneStreetInSector() => 1,
     ZoneRoadWithoutAddress() => 2,
   };
+}
+
+/// The stretches of one street (or one road without BAN street) in a zone,
+/// named and placed by the first of them.
+final class _Stretches {
+  _Stretches(BanRoad first) : name = first.name, commune = first.commune;
+
+  final String name;
+  final InseeCode? commune;
+  final lines = <List<GeoPoint>>[];
 }

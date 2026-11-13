@@ -2,6 +2,7 @@ import 'dart:math' as math;
 
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_distance.dart';
+import 'package:tournee_calendriers/domain/geometry/road_side.dart';
 
 import '../../support/geo_fixtures.dart';
 
@@ -90,6 +91,39 @@ void main() {
         // a millimetre apart.
         closeTo(metresFromSegment(point, west, north), 1e-3),
       );
+    });
+  });
+
+  group('sideOfSegment', () {
+    // The same segment running east along the latitude 45.99: walking it
+    // from west to east, north is on the left.
+    final west = at(45.99, 4.716);
+    final east = at(45.99, 4.718);
+
+    test('should say left when the point is north of a segment running '
+        'east', () {
+      expect(sideOfSegment(at(45.9901, 4.717), west, east), RoadSide.left);
+    });
+
+    test('should say right when the point is south of a segment running '
+        'east', () {
+      expect(sideOfSegment(at(45.9899, 4.717), west, east), RoadSide.right);
+    });
+
+    test('should turn round with the segment', () {
+      expect(sideOfSegment(at(45.9901, 4.717), east, west), RoadSide.right);
+    });
+
+    test('should tell the side of a point beyond an end', () {
+      expect(sideOfSegment(at(45.9901, 4.720), west, east), RoadSide.left);
+    });
+
+    test('should say nothing for a point on the line', () {
+      expect(sideOfSegment(at(45.99, 4.717), west, east), isNull);
+    });
+
+    test('should say nothing for a segment of no length', () {
+      expect(sideOfSegment(at(45.9901, 4.717), west, west), isNull);
     });
   });
 

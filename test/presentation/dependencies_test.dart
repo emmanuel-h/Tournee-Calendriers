@@ -383,21 +383,11 @@ void main() {
       final morinId = BanStreetId('69264_1460');
       valueOf(
         await container.read(lookUpStreetShapeProvider)(
-          StreetToAdd(
-            StreetMatch(
-              id: morinId,
-              name: streetName('Rue Pierre Morin'),
-              commune: villefranche,
-              position: townHallDoor,
-            ),
-            StreetNumbers(
-              id: morinId,
-              name: streetName('Rue Pierre Morin'),
-              commune: villefranche,
-              numbers: const [],
-              invalidNumbers: 0,
-              duplicateNumbers: 0,
-            ),
+          StreetMatch(
+            id: morinId,
+            name: streetName('Rue Pierre Morin'),
+            commune: villefranche,
+            position: townHallDoor,
           ),
         ),
       );

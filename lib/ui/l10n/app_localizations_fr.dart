@@ -1419,7 +1419,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get settingsCredits =>
-      'Carte © contributeurs OpenStreetMap, OpenFreeMap. Adresses : Base Adresse Nationale.';
+      'Carte © contributeurs OpenStreetMap, OpenFreeMap. Tracé des rues : IGN (BD TOPO). Adresses : Base Adresse Nationale.';
 
   @override
   String settingsRowSemantics(String label, String value) {
@@ -1466,7 +1466,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get privacyHostingBody =>
-      'Les secteurs sont stockés chez Google Firebase, dans l\'Union européenne. Les cartes viennent d\'OpenFreeMap et les adresses de la Base Adresse Nationale : comme tout site web, ces services voient l\'adresse IP du téléphone quand ils lui envoient des données.';
+      'Les secteurs sont stockés chez Google Firebase, dans l\'Union européenne. Les cartes viennent d\'OpenFreeMap et de l\'IGN, les adresses de la Base Adresse Nationale : comme tout site web, ces services voient l\'adresse IP du téléphone quand ils lui envoient des données.';
 
   @override
   String get privacyDeletionTitle => 'Suppression';

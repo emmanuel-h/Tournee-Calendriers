@@ -662,9 +662,12 @@ void main() {
       east: 4.73,
     )!;
 
-    /// A road across the zone at [latitude].
-    NamedRoad road(String name, double latitude) => NamedRoad(
+    /// A stretch of IGN BD TOPO across the zone at [latitude], carrying
+    /// the BAN street [id] (none for a road without address).
+    BanRoad road(BanStreetId? id, String name, double latitude) => BanRoad(
+      banId: id,
       name: name,
+      commune: insee('69264'),
       shape: StreetShape([
         [at(latitude, 4.712), at(latitude, 4.716)],
       ]),
@@ -677,10 +680,10 @@ void main() {
     /// « Zone » on, then a zone drawn with the Gare, the Lilas and the
     /// Chemin de Halage in it.
     Future<void> drawZone(WidgetTester tester) async {
-      shapes.roads = Ok([
-        road('Rue de la Gare', 45.985),
-        road('Rue des Lilas', 45.986),
-        road('Chemin de Halage', 45.987),
+      shapes.banRoads = Ok([
+        road(_gareId, 'Rue de la Gare', 45.985),
+        road(_lilasId, 'Rue des Lilas', 45.986),
+        road(null, 'Chemin de Halage', 45.987),
       ]);
       await tester.tap(zonePill());
       await tester.pumpAndSettle();
@@ -847,8 +850,13 @@ void main() {
       await pumpMap(tester);
       await tester.tap(zonePill());
       await tester.pumpAndSettle();
-      shapes.roads = Ok([
-        for (var i = 0; i < 51; i++) road('Chemin $i', 45.981 + i * 0.0001),
+      shapes.banRoads = Ok([
+        for (var i = 0; i < 51; i++)
+          road(
+            BanStreetId('69264_${3000 + i}'),
+            'Chemin $i',
+            45.981 + i * 0.0001,
+          ),
       ]);
 
       shownMap(tester).onZoneDrawn!(zone);
@@ -976,9 +984,11 @@ void main() {
 
       /// « Zone » on, then a zone drawn with Rue de la Gare in it.
       Future<void> drawZone(WidgetTester tester) async {
-        shapes.roads = Ok([
-          NamedRoad(
+        shapes.banRoads = Ok([
+          BanRoad(
+            banId: _gareId,
             name: 'Rue de la Gare',
+            commune: insee('69264'),
             shape: StreetShape([
               [at(45.985, 4.712), at(45.985, 4.716)],
             ]),

@@ -7,6 +7,8 @@ import 'package:tournee_calendriers/application/ports/street_shapes.dart';
 import 'package:tournee_calendriers/application/use_cases/look_up_street.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_distance.dart';
+import 'package:tournee_calendriers/domain/geometry/road_side.dart';
+import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
@@ -60,6 +62,33 @@ NamedRoad _roadNorthOfTap(String name, double metres) {
     ]),
   );
 }
+
+/// A stretch of BD TOPO running east, [metres] north of [_tap], with the
+/// BAN street [id] on [side] (both when null): the tap is south of it, on
+/// its right.
+BanRoad _stretchNorthOfTap(
+  BanStreetId? id,
+  double metres, {
+  RoadSide? side,
+  String name = 'Rue Pierre Morin',
+}) => BanRoad(
+  banId: id,
+  name: name,
+  commune: insee('69264'),
+  shape: _eastward(metres),
+  side: side,
+);
+
+/// A line running east, [metres] north of [_tap].
+StreetShape _eastward(double metres) {
+  final latitude = _tap.latitude + metres / metresPerDegree;
+  return StreetShape([
+    [at(latitude, 4.72400), at(latitude, 4.72600)],
+  ]);
+}
+
+/// Where the ✓ of a stretch [metres] north of [_tap] sits: facing it.
+GeoPoint _facingTap(double metres) => _eastward(metres).nearestPointTo(_tap)!;
 
 void main() {
   late FakeStreetRepository streets;
@@ -155,6 +184,266 @@ void main() {
     });
   });
 
+  group('the BD TOPO stretch under the finger', () {
+    // The geocoder answers the Rue des Lilas: not asked while BD TOPO
+    // gives the street.
+    late FakeAddressDirectory directory;
+    final pasteurId = BanStreetId('69264_1200');
+    final pasteurNumbers = StreetNumbers(
+      id: pasteurId,
+      name: streetName('Rue Pasteur'),
+      commune: villefranche,
+      numbers: [DirectoryNumber(number: n('5'))],
+      invalidNumbers: 0,
+      duplicateNumbers: 0,
+    );
+
+    setUp(() {
+      directory = FakeAddressDirectory(
+        places: {_tap: Ok(_lilasMatch)},
+        streets: {_morinId: Ok(_morinNumbers), pasteurId: Ok(pasteurNumbers)},
+      );
+    });
+
+    test('should look for the stretches around the tap', () async {
+      await lookUp(directory)(StreetAtPoint(_tap));
+
+      expect(shapes.areasAsked, [
+        GeoBounds.around([_tap])!.expandedBy(LookUpStreet.tapReachMetres),
+      ]);
+    });
+
+    test('should give the BAN street of the stretch by its id, named by the '
+        'BAN, its point under the finger', () async {
+      shapes.banRoads = Ok([_stretchNorthOfTap(_morinId, 10, name: 'X')]);
+
+      final found = valueOf(await lookUp(directory)(StreetAtPoint(_tap)));
+
+      expect(found, isA<StreetToAdd>());
+      found as StreetToAdd;
+      expect(
+        found.match,
+        StreetMatch(
+          id: _morinId,
+          name: streetName('Rue Pierre Morin'),
+          commune: villefranche,
+          position: _facingTap(10),
+        ),
+      );
+      expect(found.mark, _facingTap(10));
+      expect(found.numbers, same(_morinNumbers));
+      expect(found.fromCorbeille, isFalse);
+      expect(directory.streetsAsked, [_morinId]);
+    });
+
+    test('should ask neither the geocoder nor the map when BD TOPO gives '
+        'the street', () async {
+      shapes.banRoads = Ok([_stretchNorthOfTap(_morinId, 10)]);
+
+      await lookUp(directory)(StreetAtPoint(_tap));
+
+      expect(directory.pointsAsked, isEmpty);
+      expect(directory.searchesAsked, isEmpty);
+      expect(shapes.namedAreasAsked, isEmpty);
+    });
+
+    test('should give the street of the secteur by its id, named as the '
+        'secteur has it, without asking its numbers', () async {
+      shapes.banRoads = Ok([_stretchNorthOfTap(lilas.banId, 10)]);
+
+      final found = valueOf(await lookUp(directory)(StreetAtPoint(_tap)));
+
+      expect(found, isA<StreetOfTheSector>());
+      found as StreetOfTheSector;
+      expect(found.street, same(lilas));
+      expect(
+        found.match,
+        StreetMatch(
+          id: lilas.banId!,
+          name: lilas.name,
+          commune: lilas.commune,
+          position: _facingTap(10),
+        ),
+      );
+      expect(directory.streetsAsked, isEmpty);
+    });
+
+    test('should offer to add again a street of the Corbeille', () async {
+      final (deleted, change) = lilas.delete(by: lea, at: twoPm);
+      await streets.save(deleted, change);
+      final lilasDirectory = FakeAddressDirectory(
+        streets: {lilas.banId!: Ok(_morinNumbers)},
+      );
+      shapes.banRoads = Ok([_stretchNorthOfTap(lilas.banId, 10)]);
+
+      final found = valueOf(await lookUp(lilasDirectory)(StreetAtPoint(_tap)));
+
+      expect((found as StreetToAdd).fromCorbeille, isTrue);
+      expect(lilasDirectory.streetsAsked, [lilas.banId]);
+    });
+
+    test('should take the nearest stretch carrying a BAN street', () async {
+      shapes.banRoads = Ok([
+        _stretchNorthOfTap(_morinId, 20),
+        _stretchNorthOfTap(pasteurId, 5),
+        _stretchNorthOfTap(lilas.banId, 25),
+      ]);
+
+      final found = valueOf(await lookUp(directory)(StreetAtPoint(_tap)));
+
+      expect(found.match.id, pasteurId);
+      expect((found as StreetToAdd).mark, _facingTap(5));
+    });
+
+    test('should keep the first of two stretches as near', () async {
+      shapes.banRoads = Ok([
+        _stretchNorthOfTap(_morinId, 5),
+        _stretchNorthOfTap(pasteurId, 5),
+      ]);
+
+      final found = valueOf(await lookUp(directory)(StreetAtPoint(_tap)));
+
+      expect(found.match.id, _morinId);
+    });
+
+    test('should pass over a nearer stretch without BAN street', () async {
+      shapes.banRoads = Ok([
+        _stretchNorthOfTap(null, 2, name: 'ESP PAUL BERT'),
+        _stretchNorthOfTap(_morinId, 20),
+      ]);
+
+      final found = valueOf(await lookUp(directory)(StreetAtPoint(_tap)));
+
+      expect(found.match.id, _morinId);
+    });
+
+    test('should pass over a stretch without any line', () async {
+      shapes.banRoads = Ok([
+        BanRoad(
+          banId: pasteurId,
+          name: 'Rue Pasteur',
+          commune: insee('69264'),
+          shape: StreetShape.none,
+        ),
+        _stretchNorthOfTap(_morinId, 20),
+      ]);
+
+      final found = valueOf(await lookUp(directory)(StreetAtPoint(_tap)));
+
+      expect(found.match.id, _morinId);
+    });
+
+    test('should take a stretch just within reach', () async {
+      shapes.banRoads = Ok([
+        _stretchNorthOfTap(_morinId, LookUpStreet.tapReachMetres - 1),
+      ]);
+
+      final found = valueOf(await lookUp(directory)(StreetAtPoint(_tap)));
+
+      expect(found.match.id, _morinId);
+      expect(directory.pointsAsked, isEmpty);
+    });
+
+    test('should ask the geocoder when no stretch with a BAN street is '
+        'within reach', () async {
+      shapes.banRoads = Ok([
+        _stretchNorthOfTap(_morinId, LookUpStreet.tapReachMetres + 1),
+        _stretchNorthOfTap(null, 2, name: 'ESP PAUL BERT'),
+      ]);
+
+      final found = valueOf(await lookUp(directory)(StreetAtPoint(_tap)));
+
+      expect(found.match, _lilasMatch);
+      expect(directory.pointsAsked, [_tap]);
+      expect(shapes.namedAreasAsked, hasLength(1));
+    });
+
+    test('should ask the geocoder when BD TOPO cannot answer', () async {
+      shapes.banRoads = const Err(StreetShapesFailure.serviceError);
+
+      final found = valueOf(await lookUp(directory)(StreetAtPoint(_tap)));
+
+      expect(found.match, _lilasMatch);
+      expect(directory.pointsAsked, [_tap]);
+    });
+
+    test('should ask the geocoder when the BAN no longer has the BAN street '
+        'of the stretch', () async {
+      final unknown = BanStreetId('69264_9999');
+      shapes.banRoads = Ok([_stretchNorthOfTap(unknown, 10)]);
+
+      final found = valueOf(await lookUp(directory)(StreetAtPoint(_tap)));
+
+      expect(found.match, _lilasMatch);
+      expect(directory.streetsAsked, [unknown]);
+      expect(directory.pointsAsked, [_tap]);
+    });
+
+    test('should say the network is missing when the BAN cannot be '
+        'reached for the street of the stretch', () async {
+      final offline = FakeAddressDirectory(
+        places: {_tap: Ok(_lilasMatch)},
+        streets: {_morinId: const Err(AddressDirectoryFailure.noNetwork)},
+      );
+      shapes.banRoads = Ok([_stretchNorthOfTap(_morinId, 10)]);
+
+      final failure = failureOf(await lookUp(offline)(StreetAtPoint(_tap)));
+
+      expect(failure, AddressDirectoryFailure.noNetwork);
+      expect(offline.pointsAsked, isEmpty);
+    });
+
+    group('a stretch with a street on each side', () {
+      // Rue Pierre Morin on its left (north), Rue Pasteur on its right
+      // (south, where the tap is).
+      test('should give the street of the side under the finger', () async {
+        shapes.banRoads = Ok([
+          _stretchNorthOfTap(_morinId, 10, side: RoadSide.left),
+          _stretchNorthOfTap(pasteurId, 10, side: RoadSide.right),
+        ]);
+
+        final found = valueOf(await lookUp(directory)(StreetAtPoint(_tap)));
+
+        expect(found.match.id, pasteurId);
+      });
+
+      test('should give the street of the side under the finger whatever '
+          'their order', () async {
+        shapes.banRoads = Ok([
+          _stretchNorthOfTap(pasteurId, 10, side: RoadSide.right),
+          _stretchNorthOfTap(_morinId, 10, side: RoadSide.left),
+        ]);
+
+        final found = valueOf(await lookUp(directory)(StreetAtPoint(_tap)));
+
+        expect(found.match.id, pasteurId);
+      });
+
+      test('should give the street of the other side when the side under '
+          'the finger has none', () async {
+        shapes.banRoads = Ok([
+          _stretchNorthOfTap(_morinId, 10, side: RoadSide.left),
+        ]);
+
+        final found = valueOf(await lookUp(directory)(StreetAtPoint(_tap)));
+
+        expect(found.match.id, _morinId);
+      });
+
+      test('should take a nearer stretch over the side under the finger of '
+          'a farther one', () async {
+        shapes.banRoads = Ok([
+          _stretchNorthOfTap(pasteurId, 10, side: RoadSide.right),
+          _stretchNorthOfTap(_morinId, 5, side: RoadSide.left),
+        ]);
+
+        final found = valueOf(await lookUp(directory)(StreetAtPoint(_tap)));
+
+        expect(found.match.id, _morinId);
+      });
+    });
+  });
+
   group('the road under the finger', () {
     // The geocoder answers the street whose one point is nearest the tap,
     // not the road under the finger: here the Rue des Lilas, whose middle
@@ -174,7 +463,7 @@ void main() {
     test('should look for the roads of the map around the tap', () async {
       await lookUp(directory)(StreetAtPoint(_tap));
 
-      expect(shapes.zonesAsked, [
+      expect(shapes.namedAreasAsked, [
         GeoBounds.around([_tap])!.expandedBy(LookUpStreet.tapReachMetres),
       ]);
     });
@@ -491,7 +780,7 @@ void main() {
     test('should not ask the map for a street found by the search', () async {
       await lookUp(directory)(FoundStreet(_morin));
 
-      expect(shapes.zonesAsked, isEmpty);
+      expect(shapes.namedAreasAsked, isEmpty);
     });
   });
 

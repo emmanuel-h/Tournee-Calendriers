@@ -1183,7 +1183,7 @@
   "@release020Team": { "description": "« Nouveautés », version 0.2.0: Équipe actions for admins, anyone may leave." },
   "release020DeviceId": "Paramètres affiche l'identifiant de l'appareil, à donner pour devenir administrateur.",
   "@release020DeviceId": { "description": "« Nouveautés », version 0.2.0: the device identifier in Paramètres." },
-  "settingsCredits": "Carte © contributeurs OpenStreetMap, OpenFreeMap. Adresses : Base Adresse Nationale.",
+  "settingsCredits": "Carte © contributeurs OpenStreetMap, OpenFreeMap. Tracé des rues : IGN (BD TOPO). Adresses : Base Adresse Nationale.",
   "@settingsCredits": { "description": "Attribution of the map and address data at the bottom of Paramètres (PLAN §8.3)." },
   "settingsRowSemantics": "{label}, {value}",
   "@settingsRowSemantics": {
@@ -1220,7 +1220,7 @@
   "@privacyLocationBody": { "description": "Privacy page: the phone's position (PLAN §8.3): its section of PRIVACY.md, word for word." },
   "privacyHostingTitle": "Hébergement",
   "@privacyHostingTitle": { "description": "Privacy page: section about where the data is kept." },
-  "privacyHostingBody": "Les secteurs sont stockés chez Google Firebase, dans l'Union européenne. Les cartes viennent d'OpenFreeMap et les adresses de la Base Adresse Nationale : comme tout site web, ces services voient l'adresse IP du téléphone quand ils lui envoient des données.",
+  "privacyHostingBody": "Les secteurs sont stockés chez Google Firebase, dans l'Union européenne. Les cartes viennent d'OpenFreeMap et de l'IGN, les adresses de la Base Adresse Nationale : comme tout site web, ces services voient l'adresse IP du téléphone quand ils lui envoient des données.",
   "@privacyHostingBody": { "description": "Privacy page: where the data is kept (PLAN §8.3): its section of PRIVACY.md, word for word." },
   "privacyDeletionTitle": "Suppression",
   "@privacyDeletionTitle": { "description": "Privacy page: section about deleting the data." },
