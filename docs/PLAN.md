@@ -83,7 +83,7 @@ Code uses English names, the UI uses French.
 | Architecture | **Strict DDD, hexagonal**: domain (entities, value objects, aggregates) → application (use cases + ports) → adapters (Firestore, HTTP, map, UI). Riverpod for state and dependency injection |
 | Language | **French only.** Strings in `res/values/strings.xml`; no other locale |
 | Map | **MapLibre** (`maplibre_gl`, official Flutter plugin, offline regions on Android and iOS) with **OpenFreeMap** vector tiles (OpenStreetMap data, free, no key) |
-| Street picking | Tap a road → reverse geocoding (IGN Géoplateforme) gives the BAN street → BAN gives its numbers with positions → the OpenFreeMap vector tiles (OSM) give its shape, stored once (#92) |
+| Street picking | Tap a road → reverse geocoding (IGN Géoplateforme) gives the BAN street → BAN gives its numbers with positions → the OpenFreeMap vector tiles (OSM) give its shape, stored once (#92). **To change (§5.18):** the IGN BD TOPO road under the finger gives the BAN street by its id, and its segments give the shape, OSM by name only as a fallback |
 | Manual edits | Missing streets and numbers can always be added by hand, offline too |
 | Sharing | Live sync through **Firebase Firestore**; its offline cache *is* the local store (no Room) |
 | Offline | Explicit "download the secteur" step: all street documents into an unlimited Firestore cache + map tiles of the secteur area into a MapLibre offline region |
@@ -491,7 +491,8 @@ an admin, shows only « Rejoindre un secteur », in red), and the bottom of the 
   « Mes rues » (every row for a visiting admin) still open the Street screen. The map opens
   on the secteur's streets, else its communes, and stays where the member puts it when the
   team adds a street. No download banner (decided in #32, checked in #33).
-- **Lines filled in the background** (#92, `presentation/home/missing_shapes.dart`): each
+- **Lines filled in the background** (#92, `presentation/home/missing_shapes.dart`; the road from
+  IGN BD TOPO by BAN id since §5.18): each
   time Accueil reads the streets, those without a line on the map but with a house on it
   (`Street.needsShape`: imported from a list, or added before their road came) get their
   road from the map's tiles, one street at a time, each **once per session** whatever the
@@ -1811,7 +1812,8 @@ removes are marked « (removed, 5.14) » there.
     under the ✓ picture, so the disc shows even where symbols do not render), its road drawn
     when the map's tiles give it (`LookUpStreetShape`, asked once per tick); several taps may be
     on their way at once, each answer ticks its street. **The street of a tap is the road under
-    the finger** (#134, `LookUpStreet`): the geocoder answers the street whose one point (about
+    the finger** (#134, `LookUpStreet`; IGN BD TOPO's road and its BAN id first since §5.18, what follows
+    is the fallback): the geocoder answers the street whose one point (about
     its middle) is nearest, often a side street near a crossing or along a long road, which put
     a ✓ on the road tapped for another street, drawn elsewhere or not at all. So the map's
     tiles are read around the tap too (`StreetShapes.roadsIn`, 30 m around): the nearest named
@@ -2282,6 +2284,75 @@ maybe an hour, §5.7).
   the list rings in its grid (staircase chosen, door scrolled into view) with no hint pill; a
   reminder whose time passes while the schedule is written is skipped; the list shows « Plus
   aucune maison à repasser. » when the last ↻ goes while it is open.
+
+### 5.18 Street lines from IGN BD TOPO (#166, to build)
+
+Agreed 2026-11-13 from a phone test on a rural secteur. Overrides 5.3 (« Lines filled in the
+background »), 5.4, 5.14 (a tap, « Zone ») and §6.1 (`StreetShapes`) where they disagree. No
+screen changes, only the credits line and the privacy text.
+
+**Why.** A street's line comes from the OpenFreeMap tiles (OpenStreetMap) **matched by name**
+(#92, #125, #134), and OSM may be wrong where the BAN is right. Three cases seen, given here
+with Villefranche names:
+- **The name on the wrong way**: OSM names a footpath « Chemin des Vignes » while the BAN's three
+  numbers sit at the end of a short track; the line is drawn across the gardens.
+- **A misspelt name**: OSM says « Rue de le Paix », the exact shape lookup finds nothing, the
+  street has no line (the tap tolerated it since #134, the shape did not).
+- **Two BAN streets on one road name**: the BAN has « Rue de Gleteins » and « Gleteins » (a
+  hamlet road). A tap on the hamlet road asks the geocoder, which answers the nearest numbered
+  street, « Rue de Gleteins », so « Déjà dans le secteur » and « Gleteins » cannot be picked.
+
+**IGN BD TOPO** (Géoplateforme WFS, free, no key, Licence Ouverte Etalab 2.0) has each road
+segment (`BDTOPO_V3:troncon_de_route`) with **the BAN id of the street on each side**
+(`identifiant_voie_ban_gauche` / `_droite`, the same `idVoie` as ours, e.g. `69264_1270`), its
+BAN name (`nom_voie_ban_*`) and its commune (`insee_commune_*`). A street's line is then found
+**by its BAN id, never by its name**. Checked 2026-11-13: a 60 m box answers in 0.15 s, a
+500 m zone in 0.2 s (249 segments, 75 BAN ids, 47 segments without one: paths, unnamed tracks).
+
+**What changes:**
+- **A street's line** (`StreetShapes.shapeOf`): the BD TOPO segments carrying the street's BAN
+  id on either side, joined where their ends meet (`joinLines`), not simplified (the caller
+  simplifies, as today). No search area: the id is unique. **When BD TOPO has none** (a new estate
+  IGN has not mapped yet, a road only named in the BAN), the OpenFreeMap tiles are asked by name
+  as today (#92), around the houses; neither → no line, the house dots alone. Used everywhere a
+  line is looked up: a tick on « Ajouter des rues » (`LookUpStreetShape`), the background fill of
+  Accueil (`FillStreetShape`, 5.3), « Liste » and the zone's streets once added.
+- **A tap on « Ajouter des rues »** (`LookUpStreet(StreetAtPoint)`): the BD TOPO segments within
+  30 m of the finger are read; the nearest one carrying a BAN id gives the street (on a segment
+  whose two sides differ, the side under the finger). Its name, commune and point come from the
+  BAN lookup of that id, which also gives the numbers. No geocoder, no name search. With no such
+  segment within 30 m, or BD TOPO unreadable, today's path stands (the geocoder, then the tiles'
+  road names and `StreetName.typosFrom`, #134). The ✓ sits on that segment under the finger.
+- **« Zone »** (`FindZoneStreets`): the BD TOPO segments in the rectangle, grouped by BAN id
+  (one row per street, its BAN name and commune; no commune matching, no 3-commune limit). A
+  named segment without a BAN id (`nom_collaboratif_*`) is a greyed « Aucune adresse connue »
+  row as today. More than 50 streets, or more than 1000 segments in the rectangle (the WFS's
+  `numberMatched`): « Zone trop grande : 50 rues au plus. » as today. Each ✓ sits half-way
+  along the street's first segment inside the zone. Its line is looked up by id when ticked,
+  like a tap, so a zone's street is stored with its whole line (no longer filled later).
+- **The map itself** stays OpenFreeMap (style, offline region, weekly refresh): its labels may
+  still show OSM's names; only our lines and dots change.
+- **Credits** (5.9): « Carte © contributeurs OpenStreetMap, OpenFreeMap. Tracé des rues : IGN
+  (BD TOPO). Adresses : Base Adresse Nationale. » (the licence asks for the source).
+- **Privacy** (`privacyHostingBody`, `PRIVACY.md`): « Les cartes viennent d'OpenFreeMap et de
+  l'IGN, les adresses de la Base Adresse Nationale : … » (the phone now asks the IGN for roads;
+  it already asked the Géoplateforme for the geocoder).
+- **No migration, no rules change.** Lines stored before stay as they are (a line is filled
+  only while empty, §8.2). The user deletes the live secteur once this ships and creates it
+  again (single user, decided 2026-11-13).
+- **Offline unchanged**: lines are looked up only while adding a street or filling one,
+  online; stored on the street, then drawn from the cache.
+
+**Adapter.** `IgnStreetShapes` (`lib/infrastructure/geopf/`) behind the existing
+`StreetShapes` port, with `OpenFreeMapStreetShapes` kept for the name fallback. The port takes
+the BAN id (`shapeOf(banId:, name:, area:)`; the name and area serve the fallback only), and
+`roadsIn(area)` answers `BanRoad`s (BAN id or none, name, INSEE code, shape) from BD TOPO. The
+same failures (`noNetwork`, `serviceError`, `tooLarge`) and the 15 s timeout of the BAN adapter.
+Requests (§9): `GetFeature`, `TYPENAMES=BDTOPO_V3:troncon_de_route`, `OUTPUTFORMAT=application/json`,
+`SRSNAME=EPSG:4326`, `PROPERTYNAME` limited to the ids, names, INSEE codes and `geometrie`; by
+id `CQL_FILTER=identifiant_voie_ban_gauche='…' OR identifiant_voie_ban_droite='…'`; by area
+`BBOX=minLat,minLon,maxLat,maxLon,urn:ogc:def:crs:EPSG::4326` (latitude first) with `COUNT=1000`.
+Fixtures captured on Villefranche-sur-Saône only.
 
 ## 6. Data model
 
@@ -2912,6 +2983,8 @@ Address and shape adapters fixed in T3.2 (`lib/application/ports/address_directo
   without a request (the service refuses it with HTTP 400). Same failures as the BAN lookup
   (`noNetwork`, `notFound` on 404, `serviceError`); an unreadable feature is left out. One
   adapter, `BanAddressDirectory`, serves the four calls (same timeout, 15 s).
+- **§5.18 (to build) moves both calls to IGN BD TOPO by BAN id** (`IgnStreetShapes`), this
+  adapter staying as the fallback by name.
 - **Port `StreetShapes.shapeOf(name:, area:)`** (#92) → `StreetShape` as OpenStreetMap
   draws it on the map, **not simplified** (the caller calls `simplified()` before storing),
   `StreetShape.none` when no road matches; `StreetShapesFailure.noNetwork` (no answer within
@@ -3859,7 +3932,8 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
 | Commune by name, fallback | `https://data.geopf.fr/geocodage/search?q={q}&type=municipality&limit=5` | Asked only when geo.api.gouv.fr fails (transport error, timeout, non-200, unreadable answer; it refused connections for a minute on 2026-11-10, #137): `name`, `citycode` (INSEE), one `postcode`, the point as centre; ranked by its score, not by population; `q` 3–200 characters, else HTTP 400 |
 | Streets of a commune | `https://plateforme.adresse.data.gouv.fr/lookup/{inseeCode}` | `voies[]`: `idVoie`, `nomVoie`, `nbNumeros`, `type`; 404 for an unknown commune |
 | Numbers of a street | `https://plateforme.adresse.data.gouv.fr/lookup/{idVoie}` | `numeros[]`: `numero`, `suffixe`, `position.coordinates` [lon, lat]; a number may appear twice; 404 for an unknown street |
-| Shape of a street | OpenFreeMap TileJSON `https://tiles.openfreemap.org/planet` (its `tiles` template, versioned weekly: `…/planet/20261011_080001_pt/{z}/{x}/{y}.pbf`), then the z14 vector tiles around the street's houses, layer `transportation_name`, property `name` (§6.1, #92) | Same data as the map. A tile ≈ 50–250 kB, ≈ 0.1 s; max zoom 14. Lines clipped per tile with a buffer: cut and joined by the app. Fallback when empty: no shape, house dots only. Replaced Overpass (#92: 41 s then 502 on 2026-10-18) |
+| Road segments with their BAN ids (§5.18, to build) | `https://data.geopf.fr/wfs/ows?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAMES=BDTOPO_V3:troncon_de_route&OUTPUTFORMAT=application/json&SRSNAME=EPSG:4326` + `CQL_FILTER=identifiant_voie_ban_gauche='{idVoie}' OR identifiant_voie_ban_droite='{idVoie}'` or `BBOX=minLat,minLon,maxLat,maxLon,urn:ogc:def:crs:EPSG::4326&COUNT=1000` | IGN BD TOPO, Licence Ouverte 2.0 (credit « IGN (BD TOPO) »). Per segment: `identifiant_voie_ban_gauche/_droite`, `nom_voie_ban_*`, `insee_commune_*`, `nom_collaboratif_*`, `geometrie` (LineString, lon/lat + altitude). A segment may carry no BAN id. ≈ 0.15–0.2 s (2026-11-13) |
+| Shape of a street (fallback from §5.18) | OpenFreeMap TileJSON `https://tiles.openfreemap.org/planet` (its `tiles` template, versioned weekly: `…/planet/20261011_080001_pt/{z}/{x}/{y}.pbf`), then the z14 vector tiles around the street's houses, layer `transportation_name`, property `name` (§6.1, #92) | Same data as the map. A tile ≈ 50–250 kB, ≈ 0.1 s; max zoom 14. Lines clipped per tile with a buffer: cut and joined by the app. Fallback when empty: no shape, house dots only. Replaced Overpass (#92: 41 s then 502 on 2026-10-18) |
 
 All of them are wrapped behind domain interfaces (`AddressDirectory`, `CommuneSearch`, `StreetShapes`), so the rest
 of the app never sees HTTP or JSON, and tests use fakes. Parsing is tested against JSON fixtures
