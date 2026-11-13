@@ -99,7 +99,7 @@ the privacy text against what the app does (campaign erasure, Android backup, #1
 (#145). #143 needs a screen decision and #145 a risk decision before any code.
 M11 done, validated by the user, milestone closed (2026-11-12, PLAN §5.16): #143–#159; #146 (App Check
 and quota) checked by the user in the console. Rules changed (#145, #147 `openSectors/{uid}`, #148 `names/{key}`), deployed 2026-11-12
-(identical to `firestore.rules`). Live secteurs and streets deleted 2026-11-12; the user started again from the phone.
+(identical to `firestore.rules`). Live secteurs and streets deleted 2026-11-12 and again 2026-11-13; the user starts again from the phone.
 #160 (the user reviewed every string in `lib/ui/l10n/app_fr.arb`) closed 2026-11-12.
 
 ## Commands
