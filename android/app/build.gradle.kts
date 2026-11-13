@@ -82,5 +82,5 @@ flutter {
 
 dependencies {
     // The java.time of the reminders' scheduling on older Android (#82).
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 }
