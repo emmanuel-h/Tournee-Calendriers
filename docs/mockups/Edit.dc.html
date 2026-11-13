@@ -15,7 +15,10 @@ a{color:#B3261E}a:hover{color:#8C1D18}
 .ib{width:48px;height:48px;border:0;background:transparent;color:#1B1F24;border-radius:24px;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;text-decoration:none;flex-shrink:0}
 .ib svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 .tile{height:56px;box-sizing:border-box;border-radius:12px;display:flex;align-items:center;background:#FFFFFF;border:1.5px dashed #8A8F96;width:100%}
-.num{flex:1;padding-left:14px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:26px;line-height:1;background:transparent;border:0;text-align:left;color:#1B1F24;cursor:pointer;height:100%}
+.num{flex:1;min-width:0;display:flex;align-items:center;gap:8px;padding-left:14px;font-family:'Barlow Condensed',sans-serif;font-weight:700;font-size:26px;line-height:1;background:transparent;border:0;text-align:left;color:#1B1F24;cursor:pointer;height:100%}
+.num .t{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.bi{width:20px;height:20px;flex-shrink:0;fill:none;stroke:currentColor;stroke-width:2;stroke-linejoin:round;margin-right:-4px}
+.pen{width:20px;height:20px;fill:none;stroke:#5A6068;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
 .x{width:48px;height:48px;border:0;background:transparent;color:#B3261E;font-size:20px;font-weight:700;cursor:pointer;flex-shrink:0}
 .add{height:56px;box-sizing:border-box;border-radius:12px;border:1.5px solid #1B1F24;background:#F3F1EC;display:flex;align-items:center;justify-content:center;gap:6px;font:700 15px 'Atkinson Hyperlegible',sans-serif;color:#1B1F24;text-decoration:none;width:100%}
 </style>
@@ -45,18 +48,19 @@ a{color:#B3261E}a:hover{color:#8C1D18}
     <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; align-items: start">
       <div style="display: flex; flex-direction: column; gap: 10px">
         <sc-for list="{{odd}}" as="h" hint-placeholder-count="6">
-          <div class="tile"><button class="num" aria-label="{{h.editLabel}}">{{h.label}}</button><button class="x" onClick="{{h.remove}}" aria-label="{{h.removeLabel}}">✕</button></div>
+          <div class="tile"><button class="num" aria-label="{{h.editLabel}}"><sc-if value="{{h.building}}" hint-placeholder-val="{{false}}"><svg class="bi" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="1"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2"/></svg></sc-if><span class="t">{{h.label}}</span><svg class="pen" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/></svg></button><button class="x" onClick="{{h.remove}}" aria-label="{{h.removeLabel}}">✕</button></div>
         </sc-for>
         <a class="add" href="Numbers.dc.html">+ numéros</a>
       </div>
       <div style="display: flex; flex-direction: column; gap: 10px">
         <sc-for list="{{even}}" as="h" hint-placeholder-count="6">
-          <div class="tile"><button class="num" aria-label="{{h.editLabel}}">{{h.label}}</button><button class="x" onClick="{{h.remove}}" aria-label="{{h.removeLabel}}">✕</button></div>
+          <div class="tile"><button class="num" aria-label="{{h.editLabel}}"><sc-if value="{{h.building}}" hint-placeholder-val="{{false}}"><svg class="bi" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="3" width="14" height="18" rx="1"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2"/></svg></sc-if><span class="t">{{h.label}}</span><svg class="pen" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/></svg></button><button class="x" onClick="{{h.remove}}" aria-label="{{h.removeLabel}}">✕</button></div>
         </sc-for>
         <a class="add" href="Numbers.dc.html">+ numéros</a>
       </div>
     </div>
-    <p style="margin: 14px 0 0 0; font-size: 14px; color: #4A5058; line-height: 1.4">Touchez un numéro pour le renommer ou le transformer en immeuble.</p>
+    <p style="margin: 14px 0 0 0; font-size: 14px; color: #4A5058; line-height: 1.4">Touchez ✏ pour renommer un numéro ou le transformer en immeuble.</p>
+    <!-- The ✏ after each number shows the number can be edited; number and ✏ are one button opening the number sheet (« Changer le numéro », « Transformer en immeuble… » or « Ouvrir l'immeuble »). ✕ stays apart. -->
   </div>
   <sc-if value="{{hasRemoved}}" hint-placeholder-val="{{false}}">
     <div style="position: absolute; left: 16px; right: 16px; bottom: 96px; min-height: 56px; background: #1B1F24; color: #FFFFFF; border-radius: 14px; display: flex; align-items: center; justify-content: space-between; padding: 0 8px 0 18px; box-sizing: border-box; font-size: 16px">
@@ -78,7 +82,7 @@ class Component extends DCLogic {
       numbers: [
         { n: '1', side: 'odd' }, { n: '3', side: 'odd' }, { n: '3bis', side: 'odd' }, { n: '5', side: 'odd' },
         { n: '7', side: 'odd' }, { n: '9', side: 'odd' }, { n: '11', side: 'odd' },
-        { n: '2', side: 'even' }, { n: '4', side: 'even' }, { n: '6', side: 'even' }, { n: '8 · immeuble', side: 'even' },
+        { n: '2', side: 'even' }, { n: '4', side: 'even' }, { n: '6', side: 'even' }, { n: '8', side: 'even', building: true },
         { n: '10', side: 'even' }, { n: '12', side: 'even' }, { n: '14', side: 'even' }
       ]
     };
@@ -100,7 +104,8 @@ class Component extends DCLogic {
   renderVals() {
     const mk = (x) => ({
       label: x.n,
-      editLabel: 'Modifier le numéro ' + x.n,
+      building: !!x.building,
+      editLabel: 'Modifier le numéro ' + x.n + (x.building ? ', immeuble' : ''),
       removeLabel: 'Supprimer le numéro ' + x.n,
       remove: () => this.remove(x.n)
     });

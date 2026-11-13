@@ -722,9 +722,13 @@ Edit mode details fixed in T1.10 (`lib/presentation/edit_street/`,
   (« Nom limité à 150 caractères. » when too long) and keeps the screen open; going to the
   background then stores nothing and leaves the name and its message in the field.
 - **Numbers**: dashed tiles of 56 dp, odd on the left, even on the right, one column when the
-  street has numbers on one side only (decided as on the street screen); a building reads
-  « 8 · immeuble ». « + numéros » closes each column (both open the same sheet); under them
-  « Touchez un numéro pour le renommer ou le transformer en immeuble. ».
+  street has numbers on one side only (decided as on the street screen); a building shows the
+  building icon before its number, as on the street screen (« 8 · immeuble » until 2026-11-13,
+  which the ✏ would cut). Each number is followed by a small grey ✏ (`Icons.edit_outlined`, 20 dp):
+  number and ✏ are one button opening the number sheet, ✕ stays apart; the ✏ is only visual,
+  TalkBack still says « Modifier le numéro 3 » (from the phone test of 2026-11-13: the tap on a
+  number was hard to find). « + numéros » closes each column (both open the same sheet); under
+  them « Touchez ✏ pour renommer un numéro ou le transformer en immeuble. ».
 - **✕** removes at once with « N° 3 supprimé [Annuler] » (4 s, the street screen's snackbar).
   A number with marks (`House.hasMarks`) asks first: « Supprimer le n° 3 ? — Ce numéro a des
   marques (statut, « repasser » ou portes marquées). Elles partent avec lui à la
