@@ -48,7 +48,7 @@ dependencies:
   # The map (PLAN §5.3, §5.4, §10.2), with OpenFreeMap tiles; only in
   # ui/map/ and infrastructure/maplibre_offline/. 0.27.1 is the version the
   # map spike validated on a phone (docs/spikes/map.md).
-  maplibre_gl: 0.27.1
+  maplibre_gl: 0.28.0
   # Reads the join code's QR code with the camera on « Rejoindre » (PLAN
   # §5.2, §10.2); only in ui/. The camera permission is asked when
   # « Scanner le QR code » is tapped, never at launch.
