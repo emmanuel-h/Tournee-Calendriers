@@ -1055,6 +1055,8 @@
   },
   "release010First": "Première version de test.",
   "@release010First": { "description": "« Nouveautés », version 0.1.0: what it brings, one short line for the members." },
+  "release0200Card": "Ajouter des rues : toucher une rue déjà dans le secteur affiche sa fiche, pour la modifier ou la supprimer.",
+  "@release0200Card": { "description": "Line of « Nouveautés » for 0.20.0." },
   "release0190Lines": "Le tracé des rues vient maintenant de l'IGN : chaque rue est dessinée sur sa vraie route, même quand la carte se trompe de nom.",
   "@release0190Lines": { "description": "Line of « Nouveautés » for 0.19.0." },
   "release0190Tap": "Ajouter des rues : toucher une route choisit la rue du côté du doigt, même quand deux rues portent presque le même nom.",

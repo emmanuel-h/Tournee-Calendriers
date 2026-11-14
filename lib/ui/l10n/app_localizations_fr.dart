@@ -1163,6 +1163,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get release010First => 'Première version de test.';
 
   @override
+  String get release0200Card =>
+      'Ajouter des rues : toucher une rue déjà dans le secteur affiche sa fiche, pour la modifier ou la supprimer.';
+
+  @override
   String get release0190Lines =>
       'Le tracé des rues vient maintenant de l\'IGN : chaque rue est dessinée sur sa vraie route, même quand la carte se trompe de nom.';
 

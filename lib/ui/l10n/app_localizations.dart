@@ -1684,6 +1684,12 @@ abstract class AppLocalizations {
   /// **'Première version de test.'**
   String get release010First;
 
+  /// Line of « Nouveautés » for 0.20.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter des rues : toucher une rue déjà dans le secteur affiche sa fiche, pour la modifier ou la supprimer.'**
+  String get release0200Card;
+
   /// Line of « Nouveautés » for 0.19.0.
   ///
   /// In fr, this message translates to:
