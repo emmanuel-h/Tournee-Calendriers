@@ -1616,7 +1616,8 @@ outing; the team's area is the **secteur** (§2).
   (the tournée goes on) and « Abandonner la tournée » (red text, #136). « Valider » asks « Valider la tournée ? — Vous ne pourrez plus la
   modifier. [Annuler] [Valider] », then sends the summary (queued offline), forgets the dons
   and goes back to Accueil without a tournée. **A validated tournée is never changed or
-  deleted** (only with its secteur, or its campaign, §5.10).
+  deleted** (only with its secteur, or its campaign, §5.10). **Changed by 5.20 (#168):** its dons are
+  kept, and any member may correct it from Collecte.
 - **Abandonner** (#136, for a tournée started by mistake) asks « Abandonner la tournée ? —
   Ses dons seront perdus. Les maisons marquées restent marquées. [Annuler] [Abandonner] »
   (« Abandonner » in red), then the phone forgets the tournée and its dons (`open_round.json`,
@@ -2446,6 +2447,76 @@ street already in the secteur ticks nothing and says « … est déjà dans le s
   edit mode's use case, offline; the dialog is edit mode's (`showConfirmDialog`,
   `addStreets.confirmDelete`). « Modifier la rue » pushes `AppRoutes.editStreetOf(id)` and
   closes the card on the way back; edit mode's own « Supprimer la rue » still goes to Accueil.
+
+### 5.20 Correct a validated tournée, keep its dons, mark a forgotten house (#168, to build)
+
+Agreed 2026-11-14 (ASCII in the terminal, then mockups CashCorrect, CashCorrectOpen,
+RoundCorrectDons, RoundCorrect, RoundCorrectConfirm, MarkForgotten, MarkForgottenStreet). What the
+app records and what was really collected often differ (a misclick, a forgotten don); the receipts
+are recounted back at the station. **Overrides 5.13's « A validated tournée is never changed or
+deleted »** for its dons and money, and **#122** for the forgotten house only.
+
+```
+  Collecte, a tournée unfolded        Corriger la tournée                 after « Corriger »
+┌────────────────────────────┐      ┌────────────────────────────┐      ┌────────────────────────────┐
+│ Sam. 14 nov. · 14:05→18:20 │      │ ← Corriger la tournée      │      │ Sam. 14 nov. · 14:05→18:20 │
+│ 23 maisons, 20 dons  205 €▾│      │ [Don par don |  Totaux  ]  │      │ 23 maisons, 20 dons  205 €▸│
+│ ✎ Corrigée le 15 nov.      │      │ 15 € · Carte bancaire    › │      │ ✎ Corrigée le 15 nov.      │
+│  Espèces    10 dons   80 € │      │ 10 € · Espèces           › │      │ ⚠ 1 maison à marquer       │
+│  Carte b.    8 dons  105 € │      │ Calendrier offert        › │      │ [Marquer une maison]Ignorer│
+│  Calendriers offerts   1   │      │ …                          │      └────────────────────────────┘
+│  Voir les 19 dons        › │      │ [     Ajouter un don     ] │       Quelle maison ? → a street →
+│  ⚠ La liste des dons ne    │      │ [       Enregistrer      ] │       « Touchez la maison
+│  correspond plus aux totaux│      └────────────────────────────┘       oubliée » → ✓
+│              [✎ Corriger]  │
+└────────────────────────────┘
+```
+
+- **The dons are kept.** « Valider la tournée » sends the tournée's list of dons with its summary:
+  each don is its method and amount, or « Calendrier offert »; **no house, no time, no member**, in
+  the order added. The totals stay in the summary beside it. A tournée validated before #168 has
+  no list (reads as none: no « Voir les dons », « Totaux » only).
+- **Collecte, a tournée unfolded**: its methods and « Calendriers offerts », then « Voir les N dons
+  › » (the list, read-only, « Dons de la tournée » without › or buttons: to compare with the
+  receipts), then « ⚠ La liste des dons ne correspond plus aux totaux. » (amber block, `#FDF3DC`,
+  `#D99A22`) when the list does not add up to the totals (computed, not stored), then « ✎ Corriger »
+  (outlined pill, right). A corrected tournée carries « ✎ Corrigée le 15 nov. » under its line,
+  folded or not. Sent tournées only: « Pas encore envoyées » (5.16) have no « Corriger ».
+  The footer becomes « Les dons ne sont jamais associés à une adresse. ».
+- **Who**: any active member of the secteur, or an admin (summaries carry no member, #145, so
+  the rules cannot tell who validated it).
+- **« Corriger la tournée »** (full screen, « Sam. 14 nov. · 14:05 → 18:20 · 23 maisons »), a switch
+  « Don par don | Totaux » (« Don par don » first, absent with no list):
+  - **Don par don**: « 20 dons · 205 € · touchez un don pour le changer. », the list as « Dons de la
+    tournée » (5.13): a tap opens « Modifier le don » (method, amount, « Supprimer ce don »),
+    « Ajouter un don » (outlined) opens « Nouveau don »; « Enregistrer » (red) saves the list and
+    **recomputes the totals from it**, which clears the flag.
+  - **Totaux**: per method « Dons » and « Montant » side by side, then « Calendriers offerts »,
+    a live « Total » (« 20 dons · 205 € »), and « Les maisons visitées et les heures ne changent
+    pas. La liste des dons reste telle quelle et sera signalée si elle ne correspond plus. ».
+    Checks under the faulty line, « Enregistrer » greyed until fixed: count and amount both 0 or
+    both above 0 (« Un montant pour 8 dons. », « Au moins 1 don pour 20 €. »), at most 1 000 € a
+    don on average (« 1 000 € au plus par don. »), the bounds of the rules.
+  - Houses visited, start and end never change here.
+- **Confirmation**: « Corriger la tournée ? — Total : 19 dons, 210 € → 20 dons, 205 € — Tout le
+  secteur verra les nouveaux chiffres. [Annuler] [Corriger] » (« Corriger » red text); then back
+  to Collecte, snackbar « Correction enregistrée. ». Nothing changed: « Enregistrer » just goes back.
+- **Offline**: saved at once on the phone and sent when the network is back, like other writes;
+  two phones correcting the same tournée offline: the last one sent wins.
+- **A forgotten house**: a correction that adds dons or calendars (paid dons + calendars offered,
+  after minus before, when above 0) adds that many to the tournée's « maisons à marquer ». The row
+  then shows « ⚠ 1 maison à marquer » (« 2 maisons à marquer ») with « Marquer une maison »
+  (outlined pill) and « Ignorer » (muted text, asks nothing, one fewer). Seen by the whole secteur.
+  - « Marquer une maison » opens **« Quelle maison ? »** (« Tournée du sam. 14 nov. · 1 maison à
+    marquer »; amber « ⚠ Choisissez la rue de la maison oubliée, puis touchez la maison. »; a
+    street search; the secteur's streets with their progress), then the street in a **« Touchez la
+    maison oubliée »** mode (amber line « ⚠ Touchez la maison oubliée : elle sera marquée ✓ Fait. »;
+    houses already ✓ / ⊘ faded, a tap on one says « N° 9 : déjà marquée ✓. »; a building opens its
+    door grid in the same mode). One tap marks that house or door ✓ **with no tournée running**
+    (the only exception to #122), adds 1 to the tournée's « maisons visitées » and removes 1 from its
+    « maisons à marquer », then goes back to Collecte with « N° 3 rue des Lilas marquée ✓. ».
+- **Privacy text** (5.9, `PRIVACY.md`): one more sentence for the dons kept with each tournée
+  (method and amount, never a house, a time or a member); drafted by Claude for the user's review.
 
 ## 6. Data model
 
@@ -3367,7 +3438,9 @@ sectors/{sectorId}
                                                     secteur created before (reads as none);
                                                     an unreadable entry, or a second one of a
                                                     code, is skipped when read, at most 50 kept
-  campaigns/{year}/rounds/{roundId}               ← #63: one per validated tournée, create-only,
+  campaigns/{year}/rounds/{roundId}               ← #63: one per validated tournée, create-only
+                                                    (#168: corrections, 5.20; dons, correctedAt,
+                                                    housesToMark to be specified when built),
     startedAt, endedAt, housesVisited, free,          no member on purpose
     cash: { count, cents }, cheque: { count, cents }, card: { count, cents }
   members/{uid}
@@ -3960,7 +4033,7 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
   the secteur's **current campaign** (#145, decided 2026-11-11: `year == currentCampaign`, and
   that campaign exists), so no summary lands in a past campaign; once a new campaign (v1.1)
   starts, a tournée of the old one validated after the switch is refused (accepted: a
-  campaign changes once a year, out of season); **no update, no delete** (they go with the secteur or the campaign: `delete` for admins,
+  campaign changes once a year, out of season); **no update** (**changed by 5.20, #168**: a correction or a forgotten house marked, by an active member or an admin; a resend of the original must stay refused), **no delete** (they go with the secteur or the campaign: `delete` for admins,
   as the streets). `FirestoreRoundLedger.record` is a `set` not awaited: recording the same
   tournée again reaches the server as an update, refused, so the first summary stays. The
   domain does not cap at these bounds: a tournée is one outing, far below 9 999 houses or dons
@@ -3995,7 +4068,8 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
   validated tournée, its start and end, the houses visited and the count and total per
   payment method and of free calendars, seen by the secteur, **without its member**; **never
   a don per house, door or address**. The list of a tournée's dons stays on the phone, without
-  house or time, until it is validated, then it is erased. A house or door marked ✓ keeps
+  house or time, until it is validated, then it is erased. **Changed by 5.20 (#168):** it is sent
+  with the summary (method and amount, no house, time or member), seen by the secteur. A house or door marked ✓ keeps
   **how many calendars it took** (no amount, no method), seen by the team like its status,
   reset with the statuses at the next campaign. `PRIVACY.md` and the Confidentialité page (#79)
   say so in « Données enregistrées », « Hébergement » and « Suppression » (#112): the text was

@@ -378,6 +378,55 @@
       "w": 390,
       "h": 844,
       "title": "5.4 Ajouter des rues — rue déjà dans le secteur"
+    },
+    "CashCorrect.dc.html": {
+      "x": 0,
+      "y": 11376,
+      "w": 390,
+      "h": 844,
+      "title": "5.20 Collecte — tournée corrigée, maison à marquer"
+    },
+    "CashCorrectOpen.dc.html": {
+      "x": 470,
+      "y": 11376,
+      "w": 390,
+      "h": 844,
+      "title": "5.20 Collecte — dons et Corriger"
+    },
+    "RoundCorrectDons.dc.html": {
+      "x": 940,
+      "y": 11376,
+      "w": 390,
+      "h": 844,
+      "title": "5.20 Corriger la tournée — don par don"
+    },
+    "RoundCorrect.dc.html": {
+      "x": 1410,
+      "y": 11376,
+      "w": 390,
+      "h": 844,
+      "title": "5.20 Corriger la tournée — totaux"
+    },
+    "RoundCorrectConfirm.dc.html": {
+      "x": 1880,
+      "y": 11376,
+      "w": 390,
+      "h": 844,
+      "title": "5.20 Corriger la tournée ? "
+    },
+    "MarkForgotten.dc.html": {
+      "x": 2350,
+      "y": 11376,
+      "w": 390,
+      "h": 844,
+      "title": "5.20 Quelle maison ? — les rues"
+    },
+    "MarkForgottenStreet.dc.html": {
+      "x": 2820,
+      "y": 11376,
+      "w": 390,
+      "h": 844,
+      "title": "5.20 Quelle maison ? — la rue"
     }
   },
   "createdOnFiles": {
