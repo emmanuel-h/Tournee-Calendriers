@@ -1163,6 +1163,14 @@ class AppLocalizationsFr extends AppLocalizations {
   String get release010First => 'Première version de test.';
 
   @override
+  String get release0190Lines =>
+      'Le tracé des rues vient maintenant de l\'IGN : chaque rue est dessinée sur sa vraie route, même quand la carte se trompe de nom.';
+
+  @override
+  String get release0190Tap =>
+      'Ajouter des rues : toucher une route choisit la rue du côté du doigt, même quand deux rues portent presque le même nom.';
+
+  @override
   String get release0180Pen =>
       'Modifier la rue : un ✏ sur chaque numéro montre qu\'on peut le toucher pour le renommer ou le transformer en immeuble.';
 

@@ -1684,6 +1684,18 @@ abstract class AppLocalizations {
   /// **'Première version de test.'**
   String get release010First;
 
+  /// Line of « Nouveautés » for 0.19.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'Le tracé des rues vient maintenant de l\'IGN : chaque rue est dessinée sur sa vraie route, même quand la carte se trompe de nom.'**
+  String get release0190Lines;
+
+  /// Line of « Nouveautés » for 0.19.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ajouter des rues : toucher une route choisit la rue du côté du doigt, même quand deux rues portent presque le même nom.'**
+  String get release0190Tap;
+
   /// Line of « Nouveautés » for 0.18.0.
   ///
   /// In fr, this message translates to:
