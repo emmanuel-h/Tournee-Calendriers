@@ -1779,7 +1779,7 @@ removes are marked « (removed, 5.14) » there.
   back to Secteur. Still needs the network (5.4); « Liste » unchanged.
   - **Tap to tick**: a tap on a road ticks it (5.4's look-up: point → BAN street → its road from
     the map's tiles; the dark casing with a white core, and a ✓ disc on it). A tap on a ticked
-    road unticks it. A tap on a street already in the secteur ticks nothing and says
+    road unticks it. A tap on a street already in the secteur ticks nothing and (until #167; now its card, 5.19) said
     « Rue des Lilas est déjà dans le secteur. ». « Aucune rue connue ici » and the other look-up
     failures of 5.4 come as a snackbar with « Saisir à la main ». The single-street card is gone.
   - **Selection sheet** (bottom, over the map): with nothing ticked, « Touchez les rues à ajouter
@@ -2383,6 +2383,69 @@ Fixtures captured on Villefranche-sur-Saône only.
   around its ✓); the map draws its stretches in the zone until then, and they stay drawn if no
   line comes; « Ajouter » stores the whole line when it has come, none otherwise (Accueil fills
   it, 5.3).
+
+### 5.19 A secteur street on « Ajouter des rues »: change or delete it (#167, built)
+
+Agreed 2026-11-14 (ASCII in the terminal, then mockup PickInSector). Overrides 5.14's « A tap on a
+street already in the secteur ticks nothing and says « … est déjà dans le secteur. » ».
+
+```
+  before                           after
+┌────────────────────────────┐   ┌────────────────────────────┐
+│ ✕  Ajouter des rues        │   │ ✕  Ajouter des rues        │
+│ [ Carte ]   Liste          │   │ [ Carte ]   Liste          │
+│ [🔍 Rechercher…  ] [⬚ Zone]│   │ [🔍 Rechercher…  ] [⬚ Zone]│
+│ ░░▒▒▒▒▒👆▒▒▒░░░░░░░░░░░░░ │   │ ░░▓▓▓▓▓●▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ │
+│ ░▓▓▓▓▓✓▓▓▓░░░░░░░░░░░░░░░ │   │ ░▓▓▓▓▓✓▓▓▓░░░░░░░░░░░░░░░ │
+├────────────────────────────┤   ├────────────────────────────┤
+│ 2 rues sélectionnées       │   │ Rue Pasteur              ✕ │
+│ Rue Pierre Morin · 19 n° ✕ │   │ Villefranche-sur-Saône     │
+│ [     Ajouter 2 rues     ] │   │ (Dans le secteur)(18/18 f.)│
+├────────────────────────────┤   │ (Toute la rue)             │
+│ Rue Pasteur est déjà dans  │   │ [     Modifier la rue     ]│
+│ le secteur.                │   │ [    Supprimer la rue     ]│
+└────────────────────────────┘   └────────────────────────────┘
+```
+
+- **The tap** on a street of the secteur (its line or its dot) shows its **card in place of the
+  selection sheet**, at once and offline, from the phone's copy. Its road is drawn as the selected
+  road (dark casing, white core); the point tapped gets the dark dot. The card: the name
+  in 28 dp titles over the commune, a ✕ (« Fermer », 48 dp) level with the name, grey chips
+  « Dans le secteur », the progress (« 18/18 faits ») and the part (« Toute la rue », « Impairs
+  1–57 · pairs 2–30 », `streetPartText`), then « Modifier la rue » (red, the app's primary button, as « Ouvrir » on Accueil's card; 52 dp) and « Supprimer la
+  rue » (red outline, 52 dp).
+- **The ticks stay**: the streets ticked, their parts and the answers still on their way are
+  untouched. ✕ or the back gesture closes the card and brings the selection sheet back; a tap on
+  another road closes it and does what it does today (tick, untick, or another street's card).
+- **« Modifier la rue »** opens edit mode (5.5) on that street; « OK », ✕ or back come back to
+  « Ajouter des rues », the card closed, the map redrawn (name, part).
+- **« Supprimer la rue »** asks as edit mode does (« Supprimer la rue ? — « Rue Pasteur » part à
+  la Corbeille avec ses numéros et leurs statuts pour toute l'équipe. [Annuler] [Supprimer] »),
+  then sends the street to the Corbeille by the same use case. The card closes, a snackbar says
+  « Rue Pasteur supprimée » (no « Annuler »: the Corbeille restores it, 5.11), and the road shows
+  as one not in the secteur: ticked again, it comes back from the Corbeille with its marks (5.4).
+- Unchanged: « Liste » (« déjà dans le secteur ») and the zone's list (greyed « Déjà dans le
+  secteur »); no rules or data change.
+
+**Delivered in #167** (`lib/presentation/add_streets/add_streets_map_notifier.dart`,
+`lib/ui/components/street_card_sheet.dart`, `lib/ui/screens/add_streets/add_streets_screen.dart`):
+- `AddStreetsMapNotifier.tapStreet(id, at:)` shows the card from the phone's copy
+  (`AddStreetsMapState.card`, a `StreetCardInSector` now carrying the street's `part`;
+  `cardRoad`, the line the map draws for it, lit up as Accueil's; `cardPoint`, the dark dot,
+  `selectedPoint` over the point being looked up). `SectorMap.onStreetTapped` now passes the
+  point tapped too (`StreetTapped`, an optional second argument).
+- A tap beside a secteur street's line, or a secteur street picked among the search results,
+  shows its card too, once the BAN tells which street it is (it used to say « … est déjà dans
+  le secteur. »), unless something was tapped or closed meanwhile. The snackbar stays only
+  for « Toute la rue › » on a street a teammate added meanwhile.
+- The card closes with its ✕, the back gesture (and the screen's ✕, which goes through the
+  same way back), a tap on another road, a search result picked, « Zone » turned on or off, a
+  zone drawn, or its street leaving the secteur (it does not come back if restored). No card
+  while streets are being added.
+- « Supprimer la rue »: `deleteShownStreet()` runs `EditStreetNumbers(id, DeleteStreet())`,
+  edit mode's use case, offline; the dialog is edit mode's (`showConfirmDialog`,
+  `addStreets.confirmDelete`). « Modifier la rue » pushes `AppRoutes.editStreetOf(id)` and
+  closes the card on the way back; edit mode's own « Supprimer la rue » still goes to Accueil.
 
 ## 6. Data model
 

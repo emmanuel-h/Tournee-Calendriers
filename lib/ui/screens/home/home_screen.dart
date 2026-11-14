@@ -167,7 +167,9 @@ final class _HomeScreenState extends ConsumerState<HomeScreen> {
                                     layers: state.layers,
                                     area: state.area,
                                     selectedRoad: state.selectedRoad,
-                                    onStreetTapped: home.select,
+                                    // The point tapped is of no use here.
+                                    onStreetTapped: (street, [_]) =>
+                                        home.select(street),
                                     onMapTapped: (_) => home.unselect(),
                                     onZoomChanged: _zoomed,
                                     padding: EdgeInsets.only(bottom: covered),

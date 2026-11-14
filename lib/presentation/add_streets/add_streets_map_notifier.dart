@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/use_cases/add_street_from_map.dart';
+import 'package:tournee_calendriers/application/use_cases/edit_street_numbers.dart';
 import 'package:tournee_calendriers/application/use_cases/find_zone_streets.dart';
 import 'package:tournee_calendriers/application/use_cases/look_up_street.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
@@ -23,6 +24,7 @@ import 'package:tournee_calendriers/presentation/add_streets/add_streets_map_sta
 import 'package:tournee_calendriers/presentation/add_streets/part_opening.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
+import 'package:tournee_calendriers/presentation/street_card/street_card.dart';
 import 'package:tournee_calendriers/presentation/street_part/other_sectors.dart';
 import 'package:tournee_calendriers/presentation/street_part/street_part_state.dart';
 
@@ -44,7 +46,10 @@ final addStreetsMapProvider =
 /// - **A tap on a road** looks the street up (`LookUpStreet`, network) and
 ///   ticks it; its road is asked of the map meanwhile (`LookUpStreetShape`)
 ///   and drawn as soon as it is known. A tap on a ticked street unticks it.
-///   A street the secteur has is not ticked: the tap says so.
+///   A street the secteur has is not ticked: its card shows instead
+///   (PLAN §5.19), at once from the phone's copy when its line or a house
+///   dot is tapped, the ticks left as they are; « Supprimer la rue » on it
+///   sends it to the Corbeille as edit mode does (`EditStreetNumbers`).
 /// - **« Ajouter N rues »** never waits for a road: a street whose road is
 ///   not known yet is added without, and Accueil fills it later (PLAN
 ///   §5.3). Streets that fail stay ticked.
@@ -132,6 +137,14 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
   /// answer for the zone still shown is listed.
   var _zones = 0;
 
+  /// The street of the secteur whose card shows, and where it was tapped;
+  /// null when no card shows.
+  ({StreetId id, GeoPoint? at})? _card;
+
+  /// Raised by each tap, pick and card closed: a look-up's answer shows a
+  /// card only when nothing happened since its tap.
+  var _cardTaps = 0;
+
   @override
   AddStreetsMapState build() {
     _streets = const [];
@@ -151,6 +164,7 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
     _others = {};
     _askedOthers = {};
     _centre = null;
+    _card = null;
     final streets = ref
         .watch(observeStreetsProvider)()
         .listen(
@@ -181,25 +195,68 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
   void _showStreets(List<Street> streets) {
     _streets = streets;
     _layers = MapLayers.of(streets);
+    // The street of the card went (to the Corbeille, by a teammate too):
+    // its card goes for good, even if it comes back.
+    if (_card case (:final id, at: _)? when _streetOf(id) == null) {
+      _card = null;
+    }
     _show();
   }
 
   /// A tap on the map, away from the secteur's streets and the ticked
   /// ones, at [point]: ticks the street there once the BAN tells which it
-  /// is, or unticks it when it is ticked already.
+  /// is, or unticks it when it is ticked already; shows its card when the
+  /// secteur has it. A card shown closes.
   Future<TapAnswer> tapMap(GeoPoint point) {
     _search = const NoStreetSearch();
+    _closeCard();
     return _lookUp(StreetAtPoint(point), point, toggle: true);
   }
 
-  /// A tap on the line or a house of the secteur's street [id]: it is in
-  /// the secteur already, which needs no network to say.
-  TapAnswer tapStreet(StreetId id) {
+  /// A tap on the line or a house dot of the secteur's street [id], [at]
+  /// that point: its card shows in place of the selection sheet, at once
+  /// and offline (PLAN §5.19). The ticks stay as they are. No card while
+  /// the streets are being added, nor for a street no longer on the phone.
+  void tapStreet(StreetId id, {GeoPoint? at}) {
     _search = const NoStreetSearch();
+    _cardTaps++;
+    _card = _run is AddRunning || _streetOf(id) == null
+        ? null
+        : (id: id, at: at);
     _show();
-    return switch (_streetOf(id)) {
-      final street? => AlreadyInSector(street.name.text),
-      null => const NothingToSay(),
+  }
+
+  /// The card's ✕ or the back gesture, or back from edit mode: the
+  /// selection sheet shows again.
+  void closeCard() {
+    _closeCard();
+    _show();
+  }
+
+  void _closeCard() {
+    _cardTaps++;
+    _card = null;
+  }
+
+  /// « Supprimer la rue » on the card, once confirmed: the street goes to
+  /// the Corbeille with its houses and marks, by the use case of edit mode
+  /// (offline too), and the card closes. Returns the street's name, for
+  /// « Rue Pasteur supprimée »; null when no card shows, or when the
+  /// street went meanwhile.
+  Future<String?> deleteShownStreet() async {
+    final street = switch (_card) {
+      (:final id, at: _)? => _streetOf(id),
+      null => null,
+    };
+    if (street == null) return null;
+    final deleted = await ref.read(editStreetNumbersProvider)(
+      street.id,
+      const DeleteStreet(),
+    );
+    if (ref.mounted && _card?.id == street.id) closeCard();
+    return switch (deleted) {
+      Ok() => street.name.text,
+      Err() => null,
     };
   }
 
@@ -284,6 +341,7 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
     _found = const [];
     _focus = GeoBounds.around([match.position])!
         .expandedBy(foundStreetMarginMetres);
+    _closeCard();
     return _lookUp(FoundStreet(match), match.position, toggle: false);
   }
 
@@ -464,6 +522,7 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
     if (_run is AddRunning) return;
     _zoneMode = !_zoneMode;
     _clearZone();
+    _closeCard();
     _show();
   }
 
@@ -475,6 +534,7 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
     if (!_zoneMode || _run is AddRunning) return const NothingToSay();
     _search = const NoStreetSearch();
     _clearZone();
+    _closeCard();
     final ticket = _zones;
     _zone = area;
     // The zone takes the ✓'s place in view, and keeps it once gone: the
@@ -557,6 +617,7 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
     }
     final ticket = ++_lookUps;
     final clears = _clears;
+    final cardTaps = _cardTaps;
     _lookingAt = point;
     _show();
     final result = await ref.read(lookUpStreetProvider)(lookup);
@@ -570,8 +631,13 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
     switch (result) {
       case Err(:final failure):
         answer = LookUpFailed(_problemOf(failure));
+      // The street is the secteur's: its card, unless something was tapped
+      // or closed since.
       case Ok(value: StreetOfTheSector(:final street)):
-        answer = AlreadyInSector(street.name.text);
+        answer = const NothingToSay();
+        if (cardTaps == _cardTaps && _streetOf(street.id) != null) {
+          _card = (id: street.id, at: point);
+        }
       case Ok(value: final StreetToAdd found):
         answer = const NothingToSay();
         _tick(found, point, toggle: toggle);
@@ -646,8 +712,10 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
   _Pick? _pickOf(BanStreetId id) =>
       _picks.where((pick) => pick.id == id).firstOrNull;
 
-  Street? _streetOf(StreetId id) =>
-      _streets.where((street) => street.id == id).firstOrNull;
+  /// The secteur's street [id], out of the Corbeille.
+  Street? _streetOf(StreetId id) => _streets
+      .where((street) => street.id == id && !street.isDeleted)
+      .firstOrNull;
 
   /// The communes the search looks in: the secteur's; for a secteur
   /// without commune (created before them), those of its streets.
@@ -664,46 +732,62 @@ final class AddStreetsMapNotifier extends Notifier<AddStreetsMapState> {
 
   void _show() => state = _render();
 
-  AddStreetsMapState _render() => AddStreetsMapState(
-    layers: _layers,
-    area: _focus ?? addStreetsArea(_communes, _streets),
-    picked: [
-      for (final pick in _picks)
-        PickedStreetRow(
-          id: pick.id,
-          name: pick.match.name.text,
-          commune: pick.match.commune.name,
-          numberCount: pick.total,
-          part: pick.part,
-          keptCount: pick.keptCount,
-          readingPart: _readingParts.contains(pick.id),
-          fromCorbeille: pick.fromCorbeille,
-          others: _linesOf(pick.id),
-        ),
-    ],
-    pickedRoads: [
-      for (final pick in _picks)
-        PickedRoad(street: pick.id, road: pick.road, mark: pick.mark),
-    ],
-    lookingAt: _lookingAt,
-    keepInView: switch ((_zone, _latest)) {
-      (final zone?, _) => zone,
-      // The same tick, not the street ticked again since.
-      (null, final latest?) when _picks.any((p) => p.isTick(latest)) =>
-        GeoBounds.around([latest.mark]),
-      _ => null,
-    },
-    search: _search,
-    zoneMode: _zoneMode,
-    zone: switch ((_zone, _zoneStreets)) {
-      (null, _) => const NoZone(),
-      (final area?, null) => FindingZoneStreets(area),
-      (final area?, final streets?) => ZoneStreetsFound(area, [
-        for (final street in streets) _rowOf(street),
-      ]),
-    },
-    run: _run,
-  );
+  AddStreetsMapState _render() {
+    final card = switch (_card) {
+      (:final id, at: _)? => _streetOf(id),
+      null => null,
+    };
+    return AddStreetsMapState(
+      layers: _layers,
+      area: _focus ?? addStreetsArea(_communes, _streets),
+      picked: [
+        for (final pick in _picks)
+          PickedStreetRow(
+            id: pick.id,
+            name: pick.match.name.text,
+            commune: pick.match.commune.name,
+            numberCount: pick.total,
+            part: pick.part,
+            keptCount: pick.keptCount,
+            readingPart: _readingParts.contains(pick.id),
+            fromCorbeille: pick.fromCorbeille,
+            others: _linesOf(pick.id),
+          ),
+      ],
+      pickedRoads: [
+        for (final pick in _picks)
+          PickedRoad(street: pick.id, road: pick.road, mark: pick.mark),
+      ],
+      lookingAt: _lookingAt,
+      keepInView: switch ((_zone, _latest)) {
+        (final zone?, _) => zone,
+        // The same tick, not the street ticked again since.
+        (null, final latest?) when _picks.any((p) => p.isTick(latest)) =>
+          GeoBounds.around([latest.mark]),
+        _ => null,
+      },
+      search: _search,
+      zoneMode: _zoneMode,
+      zone: switch ((_zone, _zoneStreets)) {
+        (null, _) => const NoZone(),
+        (final area?, null) => FindingZoneStreets(area),
+        (final area?, final streets?) => ZoneStreetsFound(area, [
+          for (final street in streets) _rowOf(street),
+        ]),
+      },
+      run: _run,
+      card: card == null ? null : StreetCardInSector.of(card),
+      // The line the map draws for it: only the stretch held of a street
+      // held in part.
+      cardRoad:
+          _layers.lines
+              .where((line) => line.street == card?.id)
+              .firstOrNull
+              ?.shape ??
+          StreetShape.none,
+      cardPoint: card == null ? null : _card?.at,
+    );
+  }
 
   ZoneStreetRow _rowOf(ZoneStreet street) => switch (street) {
     // Added since the zone was drawn (some others failed): the secteur has

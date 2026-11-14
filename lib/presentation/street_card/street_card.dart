@@ -1,11 +1,14 @@
 import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/domain/street/street_part.dart';
 
-// The street card of Accueil (PLAN §5.14): a street of the secteur tapped
-// on the map. « Ajouter des rues » ticks streets instead of a card.
+// The card of a street of the secteur tapped on a map: on Accueil, with
+// « Ouvrir » (PLAN §5.14); on « Ajouter des rues », with « Modifier la
+// rue » and « Supprimer la rue » (PLAN §5.19).
 
-/// A street of the secteur: its progress and « Ouvrir » (PLAN §5.14). Every
-/// member covers every street, so the card names nobody.
+/// A street of the secteur: its progress, and the part of it the secteur
+/// holds (PLAN §5.15). Every member covers every street, so the card names
+/// nobody.
 final class StreetCardInSector {
   const StreetCardInSector({
     required this.id,
@@ -13,6 +16,7 @@ final class StreetCardInSector {
     required this.commune,
     required this.done,
     required this.total,
+    this.part = StreetPart.whole,
   });
 
   /// The card of [street].
@@ -24,10 +28,11 @@ final class StreetCardInSector {
       commune: street.commune.name,
       done: progress.visited,
       total: progress.total,
+      part: street.part,
     );
   }
 
-  /// The street « Ouvrir » opens.
+  /// The street the card's buttons open, change or delete.
   final StreetId id;
   final String name;
   final String commune;
@@ -36,6 +41,10 @@ final class StreetCardInSector {
   final int done;
   final int total;
 
+  /// The part of the street the secteur holds: « Toute la rue » most of
+  /// the time. Shown on « Ajouter des rues » only.
+  final StreetPart part;
+
   @override
   bool operator ==(Object other) =>
       other is StreetCardInSector &&
@@ -43,12 +52,14 @@ final class StreetCardInSector {
       other.name == name &&
       other.commune == commune &&
       other.done == done &&
-      other.total == total;
+      other.total == total &&
+      other.part == part;
 
   @override
-  int get hashCode => Object.hash(id, name, commune, done, total);
+  int get hashCode => Object.hash(id, name, commune, done, total, part);
 
   @override
   String toString() =>
-      'StreetCardInSector(${id.value}, $name, $commune, $done/$total)';
+      'StreetCardInSector(${id.value}, $name, $commune, $done/$total'
+      '${part.isWhole ? '' : ', $part'})';
 }

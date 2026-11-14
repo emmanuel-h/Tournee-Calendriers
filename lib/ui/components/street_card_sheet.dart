@@ -3,24 +3,48 @@ import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/presentation/street_card/street_card.dart';
 import 'package:tournee_calendriers/ui/components/app_buttons.dart';
 import 'package:tournee_calendriers/ui/components/close_icon_button.dart';
+import 'package:tournee_calendriers/ui/components/street_part_words.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
-/// The street card at the bottom of Accueil's map (PLAN §5.14): a street
-/// of the secteur tapped on the map, its name and commune, « 31/42 faits »
-/// in a grey chip, and « Ouvrir », which opens it. The ✕ at the top right
-/// is the screen's ([onClose]).
+/// The card of a street of the secteur tapped on a map: its name and
+/// commune, its facts in grey chips, and its buttons. The ✕ at the top
+/// right is the screen's ([onClose]).
+///
+/// - On Accueil (PLAN §5.14): « 31/42 faits » and « Ouvrir », which opens
+///   the street.
+/// - On « Ajouter des rues » ([StreetCardSheet.toChange], PLAN §5.19,
+///   PickInSector mockup): « Dans le secteur », « 18/18 faits » and its
+///   part (« Toute la rue »), then « Modifier la rue » and « Supprimer la
+///   rue ».
 final class StreetCardSheet extends StatelessWidget {
-  const StreetCardSheet({super.key, required this.card, required this.onClose});
+  const StreetCardSheet({super.key, required this.card, required this.onClose})
+    : onEdit = null,
+      onDelete = null;
+
+  /// The card of « Ajouter des rues », to change or delete the street.
+  const StreetCardSheet.toChange({
+    super.key,
+    required this.card,
+    required this.onClose,
+    required VoidCallback this.onEdit,
+    required VoidCallback this.onDelete,
+  });
 
   final StreetCardInSector card;
 
   /// The ✕: closes the card, as a tap elsewhere on the map or the back
   /// gesture does.
   final VoidCallback onClose;
+
+  /// « Modifier la rue »; null on Accueil, which has « Ouvrir » instead.
+  final VoidCallback? onEdit;
+
+  /// « Supprimer la rue »; null on Accueil.
+  final VoidCallback? onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -56,7 +80,7 @@ final class StreetCardSheet extends StatelessWidget {
                     ),
                   ),
                 ),
-                ..._inSector(context, card),
+                ..._content(context),
               ],
             ),
           ),
@@ -74,16 +98,41 @@ final class StreetCardSheet extends StatelessWidget {
     );
   }
 
-  List<Widget> _inSector(BuildContext context, StreetCardInSector street) {
+  List<Widget> _content(BuildContext context) {
     final l10n = AppLocalizations.of(context);
+    final street = card;
+    final progress = l10n.streetCardProgress(street.done, street.total);
+    final progressHeard = l10n.streetCardProgressSemantics(
+      street.done,
+      street.total,
+    );
+    // Both buttons or neither: the two constructors set them together.
+    if ((onEdit, onDelete) case (final onEdit?, final onDelete?)) {
+      final part = streetPartText(l10n, street.part);
+      return [
+        _Title(name: street.name, commune: street.commune),
+        _Chips(
+          [l10n.streetCardInSector, progress, part],
+          semanticsLabels: [l10n.streetCardInSector, progressHeard, part],
+        ),
+        PrimaryButton(
+          key: const Key('streetCard.edit'),
+          label: l10n.editStreetAction,
+          compact: true,
+          onPressed: onEdit,
+        ),
+        SecondaryButton(
+          key: const Key('streetCard.delete'),
+          label: l10n.deleteStreetAction,
+          compact: true,
+          destructive: true,
+          onPressed: onDelete,
+        ),
+      ];
+    }
     return [
       _Title(name: street.name, commune: street.commune),
-      _Chips(
-        [l10n.streetCardProgress(street.done, street.total)],
-        semanticsLabels: [
-          l10n.streetCardProgressSemantics(street.done, street.total),
-        ],
-      ),
+      _Chips([progress], semanticsLabels: [progressHeard]),
       PrimaryButton(
         key: const Key('streetCard.open'),
         label: l10n.streetCardOpen,

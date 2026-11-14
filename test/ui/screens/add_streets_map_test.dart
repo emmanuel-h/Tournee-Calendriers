@@ -26,6 +26,7 @@ import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/components/app_buttons.dart';
 import 'package:tournee_calendriers/ui/screens/add_streets/add_streets_screen.dart';
 import 'package:tournee_calendriers/ui/screens/add_streets/manual_street_screen.dart';
+import 'package:tournee_calendriers/ui/screens/edit_street/edit_street_screen.dart';
 import 'package:tournee_calendriers/ui/screens/street_part/street_part_screen.dart';
 import 'package:tournee_calendriers/ui/screens/team/team_screen.dart';
 
@@ -189,6 +190,7 @@ void main() {
         _failingId: const Err(AddressDirectoryFailure.serviceError),
         _hugoId: Ok(_numbersOf(_hugoId, 'Rue Victor Hugo', ['2'])),
         _bertId: Ok(_numbersOf(_bertId, 'Rue Paul Bert', ['4'])),
+        _lilasId: Ok(_numbersOf(_lilasId, 'Rue des Lilas', ['1', '2'])),
       },
       searches: {
         'bordelan': Ok([_bordelanMatch]),
@@ -224,8 +226,8 @@ void main() {
     await tester.pumpAndSettle();
   }
 
-  Future<void> tapStreet(WidgetTester tester, String id) async {
-    shownMap(tester).onStreetTapped!(StreetId(id));
+  Future<void> tapStreet(WidgetTester tester, String id, {GeoPoint? at}) async {
+    shownMap(tester).onStreetTapped!(StreetId(id), at);
     await tester.pumpAndSettle();
   }
 
@@ -419,21 +421,151 @@ void main() {
     );
   });
 
-  testWidgets('should say a street of the secteur is in it already, from '
-      'its line or from the map', (tester) async {
-    await pumpMap(tester);
+  group('a street of the secteur tapped (PLAN §5.19)', () {
+    Finder card() => find.byKey(const Key('addStreets.card'));
+    final onCarnot = at(45.98500, 4.72100);
 
-    await tapStreet(tester, 'carnot');
+    testWidgets('should show its card in place of the selection sheet, its '
+        'line lit up and the point tapped marked', (tester) async {
+      await pumpMap(tester);
 
-    expect(find.text('Rue Carnot est déjà dans le secteur.'), findsOneWidget);
+      await tapStreet(tester, 'carnot', at: onCarnot);
 
-    await tapRoad(tester, _onLilas);
+      expect(card(), findsOneWidget);
+      expect(sheet(), findsNothing);
+      expect(
+        find.descendant(of: card(), matching: find.text('Rue Carnot')),
+        findsOneWidget,
+      );
+      expect(find.text('Dans le secteur'), findsOneWidget);
+      expect(find.text('1/2 faits'), findsOneWidget);
+      expect(find.text('Toute la rue'), findsOneWidget);
+      expect(find.text('Modifier la rue'), findsOneWidget);
+      expect(find.text('Supprimer la rue'), findsOneWidget);
+      expect(shownMap(tester).selectedPoint, onCarnot);
+      expect(find.text('Rue Carnot est déjà dans le secteur.'), findsNothing);
+    });
 
-    expect(
-      find.text('Rue des Lilas est déjà dans le secteur.'),
-      findsOneWidget,
-    );
-    expect(shownMap(tester).pickedRoads, isEmpty);
+    testWidgets('should show its card from a tap beside its line, the BAN '
+        'telling which it is', (tester) async {
+      await pumpMap(tester);
+
+      await tapRoad(tester, _onLilas);
+
+      expect(
+        find.descendant(of: card(), matching: find.text('Rue des Lilas')),
+        findsOneWidget,
+      );
+      expect(shownMap(tester).pickedRoads, isEmpty);
+      expect(shownMap(tester).selectedPoint, _onLilas);
+    });
+
+    testWidgets('should bring the selection sheet back with its ticks on '
+        '✕', (tester) async {
+      await pumpMap(tester);
+      await tapRoad(tester, _onBordelan);
+      await tapStreet(tester, 'carnot', at: onCarnot);
+      expect(row(_bordelanId), findsNothing);
+
+      await tester.tap(find.byKey(const Key('streetCard.close')));
+      await tester.pumpAndSettle();
+
+      expect(card(), findsNothing);
+      expect(sheet(), findsOneWidget);
+      expect(row(_bordelanId), findsOneWidget);
+      expect(shownMap(tester).pickedRoads.single.street, _bordelanId);
+      expect(shownMap(tester).selectedPoint, isNull);
+    });
+
+    testWidgets('should close the card on the back gesture, staying on the '
+        'screen', (tester) async {
+      await pumpMap(tester);
+      await tapStreet(tester, 'carnot');
+
+      await tester.binding.handlePopRoute();
+      await tester.pumpAndSettle();
+
+      expect(card(), findsNothing);
+      expect(sheet(), findsOneWidget);
+      expect(find.byType(AddStreetsScreen), findsOneWidget);
+    });
+
+    testWidgets('should send the street to the Corbeille once confirmed, then '
+        'let its road be ticked again', (tester) async {
+      await pumpMap(tester);
+      await tapRoad(tester, _onBordelan);
+      await tapStreet(tester, 'lilas');
+
+      await tester.tap(find.byKey(const Key('streetCard.delete')));
+      await tester.pumpAndSettle();
+      // French typography: a no-break space (U+00A0) before « ? » and
+      // inside the quotes.
+      expect(find.text('Supprimer la rue\u00a0?'), findsOneWidget);
+      expect(
+        find.text(
+          '«\u00a0Rue des Lilas\u00a0» part à la Corbeille avec ses numéros '
+          "et leurs statuts pour toute l'équipe.",
+        ),
+        findsOneWidget,
+      );
+      await tester.tap(find.byKey(const Key('addStreets.confirmDelete.ok')));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Rue des Lilas supprimée'), findsOneWidget);
+      expect(find.text('Annuler'), findsNothing);
+      expect(card(), findsNothing);
+      expect(row(_bordelanId), findsOneWidget);
+      expect(streets[StreetId('lilas')]!.isDeleted, isTrue);
+      expect(
+        shownMap(tester).layers.lines.map((line) => line.street),
+        isNot(contains(StreetId('lilas'))),
+      );
+
+      await tapRoad(tester, _onLilas);
+
+      expect(row(_lilasId), findsOneWidget);
+    });
+
+    testWidgets('should keep the street when the confirmation is '
+        'cancelled', (tester) async {
+      await pumpMap(tester);
+      await tapStreet(tester, 'lilas');
+
+      await tester.tap(find.byKey(const Key('streetCard.delete')));
+      await tester.pumpAndSettle();
+      await tester.tap(
+        find.byKey(const Key('addStreets.confirmDelete.cancel')),
+      );
+      await tester.pumpAndSettle();
+
+      expect(streets.saved, isEmpty);
+      expect(card(), findsOneWidget);
+    });
+
+    testWidgets('should open edit mode on the street, and come back with the '
+        'card closed', (tester) async {
+      await pumpMap(tester);
+      await tapRoad(tester, _onBordelan);
+      await tapStreet(tester, 'carnot');
+
+      await tester.tap(find.byKey(const Key('streetCard.edit')));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(EditStreetScreen), findsOneWidget);
+      expect(find.widgetWithText(TextField, 'Rue Carnot'), findsOneWidget);
+
+      await tester.enterText(
+        find.widgetWithText(TextField, 'Rue Carnot'),
+        'Rue Sadi Carnot',
+      );
+      await tester.tap(find.byKey(const Key('edit.ok')));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(AddStreetsScreen), findsOneWidget);
+      expect(card(), findsNothing);
+      expect(row(_bordelanId), findsOneWidget);
+      expect(streets[StreetId('carnot')]!.name.text, 'Rue Sadi Carnot');
+    });
   });
 
   testWidgets('should say a connection is needed offline, and offer the '

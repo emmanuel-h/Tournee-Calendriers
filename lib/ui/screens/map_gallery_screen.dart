@@ -44,7 +44,7 @@ final class _MapGalleryScreenState extends State<MapGalleryScreen> {
               layers: MapLayers.of(_streets),
               area: sectorArea(_streets),
               selectedRoad: _roadSelected ? _selectedRoad : StreetShape.none,
-              onStreetTapped: (street) => showMessageSnackBar(
+              onStreetTapped: (street, [_]) => showMessageSnackBar(
                 messenger,
                 message: l10n.galleryMapStreetTapped(street.value),
               ),

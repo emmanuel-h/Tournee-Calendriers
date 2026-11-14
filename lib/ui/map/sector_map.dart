@@ -23,6 +23,12 @@ import 'package:tournee_calendriers/ui/map/zone_drawing.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 
+/// A tap on one of the secteur's streets, or on one of its house dots,
+/// [at] the point tapped when the map can tell it (« Ajouter des rues »
+/// marks it, PLAN §5.19). The point is an optional positional parameter so
+/// a screen that has no use for it can ignore it: `(street, [_]) => …`.
+typedef StreetTapped = void Function(StreetId street, [GeoPoint? at]);
+
 /// The map of a secteur (PLAN §5.3, §5.14): the OpenFreeMap background,
 /// the streets coloured by progress, the house dots from street zoom, the
 /// street picked on Accueil, the roads ticked on « Ajouter des rues », and
@@ -73,8 +79,9 @@ final class SectorMap extends StatefulWidget {
   /// Null leaves the camera where the user put it.
   final GeoBounds? area;
 
-  /// A tap on one of the secteur's streets, or on one of its house dots.
-  final ValueChanged<StreetId>? onStreetTapped;
+  /// A tap on one of the secteur's streets, or on one of its house dots,
+  /// and where.
+  final StreetTapped? onStreetTapped;
 
   /// A tap on a ticked road, or on its ✓ disc: its BAN street.
   final ValueChanged<BanStreetId>? onPickTapped;
@@ -473,7 +480,7 @@ final class _SectorMapState extends State<SectorMap> {
     Annotation? annotation,
   ) {
     if (tappedStreet(layerId, id) case final street?) {
-      widget.onStreetTapped?.call(street);
+      widget.onStreetTapped?.call(street, geoPointOf(coordinates));
     } else if (tappedPick(layerId, id) case final pick?) {
       widget.onPickTapped?.call(pick);
     }

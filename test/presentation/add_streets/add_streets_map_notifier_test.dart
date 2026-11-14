@@ -310,9 +310,9 @@ void main() {
     final container = phone();
     await pumpEventQueue();
 
-    final answer = notifierOf(container).tapStreet(StreetId('emile'));
+    notifierOf(container).tapStreet(StreetId('emile'));
 
-    expect(answer, const AlreadyInSector('Allée Émile Zola'));
+    expect(stateOf(container).card?.name, 'Allée Émile Zola');
     expect(stateOf(container).area, sectorArea([_nationale, _emile]));
   });
 
@@ -494,14 +494,15 @@ void main() {
       expect(stateOf(container).pickedRoads.single.street, _pasteurId);
     });
 
-    test('should tick nothing on a street of the secteur, and say it is in '
-        'it already', () async {
+    test('should tick nothing on a street of the secteur, and show its '
+        'card', () async {
       final container = phone();
       await pumpEventQueue();
 
       final answer = await notifierOf(container).tapMap(_onNationale);
 
-      expect(answer, const AlreadyInSector('Rue Nationale'));
+      expect(answer, const NothingToSay());
+      expect(stateOf(container).card?.name, 'Rue Nationale');
       expect(stateOf(container).picked, isEmpty);
       expect(stateOf(container).lookingAt, isNull);
       expect(shapes.asked, isEmpty);
@@ -642,39 +643,38 @@ void main() {
   });
 
   group('a street of the secteur tapped', () {
-    test('should say at once that it is in the secteur, ticking '
-        'nothing', () async {
+    test('should show its card at once, ticking nothing', () async {
       final container = phone();
       await pumpEventQueue();
 
-      final answer = notifierOf(container).tapStreet(StreetId('emile'));
+      notifierOf(container).tapStreet(StreetId('emile'));
 
-      expect(answer, const AlreadyInSector('Allée Émile Zola'));
+      expect(stateOf(container).card?.name, 'Allée Émile Zola');
       expect(stateOf(container).picked, isEmpty);
       expect(directory.pointsAsked, isEmpty);
     });
 
     test(
-      'should say it of a street held in part, its stretch tapped',
+      'should show it for a street held in part, its stretch tapped',
       () async {
         streets = FakeStreetRepository([_lilas]);
         final container = phone();
         await pumpEventQueue();
 
-        final answer = notifierOf(container).tapStreet(StreetId('lilas'));
+        notifierOf(container).tapStreet(StreetId('lilas'));
 
-        expect(answer, const AlreadyInSector('Rue des Lilas'));
+        expect(stateOf(container).card?.name, 'Rue des Lilas');
         expect(stateOf(container).picked, isEmpty);
       },
     );
 
-    test('should say nothing for a street no longer on the phone', () async {
+    test('should show nothing for a street no longer on the phone', () async {
       final container = phone();
       await pumpEventQueue();
 
-      final answer = notifierOf(container).tapStreet(StreetId('gone'));
+      notifierOf(container).tapStreet(StreetId('gone'));
 
-      expect(answer, const NothingToSay());
+      expect(stateOf(container).card, isNull);
     });
   });
 

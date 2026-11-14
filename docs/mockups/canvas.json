@@ -371,6 +371,13 @@
       "w": 390,
       "h": 844,
       "title": "Paramètres — rappels (#82)"
+    },
+    "PickInSector.dc.html": {
+      "x": 3760,
+      "y": 1264,
+      "w": 390,
+      "h": 844,
+      "title": "5.4 Ajouter des rues — rue déjà dans le secteur"
     }
   },
   "createdOnFiles": {
@@ -451,6 +458,7 @@
     "Pick.dc.html",
     "AddList.dc.html",
     "PickZone.dc.html",
+    "PickInSector.dc.html",
     "Manual.dc.html",
     "Main.dc.html",
     "Edit.dc.html",

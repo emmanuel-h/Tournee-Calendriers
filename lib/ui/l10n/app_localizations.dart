@@ -3214,6 +3214,12 @@ abstract class AppLocalizations {
   /// **'Ouvrir'**
   String get streetCardOpen;
 
+  /// Chip of the card of a street of the sector tapped on « Ajouter des rues » (PLAN §5.19): the street is in the sector already, so it is changed or deleted, not ticked.
+  ///
+  /// In fr, this message translates to:
+  /// **'Dans le secteur'**
+  String get streetCardInSector;
+
   /// Title of the manual street form (PLAN §5.5, Manual mockup).
   ///
   /// In fr, this message translates to:
@@ -3976,11 +3982,17 @@ abstract class AppLocalizations {
   /// **'Recherche de la rue…'**
   String get addStreetsLookingUp;
 
-  /// Snackbar when the street tapped on the map is in the sector already: nothing is ticked.
+  /// Snackbar when « Toute la rue › » finds that the street ticked is in the sector already (a teammate added it meanwhile): nothing opens.
   ///
   /// In fr, this message translates to:
   /// **'{name} est déjà dans le secteur.'**
   String addStreetsAlreadyIn(String name);
+
+  /// Snackbar once « Supprimer la rue » on the card of « Ajouter des rues » sent the street to the Corbeille (PLAN §5.19). No « Annuler »: the Corbeille restores it.
+  ///
+  /// In fr, this message translates to:
+  /// **'{name} supprimée'**
+  String addStreetsStreetDeleted(String name);
 
   /// Snackbar when a road is tapped offline (PLAN §5.4).
   ///

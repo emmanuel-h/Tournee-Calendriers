@@ -7,14 +7,17 @@ import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/domain/map/street_zone.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/presentation/add_streets/add_streets_map_notifier.dart';
+import 'package:tournee_calendriers/presentation/street_card/street_card.dart';
 import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
 import 'package:tournee_calendriers/ui/components/add_progress.dart';
 import 'package:tournee_calendriers/ui/components/app_buttons.dart';
 import 'package:tournee_calendriers/ui/components/close_icon_button.dart';
+import 'package:tournee_calendriers/ui/components/confirm_dialog.dart';
 import 'package:tournee_calendriers/ui/components/other_sector_lines.dart';
 import 'package:tournee_calendriers/ui/components/part_link.dart';
 import 'package:tournee_calendriers/ui/components/segmented_choice.dart';
 import 'package:tournee_calendriers/ui/components/size_reporter.dart';
+import 'package:tournee_calendriers/ui/components/street_card_sheet.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/map/map_view.dart';
 import 'package:tournee_calendriers/ui/map/sector_map.dart';
@@ -115,7 +118,9 @@ final class _AddStreetsScreenState extends ConsumerState<AddStreetsScreen> {
 }
 
 /// The search box and « Zone » over the secteur's map, and the selection
-/// sheet at the bottom, or the zone's (Pick and PickZone mockups).
+/// sheet at the bottom, or the zone's (Pick and PickZone mockups), or the
+/// card of a street of the secteur tapped (PickInSector mockup, PLAN
+/// §5.19).
 ///
 /// A `ConsumerStatefulWidget`: the search text, the sheet's height and
 /// whether it is folded belong to this tab only.
@@ -148,8 +153,12 @@ final class _MapTabState extends ConsumerState<_MapTab> {
     final map = ref.read(addStreetsMapProvider.notifier);
     final showMap = ref.watch(sectorMapViewProvider);
     return PopScope(
-      // No way back while streets are being written.
-      canPop: !state.adding,
+      // No way back while streets are being written; with a card shown,
+      // back closes the card first.
+      canPop: !state.adding && state.card == null,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop && state.card != null) map.closeCard();
+      },
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -196,15 +205,16 @@ final class _MapTabState extends ConsumerState<_MapTab> {
                           key: const Key('addStreets.map'),
                           layers: state.layers,
                           area: state.area,
-                          selectedPoint: state.lookingAt,
+                          selectedRoad: state.cardRoad,
+                          selectedPoint: state.selectedPoint,
                           pickedRoads: state.pickedRoads,
                           onMapTapped: (point) {
                             FocusScope.of(context).unfocus();
                             unawaited(_answer(map.tapMap(point)));
                           },
-                          onStreetTapped: (street) {
+                          onStreetTapped: (street, [at]) {
                             FocusScope.of(context).unfocus();
-                            _say(map.tapStreet(street));
+                            map.tapStreet(street, at: at);
                           },
                           onPickTapped: map.untick,
                           zoneMode: state.zoneMode,
@@ -244,8 +254,15 @@ final class _MapTabState extends ConsumerState<_MapTab> {
                         onHeight: (height) {
                           if (mounted) setState(() => _sheetHeight = height);
                         },
-                        child: switch (state.zone) {
-                          NoZone() => _SelectionSheet(
+                        child: switch ((state.card, state.zone)) {
+                          (final card?, _) => StreetCardSheet.toChange(
+                            key: const Key('addStreets.card'),
+                            card: card,
+                            onClose: map.closeCard,
+                            onEdit: () => unawaited(_edit(card)),
+                            onDelete: () => unawaited(_delete(card)),
+                          ),
+                          (null, NoZone()) => _SelectionSheet(
                             state: state,
                             folded: _folded,
                             maxListHeight: maxListHeight,
@@ -255,7 +272,7 @@ final class _MapTabState extends ConsumerState<_MapTab> {
                                 unawaited(_openPart(street)),
                             onAdd: () => unawaited(_add()),
                           ),
-                          final ZoneView zone => _ZoneSheet(
+                          (null, final ZoneView zone) => _ZoneSheet(
                             state: state,
                             zone: zone,
                             maxListHeight: maxListHeight,
@@ -278,8 +295,8 @@ final class _MapTabState extends ConsumerState<_MapTab> {
 
   Future<void> _answer(Future<TapAnswer> answer) async => _say(await answer);
 
-  /// What a tap had to say, in a snackbar: a street already in the
-  /// secteur, or why none could be looked up, with « Saisir à la main ».
+  /// What a tap had to say, in a snackbar: a zone too large, or why no
+  /// street could be looked up, with « Saisir à la main ».
   void _say(TapAnswer answer) {
     if (!mounted) return;
     final l10n = AppLocalizations.of(context);
@@ -292,8 +309,6 @@ final class _MapTabState extends ConsumerState<_MapTab> {
           messenger,
           message: l10n.addStreetsZoneTooLarge(zoneMaxStreets),
         );
-      case AlreadyInSector(:final name):
-        showMessageSnackBar(messenger, message: l10n.addStreetsAlreadyIn(name));
       case LookUpFailed(:final problem):
         // Read now: the action may be tapped once this tab is gone (the
         // « Liste » tab shown), when its context can no longer be used.
@@ -333,6 +348,37 @@ final class _MapTabState extends ConsumerState<_MapTab> {
       case PartNotOpened():
         break;
     }
+  }
+
+  /// « Modifier la rue » on the card: edit mode on that street; « OK », ✕
+  /// or back there come back here, the card closed and the map following
+  /// the street as it was changed.
+  Future<void> _edit(StreetCardInSector card) async {
+    await context.push<void>(AppRoutes.editStreetOf(card.id));
+    // Edit mode's « Supprimer la rue » goes to Accueil: this tab is gone.
+    if (mounted) ref.read(addStreetsMapProvider.notifier).closeCard();
+  }
+
+  /// « Supprimer la rue » on the card, after edit mode's confirmation: the
+  /// street goes to the Corbeille, and « Rue Pasteur supprimée ». No
+  /// « Annuler »: the Corbeille restores it, and ticked again here it
+  /// comes back from there with its marks (PLAN §5.4).
+  Future<void> _delete(StreetCardInSector card) async {
+    final l10n = AppLocalizations.of(context);
+    final messenger = ScaffoldMessenger.of(context);
+    final confirmed = await showConfirmDialog(
+      context,
+      name: 'addStreets.confirmDelete',
+      title: l10n.confirmDeleteStreetTitle,
+      body: l10n.confirmDeleteStreetBody(card.name),
+      confirmLabel: l10n.delete,
+    );
+    if (!confirmed || !mounted) return;
+    final name = await ref
+        .read(addStreetsMapProvider.notifier)
+        .deleteShownStreet();
+    if (name == null) return;
+    showMessageSnackBar(messenger, message: l10n.addStreetsStreetDeleted(name));
   }
 
   /// « Ajouter N rues »: once every street ticked is in the secteur, « 3

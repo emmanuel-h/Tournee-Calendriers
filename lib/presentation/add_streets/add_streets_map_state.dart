@@ -5,13 +5,16 @@ import 'package:tournee_calendriers/domain/shared/geo_point.dart';
 import 'package:tournee_calendriers/domain/shared/same_items.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_part.dart';
+import 'package:tournee_calendriers/domain/street/street_shape.dart';
+import 'package:tournee_calendriers/presentation/street_card/street_card.dart';
 import 'package:tournee_calendriers/presentation/street_part/other_sectors.dart';
 
 /// What the « Carte » tab of « Ajouter des rues » shows (PLAN §5.14, Pick
 /// and PickZone mockups): the secteur's streets and houses, the area the
 /// map shows, the streets ticked (on the map and in the selection sheet),
 /// the point being looked up, the search box's results, « Zone » and the
-/// streets found in the zone drawn, and how adding goes.
+/// streets found in the zone drawn, how adding goes, and the card of a
+/// street of the secteur tapped (PLAN §5.19, PickInSector mockup).
 /// Immutable: the notifier replaces it as a whole.
 final class AddStreetsMapState {
   AddStreetsMapState({
@@ -25,6 +28,9 @@ final class AddStreetsMapState {
     this.zoneMode = false,
     this.zone = const NoZone(),
     this.run = const AddIdle(),
+    this.card,
+    this.cardRoad = StreetShape.none,
+    this.cardPoint,
   }) : picked = List.unmodifiable(picked),
        pickedRoads = List.unmodifiable(pickedRoads);
 
@@ -68,9 +74,26 @@ final class AddStreetsMapState {
   /// How adding the ticked streets goes.
   final AddRun run;
 
+  /// The card of the street of the secteur last tapped, shown in place of
+  /// the selection sheet (or the zone's), with « Modifier la rue » and
+  /// « Supprimer la rue »; null when none shows.
+  final StreetCardInSector? card;
+
+  /// The line of the street of [card] as the map draws it (only the
+  /// stretch held of a street held in part), lit up over its colour; none
+  /// without a card, or for a street with no line.
+  final StreetShape cardRoad;
+
+  /// Where the street of [card] was tapped; null without a card.
+  final GeoPoint? cardPoint;
+
   /// Whether the ticked streets are being added: the map, the ticks and
   /// the way back wait.
   bool get adding => run is AddRunning;
+
+  /// The point the map marks with its dark dot: where the street of the
+  /// card was tapped while it shows, otherwise the point being looked up.
+  GeoPoint? get selectedPoint => card == null ? lookingAt : cardPoint;
 }
 
 /// A street ticked, as its row of the selection sheet shows it: « Rue
@@ -170,8 +193,9 @@ sealed class TapAnswer {
   const TapAnswer();
 }
 
-/// Nothing to say: a street was ticked or unticked, or the tap was dropped
-/// (a newer « Tout décocher », the streets being added, the screen gone).
+/// Nothing to say: a street was ticked or unticked, a street of the
+/// secteur shows its card, or the tap was dropped (a newer « Tout
+/// décocher », the streets being added, the screen gone).
 final class NothingToSay extends TapAnswer {
   const NothingToSay();
 
@@ -180,24 +204,6 @@ final class NothingToSay extends TapAnswer {
 
   @override
   int get hashCode => (NothingToSay).hashCode;
-}
-
-/// The secteur has the street [name] already: nothing ticked, « Rue des
-/// Lilas est déjà dans le secteur. ».
-final class AlreadyInSector extends TapAnswer {
-  const AlreadyInSector(this.name);
-
-  final String name;
-
-  @override
-  bool operator ==(Object other) =>
-      other is AlreadyInSector && other.name == name;
-
-  @override
-  int get hashCode => name.hashCode;
-
-  @override
-  String toString() => 'AlreadyInSector($name)';
 }
 
 /// No street could be looked up, for [problem]: nothing ticked.

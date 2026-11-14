@@ -46,7 +46,8 @@ Start screen:
   without any) with their house numbers from the national address base (BAN), and adds
   them to the secteur, a street from the Corbeille coming back with its marks; « Carte »
   (first) shows the secteur's map, opened on its communes: a tap on a road ticks it (a ✓ on
-  its road; a second tap unticks it; a street of the secteur says it is in it already), the
+  its road; a second tap unticks it; a street of the secteur shows its card instead, with
+  « Modifier la rue » and « Supprimer la rue »), the
   search box finds a street of the communes by name and ticks it, « Zone » draws a
   rectangle with a finger and lists its streets (those to add ticked, those of the secteur
   and roads without address greyed; at any zoom, 50 streets at most; two fingers move the

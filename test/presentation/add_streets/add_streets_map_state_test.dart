@@ -3,9 +3,12 @@ import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/map/map_layers.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_part.dart';
+import 'package:tournee_calendriers/domain/street/street_shape.dart';
 import 'package:tournee_calendriers/presentation/add_streets/add_streets_map_state.dart';
+import 'package:tournee_calendriers/presentation/street_card/street_card.dart';
 import 'package:tournee_calendriers/presentation/street_part/other_sectors.dart';
 
+import '../../support/geo_fixtures.dart';
 import '../../support/street_fixtures.dart' show part, range;
 
 final _morin = FoundStreetRow(
@@ -15,6 +18,44 @@ final _morin = FoundStreetRow(
 );
 
 void main() {
+  group('the dot on the map', () {
+    final looking = at(45.98850, 4.72500);
+    final tapped = at(45.98915, 4.71862);
+    final card = StreetCardInSector(
+      id: StreetId('nationale'),
+      name: 'Rue Nationale',
+      commune: 'Villefranche-sur-Saône',
+      done: 0,
+      total: 1,
+    );
+
+    test('should mark the point looked up with no card', () {
+      final state = AddStreetsMapState(
+        layers: MapLayers.of(const []),
+        area: null,
+        lookingAt: looking,
+      );
+
+      expect(state.selectedPoint, looking);
+      expect(state.card, isNull);
+      expect(state.cardRoad, StreetShape.none);
+      expect(state.cardPoint, isNull);
+    });
+
+    test('should mark where the street of the card was tapped while it '
+        'shows', () {
+      final state = AddStreetsMapState(
+        layers: MapLayers.of(const []),
+        area: null,
+        lookingAt: looking,
+        card: card,
+        cardPoint: tapped,
+      );
+
+      expect(state.selectedPoint, tapped);
+    });
+  });
+
   test('should tell the search states apart by their values', () {
     expect(const NoStreetSearch(), const NoStreetSearch());
     expect(const NoStreetSearch().hashCode, const NoStreetSearch().hashCode);
@@ -171,24 +212,6 @@ void main() {
     // ignore: prefer_const_constructors
     expect(NothingToSay(), const NothingToSay());
     expect(const NothingToSay().hashCode, const NothingToSay().hashCode);
-    expect(
-      // ignore: prefer_const_constructors
-      AlreadyInSector('Rue des Lilas'),
-      const AlreadyInSector('Rue des Lilas'),
-    );
-    expect(
-      const AlreadyInSector('Rue des Lilas').hashCode,
-      const AlreadyInSector('Rue des Lilas').hashCode,
-    );
-    expect(
-      const AlreadyInSector('Rue des Lilas'),
-      isNot(const AlreadyInSector('Rue Pasteur')),
-    );
-    expect(const AlreadyInSector('Rue des Lilas'), isNot(const NothingToSay()));
-    expect(
-      const AlreadyInSector('Rue des Lilas').toString(),
-      'AlreadyInSector(Rue des Lilas)',
-    );
     expect(
       // ignore: prefer_const_constructors
       LookUpFailed(LookUpProblem.noNetwork),

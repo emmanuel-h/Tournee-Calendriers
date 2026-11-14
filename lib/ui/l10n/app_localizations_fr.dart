@@ -2230,6 +2230,9 @@ class AppLocalizationsFr extends AppLocalizations {
   String get streetCardOpen => 'Ouvrir';
 
   @override
+  String get streetCardInSector => 'Dans le secteur';
+
+  @override
   String get manualTitle => 'Rue à la main';
 
   @override
@@ -2806,6 +2809,11 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String addStreetsAlreadyIn(String name) {
     return '$name est déjà dans le secteur.';
+  }
+
+  @override
+  String addStreetsStreetDeleted(String name) {
+    return '$name supprimée';
   }
 
   @override
