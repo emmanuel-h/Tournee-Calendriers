@@ -23,5 +23,11 @@ enum VisitStatus {
   /// « Repasser »: the residents asked the team to come back later. Only a
   /// door with this status carries a `ComeBack` (when to come back, if
   /// set: « samedi vers 18 h »).
-  comeBack,
+  comeBack;
+
+  /// Visited: ✓ or ⊘, what « 31/42 » counts.
+  bool get isVisited => switch (this) {
+    done || refused => true,
+    toDo || nobodyHome || comeBack => false,
+  };
 }

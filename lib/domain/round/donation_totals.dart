@@ -2,6 +2,25 @@ import 'package:tournee_calendriers/domain/round/amount.dart';
 import 'package:tournee_calendriers/domain/round/donation.dart';
 import 'package:tournee_calendriers/domain/round/payment_method.dart';
 
+/// Why a total typed in « Corriger la tournée », Totaux (PLAN §5.20) cannot
+/// stand: the bounds the server's rules hold a summary to (PLAN §8.2). Each
+/// has its words under the faulty line.
+enum TotalFailure {
+  /// Dons counted with no money: « Un montant pour 8 dons. »
+  amountMissing,
+
+  /// Money with no don: « Au moins 1 don pour 20 €. »
+  countMissing,
+
+  /// More than 1 000 € a don on average, or more than 1 000 000 € in all:
+  /// « 1 000 € au plus par don. »
+  tooLarge,
+
+  /// More than [MethodTotal.mostCount] dons or calendars: « 9 999 au
+  /// plus. »
+  tooMany,
+}
+
 /// The dons of one payment method added up (« Espèces · 15 dons · 210 € »,
 /// PLAN §5.13): how many, and their sum in cents.
 final class MethodTotal {
@@ -17,8 +36,26 @@ final class MethodTotal {
   /// No don: the starting point of a sum.
   static const none = MethodTotal._none();
 
+  /// The most dons (or free calendars) a total may count: the bound of the
+  /// server's rules.
+  static const mostCount = 9999;
+
   final int count;
   final int cents;
+
+  /// Why this total cannot be a tournée's, or null when it can: dons and
+  /// money go together (both 0 or both above 0), at most 1 000 € a don on
+  /// average, within the bounds of the rules. A sum of real dons always
+  /// can: each one is 0,01 € to 1 000 €.
+  TotalFailure? get failure {
+    if (count > mostCount) return TotalFailure.tooMany;
+    if (count > 0 && cents == 0) return TotalFailure.amountMissing;
+    if (count == 0 && cents > 0) return TotalFailure.countMissing;
+    if (cents > count * Amount.largest || cents > Amount.largestSum) {
+      return TotalFailure.tooLarge;
+    }
+    return null;
+  }
 
   /// This total with one more don of [amount].
   MethodTotal adding(Amount amount) =>
@@ -73,6 +110,18 @@ final class DonationTotals {
 
   /// The calendars given for free (« 2 calendriers offerts »).
   final int free;
+
+  /// Why [free] cannot be a tournée's, or null when it can.
+  TotalFailure? get freeFailure =>
+      free > MethodTotal.mostCount ? TotalFailure.tooMany : null;
+
+  /// Whether every total, and [free], can be a tournée's (see
+  /// [MethodTotal.failure]).
+  bool get isSound =>
+      cash.failure == null &&
+      cheque.failure == null &&
+      card.failure == null &&
+      freeFailure == null;
 
   /// The total of [method].
   MethodTotal of(PaymentMethod method) => switch (method) {

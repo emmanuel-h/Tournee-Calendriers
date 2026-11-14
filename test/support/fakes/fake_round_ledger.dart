@@ -2,6 +2,8 @@
 import 'dart:async';
 
 import 'package:tournee_calendriers/application/ports/round_ledger.dart';
+import 'package:tournee_calendriers/domain/round/round_correction.dart';
+import 'package:tournee_calendriers/domain/round/round_id.dart';
 import 'package:tournee_calendriers/domain/round/round_summary.dart';
 import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
@@ -26,6 +28,100 @@ final class FakeRoundLedger implements RoundLedger {
   void Function()? onRecord;
 
   final _changes = StreamController<void>.broadcast(sync: true);
+
+  /// Every correction written, with the tournée it went to, in order.
+  final corrected = <(SectorId, CampaignYear, RoundId, RoundCorrected)>[];
+
+  /// Every forgotten house settled, with its tournée, in order.
+  final settled = <(SectorId, CampaignYear, RoundId, ForgottenHouse)>[];
+
+  /// Puts [summary] among those of [sector] and [campaign], as a teammate's
+  /// phone would have, and tells the listeners.
+  void have(SectorId sector, CampaignYear campaign, RoundSummary summary) {
+    recorded.add((sector, campaign, summary));
+    _changes.add(null);
+  }
+
+  @override
+  Future<RoundSummary?> find(
+    SectorId sector,
+    CampaignYear campaign,
+    RoundId round,
+  ) async {
+    for (final (s, c, summary) in recorded) {
+      if (s == sector && c == campaign && summary.id == round) return summary;
+    }
+    return null;
+  }
+
+  @override
+  Future<void> correct(
+    SectorId sector,
+    CampaignYear campaign,
+    RoundId round,
+    RoundCorrected correction,
+  ) async {
+    corrected.add((sector, campaign, round, correction));
+    _replace(
+      sector,
+      campaign,
+      round,
+      (old) => RoundSummary(
+        id: old.id,
+        startedAt: old.startedAt,
+        endedAt: old.endedAt,
+        housesVisited: old.housesVisited,
+        totals: correction.totals,
+        donations: correction.donations ?? old.donations,
+        correctedAt: correction.correctedAt,
+        housesToMark: old.housesToMark + correction.housesAdded,
+      ),
+    );
+  }
+
+  @override
+  Future<void> settleForgottenHouse(
+    SectorId sector,
+    CampaignYear campaign,
+    RoundId round,
+    ForgottenHouse settled,
+  ) async {
+    this.settled.add((sector, campaign, round, settled));
+    _replace(
+      sector,
+      campaign,
+      round,
+      (old) => RoundSummary(
+        id: old.id,
+        startedAt: old.startedAt,
+        endedAt: old.endedAt,
+        housesVisited: switch (settled) {
+          ForgottenHouse.marked => old.housesVisited + 1,
+          ForgottenHouse.ignored => old.housesVisited,
+        },
+        totals: old.totals,
+        donations: old.donations,
+        correctedAt: old.correctedAt,
+        housesToMark: old.housesToMark - 1,
+      ),
+    );
+  }
+
+  /// The summary [round] made anew by [change], as the server would.
+  void _replace(
+    SectorId sector,
+    CampaignYear campaign,
+    RoundId round,
+    RoundSummary Function(RoundSummary old) change,
+  ) {
+    for (final (index, (s, c, summary)) in recorded.indexed) {
+      if (s == sector && c == campaign && summary.id == round) {
+        recorded[index] = (s, c, change(summary));
+        _changes.add(null);
+        return;
+      }
+    }
+  }
 
   @override
   Future<LedgerAnswer> record(

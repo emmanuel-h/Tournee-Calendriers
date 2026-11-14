@@ -1,6 +1,8 @@
-import 'package:cloud_firestore/cloud_firestore.dart' show Timestamp;
+import 'package:cloud_firestore/cloud_firestore.dart'
+    show FieldValue, Timestamp;
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/round/donation_totals.dart';
+import 'package:tournee_calendriers/domain/round/round_correction.dart';
 import 'package:tournee_calendriers/domain/round/round_id.dart';
 import 'package:tournee_calendriers/domain/round/round_summary.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/round_document_mapper.dart';
@@ -22,7 +24,17 @@ final summary = newRound()
     .validate(endedAt)
     .summary;
 
-/// The document of [summary].
+/// The dons of [summary], as stored.
+const storedDons = [
+  'cash:1000',
+  'cash:750',
+  'cheque:2000',
+  'card:500',
+  'free',
+  'free',
+];
+
+/// The document of [summary] without its dons: one validated before #168.
 Map<String, Object?> document() => {
   'startedAt': Timestamp.fromDate(startedAt),
   'endedAt': Timestamp.fromDate(endedAt),
@@ -34,8 +46,15 @@ Map<String, Object?> document() => {
 };
 
 void main() {
-  test('should write the summary with no member and no don', () {
-    expect(roundToDocument(summary), document());
+  test('should write the summary and its dons in order, with no member', () {
+    expect(roundToDocument(summary), {...document(), 'dons': storedDons});
+  });
+
+  test('should write no dons for a summary without a list', () {
+    expect(
+      roundToDocument(roundFromDocument('round-1', document())),
+      document(),
+    );
   });
 
   test('should read back the summary it writes, in UTC', () {
@@ -129,6 +148,7 @@ void main() {
           endedAt: empty.endedAt,
           housesVisited: 0,
           totals: DonationTotals.none,
+          donations: const [],
         ),
       ],
     );
@@ -142,5 +162,122 @@ void main() {
       }),
       [summary],
     );
+  });
+
+  group('the dons, the corrections and the houses to mark (#168)', () {
+    test('should read a document without them as one validated before', () {
+      final read = roundFromDocument('round-1', document());
+
+      expect(read.donations, isNull);
+      expect(read.correctedAt, isNull);
+      expect(read.housesToMark, 0);
+    });
+
+    test('should read the dons in order, the correction and the houses to '
+        'mark', () {
+      final read = roundFromDocument('round-1', {
+        ...document(),
+        'dons': storedDons,
+        'correctedAt': Timestamp.fromDate(DateTime.utc(2026, 10, 25, 9)),
+        'housesToMark': 2,
+      });
+
+      expect(read.donations, [
+        cash(1000),
+        cash(750),
+        cheque(2000),
+        card(500),
+        offered,
+        offered,
+      ]);
+      expect(read.correctedAt, DateTime.utc(2026, 10, 25, 9));
+      expect(read.correctedAt!.isUtc, isTrue);
+      expect(read.housesToMark, 2);
+    });
+
+    test('should read the largest don and an empty list', () {
+      expect(
+        roundFromDocument('r', {
+          ...document(),
+          'dons': ['card:100000'],
+        }).donations,
+        [card(100000)],
+      );
+      expect(
+        roundFromDocument('r', {...document(), 'dons': <Object?>[]}).donations,
+        isEmpty,
+      );
+    });
+
+    for (final (why, field, value) in [
+      ('dons that are not a list', 'dons', 'cash:1000'),
+      ('a don of an unknown method', 'dons', ['gold:1000']),
+      ('a don of no money', 'dons', ['cash:0']),
+      ('a don past 1 000 €', 'dons', ['cash:100001']),
+      ('a don without cents', 'dons', ['cash:']),
+      ('a don with a sign', 'dons', ['cash:+5']),
+      ('a don that is not a text', 'dons', [1000]),
+      ('a correction that is not a time', 'correctedAt', '2026-10-25'),
+      ('-1 house to mark', 'housesToMark', -1),
+      ('houses to mark that are not a number', 'housesToMark', '1'),
+    ]) {
+      test('should refuse $why', () {
+        expect(
+          () => roundFromDocument('r', {...document(), field: value}),
+          throwsFormatException,
+        );
+      });
+    }
+
+    test('should write a correction of the totals only, the houses it adds '
+        'as an increment', () {
+      final totals = DonationTotals.of([cash(1000), offered]);
+
+      expect(
+        correctionToUpdate(
+          RoundCorrected(
+            totals: totals,
+            donations: null,
+            correctedAt: DateTime.utc(2026, 10, 25, 9),
+            housesAdded: 2,
+          ),
+        ),
+        {
+          'free': 1,
+          'cash': {'count': 1, 'cents': 1000},
+          'cheque': {'count': 0, 'cents': 0},
+          'card': {'count': 0, 'cents': 0},
+          'correctedAt': Timestamp.fromDate(DateTime.utc(2026, 10, 25, 9)),
+          'housesToMark': FieldValue.increment(2),
+        },
+      );
+    });
+
+    test('should write the new list of a correction don by don', () {
+      final update = correctionToUpdate(
+        RoundCorrected(
+          totals: DonationTotals.of([card(500)]),
+          donations: [card(500)],
+          correctedAt: DateTime.utc(2026, 10, 25, 9),
+          housesAdded: 0,
+        ),
+      );
+
+      expect(update['dons'], ['card:500']);
+      expect(update['housesToMark'], FieldValue.increment(0));
+      expect(update.keys, isNot(contains('housesVisited')));
+      expect(update.keys, isNot(contains('startedAt')));
+    });
+
+    test('should take one off the houses to mark, and add one visited when '
+        'marked', () {
+      expect(forgottenHouseToUpdate(ForgottenHouse.marked), {
+        'housesToMark': FieldValue.increment(-1),
+        'housesVisited': FieldValue.increment(1),
+      });
+      expect(forgottenHouseToUpdate(ForgottenHouse.ignored), {
+        'housesToMark': FieldValue.increment(-1),
+      });
+    });
   });
 }

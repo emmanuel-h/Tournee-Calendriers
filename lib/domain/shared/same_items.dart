@@ -11,3 +11,8 @@ bool sameItems<T>(List<T> a, List<T> b) {
   }
   return true;
 }
+
+/// Whether [a] and [b] are both null, or lists of equal items in the same
+/// order (see [sameItems]).
+bool sameOptionalItems<T>(List<T>? a, List<T>? b) =>
+    a == null || b == null ? a == b : sameItems(a, b);

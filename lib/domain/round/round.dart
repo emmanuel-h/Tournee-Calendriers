@@ -26,8 +26,8 @@ final class NoSuchDonation {
 /// The tournée on (PLAN §2, §5.13): one outing of the member of this phone
 /// on a secteur, from « Commencer une tournée » to « Valider la tournée ».
 ///
-/// An aggregate kept on the phone only: its dons stay here until it is
-/// validated, then only its [RoundSummary] leaves. It names no member (the
+/// An aggregate kept on the phone only until it is validated; then only
+/// its [RoundSummary] leaves, its dons in it (#168: method and amount). It names no member (the
 /// phone's own) and its dons name no house and no time (PLAN §8.3).
 ///
 /// Immutable: each command returns a new tournée, which the use case saves.
@@ -130,7 +130,8 @@ final class Round {
 
   /// This tournée validated [at] (« Valider la tournée »): a tournée
   /// « validated, not yet sent » ([UnsentRound]), waiting for the server to
-  /// have its summary, all that leaves the phone.
+  /// have its summary, all that leaves the phone: its figures and its dons
+  /// in order, without a house or a time (PLAN §5.20).
   ///
   /// It ends after it started, whatever the phone's clock did meanwhile
   /// (set back by hand): at least one second after [startedAt], which the
@@ -146,6 +147,7 @@ final class Round {
         endedAt: at.isBefore(earliest) ? earliest : at,
         housesVisited: housesVisited,
         totals: totals,
+        donations: donations,
       ),
     );
   }

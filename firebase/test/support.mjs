@@ -297,8 +297,21 @@ export const roundDoc = (overrides = {}) => ({
   cash: { count: 15, cents: 21000 },
   cheque: { count: 3, cents: 6000 },
   card: { count: 1, cents: 1000 },
+  dons: roundDons(),
   ...overrides,
 });
+
+/**
+ * The dons of roundDoc(), in the order added (#168): 15 × 14 € in cash,
+ * 3 × 20 € by cheque, 10 € by card and 2 calendars given for free.
+ */
+export const roundDons = () => [
+  ...Array(15).fill('cash:1400'),
+  ...Array(3).fill('cheque:2000'),
+  'card:1000',
+  'free',
+  'free',
+];
 
 /**
  * Stores the team of Secteur 49 as the adapters leave it after creating

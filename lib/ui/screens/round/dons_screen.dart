@@ -2,12 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:tournee_calendriers/domain/round/donation.dart';
 import 'package:tournee_calendriers/presentation/round/round_notifier.dart';
 import 'package:tournee_calendriers/presentation/round/round_view.dart';
 import 'package:tournee_calendriers/ui/components/app_buttons.dart';
+import 'package:tournee_calendriers/ui/components/donation_tile.dart';
 import 'package:tournee_calendriers/ui/components/money_words.dart';
-import 'package:tournee_calendriers/ui/components/open_chevron.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/screens/round/donation_sheet.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
@@ -73,7 +72,7 @@ final class DonsScreen extends ConsumerWidget {
                         key: const Key('dons.list'),
                         children: [
                           for (final (position, row) in donations.indexed)
-                            _DonationTile(
+                            DonationTile(
                               key: ValueKey('dons.row.$position'),
                               donation: row.donation,
                               onTap: () => unawaited(
@@ -114,72 +113,6 @@ final class DonsScreen extends ConsumerWidget {
             ],
           ),
         },
-      ),
-    );
-  }
-}
-
-/// One don: its amount in a column of its own, so the methods line up,
-/// then the method (« Espèces »), or « Calendrier offert » across both; a
-/// « › » at the end. Screen readers hear one button.
-final class _DonationTile extends StatelessWidget {
-  const _DonationTile({super.key, required this.donation, required this.onTap});
-
-  final Donation donation;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context);
-    final colors = AppColors.of(context);
-    final (amount, words) = switch (donation) {
-      PaidDonation(:final method, :final amount) => (
-        eurosText(l10n, amount.cents),
-        methodName(l10n, method),
-      ),
-      FreeCalendar() => (null, l10n.donationFreeCalendar),
-    };
-    // `MergeSemantics`: the amount and the method are heard with the
-    // button.
-    return MergeSemantics(
-      child: Material(
-        color: colors.surface,
-        child: InkWell(
-          onTap: onTap,
-          child: Container(
-            constraints: const BoxConstraints(
-              minHeight: AppSizes.choiceRowHeight,
-            ),
-            padding: const EdgeInsets.fromLTRB(20, 0, 12, 0),
-            decoration: BoxDecoration(
-              border: Border(bottom: BorderSide(color: colors.divider)),
-            ),
-            child: Row(
-              spacing: 12,
-              children: [
-                SizedBox(
-                  width: AppSizes.donationAmountWidth,
-                  child: amount == null
-                      ? null
-                      : Text(
-                          amount,
-                          textAlign: TextAlign.right,
-                          style: AppTextStyles.donationAmount.copyWith(
-                            color: colors.ink,
-                          ),
-                        ),
-                ),
-                Expanded(
-                  child: Text(
-                    words,
-                    style: AppTextStyles.body.copyWith(color: colors.ink),
-                  ),
-                ),
-                OpenChevron(height: AppSizes.smallIcon, color: colors.muted),
-              ],
-            ),
-          ),
-        ),
       ),
     );
   }

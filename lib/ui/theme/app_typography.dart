@@ -341,6 +341,14 @@ abstract final class AppTextStyles {
     fontSize: 34,
   );
 
+  /// A figure typed in « Corriger la tournée », Totaux (« 80,00 », « 10 »,
+  /// RoundCorrect mockup).
+  static const correctField = TextStyle(
+    fontFamily: AppFonts.display,
+    fontWeight: FontWeight.w700,
+    fontSize: 26,
+  );
+
   /// The amount of a don in « Dons de la tournée » (« 10 € ») and of a
   /// method in the « Bilan ».
   static const donationAmount = TextStyle(

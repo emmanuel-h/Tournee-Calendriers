@@ -73,6 +73,13 @@ final class DonationRow {
   String toString() => 'DonationRow($index, $donation)';
 }
 
+/// The rows of [dons] (in the order added) as « Dons de la tournée » lists
+/// them: newest first, each keeping its place in the order added.
+List<DonationRow> donationRowsOf(List<Donation> dons) => [
+  for (var index = dons.length - 1; index >= 0; index--)
+    DonationRow(index: index, donation: dons[index]),
+];
+
 /// A tournée is on in the secteur shown.
 final class RoundOn extends RoundView {
   RoundOn({

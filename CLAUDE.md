@@ -106,6 +106,7 @@ by-id lookup inside the houses' area + 2 km, the WFS being too slow without a bo
 credits and privacy text updated. Validated by the user on the phone and closed (2026-11-14).
 #167 (PLAN §5.19) delivered 2026-11-14: on « Ajouter des rues » a tap on a secteur street shows its card (part, progress)
 with « Modifier la rue » (edit mode) and « Supprimer la rue » (to the Corbeille), the ticks kept. Validated by the user on the phone and closed (2026-11-14).
+#168 (PLAN §5.20) delivered 2026-11-14: validated tournées keep their dons (`dons`, « cash:1000 » / « free »); any member or admin corrects one from Collecte (« Don par don | Totaux », `correctedAt`), a correction adding dons leaves `housesToMark`, marked from « Quelle maison ? » with no tournée on (`Street.markForgotten`) or ignored; rules with the new `update` to deploy.
 
 ## Commands
 

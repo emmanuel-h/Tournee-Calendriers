@@ -249,4 +249,65 @@ void main() {
     expect(free.summary.totals.free, 0);
     expect(empty.summary.totals.cash, MethodTotal.none);
   });
+
+  group('the dons of a tournée not yet sent (#168)', () {
+    final withDons = UnsentRound(
+      sector: sector49Id,
+      campaign: year2026,
+      summary: round.validate(endedAt).summary,
+    );
+    final storedDons = [
+      {'method': 'cash', 'cents': 750},
+      {'free': true},
+      {'method': 'cheque', 'cents': 2000},
+      {'method': 'card', 'cents': 1000},
+    ];
+
+    test('should write them in order, with no house nor time', () {
+      final json = roundsToJson((open: null, unsent: [withDons]));
+
+      final summary =
+          ((json['unsent']! as List<Object?>).single!
+                  as Map<String, Object?>)['summary']!
+              as Map<String, Object?>;
+      expect(summary['donations'], storedDons);
+      expect(roundsFromJson(json).unsent.single, withDons);
+    });
+
+    test('should write none for a summary without a list', () {
+      final summary = (storedRefused['summary']! as Map<String, Object?>).keys;
+
+      expect(summary, isNot(contains('donations')));
+      expect(roundsFromJson(stored).unsent.first.summary.donations, isNull);
+    });
+
+    test('should refuse dons it cannot read', () {
+      for (final value in [
+        'cash:750',
+        [
+          {'method': 'gold', 'cents': 750},
+        ],
+        [
+          {'method': 'cash', 'cents': 0},
+        ],
+      ]) {
+        expect(
+          () => roundsFromJson(summaryWith('donations', value)),
+          throwsFormatException,
+          reason: '$value',
+        );
+      }
+    });
+
+    test('should read an empty list as a list of no don', () {
+      expect(
+        roundsFromJson(summaryWith('donations', <Object?>[]))
+            .unsent
+            .single
+            .summary
+            .donations,
+        isEmpty,
+      );
+    });
+  });
 }

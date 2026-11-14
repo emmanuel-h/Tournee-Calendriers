@@ -29,7 +29,12 @@ final class StreetTiles extends StatefulWidget {
     this.selected,
     this.hint,
     this.ringed,
+    this.fadeVisited = false,
   });
+
+  /// « Touchez la maison oubliée » (PLAN §5.20): the tiles ✓ or ⊘ (a
+  /// building, every door) are faded, not the one to tap.
+  final bool fadeVisited;
 
   final StreetShown state;
 
@@ -169,6 +174,9 @@ final class _StreetTilesState extends State<StreetTiles> {
           ? () => widget.onOpenBuilding(number)
           : () => widget.onTap(number),
     );
+    if (widget.fadeVisited && tile.mark.isVisited) {
+      return Opacity(opacity: AppSizes.fadedTileOpacity, child: statusTile);
+    }
     return number == widget.ringed
         ? RingPulse(key: const Key('street.ring'), child: statusTile)
         : statusTile;

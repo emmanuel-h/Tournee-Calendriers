@@ -445,4 +445,14 @@ abstract final class AppSizes {
   static const partMarkLabelHeight = 26.0;
   static const partMarkLabelWidth = 160.0;
   static const partMarkGrip = 18.0;
+
+  /// « Corriger la tournée » and its forgotten houses (#168, mockups
+  /// CashCorrect, RoundCorrect, MarkForgottenStreet): the amber notes' edge
+  /// (1 px in the mockups), the « Dons » field of « Totaux », the gap
+  /// between a method's two fields, and how much a house or door already
+  /// ✓ / ⊘ fades in « Touchez la maison oubliée ».
+  static const amberNoteBorder = 1.0;
+  static const correctCountWidth = 110.0;
+  static const correctFieldGap = 12.0;
+  static const fadedTileOpacity = 0.55;
 }

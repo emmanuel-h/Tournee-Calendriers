@@ -6,6 +6,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:mock_exceptions/mock_exceptions.dart';
 import 'package:tournee_calendriers/application/ports/round_ledger.dart';
 import 'package:tournee_calendriers/domain/round/donation_totals.dart';
+import 'package:tournee_calendriers/domain/round/round_correction.dart';
 import 'package:tournee_calendriers/domain/round/round_id.dart';
 import 'package:tournee_calendriers/domain/round/round_summary.dart';
 import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
@@ -106,6 +107,162 @@ void main() {
 
       expect(answer, LedgerAnswer.refused);
       expect((await db.doc('$roundsPath/round-1').get()).exists, isFalse);
+    });
+  });
+
+  group('find', () {
+    test('should read the tournée from its document', () async {
+      await ledger.record(sector49Id, year2026, summary);
+
+      expect(await ledger.find(sector49Id, year2026, roundId), summary);
+    });
+
+    test('should find none without its document, or in another '
+        'campaign', () async {
+      await ledger.record(SectorId('t12'), year2026, summary);
+
+      expect(await ledger.find(sector49Id, year2026, roundId), isNull);
+      expect(
+        await ledger.find(SectorId('t12'), year2026, RoundId('round-2')),
+        isNull,
+      );
+    });
+
+    test('should find none in a document it cannot read', () async {
+      await db.doc('$roundsPath/round-1').set({'housesVisited': 3});
+
+      expect(await ledger.find(sector49Id, year2026, roundId), isNull);
+    });
+
+    test('should find none when Firestore refuses the read', () async {
+      whenCalling(Invocation.method(#snapshots, null))
+          .on(db.doc('$roundsPath/round-1'))
+          .thenThrow(
+            FirebaseException(
+              plugin: 'cloud_firestore',
+              code: 'permission-denied',
+            ),
+          );
+
+      expect(await ledger.find(sector49Id, year2026, roundId), isNull);
+    });
+  });
+
+  group('correct', () {
+    final correctedAt = DateTime.utc(2026, 10, 25, 9);
+
+    test('should update the totals, the list, the time and the houses to '
+        'mark, and nothing else', () async {
+      await ledger.record(sector49Id, year2026, summary);
+      await db.doc('$roundsPath/round-1').update({'housesToMark': 1});
+
+      await ledger.correct(
+        sector49Id,
+        year2026,
+        roundId,
+        RoundCorrected(
+          totals: DonationTotals.of([cash(1000), card(500), offered]),
+          donations: [cash(1000), card(500), offered],
+          correctedAt: correctedAt,
+          housesAdded: 1,
+        ),
+      );
+      await pumpEventQueue();
+
+      final read = (await ledger.find(sector49Id, year2026, roundId))!;
+      expect(read.totals, DonationTotals.of([cash(1000), card(500), offered]));
+      expect(read.donations, [cash(1000), card(500), offered]);
+      expect(read.correctedAt, correctedAt);
+      expect(read.housesToMark, 2);
+      expect(read.housesVisited, 2);
+      expect(read.startedAt, summary.startedAt);
+      expect(read.endedAt, summary.endedAt);
+    });
+
+    test(
+      'should leave the list as it is when the correction keeps it',
+      () async {
+        await ledger.record(sector49Id, year2026, summary);
+
+        await ledger.correct(
+          sector49Id,
+          year2026,
+          roundId,
+          RoundCorrected(
+            totals: DonationTotals.of([cash(2000)]),
+            donations: null,
+            correctedAt: correctedAt,
+            housesAdded: 0,
+          ),
+        );
+        await pumpEventQueue();
+
+        final read = (await ledger.find(sector49Id, year2026, roundId))!;
+        expect(read.donations, summary.donations);
+        expect(read.totals, DonationTotals.of([cash(2000)]));
+        expect(read.housesToMark, 0);
+      },
+    );
+
+    test('should end without the server, a refusal only logged', () async {
+      whenCalling(Invocation.method(#update, null))
+          .on(db.doc('$roundsPath/round-1'))
+          .thenThrow(
+            FirebaseException(
+              plugin: 'cloud_firestore',
+              code: 'permission-denied',
+            ),
+          );
+
+      await ledger.correct(
+        sector49Id,
+        year2026,
+        roundId,
+        RoundCorrected(
+          totals: DonationTotals.none,
+          donations: null,
+          correctedAt: correctedAt,
+          housesAdded: 0,
+        ),
+      );
+      await pumpEventQueue();
+
+      expect((await db.doc('$roundsPath/round-1').get()).exists, isFalse);
+    });
+  });
+
+  group('settleForgottenHouse', () {
+    setUp(() async {
+      await ledger.record(sector49Id, year2026, summary);
+      await db.doc('$roundsPath/round-1').update({'housesToMark': 2});
+    });
+
+    test('should count a house marked as visited, one fewer to mark', () async {
+      await ledger.settleForgottenHouse(
+        sector49Id,
+        year2026,
+        roundId,
+        ForgottenHouse.marked,
+      );
+      await pumpEventQueue();
+
+      final read = (await ledger.find(sector49Id, year2026, roundId))!;
+      expect(read.housesVisited, 3);
+      expect(read.housesToMark, 1);
+    });
+
+    test('should only take one off when ignored', () async {
+      await ledger.settleForgottenHouse(
+        sector49Id,
+        year2026,
+        roundId,
+        ForgottenHouse.ignored,
+      );
+      await pumpEventQueue();
+
+      final read = (await ledger.find(sector49Id, year2026, roundId))!;
+      expect(read.housesVisited, 2);
+      expect(read.housesToMark, 1);
     });
   });
 

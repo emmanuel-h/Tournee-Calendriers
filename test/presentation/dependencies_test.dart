@@ -16,10 +16,12 @@ import 'package:tournee_calendriers/application/use_cases/find_imported_streets.
 import 'package:tournee_calendriers/application/use_cases/import_reference_area.dart';
 import 'package:tournee_calendriers/application/use_cases/look_up_street.dart';
 import 'package:tournee_calendriers/application/use_cases/mark.dart';
+import 'package:tournee_calendriers/application/use_cases/round_corrections.dart';
 import 'package:tournee_calendriers/domain/come_back/come_back_entry.dart';
 import 'package:tournee_calendriers/domain/come_back/reminder.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
 import 'package:tournee_calendriers/domain/round/donation_totals.dart';
+import 'package:tournee_calendriers/domain/round/round_correction.dart';
 import 'package:tournee_calendriers/domain/round/round_id.dart';
 import 'package:tournee_calendriers/domain/round/round_summary.dart';
 import 'package:tournee_calendriers/domain/sector/join_request.dart';
@@ -33,6 +35,7 @@ import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/corbeille.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
+import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_part.dart';
 import 'package:tournee_calendriers/domain/street/unreadable_street.dart';
@@ -41,7 +44,7 @@ import 'package:tournee_calendriers/presentation/dependencies.dart';
 
 import '../application/use_cases/street_fixtures.dart';
 import '../domain/round/round_fixtures.dart'
-    show cash, cheque, newRound, offered;
+    show card, cash, cheque, newRound, offered;
 import '../domain/sector/my_sectors_fixtures.dart';
 import '../domain/sector/sector_fixtures.dart'
     show
@@ -1032,6 +1035,61 @@ void main() {
 
       expect(collecte.rounds, [nextSummary]);
       expect(collecte.unsent, [validated]);
+    });
+
+    test('should correct a tournée of the bound ledger at the bound '
+        'time (#168)', () async {
+      final withDons = RoundSummary(
+        id: RoundId('round-3'),
+        startedAt: DateTime.utc(2026, 10, 26, 12),
+        endedAt: DateTime.utc(2026, 10, 26, 16),
+        housesVisited: 4,
+        totals: DonationTotals.of([cash(500)]),
+        donations: [cash(500)],
+      );
+      await ledger.record(sector49.id, sector49.campaign, withDons);
+      final RoundPlace place = (
+        sector: sector49.id,
+        campaign: sector49.campaign,
+        round: withDons.id,
+      );
+
+      valueOf(
+        await container.read(correctRoundTotalsProvider)(
+          place,
+          DonationTotals.of([cash(1000), cash(500)]),
+        ),
+      );
+      valueOf(
+        await container.read(correctRoundDonationsProvider)(place, [
+          cash(1000),
+          cash(500),
+          card(300),
+        ]),
+      );
+      valueOf(await container.read(ignoreForgottenHouseProvider)(place));
+      valueOf(
+        await container.read(markForgottenHouseProvider)(place, (
+          street: lilasId,
+          number: n('7'),
+          door: null,
+        )),
+      );
+
+      expect(ledger.corrected.map((c) => c.$4.correctedAt), [twoPm, twoPm]);
+      expect(ledger.settled.map((s) => s.$4), [
+        ForgottenHouse.ignored,
+        ForgottenHouse.marked,
+      ]);
+      expect(streets.saved.last.$2, isA<HouseMarked>());
+      expect(
+        (await ledger.find(
+          sector49.id,
+          sector49.campaign,
+          withDons.id,
+        ))!.housesToMark,
+        0,
+      );
     });
 
     test(

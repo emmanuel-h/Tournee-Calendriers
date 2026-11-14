@@ -1,5 +1,6 @@
 import 'package:flutter/widgets.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tournee_calendriers/domain/round/round_id.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
@@ -22,9 +23,13 @@ import 'package:tournee_calendriers/ui/screens/onboarding/create_sector_screen.d
 import 'package:tournee_calendriers/ui/screens/onboarding/join_pending_screen.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/join_sector_screen.dart';
 import 'package:tournee_calendriers/ui/screens/onboarding/welcome_screen.dart';
+import 'package:tournee_calendriers/ui/screens/round/collecte_dons_screen.dart';
 import 'package:tournee_calendriers/ui/screens/round/collecte_screen.dart';
+import 'package:tournee_calendriers/ui/screens/round/correct_round_screen.dart';
 import 'package:tournee_calendriers/ui/screens/round/dons_screen.dart';
+import 'package:tournee_calendriers/ui/screens/round/forgotten_street_screen.dart';
 import 'package:tournee_calendriers/ui/screens/round/round_recap_screen.dart';
+import 'package:tournee_calendriers/ui/screens/round/which_house_screen.dart';
 import 'package:tournee_calendriers/ui/screens/settings/changelog_screen.dart';
 import 'package:tournee_calendriers/ui/screens/settings/privacy_screen.dart';
 import 'package:tournee_calendriers/ui/screens/settings/settings_screen.dart';
@@ -159,6 +164,36 @@ GoRouter buildAppRouter({
       path: AppRoutes.collecte,
       builder: (context, state) => const CollecteScreen(),
     ),
+    // Pushed by Collecte for one validated tournée (`?id=…`, PLAN §5.20);
+    // a link without one goes back to Collecte.
+    GoRoute(
+      path: AppRoutes.collecteDons,
+      redirect: _toCollecteWithoutRound,
+      builder: (context, state) =>
+          CollecteDonsScreen(round: _roundIdOf(state)!),
+    ),
+    GoRoute(
+      path: AppRoutes.correctRound,
+      redirect: _toCollecteWithoutRound,
+      builder: (context, state) =>
+          CorrectRoundScreen(round: _roundIdOf(state)!),
+    ),
+    GoRoute(
+      path: AppRoutes.whichHouse,
+      redirect: _toCollecteWithoutRound,
+      builder: (context, state) => WhichHouseScreen(round: _roundIdOf(state)!),
+    ),
+    GoRoute(
+      path: AppRoutes.forgottenStreet,
+      redirect: (context, state) =>
+          _roundIdOf(state) == null || _forgottenStreetOf(state) == null
+          ? AppRoutes.collecte
+          : null,
+      builder: (context, state) => ForgottenStreetScreen(
+        round: _roundIdOf(state)!,
+        street: _forgottenStreetOf(state)!,
+      ),
+    ),
     if (showGallery)
       GoRoute(
         path: AppRoutes.gallery,
@@ -178,6 +213,25 @@ StreetId? _streetIdOf(GoRouterState state) =>
       final String id when id.trim().isNotEmpty => StreetId(id),
       _ => null,
     };
+
+/// The validated tournée named by the link's `id`, or null when it names
+/// none.
+RoundId? _roundIdOf(GoRouterState state) =>
+    switch (state.uri.queryParameters['id']) {
+      final String id when id.trim().isNotEmpty => RoundId(id),
+      _ => null,
+    };
+
+/// The street named by the link's `rue`, or null when it names none.
+StreetId? _forgottenStreetOf(GoRouterState state) =>
+    switch (state.uri.queryParameters['rue']) {
+      final String id when id.trim().isNotEmpty => StreetId(id),
+      _ => null,
+    };
+
+/// Collecte, for a link to a tournée's screen that names no tournée.
+String? _toCollecteWithoutRound(BuildContext context, GoRouterState state) =>
+    _roundIdOf(state) == null ? AppRoutes.collecte : null;
 
 /// The secteur named by the link's `id`, or null when it names none.
 SectorId? _sectorIdOf(GoRouterState state) =>

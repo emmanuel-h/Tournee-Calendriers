@@ -137,6 +137,7 @@ void main() {
       final state = await shown();
 
       expect(state.name, 'Rue des Lilas');
+      expect(state.commune, 'Villefranche-sur-Saône');
       expect(state.done, 3);
       expect(state.total, 8);
       expect(state.refused, 0);

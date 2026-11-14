@@ -65,18 +65,13 @@ final class RoundNotifier extends Notifier<RoundView> {
       final status = ref.read(currentSectorProvider)?.status;
       return RoundOff(canStart: status == MemberStatus.active);
     }
-    final dons = round.donations;
     return RoundOn(
       startedAt: round.startedAt.toLocal(),
       // The clock, not `DateTime.now()`, so the tests fix the time.
       now: ref.read(clockProvider).now().toLocal(),
       housesVisited: round.housesVisited,
       totals: round.totals,
-      // Newest first; each row keeps its place in the order added.
-      donations: [
-        for (var index = dons.length - 1; index >= 0; index--)
-          DonationRow(index: index, donation: dons[index]),
-      ],
+      donations: donationRowsOf(round.donations),
     );
   }
 
@@ -111,9 +106,8 @@ final class RoundNotifier extends Notifier<RoundView> {
       ref.read(removeDonationProvider)(index);
 
   /// « Valider » of « Valider la tournée ? »: the tournée is kept as
-  /// validated, not yet sent, until the server has its summary (#143), and
-  /// the phone forgets its dons. Nothing happens when it was validated
-  /// already.
+  /// validated, not yet sent, until the server has its summary and its
+  /// dons (#143, #168). Nothing happens when it was validated already.
   Future<void> validate() => ref.read(validateRoundProvider)();
 
   /// « Abandonner » of « Abandonner la tournée ? »: the phone forgets the

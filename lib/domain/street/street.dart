@@ -125,6 +125,18 @@ enum CalendarChangeFailure {
   tooMany,
 }
 
+/// Why a forgotten house or door could not be marked ✓ ([Street.markForgotten],
+/// PLAN §5.20).
+enum ForgottenMarkFailure {
+  /// The street has no such house, or the building no such door (changed
+  /// meanwhile); a building itself is never marked, its doors are.
+  notFound,
+
+  /// The house or door is ✓ or ⊘ already: it was not the forgotten one
+  /// (« N° 9 : déjà marquée ✓. »).
+  alreadyVisited,
+}
+
 /// Why a street could not be given its line on the map ([Street.fillShape]).
 enum ShapeFillFailure {
   /// The street has a shape already: a shape is set once, never replaced.
@@ -365,11 +377,21 @@ final class Street {
     if (index < 0) return const Err(HouseChangeFailure.unknownHouse);
     final before = houses[index];
     if (before.isBuilding) return const Err(HouseChangeFailure.houseIsBuilding);
-    final stamp = ChangeStamp(by: by, at: at);
+    return Ok(_markHouseAt(index, status, ChangeStamp(by: by, at: at)));
+  }
+
+  /// The house at [index] given [status], stamped with [stamp]: the steps
+  /// [markHouse] and [markForgotten] share.
+  (Street, HouseMarked) _markHouseAt(
+    int index,
+    VisitStatus status,
+    ChangeStamp stamp,
+  ) {
+    final before = houses[index];
     // The House factory keeps the come-back only for « repasser », and the
     // tries the new status allows.
     final after = House(
-      number: number,
+      number: before.number,
       status: status,
       comeBack: before.comeBack,
       lastChange: stamp,
@@ -377,10 +399,10 @@ final class Street {
       tries: before.tries,
       calendars: before.calendars,
     );
-    return Ok((
+    return (
       _withHouseAt(index, after),
       HouseMarked(streetId: id, before: before, stamp: stamp, status: status),
-    ));
+    );
   }
 
   /// Sets the « repasser » of the house at [number] to [comeBack], as [by]
@@ -596,32 +618,84 @@ final class Street {
     required MemberId by,
     required DateTime at,
   }) {
-    switch (_dwellingAt(number, key)) {
-      case Err(:final failure):
-        return Err(failure);
-      case Ok(value: (final index, final before)):
-        final stamp = ChangeStamp(by: by, at: at);
-        final after = Dwelling(
-          label: before.label,
-          status: status,
-          comeBack: before.comeBack,
-          lastChange: stamp,
-          tries: before.tries,
-          calendars: before.calendars,
-        );
-        return Ok((
-          _withDwellingAt(index, key, after),
-          DwellingMarked(
-            streetId: id,
-            number: number,
-            staircase: key.staircase,
-            level: key.level,
-            before: before,
-            stamp: stamp,
-            status: status,
-          ),
-        ));
+    return _dwellingAt(number, key).map(
+      (found) => _markDwellingAt(
+        found,
+        number,
+        key,
+        status,
+        ChangeStamp(by: by, at: at),
+      ),
+    );
+  }
+
+  /// The door [key] of the building at [number], [found] at its index,
+  /// given [status], stamped with [stamp]: the steps [markDwelling] and
+  /// [markForgotten] share.
+  (Street, DwellingMarked) _markDwellingAt(
+    (int, Dwelling) found,
+    HouseNumber number,
+    DwellingKey key,
+    VisitStatus status,
+    ChangeStamp stamp,
+  ) {
+    final (index, before) = found;
+    final after = Dwelling(
+      label: before.label,
+      status: status,
+      comeBack: before.comeBack,
+      lastChange: stamp,
+      tries: before.tries,
+      calendars: before.calendars,
+    );
+    return (
+      _withDwellingAt(index, key, after),
+      DwellingMarked(
+        streetId: id,
+        number: number,
+        staircase: key.staircase,
+        level: key.level,
+        before: before,
+        stamp: stamp,
+        status: status,
+      ),
+    );
+  }
+
+  /// Marks ✓ the house at [number], or its door [door] when it is a
+  /// building, as [by] at [at]: a house visited during a validated tournée
+  /// that nobody marked (« Touchez la maison oubliée », PLAN §5.20). The
+  /// only mark made with no tournée on.
+  ///
+  /// Refused with [ForgottenMarkFailure.alreadyVisited] on a house or door
+  /// ✓ or ⊘ already, and [ForgottenMarkFailure.notFound] when there is
+  /// none (a building named without a door included).
+  Result<(Street, StreetChange), ForgottenMarkFailure> markForgotten(
+    HouseNumber number, {
+    DwellingKey? door,
+    required MemberId by,
+    required DateTime at,
+  }) {
+    final stamp = ChangeStamp(by: by, at: at);
+    if (door != null) {
+      return switch (_dwellingAt(number, door)) {
+        Err() => const Err(ForgottenMarkFailure.notFound),
+        Ok(value: (_, final before)) when before.status.isVisited => const Err(
+          ForgottenMarkFailure.alreadyVisited,
+        ),
+        Ok(value: final found) => Ok(
+          _markDwellingAt(found, number, door, VisitStatus.done, stamp),
+        ),
+      };
     }
+    final index = _indexOf(number);
+    if (index < 0 || houses[index].isBuilding) {
+      return const Err(ForgottenMarkFailure.notFound);
+    }
+    if (houses[index].status.isVisited) {
+      return const Err(ForgottenMarkFailure.alreadyVisited);
+    }
+    return Ok(_markHouseAt(index, VisitStatus.done, stamp));
   }
 
   /// Sets the time of the « repasser » of the door at [key] of the building

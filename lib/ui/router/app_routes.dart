@@ -1,4 +1,5 @@
 import 'package:tournee_calendriers/domain/come_back/come_back_entry.dart';
+import 'package:tournee_calendriers/domain/round/round_id.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
@@ -85,6 +86,31 @@ abstract final class AppRoutes {
 
   /// « Collecte 2026 » (§5.13), pushed by Secteur's « COLLECTE 2026 » row.
   static const collecte = '/equipe/collecte';
+
+  /// A validated tournée's dons, read-only (§5.20), pushed by « Voir les
+  /// 19 dons › » of Collecte: `?id=` the tournée.
+  static const collecteDons = '/equipe/collecte/dons';
+
+  /// « Corriger la tournée » (§5.20), pushed by « ✎ Corriger ».
+  static const correctRound = '/equipe/collecte/corriger';
+
+  /// « Quelle maison ? » (§5.20), pushed by « Marquer une maison ».
+  static const whichHouse = '/equipe/collecte/maison-oubliee';
+
+  /// The street in « Touchez la maison oubliée » (§5.20), pushed by
+  /// « Quelle maison ? »: `?id=` the tournée, `&rue=` the street.
+  static const forgottenStreet = '/equipe/collecte/maison-oubliee/rue';
+
+  static String collecteDonsOf(RoundId round) => _ofRound(collecteDons, round);
+  static String correctRoundOf(RoundId round) => _ofRound(correctRound, round);
+  static String whichHouseOf(RoundId round) => _ofRound(whichHouse, round);
+  static String forgottenStreetOf(RoundId round, StreetId street) => Uri(
+    path: forgottenStreet,
+    queryParameters: {'id': round.value, 'rue': street.value},
+  ).toString();
+
+  static String _ofRound(String path, RoundId round) =>
+      Uri(path: path, queryParameters: {'id': round.value}).toString();
 
   /// « À repasser » (§5.17), pushed by its row on Accueil or a reminder.
   static const comeBacks = '/a-repasser';

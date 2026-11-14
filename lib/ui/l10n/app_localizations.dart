@@ -2143,7 +2143,7 @@ abstract class AppLocalizations {
   /// Privacy page: what is stored (PLAN §8.3): its section of PRIVACY.md, word for word.
   ///
   /// In fr, this message translates to:
-  /// **'Pour chaque rue du secteur : les numéros, leur place sur la carte, ce qui s\'est passé à chaque porte (fait, refusé, personne, à repasser), le jour et l\'heure où repasser, combien de calendriers la maison a pris, et le prénom de qui l\'a noté. Pour chaque tournée validée : son début et sa fin, le nombre de maisons visitées, le nombre et le total des dons par moyen de paiement, et les calendriers offerts, sans le prénom de qui l\'a faite. Un don n\'est jamais lié à une maison : la liste des dons reste sur le téléphone jusqu\'à la validation de la tournée, puis elle est effacée. Quels numéros de chaque rue un secteur couvre, avec le numéro du secteur et son centre de secours, est visible des membres de tous les secteurs : cela évite que deux secteurs passent aux mêmes portes. Rien d\'autre : pas de nom d\'habitant, pas de note.'**
+  /// **'Pour chaque rue du secteur : les numéros, leur place sur la carte, ce qui s\'est passé à chaque porte (fait, refusé, personne, à repasser), le jour et l\'heure où repasser, combien de calendriers la maison a pris, et le prénom de qui l\'a noté. Pour chaque tournée validée : son début et sa fin, le nombre de maisons visitées, le nombre et le total des dons par moyen de paiement, et les calendriers offerts, sans le prénom de qui l\'a faite. Un don n\'est jamais lié à une maison : avec chaque tournée validée est gardée la liste de ses dons, le moyen de paiement et le montant de chacun, sans maison, sans heure et sans membre, visible du secteur qui peut la corriger. Quels numéros de chaque rue un secteur couvre, avec le numéro du secteur et son centre de secours, est visible des membres de tous les secteurs : cela évite que deux secteurs passent aux mêmes portes. Rien d\'autre : pas de nom d\'habitant, pas de note.'**
   String get privacyDataBody;
 
   /// Privacy page: section about the phone's position.
@@ -3832,11 +3832,263 @@ abstract class AppLocalizations {
   /// **'{when}, {amount}, masquer le détail'**
   String collecteRoundHide(String when, String amount);
 
-  /// At the bottom of the Collecte screen.
+  /// At the bottom of the Collecte screen (PLAN §5.20: a validated tournée may now be corrected).
   ///
   /// In fr, this message translates to:
-  /// **'Une tournée validée ne peut plus être modifiée. Les dons ne sont jamais associés à une adresse.'**
-  String get collecteNeverChanged;
+  /// **'Les dons ne sont jamais associés à une adresse.'**
+  String get collecteFooter;
+
+  /// Under the line of a corrected tournée of the Collecte screen, folded or not (CashCorrect mockup): « ✎ Corrigée le 15 nov. ».
+  ///
+  /// In fr, this message translates to:
+  /// **'✎ Corrigée le {day}'**
+  String collecteCorrectedOn(DateTime day);
+
+  /// Amber badge of a tournée whose correction added dons or calendars: houses visited that nobody marked (CashCorrect mockup).
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, one{⚠ {count} maison à marquer} other{⚠ {count} maisons à marquer}}'**
+  String collecteToMark(int count);
+
+  /// Outlined pill under « ⚠ 1 maison à marquer »: opens « Quelle maison ? ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Marquer une maison'**
+  String get collecteMarkHouse;
+
+  /// What screen readers hear for « Marquer une maison ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Marquer une maison oubliée de la tournée du {when}'**
+  String collecteMarkHouseSpoken(String when);
+
+  /// Muted text button beside « Marquer une maison »: one fewer house to mark, asked nothing.
+  ///
+  /// In fr, this message translates to:
+  /// **'Ignorer'**
+  String get collecteIgnore;
+
+  /// What screen readers hear for « Ignorer ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Ignorer une maison à marquer de la tournée du {when}'**
+  String collecteIgnoreSpoken(String when);
+
+  /// Line of an unfolded tournée of the Collecte screen that opens its list of dons, read-only (CashCorrectOpen mockup). The count is the dons of money; a free calendar is not one.
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, =0{Voir les dons} =1{Voir le don} other{Voir les {count} dons}}'**
+  String collecteSeeDons(int count);
+
+  /// Amber block of an unfolded tournée whose list of dons no longer adds up to its totals (after « Totaux » was corrected).
+  ///
+  /// In fr, this message translates to:
+  /// **'La liste des dons ne correspond plus aux totaux.'**
+  String get collecteListDiffers;
+
+  /// Outlined pill at the end of an unfolded sent tournée of the Collecte screen: opens « Corriger la tournée ».
+  ///
+  /// In fr, this message translates to:
+  /// **'✎ Corriger'**
+  String get collecteCorrect;
+
+  /// What screen readers hear for « ✎ Corriger ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Corriger la tournée du {when}'**
+  String collecteCorrectSpoken(String when);
+
+  /// Snackbar of the Collecte screen once a correction is saved (kept on the phone, sent when the network allows).
+  ///
+  /// In fr, this message translates to:
+  /// **'Correction enregistrée.'**
+  String get correctionSaved;
+
+  /// Title of the screen that corrects a validated tournée (RoundCorrect mockups).
+  ///
+  /// In fr, this message translates to:
+  /// **'Corriger la tournée'**
+  String get correctTitle;
+
+  /// Under the title « Corriger la tournée »: « Sam. 14 nov. · 14:05 → 18:20 · 23 maisons ».
+  ///
+  /// In fr, this message translates to:
+  /// **'{when} · {houses, plural, one{{houses} maison} other{{houses} maisons}}'**
+  String correctSubtitle(String when, int houses);
+
+  /// What screen readers hear for the switch « Don par don | Totaux ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Corriger'**
+  String get correctTabsLabel;
+
+  /// First side of the switch of « Corriger la tournée »: the list of dons.
+  ///
+  /// In fr, this message translates to:
+  /// **'Don par don'**
+  String get correctTabDons;
+
+  /// Second side of the switch of « Corriger la tournée »: the count and amount per method.
+  ///
+  /// In fr, this message translates to:
+  /// **'Totaux'**
+  String get correctTabTotals;
+
+  /// Above the list on « Don par don »: « 20 dons · 205 € · touchez un don pour le changer. ».
+  ///
+  /// In fr, this message translates to:
+  /// **'{totals} · touchez un don pour le changer.'**
+  String correctDonsLine(String totals);
+
+  /// Red button at the bottom of « Corriger la tournée »; greyed while a line is wrong.
+  ///
+  /// In fr, this message translates to:
+  /// **'Enregistrer'**
+  String get correctSave;
+
+  /// Label of the count of a method on « Totaux ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Dons'**
+  String get correctCount;
+
+  /// Label of the amount of a method on « Totaux ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Montant'**
+  String get correctAmount;
+
+  /// What screen readers hear for the count field of a method on « Totaux ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Dons en {method}'**
+  String correctCountSpoken(String method);
+
+  /// What screen readers hear for the amount field of a method on « Totaux ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Montant en {method}'**
+  String correctAmountSpoken(String method);
+
+  /// Under the total on « Totaux ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Les maisons visitées et les heures ne changent pas. La liste des dons reste telle quelle et sera signalée si elle ne correspond plus.'**
+  String get correctTotalsHelp;
+
+  /// Under a method of « Totaux » with dons and no amount: « Un montant pour 8 dons. ».
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, one{Un montant pour {count} don.} other{Un montant pour {count} dons.}}'**
+  String correctAmountMissing(int count);
+
+  /// Under a method of « Totaux » with an amount and no don: « Au moins 1 don pour 20 €. ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Au moins 1 don pour {amount}.'**
+  String correctCountMissing(String amount);
+
+  /// Under a count of « Totaux » past the bound of the server.
+  ///
+  /// In fr, this message translates to:
+  /// **'9 999 au plus.'**
+  String get correctTooMany;
+
+  /// Title of the confirmation of « Enregistrer » (RoundCorrectConfirm mockup).
+  ///
+  /// In fr, this message translates to:
+  /// **'Corriger la tournée ?'**
+  String get correctConfirmTitle;
+
+  /// Body of the confirmation: the total before and after (« Total : 19 dons, 210 € / → 20 dons, 205 € »).
+  ///
+  /// In fr, this message translates to:
+  /// **'Total : {before}\n→ {after}'**
+  String correctConfirmBody(String before, String after);
+
+  /// A total in the confirmation: « 19 dons, 210 € ».
+  ///
+  /// In fr, this message translates to:
+  /// **'{count, plural, one{{count} don, {amount}} other{{count} dons, {amount}}}'**
+  String correctConfirmTotal(int count, String amount);
+
+  /// Muted line under the totals of the confirmation.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tout le secteur verra les nouveaux chiffres.'**
+  String get correctConfirmAside;
+
+  /// Red button of the confirmation: saves the correction.
+  ///
+  /// In fr, this message translates to:
+  /// **'Corriger'**
+  String get correctConfirmOk;
+
+  /// Title of the screen that finds a forgotten house (MarkForgotten mockup).
+  ///
+  /// In fr, this message translates to:
+  /// **'Quelle maison ?'**
+  String get whichHouseTitle;
+
+  /// Under « Quelle maison ? »: « Tournée du sam. 14 nov. · 1 maison à marquer ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Tournée du {day} · {count, plural, one{{count} maison à marquer} other{{count} maisons à marquer}}'**
+  String whichHouseSubtitle(DateTime day, int count);
+
+  /// Amber line on « Quelle maison ? ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Choisissez la rue de la maison oubliée, puis touchez la maison.'**
+  String get whichHouseInfo;
+
+  /// Under the street's name in « Touchez la maison oubliée »: « Villefranche-sur-Saône · 31/42 ».
+  ///
+  /// In fr, this message translates to:
+  /// **'{commune} · {done}/{total}'**
+  String forgottenStreetSubtitle(String commune, int done, int total);
+
+  /// Amber line of the street, and of a building's doors, in « Touchez la maison oubliée » (MarkForgottenStreet mockup).
+  ///
+  /// In fr, this message translates to:
+  /// **'Touchez la maison oubliée : elle sera marquée ✓ Fait.'**
+  String get forgottenStreetInfo;
+
+  /// Snackbar of a tap on a house already done in « Touchez la maison oubliée ».
+  ///
+  /// In fr, this message translates to:
+  /// **'N° {number} : déjà marquée ✓.'**
+  String forgottenHouseDone(String number);
+
+  /// Snackbar of a tap on a house already refused in « Touchez la maison oubliée ».
+  ///
+  /// In fr, this message translates to:
+  /// **'N° {number} : déjà marquée ⊘.'**
+  String forgottenHouseRefused(String number);
+
+  /// Snackbar of a tap on a door already done in « Touchez la maison oubliée ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Porte {door} : déjà marquée ✓.'**
+  String forgottenDoorDone(String door);
+
+  /// Snackbar of a tap on a door already refused in « Touchez la maison oubliée ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Porte {door} : déjà marquée ⊘.'**
+  String forgottenDoorRefused(String door);
+
+  /// Snackbar of the Collecte screen once the forgotten house is marked: « N° 3 rue des Lilas marquée ✓. » (the street's name with a small first letter).
+  ///
+  /// In fr, this message translates to:
+  /// **'N° {number} {street} marquée ✓.'**
+  String forgottenHouseMarked(String number, String street);
+
+  /// Snackbar of the Collecte screen once the forgotten door is marked: « Porte 51 du 8 rue des Lilas marquée ✓. ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Porte {door} du {number} {street} marquée ✓.'**
+  String forgottenDoorMarked(String door, String number, String street);
 
   /// The Collecte screen when no secteur is open or its tournées cannot be read.
   ///

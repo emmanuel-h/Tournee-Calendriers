@@ -14,10 +14,13 @@
 //            | null,                        ← no tournée on
 //     unsent: [ { sector, campaign: 2026, refused: false,
 //                 summary: { id, startedAt, endedAt, housesVisited, free,
-//                            cash: { count, cents }, cheque: …, card: … } },
+//                            cash: { count, cents }, cheque: …, card: …,
+//                            donations: [ … as above ] } },
 //               … ] }                       ← validated, not yet sent
 //
-// Version 1 (before #143) had no `unsent`: it is still read, as none.
+// Version 1 (before #143) had no `unsent`: it is still read, as none. A
+// summary without `donations` (validated before #168) is read as one
+// without a list.
 //
 // The dons carry no house and no time, on purpose (PLAN §8.3). Methods
 // under fixed names, so renaming the Dart enum never changes what is on
@@ -104,6 +107,10 @@ Map<String, Object?> _unsentToJson(UnsentRound round) {
       'cash': total(summary.totals.cash),
       'cheque': total(summary.totals.cheque),
       'card': total(summary.totals.card),
+      if (summary.donations case final donations?)
+        'donations': [
+          for (final donation in donations) _donationToJson(donation),
+        ],
     },
   };
 }
@@ -176,16 +183,18 @@ UnsentRound _unsentFromJson(Object? json) {
         'sector': final String sector,
         'campaign': final int campaign,
         'refused': final bool refused,
-        'summary': {
-          'id': final String id,
-          'startedAt': final String startedAt,
-          'endedAt': final String endedAt,
-          'housesVisited': final int housesVisited,
-          'free': final int free,
-          'cash': final Object? cash,
-          'cheque': final Object? cheque,
-          'card': final Object? card,
-        },
+        'summary':
+            {
+              'id': final String id,
+              'startedAt': final String startedAt,
+              'endedAt': final String endedAt,
+              'housesVisited': final int housesVisited,
+              'free': final int free,
+              'cash': final Object? cash,
+              'cheque': final Object? cheque,
+              'card': final Object? card,
+            } &&
+            final Map<String, Object?> stored,
       }
       when sector.trim().isNotEmpty &&
           id.trim().isNotEmpty &&
@@ -205,6 +214,13 @@ UnsentRound _unsentFromJson(Object? json) {
           card: _totalFromJson(card),
           free: free,
         ),
+        donations: switch (stored['donations']) {
+          null => null,
+          final List<Object?> donations => [
+            for (final donation in donations) _donationFromJson(donation),
+          ],
+          final other => throw FormatException('Not the dons: $other'),
+        },
       ),
       state: refused ? UnsentState.refused : UnsentState.waiting,
     );

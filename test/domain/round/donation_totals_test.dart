@@ -119,4 +119,75 @@ void main() {
       );
     });
   });
+
+  group('failure (PLAN §5.20, the bounds of the rules)', () {
+    TotalFailure? of(int count, int cents) =>
+        MethodTotal(count: count, cents: cents).failure;
+
+    test('should take no don and no money, or both', () {
+      expect(of(0, 0), isNull);
+      expect(of(1, 1), isNull);
+      expect(of(8, 10500), isNull);
+    });
+
+    test('should want money for dons counted', () {
+      expect(of(8, 0), TotalFailure.amountMissing);
+      expect(of(1, 0), TotalFailure.amountMissing);
+    });
+
+    test('should want a don for money', () {
+      expect(of(0, 2000), TotalFailure.countMissing);
+      expect(of(0, 1), TotalFailure.countMissing);
+    });
+
+    test('should take 1 000 € a don on average and refuse a cent more', () {
+      expect(of(1, 100000), isNull);
+      expect(of(1, 100001), TotalFailure.tooLarge);
+      expect(of(3, 300000), isNull);
+      expect(of(3, 300001), TotalFailure.tooLarge);
+    });
+
+    test('should take 1 000 000 € in all and refuse a cent more', () {
+      expect(of(1000, 100000000), isNull);
+      expect(of(2000, 100000001), TotalFailure.tooLarge);
+    });
+
+    test('should take 9 999 dons and refuse one more', () {
+      expect(of(9999, 9999), isNull);
+      expect(of(10000, 10000), TotalFailure.tooMany);
+    });
+  });
+
+  group('soundness', () {
+    DonationTotals totals({
+      MethodTotal? cash,
+      MethodTotal? cheque,
+      MethodTotal? card,
+      int free = 0,
+    }) => DonationTotals(
+      cash: cash ?? MethodTotal(count: 1, cents: 1000),
+      cheque: cheque ?? MethodTotal.none,
+      card: card ?? MethodTotal(count: 2, cents: 3000),
+      free: free,
+    );
+
+    final faulty = MethodTotal(count: 0, cents: 500);
+
+    test('should be sound when every total and the free calendars are', () {
+      expect(totals(free: 9999).isSound, isTrue);
+      expect(totals(free: 9999).freeFailure, isNull);
+      expect(DonationTotals.none.isSound, isTrue);
+    });
+
+    test('should not be sound when one total is faulty', () {
+      expect(totals(cash: faulty).isSound, isFalse);
+      expect(totals(cheque: faulty).isSound, isFalse);
+      expect(totals(card: faulty).isSound, isFalse);
+    });
+
+    test('should refuse more than 9 999 calendars given for free', () {
+      expect(totals(free: 10000).freeFailure, TotalFailure.tooMany);
+      expect(totals(free: 10000).isSound, isFalse);
+    });
+  });
 }

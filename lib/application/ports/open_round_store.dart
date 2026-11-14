@@ -6,8 +6,8 @@ import 'package:tournee_calendriers/domain/round/unsent_round.dart';
 /// tournée on, and the validated ones the server does not have yet
 /// ([UnsentRound], PLAN §5.16). On the phone only, written at each change,
 /// so a tournée survives a kill and runs offline, cold start included
-/// (PLAN §7). Its dons never leave the phone: only the summary does, once
-/// validated (`RoundLedger`).
+/// (PLAN §7). A tournée leaves the phone only once validated, as its
+/// summary with its dons, which name no house nor time (`RoundLedger`).
 ///
 /// An application port: an adapter of `infrastructure/local_storage/`
 /// implements it, tests use a fake.

@@ -21,4 +21,12 @@ void main() {
   test('should be false when the order differs', () {
     expect(sameItems(['a', 'b'], ['b', 'a']), isFalse);
   });
+
+  test('should take two absent lists as the same, and one absent as not', () {
+    expect(sameOptionalItems<String>(null, null), isTrue);
+    expect(sameOptionalItems<String>(null, []), isFalse);
+    expect(sameOptionalItems<String>([], null), isFalse);
+    expect(sameOptionalItems(['a'], ['a']), isTrue);
+    expect(sameOptionalItems(['a'], ['b']), isFalse);
+  });
 }

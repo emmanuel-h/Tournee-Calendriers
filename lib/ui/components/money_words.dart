@@ -25,6 +25,12 @@ String amountInputText(AppLocalizations l10n, Amount amount) {
   return rest == 0 ? '$euros' : l10n.amountInputCents(euros, _twoDigits(rest));
 }
 
+/// [cents] as a « Montant » of « Corriger la tournée », Totaux, shows it
+/// ready to change: always with its cents (« 80,00 », « 0,00 »), as the
+/// RoundCorrect mockup writes them.
+String sumInputText(AppLocalizations l10n, int cents) =>
+    l10n.amountInputCents(cents ~/ 100, _twoDigits(cents % 100));
+
 String _twoDigits(int value) => '$value'.padLeft(2, '0');
 
 /// The paid dons of [totals] and their money: « 19 dons · 280 € ».

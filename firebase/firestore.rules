@@ -818,9 +818,17 @@ service cloud.firestore {
     // ------------------------------------------- the validated tournées
 
     // `rounds/{roundId}` (#63, PLAN §6.2): the summary of a validated
-    // tournée, written once by the member's app (RoundLedger). No member
-    // field, on purpose: who ran it is only checked, never stored.
+    // tournée, written once by the member's app (RoundLedger), with its
+    // dons (#168). No member field, on purpose: who ran it is only
+    // checked, never stored. A correction (PLAN §5.20) adds `correctedAt`
+    // and `housesToMark`.
     function roundFields() {
+      return ['startedAt', 'endedAt', 'housesVisited', 'free', 'cash', 'cheque', 'card', 'dons'];
+    }
+
+    // The fields a summary may hold once corrected: those of roundFields()
+    // but the dons, which a summary validated before #168 has not.
+    function correctedRoundFields() {
       return ['startedAt', 'endedAt', 'housesVisited', 'free', 'cash', 'cheque', 'card'];
     }
 
@@ -830,21 +838,45 @@ service cloud.firestore {
     }
 
     // The dons of one payment method: how many (0–9 999), and their sum in
-    // cents (0–100 000 000, a million euros).
+    // cents (0–100 000 000, a million euros); dons and money go together
+    // (both 0 or both above 0), at most 1 000 € a don on average, as in
+    // « Corriger la tournée » (`MethodTotal.failure`).
     function isMethodTotal(total) {
       return total is map
         && hasExactly(total, ['count', 'cents'])
         && isFigure(total.count, 9999)
-        && isFigure(total.cents, 100000000);
+        && isFigure(total.cents, 100000000)
+        && (total.count == 0) == (total.cents == 0)
+        && total.cents <= total.count * 100000;
     }
 
-    // Exactly the fields of a summary, each in its bounds; it ends after it
-    // started (the app makes sure of it, `Round.validate`). Times are the
-    // phone's, never compared with `request.time` (a tournée validated
-    // offline reaches the server hours later).
-    function isRoundSummary(data) {
-      return hasExactly(data, roundFields())
-        && data.startedAt is timestamp
+    // One don as the app stores it (#168): « cash:1000 », « cheque:500 »,
+    // « card:1500 » (1 to 100 000 cents, 0,01 € to 1 000 €), or « free ».
+    // No house, no time, no member.
+    function donPattern() {
+      return '((cash|cheque|card):([1-9][0-9]{0,4}|100000)|free)';
+    }
+
+    // The list of a tournée's dons, at most 2 000 (`mostDonations`), each
+    // one as donPattern() says. The rules have no loops: the list joined
+    // by commas must match the pattern repeated, and split again it must
+    // give as many entries as the list, so no entry hides a comma (two
+    // dons passing for one). `join` fails on an entry that is not a text.
+    function isDonList(dons) {
+      return dons is list
+        && dons.size() <= 2000
+        && (dons.size() == 0
+          || (dons.join(',').matches(donPattern() + '(,' + donPattern() + ')*')
+            && dons.join(',').split(',').size() == dons.size()));
+    }
+
+    // The figures every summary holds, corrected or not, each in its
+    // bounds; it ends after it started (the app makes sure of it,
+    // `Round.validate`). Times are the phone's, never compared with
+    // `request.time` (a tournée validated offline reaches the server hours
+    // later).
+    function hasRoundFigures(data) {
+      return data.startedAt is timestamp
         && data.endedAt is timestamp
         && data.startedAt < data.endedAt
         && isFigure(data.housesVisited, 9999)
@@ -852,6 +884,49 @@ service cloud.firestore {
         && isMethodTotal(data.cash)
         && isMethodTotal(data.cheque)
         && isMethodTotal(data.card);
+    }
+
+    // A summary as « Valider la tournée » sends it: exactly roundFields(),
+    // its dons included, and no correction.
+    function isRoundSummary(data) {
+      return hasExactly(data, roundFields())
+        && hasRoundFigures(data)
+        && isDonList(data.dons);
+    }
+
+    // A summary as it may stand after corrections: its figures, its dons
+    // when it has some, when it was corrected, its houses to mark
+    // (0–9 999).
+    function isCorrectedRound(data) {
+      return hasFields(data, correctedRoundFields(), ['dons', 'correctedAt', 'housesToMark'])
+        && hasRoundFigures(data)
+        && (!('dons' in data) || isDonList(data.dons))
+        && (!('correctedAt' in data) || data.correctedAt is timestamp)
+        && (!('housesToMark' in data) || isFigure(data.housesToMark, 9999));
+    }
+
+    // « Corriger la tournée » (#168): stamped with a new `correctedAt`
+    // (which a summary sent again never is: a second `set` of the original
+    // stays refused; and a write keeping the old stamp is no correction),
+    // its start, end and houses visited untouched, and its list of dons
+    // kept, changed or absent as it was (a summary validated before #168
+    // never gets one).
+    function isRoundCorrection(before, after) {
+      return after.correctedAt is timestamp
+        && after.correctedAt != before.get('correctedAt', null)
+        && after.startedAt == before.startedAt
+        && after.endedAt == before.endedAt
+        && after.housesVisited == before.housesVisited
+        && ('dons' in after) == ('dons' in before);
+    }
+
+    // One of the « maisons à marquer » marked (one more house visited) or
+    // ignored: nothing else changes, one fewer to mark than the server had.
+    function isForgottenHouseSettled(before, after) {
+      return after.diff(before).affectedKeys().hasOnly(['housesToMark', 'housesVisited'])
+        && after.housesToMark == before.housesToMark - 1
+        && (after.housesVisited == before.housesVisited
+          || after.housesVisited == before.housesVisited + 1);
     }
 
     // ------------------------------------------- the secteurs' parts
@@ -996,8 +1071,11 @@ service cloud.firestore {
 
         // A validated tournée: created once by an active member at the
         // time of the write (an admin visiting runs none), in the
-        // secteur's current campaign (#145), then never changed. Sending it again (a second
+        // secteur's current campaign (#145). Sending it again (a second
         // `set` of the same id) is an update, refused: the first stays.
+        // Then corrected, or its forgotten houses settled (#168), by any
+        // active member or admin (a summary names no member, so the rules
+        // cannot tell who validated it), in the current campaign only.
         // It goes only with its secteur (or its campaign), which only an
         // admin deletes.
         match /rounds/{round} {
@@ -1007,6 +1085,11 @@ service cloud.firestore {
             && year == string(get(sectorPath(sector)).data.currentCampaign)
             && exists(campaignPath(sector, year))
             && isRoundSummary(request.resource.data);
+          allow update: if isMemberOrAdmin(sector)
+            && year == string(get(sectorPath(sector)).data.currentCampaign)
+            && isCorrectedRound(request.resource.data)
+            && (isRoundCorrection(resource.data, request.resource.data)
+              || isForgottenHouseSettled(resource.data, request.resource.data));
           allow delete: if isAdmin();
         }
       }

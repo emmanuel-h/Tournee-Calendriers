@@ -2,15 +2,20 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/domain/round/unsent_round.dart';
 import 'package:tournee_calendriers/presentation/collecte/collecte_notifier.dart';
 import 'package:tournee_calendriers/presentation/collecte/collecte_view.dart';
+import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
+import 'package:tournee_calendriers/ui/components/amber_note.dart';
 import 'package:tournee_calendriers/ui/components/app_buttons.dart';
 import 'package:tournee_calendriers/ui/components/confirm_dialog.dart';
 import 'package:tournee_calendriers/ui/components/money_lines.dart';
 import 'package:tournee_calendriers/ui/components/money_words.dart';
+import 'package:tournee_calendriers/ui/components/open_chevron.dart';
 import 'package:tournee_calendriers/ui/components/section_header.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
+import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 import 'package:tournee_calendriers/ui/theme/app_typography.dart';
@@ -27,6 +32,13 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 /// « TOURNÉES », under « PAS ENCORE ENVOYÉES (2) », each with « ⏳ En
 /// attente d'envoi » or « ⚠ Refusée par le serveur » and its « Réessayer »
 /// and « Effacer »; the totals leave them out and say so.
+///
+/// A sent tournée may be corrected (PLAN §5.20, mockups CashCorrect and
+/// CashCorrectOpen): unfolded, its dons (« Voir les 19 dons › »), « ⚠ La
+/// liste des dons ne correspond plus aux totaux. » and « ✎ Corriger »;
+/// « ✎ Corrigée le 15 nov. » under a corrected one, and « ⚠ 1 maison à
+/// marquer » with « Marquer une maison » and « Ignorer » when a
+/// correction added dons.
 final class CollecteScreen extends ConsumerWidget {
   const CollecteScreen({super.key});
 
@@ -136,7 +148,7 @@ final class _Collecte extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.fromLTRB(20, 16, 20, 24),
           child: Text(
-            l10n.collecteNeverChanged,
+            l10n.collecteFooter,
             key: const Key('collecte.neverChanged'),
             style: AppTextStyles.small.copyWith(color: colors.muted),
           ),
@@ -147,9 +159,12 @@ final class _Collecte extends StatelessWidget {
 }
 
 /// A validated tournée: « Sam. 24 oct. · 14:05 → 18:20 » over « 23
-/// maisons, 19 dons », its total and ▸; a tap unfolds its methods (▾).
-/// One not yet sent ([unsent]) has its badge under them, and once refused
-/// « Réessayer » and « Effacer ».
+/// maisons, 19 dons », « ✎ Corrigée le 15 nov. » once corrected, its total
+/// and ▸; a tap unfolds its methods (▾), and for a sent one its dons,
+/// whether the list differs from the totals and « ✎ Corriger ». One not
+/// yet sent ([unsent]) has its badge under them, and once refused
+/// « Réessayer » and « Effacer »; a sent one with houses to mark has
+/// « ⚠ 1 maison à marquer », « Marquer une maison » and « Ignorer ».
 ///
 /// A `ConsumerStatefulWidget` holds whether it is open, as a member's row
 /// of Équipe does: only this row needs to know, and the key of the row
@@ -179,31 +194,34 @@ final class _RoundRowState extends ConsumerState<_RoundRow> {
     final when = _when(l10n, round);
     final amount = eurosText(l10n, totals.cents);
     final unsent = widget.unsent;
+    final sent = unsent == null;
+    final correctedAt = round.correctedAt;
+    final corrected = correctedAt == null
+        ? null
+        : l10n.collecteCorrectedOn(correctedAt);
+    final toMark = sent && round.housesToMark > 0;
     final spokenState = switch (unsent) {
       null => null,
       UnsentState.waiting => l10n.collecteUnsentWaitingSpoken,
       UnsentState.refused => l10n.collecteUnsentRefusedSpoken,
     };
+    final label = switch ((_open, spokenState)) {
+      (false, null) => l10n.collecteRoundShow(when, amount),
+      (true, null) => l10n.collecteRoundHide(when, amount),
+      (false, final state?) => l10n.collecteUnsentShow(when, amount, state),
+      (true, final state?) => l10n.collecteUnsentHide(when, amount, state),
+    };
+    // A line under the row (the houses to mark, or « Réessayer »): the row
+    // and it share one bottom edge.
+    final followed = toMark || unsent == UnsentState.refused;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         Semantics(
           button: true,
           expanded: _open,
-          label: switch ((_open, spokenState)) {
-            (false, null) => l10n.collecteRoundShow(when, amount),
-            (true, null) => l10n.collecteRoundHide(when, amount),
-            (false, final state?) => l10n.collecteUnsentShow(
-              when,
-              amount,
-              state,
-            ),
-            (true, final state?) => l10n.collecteUnsentHide(
-              when,
-              amount,
-              state,
-            ),
-          },
+          // « ✎ Corrigée le 15 nov. » is heard after the row's own words.
+          label: corrected == null ? label : '$label, $corrected',
           // The label says it all: the texts and ▸ are not read again.
           excludeSemantics: true,
           child: Material(
@@ -217,7 +235,9 @@ final class _RoundRowState extends ConsumerState<_RoundRow> {
                 ),
                 padding: const EdgeInsets.fromLTRB(20, 8, 12, 8),
                 decoration: BoxDecoration(
-                  border: Border(bottom: BorderSide(color: colors.divider)),
+                  border: followed
+                      ? null
+                      : Border(bottom: BorderSide(color: colors.divider)),
                 ),
                 child: Row(
                   spacing: 10,
@@ -243,6 +263,14 @@ final class _RoundRowState extends ConsumerState<_RoundRow> {
                               color: colors.muted,
                             ),
                           ),
+                          if (corrected != null)
+                            Text(
+                              corrected,
+                              key: const Key('collecte.round.corrected'),
+                              style: AppTextStyles.small.copyWith(
+                                color: colors.muted,
+                              ),
+                            ),
                           if (unsent != null) _UnsentBadge(state: unsent),
                         ],
                       ),
@@ -271,46 +299,238 @@ final class _RoundRowState extends ConsumerState<_RoundRow> {
         ),
         if (unsent == UnsentState.refused)
           _RefusedActions(round: round, when: when),
-        if (_open)
-          ColoredBox(
-            key: const Key('collecte.round.methods'),
-            color: colors.ground,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                MoneyLine(
-                  name: l10n.paymentCash,
-                  count: l10n.donCount(totals.cash.count),
-                  cents: totals.cash.cents,
-                  look: MoneyLineLook.detail,
-                ),
-                MoneyLine(
-                  name: l10n.paymentCheques,
-                  count: l10n.donCount(totals.cheque.count),
-                  cents: totals.cheque.cents,
-                  look: MoneyLineLook.detail,
-                ),
-                MoneyLine(
-                  name: l10n.paymentCardLong,
-                  count: l10n.donCount(totals.card.count),
-                  cents: totals.card.cents,
-                  look: MoneyLineLook.detail,
-                ),
-              ],
-            ),
-          ),
+        if (toMark) _ToMark(round: round, when: when),
+        if (_open) _Detail(round: round, when: when, sent: sent),
       ],
     );
   }
 
   /// « Sam. 24 oct. · 14:05 → 18:20 », the day with a capital.
-  static String _when(AppLocalizations l10n, CollecteRound round) {
-    final text = l10n.collecteRoundWhen(
-      round.startedAt,
-      round.startedAt,
-      round.endedAt,
+  static String _when(AppLocalizations l10n, CollecteRound round) =>
+      collecteWhen(l10n, round.startedAt, round.endedAt);
+}
+
+/// « Sam. 24 oct. · 14:05 → 18:20 » of a tournée from [start] to [end],
+/// the day with a capital: Collecte's rows, « Corriger la tournée ».
+String collecteWhen(AppLocalizations l10n, DateTime start, DateTime end) {
+  final text = l10n.collecteRoundWhen(start, start, end);
+  return text[0].toUpperCase() + text.substring(1);
+}
+
+/// An unfolded tournée: its methods and « Calendriers offerts »; for a
+/// sent one, « Voir les 19 dons › » (when it kept some), « ⚠ La liste des
+/// dons ne correspond plus aux totaux. » (when it differs) and
+/// « ✎ Corriger ».
+final class _Detail extends StatelessWidget {
+  const _Detail({required this.round, required this.when, required this.sent});
+
+  final CollecteRound round;
+  final String when;
+
+  /// The secteur has it: only then may it be corrected.
+  final bool sent;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = AppColors.of(context);
+    final totals = round.totals;
+    return Container(
+      key: const Key('collecte.round.methods'),
+      decoration: BoxDecoration(
+        color: colors.ground,
+        border: Border(bottom: BorderSide(color: colors.divider)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          MoneyLine(
+            name: l10n.paymentCash,
+            count: l10n.donCount(totals.cash.count),
+            cents: totals.cash.cents,
+            look: MoneyLineLook.detail,
+          ),
+          MoneyLine(
+            name: l10n.paymentCheques,
+            count: l10n.donCount(totals.cheque.count),
+            cents: totals.cheque.cents,
+            look: MoneyLineLook.detail,
+          ),
+          MoneyLine(
+            name: l10n.paymentCardLong,
+            count: l10n.donCount(totals.card.count),
+            cents: totals.card.cents,
+            look: MoneyLineLook.detail,
+          ),
+          MoneyLine(
+            key: const Key('collecte.round.free'),
+            name: l10n.collecteFree,
+            count: '${totals.free}',
+            look: MoneyLineLook.detail,
+          ),
+          if (sent && round.showsDonations)
+            Semantics(
+              button: true,
+              child: InkWell(
+                key: const Key('collecte.round.dons'),
+                onTap: () =>
+                    unawaited(context.push(AppRoutes.collecteDonsOf(round.id))),
+                child: Container(
+                  constraints: const BoxConstraints(
+                    minHeight: AppSizes.minTapTarget,
+                  ),
+                  padding: const EdgeInsets.only(
+                    left: AppSizes.collecteDetailIndent,
+                    right: AppSizes.gutter,
+                  ),
+                  decoration: BoxDecoration(
+                    border: Border(bottom: BorderSide(color: colors.divider)),
+                  ),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          l10n.collecteSeeDons(round.listedDons),
+                          style: AppTextStyles.streetCounts.copyWith(
+                            color: colors.ink,
+                            fontWeight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      OpenChevron(
+                        height: AppSizes.smallIcon,
+                        color: colors.muted,
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          if (sent && round.listDiffers)
+            Padding(
+              key: const Key('collecte.round.differs'),
+              padding: const EdgeInsets.fromLTRB(
+                AppSizes.collecteDetailIndent,
+                10,
+                AppSizes.gutter,
+                0,
+              ),
+              child: AmberNote(l10n.collecteListDiffers),
+            ),
+          if (sent)
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 10, AppSizes.gutter, 12),
+              child: Align(
+                alignment: Alignment.centerRight,
+                child: PillButton(
+                  key: const Key('collecte.round.correct'),
+                  label: l10n.collecteCorrect,
+                  strong: true,
+                  semanticsLabel: l10n.collecteCorrectSpoken(when),
+                  onPressed: () => unawaited(_correct(context)),
+                ),
+              ),
+            ),
+        ],
+      ),
     );
-    return text[0].toUpperCase() + text.substring(1);
+  }
+
+  /// « Corriger la tournée », then « Correction enregistrée. » once saved.
+  Future<void> _correct(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final message = AppLocalizations.of(context).correctionSaved;
+    final saved = await context.push<bool>(AppRoutes.correctRoundOf(round.id));
+    if (saved ?? false) showMessageSnackBar(messenger, message: message);
+  }
+}
+
+/// « ⚠ 1 maison à marquer » (amber) under a sent tournée a correction left
+/// houses to mark on, with « Marquer une maison » (outlined) and
+/// « Ignorer » (muted text, asks nothing).
+final class _ToMark extends ConsumerWidget {
+  const _ToMark({required this.round, required this.when});
+
+  final CollecteRound round;
+  final String when;
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final l10n = AppLocalizations.of(context);
+    final colors = AppColors.of(context);
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 0, 12, 12),
+      decoration: BoxDecoration(
+        color: colors.surface,
+        border: Border(bottom: BorderSide(color: colors.divider)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: 6,
+        children: [
+          Container(
+            key: const Key('collecte.round.toMark'),
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 2),
+            decoration: BoxDecoration(
+              color: colors.nobodyHomePale,
+              border: Border.all(
+                color: colors.nobodyHomeBorder,
+                width: AppSizes.amberNoteBorder,
+              ),
+              borderRadius: BorderRadius.circular(AppSizes.tileRadius),
+            ),
+            child: Text(
+              l10n.collecteToMark(round.housesToMark),
+              style: AppTextStyles.small.copyWith(
+                color: colors.ink,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+          // A `Wrap`: « Ignorer » goes under « Marquer une maison » when a
+          // large phone font leaves no room beside it.
+          Wrap(
+            spacing: 10,
+            runSpacing: 4,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            children: [
+              PillButton(
+                key: const Key('collecte.round.markHouse'),
+                label: l10n.collecteMarkHouse,
+                strong: true,
+                semanticsLabel: l10n.collecteMarkHouseSpoken(when),
+                onPressed: () => unawaited(_markHouse(context)),
+              ),
+              Semantics(
+                button: true,
+                label: l10n.collecteIgnoreSpoken(when),
+                excludeSemantics: true,
+                child: TextButton(
+                  key: const Key('collecte.round.ignore'),
+                  style: TextButton.styleFrom(
+                    foregroundColor: colors.muted,
+                    textStyle: AppTextStyles.pill,
+                  ),
+                  onPressed: () => unawaited(
+                    ref
+                        .read(collecteProvider.notifier)
+                        .ignoreForgottenHouse(round.id),
+                  ),
+                  child: Text(l10n.collecteIgnore),
+                ),
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  /// « Quelle maison ? », then what was marked, once back.
+  Future<void> _markHouse(BuildContext context) async {
+    final messenger = ScaffoldMessenger.of(context);
+    final marked = await context.push<String>(AppRoutes.whichHouseOf(round.id));
+    if (marked != null) showMessageSnackBar(messenger, message: marked);
   }
 }
 

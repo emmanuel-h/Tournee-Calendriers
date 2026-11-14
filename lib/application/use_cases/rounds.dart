@@ -248,9 +248,9 @@ Future<Result<Round, DonationEditFailure>> _editDonation(
 
 /// « Valider la tournée »: the tournée on becomes one « validated, not
 /// yet sent » ([UnsentRound], PLAN §5.16), kept on the phone with its
-/// summary until the server has it ([SendUnsentRounds] sends it), and the
-/// phone forgets its dons. A validated tournée is never changed. Needs no
-/// network. Returns it.
+/// summary, its dons in it (#168), until the server has it
+/// ([SendUnsentRounds] sends it); « Corriger la tournée » may change it
+/// afterwards (`round_corrections.dart`). Needs no network. Returns it.
 ///
 /// One write moves it (`OpenRoundStore.keepValidated`): killed at any
 /// moment, the phone has it either on or validated, never both nor none.

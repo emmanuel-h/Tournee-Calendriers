@@ -47,7 +47,37 @@ final class Amount {
 
   /// Reads the « Montant » field: « 7,50 », « 7.5 », « 7 » or « 1 000 »
   /// (spaces are dropped, so the French thousands separator is too).
-  static Result<Amount, AmountFailure> parse(String text) {
+  static Result<Amount, AmountFailure> parse(String text) =>
+      switch (_centsIn(text, euroDigits: 4)) {
+        Ok(value: final cents) => create(cents),
+        Err(:final failure) => Err(failure),
+      };
+
+  /// The most a sum of dons of one method may hold, in cents: 1 000 000 €,
+  /// the bound of the server's rules (PLAN §8.2).
+  static const largestSum = 100000000;
+
+  /// Reads the « Montant » of a method in « Corriger la tournée », Totaux
+  /// (PLAN §5.20): the sum of several dons, in cents. Unlike [parse], an
+  /// empty field or « 0 » is no money at all (0), and the sum may pass
+  /// 1 000 €, up to [largestSum].
+  static Result<int, AmountFailure> parseSum(String text) {
+    if (text.replaceAll(_spaces, '').isEmpty) return const Ok(0);
+    return switch (_centsIn(text, euroDigits: 7)) {
+      Ok(value: final cents) when cents > largestSum => const Err(
+        AmountFailure.tooLarge,
+      ),
+      final read => read,
+    };
+  }
+
+  /// The cents written in [text], or why they cannot be read. Past
+  /// [euroDigits] digits of euros it is too large, refused before
+  /// `int.parse`, which cannot read a number past the largest `int`.
+  static Result<int, AmountFailure> _centsIn(
+    String text, {
+    required int euroDigits,
+  }) {
     final typed = text.replaceAll(_spaces, '');
     if (typed.isEmpty) return const Err(AmountFailure.empty);
     final match = _euros.firstMatch(typed);
@@ -58,10 +88,8 @@ final class Amount {
       return const Err(AmountFailure.notValid);
     }
     if (decimals.length > 2) return const Err(AmountFailure.tooManyDecimals);
-    // Five digits of euros are 10 000 € at least: refused before
-    // `int.parse`, which cannot read a number past the largest `int`.
-    if (euros.length > 4) return const Err(AmountFailure.tooLarge);
-    return create(
+    if (euros.length > euroDigits) return const Err(AmountFailure.tooLarge);
+    return Ok(
       int.parse(euros.isEmpty ? '0' : euros) * 100 +
           int.parse(decimals.padRight(2, '0')),
     );

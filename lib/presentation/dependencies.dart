@@ -70,6 +70,7 @@ import 'package:tournee_calendriers/application/use_cases/read_street_numbers.da
 import 'package:tournee_calendriers/application/use_cases/read_street_part_choice.dart';
 import 'package:tournee_calendriers/application/use_cases/refresh_offline_maps.dart';
 import 'package:tournee_calendriers/application/use_cases/reminders.dart';
+import 'package:tournee_calendriers/application/use_cases/round_corrections.dart';
 import 'package:tournee_calendriers/application/use_cases/round_visits.dart';
 import 'package:tournee_calendriers/application/use_cases/rounds.dart';
 import 'package:tournee_calendriers/application/use_cases/search_communes.dart';
@@ -701,6 +702,33 @@ final watchCollecteProvider = Provider(
   (ref) => WatchCollecte(
     ref.watch(roundLedgerProvider),
     ref.watch(openRoundStoreProvider),
+  ),
+);
+
+// Correcting a validated tournée and its forgotten houses (PLAN §5.20,
+// #168): through the ledger, kept on the phone and sent later.
+
+final correctRoundDonationsProvider = Provider(
+  (ref) => CorrectRoundDonations(
+    ref.watch(roundLedgerProvider),
+    ref.watch(clockProvider),
+  ),
+);
+final correctRoundTotalsProvider = Provider(
+  (ref) => CorrectRoundTotals(
+    ref.watch(roundLedgerProvider),
+    ref.watch(clockProvider),
+  ),
+);
+final ignoreForgottenHouseProvider = Provider(
+  (ref) => IgnoreForgottenHouse(ref.watch(roundLedgerProvider)),
+);
+final markForgottenHouseProvider = Provider(
+  (ref) => MarkForgottenHouse(
+    ref.watch(roundLedgerProvider),
+    ref.watch(streetRepositoryProvider),
+    ref.watch(clockProvider),
+    ref.watch(identityProvider),
   ),
 );
 

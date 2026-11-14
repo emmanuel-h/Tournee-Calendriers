@@ -131,7 +131,8 @@ void main() {
   });
 
   group('validate', () {
-    test('should sum the tournée up, without its dons, waiting to be sent to its secteur', () {
+    test('should sum the tournée up with its dons in order (#168), waiting '
+        'to be sent to its secteur', () {
       final round = newRound()
           .add(cash(1000))
           .add(offered)
@@ -152,8 +153,11 @@ void main() {
           endedAt: endedAt,
           housesVisited: 2,
           totals: DonationTotals.of([cash(1000), offered, cheque(2000)]),
+          donations: [cash(1000), offered, cheque(2000)],
         ),
       );
+      expect(validated.summary.correctedAt, isNull);
+      expect(validated.summary.housesToMark, 0);
     });
 
     test('should end at least one second after it started', () {

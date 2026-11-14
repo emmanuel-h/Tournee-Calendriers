@@ -7,6 +7,7 @@ import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/application/ports/round_ledger.dart';
 import 'package:tournee_calendriers/domain/round/donation.dart';
 import 'package:tournee_calendriers/domain/round/donation_totals.dart';
+import 'package:tournee_calendriers/domain/round/round_correction.dart';
 import 'package:tournee_calendriers/domain/round/round_id.dart';
 import 'package:tournee_calendriers/domain/round/round_summary.dart';
 import 'package:tournee_calendriers/domain/round/unsent_round.dart';
@@ -45,6 +46,26 @@ final class _BrokenLedger implements RoundLedger {
   @override
   Stream<List<RoundSummary>> watch(SectorId s, CampaignYear c) =>
       Stream.error(StateError('unreadable'));
+
+  @override
+  Future<RoundSummary?> find(SectorId s, CampaignYear c, RoundId r) async =>
+      null;
+
+  @override
+  Future<void> correct(
+    SectorId s,
+    CampaignYear c,
+    RoundId r,
+    RoundCorrected correction,
+  ) async {}
+
+  @override
+  Future<void> settleForgottenHouse(
+    SectorId s,
+    CampaignYear c,
+    RoundId r,
+    ForgottenHouse settled,
+  ) async {}
 }
 
 /// A tournée of the 49 named [id], from [start] to [end] (the phone's
@@ -337,11 +358,9 @@ void main() {
         lineText(tester, 'collecte.total'),
         'Total | 4${_nbsp}dons | 42,50$_nbsp€',
       );
+      // A validated tournée may be corrected now (PLAN §5.20, #168).
       expect(
-        find.text(
-          'Une tournée validée ne peut plus être modifiée. Les dons ne sont '
-          'jamais associés à une adresse.',
-        ),
+        find.text('Les dons ne sont jamais associés à une adresse.'),
         findsOneWidget,
       );
     });
@@ -403,6 +422,12 @@ void main() {
           'Carte bancaire',
           '0${_nbsp}don',
           '0$_nbsp€',
+          // #168: the calendars given, and « ✎ Corriger » for a sent one
+          // (no list of dons: it was validated before #168).
+          'Calendriers offerts',
+          '1',
+          '',
+          '✎ Corriger',
         ],
       );
       expect(roundText(tester, 'sat'), contains('35$_nbsp€ | ▾ | Espèces'));
@@ -410,6 +435,11 @@ void main() {
         'Sam. 24 oct. · 14:05 → 18:20, 35$_nbsp€, masquer le détail',
       );
       expect(unfolded, findsOneWidget);
+      // Below the unfolded Saturday, taller since #168.
+      await tester.scrollUntilVisible(
+        find.byKey(const ValueKey('collecte.round.fri')),
+        100,
+      );
       expect(roundText(tester, 'fri'), endsWith('| ▸'));
 
       await tester.tap(find.byKey(const Key('collecte.round.toggle')).first);

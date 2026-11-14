@@ -14,6 +14,7 @@ import 'package:tournee_calendriers/presentation/round/given_donation.dart';
 import 'package:tournee_calendriers/presentation/round/marking_access.dart';
 import 'package:tournee_calendriers/presentation/street/street_view_state.dart';
 import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
+import 'package:tournee_calendriers/ui/components/amber_note.dart';
 import 'package:tournee_calendriers/ui/components/calendars_badge.dart';
 import 'package:tournee_calendriers/ui/components/close_icon_button.dart';
 import 'package:tournee_calendriers/ui/components/confirm_dialog.dart';
@@ -61,6 +62,20 @@ Future<BuildingGridExit?> showBuildingGrid(
   builder: (_) => BuildingGridSheet(building: building, ringed: ringed),
 );
 
+/// Opens the Immeuble grid of [building] in « Touchez la maison oubliée »
+/// (PLAN §5.20): the doors ✓ or ⊘ faded (a tap on one says so), and a tap
+/// on another closes the grid and gives that door to [onDoor]. No
+/// « Gérer l'immeuble » nor « Repasser »: only the forgotten door.
+Future<void> showForgottenDoorGrid(
+  BuildContext context,
+  BuildingGridKey building, {
+  required ValueChanged<DwellingKey> onDoor,
+}) => showAppBottomSheet<void>(
+  context: context,
+  builder: (_) =>
+      BuildingGridSheet(building: building, onForgottenDoor: onDoor),
+);
+
 /// The floors of one staircase from the top down, four doors a row; during
 /// a tournée, a tap on a door opens its status picker (PLAN §5.6), and what
 /// it stores shows in the snackbar with « Annuler » for 4 s; with none on,
@@ -74,12 +89,22 @@ Future<BuildingGridExit?> showBuildingGrid(
 /// The sheet has its own `ScaffoldMessenger`, like the street screen: the
 /// snackbar of a door, and its « Annuler », goes away with the grid.
 final class BuildingGridSheet extends ConsumerStatefulWidget {
-  const BuildingGridSheet({super.key, required this.building, this.ringed});
+  const BuildingGridSheet({
+    super.key,
+    required this.building,
+    this.ringed,
+    this.onForgottenDoor,
+  });
 
   final BuildingGridKey building;
 
   /// The door to show ringed for a moment; null for none.
   final DwellingKey? ringed;
+
+  /// « Touchez la maison oubliée » ([showForgottenDoorGrid]): the door
+  /// tapped goes there instead of its status picker. Null for the grid of
+  /// a tournée.
+  final ValueChanged<DwellingKey>? onForgottenDoor;
 
   @override
   ConsumerState<BuildingGridSheet> createState() => _BuildingGridSheetState();
@@ -132,6 +157,7 @@ final class _BuildingGridSheetState extends ConsumerState<BuildingGridSheet>
     final colors = AppColors.of(context);
     final state = ref.watch(buildingGridProvider(widget.building));
     final marking = watchMarkingAccess();
+    final forgotten = widget.onForgottenDoor != null;
     // Full height but a strip at the top, where the street stays visible.
     return LayoutBuilder(
       builder: (context, constraints) => SizedBox(
@@ -152,10 +178,11 @@ final class _BuildingGridSheetState extends ConsumerState<BuildingGridSheet>
                 // the width of the sheet. « Voir les dons » and
                 // « Terminer » drop the snackbar first: its « Annuler »
                 // names a don by its place in the tournée.
-                RoundBand(
-                  onLeave: hideUndo,
-                  margin: const EdgeInsets.only(top: 12),
-                ),
+                if (!forgotten)
+                  RoundBand(
+                    onLeave: hideUndo,
+                    margin: const EdgeInsets.only(top: 12),
+                  ),
                 Expanded(
                   child: Padding(
                     padding: const EdgeInsets.fromLTRB(
@@ -181,6 +208,11 @@ final class _BuildingGridSheetState extends ConsumerState<BuildingGridSheet>
                           ],
                           BuildingGridShown() => [
                             _Header(state: state),
+                            if (forgotten)
+                              AmberNote(
+                                key: const Key('grid.forgotten'),
+                                l10n.forgottenStreetInfo,
+                              ),
                             if (state.showsStaircases)
                               _StaircaseControl(
                                 state: state,
@@ -192,8 +224,14 @@ final class _BuildingGridSheetState extends ConsumerState<BuildingGridSheet>
                                 selected: _picking,
                                 ringed: widget.ringed,
                                 ringedKey: _ringedKey,
+                                fadeVisited: forgotten,
                                 onTap: (door) {
-                                  if (mayMark()) unawaited(_pick(door, state));
+                                  if (widget.onForgottenDoor
+                                      case final onDoor?) {
+                                    _forgotten(door, state, onDoor);
+                                  } else if (mayMark()) {
+                                    unawaited(_pick(door, state));
+                                  }
                                 },
                               ),
                             ),
@@ -205,7 +243,9 @@ final class _BuildingGridSheetState extends ConsumerState<BuildingGridSheet>
                                 minHeight: AppSizes.minTapTarget,
                               ),
                               child:
-                                  snackBarShown || marking != MarkingAccess.open
+                                  snackBarShown ||
+                                      forgotten ||
+                                      marking != MarkingAccess.open
                                   ? null
                                   : Center(
                                       child: Text(
@@ -228,6 +268,7 @@ final class _BuildingGridSheetState extends ConsumerState<BuildingGridSheet>
             ),
             // The snackbar floats above these buttons, over the hint.
             bottomNavigationBar: switch (state) {
+              BuildingGridShown() when forgotten => null,
               BuildingGridShown() => _Actions(
                 onManage: () => unawaited(_manage(state)),
                 onDetails: _openDetails,
@@ -238,6 +279,33 @@ final class _BuildingGridSheetState extends ConsumerState<BuildingGridSheet>
         ),
       ),
     );
+  }
+
+  /// A tap on [door] in « Touchez la maison oubliée »: one ✓ or ⊘ already
+  /// says so (« Porte 51 : déjà marquée ✓. »); another closes the grid and
+  /// goes to [onDoor], which marks it.
+  void _forgotten(
+    DwellingKey door,
+    BuildingGridShown state,
+    ValueChanged<DwellingKey> onDoor,
+  ) {
+    final l10n = AppLocalizations.of(context);
+    final mark = state.floors
+        .expand((floor) => floor.doors)
+        .firstWhere((tile) => tile.key == door)
+        .mark;
+    switch (mark) {
+      case DoneMark():
+        showMessage(l10n.forgottenDoorDone(door.label.text));
+      case RefusedMark():
+        showMessage(l10n.forgottenDoorRefused(door.label.text));
+      case ToDoMark() ||
+          NobodyHomeMark() ||
+          ComeBackMark() ||
+          PartialBuildingMark():
+        Navigator.of(context).pop();
+        onDoor(door);
+    }
   }
 
   /// A tap on a door: a light haptic tick at once, the door outlined, and
@@ -519,9 +587,13 @@ final class _Floors extends StatelessWidget {
     required this.onTap,
     this.ringed,
     this.ringedKey,
+    this.fadeVisited = false,
   });
 
   final BuildingGridShown state;
+
+  /// « Touchez la maison oubliée »: the doors ✓ or ⊘ are faded.
+  final bool fadeVisited;
 
   /// The door whose status picker shows; null when none does.
   final DwellingKey? selected;
@@ -600,6 +672,9 @@ final class _Floors extends StatelessWidget {
       selected: door.key == selected,
       onTap: () => onTap(door.key),
     );
+    if (fadeVisited && door.mark.isVisited) {
+      return Opacity(opacity: AppSizes.fadedTileOpacity, child: button);
+    }
     return door.key == ringed
         ? RingPulse(key: ringedKey, child: button)
         : button;

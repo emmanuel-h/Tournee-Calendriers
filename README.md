@@ -116,12 +116,19 @@ Street screen (« Rue »):
   offert »; ✕ puts the house back), and a house done offers « + Ajouter un don »; « Annuler »
   in the snackbar takes the don back too. « Dons de la tournée » lists them newest first, to
   change, remove or add one; « Bilan de la tournée » shows the houses visited, the dons and the
-  money per method, then « Valider la tournée » (asked first; only the totals are kept, never a
-  don per house), or « Abandonner la tournée » for one started by mistake (asked first; its
+  money per method, then « Valider la tournée » (asked first; the totals and the list of dons
+  are kept, never a don per house, a time or a member), or « Abandonner la tournée » for one started by mistake (asked first; its
   dons are forgotten, nothing reaches « Collecte », the houses stay marked). A validated
   tournée stays on the phone until the server has it: « Collecte » lists it under « PAS ENCORE
   ENVOYÉES » (« ⏳ En attente d'envoi », or « ⚠ Refusée par le serveur » with « Réessayer » and
   « Effacer »), out of the totals.
+- Correcting a validated tournée (any member, or an admin, offline too): in « Collecte », an
+  unfolded tournée shows « Voir les 19 dons › » (read-only), « ⚠ La liste des dons ne
+  correspond plus aux totaux. » when it differs, and « ✎ Corriger »: « Don par don » (change,
+  remove or add a don; the totals follow) or « Totaux » (count and amount per method, calendars
+  offered), confirmed with the total before → after. Dons added leave « ⚠ 1 maison à marquer »:
+  « Marquer une maison » picks the street, then one tap marks the forgotten house ✓ with no
+  tournée on; « Ignorer » drops one.
 - Calendars per house: a house or door done shows « 1 calendrier » / « 2 calendriers » in its
   picker with « − » (disabled at one); « + Ajouter un don » adds one, and its
   « Annuler » takes the don and the calendar back; from two, the tile and the door carry a

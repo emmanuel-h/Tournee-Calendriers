@@ -1,9 +1,11 @@
 import 'package:tournee_calendriers/domain/round/collecte.dart';
+import 'package:tournee_calendriers/domain/round/donation.dart';
 import 'package:tournee_calendriers/domain/round/donation_totals.dart';
 import 'package:tournee_calendriers/domain/round/round_id.dart';
 import 'package:tournee_calendriers/domain/round/round_summary.dart';
 import 'package:tournee_calendriers/domain/round/unsent_round.dart';
 import 'package:tournee_calendriers/domain/shared/same_items.dart';
+import 'package:tournee_calendriers/presentation/round/round_view.dart';
 
 // The view state of « Collecte 2026 » (PLAN §5.13, mockups RunTeam and
 // Cash): what Équipe's « COLLECTE 2026 » row and the Collecte screen show,
@@ -107,15 +109,21 @@ final class CollecteShown extends CollecteView {
 }
 
 /// One validated tournée of « TOURNÉES »: « Samedi 24 oct. · 14:05 →
-/// 18:20 », « 23 maisons, 19 dons », its total; unfolded, its methods.
+/// 18:20 », « 23 maisons, 19 dons », its total; unfolded, its methods, its
+/// dons and « ✎ Corriger » (PLAN §5.20, mockups CashCorrect,
+/// CashCorrectOpen).
 final class CollecteRound {
-  const CollecteRound({
+  CollecteRound({
     required this.id,
     required this.startedAt,
     required this.endedAt,
     required this.housesVisited,
     required this.totals,
-  });
+    List<Donation>? donations,
+    this.correctedAt,
+    this.housesToMark = 0,
+    this.listDiffers = false,
+  }) : donations = donations == null ? null : List.unmodifiable(donations);
 
   /// [summary] at the phone's time of day.
   factory CollecteRound.of(RoundSummary summary) => CollecteRound(
@@ -125,6 +133,10 @@ final class CollecteRound {
     endedAt: summary.endedAt.toLocal(),
     housesVisited: summary.housesVisited,
     totals: summary.totals,
+    donations: summary.donations,
+    correctedAt: summary.correctedAt?.toLocal(),
+    housesToMark: summary.housesToMark,
+    listDiffers: summary.listDiffersFromTotals,
   );
 
   /// Which tournée: the screen keeps a row unfolded by it.
@@ -139,6 +151,31 @@ final class CollecteRound {
 
   final DonationTotals totals;
 
+  /// Its dons in the order added; null for a tournée validated before
+  /// #168, which has no « Voir les dons » and is corrected by « Totaux »
+  /// only.
+  final List<Donation>? donations;
+
+  /// « ✎ Corrigée le 15 nov. », at the phone's time; null when never.
+  final DateTime? correctedAt;
+
+  /// « ⚠ 1 maison à marquer »: 0 for none.
+  final int housesToMark;
+
+  /// « ⚠ La liste des dons ne correspond plus aux totaux. »
+  final bool listDiffers;
+
+  /// The dons as « Dons de la tournée » lists them, newest first, each
+  /// with its place in the order added; empty without a list.
+  List<DonationRow> get donationRows => donationRowsOf(donations ?? const []);
+
+  /// « Voir les 19 dons »: the dons of money in the list, a free calendar
+  /// not being one.
+  int get listedDons => DonationTotals.of(donations ?? const []).count;
+
+  /// « Voir les dons » shows: a list with at least one entry.
+  bool get showsDonations => donations?.isNotEmpty ?? false;
+
   @override
   bool operator ==(Object other) =>
       other is CollecteRound &&
@@ -146,11 +183,24 @@ final class CollecteRound {
       other.startedAt == startedAt &&
       other.endedAt == endedAt &&
       other.housesVisited == housesVisited &&
-      other.totals == totals;
+      other.totals == totals &&
+      sameOptionalItems(other.donations, donations) &&
+      other.correctedAt == correctedAt &&
+      other.housesToMark == housesToMark &&
+      other.listDiffers == listDiffers;
 
   @override
-  int get hashCode =>
-      Object.hash(id, startedAt, endedAt, housesVisited, totals);
+  int get hashCode => Object.hash(
+    id,
+    startedAt,
+    endedAt,
+    housesVisited,
+    totals,
+    donations == null ? null : Object.hashAll(donations!),
+    correctedAt,
+    housesToMark,
+    listDiffers,
+  );
 }
 
 /// One tournée of « PAS ENCORE ENVOYÉES »: the row of a validated tournée,

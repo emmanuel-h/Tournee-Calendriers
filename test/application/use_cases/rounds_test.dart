@@ -7,6 +7,7 @@ import 'package:tournee_calendriers/domain/round/collecte.dart';
 import 'package:tournee_calendriers/domain/round/donation.dart';
 import 'package:tournee_calendriers/domain/round/donation_totals.dart';
 import 'package:tournee_calendriers/domain/round/round.dart';
+import 'package:tournee_calendriers/domain/round/round_correction.dart';
 import 'package:tournee_calendriers/domain/round/round_id.dart';
 import 'package:tournee_calendriers/domain/round/round_summary.dart';
 import 'package:tournee_calendriers/domain/round/unsent_round.dart';
@@ -267,6 +268,8 @@ void main() {
           endedAt: endedAt,
           housesVisited: 1,
           totals: DonationTotals.of([cash(1000), offered]),
+          // Its dons go with it (#168, PLAN §5.20).
+          donations: [cash(1000), offered],
         ),
       );
       expect(validated, expected);
@@ -685,4 +688,24 @@ final class _FailingLedger implements RoundLedger {
   @override
   Stream<List<RoundSummary>> watch(SectorId sector, CampaignYear campaign) =>
       Stream.error(StateError('unreadable'));
+
+  @override
+  Future<RoundSummary?> find(SectorId s, CampaignYear c, RoundId r) async =>
+      null;
+
+  @override
+  Future<void> correct(
+    SectorId s,
+    CampaignYear c,
+    RoundId r,
+    RoundCorrected correction,
+  ) async {}
+
+  @override
+  Future<void> settleForgottenHouse(
+    SectorId s,
+    CampaignYear c,
+    RoundId r,
+    ForgottenHouse settled,
+  ) async {}
 }

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
+import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 
 /// Asks before a change that loses or hides something (« Supprimer la
 /// rue ? », « Modifier les étages ? »): [title], [body], [cancelLabel]
@@ -12,6 +13,9 @@ import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 /// cancel action in ink, for a removal whose marks go with it
 /// (« Supprimer la porte 52 ? »). Otherwise both use the theme's colour.
 ///
+/// [aside], when given, is a muted line under [body] (« Tout le secteur
+/// verra les nouveaux chiffres. »).
+///
 /// [name] names the buttons for tests: `<name>.cancel`, `<name>.ok`.
 Future<bool> showConfirmDialog(
   BuildContext context, {
@@ -20,6 +24,7 @@ Future<bool> showConfirmDialog(
   required String body,
   required String confirmLabel,
   String? cancelLabel,
+  String? aside,
   bool destructive = false,
 }) async {
   final cancel = cancelLabel ?? AppLocalizations.of(context).cancel;
@@ -28,7 +33,20 @@ Future<bool> showConfirmDialog(
     context: context,
     builder: (context) => AlertDialog(
       title: Text(title),
-      content: Text(body),
+      content: aside == null
+          ? Text(body)
+          : Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              spacing: 10,
+              children: [
+                Text(body),
+                Text(
+                  aside,
+                  style: AppTextStyles.body.copyWith(color: colors.muted),
+                ),
+              ],
+            ),
       actions: [
         TextButton(
           key: ValueKey('$name.cancel'),

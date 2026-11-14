@@ -20,7 +20,12 @@ import 'package:tournee_calendriers/application/ports/street_shapes.dart';
 import 'package:tournee_calendriers/bootstrap/bootstrap.dart';
 import 'package:tournee_calendriers/bootstrap/firebase.dart';
 import 'package:tournee_calendriers/domain/geometry/geo_bounds.dart';
+import 'package:tournee_calendriers/domain/round/amount.dart';
+import 'package:tournee_calendriers/domain/round/donation.dart';
 import 'package:tournee_calendriers/domain/round/donation_totals.dart';
+import 'package:tournee_calendriers/domain/round/payment_method.dart';
+import 'package:tournee_calendriers/domain/round/round_id.dart';
+import 'package:tournee_calendriers/domain/round/round_summary.dart';
 import 'package:tournee_calendriers/domain/round/unsent_round.dart';
 import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
@@ -34,6 +39,7 @@ import 'package:tournee_calendriers/domain/street/street.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
 import 'package:tournee_calendriers/domain/street/street_shape.dart';
+import 'package:tournee_calendriers/infrastructure/firestore/mappers/round_document_mapper.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/mappers/street_json_mapper.dart';
 import 'package:tournee_calendriers/main.dart' as app;
 import 'package:tournee_calendriers/presentation/dependencies.dart';
@@ -1067,6 +1073,72 @@ void main() {
       );
       expect(find.text('PAS ENCORE ENVOYÉES (1)'), findsOneWidget);
       expect(find.text("⏳ En attente d'envoi"), findsOneWidget);
+
+      // Correcting a teammate's tournée the secteur has (#168), offline:
+      // « Totaux » counts a calendar offered more, so « ⚠ 1 maison à
+      // marquer »; « Marquer une maison » then marks the 3 of Chemin des
+      // Vignes ✓ with no tournée on. The summary lands in Firestore's copy
+      // on the phone as the teammate's would (its network is off).
+      final friday = RoundSummary(
+        id: RoundId('Corr168'),
+        startedAt: DateTime.utc(2026, 11, 13, 16, 30),
+        endedAt: DateTime.utc(2026, 11, 13, 18, 45),
+        housesVisited: 4,
+        totals: DonationTotals.of([
+          Donation.paid(PaymentMethod.cash, _ok(Amount.create(1000))),
+        ]),
+        donations: [
+          Donation.paid(PaymentMethod.cash, _ok(Amount.create(1000))),
+        ],
+      );
+      offlineFirestore()
+          .doc('sectors/$t49/campaigns/2026/rounds/Corr168')
+          .set(roundToDocument(friday))
+          .ignore();
+      await tester.pumpAndSettle();
+      final fridayRow = find.byKey(const ValueKey('collecte.round.Corr168'));
+      await tester.tap(
+        find.descendant(
+          of: fridayRow,
+          matching: find.byKey(const Key('collecte.round.toggle')),
+        ),
+      );
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(
+        find.byKey(const Key('collecte.round.correct')),
+      );
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('collecte.round.correct')));
+      await tester.pumpAndSettle();
+      expect(find.text('Corriger la tournée'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('correct.tab.totals')));
+      await tester.pumpAndSettle();
+      await tester.enterText(find.byKey(const Key('correct.free')), '1');
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('correct.save')));
+      await tester.pumpAndSettle();
+      expect(find.text('Corriger la tournée\u00a0?'), findsOneWidget);
+      await tester.tap(find.byKey(const ValueKey('correct.confirm.ok')));
+      await tester.pumpAndSettle();
+      expect(find.text('Correction enregistrée.'), findsOneWidget);
+      expect(find.text('⚠ 1\u00a0maison à marquer'), findsOneWidget);
+      await tester.tap(find.byKey(const Key('collecte.round.markHouse')));
+      await tester.pumpAndSettle();
+      expect(find.text('Quelle maison\u00a0?'), findsOneWidget);
+      await tester.tap(find.text('Chemin des Vignes'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('street.tile.3')));
+      await tester.pumpAndSettle();
+      expect(find.text('N° 3 chemin des Vignes marquée ✓.'), findsOneWidget);
+      expect(find.byKey(const Key('collecte.round.markHouse')), findsNothing);
+      expect(
+        find.descendant(of: fridayRow, matching: find.textContaining('5')),
+        findsWidgets,
+      );
+      // The snackbar would cover the « Bilan »'s buttons below.
+      ScaffoldMessenger.of(tester.element(find.text('Collecte 2026')))
+          .hideCurrentSnackBar();
+      await tester.pumpAndSettle();
       await tester.tap(find.byTooltip('Retour'));
       await tester.pumpAndSettle();
 
@@ -1101,7 +1173,8 @@ void main() {
       expect(phone.read(openRoundStoreProvider).unsent, waiting);
       await tester.tap(find.byKey(const Key('home.panel.handle')));
       await tester.pumpAndSettle();
-      expect(find.text('Rues · 2/8'), findsOneWidget);
+      // The 1 and 2 of the tournées, and the 3 marked as forgotten.
+      expect(find.text('Rues · 3/8'), findsOneWidget);
       await tester.tap(find.byKey(const Key('home.panel.handle')));
       await tester.pumpAndSettle();
 

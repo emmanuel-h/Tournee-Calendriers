@@ -90,4 +90,34 @@ void main() {
     expect(valueOf(Amount.create(750)), isNot(valueOf(Amount.create(751))));
     expect(valueOf(Amount.create(750)).toString(), 'Amount(750)');
   });
+
+  group('parseSum (« Corriger la tournée », Totaux)', () {
+    test('should read an empty field, blanks or 0 as no money at all', () {
+      expect(valueOf(Amount.parseSum('')), 0);
+      expect(valueOf(Amount.parseSum('  ')), 0);
+      expect(valueOf(Amount.parseSum('0')), 0);
+      expect(valueOf(Amount.parseSum('0,00')), 0);
+    });
+
+    test('should read euros and cents past 1 000 €', () {
+      expect(valueOf(Amount.parseSum('80,50')), 8050);
+      expect(valueOf(Amount.parseSum('1 280')), 128000);
+      expect(valueOf(Amount.parseSum('0,01')), 1);
+    });
+
+    test('should take 1 000 000 € and refuse a cent more', () {
+      expect(valueOf(Amount.parseSum('1000000')), Amount.largestSum);
+      expect(failureOf(Amount.parseSum('1000000,01')), AmountFailure.tooLarge);
+      expect(failureOf(Amount.parseSum('99999999')), AmountFailure.tooLarge);
+    });
+
+    test('should refuse what is not an amount', () {
+      expect(failureOf(Amount.parseSum('abc')), AmountFailure.notValid);
+      expect(failureOf(Amount.parseSum(',')), AmountFailure.notValid);
+      expect(
+        failureOf(Amount.parseSum('7,505')),
+        AmountFailure.tooManyDecimals,
+      );
+    });
+  });
 }

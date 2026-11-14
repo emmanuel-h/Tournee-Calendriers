@@ -37,7 +37,8 @@ final class UnsentRound {
   /// The campaign of that secteur it counts in.
   final CampaignYear campaign;
 
-  /// All that will leave the phone (no member, no don).
+  /// All that will leave the phone: no member, and dons without a house
+  /// nor a time (#168).
   final RoundSummary summary;
 
   final UnsentState state;

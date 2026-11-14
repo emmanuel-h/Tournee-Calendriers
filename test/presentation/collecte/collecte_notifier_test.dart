@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/round_ledger.dart';
 import 'package:tournee_calendriers/domain/round/donation_totals.dart';
+import 'package:tournee_calendriers/domain/round/round_correction.dart';
 import 'package:tournee_calendriers/domain/round/round_id.dart';
 import 'package:tournee_calendriers/domain/round/round_summary.dart';
 import 'package:tournee_calendriers/domain/round/unsent_round.dart';
@@ -16,14 +17,18 @@ import 'package:tournee_calendriers/presentation/collecte/collecte_notifier.dart
 import 'package:tournee_calendriers/presentation/collecte/collecte_view.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
+import 'package:tournee_calendriers/presentation/round/round_view.dart';
 
+import '../../application/use_cases/street_fixtures.dart';
 import '../../domain/round/round_fixtures.dart';
 import '../../domain/sector/my_sectors_fixtures.dart';
 import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_open_round_store.dart';
 import '../../support/fakes/fake_round_ledger.dart';
 import '../../support/fakes/fake_sector_repository.dart';
+import '../../support/fakes/fake_street_repository.dart';
 import '../../support/results.dart';
+import '../../support/street_fixtures.dart' show n;
 
 /// A ledger that cannot be read: an error other than « no longer
 /// readable », which the Firestore adapter already turns into none.
@@ -38,6 +43,26 @@ final class _BrokenLedger implements RoundLedger {
   @override
   Stream<List<RoundSummary>> watch(SectorId s, CampaignYear c) =>
       Stream.error(StateError('unreadable'));
+
+  @override
+  Future<RoundSummary?> find(SectorId s, CampaignYear c, RoundId r) async =>
+      null;
+
+  @override
+  Future<void> correct(
+    SectorId s,
+    CampaignYear c,
+    RoundId r,
+    RoundCorrected correction,
+  ) async {}
+
+  @override
+  Future<void> settleForgottenHouse(
+    SectorId s,
+    CampaignYear c,
+    RoundId r,
+    ForgottenHouse settled,
+  ) async {}
 }
 
 /// Saturday's tournée of the Cash mockup, 14:05 → 18:20 in Villefranche:
@@ -63,6 +88,7 @@ void main() {
   late FakeRoundLedger ledger;
   late FakeMySectorsStore store;
   late FakeOpenRoundStore rounds;
+  late FakeStreetRepository streets;
   late ProviderContainer container;
 
   /// A phone where [open] is the secteur shown (none when null), with the
@@ -74,6 +100,7 @@ void main() {
   }) {
     ledger = FakeRoundLedger();
     rounds = FakeOpenRoundStore(null, unsent);
+    streets = repositoryWithLilas();
     var mine = MySectors.none.remember(sector12);
     if (open != null) mine = valueOf(mine.remember(open).open(open.id));
     store = FakeMySectorsStore(mine);
@@ -84,6 +111,10 @@ void main() {
         mySectorsStoreProvider.overrideWithValue(store),
         // « Mes secteurs » follows the requests of the other secteurs.
         sectorRepositoryProvider.overrideWithValue(FakeSectorRepository()),
+        // For a forgotten house (#168).
+        streetRepositoryProvider.overrideWithValue(streets),
+        clockProvider.overrideWithValue(clockAtTwo()),
+        identityProvider.overrideWithValue(leaOnThePhone()),
       ],
     );
     addTearDown(container.dispose);
@@ -278,6 +309,182 @@ void main() {
 
       expect(rounds.unsent, [waiting]);
       expect(view.unsent.single.round.id, RoundId('sat'));
+    });
+  });
+
+  group('corrections and forgotten houses (#168)', () {
+    final correctedAt = DateTime.utc(2026, 10, 25, 9);
+
+    /// Saturday, its dons kept, corrected by « Totaux » (one free calendar
+    /// more than its list), one house left to mark.
+    final corrected = RoundSummary(
+      id: RoundId('sat'),
+      startedAt: startedAt,
+      endedAt: endedAt,
+      housesVisited: 23,
+      totals: DonationTotals.of([cash(1000), cheque(2000), offered, offered]),
+      donations: [cash(1000), cheque(2000), offered],
+      correctedAt: correctedAt,
+      housesToMark: 1,
+    );
+
+    test('should show its dons newest first, its correction, its houses to '
+        'mark and that its list differs', () async {
+      phoneWith(open: sector49);
+      ledger.have(sector49Id, year2026, corrected);
+
+      final round = (await settled() as CollecteShown).rounds.single;
+
+      expect(round.donations, [cash(1000), cheque(2000), offered]);
+      expect(round.donationRows, [
+        const DonationRow(index: 2, donation: offered),
+        DonationRow(index: 1, donation: cheque(2000)),
+        DonationRow(index: 0, donation: cash(1000)),
+      ]);
+      expect(round.listedDons, 2);
+      expect(round.showsDonations, isTrue);
+      expect(round.correctedAt, correctedAt.toLocal());
+      expect(round.housesToMark, 1);
+      expect(round.listDiffers, isTrue);
+      expect(round, CollecteRound.of(corrected));
+      expect(round.hashCode, CollecteRound.of(corrected).hashCode);
+    });
+
+    test('should show no dons for a tournée validated before #168, nor for '
+        'an empty list', () async {
+      phoneWith(open: sector49);
+      ledger
+        ..have(sector49Id, year2026, saturday)
+        ..have(
+          sector49Id,
+          year2026,
+          RoundSummary(
+            id: RoundId('fri'),
+            startedAt: friday.startedAt,
+            endedAt: friday.endedAt,
+            housesVisited: 2,
+            totals: DonationTotals.none,
+            donations: const [],
+          ),
+        );
+
+      final view = await settled() as CollecteShown;
+
+      for (final round in view.rounds) {
+        expect(round.showsDonations, isFalse);
+        expect(round.donationRows, isEmpty);
+        expect(round.listedDons, 0);
+        expect(round.listDiffers, isFalse);
+        expect(round.correctedAt, isNull);
+        expect(round.housesToMark, 0);
+      }
+      expect(view.rounds.first.donations, isNull);
+      expect(view.rounds.last.donations, isEmpty);
+    });
+
+    test('should tell rounds apart by their corrections', () {
+      final plain = CollecteRound.of(corrected);
+
+      expect(plain, isNot(CollecteRound.of(saturday)));
+      expect(
+        plain,
+        isNot(
+          CollecteRound(
+            id: plain.id,
+            startedAt: plain.startedAt,
+            endedAt: plain.endedAt,
+            housesVisited: plain.housesVisited,
+            totals: plain.totals,
+            donations: plain.donations,
+            correctedAt: plain.correctedAt,
+            housesToMark: plain.housesToMark,
+          ),
+        ),
+      );
+    });
+
+    test('should take one off the houses to mark on « Ignorer »', () async {
+      phoneWith(open: sector49);
+      ledger.have(sector49Id, year2026, corrected);
+      await settled();
+
+      await container
+          .read(collecteProvider.notifier)
+          .ignoreForgottenHouse(RoundId('sat'));
+      final view = await settled() as CollecteShown;
+
+      expect(ledger.settled, [
+        (sector49Id, year2026, RoundId('sat'), ForgottenHouse.ignored),
+      ]);
+      expect(view.rounds.single.housesToMark, 0);
+    });
+
+    test('should mark a forgotten house, counted on the tournée', () async {
+      phoneWith(open: sector49);
+      ledger.have(sector49Id, year2026, corrected);
+      await settled();
+
+      final outcome = await container
+          .read(collecteProvider.notifier)
+          .markForgottenHouse(RoundId('sat'), street: lilasId, number: n('7'));
+      final view = await settled() as CollecteShown;
+
+      expect(outcome, ForgottenMarkOutcome.marked);
+      expect(view.rounds.single.housesVisited, 24);
+      expect(view.rounds.single.housesToMark, 0);
+      expect(streets.saved.single.$2.streetId, lilasId);
+    });
+
+    test('should say a door already visited, a house gone, or nothing left '
+        'to mark', () async {
+      phoneWith(open: sector49);
+      ledger.have(sector49Id, year2026, corrected);
+      await settled();
+      final notifier = container.read(collecteProvider.notifier);
+
+      expect(
+        await notifier.markForgottenHouse(
+          RoundId('sat'),
+          street: lilasId,
+          number: n('8'),
+          door: rdc('01'),
+        ),
+        ForgottenMarkOutcome.alreadyVisited,
+      );
+      expect(
+        await notifier.markForgottenHouse(
+          RoundId('sat'),
+          street: lilasId,
+          number: n('99'),
+        ),
+        ForgottenMarkOutcome.houseGone,
+      );
+      expect(
+        await notifier.markForgottenHouse(
+          RoundId('fri'),
+          street: lilasId,
+          number: n('7'),
+        ),
+        ForgottenMarkOutcome.nothingToMark,
+      );
+      expect(streets.saved, isEmpty);
+    });
+
+    test('should do nothing with no secteur open', () async {
+      phoneWith();
+      final notifier = container.read(collecteProvider.notifier);
+
+      await notifier.ignoreForgottenHouse(RoundId('sat'));
+
+      expect(
+        await notifier.markForgottenHouse(
+          RoundId('sat'),
+          street: lilasId,
+          number: n('7'),
+        ),
+        ForgottenMarkOutcome.nothingToMark,
+      );
+      expect(ledger.settled, isEmpty);
     });
   });
 }

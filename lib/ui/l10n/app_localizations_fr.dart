@@ -1464,7 +1464,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get privacyDataBody =>
-      'Pour chaque rue du secteur : les numéros, leur place sur la carte, ce qui s\'est passé à chaque porte (fait, refusé, personne, à repasser), le jour et l\'heure où repasser, combien de calendriers la maison a pris, et le prénom de qui l\'a noté. Pour chaque tournée validée : son début et sa fin, le nombre de maisons visitées, le nombre et le total des dons par moyen de paiement, et les calendriers offerts, sans le prénom de qui l\'a faite. Un don n\'est jamais lié à une maison : la liste des dons reste sur le téléphone jusqu\'à la validation de la tournée, puis elle est effacée. Quels numéros de chaque rue un secteur couvre, avec le numéro du secteur et son centre de secours, est visible des membres de tous les secteurs : cela évite que deux secteurs passent aux mêmes portes. Rien d\'autre : pas de nom d\'habitant, pas de note.';
+      'Pour chaque rue du secteur : les numéros, leur place sur la carte, ce qui s\'est passé à chaque porte (fait, refusé, personne, à repasser), le jour et l\'heure où repasser, combien de calendriers la maison a pris, et le prénom de qui l\'a noté. Pour chaque tournée validée : son début et sa fin, le nombre de maisons visitées, le nombre et le total des dons par moyen de paiement, et les calendriers offerts, sans le prénom de qui l\'a faite. Un don n\'est jamais lié à une maison : avec chaque tournée validée est gardée la liste de ses dons, le moyen de paiement et le montant de chacun, sans maison, sans heure et sans membre, visible du secteur qui peut la corriger. Quels numéros de chaque rue un secteur couvre, avec le numéro du secteur et son centre de secours, est visible des membres de tous les secteurs : cela évite que deux secteurs passent aux mêmes portes. Rien d\'autre : pas de nom d\'habitant, pas de note.';
 
   @override
   String get privacyLocationTitle => 'Position';
@@ -2689,8 +2689,226 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
-  String get collecteNeverChanged =>
-      'Une tournée validée ne peut plus être modifiée. Les dons ne sont jamais associés à une adresse.';
+  String get collecteFooter =>
+      'Les dons ne sont jamais associés à une adresse.';
+
+  @override
+  String collecteCorrectedOn(DateTime day) {
+    final intl.DateFormat dayDateFormat = intl.DateFormat.MMMd(localeName);
+    final String dayString = dayDateFormat.format(day);
+
+    return '✎ Corrigée le $dayString';
+  }
+
+  @override
+  String collecteToMark(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '⚠ $count maisons à marquer',
+      one: '⚠ $count maison à marquer',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get collecteMarkHouse => 'Marquer une maison';
+
+  @override
+  String collecteMarkHouseSpoken(String when) {
+    return 'Marquer une maison oubliée de la tournée du $when';
+  }
+
+  @override
+  String get collecteIgnore => 'Ignorer';
+
+  @override
+  String collecteIgnoreSpoken(String when) {
+    return 'Ignorer une maison à marquer de la tournée du $when';
+  }
+
+  @override
+  String collecteSeeDons(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Voir les $count dons',
+      one: 'Voir le don',
+      zero: 'Voir les dons',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get collecteListDiffers =>
+      'La liste des dons ne correspond plus aux totaux.';
+
+  @override
+  String get collecteCorrect => '✎ Corriger';
+
+  @override
+  String collecteCorrectSpoken(String when) {
+    return 'Corriger la tournée du $when';
+  }
+
+  @override
+  String get correctionSaved => 'Correction enregistrée.';
+
+  @override
+  String get correctTitle => 'Corriger la tournée';
+
+  @override
+  String correctSubtitle(String when, int houses) {
+    String _temp0 = intl.Intl.pluralLogic(
+      houses,
+      locale: localeName,
+      other: '$houses maisons',
+      one: '$houses maison',
+    );
+    return '$when · $_temp0';
+  }
+
+  @override
+  String get correctTabsLabel => 'Corriger';
+
+  @override
+  String get correctTabDons => 'Don par don';
+
+  @override
+  String get correctTabTotals => 'Totaux';
+
+  @override
+  String correctDonsLine(String totals) {
+    return '$totals · touchez un don pour le changer.';
+  }
+
+  @override
+  String get correctSave => 'Enregistrer';
+
+  @override
+  String get correctCount => 'Dons';
+
+  @override
+  String get correctAmount => 'Montant';
+
+  @override
+  String correctCountSpoken(String method) {
+    return 'Dons en $method';
+  }
+
+  @override
+  String correctAmountSpoken(String method) {
+    return 'Montant en $method';
+  }
+
+  @override
+  String get correctTotalsHelp =>
+      'Les maisons visitées et les heures ne changent pas. La liste des dons reste telle quelle et sera signalée si elle ne correspond plus.';
+
+  @override
+  String correctAmountMissing(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: 'Un montant pour $count dons.',
+      one: 'Un montant pour $count don.',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String correctCountMissing(String amount) {
+    return 'Au moins 1 don pour $amount.';
+  }
+
+  @override
+  String get correctTooMany => '9 999 au plus.';
+
+  @override
+  String get correctConfirmTitle => 'Corriger la tournée ?';
+
+  @override
+  String correctConfirmBody(String before, String after) {
+    return 'Total : $before\n→ $after';
+  }
+
+  @override
+  String correctConfirmTotal(int count, String amount) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count dons, $amount',
+      one: '$count don, $amount',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get correctConfirmAside =>
+      'Tout le secteur verra les nouveaux chiffres.';
+
+  @override
+  String get correctConfirmOk => 'Corriger';
+
+  @override
+  String get whichHouseTitle => 'Quelle maison ?';
+
+  @override
+  String whichHouseSubtitle(DateTime day, int count) {
+    final intl.DateFormat dayDateFormat = intl.DateFormat.MMMEd(localeName);
+    final String dayString = dayDateFormat.format(day);
+
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count maisons à marquer',
+      one: '$count maison à marquer',
+    );
+    return 'Tournée du $dayString · $_temp0';
+  }
+
+  @override
+  String get whichHouseInfo =>
+      'Choisissez la rue de la maison oubliée, puis touchez la maison.';
+
+  @override
+  String forgottenStreetSubtitle(String commune, int done, int total) {
+    return '$commune · $done/$total';
+  }
+
+  @override
+  String get forgottenStreetInfo =>
+      'Touchez la maison oubliée : elle sera marquée ✓ Fait.';
+
+  @override
+  String forgottenHouseDone(String number) {
+    return 'N° $number : déjà marquée ✓.';
+  }
+
+  @override
+  String forgottenHouseRefused(String number) {
+    return 'N° $number : déjà marquée ⊘.';
+  }
+
+  @override
+  String forgottenDoorDone(String door) {
+    return 'Porte $door : déjà marquée ✓.';
+  }
+
+  @override
+  String forgottenDoorRefused(String door) {
+    return 'Porte $door : déjà marquée ⊘.';
+  }
+
+  @override
+  String forgottenHouseMarked(String number, String street) {
+    return 'N° $number $street marquée ✓.';
+  }
+
+  @override
+  String forgottenDoorMarked(String door, String number, String street) {
+    return 'Porte $door du $number $street marquée ✓.';
+  }
 
   @override
   String get collecteUnavailable => 'La collecte ne peut pas être affichée.';

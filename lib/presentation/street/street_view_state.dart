@@ -37,6 +37,16 @@ sealed class TileMark {
     },
   };
 
+  /// Visited: ✓ or ⊘ (a building, every door). « Masquer faits » hides
+  /// such tiles, and « Touchez la maison oubliée » fades them.
+  bool get isVisited => switch (this) {
+    DoneMark() || RefusedMark() => true,
+    ToDoMark() ||
+    NobodyHomeMark() ||
+    ComeBackMark() ||
+    PartialBuildingMark() => false,
+  };
+
   /// The mark of a door of the Immeuble grid: its status, as a single
   /// house.
   static TileMark ofDwelling(Dwelling dwelling) => _ofStatus(dwelling.status);
@@ -209,10 +219,15 @@ final class StreetShown extends StreetViewState {
     required this.columns,
     required List<HouseTile> odd,
     required List<HouseTile> even,
+    this.commune = '',
   }) : odd = List.unmodifiable(odd),
        even = List.unmodifiable(even);
 
   final String name;
+
+  /// The commune's name, under the name in « Touchez la maison oubliée »
+  /// (« Villefranche-sur-Saône · 31/42 », PLAN §5.20).
+  final String commune;
 
   /// Header counts « 31/42 · ⊘ 2 · ✗ 3 · ↻ 1 »: doors visited (done or
   /// refused, PLAN §5.6), doors (a building counts its doors), refused,

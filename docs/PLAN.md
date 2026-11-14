@@ -2448,7 +2448,7 @@ street already in the secteur ticks nothing and says « … est déjà dans le s
   `addStreets.confirmDelete`). « Modifier la rue » pushes `AppRoutes.editStreetOf(id)` and
   closes the card on the way back; edit mode's own « Supprimer la rue » still goes to Accueil.
 
-### 5.20 Correct a validated tournée, keep its dons, mark a forgotten house (#168, to build)
+### 5.20 Correct a validated tournée, keep its dons, mark a forgotten house (#168, built)
 
 Agreed 2026-11-14 (ASCII in the terminal, then mockups CashCorrect, CashCorrectOpen,
 RoundCorrectDons, RoundCorrect, RoundCorrectConfirm, MarkForgotten, MarkForgottenStreet). What the
@@ -2517,6 +2517,33 @@ deleted »** for its dons and money, and **#122** for the forgotten house only.
     « maisons à marquer », then goes back to Collecte with « N° 3 rue des Lilas marquée ✓. ».
 - **Privacy text** (5.9, `PRIVACY.md`): one more sentence for the dons kept with each tournée
   (method and amount, never a house, a time or a member); drafted by Claude for the user's review.
+- Delivered in #168 (`RoundSummary.correctDonations` / `correctTotals` / `settleForgottenHouse`,
+  `Street.markForgotten`, `application/use_cases/round_corrections.dart`,
+  `presentation/collecte/correct_round_notifier.dart` and `which_house_notifier.dart`,
+  `ui/screens/round/correct_round_screen.dart`, `collecte_dons_screen.dart`,
+  `which_house_screen.dart`, `forgotten_street_screen.dart`, the grid's
+  `showForgottenDoorGrid`):
+  - « Voir les N dons » counts the dons of money in the list (a free calendar is not one): « Voir
+    les dons » for none, « Voir le don » for one; hidden for a list with no entry at all. The read-only
+    list is a screen of its own (« Dons de la tournée », its total under the title), newest first.
+  - An unfolded tournée also shows « Calendriers offerts » (CashCorrectOpen), sent or not.
+  - « Corriger la tournée »: each tab keeps its own draft; « Enregistrer » saves the tab shown.
+    « Don par don » reuses « Modifier le don » / « Nouveau don » as they are (Espèces | Chèque |
+    Carte only: a free calendar is changed into money there, or counted in « Totaux »). « Totaux »
+    opens on the tournée's figures (« 80,00 »); an empty field reads 0; counts take 4 digits at
+    most; under a line: « Un montant pour 8 dons. », « Au moins 1 don pour 20 €. », « 1 000 € au
+    plus par don. » (also past 1 000 000 € in all), « 9 999 au plus. » (calendars past 9 999), or
+    the amount's own refusals (« Entrez un montant valide. »…), the faulty field outlined red.
+  - Saved but refused by the server later (a removed member, a past campaign): Firestore drops the
+    write, the phone's copy follows the server again; nothing is said. A tournée gone meanwhile:
+    « Enregistrer » goes back without the snackbar.
+  - « Touchez la maison oubliée » marks the house as the member of the phone now, and does not
+    count it on a tournée on (the house belongs to the validated one). A house marked or a
+    tournée settled meanwhile: « N° 9 : déjà marquée ✓. » (⊘ for a refused one), or back to
+    « Quelle maison ? » when nothing is left to mark. A done building fades too; its grid fades
+    its visited doors (« Porte 51 : déjà marquée ✓. ») and has neither « Gérer l'immeuble » nor
+    « Repasser ». The message back in Collecte: « N° 3 rue des Lilas marquée ✓. », « Porte 51 du
+    8 rue des Lilas marquée ✓. ».
 
 ## 6. Data model
 
@@ -3366,8 +3393,17 @@ and return aggregates and `StreetChange`s, never Firestore types.
   visitées »: a house or door going from not visited to ✓ / ⊘ is `visited`, the other way
   `unvisited`, anything else `none` (✓ → ⊘ stays counted once); `undone` turns it around.
 - **`RoundSummary`** (value): its round's id (the document id, so a second send makes no
-  second tournée), start, end, houses visited and the `DonationTotals`; **no member**, nothing
-  else leaves the phone. `Collecte.of(summaries, {unsent})`: the tournées newest first and their
+  second tournée), start, end, houses visited, the `DonationTotals`, and (#168) its `donations`
+  (null for one validated before), `correctedAt` and `housesToMark`; **no member**, nothing
+  else leaves the phone. `listDiffersFromTotals` is computed (the list no longer adds up to the
+  totals). `correctDonations(list, at)` (refused without a list, `noDonationList`, or past
+  `mostDonations` = 2 000) and `correctTotals(totals, at)` (refused unless `DonationTotals.isSound`:
+  per method `MethodTotal.failure` — `amountMissing`, `countMissing`, `tooLarge` past 1 000 € a don
+  on average or 1 000 000 € in all, `tooMany` past 9 999 — and free calendars ≤ 9 999) return the
+  summary corrected and a `RoundCorrected` (totals, list or null, `correctedAt`, `housesAdded` =
+  max(0, paid dons + free after − before)); `settleForgottenHouse(marked | ignored)` (`NoHouseToMark`
+  at 0). `Street.markForgotten(number, {door})` marks a house or door ✓ unless it is ✓ or ⊘ already
+  (`ForgottenMarkFailure.alreadyVisited`, `notFound`). `Collecte.of(summaries, {unsent})`: the tournées newest first and their
   totals summed per method for the secteur (never per member); this phone's `UnsentRound`s apart,
   newest first, out of the totals, and a summary whose tournée still waits left out of the sent
   ones (the phone's copy of the server may show it before the server confirms it).
@@ -3395,7 +3431,9 @@ and return aggregates and `StreetChange`s, never Firestore types.
   or `refused` once the server has spoken, waiting offline; its `watch(sector, campaign)` gives the
   validated summaries, #110), `RetryUnsentRound` and `EraseUnsentRound` (a refused one only),
   `RoundsUnreadableAtStart`, `WatchCollecte` (#111; the ledger's summaries and the phone's unsent
-  ones of that secteur and campaign), `RemoveCalendar` (#114). The status use cases
+  ones of that secteur and campaign), `RemoveCalendar` (#114), and (#168) `CorrectRoundDonations`,
+  `CorrectRoundTotals`, `IgnoreForgottenHouse`, `MarkForgottenHouse` (through the ledger's `find`,
+  `correct`, `settleForgottenHouse`; the street's change through `runOnStreet`). The status use cases
   (`SetHouseDetails`, `MarkDwelling`) tell the open tournée about each change through
   `RoundVisits` (`RoundVisit.of(change)`), and `UndoLastChange` tells it the reverse of the
   change undone, so the count is right whatever screen marked it; only on the secteur the
@@ -3438,11 +3476,23 @@ sectors/{sectorId}
                                                     secteur created before (reads as none);
                                                     an unreadable entry, or a second one of a
                                                     code, is skipped when read, at most 50 kept
-  campaigns/{year}/rounds/{roundId}               ← #63: one per validated tournée, create-only
-                                                    (#168: corrections, 5.20; dons, correctedAt,
-                                                    housesToMark to be specified when built),
+  campaigns/{year}/rounds/{roundId}               ← #63: one per validated tournée, created
+                                                    once, then only corrected (#168, 5.20)
     startedAt, endedAt, housesVisited, free,          no member on purpose
-    cash: { count, cents }, cheque: { count, cents }, card: { count, cents }
+    cash: { count, cents }, cheque: { count, cents }, card: { count, cents },
+    dons: ["cash:1000", "free", "card:1500", …],    ← #168: in the order added, one text each
+                                                    (method:cents, 1–100 000, or "free") so the
+                                                    rules check the list with one pattern; no
+                                                    house, time or member; absent before #168
+    correctedAt: time,                              ← #168: the last correction, phone's clock
+    housesToMark: 1                                 ← #168: absent reads as 0; a correction adds
+                                                    with an increment, a house marked or ignored
+                                                    takes 1 off (and adds 1 to housesVisited)
+                                                    with increments
+                                                    A correction is an `update` of totals, dons
+                                                    (« Don par don » only), correctedAt and
+                                                    housesToMark, never a `set`: offline it waits
+                                                    in Firestore's queue, the last sent wins
   members/{uid}
     displayName: "Manu", status: "pending" | "active", requestedAt, acceptedBy, acceptedAt,
     joinCode                                      ← only on a newcomer's request: the code used
@@ -3602,8 +3652,8 @@ can never drift.
 - `open_round.json` (port `OpenRoundStore`, #63, #143): the tournée on and the validated
   tournées not yet sent, `{ version: 2, round: { id, sector, campaign, startedAt, housesVisited,
   donations: [{ method, cents } | { free: true }] } | null, unsent: [{ sector, campaign, refused,
-  summary: { id, startedAt, endedAt, housesVisited, free, cash: { count, cents }, cheque, card }
-  }] }`, written at each change (same writing as the others), so a tournée survives a kill; the
+  summary: { id, startedAt, endedAt, housesVisited, free, cash: { count, cents }, cheque, card,
+  donations: [ … ] } }] }` (#168: the summary's dons, absent on one validated before), written at each change (same writing as the others), so a tournée survives a kill; the
   dons carry no house and no time. Version 1 (no `unsent`) is still read. `ValidateRound` moves
   the tournée on to `unsent` in that one write, so a kill leaves it on or validated, never both
   nor neither; it leaves `unsent` once the server has its summary, or on « Effacer ». An
@@ -4033,14 +4083,25 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
   the secteur's **current campaign** (#145, decided 2026-11-11: `year == currentCampaign`, and
   that campaign exists), so no summary lands in a past campaign; once a new campaign (v1.1)
   starts, a tournée of the old one validated after the switch is refused (accepted: a
-  campaign changes once a year, out of season); **no update** (**changed by 5.20, #168**: a correction or a forgotten house marked, by an active member or an admin; a resend of the original must stay refused), **no delete** (they go with the secteur or the campaign: `delete` for admins,
+  campaign changes once a year, out of season); the create also needs `dons` (#168): a list of at
+  most 2 000 texts, each `cash|cheque|card:<1–100000>` or `free`, checked by joining them with
+  commas against one pattern and splitting again (so no entry hides two), and each total now has
+  dons and money together (both 0 or both above 0) and at most 1 000 € a don on average;
+  **update** (#168) by an active member or an admin, in the current campaign, the document after it
+  holding exactly the summary's fields plus optional `dons`, `correctedAt` (timestamp) and
+  `housesToMark` (0–9 999), either a **correction** (a `correctedAt` different from the stored one,
+  `startedAt`, `endedAt`, `housesVisited` unchanged, `dons` present after exactly when before) or a
+  **forgotten house** (only `housesToMark` and `housesVisited` change, `housesToMark` one fewer,
+  `housesVisited` the same or one more); a resend of the original summary (no `correctedAt`, no
+  `housesToMark`) is neither and stays refused, so it can never wipe a correction; **no delete** (they go with the secteur or the campaign: `delete` for admins,
   as the streets). `FirestoreRoundLedger.record` is a `set` not awaited: recording the same
   tournée again reaches the server as an update, refused, so the first summary stays. The
   domain does not cap at these bounds: a tournée is one outing, far below 9 999 houses or dons
   and 1 000 000 €. **Accepted risk** (#145, decided 2026-11-11, as the backdated purge): any
   active member may create any number of summaries with any figures within those bounds, and
   nothing tells who did, since a summary carries no member by design (§8.3); only an admin
-  can delete one (no screen offers it). The team is trusted and the code is the secret;
+  can delete one (no screen offers it). Since #168 any of them may also correct any summary of the
+  current campaign within the same bounds, which nothing records either. The team is trusted and the code is the secret;
   storing the author, even in an admins-only document, would break « who ran it is never
   stored ».
 - **Statuses and calendars** (#63): `status` also takes `REFUSED` (#113, accepted by the
