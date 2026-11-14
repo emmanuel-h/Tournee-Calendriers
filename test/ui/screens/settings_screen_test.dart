@@ -90,7 +90,7 @@ void main() {
     expect(find.bySemanticsLabel('Confidentialité'), findsOneWidget);
     // The version of pubspec.yaml, which `flutter test` gives too.
     expect(
-      find.bySemanticsLabel('Version 0.20.0, voir les nouveautés'),
+      find.bySemanticsLabel('Version 0.21.0, voir les nouveautés'),
       findsOneWidget,
     );
     // « RAPPELS » (#82) pushed the credits below the screen's edge.
@@ -444,10 +444,11 @@ void main() {
     await tester.tap(find.byKey(const Key('settings.version')));
     await tester.pumpAndSettle();
 
+    expect(find.bySemanticsLabel('0.21.0 · 14 nov. 2026'), findsOneWidget);
     expect(find.bySemanticsLabel('0.20.0 · 14 nov. 2026'), findsOneWidget);
-    expect(find.bySemanticsLabel('0.17.0 · 13 nov. 2026'), findsOneWidget);
     // A lazy list: the older versions are built once scrolled to.
     for (final label in [
+      '0.17.0 · 13 nov. 2026',
       '0.16.1 · 13 nov. 2026',
       '0.16.0 · 12 nov. 2026',
       '0.15.0 · 12 nov. 2026',

@@ -1684,6 +1684,18 @@ abstract class AppLocalizations {
   /// **'Première version de test.'**
   String get release010First;
 
+  /// Line of « Nouveautés » for 0.21.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'Collecte : une tournée validée garde la liste de ses dons, et chaque membre peut la corriger, don par don ou par ses totaux.'**
+  String get release0210Correct;
+
+  /// Line of « Nouveautés » for 0.21.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'Une maison oubliée se marque ✓ depuis Collecte après la correction, même sans tournée en cours.'**
+  String get release0210Forgotten;
+
   /// Line of « Nouveautés » for 0.20.0.
   ///
   /// In fr, this message translates to:

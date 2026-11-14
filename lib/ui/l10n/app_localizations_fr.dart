@@ -1163,6 +1163,14 @@ class AppLocalizationsFr extends AppLocalizations {
   String get release010First => 'Première version de test.';
 
   @override
+  String get release0210Correct =>
+      'Collecte : une tournée validée garde la liste de ses dons, et chaque membre peut la corriger, don par don ou par ses totaux.';
+
+  @override
+  String get release0210Forgotten =>
+      'Une maison oubliée se marque ✓ depuis Collecte après la correction, même sans tournée en cours.';
+
+  @override
   String get release0200Card =>
       'Ajouter des rues : toucher une rue déjà dans le secteur affiche sa fiche, pour la modifier ou la supprimer.';
 
