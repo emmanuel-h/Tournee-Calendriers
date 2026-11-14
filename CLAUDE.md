@@ -103,7 +103,7 @@ and quota) checked by the user in the console. Rules changed (#145, #147 `openSe
 #160 (the user reviewed every string in `lib/ui/l10n/app_fr.arb`) closed 2026-11-12.
 #166 (PLAN §5.18) delivered 2026-11-14: street lines, taps and « Zone » from IGN BD TOPO by BAN id (`IgnStreetShapes`,
 by-id lookup inside the houses' area + 2 km, the WFS being too slow without a box); OpenFreeMap by name only as the fallback;
-credits and privacy text updated. The user recreates the live secteur after the phone test.
+credits and privacy text updated. Validated by the user on the phone (2026-11-14).
 
 ## Commands
 
