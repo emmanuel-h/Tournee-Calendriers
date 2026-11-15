@@ -448,4 +448,88 @@ void main() {
         .dwellingAt(DwellingKey(escA, 0, d('02')));
     expect(door!.calendars, calendars(2));
   });
+
+  group('a ✓ taken back (#169)', () {
+    testWidgets('should take the house\'s own don out of the tournée, say it, '
+        'and put both back with « Annuler »', (tester) async {
+      await openStreet(tester);
+      await markDone(tester, '7');
+      await tap(tester, _key('house.give.2000'));
+      await tap(tester, _tile('7'));
+
+      await tap(tester, _key('house.status.nobodyHome'));
+
+      expect(stored('7').status, VisitStatus.nobodyHome);
+      expect(dons(), [cheque(2000)]);
+      expect(
+        findArrowText(
+          'N° 7$_nbsp: personne · son don de 20$_nbsp€ en espèces est retiré '
+          'de la tournée',
+        ),
+        findsOneWidget,
+      );
+
+      await tap(tester, find.text('Annuler'));
+
+      expect(stored('7').status, VisitStatus.done);
+      expect(dons(), [cheque(2000), cash(2000)]);
+      expect(rounds.openRound!.housesVisited, 5);
+    });
+
+    testWidgets('should name the dons and their money when there are '
+        'several', (tester) async {
+      await openStreet(tester);
+      await markDone(tester, '7');
+      await tap(tester, _key('house.give.1000'));
+      await tap(tester, _tile('7'));
+      await tap(tester, _key('house.addDonation'));
+      await tap(tester, _key('house.method.cheque'));
+      await tap(tester, _key('house.give.500'));
+      await tap(tester, _tile('7'));
+
+      await tap(tester, _key('house.status.toDo'));
+
+      expect(dons(), [cheque(2000)]);
+      expect(
+        findArrowText(
+          'N° 7$_nbsp: à faire · ses 2 dons (15$_nbsp€) sont retirés de la '
+          'tournée',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('should take out a door\'s free calendar when it is refused, '
+        'and say it', (tester) async {
+      await openStreet(tester);
+      await tap(tester, _tile('8'));
+      await tap(tester, _key('grid.door.A0-01'));
+      await tap(tester, _key('door.status.done'));
+      await tap(tester, _key('door.freeCalendar'));
+      await tap(tester, _key('grid.door.A0-01'));
+
+      await tap(tester, _key('door.status.refused'));
+
+      expect(dons(), [cheque(2000)]);
+      expect(
+        findArrowText(
+          'Porte 01$_nbsp: refusé · son calendrier offert est retiré de la '
+          'tournée',
+        ),
+        findsOneWidget,
+      );
+    });
+
+    testWidgets('should take out nothing from a ✓ marked before the tournée', (
+      tester,
+    ) async {
+      await openStreet(tester);
+      await tap(tester, _tile('3'));
+
+      await tap(tester, _key('house.status.nobodyHome'));
+
+      expect(dons(), [cheque(2000)]);
+      expect(findArrowText('N° 3$_nbsp: personne'), findsOneWidget);
+    });
+  });
 }

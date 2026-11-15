@@ -3,6 +3,8 @@ import 'package:tournee_calendriers/application/ports/identity_provider.dart';
 import 'package:tournee_calendriers/application/use_cases/command_failure.dart';
 import 'package:tournee_calendriers/application/use_cases/round_visits.dart';
 import 'package:tournee_calendriers/application/use_cases/street_command.dart';
+import 'package:tournee_calendriers/domain/round/donation_origin.dart';
+import 'package:tournee_calendriers/domain/round/donations_taken_out.dart';
 import 'package:tournee_calendriers/domain/round/round_visit.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
@@ -20,6 +22,10 @@ import 'package:tournee_calendriers/domain/street/street_repository.dart';
 /// Undoing a ✓ or ⊘ takes it back from the tournée on, and undoing a
 /// change that took one back counts it again (PLAN §5.13: « one undone does
 /// not count »): the tournée is told the reverse of what [change] told it.
+/// Undoing a ✓ taken back puts its dons back in the tournée, at their
+/// places and linked again (`putBack`, which the screen kept with the
+/// change, PLAN §5.21); undoing a ✓ takes out the dons noted from it, as
+/// any ✓ taken back does.
 ///
 /// The house or door put back is stamped with who undoes and when, like
 /// any other change (PLAN §8.2: the security rules accept only the
@@ -38,17 +44,25 @@ final class UndoLastChange {
   final RoundVisits _rounds;
 
   /// Undoes [change] on its street, saves the undo and returns the change it
-  /// made (which could be undone in turn).
+  /// made (which could be undone in turn). [putBack]: the dons [change]
+  /// took out of the tournée, if any ([Marked.takenOut]).
   Future<Result<StreetChange, CommandFailure<UndoFailure>>> call(
-    StreetChange change,
-  ) async {
+    StreetChange change, {
+    DonationsTakenOut? putBack,
+  }) async {
     final result = await runOnStreet(
       _streets,
       change.streetId,
       (street) =>
           street.undo(change, by: _identity.currentMember, at: _clock.now()),
     );
-    if (result is Ok) await _rounds.note(RoundVisit.of(change).undone);
+    if (result case Ok(value: final undone)) {
+      await _rounds.note(
+        RoundVisit.of(change).undone,
+        putBack: putBack,
+        leaving: DonationOrigin.leftDoneBy(undone),
+      );
+    }
     return result;
   }
 }

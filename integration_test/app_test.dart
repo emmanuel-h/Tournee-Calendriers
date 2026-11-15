@@ -991,6 +991,23 @@ void main() {
       await tester.pumpAndSettle();
       expect(findArrowText('N° 1 fait · 10\u00a0€ en espèces'), findsOneWidget);
       expect(find.text('1\u00a0don · 10\u00a0€ ›'), findsOneWidget);
+      // A ✓ taken back (#169): « Personne » takes the 1's own 10 € out of
+      // the tournée at once; « Annuler » puts the ✓ and its don back.
+      await tester.tap(find.byKey(const ValueKey('street.tile.1')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('house.status.nobodyHome')));
+      await tester.pumpAndSettle();
+      expect(
+        findArrowText(
+          'N° 1\u00a0: personne · son don de 10\u00a0€ en espèces est retiré '
+          'de la tournée',
+        ),
+        findsOneWidget,
+      );
+      expect(find.text('0\u00a0don · 0\u00a0€ ›'), findsOneWidget);
+      await tester.tap(find.text('Annuler'));
+      await tester.pumpAndSettle();
+      expect(find.text('1\u00a0don · 10\u00a0€ ›'), findsOneWidget);
       // A second calendar for the 1 (#114): « + Ajouter un don », offered;
       // the tile shows its badge « 2 », and « − » takes it away again.
       await tester.tap(find.byKey(const ValueKey('street.tile.1')));

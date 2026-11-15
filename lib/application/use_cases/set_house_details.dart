@@ -4,7 +4,6 @@ import 'package:tournee_calendriers/application/use_cases/command_failure.dart';
 import 'package:tournee_calendriers/application/use_cases/mark.dart';
 import 'package:tournee_calendriers/application/use_cases/round_visits.dart';
 import 'package:tournee_calendriers/application/use_cases/street_command.dart';
-import 'package:tournee_calendriers/domain/round/round_visit.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
@@ -16,7 +15,8 @@ import 'package:tournee_calendriers/domain/street/street_repository.dart';
 /// of the « repasser », or « De nouveau personne ». On a building it sets the
 /// building's own « repasser » (« Repasser » under the grid); its status is
 /// refused, its doors carry the statuses. A house made ✓ or ⊘, or taken
-/// back, is told to the tournée on (PLAN §5.13). Needs no network.
+/// back, is told to the tournée on (PLAN §5.13); a ✓ taken back takes its own
+/// dons out of it, and says which ([Marked], PLAN §5.21). Needs no network.
 final class SetHouseDetails {
   const SetHouseDetails(
     this._streets,
@@ -30,7 +30,7 @@ final class SetHouseDetails {
   final IdentityProvider _identity;
   final RoundVisits _rounds;
 
-  Future<Result<HouseChange, CommandFailure<HouseChangeFailure>>> call(
+  Future<Result<Marked<HouseChange>, CommandFailure<HouseChangeFailure>>> call(
     StreetId streetId,
     HouseNumber number,
     Mark mark,
@@ -60,9 +60,11 @@ final class SetHouseDetails {
         ),
       },
     );
-    if (result case Ok(value: final change)) {
-      await _rounds.note(RoundVisit.of(change));
+    switch (result) {
+      case Ok(value: final change):
+        return Ok(Marked(change, takenOut: await _rounds.noteChange(change)));
+      case Err(:final failure):
+        return Err(failure);
     }
-    return result;
   }
 }

@@ -46,7 +46,7 @@ void main() {
         n('5'),
         const StatusMark(VisitStatus.done),
       ),
-    );
+    ).change;
 
     final change = valueOf(await undo(marked));
 
@@ -83,7 +83,7 @@ void main() {
         rdc('01'),
         const StatusMark(VisitStatus.nobodyHome),
       ),
-    );
+    ).change;
 
     final change = valueOf(await undo(marked));
 
@@ -145,7 +145,7 @@ void main() {
           n('7'),
           const StatusMark(VisitStatus.done),
         ),
-      );
+      ).change;
 
       await undo(marked);
 
@@ -160,7 +160,7 @@ void main() {
           n('7'),
           const StatusMark(VisitStatus.done),
         ),
-      );
+      ).change;
       final undone = valueOf(await undo(marked));
 
       await undo(undone);
@@ -180,7 +180,7 @@ void main() {
           n('5'),
           const StatusMark(VisitStatus.toDo),
         ),
-      );
+      ).change;
 
       await undo(back);
 

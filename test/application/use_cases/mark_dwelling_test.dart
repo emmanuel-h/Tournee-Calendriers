@@ -39,7 +39,7 @@ void main() {
         rdc('02'),
         const StatusMark(VisitStatus.done),
       ),
-    );
+    ).change;
 
     expect(
       change,
@@ -75,7 +75,7 @@ void main() {
         rdc('02'),
         ComeBackMark(comeBack('2026-11-03', hour: 18)),
       ),
-    );
+    ).change;
 
     expect(change, isA<DwellingComeBackSet>());
     expect(
@@ -102,7 +102,7 @@ void main() {
         rdc('02'),
         const NobodyHomeAgainMark(),
       ),
-    );
+    ).change;
 
     expect(change, isA<DwellingNobodyHomeAgain>());
     expect((change as DwellingNobodyHomeAgain).tries, tries(2));

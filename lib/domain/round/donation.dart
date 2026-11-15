@@ -4,8 +4,10 @@ import 'package:tournee_calendriers/domain/round/payment_method.dart';
 /// One don of a tournée (PLAN §5.13): money paid with a method, or a
 /// calendar given for free (« Calendrier offert »).
 ///
-/// **No house and no time**, on purpose (PLAN §8.3): nothing ties money to
-/// an address, not even on the phone.
+/// **No house and no time**, on purpose (PLAN §8.3): nothing that leaves
+/// the phone ties money to an address. Only the tournée on remembers, on
+/// the phone and until it is validated, which house a don was noted from
+/// (`Round.origins`, PLAN §5.21).
 ///
 /// `sealed`: a don is one of the two classes below, so a `switch` shows
 /// « 10 € · Espèces » or « Calendrier offert » and forgets neither. The

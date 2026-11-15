@@ -4,7 +4,6 @@ import 'package:tournee_calendriers/application/use_cases/command_failure.dart';
 import 'package:tournee_calendriers/application/use_cases/mark.dart';
 import 'package:tournee_calendriers/application/use_cases/round_visits.dart';
 import 'package:tournee_calendriers/application/use_cases/street_command.dart';
-import 'package:tournee_calendriers/domain/round/round_visit.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
@@ -16,7 +15,8 @@ import 'package:tournee_calendriers/domain/street/street_repository.dart';
 /// A door of the Immeuble grid (PLAN §5.7), from its status picker (PLAN
 /// §5.6): its status, the time of its « repasser », or « De nouveau
 /// personne ». Only that door is stamped and stored. A door made ✓ or ⊘, or
-/// taken back, is told to the tournée on (PLAN §5.13). Needs no network.
+/// taken back, is told to the tournée on (PLAN §5.13); a ✓ taken back takes its own
+/// dons out of it, and says which ([Marked], PLAN §5.21). Needs no network.
 final class MarkDwelling {
   const MarkDwelling(this._streets, this._clock, this._identity, this._rounds);
 
@@ -25,7 +25,8 @@ final class MarkDwelling {
   final IdentityProvider _identity;
   final RoundVisits _rounds;
 
-  Future<Result<DwellingChange, CommandFailure<DwellingChangeFailure>>> call(
+  Future<Result<Marked<DwellingChange>, CommandFailure<DwellingChangeFailure>>>
+  call(
     StreetId streetId,
     HouseNumber number,
     DwellingKey key,
@@ -59,9 +60,11 @@ final class MarkDwelling {
         ),
       },
     );
-    if (result case Ok(value: final change)) {
-      await _rounds.note(RoundVisit.of(change));
+    switch (result) {
+      case Ok(value: final change):
+        return Ok(Marked(change, takenOut: await _rounds.noteChange(change)));
+      case Err(:final failure):
+        return Err(failure);
     }
-    return result;
   }
 }

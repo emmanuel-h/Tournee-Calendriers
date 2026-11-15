@@ -2545,7 +2545,7 @@ deleted »** for its dons and money, and **#122** for the forgotten house only.
     « Repasser ». The message back in Collecte: « N° 3 rue des Lilas marquée ✓. », « Porte 51 du
     8 rue des Lilas marquée ✓. ».
 
-### 5.21 A ✓ taken back takes its own dons out of the tournée (#169, to build)
+### 5.21 A ✓ taken back takes its own dons out of the tournée (#169, built)
 
 Agreed 2026-11-15 (ASCII in the terminal, then the mockup RunStreetUndoDon), from the phone
 test of #168: a house turned from ✓ to « Personne » kept its 20 € in the tournée, and the
@@ -2585,6 +2585,29 @@ stays on the phone, without house or time »** for the time of the tournée only
 - **Privacy text** (5.9, `PRIVACY.md`): one sentence: during a tournée the phone knows which
   house each don was noted from, until it is validated; this never leaves the phone. Drafted by
   Claude for the user's review.
+- Delivered in #169 (`DonationOrigin` and `DonationsTakenOut` in `lib/domain/round/`,
+  `Round.origins` / `takeOut` / `putBack`, `RoundVisits.note(…, leaving:, putBack:)`,
+  `Marked` returned by `SetHouseDetails` and `MarkDwelling`, `UndoLastChange(change, {putBack})`,
+  `AddDonation(…, {from})`, `takenOutWords` in `ui/screens/street/status_words.dart`):
+  - « Leaves ✓ » means the status before was ✓ and the one after is not, from the status picker
+    of a house or door, « De nouveau personne », or an undo (`DonationOrigin.leftDoneBy`). A
+    building laid out, a house renumbered, removed or purged, a street deleted, take nothing out.
+  - Only on the tournée on of the open secteur, as « maisons visitées » counts; the count and the
+    dons are saved in one write. A ✓ marked by another phone, or before the tournée, has no link,
+    so nothing goes.
+  - A door's dons are apart from its building's (a building itself has none).
+  - « Annuler » of the snackbar puts the ✓ back and the dons where they were in the list (a place
+    past the end, after « Supprimer ce don » meanwhile, puts it last), linked again; only into the
+    tournée they left. « Annuler » of « N° 7 fait · 10 € en espèces » takes the don out first, then
+    the ✓ (any other don still linked to the 7 goes with the ✓).
+  - Several dons: « ses 2 dons (15 €) sont retirés de la tournée » counts the free calendars among
+    the dons and only the paid ones in the money (« ses 2 dons (10 €) … » for 10 € and a calendar).
+  - The words follow the snackbar's own: « N° 3 : personne (2e passage) · son don … », « Porte 51 :
+    refusé · son calendrier offert … ».
+  - Privacy text (« Données enregistrées »): « Un don n'est jamais lié à une maison en dehors du
+    téléphone : … Pendant une tournée, seul votre téléphone sait de quelle maison vient chaque don,
+    pour le retirer de la tournée si la maison n'est finalement pas faite ; il l'oublie dès que la
+    tournée est validée et ne l'envoie jamais. », drafted for the user's review.
 
 ## 6. Data model
 
@@ -3416,14 +3439,22 @@ and return aggregates and `StreetChange`s, never Firestore types.
 - **`Donation`** (sealed value): `Donation.paid(method, amount)` (`PaidDonation`) or
   `Donation.free()` (`FreeCalendar`, « Calendrier offert »). **No house, no time** on purpose
   (§8.3).
+- **`DonationOrigin`** (value, #169): the house or door a don of the tournée on was noted from
+  (street id, number, door key or none); `leftDoneBy(change)` names the house or door a
+  `StreetChange` takes from ✓ (to any other status, ⊘ included), null otherwise.
+  **`DonationsTakenOut`** (value): the tournée's id, the origin, and each don taken out with its
+  index in the list before.
 - **`MethodTotal`** (value): a count and a sum of cents. **`DonationTotals`**: the three
   `MethodTotal`s and the free count; `count` and `cents` are the paid dons only (« 19 dons ·
   280 € »), a free calendar counts in `free` alone.
 - **`Round`** (aggregate, the open tournée on the phone): id, secteur, campaign, `startedAt`,
   `housesVisited` and the list of `Donation`s in the order added; **no member field**: it lives
-  on the member's own phone, one at a time (`open_round.json` names none either). `add`,
-  `replace(index)`, `remove(index)` (`NoSuchDonation` for an index past the list), `visited()` /
-  `unvisited()` (never below 0), `totals`, `validate(at)` → `UnsentRound` (its `RoundSummary`
+  on the member's own phone, one at a time (`open_round.json` names none either). Beside the dons,
+  `origins` (#169): the `DonationOrigin` of each, or null, on the phone only. `add(donation,
+  {from})`, `replace(index)` (keeps the link), `remove(index)` (drops it) (`NoSuchDonation` for an
+  index past the list), `takeOut(origin)` → `(Round, DonationsTakenOut)` and `putBack(taken)`
+  (at their places, linked again; nothing for another tournée), `visited()` /
+  `unvisited()` (never below 0), `totals`, `validate(at)` → `UnsentRound` (no link leaves; its `RoundSummary`
   ending at least one second after the start: the rules want `startedAt < endedAt`, whatever the
   phone's clock did).
 - **`UnsentRound`** (value, #143, #155): a tournée « validated, not yet sent »: secteur, campaign,
@@ -3692,10 +3723,12 @@ can never drift.
   Ids percent-encoded; same writing as the streets; an unreadable file is skipped.
 - `open_round.json` (port `OpenRoundStore`, #63, #143): the tournée on and the validated
   tournées not yet sent, `{ version: 2, round: { id, sector, campaign, startedAt, housesVisited,
-  donations: [{ method, cents } | { free: true }] } | null, unsent: [{ sector, campaign, refused,
+  donations: [{ method, cents, from? } | { free: true, from? }] } | null, unsent: [{ sector, campaign, refused,
   summary: { id, startedAt, endedAt, housesVisited, free, cash: { count, cents }, cheque, card,
   donations: [ … ] } }] }` (#168: the summary's dons, absent on one validated before), written at each change (same writing as the others), so a tournée survives a kill; the
-  dons carry no house and no time. Version 1 (no `unsent`) is still read. `ValidateRound` moves
+  dons carry no time, and only those of the tournée on may carry `from: { street, number, door? }`
+  (#169, the house or door they were noted from; absent in a file written before, read as no link),
+  never those of `unsent`. Version 1 (no `unsent`) is still read. `ValidateRound` moves
   the tournée on to `unsent` in that one write, so a kill leaves it on or validated, never both
   nor neither; it leaves `unsent` once the server has its summary, or on « Effacer ». An
   unreadable file means none, and the app says so once at start-up (the file is left as it is

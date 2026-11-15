@@ -157,7 +157,14 @@ void main() {
         labelOf(tester, _tile('1')),
         'Numéro 1, refusé, changer le statut',
       );
-      expect(findArrowText('N° 1\u00a0: refusé'), findsOneWidget);
+      // Its calendar offered leaves the tournée with the ✓ (PLAN §5.21).
+      expect(
+        findArrowText(
+          'N° 1\u00a0: refusé · son calendrier offert est retiré de la '
+          'tournée',
+        ),
+        findsOneWidget,
+      );
       expect(
         labelOf(tester, find.byKey(const Key('street.counts'))),
         '4 sur 9 faits, 1 refusé, 2 personne, 1 à repasser',

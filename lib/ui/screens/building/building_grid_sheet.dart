@@ -330,7 +330,11 @@ final class _BuildingGridSheetState extends ConsumerState<BuildingGridSheet>
         door: door,
       ),
       onStored: (status) {
-        notifier.keepForUndo(status.change, donation: status.donation);
+        notifier.keepForUndo(
+          status.change,
+          donation: status.donation,
+          takenOut: status.takenOut,
+        );
         stored = status;
       },
       onDonationAdded: (donation) {
@@ -383,6 +387,7 @@ final class _BuildingGridSheetState extends ConsumerState<BuildingGridSheet>
         stored.status,
         stored.tries,
         donation: stored.donation?.donation,
+        takenOut: stored.takenOut,
       ),
       undoLabel: l10n.undo,
       onUndo: () => unawaited(notifier.undo()),

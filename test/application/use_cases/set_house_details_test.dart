@@ -38,7 +38,7 @@ void main() {
         // ignore: prefer_const_constructors
         StatusMark(VisitStatus.toDo),
       ),
-    );
+    ).change;
 
     expect(
       change,
@@ -68,7 +68,7 @@ void main() {
         n('7'),
         const StatusMark(VisitStatus.nobodyHome),
       ),
-    );
+    ).change;
 
     expect(change.stamp.at, threePm);
     expect(change.stamp.by, lea);
@@ -101,7 +101,7 @@ void main() {
         n('5'),
         ComeBackMark(comeBack('2026-11-07')),
       ),
-    );
+    ).change;
 
     expect(
       change,
@@ -126,7 +126,7 @@ void main() {
 
     final change = valueOf(
       await setHouseDetails(lilasId, n('8'), const ComeBackMark(null)),
-    );
+    ).change;
 
     expect((change as ComeBackSet).comeBack, isNull);
     expect(houseOf(streets[lilasId]!, '8').comeBack, isNull);
@@ -140,7 +140,7 @@ void main() {
         // ignore: prefer_const_constructors
         NobodyHomeAgainMark(),
       ),
-    );
+    ).change;
 
     expect(
       change,

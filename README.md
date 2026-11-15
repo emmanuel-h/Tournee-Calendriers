@@ -114,7 +114,9 @@ Street screen (« Rue »):
   ends) and sits above the street screen and the building grid. « ✓ Fait » then asks
   « Montant du don » (Espèces | Chèque | Carte, 5 / 10 / 20 €, « Autre montant », « Calendrier
   offert »; ✕ puts the house back), and a house done offers « + Ajouter un don »; « Annuler »
-  in the snackbar takes the don back too. « Dons de la tournée » lists them newest first, to
+  in the snackbar takes the don back too. A ✓ taken back (✗, ↻, ○ or ⊘) takes the dons noted
+  from that house out of the tournée at once, « Annuler » puts them back; the phone alone knows,
+  until « Valider », which house a don came from. « Dons de la tournée » lists them newest first, to
   change, remove or add one; « Bilan de la tournée » shows the houses visited, the dons and the
   money per method, then « Valider la tournée » (asked first; the totals and the list of dons
   are kept, never a don per house, a time or a member), or « Abandonner la tournée » for one started by mistake (asked first; its

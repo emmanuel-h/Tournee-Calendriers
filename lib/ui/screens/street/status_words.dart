@@ -1,4 +1,6 @@
 import 'package:tournee_calendriers/domain/round/donation.dart';
+import 'package:tournee_calendriers/domain/round/donation_totals.dart';
+import 'package:tournee_calendriers/domain/round/donations_taken_out.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/presentation/street/street_view_state.dart';
 import 'package:tournee_calendriers/ui/components/money_words.dart';
@@ -67,14 +69,16 @@ String statusName(AppLocalizations l10n, VisitStatus status) =>
 /// [status]: « N° 7 : fait », or « N° 3bis : personne (3e passage) » once
 /// nobody was home two times or more ([tries], the count the tile shows);
 /// « N° 7 fait · 10 € en espèces » when a [donation] came with it, during
-/// a tournée.
+/// a tournée; « N° 3 : personne · son don de 20 € en espèces est retiré de
+/// la tournée » when a ✓ taken back took its dons out ([takenOut]).
 String houseStoredMessage(
   AppLocalizations l10n,
   String label,
   VisitStatus status,
   int? tries, {
   Donation? donation,
-}) => switch ((status, tries, donation)) {
+  DonationsTakenOut? takenOut,
+}) => _withTakenOut(l10n, takenOut, switch ((status, tries, donation)) {
   (_, _, final donation?) => l10n.houseDoneWithDonation(
     label,
     donationWords(l10n, donation),
@@ -85,18 +89,20 @@ String houseStoredMessage(
     count,
   ),
   _ => l10n.houseStatusStored(label, spokenStatus(l10n, status)),
-};
+});
 
 /// The same for the door [label] of a building: « Porte 51 : fait »,
 /// « Porte 51 : personne (3e passage) », « Porte 51 : fait · 10 € en
-/// espèces ».
+/// espèces », « Porte 51 : personne · son don de 20 € en espèces est retiré
+/// de la tournée ».
 String doorStoredMessage(
   AppLocalizations l10n,
   String label,
   VisitStatus status,
   int? tries, {
   Donation? donation,
-}) => switch ((status, tries, donation)) {
+  DonationsTakenOut? takenOut,
+}) => _withTakenOut(l10n, takenOut, switch ((status, tries, donation)) {
   (_, _, final donation?) => l10n.doorDoneWithDonation(
     label,
     donationWords(l10n, donation),
@@ -107,7 +113,36 @@ String doorStoredMessage(
     count,
   ),
   _ => l10n.doorStatusStored(label, spokenStatus(l10n, status)),
+});
+
+/// [marked], then what left the tournée with it, if anything did.
+String _withTakenOut(
+  AppLocalizations l10n,
+  DonationsTakenOut? takenOut,
+  String marked,
+) => switch (takenOut) {
+  null => marked,
+  final taken => l10n.markedWithDonationsTakenOut(
+    marked,
+    takenOutWords(l10n, taken.donations),
+  ),
 };
+
+/// The dons a ✓ taken back took out of the tournée (PLAN §5.21): « son don
+/// de 20 € en espèces est retiré de la tournée », « son calendrier offert
+/// est retiré de la tournée », or « ses 2 dons (15 €) sont retirés de la
+/// tournée » with the money of the paid ones.
+String takenOutWords(AppLocalizations l10n, List<Donation> donations) =>
+    switch (donations) {
+      [final PaidDonation paid] => l10n.donationTakenOutPaid(
+        donationWords(l10n, paid),
+      ),
+      [FreeCalendar()] => l10n.donationTakenOutFree,
+      _ => l10n.donationsTakenOut(
+        donations.length,
+        eurosText(l10n, DonationTotals.of(donations).cents),
+      ),
+    };
 
 /// The spoken name of [status] after a mark, with the [tries] the tile
 /// now shows: « personne, 3e passage », « fait, 2 passages sans

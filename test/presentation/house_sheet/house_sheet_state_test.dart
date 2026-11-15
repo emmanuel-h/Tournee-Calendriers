@@ -1,4 +1,6 @@
 import 'package:test/test.dart';
+import 'package:tournee_calendriers/domain/round/donation_origin.dart';
+import 'package:tournee_calendriers/domain/round/donations_taken_out.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
@@ -317,6 +319,40 @@ void main() {
             ),
           ),
         ),
+      );
+    });
+
+    test('should tell apart the dons a ✓ taken back took out (#169)', () {
+      final taken = DonationsTakenOut(
+        round: roundId,
+        origin: DonationOrigin(street: StreetId('lilas'), number: n('7')),
+        taken: [(index: 0, donation: cash(2000))],
+      );
+      final withTaken = StoredStatus(
+        status: VisitStatus.nobodyHome,
+        tries: 3,
+        change: marked,
+        takenOut: taken,
+      );
+
+      expect(withTaken.takenOut, taken);
+      expect(withTaken, isNot(stored));
+      expect(
+        withTaken.hashCode,
+        StoredStatus(
+          status: VisitStatus.nobodyHome,
+          tries: 3,
+          change: marked,
+          takenOut: taken,
+        ).hashCode,
+      );
+      expect(stored.takenOut, isNull);
+      expect('$withTaken', endsWith(', null, $taken)'));
+      expect(
+        withTaken
+            .withDonation(const GivenDonation(index: 1, donation: offered))
+            .takenOut,
+        taken,
       );
     });
 

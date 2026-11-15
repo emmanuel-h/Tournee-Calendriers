@@ -11,6 +11,7 @@ import 'package:tournee_calendriers/application/use_cases/command_failure.dart';
 import 'package:tournee_calendriers/application/use_cases/street_command.dart';
 import 'package:tournee_calendriers/domain/round/collecte.dart';
 import 'package:tournee_calendriers/domain/round/donation.dart';
+import 'package:tournee_calendriers/domain/round/donation_origin.dart';
 import 'package:tournee_calendriers/domain/round/round.dart';
 import 'package:tournee_calendriers/domain/round/round_id.dart';
 import 'package:tournee_calendriers/domain/round/round_summary.dart';
@@ -161,9 +162,12 @@ final class AddedDonation {
 }
 
 /// A don joins the tournée on: « Valider » of « Nouveau don » (no house),
-/// or « + Ajouter un don » on a house or door done ([calendarFor]), which
-/// then took one calendar more (PLAN §5.6, #114). The don itself never
-/// names the house (PLAN §8.3). Needs no network.
+/// « Montant du don » after a « Fait » ([from]), or « + Ajouter un don » on
+/// a house or door done ([calendarFor]), which then took one calendar more
+/// (PLAN §5.6, #114). A don noted from a house or door is linked to it in
+/// the tournée on, on the phone only, so a ✓ taken back takes it out (PLAN
+/// §5.21); the don itself never names the house (PLAN §8.3). Needs no
+/// network.
 final class AddDonation {
   const AddDonation(this._rounds, this._streets, this._clock, this._identity);
 
@@ -173,14 +177,16 @@ final class AddDonation {
   final IdentityProvider _identity;
 
   /// The don first, then the calendar: the money is the tournée's whatever
-  /// happened to the house. Nothing is stored without a tournée on.
+  /// happened to the house. Nothing is stored without a tournée on. The
+  /// don is linked to [from], or else to [calendarFor].
   Future<Result<AddedDonation, NoRoundOn>> call(
     Donation donation, {
+    CalendarPlace? from,
     CalendarPlace? calendarFor,
   }) async {
     final round = _rounds.openRound;
     if (round == null) return const Err(NoRoundOn());
-    final changed = round.add(donation);
+    final changed = round.add(donation, from: _originOf(from ?? calendarFor));
     await _rounds.save(changed);
     if (calendarFor == null) return Ok(AddedDonation(round: changed));
     final by = _identity.currentMember;
@@ -205,9 +211,20 @@ final class AddDonation {
   }
 }
 
+/// The house or door of [place] as the tournée links a don to it; null
+/// for none.
+DonationOrigin? _originOf(CalendarPlace? place) => switch (place) {
+  null => null,
+  (:final street, :final number, :final door) => DonationOrigin(
+    street: street,
+    number: number,
+    door: door,
+  ),
+};
+
 /// « Valider » of « Modifier le don »: the don at [index] (in the order
-/// added, `Round.donations`) becomes [donation]. A house's calendars stay
-/// as they are: dons know no house.
+/// added, `Round.donations`) becomes [donation], still linked to its house
+/// or door (PLAN §5.21). A house's calendars stay as they are.
 final class ChangeDonation {
   const ChangeDonation(this._rounds);
 
@@ -219,7 +236,8 @@ final class ChangeDonation {
   ) => _editDonation(_rounds, (round) => round.replace(index, donation));
 }
 
-/// « Supprimer ce don »: the don at [index] (in the order added) goes.
+/// « Supprimer ce don »: the don at [index] (in the order added) goes, its
+/// link to a house with it.
 final class RemoveDonation {
   const RemoveDonation(this._rounds);
 

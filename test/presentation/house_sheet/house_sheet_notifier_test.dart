@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
+import 'package:tournee_calendriers/domain/round/donation_origin.dart';
 import 'package:tournee_calendriers/domain/round/round.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
 import 'package:tournee_calendriers/domain/sector/sector_summary.dart';
@@ -855,6 +856,22 @@ void main() {
 
       expect(given, GivenDonation(index: 2, donation: cheque(2000)));
       expect(rounds.openRound!.donations, [cash(500), offered, cheque(2000)]);
+    });
+
+    test('should link the don to the house it is given for (#169)', () async {
+      duringRound();
+      open('7');
+      await shown('7');
+
+      await notifier('7').giveDonation(cheque(2000));
+      await notifier('11').addDonation(cash(1000));
+
+      expect(rounds.openRound!.origins, [
+        null,
+        null,
+        DonationOrigin(street: _id, number: n('7')),
+        DonationOrigin(street: _id, number: n('11')),
+      ]);
     });
 
     test('should leave the house as it is when a don is given', () async {

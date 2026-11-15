@@ -2155,7 +2155,7 @@ abstract class AppLocalizations {
   /// Privacy page: what is stored (PLAN §8.3): its section of PRIVACY.md, word for word.
   ///
   /// In fr, this message translates to:
-  /// **'Pour chaque rue du secteur : les numéros, leur place sur la carte, ce qui s\'est passé à chaque porte (fait, refusé, personne, à repasser), le jour et l\'heure où repasser, combien de calendriers la maison a pris, et le prénom de qui l\'a noté. Pour chaque tournée validée : son début et sa fin, le nombre de maisons visitées, le nombre et le total des dons par moyen de paiement, et les calendriers offerts, sans le prénom de qui l\'a faite. Un don n\'est jamais lié à une maison : avec chaque tournée validée est gardée la liste de ses dons, le moyen de paiement et le montant de chacun, sans maison, sans heure et sans membre, visible du secteur qui peut la corriger. Quels numéros de chaque rue un secteur couvre, avec le numéro du secteur et son centre de secours, est visible des membres de tous les secteurs : cela évite que deux secteurs passent aux mêmes portes. Rien d\'autre : pas de nom d\'habitant, pas de note.'**
+  /// **'Pour chaque rue du secteur : les numéros, leur place sur la carte, ce qui s\'est passé à chaque porte (fait, refusé, personne, à repasser), le jour et l\'heure où repasser, combien de calendriers la maison a pris, et le prénom de qui l\'a noté. Pour chaque tournée validée : son début et sa fin, le nombre de maisons visitées, le nombre et le total des dons par moyen de paiement, et les calendriers offerts, sans le prénom de qui l\'a faite. Un don n\'est jamais lié à une maison en dehors du téléphone : avec chaque tournée validée est gardée la liste de ses dons, le moyen de paiement et le montant de chacun, sans maison, sans heure et sans membre, visible du secteur qui peut la corriger. Pendant une tournée, seul votre téléphone sait de quelle maison vient chaque don, pour le retirer de la tournée si la maison n\'est finalement pas faite ; il l\'oublie dès que la tournée est validée et ne l\'envoie jamais. Quels numéros de chaque rue un secteur couvre, avec le numéro du secteur et son centre de secours, est visible des membres de tous les secteurs : cela évite que deux secteurs passent aux mêmes portes. Rien d\'autre : pas de nom d\'habitant, pas de note.'**
   String get privacyDataBody;
 
   /// Privacy page: section about the phone's position.
@@ -3615,6 +3615,30 @@ abstract class AppLocalizations {
   /// In fr, this message translates to:
   /// **'Porte {label} · {donation} ajouté, calendrier non compté'**
   String doorDonationAddedNoCalendar(String label, String donation);
+
+  /// Snackbar once a ✓ was taken back during a tournée and its own dons left the tournée (PLAN §5.21), with « Annuler », which puts the house and its dons back: « N° 3 : personne · son don de 20 € en espèces est retiré de la tournée ».
+  ///
+  /// In fr, this message translates to:
+  /// **'{marked} · {takenOut}'**
+  String markedWithDonationsTakenOut(String marked, String takenOut);
+
+  /// After « N° 3 : personne · »: the one paid don noted from that house left the tournée (PLAN §5.21).
+  ///
+  /// In fr, this message translates to:
+  /// **'son don de {donation} est retiré de la tournée'**
+  String donationTakenOutPaid(String donation);
+
+  /// After « N° 4 : personne · »: the one free calendar noted from that house left the tournée (PLAN §5.21).
+  ///
+  /// In fr, this message translates to:
+  /// **'son calendrier offert est retiré de la tournée'**
+  String get donationTakenOutFree;
+
+  /// After « N° 9 : personne · »: two dons or more noted from that house left the tournée, with the money of the paid ones (PLAN §5.21): « ses 2 dons (15 €) sont retirés de la tournée ».
+  ///
+  /// In fr, this message translates to:
+  /// **'ses {count} dons ({amount}) sont retirés de la tournée'**
+  String donationsTakenOut(int count, String amount);
 
   /// « + Ajouter un don » of the status picker on a house done during a tournée (RunStreet mockup), and the button of « Dons de la tournée » (RunDons mockup).
   ///

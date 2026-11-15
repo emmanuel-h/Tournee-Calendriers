@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tournee_calendriers/application/use_cases/calendars.dart';
 import 'package:tournee_calendriers/application/use_cases/mark.dart';
+import 'package:tournee_calendriers/application/use_cases/round_visits.dart';
 import 'package:tournee_calendriers/application/use_cases/rounds.dart';
 import 'package:tournee_calendriers/application/use_cases/set_house_details.dart';
 import 'package:tournee_calendriers/domain/round/donation.dart';
@@ -110,8 +111,9 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState>
 
   /// The use case that stores a mark, read from `ref` now: a change queued
   /// as the sheet closes runs when this notifier may be disposed. It gives
-  /// the change stored, or null when the street refused it.
-  Future<StreetChange?> Function(Mark mark) _storer();
+  /// the change stored and the dons it took out of the tournée, or null
+  /// when the street refused it.
+  Future<Marked?> Function(Mark mark) _storer();
 
   /// Where the house or door counts its calendars (#114); null on a
   /// building itself, which has none.
@@ -181,7 +183,7 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState>
   /// even when it already is « personne ».
   Future<StoredStatus?> setStatus(VisitStatus status) async {
     NobodyHomeTries? triesAfter;
-    final change = await _change((marks) {
+    final marked = await _change((marks) {
       final current = marks.status;
       if (current == null) return null;
       if (status == VisitStatus.nobodyHome && _comesBackTo(marks)) {
@@ -192,11 +194,12 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState>
       triesAfter = NobodyHomeTries.keptBy(status, marks.tries);
       return StatusMark(status);
     });
-    return switch ((change, triesAfter)) {
-      (final change?, final tries?) => StoredStatus(
+    return switch ((marked, triesAfter)) {
+      (final marked?, final tries?) => StoredStatus(
         status: status,
         tries: shownTries(tries),
-        change: change,
+        change: marked.change,
+        takenOut: marked.takenOut,
       ),
       _ => null,
     };
@@ -265,12 +268,15 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState>
   }
 
   /// A don given in « Montant du don » after a « Fait » (PLAN §5.6): it
-  /// joins the tournée on (`AddDonation`), never the house, whose calendar
-  /// came with the « Fait ». Returns where it went, for the snackbar and
-  /// its « Annuler »; null when no tournée is on any more (validated
-  /// meanwhile on another screen).
-  Future<GivenDonation?> giveDonation(Donation donation) async =>
-      _given(await ref.read(addDonationProvider)(donation), donation);
+  /// joins the tournée on (`AddDonation`), linked to this house or door
+  /// (PLAN §5.21), never the house's calendars, which came with the
+  /// « Fait ». Returns where it went, for the snackbar and its « Annuler »;
+  /// null when no tournée is on any more (validated meanwhile on another
+  /// screen).
+  Future<GivenDonation?> giveDonation(Donation donation) async => _given(
+    await ref.read(addDonationProvider)(donation, from: _calendarPlace),
+    donation,
+  );
 
   /// A don given through « + Ajouter un don » on a house or door done
   /// (PLAN §5.6, #114): it joins the tournée on, and the house or door
@@ -349,7 +355,7 @@ abstract base class MarksSheetNotifier extends Notifier<HouseSheetState>
   /// Queues the change [markFor] makes on the marks as they are when its
   /// turn comes (null: nothing to change), and gives what was stored. A
   /// refused change leaves them as they are; the sheet shows it.
-  Future<StreetChange?> _change(Mark? Function(_Marks marks) markFor) {
+  Future<Marked?> _change(Mark? Function(_Marks marks) markFor) {
     final store = _storer();
     final step = _pending.then((_) async {
       final marks = _marks;
@@ -426,7 +432,7 @@ final class HouseSheetNotifier extends MarksSheetNotifier {
   };
 
   @override
-  Future<StreetChange?> Function(Mark mark) _storer() =>
+  Future<Marked?> Function(Mark mark) _storer() =>
       _storedBy(ref.read(setHouseDetailsProvider), key);
 
   @override
@@ -462,16 +468,16 @@ final class BuildingDetailsNotifier extends MarksSheetNotifier {
   };
 
   @override
-  Future<StreetChange?> Function(Mark mark) _storer() =>
+  Future<Marked?> Function(Mark mark) _storer() =>
       _storedBy(ref.read(setHouseDetailsProvider), key);
 
   @override
   CalendarPlace? get _calendarPlace => null;
 }
 
-/// Stores a mark of the house [key] through [setHouseDetails]: the change,
-/// or null when the street refused it.
-Future<StreetChange?> Function(Mark mark) _storedBy(
+/// Stores a mark of the house [key] through [setHouseDetails]: what it
+/// stored, or null when the street refused it.
+Future<Marked?> Function(Mark mark) _storedBy(
   SetHouseDetails setHouseDetails,
   HouseSheetKey key,
 ) =>
@@ -516,7 +522,7 @@ final class DoorSheetNotifier extends MarksSheetNotifier {
       (street: key.street, number: key.number, door: key.door);
 
   @override
-  Future<StreetChange?> Function(Mark mark) _storer() {
+  Future<Marked?> Function(Mark mark) _storer() {
     final markDwelling = ref.read(markDwellingProvider);
     return (mark) async =>
         switch (await markDwelling(key.street, key.number, key.door, mark)) {

@@ -260,7 +260,7 @@ void main() {
           n('7'),
           const StatusMark(VisitStatus.done),
         ),
-      );
+      ).change;
 
       expect(change.stamp, leaAtTwo);
       expect(streets.saved, hasLength(1));
@@ -274,7 +274,7 @@ void main() {
           rdc('02'),
           const StatusMark(VisitStatus.done),
         ),
-      );
+      ).change;
 
       expect(change.stamp, leaAtTwo);
     });
@@ -338,7 +338,7 @@ void main() {
           n('7'),
           const StatusMark(VisitStatus.done),
         ),
-      );
+      ).change;
 
       valueOf(await container.read(undoLastChangeProvider)(change));
 
@@ -1103,7 +1103,7 @@ void main() {
             n('7'),
             const StatusMark(VisitStatus.done),
           ),
-        );
+        ).change;
         valueOf(
           await container.read(markDwellingProvider)(
             lilasId,

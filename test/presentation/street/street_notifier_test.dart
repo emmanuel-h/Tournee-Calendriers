@@ -525,6 +525,53 @@ void main() {
         expect(rounds.openRound!.donations, [cash(500), offered]);
       });
 
+      test('should take a ✓\'s own don out of the tournée when it is taken '
+          'back, and put both back on « Annuler » (#169)', () async {
+        final street = _street();
+        phoneWith(street, round: twoDons());
+        await settled();
+        final key = (street: _id, number: n('7'));
+        container.listen(houseSheetProvider(key), (_, _) {});
+        await Future<void>.delayed(Duration.zero);
+        final picker = container.read(houseSheetProvider(key).notifier);
+        await picker.setStatus(VisitStatus.done);
+        await picker.giveDonation(cheque(2000));
+        final withDon = rounds.openRound!;
+
+        final back = await picker.setStatus(VisitStatus.nobodyHome);
+
+        expect(back!.takenOut!.donations, [cheque(2000)]);
+        expect(rounds.openRound!.donations, [cash(500), offered]);
+        expect(rounds.openRound!.housesVisited, 0);
+        notifier().keepForUndo(back.change, takenOut: back.takenOut);
+
+        await notifier().undo();
+
+        expect(
+          streets[_id]!.houses.singleWhere((h) => h.number == n('7')).status,
+          VisitStatus.done,
+        );
+        expect(rounds.openRound, withDon);
+      });
+
+      test(
+        'should take out nothing from a ✓ marked before the tournée',
+        () async {
+          phoneWith(_street(), round: twoDons());
+          await settled();
+          final key = (street: _id, number: n('3'));
+          container.listen(houseSheetProvider(key), (_, _) {});
+          await Future<void>.delayed(Duration.zero);
+
+          final back = await container
+              .read(houseSheetProvider(key).notifier)
+              .setStatus(VisitStatus.toDo);
+
+          expect(back!.takenOut, isNull);
+          expect(rounds.openRound!.donations, [cash(500), offered]);
+        },
+      );
+
       test('should take the don back once only', () async {
         phoneWith(_street(), round: twoDons());
         await settled();

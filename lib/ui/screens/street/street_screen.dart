@@ -257,7 +257,11 @@ final class _MarkingScreenState extends ConsumerState<_MarkingScreen>
       (street: widget.streetId, number: number),
       onStored: (status) {
         // Kept at once: the picker may still change its day and hour.
-        notifier.keepForUndo(status.change, donation: status.donation);
+        notifier.keepForUndo(
+          status.change,
+          donation: status.donation,
+          takenOut: status.takenOut,
+        );
         stored = status;
       },
       onDonationAdded: (donation) {
@@ -312,6 +316,7 @@ final class _MarkingScreenState extends ConsumerState<_MarkingScreen>
         stored.status,
         stored.tries,
         donation: stored.donation?.donation,
+        takenOut: stored.takenOut,
       ),
       undoLabel: l10n.undo,
       onUndo: () => unawaited(notifier.undo()),

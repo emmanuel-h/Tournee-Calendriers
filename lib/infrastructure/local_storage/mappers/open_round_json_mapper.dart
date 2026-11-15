@@ -9,8 +9,10 @@
 //              startedAt: "2026-10-24T12:05:00.000Z",
 //              housesVisited: 23,
 //              donations: [ { method: "cash" | "cheque" | "card",
-//                             cents: 750 }
-//                         | { free: true }, … ] }
+//                             cents: 750,
+//                             from: { street, number: "3bis",
+//                                     door: "A5-51" } }  ← #169, optional
+//                         | { free: true, from: … }, … ] }
 //            | null,                        ← no tournée on
 //     unsent: [ { sector, campaign: 2026, refused: false,
 //                 summary: { id, startedAt, endedAt, housesVisited, free,
@@ -20,13 +22,17 @@
 //
 // Version 1 (before #143) had no `unsent`: it is still read, as none. A
 // summary without `donations` (validated before #168) is read as one
-// without a list.
+// without a list. A don of the tournée on without `from` (written before
+// #169, or given from « Dons de la tournée ») is linked to no house.
 //
-// The dons carry no house and no time, on purpose (PLAN §8.3). Methods
+// The dons carry no time, on purpose (PLAN §8.3). Only those of the tournée
+// on may name the house or door they were noted from (`from`, PLAN §5.21):
+// that stays on the phone, and a tournée validated keeps no `from`. Methods
 // under fixed names, so renaming the Dart enum never changes what is on
 // the phone. Every value goes through the domain's checks.
 import 'package:tournee_calendriers/domain/round/amount.dart';
 import 'package:tournee_calendriers/domain/round/donation.dart';
+import 'package:tournee_calendriers/domain/round/donation_origin.dart';
 import 'package:tournee_calendriers/domain/round/donation_totals.dart';
 import 'package:tournee_calendriers/domain/round/payment_method.dart';
 import 'package:tournee_calendriers/domain/round/round.dart';
@@ -36,6 +42,9 @@ import 'package:tournee_calendriers/domain/round/unsent_round.dart';
 import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
+import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
+import 'package:tournee_calendriers/domain/street/house_number.dart';
+import 'package:tournee_calendriers/domain/street/street_id.dart';
 
 /// The schema version this code writes.
 const storedRoundsVersion = 2;
@@ -64,7 +73,12 @@ Map<String, Object?> roundsToJson(StoredRounds rounds) => {
       'startedAt': _time(round.startedAt),
       'housesVisited': round.housesVisited,
       'donations': [
-        for (final donation in round.donations) _donationToJson(donation),
+        for (final (index, donation) in round.donations.indexed)
+          {
+            ..._donationToJson(donation),
+            if (round.origins[index] case final origin?)
+              'from': _originToJson(origin),
+          },
       ],
     },
   },
@@ -83,6 +97,12 @@ Map<String, Object?> _donationToJson(Donation donation) => switch (donation) {
     'cents': amount.cents,
   },
   FreeCalendar() => {'free': true},
+};
+
+Map<String, Object?> _originToJson(DonationOrigin origin) => {
+  'street': origin.street.value,
+  'number': origin.number.label,
+  if (origin.door case final door?) 'door': door.id,
 };
 
 Map<String, Object?> _unsentToJson(UnsentRound round) {
@@ -158,10 +178,33 @@ Round _roundFromJson(Object round) {
       donations: [
         for (final donation in donations) _donationFromJson(donation),
       ],
+      origins: [for (final donation in donations) _originOf(donation)],
     );
   }
   throw FormatException('Not a tournée: $round');
 }
+
+/// The house or door the stored [donation] was noted from; null for none.
+DonationOrigin? _originOf(Object? donation) => switch (donation) {
+  {'from': final Object? from} => switch (from) {
+    {'street': final String street, 'number': final String number} &&
+            final Map<String, Object?> place
+        when street.trim().isNotEmpty =>
+      DonationOrigin(
+        street: StreetId(street),
+        number: _valid(HouseNumber.parse(number), from),
+        door: switch (place['door']) {
+          null => null,
+          final String door =>
+            DwellingKey.parse(door) ??
+                (throw FormatException('Not a door: $door')),
+          final other => throw FormatException('Not a door: $other'),
+        },
+      ),
+    _ => throw FormatException('Not a house: $from'),
+  },
+  _ => null,
+};
 
 Donation _donationFromJson(Object? json) => switch (json) {
   {'free': true} => const Donation.free(),

@@ -1472,7 +1472,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get privacyDataBody =>
-      'Pour chaque rue du secteur : les numéros, leur place sur la carte, ce qui s\'est passé à chaque porte (fait, refusé, personne, à repasser), le jour et l\'heure où repasser, combien de calendriers la maison a pris, et le prénom de qui l\'a noté. Pour chaque tournée validée : son début et sa fin, le nombre de maisons visitées, le nombre et le total des dons par moyen de paiement, et les calendriers offerts, sans le prénom de qui l\'a faite. Un don n\'est jamais lié à une maison : avec chaque tournée validée est gardée la liste de ses dons, le moyen de paiement et le montant de chacun, sans maison, sans heure et sans membre, visible du secteur qui peut la corriger. Quels numéros de chaque rue un secteur couvre, avec le numéro du secteur et son centre de secours, est visible des membres de tous les secteurs : cela évite que deux secteurs passent aux mêmes portes. Rien d\'autre : pas de nom d\'habitant, pas de note.';
+      'Pour chaque rue du secteur : les numéros, leur place sur la carte, ce qui s\'est passé à chaque porte (fait, refusé, personne, à repasser), le jour et l\'heure où repasser, combien de calendriers la maison a pris, et le prénom de qui l\'a noté. Pour chaque tournée validée : son début et sa fin, le nombre de maisons visitées, le nombre et le total des dons par moyen de paiement, et les calendriers offerts, sans le prénom de qui l\'a faite. Un don n\'est jamais lié à une maison en dehors du téléphone : avec chaque tournée validée est gardée la liste de ses dons, le moyen de paiement et le montant de chacun, sans maison, sans heure et sans membre, visible du secteur qui peut la corriger. Pendant une tournée, seul votre téléphone sait de quelle maison vient chaque don, pour le retirer de la tournée si la maison n\'est finalement pas faite ; il l\'oublie dès que la tournée est validée et ne l\'envoie jamais. Quels numéros de chaque rue un secteur couvre, avec le numéro du secteur et son centre de secours, est visible des membres de tous les secteurs : cela évite que deux secteurs passent aux mêmes portes. Rien d\'autre : pas de nom d\'habitant, pas de note.';
 
   @override
   String get privacyLocationTitle => 'Position';
@@ -2492,6 +2492,25 @@ class AppLocalizationsFr extends AppLocalizations {
   @override
   String doorDonationAddedNoCalendar(String label, String donation) {
     return 'Porte $label · $donation ajouté, calendrier non compté';
+  }
+
+  @override
+  String markedWithDonationsTakenOut(String marked, String takenOut) {
+    return '$marked · $takenOut';
+  }
+
+  @override
+  String donationTakenOutPaid(String donation) {
+    return 'son don de $donation est retiré de la tournée';
+  }
+
+  @override
+  String get donationTakenOutFree =>
+      'son calendrier offert est retiré de la tournée';
+
+  @override
+  String donationsTakenOut(int count, String amount) {
+    return 'ses $count dons ($amount) sont retirés de la tournée';
   }
 
   @override

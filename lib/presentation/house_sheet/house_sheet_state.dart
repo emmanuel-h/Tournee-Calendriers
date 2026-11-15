@@ -1,3 +1,4 @@
+import 'package:tournee_calendriers/domain/round/donations_taken_out.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/street_change.dart';
@@ -252,6 +253,7 @@ final class StoredStatus {
     required this.tries,
     required this.change,
     this.donation,
+    this.takenOut,
   });
 
   final VisitStatus status;
@@ -259,12 +261,18 @@ final class StoredStatus {
   final StreetChange change;
   final GivenDonation? donation;
 
+  /// The dons of a ✓ taken back that left the tournée with it (PLAN
+  /// §5.21): the snackbar names them, its « Annuler » puts them back. Null
+  /// when none did.
+  final DonationsTakenOut? takenOut;
+
   /// The same, with the don given after it.
   StoredStatus withDonation(GivenDonation donation) => StoredStatus(
     status: status,
     tries: tries,
     change: change,
     donation: donation,
+    takenOut: takenOut,
   );
 
   @override
@@ -273,11 +281,15 @@ final class StoredStatus {
       other.status == status &&
       other.tries == tries &&
       other.change == change &&
-      other.donation == donation;
+      other.donation == donation &&
+      other.takenOut == takenOut;
 
   @override
-  int get hashCode => Object.hash(status, tries, change, donation);
+  int get hashCode => Object.hash(status, tries, change, donation, takenOut);
 
+  /// The dons taken out only when there are some, so the line stays short.
   @override
-  String toString() => 'StoredStatus($status, $tries, $change, $donation)';
+  String toString() =>
+      'StoredStatus($status, $tries, $change, $donation'
+      '${takenOut == null ? '' : ', $takenOut'})';
 }

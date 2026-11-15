@@ -1,14 +1,18 @@
 import 'package:test/test.dart';
+import 'package:tournee_calendriers/domain/round/donation_origin.dart';
 import 'package:tournee_calendriers/domain/round/donation_totals.dart';
 import 'package:tournee_calendriers/domain/round/round_id.dart';
 import 'package:tournee_calendriers/domain/round/round_summary.dart';
 import 'package:tournee_calendriers/domain/round/unsent_round.dart';
 import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
+import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
+import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/infrastructure/local_storage/mappers/open_round_json_mapper.dart';
 
 import '../../../domain/round/round_fixtures.dart';
 import '../../../support/results.dart';
+import '../../../support/street_fixtures.dart';
 
 void main() {
   final round = newRound()
@@ -308,6 +312,99 @@ void main() {
             .donations,
         isEmpty,
       );
+    });
+  });
+
+  group('the house each don of the tournée on was noted from (#169)', () {
+    final lilas = StreetId('rue-des-lilas');
+    final threeBis = DonationOrigin(street: lilas, number: n('3bis'));
+    final door51 = DonationOrigin(
+      street: lilas,
+      number: n('8'),
+      door: DwellingKey(escA, 5, d('51')),
+    );
+    final linked = newRound()
+        .add(cash(2000), from: threeBis)
+        .add(cheque(500))
+        .add(offered, from: door51);
+    final storedLinked = {
+      ...storedRound,
+      'housesVisited': 0,
+      'donations': [
+        {
+          'method': 'cash',
+          'cents': 2000,
+          'from': {'street': 'rue-des-lilas', 'number': '3bis'},
+        },
+        {'method': 'cheque', 'cents': 500},
+        {
+          'free': true,
+          'from': {'street': 'rue-des-lilas', 'number': '8', 'door': 'A5-51'},
+        },
+      ],
+    };
+
+    test('should write the house or door beside its don, none for a don '
+        'without one', () {
+      expect(roundsToJson((open: linked, unsent: const [])), {
+        'version': 2,
+        'round': storedLinked,
+        'unsent': <Object?>[],
+      });
+    });
+
+    test('should read the links back', () {
+      final read = roundsFromJson({
+        'version': 2,
+        'round': storedLinked,
+        'unsent': <Object?>[],
+      });
+
+      expect(read.open, linked);
+      expect(read.open!.origins, [threeBis, null, door51]);
+    });
+
+    test('should read a tournée kept before #169 as linking no don', () {
+      expect(roundsFromJson(stored).open!.origins, [null, null, null, null]);
+    });
+
+    test('should keep no link in a tournée validated', () {
+      final json = roundsToJson((
+        open: null,
+        unsent: [linked.validate(endedAt)],
+      ));
+      final summary =
+          ((json['unsent']! as List<Object?>).single!
+                  as Map<String, Object?>)['summary']!
+              as Map<String, Object?>;
+
+      expect(summary['donations'], [
+        {'method': 'cash', 'cents': 2000},
+        {'method': 'cheque', 'cents': 500},
+        {'free': true},
+      ]);
+    });
+
+    test('should refuse a link it cannot read', () {
+      for (final from in [
+        'rue-des-lilas',
+        {'street': 'rue-des-lilas'},
+        {'number': '3'},
+        {'street': ' ', 'number': '3'},
+        {'street': 'rue-des-lilas', 'number': 'bis'},
+        {'street': 'rue-des-lilas', 'number': '8', 'door': 'A5'},
+        {'street': 'rue-des-lilas', 'number': '8', 'door': 51},
+      ]) {
+        expect(
+          () => roundsFromJson(
+            storedWith('donations', [
+              {'method': 'cash', 'cents': 2000, 'from': from},
+            ]),
+          ),
+          throwsFormatException,
+          reason: '$from',
+        );
+      }
     });
   });
 }
