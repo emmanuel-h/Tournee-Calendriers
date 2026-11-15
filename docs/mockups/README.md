@@ -24,6 +24,8 @@ member; `Welcome.dc.html` shows a phone that is not an admin. `AddList.dc.html` 
 
 **Corriger une tournée (PLAN §5.20, #168, agreed 2026-11-14, to build):** `CashCorrect.dc.html` is Collecte with a corrected tournée (« ✎ Corrigée le … ») and « ⚠ 1 maison à marquer » with « Marquer une maison » / « Ignorer »; `CashCorrectOpen.dc.html` a tournée unfolded: « Voir les 19 dons › » (read-only), « ⚠ La liste des dons ne correspond plus aux totaux. » and « ✎ Corriger »; `RoundCorrectDons.dc.html` « Corriger la tournée » on « Don par don » (the dons, « Ajouter un don », « Enregistrer »); `RoundCorrect.dc.html` on « Totaux » with a refused line (« Enregistrer » greyed); `RoundCorrectConfirm.dc.html` the confirmation with the totals before and after; `MarkForgotten.dc.html` « Quelle maison ? » (the secteur's streets) and `MarkForgottenStreet.dc.html` the street in « Touchez la maison oubliée » mode, done houses faded.
 
+**Un ✓ repris retire son don (PLAN §5.21, #169, agreed 2026-11-15, to build):** `RunStreetUndoDon.dc.html` is the street during a tournée just after N° 3 went from ✓ to « Personne »: its 20 € left the band (« 18 dons · 260 € ») and the snackbar says « N° 3 : personne · son don de 20 € en espèces est retiré de la tournée » with « Annuler »; N° 9 (two dons) and N° 4 (a calendar offered) show the other wordings.
+
 Status: **awaiting approval**. Once approved, these are the visual reference for the `ui/` code:
 the colours, type, spacing and status treatments below are the design tokens.
 

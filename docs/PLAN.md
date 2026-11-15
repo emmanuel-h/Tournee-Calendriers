@@ -2545,6 +2545,47 @@ deleted »** for its dons and money, and **#122** for the forgotten house only.
     « Repasser ». The message back in Collecte: « N° 3 rue des Lilas marquée ✓. », « Porte 51 du
     8 rue des Lilas marquée ✓. ».
 
+### 5.21 A ✓ taken back takes its own dons out of the tournée (#169, to build)
+
+Agreed 2026-11-15 (ASCII in the terminal, then the mockup RunStreetUndoDon), from the phone
+test of #168: a house turned from ✓ to « Personne » kept its 20 € in the tournée, and the
+totals were wrong until corrected. Choosing a don from the list would be a guess, so the phone
+remembers which house each don was noted from. **Changes 5.13's « The list of a tournée's dons
+stays on the phone, without house or time »** for the time of the tournée only.
+
+```
+  N° 3 ✓ (20 € en espèces) → « Personne »
+┌──────────────────────────────┐
+│▌● En tournée        [Terminer]│
+│▌18 dons · 260 € ›            │   was 19 dons · 280 €
+│ ← Rue des Lilas           ✎  │
+│  [ 3   ✗ ]      [ 2   ✓ ]    │
+├──────────────────────────────┤
+│ N° 3 : personne · son don de │
+│ 20 € en espèces est retiré   │
+│ de la tournée      [Annuler] │   Annuler: the ✓ and its don back
+└──────────────────────────────┘
+```
+
+- **The link**: a don noted from a house or door (the « Montant du don » step after ✓, or
+  « + Ajouter un don » on a ✓) is linked to it in the open tournée, on the phone only
+  (`open_round.json`). « Valider » drops every link before anything is kept or sent: the summary
+  and its dons (5.20) stay without a house. « Abandonner » forgets them with the tournée.
+- **Taking a ✓ back** during the tournée (to ✗, ↻, ○ or ⊘; from the status picker, a door, or
+  any other change that leaves ✓) removes the dons linked to that house or door from the
+  tournée, at once, asking nothing. The snackbar says so: « N° 3 : personne · son don de 20 € en
+  espèces est retiré de la tournée », « … · son calendrier offert est retiré de la tournée »,
+  « … · ses 2 dons (15 €) sont retirés de la tournée » (« Porte 51 : … » on a door).
+  « Annuler » puts back the house and its dons, at their places, linked again.
+- **Not linked, never removed**: a don added from « Dons de la tournée » (« Ajouter un don »),
+  any don of a ✓ marked before the tournée started or by another phone, and every don once the
+  tournée is validated. « Modifier le don » keeps the link; « Supprimer ce don » drops it.
+- A house removed in edit mode, or its street deleted, while ✓: its dons stay (only a status
+  leaving ✓ removes them).
+- **Privacy text** (5.9, `PRIVACY.md`): one sentence: during a tournée the phone knows which
+  house each don was noted from, until it is validated; this never leaves the phone. Drafted by
+  Claude for the user's review.
+
 ## 6. Data model
 
 ### 6.1 Domain model (pure Dart: no Flutter, no Firebase, no MapLibre)
@@ -4129,7 +4170,8 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
   validated tournée, its start and end, the houses visited and the count and total per
   payment method and of free calendars, seen by the secteur, **without its member**; **never
   a don per house, door or address**. The list of a tournée's dons stays on the phone, without
-  house or time, until it is validated, then it is erased. **Changed by 5.20 (#168):** it is sent
+  house or time, until it is validated, then it is erased (**changed by 5.21, #169:** during the
+  tournée, the phone alone knows which house each don was noted from, dropped at « Valider »). **Changed by 5.20 (#168):** it is sent
   with the summary (method and amount, no house, time or member), seen by the secteur. A house or door marked ✓ keeps
   **how many calendars it took** (no amount, no method), seen by the team like its status,
   reset with the statuses at the next campaign. `PRIVACY.md` and the Confidentialité page (#79)
