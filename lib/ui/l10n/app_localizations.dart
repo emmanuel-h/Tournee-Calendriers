@@ -1684,6 +1684,12 @@ abstract class AppLocalizations {
   /// **'Première version de test.'**
   String get release010First;
 
+  /// Line of « Nouveautés » for 0.22.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'Pendant une tournée, une maison qui n\'est plus ✓ Fait retire aussi son don de la tournée ; « Annuler » le remet.'**
+  String get release0220TakenOut;
+
   /// Line of « Nouveautés » for 0.21.0.
   ///
   /// In fr, this message translates to:

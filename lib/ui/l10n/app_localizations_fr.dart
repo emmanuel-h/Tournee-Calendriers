@@ -1163,6 +1163,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get release010First => 'Première version de test.';
 
   @override
+  String get release0220TakenOut =>
+      'Pendant une tournée, une maison qui n\'est plus ✓ Fait retire aussi son don de la tournée ; « Annuler » le remet.';
+
+  @override
   String get release0210Correct =>
       'Collecte : une tournée validée garde la liste de ses dons, et chaque membre peut la corriger, don par don ou par ses totaux.';
 

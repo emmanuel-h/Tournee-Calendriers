@@ -30,6 +30,11 @@ final class Release {
 /// day it is published, and its lines to `app_fr.arb`.
 final shippedReleases = [
   Release(
+    version: '0.22.0',
+    date: DateTime(2026, 11, 15),
+    notes: (l10n) => [l10n.release0220TakenOut],
+  ),
+  Release(
     version: '0.21.0',
     date: DateTime(2026, 11, 14),
     notes: (l10n) => [l10n.release0210Correct, l10n.release0210Forgotten],
