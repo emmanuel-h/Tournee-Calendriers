@@ -125,7 +125,15 @@ describe('recording a validated tournée', () => {
     await assertFails(record(lea, roundDoc(), 'round-1'));
   });
 
-  for (const field of Object.keys(roundDoc())) {
+  // A phone still on a version before #168 sends no dons: its summary is
+  // kept as one from before (no « Voir les dons », « Totaux » only).
+  it('should accept a summary without its dons, as from an app before #168', async () => {
+    const data = roundDoc();
+    delete data.dons;
+    await assertSucceeds(record(lea, data));
+  });
+
+  for (const field of Object.keys(roundDoc()).filter((f) => f !== 'dons')) {
     it(`should refuse a summary without ${field}`, async () => {
       const data = roundDoc();
       delete data[field];

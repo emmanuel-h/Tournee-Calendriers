@@ -887,11 +887,13 @@ service cloud.firestore {
     }
 
     // A summary as « Valider la tournée » sends it: exactly roundFields(),
-    // its dons included, and no correction.
+    // and no correction. Its dons may be missing: a phone not yet updated
+    // past #168 sends none, and its summary must not stay refused (it is
+    // read as one from before, with no list).
     function isRoundSummary(data) {
-      return hasExactly(data, roundFields())
+      return hasFields(data, correctedRoundFields(), ['dons'])
         && hasRoundFigures(data)
-        && isDonList(data.dons);
+        && (!('dons' in data) || isDonList(data.dons));
     }
 
     // A summary as it may stand after corrections: its figures, its dons

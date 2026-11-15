@@ -2475,7 +2475,7 @@ deleted »** for its dons and money, and **#122** for the forgotten house only.
 - **The dons are kept.** « Valider la tournée » sends the tournée's list of dons with its summary:
   each don is its method and amount, or « Calendrier offert »; **no house, no time, no member**, in
   the order added. The totals stay in the summary beside it. A tournée validated before #168 has
-  no list (reads as none: no « Voir les dons », « Totaux » only).
+  no list (reads as none: no « Voir les dons », « Totaux » only); the rules also accept a new summary without `dons`, as a phone not yet updated sends it (seen 2026-11-15: refused, « Réessayer » could not help).
 - **Collecte, a tournée unfolded**: its methods and « Calendriers offerts », then « Voir les N dons
   › » (the list, read-only, « Dons de la tournée » without › or buttons: to compare with the
   receipts), then « ⚠ La liste des dons ne correspond plus aux totaux. » (amber block, `#FDF3DC`,
