@@ -108,7 +108,7 @@ credits and privacy text updated. Validated by the user on the phone and closed 
 with « Modifier la rue » (edit mode) and « Supprimer la rue » (to the Corbeille), the ticks kept. Validated by the user on the phone and closed (2026-11-14).
 #168 (PLAN §5.20) delivered 2026-11-14: validated tournées keep their dons (`dons`, « cash:1000 » / « free »); any member or admin corrects one from Collecte (« Don par don | Totaux », `correctedAt`), a correction adding dons leaves `housesToMark`, marked from « Quelle maison ? » with no tournée on (`Street.markForgotten`) or ignored. Rules with the new `update` deployed 2026-11-14; a summary without `dons` (a phone not yet updated) accepted again, deployed 2026-11-15 by the user (identical to `firestore.rules`); privacy sentence approved by the user. Validated by the user on the phone and closed (2026-11-16).
 #169 (PLAN §5.21) delivered 2026-11-15: a ✓ taken back during the tournée takes the dons noted from that house or door out of it (`Round.origins`, `DonationOrigin`, `takeOut` / `putBack`, kept in `open_round.json` only, dropped at « Valider »); « Annuler » puts them back; privacy sentence drafted for the user's review. No rules change. Validated by the user on the phone and closed (2026-11-16).
-#171 open: a ✓ house turned into a building should take its dons out of the tournée too. #172 delivered 2026-11-16: « Corriger la tournée ? » adds « Calendriers offerts : 2 → 3 » when the free calendars change.
+#171 open: a ✓ house turned into a building should take its dons out of the tournée too. #172 delivered 2026-11-16: « Corriger la tournée ? » adds « Calendriers offerts : 2 → 3 » when the free calendars change. Validated by the user on the phone and closed (2026-11-16).
 
 ## Commands
 
