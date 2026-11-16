@@ -1163,6 +1163,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get release010First => 'Première version de test.';
 
   @override
+  String get release0240Map =>
+      'Mise à jour de la carte, sans changement visible.';
+
+  @override
   String get release0230FreeCalendars =>
       'En corrigeant une tournée, la confirmation montre aussi les calendriers offerts quand leur nombre change.';
 

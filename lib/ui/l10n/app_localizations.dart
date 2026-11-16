@@ -1684,6 +1684,12 @@ abstract class AppLocalizations {
   /// **'Première version de test.'**
   String get release010First;
 
+  /// Line of « Nouveautés » for 0.24.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'Mise à jour de la carte, sans changement visible.'**
+  String get release0240Map;
+
   /// Line of « Nouveautés » for 0.23.0.
   ///
   /// In fr, this message translates to:
