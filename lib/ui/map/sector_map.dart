@@ -205,16 +205,12 @@ final class _SectorMapState extends State<SectorMap> {
   ///
   /// The screen may close while they are added (« Ajouter des rues » left
   /// at once, the app restarted): the map's platform side is then gone, and
-  /// the call on its way fails with a [MissingPluginException] or a
-  /// [PlatformException] (« MAP_NOT_READY »), which mean nothing to a map
-  /// no longer shown.
+  /// the call on its way fails with a [PlatformException] (« MAP_DISPOSED »),
+  /// which means nothing to a map no longer shown.
   Future<void> _onStyleLoaded() async {
     try {
       await _addOurLayers();
-    } on MissingPluginException {
-      if (mounted) rethrow;
     } on PlatformException {
-      // « MAP_NOT_READY »: the map view was torn down under the call.
       if (mounted) rethrow;
     }
   }
@@ -349,12 +345,6 @@ final class _SectorMapState extends State<SectorMap> {
     }
   }
 
-  /// How many of MapLibre's screen units make one logical pixel: Android's
-  /// map counts physical pixels.
-  double get _screenScale => defaultTargetPlatform == TargetPlatform.android
-      ? MediaQuery.devicePixelRatioOf(context)
-      : 1;
-
   /// Measures where the zone shown is on screen.
   Future<void> _measureZone() async {
     final controller = _controller;
@@ -363,7 +353,6 @@ final class _SectorMapState extends State<SectorMap> {
       _zoneOnScreen = null;
       return;
     }
-    final scale = _screenScale;
     final corners = await controller.toScreenLocationBatch([
       LatLng(zone.north, zone.west),
       LatLng(zone.south, zone.east),
@@ -371,8 +360,8 @@ final class _SectorMapState extends State<SectorMap> {
     // Measured for another zone, or none, since the call left.
     if (_shownZone != zone) return;
     _zoneOnScreen = Rect.fromPoints(
-      Offset(corners[0].x / scale, corners[0].y / scale),
-      Offset(corners[1].x / scale, corners[1].y / scale),
+      Offset(corners[0].x.toDouble(), corners[0].y.toDouble()),
+      Offset(corners[1].x.toDouble(), corners[1].y.toDouble()),
     );
   }
 
@@ -382,12 +371,9 @@ final class _SectorMapState extends State<SectorMap> {
     final controller = _controller;
     final onZoneDrawn = widget.onZoneDrawn;
     if (controller == null || onZoneDrawn == null) return;
-    final scale = _screenScale;
-    final northWest = await controller.toLatLng(
-      Point(drawn.left * scale, drawn.top * scale),
-    );
+    final northWest = await controller.toLatLng(Point(drawn.left, drawn.top));
     final southEast = await controller.toLatLng(
-      Point(drawn.right * scale, drawn.bottom * scale),
+      Point(drawn.right, drawn.bottom),
     );
     final area = GeoBounds.of(
       south: southEast.latitude,
@@ -428,7 +414,6 @@ final class _SectorMapState extends State<SectorMap> {
     }
     final size = context.size;
     if (size == null) return;
-    final scale = _screenScale;
     final corners = await controller.toScreenLocationBatch([
       LatLng(target.north, target.west),
       LatLng(target.south, target.east),
@@ -444,8 +429,8 @@ final class _SectorMapState extends State<SectorMap> {
       size.height - padding.bottom - margin,
     );
     final onScreen = Rect.fromPoints(
-      Offset(corners[0].x / scale, corners[0].y / scale),
-      Offset(corners[1].x / scale, corners[1].y / scale),
+      Offset(corners[0].x.toDouble(), corners[0].y.toDouble()),
+      Offset(corners[1].x.toDouble(), corners[1].y.toDouble()),
     );
     switch (cameraReveal(onScreen, free)) {
       case StayPut():
@@ -455,7 +440,7 @@ final class _SectorMapState extends State<SectorMap> {
         // the other way from the centre becomes the centre.
         final centre = size.center(Offset.zero) - offset;
         final newCentre = await controller.toLatLng(
-          Point(centre.dx * scale, centre.dy * scale),
+          Point(centre.dx, centre.dy),
         );
         if (!mounted) return;
         await controller.animateCamera(CameraUpdate.newLatLng(newCentre));

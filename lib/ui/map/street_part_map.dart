@@ -75,8 +75,6 @@ final class _StreetPartMapState extends State<StreetPartMap> {
   Future<void> _onStyleLoaded() async {
     try {
       await _addOurLayers();
-    } on MissingPluginException {
-      if (mounted) rethrow;
     } on PlatformException {
       if (mounted) rethrow;
     }
@@ -186,10 +184,6 @@ final class _StreetPartMapState extends State<StreetPartMap> {
     final controller = _controller;
     if (controller == null || !_styleReady || !mounted) return;
     final gaps = widget.drawing.gaps;
-    // Android's map counts physical pixels.
-    final scale = defaultTargetPlatform == TargetPlatform.android
-        ? MediaQuery.devicePixelRatioOf(context)
-        : 1.0;
     final onScreen = gaps.isEmpty
         ? const <Point<num>>[]
         : await controller.toScreenLocationBatch([
@@ -200,7 +194,8 @@ final class _StreetPartMapState extends State<StreetPartMap> {
     setState(() {
       _placesFor = gaps;
       _places = [
-        for (final point in onScreen) Offset(point.x / scale, point.y / scale),
+        for (final point in onScreen)
+          Offset(point.x.toDouble(), point.y.toDouble()),
       ];
     });
   }
