@@ -2134,6 +2134,8 @@
   "@correctConfirmBody": {"description": "Body of the confirmation: the total before and after (« Total : 19 dons, 210 € / → 20 dons, 205 € »).", "placeholders": {"before": {"type": "String", "example": "19 dons, 210 €"}, "after": {"type": "String", "example": "20 dons, 205 €"}}},
   "correctConfirmTotal": "{count, plural, one{{count} don, {amount}} other{{count} dons, {amount}}}",
   "@correctConfirmTotal": {"description": "A total in the confirmation: « 19 dons, 210 € ».", "placeholders": {"count": {"type": "int", "example": "19"}, "amount": {"type": "String", "example": "210 €"}}},
+  "correctConfirmFree": "Calendriers offerts : {before} → {after}",
+  "@correctConfirmFree": {"description": "Line under the totals of the confirmation, only when the correction changes the free calendars (#172): « Calendriers offerts : 2 → 3 ».", "placeholders": {"before": {"type": "int", "example": "2"}, "after": {"type": "int", "example": "3"}}},
   "correctConfirmAside": "Tout le secteur verra les nouveaux chiffres.",
   "@correctConfirmAside": {"description": "Muted line under the totals of the confirmation."},
   "correctConfirmOk": "Corriger",

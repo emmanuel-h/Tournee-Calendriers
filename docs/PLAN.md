@@ -2499,7 +2499,9 @@ deleted »** for its dons and money, and **#122** for the forgotten house only.
     don on average (« 1 000 € au plus par don. »), the bounds of the rules.
   - Houses visited, start and end never change here.
 - **Confirmation**: « Corriger la tournée ? — Total : 19 dons, 210 € → 20 dons, 205 € — Tout le
-  secteur verra les nouveaux chiffres. [Annuler] [Corriger] » (« Corriger » red text); then back
+  secteur verra les nouveaux chiffres. [Annuler] [Corriger] » (« Corriger » red text). When the
+  free calendars change (they are not in the total), « Calendriers offerts : 2 → 3 » goes under the
+  total (#172); otherwise the line is not shown. Then back
   to Collecte, snackbar « Correction enregistrée. ». Nothing changed: « Enregistrer » just goes back.
 - **Offline**: saved at once on the phone and sent when the network is back, like other writes;
   two phones correcting the same tournée offline: the last one sent wins.

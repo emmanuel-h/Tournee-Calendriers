@@ -397,6 +397,14 @@ void main() {
 
       await tester.tap(find.byKey(const Key('correct.save')));
       await tester.pumpAndSettle();
+      // Only the free calendars changed: the same total, then their line.
+      expect(
+        find.text(
+          'Total : 4${_nbsp}dons, 40$_nbsp€\n→ 4${_nbsp}dons, 40$_nbsp€\n'
+          'Calendriers offerts : 1 → 2',
+        ),
+        findsOneWidget,
+      );
       await tester.tap(find.byKey(const ValueKey('correct.confirm.cancel')));
       await tester.pumpAndSettle();
 

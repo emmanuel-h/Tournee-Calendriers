@@ -4054,6 +4054,12 @@ abstract class AppLocalizations {
   /// **'{count, plural, one{{count} don, {amount}} other{{count} dons, {amount}}}'**
   String correctConfirmTotal(int count, String amount);
 
+  /// Line under the totals of the confirmation, only when the correction changes the free calendars (#172): « Calendriers offerts : 2 → 3 ».
+  ///
+  /// In fr, this message translates to:
+  /// **'Calendriers offerts : {before} → {after}'**
+  String correctConfirmFree(int before, int after);
+
   /// Muted line under the totals of the confirmation.
   ///
   /// In fr, this message translates to:

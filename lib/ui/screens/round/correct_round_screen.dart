@@ -175,7 +175,9 @@ final class _CorrectRoundState extends ConsumerState<CorrectRoundScreen> {
   }
 
   /// « Enregistrer »: back at once when nothing changed; otherwise « Corriger
-  /// la tournée ? » with the total before and after, then saved.
+  /// la tournée ? » with the total before and after, and the free calendars
+  /// before and after when they changed (they are not in the total), then
+  /// saved.
   Future<void> _save(CorrectRoundShown view) async {
     final navigator = Navigator.of(context);
     if (!view.changed) {
@@ -185,11 +187,16 @@ final class _CorrectRoundState extends ConsumerState<CorrectRoundScreen> {
     final l10n = AppLocalizations.of(context);
     String total(DonationTotals totals) =>
         l10n.correctConfirmTotal(totals.count, eurosText(l10n, totals.cents));
+    final (freeBefore, freeAfter) = (view.before.free, view.after.free);
     final confirmed = await showConfirmDialog(
       context,
       name: 'correct.confirm',
       title: l10n.correctConfirmTitle,
-      body: l10n.correctConfirmBody(total(view.before), total(view.after)),
+      body: [
+        l10n.correctConfirmBody(total(view.before), total(view.after)),
+        if (freeBefore != freeAfter)
+          l10n.correctConfirmFree(freeBefore, freeAfter),
+      ].join('\n'),
       aside: l10n.correctConfirmAside,
       confirmLabel: l10n.correctConfirmOk,
       destructive: true,

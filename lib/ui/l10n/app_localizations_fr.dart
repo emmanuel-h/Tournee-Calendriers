@@ -2875,6 +2875,11 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String correctConfirmFree(int before, int after) {
+    return 'Calendriers offerts : $before → $after';
+  }
+
+  @override
   String get correctConfirmAside =>
       'Tout le secteur verra les nouveaux chiffres.';
 
