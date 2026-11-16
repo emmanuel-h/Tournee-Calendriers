@@ -54,6 +54,41 @@ end_of_record
     );
   });
 
+  test('should not count a const constructor line when it is missed', () {
+    // The VM builds `const Loading()` when compiling, so whether the
+    // constructor line counts as run changes from one run to the next.
+    _write(project, 'lib/presentation/state.dart', '''
+sealed class State {
+  const State();
+}
+final class Loading extends State {
+  const Loading();
+}
+final class Named extends State {
+  const Named.of(this.name, {required int age}) : _age = age;
+  final String name;
+  final int _age;
+  int get age => _age;
+}
+''');
+    _write(project, 'coverage/lcov.info', '''
+SF:lib/presentation/state.dart
+DA:2,0
+DA:5,0
+DA:8,0
+DA:12,0
+end_of_record
+''');
+
+    final result = _run(project);
+
+    expect(result.exitCode, 1, reason: _output(result));
+    expect(
+      result.stdout,
+      contains('lib/presentation/state.dart  0/1 lines, uncovered: 12'),
+    );
+  });
+
   test('should fail when any gated folder is below 100 %', () {
     for (final path in [
       'lib/domain/a.dart',

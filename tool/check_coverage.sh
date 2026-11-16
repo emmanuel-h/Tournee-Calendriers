@@ -60,6 +60,11 @@ has_code() {
 
 # One line per source file: "<path> <covered> <total> <uncovered line list>".
 # lcov paths may be absolute; they are made relative to the project root.
+#
+# A const constructor's first line (`const Loading();`) is left out: its
+# instances are mostly built by the compiler, so the VM reports that line
+# run in some runs and not in others, and CI failed on a different one each
+# time. It has no body to test; its initializers, on later lines, still count.
 summary="$(awk -v root="$PWD/" '
   function flush() {
     if (file != "") print file, hit, total, (missed == "" ? "-" : missed)
@@ -69,9 +74,18 @@ summary="$(awk -v root="$PWD/" '
     file = substr($0, 4)
     if (index(file, root) == 1) file = substr(file, length(root) + 1)
     hit = 0; total = 0; missed = ""
+    delete constLine
+    n = 0
+    while ((getline src < file) > 0) {
+      n++
+      if (src ~ /^[ \t]*const[ \t]+[A-Za-z_$][A-Za-z0-9_$]*(\.[A-Za-z_$][A-Za-z0-9_$]*)?[ \t]*\(/)
+        constLine[n] = 1
+    }
+    close(file)
   }
   /^DA:/ {
     split(substr($0, 4), field, ",")
+    if (field[1] in constLine) next
     total++
     if (field[2] > 0) hit++
     else missed = missed (missed == "" ? "" : ",") field[1]
