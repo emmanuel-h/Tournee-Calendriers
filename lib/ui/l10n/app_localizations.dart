@@ -1684,6 +1684,12 @@ abstract class AppLocalizations {
   /// **'Première version de test.'**
   String get release010First;
 
+  /// Line of « Nouveautés » for 0.23.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'En corrigeant une tournée, la confirmation montre aussi les calendriers offerts quand leur nombre change.'**
+  String get release0230FreeCalendars;
+
   /// Line of « Nouveautés » for 0.22.0.
   ///
   /// In fr, this message translates to:

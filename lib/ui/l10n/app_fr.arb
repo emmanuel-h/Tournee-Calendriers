@@ -1055,6 +1055,8 @@
   },
   "release010First": "Première version de test.",
   "@release010First": { "description": "« Nouveautés », version 0.1.0: what it brings, one short line for the members." },
+  "release0230FreeCalendars": "En corrigeant une tournée, la confirmation montre aussi les calendriers offerts quand leur nombre change.",
+  "@release0230FreeCalendars": { "description": "Line of « Nouveautés » for 0.23.0." },
   "release0220TakenOut": "Pendant une tournée, une maison qui n'est plus ✓ Fait retire aussi son don de la tournée ; « Annuler » le remet.",
   "@release0220TakenOut": { "description": "Line of « Nouveautés » for 0.22.0." },
   "release0210Correct": "Collecte : une tournée validée garde la liste de ses dons, et chaque membre peut la corriger, don par don ou par ses totaux.",

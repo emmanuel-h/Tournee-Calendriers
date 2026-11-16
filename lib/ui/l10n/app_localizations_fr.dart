@@ -1163,6 +1163,10 @@ class AppLocalizationsFr extends AppLocalizations {
   String get release010First => 'Première version de test.';
 
   @override
+  String get release0230FreeCalendars =>
+      'En corrigeant une tournée, la confirmation montre aussi les calendriers offerts quand leur nombre change.';
+
+  @override
   String get release0220TakenOut =>
       'Pendant une tournée, une maison qui n\'est plus ✓ Fait retire aussi son don de la tournée ; « Annuler » le remet.';
 
