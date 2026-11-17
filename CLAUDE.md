@@ -112,7 +112,7 @@ with « Modifier la rue » (edit mode) and « Supprimer la rue » (to the Corbei
 #173 delivered 2026-11-16: maplibre_gl 0.28 (replaces Dependabot #129); `StartedMapChannel` gone (0.28 copes with a map disposed before its view), no Android `devicePixelRatio` scaling of screen points (logical pixels on every platform), a disposed map's calls fail with `MAP_DISPOSED` (a `PlatformException`). Validated by the user on the phone and closed (2026-11-17).
 #118 (PLAN §5.9) delivered 2026-11-17: « Écrire au développeur ↗ » in Paramètres opens the mail app (`mailto:` to the
 `PRIVACY.md` address, subject « Tournée Calendriers {version} : idée », body empty); no mail app → snackbar with the address
-and « Copier »; one sentence added to « Compte » in `PRIVACY.md` and Confidentialité. No rules change. Validated by the user on the phone (2026-11-17).
+and « Copier »; one sentence added to « Compte » in `PRIVACY.md` and Confidentialité. No rules change. Validated by the user on the phone and closed (2026-11-17).
 
 ## Commands
 
