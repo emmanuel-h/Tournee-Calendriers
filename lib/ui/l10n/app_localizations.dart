@@ -862,6 +862,12 @@ abstract class AppLocalizations {
   /// **'N° {number} changé en maison'**
   String backToHouseDone(String number);
 
+  /// Start of the undo snackbar after a ✓ house was turned into a building during a tournée and its dons left the tournée (PLAN §5.21, #171), followed by « · son don de 20 € en espèces est retiré de la tournée ». Not shown when no don left.
+  ///
+  /// In fr, this message translates to:
+  /// **'N° {number} changé en immeuble'**
+  String houseToBuildingDone(String number);
+
   /// Confirms a removal (a number, a street).
   ///
   /// In fr, this message translates to:

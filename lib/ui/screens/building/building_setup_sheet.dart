@@ -20,16 +20,16 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 /// Opens « Décrire l'immeuble » (PLAN §5.7,
 /// `docs/mockups/BuildingSetup.dc.html`) for [house]: from « Transformer en
 /// immeuble… » on a house, prefilled from the building by « Modifier les
-/// étages ». Returns true once « Valider » laid the building out.
-Future<bool> showBuildingSetup(
+/// étages ». Returns what « Valider » laid out (with the dons a ✓ house
+/// took out of the tournée, PLAN §5.21), or null when the sheet was left
+/// without it.
+Future<SetupLaidOut?> showBuildingSetup(
   BuildContext context,
   BuildingSetupKey house,
-) async =>
-    await showAppBottomSheet<bool>(
-      context: context,
-      builder: (_) => BuildingSetupSheet(house: house),
-    ) ??
-    false;
+) => showAppBottomSheet<SetupLaidOut>(
+  context: context,
+  builder: (_) => BuildingSetupSheet(house: house),
+);
 
 /// Steppers « Escaliers », « Étages », « Portes par étage », the label
 /// style, the preview and « Valider ». A step the domain refuses leaves
@@ -212,7 +212,7 @@ final class BuildingSetupSheet extends ConsumerWidget {
     // When the house went meanwhile (`SetupFailed`), the sheet already
     // says so and stays.
     if (outcome is SetupLaidOut && context.mounted) {
-      Navigator.of(context).pop(true);
+      Navigator.of(context).pop(outcome);
     }
   }
 

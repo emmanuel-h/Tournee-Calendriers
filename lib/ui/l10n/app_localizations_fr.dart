@@ -573,6 +573,11 @@ class AppLocalizationsFr extends AppLocalizations {
   }
 
   @override
+  String houseToBuildingDone(String number) {
+    return 'N° $number changé en immeuble';
+  }
+
+  @override
   String get delete => 'Supprimer';
 
   @override

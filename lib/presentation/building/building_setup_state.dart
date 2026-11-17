@@ -1,7 +1,9 @@
+import 'package:tournee_calendriers/domain/round/donations_taken_out.dart';
 import 'package:tournee_calendriers/domain/street/building/building_plan.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase.dart';
 import 'package:tournee_calendriers/domain/street/building/staircase_name.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
+import 'package:tournee_calendriers/domain/street/street_change.dart';
 
 // The view state of the « Décrire l'immeuble » sheet (PLAN §5.7, mockup
 // BuildingSetup), opened by « Transformer en immeuble… » and « Modifier les
@@ -165,9 +167,14 @@ sealed class SetupOutcome {
   const SetupOutcome();
 }
 
-/// The building is laid out: the sheet closes.
+/// The building is laid out: the sheet closes. The [change] can be undone
+/// (« Annuler »); [takenOut] names the dons a ✓ house turned into a
+/// building took out of the tournée on (PLAN §5.21, #171), null when none.
 final class SetupLaidOut extends SetupOutcome {
-  const SetupLaidOut();
+  const SetupLaidOut(this.change, {this.takenOut});
+
+  final HouseChange change;
+  final DonationsTakenOut? takenOut;
 }
 
 /// Nothing was stored yet: the new layout would drop [markedDoors] doors

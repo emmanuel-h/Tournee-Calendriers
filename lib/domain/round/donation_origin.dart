@@ -25,10 +25,11 @@ final class DonationOrigin {
   /// becomes (✗, ↻, ○, or ⊘: a refusal took no calendar either); null for
   /// a change that leaves ✓ where it was.
   ///
-  /// Only the marks of the status picker, « De nouveau personne » and the
-  /// undo of either move a status, as for `RoundVisit.of`. A house removed
-  /// in edit mode, or its street deleted, keeps its dons (PLAN §5.21). The
-  /// `switch` names every change, so a new one must be placed here.
+  /// Only the marks of the status picker, « De nouveau personne », the
+  /// undo of either, and a ✓ house turned into a building (whose dons have
+  /// no house left to belong to) take a ✓ away. A house removed in edit
+  /// mode, or its street deleted, keeps its dons (PLAN §5.21). The `switch`
+  /// names every change, so a new one must be placed here.
   static DonationOrigin? leftDoneBy(StreetChange change) => switch (change) {
     HouseMarked(:final streetId, :final before, :final status) => _ifLeft(
       before.status,
@@ -71,12 +72,20 @@ final class DonationOrigin {
       :final dwelling,
     ) =>
       _ifLeft(replaced.status, dwelling.status, streetId, number, key),
+    // A single house becomes a building, whose own status is always « à
+    // faire » (its doors carry theirs): a ✓ house leaves ✓ (#171). A
+    // building laid out again was « à faire » already, so it names nothing.
+    BuildingLaidOut(:final streetId, :final before) => _ifLeft(
+      before.status,
+      VisitStatus.toDo,
+      streetId,
+      before.number,
+    ),
     ComeBackSet() ||
     DwellingComeBackSet() ||
     // A calendar more or less: the house is ✓ before and after.
     HouseCalendarsCounted() ||
     DwellingCalendarsCounted() ||
-    BuildingLaidOut() ||
     BuildingRemoved() ||
     NumberRenamed() ||
     StreetDeleted() ||

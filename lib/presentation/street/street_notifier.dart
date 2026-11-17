@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tournee_calendriers/application/use_cases/describe_building.dart';
+import 'package:tournee_calendriers/application/use_cases/round_visits.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
@@ -50,7 +51,8 @@ final class StreetNotifier extends Notifier<StreetViewState>
       const BackToSingleHouse(),
     );
     switch (result) {
-      case Ok(value: final change):
+      // The doors' dons stay apart: back to a house takes none out.
+      case Ok(value: Marked(:final change)):
         keepForUndo(change);
         return true;
       case Err():

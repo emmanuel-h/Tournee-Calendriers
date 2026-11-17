@@ -7,6 +7,7 @@ import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/street_name.dart';
 import 'package:tournee_calendriers/domain/street/street_part.dart';
+import 'package:tournee_calendriers/presentation/building/building_setup_state.dart';
 import 'package:tournee_calendriers/presentation/edit_street/edit_street_notifier.dart';
 import 'package:tournee_calendriers/presentation/edit_street/edit_street_state.dart';
 import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
@@ -24,6 +25,7 @@ import 'package:tournee_calendriers/ui/screens/building/building_setup_sheet.dar
 import 'package:tournee_calendriers/ui/screens/edit_street/add_numbers_sheet.dart';
 import 'package:tournee_calendriers/ui/screens/edit_street/edit_tiles.dart';
 import 'package:tournee_calendriers/ui/screens/edit_street/number_sheet.dart';
+import 'package:tournee_calendriers/ui/screens/street/status_words.dart';
 import 'package:tournee_calendriers/ui/screens/street_part/street_part_screen.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
@@ -266,10 +268,25 @@ final class _EditScreenState extends ConsumerState<_EditScreen>
           onUndo: () => unawaited(notifier.undo()),
         );
       case DescribeBuildingExit():
-        await showBuildingSetup(context, (
+        final laidOut = await showBuildingSetup(context, (
           street: widget.streetId,
           number: number,
         ));
+        // Only a ✓ house whose dons left the tournée says so (PLAN §5.21):
+        // « Annuler » brings the house and its dons back. Any other layout
+        // shows nothing, as before.
+        if (laidOut case SetupLaidOut(:final change, takenOut: final takenOut?)
+            when mounted) {
+          notifier.keepForUndo(change, takenOut: takenOut);
+          showUndo(
+            message: l10n.markedWithDonationsTakenOut(
+              l10n.houseToBuildingDone(number.label),
+              takenOutWords(l10n, takenOut.donations),
+            ),
+            undoLabel: l10n.undo,
+            onUndo: () => unawaited(notifier.undo()),
+          );
+        }
       case OpenBuildingExit():
         final gridExit = await showBuildingGrid(context, (
           street: widget.streetId,

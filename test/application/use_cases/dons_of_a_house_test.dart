@@ -4,8 +4,10 @@
 // « Annuler » puts them back.
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/use_cases/calendars.dart';
+import 'package:tournee_calendriers/application/use_cases/describe_building.dart';
 import 'package:tournee_calendriers/application/use_cases/mark.dart';
 import 'package:tournee_calendriers/application/use_cases/mark_dwelling.dart';
+import 'package:tournee_calendriers/application/use_cases/round_visits.dart';
 import 'package:tournee_calendriers/application/use_cases/rounds.dart';
 import 'package:tournee_calendriers/application/use_cases/set_house_details.dart';
 import 'package:tournee_calendriers/application/use_cases/undo_last_change.dart';
@@ -20,6 +22,7 @@ import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
 import '../../domain/round/round_fixtures.dart';
+import '../../support/building_fixtures.dart';
 import '../../support/fakes/fake_open_round_store.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/results.dart';
@@ -44,6 +47,7 @@ void main() {
   late MarkDwelling markDwelling;
   late UndoLastChange undo;
   late AddDonation addDonation;
+  late DescribeBuilding describeBuilding;
 
   setUp(() {
     streets = repositoryWithLilas();
@@ -67,6 +71,12 @@ void main() {
       visitsTo(rounds),
     );
     addDonation = AddDonation(rounds, streets, clockAtTwo(), leaOnThePhone());
+    describeBuilding = DescribeBuilding(
+      streets,
+      clockAtTwo(),
+      leaOnThePhone(),
+      visitsTo(rounds),
+    );
   });
 
   /// N° 7 made ✓ with [donation] given in « Montant du don ».
@@ -278,6 +288,95 @@ void main() {
         isNull,
       );
       expect(rounds.openRound!.donations, [cash(2000)]);
+    });
+  });
+
+  group('a ✓ house turned into a building (#171)', () {
+    /// « Transformer en immeuble… » on N° 7: RdC and 1er, two doors each.
+    Future<Marked<HouseChange>> sevenLaidOut() async => valueOf(
+      await describeBuilding(
+        lilasId,
+        n('7'),
+        LayOutBuilding(plan(topFloor: 1, doors: 2)),
+      ),
+    );
+
+    test('should take its dons out of the tournée and say which', () async {
+      await addDonation(card(1000));
+      await sevenDoneWith(cash(2000));
+
+      final marked = await sevenLaidOut();
+
+      expect(marked.change, isA<BuildingLaidOut>());
+      expect(
+        marked.takenOut,
+        DonationsTakenOut(
+          round: roundId,
+          origin: _seven,
+          taken: [(index: 1, donation: cash(2000))],
+        ),
+      );
+      expect(rounds.openRound!.donations, [card(1000)]);
+      expect(rounds.openRound!.origins, [null]);
+    });
+
+    test('should leave the houses visited as they were', () async {
+      await sevenDoneWith(cash(2000));
+
+      await sevenLaidOut();
+
+      expect(rounds.openRound!.housesVisited, 1);
+    });
+
+    test('should take out nothing from a house that was not ✓', () async {
+      await addDonation(cash(1000), from: _place(_seven));
+
+      final marked = await sevenLaidOut();
+
+      expect(marked.takenOut, isNull);
+      expect(rounds.openRound!.donations, [cash(1000)]);
+    });
+
+    test('should take out nothing from a ✓ house with no don', () async {
+      await setHouseDetails(
+        lilasId,
+        n('7'),
+        const StatusMark(VisitStatus.done),
+      );
+      final before = rounds.openRound!;
+
+      final marked = await sevenLaidOut();
+
+      expect(marked.takenOut, isNull);
+      expect(rounds.openRound, before);
+    });
+
+    test('should take out nothing when a building is laid out again, its '
+        'doors\' dons kept', () async {
+      await addDonation(cash(1000), from: _place(_doorOne));
+
+      final marked = valueOf(
+        await describeBuilding(lilasId, n('8'), AddDoor(escA, 0)),
+      );
+
+      expect(marked.takenOut, isNull);
+      expect(rounds.openRound!.donations, [cash(1000)]);
+    });
+
+    test('should put the ✓ house and its dons back on « Annuler »', () async {
+      await addDonation(card(1000));
+      await sevenDoneWith(cash(2000));
+      await addDonation(offered);
+      final before = rounds.openRound!;
+      final marked = await sevenLaidOut();
+
+      await undo(marked.change, putBack: marked.takenOut);
+
+      final seven = houseOf(streets[lilasId]!, '7');
+      expect(seven.building, isNull);
+      expect(seven.status, VisitStatus.done);
+      expect(rounds.openRound, before);
+      expect(rounds.openRound!.origins, [null, _seven, null]);
     });
   });
 

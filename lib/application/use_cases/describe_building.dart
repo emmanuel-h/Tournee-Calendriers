@@ -1,6 +1,7 @@
 import 'package:tournee_calendriers/application/ports/clock.dart';
 import 'package:tournee_calendriers/application/ports/identity_provider.dart';
 import 'package:tournee_calendriers/application/use_cases/command_failure.dart';
+import 'package:tournee_calendriers/application/use_cases/round_visits.dart';
 import 'package:tournee_calendriers/application/use_cases/street_command.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/building/building.dart';
@@ -62,22 +63,29 @@ final class BackToSingleHouse extends BuildingEdit {
 /// member and the time. Needs no network.
 ///
 /// Returns the change ([BuildingLaidOut] or [BuildingRemoved]), whose undo
-/// puts the house back as it was, doors and marks included.
+/// puts the house back as it was, doors and marks included. A ✓ house
+/// turned into a building takes its own dons out of the tournée on, as a ✓
+/// taken back does, and says which ([Marked.takenOut], PLAN §5.21, #171):
+/// they have no house left to belong to. No other edit moves a status, so
+/// no other edit tells the tournée anything.
 final class DescribeBuilding {
-  const DescribeBuilding(this._streets, this._clock, this._identity);
+  const DescribeBuilding(
+    this._streets,
+    this._clock,
+    this._identity,
+    this._rounds,
+  );
 
   final StreetRepository _streets;
   final Clock _clock;
   final IdentityProvider _identity;
+  final RoundVisits _rounds;
 
-  Future<Result<HouseChange, CommandFailure<BuildingChangeFailure>>> call(
-    StreetId streetId,
-    HouseNumber number,
-    BuildingEdit edit,
-  ) {
+  Future<Result<Marked<HouseChange>, CommandFailure<BuildingChangeFailure>>>
+  call(StreetId streetId, HouseNumber number, BuildingEdit edit) async {
     final by = _identity.currentMember;
     final at = _clock.now();
-    return runOnStreet(
+    final result = await runOnStreet(
       _streets,
       streetId,
       (street) => switch (edit) {
@@ -110,5 +118,11 @@ final class DescribeBuilding {
         BackToSingleHouse() => street.removeBuilding(number, by: by, at: at),
       },
     );
+    switch (result) {
+      case Ok(value: final change):
+        return Ok(Marked(change, takenOut: await _rounds.noteChange(change)));
+      case Err(:final failure):
+        return Err(failure);
+    }
   }
 }

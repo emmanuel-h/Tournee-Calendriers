@@ -7,6 +7,7 @@ import 'package:tournee_calendriers/domain/street/street_change.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
+import '../../support/building_fixtures.dart';
 import '../../support/street_fixtures.dart';
 
 final _lilas = StreetId('rue-des-lilas');
@@ -177,6 +178,65 @@ void main() {
           ),
         ),
         _twelve,
+      );
+    });
+
+    test('should name a ✓ house turned into a building (#171)', () {
+      BuildingLaidOut laidOut(VisitStatus from) => BuildingLaidOut(
+        streetId: _lilas,
+        before: _house(from),
+        stamp: leaAtTwo,
+        building: building(topFloor: 1, doors: 2),
+      );
+
+      expect(DonationOrigin.leftDoneBy(laidOut(VisitStatus.done)), _twelve);
+      for (final from in notDone) {
+        expect(
+          DonationOrigin.leftDoneBy(laidOut(from)),
+          isNull,
+          reason: '$from → immeuble',
+        );
+      }
+    });
+
+    test('should name nothing for a building laid out again, its doors '
+        '✓ or not', () {
+      final doneDoor = Dwelling(label: d('01'), status: VisitStatus.done);
+      final before = House(
+        number: n('8'),
+        building: building(
+          topFloor: 0,
+          doors: 2,
+        ).withDwelling(escA, 0, doneDoor),
+      );
+
+      expect(
+        DonationOrigin.leftDoneBy(
+          BuildingLaidOut(
+            streetId: _lilas,
+            before: before,
+            stamp: leaAtTwo,
+            building: building(topFloor: 0, doors: 3),
+          ),
+        ),
+        isNull,
+      );
+    });
+
+    test('should name nothing for a building turned back into a house', () {
+      expect(
+        DonationOrigin.leftDoneBy(
+          BuildingRemoved(
+            streetId: _lilas,
+            before: House(
+              number: n('8'),
+              building: building(topFloor: 0, doors: 2),
+            ),
+            stamp: leaAtTwo,
+            status: VisitStatus.toDo,
+          ),
+        ),
+        isNull,
       );
     });
 

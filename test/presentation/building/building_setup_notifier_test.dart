@@ -1,5 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
+import 'package:tournee_calendriers/domain/round/donation_origin.dart';
+import 'package:tournee_calendriers/domain/round/donations_taken_out.dart';
+import 'package:tournee_calendriers/domain/round/round.dart';
+import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
 import 'package:tournee_calendriers/domain/street/building/building.dart';
 import 'package:tournee_calendriers/domain/street/building/building_plan.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
@@ -13,7 +17,11 @@ import 'package:tournee_calendriers/presentation/building/building_setup_notifie
 import 'package:tournee_calendriers/presentation/building/building_setup_state.dart';
 import 'package:tournee_calendriers/presentation/dependencies.dart';
 
+import '../../domain/round/round_fixtures.dart';
+import '../../domain/sector/my_sectors_fixtures.dart';
 import '../../support/building_fixtures.dart';
+import '../../support/fakes/fake_my_sectors_store.dart';
+import '../../support/fakes/fake_open_round_store.dart';
 import '../../support/fakes/fake_ports.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/fakes/lost_streets.dart';
@@ -96,8 +104,12 @@ void main() {
   late FakeStreetRepository streets;
   late ProviderContainer container;
 
-  void phoneWith(Street? street, {bool lost = false}) {
+  late FakeOpenRoundStore rounds;
+
+  /// A phone holding [street], with [round] on in the 49 when given.
+  void phoneWith(Street? street, {bool lost = false, Round? round}) {
     streets = FakeStreetRepository([?street]);
+    rounds = FakeOpenRoundStore(round);
     container = ProviderContainer(
       overrides: [
         streetRepositoryProvider.overrideWithValue(
@@ -105,6 +117,12 @@ void main() {
         ),
         clockProvider.overrideWithValue(FakeClock(twoPm)),
         identityProvider.overrideWithValue(FakeIdentity(lea)),
+        openRoundStoreProvider.overrideWithValue(rounds),
+        mySectorsStoreProvider.overrideWithValue(
+          FakeMySectorsStore(
+            valueOf(MySectors.none.remember(sector49).open(sector49.id)),
+          ),
+        ),
       ],
     );
     addTearDown(container.dispose);
@@ -684,6 +702,8 @@ void main() {
         final outcome = await notifier('7').validate();
 
         expect(outcome, isA<SetupLaidOut>());
+        expect((outcome as SetupLaidOut).takenOut, isNull);
+        expect(outcome.change, streets.saved.single.$2);
         expect(
           streets.saved.single.$2,
           BuildingLaidOut(
@@ -715,6 +735,31 @@ void main() {
         );
       },
     );
+
+    test('should say which dons a ✓ house turned into a building took out '
+        'of the tournée (#171)', () async {
+      final three = House(number: n('3'), status: VisitStatus.done);
+      final origin = DonationOrigin(street: _id, number: n('3'));
+      phoneWith(
+        _street(houses: [three]),
+        round: newRound().add(cash(500)).add(cheque(2000), from: origin),
+      );
+      await settled('3');
+
+      final outcome = await notifier('3').validate() as SetupLaidOut;
+
+      expect(outcome.change, streets.saved.single.$2);
+      expect(outcome.change.before, three);
+      expect(
+        outcome.takenOut,
+        DonationsTakenOut(
+          round: roundId,
+          origin: origin,
+          taken: [(index: 1, donation: cheque(2000))],
+        ),
+      );
+      expect(rounds.openRound!.donations, [cash(500)]);
+    });
 
     test('should ask first when marked doors would be dropped', () async {
       phoneWith(_street());

@@ -255,6 +255,7 @@ final describeBuildingProvider = Provider(
     ref.watch(streetRepositoryProvider),
     ref.watch(clockProvider),
     ref.watch(identityProvider),
+    ref.watch(roundVisitsProvider),
   ),
 );
 final editStreetNumbersProvider = Provider(

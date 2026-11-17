@@ -2584,6 +2584,14 @@ stays on the phone, without house or time »** for the time of the tournée only
   tournée is validated. « Modifier le don » keeps the link; « Supprimer ce don » drops it.
 - A house removed in edit mode, or its street deleted, while ✓: its dons stay (only a status
   leaving ✓ removes them).
+- **A ✓ house turned into a building** (edit mode, « Transformer en immeuble… » then « Valider »,
+  #171, agreed 2026-11-17): its own dons have no house left, so they leave the tournée as for a
+  ✓ taken back. Snackbar on « Modifier la rue »: « N° 3 changé en immeuble · son don de 20 € en
+  espèces est retiré de la tournée » (same wordings as above); « Annuler » makes it a single ✓
+  house again with its dons back at their places, linked again. Shown only when dons left: a
+  house not ✓, a ✓ with no linked don, or « Modifier les étages » on a building show nothing, as
+  before. « maisons visitées » does not change (a building laid out counts nothing). Nothing
+  changes on the server.
 - **Privacy text** (5.9, `PRIVACY.md`): one sentence: during a tournée the phone knows which
   house each don was noted from, until it is validated; this never leaves the phone. Drafted by
   Claude for the user's review.
@@ -2592,8 +2600,11 @@ stays on the phone, without house or time »** for the time of the tournée only
   `Marked` returned by `SetHouseDetails` and `MarkDwelling`, `UndoLastChange(change, {putBack})`,
   `AddDonation(…, {from})`, `takenOutWords` in `ui/screens/street/status_words.dart`):
   - « Leaves ✓ » means the status before was ✓ and the one after is not, from the status picker
-    of a house or door, « De nouveau personne », or an undo (`DonationOrigin.leftDoneBy`). A
-    building laid out, a house renumbered, removed or purged, a street deleted, take nothing out.
+    of a house or door, « De nouveau personne », an undo, or a ✓ single house laid out as a
+    building (#171) (`DonationOrigin.leftDoneBy`; `DescribeBuilding` returns `Marked` too and
+    `SetupLaidOut` carries the change and its `takenOut`). A building laid out again, a building
+    turned back into a house (`BuildingRemoved`), doors dropped, a house renumbered, removed or
+    purged, a street deleted, take nothing out.
   - Only on the tournée on of the open secteur, as « maisons visitées » counts; the count and the
     dons are saved in one write. A ✓ marked by another phone, or before the tournée, has no link,
     so nothing goes.

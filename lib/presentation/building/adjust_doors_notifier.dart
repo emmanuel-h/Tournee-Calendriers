@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tournee_calendriers/application/use_cases/command_failure.dart';
 import 'package:tournee_calendriers/application/use_cases/describe_building.dart';
+import 'package:tournee_calendriers/application/use_cases/round_visits.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/building/building.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
@@ -94,7 +95,7 @@ final class AdjustDoorsNotifier extends Notifier<AdjustDoorsState>
     }
     if (label == door.label) return const DoorNameKept();
     switch (await _describe(RenameDoor(door, label))) {
-      case Ok(value: final change):
+      case Ok(value: Marked(:final change)):
         keepForUndo(change);
         return DoorRenamed(DwellingKey(door.staircase, door.level, label));
       case Err(failure: final failure):
@@ -102,18 +103,20 @@ final class AdjustDoorsNotifier extends Notifier<AdjustDoorsState>
     }
   }
 
-  Future<Result<HouseChange, CommandFailure<BuildingChangeFailure>>> _describe(
-    BuildingEdit edit,
-  ) => ref.read(describeBuildingProvider)(key.street, key.number, edit);
+  /// A door added, removed or renamed moves no status: nothing is ever
+  /// taken out of the tournée ([Marked.takenOut] stays null).
+  Future<Result<Marked<HouseChange>, CommandFailure<BuildingChangeFailure>>>
+  _describe(BuildingEdit edit) =>
+      ref.read(describeBuildingProvider)(key.street, key.number, edit);
 
   /// Keeps the change of [result] for « Annuler », naming the [door] it
   /// added or removed, or says why there is none.
   DoorEditOutcome _outcome(
-    Result<HouseChange, CommandFailure<BuildingChangeFailure>> result,
+    Result<Marked<HouseChange>, CommandFailure<BuildingChangeFailure>> result,
     DwellingKey door,
   ) {
     switch (result) {
-      case Ok(value: final change):
+      case Ok(value: Marked(:final change)):
         keepForUndo(change);
         return DoorEditApplied(door);
       case Err(:final failure):

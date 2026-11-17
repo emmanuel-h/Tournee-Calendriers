@@ -5,6 +5,7 @@ import 'package:tournee_calendriers/application/use_cases/command_failure.dart';
 import 'package:tournee_calendriers/application/use_cases/describe_building.dart';
 import 'package:tournee_calendriers/application/use_cases/edit_street_numbers.dart';
 import 'package:tournee_calendriers/application/use_cases/read_street_part_choice.dart';
+import 'package:tournee_calendriers/application/use_cases/round_visits.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
@@ -37,7 +38,9 @@ final editStreetProvider = NotifierProvider.autoDispose
 /// (`House.hasMarks`, `Building.hasMarks`) before anything is stored, so the
 /// screen can ask the person first.
 ///
-/// « Annuler » undoes the last removal, renumbering or « back to a house ».
+/// « Annuler » undoes the last removal, renumbering or « back to a house »,
+/// or a ✓ house turned into a building that took dons out of the tournée
+/// (the screen keeps it with `keepForUndo`, PLAN §5.21).
 final class EditStreetNotifier extends Notifier<EditStreetState>
     with FollowsStreet<EditStreetState>, UndoesLastChange<EditStreetState> {
   EditStreetNotifier(this.streetId);
@@ -112,13 +115,21 @@ final class EditStreetNotifier extends Notifier<EditStreetState>
   /// « Changer en maison » on the building at [number], chosen in its
   /// grid (which asked first when a door had marks): its doors go, with
   /// « Annuler » to bring them back.
-  Future<EditOutcome> backToSingleHouse(HouseNumber number) async => _keep(
-    await ref.read(describeBuildingProvider)(
+  Future<EditOutcome> backToSingleHouse(HouseNumber number) async {
+    final result = await ref.read(describeBuildingProvider)(
       streetId,
       number,
       const BackToSingleHouse(),
-    ),
-  );
+    );
+    switch (result) {
+      // The doors' dons stay apart: back to a house takes none out.
+      case Ok(value: Marked(:final change)):
+        keepForUndo(change);
+        return const EditApplied();
+      case Err():
+        return const EditFailed();
+    }
+  }
 
   /// « Supprimer la rue », once confirmed: the street goes to the Corbeille
   /// with its houses and marks. Returns whether it went.

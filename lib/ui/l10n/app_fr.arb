@@ -543,6 +543,11 @@
     "description": "Undo snackbar after a building was turned back into a single house.",
     "placeholders": { "number": { "type": "String", "example": "8" } }
   },
+  "houseToBuildingDone": "N° {number} changé en immeuble",
+  "@houseToBuildingDone": {
+    "description": "Start of the undo snackbar after a ✓ house was turned into a building during a tournée and its dons left the tournée (PLAN §5.21, #171), followed by « · son don de 20 € en espèces est retiré de la tournée ». Not shown when no don left.",
+    "placeholders": { "number": { "type": "String", "example": "3" } }
+  },
   "delete": "Supprimer",
   "@delete": { "description": "Confirms a removal (a number, a street)." },
   "confirmRemoveTitle": "Supprimer le n° {number} ?",

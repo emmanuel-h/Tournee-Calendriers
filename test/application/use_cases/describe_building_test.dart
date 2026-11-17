@@ -8,6 +8,7 @@ import 'package:tournee_calendriers/domain/street/street_id.dart';
 import 'package:tournee_calendriers/domain/street/visit_status.dart';
 
 import '../../support/building_fixtures.dart';
+import '../../support/fakes/fake_open_round_store.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
@@ -19,20 +20,26 @@ void main() {
 
   setUp(() {
     streets = repositoryWithLilas();
-    describeBuilding = DescribeBuilding(streets, clockAtTwo(), leaOnThePhone());
+    describeBuilding = DescribeBuilding(
+      streets,
+      clockAtTwo(),
+      leaOnThePhone(),
+      noRoundOn(),
+    );
   });
 
   Building? buildingOf(String label) =>
       houseOf(streets[lilasId]!, label).building;
 
   test('should make a house the building of the plan', () async {
-    final change = valueOf(
+    final marked = valueOf(
       await describeBuilding(
         lilasId,
         n('7'),
         LayOutBuilding(plan(topFloor: 1, doors: 2)),
       ),
     );
+    final change = marked.change;
 
     expect(
       change,
@@ -45,12 +52,13 @@ void main() {
     );
     expect(streets.saved.single.$2, change);
     expect(buildingOf('7'), building(topFloor: 1, doors: 2));
+    expect(marked.takenOut, isNull);
   });
 
   test('should add a door at the end of a floor', () async {
     final change = valueOf(
       await describeBuilding(lilasId, n('8'), AddDoor(escA, 0)),
-    );
+    ).change;
 
     expect(change, isA<BuildingLaidOut>());
     expect(change.before, eight);
@@ -84,7 +92,7 @@ void main() {
       // the compiler, so its constructor line would never count as covered.
       // ignore: prefer_const_constructors
       await describeBuilding(lilasId, n('8'), BackToSingleHouse()),
-    );
+    ).change;
 
     expect(
       change,

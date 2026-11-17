@@ -286,7 +286,7 @@ void main() {
           n('8'),
           const BackToSingleHouse(),
         ),
-      );
+      ).change;
 
       expect(change.stamp, leaAtTwo);
     });

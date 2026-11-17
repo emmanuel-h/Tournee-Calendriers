@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
+import 'package:tournee_calendriers/domain/round/donation_origin.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
@@ -14,12 +15,15 @@ import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/components/building_icon.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 
+import '../../domain/round/round_fixtures.dart';
 import '../../support/building_fixtures.dart';
 import '../../support/fakes/fake_address_directory.dart';
+import '../../support/fakes/fake_open_round_store.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/results.dart';
 import '../../support/street_fixtures.dart';
 import '../support/app_overrides.dart';
+import '../support/finders.dart';
 import '../support/keyboard.dart';
 import '../support/large_text.dart';
 import '../support/navigation.dart';
@@ -81,11 +85,13 @@ void main() {
   /// screen, then its edit mode with ✏, on a tall phone so every row of
   /// the test street is built.
   /// [street] replaces the Rue des Lilas as it is stored.
+  /// [rounds]: the 49 open with that tournée on instead of no secteur.
   /// [largeText] shows it on a phone with text at 200 % instead.
   Future<void> openEditMode(
     WidgetTester tester, {
     Street? street,
     FakeAddressDirectory? directory,
+    FakeOpenRoundStore? rounds,
     bool largeText = false,
   }) async {
     if (largeText) {
@@ -99,7 +105,9 @@ void main() {
     streets = FakeStreetRepository([street ?? _lilas]);
     await tester.pumpWidget(
       ProviderScope(
-        overrides: fakePhone(streets: streets, directory: directory),
+        overrides: rounds == null
+            ? fakePhone(streets: streets, directory: directory)
+            : fakePhoneInRound(streets: streets, rounds: rounds),
         child: const TourneeApp(showGallery: false),
       ),
     );
@@ -450,6 +458,67 @@ void main() {
         ),
         findsOneWidget,
       );
+    });
+  });
+
+  group('Transformer en immeuble during a tournée (#171)', () {
+    final three = DonationOrigin(street: _id, number: n('3'));
+
+    /// ✏ on N° 3, « Transformer en immeuble… », then « Valider » with the
+    /// answers of the sheet as they open.
+    Future<void> turnThreeIntoABuilding(WidgetTester tester) async {
+      await tester.tap(_pen('3'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const Key('number.toBuilding')));
+      await tester.pumpAndSettle();
+      await tester.ensureVisible(find.byKey(const Key('setup.validate')));
+      await tester.tap(find.byKey(const Key('setup.validate')));
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('should take the ✓ house\'s don out of the tournée, then put '
+        'the house and its don back when Annuler is tapped', (tester) async {
+      final round = newRound()
+          .add(cash(500))
+          .add(cash(2000), from: three)
+          .visited();
+      final rounds = FakeOpenRoundStore(round);
+      await openEditMode(tester, rounds: rounds);
+
+      await turnThreeIntoABuilding(tester);
+
+      expect(
+        findArrowText(
+          'N° 3 changé en immeuble · son don de 20\u00A0€ en espèces est '
+          'retiré de la tournée',
+        ),
+        findsOneWidget,
+      );
+      expect(rounds.openRound!.donations, [cash(500)]);
+      expect(rounds.openRound!.housesVisited, 1);
+      expect(_buildingIcon('3'), findsOneWidget);
+
+      await tester.tap(find.text('Annuler'));
+      await tester.pumpAndSettle();
+
+      final house = streets[_id]!.houses.singleWhere((h) => h.number == n('3'));
+      expect(house.building, isNull);
+      expect(house.status, VisitStatus.done);
+      expect(rounds.openRound, round);
+      expect(_buildingIcon('3'), findsNothing);
+    });
+
+    testWidgets('should say nothing when no don left the tournée', (
+      tester,
+    ) async {
+      final rounds = FakeOpenRoundStore(newRound().add(cash(500)));
+      await openEditMode(tester, rounds: rounds);
+
+      await turnThreeIntoABuilding(tester);
+
+      expect(_buildingIcon('3'), findsOneWidget);
+      expect(find.byType(SnackBar), findsNothing);
+      expect(rounds.openRound!.donations, [cash(500)]);
     });
   });
 

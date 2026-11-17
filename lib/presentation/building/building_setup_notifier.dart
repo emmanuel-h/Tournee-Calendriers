@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tournee_calendriers/application/use_cases/describe_building.dart';
+import 'package:tournee_calendriers/application/use_cases/round_visits.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/domain/street/building/building.dart';
 import 'package:tournee_calendriers/domain/street/building/building_plan.dart';
@@ -107,7 +108,8 @@ final class BuildingSetupNotifier extends Notifier<BuildingSetupState>
 
   /// « Valider »: lays the house out as the answers say. When that would
   /// drop doors that have marks, nothing is stored unless [confirmed]: the
-  /// sheet asks first.
+  /// sheet asks first. Says which dons left the tournée with a ✓ house
+  /// (PLAN §5.21).
   Future<SetupOutcome> validate({bool confirmed = false}) async {
     final house = _house;
     final plan = _plan;
@@ -120,7 +122,10 @@ final class BuildingSetupNotifier extends Notifier<BuildingSetupState>
       LayOutBuilding(plan),
     );
     return switch (result) {
-      Ok() => const SetupLaidOut(),
+      Ok(value: Marked(:final change, :final takenOut)) => SetupLaidOut(
+        change,
+        takenOut: takenOut,
+      ),
       Err() => const SetupFailed(),
     };
   }
