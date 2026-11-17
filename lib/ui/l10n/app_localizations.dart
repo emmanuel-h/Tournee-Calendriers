@@ -1726,6 +1726,18 @@ abstract class AppLocalizations {
   /// **'Mise à jour de la carte, sans changement visible.'**
   String get release0240Map;
 
+  /// Line of « Nouveautés » for 0.25.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'« Écrire au développeur » dans Paramètres : envoyez une idée ou un souci par mail.'**
+  String get release0250Contact;
+
+  /// Line of « Nouveautés » for 0.25.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'Une maison faite changée en immeuble retire ses dons de la tournée ; « Annuler » les remet.'**
+  String get release0250Building;
+
   /// Line of « Nouveautés » for 0.23.0.
   ///
   /// In fr, this message translates to:
