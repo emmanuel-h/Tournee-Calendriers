@@ -476,6 +476,69 @@
       "w": 390,
       "h": 844,
       "title": "5.22 Accueil — nouvelle campagne"
+    },
+    "SettingsSuperLink.dc.html": {
+      "x": 0,
+      "y": 13904,
+      "w": 390,
+      "h": 844,
+      "title": "5.23 Paramètres — super admin, Google à lier"
+    },
+    "SettingsSuper.dc.html": {
+      "x": 470,
+      "y": 13904,
+      "w": 390,
+      "h": 844,
+      "title": "5.23 Paramètres — super admin"
+    },
+    "WelcomeGoogle.dc.html": {
+      "x": 940,
+      "y": 13904,
+      "w": 390,
+      "h": 844,
+      "title": "5.23 Bienvenue — super admin, se connecter"
+    },
+    "Admins.dc.html": {
+      "x": 1410,
+      "y": 13904,
+      "w": 390,
+      "h": 844,
+      "title": "5.23 Administrateurs"
+    },
+    "AdminsMenu.dc.html": {
+      "x": 1880,
+      "y": 13904,
+      "w": 390,
+      "h": 844,
+      "title": "5.23 Administrateurs — ⋮"
+    },
+    "AdminEdit.dc.html": {
+      "x": 2350,
+      "y": 13904,
+      "w": 390,
+      "h": 844,
+      "title": "5.23 Nouvel administrateur"
+    },
+    "AdminRemove.dc.html": {
+      "x": 2820,
+      "y": 13904,
+      "w": 390,
+      "h": 844,
+      "title": "5.23 Retirer un administrateur"
+    },
+    "CreateCentre.dc.html": {
+      "x": 3290,
+      "y": 13904,
+      "w": 390,
+      "h": 844,
+      "title": "5.23 Nouveau secteur — choix du CS"
+    },
+    "TeamDelete.dc.html": {
+      "x": 3760,
+      "y": 13904,
+      "w": 390,
+      "h": 844,
+      "title": "5.23 Supprimer le secteur — confirmation"
     }
   },
   "createdOnFiles": {
@@ -596,7 +659,16 @@
     "ComeBackNotify.dc.html",
     "StreetRing.dc.html",
     "SettingsReminders.dc.html",
-    "SettingsContact.dc.html"
+    "SettingsContact.dc.html",
+    "SettingsSuperLink.dc.html",
+    "SettingsSuper.dc.html",
+    "WelcomeGoogle.dc.html",
+    "Admins.dc.html",
+    "AdminsMenu.dc.html",
+    "AdminEdit.dc.html",
+    "AdminRemove.dc.html",
+    "CreateCentre.dc.html",
+    "TeamDelete.dc.html"
   ],
   "pages": [],
   "title": "Tournée Calendriers screens"

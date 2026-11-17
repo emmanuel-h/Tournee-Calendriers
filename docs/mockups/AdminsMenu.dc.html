@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Administrateurs, menu</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B3261E}a:hover{color:#8C1D18}
+.ib{width:48px;height:48px;border:0;background:transparent;color:#1B1F24;border-radius:24px;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;text-decoration:none;flex-shrink:0}
+.ib svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.hd{padding:18px 20px 8px 20px;font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#4A5058}
+.tr{display:flex;align-items:center;gap:12px;min-height:64px;padding:0 12px 0 20px;border-bottom:1px solid #E2DED5;background:#FFFFFF;text-decoration:none;color:#1B1F24}
+.tr:hover{color:#1B1F24}
+.tr .n{font:700 21px 'Barlow Condensed',sans-serif}
+.tr .s{font-size:14px;color:#4A5058}
+.tr svg{width:20px;height:20px;fill:none;stroke:#5A6068;stroke-width:2;flex-shrink:0}
+.row{display:flex;align-items:center;gap:12px;min-height:56px;text-decoration:none;color:#1B1F24;border-bottom:1px solid #E2DED5}
+.row:hover{color:#1B1F24}
+.lg{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;white-space:nowrap}
+.line{display:flex;align-items:center;min-height:56px;padding:0 20px;gap:8px;border-bottom:1px solid #E2DED5;background:#FFFFFF;text-decoration:none;color:#1B1F24}
+.m{flex:1;font-weight:700;font-size:16px}
+.v{color:#4A5058}
+.new{box-shadow:inset 4px 0 0 #B3261E}
+.in{height:56px;box-sizing:border-box;width:100%;border:1.5px solid #CFC9BD;border-radius:12px;background:#FFFFFF;padding:0 16px;font:400 17px 'Atkinson Hyperlegible',sans-serif;color:#1B1F24}
+.lbl{font-size:15px;font-weight:700}
+.cb{display:flex;align-items:center;gap:14px;min-height:56px;padding:0 20px;border-bottom:1px solid #E2DED5;background:#FFFFFF}
+.cb .box{width:22px;height:22px;border-radius:5px;border:2px solid #4A5058;box-sizing:border-box;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cb .on{background:#1B1F24;border-color:#1B1F24}
+.cb .on::after{content:'';width:10px;height:5px;border:solid #FFFFFF;border-width:0 0 2.5px 2.5px;transform:rotate(-45deg) translate(1px,-1px)}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F3F1EC; color: #1B1F24; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; display: flex; flex-direction: column; position: relative; overflow: hidden">
+  <div style="display: flex; align-items: center; gap: 4px; padding: 8px">
+    <a class="ib" href="SettingsSuper.dc.html" aria-label="Retour"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a>
+    <div style="display: flex; flex-direction: column"><h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 28px; line-height: 1.05">Administrateurs</h1><span style="font-size: 14px; color: #4A5058">Ils gèrent les centres de secours qui leur sont confiés.</span></div>
+  </div>
+  <div style="border-top: 1px solid #E2DED5">
+    <div class="tr" style="padding-right: 4px"><span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span class="n">Manu (vous)</span><span class="s">Super administrateur · tous les centres</span></span></div>
+    <div class="tr" style="padding-right: 4px"><span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span class="n">Léa</span><span class="s">CS Villefranche : tout · CS Gleizé : Équipes</span></span><button class="ib" aria-label="Plus d'actions pour Léa"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/></svg></button></div>
+    <div class="tr" style="padding-right: 4px"><span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span class="n">Paul</span><span class="s">CS Gleizé : Campagne, Rues</span></span><button class="ib" aria-label="Plus d'actions pour Paul"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/></svg></button></div>
+    <div class="tr" style="padding-right: 4px"><span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span class="n">Sans nom</span><span class="s"><span style="font-family: ui-monospace, monospace">7Hq2…Lc1</span> · aucune permission</span></span><button class="ib" aria-label="Plus d'actions pour Sans nom"><svg viewBox="0 0 24 24"><circle cx="12" cy="5" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="19" r="1.5" fill="currentColor"/></svg></button></div>
+  </div>
+  <div style="padding: 16px">
+    <a href="AdminEdit.dc.html" style="height: 52px; border-radius: 26px; border: 1.5px solid #1B1F24; background: #FFFFFF; color: #1B1F24; font-weight: 700; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none">+ Ajouter un administrateur</a>
+  </div>
+  <div style="position: absolute; right: 16px; top: 168px; width: 200px; background: #FFFFFF; border-radius: 12px; box-shadow: 0 6px 20px rgba(27, 31, 36, 0.2); padding: 6px 0; z-index: 5">
+    <a href="AdminEdit.dc.html" style="display: flex; align-items: center; min-height: 48px; padding: 0 16px; color: #1B1F24; text-decoration: none; font-size: 16px">Modifier</a>
+    <a href="AdminRemove.dc.html" style="display: flex; align-items: center; min-height: 48px; padding: 0 16px; color: #B3261E; text-decoration: none; font-size: 16px; font-weight: 700">Retirer</a>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

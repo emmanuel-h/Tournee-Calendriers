@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Nouveau secteur, choix du CS</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B3261E}a:hover{color:#8C1D18}
+.ib{width:48px;height:48px;border:0;background:transparent;color:#1B1F24;border-radius:24px;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;text-decoration:none;flex-shrink:0}
+.ib svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.hd{padding:18px 20px 8px 20px;font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#4A5058}
+.tr{display:flex;align-items:center;gap:12px;min-height:64px;padding:0 12px 0 20px;border-bottom:1px solid #E2DED5;background:#FFFFFF;text-decoration:none;color:#1B1F24}
+.tr:hover{color:#1B1F24}
+.tr .n{font:700 21px 'Barlow Condensed',sans-serif}
+.tr .s{font-size:14px;color:#4A5058}
+.tr svg{width:20px;height:20px;fill:none;stroke:#5A6068;stroke-width:2;flex-shrink:0}
+.row{display:flex;align-items:center;gap:12px;min-height:56px;text-decoration:none;color:#1B1F24;border-bottom:1px solid #E2DED5}
+.row:hover{color:#1B1F24}
+.lg{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;white-space:nowrap}
+.line{display:flex;align-items:center;min-height:56px;padding:0 20px;gap:8px;border-bottom:1px solid #E2DED5;background:#FFFFFF;text-decoration:none;color:#1B1F24}
+.m{flex:1;font-weight:700;font-size:16px}
+.v{color:#4A5058}
+.new{box-shadow:inset 4px 0 0 #B3261E}
+.in{height:56px;box-sizing:border-box;width:100%;border:1.5px solid #CFC9BD;border-radius:12px;background:#FFFFFF;padding:0 16px;font:400 17px 'Atkinson Hyperlegible',sans-serif;color:#1B1F24}
+.lbl{font-size:15px;font-weight:700}
+.cb{display:flex;align-items:center;gap:14px;min-height:56px;padding:0 20px;border-bottom:1px solid #E2DED5;background:#FFFFFF}
+.cb .box{width:22px;height:22px;border-radius:5px;border:2px solid #4A5058;box-sizing:border-box;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cb .on{background:#1B1F24;border-color:#1B1F24}
+.cb .on::after{content:'';width:10px;height:5px;border:solid #FFFFFF;border-width:0 0 2.5px 2.5px;transform:rotate(-45deg) translate(1px,-1px)}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F3F1EC; color: #1B1F24; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; display: flex; flex-direction: column; position: relative; overflow: hidden">
+  <div style="display: flex; align-items: center; gap: 4px; padding: 8px">
+    <a class="ib" href="Welcome.dc.html" aria-label="Retour"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a>
+    <h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 28px">Nouveau secteur</h1>
+  </div>
+  <div style="display: flex; flex-direction: column; gap: 16px; padding: 4px 24px 0 24px">
+    <div style="display: flex; flex-direction: column; gap: 6px"><label class="lbl" for="cs">Centre de secours</label>
+      <div style="position: relative"><button class="in" id="cs" style="text-align: left; padding-right: 44px; border-color: #1B1F24">CS Villefranche</button><svg viewBox="0 0 24 24" style="position: absolute; right: 14px; top: 16px; width: 20px; height: 20px; fill: none; stroke: #4A5058; stroke-width: 2; stroke-linecap: round"><path d="M6 9l6 6 6-6"/></svg></div></div>
+    <!-- #78: one or more communes, at least one. Chips with ✕ (48 dp target), then a field that
+         searches geo.api.gouv.fr as « Importer des rues » did; a pick adds a chip and clears it. -->
+    <div style="display: flex; flex-direction: column; gap: 8px"><span class="lbl">Communes</span>
+      <div style="display: flex; flex-wrap: wrap; gap: 8px">
+        <span style="height: 40px; display: inline-flex; align-items: center; gap: 4px; padding: 0 4px 0 14px; border-radius: 20px; background: #FFFFFF; border: 1.5px solid #CFC9BD; font-size: 15px">Villefranche-sur-Saône (69400)<button class="ib" aria-label="Retirer Villefranche-sur-Saône" style="width: 36px; height: 36px"><svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></svg></button></span>
+      </div>
+      <div style="position: relative"><input class="in" id="commune" placeholder="Ajouter une commune…" style="padding-left: 44px"><svg viewBox="0 0 24 24" style="position: absolute; left: 14px; top: 16px; width: 20px; height: 20px; fill: none; stroke: #4A5058; stroke-width: 2; stroke-linecap: round"><path d="M12 5v14M5 12h14"/></svg></div></div>
+    <div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px">
+      <div style="display: flex; flex-direction: column; gap: 6px"><label class="lbl" for="num">N° de secteur</label><input class="in" id="num" value="49"></div>
+      <div style="display: flex; flex-direction: column; gap: 6px"><span class="lbl">Année</span><span style="height: 56px; display: flex; align-items: center; font-size: 17px; color: #4A5058">2026 (celle du CS)</span></div>
+    </div>
+    <button style="height: 56px; border-radius: 28px; border: 0; background: #B3261E; color: #FFFFFF; font: 700 17px 'Atkinson Hyperlegible', sans-serif">Créer</button>
+  </div>
+  <div style="position: absolute; inset: 0; background: rgba(27, 31, 36, 0.5); z-index: 8"></div>
+  <div role="dialog" aria-label="Centre de secours" style="position: absolute; left: 0; right: 0; bottom: 0; background: #FFFFFF; border-radius: 24px 24px 0 0; padding: 10px 0 24px 0; z-index: 9">
+    <div style="width: 40px; height: 4px; border-radius: 2px; background: #CFC9BD; margin: 0 auto 12px auto"></div>
+    <div style="padding: 0 20px 8px 20px; font: 700 22px 'Barlow Condensed', sans-serif">Centre de secours</div>
+    <div class="line" style="border-top: 1px solid #E2DED5"><span class="m">CS Villefranche</span><span style="color: #1E6B47; font-weight: 700">✓</span></div>
+    <div class="line"><span class="m">CS Gleizé</span></div>
+    <div style="padding: 10px 20px 0 20px; font-size: 14px; color: #4A5058; line-height: 1.4">Les centres où vous avez la permission « Secteurs ». Un nouveau centre : le super administrateur.</div>
+    <div style="padding: 14px 20px 0 20px; font-size: 13px; font-weight: 700; color: #4A5058; text-transform: uppercase; letter-spacing: 0.06em">Super administrateur seulement</div>
+    <div class="line" style="border-top: 1px solid #E2DED5; margin-top: 8px; color: #B3261E"><span class="m">+ Nouveau centre de secours</span></div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

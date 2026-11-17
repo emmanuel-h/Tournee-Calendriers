@@ -2739,7 +2739,7 @@ end together, so no secteur is ever on another year than its CS.
 
 ### 5.23 Rôles et permissions (M12, to build before §5.22)
 
-Decided with the user 2026-11-17 (ASCII in the terminal; mockups to come before any code). Replaces
+Decided with the user 2026-11-17 (ASCII in the terminal, then mockups SettingsSuperLink, SettingsSuper, WelcomeGoogle, Admins, AdminsMenu, AdminEdit, AdminRemove, CreateCentre, TeamDelete; to be approved by the user before code). Replaces
 the « admins are global » of 5.12: an admin's powers are now **per centre de secours, per
 permission**.
 

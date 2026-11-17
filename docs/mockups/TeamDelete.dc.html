@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Supprimer le secteur</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B3261E}a:hover{color:#8C1D18}
+.ib{width:48px;height:48px;border:0;background:transparent;color:#1B1F24;border-radius:24px;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;text-decoration:none;flex-shrink:0}
+.ib svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.hd{padding:18px 20px 8px 20px;font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#4A5058}
+.tr{display:flex;align-items:center;gap:12px;min-height:64px;padding:0 12px 0 20px;border-bottom:1px solid #E2DED5;background:#FFFFFF;text-decoration:none;color:#1B1F24}
+.tr:hover{color:#1B1F24}
+.tr .n{font:700 21px 'Barlow Condensed',sans-serif}
+.tr .s{font-size:14px;color:#4A5058}
+.tr svg{width:20px;height:20px;fill:none;stroke:#5A6068;stroke-width:2;flex-shrink:0}
+.row{display:flex;align-items:center;gap:12px;min-height:56px;text-decoration:none;color:#1B1F24;border-bottom:1px solid #E2DED5}
+.row:hover{color:#1B1F24}
+.lg{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;white-space:nowrap}
+.line{display:flex;align-items:center;min-height:56px;padding:0 20px;gap:8px;border-bottom:1px solid #E2DED5;background:#FFFFFF;text-decoration:none;color:#1B1F24}
+.m{flex:1;font-weight:700;font-size:16px}
+.v{color:#4A5058}
+.new{box-shadow:inset 4px 0 0 #B3261E}
+.in{height:56px;box-sizing:border-box;width:100%;border:1.5px solid #CFC9BD;border-radius:12px;background:#FFFFFF;padding:0 16px;font:400 17px 'Atkinson Hyperlegible',sans-serif;color:#1B1F24}
+.lbl{font-size:15px;font-weight:700}
+.cb{display:flex;align-items:center;gap:14px;min-height:56px;padding:0 20px;border-bottom:1px solid #E2DED5;background:#FFFFFF}
+.cb .box{width:22px;height:22px;border-radius:5px;border:2px solid #4A5058;box-sizing:border-box;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.cb .on{background:#1B1F24;border-color:#1B1F24}
+.cb .on::after{content:'';width:10px;height:5px;border:solid #FFFFFF;border-width:0 0 2.5px 2.5px;transform:rotate(-45deg) translate(1px,-1px)}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F3F1EC; color: #1B1F24; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; display: flex; flex-direction: column; position: relative; overflow: hidden">
+  <div style="display: flex; align-items: center; gap: 4px; padding: 8px">
+    <a class="ib" href="Team.dc.html" aria-label="Retour"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a>
+    <div style="display: flex; flex-direction: column"><h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 28px; line-height: 1.05">Secteur 49</h1><span style="font-size: 14px; color: #4A5058">CS Villefranche · 2026</span></div>
+  </div>
+  <div class="hd">Membres (5)</div>
+  <div style="border-top: 1px solid #E2DED5">
+    <a class="tr" href="#">
+      <span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span class="n">Manu (vous)</span><span class="s">admin</span></span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+    </a>
+    <a class="tr" href="#">
+      <span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span class="n">Léa</span><span class="s"></span></span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+    </a>
+  </div>
+  <div class="hd">Rues (38)</div>
+  <div style="border-top: 1px solid #E2DED5">
+    <a class="tr" href="#">
+      <span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span class="n">+ Ajouter des rues</span><span class="s"></span></span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+    </a>
+  </div>
+  <div style="flex: 1"></div>
+  <div style="display: flex; gap: 10px; padding: 12px 16px 20px 16px; border-top: 1px solid #E2DED5">
+    <span style="flex: 1; height: 48px; border-radius: 24px; border: 1.5px solid #CFC9BD; background: #FFFFFF; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center">Quitter le secteur</span>
+    <span style="flex: 1; height: 48px; border-radius: 24px; border: 1.5px solid #B3261E; background: #FFFFFF; color: #B3261E; font-weight: 700; font-size: 14px; display: flex; align-items: center; justify-content: center">Supprimer le secteur</span>
+  </div>
+  <div style="position: absolute; inset: 0; background: rgba(27, 31, 36, 0.5); display: flex; align-items: center; justify-content: center; padding: 24px; z-index: 9">
+      <div role="alertdialog" aria-labelledby="dt" style="background: #FFFFFF; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 14px; width: 100%; box-sizing: border-box">
+        <h2 id="dt" style="margin: 0; font: 700 26px 'Barlow Condensed', sans-serif">Supprimer le secteur 49&#160;?</h2>
+        <span style="font-size: 16px; color: #4A5058; line-height: 1.4">Ses rues, ses tournées et son équipe seront effacées pour tout le monde. Impossible de revenir en arrière.</span>
+        <label for="conf" style="font-size: 15px; font-weight: 700">Tapez 49 pour confirmer</label>
+        <input id="conf" value="4" style="height: 52px; box-sizing: border-box; border: 1.5px solid #1B1F24; border-radius: 12px; padding: 0 16px; font: 400 18px 'Atkinson Hyperlegible', sans-serif">
+        <div style="display: flex; justify-content: flex-end; gap: 8px">
+          <a href="Team.dc.html" style="height: 48px; padding: 0 18px; font-weight: 700; font-size: 16px; color: #1B1F24; display: flex; align-items: center; text-decoration: none">Annuler</a>
+          <span aria-disabled="true" style="height: 48px; padding: 0 22px; border-radius: 24px; background: #E2DED5; color: #6B737E; font-weight: 700; font-size: 16px; display: flex; align-items: center">Supprimer</span>
+        </div>
+      </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>
