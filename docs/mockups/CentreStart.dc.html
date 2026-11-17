@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Démarrer la campagne</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+a{color:#B3261E}a:hover{color:#8C1D18}
+.ib{width:48px;height:48px;border:0;background:transparent;color:#1B1F24;border-radius:24px;display:flex;align-items:center;justify-content:center;padding:0;cursor:pointer;text-decoration:none;flex-shrink:0}
+.ib svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.hd{padding:18px 20px 8px 20px;font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#4A5058}
+.tr{display:flex;align-items:center;gap:12px;min-height:64px;padding:0 12px 0 20px;border-bottom:1px solid #E2DED5;background:#FFFFFF;text-decoration:none;color:#1B1F24}
+.tr:hover{color:#1B1F24}
+.tr .n{font:700 21px 'Barlow Condensed',sans-serif}
+.tr .s{font-size:14px;color:#4A5058}
+.tr svg{width:20px;height:20px;fill:none;stroke:#5A6068;stroke-width:2;flex-shrink:0}
+.row{display:flex;align-items:center;gap:12px;min-height:56px;text-decoration:none;color:#1B1F24;border-bottom:1px solid #E2DED5}
+.row:hover{color:#1B1F24}
+.lg{display:flex;align-items:center;gap:6px;font-size:13px;font-weight:700;white-space:nowrap}
+</style>
+</helmet>
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F3F1EC; color: #1B1F24; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; display: flex; flex-direction: column; position: relative; overflow: hidden">
+  <div style="display: flex; align-items: center; gap: 4px; padding: 8px">
+    <a class="ib" href="AllTournees.dc.html" aria-label="Retour"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></a>
+    <div style="display: flex; flex-direction: column"><h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 28px; line-height: 1.05">CS Villefranche</h1><span style="font-size: 14px; color: #4A5058">Centre de secours · 3 secteurs</span></div>
+  </div>
+  <div style="flex: 1; overflow: hidden">
+  <div class="hd">Campagne</div>
+  <div style="margin: 0 16px; background: #FFFFFF; border: 1px solid #E2DED5; border-radius: 16px; padding: 16px; display: flex; flex-direction: column; gap: 10px">
+    <div style="display: flex; align-items: baseline; justify-content: space-between"><span style="font: 700 30px 'Barlow Condensed', sans-serif; line-height: 1">2026</span><span style="display: inline-flex; align-items: center; gap: 6px; font-size: 14px; font-weight: 700; color: #4A5058"><svg viewBox="0 0 24 24" aria-hidden="true" style="width: 12px; height: 12px; fill: #4A5058"><rect x="4" y="4" width="16" height="16" rx="1"/></svg>Terminée le 15 janv.</span></div>
+    <span style="font-size: 15px; color: #4A5058; line-height: 1.4">Plus aucune maison ne peut être marquée. Préparez les secteurs pour 2027 (rues, parties, immeubles), puis démarrez : tout sera repris.</span>
+    <a href="CentreStart.dc.html" style="height: 52px; border-radius: 26px; background: #B3261E; color: #FFFFFF; font-weight: 700; font-size: 16px; display: flex; align-items: center; justify-content: center; gap: 10px; text-decoration: none"><svg viewBox="0 0 24 24" aria-hidden="true" style="width: 18px; height: 18px; fill: #FFFFFF"><path d="M7 4.5v15l12-7.5z"/></svg>Démarrer 2027</a>
+  </div>
+  <div class="hd">Secteurs (3)</div>
+  <div style="border-top: 1px solid #E2DED5">
+    <a class="tr" href="Home.dc.html">
+      <span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span class="n">Secteur 49</span><span class="s">5 membres · 38 rues</span></span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+    </a>
+    <a class="tr" href="HomeAdmin.dc.html">
+      <span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span class="n">Secteur 50</span><span class="s">4 membres · 22 rues</span></span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+    </a>
+    <a class="tr" href="HomeAdmin.dc.html">
+      <span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span class="n">Secteur 51</span><span class="s">2 membres · 38 rues</span></span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+    </a>
+    <a class="tr" href="Create.dc.html" style="min-height: 56px; color: #B3261E"><span style="flex: 1; font-weight: 700; font-size: 16px">+ Nouveau secteur</span></a>
+  </div>
+  <div class="hd">Couverture · Villefranche-sur-Saône</div>
+  <div style="border-top: 1px solid #E2DED5">
+    <a class="tr" href="#">
+      <span aria-hidden="true" style="width: 28px; height: 28px; border-radius: 14px; background: #1E6B47; color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-weight: 700; flex-shrink: 0">✓</span><span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span class="n">Tout est couvert</span><span class="s">412 rues · 5 hors CS</span></span>
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+    </a>
+  </div>
+  </div>
+  <div style="position: absolute; inset: 0; background: rgba(27, 31, 36, 0.5); display: flex; align-items: center; justify-content: center; padding: 24px; z-index: 9">
+      <div role="alertdialog" aria-labelledby="dt" style="background: #FFFFFF; border-radius: 24px; padding: 24px; display: flex; flex-direction: column; gap: 14px; width: 100%; box-sizing: border-box">
+        <h2 id="dt" style="margin: 0; font: 700 26px 'Barlow Condensed', sans-serif">Démarrer 2027&#160;?</h2>
+        <span style="font-size: 16px; color: #4A5058; line-height: 1.4"><b style="color: #1B1F24">Repris de 2026</b></span>
+        <span style="font-size: 16px; color: #4A5058; line-height: 1.4"><span style="display: flex; gap: 10px; font-size: 16px; line-height: 1.35"><span aria-hidden="true" style="width: 18px; color: #1E6B47; font-weight: 700">✓</span><span>3 secteurs, leurs membres et leurs codes</span></span></span>
+        <span style="font-size: 16px; color: #4A5058; line-height: 1.4"><span style="display: flex; gap: 10px; font-size: 16px; line-height: 1.35"><span aria-hidden="true" style="width: 18px; color: #1E6B47; font-weight: 700">✓</span><span>98 rues, 2&#160;412 numéros, 14 immeubles</span></span></span>
+        <span style="font-size: 16px; color: #4A5058; line-height: 1.4"><b style="color: #1B1F24">Remis à zéro</b></span>
+        <span style="font-size: 16px; color: #4A5058; line-height: 1.4"><span style="display: flex; gap: 10px; font-size: 16px; line-height: 1.35"><span aria-hidden="true" style="width: 18px; color: #4A5058; font-weight: 700">○</span><span>les maisons, les portes, les calendriers</span></span></span>
+        <span style="font-size: 16px; color: #4A5058; line-height: 1.4">Les marques de 2026 ne seront plus visibles dans l'application.</span>
+        <span style="font-size: 16px; color: #4A5058; line-height: 1.4"><span style="display: flex; gap: 8px; align-items: center"><svg viewBox="0 0 24 24" aria-hidden="true" style="width: 18px; height: 18px; fill: none; stroke: #4A5058; stroke-width: 2; stroke-linecap: round"><path d="M2 9a15 15 0 0 1 20 0M5 12.5a10 10 0 0 1 14 0M8.5 16a5 5 0 0 1 7 0"/><circle cx="12" cy="19.5" r="1" fill="#4A5058"/></svg>Connexion internet nécessaire.</span></span>
+        <div style="display: flex; justify-content: flex-end; gap: 8px">
+          <a href="CentreEnded.dc.html" style="height: 48px; padding: 0 18px; font-weight: 700; font-size: 16px; color: #1B1F24; display: flex; align-items: center; text-decoration: none">Annuler</a>
+          <a href="RunNewYear.dc.html" style="height: 48px; padding: 0 22px; border-radius: 24px; background: #B3261E; color: #FFFFFF; font-weight: 700; font-size: 16px; display: flex; align-items: center; text-decoration: none">Démarrer</a>
+        </div>
+      </div>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":390,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

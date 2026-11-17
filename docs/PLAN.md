@@ -2680,7 +2680,7 @@ stays on the phone, without house or time »** for the time of the tournée only
 
 ### 5.22 Centre de secours: the CS page (M6, to build)
 
-Decided with the user 2026-11-17 (ASCII in the terminal; mockup to come before any code). Admins
+Decided with the user 2026-11-17 (ASCII in the terminal, then mockups AllTournees, Centre, CentreEnd, CentreEnded, CentreStart, RunEnded, RunNewYear, approved the same day). Admins
 only (5.12). A centre de secours runs **one campaign year for all its secteurs**: they start and
 end together, so no secteur is ever on another year than its CS.
 

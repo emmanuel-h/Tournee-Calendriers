@@ -28,6 +28,8 @@ member; `Welcome.dc.html` shows a phone that is not an admin. `AddList.dc.html` 
 
 **Un ✓ repris retire son don (PLAN §5.21, #169, agreed 2026-11-15, built 2026-11-15):** `RunStreetUndoDon.dc.html` is the street during a tournée just after N° 3 went from ✓ to « Personne »: its 20 € left the band (« 18 dons · 260 € ») and the snackbar says « N° 3 : personne · son don de 20 € en espèces est retiré de la tournée » with « Annuler »; N° 9 (two dons) and N° 4 (a calendar offered) show the other wordings.
 
+**Centre de secours (PLAN §5.22, #40, agreed 2026-11-17, to build):** `AllTournees.dc.html` now has a « CS VILLEFRANCHE · 2026 » header per centre with « Gérer le CS › »; `Centre.dc.html` is the CS page while the year runs (CAMPAGNE card with « ■ Terminer 2026 », SECTEURS with « + Nouveau secteur », COUVERTURE rows filled by #177), `CentreEnd.dc.html` its « Terminer 2026 ? » confirmation, `CentreEnded.dc.html` the page once ended (« Démarrer 2027 », red), `CentreStart.dc.html` the « Démarrer 2027 ? » confirmation (what is kept, what starts again, « Connexion internet nécessaire. »); `RunEnded.dc.html` is a member's Accueil while the year is ended (no « Commencer une tournée »), `RunNewYear.dc.html` Accueil on the new year with the snackbar « La campagne 2027 a commencé. ». `Campaign.dc.html` (« Nouvelle campagne » from Équipe) is gone, and so is Équipe's « Démarrer une nouvelle campagne » (`Team.dc.html`).
+
 Status: **awaiting approval**. Once approved, these are the visual reference for the `ui/` code:
 the colours, type, spacing and status treatments below are the design tokens.
 
