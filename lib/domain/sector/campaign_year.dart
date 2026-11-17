@@ -50,6 +50,10 @@ final class CampaignYear {
 
   final int value;
 
+  /// The year of the campaign that follows this one (PLAN §5.10), or
+  /// [CampaignYearFailure.outOfRange] after [last].
+  Result<CampaignYear, CampaignYearFailure> get next => create(value + 1);
+
   @override
   bool operator ==(Object other) =>
       other is CampaignYear && other.value == value;

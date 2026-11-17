@@ -205,6 +205,27 @@ final class Building {
     return dropped;
   }
 
+  /// This building for the next campaign (PLAN §5.10): the same style,
+  /// staircases, floors (an emptied one included) and door labels, every
+  /// door to do again with no « repasser », tries, calendars or last
+  /// change.
+  Building get unmarked => Building._(style, [
+    for (final staircase in staircases)
+      Staircase(
+        name: staircase.name,
+        floors: [
+          for (final floor in staircase.floors)
+            Floor(
+              level: floor.level,
+              dwellings: [
+                for (final dwelling in floor.dwellings)
+                  Dwelling(label: dwelling.label),
+              ],
+            ),
+        ],
+      ),
+  ]);
+
   /// The dwelling at [key], or null when the building has none.
   Dwelling? dwellingAt(DwellingKey key) =>
       _staircaseNamed(key.staircase)?.floor(key.level)?.dwelling(key.label);

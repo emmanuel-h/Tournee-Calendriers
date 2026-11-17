@@ -1182,6 +1182,26 @@ final class Street {
     );
   }
 
+  /// This street as the next campaign starts it (PLAN §5.10), or null
+  /// when it is in the Corbeille: a deleted street is not carried over.
+  ///
+  /// The setup is kept, what an admin would otherwise lay out again: the
+  /// id, name, commune, BAN id, shape, part, and each shown number with
+  /// its position and building. Everything marked starts again (see
+  /// [House.unmarked]). The numbers in the Corbeille stay behind with the
+  /// old campaign.
+  Street? forNextCampaign() => isDeleted
+      ? null
+      : _copy(
+          name: name,
+          // Already sorted: a house keeps its number.
+          houses: List.unmodifiable([
+            for (final house in houses) house.unmarked,
+          ]),
+          removedHouses: const [],
+          deletion: null,
+        );
+
   /// Whether the street has been in the Corbeille more than 30 days at
   /// [now] (see `isPastRetention`): it may then be removed for good, with
   /// its houses and their marks (`StreetRepository.purge`, PLAN §5.11).

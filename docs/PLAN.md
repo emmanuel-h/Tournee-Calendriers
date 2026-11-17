@@ -3699,7 +3699,11 @@ makes number + CS unique even if two people create it at the same second.
 A new campaign (v1.1) is a batch that copies each street of the current campaign into
 `campaigns/{newYear}`, keeping only the setup listed in 5.10, flips `currentCampaign` and
 deletes the past years 5.10 does not keep. Listeners follow `currentCampaign`, so every phone
-switches by itself.
+switches by itself. The rules are in the domain (T6.1, #38): `Street.forNextCampaign()` (null for
+a street in the Corbeille; same id, name, commune, BAN id, shape, part, numbers with their positions
+and buildings, through `House.unmarked` and `Building.unmarked`; no Corbeille), `CampaignYear.next`
+(refused after 2099), and `yearsToDeleteAtRollOver` over the secteur's `CampaignRecord`s (each year
+and whether it had a validated tournée), which keeps only the latest year with one.
 
 Why houses are a map inside the street document and not one document each:
 

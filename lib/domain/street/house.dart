@@ -121,6 +121,13 @@ final class House {
       comeBack != null ||
       (building?.hasMarks ?? false);
 
+  /// This house for the next campaign (PLAN §5.10): the same number,
+  /// position and building layout (see [Building.unmarked]), to do again
+  /// with no « repasser », tries, calendars or last change. No trace of
+  /// this campaign's marks is kept: there is no per-house history.
+  House get unmarked =>
+      House(number: number, position: position, building: building?.unmarked);
+
   /// What this house adds to its street's progress: one door for a single
   /// house; the doors of a building, plus the building's own « repasser »
   /// when it has one (counted in the street's ↻, not as a door).

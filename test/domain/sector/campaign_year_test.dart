@@ -74,6 +74,23 @@ void main() {
     });
   });
 
+  group('next', () {
+    test('should be the year after when a new campaign starts', () {
+      expect(valueOf(valueOf(CampaignYear.create(2026)).next).value, 2027);
+    });
+
+    test('should be the last year when the current one is 2098', () {
+      expect(valueOf(valueOf(CampaignYear.create(2098)).next).value, 2099);
+    });
+
+    test('should refuse when the current year is the last one', () {
+      expect(
+        failureOf(valueOf(CampaignYear.create(2099)).next),
+        CampaignYearFailure.outOfRange,
+      );
+    });
+  });
+
   group('equality', () {
     test('should be equal when the years are equal', () {
       final typed = valueOf(CampaignYear.parse('2026'));
