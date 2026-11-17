@@ -2743,6 +2743,19 @@ Decided with the user 2026-11-17 (ASCII in the terminal, then mockups SettingsSu
 the « admins are global » of 5.12: an admin's powers are now **per centre de secours, per
 permission**.
 
+> **Changed the same day: the super admin is an access list, not `super: true`** (the user,
+> 2026-11-17; overrides every `super` below). `admins/{uid}` = `{ name, addedAt, addedBy,
+> updatedAt, centres: { <centreKey>: [campaign, sectors, teams, streets] }, global: [...] }`.
+> `global` is written **only in the console**, never by the app, and holds at most two global
+> permissions: **`admins`** (the Administrateurs screen: add, change, remove admins; « Rouvrir »
+> a year, 5.22) and **`centres`** (create a new CS). No expiry. Everything else comes from
+> `centres`, the super admin's own included: holding `admins` gives **no** power over secteurs
+> (least privilege). The holder of `admins` may change any admin's `name` / `centres`, their own
+> `centres` included, but never anyone's `global`, and never removes or edits another document
+> holding a `global`. « Super administrateur » in the app means « holds `admins` ». A stolen token
+> of that phone can manage admins until the console edit: the console document stays the kill
+> switch. The user's document: `global: ['admins', 'centres']` plus the CS grants they want.
+
 ```
   Paramètres (super admin)          Administrateurs                    Ajouter / modifier
 ┌────────────────────────────┐   ┌────────────────────────────┐   ┌──────────────────────────────┐
