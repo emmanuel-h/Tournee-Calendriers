@@ -2739,7 +2739,7 @@ end together, so no secteur is ever on another year than its CS.
 
 ### 5.23 Rôles et permissions (M12, to build before §5.22)
 
-Decided with the user 2026-11-17 (ASCII in the terminal, then mockups SettingsSuperLink, SettingsSuper, WelcomeGoogle, Admins, AdminsMenu, AdminEdit, AdminRemove, CreateCentre, TeamDelete; to be approved by the user before code). Replaces
+Decided with the user 2026-11-17 (ASCII in the terminal, then mockups SettingsSuper, Admins, AdminsMenu, AdminEdit, AdminRemove, CreateCentre, TeamDelete; to be approved by the user before code). Replaces
 the « admins are global » of 5.12: an admin's powers are now **per centre de secours, per
 permission**.
 
@@ -2804,12 +2804,16 @@ backup and device transfer exclude the app's data (no sign-in token leaves the p
 secteur's `centreKey`, `createdBy` and `number` are immutable, a revoked admin's queued writes
 are refused at sync.
 
-- **The super admin signs in with Google** (T12.4): the phone's anonymous account is linked to
-  the user's Google account once (Paramètres), keeping its uid; the rules grant super only to
-  `admins/{uid}.super == true` **and** `request.auth.token.firebase.sign_in_provider ==
-  'google.com'`. A reinstall or a new phone signs in again and gets the same uid back; a lost
-  phone is cut off by signing out of Google's sessions. Members and other admins stay
-  anonymous. Deploy order: link first, then the rules.
+- **The super admin stays an anonymous account** (decided 2026-11-17, after weighing a Google
+  sign-in and dropping it): `super: true` protects *who can become* super admin (only the console,
+  i.e. the user's Google account, can write it; the rules refuse any `super` written by the app)
+  and is the off switch (deleting or editing it in the console cuts the powers at once, the rules
+  re-reading it on every request). It does not protect *who holds the phone*: the screen lock does,
+  and the phone must not be rooted (the sign-in token lives in the app's data, never backed up or
+  transferred). A Google sign-in would only require the token to come from Google, which the token
+  on that phone already would: no added protection. **No entry in the app reveals the role**:
+  ADMINISTRATION and « Super administrateur » show to the super admin only; a new phone is set up
+  in the console (copy the new identifier into `admins/{uid}` with `super: true`, delete the old).
 - **A new secteur's CS is checked** (T12.1, a gap today): `existsAfter(rescueCentres/{centreKey})`
   and `centreName` equal to that document's name; `rescueCentres` created by the super admin only.
   Otherwise an admin with « Secteurs » could invent a CS, or show another CS's name.

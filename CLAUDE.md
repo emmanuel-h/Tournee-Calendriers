@@ -121,7 +121,8 @@ from a CS page in « Tous les secteurs » (Terminer, then Démarrer; Couverture;
 then #40 (mockups approved 2026-11-17), #177, #178.
 M12 planned 2026-11-17 (PLAN §5.23, #179–#181), **before** the rest of M6: a super admin (`super: true`, console only)
 names admins in the app, each admin holding per CS some of four permissions (Campagne, Secteurs, Équipes, Rues); security analysis
-recorded in PLAN §5.23 « Security » (super admin signs in with Google, #182; permission-matrix rules test mandatory).
+recorded in PLAN §5.23 « Security » (the super admin stays anonymous, set up in the console only, nothing in the app
+reveals the role; #182 Google sign-in dropped; permission-matrix rules test mandatory).
 
 ## Commands
 
