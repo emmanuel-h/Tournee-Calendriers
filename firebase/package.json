@@ -1,7 +1,7 @@
 {
   "name": "tournee-calendriers-firestore-rules",
   "private": true,
-  "description": "Tests of the Firestore security rules in the emulator (PLAN §8.2, §11).",
+  "description": "Tests of the Firestore security rules in the emulator (PLAN \u00a78.2, \u00a711).",
   "scripts": {
     "test": "firebase emulators:exec --only firestore --project demo-tournee-calendriers \"node --test test/*.test.mjs\""
   },
@@ -13,6 +13,10 @@
   "overrides": {
     "@firebase/firestore": {
       "@grpc/grpc-js": "1.14.7"
-    }
+    },
+    "@opentelemetry/core": "^2.8.0",
+    "uuid": "^11.1.1",
+    "glob": "^14.0.2",
+    "rimraf": "^6.1.4"
   }
 }

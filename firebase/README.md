@@ -19,7 +19,10 @@ program, downloaded on the first run into `~/.cache/firebase/emulators`).
 `@firebase/rules-unit-testing` 6 is not used: it needs Node 24.12 or later.
 
 `overrides` in `package.json` lifts `@grpc/grpc-js` inside `@firebase/firestore` from 1.9 to the
-1.14 line that firebase-tools already uses: 1.9 has known high-severity advisories. The moderate
-advisories `npm audit` still lists are all inside firebase-tools' own dependencies (glob,
-minimatch, uuid…); they only run on this machine and in CI, and go away with a later
-firebase-tools.
+1.14 line that firebase-tools already uses: 1.9 has known high-severity advisories. It also
+lifts `@opentelemetry/core` (^2.8.0), `uuid` (^11.1.1), `glob` (^14.0.2) and `rimraf` (^6.1.4)
+inside firebase-tools, whose published dependency ranges still pull versions with moderate
+advisories (#102). firebase-tools forces the same versions in its own repository, but npm applies
+`overrides` only from the top-level project, so they never reached this one. With them,
+`npm audit` reports 0. If a firebase-tools upgrade breaks the emulators, suspect these first
+(glob 10 → 14 under exegesis and archiver); drop each one once firebase-tools' own ranges cover it.
