@@ -2793,6 +2793,48 @@ permission**.
   existing admin documents without `centres` have no permission until edited.
 - Privacy: the admin's name is stored (one sentence for the user's review).
 
+**Security (analysis of 2026-11-17, decided with the user).** The code and rules are public and
+the API key ships in the APK: assume an attacker knows every rule, makes any number of anonymous
+accounts and sends any write the rules allow. The two boundaries are **the Firestore rules** and
+**the Google account owning the Firebase project** (2-step verification, ideally a security key;
+only the user as IAM Owner; no service-account key with Firestore access; the Play service
+account with Play rights only). App Check (enforced) raises the cost of scripted abuse but is not
+authorization. Verified sound: no secret tracked in git, CI holds no deploy or admin credential,
+backup and device transfer exclude the app's data (no sign-in token leaves the phone), a
+secteur's `centreKey`, `createdBy` and `number` are immutable, a revoked admin's queued writes
+are refused at sync.
+
+- **The super admin signs in with Google** (T12.4): the phone's anonymous account is linked to
+  the user's Google account once (Paramètres), keeping its uid; the rules grant super only to
+  `admins/{uid}.super == true` **and** `request.auth.token.firebase.sign_in_provider ==
+  'google.com'`. A reinstall or a new phone signs in again and gets the same uid back; a lost
+  phone is cut off by signing out of Google's sessions. Members and other admins stay
+  anonymous. Deploy order: link first, then the rules.
+- **A new secteur's CS is checked** (T12.1, a gap today): `existsAfter(rescueCentres/{centreKey})`
+  and `centreName` equal to that document's name; `rescueCentres` created by the super admin only.
+  Otherwise an admin with « Secteurs » could invent a CS, or show another CS's name.
+- **Every admin rule moves to « permission P in this secteur's CS »** (24 sites): one left as
+  « any admin » is a cross-CS escalation. A **permission-matrix test** is mandatory: each
+  operation × each permission × (same CS / other CS / super / member / signed-in stranger),
+  allowed or refused as specified.
+- **`admins/{uid}` writes:** super admin only, never their own document, never a `super` field,
+  never a `super` document, exact fields (`name` 1–30, `addedAt`, `addedBy` = the caller,
+  `updatedAt`, `centres`: a map of at most 50 CS, keys well-formed). Values inside `centres` cannot
+  be checked one by one (no loops): an unknown value grants nothing.
+- **Names stay readable** (decided: as today): any signed-in account may `get` an `admins/{uid}`,
+  now with its name and CS; « · admin » stays visible to members. Said in the privacy text.
+- **« Supprimer le secteur »** stays with « Secteurs », after typing the secteur's number.
+- **Ending a year can be undone by the super admin** (« Rouvrir 2026 » on the CS page while the
+  next year has not started, #176 / #40); `endedBy` / `endedAt` record who ended it.
+- **Adding an admin:** get the identifier face to face or have the person read its last four
+  characters; the screen shows it whole. A typo grants nobody anything.
+- **Audit:** `addedBy`, `updatedAt` on each admin document. (Cloud Audit Logs for Firestore data
+  writes: check whether free on Spark before relying on them.)
+- **App Check debug tokens** are a full bypass: keep only the user's, delete it if the laptop is
+  lost.
+- Accepted: quota exhaustion by a member on Spark (#146); the #39 copy rule not checking houses
+  one by one (admins with « Campagne » only).
+
 ## 6. Data model
 
 ### 6.1 Domain model (pure Dart: no Flutter, no Firebase, no MapLibre)

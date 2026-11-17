@@ -202,3 +202,4 @@ Planned 2026-11-17 (PLAN §5.23): a super admin made in the console, admins per 
 | [#179](https://github.com/emmanuel-h/Tournee-Calendriers/issues/179) | T12.1 Roles and permissions: super admin, admins per CS and per permission | task |
 | [#180](https://github.com/emmanuel-h/Tournee-Calendriers/issues/180) | T12.2 Administrateurs: list, add, change and remove admins | task |
 | [#181](https://github.com/emmanuel-h/Tournee-Calendriers/issues/181) | T12.3 Nouveau secteur: the CS from the admin's list; a new CS by the super admin only | task |
+| [#182](https://github.com/emmanuel-h/Tournee-Calendriers/issues/182) | T12.4 Super admin signs in with Google | task |
