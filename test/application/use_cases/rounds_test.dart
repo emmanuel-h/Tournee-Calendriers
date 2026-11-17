@@ -613,6 +613,22 @@ void main() {
       expect(collecte.totals, DonationTotals.of([cash(1000)]));
     });
 
+    test('should give apart too a tournée of the year left that was not '
+        'sent: the server refuses it once the new campaign started', () async {
+      final left = UnsentRound(
+        sector: sector49Id,
+        campaign: year2026,
+        summary: _unsent('left', 27).summary,
+      ).refused();
+      rounds = FakeOpenRoundStore(null, [left]);
+      watch = WatchCollecte(ledger, rounds);
+
+      final collecte = await watch(sector49Id, campaign2027).first;
+
+      expect(collecte.unsent, [left]);
+      expect(collecte.totals, DonationTotals.of(const []));
+    });
+
     test('should give the collecte again when a tournée waits, is refused '
         'or is sent', () async {
       final shown = <Collecte>[];

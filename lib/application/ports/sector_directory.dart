@@ -229,6 +229,12 @@ abstract interface class SectorDirectory {
   /// sees another one.
   Stream<MemberName> watchOwnName(SectorId sector, MemberId member);
 
+  /// The campaign [sector] works on, now and after each change: a new
+  /// campaign started by an admin (PLAN §5.10) moves every phone of the
+  /// team to it. Read from the phone's copy first; a secteur the member
+  /// may no longer read, or one without a readable year, tells nothing.
+  Stream<CampaignYear> watchCurrentCampaign(SectorId sector);
+
   /// Whether a secteur [number] already exists in [centre] (the same
   /// station, however written: `RescueCentre.isSameStationAs`), asked
   /// while the creator types (« Le secteur 49 du CS Villefranche existe

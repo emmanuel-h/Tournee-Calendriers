@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:tournee_calendriers/application/ports/sector_directory.dart';
+import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
 import 'package:tournee_calendriers/domain/sector/join_code.dart';
 import 'package:tournee_calendriers/domain/sector/join_request.dart';
 import 'package:tournee_calendriers/domain/sector/member.dart';
@@ -16,6 +17,7 @@ import 'package:tournee_calendriers/domain/shared/french_text.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_layout.dart';
+import 'package:tournee_calendriers/infrastructure/firestore/mappers/campaign_document_mapper.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/sector_document_mapper.dart';
 
 /// The [SectorDirectory] over Firestore, on the phone (Spark plan, PLAN
@@ -231,6 +233,24 @@ final class FirestoreSectorDirectory implements SectorDirectory {
           hasPendingWrites: doc.metadata.hasPendingWrites,
         ),
       );
+
+  /// Follows the secteur document, which any member, and an admin who
+  /// visits, may read. A snapshot without a readable year (the secteur
+  /// deleted: the membership listener tells that) gives nothing, and so
+  /// does a refusal (removed, left: the same).
+  @override
+  Stream<CampaignYear> watchCurrentCampaign(SectorId sector) =>
+      FirestoreLayout.sector(_db, sector)
+          .snapshots()
+          // `?`: the element is left out of the list when it is null.
+          .expand((doc) => [?currentCampaignOf(doc.data())])
+          .transform(
+            StreamTransformer.fromHandlers(
+              handleError: (error, trace, sink) {
+                if (!isNoLongerReadable(error)) sink.addError(error, trace);
+              },
+            ),
+          );
 
   @override
   Future<Result<bool, DirectoryFailure>> isTaken(

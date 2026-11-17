@@ -1431,6 +1431,32 @@ admin » for « Nouveau code », « Retirer », « Supprimer » and the campaign
 - **Not built:** the sketch's « Reprendre mes rues » and the house sheet's « En 2026 : … »,
   nor « 2026 reste consultable » (Paramètres → Campagne 2026).
 - Members need the network once to receive the new campaign; the download step then runs again.
+- **Delivered in #39 (no screen), scope changed by the user (2026-11-17):** the « a secteur
+  behind jumps to the centre's latest year + 1 » policy above is **not** built: a CS admin view
+  (start / end a year, organise secteurs, coverage and overlap checks) is being designed apart and
+  will own the policy of a whole centre; an explicit « end the year » may come later. Built:
+  - the core, `RollOverSector(sector, from:, to:)` (`application/use_cases/campaigns.dart`,
+    behind the `CampaignStore` port, adapter `FirestoreCampaignStore`): one secteur moved from its
+    current campaign to any later year. Its current campaign's streets read from the server, the
+    new campaign written with each street's copy (15 per batch, the campaign document in the
+    first), then the secteur switched with its join preview (a transaction, leaving a secteur
+    another admin moved meanwhile), then its past years dropped (`yearsToDeleteAtRollOver` over
+    the years before the new one; streets and tournées first, the campaign document last). An
+    earlier year is refused (`notLater`); the same year again (`from` = `to`) only redoes the
+    deletions, which is how a cut-off roll-over is finished. Cut off (`noNetwork`, `notAdmin`),
+    what is done stays done. A street that cannot be read is not copied;
+  - a thin wrapper, `StartCampaign(centre, year)`: every secteur of the centre (read from the
+    server, matched by station key) through `RollOverSector`, one after the other, only when they
+    all work on the same year (`commonCampaignOf`, domain); otherwise nothing is done
+    (`mixedYears`).
+  - **Phones follow:** each secteur of the phone that is not a request listens to its
+    `currentCampaign` (`WatchCampaign`) and moves the phone's `SectorSummary` forward, never back
+    (`FollowCampaign`, `SectorSummary.followedTo`); the streets, the Collecte and the offline
+    download follow the open secteur's campaign. The snackbar « La campagne 2027 a commencé. » is
+    left to #40.
+  - **The year left:** an open tournée of it is refused at « Valider » by the rules, and a summary
+    not yet sent is refused when sent; Collecte lists under « PAS ENCORE ENVOYÉES » the unsent
+    tournées of its year and of the years before it, so such a tournée shows refused with its dons.
 
 ### 5.11 Corbeille
 
@@ -3707,9 +3733,14 @@ Creating a secteur writes `sectorKeys`, `joinCodes`, `sectors` and its first cam
 batch; the security rules refuse the batch if `sectorKeys/{key}` already exists, which is what
 makes number + CS unique even if two people create it at the same second.
 
-A new campaign (v1.1) is a batch that copies each street of the current campaign into
-`campaigns/{newYear}`, keeping only the setup listed in 5.10, flips `currentCampaign` and
-deletes the past years 5.10 does not keep. Listeners follow `currentCampaign`, so every phone
+A new campaign (v1.1, #39) writes, for one secteur (`RollOverSector`):
+`campaigns/{newYear}` (`startedAt` the server's time, `previousYear` the year left) with the copy
+of each street of the current campaign, keeping only the setup listed in 5.10, in batches of 15
+copies (each copy is checked by the rules against its street of the current campaign, and a batch
+may read at most 20 documents); then, in one transaction, `currentCampaign` and the `campaign` of
+its `joinCodes/{code}`; then deletes the past years 5.10 does not keep (streets and `rounds` in
+batches of 500, the campaign document last). Run again after a cut, it writes the copies again
+whole and deletes a copy no longer to make. Listeners follow `currentCampaign`, so every phone
 switches by itself. The rules are in the domain (T6.1, #38): `Street.forNextCampaign()` (null for
 a street in the Corbeille; same id, name, commune, BAN id, shape, part, numbers with their positions
 and buildings, through `House.unmarked` and `Building.unmarked`; no Corbeille), `CampaignYear.next`
@@ -3975,7 +4006,7 @@ photo of the QR) is even more likely. So **knowing a code must not be enough**:
   change, not the server's (T2.3): a mark queued offline reaches the server hours later and
   must keep the time it was made, so the rules cannot require `at == request.time`.
 - Only the creator: delete the secteur, regenerate the code, start a campaign. Previous
-  campaigns are read-only.
+  campaigns are read-only. (Admins since #75; a new campaign below, #39.)
 
 **Admins (#75, 5.12)** change the rules as follows; where they contradict the lines above and
 below, these win:
@@ -4180,8 +4211,26 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
   rules accept a number's `deletedBy` that is the caller or an active member of the secteur
   (so a member could also name a teammate as the remover of a number; the stricter choice,
   stamping that undo with who undoes as for houses and doors, would change T2.3's undo).
-- Fields no adapter writes yet (a new campaign in v1.1) are refused: the task that
-  writes them extends the rules and their tests.
+- **A new campaign** (#39, 5.10; tests `firebase/test/campaigns.test.mjs`). An admin, member or
+  not:
+  - creates a later campaign (`isNextCampaign`): its id a year after `currentCampaign`, exactly
+    `startedAt` (a timestamp) and `previousYear` = the current year;
+  - writes in it, while it is not current, each street's copy (`isStreetCopy`, create or a `set`
+    again): the same id as a street of the current campaign that is not in the Corbeille, with
+    its name, commune and BAN id, out of the Corbeille, the street's fields only (shape counted,
+    part checked), and only numbers that street has. The houses are **not** checked one by one:
+    a copy holds every house in one write and the rules have no loops. **Accepted risk:** an
+    admin could write marks into a copy (admins are trusted, added by hand); once the campaign
+    starts, every write is checked as usual;
+  - moves `currentCampaign` forward (`isCampaignStart`), alone, to a year whose campaign names
+    the year left as `previousYear`, with `joinCodes/{code}`.`campaign` set to it in the same
+    write (`isPreviewOfNewCampaign`: an admin, only `campaign`, equal to the secteur's year after
+    the write). Never back, never past 2099;
+  - deletes a past year's streets, tournées and campaign (`delete` stays admins only).
+  The year left is **frozen**: streets and tournées are written only in `currentCampaign` (marks,
+  « numéros en plus », a tournée validated, a correction of #168), for members and admins alike;
+  a copy into it, or into the current campaign, is refused. What the previous app writes on the
+  current campaign is unchanged. Measured in the emulator: 17 copies in one batch pass, 18 do not.
 - **Communes** (#78): a new secteur must hold `communes`, a list of 1 to 50 entries; the first
   entry is checked whole (`code` an INSEE code, `name` trimmed, not blank, ≤ 100, `lat` / `lon`
   in range or both null, nothing else), the others only counted. Any active member or admin
@@ -4274,8 +4323,9 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
 - Attribution shown on the map and in Paramètres: © OpenStreetMap contributors (ODbL),
   OpenFreeMap, Base Adresse Nationale (Licence Ouverte).
 - Play Store: needs a privacy policy (Firebase + network + location). Data can be deleted by
-  deleting the secteur; the previous-but-one campaign is to be deleted at each roll-over once
-  M6 exists (until then the text says past campaigns stay until the secteur is deleted, #144). The
+  deleting the secteur; at each new campaign a secteur keeps only its latest past year that had a
+  validated tournée and the others are deleted (#39; the text says so since then, drafted for the
+  user's review). The
   policy is `PRIVACY.md` at the root of the repository (with a contact address); the
   Confidentialité page (5.9) shows its five sections word for word and links to it.
 

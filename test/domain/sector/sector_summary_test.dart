@@ -71,6 +71,31 @@ void main() {
     expect(accepted.campaign, sector7.campaign);
   });
 
+  group('followedTo', () {
+    final named = sector12Visited.withMemberName(nameOf('Léa B.'));
+
+    test('should move to a later campaign, all else kept', () {
+      final followed = named.followedTo(campaign2027)!;
+
+      expect(followed.campaign, campaign2027);
+      expect(followed.id, named.id);
+      expect(followed.number, named.number);
+      expect(followed.centre, named.centre);
+      expect(followed.status, MemberStatus.visiting);
+      expect(followed.memberName, nameOf('Léa B.'));
+    });
+
+    test('should stay when the year is the one it works on', () {
+      expect(sector49.followedTo(campaign2026), isNull);
+    });
+
+    test('should never go back to an earlier year', () {
+      final on2027 = summaryOf('t49', 49, campaign: campaign2027);
+
+      expect(on2027.followedTo(campaign2026), isNull);
+    });
+  });
+
   test('should be equal when every field is', () {
     expect(summaryOf('t49', 49), sector49);
     expect(summaryOf('t49', 49).hashCode, sector49.hashCode);

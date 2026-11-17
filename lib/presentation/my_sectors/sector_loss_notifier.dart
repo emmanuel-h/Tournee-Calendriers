@@ -29,14 +29,21 @@ final sectorLossProvider =
 /// waited, or while the secteur could not be read offline, reaches the
 /// team as soon as the server is heard. This changes nothing in [state].
 ///
+/// It also listens to the campaign each secteur works on, and moves the
+/// phone's secteur to a new one an admin started (`FollowCampaign`, PLAN
+/// §5.10): the title, the streets, the Collecte and the offline download
+/// follow the open secteur's campaign, so every phone of the team switches
+/// by itself once it hears the server.
+///
 /// A phone that never signed in has no member to follow the secteurs as:
 /// it follows nothing until a sign-in succeeds, then starts again from the
 /// secteurs the phone keeps then.
 final class SectorLossNotifier extends Notifier<SectorLossNotice?> {
   /// The listeners of each secteur the member is in, by secteur: its
-  /// membership and the member's name there. `Object?`: a subscription to
-  /// a stream of anything, so both fit in one list (`StreamSubscription`
-  /// is covariant in its type, like every Dart generic).
+  /// membership, the member's name there and its campaign. `Object?`: a
+  /// subscription to a stream of anything, so all three fit in one list
+  /// (`StreamSubscription` is covariant in its type, like every Dart
+  /// generic).
   final _memberships = <SectorId, List<StreamSubscription<Object?>>>{};
 
   /// Whether each secteur followed is followed as one an admin only
@@ -120,6 +127,14 @@ final class SectorLossNotifier extends Notifier<SectorLossNotice?> {
                     unawaited(ref.read(catchUpMemberNameProvider)(id, heard)),
                 // A listener that fails sends nothing: the name catches up
                 // at the next launch or sign-in.
+                onError: (Object _) {},
+              ),
+          ref
+              .read(watchCampaignProvider)(id)
+              .listen(
+                (year) => unawaited(ref.read(followCampaignProvider)(id, year)),
+                // A listener that fails keeps the year the phone has: it
+                // follows at the next launch.
                 onError: (Object _) {},
               ),
         ],

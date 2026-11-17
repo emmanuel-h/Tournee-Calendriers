@@ -21,7 +21,7 @@ Les secteurs sont stockés chez Google Firebase, dans l'Union européenne. Les c
 
 ## Suppression
 
-Supprimer le secteur efface tout ce qu'il contient. Les campagnes passées ne sont pas encore effacées d'elles-mêmes : elles restent jusqu'à la suppression du secteur. Quitter un secteur, en être retiré ou le supprimer efface ses rues du téléphone à un prochain démarrage de l'appli avec du réseau. Désinstaller l'appli efface ce qui est sur le téléphone, y compris les dons d'une tournée pas encore validée, et rien n'en est copié dans la sauvegarde Android ; ce qui est partagé avec l'équipe reste jusqu'à la suppression du secteur.
+Supprimer le secteur efface tout ce qu'il contient. Quand une nouvelle campagne commence, chaque secteur ne garde de ses années passées, en lecture seule, que la dernière où une tournée a été validée (ses rues et ses tournées), et toutes les autres sont effacées ; celle-ci l'est à son tour au début d'une campagne suivante, dès qu'une année plus récente a eu une tournée validée. Quitter un secteur, en être retiré ou le supprimer efface ses rues du téléphone à un prochain démarrage de l'appli avec du réseau. Désinstaller l'appli efface ce qui est sur le téléphone, y compris les dons d'une tournée pas encore validée, et rien n'en est copié dans la sauvegarde Android ; ce qui est partagé avec l'équipe reste jusqu'à la suppression du secteur.
 
 ## Contact
 

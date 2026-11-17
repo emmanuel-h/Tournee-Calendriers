@@ -408,7 +408,9 @@ final class AbandonRound {
 
 /// « Collecte 2026 » (PLAN §5.13, §5.16): the validated tournées of
 /// [campaign] of [sector] and their totals, with apart those this phone
-/// validated that the server does not have yet, now and again at each
+/// validated that the server does not have yet (of [campaign], or of a
+/// year the secteur left meanwhile: refused once a new campaign started,
+/// PLAN §5.10, they still show with their dons), now and again at each
 /// change: a tournée validated by this phone or a teammate's, one sent,
 /// refused or erased. Read from the phone's copy first, so it works
 /// offline. Never split per member: a summary names none.
@@ -421,7 +423,8 @@ final class WatchCollecte {
   Stream<Collecte> call(SectorId sector, CampaignYear campaign) {
     List<UnsentRound> ours(List<UnsentRound> unsent) => [
       for (final round in unsent)
-        if (round.sector == sector && round.campaign == campaign) round,
+        if (round.sector == sector && round.campaign.value <= campaign.value)
+          round,
     ];
     // Both sources in one stream, as soon as the ledger has answered once:
     // a controller, which starts listening to them when the screen does

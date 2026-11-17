@@ -3,13 +3,15 @@
 // request ([answer]), says which codes show a secteur ([previews]), which
 // numbers are taken ([taken]) and which centres are known ([centres]), or
 // cuts the network ([offline]). It records the requests sent and cancelled.
-// It also plays the server telling a member they lost a secteur ([lose])
-// and the name it holds for them in a secteur ([hearName]), and lists every
+// It also plays the server telling a member they lost a secteur ([lose]),
+// the name it holds for them in a secteur ([hearName]) and the campaign a
+// secteur works on ([hearCampaign]), and lists every
 // secteur of the app for an admin ([overviews]), or refuses it to a phone
 // no longer an admin's ([notAdmin]).
 import 'dart:async';
 
 import 'package:tournee_calendriers/application/ports/sector_directory.dart';
+import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
 import 'package:tournee_calendriers/domain/sector/join_code.dart';
 import 'package:tournee_calendriers/domain/sector/join_request.dart';
 import 'package:tournee_calendriers/domain/sector/member.dart';
@@ -101,6 +103,26 @@ final class FakeSectorDirectory implements SectorDirectory {
     memberships.add((sector, member));
     return _loss(sector.id).stream;
   }
+
+  final _campaigns = <SectorId, StreamController<CampaignYear>>{};
+
+  StreamController<CampaignYear> _campaign(SectorId sector) =>
+      _campaigns.putIfAbsent(sector, StreamController.broadcast);
+
+  /// The server tells [sector] works on [year].
+  void hearCampaign(SectorId sector, CampaignYear year) =>
+      _campaign(sector).add(year);
+
+  /// The listener of the campaign of [sector] fails (a server error).
+  void failCampaign(SectorId sector) =>
+      _campaign(sector).addError(StateError('listener failed'));
+
+  /// Whether someone still listens to the campaign of [sector].
+  bool isHearingCampaign(SectorId sector) => _campaign(sector).hasListener;
+
+  @override
+  Stream<CampaignYear> watchCurrentCampaign(SectorId sector) =>
+      _campaign(sector).stream;
 
   /// Every (secteur, member) whose own name was watched, in order.
   final ownNames = <(SectorId, MemberId)>[];

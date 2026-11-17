@@ -70,6 +70,21 @@ final class SectorSummary {
     memberName: name,
   );
 
+  /// The same secteur once its team moved to the campaign [year] (a new
+  /// campaign started, PLAN §5.10); null when [year] is not later than the
+  /// one kept: a campaign never goes back, so an old answer heard late
+  /// changes nothing.
+  SectorSummary? followedTo(CampaignYear year) => year.value > campaign.value
+      ? SectorSummary(
+          id: id,
+          number: number,
+          centre: centre,
+          campaign: year,
+          status: status,
+          memberName: memberName,
+        )
+      : null;
+
   @override
   bool operator ==(Object other) =>
       other is SectorSummary &&

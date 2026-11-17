@@ -20,6 +20,7 @@ import 'package:tournee_calendriers/domain/street/visit_status.dart';
 import 'package:tournee_calendriers/infrastructure/ban/ban_address_directory.dart';
 import 'package:tournee_calendriers/infrastructure/firebase_auth/firebase_identity.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_admin_status.dart';
+import 'package:tournee_calendriers/infrastructure/firestore/firestore_campaign_store.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_round_ledger.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_sector_directory.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_sector_repository.dart';
@@ -132,6 +133,10 @@ void main() {
     );
     expect(container.read(adminStatusProvider), isA<FirestoreAdminStatus>());
     expect(container.read(roundLedgerProvider), isA<FirestoreRoundLedger>());
+    expect(
+      container.read(campaignStoreProvider),
+      isA<FirestoreCampaignStore>(),
+    );
     expect(
       container.read(streetsDownloadProvider),
       isA<FirestoreStreetsDownload>(),

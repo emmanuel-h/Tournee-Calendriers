@@ -30,6 +30,7 @@ import 'package:tournee_calendriers/infrastructure/ban/ban_address_directory.dar
 import 'package:tournee_calendriers/infrastructure/firebase_auth/anonymous_auth.dart';
 import 'package:tournee_calendriers/infrastructure/firebase_auth/firebase_identity.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_admin_status.dart';
+import 'package:tournee_calendriers/infrastructure/firestore/firestore_campaign_store.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_layout.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_round_ledger.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_sector_directory.dart';
@@ -300,6 +301,8 @@ Future<List<Override>> bindAdapters({
     sectorRepositoryProvider.overrideWith(
       (ref) => FirestoreSectorRepository(db, random: random),
     ),
+    // A new campaign, started by an admin (PLAN §5.10).
+    campaignStoreProvider.overrideWith((ref) => FirestoreCampaignStore(db)),
     randomProvider.overrideWithValue(random),
     // The offline download (PLAN §7): the streets read from the server,
     // the map regions of the map library over the very style the map

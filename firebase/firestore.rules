@@ -56,6 +56,10 @@ service cloud.firestore {
       return /databases/$(database)/documents/sectors/$(sector)/campaigns/$(year);
     }
 
+    function streetPath(sector, year, street) {
+      return /databases/$(database)/documents/sectors/$(sector)/campaigns/$(year)/streets/$(street);
+    }
+
     function joinCodePath(code) {
       return /databases/$(database)/documents/joinCodes/$(code);
     }
@@ -207,6 +211,16 @@ service cloud.firestore {
       return isAdmin() && !existsAfter(sectorPath(sectorId));
     }
 
+    // A new campaign (#39, PLAN §5.10): the preview shows the year the
+    // secteur moves to, in the write that moves it (isCampaignStart).
+    // Only its `campaign` changes, by an admin.
+    function isPreviewOfNewCampaign(code, before, after) {
+      return isAdmin()
+        && after.diff(before).affectedKeys().hasOnly(['campaign'])
+        && getAfter(sectorPath(before.sectorId)).data.joinCode == code
+        && after.campaign == getAfter(sectorPath(before.sectorId)).data.currentCampaign;
+    }
+
     function isCodeFreed(code, data) {
       return isAdmin()
         && (!existsAfter(sectorPath(data.sectorId))
@@ -245,6 +259,7 @@ service cloud.firestore {
       // so no one replaces another secteur's preview.
       allow get: if signedIn();
       allow create: if signedIn() && isJoinCode(code) && isPreview(code, request.resource.data);
+      allow update: if isPreviewOfNewCampaign(code, resource.data, request.resource.data);
       allow delete: if isCodeFreed(code, resource.data);
     }
 
@@ -326,6 +341,22 @@ service cloud.firestore {
         && isJoinCode(after.joinCode)
         && getAfter(joinCodePath(after.joinCode)).data.sectorId == sector
         && !existsAfter(joinCodePath(before.joinCode));
+    }
+
+    // A new campaign starts (#39, PLAN §5.10): an admin moves
+    // `currentCampaign` forward, alone, once the campaign it moves to holds
+    // its copies (isNextCampaign, isStreetCopy): that campaign's document
+    // must name the year left as its previous one, and the join preview
+    // must show the new year in the same write. Never back: a year left is
+    // frozen (its streets and tournées are written only while current).
+    function isCampaignStart(sector, before, after) {
+      return isAdmin()
+        && after.diff(before).affectedKeys().hasOnly(['currentCampaign'])
+        && isCampaignYear(after.currentCampaign)
+        && after.currentCampaign > before.currentCampaign
+        && getAfter(campaignPath(sector, string(after.currentCampaign))).data.previousYear
+          == before.currentCampaign
+        && getAfter(joinCodePath(after.joinCode)).data.campaign == after.currentCampaign;
     }
 
     // Deleting (admins only, member or not) is the last batch: the code
@@ -815,6 +846,66 @@ service cloud.firestore {
         && isAddedHouseAt(houses, keys, 1);
     }
 
+    // ------------------------------------------------ a new campaign
+
+    // The year of a campaign as its document id: four digits ("2027").
+    function isYearId(year) {
+      return year.matches('20[0-9]{2}');
+    }
+
+    // A campaign after the secteur's current one (#39, PLAN §5.10), not
+    // yet started: an admin writes it, then the copies of the current
+    // one's streets (isStreetCopy), then moves `currentCampaign` to it
+    // (isCampaignStart). A secteur behind the others of its centre jumps
+    // to their next year, so any later year will do. It names the year it
+    // is copied from.
+    function isNextCampaign(sector, year, data) {
+      return isAdmin()
+        && isYearId(year)
+        && int(year) > get(sectorPath(sector)).data.currentCampaign
+        && hasExactly(data, ['startedAt', 'previousYear'])
+        && data.startedAt is timestamp
+        && data.previousYear == get(sectorPath(sector)).data.currentCampaign;
+    }
+
+    // A street of the secteur's current campaign copied into a later one
+    // not yet started (#39, `Street.forNextCampaign`): by an admin, under
+    // the same id, with the same name, commune and BAN id, from a street
+    // that is not in the Corbeille, out of the Corbeille itself, and only
+    // with numbers the street has (those in the Corbeille stay behind).
+    // Written again whole when a cut-off roll-over runs again, hence
+    // allowed as a create and as an update.
+    //
+    // The houses are only counted through their numbers, not checked one
+    // by one: the rules have no loops, a copy holds every house of the
+    // street in one write, and each house costs about 200 of the 1 000
+    // expressions (housesPerWrite). So an admin could write marks into a
+    // copy; admins are trusted (added by hand, PLAN §5.12), and once the
+    // campaign starts every write is checked as usual. Each copy reads its
+    // own street of the current campaign: a batch may read at most 20
+    // documents, so the adapter sends the copies a few at a time
+    // (`copiesPerBatch`, firestore_campaign_store.dart).
+    function isStreetCopy(sector, year, street, data) {
+      let current = get(sectorPath(sector)).data.currentCampaign;
+      let source = get(streetPath(sector, string(current), street)).data;
+      return isAdmin()
+        && isYearId(year)
+        && int(year) > current
+        && existsAfter(campaignPath(sector, year))
+        && data.keys().hasAll(streetFields())
+        && data.keys().hasOnly(streetFields().concat(mapFields()).concat(['part']))
+        && data.name == source.name
+        && data.communeName == source.communeName
+        && data.communeCode == source.communeCode
+        && data.banId == source.banId
+        && source.deletedAt == null
+        && data.deletedAt == null && data.deletedBy == null
+        && (!('shape' in data) || isShape(data.shape))
+        && (!('part' in data) || isPart(data.part))
+        && data.houses is map
+        && source.houses.keys().hasAll(data.houses.keys());
+    }
+
     // ------------------------------------------- the validated tournées
 
     // `rounds/{roundId}` (#63, PLAN §6.2): the summary of a validated
@@ -996,7 +1087,8 @@ service cloud.firestore {
       allow list: if isAdmin();
       allow create: if isNewSector(sector, request.resource.data);
       allow update: if isNewCode(sector, resource.data, request.resource.data)
-        || isCommunesChange(sector, resource.data, request.resource.data);
+        || isCommunesChange(sector, resource.data, request.resource.data)
+        || isCampaignStart(sector, resource.data, request.resource.data);
       allow delete: if isSectorDeletion(resource.data);
 
       match /members/{member} {
@@ -1041,27 +1133,32 @@ service cloud.firestore {
       match /campaigns/{year} {
         allow read: if isMemberOrAdmin(sector);
         // The first campaign, written by the creator (an admin) with the
-        // secteur. A new campaign (v1.1) extends this rule when it is
-        // written.
-        allow create: if isAdmin()
+        // secteur; or a later one, before the secteur moves to it
+        // (isNextCampaign, #39). An admin deletes one: with the secteur, or
+        // a past year no longer kept (PLAN §5.10).
+        allow create: if (isAdmin()
           && hasExactly(request.resource.data, ['startedAt', 'previousYear'])
           && request.resource.data.startedAt is timestamp
           && request.resource.data.previousYear == null
           && getAfter(sectorPath(sector)).data.createdBy == uid()
-          && year == string(getAfter(sectorPath(sector)).data.currentCampaign);
+          && year == string(getAfter(sectorPath(sector)).data.currentCampaign))
+          || isNextCampaign(sector, year, request.resource.data);
         allow delete: if isAdmin();
 
         match /streets/{street} {
           allow read: if isMemberOrAdmin(sector);
-          // Previous campaigns are read-only.
-          allow create: if isMemberOrAdmin(sector)
+          // Previous campaigns are read-only (frozen, PLAN §5.10); a later
+          // one not yet started takes only the copies of an admin (#39).
+          allow create: if (isMemberOrAdmin(sector)
             && year == string(get(sectorPath(sector)).data.currentCampaign)
-            && isNewStreet(request.resource.data);
-          allow update: if isMemberOrAdmin(sector)
+            && isNewStreet(request.resource.data))
+            || isStreetCopy(sector, year, street, request.resource.data);
+          allow update: if (isMemberOrAdmin(sector)
             && year == string(get(sectorPath(sector)).data.currentCampaign)
             && (isStreetChange(sector, resource.data, request.resource.data)
               || isShapeFill(resource.data, request.resource.data)
-              || isPartChange(resource.data, request.resource.data));
+              || isPartChange(resource.data, request.resource.data)))
+            || isStreetCopy(sector, year, street, request.resource.data);
           // A street goes to the Corbeille by an update. Hard deletion goes
           // with the secteur (an admin), or is the 30-day purge, which any
           // active member's or admin's app makes (no server, PLAN §5.11).

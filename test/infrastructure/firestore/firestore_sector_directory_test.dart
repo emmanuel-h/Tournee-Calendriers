@@ -5,6 +5,7 @@ import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mock_exceptions/mock_exceptions.dart';
 import 'package:tournee_calendriers/application/ports/sector_directory.dart';
+import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
 import 'package:tournee_calendriers/domain/sector/member.dart';
 import 'package:tournee_calendriers/domain/sector/member_name.dart';
 import 'package:tournee_calendriers/domain/sector/rescue_centre.dart';
@@ -512,6 +513,41 @@ void main() {
 
     test('should tell nothing while there is no member document', () async {
       final seen = await namesWhile(() async {});
+
+      expect(seen, isEmpty);
+    });
+  });
+
+  group('current campaign', () {
+    Future<List<CampaignYear>> yearsWhile(
+      Future<void> Function() change,
+    ) async {
+      final seen = <CampaignYear>[];
+      final errors = <Object>[];
+      final subscription = directory
+          .watchCurrentCampaign(sectorId)
+          .listen(seen.add, onError: errors.add);
+      await pumpEventQueue();
+      await change();
+      await pumpEventQueue();
+      await subscription.cancel();
+      expect(errors, isEmpty);
+      return seen;
+    }
+
+    test('should tell the year the secteur works on, then the new '
+        'one', () async {
+      await db.doc('sectors/t49').set(sectorToDocument(team()));
+
+      final seen = await yearsWhile(
+        () => db.doc('sectors/t49').update({'currentCampaign': 2027}),
+      );
+
+      expect(seen, [campaign2026, campaign2027]);
+    });
+
+    test('should tell nothing of a secteur that is not there', () async {
+      final seen = await yearsWhile(() async {});
 
       expect(seen, isEmpty);
     });

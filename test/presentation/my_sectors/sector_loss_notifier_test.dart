@@ -283,6 +283,56 @@ void main() {
     expect(directory.memberships, hasLength(2));
   });
 
+  group('the campaign', () {
+    test('should listen to the campaign of each secteur the member is in, '
+        'and not of their requests', () {
+      final container = containerWith(_manusPhone());
+
+      container.read(sectorLossProvider);
+
+      expect(directory.isHearingCampaign(sector49.id), isTrue);
+      expect(directory.isHearingCampaign(sector12.id), isTrue);
+      expect(directory.isHearingCampaign(sector7.id), isFalse);
+    });
+
+    test('should move a secteur to the campaign its team moved to, the open '
+        'one kept open', () async {
+      final container = containerWith(_manusPhone());
+      container.read(sectorLossProvider);
+
+      directory.hearCampaign(sector12.id, campaign2027);
+      await pumpEventQueue();
+
+      expect(store.mySectors.find(sector12.id)!.campaign, campaign2027);
+      expect(store.mySectors.find(sector49.id)!.campaign, campaign2026);
+      expect(store.mySectors.currentId, sector49.id);
+      expect(container.read(sectorLossProvider), isNull);
+    });
+
+    test(
+      'should keep the year the phone has when the listener fails',
+      () async {
+        final container = containerWith(_manusPhone());
+        container.read(sectorLossProvider);
+
+        directory.failCampaign(sector49.id);
+        await pumpEventQueue();
+
+        expect(store.saves, isEmpty);
+      },
+    );
+
+    test('should stop listening to a secteur lost', () async {
+      final container = containerWith(_manusPhone());
+      container.read(sectorLossProvider);
+
+      directory.lose(sector49.id, SectorLoss.removed);
+      await pumpEventQueue();
+
+      expect(directory.isHearingCampaign(sector49.id), isFalse);
+    });
+  });
+
   group('the member\'s name', () {
     test('should listen to the name the server holds in each secteur the '
         'member is in, and not in their requests', () {

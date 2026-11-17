@@ -15,6 +15,7 @@ import 'dart:math';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:tournee_calendriers/application/ports/address_directory.dart';
 import 'package:tournee_calendriers/application/ports/admin_status.dart';
+import 'package:tournee_calendriers/application/ports/campaign_store.dart';
 import 'package:tournee_calendriers/application/ports/clock.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
 import 'package:tournee_calendriers/application/ports/id_generator.dart';
@@ -41,6 +42,7 @@ import 'package:tournee_calendriers/application/use_cases/add_manual_street.dart
 import 'package:tournee_calendriers/application/use_cases/add_street_from_map.dart';
 import 'package:tournee_calendriers/application/use_cases/admins.dart';
 import 'package:tournee_calendriers/application/use_cases/calendars.dart';
+import 'package:tournee_calendriers/application/use_cases/campaigns.dart';
 import 'package:tournee_calendriers/application/use_cases/change_street_part.dart';
 import 'package:tournee_calendriers/application/use_cases/choose_start_point.dart';
 import 'package:tournee_calendriers/application/use_cases/create_sector.dart';
@@ -159,6 +161,12 @@ final sectorRepositoryProvider = Provider<SectorRepository>(
 );
 final adminStatusProvider = Provider<AdminStatus>(
   (ref) => _unbound('AdminStatus'),
+);
+
+/// The campaigns of the secteurs on the server, for an admin starting a
+/// new one (PLAN §5.10).
+final campaignStoreProvider = Provider<CampaignStore>(
+  (ref) => _unbound('CampaignStore'),
 );
 
 /// The streets of a secteur as the server has them, for its download
@@ -546,6 +554,25 @@ final listAllSectorsProvider = Provider(
 );
 final openAsAdminProvider = Provider(
   (ref) => OpenAsAdmin(ref.watch(mySectorsStoreProvider)),
+);
+
+/// A new campaign (PLAN §5.10), for the screens to come: one secteur
+/// moved to a later year, or every secteur of a centre on one year.
+final rollOverSectorProvider = Provider(
+  (ref) => RollOverSector(ref.watch(campaignStoreProvider)),
+);
+final startCampaignProvider = Provider(
+  (ref) => StartCampaign(
+    ref.watch(sectorDirectoryProvider),
+    ref.watch(memberAccountProvider),
+    ref.watch(campaignStoreProvider),
+  ),
+);
+final watchCampaignProvider = Provider(
+  (ref) => WatchCampaign(ref.watch(sectorDirectoryProvider)),
+);
+final followCampaignProvider = Provider(
+  (ref) => FollowCampaign(ref.watch(mySectorsStoreProvider)),
 );
 final chooseStartPointProvider = Provider(
   (ref) => ChooseStartPoint(ref.watch(mySectorsStoreProvider)),

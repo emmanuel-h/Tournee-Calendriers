@@ -63,6 +63,7 @@ import '../domain/sector/sector_fixtures.dart'
         sectorId;
 import '../support/fakes/fake_address_directory.dart';
 import '../support/fakes/fake_admin_status.dart';
+import '../support/fakes/fake_campaign_store.dart';
 import '../support/fakes/fake_commune_search.dart';
 import '../support/fakes/fake_member_account.dart';
 import '../support/fakes/fake_my_sectors_store.dart';
@@ -115,6 +116,7 @@ void main() {
   late FakeOpenRoundStore rounds;
   late FakeRoundLedger ledger;
   late FakeStreetPartIndex index;
+  late FakeCampaignStore campaigns;
   late ProviderContainer container;
 
   /// Every port bound to the fakes, the member on the phone being
@@ -143,6 +145,7 @@ void main() {
     openRoundStoreProvider.overrideWithValue(rounds),
     roundLedgerProvider.overrideWithValue(ledger),
     streetPartIndexProvider.overrideWithValue(index),
+    campaignStoreProvider.overrideWithValue(campaigns),
     // The indexes of `2`…`7` in the alphabet: the code `234567`.
     randomProvider.overrideWithValue(ScriptedRandom([23, 24, 25, 26, 27, 28])),
   ];
@@ -190,6 +193,7 @@ void main() {
     rounds = FakeOpenRoundStore();
     ledger = FakeRoundLedger();
     index = FakeStreetPartIndex();
+    campaigns = FakeCampaignStore();
     // A ProviderContainer is what a ProviderScope holds, without widgets:
     // the overrides bind the ports to the fakes.
     container = ProviderContainer(overrides: overridesAs(lea));
@@ -226,6 +230,7 @@ void main() {
       'PhoneCacheReset': phoneCacheResetProvider,
       'ReminderScheduler': reminderSchedulerProvider,
       'ReminderPreferences': reminderPreferencesProvider,
+      'CampaignStore': campaignStoreProvider,
     };
     ports.forEach((name, port) {
       test('should name $name when nobody bound it', () {
@@ -802,6 +807,57 @@ void main() {
       valueOf(await container.read(listAllSectorsProvider)());
 
       expect(sectorDirectory.allAsked, [MemberId('uid-lea')]);
+    });
+
+    test('should start a campaign with the bound directory, account and '
+        'campaigns', () async {
+      sectorDirectory.overviews = [
+        SectorOverview(
+          id: sector12.id,
+          number: sector12.number,
+          centre: csVillefranche,
+          campaign: campaign2026,
+          activeMembers: 1,
+          pendingRequests: 0,
+          callerIsActive: true,
+        ),
+      ];
+
+      valueOf(
+        await container.read(startCampaignProvider)(
+          csVillefranche,
+          campaign2027,
+        ),
+      );
+
+      expect(sectorDirectory.allAsked, [MemberId('uid-lea')]);
+      expect(campaigns.steps, contains('switchTo t12 2027'));
+    });
+
+    test('should move one secteur with the bound campaigns', () async {
+      valueOf(
+        await container.read(rollOverSectorProvider)(
+          sector49.id,
+          from: campaign2026,
+          to: campaign2027,
+        ),
+      );
+
+      expect(campaigns.steps, contains('switchTo t49 2027'));
+    });
+
+    test('should follow the campaign of a secteur from the bound directory '
+        'into the bound store', () async {
+      final heard = container.read(watchCampaignProvider)(sector49.id).first;
+      sectorDirectory.hearCampaign(sector49.id, campaign2027);
+
+      final followed = await container.read(followCampaignProvider)(
+        sector49.id,
+        await heard,
+      );
+
+      expect(followed!.campaign, campaign2027);
+      expect(mySectors.mySectors.find(sector49.id)!.campaign, campaign2027);
     });
 
     test('should open a secteur as an admin in the bound store', () async {
