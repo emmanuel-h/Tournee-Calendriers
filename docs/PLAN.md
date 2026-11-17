@@ -89,7 +89,7 @@ Code uses English names, the UI uses French.
 | Offline | Explicit "download the secteur" step: all street documents into an unlimited Firestore cache + map tiles of the secteur area into a MapLibre offline region |
 | Identity | Firebase **anonymous auth** + display name + 6-character join code or QR |
 | Secteur identity | Number + centre de secours + code. Number + CS is unique across the app; the code is the secret used to join |
-| Years | A secteur has one campaign per year. A new campaign copies streets, numbers and buildings; statuses and *repasser* start at ○ (v1.1) |
+| Years | A secteur has one campaign per year. A new campaign copies the setup (streets with their part and shape, numbers, buildings); everything marked starts again at ○, no history per house (v1.1, M6) |
 | Apartments | Optional unit list per house; building status derived from units |
 | Comments in code | Explain the *why* and non-obvious Dart/Flutter concepts; never restate the code |
 | Tests | TDD, fast Dart tests in the dev loop; 100 % coverage gate on domain + application + presentation; no mutation-testing gate (no reliable Dart tool) |
@@ -1402,13 +1402,23 @@ admin » for « Nouveau code », « Retirer », « Supprimer » and the campaign
 └──────────────────────────────┘    └──────────────────────────────┘
 ```
 
-- Copied: streets (with shapes and edits), numbers, buildings and their floors. Reset: statuses, *repasser*, last-change info.
-- ~~*Reprendre mes rues 2026* re-takes in one tap the streets the member covered last year~~
-  (no attribution since 5.14: nothing to re-take; the sketch above still shows it).
-- The house sheet and door sheet show last year's result in small type: *En 2026 : ✗ personne*.
-  It helps ("nobody home last year either, try the evening") and is read-only.
-- The previous campaign stays readable from Paramètres → Secteur → *Campagne 2026*. The one
-  before it is deleted when a new campaign starts (data minimisation).
+- **Decided 2026-11-17 (M6, #38–#40), replaces the bullets that stood here:** a new campaign
+  carries over **the setup only**, what an admin would otherwise lay out again: the streets (name,
+  commune, BAN id, shape, part), their numbers and positions, buildings with their staircases,
+  floors and doors. Everything marked starts again: status, tries, « repasser » day and hour,
+  calendars, last change. **No per-house history** (no `prev`, no « En 2026 : … » line in the
+  sheets): which house said yes and the dons are not tracked across years. The Corbeille is not
+  copied (its items are purged). No « Reprendre mes rues » (no attribution since 5.14).
+- **Who:** any admin of the secteur (5.12), from Équipe. The year is the next one after the
+  current campaign.
+- **The old year is frozen** the moment the new one starts: its streets and its tournées are
+  read-only for everyone (a tournée still open or not yet sent from the old year is refused, and
+  shows as refused with its dons on the phone, 5.16). The campaigns are months apart, so this is
+  accepted.
+- **What is kept:** each secteur keeps the latest past year that actually had a validated
+  tournée, read-only (its streets and its Collecte). When the new campaign starts, every older
+  year is deleted, and so is the year just closed if it had no validated tournée (then the year
+  before it stays as the last real one). Data minimisation: at most one past year per secteur.
 - Members need the network once to receive the new campaign; the download step then runs again.
 
 ### 5.11 Corbeille
@@ -2651,8 +2661,8 @@ French ordering), `StreetName`, `InseeCode` (the five-character commune code, `2
 in Corsica), `VisitStatus` (`toDo`, `done`, `nobodyHome`, `comeBack`), `ComeBack` (when to come back: an optional day and hour, #81), `CalendarDay` (a date without time or zone, #81),
 `NobodyHomeTries` (the tries with nobody home, #80),
 `GeoPoint`, `StreetShape`, `Progress`, `ProgressLevel`
-(`free`, `toDo`, `partial`, `done`), `CampaignYear`. Each house and dwelling also keeps its
-`previousStatus` (last campaign's result, read-only).
+(`free`, `toDo`, `partial`, `done`), `CampaignYear`. No house or dwelling keeps last campaign's
+result (decided 2026-11-17, §5.10).
 
 Value-object rules fixed in T1.1 (`lib/domain/street/`):
 
@@ -3641,8 +3651,8 @@ sectors/{sectorId}
 ```
 
 The street document fixed in T2.3 (`infrastructure/firestore/mappers/`): field names above,
-statuses and label styles under fixed names. `prev` (last campaign's status) comes with the new
-campaign (v1.1). `shape` came with the map (T3.3): a document written before has none and
+statuses and label styles under fixed names. No `prev` field: a new campaign keeps no
+per-house history (§5.10). `shape` came with the map (T3.3): a document written before has none and
 reads as no shape. `assignees` (who covered the street, T3.3) went with 5.14 (#120): it is no
 longer written, a document that still has it is read as if it had not, and the rules let no
 write add or change it. `tries` (#80) is written only from the
@@ -3687,8 +3697,8 @@ batch; the security rules refuse the batch if `sectorKeys/{key}` already exists,
 makes number + CS unique even if two people create it at the same second.
 
 A new campaign (v1.1) is a batch that copies each street of the current campaign into
-`campaigns/{newYear}`, resets the fields listed in 5.10, stores the old effective status in
-`prev`, then flips `currentCampaign`. Listeners follow `currentCampaign`, so every phone
+`campaigns/{newYear}`, keeping only the setup listed in 5.10, flips `currentCampaign` and
+deletes the past years 5.10 does not keep. Listeners follow `currentCampaign`, so every phone
 switches by itself.
 
 Why houses are a map inside the street document and not one document each:
@@ -4155,7 +4165,7 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
   rules accept a number's `deletedBy` that is the caller or an active member of the secteur
   (so a member could also name a teammate as the remover of a number; the stricter choice,
   stamping that undo with who undoes as for houses and doors, would change T2.3's undo).
-- Fields no adapter writes yet (`prev` and a new campaign in v1.1) are refused: the task that
+- Fields no adapter writes yet (a new campaign in v1.1) are refused: the task that
   writes them extends the rules and their tests.
 - **Communes** (#78): a new secteur must hold `communes`, a list of 1 to 50 entries; the first
   entry is checked whole (`code` an INSEE code, `name` trimmed, not blank, ≤ 100, `lat` / `lon`
@@ -4432,7 +4442,7 @@ to TestFlight once the Apple account exists.
 | M4 | Offline: automatic, invisible download (cache + tiles, silent map refresh), pending-writes indicator, what « Mes secteurs » / Paramètres show of it (#33), airplane-mode checklist | a full day without network |
 | M5 | Polish and release: dark mode, accessibility (TalkBack, 200 % font), icon, privacy policy, Play listing | store-ready |
 | M8 | Status picker and tournées (#63): a tap shows the five statuses with « Refusé » (§5.6), calendars per house, tournées with dons per payment method, recap, Collecte (§5.13), rules; « Secteur » and the code glossary | a tournée counted to the cent, validated, seen by the secteur |
-| M6 (v1.1) | Nouvelle campagne: copy / reset, *Reprendre mes rues*, last year's result in the sheets, read-only archive | secteur 49 starts 2027 from 2026 |
+| M6 (v1.1) | Nouvelle campagne: copy the setup, reset the marks, old year frozen, one past year kept read-only | secteur 49 starts 2027 from 2026 |
 
 M1 comes before Firebase on purpose: the street screen is where the app succeeds or fails,
 and a real reference area stored on the phone lets you try it in the street before any backend
@@ -4460,7 +4470,7 @@ exists. No invented data at any stage.
 | Q14 | Correcting streets | Edit mode on the street screen (✏): remove / add / rename numbers, rename, make a building, stop covering, delete. Manual street always reachable from *Ajouter des rues*. |
 | Q15 | Buildings | Described by floor (and staircase when several); one row per floor, top to bottom. |
 | Q16 | Secteur identity | Number + centre de secours + code. Number + CS unique; CS picked from a shared list. Joining needs only the code (or QR), with a confirmation of number + CS. |
-| Q17 | Next year | One campaign per year inside the secteur. New campaign keeps streets, numbers, buildings; resets statuses, *repasser*, assignees; *Reprendre mes rues 2026*; last year's result shown in the sheets. v1.1, model ready in v1. |
+| Q17 | Next year | One campaign per year inside the secteur. New campaign keeps streets, numbers, buildings; resets everything marked; no per-house history; the old year frozen; one past year with tournées kept (§5.10, decided 2026-11-17). v1.1, model ready in v1. |
 | Q18 | Who starts a campaign, what is kept | The creator (an admin from #75, 5.12). Previous campaign read-only; the one before is deleted. |
 | Q19 | Guessed / leaked codes | A code only creates a pending request; any accepted member accepts or refuses. App Check in v1. Soft delete with a 30-day Corbeille. |
 | Q20 | Infrastructure | **Decided at the M2 checkpoint (2026-10-05): Spark (free), Blaze-ready.** Join on the phone (`joinCodes` get → pending member) behind a `SectorDirectory` port; App Check + approval are the guard; the Corbeille purge runs on members' phones (5.11). Move to Blaze (1 click, no data migration) and a rate-limited callable join + scheduled purge when real usage nears Spark's shared daily quota (50 k reads, 20 k writes for the whole app ≈ 10 busy secteurs a day) or abuse shows up. Another backend was rejected: it loses Firestore's offline cache. |
