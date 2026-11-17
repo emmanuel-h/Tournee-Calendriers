@@ -117,7 +117,7 @@ and « Copier »; one sentence added to « Compte » in `PRIVACY.md` and Confide
 M6 replanned 2026-11-17 (PLAN §5.10, §5.22): a new campaign copies the setup only, no per-house history, the old
 year frozen, one past year with tournées kept and not shown. A centre de secours runs one year for all its secteurs,
 from a CS page in « Tous les secteurs » (Terminer, then Démarrer; Couverture; organise streets across secteurs).
-#38 (roll-over domain) and #39 (`RollOverSector`, `StartCampaign`, rules: not yet deployed) delivered; next #176,
+#38 (roll-over domain) and #39 (`RollOverSector`, `StartCampaign`; its rules deployed 2026-11-17, identical to `firestore.rules`) delivered; next #176,
 then #40 (mockups approved 2026-11-17), #177, #178.
 M12 planned 2026-11-17 (PLAN §5.23, #179–#181), **before** the rest of M6: a super admin (global `admins` in an access
 list, written in the console only; no power over secteurs from it) names admins in the app, each admin holding per CS some of four permissions (Campagne, Secteurs, Équipes, Rues); security analysis
