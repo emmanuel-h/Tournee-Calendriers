@@ -133,7 +133,10 @@ later screen could be checked with real streets (decided with you on 2026-10-04)
 |---|---|---|
 | [#38](https://github.com/emmanuel-h/Tournee-Calendriers/issues/38) | T6.1 Roll-over rules (domain) |  |
 | [#39](https://github.com/emmanuel-h/Tournee-Calendriers/issues/39) | T6.2 StartCampaign |  |
-| [#40](https://github.com/emmanuel-h/Tournee-Calendriers/issues/40) | T6.3 Campaign UI |  |
+| [#40](https://github.com/emmanuel-h/Tournee-Calendriers/issues/40) | T6.3 CS page: end and start a year |  |
+| [#176](https://github.com/emmanuel-h/Tournee-Calendriers/issues/176) | T6.4 End a centre de secours' year; secteurs follow the CS year |  |
+| [#177](https://github.com/emmanuel-h/Tournee-Calendriers/issues/177) | T6.5 Couverture: gaps, overlaps and « Hors CS » for a centre de secours |  |
+| [#178](https://github.com/emmanuel-h/Tournee-Calendriers/issues/178) | T6.6 Organise a centre de secours: add, move and remove streets across secteurs |  |
 | [#82](https://github.com/emmanuel-h/Tournee-Calendriers/issues/82) | Come-back reminders and a list of houses to come back to |  |
 
 ## M7 iOS

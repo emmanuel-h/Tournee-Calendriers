@@ -1412,8 +1412,8 @@ admin » for « Nouveau code », « Retirer », « Supprimer » and the campaign
 - **Who and where (decided 2026-11-17, #40): per centre de secours.** An admin (5.12) starts
   the new campaign for **every secteur of a CS at once**, from « Tous les secteurs »: each CS
   header reads « CS VILLEFRANCHE · 2026 » with a row « ↻ Nouvelle campagne 2027 › » under it.
-  Nothing on the Secteur screen. The year is the CS's latest current year + 1; a secteur behind
-  (e.g. still on 2025) jumps to it, copied from its own current campaign. Each secteur still
+  Nothing on the Secteur screen. **Changed by 5.22:** the CS page owns the year, every secteur
+  of a CS starts and ends with it (no secteur behind). Each secteur still
   stores its own `currentCampaign` (no centre document); a secteur is unique by number + CS, so
   « Secteur 12 » of two centres are two secteurs.
 - **What members see:** once, when their phone follows the switch, a snackbar « La campagne
@@ -1431,10 +1431,9 @@ admin » for « Nouveau code », « Retirer », « Supprimer » and the campaign
 - **Not built:** the sketch's « Reprendre mes rues » and the house sheet's « En 2026 : … »,
   nor « 2026 reste consultable » (Paramètres → Campagne 2026).
 - Members need the network once to receive the new campaign; the download step then runs again.
-- **Delivered in #39 (no screen), scope changed by the user (2026-11-17):** the « a secteur
-  behind jumps to the centre's latest year + 1 » policy above is **not** built: a CS admin view
-  (start / end a year, organise secteurs, coverage and overlap checks) is being designed apart and
-  will own the policy of a whole centre; an explicit « end the year » may come later. Built:
+- **Delivered in #39 (no screen), scope changed by the user (2026-11-17):** no « secteur behind
+  jumps » policy; the CS page (5.22) owns the year of a whole centre, with « Terminer » and
+  « Démarrer ». Built:
   - the core, `RollOverSector(sector, from:, to:)` (`application/use_cases/campaigns.dart`,
     behind the `CampaignStore` port, adapter `FirestoreCampaignStore`): one secteur moved from its
     current campaign to any later year. Its current campaign's streets read from the server, the
@@ -2678,6 +2677,65 @@ stays on the phone, without house or time »** for the time of the tournée only
     téléphone : … Pendant une tournée, seul votre téléphone sait de quelle maison vient chaque don,
     pour le retirer de la tournée si la maison n'est finalement pas faite ; il l'oublie dès que la
     tournée est validée et ne l'envoie jamais. », drafted for the user's review.
+
+### 5.22 Centre de secours: the CS page (M6, to build)
+
+Decided with the user 2026-11-17 (ASCII in the terminal; mockup to come before any code). Admins
+only (5.12). A centre de secours runs **one campaign year for all its secteurs**: they start and
+end together, so no secteur is ever on another year than its CS.
+
+```
+  Tous les secteurs  before → after       CS page · season                 CS page · after « Terminer 2026 »
+┌───────────────────────┐┌───────────────────────┐ ┌────────────────────────────┐ ┌────────────────────────────┐
+│ ← Tous les secteurs   ││ ← Tous les secteurs   │ │ ← CS Villefranche          │ │ ← CS Villefranche          │
+│ CS VILLEFRANCHE       ││ CS VILLEFRANCHE ·2026›│ │ CAMPAGNE 2026 · en cours   │ │ CAMPAGNE 2026 · terminée   │
+│ Secteur 49 · 2026   › ││ Secteur 49 · 2026   › │ │ 14 tournées · 3 secteurs   │ │ Préparez les secteurs pour │
+│ Secteur 50 · 2026   › ││ Secteur 50 · 2026   › │ │ [    Terminer 2026     ]   │ │ 2027, puis démarrez.       │
+│ CS GLEIZÉ             ││ CS GLEIZÉ · 2026    › │ │ SECTEURS (3)               │ │ [    Démarrer 2027     ]   │
+│ Secteur 12 · 2026   › ││ Secteur 12 · 2026   › │ │ Secteur 49 · 38 rues     › │ │ SECTEURS (3) …             │
+└───────────────────────┘└───────────────────────┘ │ Secteur 50 · 22 rues     › │ │ [ + Nouveau secteur ]      │
+   (header = plain label)   (header opens CS page) │ [ + Nouveau secteur ]      │ │ COUVERTURE                 │
+                                                   │ COUVERTURE                 │ │ ✓ Tout est couvert       › │
+                                                   │ ⚠ 14 rues sans secteur   › │ └────────────────────────────┘
+                                                   │ ⚠ 2 chevauchements       › │
+                                                   └────────────────────────────┘
+  Accueil, CS year ended (member)  Couverture                        [+ ▾] on a gap / ⋮ on a street
+┌────────────────────────────┐   ┌────────────────────────────┐   ┌────────────────────────────┐
+│ Secteur 49 · 2026 ▾     [⚙]│   │ ← Couverture               │   │ Rue Pasteur · 22 n°        │
+│ ░░ map ░░░░░░░░░░░░░░░░░░░ │   │   CS Villefranche          │   │ Ajouter au secteur 49      │
+├────────────────────────────┤   │ Villefranche-sur-Saône     │   │ Ajouter au secteur 50      │
+│ ⏹ Campagne 2026 terminée.  │   │   412 rues · 398 couvertes │   │ Ajouter une partie…      › │
+│   Merci ! La prochaine     │   │ ⚠ SANS SECTEUR (14)        │   │ Hors CS (ne plus signaler) │
+│   démarrera l'an prochain. │   │ Rue Pasteur · 22 n°  [+ ▾] │   ├────────────────────────────┤
+│ Rues · 31/50               │   │ Rue Gambetta 31–45   [+ ▾] │   │ Rue Nationale · Secteur 49 │
+│ Rue des Lilas ▓▓▓░ 31/42 › │   │ ⚠ CHEVAUCHEMENTS (2)       │   │ Déplacer vers le secteur…▸ │
+└────────────────────────────┘   │ Rue Nationale 1–40       › │   │ Modifier la partie       › │
+  no « Commencer une tournée »   │   Secteur 49 et Secteur 50 │   │ Retirer du secteur         │
+                                 │ HORS CS (5)              › │   └────────────────────────────┘
+                                 └────────────────────────────┘
+```
+
+- **Entry:** in « Tous les secteurs » each CS header shows its year and opens the CS page.
+- **The year, in two steps.** « Terminer 2026 » (with a confirmation) ends the year for every
+  secteur of the CS: marks, tournées and dons are frozen (an open or unsent tournée is refused,
+  5.16); members see « Campagne 2026 terminée » on Accueil and no « Commencer une tournée ».
+  **The setup stays editable by admins** (streets, numbers, parts, buildings, secteurs): the
+  season between is when the CS is reorganised. « Démarrer 2027 » (only once ended) copies
+  that setup into 2027 for every secteur (5.10, #39) and opens marking; members get the snackbar.
+  Cut off midway, « Démarrer » finishes what is left.
+- **Secteurs follow the CS:** a new secteur, from « + Nouveau secteur » on the CS page or from
+  Bienvenue, is created in its CS's current year (no « Année » to choose once the CS has a
+  secteur). A secteur is unique by number + CS (« Secteur 12 » of two centres are two secteurs).
+- **Couverture** (needs the network): the BAN streets and numbers of the communes the CS's
+  secteurs use, each expected in exactly one secteur (or one part of a split street, 5.15).
+  « SANS SECTEUR » lists the gaps, « CHEVAUCHEMENTS » the numbers in two secteurs, « HORS CS »
+  the streets an admin set aside (another CS covers them, nobody lives there): stored for the
+  CS, undone from that list.
+- **Organise from the CS page:** add a gap street (or a part of it) to a secteur, move a street
+  or its part to another secteur, change its part, remove it from its secteur; create a secteur.
+  Editing inside one secteur stays on its Secteur screen.
+- **Accepted risk (#39):** the houses inside a copied street are not checked one by one by the
+  rules (admins only).
 
 ## 6. Data model
 

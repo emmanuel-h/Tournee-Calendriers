@@ -114,6 +114,12 @@ with « Modifier la rue » (edit mode) and « Supprimer la rue » (to the Corbei
 `PRIVACY.md` address, subject « Tournée Calendriers {version} : idée », body empty); no mail app → snackbar with the address
 and « Copier »; one sentence added to « Compte » in `PRIVACY.md` and Confidentialité. No rules change. Validated by the user on the phone and closed (2026-11-17).
 
+M6 replanned 2026-11-17 (PLAN §5.10, §5.22): a new campaign copies the setup only, no per-house history, the old
+year frozen, one past year with tournées kept and not shown. A centre de secours runs one year for all its secteurs,
+from a CS page in « Tous les secteurs » (Terminer, then Démarrer; Couverture; organise streets across secteurs).
+#38 (roll-over domain) and #39 (`RollOverSector`, `StartCampaign`, rules: not yet deployed) delivered; next #176,
+then #40 (mockups first), #177, #178.
+
 ## Commands
 
 ```bash
