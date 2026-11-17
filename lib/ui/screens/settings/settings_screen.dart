@@ -17,6 +17,7 @@ import 'package:tournee_calendriers/ui/components/section_header.dart';
 import 'package:tournee_calendriers/ui/l10n/app_localizations.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/screens/my_sectors/my_sectors_sheet.dart';
+import 'package:tournee_calendriers/ui/screens/settings/developer_contact.dart';
 import 'package:tournee_calendriers/ui/screens/settings/name_sheet.dart';
 import 'package:tournee_calendriers/ui/screens/settings/theme_sheet.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
@@ -28,7 +29,8 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 /// member under another name (#148, SettingsNameTaken mockup),
 /// « RAPPELS » (#82, SettingsReminders mockup), then the theme, the privacy page, the version (a tap
 /// opens « Nouveautés »), the licences, the phone's uid (« Identifiant de
-/// l'appareil », PLAN §5.12) and the data credits. Works offline; the
+/// l'appareil », PLAN §5.12) and the data credits. « Écrire au développeur »
+/// opens the phone's mail app (#118). Works offline; the
 /// screen signs the phone in when it opens, so the uid shows once online.
 ///
 /// No « Hors-ligne » section: the secteur downloads itself for offline use,
@@ -116,6 +118,14 @@ final class SettingsScreen extends ConsumerWidget {
                   key: const Key('settings.privacy'),
                   label: l10n.settingsPrivacy,
                   onTap: () => context.push(AppRoutes.privacy),
+                ),
+                _SettingRow(
+                  key: const Key('settings.contact'),
+                  label: l10n.settingsContact,
+                  semanticsLabel: l10n.settingsContactSemantics,
+                  // The ↗ of the mockup: the mail app opens outside the app.
+                  icon: Icons.open_in_new,
+                  onTap: () => writeToDeveloper(context, version: version),
                 ),
                 _SettingRow(
                   key: const Key('settings.version'),
@@ -420,6 +430,7 @@ final class _SettingRow extends StatelessWidget {
     required this.onTap,
     this.value,
     this.semanticsLabel,
+    this.icon = Icons.chevron_right,
   });
 
   final String label;
@@ -429,6 +440,10 @@ final class _SettingRow extends StatelessWidget {
 
   /// What screen readers hear instead of « label, value ».
   final String? semanticsLabel;
+
+  /// At the right edge: › for a page or a sheet of the app, ↗ for another
+  /// app.
+  final IconData icon;
   final VoidCallback onTap;
 
   @override
@@ -436,6 +451,13 @@ final class _SettingRow extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final colors = AppColors.of(context);
     final value = this.value ?? '';
+    final labelText = Text(
+      label,
+      style: AppTextStyles.bodyLarge.copyWith(
+        color: colors.ink,
+        fontWeight: FontWeight.w700,
+      ),
+    );
     return Semantics(
       button: true,
       label:
@@ -457,31 +479,28 @@ final class _SettingRow extends StatelessWidget {
             child: Row(
               spacing: 12,
               children: [
-                Text(
-                  label,
-                  style: AppTextStyles.bodyLarge.copyWith(
-                    color: colors.ink,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-                // Takes the room left, so the value and the chevron sit at
-                // the right edge, value or not.
-                Expanded(
-                  child: Text(
-                    value,
-                    textAlign: TextAlign.end,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppTextStyles.bodyLarge.copyWith(
-                      color: colors.muted,
+                if (value.isEmpty)
+                  // Without a value, a long label (« Écrire au
+                  // développeur » in large text) wraps instead of pushing
+                  // the icon off the edge.
+                  Expanded(child: labelText)
+                else ...[
+                  labelText,
+                  // Takes the room left, so the value and the chevron sit
+                  // at the right edge.
+                  Expanded(
+                    child: Text(
+                      value,
+                      textAlign: TextAlign.end,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppTextStyles.bodyLarge.copyWith(
+                        color: colors.muted,
+                      ),
                     ),
                   ),
-                ),
-                Icon(
-                  Icons.chevron_right,
-                  size: AppSizes.smallIcon,
-                  color: colors.muted,
-                ),
+                ],
+                Icon(icon, size: AppSizes.smallIcon, color: colors.muted),
               ],
             ),
           ),

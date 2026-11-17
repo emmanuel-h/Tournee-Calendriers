@@ -104,5 +104,12 @@
             <action android:name="android.intent.action.VIEW"/>
             <data android:scheme="https"/>
         </intent>
+        <!-- The same for the mail apps: « Écrire au développeur »
+             (Paramètres, #118) opens a mailto link with url_launcher,
+             which sends it as a VIEW intent. -->
+        <intent>
+            <action android:name="android.intent.action.VIEW"/>
+            <data android:scheme="mailto"/>
+        </intent>
     </queries>
 </manifest>

@@ -372,6 +372,13 @@
       "h": 844,
       "title": "Paramètres — rappels (#82)"
     },
+    "SettingsContact.dc.html": {
+      "x": 2350,
+      "y": 10112,
+      "w": 820,
+      "h": 844,
+      "title": "Paramètres — écrire au développeur (#118)"
+    },
     "PickInSector.dc.html": {
       "x": 3760,
       "y": 1264,
@@ -548,7 +555,8 @@
     "ComeBackList.dc.html",
     "ComeBackNotify.dc.html",
     "StreetRing.dc.html",
-    "SettingsReminders.dc.html"
+    "SettingsReminders.dc.html",
+    "SettingsContact.dc.html"
   ],
   "pages": [],
   "title": "Tournée Calendriers screens"

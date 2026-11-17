@@ -1030,6 +1030,26 @@
   "@themeDark": { "description": "Dark theme." },
   "settingsPrivacy": "Confidentialité",
   "@settingsPrivacy": { "description": "Row of Paramètres that opens the privacy page, and its title." },
+  "settingsContact": "Écrire au développeur",
+  "@settingsContact": { "description": "Row of Paramètres between Confidentialité and Version: opens the phone's mail app on a new message to the developer (PLAN §5.9, #118)." },
+  "settingsContactSemantics": "Écrire au développeur, ouvre votre messagerie",
+  "@settingsContactSemantics": { "description": "What screen readers say for the row that opens the mail app to write to the developer." },
+  "contactSubject": "Tournée Calendriers {version} : idée",
+  "@contactSubject": {
+    "description": "Subject of the new message to the developer, in the phone's mail app (PLAN §5.9, #118). Nothing else is prefilled.",
+    "placeholders": {
+      "version": { "type": "String", "example": "0.24.0" }
+    }
+  },
+  "contactFailed": "Impossible d'ouvrir la messagerie. Écrivez à {email}",
+  "@contactFailed": {
+    "description": "Snackbar when no mail app opened from « Écrire au développeur »; its action copies the address.",
+    "placeholders": {
+      "email": { "type": "String", "example": "mandarinetech.dev@gmail.com" }
+    }
+  },
+  "contactCopy": "Copier",
+  "@contactCopy": { "description": "Action of the snackbar when no mail app opened: copies the developer's address to the clipboard." },
   "settingsVersion": "Version",
   "@settingsVersion": { "description": "Row of Paramètres with the app's version; a tap opens « Nouveautés »." },
   "settingsVersionSemantics": "Version {version}, voir les nouveautés",
@@ -1229,7 +1249,7 @@
   },
   "privacyAccountTitle": "Compte",
   "@privacyAccountTitle": { "description": "Privacy page: section about the account." },
-  "privacyAccountBody": "L'appli ne demande ni adresse e-mail ni numéro de téléphone. Au premier lancement, elle crée un compte anonyme. Vos coéquipiers voient seulement le prénom que vous avez tapé.",
+  "privacyAccountBody": "L'appli ne demande ni adresse e-mail ni numéro de téléphone. Au premier lancement, elle crée un compte anonyme. Vos coéquipiers voient seulement le prénom que vous avez tapé. Si vous écrivez au développeur depuis Paramètres, votre messagerie lui envoie votre adresse e-mail ; elle sert seulement à vous répondre.",
   "@privacyAccountBody": { "description": "Privacy page: the account (PLAN §8.3): its section of PRIVACY.md, word for word." },
   "privacyDataTitle": "Données enregistrées",
   "@privacyDataTitle": { "description": "Privacy page: section about the data stored." },

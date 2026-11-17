@@ -2,55 +2,24 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plugin_platform_interface/plugin_platform_interface.dart';
 import 'package:tournee_calendriers/ui/screens/settings/privacy_screen.dart';
-import 'package:url_launcher_platform_interface/link.dart';
 import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 
+import '../support/fake_url_launcher.dart';
 import '../support/large_text.dart';
 import '../support/test_app.dart';
-
-/// The phone's browser, as url_launcher reaches it: it records what it was
-/// asked to open and answers [opens], or throws when [fails].
-///
-/// `MockPlatformInterfaceMixin` lets a test class stand in for the plugin
-/// (`UrlLauncherPlatform.instance = …`), which otherwise only accepts a
-/// subclass registered by the plugin itself.
-final class _FakeBrowser extends UrlLauncherPlatform
-    with MockPlatformInterfaceMixin {
-  _FakeBrowser({this.opens = true, this.fails = false});
-
-  final bool opens;
-  final bool fails;
-  final opened = <(String, PreferredLaunchMode)>[];
-
-  @override
-  LinkDelegate? get linkDelegate => null;
-
-  @override
-  Future<bool> launchUrl(String url, LaunchOptions options) async {
-    opened.add((url, options.mode));
-    if (fails) throw PlatformException(code: 'ACTIVITY_NOT_FOUND');
-    return opens;
-  }
-}
 
 const _url =
     'https://github.com/emmanuel-h/Tournee-Calendriers/blob/main/PRIVACY.md';
 
 void main() {
-  final realBrowser = UrlLauncherPlatform.instance;
-  tearDown(() => UrlLauncherPlatform.instance = realBrowser);
-
-  Future<_FakeBrowser> pumpPrivacy(
+  Future<FakeUrlLauncher> pumpPrivacy(
     WidgetTester tester, {
     bool opens = true,
     bool fails = false,
   }) async {
-    final browser = _FakeBrowser(opens: opens, fails: fails);
-    UrlLauncherPlatform.instance = browser;
+    final browser = FakeUrlLauncher.install(opens: opens, fails: fails);
     await tester.pumpWidget(testApp(const PrivacyScreen()));
     await tester.scrollUntilVisible(
       find.byKey(const Key('privacy.online')),
@@ -79,6 +48,15 @@ void main() {
     expect(arb['privacyLocationBody'], sections['Position']);
     expect(arb['privacyHostingBody'], sections['Hébergement']);
     expect(arb['privacyDeletionBody'], sections['Suppression']);
+    // Writing to the developer from Paramètres gives away an address (#118).
+    expect(
+      arb['privacyAccountBody'],
+      endsWith(
+        'Si vous écrivez au développeur depuis Paramètres, votre messagerie '
+        'lui envoie votre adresse e-mail\u00a0; elle sert seulement à vous '
+        'répondre.',
+      ),
+    );
     // French typography: a non-breaking space before « : ».
     expect(arb['privacyDataBody'], contains('secteur : les numéros'));
   });

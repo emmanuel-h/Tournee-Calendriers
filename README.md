@@ -68,7 +68,7 @@ Start screen:
   « Mes secteurs » (also « Changer de secteur » in Secteur), to switch secteur (the app
   reopens the last one at launch, offline too) or create or join one, with a dot on another
   secteur where a join request waits; ⚙ opens Paramètres: first name (the team sees the new one where it is free; « Vos noms par secteur » and a name of its own for a secteur where it is taken), « Mes secteurs », theme (Système,
-  Clair, Sombre), confidentialité, version (opens « Nouveautés », what each version brings), licences, data credits.
+  Clair, Sombre), confidentialité, « Écrire au développeur » (opens the mail app, subject with the version), version (opens « Nouveautés », what each version brings), licences, data credits.
 - Secteur (Accueil's title, once called Équipe): « Changer de secteur », the join code (copy button: « Code copié ») and its QR code, « Partager »,
   « Nouveau code » (admins), the requests to join with « Accepter » / « Refuser » (any
   member or admin), the members (« · admin ») and « Retirer » (admins; « Changer aussi le code » ticked), « RUES (n) » with

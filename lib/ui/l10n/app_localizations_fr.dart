@@ -1135,6 +1135,26 @@ class AppLocalizationsFr extends AppLocalizations {
   String get settingsPrivacy => 'Confidentialité';
 
   @override
+  String get settingsContact => 'Écrire au développeur';
+
+  @override
+  String get settingsContactSemantics =>
+      'Écrire au développeur, ouvre votre messagerie';
+
+  @override
+  String contactSubject(String version) {
+    return 'Tournée Calendriers $version : idée';
+  }
+
+  @override
+  String contactFailed(String email) {
+    return 'Impossible d\'ouvrir la messagerie. Écrivez à $email';
+  }
+
+  @override
+  String get contactCopy => 'Copier';
+
+  @override
   String get settingsVersion => 'Version';
 
   @override
@@ -1482,7 +1502,7 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get privacyAccountBody =>
-      'L\'appli ne demande ni adresse e-mail ni numéro de téléphone. Au premier lancement, elle crée un compte anonyme. Vos coéquipiers voient seulement le prénom que vous avez tapé.';
+      'L\'appli ne demande ni adresse e-mail ni numéro de téléphone. Au premier lancement, elle crée un compte anonyme. Vos coéquipiers voient seulement le prénom que vous avez tapé. Si vous écrivez au développeur depuis Paramètres, votre messagerie lui envoie votre adresse e-mail ; elle sert seulement à vous répondre.';
 
   @override
   String get privacyDataTitle => 'Données enregistrées';

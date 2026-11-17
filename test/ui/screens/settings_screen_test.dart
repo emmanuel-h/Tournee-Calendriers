@@ -13,6 +13,7 @@ import 'package:tournee_calendriers/ui/screens/my_sectors/my_sectors_sheet.dart'
 import 'package:tournee_calendriers/ui/screens/settings/changelog.dart';
 import 'package:tournee_calendriers/ui/screens/settings/changelog_screen.dart';
 import 'package:tournee_calendriers/ui/screens/settings/privacy_screen.dart';
+import 'package:url_launcher_platform_interface/url_launcher_platform_interface.dart';
 
 import '../../domain/sector/my_sectors_fixtures.dart';
 import '../../domain/sector/sector_fixtures.dart';
@@ -25,6 +26,7 @@ import '../../support/fakes/fake_sector_repository.dart';
 import '../../support/results.dart';
 import '../support/app_overrides.dart';
 import '../support/clipboard.dart';
+import '../support/fake_url_launcher.dart';
 import '../support/large_text.dart';
 import '../support/navigation.dart';
 
@@ -371,6 +373,108 @@ void main() {
     expect(find.text('DONNÉES ENREGISTRÉES'), findsOneWidget);
   });
 
+  group('Écrire au développeur (PLAN §5.9, #118)', () {
+    final row = find.byKey(const Key('settings.contact'));
+
+    /// Paramètres, scrolled to the row, then the row tapped.
+    Future<void> tapContact(WidgetTester tester) async {
+      await pumpSettings(tester);
+      await tester.ensureVisible(row);
+      await tester.pumpAndSettle();
+      await tester.tap(row);
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('should sit between Confidentialité and Version with its ↗ '
+        'and label', (tester) async {
+      FakeUrlLauncher.install();
+      await pumpSettings(tester);
+
+      expect(
+        find.descendant(of: row, matching: find.text('Écrire au développeur')),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: row, matching: find.byIcon(Icons.open_in_new)),
+        findsOneWidget,
+      );
+      expect(
+        find.descendant(of: row, matching: find.byIcon(Icons.chevron_right)),
+        findsNothing,
+      );
+      expect(
+        find.bySemanticsLabel('Écrire au développeur, ouvre votre messagerie'),
+        findsOneWidget,
+      );
+      final contact = tester.getRect(row);
+      expect(
+        contact.top,
+        tester.getRect(find.byKey(const Key('settings.privacy'))).bottom,
+      );
+      expect(
+        contact.bottom,
+        tester.getRect(find.byKey(const Key('settings.version'))).top,
+      );
+    });
+
+    testWidgets('should open the mail app to the developer with the version '
+        'in the subject and no body when the row is tapped', (tester) async {
+      final mail = FakeUrlLauncher.install();
+
+      await tapContact(tester);
+
+      // « Tournée Calendriers 0.24.0 : idée », spaces as %20 (not « + »),
+      // the non-breaking space before « : » as %C2%A0.
+      expect(mail.opened, [
+        (
+          'mailto:mandarinetech.dev@gmail.com'
+              '?subject=Tourn%C3%A9e%20Calendriers%200.24.0%C2%A0%3A%20id%C3%A9e',
+          PreferredLaunchMode.externalApplication,
+        ),
+      ]);
+      expect(find.byType(SnackBar), findsNothing);
+    });
+
+    testWidgets('should give the address and copy it when no mail app '
+        'opens', (tester) async {
+      final clipboard = FakeClipboard.install(tester);
+      final mail = FakeUrlLauncher.install(opens: false);
+
+      await tapContact(tester);
+
+      expect(mail.opened, hasLength(1));
+      expect(
+        find.text(
+          "Impossible d'ouvrir la messagerie. Écrivez à "
+          'mandarinetech.dev@gmail.com',
+        ),
+        findsOneWidget,
+      );
+      expect(clipboard.text, isNull);
+      await tester.tap(find.widgetWithText(SnackBarAction, 'Copier'));
+      await tester.pumpAndSettle();
+
+      expect(clipboard.text, 'mandarinetech.dev@gmail.com');
+    });
+
+    testWidgets('should give the address when the mail plugin fails', (
+      tester,
+    ) async {
+      FakeUrlLauncher.install(fails: true);
+
+      await tapContact(tester);
+
+      expect(
+        find.text(
+          "Impossible d'ouvrir la messagerie. Écrivez à "
+          'mandarinetech.dev@gmail.com',
+        ),
+        findsOneWidget,
+      );
+      expect(find.widgetWithText(SnackBarAction, 'Copier'), findsOneWidget);
+    });
+  });
+
   testWidgets('should open the licences from their own row', (tester) async {
     await pumpSettings(tester);
     await tester.scrollUntilVisible(
@@ -414,6 +518,9 @@ void main() {
       ],
     );
 
+    // « Écrire au développeur » (#118) pushed it near the screen's edge.
+    await tester.ensureVisible(find.byKey(const Key('settings.version')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('settings.version')));
     await tester.pumpAndSettle();
 
@@ -441,6 +548,9 @@ void main() {
   testWidgets('should list the versions shipped with the app', (tester) async {
     await pumpSettings(tester);
 
+    // « Écrire au développeur » (#118) pushed it near the screen's edge.
+    await tester.ensureVisible(find.byKey(const Key('settings.version')));
+    await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('settings.version')));
     await tester.pumpAndSettle();
 

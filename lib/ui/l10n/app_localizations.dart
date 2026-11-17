@@ -1648,6 +1648,36 @@ abstract class AppLocalizations {
   /// **'Confidentialité'**
   String get settingsPrivacy;
 
+  /// Row of Paramètres between Confidentialité and Version: opens the phone's mail app on a new message to the developer (PLAN §5.9, #118).
+  ///
+  /// In fr, this message translates to:
+  /// **'Écrire au développeur'**
+  String get settingsContact;
+
+  /// What screen readers say for the row that opens the mail app to write to the developer.
+  ///
+  /// In fr, this message translates to:
+  /// **'Écrire au développeur, ouvre votre messagerie'**
+  String get settingsContactSemantics;
+
+  /// Subject of the new message to the developer, in the phone's mail app (PLAN §5.9, #118). Nothing else is prefilled.
+  ///
+  /// In fr, this message translates to:
+  /// **'Tournée Calendriers {version} : idée'**
+  String contactSubject(String version);
+
+  /// Snackbar when no mail app opened from « Écrire au développeur »; its action copies the address.
+  ///
+  /// In fr, this message translates to:
+  /// **'Impossible d\'ouvrir la messagerie. Écrivez à {email}'**
+  String contactFailed(String email);
+
+  /// Action of the snackbar when no mail app opened: copies the developer's address to the clipboard.
+  ///
+  /// In fr, this message translates to:
+  /// **'Copier'**
+  String get contactCopy;
+
   /// Row of Paramètres with the app's version; a tap opens « Nouveautés ».
   ///
   /// In fr, this message translates to:
@@ -2167,7 +2197,7 @@ abstract class AppLocalizations {
   /// Privacy page: the account (PLAN §8.3): its section of PRIVACY.md, word for word.
   ///
   /// In fr, this message translates to:
-  /// **'L\'appli ne demande ni adresse e-mail ni numéro de téléphone. Au premier lancement, elle crée un compte anonyme. Vos coéquipiers voient seulement le prénom que vous avez tapé.'**
+  /// **'L\'appli ne demande ni adresse e-mail ni numéro de téléphone. Au premier lancement, elle crée un compte anonyme. Vos coéquipiers voient seulement le prénom que vous avez tapé. Si vous écrivez au développeur depuis Paramètres, votre messagerie lui envoie votre adresse e-mail ; elle sert seulement à vous répondre.'**
   String get privacyAccountBody;
 
   /// Privacy page: section about the data stored.

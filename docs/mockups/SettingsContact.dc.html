@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Paramètres, écrire au développeur</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible:wght@400;700&amp;family=Barlow+Condensed:wght@600;700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.ib{width:48px;height:48px;border:0;background:transparent;color:#1B1F24;border-radius:24px;display:flex;align-items:center;justify-content:center;padding:0;flex-shrink:0}
+.ib svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.hd{padding:18px 20px 8px 20px;font-size:13px;font-weight:700;letter-spacing:0.06em;text-transform:uppercase;color:#4A5058}
+.line{display:flex;align-items:center;min-height:56px;padding:0 20px;gap:8px;border-bottom:1px solid #E2DED5;background:#FFFFFF}
+.m{flex:1;font-weight:700;font-size:16px}
+.v{color:#4A5058}
+.new{box-shadow:inset 4px 0 0 #B3261E}
+.ext{width:20px;height:20px;fill:none;stroke:#4A5058;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;flex-shrink:0}
+.sw{width:52px;height:32px;border-radius:16px;background:#1D4E7A;position:relative;flex-shrink:0}
+.sw::after{content:'';position:absolute;right:4px;top:4px;width:24px;height:24px;border-radius:12px;background:#FFFFFF}
+.snack{position:absolute;left:12px;right:12px;bottom:16px;background:#1B1F24;color:#FFFFFF;border-radius:10px;padding:14px 8px 14px 16px;display:flex;align-items:center;gap:8px;font-size:15px;line-height:1.35;box-shadow:0 4px 12px rgba(0,0,0,0.25)}
+.snack b{color:#F2B33D;font-size:15px;padding:0 8px;flex-shrink:0}
+.mail{position:absolute;inset:0;background:#FFFFFF;display:flex;flex-direction:column;font-family:system-ui,sans-serif;color:#1B1F24}
+.mail .f{display:flex;gap:12px;padding:14px 16px;border-bottom:1px solid #E2DED5;font-size:16px}
+.mail .f span:first-child{color:#4A5058;width:48px}
+</style>
+</helmet>
+<div style="display: flex; gap: 40px; align-items: flex-start">
+<!-- 1. Paramètres: « Écrire au développeur » between Confidentialité and Version (red edge = new). -->
+<div style="width: 390px; height: 844px; box-sizing: border-box; background: #F3F1EC; color: #1B1F24; font-family: 'Atkinson Hyperlegible', system-ui, sans-serif; display: flex; flex-direction: column; position: relative; overflow: hidden">
+  <div style="display: flex; align-items: center; gap: 4px; padding: 8px"><span class="ib" aria-label="Retour"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></span><h1 style="margin: 0; font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 28px; line-height: 1.05">Paramètres</h1></div>
+  <div class="hd">Vous</div>
+  <div style="border-top: 1px solid #E2DED5">
+    <div class="line"><span class="m">Prénom</span><span class="v">Manu ›</span></div>
+    <div class="line"><span class="m">Mes secteurs</span><span class="v">49 · 2026 ›</span></div>
+  </div>
+  <div style="padding: 10px 20px 0 20px; font-size: 14px; color: #4A5058; line-height: 1.4">L'application fonctionne sans réseau ; les modifications sont envoyées dès qu'il revient.</div>
+  <div class="hd">Rappels</div>
+  <div style="border-top: 1px solid #E2DED5">
+    <div class="line" style="min-height: 64px"><span style="flex: 1; display: flex; flex-direction: column; gap: 2px"><span class="m">Rappels pour repasser</span><span style="font-size: 14px; color: #4A5058">15 min avant l'heure ; à 9 h quand il n'y a pas d'heure.</span></span><span class="sw" aria-hidden="true"></span></div>
+  </div>
+  <div class="hd">Application</div>
+  <div style="border-top: 1px solid #E2DED5">
+    <div class="line"><span class="m">Thème</span><span class="v">Système ›</span></div>
+    <div class="line"><span class="m">Confidentialité</span><span class="v">›</span></div>
+    <div class="line new" role="link" aria-label="Écrire au développeur, ouvre votre messagerie"><span class="m">Écrire au développeur</span><svg class="ext" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5"/></svg></div>
+    <div class="line"><span class="m">Version</span><span class="v">0.24.0 ›</span></div>
+    <div class="line"><span class="m">Licences</span><span class="v">›</span></div>
+  </div>
+  <!-- 2. When no mail app opens. -->
+  <div class="snack"><span style="flex: 1">Impossible d'ouvrir la messagerie. Écrivez à mandarinetech.dev@gmail.com</span><b>COPIER</b></div>
+</div>
+<!-- 3. What the phone's mail app opens: subject filled in, body empty, nothing about the secteur. -->
+<div style="width: 390px; height: 844px; position: relative; overflow: hidden">
+  <div class="mail">
+    <div style="display: flex; align-items: center; gap: 8px; padding: 8px"><span class="ib"><svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg></span><span style="flex: 1; font-size: 20px">Nouveau message</span><span class="ib"><svg viewBox="0 0 24 24"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4z"/></svg></span></div>
+    <div class="f"><span>De</span><span>vous@exemple.fr</span></div>
+    <div class="f"><span>À</span><span>mandarinetech.dev@gmail.com</span></div>
+    <div class="f"><span>Objet</span><span>Tournée Calendriers 0.24.0 : idée</span></div>
+    <div style="padding: 16px; color: #8A9098">Rédigez votre e-mail</div>
+    <div style="margin-top: auto; padding: 16px; font-size: 13px; color: #4A5058; background: #F3F1EC">(The phone's own mail app, not ours: shown only for what it receives.)</div>
+  </div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":820,"height":844}}'>
+class Component extends DCLogic {
+  renderVals() {
+    return {};
+  }
+}
+</script>
+</body>
+</html>

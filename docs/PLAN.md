@@ -1321,6 +1321,7 @@ admin » for « Nouveau code », « Retirer », « Supprimer » and the campaign
 │ APPLICATION                  │
 │ Thème         Système      › │
 │ Confidentialité            › │
+│ Écrire au développeur      ↗ │  → the phone's mail app (#118)
 │ Version       1.0.0        › │  → Nouveautés
 │ Licences                   › │
 │ Données © OpenStreetMap, BAN │
@@ -1355,6 +1356,15 @@ admin » for « Nouveau code », « Retirer », « Supprimer » and the campaign
   #36), in the browser (decided 2026-11-02). When no browser opens, a snackbar gives the
   address: « Impossible d'ouvrir le navigateur. La politique est à l'adresse … ». The text
   works offline; only the link needs the network.
+- **Écrire au développeur ↗** (#118, agreed 2026-11-17, SettingsContact mockup): opens the
+  phone's mail app on a new message (a `mailto:` link) to the contact address of `PRIVACY.md`
+  (mandarinetech.dev@gmail.com), subject « Tournée Calendriers {version} : idée », body empty.
+  Nothing else is prefilled: no secteur, street, place or Android version. Nothing is sent from
+  the app; the mail app may queue it offline. When no mail app opens, a snackbar gives the
+  address: « Impossible d'ouvrir la messagerie. Écrivez à mandarinetech.dev@gmail.com » with
+  « Copier » (copies the address). The « Compte » section of the privacy text (`PRIVACY.md` and
+  the Confidentialité page) says: « Si vous écrivez au développeur depuis Paramètres, votre
+  messagerie lui envoie votre adresse e-mail ; elle sert seulement à vous répondre. »
 - **Version** (from `pubspec.yaml`, `appBuildName`) has a › : a tap opens **« Nouveautés »**
   (Changelog mockup): each version, newest first, with the day it came out (« 16 oct.
   2026 ») and what it brings in short French lines for the members (not commit messages).
