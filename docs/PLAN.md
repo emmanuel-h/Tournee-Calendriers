@@ -1250,7 +1250,7 @@ Immeuble details fixed in T1.9 (`lib/presentation/building/`, `lib/ui/screens/bu
 └──────────────────────────────┘
 ```
 
-**From #75 (5.12) the creator has no power of their own:** read « the creator » below as « an
+**Changed by 5.23 (M12): admins are per CS and per permission.** **From #75 (5.12) the creator has no power of their own:** read « the creator » below as « an
 admin » for « Nouveau code », « Retirer », « Supprimer » and the campaign; « · admin » replaces
 « · créateur »; every member may leave, admins and the creator included, so a member sees
 « Quitter » and an admin both « Quitter » and « Supprimer » (mockups Team, TeamMember).
@@ -1494,7 +1494,7 @@ admin » for « Nouveau code », « Retirer », « Supprimer » and the campaign
   deletes are sent later; the server refuses any that is not past 30 days by its own clock
   (a teammate restored it meanwhile), and the item comes back.
 
-### 5.12 Administrateurs (#75)
+### 5.12 Administrateurs (#75; per CS and per permission since 5.23)
 
 ```
   Tous les secteurs (admin)        Accueil, admin not a member
@@ -2736,6 +2736,62 @@ end together, so no secteur is ever on another year than its CS.
   Editing inside one secteur stays on its Secteur screen.
 - **Accepted risk (#39):** the houses inside a copied street are not checked one by one by the
   rules (admins only).
+
+### 5.23 Rôles et permissions (M12, to build before §5.22)
+
+Decided with the user 2026-11-17 (ASCII in the terminal; mockups to come before any code). Replaces
+the « admins are global » of 5.12: an admin's powers are now **per centre de secours, per
+permission**.
+
+```
+  Paramètres (super admin)          Administrateurs                    Ajouter / modifier
+┌────────────────────────────┐   ┌────────────────────────────┐   ┌──────────────────────────────┐
+│ ← Paramètres               │   │ ← Administrateurs          │   │ ← Léa                        │
+│ …                          │   │ Manu (vous)                │   │ Identifiant  k3Jx9…Qp2  [📋] │
+│ ADMINISTRATION             │   │   super administrateur     │   │ Nom  [ Léa               ]   │
+│ Administrateurs (3)      › │   │ Léa                    [⋮] │   │ CS VILLEFRANCHE    [Tout ☑]  │
+│ APPLICATION                │   │   CS Villefranche (4),     │   │  ☑ Campagne                  │
+│ …                          │   │   CS Gleizé (1)            │   │  ☑ Secteurs                  │
+│ Identifiant de l'appareil  │   │ Sans nom · 7Hq…c1      [⋮] │   │  ☑ Équipes                   │
+│ k3Jx…  Super administrateur│   │   aucune permission        │   │  ☑ Rues                      │
+└────────────────────────────┘   │ [     + Ajouter     ]      │   │ CS GLEIZÉ          [Tout ☐]  │
+                                 └────────────────────────────┘   │  ☑ Équipes   (others ☐)      │
+                                   ⋮ → Modifier · Retirer          │ [ + Ajouter un CS ]          │
+                                                                   │ [       Enregistrer      ]   │
+                                                                   └──────────────────────────────┘
+```
+
+- **Three roles.** *Super administrateur*: every permission in every CS, plus « Administrateurs »
+  and creating a new CS; made **only by hand in the console** (`admins/{uid}` with `super: true`),
+  never by the app, so nobody can be locked out from inside it. *Administrateur*: the permissions
+  the super admin gave them, per CS. *Membre*: their secteur(s), as today (5.14).
+- **The four permissions**, per CS:
+  - **Campagne**: « Terminer » / « Démarrer » the CS's year (5.22, the #39 rules).
+  - **Secteurs**: « + Nouveau secteur » in that CS (the CS picked from a list, no free text),
+    « Supprimer le secteur », « Nouveau code ».
+  - **Équipes**: accept / refuse requests, « Retirer » a member, visit a secteur and « Rejoindre »
+    without a code.
+  - **Rues**: Couverture, « Hors CS », moving streets across secteurs (5.22), adding and removing
+    streets in a secteur they are not a member of.
+  Any permission in a CS shows that CS and its secteurs in « Tous les secteurs » (read-only for
+  what the permission does not cover); the super admin sees every CS.
+- **A new CS** is created only by the super admin (typing a new name in « Nouveau secteur »).
+- **Administrateurs** (Paramètres → ADMINISTRATION, super admin only): the list (the super admin
+  first, « (vous) »), each admin with their CS and the number of permissions; « + Ajouter » asks
+  the **identifier** (copied by the future admin from Paramètres → « Identifiant de l'appareil »;
+  it cannot be checked, any identifier is taken as typed) and a **name**, then the CS and their
+  permissions (« Tout » ticks the four); ⋮ → « Modifier » / « Retirer » (a confirmation). The super
+  admin cannot remove or change a super admin, themself included. An admin added in the console
+  without a name shows « Sans nom » and the start of the identifier.
+- **Data:** `admins/{uid}` = `{ name, addedAt, centres: { <centreKey>: ['campaign', 'sectors',
+  'teams', 'streets'] } }` or `{ super: true }` (console). The rules replace each « is an admin »
+  by « has permission P in this secteur's CS » (`centreKey` is on the secteur); `get` of one's own
+  document stays open to the phone; `list`, `create`, `update`, `delete` of `admins` for the super
+  admin only, never on a `super` document. Paramètres shows « Administrateur » or « Super
+  administrateur » under the identifier.
+- **No migration** (single user, §3): the user's own document gets `super: true` by hand; other
+  existing admin documents without `centres` have no permission until edited.
+- Privacy: the admin's name is stored (one sentence for the user's review).
 
 ## 6. Data model
 

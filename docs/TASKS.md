@@ -192,3 +192,13 @@ Planned 2026-11-11 from the security, reliability and DDD audit of that day. The
 | [#157](https://github.com/emmanuel-h/Tournee-Calendriers/issues/157) | T11.15 Join request builds a Member outside the Sector root | severity: info |
 | [#158](https://github.com/emmanuel-h/Tournee-Calendriers/issues/158) | T11.16 IndexedStreetRepository: a change handler written as a repository | severity: info |
 | [#159](https://github.com/emmanuel-h/Tournee-Calendriers/issues/159) | T11.17 Map read models live in the domain | severity: info |
+
+## M12 Roles and permissions
+
+Planned 2026-11-17 (PLAN §5.23): a super admin made in the console, admins per CS with four permissions. Before M6's CS page.
+
+| Issue | Task | Labels |
+|---|---|---|
+| [#179](https://github.com/emmanuel-h/Tournee-Calendriers/issues/179) | T12.1 Roles and permissions: super admin, admins per CS and per permission | task |
+| [#180](https://github.com/emmanuel-h/Tournee-Calendriers/issues/180) | T12.2 Administrateurs: list, add, change and remove admins | task |
+| [#181](https://github.com/emmanuel-h/Tournee-Calendriers/issues/181) | T12.3 Nouveau secteur: the CS from the admin's list; a new CS by the super admin only | task |
