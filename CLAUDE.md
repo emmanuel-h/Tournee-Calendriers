@@ -59,7 +59,7 @@ M5 follow-ups (2026-11-02); M5 closed by the user (2026-11-02): built-in Kotlin 
 warns about firebase_core/auth/app_check, a false positive of its text check, flutter/flutter#189770);
 a new street cut off mid-write is caught up at the next start (#104, `UnfinishedStreets`; debug log
 « Street … written » to time a 300-number street); streets per member in Équipe, bottom buttons
-pinned (#105). #102 waits for a firebase-tools release past 15.34.2.
+pinned (#105). #102: firebase-tools 15.36.0 (2026-11-17) still leaves 14 moderate transitive advisories; waits for a release past 15.36.0.
 M8 done (2026-11-03), validated by the user, milestone closed (2026-11-10): code and Firestore renamed `Tournee` → `Sector` (`sectors/`, `sectorKeys/`; phone files keep
 their old names) and the outing is `Round` (#116, #115); status picker instead of the tap cycle (#107); « Refusé »
 ⊘ (#113); tournées with their dons, kept in `open_round.json` until validated, then a create-only summary under
