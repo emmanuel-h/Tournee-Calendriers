@@ -1409,8 +1409,17 @@ admin » for « Nouveau code », « Retirer », « Supprimer » and the campaign
   calendars, last change. **No per-house history** (no `prev`, no « En 2026 : … » line in the
   sheets): which house said yes and the dons are not tracked across years. The Corbeille is not
   copied (its items are purged). No « Reprendre mes rues » (no attribution since 5.14).
-- **Who:** any admin of the secteur (5.12), from Équipe. The year is the next one after the
-  current campaign.
+- **Who and where (decided 2026-11-17, #40): per centre de secours.** An admin (5.12) starts
+  the new campaign for **every secteur of a CS at once**, from « Tous les secteurs »: each CS
+  header reads « CS VILLEFRANCHE · 2026 » with a row « ↻ Nouvelle campagne 2027 › » under it.
+  Nothing on the Secteur screen. The year is the CS's latest current year + 1; a secteur behind
+  (e.g. still on 2025) jumps to it, copied from its own current campaign. Each secteur still
+  stores its own `currentCampaign` (no centre document); a secteur is unique by number + CS, so
+  « Secteur 12 » of two centres are two secteurs.
+- **What members see:** once, when their phone follows the switch, a snackbar « La campagne
+  2027 a commencé. »; the title shows the new year, every street is « à faire ».
+- **The kept past year is not shown** in the app (decided 2026-11-17): it stays in Firestore as
+  a read-only safety copy, its Collecte included.
 - **The old year is frozen** the moment the new one starts: its streets and its tournées are
   read-only for everyone (a tournée still open or not yet sent from the old year is refused, and
   shows as refused with its dons on the phone, 5.16). The campaigns are months apart, so this is
@@ -1419,6 +1428,8 @@ admin » for « Nouveau code », « Retirer », « Supprimer » and the campaign
   tournée, read-only (its streets and its Collecte). When the new campaign starts, every older
   year is deleted, and so is the year just closed if it had no validated tournée (then the year
   before it stays as the last real one). Data minimisation: at most one past year per secteur.
+- **Not built:** the sketch's « Reprendre mes rues » and the house sheet's « En 2026 : … »,
+  nor « 2026 reste consultable » (Paramètres → Campagne 2026).
 - Members need the network once to receive the new campaign; the download step then runs again.
 
 ### 5.11 Corbeille
