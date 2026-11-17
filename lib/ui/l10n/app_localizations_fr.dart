@@ -1192,6 +1192,14 @@ class AppLocalizationsFr extends AppLocalizations {
       'Mise à jour de la carte, sans changement visible.';
 
   @override
+  String get release0250Contact =>
+      '« Écrire au développeur » dans Paramètres : envoyez une idée ou un souci par mail.';
+
+  @override
+  String get release0250Building =>
+      'Une maison faite changée en immeuble retire ses dons de la tournée ; « Annuler » les remet.';
+
+  @override
   String get release0230FreeCalendars =>
       'En corrigeant une tournée, la confirmation montre aussi les calendriers offerts quand leur nombre change.';
 

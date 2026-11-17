@@ -92,7 +92,7 @@ void main() {
     expect(find.bySemanticsLabel('Confidentialité'), findsOneWidget);
     // The version of pubspec.yaml, which `flutter test` gives too.
     expect(
-      find.bySemanticsLabel('Version 0.24.0, voir les nouveautés'),
+      find.bySemanticsLabel('Version 0.25.0, voir les nouveautés'),
       findsOneWidget,
     );
     // « RAPPELS » (#82) pushed the credits below the screen's edge.
@@ -423,12 +423,12 @@ void main() {
 
       await tapContact(tester);
 
-      // « Tournée Calendriers 0.24.0 : idée », spaces as %20 (not « + »),
+      // « Tournée Calendriers 0.25.0 : idée », spaces as %20 (not « + »),
       // the non-breaking space before « : » as %C2%A0.
       expect(mail.opened, [
         (
           'mailto:mandarinetech.dev@gmail.com'
-              '?subject=Tourn%C3%A9e%20Calendriers%200.24.0%C2%A0%3A%20id%C3%A9e',
+              '?subject=Tourn%C3%A9e%20Calendriers%200.25.0%C2%A0%3A%20id%C3%A9e',
           PreferredLaunchMode.externalApplication,
         ),
       ]);
