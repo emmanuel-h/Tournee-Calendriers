@@ -18,7 +18,7 @@ dependencies:
   # cache), App Check (only the genuine app talks to Firebase), anonymous
   # sign-in (the uid is the member id) and the core every Firebase plugin
   # needs.
-  cloud_firestore: 7.1.0
+  cloud_firestore: 7.2.0
   firebase_app_check: 0.5.1
   firebase_auth: 7.0.1
   firebase_core: 5.1.0
