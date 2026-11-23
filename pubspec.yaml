@@ -28,7 +28,7 @@ dependencies:
   # scheduled on the phone, inexact, kept after a restart; only in
   # infrastructure/notifications/. The permission is asked the first time
   # the member gives a « repasser » a day, never at launch.
-  flutter_local_notifications: 23.0.2
+  flutter_local_notifications: 23.0.3
   # Material and Cupertino translations for French (dates, tooltips, the
   # licences page).
   flutter_localizations:
