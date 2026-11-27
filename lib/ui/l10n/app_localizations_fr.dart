@@ -1200,6 +1200,10 @@ class AppLocalizationsFr extends AppLocalizations {
       'Une maison faite changée en immeuble retire ses dons de la tournée ; « Annuler » les remet.';
 
   @override
+  String get release0251NavBar =>
+      'Avec les boutons Retour, Accueil et Applis en bas de l\'écran, les fiches et leurs boutons ne passent plus dessous.';
+
+  @override
   String get release0230FreeCalendars =>
       'En corrigeant une tournée, la confirmation montre aussi les calendriers offerts quand leur nombre change.';
 

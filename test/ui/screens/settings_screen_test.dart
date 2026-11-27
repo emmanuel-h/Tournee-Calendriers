@@ -92,7 +92,7 @@ void main() {
     expect(find.bySemanticsLabel('Confidentialité'), findsOneWidget);
     // The version of pubspec.yaml, which `flutter test` gives too.
     expect(
-      find.bySemanticsLabel('Version 0.25.0, voir les nouveautés'),
+      find.bySemanticsLabel('Version 0.25.1, voir les nouveautés'),
       findsOneWidget,
     );
     // « RAPPELS » (#82) pushed the credits below the screen's edge.
@@ -423,12 +423,12 @@ void main() {
 
       await tapContact(tester);
 
-      // « Tournée Calendriers 0.25.0 : idée », spaces as %20 (not « + »),
+      // « Tournée Calendriers 0.25.1 : idée », spaces as %20 (not « + »),
       // the non-breaking space before « : » as %C2%A0.
       expect(mail.opened, [
         (
           'mailto:mandarinetech.dev@gmail.com'
-              '?subject=Tourn%C3%A9e%20Calendriers%200.25.0%C2%A0%3A%20id%C3%A9e',
+              '?subject=Tourn%C3%A9e%20Calendriers%200.25.1%C2%A0%3A%20id%C3%A9e',
           PreferredLaunchMode.externalApplication,
         ),
       ]);
@@ -554,11 +554,13 @@ void main() {
     await tester.tap(find.byKey(const Key('settings.version')));
     await tester.pumpAndSettle();
 
-    expect(find.bySemanticsLabel('0.24.0 · 16 nov. 2026'), findsOneWidget);
-    expect(find.bySemanticsLabel('0.23.0 · 16 nov. 2026'), findsOneWidget);
-    expect(find.bySemanticsLabel('0.22.0 · 15 nov. 2026'), findsOneWidget);
+    expect(find.bySemanticsLabel('0.25.1 · 27 nov. 2026'), findsOneWidget);
+    expect(find.bySemanticsLabel('0.25.0 · 17 nov. 2026'), findsOneWidget);
     // A lazy list: the older versions are built once scrolled to.
     for (final label in [
+      '0.24.0 · 16 nov. 2026',
+      '0.23.0 · 16 nov. 2026',
+      '0.22.0 · 15 nov. 2026',
       '0.21.0 · 14 nov. 2026',
       '0.20.0 · 14 nov. 2026',
       '0.17.0 · 13 nov. 2026',

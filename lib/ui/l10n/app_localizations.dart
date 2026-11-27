@@ -1738,6 +1738,12 @@ abstract class AppLocalizations {
   /// **'Une maison faite changée en immeuble retire ses dons de la tournée ; « Annuler » les remet.'**
   String get release0250Building;
 
+  /// Line of « Nouveautés » for 0.25.1.
+  ///
+  /// In fr, this message translates to:
+  /// **'Avec les boutons Retour, Accueil et Applis en bas de l\'écran, les fiches et leurs boutons ne passent plus dessous.'**
+  String get release0251NavBar;
+
   /// Line of « Nouveautés » for 0.23.0.
   ///
   /// In fr, this message translates to:
