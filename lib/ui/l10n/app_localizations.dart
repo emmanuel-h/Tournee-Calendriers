@@ -1738,6 +1738,18 @@ abstract class AppLocalizations {
   /// **'Une maison faite changée en immeuble retire ses dons de la tournée ; « Annuler » les remet.'**
   String get release0250Building;
 
+  /// Line of « Nouveautés » for 0.26.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'Les administrateurs agissent seulement dans les centres de secours et avec les droits qui leur sont donnés.'**
+  String get release0260Permissions;
+
+  /// Line of « Nouveautés » for 0.26.0.
+  ///
+  /// In fr, this message translates to:
+  /// **'« Supprimer le secteur » demande de taper le numéro du secteur pour confirmer.'**
+  String get release0260Delete;
+
   /// Line of « Nouveautés » for 0.25.1.
   ///
   /// In fr, this message translates to:

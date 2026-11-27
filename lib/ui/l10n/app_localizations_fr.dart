@@ -1200,6 +1200,14 @@ class AppLocalizationsFr extends AppLocalizations {
       'Une maison faite changée en immeuble retire ses dons de la tournée ; « Annuler » les remet.';
 
   @override
+  String get release0260Permissions =>
+      'Les administrateurs agissent seulement dans les centres de secours et avec les droits qui leur sont donnés.';
+
+  @override
+  String get release0260Delete =>
+      '« Supprimer le secteur » demande de taper le numéro du secteur pour confirmer.';
+
+  @override
   String get release0251NavBar =>
       'Avec les boutons Retour, Accueil et Applis en bas de l\'écran, les fiches et leurs boutons ne passent plus dessous.';
 
