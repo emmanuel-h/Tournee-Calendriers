@@ -169,7 +169,7 @@ final class StartCampaign {
     };
     if (admin == null) return const Err(StartCampaignFailure.noNetwork);
     final List<SectorOverview> all;
-    switch (await _directory.allSectors(admin)) {
+    switch (await _directory.allSectors(admin, centres: {centre.key})) {
       case Ok(:final value):
         all = value;
       case Err(failure: DirectoryFailure.noNetwork):

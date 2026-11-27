@@ -1,9 +1,12 @@
-// Whether the phone, or a member, is an administrator (PLAN §5.12), against
-// an in-memory Firestore (fake_cloud_firestore, PLAN §11).
+// What the phone may do as an administrator, and whether a member is one
+// (PLAN §5.12, §5.23), against an in-memory Firestore (fake_cloud_firestore,
+// PLAN §11).
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:fake_cloud_firestore/fake_cloud_firestore.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mock_exceptions/mock_exceptions.dart';
+import 'package:tournee_calendriers/domain/sector/admin_grants.dart';
+import 'package:tournee_calendriers/domain/sector/permission.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_admin_status.dart';
 
 import '../../domain/sector/sector_fixtures.dart';
@@ -14,12 +17,12 @@ void main() {
 
   setUp(() => db = FakeFirebaseFirestore());
 
-  Future<List<bool>> seenWhile(
+  Future<List<AdminGrants>> seenWhile(
     FirestoreAdminStatus admins,
     Future<void> Function() change,
   ) async {
-    final seen = <bool>[];
-    final subscription = admins.watchIsAdmin().listen(seen.add);
+    final seen = <AdminGrants>[];
+    final subscription = admins.watchGrants().listen(seen.add);
     await pumpEventQueue();
     await change();
     await pumpEventQueue();
@@ -27,10 +30,17 @@ void main() {
     return seen;
   }
 
-  group('watchIsAdmin', () {
-    test('should say the signed-in member is an admin while their admin '
-        'document is there', () async {
-      await db.doc('admins/uid-sam').set(<String, Object?>{});
+  final teams = {
+    'centres': {
+      'villefranche': ['teams'],
+    },
+  };
+  final teamsGrants = grantsInVillefranche({Permission.teams});
+
+  group('watchGrants', () {
+    test('should give the signed-in member the grants of their admin '
+        'document', () async {
+      await db.doc('admins/uid-sam').set(teams);
       final admins = FirestoreAdminStatus(
         db,
         FakeMemberAccount(signedInMember: samId),
@@ -38,33 +48,51 @@ void main() {
 
       final seen = await seenWhile(admins, () async {});
 
-      expect(seen, [true]);
+      expect(seen, [teamsGrants]);
     });
 
-    test('should follow the admin document added, then removed', () async {
+    test('should follow the admin document added, changed, then '
+        'removed', () async {
       final admins = FirestoreAdminStatus(
         db,
         FakeMemberAccount(signedInMember: samId),
       );
 
       final seen = await seenWhile(admins, () async {
-        await db.doc('admins/uid-sam').set(<String, Object?>{});
+        await db.doc('admins/uid-sam').set(teams);
+        await pumpEventQueue();
+        await db.doc('admins/uid-sam').set({
+          'centres': {
+            'villefranche': ['teams', 'streets'],
+          },
+          'global': ['admins'],
+        });
         await pumpEventQueue();
         await db.doc('admins/uid-sam').delete();
       });
 
-      expect(seen, [false, true, false]);
+      expect(seen, [
+        AdminGrants.none,
+        teamsGrants,
+        AdminGrants(
+          centres: {
+            csVillefranche.key: {Permission.teams, Permission.streets},
+          },
+          global: {GlobalPermission.admins},
+        ),
+        AdminGrants.none,
+      ]);
     });
 
-    test('should say no before the phone has an account, then follow the '
-        'member once signed in', () async {
-      await db.doc('admins/uid-sam').set(<String, Object?>{});
+    test('should give none before the phone has an account, then follow '
+        'the member once signed in', () async {
+      await db.doc('admins/uid-sam').set(teams);
       final account = FakeMemberAccount(nextMember: samId);
       final admins = FirestoreAdminStatus(db, account);
 
       final seen = await seenWhile(admins, account.signInIfNeeded);
 
-      expect(seen, [false, true]);
+      expect(seen, [AdminGrants.none, teamsGrants]);
       expect(account.isWaitedFor, isFalse);
     });
 
@@ -74,7 +102,7 @@ void main() {
 
       final seen = await seenWhile(admins, () async {});
 
-      expect(seen, [false]);
+      expect(seen, [AdminGrants.none]);
       expect(account.isWaitedFor, isFalse);
     });
   });

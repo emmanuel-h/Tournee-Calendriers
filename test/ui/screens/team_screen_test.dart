@@ -3,8 +3,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
+import 'package:tournee_calendriers/domain/sector/admin_grants.dart';
 import 'package:tournee_calendriers/domain/sector/member.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
+import 'package:tournee_calendriers/domain/sector/permission.dart';
+import 'package:tournee_calendriers/domain/sector/rescue_centre.dart';
 import 'package:tournee_calendriers/domain/sector/sector_change.dart';
 import 'package:tournee_calendriers/domain/sector/sector_commune.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
@@ -60,6 +63,7 @@ void main() {
     List<SectorCommune> communes = const [],
     FakeCommuneSearch? search,
     List<Street> streets = const [],
+    AdminGrants? grants,
   }) async {
     // A phone's screen (the mockup's), so the buttons at the bottom show.
     tester.view
@@ -84,6 +88,7 @@ void main() {
           communes: search,
           admins: FakeAdminStatus(
             phoneIsAdmin: member == manuId || member == samId,
+            phoneGrants: grants,
             admins: [manuId, samId],
           ),
         ),
@@ -151,6 +156,73 @@ void main() {
     expect(find.byKey(const Key('team.delete')), findsOneWidget);
     expect(find.byKey(const Key('team.leave')), findsNothing);
     expect(find.byKey(const Key('team.forgetVisit')), findsOneWidget);
+  });
+
+  testWidgets('should give an admin visiting with « Secteurs » only the code '
+      'and deleting, the requests shown without their buttons', (tester) async {
+    await pumpTeam(
+      tester,
+      samId,
+      grants: grantsInVillefranche({Permission.sectors}),
+    );
+
+    expect(find.byKey(const Key('team.newCode')), findsOneWidget);
+    expect(find.byKey(const Key('team.delete')), findsOneWidget);
+    expect(inRequest(find.text('Julie')), findsOneWidget);
+    expect(
+      inRequest(find.byKey(const Key('team.request.accept'))),
+      findsNothing,
+    );
+    expect(
+      inRequest(find.byKey(const Key('team.request.refuse'))),
+      findsNothing,
+    );
+    expect(find.byTooltip('Options pour Léa'), findsNothing);
+    expect(
+      find.byKey(const Key('team.addStreets'), skipOffstage: false),
+      findsNothing,
+    );
+  });
+
+  testWidgets('should give an admin visiting with « Équipes » only the '
+      'requests and « Retirer »', (tester) async {
+    await pumpTeam(
+      tester,
+      samId,
+      grants: grantsInVillefranche({Permission.teams}),
+    );
+
+    expect(
+      inRequest(find.byKey(const Key('team.request.accept'))),
+      findsOneWidget,
+    );
+    expect(find.byTooltip('Options pour Léa'), findsOneWidget);
+    expect(find.byKey(const Key('team.newCode')), findsNothing);
+    expect(find.byKey(const Key('team.delete')), findsNothing);
+    expect(find.byKey(const Key('team.forgetVisit')), findsOneWidget);
+  });
+
+  testWidgets('should give an admin of another CS nothing of an admin\'s', (
+    tester,
+  ) async {
+    await pumpTeam(
+      tester,
+      samId,
+      grants: AdminGrants(
+        centres: {
+          valueOf(RescueCentre.create('CS Gleizé')).key: Permission.values
+              .toSet(),
+        },
+      ),
+    );
+
+    expect(find.byKey(const Key('team.newCode')), findsNothing);
+    expect(find.byKey(const Key('team.delete')), findsNothing);
+    expect(find.byTooltip('Options pour Léa'), findsNothing);
+    expect(
+      inRequest(find.byKey(const Key('team.request.accept'))),
+      findsNothing,
+    );
   });
 
   testWidgets('should forget a visited secteur on the phone, writing '
@@ -344,19 +416,51 @@ void main() {
   });
 
   testWidgets('should go back to the start screen with no secteur open once '
-      'an admin deletes it', (tester) async {
+      'an admin deletes it, its number typed', (tester) async {
     await pumpTeam(tester, manuId);
 
     await tapVisible(tester, find.byKey(const Key('team.delete')));
     await tester.pumpAndSettle();
     expect(find.text('Supprimer le secteur 49 ?'), findsOneWidget);
-    await tester.tap(find.byKey(const ValueKey('team.confirmDelete.ok')));
+    expect(find.text('Tapez 49 pour confirmer'), findsOneWidget);
+    await tester.enterText(
+      find.byKey(const Key('team.confirmDelete.number')),
+      ' 49 ',
+    );
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('team.confirmDelete.ok')));
     await tester.pumpAndSettle();
 
     expect(sectors.deleted, hasLength(1));
     expect(store.mySectors.sectors, isEmpty);
     expect(find.text('Tournée des calendriers'), findsOneWidget);
     expect(find.byKey(const Key('home.sector')), findsNothing);
+  });
+
+  testWidgets('should keep « Supprimer » off until the secteur\'s number is '
+      'typed', (tester) async {
+    await pumpTeam(tester, manuId);
+
+    await tapVisible(tester, find.byKey(const Key('team.delete')));
+    await tester.pumpAndSettle();
+    final ok = find.byKey(const Key('team.confirmDelete.ok'));
+    for (final typed in ['', '4', '490', '12']) {
+      await tester.enterText(
+        find.byKey(const Key('team.confirmDelete.number')),
+        typed,
+      );
+      await tester.pump();
+      expect(
+        tester.widget<TextButton>(ok).onPressed,
+        isNull,
+        reason: 'typed "$typed"',
+      );
+    }
+    await tester.tap(ok);
+    await tester.pumpAndSettle();
+
+    expect(sectors.deleted, isEmpty);
+    expect(find.text('Tapez 49 pour confirmer'), findsOneWidget);
   });
 
   testWidgets('should keep the secteur when deleting is cancelled', (
@@ -366,7 +470,7 @@ void main() {
 
     await tapVisible(tester, find.byKey(const Key('team.delete')));
     await tester.pumpAndSettle();
-    await tester.tap(find.byKey(const ValueKey('team.confirmDelete.cancel')));
+    await tester.tap(find.byKey(const Key('team.confirmDelete.cancel')));
     await tester.pumpAndSettle();
 
     expect(sectors.deleted, isEmpty);

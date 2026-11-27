@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tournee_calendriers/domain/sector/permission.dart';
+import 'package:tournee_calendriers/presentation/admin/admin_notifier.dart';
 import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
 import 'package:tournee_calendriers/presentation/team/team_notifier.dart';
 import 'package:tournee_calendriers/ui/components/action_snack_bar.dart';
@@ -16,7 +18,8 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 /// secteur without being in its team (PLAN §5.12, HomeAdmin mockup): a
 /// shield, « Administrateur · pas membre » over « Vous n'êtes pas dans
 /// l'équipe de ce secteur. », and « Rejoindre », which makes them a
-/// member at once. In the « repasser » blue. Nothing for anyone else.
+/// member at once, for an admin with « Équipes » in its CS (PLAN §5.23).
+/// In the « repasser » blue. Nothing for anyone else.
 final class AdminVisitBanner extends ConsumerWidget {
   const AdminVisitBanner({super.key});
 
@@ -26,6 +29,11 @@ final class AdminVisitBanner extends ConsumerWidget {
       currentSectorProvider.select((sector) => sector?.isVisiting ?? false),
     );
     if (!visiting) return const SizedBox.shrink();
+    final mayJoin = ref.watch(
+      openSectorPermissionsProvider.select(
+        (held) => held.contains(Permission.teams),
+      ),
+    );
     final l10n = AppLocalizations.of(context);
     final colors = AppColors.of(context);
     final text = AppTextStyles.small.copyWith(color: colors.onComeBack);
@@ -65,18 +73,19 @@ final class AdminVisitBanner extends ConsumerWidget {
               ],
             ),
           ),
-          FilledButton(
-            key: const Key('home.adminJoin'),
-            onPressed: () => unawaited(_join(context, ref)),
-            style: FilledButton.styleFrom(
-              backgroundColor: colors.onComeBack,
-              foregroundColor: colors.comeBack,
-              minimumSize: const Size(0, AppSizes.minTapTarget),
-              padding: const EdgeInsets.symmetric(horizontal: 14),
-              textStyle: AppTextStyles.pill,
+          if (mayJoin)
+            FilledButton(
+              key: const Key('home.adminJoin'),
+              onPressed: () => unawaited(_join(context, ref)),
+              style: FilledButton.styleFrom(
+                backgroundColor: colors.onComeBack,
+                foregroundColor: colors.comeBack,
+                minimumSize: const Size(0, AppSizes.minTapTarget),
+                padding: const EdgeInsets.symmetric(horizontal: 14),
+                textStyle: AppTextStyles.pill,
+              ),
+              child: Text(l10n.adminBannerJoin),
             ),
-            child: Text(l10n.adminBannerJoin),
-          ),
         ],
       ),
     );

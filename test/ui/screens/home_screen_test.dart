@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tournee_calendriers/domain/map/sector_area.dart';
+import 'package:tournee_calendriers/domain/sector/admin_grants.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
+import 'package:tournee_calendriers/domain/sector/permission.dart';
 import 'package:tournee_calendriers/domain/sector/sector_summary.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
@@ -19,7 +21,8 @@ import 'package:tournee_calendriers/ui/screens/street/street_screen.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 
 import '../../domain/sector/my_sectors_fixtures.dart';
-import '../../domain/sector/sector_fixtures.dart' show team;
+import '../../domain/sector/sector_fixtures.dart'
+    show grantsInVillefranche, team;
 import '../../support/fakes/fake_admin_status.dart';
 import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_pending_sync.dart';
@@ -271,6 +274,32 @@ void main() {
       expect(row('carnot'), findsOneWidget);
     });
 
+    testWidgets('should offer « Rejoindre » on the banner only with '
+        '« Équipes » in the secteur\'s CS', (tester) async {
+      await pumpHome(
+        tester,
+        open: sector12Visited,
+        admins: FakeAdminStatus(
+          phoneGrants: grantsInVillefranche({Permission.teams}),
+        ),
+      );
+      expect(find.byKey(const Key('home.adminJoin')), findsOneWidget);
+
+      await pumpHome(
+        tester,
+        open: sector12Visited,
+        admins: FakeAdminStatus(
+          phoneGrants: grantsInVillefranche({
+            Permission.campaign,
+            Permission.sectors,
+            Permission.streets,
+          }),
+        ),
+      );
+      expect(find.byKey(const Key('home.adminBanner')), findsOneWidget);
+      expect(find.byKey(const Key('home.adminJoin')), findsNothing);
+    });
+
     testWidgets('should end the list with the last street: « Ajouter des '
         'rues » is in Secteur', (tester) async {
       await pumpHome(tester);
@@ -345,6 +374,7 @@ void main() {
     Future<FakeUnreadableStreets> pumpUnreadable(
       WidgetTester tester, {
       bool admin = false,
+      AdminGrants? grants,
     }) async {
       final unreadable = FakeUnreadableStreets([
         hugo,
@@ -353,7 +383,7 @@ void main() {
       await pumpHome(
         tester,
         unreadable: unreadable,
-        admins: FakeAdminStatus(phoneIsAdmin: admin),
+        admins: FakeAdminStatus(phoneIsAdmin: admin, phoneGrants: grants),
       );
       await tester.drag(
         find.byKey(const Key('home.panel.handle')),
@@ -445,6 +475,23 @@ void main() {
         ),
         findsOneWidget,
       );
+    });
+
+    testWidgets('should not offer deleting it to an admin without « Rues » '
+        'in the secteur\'s CS', (tester) async {
+      await pumpUnreadable(
+        tester,
+        grants: grantsInVillefranche({
+          Permission.campaign,
+          Permission.sectors,
+          Permission.teams,
+        }),
+      );
+      await tester.tap(unreadableRow('hugo'));
+      await tester.pumpAndSettle();
+
+      expect(find.byKey(const Key('unreadable.sheet')), findsOneWidget);
+      expect(find.byKey(const Key('unreadable.delete')), findsNothing);
     });
 
     testWidgets('should let an admin delete it, closing the sheet', (

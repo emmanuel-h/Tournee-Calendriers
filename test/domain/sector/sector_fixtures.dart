@@ -1,14 +1,16 @@
 // Shared values for the secteur tests: the team of the secteur 49 of the
 // CS Villefranche (PLAN §5.8), with Manu who created it, Léa who was
 // accepted, and Julie whose request is pending. Paul never asked to join.
-// Manu and Sam are administrators of the app (PLAN §5.12); Sam is in no
-// secteur.
+// Manu and Sam are administrators holding every permission in the CS
+// Villefranche (PLAN §5.23); Sam is in no secteur.
 import 'package:tournee_calendriers/domain/sector/actor.dart';
+import 'package:tournee_calendriers/domain/sector/admin_grants.dart';
 import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
 import 'package:tournee_calendriers/domain/sector/join_code.dart';
 import 'package:tournee_calendriers/domain/sector/join_request.dart';
 import 'package:tournee_calendriers/domain/sector/member.dart';
 import 'package:tournee_calendriers/domain/sector/member_name.dart';
+import 'package:tournee_calendriers/domain/sector/permission.dart';
 import 'package:tournee_calendriers/domain/sector/rescue_centre.dart';
 import 'package:tournee_calendriers/domain/sector/sector.dart';
 import 'package:tournee_calendriers/domain/sector/sector_commune.dart';
@@ -37,16 +39,23 @@ final julieId = MemberId('uid-julie');
 final paulId = MemberId('uid-paul');
 final samId = MemberId('uid-sam');
 
-/// Manu acting as the administrator he is.
-final manuAsAdmin = Actor(member: manuId, isAdmin: true);
+/// [permissions] held in the CS of the secteur 49 (PLAN §5.23).
+AdminGrants grantsInVillefranche(Set<Permission> permissions) =>
+    AdminGrants(centres: {csVillefranche.key: permissions});
+
+/// Every permission in the CS Villefranche.
+final allInVillefranche = grantsInVillefranche(Permission.values.toSet());
+
+/// Manu acting as the administrator he is, of the CS Villefranche.
+final manuAsAdmin = Actor(member: manuId, grants: allInVillefranche);
 
 /// Léa, Julie and Paul acting: none of them is an administrator.
-final leaActing = Actor(member: leaId, isAdmin: false);
-final julieActing = Actor(member: julieId, isAdmin: false);
-final paulActing = Actor(member: paulId, isAdmin: false);
+final leaActing = Actor(member: leaId);
+final julieActing = Actor(member: julieId);
+final paulActing = Actor(member: paulId);
 
-/// Sam, an administrator who is not in the secteur.
-final samAsAdmin = Actor(member: samId, isAdmin: true);
+/// Sam, an administrator of the CS Villefranche who is not in the secteur.
+final samAsAdmin = Actor(member: samId, grants: allInVillefranche);
 
 final createdAt = DateTime.utc(2026, 10, 1, 18);
 final leaAskedAt = DateTime.utc(2026, 10, 2, 9);

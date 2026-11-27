@@ -3,9 +3,11 @@ import 'dart:async';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/sector_directory.dart';
+import 'package:tournee_calendriers/domain/sector/admin_grants.dart';
 import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
 import 'package:tournee_calendriers/domain/sector/member.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
+import 'package:tournee_calendriers/domain/sector/permission.dart';
 import 'package:tournee_calendriers/domain/sector/rescue_centre.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/domain/sector/sector_number.dart';
@@ -15,6 +17,7 @@ import 'package:tournee_calendriers/presentation/dependencies.dart';
 
 import '../../domain/sector/my_sectors_fixtures.dart';
 import '../../domain/sector/sector_fixtures.dart';
+import '../../support/fakes/fake_admin_status.dart';
 import '../../support/fakes/fake_member_account.dart';
 import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_sector_directory.dart';
@@ -39,6 +42,19 @@ SectorOverview overview(
   callerIsActive: mine,
 );
 
+/// The phone of an admin with a permission in each station of the tests
+/// (PLAN §5.23): « Tous les secteurs » lists only those.
+final _grants = AdminGrants(
+  centres: {
+    for (final centre in [
+      'CS Villefranche',
+      'CS Villefranche Nord',
+      'CIS Villefranche Est',
+    ])
+      valueOf(RescueCentre.create(centre)).key: {Permission.teams},
+  },
+);
+
 void main() {
   late FakeSectorDirectory directory;
   late FakeMemberAccount account;
@@ -50,6 +66,9 @@ void main() {
         sectorDirectoryProvider.overrideWithValue(directory),
         memberAccountProvider.overrideWithValue(account),
         mySectorsStoreProvider.overrideWithValue(store),
+        adminStatusProvider.overrideWithValue(
+          FakeAdminStatus(phoneGrants: _grants),
+        ),
       ],
     );
     addTearDown(container.dispose);

@@ -76,6 +76,14 @@ service cloud.firestore {
       return /databases/$(database)/documents/sectors/$(sector)/names/$(key);
     }
 
+    function adminPath(account) {
+      return /databases/$(database)/documents/admins/$(account);
+    }
+
+    function rescueCentrePath(centreKey) {
+      return /databases/$(database)/documents/rescueCentres/$(centreKey);
+    }
+
     // An accepted member: a pending one reads and writes nothing of the
     // secteur (PLAN §8.1), only their own member document.
     function isActiveMember(sector) {
@@ -84,18 +92,87 @@ service cloud.firestore {
         && get(memberPath(sector, uid())).data.status == 'active';
     }
 
-    // An administrator of the app (PLAN §5.12): an `admins/{uid}` document,
-    // added by hand in the console. Admins are global: they manage every
-    // secteur, member of it or not. The creator has no power of their own.
-    function isAdmin() {
-      return signedIn()
-        && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    // ------------------------------------------- the admins (PLAN §5.23)
+    //
+    // An administrator holds, in `admins/{uid}`, some of four permissions
+    // per centre de secours (`centres: { villefranche: ['campaign',
+    // 'sectors', 'teams', 'streets'] }`), written by the super admin, and
+    // maybe some global ones (`global: ['admins', 'centres']`), written
+    // only in the console. Every admin power over a secteur is « holds P
+    // in this secteur's CS » (its `centreKey`): no global permission gives
+    // any, the super admin's own come from `centres` too (least
+    // privilege). A value that is not a list, an unknown name, a missing
+    // document: nothing is granted (an error counts as false). The creator
+    // has no power of their own.
+
+    // The permission names the caller holds in the CS [centreKey].
+    function grantsIn(centreKey) {
+      return get(adminPath(uid())).data.get('centres', {}).get(centreKey, []);
     }
 
-    // An active member or an admin: who reads a secteur and works on its
-    // streets.
-    function isMemberOrAdmin(sector) {
-      return isActiveMember(sector) || isAdmin();
+    // Whether the caller holds [permission] (`campaign`, `sectors`,
+    // `teams`, `streets`) in the CS [centreKey].
+    function hasPermission(centreKey, permission) {
+      return signedIn()
+        && exists(adminPath(uid()))
+        && grantsIn(centreKey).hasAny([permission]);
+    }
+
+    // Whether the caller holds some permission in the CS [centreKey]: they
+    // read its secteurs (« Tous les secteurs », a visit), read-only for
+    // what their permissions do not cover.
+    function holdsAnyIn(centreKey) {
+      return signedIn()
+        && exists(adminPath(uid()))
+        && grantsIn(centreKey).hasAny(['campaign', 'sectors', 'teams', 'streets']);
+    }
+
+    // Whether the caller is an admin of at least one CS (whatever it
+    // grants there). Only for what concerns no CS in particular: the
+    // shared index of streets, and what is left of a secteur deleted.
+    function isAdminSomewhere() {
+      return signedIn()
+        && exists(adminPath(uid()))
+        && get(adminPath(uid())).data.get('centres', {}).size() > 0;
+    }
+
+    // Whether the caller holds the global [permission] (`admins`: manage
+    // the admins; `centres`: create a CS), written only in the console.
+    function holdsGlobal(permission) {
+      return signedIn()
+        && exists(adminPath(uid()))
+        && get(adminPath(uid())).data.get('global', []).hasAny([permission]);
+    }
+
+    // Whether the caller holds [permission] in the CS of the secteur
+    // [sector] (as stored before the write).
+    function mayIn(sector, permission) {
+      return hasPermission(get(sectorPath(sector)).data.centreKey, permission);
+    }
+
+    // A secteur is created in a CS where the caller holds « Secteurs », or
+    // in a new CS, which the holder of the global `centres` creates in the
+    // same write with its first secteur (PLAN §5.23: a CS is created by
+    // typing a new name in « Nouveau secteur »). That gives no power over
+    // any secteur that exists.
+    function mayCreateSectorIn(centreKey) {
+      return hasPermission(centreKey, 'sectors')
+        || (holdsGlobal('centres')
+          && !exists(rescueCentrePath(centreKey))
+          && existsAfter(rescueCentrePath(centreKey)));
+    }
+
+    // An active member, or an admin holding some permission in its CS:
+    // who reads a secteur.
+    function isMemberOrReader(sector) {
+      return isActiveMember(sector)
+        || holdsAnyIn(get(sectorPath(sector)).data.centreKey);
+    }
+
+    // An active member, or an admin holding [permission] in its CS: who
+    // works on its streets (`streets`), its team (`teams`)…
+    function isMemberOr(sector, permission) {
+      return isActiveMember(sector) || mayIn(sector, permission);
     }
 
     // An active member of some secteur (#147). The rules cannot search
@@ -181,24 +258,25 @@ service cloud.firestore {
     // ----------------------------------------------------- the directory
 
     // `sectorKeys/{centreKey}_{number}`: its existence reserves the number
-    // in the station. Written by the creator, an admin, for the secteur's
-    // own pair.
+    // in the station. Written by the creator, an admin who may create a
+    // secteur in that CS, for the secteur's own pair.
     function isReservation(key, data) {
-      return isAdmin()
-        && hasExactly(data, ['sectorId'])
+      return hasExactly(data, ['sectorId'])
         && isId(data.sectorId)
+        && mayCreateSectorIn(getAfter(sectorPath(data.sectorId)).data.centreKey)
         && getAfter(sectorPath(data.sectorId)).data.createdBy == uid()
         && key == getAfter(sectorPath(data.sectorId)).data.centreKey + '_'
           + string(getAfter(sectorPath(data.sectorId)).data.number);
     }
 
     // `joinCodes/{code}`: what « Rejoindre » shows before the request, and
-    // nothing else (PLAN §8.2). Written by an admin with the secteur or a
-    // new code, and it must say what the secteur says.
+    // nothing else (PLAN §8.2). Written with the secteur or a new code by
+    // an admin with « Secteurs » in its CS (or creating that CS), and it
+    // must say what the secteur says.
     function isPreview(code, data) {
-      return isAdmin()
-        && hasExactly(data, ['sectorId', 'number', 'centreName', 'campaign'])
+      return hasExactly(data, ['sectorId', 'number', 'centreName', 'campaign'])
         && isId(data.sectorId)
+        && mayCreateSectorIn(getAfter(sectorPath(data.sectorId)).data.centreKey)
         && getAfter(sectorPath(data.sectorId)).data.joinCode == code
         && data.number == getAfter(sectorPath(data.sectorId)).data.number
         && data.centreName == getAfter(sectorPath(data.sectorId)).data.centreName
@@ -206,49 +284,91 @@ service cloud.firestore {
     }
 
     // A code or a reservation goes when its secteur goes, or (a code) when
-    // an admin draws a new one.
+    // an admin draws a new one: « Secteurs » in its CS. The secteur is
+    // read as it was before the write, still there.
     function isFreedByAdmin(sectorId) {
-      return isAdmin() && !existsAfter(sectorPath(sectorId));
+      return mayIn(sectorId, 'sectors') && !existsAfter(sectorPath(sectorId));
     }
 
     // A new campaign (#39, PLAN §5.10): the preview shows the year the
     // secteur moves to, in the write that moves it (isCampaignStart).
-    // Only its `campaign` changes, by an admin.
+    // Only its `campaign` changes, by an admin with « Campagne ».
     function isPreviewOfNewCampaign(code, before, after) {
-      return isAdmin()
+      return mayIn(before.sectorId, 'campaign')
         && after.diff(before).affectedKeys().hasOnly(['campaign'])
         && getAfter(sectorPath(before.sectorId)).data.joinCode == code
         && after.campaign == getAfter(sectorPath(before.sectorId)).data.currentCampaign;
     }
 
     function isCodeFreed(code, data) {
-      return isAdmin()
+      return mayIn(data.sectorId, 'sectors')
         && (!existsAfter(sectorPath(data.sectorId))
           || getAfter(sectorPath(data.sectorId)).data.joinCode != code);
     }
 
-    // `admins/{uid}`: no fields, added and removed by hand in the console,
-    // never by the app. Any signed-in phone may ask whether one uid is an
-    // admin (its own, or a member's « · admin »); nobody lists them.
+    // The CS grants of an admin document (PLAN §5.23): at most 50 CS, each
+    // under a well-formed key. The rules have no loops: the keys joined by
+    // commas must match the key pattern repeated, and split again give as
+    // many (so no key hides a comma). The values cannot be checked one by
+    // one: an unknown one grants nothing (hasPermission).
+    function isCentreGrants(centres) {
+      return centres is map
+        && centres.size() <= 50
+        && (centres.size() == 0
+          || (centres.keys().join(',').matches(
+                '[a-z0-9]+(-[a-z0-9]+)*(,[a-z0-9]+(-[a-z0-9]+)*)*')
+            && centres.keys().join(',').split(',').size() == centres.size()));
+    }
+
+    // `admins/{uid}` (PLAN §5.23): `{ name, addedAt, addedBy, updatedAt,
+    // centres }`, and `global` written only in the console. Any signed-in
+    // phone may get one (its own grants, a member's « · admin »). The
+    // holder of the global `admins` (the super admin) lists them, adds
+    // one with exactly those fields (`addedBy` the caller, never a
+    // `global`), changes a name or the CS grants (their own included,
+    // never anyone's `global`), and removes one; never a document holding
+    // a `global`, but their own CS grants. The console stays the kill
+    // switch: editing the super admin's document there cuts it at once.
     match /admins/{admin} {
       allow get: if signedIn();
+      allow list: if holdsGlobal('admins');
+      allow create: if holdsGlobal('admins')
+        && hasExactly(request.resource.data,
+          ['name', 'addedAt', 'addedBy', 'updatedAt', 'centres'])
+        && isName(request.resource.data.name, 30)
+        && request.resource.data.addedAt is timestamp
+        && request.resource.data.addedBy == uid()
+        && request.resource.data.updatedAt is timestamp
+        && isCentreGrants(request.resource.data.centres);
+      allow update: if holdsGlobal('admins')
+        && (admin == uid() || !('global' in resource.data))
+        && request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['name', 'updatedAt', 'centres'])
+        && request.resource.data.updatedAt is timestamp
+        && (!('name' in request.resource.data) || isName(request.resource.data.name, 30))
+        && isCentreGrants(request.resource.data.centres);
+      allow delete: if holdsGlobal('admins') && !('global' in resource.data);
     }
 
     match /rescueCentres/{centreKey} {
       // Listed by « Créer » (station names only); the first name stays.
-      // Only admins create secteurs, hence stations (PLAN §5.12).
+      // Only the holder of the global `centres` creates one (PLAN §5.23),
+      // with its first secteur (mayCreateSectorIn).
       allow read: if signedIn();
-      allow create: if isAdmin()
+      allow create: if holdsGlobal('centres')
         && isCentreKey(centreKey)
         && hasExactly(request.resource.data, ['name'])
         && isName(request.resource.data.name, 80);
     }
 
     match /sectorKeys/{key} {
-      // `get` only, by an admin: « Créer » (admins only) asks whether one
-      // pair is taken. Nobody else: the reservation names the secteur's id,
-      // the target of a join request (#147).
-      allow get: if isAdmin();
+      // `get` only, by an admin who may create a secteur in that CS (the
+      // key starts with the CS's key, which holds no `_`): « Créer » asks
+      // whether one pair is taken, and so does creating a new CS. Nobody
+      // else: the reservation names the secteur's id, the target of a join
+      // request (#147).
+      allow get: if hasPermission(key.split('_')[0], 'sectors')
+        || (holdsGlobal('centres') && !exists(rescueCentrePath(key.split('_')[0])));
       allow create: if signedIn() && isReservation(key, request.resource.data);
       allow delete: if isFreedByAdmin(resource.data.sectorId);
     }
@@ -295,7 +415,8 @@ service cloud.firestore {
         && isCommuneEntry(communes[0]);
     }
 
-    // Any active member or admin adds or removes one commune (Équipe,
+    // Any active member, or an admin with « Rues », adds or removes one
+    // commune (Équipe,
     // `arrayUnion` / `arrayRemove` of one entry): only `communes` changes,
     // by one entry, an added one checked whole; the list never empties.
     // A secteur stored before the communes has no list: it counts as
@@ -303,7 +424,7 @@ service cloud.firestore {
     function isCommunesChange(sector, before, after) {
       let old = before.get('communes', []);
       let now = after.communes;
-      return isMemberOrAdmin(sector)
+      return isMemberOr(sector, 'streets')
         && after.diff(before).affectedKeys().hasOnly(['communes'])
         && now is list
         && now.size() >= 1 && now.size() <= maxCommunes()
@@ -312,16 +433,19 @@ service cloud.firestore {
           || (now.size() == old.size() - 1 && old.hasAll(now)));
     }
 
-    // Created by an admin in one batch with its reservation, its code, its
-    // creator (already active) and its first campaign (PLAN §8.2): the
-    // reservation can only be created if absent, which makes number +
-    // station unique.
+    // Created by an admin with « Secteurs » in its CS (or creating that CS)
+    // in one batch with its reservation, its code, its creator (already
+    // active) and its first campaign (PLAN §8.2): the reservation can only
+    // be created if absent, which makes number + station unique. Its CS
+    // exists after the write and the secteur repeats its name (PLAN
+    // §5.23): no inventing a CS, nor showing another's name.
     function isNewSector(sector, data) {
-      return isAdmin()
-        && hasExactly(data, sectorFields())
+      return hasExactly(data, sectorFields())
         && isSectorNumber(data.number)
         && isCentreKey(data.centreKey)
         && isName(data.centreName, 80)
+        && mayCreateSectorIn(data.centreKey)
+        && getAfter(rescueCentrePath(data.centreKey)).data.name == data.centreName
         && isJoinCode(data.joinCode)
         && data.createdBy == uid()
         && data.createdAt is timestamp
@@ -333,24 +457,26 @@ service cloud.firestore {
         && existsAfter(campaignPath(sector, string(data.currentCampaign)));
     }
 
-    // A new code (admins only, member or not): the new code document comes
-    // with it and the old one goes, in the same transaction.
+    // A new code (an admin with « Secteurs » in its CS, member or not):
+    // the new code document comes with it and the old one goes, in the
+    // same transaction.
     function isNewCode(sector, before, after) {
-      return isAdmin()
+      return hasPermission(before.centreKey, 'sectors')
         && after.diff(before).affectedKeys().hasOnly(['joinCode'])
         && isJoinCode(after.joinCode)
         && getAfter(joinCodePath(after.joinCode)).data.sectorId == sector
         && !existsAfter(joinCodePath(before.joinCode));
     }
 
-    // A new campaign starts (#39, PLAN §5.10): an admin moves
+    // A new campaign starts (#39, PLAN §5.10): an admin with « Campagne »
+    // in its CS moves
     // `currentCampaign` forward, alone, once the campaign it moves to holds
     // its copies (isNextCampaign, isStreetCopy): that campaign's document
     // must name the year left as its previous one, and the join preview
     // must show the new year in the same write. Never back: a year left is
     // frozen (its streets and tournées are written only while current).
     function isCampaignStart(sector, before, after) {
-      return isAdmin()
+      return hasPermission(before.centreKey, 'campaign')
         && after.diff(before).affectedKeys().hasOnly(['currentCampaign'])
         && isCampaignYear(after.currentCampaign)
         && after.currentCampaign > before.currentCampaign
@@ -359,13 +485,14 @@ service cloud.firestore {
         && getAfter(joinCodePath(after.joinCode)).data.campaign == after.currentCampaign;
     }
 
-    // Deleting (admins only, member or not) is the last batch: the code
+    // Deleting (an admin with « Secteurs » in its CS, member or not) is
+    // the last batch: the code
     // and the reservation go with the secteur, after its campaigns and
     // streets, with whichever member documents remain (there may be none:
     // everyone may leave, PLAN §8.2). The rules cannot list the members,
     // so they do not check that every one goes.
     function isSectorDeletion(data) {
-      return isAdmin()
+      return hasPermission(data.centreKey, 'sectors')
         && !existsAfter(joinCodePath(data.joinCode))
         && !existsAfter(sectorKeyPath(data.centreKey + '_' + string(data.number)));
     }
@@ -435,11 +562,15 @@ service cloud.firestore {
     }
 
     // An admin's own document, active at once and accepted by themself,
-    // without a code: the creator's, written with the secteur, or an admin
+    // without a code: the creator's, written with the secteur (which did
+    // not exist before the write), or an admin with « Équipes » in its CS
     // joining a secteur they are not in (« Rejoindre », PLAN §5.12). Its
     // name is held for them in the same write (#148).
     function isAdminMembership(sector, data) {
-      return isAdmin()
+      return ((!exists(sectorPath(sector))
+            && getAfter(sectorPath(sector)).data.createdBy == uid()
+            && mayCreateSectorIn(getAfter(sectorPath(sector)).data.centreKey))
+          || mayIn(sector, 'teams'))
         && hasExactly(data, memberFields())
         && isName(data.displayName, 30)
         && data.status == 'active'
@@ -449,10 +580,10 @@ service cloud.firestore {
         && hasNameEntry(sector, data.displayName);
     }
 
-    // Any active member or admin accepts a pending one: status, who and
-    // when only.
+    // Any active member, or an admin with « Équipes », accepts a pending
+    // one: status, who and when only.
     function isAcceptance(sector, before, after) {
-      return isMemberOrAdmin(sector)
+      return isMemberOr(sector, 'teams')
         && before.status == 'pending'
         && after.diff(before).affectedKeys().hasOnly(['status', 'acceptedBy', 'acceptedAt'])
         && after.status == 'active'
@@ -472,14 +603,27 @@ service cloud.firestore {
         && hasNameEntry(sector, after.displayName);
     }
 
-    // Refuse or cancel a request; remove (an admin, any member, admins
-    // included) or leave (the member, the creator too, even the last one)
-    // an active one (PLAN §5.12).
+    // Refuse or cancel a request; remove (an admin with « Équipes », any
+    // member, admins included) or leave (the member, the creator too, even
+    // the last one) an active one (PLAN §5.12). With « Secteurs », every
+    // member goes with the secteur deleted in the same write. What is left
+    // of a secteur already deleted (a request sent at that moment) goes
+    // with any admin's cleaning up (isLeftOver).
     function isMemberDeletion(sector, member, data) {
       return signedIn() && (
         member == uid()
-        || isAdmin()
-        || (data.status == 'pending' && isActiveMember(sector)));
+        || (data.status == 'pending' && isActiveMember(sector))
+        || isLeftOver(sector)
+        || mayIn(sector, 'teams')
+        || (mayIn(sector, 'sectors') && !existsAfter(sectorPath(sector))));
+    }
+
+    // A document under a secteur that is no longer there: the deleting
+    // admin's phone lists and deletes it after the last batch (a request
+    // sent meanwhile). The secteur is gone, so its CS cannot be told: any
+    // admin of a CS may.
+    function isLeftOver(sector) {
+      return !exists(sectorPath(sector)) && isAdminSomewhere();
     }
 
     // ------------------------------------------------------- the streets
@@ -614,13 +758,15 @@ service cloud.firestore {
     // The same for a number, and one more case: the undo of « Restaurer »
     // puts back the removal it undoes, which may be a teammate's (PLAN
     // §6.2). Then it must name an active member of the secteur, or an
-    // admin, who may have removed it without being in the team.
+    // admin with « Rues » in its CS, who may have removed it without being
+    // in the team.
     function isNumberRemoval(sector, house) {
       return isRemovalStamp(house)
         || (isId(house.deletedBy)
           && house.deletedAt is timestamp
           && (get(memberPath(sector, house.deletedBy)).data.status == 'active'
-            || exists(/databases/$(database)/documents/admins/$(house.deletedBy))));
+            || get(adminPath(house.deletedBy)).data.get('centres', {})
+              .get(get(sectorPath(sector)).data.centreKey, []).hasAny(['streets'])));
     }
 
     // The 30-day purge of the Corbeille (PLAN §5.11; `isPastRetention` in
@@ -854,13 +1000,14 @@ service cloud.firestore {
     }
 
     // A campaign after the secteur's current one (#39, PLAN §5.10), not
-    // yet started: an admin writes it, then the copies of the current
+    // yet started: an admin with « Campagne » writes it, then the copies of
+    // the current
     // one's streets (isStreetCopy), then moves `currentCampaign` to it
     // (isCampaignStart). A secteur behind the others of its centre jumps
     // to their next year, so any later year will do. It names the year it
     // is copied from.
     function isNextCampaign(sector, year, data) {
-      return isAdmin()
+      return mayIn(sector, 'campaign')
         && isYearId(year)
         && int(year) > get(sectorPath(sector)).data.currentCampaign
         && hasExactly(data, ['startedAt', 'previousYear'])
@@ -869,7 +1016,8 @@ service cloud.firestore {
     }
 
     // A street of the secteur's current campaign copied into a later one
-    // not yet started (#39, `Street.forNextCampaign`): by an admin, under
+    // not yet started (#39, `Street.forNextCampaign`): by an admin with
+    // « Campagne » in its CS, under
     // the same id, with the same name, commune and BAN id, from a street
     // that is not in the Corbeille, out of the Corbeille itself, and only
     // with numbers the street has (those in the Corbeille stay behind).
@@ -880,7 +1028,8 @@ service cloud.firestore {
     // by one: the rules have no loops, a copy holds every house of the
     // street in one write, and each house costs about 200 of the 1 000
     // expressions (housesPerWrite). So an admin could write marks into a
-    // copy; admins are trusted (added by hand, PLAN §5.12), and once the
+    // copy; admins are trusted (named by the super admin, PLAN §5.23, and
+    // only with « Campagne », accepted risk of §5.22), and once the
     // campaign starts every write is checked as usual. Each copy reads its
     // own street of the current campaign: a batch may read at most 20
     // documents, so the adapter sends the copies a few at a time
@@ -888,7 +1037,7 @@ service cloud.firestore {
     function isStreetCopy(sector, year, street, data) {
       let current = get(sectorPath(sector)).data.currentCampaign;
       let source = get(streetPath(sector, string(current), street)).data;
-      return isAdmin()
+      return mayIn(sector, 'campaign')
         && isYearId(year)
         && int(year) > current
         && existsAfter(campaignPath(sector, year))
@@ -904,6 +1053,16 @@ service cloud.firestore {
         && (!('part' in data) || isPart(data.part))
         && data.houses is map
         && source.houses.keys().hasAll(data.houses.keys());
+    }
+
+    // A campaign, a street or a tournée deleted outright: with the secteur,
+    // by an admin with « Secteurs » in its CS (its contents go first, the
+    // secteur last), or a year it does not keep, never the current one, by
+    // an admin with « Campagne » (a new campaign, PLAN §5.10).
+    function isGoneWithSectorOrYear(sector, year) {
+      return mayIn(sector, 'sectors')
+        || (mayIn(sector, 'campaign')
+          && year != string(get(sectorPath(sector)).data.currentCampaign));
     }
 
     // ------------------------------------------- the validated tournées
@@ -1038,8 +1197,10 @@ service cloud.firestore {
 
     // A write of the index (FirestoreStreetPartIndex): one entry changes,
     // the one of the secteur `sector` names, set or removed, by an active
-    // member of that secteur or an admin (an admin deleting a secteur,
-    // member or not, removes its entries). The rules cannot tell which key
+    // member of that secteur or an admin with « Rues » in its CS (or with
+    // « Secteurs », deleting it, member or not, removes its entries; once
+    // it is gone, any admin of a CS may remove what is left, isLeftOver:
+    // setting an entry still needs the secteur, isSectorPartEntry). The rules cannot tell which key
     // of a map a write changed, so the write names it in `sector`; any
     // other key changing is refused. [before] is the `parts` stored ({}
     // for a new document). `parts` may be missing: removing an entry from
@@ -1049,17 +1210,20 @@ service cloud.firestore {
         && isId(data.sector)
         && data.get('parts', {}) is map
         && data.get('parts', {}).diff(before).affectedKeys().hasOnly([data.sector])
-        && isMemberOrAdmin(data.sector)
+        && (isMemberOr(data.sector, 'streets')
+          || mayIn(data.sector, 'sectors')
+          || isLeftOver(data.sector))
         && (!(data.sector in data.get('parts', {}))
           || isSectorPartEntry(data.sector, data.parts[data.sector]));
     }
 
     match /streetParts/{banId} {
-      // `get` only, by an active member of some secteur or an admin (#147):
+      // `get` only, by an active member of some secteur or an admin of some
+      // CS (#147, PLAN §5.23):
       // a phone reads the street it shows, by its BAN id; no one lists
       // which secteur covers what, and an account in no secteur reads
       // nothing. Never deleted: a secteur removes its own entry.
-      allow get: if isAdmin() || isActiveSomewhere();
+      allow get: if isAdminSomewhere() || isActiveSomewhere();
       allow create: if isStreetPartsWrite({}, request.resource.data);
       allow update: if isStreetPartsWrite(resource.data.get('parts', {}), request.resource.data);
     }
@@ -1077,14 +1241,18 @@ service cloud.firestore {
     }
 
     match /sectors/{sector} {
-      // A member reaches a secteur by its id, from its code; only admins
-      // list them all (« Tous les secteurs », PLAN §5.12). A secteur that
-      // is not there may be asked by anyone signed in (`resource == null`):
+      // A member reaches a secteur by its id, from its code; the admins of
+      // its CS read it and list those of their CS (« Tous les secteurs »,
+      // PLAN §5.12, §5.23). A secteur that is not there may be asked by anyone signed in (`resource == null`):
       // a member whose own document went learns whether the secteur was
       // deleted (not there) or they were removed (refused), #147. It tells
       // nothing of one that exists.
-      allow get: if isMemberOrAdmin(sector) || (signedIn() && resource == null);
-      allow list: if isAdmin();
+      allow get: if (signedIn() && resource == null)
+        || isActiveMember(sector)
+        || holdsAnyIn(resource.data.centreKey);
+      // A query of the secteurs of the CS the admin holds a permission in
+      // (`centreKey` in them): one that could hold another's is refused.
+      allow list: if holdsAnyIn(resource.data.centreKey);
       allow create: if isNewSector(sector, request.resource.data);
       allow update: if isNewCode(sector, resource.data, request.resource.data)
         || isCommunesChange(sector, resource.data, request.resource.data)
@@ -1094,8 +1262,8 @@ service cloud.firestore {
       match /members/{member} {
         // A pending newcomer reads their own document (« Demande envoyée »
         // follows it), and nothing else.
-        allow get: if (signedIn() && member == uid()) || isMemberOrAdmin(sector);
-        allow list: if isMemberOrAdmin(sector);
+        allow get: if (signedIn() && member == uid()) || isMemberOrReader(sector);
+        allow list: if isMemberOrReader(sector) || isLeftOver(sector);
         allow create: if signedIn() && member == uid()
           && (isJoinRequest(sector, request.resource.data)
             || isAdminMembership(sector, request.resource.data));
@@ -1113,59 +1281,63 @@ service cloud.firestore {
         // The team and the admins read them. Anyone else signed in may ask
         // for one name that is free, or theirs: a newcomer's phone learns
         // its name is taken from the refusal, and nothing of who holds it.
-        allow get: if isMemberOrAdmin(sector)
+        allow get: if isMemberOrReader(sector)
           || (signedIn() && (resource == null || resource.data.member == uid()));
-        allow list: if isMemberOrAdmin(sector);
+        allow list: if isMemberOrReader(sector) || isLeftOver(sector);
         allow create: if signedIn()
           && hasExactly(request.resource.data, ['member'])
           && request.resource.data.member == uid()
           && holdsName(sector, uid(), key);
         // Freed with a request refused or cancelled, a member removed or
-        // leaving, a rename, or the secteur (an admin): an entry whose
-        // member no longer holds that name. Deleting one that is not there
-        // is harmless (a member of before #148 held none).
+        // leaving, a rename, or the secteur (an admin with « Équipes » or
+        // « Secteurs »): an entry whose member no longer holds that name.
+        // Deleting one that is not there is harmless (a member of before
+        // #148 held none).
         allow delete: if signedIn()
           && (resource == null
-            || isAdmin()
+            || mayIn(sector, 'teams')
+            || mayIn(sector, 'sectors')
             || !holdsName(sector, resource.data.member, key));
       }
 
       match /campaigns/{year} {
-        allow read: if isMemberOrAdmin(sector);
+        allow read: if isMemberOrReader(sector);
         // The first campaign, written by the creator (an admin) with the
         // secteur; or a later one, before the secteur moves to it
         // (isNextCampaign, #39). An admin deletes one: with the secteur, or
-        // a past year no longer kept (PLAN §5.10).
-        allow create: if (isAdmin()
+        // a year no longer kept (isGoneWithSectorOrYear, PLAN §5.10).
+        allow create: if (mayCreateSectorIn(getAfter(sectorPath(sector)).data.centreKey)
           && hasExactly(request.resource.data, ['startedAt', 'previousYear'])
           && request.resource.data.startedAt is timestamp
           && request.resource.data.previousYear == null
           && getAfter(sectorPath(sector)).data.createdBy == uid()
           && year == string(getAfter(sectorPath(sector)).data.currentCampaign))
           || isNextCampaign(sector, year, request.resource.data);
-        allow delete: if isAdmin();
+        allow delete: if isGoneWithSectorOrYear(sector, year);
 
         match /streets/{street} {
-          allow read: if isMemberOrAdmin(sector);
+          allow read: if isMemberOrReader(sector);
           // Previous campaigns are read-only (frozen, PLAN §5.10); a later
           // one not yet started takes only the copies of an admin (#39).
-          allow create: if (isMemberOrAdmin(sector)
+          allow create: if (isMemberOr(sector, 'streets')
             && year == string(get(sectorPath(sector)).data.currentCampaign)
             && isNewStreet(request.resource.data))
             || isStreetCopy(sector, year, street, request.resource.data);
-          allow update: if (isMemberOrAdmin(sector)
+          allow update: if (isMemberOr(sector, 'streets')
             && year == string(get(sectorPath(sector)).data.currentCampaign)
             && (isStreetChange(sector, resource.data, request.resource.data)
               || isShapeFill(resource.data, request.resource.data)
               || isPartChange(resource.data, request.resource.data)))
             || isStreetCopy(sector, year, street, request.resource.data);
           // A street goes to the Corbeille by an update. Hard deletion goes
-          // with the secteur (an admin), or is the 30-day purge, which any
-          // active member's or admin's app makes (no server, PLAN §5.11).
-          allow delete: if isAdmin()
-            || (isMemberOrAdmin(sector)
+          // with the secteur or a year (isGoneWithSectorOrYear), is an
+          // unreadable street deleted by an admin with « Rues », or is the
+          // 30-day purge, which any active member's app makes, or an
+          // admin's with « Rues » (no server, PLAN §5.11).
+          allow delete: if isGoneWithSectorOrYear(sector, year)
+            || (isMemberOr(sector, 'streets')
               && year == string(get(sectorPath(sector)).data.currentCampaign)
-              && isPastRetention(resource.data));
+              && (mayIn(sector, 'streets') || isPastRetention(resource.data)));
         }
 
         // A validated tournée: created once by an active member at the
@@ -1173,23 +1345,23 @@ service cloud.firestore {
         // secteur's current campaign (#145). Sending it again (a second
         // `set` of the same id) is an update, refused: the first stays.
         // Then corrected, or its forgotten houses settled (#168), by any
-        // active member or admin (a summary names no member, so the rules
-        // cannot tell who validated it), in the current campaign only.
-        // It goes only with its secteur (or its campaign), which only an
-        // admin deletes.
+        // active member or admin with « Campagne » (a summary names no
+        // member, so the rules cannot tell who validated it), in the
+        // current campaign only. It goes only with its secteur (or its
+        // campaign), which only an admin deletes.
         match /rounds/{round} {
-          allow read: if isMemberOrAdmin(sector);
+          allow read: if isMemberOrReader(sector);
           allow create: if isActiveMember(sector)
             && isId(round)
             && year == string(get(sectorPath(sector)).data.currentCampaign)
             && exists(campaignPath(sector, year))
             && isRoundSummary(request.resource.data);
-          allow update: if isMemberOrAdmin(sector)
+          allow update: if isMemberOr(sector, 'campaign')
             && year == string(get(sectorPath(sector)).data.currentCampaign)
             && isCorrectedRound(request.resource.data)
             && (isRoundCorrection(resource.data, request.resource.data)
               || isForgottenHouseSettled(resource.data, request.resource.data));
-          allow delete: if isAdmin();
+          allow delete: if isGoneWithSectorOrYear(sector, year);
         }
       }
     }

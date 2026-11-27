@@ -1496,6 +1496,9 @@ admin » for « Nouveau code », « Retirer », « Supprimer » and the campaign
 
 ### 5.12 Administrateurs (#75; per CS and per permission since 5.23)
 
+> Since #179 (5.23) everything an admin does below needs a permission in the secteur's centre de
+> secours; « Tous les secteurs » lists only those CS; see 5.23 « Delivered in #179 ».
+
 ```
   Tous les secteurs (admin)        Accueil, admin not a member
 ┌──────────────────────────────┐    ┌──────────────────────────────┐
@@ -2852,6 +2855,44 @@ are refused at sync.
 - Accepted: quota exhaustion by a member on Spark (#146); the #39 copy rule not checking houses
   one by one (admins with « Campagne » only).
 
+**Delivered in #179 (T12.1, 2026-11-27)**, domain, rules and the existing screens; the
+Administrateurs screen is #180, the CS picked from a list in « Nouveau secteur » #181:
+
+- **Domain:** `Permission` (campaign, sectors, teams, streets) and `GlobalPermission` (admins,
+  centres) in `domain/sector/permission.dart`; `AdminGrants` (`admin_grants.dart`): the
+  permissions per `RescueCentreKey`, `may(P, centre)`, `holdsAnyIn`, `centres`, `holds(G)`,
+  `role` (`AdminRole.none | admin | superAdmin`), `mayCreateSectors`; a global permission gives no
+  `may` anywhere. `Actor` carries the grants; `Sector` asks « Équipes » (accept, refuse — or an
+  active member —, remove, `joinAsAdmin`), « Secteurs » (new code, delete), « Rues » (communes —
+  or an active member) in its own CS. `RescueCentreKey.fromStored`.
+- **Phone:** `AdminStatus.watchGrants()` (`adminGrantsFrom`, lenient: an unknown name, CS key
+  or shape grants nothing), cached by Firestore so known offline once read; `adminProvider`
+  holds the grants, `openSectorPermissionsProvider` those in the open secteur's CS,
+  `canPrepareStreetsProvider` (a member, the phone's own streets, or a visitor with « Rues »).
+  « Créer un secteur » shows with « Secteurs » in some CS or the global `centres`; « Tous les
+  secteurs › » with a permission in some CS, and lists only those CS (`whereIn` on `centreKey`,
+  30 per query); « Nouveau code » and « Supprimer le secteur » with « Secteurs »; « Retirer »,
+  « Accepter » / « Refuser » for a visitor, and « Rejoindre » of the banner with « Équipes »;
+  « RUES » and the communes in Secteur, ✏ of a street and « Supprimer la rue » of an unreadable
+  one with « Rues » (or as a member). A visited secteur is forgotten (« Vous n'êtes plus
+  administrateur… ») once the server's admin document holds no permission in its CS.
+  Paramètres: « Administrateur » or « Super administrateur » under the identifier.
+  « Supprimer le secteur 49 ? » (TeamDelete): « Tapez 49 pour confirmer », « Supprimer » off
+  until the number is typed (spaces around it ignored).
+- **Rules:** see §8.2 « Roles and permissions ».
+- **Decided while building:** the holder of the global `centres` creates a new CS together with
+  its first secteur (the old app writes the station in the same transaction), and may ask
+  whether a number is taken in a CS that does not exist yet; that gives no power over any
+  secteur that exists (they then grant themselves the CS's permissions, #180). Correcting a
+  validated tournée is « Campagne » (or an active member). An admin with any permission in a CS
+  reads its secteurs; streets, tournées and campaigns are deleted outright with « Secteurs »
+  (deleting the secteur), or a year other than the current one with « Campagne ». The app on Play
+  before #179 lists every secteur at once for « Tous les secteurs »: that read is refused now
+  (the list says « Vous n'êtes plus administrateur. ») until the phone is updated; its writes all
+  pass for the user's document (`firebase/test/previous_app.test.mjs`).
+- **Privacy:** one sentence in « Compte » (`PRIVACY.md` and Confidentialité), for the user's
+  review: an admin's name and CS are stored and readable by any account of the app.
+
 ## 6. Data model
 
 ### 6.1 Domain model (pure Dart: no Flutter, no Firebase, no MapLibre)
@@ -3762,7 +3803,10 @@ field naming them was `tourneeId`. Nothing was migrated: with a single user (202
 rules know only the new names.
 
 ```
-admins/{uid}                                      ← no fields; added by hand in the console (#75)
+admins/{uid}                                      ← #179 (5.23): { name, addedAt, addedBy, updatedAt,
+    centres: { villefranche: ['campaign',            the CS grants, written by the super admin;
+      'sectors', 'teams', 'streets'] },             `global` (['admins', 'centres']) only in the
+    global: ['admins', 'centres'] }                 console; `get` by anyone signed in
 rescueCentres/{centreKey}                         ← "villefranche"; the CS picker lists these
     name: "CS Villefranche"
 sectorKeys/{centreKey}_{number}                   ← "villefranche_49": guarantees number + CS is unique;
@@ -4186,6 +4230,7 @@ below, these win:
 
 - `isAdmin()` = `exists(/databases/$(database)/documents/admins/$(request.auth.uid))`.
   `admins/{uid}`: `get` for signed-in users, never `list`, never written by a client.
+  (Replaced by the permissions of #179, below.)
 - **Creating** a secteur (its reservation, code, first campaign, creator member) and a
   `rescueCentres` entry: admins only.
 - **Reading and listing** `sectors` and everything under them: active members **or admins**
@@ -4207,6 +4252,53 @@ below, these win:
   An admin's own active document (creation or « Rejoindre ») is one rule,
   `isAdminMembership`. The rules tests seed `admins/manu` (the creator) and `admins/sam`
   (in no secteur); the older tests that gave the creator powers now name an admin.
+
+**Roles and permissions (#179, 5.23)** replace « an admin » everywhere above and below by « an
+admin holding the permission P in this secteur's CS » (`centreKey` on the secteur; where they
+contradict the lines above and below, these win). No global permission gives any power over a
+secteur, the super admin's included (`firebase/firestore.rules`, « the admins »):
+
+- `hasPermission(centreKey, P)`: the caller's `admins/{uid}`.`centres[centreKey]` holds P (an
+  error, a missing document, a value that is not a list: refused); `mayIn(sector, P)` reads the
+  secteur's `centreKey` (as before the write); `holdsAnyIn` any of the four; `holdsGlobal(G)` the
+  caller's `global`; `isAdminSomewhere()` at least one CS in `centres`.
+- **Reading** a secteur, its members, names, campaigns, streets, tournées: active members, or an
+  admin with any permission in its CS (`isMemberOrReader`). **Listing** `sectors`: a query on
+  `centreKey` (`==` or `in`) of CS the caller holds a permission in (`holdsAnyIn(resource.data.
+  centreKey)`); an unfiltered list is refused. `streetParts` get: `isAdminSomewhere()` or
+  `isActiveSomewhere()`. `sectorKeys` get: « Secteurs » in the CS (the key's part before `_`), or
+  the global `centres` for a CS not created yet.
+- **Secteurs:** creating a secteur (`isNewSector`, its reservation, preview, creator membership,
+  first campaign: `mayCreateSectorIn`) needs « Secteurs » in its CS, or the global `centres` with
+  `rescueCentres/{centreKey}` created in the same write; in both cases the CS exists after the
+  write (`getAfter`) and `centreName` is its `name`. `rescueCentres` create: the global
+  `centres` only. New code, deleting the secteur, freeing its code and reservation: « Secteurs ».
+- **Équipes:** accepting / refusing a request (or an active member), removing a member,
+  « Rejoindre » without a code (`isAdminMembership`, or the creator in the creating write).
+  Members and names also go with the secteur deleted in the same batch (« Secteurs »). What is
+  left under a secteur already gone (a request sent during the deletion) may be listed and deleted
+  by any admin of some CS (`isLeftOver`): its CS cannot be told any more.
+- **Rues:** street writes and the communes (or an active member); deleting a street outright
+  in the current campaign (an unreadable one); the undo of « Restaurer » may name as remover an
+  admin with « Rues » in the CS; `streetParts` entries (or « Secteurs », deleting the secteur).
+- **Campagne:** the next campaign, the copies, `currentCampaign` and the preview's `campaign`
+  (#39); correcting a validated tournée (or an active member); deleting a year that is not the
+  current one (`isGoneWithSectorOrYear`, also « Secteurs » for any year, deleting the secteur).
+- **`admins/{uid}`:** `get` by anyone signed in (decided: « · admin » stays visible); `list`,
+  `create`, `update`, `delete` by the holder of the global `admins` only. Create: exactly `name`
+  (as `MemberName` cleans it, 1–30), `addedAt`, `addedBy` = the caller, `updatedAt` (timestamps),
+  `centres` (`isCentreGrants`: a map of at most 50 keys, each `a–z 0–9` words joined by `-`,
+  checked by joining them with commas and splitting again; values unchecked: an unknown one
+  grants nothing). Update: only `name`, `updatedAt` (required, a timestamp), `centres`, so never
+  a `global`, on their own document or one holding no `global`. Delete: a document holding no
+  `global` (so never their own). The console stays the only writer of `global`.
+- Tests: `firebase/test/permissions.test.mjs` (the matrix: 21 operations × Campagne, Secteurs,
+  Équipes, Rues in the CS, every permission in another CS, the super admin with the global
+  permissions alone, an active member, a signed-in stranger), `admins.test.mjs` (the admin
+  documents), `previous_app.test.mjs` (every admin write of the app before #179 by the user's
+  document: `global: ['admins', 'centres']` and the four permissions in their only CS, as set in
+  the console before deploying; the other files seed Manu with that same document, and Sam with
+  the four permissions in the CS Villefranche).
 
 What the adapters write (T2.3), which the rules must allow:
 
@@ -4490,6 +4582,9 @@ Rules fixed in T2.4 (`firebase/firestore.rules`, emulator tests in `firebase/tes
   person; only the ↻ the member set ring on their phone. Android asks for the notification
   permission the first time the member gives a ↻ a day, never at launch; no exact-alarm
   permission.
+- **Administrators (#179, 5.23):** an admin's document holds the name the super admin gives
+  them and the CS they hold permissions in, readable by any signed-in account (« · admin »).
+  « Compte » of `PRIVACY.md` and Confidentialité says so (drafted for the user's review).
 - **Location:** the phone's position is used only on screen ("locate me"), never stored or
   sent. Permission is asked when the button is first tapped.
 - Firestore region: `europe-west` (EU).

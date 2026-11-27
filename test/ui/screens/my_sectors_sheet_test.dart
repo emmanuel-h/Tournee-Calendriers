@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:tournee_calendriers/application/ports/sector_downloads.dart';
+import 'package:tournee_calendriers/domain/sector/admin_grants.dart';
 import 'package:tournee_calendriers/domain/sector/member.dart';
 import 'package:tournee_calendriers/domain/sector/member_name.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
+import 'package:tournee_calendriers/domain/sector/permission.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/screens/all_sectors/all_sectors_screen.dart';
@@ -17,7 +19,8 @@ import 'package:tournee_calendriers/ui/screens/team/team_screen.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 
 import '../../domain/sector/my_sectors_fixtures.dart';
-import '../../domain/sector/sector_fixtures.dart' show nameOf, samId, team;
+import '../../domain/sector/sector_fixtures.dart'
+    show grantsInVillefranche, nameOf, samId, team;
 import '../../support/fakes/fake_admin_status.dart';
 import '../../support/fakes/fake_member_account.dart';
 import '../../support/fakes/fake_my_sectors_store.dart';
@@ -50,6 +53,7 @@ void main() {
     MemberName? name,
     FakeSectorRepository? sectors,
     bool admin = false,
+    AdminGrants? grants,
     bool offline = false,
     Iterable<SectorId> downloaded = const [],
   }) async {
@@ -61,7 +65,7 @@ void main() {
           mySectors: store,
           settings: settings,
           sectors: sectors,
-          admins: FakeAdminStatus(phoneIsAdmin: admin),
+          admins: FakeAdminStatus(phoneIsAdmin: admin, phoneGrants: grants),
           account: FakeMemberAccount(signedInMember: samId),
           sectorDirectory: FakeSectorDirectory(),
           connection: FakeServerConnection(offline: offline),
@@ -448,6 +452,32 @@ void main() {
       expect(find.byKey(const Key('mySectors.create')), findsNothing);
       expect(find.byKey(const Key('mySectors.all')), findsNothing);
       expect(find.byKey(const Key('mySectors.join')), findsOneWidget);
+    });
+
+    testWidgets('should offer « Tous les secteurs » but not « Créer » to an '
+        'admin without « Secteurs »', (tester) async {
+      await pumpApp(
+        tester,
+        _manusPhone(),
+        grants: grantsInVillefranche({Permission.teams, Permission.streets}),
+      );
+      await openSheet(tester);
+
+      expect(find.byKey(const Key('mySectors.all')), findsOneWidget);
+      expect(find.byKey(const Key('mySectors.create')), findsNothing);
+    });
+
+    testWidgets('should offer « Créer » but not « Tous les secteurs » to the '
+        'super admin holding no CS', (tester) async {
+      await pumpApp(
+        tester,
+        _manusPhone(),
+        grants: AdminGrants(global: GlobalPermission.values.toSet()),
+      );
+      await openSheet(tester);
+
+      expect(find.byKey(const Key('mySectors.create')), findsOneWidget);
+      expect(find.byKey(const Key('mySectors.all')), findsNothing);
     });
 
     testWidgets('should open « Tous les secteurs » for an admin', (

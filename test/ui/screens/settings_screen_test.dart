@@ -5,7 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/application/ports/phone_settings.dart';
+import 'package:tournee_calendriers/domain/sector/admin_grants.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
+import 'package:tournee_calendriers/domain/sector/permission.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/ui/app.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
@@ -46,6 +48,7 @@ void main() {
     List<Release>? releases,
     FakeMemberAccount? account,
     bool admin = false,
+    AdminGrants? grants,
     bool notificationsAllowed = true,
   }) async {
     settings = FakePhoneSettings(memberName: nameOf('Manu'));
@@ -61,7 +64,7 @@ void main() {
             sectors: sectors,
             member: manuId,
             account: account,
-            admins: FakeAdminStatus(phoneIsAdmin: admin),
+            admins: FakeAdminStatus(phoneIsAdmin: admin, phoneGrants: grants),
             reminders: reminders,
             reminderPreferences: reminderPreferences,
             mySectors: FakeMySectorsStore(
@@ -706,6 +709,32 @@ void main() {
 
       expect(find.text(uid.value), findsOneWidget);
       expect(find.text('Administrateur'), findsOneWidget);
+      expect(find.text('Super administrateur'), findsNothing);
+    });
+
+    testWidgets('should say super administrateur on the phone holding '
+        '« admins »', (tester) async {
+      await pumpSettings(
+        tester,
+        account: FakeMemberAccount(signedInMember: uid),
+        grants: AdminGrants(
+          global: {GlobalPermission.admins, GlobalPermission.centres},
+        ),
+      );
+      await scrollToIt(tester);
+
+      expect(find.text('Super administrateur'), findsOneWidget);
+      expect(find.text('Administrateur'), findsNothing);
+    });
+
+    testWidgets('should name no role on a member\'s phone', (tester) async {
+      await pumpSettings(
+        tester,
+        account: FakeMemberAccount(signedInMember: uid),
+      );
+      await scrollToIt(tester);
+
+      expect(find.byKey(const Key('settings.role')), findsNothing);
     });
 
     testWidgets('should sign in when it opens, then show the device id', (

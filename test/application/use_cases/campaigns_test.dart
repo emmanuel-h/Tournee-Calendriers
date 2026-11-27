@@ -217,6 +217,10 @@ void main() {
         'delete t12 [2026]',
       ]);
       expect(directory.allAsked, [samId]);
+      // Only the secteurs of that CS are asked for (PLAN §5.23).
+      expect(directory.allCentresAsked, [
+        {csVillefranche.key},
+      ]);
     });
 
     test('should find the centre however its name is written', () async {

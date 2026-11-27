@@ -62,8 +62,9 @@ export const twoPm = at('2026-11-02T14:00:00Z');
 export const threePm = at('2026-11-02T15:00:00Z');
 
 // The team: Manu created the secteur, Léa was accepted, Paul is waiting
-// for an answer, Zoé is in no secteur. Manu is an administrator of the app
-// (`admins/manu`, PLAN §5.12), and so is Sam, who is in no secteur.
+// for an answer, Zoé is in no secteur. Manu is the super admin, with every
+// permission in the CS Villefranche (`admins/manu`, PLAN §5.23); Sam, in no
+// secteur, is an admin of the CS Villefranche with every permission.
 export const manu = 'manu';
 export const lea = 'lea';
 export const paul = 'paul';
@@ -100,6 +101,32 @@ export function writeWithName(db, uid, data, key, { update = false } = {}) {
   batch.set(doc(db, namePath(key)), nameDoc(uid));
   return batch.commit();
 }
+
+/** The four permissions an admin may hold in a CS (PLAN §5.23). */
+export const allPermissions = ['campaign', 'sectors', 'teams', 'streets'];
+
+/**
+ * The document of an admin named by the super admin (PLAN §5.23, §6.2):
+ * [centres] the permissions per CS.
+ */
+export const adminDoc = (name, centres, overrides = {}) => ({
+  name,
+  addedAt: twoPm,
+  addedBy: manu,
+  updatedAt: twoPm,
+  centres,
+  ...overrides,
+});
+
+/**
+ * The user's own document, as set by hand in the console before the rules
+ * of #179 were deployed: both global permissions and every permission in
+ * their only CS, no other field (PLAN §5.23).
+ */
+export const superAdminDoc = () => ({
+  global: ['admins', 'centres'],
+  centres: { villefranche: allPermissions },
+});
 
 /** communeEntry of Villefranche-sur-Saône, with its centre. */
 export const villefrancheEntry = {
@@ -317,11 +344,11 @@ export const roundDons = () => [
  * Stores the team of Secteur 49 as the adapters leave it after creating
  * it, accepting Léa and receiving Paul's request (each name held, #148),
  * with Rue Nationale and a validated tournée in the campaign 2026; and the
- * two administrators, added by hand in the console (no fields).
+ * two administrators (PLAN §5.23): Manu as the console set him, Sam as the
+ * super admin named him.
  */
 export async function seedTeam(env) {
-  await seed(env, `admins/${manu}`, {});
-  await seed(env, `admins/${sam}`, {});
+  await seedAdmins(env);
   await seed(env, sectorPath, sectorDoc());
   await seed(env, memberPath(manu), activeMemberDoc('Manu', manu));
   await seed(env, memberPath(lea), {
@@ -339,4 +366,10 @@ export async function seedTeam(env) {
   await seed(env, 'rescueCentres/villefranche', { name: 'CS Villefranche' });
   await seed(env, `${streetsPath}/nationale`, streetDoc());
   await seed(env, `${roundsPath}/round1`, roundDoc());
+}
+
+/** The two administrators of seedTeam, alone. */
+export async function seedAdmins(env) {
+  await seed(env, `admins/${manu}`, superAdminDoc());
+  await seed(env, `admins/${sam}`, adminDoc('Sam', { villefranche: allPermissions }));
 }

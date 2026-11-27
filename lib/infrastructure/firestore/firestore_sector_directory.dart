@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math';
 
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
@@ -17,6 +18,7 @@ import 'package:tournee_calendriers/domain/shared/french_text.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
 import 'package:tournee_calendriers/domain/shared/result.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/firestore_layout.dart';
+import 'package:tournee_calendriers/infrastructure/firestore/mappers/admin_document_mapper.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/campaign_document_mapper.dart';
 import 'package:tournee_calendriers/infrastructure/firestore/mappers/sector_document_mapper.dart';
 
@@ -26,7 +28,8 @@ import 'package:tournee_calendriers/infrastructure/firestore/mappers/sector_docu
 /// own pending member document. A member follows their own member
 /// document too, to learn they were removed or the secteur deleted; an
 /// admin who only visits a secteur follows the secteur and their own
-/// `admins/{uid}` instead (PLAN §5.12). An admin lists every secteur.
+/// `admins/{uid}` instead (PLAN §5.12). An admin lists the secteurs of the
+/// centres de secours they hold a permission in (PLAN §5.23).
 ///
 /// What must be true *now* (a code, a number taken) is asked of the server
 /// (`Source.server`): an answer from the phone's copy could be stale. The
@@ -37,6 +40,10 @@ final class FirestoreSectorDirectory implements SectorDirectory {
   final FirebaseFirestore _db;
 
   static const _server = GetOptions(source: Source.server);
+
+  /// The most values a `whereIn` filter takes (Firestore's limit): an admin
+  /// may hold up to 50 CS, asked in as many queries as needed.
+  static const _whereInLimit = 30;
 
   @override
   Future<Result<JoinPreview, JoinFailure>> preview(JoinCode code) async {
@@ -185,14 +192,21 @@ final class FirestoreSectorDirectory implements SectorDirectory {
   /// A secteur the admin [member] only visits (PLAN §5.12): they have no
   /// member document to follow. The secteur tells it was deleted once the
   /// server has it no more; their own `admins/{uid}`, which the rules let
-  /// any signed-in phone read, tells they are no longer an admin once the
-  /// server has it no more. Both listeners run at once, in one stream.
+  /// any signed-in phone read, tells they may no longer see it once the
+  /// server has it no more, or has it without a permission in the
+  /// secteur's CS (PLAN §5.23). Both listeners run at once, in one stream.
   Stream<SectorLoss> _watchVisit(SectorSummary sector, MemberId member) {
     bool gone(DocumentSnapshot<Object?> doc) => isGoneOnServer(
       exists: doc.exists,
       fromCache: doc.metadata.isFromCache,
       hasPendingWrites: doc.metadata.hasPendingWrites,
     );
+    // The server's answer only: the phone's copy alone never takes a
+    // secteur away (PLAN §7).
+    bool revoked(DocumentSnapshot<Map<String, dynamic>> doc) =>
+        !doc.metadata.isFromCache &&
+        !doc.metadata.hasPendingWrites &&
+        !adminGrantsFrom(doc.data()).holdsAnyIn(sector.centre.key);
     final losses = [
       FirestoreLayout.sector(
         _db,
@@ -201,7 +215,7 @@ final class FirestoreSectorDirectory implements SectorDirectory {
       FirestoreLayout.admin(
         _db,
         member,
-      ).snapshots().where(gone).map((_) => SectorLoss.adminRevoked),
+      ).snapshots().where(revoked).map((_) => SectorLoss.adminRevoked),
     ];
     late final StreamController<SectorLoss> controller;
     final listeners = <StreamSubscription<SectorLoss>>[];
@@ -296,23 +310,39 @@ final class FirestoreSectorDirectory implements SectorDirectory {
     }
   }
 
-  /// Reads every secteur from the server, then the members of each (at the
-  /// same time), as the security rules let only an admin do. A secteur
-  /// that cannot be read is left out, not fatal: it is only a list.
+  /// Reads the secteurs of [centres] from the server (`centreKey` in
+  /// them, which is what the security rules let an admin of those CS
+  /// list: a query for any other could hold a secteur the caller may not
+  /// read, and is refused whole), then the members of each (at the same
+  /// time). A secteur that cannot be read is left out, not fatal: it is
+  /// only a list.
   @override
   Future<Result<List<SectorOverview>, DirectoryFailure>> allSectors(
-    MemberId caller,
-  ) async {
+    MemberId caller, {
+    required Set<RescueCentreKey> centres,
+  }) async {
+    final keys = [for (final centre in centres) centre.value]..sort();
     try {
-      final sectors = await _db
-          .collection(FirestoreLayout.sectors)
-          .get(_server);
+      final queries = await Future.wait([
+        for (var start = 0; start < keys.length; start += _whereInLimit)
+          _db
+              .collection(FirestoreLayout.sectors)
+              .where(
+                'centreKey',
+                whereIn: keys.sublist(
+                  start,
+                  min(start + _whereInLimit, keys.length),
+                ),
+              )
+              .get(_server),
+      ]);
+      final sectors = [for (final query in queries) ...query.docs];
       final teams = await Future.wait([
-        for (final doc in sectors.docs)
+        for (final doc in sectors)
           FirestoreLayout.membersOf(_db, SectorId(doc.id)).get(_server),
       ]);
       final overviews = <SectorOverview>[];
-      for (final (index, doc) in sectors.docs.indexed) {
+      for (final (index, doc) in sectors.indexed) {
         try {
           final sector = sectorFromDocuments(doc.id, doc.data(), {
             for (final member in teams[index].docs) member.id: member.data(),
@@ -325,7 +355,8 @@ final class FirestoreSectorDirectory implements SectorDirectory {
       return Ok(List.unmodifiable(overviews));
     } on FirebaseException catch (error) {
       if (isNoNetwork(error)) return const Err(DirectoryFailure.noNetwork);
-      // Only an admin may list the secteurs: the phone is no longer one.
+      // Only an admin of those CS may list their secteurs: the phone no
+      // longer is.
       if (isRefused(error)) return const Err(DirectoryFailure.notAdmin);
       rethrow;
     }

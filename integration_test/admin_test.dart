@@ -1,6 +1,7 @@
-// Instrumented admin flows (PLAN §5.12, §11), run inside the real app on the
-// Android emulator against the LOCAL Firebase emulators (Auth + Firestore
-// with the real `firebase/firestore.rules`), never the real project:
+// Instrumented admin flows (PLAN §5.12, §5.23, §11), run inside the real app
+// on the
+// Android emulator against the LOCAL Firebase emulators (Auth + Firestore with
+// the real `firebase/firestore.rules`), never the real project:
 //
 //   tool/admin_e2e.sh
 //
@@ -8,10 +9,11 @@
 // alone (`flutter test integration_test/admin_test.dart`) without the
 // emulators, it fails at once: nothing answers on 10.0.2.2.
 //
-// Why emulators: an admin is an `admins/{uid}` document added by hand, and
-// the app gets a new anonymous uid at each install. Here the test plays the
-// console: it adds and removes `admins/{uid}` itself, bypassing the rules
-// (« Bearer owner », which only the emulator accepts).
+// Why emulators: an admin is an `admins/{uid}` document (its CS grants, and
+// the global permissions only the console writes), and the app gets a new
+// anonymous uid at each install. Here the test plays the console: it writes
+// and removes `admins/{uid}` itself, bypassing the rules (« Bearer owner »,
+// which only the emulator accepts).
 //
 // Each file of `integration_test/` runs in its own app process, so this one
 // can point Firebase at the emulators without touching `app_test.dart`.
@@ -92,6 +94,17 @@ Future<void> _put(String path, Map<String, Object?> fields) async {
 Map<String, Object?> _text(String value) => {'stringValue': value};
 Map<String, Object?> _int(int value) => {'integerValue': '$value'};
 Map<String, Object?> _time(String value) => {'timestampValue': value};
+Map<String, Object?> _texts(List<String> values) => {
+  'arrayValue': {
+    'values': [for (final value in values) _text(value)],
+  },
+};
+Map<String, Object?> _map(Map<String, Object?> fields) => {
+  'mapValue': {'fields': fields},
+};
+
+/// The four permissions an admin may hold in a CS (PLAN §5.23).
+final _allPermissions = _texts(['campaign', 'sectors', 'teams', 'streets']);
 
 /// Secteur 12 of the CS Villefranche, created by Léa, who is its only
 /// member: one the admin on the phone is not in. Its centre is then known
@@ -175,8 +188,9 @@ void main() {
   tearDownAll(() => FirebaseAuth.instance.signOut());
 
   testWidgets(
-    'should let an admin create a secteur, visit and join another one, and '
-    'say « Vous n\'êtes plus administrateur. » once admins/{uid} is removed',
+    'should let an admin of the CS create a secteur, visit and join another '
+    'one; give the super admin no power over secteurs; and say « Vous '
+    'n\'êtes plus administrateur. » once admins/{uid} is removed',
     (tester) async {
       final storage = await Directory.systemTemp.createTemp('admin_flow');
       addTearDown(() => storage.delete(recursive: true));
@@ -207,9 +221,15 @@ void main() {
       }
       final uid = FirebaseAuth.instance.currentUser!.uid;
 
-      // The console makes the phone an admin's: « Bienvenue » offers
-      // « Créer un secteur ».
-      await _put('admins/$uid', {});
+      // The super admin makes the phone an admin of the CS Villefranche,
+      // with every permission: « Bienvenue » offers « Créer un secteur ».
+      await _put('admins/$uid', {
+        'name': _text('Sam'),
+        'addedAt': _time('2026-11-20T08:00:00Z'),
+        'addedBy': _text('uidManu'),
+        'updatedAt': _time('2026-11-20T08:00:00Z'),
+        'centres': _map({'villefranche': _allPermissions}),
+      });
       await _seedSector12();
       await tester.enterText(find.byKey(const Key('welcome.name')), 'Sam');
       await tester.testTextInput.receiveAction(TextInputAction.done);
@@ -268,10 +288,31 @@ void main() {
       await _tap(tester, const Key('home.adminJoin'));
       expect(find.byKey(const Key('home.adminBanner')), findsNothing);
 
-      // A new secteur is started, then the console removes admins/{uid}
-      // before « Créer »: the server refuses, the screen says why.
+      // Paramètres says « Administrateur » under the identifier.
+      await _tap(tester, const Key('home.settings'));
+      await tester.scrollUntilVisible(
+        find.byKey(const Key('settings.role')),
+        200,
+        scrollable: find.byType(Scrollable).first,
+      );
+      expect(find.text('Administrateur'), findsOneWidget);
+
+      // The console makes the phone the super admin's, with the global
+      // permissions alone (PLAN §5.23): « Super administrateur », and no
+      // power over a secteur, « Tous les secteurs » gone.
+      await _put('admins/$uid', {
+        'global': _texts(['admins', 'centres']),
+      });
+      await _waitFor(tester, find.text('Super administrateur'));
+      await tester.tap(find.byTooltip('Retour'));
+      await tester.pumpAndSettle();
       await _tap(tester, const Key('home.sector'));
       await _tap(tester, const Key('team.changeSector'));
+      expect(find.byKey(const Key('mySectors.all')), findsNothing);
+
+      // « Créer » still shows (« centres » creates a new CS), but not in
+      // the CS Villefranche, where the super admin holds no « Secteurs »:
+      // the server refuses, the screen says why.
       await _tap(tester, const Key('mySectors.create'));
       await tester.enterText(find.byKey(const Key('create.centre')), 'villef');
       await _tap(tester, const ValueKey('create.centre.villefranche'));
@@ -280,12 +321,13 @@ void main() {
       await _tap(tester, const ValueKey('communes.suggestion.69264'));
       await tester.enterText(find.byKey(const Key('create.number')), '50');
       await tester.pumpAndSettle(const Duration(milliseconds: 400));
-      expect(await _asOwner('DELETE', 'admins/$uid'), 200);
       await _tap(tester, const Key('create.create'));
       await _waitFor(tester, find.byKey(const Key('create.notAdmin')));
       expect(find.text("Vous n'êtes plus administrateur."), findsOneWidget);
 
-      // Back on Secteur, « Mes secteurs » no longer offers « Créer ».
+      // The console removes admins/{uid}: back on Secteur, « Mes
+      // secteurs » no longer offers « Créer ».
+      expect(await _asOwner('DELETE', 'admins/$uid'), 200);
       await tester.tap(find.byTooltip('Retour'));
       await tester.pumpAndSettle();
       await _tap(tester, const Key('team.changeSector'));

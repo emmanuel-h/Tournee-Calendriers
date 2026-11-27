@@ -211,11 +211,15 @@ final class FakeSectorDirectory implements SectorDirectory {
     return Ok(taken.contains((centre.key, number)));
   }
 
-  /// Every secteur of the app, as « Tous les secteurs » lists them.
+  /// Every secteur of the app; [allSectors] gives those of the centres
+  /// asked for, as the server's query does.
   List<SectorOverview> overviews = const [];
 
   /// Every admin [allSectors] was asked for, in order.
   final allAsked = <MemberId>[];
+
+  /// The centres of each call to [allSectors], in order.
+  final allCentresAsked = <Set<RescueCentreKey>>[];
 
   /// Plays a server that no longer takes the phone for an admin's:
   /// [allSectors] fails with `notAdmin`.
@@ -223,12 +227,17 @@ final class FakeSectorDirectory implements SectorDirectory {
 
   @override
   Future<Result<List<SectorOverview>, DirectoryFailure>> allSectors(
-    MemberId caller,
-  ) async {
+    MemberId caller, {
+    required Set<RescueCentreKey> centres,
+  }) async {
     allAsked.add(caller);
+    allCentresAsked.add(centres);
     if (offline) return const Err(DirectoryFailure.noNetwork);
     if (notAdmin) return const Err(DirectoryFailure.notAdmin);
-    return Ok(overviews);
+    return Ok([
+      for (final sector in overviews)
+        if (centres.contains(sector.centre.key)) sector,
+    ]);
   }
 
   @override

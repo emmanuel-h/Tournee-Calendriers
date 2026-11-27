@@ -2215,7 +2215,7 @@ abstract class AppLocalizations {
   /// Privacy page: the account (PLAN §8.3): its section of PRIVACY.md, word for word.
   ///
   /// In fr, this message translates to:
-  /// **'L\'appli ne demande ni adresse e-mail ni numéro de téléphone. Au premier lancement, elle crée un compte anonyme. Vos coéquipiers voient seulement le prénom que vous avez tapé. Si vous écrivez au développeur depuis Paramètres, votre messagerie lui envoie votre adresse e-mail ; elle sert seulement à vous répondre.'**
+  /// **'L\'appli ne demande ni adresse e-mail ni numéro de téléphone. Au premier lancement, elle crée un compte anonyme. Vos coéquipiers voient seulement le prénom que vous avez tapé. Un administrateur est enregistré avec le nom que lui donne le super administrateur et les centres de secours où il agit, lisibles par tout compte de l\'appli : ses coéquipiers voient « admin » à côté de son prénom. Si vous écrivez au développeur depuis Paramètres, votre messagerie lui envoie votre adresse e-mail ; elle sert seulement à vous répondre.'**
   String get privacyAccountBody;
 
   /// Privacy page: section about the data stored.
@@ -2470,7 +2470,7 @@ abstract class AppLocalizations {
   /// **'Quitter'**
   String get teamLeaveConfirm;
 
-  /// Admin-only button of Équipe (PLAN §5.12).
+  /// Button of Équipe for an admin with « Secteurs » in the secteur's CS (PLAN §5.12, §5.23).
   ///
   /// In fr, this message translates to:
   /// **'Supprimer le secteur'**
@@ -2482,11 +2482,17 @@ abstract class AppLocalizations {
   /// **'Supprimer le secteur {number} ?'**
   String teamDeleteTitle(String number);
 
-  /// Body of the confirmation before deleting the sector (PLAN §8.3).
+  /// Body of the confirmation before deleting the sector (PLAN §8.3, TeamDelete mockup).
   ///
   /// In fr, this message translates to:
-  /// **'Les rues, les statuts et les membres seront supprimés pour toute l\'équipe. C\'est définitif.'**
+  /// **'Ses rues, ses tournées et son équipe seront effacées pour tout le monde. Impossible de revenir en arrière.'**
   String get teamDeleteBody;
+
+  /// Label of the field of « Supprimer le secteur 49 ? »: « Supprimer » stays off until the secteur's number is typed (PLAN §5.23, TeamDelete mockup).
+  ///
+  /// In fr, this message translates to:
+  /// **'Tapez {number} pour confirmer'**
+  String teamDeleteTypeNumber(String number);
 
   /// Confirm button of the confirmation before deleting the sector.
   ///
@@ -2866,11 +2872,17 @@ abstract class AppLocalizations {
   /// **'Identifiant de l\'appareil'**
   String get deviceIdLabel;
 
-  /// Paramètres, under the phone's uid when it is an admin's (PLAN §5.12).
+  /// Paramètres, under the phone's uid when it holds a permission as an admin, in a CS or to create one (PLAN §5.12, §5.23). Shown on that phone only.
   ///
   /// In fr, this message translates to:
   /// **'Administrateur'**
   String get deviceIdIsAdmin;
+
+  /// Paramètres, under the phone's uid when it holds the global « admins » permission (PLAN §5.23, SettingsSuper mockup). Shown on that phone only: nothing else in the app reveals the role.
+  ///
+  /// In fr, this message translates to:
+  /// **'Super administrateur'**
+  String get deviceIdIsSuperAdmin;
 
   /// Screen-reader name and tooltip of the copy button of the phone's uid.
   ///

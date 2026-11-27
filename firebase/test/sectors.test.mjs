@@ -21,6 +21,8 @@ import {
 } from 'firebase/firestore';
 import {
   activeMemberDoc,
+  adminDoc,
+  allPermissions,
   campaignDoc,
   communeEntries,
   gleizeEntry,
@@ -39,6 +41,7 @@ import {
   rulesEnvironment,
   sam,
   seed,
+  seedAdmins,
   seedTeam,
   streetDoc,
   streetsPath,
@@ -116,10 +119,14 @@ function createSector(change = (docs) => docs, uid = sam) {
   });
 }
 
-/** An empty database but for Sam, still an admin, to create again. */
+/**
+ * An empty database but for the admins and the CS Villefranche, to create
+ * again.
+ */
 async function restart() {
   await env.clearFirestore();
-  await seed(env, `admins/${sam}`, {});
+  await seedAdmins(env);
+  await seed(env, 'rescueCentres/villefranche', { name: 'CS Villefranche' });
 }
 
 /** The secteur [docs] with [fields] changed in it, the preview following. */
@@ -159,12 +166,16 @@ describe('creating a secteur', () => {
     );
   });
 
-  it('should accept a new station, written once with the secteur', async () => {
+  it('should accept a new station, written once with the secteur by the '
+    + 'holder of the global « centres »', async () => {
     await assertSucceeds(
-      createSector((docs) => ({
-        ...withSector(docs, { centreKey: 'villefranche-nord', centreName: 'CS Villefranche Nord' }),
-        centre: { name: 'CS Villefranche Nord' },
-      })),
+      createSector(
+        (docs) => ({
+          ...withSector(docs, { centreKey: 'villefranche-nord', centreName: 'CS Villefranche Nord' }),
+          centre: { name: 'CS Villefranche Nord' },
+        }),
+        manu,
+      ),
     );
   });
 
@@ -298,19 +309,24 @@ describe('creating a secteur', () => {
   });
 
   it('should accept a station name of 80 characters and refuse 81', async () => {
-    await assertSucceeds(
-      createSector((docs) => withSector(docs, { centreName: '🚒'.repeat(80) })),
-    );
-    await restart();
-    await assertFails(
-      createSector((docs) => withSector(docs, { centreName: '🚒'.repeat(81) })),
-    );
+    for (const [centreName, expected] of [['🚒'.repeat(80), assertSucceeds], ['🚒'.repeat(81), assertFails]]) {
+      await seed(env, 'rescueCentres/villefranche', { name: centreName });
+      await expected(createSector((docs) => withSector(docs, { centreName })));
+      await restart();
+    }
   });
 
   it('should refuse a station key that is not words of a-z 0-9 joined by dashes', async () => {
     for (const centreKey of ['Villefranche', 'ville franche', 'villefranche-', '-villefranche', 'saône']) {
+      await seed(env, `rescueCentres/${centreKey}`, { name: 'CS Villefranche' });
       await assertFails(createSector((docs) => withSector(docs, { centreKey })));
     }
+    await seed(env, 'rescueCentres/villefranche-sur-saone', { name: 'CS Villefranche' });
+    await seed(
+      env,
+      `admins/${sam}`,
+      adminDoc('Sam', { 'villefranche-sur-saone': allPermissions }),
+    );
     await assertSucceeds(
       createSector((docs) => withSector(docs, { centreKey: 'villefranche-sur-saone' })),
     );
@@ -516,15 +532,16 @@ describe('the directory', () => {
     await assertFails(getDocs(collection(phoneOf(env, null), 'rescueCentres')));
   });
 
-  it('should accept a new station by an admin and refuse changing or deleting one', async () => {
-    const db = phoneOf(env, sam);
+  it('should accept a new station by the holder of the global « centres » and '
+    + 'refuse changing or deleting one', async () => {
+    const db = phoneOf(env, manu);
     await assertSucceeds(setDoc(doc(db, 'rescueCentres/villefranche-nord'), { name: 'CS Villefranche Nord' }));
     await assertFails(setDoc(doc(db, 'rescueCentres/villefranche'), { name: 'CS Ville' }));
     await assertFails(deleteDoc(doc(db, 'rescueCentres/villefranche')));
   });
 
   it('should refuse a station with a bad key, a long name or another field', async () => {
-    const db = phoneOf(env, sam);
+    const db = phoneOf(env, manu);
     await assertFails(setDoc(doc(db, 'rescueCentres/Villefranche-Nord'), { name: 'CS Villefranche Nord' }));
     await assertFails(setDoc(doc(db, 'rescueCentres/villefranche-nord'), { name: '🚒'.repeat(81) }));
     await assertSucceeds(setDoc(doc(db, 'rescueCentres/villefranche-nord'), { name: '🚒'.repeat(80) }));

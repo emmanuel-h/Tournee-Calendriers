@@ -1,11 +1,11 @@
 # Politique de confidentialité — Tournée Calendriers
 
 Application Android `fr.mandarine.tourneecalendriers`, pour la tournée des calendriers des
-sapeurs-pompiers. Mise à jour le 17 novembre 2026.
+sapeurs-pompiers. Mise à jour le 27 novembre 2026.
 
 ## Compte
 
-L'appli ne demande ni adresse e-mail ni numéro de téléphone. Au premier lancement, elle crée un compte anonyme. Vos coéquipiers voient seulement le prénom que vous avez tapé. Si vous écrivez au développeur depuis Paramètres, votre messagerie lui envoie votre adresse e-mail ; elle sert seulement à vous répondre.
+L'appli ne demande ni adresse e-mail ni numéro de téléphone. Au premier lancement, elle crée un compte anonyme. Vos coéquipiers voient seulement le prénom que vous avez tapé. Un administrateur est enregistré avec le nom que lui donne le super administrateur et les centres de secours où il agit, lisibles par tout compte de l'appli : ses coéquipiers voient « admin » à côté de son prénom. Si vous écrivez au développeur depuis Paramètres, votre messagerie lui envoie votre adresse e-mail ; elle sert seulement à vous répondre.
 
 ## Données enregistrées
 

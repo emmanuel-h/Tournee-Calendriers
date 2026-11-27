@@ -1,9 +1,13 @@
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/sector_directory.dart';
 import 'package:tournee_calendriers/application/use_cases/admins.dart';
+import 'package:tournee_calendriers/domain/sector/admin_grants.dart';
 import 'package:tournee_calendriers/domain/sector/member.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
+import 'package:tournee_calendriers/domain/sector/permission.dart';
+import 'package:tournee_calendriers/domain/sector/rescue_centre.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
+import 'package:tournee_calendriers/domain/sector/sector_number.dart';
 import 'package:tournee_calendriers/domain/sector/sector_summary.dart';
 
 import '../../domain/sector/my_sectors_fixtures.dart';
@@ -27,21 +31,40 @@ SectorOverview overview12({bool callerIsActive = false}) => SectorOverview(
 
 void main() {
   group('ObserveAdminStatus', () {
-    test(
-      'should tell whether the phone is an admin, then each change',
-      () async {
-        final admins = FakeAdminStatus();
-        final seen = <bool>[];
-        final listening = ObserveAdminStatus(admins)().listen(seen.add);
-        addTearDown(listening.cancel);
-        await pumpEventQueue();
+    test('should tell the phone\'s grants, then each change', () async {
+      final admins = FakeAdminStatus();
+      final seen = <AdminGrants>[];
+      final listening = ObserveAdminStatus(admins)().listen(seen.add);
+      addTearDown(listening.cancel);
+      await pumpEventQueue();
 
-        admins.phoneIsAdmin = true;
-        await pumpEventQueue();
+      admins.phoneGrants = grantsInVillefranche({Permission.teams});
+      await pumpEventQueue();
 
-        expect(seen, [false, true]);
-      },
-    );
+      expect(seen, [
+        AdminGrants.none,
+        grantsInVillefranche({Permission.teams}),
+      ]);
+    });
+  });
+
+  group('grantsOf', () {
+    test('should give the grants the phone knows', () async {
+      final admins = FakeAdminStatus(
+        phoneGrants: grantsInVillefranche({Permission.streets}),
+      );
+
+      expect(
+        await grantsOf(admins),
+        grantsInVillefranche({Permission.streets}),
+      );
+    });
+
+    test('should give none when they cannot be read', () async {
+      final admins = FakeAdminStatus(phoneIsAdmin: true)..unreadable = true;
+
+      expect(await grantsOf(admins), AdminGrants.none);
+    });
   });
 
   group('IsMemberAdmin', () {
@@ -56,27 +79,82 @@ void main() {
 
   group('ListAllSectors', () {
     late FakeSectorDirectory directory;
+    late FakeAdminStatus admins;
+    final gleize = valueOf(RescueCentre.create('CS Gleizé'));
+    final gleize7 = SectorOverview(
+      id: SectorId('g7'),
+      number: valueOf(SectorNumber.create(7)),
+      centre: gleize,
+      campaign: campaign2026,
+      activeMembers: 1,
+      pendingRequests: 0,
+      callerIsActive: false,
+    );
 
     setUp(() {
-      directory = FakeSectorDirectory()..overviews = [overview12()];
+      directory = FakeSectorDirectory()..overviews = [overview12(), gleize7];
+      admins = FakeAdminStatus(
+        phoneGrants: grantsInVillefranche({Permission.teams}),
+      );
     });
 
     test(
-      'should list every secteur of the app for the admin signed in',
+      'should list the secteurs of the CS the admin holds a permission in',
       () async {
         final account = FakeMemberAccount(signedInMember: samId);
 
-        final all = valueOf(await ListAllSectors(directory, account)());
+        final all = valueOf(await ListAllSectors(directory, account, admins)());
 
         expect(all, [overview12()]);
         expect(directory.allAsked, [samId]);
+        expect(directory.allCentresAsked, [
+          {csVillefranche.key},
+        ]);
       },
     );
+
+    test('should ask for every CS of the admin', () async {
+      admins.phoneGrants = AdminGrants(
+        centres: {
+          csVillefranche.key: {Permission.campaign},
+          gleize.key: {Permission.streets},
+        },
+      );
+
+      final all = valueOf(
+        await ListAllSectors(
+          directory,
+          FakeMemberAccount(signedInMember: samId),
+          admins,
+        )(),
+      );
+
+      expect(all, [overview12(), gleize7]);
+      expect(directory.allCentresAsked, [
+        {csVillefranche.key, gleize.key},
+      ]);
+    });
+
+    test('should refuse, asking nothing, when the phone holds no CS (a '
+        'super admin\'s global permissions alone)', () async {
+      admins.phoneGrants = AdminGrants(global: GlobalPermission.values.toSet());
+
+      final failure = failureOf(
+        await ListAllSectors(
+          directory,
+          FakeMemberAccount(signedInMember: samId),
+          admins,
+        )(),
+      );
+
+      expect(failure, DirectoryFailure.notAdmin);
+      expect(directory.allAsked, isEmpty);
+    });
 
     test('should sign in first when the phone has no account yet', () async {
       final account = FakeMemberAccount(nextMember: samId);
 
-      valueOf(await ListAllSectors(directory, account)());
+      valueOf(await ListAllSectors(directory, account, admins)());
 
       expect(account.signInCalls, 1);
       expect(directory.allAsked, [samId]);
@@ -85,7 +163,9 @@ void main() {
     test('should tell when the phone cannot sign in', () async {
       final account = FakeMemberAccount();
 
-      final failure = failureOf(await ListAllSectors(directory, account)());
+      final failure = failureOf(
+        await ListAllSectors(directory, account, admins)(),
+      );
 
       expect(failure, DirectoryFailure.noNetwork);
       expect(directory.allAsked, isEmpty);
@@ -98,6 +178,7 @@ void main() {
         await ListAllSectors(
           directory,
           FakeMemberAccount(signedInMember: samId),
+          admins,
         )(),
       );
 
@@ -112,6 +193,7 @@ void main() {
         await ListAllSectors(
           directory,
           FakeMemberAccount(signedInMember: samId),
+          admins,
         )(),
       );
 

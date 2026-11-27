@@ -9,6 +9,7 @@ import 'package:tournee_calendriers/domain/come_back/come_back_entry.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/house_number.dart';
 import 'package:tournee_calendriers/domain/street/street_id.dart';
+import 'package:tournee_calendriers/presentation/admin/admin_notifier.dart';
 import 'package:tournee_calendriers/presentation/come_backs/come_backs_notifier.dart';
 import 'package:tournee_calendriers/presentation/house_sheet/house_sheet_state.dart';
 import 'package:tournee_calendriers/presentation/round/given_donation.dart';
@@ -152,7 +153,10 @@ final class _MarkingScreenState extends ConsumerState<_MarkingScreen>
                 StreetGone() => widget.title ?? l10n.screenStreet,
               }),
               actions: [
-                if (state is StreetShown)
+                // Preparing the street: a member, or an admin visiting with
+                // « Rues » in the secteur's CS (PLAN §5.23).
+                if (state is StreetShown &&
+                    ref.watch(canPrepareStreetsProvider))
                   IconButton(
                     key: const Key('street.edit'),
                     tooltip: l10n.editStreetAction,

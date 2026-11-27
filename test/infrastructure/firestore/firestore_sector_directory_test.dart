@@ -359,7 +359,11 @@ void main() {
     }
 
     setUp(() async {
-      await db.doc('admins/uid-sam').set(<String, Object?>{});
+      await db.doc('admins/uid-sam').set({
+        'centres': {
+          'villefranche': ['teams'],
+        },
+      });
       await db.doc('sectorKeys/villefranche_49').set({'sectorId': 't49'});
       await db.doc('sectors/t49').set(sectorToDocument(team()));
     });
@@ -393,11 +397,40 @@ void main() {
 
       expect(seen, [SectorLoss.adminRevoked]);
     });
+
+    test('should tell the admin was revoked once their document no longer '
+        'grants anything in the secteur\'s CS', () async {
+      final seen = await lossesWhile(
+        () => db.doc('admins/uid-sam').set({
+          'centres': {
+            'gleize': ['teams'],
+          },
+          'global': ['admins', 'centres'],
+        }),
+      );
+
+      expect(seen, [SectorLoss.adminRevoked]);
+    });
+
+    test('should tell nothing while any permission is left in the '
+        'secteur\'s CS', () async {
+      final seen = await lossesWhile(
+        () => db.doc('admins/uid-sam').set({
+          'centres': {
+            'villefranche': ['streets'],
+          },
+        }),
+      );
+
+      expect(seen, isEmpty);
+    });
   });
 
   group('allSectors', () {
-    test('should list every secteur with its team counted for the '
-        'caller', () async {
+    final villefrancheOnly = {csVillefranche.key};
+
+    test('should list every secteur of the CS asked for, with its team '
+        'counted for the caller', () async {
       await db.doc('sectors/t49').set(sectorToDocument(team()));
       for (final member in [manu, lea, julie]) {
         await db
@@ -409,7 +442,9 @@ void main() {
         'number': 12,
       });
 
-      final all = valueOf(await directory.allSectors(leaId));
+      final all = valueOf(
+        await directory.allSectors(leaId, centres: villefrancheOnly),
+      );
 
       expect(all, [
         overviewOf(team(), leaId),
@@ -435,13 +470,62 @@ void main() {
       await db.doc('sectors/t49').set(sectorToDocument(team()));
       await db.doc('sectors/broken').set({'number': 'quarante'});
 
-      final all = valueOf(await directory.allSectors(samId));
+      await db.doc('sectors/broken').set({
+        'number': 'quarante',
+        'centreKey': 'villefranche',
+      });
+
+      final all = valueOf(
+        await directory.allSectors(samId, centres: villefrancheOnly),
+      );
 
       expect(all.map((sector) => sector.id), [sectorId]);
     });
 
+    test('should leave out the secteurs of the other CS', () async {
+      await db.doc('sectors/t49').set(sectorToDocument(team()));
+      await db.doc('sectors/g7').set({
+        ...sectorToDocument(team()),
+        'number': 7,
+        'centreKey': 'gleize',
+        'centreName': 'CS Gleizé',
+      });
+
+      final all = valueOf(
+        await directory.allSectors(samId, centres: villefrancheOnly),
+      );
+
+      expect(all.map((sector) => sector.id), [sectorId]);
+    });
+
+    test('should ask for more CS than one query takes', () async {
+      // 31 CS: one more than a `whereIn` holds, the last one Villefranche.
+      final centres = {
+        for (var i = 0; i < 30; i++)
+          valueOf(RescueCentre.create('CS Anse $i')).key,
+        csVillefranche.key,
+      };
+      await db.doc('sectors/t49').set(sectorToDocument(team()));
+      await db.doc('sectors/a7').set({
+        ...sectorToDocument(team()),
+        'number': 7,
+        'centreKey': 'anse-0',
+        'centreName': 'CS Anse 0',
+      });
+
+      final all = valueOf(await directory.allSectors(samId, centres: centres));
+
+      expect(all.map((sector) => sector.id).toSet(), {
+        SectorId('a7'),
+        sectorId,
+      });
+    });
+
     test('should list nothing when the app has no secteur', () async {
-      expect(valueOf(await directory.allSectors(samId)), isEmpty);
+      expect(
+        valueOf(await directory.allSectors(samId, centres: villefrancheOnly)),
+        isEmpty,
+      );
     });
 
     test('should tell when the server cannot be reached', () async {
@@ -449,7 +533,7 @@ void main() {
       // The in-memory Firestore reads a collection document by document.
       offline(db.doc('sectors/t49'));
 
-      final all = await directory.allSectors(samId);
+      final all = await directory.allSectors(samId, centres: villefrancheOnly);
 
       expect(failureOf(all), DirectoryFailure.noNetwork);
     });
@@ -461,7 +545,10 @@ void main() {
         // What the security rules answer once `admins/{uid}` is gone.
         offline(db.doc('sectors/t49'), 'permission-denied');
 
-        final all = await directory.allSectors(samId);
+        final all = await directory.allSectors(
+          samId,
+          centres: villefrancheOnly,
+        );
 
         expect(failureOf(all), DirectoryFailure.notAdmin);
       },
@@ -472,7 +559,7 @@ void main() {
       offline(db.doc('sectors/t49'), 'internal');
 
       await expectLater(
-        directory.allSectors(samId),
+        directory.allSectors(samId, centres: villefrancheOnly),
         throwsA(isA<FirebaseException>()),
       );
     });

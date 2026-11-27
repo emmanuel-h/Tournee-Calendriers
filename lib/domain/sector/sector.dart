@@ -5,6 +5,7 @@ import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
 import 'package:tournee_calendriers/domain/sector/join_code.dart';
 import 'package:tournee_calendriers/domain/sector/member.dart';
 import 'package:tournee_calendriers/domain/sector/member_name.dart';
+import 'package:tournee_calendriers/domain/sector/permission.dart';
 import 'package:tournee_calendriers/domain/sector/rescue_centre.dart';
 import 'package:tournee_calendriers/domain/sector/sector_change.dart';
 import 'package:tournee_calendriers/domain/sector/sector_commune.dart';
@@ -32,15 +33,18 @@ enum NewSectorFailure {
 /// team changed in the meantime (« vous avez été retiré »).
 enum SectorCommandFailure {
   /// The one acting is not in the secteur (never joined, removed, or left)
-  /// and is not an admin.
+  /// and holds no permission for the command in its CS.
   notAMember,
 
-  /// The one acting is still waiting to be accepted and is not an admin:
-  /// they can do nothing but cancel their request (`leave`).
+  /// The one acting is still waiting to be accepted and holds no
+  /// permission for the command: they can do nothing but cancel their
+  /// request (`leave`).
   requestPending,
 
-  /// Only an admin removes members, regenerates the code, deletes the
-  /// secteur and joins it without a code.
+  /// The command is an admin's, and the one acting does not hold its
+  /// permission in the secteur's CS (PLAN §5.23): « Équipes » to remove a
+  /// member or join without a code, « Secteurs » for a new code or
+  /// deleting the secteur.
   notAdmin,
 
   /// The member acted on is not in the secteur (any more).
@@ -90,21 +94,23 @@ enum SectorCommandFailure {
 ///   have none.
 ///
 /// The creator ([createdBy]) has no power of their own (PLAN §5.12): the
-/// app's admins run the secteur, member of it or not, and anyone may
-/// leave, the creator and the last member included. Who acts comes as an
-/// [Actor]: their id and whether they are an admin.
+/// admins of its centre de secours run the secteur, member of it or not,
+/// each with the permissions they hold in that CS (PLAN §5.23), and anyone
+/// may leave, the creator and the last member included. Who acts comes as
+/// an [Actor]: their id and their grants.
 ///
-/// Permissions (each command returns a [SectorCommandFailure] otherwise):
+/// Permissions (each command returns a [SectorCommandFailure] otherwise);
+/// « admin with P » means holding the permission P in this secteur's CS:
 ///
-/// | command                    | admin      | active | pending      | outsider |
-/// |----------------------------|------------|--------|--------------|----------|
-/// | [accept], [refuse]         | yes        | yes    | no           | no       |
-/// | [remove]                   | yes        | no     | no           | no       |
-/// | [leave]                    | if in it   | yes    | yes (cancel) | no       |
-/// | [regenerateCode], [delete] | yes        | no     | no           | no       |
-/// | [joinAsAdmin]              | if not in  | no     | no           | no       |
-/// | [rename] (themself)        | if active  | yes    | no           | no       |
-/// | [addCommune], [removeCommune] | yes     | yes    | no           | no       |
+/// | command                    | admin with      | active | pending      | outsider |
+/// |----------------------------|-----------------|--------|--------------|----------|
+/// | [accept], [refuse]         | Équipes         | yes    | no           | no       |
+/// | [remove]                   | Équipes         | no     | no           | no       |
+/// | [leave]                    | (if in it)      | yes    | yes (cancel) | no       |
+/// | [regenerateCode], [delete] | Secteurs        | no     | no           | no       |
+/// | [joinAsAdmin]              | Équipes, not in | no     | no           | no       |
+/// | [rename] (themself)        | (if active)     | yes    | no           | no       |
+/// | [addCommune], [removeCommune] | Rues         | yes    | no           | no       |
 ///
 /// A `Sector` is immutable. Each command returns a new secteur together
 /// with the [SectorChange] it made, as a Dart record `(Sector, Change)`;
@@ -271,13 +277,16 @@ final class Sector {
   }
 
   /// Lets the pending [member] in, as [by] at [at] (« Accepter »). Any
-  /// active member or admin may: nobody has to wait for someone else.
+  /// active member may, or an admin with « Équipes » in the CS: nobody has
+  /// to wait for someone else.
   Result<(Sector, MemberAccepted), SectorCommandFailure> accept(
     MemberId member, {
     required Actor by,
     required DateTime at,
   }) {
-    if (_teamActor(by) case final failure?) return Err(failure);
+    if (_actorFor(Permission.teams, by) case final failure?) {
+      return Err(failure);
+    }
     final request = memberOf(member);
     if (request == null) return const Err(SectorCommandFailure.unknownMember);
     if (request.isActive) return const Err(SectorCommandFailure.alreadyActive);
@@ -297,12 +306,14 @@ final class Sector {
   }
 
   /// Turns down the pending request of [member], as [by] (« Refuser »).
-  /// Any active member or admin may.
+  /// Any active member may, or an admin with « Équipes » in the CS.
   Result<(Sector, MemberRefused), SectorCommandFailure> refuse(
     MemberId member, {
     required Actor by,
   }) {
-    if (_teamActor(by) case final failure?) return Err(failure);
+    if (_actorFor(Permission.teams, by) case final failure?) {
+      return Err(failure);
+    }
     final request = memberOf(member);
     if (request == null) return const Err(SectorCommandFailure.unknownMember);
     if (request.isActive) return const Err(SectorCommandFailure.alreadyActive);
@@ -310,14 +321,16 @@ final class Sector {
   }
 
   /// Takes the active [member] out of the secteur, as [by] (« Retirer »).
-  /// Only an admin may, on any active member, admins and the creator
-  /// included; combined with [regenerateCode] when the code has leaked
-  /// (PLAN §5.8).
+  /// Only an admin with « Équipes » in the CS may, on any active member,
+  /// admins and the creator included; combined with [regenerateCode] when
+  /// the code has leaked (PLAN §5.8).
   Result<(Sector, MemberRemoved), SectorCommandFailure> remove(
     MemberId member, {
     required Actor by,
   }) {
-    if (_adminActor(by) case final failure?) return Err(failure);
+    if (_adminFor(Permission.teams, by) case final failure?) {
+      return Err(failure);
+    }
     final removed = memberOf(member);
     if (removed == null) return const Err(SectorCommandFailure.unknownMember);
     if (!removed.isActive) {
@@ -369,14 +382,17 @@ final class Sector {
   }
 
   /// Replaces the join code by a new one drawn from [random], as [by]
-  /// (« Nouveau code »). Only an admin may, member or not. The new code
+  /// (« Nouveau code »). Only an admin with « Secteurs » in the CS may,
+  /// member or not. The new code
   /// always differs from the old one, which stops working; the members
   /// stay.
   Result<(Sector, JoinCodeRegenerated), SectorCommandFailure> regenerateCode({
     required Actor by,
     required Random random,
   }) {
-    if (_adminActor(by) case final failure?) return Err(failure);
+    if (_adminFor(Permission.sectors, by) case final failure?) {
+      return Err(failure);
+    }
     JoinCode code;
     // One draw in 887 million gives the same code again: draw once more,
     // or the old code would keep working.
@@ -398,15 +414,17 @@ final class Sector {
   Sector withJoinCode(JoinCode code) => _copy(joinCode: code);
 
   /// Deletes the secteur, as [by] (« Supprimer le secteur »). Only an
-  /// admin may, member or not. Nothing is left to return but the deletion
-  /// itself.
+  /// admin with « Secteurs » in the CS may, member or not. Nothing is left
+  /// to return but the deletion itself.
   Result<SectorDeleted, SectorCommandFailure> delete({required Actor by}) {
-    if (_adminActor(by) case final failure?) return Err(failure);
+    if (_adminFor(Permission.sectors, by) case final failure?) {
+      return Err(failure);
+    }
     return Ok(SectorDeleted(this));
   }
 
-  /// Makes the admin [by], who is not in the secteur, an active member at
-  /// once under [name] (« Rejoindre » of the banner « Administrateur · pas
+  /// Makes the admin [by], who is not in the secteur and holds « Équipes »
+  /// in its CS, an active member at once under [name] (« Rejoindre » of the banner « Administrateur · pas
   /// membre », PLAN §5.12): no code, no request to answer, accepted by
   /// themself at [at], as the creator was. Refused when a member holds
   /// [name] already ([SectorCommandFailure.nameTaken]).
@@ -415,7 +433,9 @@ final class Sector {
     required MemberName name,
     required DateTime at,
   }) {
-    if (!by.isAdmin) return const Err(SectorCommandFailure.notAdmin);
+    if (!by.may(Permission.teams, centre.key)) {
+      return const Err(SectorCommandFailure.notAdmin);
+    }
     if (memberOf(by.member) != null) {
       return const Err(SectorCommandFailure.alreadyMember);
     }
@@ -435,14 +455,17 @@ final class Sector {
   }
 
   /// Adds [commune] after the secteur's others, as [by] (« + Ajouter une
-  /// commune » in Équipe, PLAN §5.8). Any active member or admin may.
+  /// commune » in Équipe, PLAN §5.8). Any active member may, or an admin
+  /// with « Rues » in the CS.
   /// Refused when the secteur already covers that commune (same INSEE
   /// code) or has [maxCommunes].
   Result<(Sector, CommuneAdded), SectorCommandFailure> addCommune(
     SectorCommune commune, {
     required Actor by,
   }) {
-    if (_teamActor(by) case final failure?) return Err(failure);
+    if (_actorFor(Permission.streets, by) case final failure?) {
+      return Err(failure);
+    }
     if (_communeOf(commune.inseeCode) != null) {
       return const Err(SectorCommandFailure.communeAlreadyIn);
     }
@@ -456,13 +479,16 @@ final class Sector {
   }
 
   /// Takes the commune [code] out of the secteur, as [by] (✕ in Équipe).
-  /// Any active member or admin may; the streets already added from it
-  /// stay. Never the last commune: « Ajouter des rues » needs one.
+  /// Any active member may, or an admin with « Rues » in the CS; the
+  /// streets already added from it stay. Never the last commune:
+  /// « Ajouter des rues » needs one.
   Result<(Sector, CommuneRemoved), SectorCommandFailure> removeCommune(
     InseeCode code, {
     required Actor by,
   }) {
-    if (_teamActor(by) case final failure?) return Err(failure);
+    if (_actorFor(Permission.streets, by) case final failure?) {
+      return Err(failure);
+    }
     final removed = _communeOf(code);
     if (removed == null) {
       return const Err(SectorCommandFailure.unknownCommune);
@@ -498,15 +524,17 @@ final class Sector {
     return null;
   }
 
-  /// Why [by] may not answer a request, or null when they are an admin or
-  /// an active member.
-  SectorCommandFailure? _teamActor(Actor by) =>
-      by.isAdmin ? null : _activeActor(by.member);
+  /// Why [by] may not run a command of the team's, or null when they hold
+  /// [permission] in the secteur's CS or are an active member.
+  SectorCommandFailure? _actorFor(Permission permission, Actor by) =>
+      by.may(permission, centre.key) ? null : _activeActor(by.member);
 
-  /// Why [by] may not run an admin's command, or null when they are an
-  /// admin. A non-admin hears first what keeps them from acting at all
-  /// (not in the secteur, still pending), as before.
-  SectorCommandFailure? _adminActor(Actor by) => by.isAdmin
+  /// Why [by] may not run an admin's command, or null when they hold
+  /// [permission] in the secteur's CS. Anyone else hears first what keeps
+  /// them from acting at all (not in the secteur, still pending), as
+  /// before.
+  SectorCommandFailure? _adminFor(Permission permission, Actor by) =>
+      by.may(permission, centre.key)
       ? null
       : _activeActor(by.member) ?? SectorCommandFailure.notAdmin;
 

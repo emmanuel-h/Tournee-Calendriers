@@ -1,8 +1,10 @@
-// The administrators of the app (PLAN §5.12, the « Admins » block of
-// §8.2): an `admins/{uid}` document added by hand in the console makes a
-// phone an admin of every secteur, member of it or not. Sam is an admin
-// in no secteur; Manu, who created Secteur 49, is one too; Léa is a
-// member who is not.
+// The administrators of the app (PLAN §5.12, §5.23, the « Admins » block of
+// §8.2): an `admins/{uid}` document makes a phone an admin of the CS it
+// grants permissions in, member of their secteurs or not; the super admin
+// (the global `admins`, set in the console) writes the others. Sam is an
+// admin of the CS Villefranche in no secteur; Manu, who created Secteur 49,
+// is the super admin with every permission there too; Léa is a member who
+// is not an admin. The permission matrix is permissions.test.mjs.
 import { after, before, beforeEach, describe, it } from 'node:test';
 import { assertFails, assertSucceeds } from '@firebase/rules-unit-testing';
 import {
@@ -11,13 +13,17 @@ import {
   doc,
   getDoc,
   getDocs,
+  query,
   runTransaction,
   setDoc,
   updateDoc,
+  where,
   writeBatch,
 } from 'firebase/firestore';
 import {
   activeMemberDoc,
+  adminDoc,
+  allPermissions,
   at,
   campaignPath,
   code,
@@ -36,6 +42,8 @@ import {
   sam,
   seed,
   seedTeam,
+  sectorDoc,
+  superAdminDoc,
   streetDoc,
   streetsPath,
   threePm,
@@ -82,6 +90,136 @@ describe('the admin documents', () => {
   });
 });
 
+describe('the admin documents, written by the super admin (PLAN §5.23)', () => {
+  /** [uid]'s phone's reference to `admins/{admin}`. */
+  const adminRef = (uid, admin) => doc(phoneOf(env, uid), `admins/${admin}`);
+
+  /** The document Manu writes to name Nina an admin of the CS Villefranche. */
+  const nina = (overrides = {}) =>
+    adminDoc('Nina', { villefranche: ['teams', 'streets'] }, { addedBy: manu, ...overrides });
+
+  /** [count] CS of well-formed keys, each with « Équipes ». */
+  const centres = (count) =>
+    Object.fromEntries(Array.from({ length: count }, (_, i) => [`cs-${i}`, ['teams']]));
+
+  it('should let the super admin list them, and nobody else', async () => {
+    await assertSucceeds(getDocs(collection(phoneOf(env, manu), 'admins')));
+    await assertFails(getDocs(collection(phoneOf(env, sam), 'admins')));
+    await assertFails(getDocs(collection(phoneOf(env, lea), 'admins')));
+  });
+
+  it('should let the super admin name an admin with exactly the fields', async () => {
+    await assertSucceeds(setDoc(adminRef(manu, 'nina'), nina()));
+  });
+
+  it('should refuse an admin named by anyone else', async () => {
+    await assertFails(setDoc(adminRef(sam, 'nina'), nina({ addedBy: sam })));
+    await assertFails(setDoc(adminRef(lea, 'nina'), nina({ addedBy: lea })));
+    await assertFails(setDoc(adminRef(zoe, zoe), nina({ addedBy: zoe })));
+  });
+
+  it('should refuse a new admin with a global permission, another field, or one missing', async () => {
+    await assertFails(setDoc(adminRef(manu, 'nina'), nina({ global: ['admins'] })));
+    await assertFails(setDoc(adminRef(manu, 'nina'), nina({ global: [] })));
+    await assertFails(setDoc(adminRef(manu, 'nina'), nina({ super: true })));
+    const { updatedAt: _, ...noUpdate } = nina();
+    await assertFails(setDoc(adminRef(manu, 'nina'), noUpdate));
+  });
+
+  it('should refuse a new admin added in someone else\'s name, or with times that are not', async () => {
+    await assertFails(setDoc(adminRef(manu, 'nina'), nina({ addedBy: sam })));
+    await assertFails(setDoc(adminRef(manu, 'nina'), nina({ addedAt: '2026-11-02' })));
+    await assertFails(setDoc(adminRef(manu, 'nina'), nina({ updatedAt: null })));
+  });
+
+  it('should take a name of 1 to 30 characters, cleaned', async () => {
+    await assertSucceeds(setDoc(adminRef(manu, 'a'), nina({ name: '🚒'.repeat(30) })));
+    await assertFails(setDoc(adminRef(manu, 'b'), nina({ name: '🚒'.repeat(31) })));
+    await assertFails(setDoc(adminRef(manu, 'c'), nina({ name: '' })));
+    await assertFails(setDoc(adminRef(manu, 'd'), nina({ name: ' Nina' })));
+  });
+
+  it('should take up to 50 CS, under well-formed keys', async () => {
+    await assertSucceeds(setDoc(adminRef(manu, 'a'), nina({ centres: centres(50) })));
+    await assertSucceeds(setDoc(adminRef(manu, 'b'), nina({ centres: {} })));
+    await assertFails(setDoc(adminRef(manu, 'c'), nina({ centres: centres(51) })));
+    for (const key of ['Gleizé', 'gleize-', 'ville franche', 'anse,gleize', 'anse_12']) {
+      await assertFails(
+        setDoc(adminRef(manu, 'd'), nina({ centres: { villefranche: ['teams'], [key]: ['teams'] } })),
+        key,
+      );
+    }
+    await assertFails(setDoc(adminRef(manu, 'e'), nina({ centres: ['villefranche'] })));
+  });
+
+  it('should let the super admin change another admin\'s name and CS', async () => {
+    await assertSucceeds(
+      updateDoc(adminRef(manu, sam), {
+        name: 'Samuel',
+        centres: { gleize: ['campaign'] },
+        updatedAt: threePm,
+      }),
+    );
+  });
+
+  it('should let the super admin change their own CS, never their global permissions', async () => {
+    await assertSucceeds(
+      updateDoc(adminRef(manu, manu), {
+        centres: { villefranche: ['teams'], gleize: ['sectors'] },
+        updatedAt: threePm,
+      }),
+    );
+    await assertFails(
+      updateDoc(adminRef(manu, manu), { global: ['admins'], updatedAt: threePm }),
+    );
+  });
+
+  it('should refuse an update giving a global permission, or touching another field', async () => {
+    await assertFails(updateDoc(adminRef(manu, sam), { global: ['centres'], updatedAt: threePm }));
+    await assertFails(updateDoc(adminRef(manu, sam), { addedBy: lea, updatedAt: threePm }));
+    await assertFails(updateDoc(adminRef(manu, sam), { addedAt: threePm, updatedAt: threePm }));
+    await assertFails(updateDoc(adminRef(manu, sam), { centres: centres(51), updatedAt: threePm }));
+    await assertFails(updateDoc(adminRef(manu, sam), { name: '', updatedAt: threePm }));
+    await assertFails(updateDoc(adminRef(manu, sam), { centres: {}, updatedAt: 'now' }));
+  });
+
+  it('should refuse an admin changing their own document without « admins »', async () => {
+    await assertFails(
+      updateDoc(adminRef(sam, sam), { centres: { gleize: allPermissions }, updatedAt: threePm }),
+    );
+  });
+
+  it('should let the super admin remove an admin, never a holder of a global permission', async () => {
+    await seed(env, 'admins/other', { global: ['centres'], centres: {} });
+
+    await assertFails(deleteDoc(adminRef(manu, 'other')));
+    await assertFails(
+      updateDoc(adminRef(manu, 'other'), { centres: { villefranche: ['teams'] }, updatedAt: threePm }),
+    );
+    await assertFails(deleteDoc(adminRef(manu, manu)));
+    await assertSucceeds(deleteDoc(adminRef(manu, sam)));
+    await assertFails(deleteDoc(adminRef(sam, 'other')));
+  });
+
+  it('should take the powers away once the console removes « admins »', async () => {
+    await seed(env, `admins/${manu}`, { ...superAdminDoc(), global: ['centres'] });
+
+    await assertFails(setDoc(adminRef(manu, 'nina'), nina()));
+    await assertFails(getDocs(collection(phoneOf(env, manu), 'admins')));
+  });
+
+  it('should give the super admin no power over a secteur from « admins » alone', async () => {
+    await seed(env, `admins/${manu}`, { global: ['admins', 'centres'] });
+    // Manu is no member of the 12, which only an admin of its CS reads.
+    await seed(env, 'sectors/t12', sectorDoc({ number: 12, joinCode: 'M4N8RT', createdBy: lea }));
+
+    await assertFails(getDoc(doc(phoneOf(env, manu), 'sectors/t12')));
+    await assertFails(
+      getDocs(query(collection(phoneOf(env, manu), 'sectors'), where('centreKey', 'in', ['villefranche']))),
+    );
+  });
+});
+
 describe('what an admin outside the team reads', () => {
   it('should let them read the secteur, its members, campaign and streets', async () => {
     const phone = phoneOf(env, sam);
@@ -92,10 +230,15 @@ describe('what an admin outside the team reads', () => {
     await assertSucceeds(getDocs(collection(phone, streetsPath)));
   });
 
-  it('should let only an admin list the secteurs', async () => {
-    await assertSucceeds(getDocs(collection(phoneOf(env, sam), 'sectors')));
-    await assertFails(getDocs(collection(phoneOf(env, lea), 'sectors')));
-    await assertFails(getDocs(collection(phoneOf(env, zoe), 'sectors')));
+  it('should let only an admin of the CS list its secteurs', async () => {
+    const ofVillefranche = (uid) =>
+      query(collection(phoneOf(env, uid), 'sectors'), where('centreKey', 'in', ['villefranche']));
+    await assertSucceeds(getDocs(ofVillefranche(sam)));
+    await assertFails(getDocs(ofVillefranche(lea)));
+    await assertFails(getDocs(ofVillefranche(zoe)));
+    // Every secteur of the app, as the app did before PLAN §5.23: it could
+    // hold another CS's, refused whole.
+    await assertFails(getDocs(collection(phoneOf(env, sam), 'sectors')));
   });
 
   it('should refuse someone who is no longer an admin', async () => {

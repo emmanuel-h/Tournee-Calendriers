@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tournee_calendriers/domain/sector/admin_grants.dart';
 import 'package:tournee_calendriers/presentation/account/device_id_state.dart';
 import 'package:tournee_calendriers/presentation/my_sectors/my_sectors_notifier.dart';
 import 'package:tournee_calendriers/presentation/reminders/reminders_notifier.dart';
@@ -206,7 +207,7 @@ final class _DeviceIdRow extends StatelessWidget {
                     ),
                   ),
                   ...switch (deviceId) {
-                    DeviceIdShown(:final id, :final isAdmin) => [
+                    DeviceIdShown(:final id, :final role) => [
                       // A long press selects it, for whoever prefers that
                       // to the copy button.
                       SelectableText(
@@ -216,7 +217,20 @@ final class _DeviceIdRow extends StatelessWidget {
                           color: colors.ink,
                         ),
                       ),
-                      if (isAdmin) Text(l10n.deviceIdIsAdmin, style: muted),
+                      // Only this phone ever names its role (PLAN §5.23).
+                      ?switch (role) {
+                        AdminRole.none => null,
+                        AdminRole.admin => Text(
+                          l10n.deviceIdIsAdmin,
+                          key: const Key('settings.role'),
+                          style: muted,
+                        ),
+                        AdminRole.superAdmin => Text(
+                          l10n.deviceIdIsSuperAdmin,
+                          key: const Key('settings.role'),
+                          style: muted,
+                        ),
+                      },
                     ],
                     DeviceIdSigningIn() => [
                       Text(l10n.accountSigningIn, style: muted),

@@ -1,3 +1,5 @@
+import 'package:tournee_calendriers/domain/sector/admin_grants.dart';
+import 'package:tournee_calendriers/domain/sector/permission.dart';
 import 'package:tournee_calendriers/domain/sector/sector.dart';
 import 'package:tournee_calendriers/domain/shared/insee_code.dart';
 import 'package:tournee_calendriers/domain/shared/member_id.dart';
@@ -17,9 +19,9 @@ enum TeamActionFailure {
   noName,
 
   /// A command of an admin (« Nouveau code », « Retirer », « Supprimer le
-  /// secteur », « Rejoindre ») from a phone no longer an admin's: the
-  /// server refused it, or the phone learnt it just before (« Vous n'êtes
-  /// plus administrateur. »).
+  /// secteur », « Rejoindre ») from a phone that no longer holds its
+  /// permission in the secteur's CS: the server refused it, or the phone
+  /// learnt it just before (« Vous n'êtes plus administrateur. »).
   notAdmin,
 
   /// The commune picked is already one of the secteur's.
@@ -67,8 +69,10 @@ final class TeamShown extends TeamState {
     required this.campaign,
     required this.code,
     required this.qrData,
-    required this.iAmAdmin,
     required this.iAmIn,
+    this.canRenewCode = false,
+    this.canDelete = false,
+    this.canAnswer = false,
     required List<RequestRow> requests,
     required List<MemberRow> members,
     this.canPrepare = false,
@@ -77,22 +81,28 @@ final class TeamShown extends TeamState {
        members = List.unmodifiable(members),
        communes = List.unmodifiable(communes);
 
-  /// [sector] as [me] sees it at [now] (« il y a 2 min »): [iAmAdmin]
-  /// when the phone is an admin's, [admins] the other members known to be
+  /// [sector] as [me] sees it at [now] (« il y a 2 min »): [grants] what
+  /// the phone may do as an admin, [admins] the other members known to be
   /// admins.
   factory TeamShown.of(
     Sector sector, {
     required MemberId me,
     required DateTime now,
-    required bool iAmAdmin,
+    required AdminGrants grants,
     required Set<MemberId> admins,
   }) {
-    // An active member or an admin prepares the secteur: its communes
-    // (PLAN §5.8, never the last one) and its streets (§5.14).
-    final canPrepare = iAmAdmin || (sector.memberOf(me)?.isActive ?? false);
+    // What the phone may do in this secteur's CS (PLAN §5.23).
+    final held = grants.inCentre(sector.centre.key);
+    final active = sector.memberOf(me)?.isActive ?? false;
+    // An active member, or an admin with « Rues », prepares the secteur:
+    // its communes (PLAN §5.8, never the last one) and its streets (§5.14).
+    final canPrepare = active || held.contains(Permission.streets);
     final lastOne = sector.communes.length == 1;
     return TeamShown(
       canPrepare: canPrepare,
+      canRenewCode: held.contains(Permission.sectors),
+      canDelete: held.contains(Permission.sectors),
+      canAnswer: active || held.contains(Permission.teams),
       communes: [
         for (final commune in sector.communes)
           CommuneRow(
@@ -106,7 +116,6 @@ final class TeamShown extends TeamState {
       campaign: sector.currentCampaign.value,
       code: sector.joinCode.display,
       qrData: sector.joinCode.value,
-      iAmAdmin: iAmAdmin,
       iAmIn: sector.memberOf(me) != null,
       requests: [
         for (final request in sector.pendingMembers)
@@ -123,10 +132,12 @@ final class TeamShown extends TeamState {
             name: member.name.text,
             isMe: member.id == me,
             // The phone knows about itself first (`adminProvider`).
-            isAdmin: member.id == me ? iAmAdmin : admins.contains(member.id),
-            // An admin removes any other member, admins included; leaving
-            // is « Quitter » (PLAN §5.12).
-            canRemove: iAmAdmin && member.id != me,
+            isAdmin: member.id == me
+                ? grants.isAdmin
+                : admins.contains(member.id),
+            // An admin with « Équipes » removes any other member, admins
+            // included; leaving is « Quitter » (PLAN §5.12).
+            canRemove: held.contains(Permission.teams) && member.id != me,
           ),
       ],
     );
@@ -147,27 +158,33 @@ final class TeamShown extends TeamState {
   /// §5.2), which « Rejoindre » reads like a typed code.
   final String qrData;
 
-  /// Whether the phone is an admin's (PLAN §5.12): « Nouveau code »,
-  /// « Retirer » and « Supprimer le secteur » are theirs, member of the
-  /// secteur or not.
-  final bool iAmAdmin;
+  /// « Nouveau code » shows: the phone holds « Secteurs » in the
+  /// secteur's CS (PLAN §5.23), member of the secteur or not.
+  final bool canRenewCode;
+
+  /// « Supprimer le secteur » shows: « Secteurs » too.
+  final bool canDelete;
+
+  /// « Accepter » and « Refuser » show on each request: an active member,
+  /// or an admin with « Équipes » in the CS.
+  final bool canAnswer;
 
   /// Whether the member on the phone is in the team: they may « Quitter »
   /// it. Otherwise they are an admin visiting it, who « Retirer de Mes
   /// secteurs » instead and is not listed in « Membres ».
   final bool iAmIn;
 
-  /// « En attente »: the requests, oldest first. Any member or admin may
-  /// answer.
+  /// « En attente »: the requests, oldest first, answered by whom
+  /// [canAnswer] says.
   final List<RequestRow> requests;
 
   /// « Membres »: the accepted members, oldest first.
   final List<MemberRow> members;
 
   /// The member on the phone prepares the secteur (PLAN §5.14): an active
-  /// member or an admin, never a member still pending. « RUES » (« + Ajouter
-  /// des rues », the Corbeille) and « + Ajouter une commune » show, and the
-  /// communes have their ✕.
+  /// member or an admin with « Rues » in its CS, never a member still
+  /// pending. « RUES » (« + Ajouter des rues », the Corbeille) and « +
+  /// Ajouter une commune » show, and the communes have their ✕.
   final bool canPrepare;
 
   /// « Communes »: the secteur's, in the order they were added; none for a

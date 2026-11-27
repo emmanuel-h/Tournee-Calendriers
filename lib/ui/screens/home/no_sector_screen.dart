@@ -97,9 +97,11 @@ final class _Panel extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final colors = AppColors.of(context);
-    // Only an admin creates a secteur; nothing hints at it otherwise, as on
-    // « Bienvenue ».
-    final isAdmin = ref.watch(adminProvider);
+    // Only an admin who may create one (PLAN §5.23) creates a secteur;
+    // nothing hints at it otherwise, as on « Bienvenue ».
+    final mayCreate = ref.watch(
+      adminProvider.select((grants) => grants.mayCreateSectors),
+    );
     return Material(
       color: colors.surface,
       elevation: 8,
@@ -156,7 +158,7 @@ final class _Panel extends ConsumerWidget {
                     unawaited(openWithName(context, AppRoutes.join)),
               ),
             ),
-            if (isAdmin)
+            if (mayCreate)
               SecondaryButton(
                 key: const Key('noSector.create'),
                 label: l10n.createSectorAction,

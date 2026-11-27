@@ -34,10 +34,12 @@ import 'package:tournee_calendriers/ui/theme/app_typography.dart';
 /// « RUES (38) » with « + Ajouter des rues » and the Corbeille, the
 /// communes, « COLLECTE 2026 », and leaving or deleting the secteur.
 ///
-/// Every member sees the code and answers requests; « Nouveau code »,
-/// « Retirer » and « Supprimer le secteur » are the admins' (PLAN §5.12),
-/// member or not; every member may « Quitter », and an admin who only
-/// visits the secteur « Retirer de Mes secteurs ». The team is followed
+/// Every member sees the code and answers requests; « Nouveau code » and
+/// « Supprimer le secteur » are the admins' with « Secteurs » in the
+/// secteur's CS, « Retirer » and the requests of a secteur they visit need
+/// « Équipes » (PLAN §5.12, §5.23), member or not; every member may
+/// « Quitter », and an admin who only visits the secteur « Retirer de Mes
+/// secteurs ». The team is followed
 /// live; it opens offline from the phone's copy, where a new code and
 /// deleting say they need the network.
 ///
@@ -195,6 +197,7 @@ final class _Team extends ConsumerWidget {
                       _RequestCard(
                         key: ValueKey('team.request.${request.id.value}'),
                         request: request,
+                        canAnswer: state.canAnswer,
                         onAccept: () =>
                             unawaited(run(() => notifier.accept(request.id))),
                         onRefuse: () =>
@@ -260,8 +263,9 @@ final class _Team extends ConsumerWidget {
 
 /// At the bottom: « Quitter le secteur » for a member (« Retirer de Mes
 /// secteurs » for an admin who only visits it), and beside it « Supprimer
-/// le secteur » for an admin (Team and TeamMember mockups). Each one then
-/// goes back to the start screen with no secteur open.
+/// le secteur » for an admin with « Secteurs » (Team, TeamMember and
+/// TeamDelete mockups), confirmed by typing the secteur's number. Each one
+/// then goes back to the start screen with no secteur open.
 final class _BottomActions extends ConsumerWidget {
   const _BottomActions({required this.state, required this.run});
 
@@ -304,7 +308,7 @@ final class _BottomActions extends ConsumerWidget {
               if (context.mounted) context.go(AppRoutes.home);
             },
           );
-    if (!state.iAmAdmin) return first;
+    if (!state.canDelete) return first;
     return Row(
       spacing: 10,
       children: [
@@ -316,15 +320,11 @@ final class _BottomActions extends ConsumerWidget {
             compact: true,
             destructive: true,
             onPressed: () async {
-              final confirmed = await showConfirmDialog(
-                context,
-                name: 'team.confirmDelete',
-                title: l10n.teamDeleteTitle('${state.number}'),
-                body: l10n.teamDeleteBody,
-                confirmLabel: l10n.teamDeleteConfirm,
-                destructive: true,
+              final confirmed = await showDialog<bool>(
+                context: context,
+                builder: (_) => _DeleteDialog(number: state.number),
               );
-              if (!confirmed) return;
+              if (confirmed != true) return;
               if (await run(notifier.deleteSector) && context.mounted) {
                 context.go(AppRoutes.home);
               }
@@ -337,7 +337,7 @@ final class _BottomActions extends ConsumerWidget {
 }
 
 /// The QR code beside « Code K7P-2QX » and its copy button, « Partager »
-/// and, for an admin, « Nouveau code ».
+/// and, for an admin with « Secteurs », « Nouveau code ».
 final class _CodeCard extends StatelessWidget {
   const _CodeCard({
     required this.state,
@@ -394,7 +394,7 @@ final class _CodeCard extends StatelessWidget {
                       label: l10n.teamShare,
                       onPressed: onShare,
                     ),
-                    if (state.iAmAdmin)
+                    if (state.canRenewCode)
                       TextButton(
                         key: const Key('team.newCode'),
                         onPressed: onNewCode,
@@ -419,16 +419,19 @@ final class _CodeCard extends StatelessWidget {
 }
 
 /// A request: « Julie · a demandé à rejoindre · il y a 2 min », then
-/// « Accepter » and « Refuser ».
+/// « Accepter » and « Refuser » for whom may answer ([canAnswer]: an admin
+/// visiting without « Équipes » only sees it).
 final class _RequestCard extends StatelessWidget {
   const _RequestCard({
     super.key,
     required this.request,
+    required this.canAnswer,
     required this.onAccept,
     required this.onRefuse,
   });
 
   final RequestRow request;
+  final bool canAnswer;
   final VoidCallback onAccept;
   final VoidCallback onRefuse;
 
@@ -481,45 +484,50 @@ final class _RequestCard extends StatelessWidget {
               ),
             ],
           ),
-          Row(
-            spacing: 10,
-            children: [
-              Expanded(
-                child: Semantics(
-                  button: true,
-                  label: l10n.teamAcceptSemantics(request.name),
-                  excludeSemantics: true,
-                  child: FilledButton(
-                    key: const Key('team.request.accept'),
-                    onPressed: onAccept,
-                    style: FilledButton.styleFrom(
-                      backgroundColor: colors.done,
-                      foregroundColor: colors.onDone,
-                      minimumSize: const Size.fromHeight(AppSizes.minTapTarget),
-                      textStyle: AppTextStyles.compactButton,
+          if (canAnswer)
+            Row(
+              spacing: 10,
+              children: [
+                Expanded(
+                  child: Semantics(
+                    button: true,
+                    label: l10n.teamAcceptSemantics(request.name),
+                    excludeSemantics: true,
+                    child: FilledButton(
+                      key: const Key('team.request.accept'),
+                      onPressed: onAccept,
+                      style: FilledButton.styleFrom(
+                        backgroundColor: colors.done,
+                        foregroundColor: colors.onDone,
+                        minimumSize: const Size.fromHeight(
+                          AppSizes.minTapTarget,
+                        ),
+                        textStyle: AppTextStyles.compactButton,
+                      ),
+                      child: Text(l10n.teamAccept),
                     ),
-                    child: Text(l10n.teamAccept),
                   ),
                 ),
-              ),
-              Expanded(
-                child: Semantics(
-                  button: true,
-                  label: l10n.teamRefuseSemantics(request.name),
-                  excludeSemantics: true,
-                  child: OutlinedButton(
-                    key: const Key('team.request.refuse'),
-                    onPressed: onRefuse,
-                    style: OutlinedButton.styleFrom(
-                      minimumSize: const Size.fromHeight(AppSizes.minTapTarget),
-                      textStyle: AppTextStyles.compactButton,
+                Expanded(
+                  child: Semantics(
+                    button: true,
+                    label: l10n.teamRefuseSemantics(request.name),
+                    excludeSemantics: true,
+                    child: OutlinedButton(
+                      key: const Key('team.request.refuse'),
+                      onPressed: onRefuse,
+                      style: OutlinedButton.styleFrom(
+                        minimumSize: const Size.fromHeight(
+                          AppSizes.minTapTarget,
+                        ),
+                        textStyle: AppTextStyles.compactButton,
+                      ),
+                      child: Text(l10n.teamRefuse),
                     ),
-                    child: Text(l10n.teamRefuse),
                   ),
                 ),
-              ),
-            ],
-          ),
+              ],
+            ),
         ],
       ),
     );
@@ -1096,6 +1104,77 @@ final class _RemoveDialogState extends State<_RemoveDialog> {
           style: TextButton.styleFrom(foregroundColor: colors.accent),
           onPressed: () => Navigator.of(context).pop(_renewCode),
           child: Text(l10n.teamRemove),
+        ),
+      ],
+    );
+  }
+}
+
+/// « Supprimer le secteur 49 ? » (TeamDelete mockup, PLAN §5.23): what goes,
+/// then « Tapez 49 pour confirmer », with « Supprimer » off until the
+/// secteur's [number] is typed, so a slip of the finger deletes nothing.
+/// Pops true once confirmed, nothing when cancelled. A `StatefulWidget`:
+/// it keeps the text typed while it is open.
+final class _DeleteDialog extends StatefulWidget {
+  const _DeleteDialog({required this.number});
+
+  final int number;
+
+  @override
+  State<_DeleteDialog> createState() => _DeleteDialogState();
+}
+
+final class _DeleteDialogState extends State<_DeleteDialog> {
+  // A `TextEditingController` holds what the field shows; it is freed with
+  // the dialog (`dispose`).
+  final _typed = TextEditingController();
+
+  @override
+  void dispose() {
+    _typed.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+    final colors = AppColors.of(context);
+    final number = '${widget.number}';
+    return AlertDialog(
+      title: Text(l10n.teamDeleteTitle(number)),
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        spacing: 14,
+        children: [
+          Text(l10n.teamDeleteBody),
+          TextField(
+            key: const Key('team.confirmDelete.number'),
+            controller: _typed,
+            autofocus: true,
+            keyboardType: TextInputType.number,
+            decoration: InputDecoration(
+              labelText: l10n.teamDeleteTypeNumber(number),
+            ),
+            // Redrawn at each key: « Supprimer » follows what is typed.
+            onChanged: (_) => setState(() {}),
+          ),
+        ],
+      ),
+      actions: [
+        TextButton(
+          key: const Key('team.confirmDelete.cancel'),
+          style: TextButton.styleFrom(foregroundColor: colors.ink),
+          onPressed: () => Navigator.of(context).pop(),
+          child: Text(l10n.cancel),
+        ),
+        TextButton(
+          key: const Key('team.confirmDelete.ok'),
+          style: TextButton.styleFrom(foregroundColor: colors.accent),
+          onPressed: _typed.text.trim() == number
+              ? () => Navigator.of(context).pop(true)
+              : null,
+          child: Text(l10n.teamDeleteConfirm),
         ),
       ],
     );

@@ -27,8 +27,9 @@ final teamProvider = NotifierProvider<TeamNotifier, TeamState>(
 /// joining as an admin and deleting need the network.
 ///
 /// It asks once about each other member whether they are an admin
-/// (« · admin »), and follows whether the phone is one (`adminProvider`),
-/// which gives or takes away the admin's commands at once.
+/// (« · admin »), and follows what the phone may do as one
+/// (`adminProvider`), which gives or takes away the admin's commands at
+/// once.
 final class TeamNotifier extends Notifier<TeamState> {
   /// What each member asked about turned out to be: admin or not. Kept
   /// across secteurs: an admin is one everywhere.
@@ -46,7 +47,7 @@ final class TeamNotifier extends Notifier<TeamState> {
     // follows the new one.
     final sector = ref.watch(currentSectorProvider);
     if (sector == null) return const NoTeam();
-    // `ref.listen`, not `ref.watch`: a change of the phone's admin status
+    // `ref.listen`, not `ref.watch`: a change of the phone's grants
     // redraws the team as it is, without following the secteur again.
     ref.listen(adminProvider, (_, _) => _showLast());
     final listening = ref
@@ -80,7 +81,7 @@ final class TeamNotifier extends Notifier<TeamState> {
       // « il y a 2 min » is worked out when the team changes; the clock is
       // read here, like the house sheet's « Modifié à ».
       now: ref.read(clockProvider).now(),
-      iAmAdmin: ref.read(adminProvider),
+      grants: ref.read(adminProvider),
       admins: {
         for (final MapEntry(key: member, value: isAdmin) in _admins.entries)
           if (isAdmin) member,

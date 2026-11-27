@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tournee_calendriers/domain/sector/permission.dart';
 import 'package:tournee_calendriers/presentation/admin/admin_notifier.dart';
 import 'package:tournee_calendriers/presentation/home/home_notifier.dart';
 import 'package:tournee_calendriers/presentation/home/street_row.dart';
@@ -36,9 +37,14 @@ final class UnreadableStreetSheet extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
     final colors = AppColors.of(context);
-    // `watch`: should the admin status arrive while the sheet shows, the
-    // button appears.
-    final isAdmin = ref.watch(adminProvider);
+    // `watch`: should the grants arrive while the sheet shows, the button
+    // appears. Deleting a street outright takes « Rues » in the secteur's
+    // CS (PLAN §5.23).
+    final mayDelete = ref.watch(
+      openSectorPermissionsProvider.select(
+        (held) => held.contains(Permission.streets),
+      ),
+    );
     final text = AppTextStyles.body.copyWith(color: colors.ink, height: 1.4);
     return SheetScaffold(
       key: const Key('unreadable.sheet'),
@@ -65,7 +71,7 @@ final class UnreadableStreetSheet extends ConsumerWidget {
           l10n.unreadableStreetAdminHint,
           style: AppTextStyles.small.copyWith(color: colors.muted),
         ),
-        if (isAdmin) ...[
+        if (mayDelete) ...[
           const SizedBox(height: 10),
           SecondaryButton(
             key: const Key('unreadable.delete'),

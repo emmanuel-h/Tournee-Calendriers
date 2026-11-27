@@ -55,8 +55,11 @@ final class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
     final colors = AppColors.of(context);
     final state = ref.watch(welcomeProvider);
     final goOn = state.canGoOn;
-    // Only an admin creates a secteur; nothing hints at it otherwise.
-    final isAdmin = ref.watch(adminProvider);
+    // Only an admin who may create one (PLAN §5.23) creates a secteur;
+    // nothing hints at it otherwise.
+    final mayCreate = ref.watch(
+      adminProvider.select((grants) => grants.mayCreateSectors),
+    );
     // Watching it signs the phone in (`accountProvider`).
     final deviceId = ref.watch(deviceIdProvider);
     return Scaffold(
@@ -138,7 +141,7 @@ final class _WelcomeScreenState extends ConsumerState<WelcomeScreen> {
                     mainAxisSize: MainAxisSize.min,
                     spacing: 12,
                     children: [
-                      if (isAdmin) ...[
+                      if (mayCreate) ...[
                         PrimaryButton(
                           key: const Key('welcome.create'),
                           label: l10n.createSectorAction,

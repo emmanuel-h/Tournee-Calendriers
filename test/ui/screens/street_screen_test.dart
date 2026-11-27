@@ -3,6 +3,9 @@ import 'package:flutter/rendering.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
+import 'package:tournee_calendriers/domain/sector/member.dart';
+import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
+import 'package:tournee_calendriers/domain/sector/permission.dart';
 import 'package:tournee_calendriers/domain/street/building/dwelling.dart';
 import 'package:tournee_calendriers/domain/street/house.dart';
 import 'package:tournee_calendriers/domain/street/street.dart';
@@ -14,7 +17,11 @@ import 'package:tournee_calendriers/ui/components/open_chevron.dart';
 import 'package:tournee_calendriers/ui/router/app_routes.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
 
+import '../../domain/sector/my_sectors_fixtures.dart';
+import '../../domain/sector/sector_fixtures.dart' show grantsInVillefranche;
 import '../../support/building_fixtures.dart';
+import '../../support/fakes/fake_admin_status.dart';
+import '../../support/fakes/fake_my_sectors_store.dart';
 import '../../support/fakes/fake_street_repository.dart';
 import '../../support/fakes/fake_street_view_preferences.dart';
 import '../../support/results.dart';
@@ -333,6 +340,40 @@ void main() {
 
     expect(find.widgetWithText(AppBar, 'Modifier la rue'), findsOneWidget);
     expect(router.state.uri.toString(), AppRoutes.editStreetOf(_id));
+  });
+
+  testWidgets('should offer ✏ to an admin visiting the secteur only with '
+      '« Rues » in its CS', (tester) async {
+    for (final (permission, edit) in [
+      (Permission.streets, findsOneWidget),
+      (Permission.teams, findsNothing),
+    ]) {
+      usePhoneScreen(tester);
+      final visited = summaryOf('t12', 12, status: MemberStatus.visiting);
+      await tester.pumpWidget(
+        ProviderScope(
+          // A new scope for each case: a fresh app.
+          key: ValueKey(permission),
+          overrides: fakePhone(
+            streets: FakeStreetRepository([_lilas]),
+            mySectors: FakeMySectorsStore(
+              valueOf(MySectors.none.remember(visited).open(visited.id)),
+            ),
+            admins: FakeAdminStatus(
+              phoneGrants: grantsInVillefranche({permission}),
+            ),
+          ),
+          child: const TourneeApp(showGallery: false),
+        ),
+      );
+      await tester.pumpAndSettle();
+      final router = GoRouter.of(tester.element(find.byType(Scaffold).first));
+      unawaitedPush(router, AppRoutes.streetOf(_id));
+      await tester.pumpAndSettle();
+
+      expect(find.text('Rue des Lilas'), findsWidgets);
+      expect(find.byKey(const Key('street.edit')), edit, reason: '$permission');
+    }
   });
 
   group('counts row with the app fonts (#35)', () {

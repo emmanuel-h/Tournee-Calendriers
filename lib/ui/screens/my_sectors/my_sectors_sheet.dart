@@ -73,7 +73,12 @@ final class MySectorsSheet extends ConsumerWidget {
     // Watched only here: whether the phone is offline is followed while
     // the sheet is shown, and the rows grey or come back with the network.
     final access = ref.watch(offlineAccessProvider);
-    final isAdmin = ref.watch(adminProvider);
+    // `select`: rebuilt only when what the sheet offers changes.
+    final (mayCreate, holdsCentres) = ref.watch(
+      adminProvider.select(
+        (grants) => (grants.mayCreateSectors, grants.centres.isNotEmpty),
+      ),
+    );
     return SheetScaffold(
       title: l10n.mySectorsTitle,
       spacing: 6,
@@ -105,8 +110,9 @@ final class MySectorsSheet extends ConsumerWidget {
         // The current secteur stays open until the new one is ready (or
         // accepted, PLAN §5.3).
         const SizedBox(height: 10),
-        // Only admins create a secteur; nothing hints at it otherwise.
-        if (isAdmin)
+        // Only an admin with « Secteurs » somewhere, or who may create a CS,
+        // creates a secteur; nothing hints at it otherwise (PLAN §5.23).
+        if (mayCreate)
           PrimaryButton(
             key: const Key('mySectors.create'),
             label: l10n.createSectorAction,
@@ -120,7 +126,9 @@ final class MySectorsSheet extends ConsumerWidget {
           compact: true,
           onPressed: () => Navigator.of(context).pop(AppRoutes.join),
         ),
-        if (isAdmin)
+        // The secteurs of the CS the admin holds a permission in: none to
+        // show for the super admin's global permissions alone.
+        if (holdsCentres)
           TextButton.icon(
             key: const Key('mySectors.all'),
             onPressed: () => Navigator.of(context).pop(AppRoutes.allSectors),

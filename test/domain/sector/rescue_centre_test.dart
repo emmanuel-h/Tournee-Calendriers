@@ -166,4 +166,31 @@ void main() {
       'RescueCentre(CS Villefranche)',
     );
   });
+
+  group('stored key', () {
+    test('should read back a key as the app stores it', () {
+      final key = RescueCentreKey.fromStored('villefranche-sur-saone');
+
+      expect(key?.value, 'villefranche-sur-saone');
+      expect(
+        key,
+        valueOf(RescueCentre.create('CS Villefranche-sur-Saône')).key,
+      );
+    });
+
+    for (final stored in [
+      '',
+      'Villefranche',
+      'ville franche',
+      'villefranche-',
+      '-villefranche',
+      'ville--franche',
+      'saône',
+      'villefranche_49',
+    ]) {
+      test('should refuse "$stored", which the app never stores', () {
+        expect(RescueCentreKey.fromStored(stored), isNull);
+      });
+    }
+  });
 }

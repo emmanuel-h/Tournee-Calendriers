@@ -70,19 +70,25 @@ Start screen:
   secteur where a join request waits; ⚙ opens Paramètres: first name (the team sees the new one where it is free; « Vos noms par secteur » and a name of its own for a secteur where it is taken), « Mes secteurs », theme (Système,
   Clair, Sombre), confidentialité, « Écrire au développeur » (opens the mail app, subject with the version), version (opens « Nouveautés », what each version brings), licences, data credits.
 - Secteur (Accueil's title, once called Équipe): « Changer de secteur », the join code (copy button: « Code copié ») and its QR code, « Partager »,
-  « Nouveau code » (admins), the requests to join with « Accepter » / « Refuser » (any
-  member or admin), the members (« · admin ») and « Retirer » (admins; « Changer aussi le code » ticked), « RUES (n) » with
+  « Nouveau code » (admins with « Secteurs »), the requests to join with « Accepter » / « Refuser » (any
+  member, or an admin with « Équipes »), the members (« · admin ») and « Retirer » (admins with « Équipes »; « Changer aussi le code » ticked), « RUES (n) » with
   « + Ajouter des rues » and the Corbeille (not for a pending member), the secteur's
   communes (« + Ajouter une commune », ✕ but on the last one), and pinned at the bottom
-  « Quitter le secteur » (every member) and « Supprimer le secteur » (admins).
+  « Quitter le secteur » (every member) and « Supprimer le secteur » (admins with « Secteurs », after typing the secteur's number).
   Answering, removing and leaving work offline; a new code and deleting need the network.
   A member removed, or whose secteur was deleted, sees it leave « Mes secteurs » with a
   message (« Vous avez été retiré du secteur 49. »); offline, nothing is forgotten.
-- Administrators (an `admins/{uid}` document added by hand in the Firebase console): they
-  create secteurs, manage every one, and see them all in « Tous les secteurs » (from
-  « Mes secteurs », needs the network). A secteur an admin opens without being in it shows
-  « Administrateur · pas membre » with « Rejoindre » (a member at once); « Retirer de Mes
-  secteurs » forgets it. Paramètres shows « Identifiant de l'appareil » (« · administrateur »).
+- Administrators, per centre de secours and per permission (an `admins/{uid}` document):
+  « Campagne », « Secteurs » (create, new code, delete), « Équipes » (requests, « Retirer »,
+  « Rejoindre » without a code) and « Rues » (the streets of a secteur they are not in). Any
+  permission in a CS shows its secteurs in « Tous les secteurs » (from « Mes secteurs », needs
+  the network). A secteur an admin opens without being in it shows « Administrateur · pas
+  membre », with « Rejoindre » (a member at once) for « Équipes »; « Retirer de Mes secteurs »
+  forgets it. The super admin (the global `admins` and `centres`, set only in the Firebase
+  console) creates new CS and manages the admins' documents (no screen yet: the console);
+  holding them gives no power over a secteur.
+  Paramètres shows « Identifiant de l'appareil », with « Administrateur » or « Super
+  administrateur » under it on that phone only.
 - Corbeille (from Secteur): the deleted streets and numbers, who deleted them and when, and
   « Restaurer », which brings them back with their marks. What stayed there more than 30 days
   is deleted for good by the first member's app that starts (no server).

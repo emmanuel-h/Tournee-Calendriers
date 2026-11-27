@@ -1,8 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/application/ports/commune_search.dart';
+import 'package:tournee_calendriers/domain/sector/admin_grants.dart';
 import 'package:tournee_calendriers/domain/sector/member.dart';
 import 'package:tournee_calendriers/domain/sector/my_sectors.dart';
+import 'package:tournee_calendriers/domain/sector/permission.dart';
+import 'package:tournee_calendriers/domain/sector/rescue_centre.dart';
 import 'package:tournee_calendriers/domain/sector/sector.dart';
 import 'package:tournee_calendriers/domain/sector/sector_change.dart';
 import 'package:tournee_calendriers/domain/sector/sector_commune.dart';
@@ -47,16 +50,19 @@ void main() {
   late FakeAdminStatus admins;
 
   /// The phone of [member], with the 49 open (or [mine]). Manu and Sam are
-  /// admins of the app; the phone is an admin's when [member] is one of
-  /// them, unless [admin] says otherwise.
+  /// admins of the CS Villefranche, with every permission; the phone is an
+  /// admin's when [member] is one of them, unless [admin] says otherwise,
+  /// with [grants] when given.
   ProviderContainer phoneOf(
     MemberId member, {
     MySectors? mine,
     bool? admin,
+    AdminGrants? grants,
     FakePhoneSettings? settings,
   }) {
     admins = FakeAdminStatus(
       phoneIsAdmin: admin ?? (member == manuId || member == samId),
+      phoneGrants: grants,
       admins: [manuId, samId],
     );
     sectors = FakeSectorRepository([team()]);
@@ -125,7 +131,9 @@ void main() {
       expect(team.campaign, 2026);
       expect(team.code, 'K7P-2QX');
       expect(team.qrData, 'K7P2QX');
-      expect(team.iAmAdmin, isTrue);
+      expect(team.canRenewCode, isTrue);
+      expect(team.canDelete, isTrue);
+      expect(team.canAnswer, isTrue);
       expect(team.iAmIn, isTrue);
       expect(team.requests, [
         RequestRow(id: julieId, name: 'Julie', asked: const MinutesAgo(2)),
@@ -153,7 +161,10 @@ void main() {
         'admins', () async {
       final team = await shown(phoneOf(leaId));
 
-      expect(team.iAmAdmin, isFalse);
+      expect(team.canRenewCode, isFalse);
+      expect(team.canDelete, isFalse);
+      // Any active member answers requests.
+      expect(team.canAnswer, isTrue);
       expect(team.iAmIn, isTrue);
       expect(team.members, [
         MemberRow(
@@ -188,10 +199,91 @@ void main() {
         'the members', () async {
       final team = await shown(phoneOf(samId));
 
-      expect(team.iAmAdmin, isTrue);
+      expect(team.canRenewCode, isTrue);
+      expect(team.canAnswer, isTrue);
       expect(team.iAmIn, isFalse);
       expect(team.members.map((member) => member.id), [manuId, leaId]);
       expect(team.members.every((member) => member.canRemove), isTrue);
+    });
+
+    test('should offer « Nouveau code » and « Supprimer » with « Secteurs » '
+        'in the CS, nothing of the team', () async {
+      final team = await shown(
+        phoneOf(samId, grants: grantsInVillefranche({Permission.sectors})),
+      );
+
+      expect(team.canRenewCode, isTrue);
+      expect(team.canDelete, isTrue);
+      expect(team.canAnswer, isFalse);
+      expect(team.canPrepare, isFalse);
+      expect(team.members.any((member) => member.canRemove), isFalse);
+    });
+
+    test('should offer the requests and « Retirer » with « Équipes » in the '
+        'CS, not the code nor deleting', () async {
+      final team = await shown(
+        phoneOf(samId, grants: grantsInVillefranche({Permission.teams})),
+      );
+
+      expect(team.canAnswer, isTrue);
+      expect(team.members.every((member) => member.canRemove), isTrue);
+      expect(team.canRenewCode, isFalse);
+      expect(team.canDelete, isFalse);
+      expect(team.canPrepare, isFalse);
+    });
+
+    test('should let an admin with « Rues » prepare the streets, nothing '
+        'else', () async {
+      final team = await shown(
+        phoneOf(samId, grants: grantsInVillefranche({Permission.streets})),
+      );
+
+      expect(team.canPrepare, isTrue);
+      expect(team.canAnswer, isFalse);
+      expect(team.canRenewCode, isFalse);
+      expect(team.members.any((member) => member.canRemove), isFalse);
+    });
+
+    test('should offer nothing of an admin\'s for permissions held in another '
+        'CS only, or global ones', () async {
+      for (final grants in [
+        AdminGrants(
+          centres: {
+            valueOf(RescueCentre.create('CS Gleizé')).key: Permission.values
+                .toSet(),
+          },
+        ),
+        AdminGrants(global: GlobalPermission.values.toSet()),
+      ]) {
+        final team = await shown(phoneOf(samId, grants: grants));
+
+        expect(team.canRenewCode, isFalse, reason: '$grants');
+        expect(team.canDelete, isFalse, reason: '$grants');
+        expect(team.canAnswer, isFalse, reason: '$grants');
+        expect(team.canPrepare, isFalse, reason: '$grants');
+        expect(team.members.any((member) => member.canRemove), isFalse);
+      }
+    });
+
+    test('should let a member who is an admin of another CS do what any '
+        'member does, and label them admin', () async {
+      final team = await shown(
+        phoneOf(
+          leaId,
+          grants: AdminGrants(
+            centres: {
+              valueOf(RescueCentre.create('CS Gleizé')).key: {
+                Permission.sectors,
+              },
+            },
+          ),
+        ),
+      );
+
+      expect(team.canAnswer, isTrue);
+      expect(team.canPrepare, isTrue);
+      expect(team.canRenewCode, isFalse);
+      expect(team.members.last.isAdmin, isTrue);
     });
 
     test('should take the admin powers away when the phone stops being an '
@@ -203,7 +295,8 @@ void main() {
       await pumpEventQueue();
 
       final state = container.read(teamProvider) as TeamShown;
-      expect(state.iAmAdmin, isFalse);
+      expect(state.canRenewCode, isFalse);
+      expect(state.canDelete, isFalse);
       expect(state.members.first.canRemove, isFalse);
     });
 

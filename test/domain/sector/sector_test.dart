@@ -1,7 +1,9 @@
 import 'package:test/test.dart';
 import 'package:tournee_calendriers/domain/sector/actor.dart';
+import 'package:tournee_calendriers/domain/sector/admin_grants.dart';
 import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
 import 'package:tournee_calendriers/domain/sector/member.dart';
+import 'package:tournee_calendriers/domain/sector/permission.dart';
 import 'package:tournee_calendriers/domain/sector/rescue_centre.dart';
 import 'package:tournee_calendriers/domain/sector/sector.dart';
 import 'package:tournee_calendriers/domain/sector/sector_change.dart';
@@ -637,11 +639,13 @@ void main() {
   });
 
   group('permissions', () {
-    // Who may run each command (PLAN §5.12, §6.1, §8.2): `null` means the
+    // Who may run each command (PLAN §5.23, §6.1, §8.2): `null` means the
     // command is allowed, otherwise the failure it returns. Manu created
     // the secteur and is an admin, Léa is active, Julie is pending, Paul is
     // not in it; Sam is an admin who is not in it, and Julie is tried once
-    // more as an admin whose own request still waits.
+    // more as an admin whose own request still waits. Sam is then tried
+    // with each permission alone, with all of them in another CS, and as
+    // the super admin, whose global permissions give no power here.
     final at = DateTime.utc(2026, 11, 2, 9);
     final commands = <String, Object? Function(Sector, Actor)>{
       'accept a request': (t, by) => t.accept(julieId, by: by, at: at),
@@ -665,25 +669,79 @@ void main() {
     const notAdmin = SectorCommandFailure.notAdmin;
     const inIt = SectorCommandFailure.alreadyMember;
     const matrix = <String, List<SectorCommandFailure?>>{
-      //                 Manu, Léa, Julie, Paul, Sam, Julie (admin)
-      'accept a request': [ok, ok, pending, outsider, ok, ok],
-      'refuse a request': [ok, ok, pending, outsider, ok, ok],
-      'remove Léa': [ok, notAdmin, pending, outsider, ok, ok],
-      'leave': [ok, ok, ok, outsider, outsider, ok],
-      'regenerate the code': [ok, notAdmin, pending, outsider, ok, ok],
-      'delete the secteur': [ok, notAdmin, pending, outsider, ok, ok],
-      'rename themself': [ok, ok, pending, outsider, outsider, pending],
-      'join as an admin': [inIt, notAdmin, notAdmin, notAdmin, ok, inIt],
-      'add a commune': [ok, ok, pending, outsider, ok, ok],
-      'remove a commune': [ok, ok, pending, outsider, ok, ok],
+      // Manu, Léa, Julie, Paul, Sam, Julie (admin), then Sam holding only
+      // Campagne, Secteurs, Équipes, Rues, every one in another CS, and
+      // the super admin's global permissions alone.
+      'accept a request': [
+        ok, ok, pending, outsider, ok, ok, //
+        outsider, outsider, ok, outsider, outsider, outsider,
+      ],
+      'refuse a request': [
+        ok, ok, pending, outsider, ok, ok, //
+        outsider, outsider, ok, outsider, outsider, outsider,
+      ],
+      'remove Léa': [
+        ok, notAdmin, pending, outsider, ok, ok, //
+        outsider, outsider, ok, outsider, outsider, outsider,
+      ],
+      'leave': [
+        ok, ok, ok, outsider, outsider, ok, //
+        outsider, outsider, outsider, outsider, outsider, outsider,
+      ],
+      'regenerate the code': [
+        ok, notAdmin, pending, outsider, ok, ok, //
+        outsider, ok, outsider, outsider, outsider, outsider,
+      ],
+      'delete the secteur': [
+        ok, notAdmin, pending, outsider, ok, ok, //
+        outsider, ok, outsider, outsider, outsider, outsider,
+      ],
+      'rename themself': [
+        ok, ok, pending, outsider, outsider, pending, //
+        outsider, outsider, outsider, outsider, outsider, outsider,
+      ],
+      'join as an admin': [
+        inIt, notAdmin, notAdmin, notAdmin, ok, inIt, //
+        notAdmin, notAdmin, ok, notAdmin, notAdmin, notAdmin,
+      ],
+      'add a commune': [
+        ok, ok, pending, outsider, ok, ok, //
+        outsider, outsider, outsider, ok, outsider, outsider,
+      ],
+      'remove a commune': [
+        ok, ok, pending, outsider, ok, ok, //
+        outsider, outsider, outsider, ok, outsider, outsider,
+      ],
     };
+    Actor samHolding(Set<Permission> permissions) =>
+        Actor(member: samId, grants: grantsInVillefranche(permissions));
     final actors = {
       'Manu (active admin)': manuAsAdmin,
       'Léa (active)': leaActing,
       'Julie (pending)': julieActing,
       'Paul (outsider)': paulActing,
       'Sam (admin, outsider)': samAsAdmin,
-      'Julie (pending admin)': Actor(member: julieId, isAdmin: true),
+      'Julie (pending admin)': Actor(
+        member: julieId,
+        grants: allInVillefranche,
+      ),
+      'Sam (Campagne only)': samHolding({Permission.campaign}),
+      'Sam (Secteurs only)': samHolding({Permission.sectors}),
+      'Sam (Équipes only)': samHolding({Permission.teams}),
+      'Sam (Rues only)': samHolding({Permission.streets}),
+      'Sam (every permission, in another CS)': Actor(
+        member: samId,
+        grants: AdminGrants(
+          centres: {
+            valueOf(RescueCentre.create('CS Gleizé')).key: Permission.values
+                .toSet(),
+          },
+        ),
+      ),
+      'Sam (super admin, no CS)': Actor(
+        member: samId,
+        grants: AdminGrants(global: GlobalPermission.values.toSet()),
+      ),
     };
 
     for (final MapEntry(key: command, value: run) in commands.entries) {

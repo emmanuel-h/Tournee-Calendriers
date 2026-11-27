@@ -5,7 +5,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
 import 'package:tournee_calendriers/application/ports/sector_directory.dart';
+import 'package:tournee_calendriers/domain/sector/admin_grants.dart';
 import 'package:tournee_calendriers/domain/sector/campaign_year.dart';
+import 'package:tournee_calendriers/domain/sector/permission.dart';
 import 'package:tournee_calendriers/domain/sector/rescue_centre.dart';
 import 'package:tournee_calendriers/domain/sector/sector_change.dart';
 import 'package:tournee_calendriers/domain/sector/sector_id.dart';
@@ -78,7 +80,20 @@ void main() {
             memberName: withName ? nameOf('Sam') : null,
           ),
           account: FakeMemberAccount(signedInMember: samId),
-          admins: FakeAdminStatus(phoneIsAdmin: true, admins: [manuId, samId]),
+          // A permission in each station of the tests (PLAN §5.23).
+          admins: FakeAdminStatus(
+            phoneGrants: AdminGrants(
+              centres: {
+                for (final centre in [
+                  'CS Villefranche',
+                  'CS Villefranche Nord',
+                  'CS Villefranche Est',
+                ])
+                  valueOf(RescueCentre.create(centre)).key: {Permission.teams},
+              },
+            ),
+            admins: [manuId, samId],
+          ),
         ),
         child: const TourneeApp(showGallery: false),
       ),

@@ -92,6 +92,15 @@ final class RescueCentreKey {
 
   static final _notLetterOrDigit = RegExp('[^a-z0-9]+');
 
+  static final _stored = RegExp(r'^[a-z0-9]+(-[a-z0-9]+)*$');
+
+  /// The key [value] as storage holds it (`villefranche-sur-saone`, the
+  /// CS of an admin's grants, PLAN §5.23), or null when it is not one the
+  /// app makes: lower-case letters and digits, words joined by single
+  /// dashes.
+  static RescueCentreKey? fromStored(String value) =>
+      _stored.hasMatch(value) ? RescueCentreKey._(value) : null;
+
   /// The key of [name], or null when nothing is left of it.
   ///
   /// The name goes through [searchKey] (lower case, accents dropped,

@@ -794,7 +794,10 @@ void main() {
     });
 
     test('should follow the bound admin status', () async {
-      expect(await container.read(observeAdminStatusProvider)().first, isTrue);
+      expect(
+        await container.read(observeAdminStatusProvider)().first,
+        everyPermissionInVillefranche,
+      );
     });
 
     test('should ask the bound admin status about a member', () async {

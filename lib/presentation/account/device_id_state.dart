@@ -1,4 +1,5 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:tournee_calendriers/domain/sector/admin_grants.dart';
 import 'package:tournee_calendriers/presentation/account/account_notifier.dart';
 import 'package:tournee_calendriers/presentation/account/account_state.dart';
 import 'package:tournee_calendriers/presentation/admin/admin_notifier.dart';
@@ -13,7 +14,7 @@ final deviceIdProvider = Provider.autoDispose<DeviceIdState>(
   (ref) => switch (ref.watch(accountProvider)) {
     AccountSignedIn(:final member) => DeviceIdShown(
       member.value,
-      isAdmin: ref.watch(adminProvider),
+      role: ref.watch(adminProvider.select((grants) => grants.role)),
     ),
     AccountSigningIn() => const DeviceIdSigningIn(),
     AccountOffline() => const DeviceIdOffline(),
@@ -37,19 +38,20 @@ final class DeviceIdOffline extends DeviceIdState {
   const DeviceIdOffline();
 }
 
-/// The phone's uid [id], and whether it is an admin (« Administrateur »).
+/// The phone's uid [id], and its [role] (« Administrateur », « Super
+/// administrateur », PLAN §5.23): only this phone ever shows it.
 final class DeviceIdShown extends DeviceIdState {
-  const DeviceIdShown(this.id, {required this.isAdmin});
+  const DeviceIdShown(this.id, {this.role = AdminRole.none});
 
   /// The whole uid, shown in full and put on the clipboard by the copy
   /// button.
   final String id;
-  final bool isAdmin;
+  final AdminRole role;
 
   @override
   bool operator ==(Object other) =>
-      other is DeviceIdShown && other.id == id && other.isAdmin == isAdmin;
+      other is DeviceIdShown && other.id == id && other.role == role;
 
   @override
-  int get hashCode => Object.hash(id, isAdmin);
+  int get hashCode => Object.hash(id, role);
 }

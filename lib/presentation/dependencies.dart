@@ -550,6 +550,7 @@ final listAllSectorsProvider = Provider(
   (ref) => ListAllSectors(
     ref.watch(sectorDirectoryProvider),
     ref.watch(memberAccountProvider),
+    ref.watch(adminStatusProvider),
   ),
 );
 final openAsAdminProvider = Provider(

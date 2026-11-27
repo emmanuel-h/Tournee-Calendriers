@@ -6,6 +6,7 @@ import 'package:tournee_calendriers/application/ports/identity_provider.dart';
 import 'package:tournee_calendriers/application/ports/my_sectors_store.dart';
 import 'package:tournee_calendriers/application/ports/phone_cache_reset.dart';
 import 'package:tournee_calendriers/application/ports/phone_settings.dart';
+import 'package:tournee_calendriers/application/use_cases/admins.dart';
 import 'package:tournee_calendriers/domain/sector/actor.dart';
 import 'package:tournee_calendriers/domain/sector/join_code.dart';
 import 'package:tournee_calendriers/domain/sector/sector.dart';
@@ -20,8 +21,8 @@ import 'package:tournee_calendriers/domain/shared/same_items.dart';
 
 // Équipe (PLAN §5.8, §5.12): who is in the open secteur, the requests to
 // answer, the join code, its communes, and leaving or deleting the secteur. The member
-// acting is the one on the phone (`IdentityProvider`), with whether they
-// are an admin (`AdminStatus`): the secteur's root checks they may do it.
+// acting is the one on the phone (`IdentityProvider`), with their grants as
+// an admin (`AdminStatus`): the secteur's root checks they may do it.
 // Accepting, refusing, removing, leaving and changing the communes work
 // offline (queued by storage); a new code, an admin joining and deleting
 // need the server.
@@ -86,22 +87,10 @@ TeamFailure _teamFailureOf(SectorWriteFailure failure) => switch (failure) {
   SectorWriteFailure.nameTaken => TeamProblem.nameTaken,
 };
 
-/// Who acts on the phone: the member, and whether they are an admin as
-/// [admins] last knew it (false until known, so an admin's command is then
-/// refused rather than sent to a server that would refuse it).
-///
-/// A status that cannot be read counts as not an admin too: the member's
-/// own commands still run, and an admin's is refused with a reason the
-/// screen words, instead of an error it cannot.
-Future<Actor> _actorOf(IdentityProvider identity, AdminStatus admins) async {
-  bool isAdmin;
-  try {
-    isAdmin = await admins.watchIsAdmin().first;
-  } on Object {
-    isAdmin = false;
-  }
-  return Actor(member: identity.currentMember, isAdmin: isAdmin);
-}
+/// Who acts on the phone: the member, with their grants as [admins] last
+/// knew them ([grantsOf]: none until known or when unreadable).
+Future<Actor> _actorOf(IdentityProvider identity, AdminStatus admins) async =>
+    Actor(member: identity.currentMember, grants: await grantsOf(admins));
 
 /// The steps every command of Équipe shares: load the secteur [id], run
 /// [command] on it, store the change it made, and return the secteur as
