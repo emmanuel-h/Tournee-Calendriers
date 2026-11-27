@@ -1,3 +1,5 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:tournee_calendriers/ui/theme/app_colors.dart';
 import 'package:tournee_calendriers/ui/theme/app_sizes.dart';
@@ -40,14 +42,17 @@ final class SheetScaffold extends StatelessWidget {
   Widget build(BuildContext context) {
     final colors = AppColors.of(context);
     final title = this.title;
+    // The sheet is drawn edge to edge, under the phone's navigation bar
+    // (`useSafeArea` only guards its top and sides). `paddingOf` is the
+    // height of that bar: tall with the 3-button bar, thin with gestures.
+    // `viewInsetsOf` is the keyboard, which covers the bar when it is up,
+    // hence the larger of the two rather than their sum.
+    final bottom = max(
+      MediaQuery.viewInsetsOf(context).bottom,
+      MediaQuery.paddingOf(context).bottom,
+    );
     return SingleChildScrollView(
-      // Lifts the content above the keyboard when a field has focus.
-      padding: EdgeInsets.fromLTRB(
-        20,
-        12,
-        20,
-        28 + MediaQuery.viewInsetsOf(context).bottom,
-      ),
+      padding: EdgeInsets.fromLTRB(20, 12, 20, 28 + bottom),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.stretch,

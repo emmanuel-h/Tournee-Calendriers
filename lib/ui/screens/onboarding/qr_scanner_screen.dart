@@ -73,24 +73,28 @@ final class _QrScannerScreenState extends State<QrScannerScreen> {
               ),
             ),
           ),
-          Align(
-            alignment: Alignment.bottomCenter,
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: DecoratedBox(
-                decoration: BoxDecoration(
-                  color: colors.snackBar,
-                  borderRadius: BorderRadius.circular(AppSizes.sheetRadius),
-                ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 10,
+          // `SafeArea`: the camera runs under the navigation bar, the hint
+          // stays above it.
+          SafeArea(
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    color: colors.snackBar,
+                    borderRadius: BorderRadius.circular(AppSizes.sheetRadius),
                   ),
-                  child: Text(
-                    l10n.scannerHint,
-                    style: AppTextStyles.body.copyWith(
-                      color: colors.onSnackBar,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
+                    child: Text(
+                      l10n.scannerHint,
+                      style: AppTextStyles.body.copyWith(
+                        color: colors.onSnackBar,
+                      ),
                     ),
                   ),
                 ),
