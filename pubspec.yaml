@@ -21,7 +21,7 @@ dependencies:
   cloud_firestore: 7.1.0
   firebase_app_check: 0.5.1
   firebase_auth: 7.0.1
-  firebase_core: 5.1.0
+  firebase_core: 5.2.0
   flutter:
     sdk: flutter
   # The reminders to come back (PLAN §5.17, #82): local notifications
